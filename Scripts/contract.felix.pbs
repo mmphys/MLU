@@ -1,0 +1,24 @@
+# PBS job options name, compute nodes, job time)
+#PBS -N cpionf
+# Select nodes
+#PBS -l select=1:ncpus=24:mpiprocs=1
+#PBS -l walltime=01:00:00
+#PBS -l place=scatter
+# [budget code] is dp008
+#PBS -A dp008
+
+# Change to the directory that the job was submitted from
+cd $PBS_O_WORKDIR
+# Jobs submitted from log directory, so change up a level
+cd ..
+
+# Intel compilers and working version of MPI
+EnvDir=/home/dp008/dp008/shared/env
+. $EnvDir/mod-intel18-impi19-tp.sh
+# MPI optimisation environment variables for Tesseract
+. $EnvDir/i18mpi-env.sh
+
+# Set up application and options
+CMD="./HadronsContractor contract.felix.xml"
+CMD="${CMD} &> log/${PBS_JOBNAME}.l${PBS_JOBID%%.*}"
+eval ${CMD}

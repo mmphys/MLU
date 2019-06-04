@@ -1,0 +1,440 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		6822E8C022A7057400A85993 /* bootstrap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8BF22A7057400A85993 /* bootstrap.cpp */; };
+		68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8C722A708A200A85993 /* peramb-compare.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		6822E8BA22A7057400A85993 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		68AC6DE422A7114900D42F70 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		6822E8BC22A7057400A85993 /* bootstrap */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = bootstrap; sourceTree = BUILT_PRODUCTS_DIR; };
+		6822E8BF22A7057400A85993 /* bootstrap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bootstrap.cpp; sourceTree = "<group>"; };
+		6822E8C622A708A200A85993 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		6822E8C722A708A200A85993 /* peramb-compare.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "peramb-compare.cpp"; sourceTree = "<group>"; };
+		6822E8C822A710FA00A85993 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
+		68AC6DE622A7114900D42F70 /* peramb-compare */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "peramb-compare"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		6822E8B922A7057400A85993 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68AC6DE322A7114900D42F70 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		6822E8B322A7057400A85993 = {
+			isa = PBXGroup;
+			children = (
+				6822E8BE22A7057400A85993 /* Analyze */,
+				6822E8C822A710FA00A85993 /* Scripts */,
+				6822E8BD22A7057400A85993 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6822E8BD22A7057400A85993 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6822E8BC22A7057400A85993 /* bootstrap */,
+				68AC6DE622A7114900D42F70 /* peramb-compare */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6822E8BE22A7057400A85993 /* Analyze */ = {
+			isa = PBXGroup;
+			children = (
+				6822E8C622A708A200A85993 /* Makefile */,
+				6822E8BF22A7057400A85993 /* bootstrap.cpp */,
+				6822E8C722A708A200A85993 /* peramb-compare.cpp */,
+			);
+			path = Analyze;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		6822E8BB22A7057400A85993 /* bootstrap */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6822E8C322A7057400A85993 /* Build configuration list for PBXNativeTarget "bootstrap" */;
+			buildPhases = (
+				6822E8B822A7057400A85993 /* Sources */,
+				6822E8B922A7057400A85993 /* Frameworks */,
+				6822E8BA22A7057400A85993 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = bootstrap;
+			productName = Utility;
+			productReference = 6822E8BC22A7057400A85993 /* bootstrap */;
+			productType = "com.apple.product-type.tool";
+		};
+		68AC6DE522A7114900D42F70 /* peramb-compare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 68AC6DEC22A7114A00D42F70 /* Build configuration list for PBXNativeTarget "peramb-compare" */;
+			buildPhases = (
+				68AC6DE222A7114900D42F70 /* Sources */,
+				68AC6DE322A7114900D42F70 /* Frameworks */,
+				68AC6DE422A7114900D42F70 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "peramb-compare";
+			productName = "peramb-compare";
+			productReference = 68AC6DE622A7114900D42F70 /* peramb-compare */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6822E8B422A7057400A85993 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1020;
+				ORGANIZATIONNAME = sopa;
+				TargetAttributes = {
+					6822E8BB22A7057400A85993 = {
+						CreatedOnToolsVersion = 10.2.1;
+					};
+					68AC6DE522A7114900D42F70 = {
+						CreatedOnToolsVersion = 10.2.1;
+					};
+				};
+			};
+			buildConfigurationList = 6822E8B722A7057400A85993 /* Build configuration list for PBXProject "Utility" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 6822E8B322A7057400A85993;
+			productRefGroup = 6822E8BD22A7057400A85993 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6822E8BB22A7057400A85993 /* bootstrap */,
+				68AC6DE522A7114900D42F70 /* peramb-compare */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6822E8B822A7057400A85993 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6822E8C022A7057400A85993 /* bootstrap.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68AC6DE222A7114900D42F70 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		6822E8C122A7057400A85993 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					$LatAnalyzeBuild,
+					$LatAnalyze/lib,
+					$GridPkg/include,
+					$GridPre/include,
+					$GridBuild/Grid,
+					$Grid,
+					$GridPre/openmpi/include,
+					$GridPre/lime/include,
+				);
+				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
+				LIBRARY_SEARCH_PATHS = (
+					$GridPkg/lib,
+					$GridPre/lib,
+					$GridBuild/Grid,
+					$GridBuild/Hadrons,
+					$GridPre/openmpi/lib,
+					$GridPre/lime/lib,
+					$LatAnalyzeBuild/lib/.libs,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = (
+					"-lLatAnalyze",
+					"-lLexers",
+					"-lgsl",
+					"-lgslcblas",
+					"-lm",
+					"-lnlopt_cxx",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lMinuit2",
+					"-lGrid",
+					"-lHadrons",
+					"-lmpi",
+					"-lz",
+					"-lcrypto",
+					"-llime",
+					"-lfftw3f",
+					"-lfftw3",
+					"-lmpfr",
+					"-lgmp",
+				);
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		6822E8C222A7057400A85993 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					$LatAnalyzeBuild,
+					$LatAnalyze/lib,
+					$GridPkg/include,
+					$GridPre/include,
+					$GridBuild/Grid,
+					$Grid,
+					$GridPre/openmpi/include,
+					$GridPre/lime/include,
+				);
+				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
+				LIBRARY_SEARCH_PATHS = (
+					$GridPkg/lib,
+					$GridPre/lib,
+					$GridBuild/Grid,
+					$GridBuild/Hadrons,
+					$GridPre/openmpi/lib,
+					$GridPre/lime/lib,
+					$LatAnalyzeBuild/lib/.libs,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				OTHER_LDFLAGS = (
+					"-lLatAnalyze",
+					"-lLexers",
+					"-lgsl",
+					"-lgslcblas",
+					"-lm",
+					"-lnlopt_cxx",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lMinuit2",
+					"-lGrid",
+					"-lHadrons",
+					"-lmpi",
+					"-lz",
+					"-lcrypto",
+					"-llime",
+					"-lfftw3f",
+					"-lfftw3",
+					"-lmpfr",
+					"-lgmp",
+				);
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		6822E8C422A7057400A85993 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		6822E8C522A7057400A85993 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		68AC6DEA22A7114A00D42F70 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		68AC6DEB22A7114A00D42F70 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6822E8B722A7057400A85993 /* Build configuration list for PBXProject "Utility" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6822E8C122A7057400A85993 /* Debug */,
+				6822E8C222A7057400A85993 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6822E8C322A7057400A85993 /* Build configuration list for PBXNativeTarget "bootstrap" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6822E8C422A7057400A85993 /* Debug */,
+				6822E8C522A7057400A85993 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		68AC6DEC22A7114A00D42F70 /* Build configuration list for PBXNativeTarget "peramb-compare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				68AC6DEA22A7114A00D42F70 /* Debug */,
+				68AC6DEB22A7114A00D42F70 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 6822E8B422A7057400A85993 /* Project object */;
+}

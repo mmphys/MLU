@@ -1,0 +1,37 @@
+<?xml hersion="1.0"?>
+<grid>
+  <global>
+    <nt>64</nt>
+    <diskVectorDir>dv</diskVectorDir>
+    <output>.</output>
+    <trajCounter>
+      <start>3000</start>
+      <end>4000</end>
+      <step>40</step>
+    </trajCounter>
+  </global>
+  <a2aMatrix>
+    <elem>
+      <file>/home/dp008/dp008/dc-erbe1/run/light_tsrc0/output/Phi_L_100.@traj@/Identity_0_0_0.h5</file>
+      <dataset>Identity_0_0_0</dataset>
+      <cacheSize>1</cacheSize>
+      <name>phiL</name>
+    </elem>
+    <elem>
+      <file>/home/dp008/dp008/dc-erbe1/run/light_tsrc0/output/Rho_L_100.@traj@/Identity_0_0_0.h5</file>
+      <dataset>Identity_0_0_0</dataset>
+      <cacheSize>1</cacheSize>
+      <name>rhoL</name>
+    </elem>
+  </a2aMatrix>
+  <product>
+    <elem>
+      <terms>phiL rhoL</terms>
+      <times>
+        <elem>0</elem>
+      </times>
+      <translations>0..63</translations>
+      <translationAverage>true</translationAverage>
+    </elem>
+  </product>
+</grid>

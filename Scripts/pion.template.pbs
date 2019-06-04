@@ -1,0 +1,38 @@
+# PBS job options name, compute nodes, job time)
+#PBS -N pion_{cfg}
+# Select nodes
+#PBS -l select=16:ncpus=24:mpiprocs=2
+#PBS -l walltime=06:00:00
+#PBS -l place=scatter
+# [budget code] is dp008
+#PBS -A dp008
+
+# Change to the directory that the job was submitted from
+cd $PBS_O_WORKDIR
+# Jobs submitted from log directory, so change up a level
+cd ..
+
+# Intel compilers and working version of MPI
+EnvDir=/home/dp008/dp008/shared/env
+. $EnvDir/mod-intel18-impi19-tp.sh
+# MPI optimisation environment variables for Tesseract
+. $EnvDir/i18mpi-env.sh
+
+# Set up application and options
+application="./HadronsXmlRun {xml}"
+#MPI="4.4.2.1"
+#MPI="4.2.2.2"
+MPI="2.2.2.4"
+#MPI="1.1.1.32"  #Not sure this runs because of red black???
+options="--grid 24.24.24.64 --mpi ${MPI}"
+options="${options} --dslash-unroll"
+options="${options} --log Error,Warning,Message,Debug,Iterative"
+options="${options} --debug-signals" # Kill the process if we get NANs
+#options="${options} --notimestamp" # No timing info in log (so we can compare runs)
+#options="${options} --debug-stdout" # Send output from each rank to it's own file
+
+# Launch the parallel job
+CMD="mpirun -np 32 -ppn 2"
+CMD="${CMD} ${application} ${options}"
+CMD="${CMD} &> log/${PBS_JOBNAME}.l${PBS_JOBID%%.*}"
+eval ${CMD}
