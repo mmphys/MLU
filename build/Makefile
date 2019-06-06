@@ -8,27 +8,30 @@
 GridConf  := $(GridBuild)/grid-config
 LatAnConf := $(LatAnalyzeBuild)/latan-config
 CXX       := $(shell $(GridConf) --cxx)
-CC        := $(CXX)
+CC        ?= $(CXX)
+
+# De-duplicate header include (-I) paths, followed by other options
 CXXFLAGS  := $(shell $(GridConf) --cxxflags) $(shell $(LatAnConf) --cxxflags)
+INCLUDE   := $(sort $(patsubst -I%,%,$(filter -I%,$(CXXFLAGS))))
+CXXFLAGS  := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(LatAnalyzeBuild) $(LatAnalyze)/lib $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
 # Turn off compiler optimisation
 CXXFLAGS  := $(filter-out -O%,$(CXXFLAGS))
-INCLUDE   := $(sort $(patsubst -I%,%,$(filter -I%,$(CXXFLAGS))))
-# Now add deduplicated list of compiler flags
-CXXFLAGS  := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(LatAnalyzeBuild) $(LatAnalyze)/lib $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
 
-LDLIBS    := $(sort -lGrid -lHadrons -lLatAnalyze -lLexers $(shell $(GridConf) --libs) $(shell $(LatAnConf) --libs))
+# De-duplicate library (-L) paths and libraries (-l), followed by other options
+LDLIBS    := -lHadrons -lGrid -lLatAnalyze -lLexers $(sort $(shell $(GridConf) --libs) $(shell $(LatAnConf) --libs))
 LDFLAGS   := $(shell $(GridConf) --ldflags) $(shell $(LatAnConf) --ldflags)
 LDPATHS   := $(sort $(patsubst -L%,%,$(filter -L%,$(LDFLAGS))))
 LDFLAGS   := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(LatAnalyzeBuild)/lib/.libs $(GridPre)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
 
-srcfiles  := $(filter-out %~,$(wildcard *.c*))
-base      := $(basename $(srcfiles))
-objects   := $(addsuffix .o,$(base))
-#target    := $(addprefix build/,$(base))
-target    := $(base)
+srcdir    := ../Analyze
+VPATH     := $(srcdir)
+srcfiles  := $(filter-out %~,$(wildcard $(srcdir)/*.c*))
+basefiles := $(basename $(notdir $(srcfiles)))
+objects   := $(addsuffix .o,$(basefiles))
+#target    := $(addprefix build/,$(basefiles))
+target    := $(basefiles)
 
 all: $(target)
-	mkdir -p build
 
 clean:
 	rm -rf $(target) $(objects) $(depfile) *~ $(addsuffix .dSYM,$(base))

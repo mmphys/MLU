@@ -1,5 +1,6 @@
-*.dSYM
-Analyse/build/
+# Ignore the build directory ... except the Makefile
+build/*
+!build/Makefile
 
 # Apple stuff
 .DS_Store
