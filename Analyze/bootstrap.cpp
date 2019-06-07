@@ -27,6 +27,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <sys/stat.h>
 #include <Grid/Grid.h>
 #include <LatAnalyze/Io/Io.hpp>
 #include <LatAnalyze/Core/OptParser.hpp>
@@ -130,8 +131,7 @@ void NonBuggyBootstrapMean(Sample<T> &s, const Dataset<T> &ds, const SeedType se
 }
 #endif //TURNS_OUT_THIS_WASNT_BUGGY
 
-// Debug - show me the averages for each timeslice
-#ifdef DEBUG
+// Show me the averages for each timeslice
 void ShowTimeSliceAvg(const Dataset<DMat> &data) {
   const int nFile{static_cast<int>(data.size())};
   if( !nFile )
@@ -153,35 +153,145 @@ void ShowTimeSliceAvg(const Dataset<DMat> &data) {
     }
   }
 }
-#endif //DEBUG
+
+// Extract the contraction name and trajectory number from filename
+enum ExtractFilenameReturn {Good, Bad, No_trajectory};
+ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, std::string &Contraction, int &traj)
+{
+  ExtractFilenameReturn r{Bad};
+  Contraction.clear();
+  traj = 0;
+  auto pos = Filename.find_last_of('/');
+  if( pos == std::string::npos )
+    pos = 0;
+  else
+    pos++;
+  auto delim = Filename.find_first_of('.', pos);
+  if( delim != std::string::npos )
+  {
+    Contraction = Filename.substr(pos, delim - pos);
+    pos = delim + 1;
+    delim = Filename.find_first_of('.', pos);
+    if( delim != std::string::npos && delim != pos )
+    {
+      r = Good;
+      while( r == Good && pos < delim )
+      {
+        auto c = Filename[pos++] - '0';
+        if( c >=0 && c < 10 )
+          traj = traj * 10 + c;
+        else
+          r = No_trajectory;
+      }
+    }
+  }
+  return r;
+}
+
+// Per contraction map from trajectory numbers to filename
+struct ContractionList
+{
+  std::string Contraction;
+  std::map<int, std::string> Filename;
+};
+
+// Map from contraction names to ContractionList
+using ContractList = std::map<std::string, ContractionList>;
+
+bool FileExists(const std::string& Filename)
+{
+  struct stat buf;
+  return stat(Filename.c_str(), &buf) != -1;
+}
 
 int main(int argc, char *argv[])
 {
   // parse command line/options ////////////////////////////////////////////////////////
   OptParser              opt;
-  bool                   parsed;
-  string                 manFilename, outStem;
+  string                 outStem;
   Latan::Index           binSize, nSample;
   random_device          rd;
   SeedType               seed = rd();
-  
+  static const char      DefaultOutputStem[] = "@corr@.bootstrap.h5";
   opt.addOption("n", "nsample"   , OptParser::OptType::value,   true,
                 "number of samples", DEF_NSAMPLE);
   opt.addOption("b", "bin"       , OptParser::OptType::value,   true,
                 "bin size", "1");
+  opt.addOption("o", "output"    , OptParser::OptType::value,   true,
+                "output file", DefaultOutputStem);
   opt.addOption("r", "seed"      , OptParser::OptType::value,   true,
                 "random generator seed (default: random)");
+  opt.addOption("v", "verbose"   , OptParser::OptType::trigger, true,
+                "show extra detail, e.g. Correlator averages");
   opt.addOption("" , "help"      , OptParser::OptType::trigger, true,
                 "show this help message and exit");
-  parsed = opt.parse(argc, argv);
-  if (!parsed or (opt.getArgs().size() != 2) or opt.gotOption("help"))
+  bool parsed = opt.parse(argc, argv) and !opt.gotOption("help") and opt.getArgs().size() > 0;
+  if (parsed)
   {
-    cerr << "usage: " << argv[0];
-    cerr << " <manifest file> <output stem> <options>" << endl;
-    cerr << endl << "output stem must contain '@corr@', "
-         << "e.g. 'foo_@corr@.h5'" << endl;
-    cerr << endl << "Possible options:" << endl << opt << endl;
-    
+    // If the output stem was specified, ensure it includes "@corr@"
+    outStem = opt.optionValue("o");
+    if (outStem.find("@corr@") == std::string::npos)
+    {
+      parsed=false;
+      std::cout << "Output stem " << outStem << " invalid" << std::endl;
+    }
+  }
+  // Now parse the input file names, grouping by correlator, indexed by trajectory
+  ContractList Contractions;
+  if( parsed )
+  {
+    for( int i = 0; i < opt.getArgs().size(); i++ )
+    {
+      const std::string &Filename{opt.getArgs()[i]};
+      if( !FileExists(Filename))
+      {
+        parsed = false;
+        std::cout << "Error: File " << (i+1) << " nonexistent - " << Filename << std::endl;
+      }
+      else
+      {
+        std::string Contraction;
+        int         traj;
+        switch( ExtractFilenameParts( Filename, Contraction, traj ) )
+        {
+          case Good:
+            {
+              ContractionList & cl{Contractions[Contraction]};
+              if( cl.Filename.size() == 0 )
+                cl.Contraction = Contraction;
+              auto it = cl.Filename.find( traj );
+              if( it == cl.Filename.end() )
+                cl.Filename[traj] = Filename;
+              else
+              {
+                if( !Filename.compare(it->second) )
+                  std::cout << "Ignoring repetition of " << Filename << std::endl;
+                else
+                {
+                  parsed = false;
+                  std::cout << "Error " << Filename << " conflicts with " << it->second << std::endl;
+                }
+              }
+            }
+            break;
+            
+          case No_trajectory:
+            std::cout << "Ignoring non-numeric trajectory " << Filename << std::endl;
+            break;
+            
+          default:
+            parsed = false;
+            std::cout << "Error: File " << (i+1) << " not a contraction file - " << Filename << std::endl;
+            break;
+        }
+      }
+    }
+  }
+  if (!parsed)
+  {
+    cerr << "usage: " << argv[0] << " <options> ContractionFile1 [ContractionFile2 ...]"
+    << "\nOutput stem (if present) must contain '@corr@', e.g. '" << DefaultOutputStem << "'"
+    << "\nPossible options:\n" << opt << endl;
     return EXIT_FAILURE;
   }
   
@@ -191,92 +301,69 @@ int main(int argc, char *argv[])
   {
     seed = opt.optionValue<SeedType>("r");
   }
-  manFilename = opt.getArgs()[0];
-  outStem     = opt.getArgs()[1];
 
   // load data /////////////////////////////////////////////////////////////////
-  cout << "Manifest file " << manFilename << ", output stem " << outStem
-    << "\n-- loading data..." << endl;
-  
-  // Which correlators are we interested in
-  //vector<string> corrNames{"phiL_0_rhoL", "phiL_g5_0_rhoL_g5"};
-  vector<string> corrNames{"phiL_0_rhoL"};
-  //vector<string> corrNames{"phiL_g5_0_rhoL_g5"};
-  const unsigned int nCorrs{ static_cast<unsigned int>(corrNames.size())};
+  cout << "Creating bootstrap output " << outStem << endl;
 
-  // Read the manifest file, ie the /path/to/.h5_file
-  vector<string> inFilename{};
+  // Walk the list of contractions, performing a separate bootstrap for each
+  int BootstrapCount = 0;
+  Latan::DMatSample out(nSample);
+  for( auto itc = Contractions.begin(); itc != Contractions.end(); itc++ )
   {
-    bool bComments = false;
-    vector<string> actualManifest{readManifest(manFilename)};
-    for( string &s : actualManifest ) {
-      if( (s[0] == '/' && s[1] == '/') || s[0] == '%' ) {
-        if( !bComments ) {
-          bComments = true;
-          std::cout << "Ignoring comment(s) in manifest:" << std::endl;
-        }
-        std::cout << s << std::endl;
-      }
-      else
-        inFilename.push_back( s );
-    }
-  }
-  const unsigned int nFile{ static_cast<unsigned int>(inFilename.size())};
-  vector<Dataset<DMat>> data(nCorrs, Latan::Dataset<Latan::DMat>(nFile)); // resizing the data such that each element contains a Latan::DMat
-
-  // this reads the DataSet name of .h5 file into buf's vector<ComplexD>; (for resizing variables)
-  Contractor::CorrelatorResult  buf;
-  readFile<Hdf5Reader>(buf, corrNames[0], tokenReplaceCopy(inFilename[0], "corr", corrNames[0]));
-  const unsigned int nt{ static_cast<unsigned int>(buf.correlator.size())};
-  DMatSample out(nSample);
-  for( unsigned int i = 0; i < nSample; i++)
-    out[i].resize(nt,2);
-  out[central].resize(nt,2);
-  // data = Latan::Dataset<Latan::DMat>(nFile);
-
-  for(unsigned int i=0; i < nCorrs; ++i)
-  {
-    for (unsigned int j = 0; j < nFile; ++j) // for each .h5 file, read real and imag part into data
+    const std::string &Contraction{itc->first};
+    ContractionList &l{itc->second};
+    std::string sOutFileName{tokenReplaceCopy(outStem, "corr", Contraction)};
+    if( FileExists( sOutFileName ) )
+      std::cout << "Skipping " << Contraction << " because " << sOutFileName << " already exists" << std::endl;
+    else
     {
-      std::cout << '\r' << Latan::ProgressBar(j+1, nFile);
-      if( i != 0 || j != 0 )
-        // maybe set dataset name as a command line argument?
-        readFile<Hdf5Reader>(buf, corrNames[i], tokenReplaceCopy(inFilename[j], "corr", corrNames[i]));
-      Latan::DMat & m{data[i][j]};
-      m.resize(nt, 2); // resizing vector to nt * 2 matrix
-      for (unsigned int t = 0; t < nt; ++t)
+      std::cout << Contraction << std::endl;
+      const unsigned int nFile{ static_cast<unsigned int>(l.Filename.size())};
+      Latan::Dataset<Latan::DMat> data(nFile);
+      // this reads the DataSet name of .h5 file into buf's vector<ComplexD>; (for resizing variables)
+      unsigned int nt = 0;
+      unsigned int j = 0; // which file are we processing
+      for( auto it = l.Filename.begin(); it != l.Filename.end(); it++, j++ )
       {
-        m(t, 0) = buf.correlator[t].real(); // seems like each element of data is a 'nt x 2' matrix.
-        m(t, 1) = buf.correlator[t].imag();
+        const int &traj{it->first};
+        std::string &Filename{it->second};
+        std::cout << "\t" << traj << "\t" << Filename << std::endl;
+        Contractor::CorrelatorResult buf;
+        readFile<Hdf5Reader>(buf, Contraction, Filename);
+        if(j == 0)
+        {
+          nt = static_cast<unsigned int>(buf.correlator.size());
+          for( unsigned int i = 0; i < nSample; i++)
+            out[i].resize(nt,2);
+          out[central].resize(nt,2);
+        }
+        Latan::DMat & m{data[j]};
+        m.resize(nt, 2); // resizing vector to nt * 2 matrix
+        for (unsigned int t = 0; t < nt; ++t)
+        {
+          m(t, 0) = buf.correlator[t].real();
+          m(t, 1) = buf.correlator[t].imag();
+        }
       }
-    }
-    std::cout << std::endl;
 
-    // Debug - show me the averages for each timeslice
-#ifdef DEBUG
-    ShowTimeSliceAvg(data[i]);
-#endif
+      if( opt.gotOption("verbose") )
+        ShowTimeSliceAvg(data);
 
-    // Resampling //////////////////////////////////////////////////////////////////
-    if(1) {
+      // Resampling //////////////////////////////////////////////////////////////////
       cout << "-- resampling (" << nSample << " samples)..." << endl;
-      std::string sOutFileName{tokenReplaceCopy(outStem, "corr", corrNames[i])};
       if( binSize != 1 )
-        data[i].bin(binSize);
+        data.bin(binSize);
 #ifdef TURNS_OUT_THIS_WASNT_BUGGY
-      NonBuggyBootstrapMean(out, data[i], seed, nt);
+      NonBuggyBootstrapMean(out, data, seed, nt);
 #else
-      DMatSample out = data[i].bootstrapMean(nSample, seed);
+      DMatSample out = data.bootstrapMean(nSample, seed);
 #endif //TURNS_OUT_THIS_WASNT_BUGGY
       cout << "Saving sample to '" << sOutFileName << "' ...";
-      Io::save<DMatSample>(out, sOutFileName);
+      Latan::Io::save<DMatSample>(out, sOutFileName, Latan::File::Mode::write, "bootstrap");
       cout << " done" << endl;
+      BootstrapCount++;
     }
   }
-  cout << "All correlators written" << endl;
-  int * a = new int[3];
-  for(int i = 0; i<4; i++)
-    a[i] = 7;
-  delete [] a;
+  std::cout << "Bootstraps written for " << BootstrapCount << " correlators" << endl;
   return EXIT_SUCCESS;
 }

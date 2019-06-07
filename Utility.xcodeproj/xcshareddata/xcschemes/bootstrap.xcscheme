@@ -47,7 +47,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "/Users/s1786208/src/pion/r_tmp"
+      customWorkingDirectory = "/Users/s1786208/src/Utility/run2"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -64,11 +64,19 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "manifest.txt"
+            argument = "-v"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "pion_@corr@.h5"
+            argument = "-o"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "@corr@.funkybootstrap.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "../run/phiL_0_rhoL.3000.h5 ../run/phiL_0_rhoL.3040.h5 ../run/phiL_0_rhoL.3080.h5 ../run/phiL_0_rhoL.3120.h5 ../run/phiL_0_rhoL.3160.h5 ../run/phiL_0_rhoL.3200.h5 ../run/phiL_0_rhoL.3240.h5 ../run/phiL_0_rhoL.3280.h5 ../run/phiL_0_rhoL.3320.h5 ../run/phiL_0_rhoL.3360.h5 ../run/phiL_0_rhoL.3400.h5 ../run/phiL_0_rhoL.3440.h5"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

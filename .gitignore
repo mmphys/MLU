@@ -1,6 +1,7 @@
 # Ignore the build directory ... except the Makefile
 build/*
 !build/Makefile
+run*/*
 
 # Apple stuff
 .DS_Store
