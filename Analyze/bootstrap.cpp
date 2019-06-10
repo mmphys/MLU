@@ -217,6 +217,10 @@ int main(int argc, char *argv[])
                 "number of samples", DEF_NSAMPLE);
   opt.addOption("b", "bin"       , OptParser::OptType::value,   true,
                 "bin size", "1");
+  opt.addOption("i", "ignore"    , OptParser::OptType::value,   true,
+                "ignore file", "");
+  opt.addOption("m" , "mass"     , OptParser::OptType::trigger, true,
+                "calculate three-point mass (debug)");
   opt.addOption("o", "output"    , OptParser::OptType::value,   true,
                 "output file", DefaultOutputStem);
   opt.addOption("r", "seed"      , OptParser::OptType::value,   true,
@@ -240,10 +244,13 @@ int main(int argc, char *argv[])
   ContractList Contractions;
   if( parsed )
   {
+    const std::string sIgnore{opt.optionValue("i")};
     for( int i = 0; i < opt.getArgs().size(); i++ )
     {
       const std::string &Filename{opt.getArgs()[i]};
-      if( !FileExists(Filename))
+      if( !sIgnore.compare(Filename) )
+        std::cout << "--ignore " << Filename << std::endl;
+      else if( !FileExists(Filename))
       {
         parsed = false;
         std::cout << "Error: File " << (i+1) << " nonexistent - " << Filename << std::endl;
@@ -308,6 +315,7 @@ int main(int argc, char *argv[])
   // Walk the list of contractions, performing a separate bootstrap for each
   int BootstrapCount = 0;
   Latan::DMatSample out(nSample);
+  const bool bMass{opt.gotOption("mass")};
   for( auto itc = Contractions.begin(); itc != Contractions.end(); itc++ )
   {
     static const char szBootstrap[] = "bootstrap";
@@ -350,8 +358,12 @@ int main(int argc, char *argv[])
         Latan::DMat & massm{mass[j]};
         massm.resize(nt, 1);
         for (unsigned int t = 0; t < nt; ++t)
-          massm(t,0) = - log( m((t + 1) % nt, 0) / m(t, 0) );
-          //massm(t,0) = log( (m((t - 1) % nt, 0) + m((t + 1) % nt, 0)) / (2 * m(t, 0) ) );
+        {
+          if( bMass )
+            massm(t,0) = - log( m((t + 1) % nt, 0) / m(t, 0) );
+          else
+            massm(t,0) = log( (m((t - 1) % nt, 0) + m((t + 1) % nt, 0)) / (2 * m(t, 0) ) );
+        }
       }
 
       if( opt.gotOption("verbose") )

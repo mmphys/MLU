@@ -72,12 +72,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "../run/phiL_0_rhoL.3000.h5 ../run/phiL_0_rhoL.3040.h5 ../run/phiL_0_rhoL.3080.h5 ../run/phiL_0_rhoL.3120.h5 ../run/phiL_0_rhoL.3160.h5 ../run/phiL_0_rhoL.3200.h5 ../run/phiL_0_rhoL.3240.h5 ../run/phiL_0_rhoL.3280.h5 ../run/phiL_0_rhoL.3320.h5 ../run/phiL_0_rhoL.3360.h5 ../run/phiL_0_rhoL.3400.h5 ../run/phiL_0_rhoL.3440.h5"
+            argument = "-i ../run/phiL_0_rhoL.3000.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "../run/phiL_0_rhoL.3000.h5"
-            isEnabled = "NO">
+            argument = "../run/phiL_0_rhoL.3000.h5 ../run/phiL_0_rhoL.3040.h5 ../run/phiL_0_rhoL.3080.h5 ../run/phiL_0_rhoL.3120.h5 ../run/phiL_0_rhoL.3160.h5 ../run/phiL_0_rhoL.3200.h5 ../run/phiL_0_rhoL.3240.h5 ../run/phiL_0_rhoL.3280.h5 ../run/phiL_0_rhoL.3320.h5 ../run/phiL_0_rhoL.3360.h5 ../run/phiL_0_rhoL.3400.h5 ../run/phiL_0_rhoL.3440.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
