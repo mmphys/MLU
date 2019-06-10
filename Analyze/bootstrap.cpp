@@ -84,7 +84,7 @@ void readFile(Result &out, const std::string &name, const std::string &filename)
 }
 
 template <typename T>
-std::string tokenReplaceCopy(std::string &str, const std::string token, const T &x )
+std::string tokenReplaceCopy(const std::string &str, const std::string token, const T &x )
 {
   std::string sCopy{str};
   tokenReplace(sCopy, token, x );
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
   Latan::Index           binSize, nSample;
   random_device          rd;
   SeedType               seed = rd();
-  static const char      DefaultOutputStem[] = "@corr@.bootstrap.h5";
+  static const char      DefaultOutputStem[] = "@corr@.@type@";
   opt.addOption("n", "nsample"   , OptParser::OptType::value,   true,
                 "number of samples", DEF_NSAMPLE);
   opt.addOption("b", "bin"       , OptParser::OptType::value,   true,
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
   {
     // If the output stem was specified, ensure it includes "@corr@"
     outStem = opt.optionValue("o");
-    if (outStem.find("@corr@") == std::string::npos)
+    if (outStem.find("@corr@") == std::string::npos or outStem.find("@type@") == std::string::npos)
     {
       parsed=false;
       std::cout << "Output stem " << outStem << " invalid" << std::endl;
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
   if (!parsed)
   {
     cerr << "usage: " << argv[0] << " <options> ContractionFile1 [ContractionFile2 ...]"
-    << "\nOutput stem (if present) must contain '@corr@', e.g. '" << DefaultOutputStem << "'"
+    << "\nOutput stem (if present) must contain '@corr@' and '@type', e.g. '" << DefaultOutputStem << "'"
     << "\nPossible options:\n" << opt << endl;
     return EXIT_FAILURE;
   }
@@ -310,9 +310,11 @@ int main(int argc, char *argv[])
   Latan::DMatSample out(nSample);
   for( auto itc = Contractions.begin(); itc != Contractions.end(); itc++ )
   {
+    static const char szBootstrap[] = "bootstrap";
     const std::string &Contraction{itc->first};
     ContractionList &l{itc->second};
-    std::string sOutFileName{tokenReplaceCopy(outStem, "corr", Contraction)};
+    const std::string sOutFileBase{tokenReplaceCopy(outStem, "corr", Contraction)};
+    std::string sOutFileName{tokenReplaceCopy(sOutFileBase, "type", szBootstrap) + ".h5"};
     if( FileExists( sOutFileName ) )
       std::cout << "Skipping " << Contraction << " because " << sOutFileName << " already exists" << std::endl;
     else
@@ -320,6 +322,7 @@ int main(int argc, char *argv[])
       std::cout << Contraction << std::endl;
       const unsigned int nFile{ static_cast<unsigned int>(l.Filename.size())};
       Latan::Dataset<Latan::DMat> data(nFile);
+      Latan::Dataset<Latan::DMat> mass(nFile);
       // this reads the DataSet name of .h5 file into buf's vector<ComplexD>; (for resizing variables)
       unsigned int nt = 0;
       unsigned int j = 0; // which file are we processing
@@ -333,9 +336,9 @@ int main(int argc, char *argv[])
         if(j == 0)
         {
           nt = static_cast<unsigned int>(buf.correlator.size());
+          out[central].resize(nt,2);
           for( unsigned int i = 0; i < nSample; i++)
             out[i].resize(nt,2);
-          out[central].resize(nt,2);
         }
         Latan::DMat & m{data[j]};
         m.resize(nt, 2); // resizing vector to nt * 2 matrix
@@ -344,12 +347,17 @@ int main(int argc, char *argv[])
           m(t, 0) = buf.correlator[t].real();
           m(t, 1) = buf.correlator[t].imag();
         }
+        Latan::DMat & massm{mass[j]};
+        massm.resize(nt, 1);
+        for (unsigned int t = 0; t < nt; ++t)
+          massm(t,0) = - log( m((t + 1) % nt, 0) / m(t, 0) );
+          //massm(t,0) = log( (m((t - 1) % nt, 0) + m((t + 1) % nt, 0)) / (2 * m(t, 0) ) );
       }
 
       if( opt.gotOption("verbose") )
         ShowTimeSliceAvg(data);
 
-      // Resampling //////////////////////////////////////////////////////////////////
+      // Resample
       cout << "-- resampling (" << nSample << " samples)..." << endl;
       if( binSize != 1 )
         data.bin(binSize);
@@ -358,10 +366,76 @@ int main(int argc, char *argv[])
 #else
       DMatSample out = data.bootstrapMean(nSample, seed);
 #endif //TURNS_OUT_THIS_WASNT_BUGGY
+      DMatSample outMass = mass.bootstrapMean(nSample, seed);
       cout << "Saving sample to '" << sOutFileName << "' ...";
-      Latan::Io::save<DMatSample>(out, sOutFileName, Latan::File::Mode::write, "bootstrap");
+      Latan::Io::save<DMatSample>(out, sOutFileName, Latan::File::Mode::write, szBootstrap);
       cout << " done" << endl;
       BootstrapCount++;
+
+      // Now make summary data files
+      std::vector<double>   TmpSamples( nSample );
+      static const char sep[] = " ";
+      static const char * SummaryNames[] = { "corr", "mass3pt" };
+      static const char * SummaryHeader[] =
+      {
+        "# correlator\nt corr_re corr_stddev corr_im corr_im_stddev",
+        "# three-point mass\nt mass mass_low mass_high"
+      };
+      for(int f = 0; f < sizeof(SummaryNames)/sizeof(SummaryNames[0]); f++)
+      {
+        sOutFileName = tokenReplaceCopy(sOutFileBase, "type", SummaryNames[f]) + ".dat";
+        std::ofstream s(sOutFileName);
+        s << SummaryHeader[f] << std::endl;
+        for(int t = 0; t < nt; t++)
+        {
+          double Avg = 0;
+          double StdDev = 0;
+          if( f == 0 )
+          {
+            double AvgIm = 0;
+            for(int i = 0; i < nSample; i++)
+            {
+              Avg   += out[i](t,0);
+              AvgIm += out[i](t,1);
+            }
+            Avg   /= nSample;
+            AvgIm /= nSample;
+            double StdDevIm = 0;
+            for(int i = 0; i < nSample; i++)
+            {
+              double d = out[i](t,0) - Avg;
+              StdDev += d * d;
+              d = out[i](t,1) - AvgIm;
+              StdDevIm += d * d;
+            }
+            StdDev   /= nSample;
+            StdDevIm /= nSample;
+            StdDev    = std::sqrt( StdDev );
+            StdDevIm  = std::sqrt( StdDevIm );
+            s << t << sep << Avg << sep << StdDev << sep << AvgIm << sep << StdDevIm << sep << std::endl;
+          }
+          else
+          {
+            double   DThis = 0;
+            for(int i = 0; i < nSample; i++)
+            {
+              switch(f)
+              {
+                case 1: // three-point mass
+                  DThis = outMass[i](t, 0);
+                  break;
+              }
+              TmpSamples[i] = DThis;
+              Avg += DThis;
+            }
+            Avg /= nSample;
+            std::sort(TmpSamples.begin(), TmpSamples.end());
+            int Index = static_cast<int>( 0.16 * nSample + 0.5 );
+            s << t << sep << Avg << sep
+              << (Avg - TmpSamples[Index]) << sep << (TmpSamples[nSample - Index] - Avg) << std::endl;
+          }
+        }
+      }
     }
   }
   std::cout << "Bootstraps written for " << BootstrapCount << " correlators" << endl;
