@@ -219,8 +219,6 @@ int main(int argc, char *argv[])
                 "bin size", "1");
   opt.addOption("i", "ignore"    , OptParser::OptType::value,   true,
                 "ignore file", "");
-  opt.addOption("m" , "mass"     , OptParser::OptType::trigger, true,
-                "calculate three-point mass (debug)");
   opt.addOption("o", "output"    , OptParser::OptType::value,   true,
                 "output file", DefaultOutputStem);
   opt.addOption("r", "seed"      , OptParser::OptType::value,   true,
@@ -315,7 +313,6 @@ int main(int argc, char *argv[])
   // Walk the list of contractions, performing a separate bootstrap for each
   int BootstrapCount = 0;
   Latan::DMatSample out(nSample);
-  const bool bMass{opt.gotOption("mass")};
   for( auto itc = Contractions.begin(); itc != Contractions.end(); itc++ )
   {
     static const char szBootstrap[] = "bootstrap";
@@ -355,15 +352,6 @@ int main(int argc, char *argv[])
           m(t, 0) = buf.correlator[t].real();
           m(t, 1) = buf.correlator[t].imag();
         }
-        Latan::DMat & massm{mass[j]};
-        massm.resize(nt, 1);
-        for (unsigned int t = 0; t < nt; ++t)
-        {
-          if( bMass )
-            massm(t,0) = - log( m((t + 1) % nt, 0) / m(t, 0) );
-          else
-            massm(t,0) = log( (m((t - 1) % nt, 0) + m((t + 1) % nt, 0)) / (2 * m(t, 0) ) );
-        }
       }
 
       if( opt.gotOption("verbose") )
@@ -378,20 +366,23 @@ int main(int argc, char *argv[])
 #else
       DMatSample out = data.bootstrapMean(nSample, seed);
 #endif //TURNS_OUT_THIS_WASNT_BUGGY
-      DMatSample outMass = mass.bootstrapMean(nSample, seed);
       cout << "Saving sample to '" << sOutFileName << "' ...";
       Latan::Io::save<DMatSample>(out, sOutFileName, Latan::File::Mode::write, szBootstrap);
       cout << " done" << endl;
       BootstrapCount++;
 
       // Now make summary data files
-      std::vector<double>   TmpSamples( nSample );
+      std::vector<double> TmpAvg( nt );
+      std::vector<std::vector<double>> TmpSamples( nt );
+      for(int t = 0; t < nt; t++)
+        TmpSamples[t].resize( nSample );
       static const char sep[] = " ";
-      static const char * SummaryNames[] = { "corr", "mass3pt" };
+      static const char * SummaryNames[] = { "corr", "mass3pt", "mass" };
       static const char * SummaryHeader[] =
       {
         "# correlator\nt corr_re corr_stddev corr_im corr_im_stddev",
-        "# three-point mass\nt mass mass_low mass_high"
+        "# three-point mass\nt mass mass_low mass_high",
+        "# mass\nt mass mass_low mass_high",
       };
       for(int f = 0; f < sizeof(SummaryNames)/sizeof(SummaryNames[0]); f++)
       {
@@ -400,11 +391,12 @@ int main(int argc, char *argv[])
         s << SummaryHeader[f] << std::endl;
         for(int t = 0; t < nt; t++)
         {
-          double Avg = 0;
-          double StdDev = 0;
           if( f == 0 )
           {
+            double Avg = 0;
+            double StdDev = 0;
             double AvgIm = 0;
+            double StdDevIm = 0;
             for(int i = 0; i < nSample; i++)
             {
               Avg   += out[i](t,0);
@@ -412,7 +404,6 @@ int main(int argc, char *argv[])
             }
             Avg   /= nSample;
             AvgIm /= nSample;
-            double StdDevIm = 0;
             for(int i = 0; i < nSample; i++)
             {
               double d = out[i](t,0) - Avg;
@@ -428,23 +419,31 @@ int main(int argc, char *argv[])
           }
           else
           {
-            double   DThis = 0;
+            TmpAvg[t] = 0;
             for(int i = 0; i < nSample; i++)
             {
-              switch(f)
               {
-                case 1: // three-point mass
-                  DThis = outMass[i](t, 0);
-                  break;
+                double DThis;
+                switch(f)
+                {
+                  case 1: // three-point mass
+                    DThis = ( out[i]((t + nt - 1) % nt, 0) + out[i]((t + 1) % nt, 0) ) / (2 * out[i](t, 0) );
+                    break;
+                  case 2: // mass
+                    DThis = - log( out[i]((t + nt + 1) % nt, 0) / out[i](t, 0) );
+                    break;
+                  default:
+                    DThis = 0;
+                }
+                TmpSamples[t][i] = DThis;
+                TmpAvg[t] += DThis;
               }
-              TmpSamples[i] = DThis;
-              Avg += DThis;
             }
-            Avg /= nSample;
-            std::sort(TmpSamples.begin(), TmpSamples.end());
+            TmpAvg[t] /= nSample;
+            std::sort(TmpSamples[t].begin(), TmpSamples[t].end());
             int Index = static_cast<int>( 0.16 * nSample + 0.5 );
-            s << t << sep << Avg << sep
-              << (Avg - TmpSamples[Index]) << sep << (TmpSamples[nSample - Index] - Avg) << std::endl;
+            s << t << sep << TmpAvg[t] << sep << (TmpAvg[t] - TmpSamples[t][Index])
+              << sep << (TmpSamples[t][nSample - Index] - TmpAvg[t]) << std::endl;
           }
         }
       }

@@ -1,2 +1,2 @@
 #!/bin/sh
-gnuplot $HOME/src/Utility/Scripts/plot.gnuplot
+gnuplot $HOME/src/Utility/Scripts/plot.gp
