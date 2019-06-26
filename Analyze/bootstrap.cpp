@@ -210,8 +210,6 @@ int main(int argc, char *argv[])
   OptParser              opt;
   string                 outStem;
   Latan::Index           binSize, nSample;
-  random_device          rd;
-  SeedType               seed = rd();
   static const char      DefaultOutputStem[] = "@corr@.@type@";
   opt.addOption("n", "nsample"   , OptParser::OptType::value,   true,
                 "number of samples", DEF_NSAMPLE);
@@ -302,24 +300,28 @@ int main(int argc, char *argv[])
   
   nSample     = opt.optionValue<Latan::Index>("n");
   binSize     = opt.optionValue<Latan::Index>("b");
+  SeedType    seed;
   if (opt.gotOption("r"))
-  {
     seed = opt.optionValue<SeedType>("r");
+  else {
+    random_device rd;
+    seed = rd();
   }
 
   // load data /////////////////////////////////////////////////////////////////
-  cout << "Creating bootstrap output " << outStem << endl;
+  cout << "Creating bootstrap output " << outStem << ", seed=" << seed << endl;
 
   // Walk the list of contractions, performing a separate bootstrap for each
   int BootstrapCount = 0;
   Latan::DMatSample out(nSample);
   for( auto itc = Contractions.begin(); itc != Contractions.end(); itc++ )
   {
-    static const char szBootstrap[] = "bootstrap";
+    static const std::string szBootstrap{"bootstrap"s};
     const std::string &Contraction{itc->first};
     ContractionList &l{itc->second};
     const std::string sOutFileBase{tokenReplaceCopy(outStem, "corr", Contraction)};
-    std::string sOutFileName{tokenReplaceCopy(sOutFileBase, "type", szBootstrap) + ".h5"};
+    //std::string sOutFileName{tokenReplaceCopy(sOutFileBase, "type", szBootstrap) + ".h5"};
+    std::string sOutFileName{tokenReplaceCopy(sOutFileBase, "type", szBootstrap + '.' + std::to_string( seed )) + ".h5"};
     if( FileExists( sOutFileName ) )
       std::cout << "Skipping " << Contraction << " because " << sOutFileName << " already exists" << std::endl;
     else
