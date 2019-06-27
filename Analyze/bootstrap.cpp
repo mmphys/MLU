@@ -28,6 +28,7 @@
 /*  END LEGAL */
 
 #include <sys/stat.h>
+#include <mutex>
 //#include <Grid/Grid.h>
 #include <LatAnalyze/Io/Io.hpp>
 #include <LatAnalyze/Core/OptParser.hpp>
@@ -264,16 +265,20 @@ int main(int argc, char *argv[])
                 "number of samples", DEF_NSAMPLE);
   opt.addOption("b", "bin"       , OptParser::OptType::value,   true,
                 "bin size", "1");
-  opt.addOption("o", "output"    , OptParser::OptType::value,   true,
-                "output file", DefaultOutputStem);
   opt.addOption("r", "seed"      , OptParser::OptType::value,   true,
                 "random generator seed (default: random)");
+  opt.addOption("o", "output"    , OptParser::OptType::value,   true,
+                "output file", DefaultOutputStem);
+  opt.addOption("f", "format"    , OptParser::OptType::value,   true,
+                "output file format", "h5");
+  opt.addOption("d", "dump-boot" , OptParser::OptType::trigger, true,
+                "dump bootstrap sequence");
+  opt.addOption("" , "help"      , OptParser::OptType::trigger, true,
+                "show this help message and exit");
   opt.addOption("v", "verbose"   , OptParser::OptType::trigger, true,
                 "show extra detail, e.g. Correlator averages");
   opt.addOption("x", "exclude"   , OptParser::OptType::value,   true,
                 "exclude file", "");
-  opt.addOption("" , "help"      , OptParser::OptType::trigger, true,
-                "show this help message and exit");
   bool parsed = opt.parse(argc, argv) and !opt.gotOption("help") and opt.getArgs().size() > 0;
   if (parsed)
   {
@@ -356,8 +361,9 @@ int main(int argc, char *argv[])
     random_device rd;
     seed = rd();
   }
+  const std::string & OutFileExt{opt.optionValue("f")};
+  const bool dumpBoot{ opt.gotOption("d") };
 
-  // load data /////////////////////////////////////////////////////////////////
   cout << "Creating bootstrap output " << outStem << ", seed=" << seed << endl;
   const bool bVerbose{opt.gotOption("verbose")};
 
@@ -370,18 +376,17 @@ int main(int argc, char *argv[])
     const std::string &Contraction{itc->first};
     ContractionList &l{itc->second};
     const std::string sOutFileBase{tokenReplaceCopy(outStem, "corr", Contraction)};
-    //std::string sOutFileName{tokenReplaceCopy(sOutFileBase, "type", szBootstrap) + ".h5"};
-    std::string sOutFileName{tokenReplaceCopy(sOutFileBase, "type", szBootstrap + '.' + std::to_string( seed )) + ".h5"};
+    std::string sOutFileName{tokenReplaceCopy(sOutFileBase, "type", szBootstrap + '.' + std::to_string( seed )) + '.' + OutFileExt};
     if( FileExists( sOutFileName ) )
       std::cout << "Skipping " << Contraction << " because " << sOutFileName << " already exists" << std::endl;
     else
     {
+      // load data /////////////////////////////////////////////////////////////////
       std::cout << Contraction << std::endl;
       const unsigned int nFile{ static_cast<unsigned int>(l.Filename.size())};
       Latan::Dataset<Latan::DMat> data(nFile);
-      Latan::Dataset<Latan::DMat> mass(nFile);
       unsigned int nt = 0;
-      unsigned int j = 0; // which file are we processing
+      unsigned int j = 0; // which trajectory are we processing
       std::vector<std::complex<double>> buf;
       for( auto it = l.Filename.begin(); it != l.Filename.end(); it++, j++ )
       {
@@ -409,16 +414,32 @@ int main(int argc, char *argv[])
         ShowTimeSliceAvg(data);
 
       // Resample
-      cout << "-- resampling (" << nSample << " samples)..." << endl;
+      std::cout << "-- resampling (" << nSample << " samples)..." << endl;
       if( binSize != 1 )
         data.bin(binSize);
       DMatSample out = data.bootstrapMean(nSample, seed);
-      cout << "Saving sample to '" << sOutFileName << "' ...";
+      std::cout << "Saving sample to '" << sOutFileName << "' ...";
       Latan::Io::save<DMatSample>(out, sOutFileName, Latan::File::Mode::write, szBootstrap);
-      cout << " done" << endl;
+      std::cout << " done" << endl;
       BootstrapCount++;
       if( bVerbose )
         MakeSummaries(out, nt, nSample, sOutFileBase);
+      if( dumpBoot ) {
+        std::string SeqFileName{tokenReplaceCopy(sOutFileBase, "type", "bootseq"s + '.' + std::to_string( seed )) + ".txt"};
+        std::cout << "Saving bootstrap sequence to '" << SeqFileName << "' ...";
+        std::ofstream file(SeqFileName);
+        file << "# bootstrap sequences" << std::endl;
+        file << "#      bin size: " << binSize << std::endl;
+        file << "#          seed: " << std::to_string( seed ) << std::endl;
+        for( auto it = l.Filename.begin(); it != l.Filename.end(); it++ )
+        {
+          const int &traj{it->first};
+          std::string &Filename{it->second};
+          file << "#   traj / file: " << traj << " / " << Filename << std::endl;
+        }
+        data.dumpBootstrapSeq(file, nSample, seed);
+        std::cout << std::endl;
+      }
     }
   }
   std::cout << "Bootstraps written for " << BootstrapCount << " correlators" << endl;
