@@ -46,13 +46,17 @@ using namespace Latan;
 // Register the same complex type Grid does
 struct H5CustomTypes {
 protected:
+#ifndef __INTEL_COMPILER
   static std::mutex sync;
+#endif
   static bool bInitialised;
   static H5::CompType m_Complex;
 public:
   static H5::CompType Complex() {
     {
+#ifndef __INTEL_COMPILER
       std::lock_guard<std::mutex> guard( sync );
+#endif
       if( !bInitialised ) {
         m_Complex.insertMember("re", 0 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
         m_Complex.insertMember("im", 1 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
@@ -62,7 +66,9 @@ public:
     return m_Complex;
   }
 };
+#ifndef __INTEL_COMPILER
 std::mutex H5CustomTypes::sync;
+#endif
 bool H5CustomTypes::bInitialised = false;
 H5::CompType H5CustomTypes::m_Complex(sizeof(std::complex<double>));
 
