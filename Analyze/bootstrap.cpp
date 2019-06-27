@@ -28,59 +28,62 @@
 /*  END LEGAL */
 
 #include <sys/stat.h>
-#include <Grid/Grid.h>
+//#include <Grid/Grid.h>
 #include <LatAnalyze/Io/Io.hpp>
 #include <LatAnalyze/Core/OptParser.hpp>
 #include <LatAnalyze/Statistics/Dataset.hpp>
-//#include <LatAnalyze/Io/Hdf5File.hpp>
+#include <LatAnalyze/Io/Hdf5File.hpp>
+#include <H5CompType.h>
 
 using namespace std;
 using namespace Latan;
-using namespace Grid;
-
-namespace Contractor
-{
-  using namespace Grid;
-  class A2AMatrixPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(A2AMatrixPar,
-                                        std::string, file,
-                                        std::string, dataset,
-                                        unsigned int, cacheSize,
-                                        std::string, name);
-    };
-
-    class ProductPar: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(ProductPar,
-                                        std::string, terms,
-                                        std::vector<std::string>, times,
-                                        std::string, translations,
-                                        bool, translationAverage);
-    };
-
-  class CorrelatorResult: Serializable
-    {
-    public:
-        GRID_SERIALIZABLE_CLASS_MEMBERS(CorrelatorResult,
-                                        std::vector<Contractor::A2AMatrixPar>,  a2aMatrix,
-                                        ProductPar, contraction,
-                                        std::vector<unsigned int>, times,
-                                        std::vector<ComplexD>, correlator);
-    };
-}
+//using namespace Grid;
 
 #ifndef DEF_NSAMPLE
 #define DEF_NSAMPLE "10000"
 #endif
 
-template <typename Reader, typename Result>
-void readFile(Result &out, const std::string &name, const std::string &filename)
+// Register the same complex type Grid does
+struct H5CustomTypes {
+protected:
+  static std::mutex sync;
+  static bool bInitialised;
+  static H5::CompType m_Complex;
+public:
+  static H5::CompType Complex() {
+    {
+      std::lock_guard<std::mutex> guard( sync );
+      if( !bInitialised ) {
+        m_Complex.insertMember("re", 0 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
+        m_Complex.insertMember("im", 1 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
+        bInitialised = true;
+      }
+    }
+    return m_Complex;
+  }
+};
+std::mutex H5CustomTypes::sync;
+bool H5CustomTypes::bInitialised = false;
+H5::CompType H5CustomTypes::m_Complex(sizeof(std::complex<double>));
+
+// Read a complex array from an HDF5 file
+void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,
+                      const std::string &GroupName, const std::string &ObjectName = "correlator"s)
 {
-  Reader reader(filename);
-  read(reader, name, out);
+  H5::H5File f(FileName, H5F_ACC_RDONLY);
+  H5::Group g = f.openGroup(GroupName);
+  H5::DataSet ds = g.openDataSet(ObjectName);
+  H5::DataSpace dsp = ds.getSpace();
+  const int nDims{dsp.getSimpleExtentNdims()};
+  if( nDims != 1 ) {
+    std::cerr << "Error: " << FileName << ", " << GroupName << ", " << ObjectName << " has " << nDims << " dimensions" << std::endl;
+    assert(0 && "Wrong number of dimensions");
+  } else {
+    hsize_t dim[1];
+    dsp.getSimpleExtentDims(dim);
+    buffer.resize(dim[0]);
+    ds.read(&buffer[0], H5CustomTypes::Complex());
+  }
 }
 
 template <typename T>
@@ -90,46 +93,6 @@ std::string tokenReplaceCopy(const std::string &str, const std::string token, co
   tokenReplace(sCopy, token, x );
   return sCopy;
 }
-
-#ifdef TURNS_OUT_THIS_WASNT_BUGGY
-template <typename T>
-void NonBuggyPtVectorMean(T &m, const Dataset<T> &ds, const std::vector<int> &selection)
-{
-  const int NumReplicas{static_cast<int>(ds.size())};
-  if( NumReplicas ) {
-    const int rows{static_cast<int>(m.rows())};
-    const int cols{static_cast<int>(m.cols())};
-    //m.resize(rows, cols); // resizing vector to nt * 2 matrix
-    for( unsigned int t = 0; t < rows; t++ )
-      for( unsigned int j = 0; j < cols; j++ ) {
-        m(t,j) = ds[selection[0]](t,j);
-        for( unsigned int i = 1; i < NumReplicas; ++i )
-          m(t,j) += ds[selection[i]](t,j);
-        m(t,j) /= NumReplicas;
-      }
-  }
-}
-
-template <typename T>
-void NonBuggyBootstrapMean(Sample<T> &s, const Dataset<T> &ds, const SeedType seed, unsigned int nt)
-{
-  const Index                         nSample{s.size()};
-  const int                           NumReplicas{static_cast<int>(ds.size())};
-  std::mt19937                        gen(seed);
-  std::uniform_int_distribution<int>  dis(0, NumReplicas - 1);
-  std::vector<int>                    selection(NumReplicas);
-
-  std::cout << "Taking average over " << nSample << " samples" << std::endl;
-  for (int j = 0; j < NumReplicas; ++j)
-    selection[j] = j;
-  NonBuggyPtVectorMean(s[central], ds, selection);
-  for (Index i = 0; i < nSample; ++i) {
-    for (unsigned int j = 0; j < NumReplicas; ++j)
-      selection[j] = dis(gen);
-    NonBuggyPtVectorMean(s[i], ds, selection);
-  }
-}
-#endif //TURNS_OUT_THIS_WASNT_BUGGY
 
 // Show me the averages for each timeslice
 void ShowTimeSliceAvg(const Dataset<DMat> &data) {
@@ -204,6 +167,86 @@ bool FileExists(const std::string& Filename)
   return stat(Filename.c_str(), &buf) != -1;
 }
 
+void MakeSummaries(const Latan::DMatSample &out, unsigned int nt, Latan::Index nSample, const std::string & sOutFileBase)
+{
+  // Now make summary data files
+  std::vector<double> TmpAvg( nt );
+  std::vector<std::vector<double>> TmpSamples( nt );
+  for(int t = 0; t < nt; t++)
+  TmpSamples[t].resize( nSample );
+  static const char sep[] = " ";
+  static const char * SummaryNames[] = { "corr", "mass3pt", "mass" };
+  static const char * SummaryHeader[] =
+  {
+    "# correlator\nt corr_re corr_stddev corr_im corr_im_stddev",
+    "# three-point mass\nt mass mass_low mass_high",
+    "# mass\nt mass mass_low mass_high",
+  };
+  for(int f = 0; f < sizeof(SummaryNames)/sizeof(SummaryNames[0]); f++)
+  {
+    std::string sOutFileName{ tokenReplaceCopy(sOutFileBase, "type", SummaryNames[f]) + ".dat" };
+    std::ofstream s(sOutFileName);
+    s << SummaryHeader[f] << std::endl;
+    for(int t = 0; t < nt; t++)
+    {
+      if( f == 0 )
+      {
+        double Avg = 0;
+        double StdDev = 0;
+        double AvgIm = 0;
+        double StdDevIm = 0;
+        for(int i = 0; i < nSample; i++)
+        {
+          Avg   += out[i](t,0);
+          AvgIm += out[i](t,1);
+        }
+        Avg   /= nSample;
+        AvgIm /= nSample;
+        for(int i = 0; i < nSample; i++)
+        {
+          double d = out[i](t,0) - Avg;
+          StdDev += d * d;
+          d = out[i](t,1) - AvgIm;
+          StdDevIm += d * d;
+        }
+        StdDev   /= nSample;
+        StdDevIm /= nSample;
+        StdDev    = std::sqrt( StdDev );
+        StdDevIm  = std::sqrt( StdDevIm );
+        s << t << sep << Avg << sep << StdDev << sep << AvgIm << sep << StdDevIm << sep << std::endl;
+      }
+      else
+      {
+        TmpAvg[t] = 0;
+        for(int i = 0; i < nSample; i++)
+        {
+          {
+            double DThis;
+            switch(f)
+            {
+                case 1: // three-point mass
+                DThis = ( out[i]((t + nt - 1) % nt, 0) + out[i]((t + 1) % nt, 0) ) / (2 * out[i](t, 0) );
+                break;
+                case 2: // mass
+                DThis = - log( out[i]((t + nt + 1) % nt, 0) / out[i](t, 0) );
+                break;
+              default:
+                DThis = 0;
+            }
+            TmpSamples[t][i] = DThis;
+            TmpAvg[t] += DThis;
+          }
+        }
+        TmpAvg[t] /= nSample;
+        std::sort(TmpSamples[t].begin(), TmpSamples[t].end());
+        int Index = static_cast<int>( 0.16 * nSample + 0.5 );
+        s << t << sep << TmpAvg[t] << sep << (TmpAvg[t] - TmpSamples[t][Index])
+        << sep << (TmpSamples[t][nSample - Index] - TmpAvg[t]) << std::endl;
+      }
+    }
+  }
+}
+
 int main(int argc, char *argv[])
 {
   // parse command line/options ////////////////////////////////////////////////////////
@@ -215,14 +258,14 @@ int main(int argc, char *argv[])
                 "number of samples", DEF_NSAMPLE);
   opt.addOption("b", "bin"       , OptParser::OptType::value,   true,
                 "bin size", "1");
-  opt.addOption("i", "ignore"    , OptParser::OptType::value,   true,
-                "ignore file", "");
   opt.addOption("o", "output"    , OptParser::OptType::value,   true,
                 "output file", DefaultOutputStem);
   opt.addOption("r", "seed"      , OptParser::OptType::value,   true,
                 "random generator seed (default: random)");
   opt.addOption("v", "verbose"   , OptParser::OptType::trigger, true,
                 "show extra detail, e.g. Correlator averages");
+  opt.addOption("x", "exclude"   , OptParser::OptType::value,   true,
+                "exclude file", "");
   opt.addOption("" , "help"      , OptParser::OptType::trigger, true,
                 "show this help message and exit");
   bool parsed = opt.parse(argc, argv) and !opt.gotOption("help") and opt.getArgs().size() > 0;
@@ -240,7 +283,7 @@ int main(int argc, char *argv[])
   ContractList Contractions;
   if( parsed )
   {
-    const std::string sIgnore{opt.optionValue("i")};
+    const std::string sIgnore{opt.optionValue("x")};
     for( int i = 0; i < opt.getArgs().size(); i++ )
     {
       const std::string &Filename{opt.getArgs()[i]};
@@ -310,6 +353,7 @@ int main(int argc, char *argv[])
 
   // load data /////////////////////////////////////////////////////////////////
   cout << "Creating bootstrap output " << outStem << ", seed=" << seed << endl;
+  const bool bVerbose{opt.gotOption("verbose")};
 
   // Walk the list of contractions, performing a separate bootstrap for each
   int BootstrapCount = 0;
@@ -330,19 +374,18 @@ int main(int argc, char *argv[])
       const unsigned int nFile{ static_cast<unsigned int>(l.Filename.size())};
       Latan::Dataset<Latan::DMat> data(nFile);
       Latan::Dataset<Latan::DMat> mass(nFile);
-      // this reads the DataSet name of .h5 file into buf's vector<ComplexD>; (for resizing variables)
       unsigned int nt = 0;
       unsigned int j = 0; // which file are we processing
+      std::vector<std::complex<double>> buf;
       for( auto it = l.Filename.begin(); it != l.Filename.end(); it++, j++ )
       {
         const int &traj{it->first};
         std::string &Filename{it->second};
         std::cout << "\t" << traj << "\t" << Filename << std::endl;
-        Contractor::CorrelatorResult buf;
-        readFile<Hdf5Reader>(buf, Contraction, Filename);
+        ReadComplexArray(buf, Filename, Contraction);
         if(j == 0)
         {
-          nt = static_cast<unsigned int>(buf.correlator.size());
+          nt = static_cast<unsigned int>(buf.size());
           out[central].resize(nt,2);
           for( unsigned int i = 0; i < nSample; i++)
             out[i].resize(nt,2);
@@ -351,104 +394,25 @@ int main(int argc, char *argv[])
         m.resize(nt, 2); // resizing vector to nt * 2 matrix
         for (unsigned int t = 0; t < nt; ++t)
         {
-          m(t, 0) = buf.correlator[t].real();
-          m(t, 1) = buf.correlator[t].imag();
+          m(t, 0) = buf[t].real();
+          m(t, 1) = buf[t].imag();
         }
       }
 
-      if( opt.gotOption("verbose") )
+      if( bVerbose )
         ShowTimeSliceAvg(data);
 
       // Resample
       cout << "-- resampling (" << nSample << " samples)..." << endl;
       if( binSize != 1 )
         data.bin(binSize);
-#ifdef TURNS_OUT_THIS_WASNT_BUGGY
-      NonBuggyBootstrapMean(out, data, seed, nt);
-#else
       DMatSample out = data.bootstrapMean(nSample, seed);
-#endif //TURNS_OUT_THIS_WASNT_BUGGY
       cout << "Saving sample to '" << sOutFileName << "' ...";
       Latan::Io::save<DMatSample>(out, sOutFileName, Latan::File::Mode::write, szBootstrap);
       cout << " done" << endl;
       BootstrapCount++;
-
-      // Now make summary data files
-      std::vector<double> TmpAvg( nt );
-      std::vector<std::vector<double>> TmpSamples( nt );
-      for(int t = 0; t < nt; t++)
-        TmpSamples[t].resize( nSample );
-      static const char sep[] = " ";
-      static const char * SummaryNames[] = { "corr", "mass3pt", "mass" };
-      static const char * SummaryHeader[] =
-      {
-        "# correlator\nt corr_re corr_stddev corr_im corr_im_stddev",
-        "# three-point mass\nt mass mass_low mass_high",
-        "# mass\nt mass mass_low mass_high",
-      };
-      for(int f = 0; f < sizeof(SummaryNames)/sizeof(SummaryNames[0]); f++)
-      {
-        sOutFileName = tokenReplaceCopy(sOutFileBase, "type", SummaryNames[f]) + ".dat";
-        std::ofstream s(sOutFileName);
-        s << SummaryHeader[f] << std::endl;
-        for(int t = 0; t < nt; t++)
-        {
-          if( f == 0 )
-          {
-            double Avg = 0;
-            double StdDev = 0;
-            double AvgIm = 0;
-            double StdDevIm = 0;
-            for(int i = 0; i < nSample; i++)
-            {
-              Avg   += out[i](t,0);
-              AvgIm += out[i](t,1);
-            }
-            Avg   /= nSample;
-            AvgIm /= nSample;
-            for(int i = 0; i < nSample; i++)
-            {
-              double d = out[i](t,0) - Avg;
-              StdDev += d * d;
-              d = out[i](t,1) - AvgIm;
-              StdDevIm += d * d;
-            }
-            StdDev   /= nSample;
-            StdDevIm /= nSample;
-            StdDev    = std::sqrt( StdDev );
-            StdDevIm  = std::sqrt( StdDevIm );
-            s << t << sep << Avg << sep << StdDev << sep << AvgIm << sep << StdDevIm << sep << std::endl;
-          }
-          else
-          {
-            TmpAvg[t] = 0;
-            for(int i = 0; i < nSample; i++)
-            {
-              {
-                double DThis;
-                switch(f)
-                {
-                  case 1: // three-point mass
-                    DThis = ( out[i]((t + nt - 1) % nt, 0) + out[i]((t + 1) % nt, 0) ) / (2 * out[i](t, 0) );
-                    break;
-                  case 2: // mass
-                    DThis = - log( out[i]((t + nt + 1) % nt, 0) / out[i](t, 0) );
-                    break;
-                  default:
-                    DThis = 0;
-                }
-                TmpSamples[t][i] = DThis;
-                TmpAvg[t] += DThis;
-              }
-            }
-            TmpAvg[t] /= nSample;
-            std::sort(TmpSamples[t].begin(), TmpSamples[t].end());
-            int Index = static_cast<int>( 0.16 * nSample + 0.5 );
-            s << t << sep << TmpAvg[t] << sep << (TmpAvg[t] - TmpSamples[t][Index])
-              << sep << (TmpSamples[t][nSample - Index] - TmpAvg[t]) << std::endl;
-          }
-        }
-      }
+      if( bVerbose )
+        MakeSummaries(out, nt, nSample, sOutFileBase);
     }
   }
   std::cout << "Bootstraps written for " << BootstrapCount << " correlators" << endl;
