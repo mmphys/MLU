@@ -33,9 +33,13 @@
 #ifndef DEF_NSAMPLE
 #define DEF_NSAMPLE "10000"
 #endif
-// Default output file format
+// Default output file format for bootstrap data
 #ifndef DEF_FMT
 #define DEF_FMT "h5"
+#endif
+// Default output file format for text based summaries of bootstrap data
+#ifndef TEXT_EXT
+#define TEXT_EXT "txt"
 #endif
 
 // This describes one contraction and each of its trajectory files
@@ -60,9 +64,11 @@ void ShowTimeSliceAvg(const Latan::Dataset<Latan::DMat> &data);
 // Does the specified file exist?
 bool FileExists(const std::string& Filename);
 // Make summary files of this data set
-void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase);
+void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed);
 // Process list of files on the command-line, breaking them up into individual trajectories
 bool ParseFileList(ContractList &Contractions, const std::vector<std::string> &Args, const std::string &sIgnore);
+// Make a filename of a specific type
+std::string MakeFilename(const std::string &Base, const char *Type, Latan::SeedType Seed, const std::string &Ext);
 
 /*****************************************************************
 
@@ -145,11 +151,12 @@ int main(int argc, char *argv[])
   Latan::DMatSample out(nSample);
   for( auto itc = Contractions.begin(); itc != Contractions.end(); itc++ )
   {
-    static const std::string szBootstrap{"bootstrap"};
+    static const char * pszBootstrap{"bootstrap"};
+    static const std::string sBootstrap{pszBootstrap};
     const std::string &Contraction{itc->first};
     OneContraction &l{itc->second};
     const std::string sOutFileBase{tokenReplaceCopy(outStem, "corr", Contraction)};
-    std::string sOutFileName{tokenReplaceCopy(sOutFileBase, "type", szBootstrap + '.' + std::to_string( seed )) + '.' + OutFileExt};
+    std::string sOutFileName{MakeFilename(sOutFileBase, pszBootstrap, seed, OutFileExt)};
     if( FileExists( sOutFileName ) )
       std::cout << "Skipping " << Contraction << " because " << sOutFileName << " already exists" << std::endl;
     else
@@ -195,7 +202,7 @@ int main(int argc, char *argv[])
               bNumbersOK = false;
           }
           if( !bNumbersOK ) { // Only print this message once per file
-            std::cerr << "\t\t Error: Infinite/NaN values in " << Filename << std::endl;
+            std::cerr << "\t\tError: Infinite/NaN values in " << Filename << std::endl;
             bError = true;
           }
         }
@@ -212,12 +219,12 @@ int main(int argc, char *argv[])
           data.bin(binSize);
         Latan::DMatSample out = data.bootstrapMean(nSample, seed);
         std::cout << "Saving sample to '" << sOutFileName << "' ...";
-        Latan::Io::save<Latan::DMatSample>(out, sOutFileName, Latan::File::Mode::write, szBootstrap);
+        Latan::Io::save<Latan::DMatSample>(out, sOutFileName, Latan::File::Mode::write, sBootstrap);
         std::cout << " done" << std::endl;
         if( bSaveSummaries )
-          MakeSummaries(out, sOutFileBase);
+          MakeSummaries(out, sOutFileBase, seed);
         if( dumpBoot ) { // Dump the bootstrap sequences
-          std::string SeqFileName{tokenReplaceCopy(sOutFileBase, "type", std::string("bootseq") + '.' + std::to_string( seed )) + ".txt"};
+          std::string SeqFileName{MakeFilename(sOutFileBase, "bootseq", seed, TEXT_EXT)};
           std::cout << "Saving bootstrap sequence to '" << SeqFileName << "' ...";
           std::ofstream file(SeqFileName);
           file << "# bootstrap sequences" << std::endl;
@@ -321,8 +328,17 @@ bool FileExists(const std::string& Filename)
   return stat(Filename.c_str(), &buf) != -1;
 }
 
+// Make a filename of a specific type
+std::string MakeFilename(const std::string &Base, const char *Type, Latan::SeedType Seed, const std::string &Ext)
+{
+  std::string type{Type};
+  type.append( 1, '.' );
+  type.append( std::to_string( Seed ) );
+  return tokenReplaceCopy( Base, "type", type ) + '.' + Ext;
+}
+
 // Make summary files of this data set
-void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase)
+void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed)
 {
   const int           nt{static_cast<int>(out[Latan::central].rows())};
   const Latan::Index  nSample{out.size()};
@@ -341,7 +357,7 @@ void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBas
   };
   for(int f = 0; f < sizeof(SummaryNames)/sizeof(SummaryNames[0]); f++)
   {
-    std::string sOutFileName{ tokenReplaceCopy(sOutFileBase, "type", SummaryNames[f]) + ".txt" };
+    std::string sOutFileName{ MakeFilename(sOutFileBase, SummaryNames[f], Seed, TEXT_EXT) };
     std::ofstream s(sOutFileName);
     s << std::setprecision(std::numeric_limits<double>::digits10 + 1) << SummaryHeader[f] << std::endl;
     for(int t = 0; t < nt; t++)
