@@ -161,39 +161,46 @@ int main(int argc, char *argv[])
       unsigned int nt = 0;
       unsigned int j = 0; // which trajectory are we processing
       std::vector<std::complex<double>> buf;
-      bool bLoadOK = true;
-      for( auto it = l.Filename.begin(); bLoadOK && it != l.Filename.end(); it++, j++ )
+      bool bError = false;
+      bool bResized = false;
+      for( auto it = l.Filename.begin(); it != l.Filename.end(); it++, j++ )
       {
         const int &traj{it->first};
         std::string &Filename{it->second};
         std::cout << "\t" << traj << "\t" << Filename << std::endl;
+        bool bThisLoad = true;
         try {
           ReadComplexArray(buf, Filename, Contraction);
         } catch(...) {
-          bLoadOK = false;
-        }
-        if( !bLoadOK )
           std::cerr << "\tError reading " << Filename << std::endl;
-        else {
-          if(j == 0)
+          bThisLoad = false;
+          bError = true;
+        }
+        if( bThisLoad )
+        {
+          if( !bResized )
           {
             nt = static_cast<unsigned int>(buf.size());
             out.resizeMat(nt, 2);
+            bResized = true;
           }
           Latan::DMat & m{data[j]};
           m.resize(nt, 2); // LatAnalyze prefers nt * 2 real matrix
+          bool bNumbersOK = true;
           for (unsigned int t = 0; t < nt; ++t)
           {
             m(t, 0) = buf[t].real();
             m(t, 1) = buf[t].imag();
             if( !std::isfinite( m(t, 0) ) || !std::isfinite( m(t, 1) ) )
-              bLoadOK = false;
+              bNumbersOK = false;
           }
-          if(!bLoadOK )
+          if( !bNumbersOK ) { // Only print this message once per file
             std::cerr << "\tError: Infinite/NaN values while reading " << Filename << std::endl;
+            bError = true;
+          }
         }
       }
-      if(!bLoadOK )
+      if( bError )
         std::cerr << "\tOutput not created for " << Contraction << std::endl;
       else
       {
@@ -334,7 +341,7 @@ void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBas
   };
   for(int f = 0; f < sizeof(SummaryNames)/sizeof(SummaryNames[0]); f++)
   {
-    std::string sOutFileName{ tokenReplaceCopy(sOutFileBase, "type", SummaryNames[f]) + ".dat" };
+    std::string sOutFileName{ tokenReplaceCopy(sOutFileBase, "type", SummaryNames[f]) + ".txt" };
     std::ofstream s(sOutFileName);
     s << std::setprecision(std::numeric_limits<double>::digits10 + 1) << SummaryHeader[f] << std::endl;
     for(int t = 0; t < nt; t++)
