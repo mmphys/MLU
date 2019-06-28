@@ -20,6 +20,7 @@
  */
 
 #include <cmath>
+#include <iomanip>
 #include <mutex> // Apparently empty under __INTEL_COMPILER
 #include <sys/stat.h>
 #include <LatAnalyze/Core/OptParser.hpp>
@@ -89,12 +90,14 @@ int main(int argc, char *argv[])
                 "output file format", DEF_FMT);
   opt.addOption("d", "dump-boot" , Latan::OptParser::OptType::trigger, true,
                 "dump bootstrap sequence");
+  opt.addOption("t", "txt"       , Latan::OptParser::OptType::trigger, true,
+                "save text versions of correlators (for use by GnuPlot)");
+  opt.addOption("a", "average"   , Latan::OptParser::OptType::trigger, true,
+                "show correlator averages");
+  opt.addOption("x", "exclude"   , Latan::OptParser::OptType::value,   true,
+                "exclude files (colon separated list)", "");
   opt.addOption("" , "help"      , Latan::OptParser::OptType::trigger, true,
                 "show this help message and exit");
-  opt.addOption("t", "txt"   , Latan::OptParser::OptType::trigger, true,
-                "save text versions of correlators (for use by GnuPlot)");
-  opt.addOption("x", "exclude"   , Latan::OptParser::OptType::value,   true,
-                "exclude file", "");
   bool parsed = opt.parse(argc, argv) and !opt.gotOption("help") and opt.getArgs().size() > 0;
   // If the output stem was specified, ensure it includes "@corr@"
   std::string outStem;
@@ -133,7 +136,8 @@ int main(int argc, char *argv[])
   }
   const std::string & OutFileExt{opt.optionValue("f")};
   const bool dumpBoot{ opt.gotOption("d") };
-  const bool bVerbose{ opt.gotOption("v") };
+  const bool bShowAverages{ opt.gotOption("a") };
+  const bool bSaveSummaries{ opt.gotOption("t") };
   std::cout << "Creating bootstrap output " << outStem << ", seed=" << seed << std::endl;
 
   // Walk the list of contractions, performing a separate bootstrap for each
@@ -193,7 +197,7 @@ int main(int argc, char *argv[])
         std::cerr << "\tOutput not created for " << Contraction << std::endl;
       else
       {
-        if( bVerbose )
+        if( bShowAverages )
           ShowTimeSliceAvg(data);
         // Resample
         std::cout << "-- resampling (" << nSample << " samples)..." << std::endl;
@@ -203,7 +207,7 @@ int main(int argc, char *argv[])
         std::cout << "Saving sample to '" << sOutFileName << "' ...";
         Latan::Io::save<Latan::DMatSample>(out, sOutFileName, Latan::File::Mode::write, szBootstrap);
         std::cout << " done" << std::endl;
-        if( bVerbose )
+        if( bSaveSummaries )
           MakeSummaries(out, sOutFileBase);
         if( dumpBoot ) { // Dump the bootstrap sequences
           std::string SeqFileName{tokenReplaceCopy(sOutFileBase, "type", std::string("bootseq") + '.' + std::to_string( seed )) + ".txt"};
@@ -216,7 +220,7 @@ int main(int argc, char *argv[])
           {
             const int &traj{it->first};
             std::string &Filename{it->second};
-            file << "#   traj / file: " << traj << " / " << Filename << std::endl;
+            file << "#   traj / file: " << traj << " " << Filename << std::endl;
           }
           data.dumpBootstrapSeq(file, nSample, seed);
           std::cout << std::endl;
@@ -332,7 +336,7 @@ void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBas
   {
     std::string sOutFileName{ tokenReplaceCopy(sOutFileBase, "type", SummaryNames[f]) + ".dat" };
     std::ofstream s(sOutFileName);
-    s << SummaryHeader[f] << std::endl;
+    s << std::setprecision(std::numeric_limits<double>::digits10 + 1) << SummaryHeader[f] << std::endl;
     for(int t = 0; t < nt; t++)
     {
       if( f == 0 )
@@ -430,10 +434,28 @@ ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, std::str
 
 bool ParseFileList(ContractList &Contractions, const std::vector<std::string> &Args, const std::string &sIgnore)
 {
+  std::vector<std::string> Ignore;
+  for( std::size_t start = 0; start < sIgnore.length() ; ) {
+    auto end = sIgnore.find(':', start);
+    std::size_t SepLen;
+    if( end == std::string::npos ) {
+      SepLen = 0;
+      end = sIgnore.length();
+    }
+    else
+      SepLen = 1;
+    if( end > start )
+      Ignore.push_back( sIgnore.substr( start, end - start ) );
+    start = end + SepLen;
+  }
   bool parsed = ( Args.size() > 0 );
   for( const std::string &Filename : Args )
   {
-    if( !sIgnore.compare(Filename) )
+    // See whether this file is in the ignore list
+    std::size_t iIgnore = 0;
+    while( iIgnore < Ignore.size() && Ignore[iIgnore].compare(Filename) )
+      iIgnore++;
+    if( iIgnore < Ignore.size() )
       std::cout << "Ignoring " << Filename << std::endl;
     else if( !FileExists(Filename))
     {
