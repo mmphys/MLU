@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
               bNumbersOK = false;
           }
           if( !bNumbersOK ) { // Only print this message once per file
-            std::cerr << "\tError: Infinite/NaN values while reading " << Filename << std::endl;
+            std::cerr << "\t\t Error: Infinite/NaN values in " << Filename << std::endl;
             bError = true;
           }
         }
