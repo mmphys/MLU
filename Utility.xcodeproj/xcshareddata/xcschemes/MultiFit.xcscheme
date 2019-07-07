@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6822E8BB22A7057400A85993"
-               BuildableName = "bootstrap"
-               BlueprintName = "bootstrap"
+               BlueprintIdentifier = "6815510222CBCB61009AB4AD"
+               BuildableName = "MultiFit"
+               BlueprintName = "MultiFit"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -32,9 +32,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6822E8BB22A7057400A85993"
-            BuildableName = "bootstrap"
-            BlueprintName = "bootstrap"
+            BlueprintIdentifier = "6815510222CBCB61009AB4AD"
+            BuildableName = "MultiFit"
+            BlueprintName = "MultiFit"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -47,7 +47,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/201906Meson/contract/Mike"
+      customWorkingDirectory = "$HOME/data/201906Meson/analyze/light_100"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -56,40 +56,44 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6822E8BB22A7057400A85993"
-            BuildableName = "bootstrap"
-            BlueprintName = "bootstrap"
+            BlueprintIdentifier = "6815510222CBCB61009AB4AD"
+            BuildableName = "MultiFit"
+            BlueprintName = "MultiFit"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-r987654321"
+            argument = "$HOME/data/201906Meson/contract/Felix/nvec_studies/light_100/phiL_0_rhoL.3000.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-r4147798751"
+            argument = "phiL_0_rhoL.bootstrap.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o$PROJECT_DIR/run/@corr@.@type@"
+            argument = "phiL_ax_0_rhoL.bootstrap.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "phiL_0_rhoL.3000.h5 phiL_0_rhoL.3120.h5 phiL_0_rhoL.3240.h5 phiL_0_rhoL.3360.h5&#10;phiL_0_rhoL.3040.h5 phiL_0_rhoL.3160.h5 phiL_0_rhoL.3280.h5 phiL_0_rhoL.3400.h5&#10;phiL_0_rhoL.3080.h5 phiL_0_rhoL.3200.h5 phiL_0_rhoL.3320.h5 phiL_0_rhoL.3440.h5"
+            argument = "phiL_0_rhoL_ax.bootstrap.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-t"
+            argument = "phiL_ax_0_rhoL_ax.bootstrap.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-d"
-            isEnabled = "NO">
+            argument = "--ti3"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-xphiL_0_rhoL.3040.h5:phiL_0_rhoL.3120.h5"
-            isEnabled = "NO">
+            argument = "--tf20"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-f1"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
@@ -105,9 +109,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6822E8BB22A7057400A85993"
-            BuildableName = "bootstrap"
-            BlueprintName = "bootstrap"
+            BlueprintIdentifier = "6815510222CBCB61009AB4AD"
+            BuildableName = "MultiFit"
+            BlueprintName = "MultiFit"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

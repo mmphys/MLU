@@ -19,10 +19,11 @@
  * along with LatAnalyze 3.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Common.hpp"
+
 #include <cmath>
 #include <iomanip>
 #include <mutex> // Apparently empty under __INTEL_COMPILER
-#include <sys/stat.h>
 #include <LatAnalyze/Core/OptParser.hpp>
 #include <LatAnalyze/Statistics/Dataset.hpp>
 #include <LatAnalyze/Io/Io.hpp>
@@ -42,31 +43,12 @@
 #define TEXT_EXT "txt"
 #endif
 
-// This describes one contraction and each of its trajectory files
-struct OneContraction
-{
-  std::string Name;                     // name of the contraction
-  std::map<int, std::string> Filename;  // list of all the files, sorted by trajectory number
-};
-
-// This is a list of all the contractions we've been asked to process
-using ContractList = std::map<std::string, OneContraction>;
-
-// Return the same HDF5 complex type Grid uses
-namespace H5CustomTypes { static H5::CompType & Complex(void); };
-// Read a complex array from an HDF5 file
-void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,
-        const std::string &GroupName, const std::string &ObjectName = std::string( "correlator" ) );
 // Make a copy of str, in which token has been replaced by x
 template <typename T> std::string tokenReplaceCopy(const std::string &str, const std::string token, const T &x );
 // Show me the averages for each timeslice
 void ShowTimeSliceAvg(const Latan::Dataset<Latan::DMat> &data);
-// Does the specified file exist?
-bool FileExists(const std::string& Filename);
 // Make summary files of this data set
 void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed);
-// Process list of files on the command-line, breaking them up into individual trajectories
-bool ParseFileList(ContractList &Contractions, const std::vector<std::string> &Args, const std::string &sIgnore);
 // Make a filename of a specific type
 std::string MakeFilename(const std::string &Base, const char *Type, Latan::SeedType Seed, const std::string &Ext);
 
@@ -79,11 +61,23 @@ std::string MakeFilename(const std::string &Base, const char *Type, Latan::SeedT
 
 *****************************************************************/
 
+static const char DefaultOutputStem[] = "@corr@.@type@";
+
+static void Usage( const char * pExecutableName, Latan::OptParser &opt )
+{
+  std::string cmd{ pExecutableName };
+  auto pos = cmd.find_last_of('/');
+  if( pos != std::string::npos && pos < cmd.length() - 1 )
+    cmd = cmd.substr( pos + 1 );
+  std::cerr << "usage: " << pExecutableName << " <options> ContractionFile1 [ContractionFile2 ...]"
+  << "\nOutput stem (if present) must contain '@corr@' and '@type', e.g. '" << DefaultOutputStem << "'"
+  << "\nPossible options:\n" << opt << std::endl;
+}
+
 int main(int argc, char *argv[])
 {
   // parse command line/options ////////////////////////////////////////////////////////
   Latan::OptParser       opt;
-  static const char      DefaultOutputStem[] = "@corr@.@type@";
   opt.addOption("n", "nsample"   , Latan::OptParser::OptType::value,   true,
                 "number of samples", DEF_NSAMPLE);
   opt.addOption("b", "bin"       , Latan::OptParser::OptType::value,   true,
@@ -116,21 +110,18 @@ int main(int argc, char *argv[])
       std::cout << "Output stem " << outStem << " invalid" << std::endl;
     }
   }
-  // Now parse the input file names, grouping by correlator, indexed by trajectory
-  ContractList Contractions;
-  if( parsed )
-  {
-    const std::string sIgnore{opt.optionValue("x")};
-    parsed = ParseFileList(Contractions, opt.getArgs(), sIgnore);
-  }
-  if (!parsed)
-  {
-    std::cerr << "usage: " << argv[0] << " <options> ContractionFile1 [ContractionFile2 ...]"
-    << "\nOutput stem (if present) must contain '@corr@' and '@type', e.g. '" << DefaultOutputStem << "'"
-    << "\nPossible options:\n" << opt << std::endl;
+  if (!parsed) {
+    Usage( argv[0], opt );
     return EXIT_FAILURE;
   }
-  
+
+  // Now parse the input file names, grouping by correlator, indexed by trajectory
+  Common::Manifest Manifest{opt.getArgs(), opt.optionValue("x")};
+  if( Manifest.empty() ) {
+    Usage( argv[0], opt );
+    return EXIT_FAILURE;
+  }
+
   Latan::Index    nSample = opt.optionValue<Latan::Index>("n");
   Latan::Index    binSize = opt.optionValue<Latan::Index>("b");
   Latan::SeedType seed;
@@ -149,15 +140,15 @@ int main(int argc, char *argv[])
   // Walk the list of contractions, performing a separate bootstrap for each
   int BootstrapCount = 0;
   Latan::DMatSample out(nSample);
-  for( auto itc = Contractions.begin(); itc != Contractions.end(); itc++ )
+  for( auto itc = Manifest.begin(); itc != Manifest.end(); itc++ )
   {
     static const char * pszBootstrap{"bootstrap"};
     static const std::string sBootstrap{pszBootstrap};
     const std::string &Contraction{itc->first};
-    OneContraction &l{itc->second};
+    Common::TrajList &l{itc->second};
     const std::string sOutFileBase{tokenReplaceCopy(outStem, "corr", Contraction)};
     std::string sOutFileName{MakeFilename(sOutFileBase, pszBootstrap, seed, OutFileExt)};
-    if( FileExists( sOutFileName ) )
+    if( Common::FileExists( sOutFileName ) )
       std::cout << "Skipping " << Contraction << " because " << sOutFileName << " already exists" << std::endl;
     else
     {
@@ -177,7 +168,7 @@ int main(int argc, char *argv[])
         std::cout << "\t" << traj << "\t" << Filename << std::endl;
         bool bThisLoad = true;
         try {
-          ReadComplexArray(buf, Filename, Contraction);
+          Common::ReadComplexArray(buf, Filename, Contraction);
         } catch(...) {
           std::cerr << "\tError reading " << Filename << std::endl;
           bThisLoad = false;
@@ -244,50 +235,8 @@ int main(int argc, char *argv[])
     }
   }
   std::cout << "Bootstraps written for " << BootstrapCount
-            << " / " << Contractions.size() << " correlators" << std::endl;
+            << " / " << Manifest.size() << " correlators" << std::endl;
   return EXIT_SUCCESS;
-}
-
-// Return the same HDF5 complex type Grid uses
-namespace H5CustomTypes {
-  static H5::CompType & Complex(void)
-  {
-    static bool bInitialised = false;
-    static H5::CompType m_Complex(sizeof(std::complex<double>));
-    {
-#ifndef __INTEL_COMPILER
-      // mutex not available for this compiler, so initialisation not thread-safe
-      static std::mutex sync;
-      std::lock_guard<std::mutex> guard( sync );
-#endif
-      if( !bInitialised ) {
-        m_Complex.insertMember("re", 0 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
-        m_Complex.insertMember("im", 1 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
-        bInitialised = true;
-      }
-    }
-    return m_Complex;
-  }
-};
-
-// Read a complex array from an HDF5 file
-void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,
-                      const std::string &GroupName, const std::string &ObjectName )
-{
-  H5::H5File f(FileName, H5F_ACC_RDONLY);
-  H5::Group g = f.openGroup(GroupName);
-  H5::DataSet ds = g.openDataSet(ObjectName);
-  H5::DataSpace dsp = ds.getSpace();
-  const int nDims{dsp.getSimpleExtentNdims()};
-  if( nDims != 1 ) {
-    std::cerr << "Error: " << FileName << ", " << GroupName << ", " << ObjectName << " has " << nDims << " dimensions" << std::endl;
-    assert(0 && "Wrong number of dimensions");
-  } else {
-    hsize_t dim[1];
-    dsp.getSimpleExtentDims(dim);
-    buffer.resize(dim[0]);
-    ds.read(&buffer[0], H5CustomTypes::Complex());
-  }
 }
 
 // Make a copy of str, in which token has been replaced by x
@@ -319,13 +268,6 @@ void ShowTimeSliceAvg(const Latan::Dataset<Latan::DMat> &data) {
       std::cout << "C(" << t << ")=" << Avg[t] << std::endl;
     }
   }
-}
-
-// Does the specified file exist?
-bool FileExists(const std::string& Filename)
-{
-  struct stat buf;
-  return stat(Filename.c_str(), &buf) != -1;
 }
 
 // Make a filename of a specific type
@@ -418,110 +360,4 @@ void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBas
       }
     }
   }
-}
-
-enum ExtractFilenameReturn {Good, Bad, No_trajectory};
-
-// Extract the contraction name and trajectory number from filename
-ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, std::string &Contraction, int &traj)
-{
-  ExtractFilenameReturn r{Bad};
-  Contraction.clear();
-  traj = 0;
-  auto pos = Filename.find_last_of('/');
-  if( pos == std::string::npos )
-    pos = 0;
-  else
-    pos++;
-  auto delim = Filename.find_first_of('.', pos);
-  if( delim != std::string::npos )
-  {
-    Contraction = Filename.substr(pos, delim - pos);
-    pos = delim + 1;
-    delim = Filename.find_first_of('.', pos);
-    if( delim != std::string::npos && delim != pos )
-    {
-      r = Good;
-      while( r == Good && pos < delim )
-      {
-        auto c = Filename[pos++] - '0';
-        if( c >=0 && c < 10 )
-          traj = traj * 10 + c;
-        else
-          r = No_trajectory;
-      }
-    }
-  }
-  return r;
-}
-
-bool ParseFileList(ContractList &Contractions, const std::vector<std::string> &Args, const std::string &sIgnore)
-{
-  std::vector<std::string> Ignore;
-  for( std::size_t start = 0; start < sIgnore.length() ; ) {
-    auto end = sIgnore.find(':', start);
-    std::size_t SepLen;
-    if( end == std::string::npos ) {
-      SepLen = 0;
-      end = sIgnore.length();
-    }
-    else
-      SepLen = 1;
-    if( end > start )
-      Ignore.push_back( sIgnore.substr( start, end - start ) );
-    start = end + SepLen;
-  }
-  bool parsed = ( Args.size() > 0 );
-  for( const std::string &Filename : Args )
-  {
-    // See whether this file is in the ignore list
-    std::size_t iIgnore = 0;
-    while( iIgnore < Ignore.size() && Ignore[iIgnore].compare(Filename) )
-      iIgnore++;
-    if( iIgnore < Ignore.size() )
-      std::cout << "Ignoring " << Filename << std::endl;
-    else if( !FileExists(Filename))
-    {
-      parsed = false;
-      std::cout << "Error: " << Filename << " doesn't exist" << std::endl;
-    }
-    else
-    {
-      std::string Contraction;
-      int         traj;
-      switch( ExtractFilenameParts( Filename, Contraction, traj ) )
-      {
-        case Good:
-        {
-          OneContraction & cl{Contractions[Contraction]};
-          if( cl.Filename.size() == 0 )
-            cl.Name = Contraction;
-          auto it = cl.Filename.find( traj );
-          if( it == cl.Filename.end() )
-            cl.Filename[traj] = Filename;
-          else
-          {
-            if( !Filename.compare(it->second) )
-              std::cout << "Ignoring repetition of " << Filename << std::endl;
-            else
-            {
-              parsed = false;
-              std::cout << "Error " << Filename << " conflicts with " << it->second << std::endl;
-            }
-          }
-        }
-          break;
-          
-        case No_trajectory:
-          std::cout << "Ignoring non-numeric trajectory " << Filename << std::endl;
-          break;
-          
-        default:
-          parsed = false;
-          std::cout << "Error: " << Filename << " is not a contraction file" << std::endl;
-          break;
-      }
-    }
-  }
-  return parsed;
 }
