@@ -15,15 +15,18 @@ bool FileExists(const std::string& Filename)
 }
 
 // Return the same HDF5 complex type Grid uses
+#ifndef __INTEL_COMPILER
+// mutex not available for this compiler, so initialisation not thread-safe
+static std::mutex ComplexTypeSync;
+#endif
+
 H5::CompType & H5File::ComplexType(void)
 {
   static bool bInitialised = false;
   static H5::CompType m_Complex(sizeof(std::complex<double>));
   {
 #ifndef __INTEL_COMPILER
-    // mutex not available for this compiler, so initialisation not thread-safe
-    static std::mutex sync;
-    std::lock_guard<std::mutex> guard( sync );
+    std::lock_guard<std::mutex> guard( ComplexTypeSync );
 #endif
     if( !bInitialised ) {
       m_Complex.insertMember("re", 0 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
@@ -85,25 +88,34 @@ static void ReadBootstrapCorrsHelper( Latan::DMat &m, std::vector<double> ReadBu
     // Presumably it was originally written this way, and now can't change because all data are in this format
     //const double re{ReadBuffer[ k ]};
     //const double im{ReadBuffer[ k + dim[0] * 1 ]};
-    int Source1 = ( NtSource + Shift + k ) % NtSource;
+    double Source1 = ReadBuffer[ ( NtSource + Shift + k ) % NtSource ];
     int Dest    = iFile * NtDest + k;
     if( Fold == 0 ) {
-      m( Dest, 0 ) = ReadBuffer[ Source1 ];
+      m( Dest, 0 ) = Source1;
     }
     else
     {
-      int Source2 = ( 2 * NtSource + Shift - k ) % NtSource;
+      double Source2 = ReadBuffer[ ( 2 * NtSource + Shift - k ) % NtSource ];
       if( Fold > 0 )
-        m( Dest, 0 ) = ( ReadBuffer[ Source1 ] + ReadBuffer[ Source2 ] ) * 0.5;
+        m( Dest, 0 ) = ( Source1 + Source2 ) * 0.5;
       else
-        m( Dest, 0 ) = ( ReadBuffer[ Source1 ] - ReadBuffer[ Source2 ] ) * 0.5;
+        m( Dest, 0 ) = ( std::abs( Source2 ) + std::abs( Source1 ) ) * 0.5;
+        //m( Dest, 0 ) = ( Source2 - Source1 ) * 0.5;
     }
   }
 }
 
-Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName, int Fold, int Shift )
+Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps )
 {
-  assert( Fold >= -1 && Fold <= 1 && "Error: Invalid Fold parameter" );
+  assert( abs( Fold ) <= 2 && "Error: Invalid Fold parameter" );
+  const bool bAlternateFold{ abs( Fold ) > 1 };
+  if( bAlternateFold ) {
+    if( Fold > 0 )
+      --Fold;
+    else
+      ++Fold;
+  }
+  const int FirstFold{ Fold };
   const int NumFiles{ static_cast<int>( FileName.size() ) };
   // These will be initialised when we read in the first correlator
   int NtSource = -999; // Number of timeslices in the source file(s)
@@ -144,8 +156,18 @@ Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName,
     hsize_t dim[2];
     dsp.getSimpleExtentDims( dim );
     assert( dim[1] == 2 && "Correlator should contain real and imaginary parts for each timeslice" );
-    if( i != 0 )
+    if( i != 0 ) {
       assert( NtSource == dim[0] && "Error: inconsistent number of timeslices" );
+      if( bAlternateFold ) {
+        Fold = FirstFold;
+        const int row{ i / NumOps };
+        const int col{ i % NumOps };
+        if( row & 1 )
+          Fold *= -1;
+        if( col & 1 )
+          Fold *= -1;
+      }
+    }
     else {
       // Initialise defaults first time around
       assert( dim[0] > 0 && dim[0] <= std::numeric_limits<int>::max() && "Error: invalid number of timeslices" );

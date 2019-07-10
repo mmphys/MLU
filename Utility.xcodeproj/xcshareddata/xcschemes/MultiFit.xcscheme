@@ -64,12 +64,20 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "$HOME/data/201906Meson/contract/Felix/nvec_studies/light_100/phiL_0_rhoL.3000.h5"
+            argument = "phiL_0_rhoL.bootstrap.4147798751.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "phiL_0_rhoL.bootstrap.4147798751.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "phiL_0_rhoL.bootstrap.4147798751.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "phiL_0_rhoL.bootstrap.4147798751.h5"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "phiL_ax_0_rhoL.bootstrap.4147798751.h5"
@@ -92,8 +100,16 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-f2"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-f1"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-f-1"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>

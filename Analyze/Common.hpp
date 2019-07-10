@@ -26,13 +26,42 @@ std::string GetFirstGroupName( H5::Group & g );
 // Does the specified file exist?
 bool FileExists(const std::string& Filename);
 
+// Are all the floating point numbers pointed to finite
+template <typename T, typename I> inline bool IsFinite( const T * d, I n )
+{
+  while( n-- )
+    if( !std::isfinite( *d++ ) )
+      return false;
+  return true;
+}
+
+// Are all the floating point numbers in this matrix finite
+template <typename T> inline bool IsFinite( const Latan::Mat<T> & m )
+{
+  for( Latan::Index row = 0; row < m.rows(); ++row )
+    for( Latan::Index col = 0; col < m.cols(); ++col )
+      if( !std::isfinite( m( row, col ) ) )
+        return false;
+  return true;
+}
+
+// Are all the floating point numbers in this vector finite
+template <typename T> inline bool IsFinite( const std::vector<T> & v )
+{
+  for( const T n : v )
+    if( !std::isfinite( n ) )
+      return false;
+  return true;
+}
+
 // Read a complex array from an HDF5 file
+
 void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,
                       const std::string &GroupName  = std::string(),
                       const std::string &ObjectName = std::string( "correlator" ) );
 
 // Read a list of bootstrapped correlators into a single correlator
-Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName, int Fold = 0, int Shift = 0 );
+Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps );
 
 // This describes one contraction and each of its trajectory files
 struct TrajList
