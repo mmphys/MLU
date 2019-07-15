@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
   opt.addOption("d", "dump-boot" , Latan::OptParser::OptType::trigger, true,
                 "dump bootstrap sequence");
   opt.addOption("t", "txt"       , Latan::OptParser::OptType::trigger, true,
-                "save text versions of correlators (for use by GnuPlot)");
+                "don't save text versions of correlators (for GnuPlot)");
   opt.addOption("a", "average"   , Latan::OptParser::OptType::trigger, true,
                 "show correlator averages");
   opt.addOption("x", "exclude"   , Latan::OptParser::OptType::value,   true,
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
   const std::string & OutFileExt{opt.optionValue("f")};
   const bool dumpBoot{ opt.gotOption("d") };
   const bool bShowAverages{ opt.gotOption("a") };
-  const bool bSaveSummaries{ opt.gotOption("t") };
+  const bool bSaveSummaries{ !opt.gotOption("t") };
   std::cout << "Creating bootstrap output " << outStem << ", seed=" << seed << std::endl;
 
   // Walk the list of contractions, performing a separate bootstrap for each

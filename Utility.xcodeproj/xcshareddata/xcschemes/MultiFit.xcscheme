@@ -68,27 +68,27 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "phiL_0_rhoL.bootstrap.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "phiL_0_rhoL.bootstrap.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "phiL_0_rhoL.bootstrap.4147798751.h5"
-            isEnabled = "NO">
+            argument = "phiL_0_rhoL_ax.bootstrap.4147798751.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "phiL_ax_0_rhoL.bootstrap.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "phiL_0_rhoL_ax.bootstrap.4147798751.h5"
+            argument = "phiL_ax_0_rhoL_ax.bootstrap.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "phiL_ax_0_rhoL_ax.bootstrap.4147798751.h5"
+            argument = "-f2"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-f-1"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-e1"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -98,18 +98,6 @@
          <CommandLineArgument
             argument = "--tf20"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-f2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-f1"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-f-1"
-            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>

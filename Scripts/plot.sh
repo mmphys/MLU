@@ -20,7 +20,8 @@ ext=${file_array[3]}
 cmd="plot '${file}'"
 if [[ $ext == "txt" ]] ; then
   case $type in
-corr) cmd2="set title 'Im( Correlator ) ${corr_escaped} (seed=${seed})'; ${cmd} using 1:4:5 with yerrorbars"
+    corr) cmd3="set title 'Im( Correlator ) ${corr_escaped} (seed=${seed})'; ${cmd} using 1:4:5 with yerrorbars"
+          cmd2="set title 'Correlator ${corr_escaped} (seed=${seed})'; ${cmd} using 1:2:3 with yerrorbars"
           cmd="set title 'Correlator ${corr_escaped} (seed=${seed})'; set logscale y; ${cmd} using 1:2:3 with yerrorbars";;
     mass | mass3pt) cmd="set title '${type} ${corr_escaped} (seed=${seed})'; ${cmd} using 1:2:(\$2-\$3):(\$2+\$4) with yerrorbars";;
     *) echo "Unsupported file format: ${type}"
@@ -29,3 +30,4 @@ corr) cmd2="set title 'Im( Correlator ) ${corr_escaped} (seed=${seed})'; ${cmd} 
 fi
 do_plot "$cmd"
 do_plot "$cmd2"
+do_plot "$cmd3"

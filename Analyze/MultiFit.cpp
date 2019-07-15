@@ -9,7 +9,7 @@
 #include <LatAnalyze/Core/OptParser.hpp>
 //#include <LatAnalyze/Eigen/Dense>
 //#include <LatAnalyze/Functional/CompiledModel.hpp>
-//#include <LatAnalyze/Io/Io.hpp>
+#include <LatAnalyze/Io/Io.hpp>
 //#include <LatAnalyze/Statistics/MatSample.hpp>
 //#include <LatAnalyze/Core/Math.hpp>
 #include <LatAnalyze/Numerical/MinuitMinimizer.hpp>
@@ -42,7 +42,7 @@ public:
   virtual double operator()( const vd_t & ModelParameters ) const;
   //virtual void SetErrorDef(double def) {theErrorDef = def;}
   // These are definitely not part of the FCNBase interface
-  void PerformFit( void );
+  void PerformFit( int Verbosity );
 private:
   const int NumExponents;
   const int NumOps;
@@ -86,6 +86,10 @@ MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int TMin_, int TMax
     std::cout << "\n";
   }
   assert( Common::IsFinite( CovarInv ) && "Error: inverse covariance matrix isn't finite" );
+#ifdef DEBUG
+  Latan::Io::save(Covar, "Debug.Covar.h5");
+  Latan::Io::save(CovarInv, "Debug.CovarInv.h5");
+#endif
 }
 
 // Make the covariance matrix, for only the timeslices we are interested in
@@ -142,7 +146,7 @@ double MultiExpModel::operator()( const vd_t & par ) const {
         double CumulativeEnergy = 0;
         for( int e = 0; e < NumExponents; ++e ) {
           CumulativeEnergy -= Energy[e];
-          z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( CumulativeEnergy * t );
+          z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( CumulativeEnergy * ( t + tMin ) );
         }
         const int iRead{ AlphaIndex( src, snk ) * Nt + t + tMin };
         const int iWrite{ AlphaIndex( src, snk ) * NtCorr + t };
@@ -150,17 +154,25 @@ double MultiExpModel::operator()( const vd_t & par ) const {
       }
   assert( Common::IsFinite( ModelError, Extent ) && "Error: Model errors aren't finite" );
 
+  // The inverse of a symmetric matrix is also symmetric, so only calculate half the matrix
   double chi2 = 0;
-  // TODO: I think this should be symmetric - only calculate half the non-diagonals if so
   for( int i = 0; i < Extent; ++i )
-    for( int j = 0; j < Extent; ++j )
-      chi2 += ModelError[i] * CovarInv(i, j) * ModelError[j];
+    for( int j = 0; j < Extent; ++j ) {
+      double z = ModelError[i] * CovarInv(i, j) * ModelError[j];
+      chi2 += z;
+      //if( i != j )
+        //chi2 += z;
+    }
   return chi2;
 }
 
 // Perform a fit
-void MultiExpModel::PerformFit( void )
+  void MultiExpModel::PerformFit( int Verbosity )
 {
+  //ROOT::Minuit2::Minuit2Minimizer minimizer( ROOT::Minuit2::kMigrad ); // even though this is default
+  //minimizer.SetPrintLevel( Verbosity );
+  //minimizer.SetFunction();
+  //VariableIterator i;
   const int NeedSize{ NumExponents * ( 1 + NumOps ) };
   std::vector<double> par( NeedSize );
   double * const Energy{ par.data() };
@@ -171,7 +183,7 @@ void MultiExpModel::PerformFit( void )
     const int tGuess{Nt / 4};
     const Latan::DMat & m{ Corr[Latan::central] };
     Energy[0] = std::log( m( tGuess, 0 ) / m( tGuess + 1, 0 ) );
-    CoeffGuess = m( tGuess, 0 ) / ( std::exp( - Energy[0] * tGuess ) );
+    CoeffGuess = std::abs( m( tGuess, 0 ) / ( std::exp( - Energy[0] * tGuess ) ) );
     for( int o = 0; o < NumOps; ++o )
       Coeff[MELIndex(o, 0)] = std::sqrt( CoeffGuess / NumOps );
   }
@@ -190,18 +202,28 @@ void MultiExpModel::PerformFit( void )
   // Create minimisation parameters
   ROOT::Minuit2::MnUserParameters upar( par, Error );
   //upar.SetPrecision(0.001);
-  //upar.SetLowerLimit( 0, 0. );
-  for( int e = 0; e < NumExponents; ++e )
-    upar.SetLowerLimit( e, 0. );
+  //upar.SetLowerLimit( 0, 0.1 );
+  //for( int e = 1; e < NumExponents; ++e )
+    //upar.SetLowerLimit( e, 0. );
+#ifdef DEBUG
+  //upar.SetValue(0,0.184);
+  //upar.Fix(0);
+#endif
 
-  //ROOT::Minuit2::VariableMetricMinimizer minimizer2;
-  //ROOT::Minuit2::FunctionMinimum min = minimizer2.Minimize( *this, par, Error );
+  //ROOT::Minuit2::VariableMetricMinimizer minimizer;
   ROOT::Minuit2::MnMigrad minimizer( *this, upar );
   ROOT::Minuit2::FunctionMinimum min = minimizer();
   ROOT::Minuit2::MnUserParameterState state = min.UserState();
-  std::cout << "state.IsValid() = " << state.IsValid() << "\n";
+  //assert( minimizer.SetVariables( par.begin(), par.end() ) == NeedSize && "Error: could not set variables" );
+  //minimizer.SetFunction( *this );
+  //ROOT::Minuit2::FunctionMinimum min = minimizer.Minimize( *this, par, Error );
+  //ROOT::Minuit2::MnUserParameterState state = min.UserState();
+  bool bOK{ state.IsValid() };
+  //bool bOK{ minimizer.Minimize() };
+  std::cout << "state.IsValid() = " << bOK << "\n";
   ROOT::Minuit2::MnUserParameters params = min.UserParameters();
   std::cout << "Fit result:" << state << std::endl;
+  //std::cout << "Fit result:" << min << std::endl;
 }
 
 /*static const char DefaultOutputStem[] = "@corr@.@type@";
@@ -239,7 +261,7 @@ int main(int argc, char *argv[])
                 "singular value elimination threshold", "0.");
   opt.addOption("v", "verbosity", OptParser::OptType::value  , true,
                 "minimizer verbosity level (0|1|2)",
-#ifdef _DEBUG
+#ifdef DEBUG
                 "2");
 #else
                 "0");
@@ -280,8 +302,9 @@ int main(int argc, char *argv[])
   //bool doPlot             = opt.gotOption("p");
   //double plotrange        = opt.optionValue<Index>("range");
   //bool doHeatmap          = opt.gotOption("h");
-  Minimizer::Verbosity verbosity;
-  switch (opt.optionValue<unsigned int>("v"))
+  const int Verbosity{ opt.optionValue<int>("v") };
+  /*Minimizer::Verbosity verbosity;
+  switch ( Verbosity )
   {
     case 0:
       verbosity = Minimizer::Verbosity::Silent;
@@ -295,7 +318,7 @@ int main(int argc, char *argv[])
     default:
       std::cerr << "error: wrong verbosity level" << std::endl;
       return EXIT_FAILURE;
-  }
+  }*/
   
   // load correlator /////////////////////////////////////////////////////////
   const std::vector<std::string> & FileName( opt.getArgs() );
@@ -312,7 +335,7 @@ int main(int argc, char *argv[])
   if( NumExponents == 0 )
     NumExponents = NumOps;
   MultiExpModel m ( Common::ReadBootstrapCorrs( FileName, fold, shift, NumOps ), ti, tf, NumOps, NumExponents );
-  m.PerformFit();
+  m.PerformFit( Verbosity );
 
   return EXIT_SUCCESS;
 }
