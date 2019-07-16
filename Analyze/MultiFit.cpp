@@ -35,16 +35,16 @@
 class MultiExpModel : public ROOT::Minuit2::FCNBase {
 public:
   using vd_t = std::vector<double>;
-  explicit MultiExpModel( const Latan::DMatSample Corr, int tMin, int tMax, int NumOps, int NumExponents, bool bCorrelated = true );
+  explicit MultiExpModel( const Latan::DMatSample Corr, int tMin, int tMax, int NumOps, int NumExponents, int Verbosity );
   virtual ~MultiExpModel() {}
   // These are part of the FCNBase interface
   virtual double Up() const { return 1.; }
   virtual double operator()( const vd_t & ModelParameters ) const;
   //virtual void SetErrorDef(double def) {theErrorDef = def;}
   // These are definitely not part of the FCNBase interface
-  void PerformFit( int Verbosity );
+  void PerformFit( bool bCorrelated );
 private:
-  const bool bCorrelated;
+  const int Verbosity;
   const int NumExponents;
   const int NumOps;
   const int NumFiles;
@@ -54,16 +54,17 @@ private:
   const int tMax;
   const int NtCorr;
   const Latan::DMatSample Corr;
-  const Latan::DMat Covar;
-  const Latan::DMat CovarInv;
+  bool bGotCovar = false;
+  Latan::DMat Covar;
+  Latan::DMat CovarInv;
   // Helper functions
-  Latan::DMat MakeCovar( void );
+  void MakeCovar( bool bCorrelated );
   inline int AlphaIndex( int src, int snk) const { return snk * NumOps + src; };
   inline int MELIndex( int op, int EnergyLevel) const { return EnergyLevel * NumOps + op; };
 };
 
-MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int TMin_, int TMax_, int numOps_, int numExponents_, bool _Bcorrelated )
-  : bCorrelated{ _Bcorrelated },
+MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int TMin_, int TMax_, int numOps_, int numExponents_, int verbosity_ )
+  : Verbosity{ verbosity_ },
     NumExponents{ numExponents_ },
     NumOps{ numOps_ },
     NumFiles{ numOps_ * numOps_ },
@@ -73,39 +74,26 @@ MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int TMin_, int TMax
     tMax{ TMax_ },
     NtCorr{ TMax_ - TMin_ + 1 },
     Corr{ corr_ },
-    Covar{ MakeCovar() },
-    CovarInv{ Covar.inverse() }
+    Covar{ NumFiles * NtCorr, NumFiles * NtCorr },
+    CovarInv{ NumFiles * NtCorr, NumFiles * NtCorr }
 {
   assert( numExponents_ > 0 && "Number of exponents in the fit should be positive" );
-  assert( Common::IsFinite( CovarInv ) && "Error: inverse covariance matrix isn't finite" );
-#ifdef DEBUG
-  std::cout << "Covariance matrix is " << Covar.rows() << " x " << Covar.cols() << "\n";
-  std::cout << "Inverse covariance matrix is " << CovarInv.rows() << " x " << CovarInv.cols() << "\n";
-  std::cout << "Correlation matrix:\n";
-  for( int i = 0; i < ( NumFiles > 1 ? 1 : 0 ) * NtCorr + DEBUG_NUM; ++i ) {
-    std::cout << " " << i << ":";
-    for( int j = 0; j < DEBUG_NUM; ++j ) {
-      std::cout << " " << Covar(i, j) / ( sqrt( Covar(i, i) ) * sqrt( Covar(j, j) ) );
-    }
-    std::cout << "\n";
-  }
-  Latan::Io::save(Covar, "Debug.Covar.h5");
-  Latan::Io::save(CovarInv, "Debug.CovarInv.h5");
-  Latan::DMat CovarProd{ Covar * CovarInv };
-  Latan::Io::save(CovarProd, "Debug.CovarProd.h5");
-#endif
 }
 
 // Make the covariance matrix, for only the timeslices we are interested in
-Latan::DMat MultiExpModel::MakeCovar( void )
+void MultiExpModel::MakeCovar( bool bCorrelated )
 {
-  std::cout << "Creating covariance matrix ... ";
+  if( bGotCovar )
+    return;
+  if( bCorrelated )
+    std::cout << "Creating covariance matrix ...\n";
+  else
+    std::cout << "Creating variance vector ...\n";
   assert( Corr[Latan::central].rows() == NumOps * NumOps * Nt && "Bug" );
   assert( tMin >= 0 && tMin < Nt && "Error: tMin invalid" );
   assert( tMax >= 0 && tMax < Nt && "Error: tMax invalid" );
   assert( NtCorr > 1 && "Error: tMin >= tMax" );
   const int Extent{ NumFiles * NtCorr };
-  Latan::DMat covar( Extent, Extent );
   for( int x = 0; x < Extent; ++x ) {
     const int f1{ x / NtCorr };
     const int t1{ x % NtCorr };
@@ -113,8 +101,8 @@ Latan::DMat MultiExpModel::MakeCovar( void )
     const double ExpectedX{ Corr[Latan::central]( ReadX,  0 ) };
     for( int y = 0; y <= x; ++y ) {
       if( !bCorrelated && x != y ) {
-        covar(x, y) = 0;
-        covar(y, x) = 0;
+        Covar(x, y) = 0;
+        Covar(y, x) = 0;
       } else {
         const int f2{ y / NtCorr };
         const int t2{ y % NtCorr };
@@ -124,15 +112,50 @@ Latan::DMat MultiExpModel::MakeCovar( void )
         for( int i = 0; i < NSamples; ++i )
           z += ( Corr[i]( ReadX, 0 ) - ExpectedX ) * ( Corr[i]( ReadY, 0 ) - ExpectedY );
         z /= NSamples;
-        covar(x, y) = z;
+        Covar(x, y) = z;
         if( x != y )
-          covar(y, x) = z;
+          Covar(y, x) = z;
       }
     }
   }
-  assert( Common::IsFinite( covar ) && "Error: covariance matrix isn't finite" );
-  std::cout << "done.\n";
-  return covar;
+  assert( Common::IsFinite( Covar, !bCorrelated ) && "Error: covariance matrix isn't finite" );
+  if( !bCorrelated )
+    for( int i = 0; i < Extent; i++ )
+      for( int j = 0; j < Extent; j++ )
+        if( i == j )
+          CovarInv( i, i ) = 1. / Covar( i, i );
+        else
+          CovarInv( i, j ) = 0;
+  else {
+    CovarInv = Covar.inverse();
+    bGotCovar = true;
+  }
+  assert( Common::IsFinite( CovarInv, !bCorrelated ) && "Error: inverse covariance matrix isn't finite" );
+#ifdef DEBUG
+  if( bCorrelated ) {
+    std::cout << "Covariance matrix is " << Covar.rows() << " x " << Covar.cols() << "\n";
+    std::cout << "Inverse covariance matrix is " << CovarInv.rows() << " x " << CovarInv.cols() << "\n";
+    if( Verbosity ) {
+      std::cout << "Correlation matrix:\n";
+      for( int i = 0; i < ( NumFiles > 1 ? 1 : 0 ) * NtCorr + DEBUG_NUM; ++i ) {
+        std::cout << " " << i << ":";
+        for( int j = 0; j < DEBUG_NUM; ++j )
+          std::cout << " " << Covar(i, j) / ( sqrt( Covar(i, i) ) * sqrt( Covar(j, j) ) );
+        std::cout << "\n";
+      }
+    }
+    Latan::Io::save(Covar, "Debug.Covar.h5");
+    Latan::Io::save(CovarInv, "Debug.CovarInv.h5");
+    Latan::DMat CovarProd{ Covar * CovarInv };
+    Latan::Io::save(CovarProd, "Debug.CovarProd.h5");
+    const double CondNumber{ Covar.norm() * CovarInv.norm() };
+    const int CondDigits{ static_cast<int>( std::log10( CondNumber ) + 0.5 ) };
+    if( CondDigits >= 12 )
+      std::cout << "ERROR: "; // see https://en.wikipedia.org/wiki/Condition_number
+    std::cout << "Covariance matrix condition number=" << CondNumber
+      << ", i.e. potential loss of " << CondDigits << " digits.\n";
+  }
+#endif
 }
 
 // Compute chi-squared given parameters for multi-exponential fit
@@ -148,8 +171,8 @@ double MultiExpModel::operator()( const vd_t & par ) const {
   // Calculate the theory errors for these model parameters
   const int Extent{ NumFiles * NtCorr };
   double ModelError[Extent]; // Should happily fit on stack
-  for( int src = 0; src < NumOps; ++src )
-    for( int snk = 0; snk < NumOps; ++snk )
+  for( int snk = 0; snk < NumOps; ++snk )
+    for( int src = 0; src < NumOps; ++src )
       for( int t = 0; t < NtCorr; ++t ) {
         double z = 0;
         double CumulativeEnergy = 0;
@@ -161,7 +184,14 @@ double MultiExpModel::operator()( const vd_t & par ) const {
         const int iWrite{ AlphaIndex( src, snk ) * NtCorr + t };
         ModelError[iWrite] = Corr[Latan::central]( iRead, 0 ) - z;
       }
-  assert( Common::IsFinite( ModelError, Extent ) && "Error: Model errors aren't finite" );
+  //assert( Common::IsFinite( ModelError, Extent ) && "Error: Model errors aren't finite" );
+  static int iCall{ 0 };
+  iCall++;
+  if( !Common::IsFinite( ModelError, Extent ) ) {
+    static int iOOB{ 0 };
+    std::cout << "Call " << iCall << ", " << ++iOOB << "th overflow\n";
+    return std::numeric_limits<double>::max();
+  }
 
   // The inverse of a symmetric matrix is also symmetric, so only calculate half the matrix
   double chi2 = 0;
@@ -172,12 +202,21 @@ double MultiExpModel::operator()( const vd_t & par ) const {
       //if( i != j )
         //chi2 += z;
     }
+  if( Verbosity )
+    std::cout << "Call " << iCall << ", chi^2=" << chi2 << ", E0=" << Energy[0] << ", E1=" << Energy[1] << "\n";
   return chi2;
 }
 
 // Perform a fit
-  void MultiExpModel::PerformFit( int Verbosity )
+  void MultiExpModel::PerformFit( bool bCorrelated )
 {
+  std::cout << "=========================================\nPerforming ";
+  if( bCorrelated )
+    std::cout << "correlated";
+  else
+    std::cout << "uncorrelated";
+  std::cout << " fit\n";
+  MakeCovar( bCorrelated );
   //ROOT::Minuit2::Minuit2Minimizer minimizer( ROOT::Minuit2::kMigrad ); // even though this is default
   //minimizer.SetPrintLevel( Verbosity );
   //minimizer.SetFunction();
@@ -219,7 +258,7 @@ double MultiExpModel::operator()( const vd_t & par ) const {
   //for( int e = 1; e < NumExponents; ++e )
     //upar.SetLowerLimit( e, 0. );
 #ifdef _DEBUG
-  upar.SetValue(0,0.184);
+  //upar.SetValue(0,0.184);
   upar.Fix(0);
 #endif
 
@@ -273,12 +312,7 @@ int main(int argc, char *argv[])
   opt.addOption("" , "svd"      , OptParser::OptType::value  , true,
                 "singular value elimination threshold", "0.");
   opt.addOption("v", "verbosity", OptParser::OptType::value  , true,
-                "minimizer verbosity level (0|1|2)",
-#ifdef DEBUG
-                "2");
-#else
-                "0");
-#endif
+                "minimizer verbosity level (0|1|2)", "0");
   opt.addOption("o", "output",    OptParser::OptType::value  , true,
                 "output file", "");
   opt.addOption("" , "uncorr"   , OptParser::OptType::trigger, true,
@@ -350,8 +384,10 @@ int main(int argc, char *argv[])
   int NumExponents{ opt.optionValue<int>( "exponents" ) };
   if( NumExponents == 0 )
     NumExponents = NumOps;
-  MultiExpModel m ( Common::ReadBootstrapCorrs( FileName, fold, shift, NumOps ), ti, tf, NumOps, NumExponents, doCorr );
-  m.PerformFit( Verbosity );
+  MultiExpModel m ( Common::ReadBootstrapCorrs( FileName, fold, shift, NumOps ), ti, tf, NumOps, NumExponents, Verbosity );
+  m.PerformFit( false );
+  if( doCorr )
+    m.PerformFit( true );
 
   return EXIT_SUCCESS;
 }

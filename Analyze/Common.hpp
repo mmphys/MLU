@@ -36,11 +36,11 @@ template <typename T, typename I> inline bool IsFinite( const T * d, I n )
 }
 
 // Are all the floating point numbers in this matrix finite
-template <typename T> inline bool IsFinite( const Latan::Mat<T> & m )
+template <typename T> inline bool IsFinite( const Latan::Mat<T> & m, bool bDiagonalsOnly = false )
 {
   for( Latan::Index row = 0; row < m.rows(); ++row )
     for( Latan::Index col = 0; col < m.cols(); ++col )
-      if( !std::isfinite( m( row, col ) ) )
+      if( ( !bDiagonalsOnly || row == col ) && !std::isfinite( m( row, col ) ) )
         return false;
   return true;
 }
