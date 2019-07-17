@@ -89,15 +89,15 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e1"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--uncorr"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-v1"
-            isEnabled = "NO">
+            argument = "-v2"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti3"
