@@ -62,6 +62,7 @@ private:
   std::vector<double> VarianceInv;
   bool bCorrelated;
   std::string OutputRunBase;
+  Latan::Index idx;
   // Helper functions
   inline int AlphaIndex( int src, int snk) const { return snk * NumOps + src; };
   inline int MELIndex( int op, int EnergyLevel) const { return EnergyLevel * NumOps + op; };
@@ -293,7 +294,7 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
   // Create minimisation parameters
   std::vector<double> Error( NeedSize, 0. );
   ROOT::Minuit2::MnUserParameters upar( par, Error );
-  if( Verbosity > 1 )
+  if( Verbosity )
     DumpParameters( "Initial guess:", upar );
   //upar.SetPrecision(0.001);
   //upar.SetLowerLimit( 0, 0.1 );
@@ -306,17 +307,22 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
 
   //ROOT::Minuit2::VariableMetricMinimizer minimizer;
   ROOT::Minuit2::MnMigrad minimizer( *this, upar );
-  ROOT::Minuit2::FunctionMinimum min = minimizer();
-  ROOT::Minuit2::MnUserParameterState state = min.UserState();
-  //assert( minimizer.SetVariables( par.begin(), par.end() ) == NeedSize && "Error: could not set variables" );
-  //minimizer.SetFunction( *this );
-  //ROOT::Minuit2::FunctionMinimum min = minimizer.Minimize( *this, par, Error );
-  //ROOT::Minuit2::MnUserParameterState state = min.UserState();
-  //bool bOK{ minimizer.Minimize() };
-  bool bOK{ state.IsValid() };
-  if( !bOK )
-    std::cout << "ERROR: Fit did not converge on an answer\n";
-  else {
+  Latan::DMatSample Fit( NSamples, NeedSize, 1 );
+  //FOR_STAT_ARRAY( Fit, <#i#> ) {
+  for (Latan::Index i = -Fit.offset; i < Fit.size(); ++i) {
+    idx = i;
+    ROOT::Minuit2::FunctionMinimum min = minimizer();
+    ROOT::Minuit2::MnUserParameterState state = min.UserState();
+    //assert( minimizer.SetVariables( par.begin(), par.end() ) == NeedSize && "Error: could not set variables" );
+    //minimizer.SetFunction( *this );
+    //ROOT::Minuit2::FunctionMinimum min = minimizer.Minimize( *this, par, Error );
+    //ROOT::Minuit2::MnUserParameterState state = min.UserState();
+    //bool bOK{ minimizer.Minimize() };
+    bool bOK{ state.IsValid() };
+    if( !bOK ) {
+      std::cout << "ERROR: Fit " << i << " did not converge on an answer\n";
+      return false;
+    }
     //ROOT::Minuit2::MnUserParameters params = min.UserParameters();
     //std::cout << "Fit result:" << min << std::endl;
     const std::string FitResult{ "Fit result:" };
@@ -325,9 +331,13 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
       std::cout << FitResult << state << "\n";
     }
     upar = state.Parameters();
-    DumpParameters( FitResult, upar );
+    if( i == Latan::central || Verbosity > 1 )
+      DumpParameters( FitResult, upar );
+    for( int j = 0; j < NeedSize; ++j )
+      Fit[i](j, 0) = upar.Value( j );
   }
-  return bOK;
+  Latan::Io::save(Fit, OutputRunBase + "Fit.h5");
+  return true;
 }
 
 /*static const char DefaultOutputStem[] = "@corr@.@type@";
