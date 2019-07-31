@@ -1,12 +1,40 @@
+/*************************************************************************************
+ 
+ Common utilities (no dependencies other than c++ stdlib)
+ 
+ Source file: Common.hpp
+ 
+ Copyright (C) 2019
+ 
+ Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
+ 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ See the full license in the file "LICENSE" in the top level distribution directory
+ *************************************************************************************/
+/*  END LEGAL */
+
 #ifndef Common_hpp
 #define Common_hpp
 
 #include <complex>
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
 #include <H5Cpp.h>
-#include <LatAnalyze/Statistics/Dataset.hpp>
 
 #define BEGIN_COMMON_NAMESPACE namespace Common {
 #define END_COMMON_NAMESPACE   };
@@ -35,16 +63,6 @@ template <typename T, typename I> inline bool IsFinite( const T * d, I n )
   return true;
 }
 
-// Are all the floating point numbers in this matrix finite
-template <typename T> inline bool IsFinite( const Latan::Mat<T> & m, bool bDiagonalsOnly = false )
-{
-  for( Latan::Index row = 0; row < m.rows(); ++row )
-    for( Latan::Index col = 0; col < m.cols(); ++col )
-      if( ( !bDiagonalsOnly || row == col ) && !std::isfinite( m( row, col ) ) )
-        return false;
-  return true;
-}
-
 // Are all the floating point numbers in this vector finite
 template <typename T> inline bool IsFinite( const std::vector<T> & v )
 {
@@ -60,9 +78,6 @@ void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::stri
                       const std::string &GroupName  = std::string(),
                       const std::string &ObjectName = std::string( "correlator" ) );
 
-// Read a list of bootstrapped correlators into a single correlator
-Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps );
-
 // This describes one contraction and each of its trajectory files
 struct TrajList
 {
@@ -75,6 +90,63 @@ class Manifest : public std::map<std::string, TrajList> {
 public:
   // Process list of files on the command-line, breaking them up into individual trajectories
   explicit Manifest(const std::vector<std::string> &Files, const std::string &sIgnore = "");
+};
+
+// Generic conversion from a string to any type
+template<typename T> inline T FromString( const std::string &String ) {
+  T t;
+  std::istringstream iss( String );
+  if( !( iss >> t ) || ( iss >> std::ws && !iss.eof() ) ) {
+    std::cerr << "Error converting \"" << String << "\"" << std::endl;
+    exit( EXIT_FAILURE );
+  }
+  return t;
+}
+template<> inline std::string FromString<std::string>( const std::string &String ) {
+  return String; // Yes, this makes a copy
+}
+
+struct CommandLine;
+std::ostream& operator<<( std::ostream& os, const CommandLine &cl);
+
+struct CommandLine {
+  using SwitchMap = std::map<std::string, std::vector<std::string>>;
+  using SwitchPair = std::pair<std::string, std::vector<std::string>>;
+  
+  enum SwitchType { Flag, Single, Multiple };
+  struct SwitchDef {
+    const char * Switch;
+    SwitchType   Type;
+    const char * Default;
+    SwitchDef( const char * switch_, SwitchType type_ = Single, const char * default_ = nullptr )
+    : Switch{ switch_ }, Type{ type_ }, Default{ default_ } {}
+  };
+  
+  std::vector<std::string> Args;
+  SwitchMap                Switches;
+  
+private:
+  static void SkipPastSep( const char * & p );
+  
+public:
+  CommandLine( int argc, char *argv[], const std::vector<SwitchDef> &defs );
+
+  inline bool GotSwitch( const std::string &SwitchName ) {
+    return Switches.find( SwitchName ) != Switches.end(); }
+
+  template<typename T> inline T SwitchValue( const std::string &Switch, int Subscript = 0 ) {
+    SwitchMap::const_iterator it = Switches.find( Switch );
+    if( it == Switches.end() ) {
+      std::cerr << "Switch \"" << Switch << "\" not found" << std::endl;
+      exit( EXIT_FAILURE );
+    }
+    const std::vector<std::string> &v{ it->second };
+    if( static_cast<std::size_t>( Subscript ) >= v.size() ) {
+      std::cerr << "Switch \"" << Switch << "\", Subscript " << Subscript << " not found" << std::endl;
+      exit( EXIT_FAILURE );
+    }
+    return FromString<T>( v[Subscript] );
+  }
 };
 
 END_COMMON_NAMESPACE

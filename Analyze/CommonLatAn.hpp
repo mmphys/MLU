@@ -1,8 +1,8 @@
 /*************************************************************************************
  
- Multi-exponential fits
+ Common utilities (with dependencies on c++ stdlib and LatAnalyze)
  
- Source file: MultiFit.hpp
+ Source file: CommonLatAn.hpp
  
  Copyright (C) 2019
  
@@ -26,9 +26,26 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef MultiFit_hpp
-#define MultiFit_hpp
+#ifndef CommonLatAn_hpp
+#define CommonLatAn_hpp
 
-// Forward declarations
+#include "Common.hpp"
+#include <LatAnalyze/Statistics/Dataset.hpp>
 
-#endif // MultiFit_hpp
+BEGIN_COMMON_NAMESPACE
+
+// Are all the floating point numbers in this matrix finite
+template <typename T> inline bool IsFinite( const Latan::Mat<T> & m, bool bDiagonalsOnly = false )
+{
+  for( Latan::Index row = 0; row < m.rows(); ++row )
+    for( Latan::Index col = 0; col < m.cols(); ++col )
+      if( ( !bDiagonalsOnly || row == col ) && !std::isfinite( m( row, col ) ) )
+        return false;
+  return true;
+}
+
+// Read a list of bootstrapped correlators into a single correlator
+Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps );
+
+END_COMMON_NAMESPACE
+#endif // CommonLatAn_hpp

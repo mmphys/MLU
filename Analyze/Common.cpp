@@ -1,6 +1,33 @@
+/*************************************************************************************
+ 
+ Common utilities (no dependencies other than c++ stdlib)
+ 
+ Source file: Common.cpp
+ 
+ Copyright (C) 2019
+ 
+ Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
+ 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ See the full license in the file "LICENSE" in the top level distribution directory
+ *************************************************************************************/
+/*  END LEGAL */
+
 #include "Common.hpp"
 
-#include <iostream>
 #include <mutex> // Apparently empty under __INTEL_COMPILER
 #include <sys/stat.h>
 #include <H5CompType.h>
@@ -77,125 +104,6 @@ void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::stri
     buffer.resize(dim[0]);
     ds.read(&buffer[0], Common::H5File::ComplexType());
   }
-}
-
-// Read a list of bootstrapped correlators into a single correlator
-
-static void ReadBootstrapCorrsHelper( Latan::DMat &m, std::vector<double> ReadBuffer, int iFile, int NtSource, int NtDest, int Fold, int Shift )
-{
-  for( int k = 0; k < NtDest; ++k ) {
-    // NB: This is the wrong order! But reflects a bug in LatAnalyze
-    // Presumably it was originally written this way, and now can't change because all data are in this format
-    //const double re{ReadBuffer[ k ]};
-    //const double im{ReadBuffer[ k + dim[0] * 1 ]};
-    double Source1 = ReadBuffer[ ( NtSource + Shift + k ) % NtSource ];
-    int Dest    = iFile * NtDest + k;
-    if( Fold == 0 ) {
-      m( Dest, 0 ) = Source1;
-    }
-    else
-    {
-      double Source2 = ReadBuffer[ ( 2 * NtSource + Shift - k ) % NtSource ];
-      if( Fold > 0 )
-        m( Dest, 0 ) = ( Source1 + Source2 ) * 0.5;
-      else
-        m( Dest, 0 ) = ( std::abs( Source2 ) + std::abs( Source1 ) ) * 0.5;
-        //m( Dest, 0 ) = ( Source2 - Source1 ) * 0.5;
-    }
-  }
-}
-
-Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps )
-{
-  assert( abs( Fold ) <= 2 && "Error: Invalid Fold parameter" );
-  const bool bAlternateFold{ abs( Fold ) > 1 };
-  if( bAlternateFold ) {
-    if( Fold > 0 )
-      --Fold;
-    else
-      ++Fold;
-  }
-  const int FirstFold{ Fold };
-  const int NumFiles{ static_cast<int>( FileName.size() ) };
-  // These will be initialised when we read in the first correlator
-  int NtSource = -999; // Number of timeslices in the source file(s)
-  int NtDest   = -888; // Number of timeslices after folding
-  int NSamples = -777; // Number of bootstrap samples per correlator
-  std::vector<double> ReadBuffer;
-  Latan::DMatSample   Corr;
-  for( int i = 0; i < NumFiles; ++i ) {
-    std::cout << "Reading correlator from " << FileName[i];
-    Common::H5File f( FileName[i], H5F_ACC_RDONLY );
-    H5::Group gBoot = f.openGroup( std::string("/") );
-    std::cout << ", group ";
-    std::string GroupName{ Common::GetFirstGroupName( gBoot ) };
-    std::cout << GroupName << "\n";
-    gBoot = gBoot.openGroup( GroupName );
-    {
-      // Check the attributes of this bootstrap sample
-      short int thisType;
-      H5::Attribute a = gBoot.openAttribute("type");
-      a.read(H5::PredType::NATIVE_SHORT, &thisType);
-      assert( thisType == 2 && "Error: bad type attribute" );
-      int thisNSample;
-      a = gBoot.openAttribute("nSample");
-      a.read(H5::PredType::NATIVE_INT, &thisNSample);
-      assert( thisNSample > 0 && "Error: bad number of samples" );
-      if( i != 0 )
-        assert( thisNSample == NSamples && "Error: inconsistent number of samples" );
-      else {
-        // Initialise defaults first time around
-        NSamples = thisNSample;
-        std::cout << NSamples << " bootstrap samples per correlator\n";
-      }
-    }
-    H5::DataSet ds = gBoot.openDataSet("data_C");
-    H5::DataSpace dsp = ds.getSpace();
-    const int nDims{dsp.getSimpleExtentNdims()};
-    assert( nDims == 2 && "Error: Wrong number of dimensions");
-    hsize_t dim[2];
-    dsp.getSimpleExtentDims( dim );
-    assert( dim[1] == 2 && "Correlator should contain real and imaginary parts for each timeslice" );
-    if( i != 0 ) {
-      assert( NtSource == dim[0] && "Error: inconsistent number of timeslices" );
-      if( bAlternateFold ) {
-        Fold = FirstFold;
-        const int row{ i / NumOps };
-        const int col{ i % NumOps };
-        if( row & 1 )
-          Fold *= -1;
-        if( col & 1 )
-          Fold *= -1;
-      }
-    }
-    else {
-      // Initialise defaults first time around
-      assert( dim[0] > 0 && dim[0] <= std::numeric_limits<int>::max() && "Error: invalid number of timeslices" );
-      NtSource = static_cast<int>( dim[0] );
-      NtDest   = Fold ? NtSource / 2 + 1 : NtSource;
-      std::cout << NtSource << " timeslices per correlator";
-      if( Fold )
-        std::cout << " folded into " << NtDest << " timeslices with " << (Fold == 1 ? "positive" : "negative") << " parity";
-      std::cout << std::endl;
-      ReadBuffer.resize( dim[0] * dim[1] );
-      Corr.resize( NSamples );
-      Corr.resizeMat( NtDest * NumFiles, 1 );
-    }
-    ds.read( ReadBuffer.data(), H5::PredType::NATIVE_DOUBLE );
-    ReadBootstrapCorrsHelper( Corr[Latan::central], ReadBuffer, i, NtSource, NtDest, Fold, Shift );
-    for( int j = 0; j < NSamples; ++j ) {
-      std::string dsName{ "data_S_" };
-      dsName.append( std::to_string( j ) );
-      ds = gBoot.openDataSet( dsName );
-      dsp = ds.getSpace();
-      assert( dsp.getSimpleExtentNdims() == 2 && "Wrong number of dimensions" );
-      dsp.getSimpleExtentDims( dim );
-      assert( dim[0] == NtSource && dim[1] == 2 && "Error: Inconsistent Correlator dimensions" );
-      ds.read( ReadBuffer.data(), H5::PredType::NATIVE_DOUBLE );
-      ReadBootstrapCorrsHelper( Corr[j], ReadBuffer, i, NtSource, NtDest, Fold, Shift );
-    }
-  }
-  return Corr;
 }
 
 enum ExtractFilenameReturn {Good, Bad, No_trajectory};
@@ -301,6 +209,134 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgn
           break;
       }
     }
+  }
+}
+
+std::ostream& operator<<( std::ostream& os, const CommandLine &cl)
+{
+  os << "Command-line has " << cl.Args.size() << " arguments and " << cl.Switches.size() << " switches";
+  for( int i = 0; i < cl.Args.size(); i++ )
+    os << "\nArg[" << i << "]=\"" << cl.Args[i] << "\"";
+  int i = 0;
+  //for( const CommandLine::SwitchPair &p : cl.Switches ) {
+  for( CommandLine::SwitchMap::const_iterator p = cl.Switches.begin(); p != cl.Switches.end(); ++p ) {
+    const std::string &Switch{ p->first };
+    const std::vector<std::string> &Values{ p->second };
+    os << "\nSwitch[" << i << "]=\"" << Switch << "\", was specified";
+    const std::size_t sz{ Values.size() };
+    if( sz ) {
+      os << " " << Values.size() << " time";
+      if( sz > 1 )
+        os << "s";
+    }
+    for( int j = 0; j < Values.size(); j++ )
+      os << "\n      [" << i << "][" << j << "]=\"" << Values[j] << "\"";
+    ++i;
+  }
+  return os;
+}
+
+void CommandLine::SkipPastSep( const char * & p )
+{
+  while( *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n' )
+    p++;
+  if( *p == '=' ) {
+    ++p;
+    while( *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n' )
+      p++;
+  }
+}
+
+CommandLine::CommandLine( int argc, char *argv[], const std::vector<SwitchDef> &defs )
+{
+  bool bError{ false };
+  int SwitchNo = -1; // Not waiting for switch value
+  bool bInMultiChar{ false };
+  for( int i = 1; i < argc; i++ ) {
+    const char *p = argv[i];
+    if( *p == '-' ) { // Switch
+      if( SwitchNo != -1 ) { // We were waiting on a switch that requires a value
+        Switches[defs[SwitchNo].Switch].push_back( "" );
+        SwitchNo = -1;
+      }
+      std::string SwitchName;
+      if( *++p == '-' ) {
+        // multi-char switch.
+        const char * pEnd = ++p;
+        if( *p == 0 ) {
+          // This is the special switch "--"
+          p -= 2;
+          bInMultiChar = true;
+        } else {
+          while( *pEnd && *pEnd != '=' && *pEnd != ' ' && *pEnd != '\t' && *pEnd != '\r' && *pEnd != '\n' )
+            pEnd++;
+        }
+        SwitchName = std::string( p, pEnd - p );
+        p = pEnd;
+      } else {
+        // Single character switch
+        if( *p == 0 ) {
+          std::cerr << "Unrecognised switch \"-\"" << std::endl;
+          bError = true;
+          continue;
+        }
+        SwitchName.resize( 1 );
+        SwitchName[0] = *p++;
+      }
+      // I've just decoded a short or long switch name - see whether it's valid
+      SwitchNo = 0;
+      while( SwitchNo < defs.size() && SwitchName.compare( defs[SwitchNo].Switch ) )
+        SwitchNo++;
+      if( SwitchNo >= defs.size() ) {
+        std::cerr << "Unrecognised switch \"" << argv[i] << "\"" << std::endl;
+        bError = true;
+        SwitchNo = -1;
+        continue;
+      }
+      if( defs[SwitchNo].Type == SwitchType::Flag ) {
+        // This is just a switch - it should not have a value
+        if( *p ) {
+          std::cerr << "Switch \"" << SwitchName << "\" should not have a value \"" << p << "\"" << std::endl;
+          bError = true;
+        } else if( GotSwitch( SwitchName ) ) {
+          std::cerr << "Switch \"" << SwitchName << "\" should not be repeated" << std::endl;
+          bError = true;
+        } else
+          Switches[SwitchName]; // First time we've seen this flag
+        SwitchNo = -1;
+        continue;
+      } else if( defs[SwitchNo].Type == SwitchType::Single && GotSwitch( SwitchName ) ) {
+        std::cerr << "Switch \"" << SwitchName << "\" should not be repeated" << std::endl;
+        bError = true;
+        SwitchNo = -1;
+        continue;
+      }
+      // Use the remainder of this switch as a value ... or wait for next param if empty
+      SkipPastSep( p );
+      if( *p == 0 )
+        continue;
+    }
+    if( SwitchNo != -1 ) {
+      // Get the value of the current switch
+      Switches[defs[SwitchNo].Switch].push_back( p );
+      if( !bInMultiChar )
+        SwitchNo = -1;
+    }
+    else // Argument
+      Args.push_back( p );
+  }
+  if( SwitchNo != -1 && !bInMultiChar ) {
+    std::cerr << "Still processing switch \"" << defs[SwitchNo].Switch << "\"" << std::endl;
+    bError = true;
+  }
+  if( bError ) {
+    std::cout << (*this) << std::endl;
+    exit( EXIT_FAILURE );
+  }
+  // Now put defaults in for any missing switches
+  for( int i = 0; i < defs.size(); i++ ) {
+    if( defs[i].Type == Single && defs[i].Default && !GotSwitch( defs[i].Switch ) )
+      Switches[defs[i].Switch].push_back( defs[i].Default );
   }
 }
 
