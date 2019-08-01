@@ -2,7 +2,7 @@
  
  Compare perambulators
  
- Source file: physics/peramb-compare.cpp
+ Source file: peramb-compare.cpp
  
  Copyright (C) 2019
  

@@ -11,6 +11,9 @@
 		6815510D22CBE8B6009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		6815510E22CBF569009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		6816B51722D87314004CBEC4 /* broken.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6816B51622D87314004CBEC4 /* broken.cc */; };
+		681DC8B822F19CB000EE04A9 /* hlxml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B722F19CB000EE04A9 /* hlxml.cpp */; };
+		681DC8BB22F20FE100EE04A9 /* CommonLatAn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */; };
+		681DC8BD22F211B600EE04A9 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		6822E8C022A7057400A85993 /* bootstrap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8BF22A7057400A85993 /* bootstrap.cpp */; };
 		68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8C722A708A200A85993 /* peramb-compare.cpp */; };
 /* End PBXBuildFile section */
@@ -26,6 +29,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		6816B51222D87314004CBEC4 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		681DC8AE22F19BAB00EE04A9 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -62,6 +74,10 @@
 		6815510C22CBE676009AB4AD /* Common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Common.cpp; sourceTree = "<group>"; };
 		6816B51422D87314004CBEC4 /* broken */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = broken; sourceTree = BUILT_PRODUCTS_DIR; };
 		6816B51622D87314004CBEC4 /* broken.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = broken.cc; sourceTree = "<group>"; };
+		681DC8B022F19BAB00EE04A9 /* hlxml */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hlxml; sourceTree = BUILT_PRODUCTS_DIR; };
+		681DC8B722F19CB000EE04A9 /* hlxml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hlxml.cpp; sourceTree = "<group>"; };
+		681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CommonLatAn.cpp; sourceTree = "<group>"; };
+		681DC8BA22F20D8B00EE04A9 /* CommonLatAn.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommonLatAn.hpp; sourceTree = "<group>"; };
 		6822E8BC22A7057400A85993 /* bootstrap */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = bootstrap; sourceTree = BUILT_PRODUCTS_DIR; };
 		6822E8BF22A7057400A85993 /* bootstrap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bootstrap.cpp; sourceTree = "<group>"; };
 		6822E8C722A708A200A85993 /* peramb-compare.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "peramb-compare.cpp"; sourceTree = "<group>"; };
@@ -79,6 +95,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		6816B51122D87314004CBEC4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		681DC8AD22F19BAB00EE04A9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -128,6 +151,7 @@
 				68AC6DE622A7114900D42F70 /* peramb-compare */,
 				6815510322CBCB61009AB4AD /* MultiFit */,
 				6816B51422D87314004CBEC4 /* broken */,
+				681DC8B022F19BAB00EE04A9 /* hlxml */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -135,11 +159,14 @@
 		6822E8BE22A7057400A85993 /* Analyze */ = {
 			isa = PBXGroup;
 			children = (
+				6822E8BF22A7057400A85993 /* bootstrap.cpp */,
 				6815510C22CBE676009AB4AD /* Common.cpp */,
 				6815510B22CBE676009AB4AD /* Common.hpp */,
+				681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */,
+				681DC8BA22F20D8B00EE04A9 /* CommonLatAn.hpp */,
+				681DC8B722F19CB000EE04A9 /* hlxml.cpp */,
 				681550FE22CBC9B9009AB4AD /* MultiFit.cpp */,
 				681550FD22CBC9B9009AB4AD /* MultiFit.hpp */,
-				6822E8BF22A7057400A85993 /* bootstrap.cpp */,
 				6822E8C722A708A200A85993 /* peramb-compare.cpp */,
 			);
 			path = Analyze;
@@ -180,6 +207,23 @@
 			name = broken;
 			productName = broken;
 			productReference = 6816B51422D87314004CBEC4 /* broken */;
+			productType = "com.apple.product-type.tool";
+		};
+		681DC8AF22F19BAB00EE04A9 /* hlxml */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 681DC8B622F19BAB00EE04A9 /* Build configuration list for PBXNativeTarget "hlxml" */;
+			buildPhases = (
+				681DC8AC22F19BAB00EE04A9 /* Sources */,
+				681DC8AD22F19BAB00EE04A9 /* Frameworks */,
+				681DC8AE22F19BAB00EE04A9 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = hlxml;
+			productName = hlxml;
+			productReference = 681DC8B022F19BAB00EE04A9 /* hlxml */;
 			productType = "com.apple.product-type.tool";
 		};
 		6822E8BB22A7057400A85993 /* bootstrap */ = {
@@ -231,6 +275,9 @@
 					6816B51322D87314004CBEC4 = {
 						CreatedOnToolsVersion = 10.2.1;
 					};
+					681DC8AF22F19BAB00EE04A9 = {
+						CreatedOnToolsVersion = 10.3;
+					};
 					6822E8BB22A7057400A85993 = {
 						CreatedOnToolsVersion = 10.2.1;
 					};
@@ -255,6 +302,7 @@
 				68AC6DE522A7114900D42F70 /* peramb-compare */,
 				6815510222CBCB61009AB4AD /* MultiFit */,
 				6816B51322D87314004CBEC4 /* broken */,
+				681DC8AF22F19BAB00EE04A9 /* hlxml */,
 			);
 		};
 /* End PBXProject section */
@@ -265,6 +313,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6815510D22CBE8B6009AB4AD /* Common.cpp in Sources */,
+				681DC8BB22F20FE100EE04A9 /* CommonLatAn.cpp in Sources */,
 				6815510A22CBCB74009AB4AD /* MultiFit.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -274,6 +323,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				6816B51722D87314004CBEC4 /* broken.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		681DC8AC22F19BAB00EE04A9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				681DC8BD22F211B600EE04A9 /* Common.cpp in Sources */,
+				681DC8B822F19CB000EE04A9 /* hlxml.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,6 +383,24 @@
 			name = Debug;
 		};
 		6816B51922D87314004CBEC4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				INSTALL_PATH = /;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		681DC8B422F19BAB00EE04A9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				INSTALL_PATH = /;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		681DC8B522F19BAB00EE04A9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -587,6 +663,15 @@
 			buildConfigurations = (
 				6816B51822D87314004CBEC4 /* Debug */,
 				6816B51922D87314004CBEC4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		681DC8B622F19BAB00EE04A9 /* Build configuration list for PBXNativeTarget "hlxml" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				681DC8B422F19BAB00EE04A9 /* Debug */,
+				681DC8B522F19BAB00EE04A9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -25,16 +25,18 @@ LDFLAGS   := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(LatAnalyzeB
 
 srcdir    := ../Analyze
 VPATH     := $(srcdir)
-srcfiles  := $(filter-out $(srcdir)/Common.cpp,$(filter-out %~,$(wildcard $(srcdir)/*.c*)))
+srcfiles  := $(filter-out $(srcdir)/Common.cpp,$(filter-out $(srcdir)/CommonLatAn.cpp,$(filter-out %~,$(wildcard $(srcdir)/*.c*))))
 basefiles := $(basename $(notdir $(srcfiles)))
 objects   := $(addsuffix .o,$(basefiles)) Common.o
 target    := $(basefiles)
 
 all: $(target)
 
-MultiFit: MultiFit.o Common.o
+MultiFit: MultiFit.o Common.o CommonLatAn.o
 
 bootstrap: bootstrap.o Common.o
+
+hlxml: hlxml.o Common.o
 
 clean:
 	rm -rf $(target) $(objects) $(depfile) *~ $(addsuffix .dSYM,$(basefiles))

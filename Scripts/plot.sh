@@ -1,7 +1,5 @@
 #!/bin/sh
-file=$1
-
-function do_plot()
+function plot_one()
 {
   local cmd="$1"
   if [[ $cmd != "" ]] ; then
@@ -11,23 +9,32 @@ function do_plot()
   fi
 }
 
-file_array=(${file//./ })
-corr=${file_array[0]}
-corr_escaped=${corr//\_/\\\_}
-type=${file_array[1]}
-seed=${file_array[2]}
-ext=${file_array[3]}
-cmd="plot '${file}'"
-if [[ $ext == "txt" ]] ; then
-  case $type in
-    corr) cmd3="set title 'Im( Correlator ) ${corr_escaped} (seed=${seed})'; ${cmd} using 1:4:5 with yerrorbars"
-          cmd2="set title 'Correlator ${corr_escaped} (seed=${seed})'; ${cmd} using 1:2:3 with yerrorbars"
-          cmd="set title 'Correlator ${corr_escaped} (seed=${seed})'; set logscale y; ${cmd} using 1:2:3 with yerrorbars";;
-    mass | mass3pt) cmd="set title '${type} ${corr_escaped} (seed=${seed})'; ${cmd} using 1:2:(\$2-\$3):(\$2+\$4) with yerrorbars";;
-    *) echo "Unsupported file format: ${type}"
-       cmd="set title '${type} ${corr_escaped} (seed=${seed})'; ${cmd}";;
-  esac
-fi
-do_plot "$cmd"
-do_plot "$cmd2"
-do_plot "$cmd3"
+function plot_file()
+{
+  local file=$1
+  local file_array=(${file//./ })
+  local corr=${file_array[0]}
+  local corr_escaped=${corr//\_/\\\_}
+  local type=${file_array[1]}
+  local seed=${file_array[2]}
+  local ext=${file_array[3]}
+  local cmd="plot '${file}'"
+  if [[ $ext == "txt" ]] ; then
+    case $type in
+      corr) local cmd3="set title 'Im( Correlator ) ${corr_escaped} (seed=${seed})'; ${cmd} using 1:4:5 with yerrorbars"
+            local cmd2="set title 'Correlator ${corr_escaped} (seed=${seed})'; ${cmd} using 1:2:3 with yerrorbars"
+            cmd="set title 'Correlator ${corr_escaped} (seed=${seed})'; set logscale y; ${cmd} using 1:2:3 with yerrorbars";;
+      mass | cosh | sinh | mass3pt ) cmd="set title '${type} ${corr_escaped} (seed=${seed})'; ${cmd} using 1:2:(\$2-\$3):(\$2+\$4) with yerrorbars";;
+      *) echo "Unsupported file format: ${type}"
+         cmd="set title '${type} ${corr_escaped} (seed=${seed})'; ${cmd}";;
+    esac
+  fi
+  plot_one "$cmd"
+  plot_one "$cmd2"
+  plot_one "$cmd3"
+}
+
+while (( "$#" )); do
+  plot_file $1
+shift
+done

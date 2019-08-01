@@ -290,12 +290,13 @@ void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBas
   for(int t = 0; t < nt; t++)
     TmpSamples[t].resize( nSample );
   static const char sep[] = " ";
-  static const char * SummaryNames[] = { "corr", "mass3pt", "mass" };
+  static const char * SummaryNames[] = { "corr", "mass", "cosh", "sinh" };
   static const char * SummaryHeader[] =
   {
     "# correlator\nt corr_re corr_stddev corr_im corr_im_stddev",
-    "# three-point mass\nt mass mass_low mass_high",
-    "# mass\nt mass mass_low mass_high",
+    "# "   "mass\nt mass mass_low mass_high check",
+    "# cosh_mass\nt mass mass_low mass_high check",
+    "# sinh_mass\nt mass mass_low mass_high check",
   };
   for(int f = 0; f < sizeof(SummaryNames)/sizeof(SummaryNames[0]); f++)
   {
@@ -333,30 +334,48 @@ void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBas
       else
       {
         TmpAvg[t] = 0;
+        int Count = 0;
         for(int i = 0; i < nSample; i++)
         {
           {
             double DThis;
             switch(f)
             {
-              case 1: // three-point mass
-                DThis = ( out[i]((t + nt - 1) % nt, 0) + out[i]((t + 1) % nt, 0) ) / (2 * out[i](t, 0) );
+              case 1: // mass
+                DThis = std::log( out[i](t, 0) / out[i]((t + 1 + nt) % nt, 0) );
                 break;
-              case 2: // mass
-                DThis = - log( out[i]((t + nt + 1) % nt, 0) / out[i](t, 0) );
+              case 2: // cosh mass
+                DThis = std::acosh((out[i]((t - 1 + nt) % nt, 0) + out[i]((t + 1) % nt, 0)) / (2 * out[i](t, 0)));
+                break;
+              case 3: // sinh mass
+                DThis = std::asinh((out[i]((t - 1 + nt) % nt, 0) - out[i]((t + 1) % nt, 0)) / (2 * out[i](t, 0)));
                 break;
               default:
                 DThis = 0;
             }
-            TmpSamples[t][i] = DThis;
-            TmpAvg[t] += DThis;
+            if( std::isfinite( DThis ) ) {
+              TmpSamples[t][Count++] = DThis;
+              TmpAvg[t] += DThis;
+            }
           }
         }
-        TmpAvg[t] /= nSample;
-        std::sort(TmpSamples[t].begin(), TmpSamples[t].end());
-        int Index = static_cast<int>( 0.16 * nSample + 0.5 );
-        s << t << sep << TmpAvg[t] << sep << (TmpAvg[t] - TmpSamples[t][Index])
-        << sep << (TmpSamples[t][nSample - Index] - TmpAvg[t]) << std::endl;
+        static const double NaN{ std::nan( "" ) };
+        assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
+        double dErrPlus, dErrMinus;
+        if( Count ) {
+          TmpAvg[t] /= Count;
+          const typename std::vector<double>::iterator itStart{ TmpSamples[t].begin() };
+          const typename std::vector<double>::iterator itEnd  { itStart + Count };
+          std::sort( itStart, itEnd );
+          int Index = static_cast<int>( 0.16 * Count + 0.5 );
+          dErrMinus = TmpAvg[t] - TmpSamples[t][Index];
+          dErrPlus  = TmpSamples[t][Count - Index] - TmpAvg[t];
+        } else {
+          TmpAvg[t] = NaN;
+          dErrPlus  = NaN;
+          dErrMinus = NaN;
+        }
+        s << t << sep << TmpAvg[t] << sep << dErrMinus << sep << dErrPlus << sep << ( static_cast<double>( Count ) / nSample ) << std::endl;
       }
     }
   }

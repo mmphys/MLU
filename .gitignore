@@ -3,6 +3,7 @@ build/*
 !build/Makefile
 run*/*
 test*/*
+**/Felix/
 
 # Apple stuff
 .DS_Store
