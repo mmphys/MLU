@@ -1,8 +1,8 @@
 # Ignore the build directory ... except the Makefile
-build/*
+build/
 !build/Makefile
-run*/*
-test*/*
+**/run*/
+**/test*/
 **/Felix/
 
 # Apple stuff

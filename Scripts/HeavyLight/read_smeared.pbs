@@ -1,0 +1,45 @@
+# PBS job options name, compute nodes, job time)
+#PBS -N hl_3200_ls
+# Select nodes
+#PBS -l select=32:ncpus=24:mpiprocs=1
+#PBS -l walltime=48:00:00
+#PBS -l place=scatter
+
+# Replace [budget code] below with your project code (e.g. t01)
+#PBS -A dp008
+
+# Redirect stdout and stderr to log directory
+#PBS -o log/
+#PBS -e log/
+
+# Change to the directory that the job was submitted from
+cd $PBS_O_WORKDIR
+
+# Intel compilers and working version of MPI
+EnvDir=/home/dp008/dp008/shared/env
+. $EnvDir/mod-intel18-impi19-tp.sh
+# MPI optimisation environment variables for Tesseract
+. $EnvDir/i18mpi-env.sh
+
+# optimisationsfrom Antonins code
+export KMP_AFFINITY=compact
+export I_MPI_PIN=1
+export OMP_NUM_THREADS=12
+export COMMS_THREADS=8
+export I_MPI_THREAD_SPLIT=1
+export I_MPI_THREAD_RUNTIME=openmp
+export I_MPI_THREAD_MAX=${COMMS_THREADS}
+export PSM2_MULTI_EP=1
+export I_MPI_EXTRA_FILESYSTEM=on
+export I_MPI_EXTRA_FILESYSTEM_LIST=lustre
+export I_MPI_LUSTRE_STRIPE_AWARE=on
+
+# Set up application and options
+application="/home/dp008/dp008/dc-mars3/data/201907HL/HadronsXmlRun read_smeared.xml "
+MPI="2.2.4.4"
+options="--grid 24.24.24.64 --mpi ${MPI} --dslash-unroll --log Message,Debug --debug-mem" 
+
+# Launch the parallel job
+CMD="mpirun -np 64 -ppn 2 ${application} ${options} &> log/${PBS_JOBNAME}.${PBS_JOBID%%.*}.log"
+
+eval ${CMD}
