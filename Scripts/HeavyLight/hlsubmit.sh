@@ -1,14 +1,21 @@
-HL_Contract="$1"
+HL_Contract_Num="$1"
 HL_Contract_QL="$2"
 HL_Contract_QR="$3"
 HL_Contract_P="$4"
 
-if [[ "$HL_Contract" == "" || "$HL_Contract_QL" == "" \
+if [[ "$HL_Contract_Num" == "" || "$HL_Contract_QL" == "" \
    || "$HL_Contract_QR" == "" || "$HL_Contract_P" == "" ]]
 then
     echo "Usage: ${0##*/} prefix quarkL quarkR momentum"
     exit 1
 fi
+
+case "$HL_Contract_Num" in
+  0) HL_Contract="c30p";;
+  1) HL_Contract="c3p0";;
+  2) HL_Contract="c2p0";;
+  *) echo "Error: Contraction type \"$HL_Contract_Num\" should be 0, 1 or 2"; exit 1;;
+esac
 
 HL_Contract_Base=${HL_Contract}_${HL_Contract_QL}_${HL_Contract_QR}_p2_${HL_Contract_P}
 HL_Contract_XML=${HL_Contract_Base}.xml
@@ -35,7 +42,7 @@ fi
 #create the PBS script
 HL_Contract_PBS="${HL_Contract_Base}.pbs"
 export HL_Contract_XML
-export HL_Contract_JobName="hl${HL_Contract}p${HL_Contract_P}"
+export HL_Contract_JobName="${HL_Contract_QL}${HL_Contract_QR}c${HL_Contract_Num}p${HL_Contract_P}"
 cat hlcontract.pbs | envsubst '$HL_Contract_XML $HL_Contract_JobName' > "$HL_Contract_PBS"
 
 #now submit the command
