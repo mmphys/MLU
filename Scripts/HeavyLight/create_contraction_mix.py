@@ -12,7 +12,7 @@ print 'DirectorySmeared: ' + DirectorySmeared
 print
 
 #Which momentum?
-for p2 in range(0,3):
+for p2 in range(0,5):
     nMom=0
     moms=[]
     moms_neg=[]
@@ -32,6 +32,8 @@ for p2 in range(0,3):
 
     # Which type of contraction?
     for ContractFor in range(0,3):
+        if p2 != 2 and ContractFor != 0:
+            continue
         if ContractFor >= 2:
             ContractFor = 2
             ContractPrefix = 'c2p0'
@@ -268,7 +270,7 @@ for p2 in range(0,3):
         out.write(indent + '<product>\n')
         indent+='  '
         #3PT
-        if ContractFor != 2:
+        if p2 != 2 or ContractFor != 2:
             for i in range(0,nQuarks):
                 for j in range(0,nQuarks):
                     for t in range(0,Nt/interlace):
@@ -296,7 +298,7 @@ for p2 in range(0,3):
             for jAx in range(0,nAx):
                 #if (iAx == 0 and jAx==0): continue
                 #if (iAx == 0 or jAx==1): continue
-                if ContractFor == 0:
+                if p2 != 2 or ContractFor == 0:
                     #3PT - 0P
                     for i in range(0,nQuarks):
                         for j in range(0,nQuarks):
@@ -319,7 +321,7 @@ for p2 in range(0,3):
                                             out.write(indent + '<translationAverage>true</translationAverage>\n')
                                             indent=indent[:-2]
                                             out.write(indent + '</elem>\n')
-                elif ContractFor == 1:
+                if p2 != 2 or ContractFor == 1:
                     #3PT - P0
                     for i in range(0,nQuarks):
                         for j in range(0,nQuarks):
@@ -342,7 +344,7 @@ for p2 in range(0,3):
                                             out.write(indent + '<translationAverage>true</translationAverage>\n')
                                             indent=indent[:-2]
                                             out.write(indent + '</elem>\n')
-                else:
+                if p2 != 2 or ContractFor == 0:
                     #2PT
                     for i in range(0,nQuarks):
                         for t in range(0,Nt/interlace):
