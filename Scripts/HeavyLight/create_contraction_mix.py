@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 #quarks=['l','h1','h2']
 quarkL=['h2']
@@ -29,6 +30,9 @@ for p2 in range(0,5):
     print 'Positive: ' + str(moms)
     print 'Negative: ' + str(moms_neg)
     print
+
+    #sys.exit(1)
+    #continue
 
     # Which type of contraction?
     for ContractFor in range(0,3):
@@ -344,7 +348,7 @@ for p2 in range(0,5):
                                             out.write(indent + '<translationAverage>true</translationAverage>\n')
                                             indent=indent[:-2]
                                             out.write(indent + '</elem>\n')
-                if p2 != 2 or ContractFor == 0:
+                if p2 != 2 or ContractFor == 2:
                     #2PT
                     for i in range(0,nQuarks):
                         for t in range(0,Nt/interlace):

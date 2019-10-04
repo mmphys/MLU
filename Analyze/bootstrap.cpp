@@ -48,9 +48,11 @@ template <typename T> std::string tokenReplaceCopy(const std::string &str, const
 // Show me the averages for each timeslice
 void ShowTimeSliceAvg(const Latan::Dataset<Latan::DMat> &data);
 // Make summary files of this data set
-void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed);
+void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed, int momentum_squared);
 // Make a filename of a specific type
 std::string MakeFilename(const std::string &Base, const char *Type, Latan::SeedType Seed, const std::string &Ext);
+// Make a default manifest if one not specified
+void MakeManifest( Common::Manifest & manifest, const std::string &Heavy, const std::string &Light );
 
 /*****************************************************************
 
@@ -98,7 +100,7 @@ int main(int argc, char *argv[])
                 "exclude files (colon separated list)", "");
   opt.addOption("" , "help"      , Latan::OptParser::OptType::trigger, true,
                 "show this help message and exit");
-  bool parsed = opt.parse(argc, argv) and !opt.gotOption("help") and opt.getArgs().size() > 0;
+  bool parsed = opt.parse(argc, argv) and !opt.gotOption("help") /*and opt.getArgs().size() > 0*/;
   // If the output stem was specified, ensure it includes "@corr@"
   std::string outStem;
   if (parsed)
@@ -118,8 +120,13 @@ int main(int argc, char *argv[])
   // Now parse the input file names, grouping by correlator, indexed by trajectory
   Common::Manifest Manifest{opt.getArgs(), opt.optionValue("x")};
   if( Manifest.empty() ) {
-    Usage( argv[0], opt );
-    return EXIT_FAILURE;
+    const std::string qHeavy{ "h1" };
+    const std::string qLight{ "l" };
+    std::cout << "No files specified. Making default manifest for "
+              << qHeavy << " and " << qLight << std::endl;
+    MakeManifest( Manifest, qHeavy, qLight );
+    //Usage( argv[0], opt );
+    //return EXIT_FAILURE;
   }
 
   Latan::Index    nSample = opt.optionValue<Latan::Index>("n");
@@ -154,21 +161,23 @@ int main(int argc, char *argv[])
     {
       // load all the files for this correlator
       std::cout << Contraction << std::endl;
-      const unsigned int nFile{ static_cast<unsigned int>(l.Filename.size())};
+      const unsigned int nFile{ static_cast<unsigned int>(l.TrajFile.size())};
       Latan::Dataset<Latan::DMat> data(nFile);
       unsigned int nt = 0;
       unsigned int j = 0; // which trajectory are we processing
       std::vector<std::complex<double>> buf;
       bool bError = false;
       bool bResized = false;
-      for( auto it = l.Filename.begin(); it != l.Filename.end(); it++, j++ )
+      for( auto it = l.TrajFile.begin(); it != l.TrajFile.end(); it++, j++ )
       {
         const int &traj{it->first};
-        std::string &Filename{it->second};
-        std::cout << "\t" << traj << "\t" << Filename << std::endl;
+        //std::string &Filename{it->second};
+        const Common::TrajFile &tf{it->second};
+        const std::string &Filename{tf.Filename};
+        std::cout << "\t" << traj << "\t" << Filename << "\t" << tf.offset << std::endl;
         bool bThisLoad = true;
         try {
-          Common::ReadComplexArray(buf, Filename, Contraction);
+          Common::ReadComplexArray(buf, Filename);//, Contraction);
         } catch(...) {
           std::cerr << "\tError reading " << Filename << std::endl;
           bThisLoad = false;
@@ -187,8 +196,11 @@ int main(int argc, char *argv[])
           bool bNumbersOK = true;
           for (unsigned int t = 0; t < nt; ++t)
           {
-            m(t, 0) = buf[t].real();
-            m(t, 1) = buf[t].imag();
+            const std::complex<double> &d{ buf[( t + tf.offset ) % nt] };
+            m(t, 0) = ( tf.bImaginary ? d.imag() : d.real() );
+            if( tf.iMultiplier )
+              m(t, 0) *= tf.iMultiplier;
+            m(t, 1) = ( tf.bImaginary ? d.real() : d.real() );
             if( !std::isfinite( m(t, 0) ) || !std::isfinite( m(t, 1) ) )
               bNumbersOK = false;
           }
@@ -213,7 +225,7 @@ int main(int argc, char *argv[])
         Latan::Io::save<Latan::DMatSample>(out, sOutFileName, Latan::File::Mode::write, sBootstrap);
         std::cout << " done" << std::endl;
         if( bSaveSummaries )
-          MakeSummaries(out, sOutFileBase, seed);
+          MakeSummaries(out, sOutFileBase, seed, l.momentum);
         if( dumpBoot ) { // Dump the bootstrap sequences
           std::string SeqFileName{MakeFilename(sOutFileBase, "bootseq", seed, TEXT_EXT)};
           std::cout << "Saving bootstrap sequence to '" << SeqFileName << "' ...";
@@ -221,10 +233,12 @@ int main(int argc, char *argv[])
           file << "# bootstrap sequences" << std::endl;
           file << "#      bin size: " << binSize << std::endl;
           file << "#          seed: " << std::to_string( seed ) << std::endl;
-          for( auto it = l.Filename.begin(); it != l.Filename.end(); it++ )
+          for( auto it = l.TrajFile.begin(); it != l.TrajFile.end(); it++ )
           {
             const int &traj{it->first};
-            std::string &Filename{it->second};
+            //std::string &Filename{it->second};
+            const Common::TrajFile &tf{it->second};
+            const std::string &Filename{tf.Filename};
             file << "#   traj / file: " << traj << " " << Filename << std::endl;
           }
           data.dumpBootstrapSeq(file, nSample, seed);
@@ -280,7 +294,7 @@ std::string MakeFilename(const std::string &Base, const char *Type, Latan::SeedT
 }
 
 // Make summary files of this data set
-void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed)
+void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed, int momentum_squared)
 {
   const int           nt{static_cast<int>(out[Latan::central].rows())};
   const Latan::Index  nSample{out.size()};
@@ -342,7 +356,21 @@ void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBas
             switch(f)
             {
               case 1: // mass
-                DThis = std::log( out[i](t, 0) / out[i]((t + 1 + nt) % nt, 0) );
+                DThis = std::log( abs( out[i](t, 0) / out[i]((t + 1 + nt) % nt, 0) ) );
+              /*assert( momentum_squared >= 0 && momentum_squared <= 6 && "Unsupported momentum" );
+                if( momentum_squared >= 1 && momentum_squared <= 6 )
+                {
+                  // Lattice dispersion relation (not very well implemented)
+                  static const double ss_half{ sin(0.5) * sin(0.5) };
+                  static const double ss_one{ sin(1.) * sin(1.) };
+                  double sum;
+                  if( momentum_squared <= 3 )
+                    sum = ss_half * momentum_squared;
+                  else
+                    sum = ss_half * ( momentum_squared - 4 ) + ss_one;
+                  double dSinh_HalfE0{ sinh( DThis / 2 ) };
+                  DThis = 2 * asinh( sqrt( dSinh_HalfE0 * dSinh_HalfE0 - sum ) );
+                }*/
                 break;
               case 2: // cosh mass
                 DThis = std::acosh((out[i]((t - 1 + nt) % nt, 0) + out[i]((t + 1) % nt, 0)) / (2 * out[i](t, 0)));
@@ -376,6 +404,209 @@ void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBas
           dErrMinus = NaN;
         }
         s << t << sep << TmpAvg[t] << sep << dErrMinus << sep << dErrPlus << sep << ( static_cast<double>( Count ) / nSample ) << std::endl;
+      }
+    }
+  }
+}
+
+struct Momentum {
+  int x;
+  int y;
+  int z;
+  Momentum( int _x, int _y, int _z ) : x(_x), y(_y), z(_z) {}
+};
+
+struct SubStrings {
+  std::string              Name;
+  std::vector<std::string> Strings;
+};
+
+const std::string & MesonSuffix( const std::string MesonTypeName )
+{
+  static const std::string axial{ "ax" };
+  static const std::string axial_name{ "_ax" };
+  static const std::string other_name{};
+  return axial.compare( MesonTypeName ) == 0 ? axial_name : other_name;
+}
+
+// Make a default manifest
+// Heavy-light meson decays. 2pt function with current inserted and momentum on light meson
+
+void MakeManifest( Common::Manifest & manifest, const std::string &qHeavy, const std::string &qLight )
+{
+  const std::string sep{"_"};
+  const std::string sepBig{"."};
+  static const int Nt{64};
+  for( int p2 = 0; p2 < 5; p2++ ) {
+    // All I need are the number of momenta >=0 that match p2
+    std::vector<Momentum> Momenta;
+    for( int px = -p2; px <= p2; px++ )
+      for( int py = -p2; py <= p2; py++ )
+        for( int pz = -p2; pz <= p2; pz++ )
+          if( px*px + py*py +pz*pz == p2 ) {
+            Momenta.push_back( Momentum( px, py, pz ) );
+          }
+    const unsigned int Np{ static_cast<unsigned int>( Momenta.size() ) };
+    //for( Momentum &m : Momenta )
+      //std::cout << "    " << m.x << ", " << m.y << ", " << m.z << std::endl;
+    //assert( Np == 0 && "Der" );
+    std::cout << "p^2=" << p2 << " => Np=" << Np << std::endl;
+    const std::array<std::string, 2> Mesons{ "ps", "ax" };
+    for( const std::string & MesonSrc : Mesons ) {
+      for( const std::string & MesonSnk : Mesons ) {
+        const std::vector<std::string> g0{ "g0" };
+        const std::vector<std::string> gi{ "gx", "gy", "gz" };
+        const SubStrings s0{ "V0", g0 };
+        const SubStrings si{ "Vi", gi };
+        const std::array<SubStrings, 2> VectorType{ s0, si };
+        for( const SubStrings & vt : VectorType ) {
+          for( int DeltaT = 12; DeltaT <= 24; DeltaT += 4 ) {
+            // I have a correlator
+            std::string corr{ vt.Name };
+            corr.append( sep );
+            corr.append( std::to_string( DeltaT ) );
+            corr.append( sep );
+            corr.append( "p" );
+            corr.append( std::to_string( p2 ) );
+            corr.append( sep );
+            corr.append( MesonSnk );
+            corr.append( sep );
+            corr.append( MesonSrc );
+            std:: cout << "    " << corr << std::endl;
+            // Add this to my list of correlators, and get a reference to the trajectory list
+            Common::TrajList & cl{manifest[corr]};
+            cl.Name = corr;
+            cl.momentum = p2;
+            unsigned int traj{0};
+            for( int ContractFor = 0; ContractFor < 2; ContractFor++ ) {
+              const std::string & qLeft{ ContractFor ? qHeavy : qLight };
+              const std::string & qRight{ ContractFor ? qLight : qHeavy };
+              for( int p=0; p < Np; p++ ) {
+                for( int tsrc=0; tsrc < 64; tsrc += 4 ) {
+                  for( const std::string & current : vt.Strings ) {
+                    const char cDim{ current[1] };
+                    if( cDim == '0' || p2 == 0
+                       || ( cDim == 'x' && Momenta[p].x != 0 )
+                       || ( cDim == 'y' && Momenta[p].y != 0 )
+                       || ( cDim == 'z' && Momenta[p].z != 0 ) )
+                    {
+                      // Create file name
+                      std::string f{ sep };
+                      f.append( qLeft );
+                      f.append( sep );
+                      f.append( qRight );
+                      f.append( sep );
+                      f.append( "p2" );
+                      f.append( sep );
+                      f.append( std::to_string( p2 ) );
+                      f.append( "/sink" );
+                      f.append( MesonSuffix( MesonSnk ) );
+                      f.append( sep );
+                      switch( ContractFor )
+                      {
+                        case 0:
+                          f.append( "0" );
+                          break;
+                        case 1:
+                          f.append( "p" );
+                          f.append( sep );
+                          f.append( std::to_string( p ) );
+                          break;
+                        default:
+                          assert( 0 && "Unsupported contraction type" );
+                      }
+                      f.append( sep );
+                      f.append( std::to_string( DeltaT ) );
+                      f.append( sep );
+                      f.append( qLight );
+                      f.append( sep );
+                      f.append( std::to_string( tsrc ) );
+                      f.append( sepBig );
+                      f.append( std::to_string( ( tsrc + DeltaT ) % Nt ) );
+                      f.append( sepBig );
+                      f.append( "source" );
+                      f.append( MesonSuffix( MesonSrc ) );
+                      f.append( sep );
+                      switch( ContractFor )
+                      {
+                        case 0:
+                          f.append( "p" );
+                          f.append( sep );
+                          f.append( std::to_string( p ) );
+                          break;
+                        case 1:
+                          f.append( "0" );
+                          break;
+                        default:
+                          assert( 0 && "Unsupported contraction type" );
+                      }
+                      f.append( sep );
+                      f.append( std::to_string( tsrc ) );
+                      f.append( sepBig );
+                      f.append( std::to_string( tsrc ) );
+                      f.append( sepBig );
+                      f.append( current );
+                      f.append( sep );
+                      f.append( std::to_string( DeltaT ) );
+                      f.append( sep );
+                      f.append( qLeft );
+                      f.append( sep );
+                      f.append( qRight );
+                      f.append( sep );
+                      f.append( std::to_string( tsrc ) );
+                      f.append( sep );
+                      f.append( "p" );
+                      f.append( sep );
+                      f.append( std::to_string( p ) );
+                      f.append( ".3200" );
+                      f.append( ".h5" );
+                      // For momenta <> 2
+                      bool bFound{ false };
+                      for( int n = 0; n < 2 && !bFound; n++ )
+                      {
+                        std::string FileName{ "../contract/" };
+                        if( n == 0 ) {
+                          switch( ContractFor )
+                          {
+                            case 0:
+                              FileName.append( "c30p" );
+                              break;
+                            case 1:
+                              FileName.append( "c3p0" );
+                              break;
+                            case 2:
+                              FileName.append( "c2p0" );
+                              break;
+                            default:
+                              assert( 0 && "Unsupported contraction type" );
+                          }
+                        } else {
+                          FileName.append( "c30p" );
+                          // Try it in
+                        }
+                        FileName.append( f );
+                        bFound = Common::FileExists( FileName );
+                        if( bFound )
+                          f = std::move( FileName );
+                        else
+                          std::cout << FileName << " not found" << std::endl;
+                      }
+                      assert( bFound && "File doesn't exist" );
+                      Common::TrajFile & tf{ cl.TrajFile[traj++] };
+                      tf.Filename = f;
+                      tf.offset = tsrc;
+                      tf.bImaginary = ( cDim != '0' );
+                      tf.iMultiplier = ( ( cDim == 'x' && Momenta[p].x < 0 )
+                                        || ( cDim == 'y' && Momenta[p].y < 0 )
+                                        || ( cDim == 'z' && Momenta[p].z < 0 ) ) ? -1 : 0;
+                      ;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
