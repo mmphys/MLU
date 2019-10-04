@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "68BEFF692343A75A0031E3E3"
-               BuildableName = "Study1Plateau"
-               BlueprintName = "Study1Plateau"
+               BlueprintIdentifier = "6845351F23477BBE00106304"
+               BuildableName = "xmlPeramb"
+               BlueprintName = "xmlPeramb"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "/Users/s1786208/src/Utility/run/Study1"
+      customWorkingDirectory = "$PROJECT_DIR/run/Study1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -45,9 +45,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "68BEFF692343A75A0031E3E3"
-            BuildableName = "Study1Plateau"
-            BlueprintName = "Study1Plateau"
+            BlueprintIdentifier = "6845351F23477BBE00106304"
+            BuildableName = "xmlPeramb"
+            BlueprintName = "xmlPeramb"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,9 +62,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "68BEFF692343A75A0031E3E3"
-            BuildableName = "Study1Plateau"
-            BlueprintName = "Study1Plateau"
+            BlueprintIdentifier = "6845351F23477BBE00106304"
+            BuildableName = "xmlPeramb"
+            BlueprintName = "xmlPeramb"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
