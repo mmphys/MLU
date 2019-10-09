@@ -1,12 +1,14 @@
 #!/bin/bash
 
 step=40
-#configs=`seq 3040 $step 3440`
-configs=3040
+#configs=`seq 3040 $step 3360`
+configs=3000
 echo configs=$configs
 #tplt_xml=pion.template
-tplt_xml=pion_load_peramb.template
+#tplt_xml=pion_load_peramb.template
 #tplt_xml=pion_LapEvec.template
+tplt_xml=Peramb.template
+#tplt_xml=Z2Plateau.template
 
 case $tplt_xml in
   pion*.template) tplt_pbs=pion.template;;
@@ -23,6 +25,6 @@ do
     sed -e "s|{cfg}|$i|g" -e "s|{end}|$j|g" -e "s|{step}|$step|g" -e "s|{xml}|$this_xml|g" $tplt_pbs.pbs > $this_pbs
     sed -e "s|{cfg}|$i|g" -e "s|{end}|$j|g" -e "s|{step}|$step|g" $tplt_xml.xml > $this_xml
     cd log
-    qsub ../$this_pbs
+    echo qsub ../$this_pbs
     cd ..
 done

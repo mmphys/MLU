@@ -25,7 +25,7 @@ LDFLAGS   := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(LatAnalyzeB
 
 # Make a separate executable for every source in subdirectories except build*, run* or script*
 # Except filenames starting with "Common", for which explicit target rules must be provided
-VPATH     := $(shell find .. -type d -depth 1 \! \( -iname 'build*' -or -iname 'run*' -or -iname 'script*' -or -iname '*.*' \))
+VPATH     := $(shell find .. -maxdepth 1 -type d \! \( -iname 'build*' -or -iname 'run*' -or -iname 'script*' -or -iname '*.*' \))
 srcfiles  := $(filter-out %~,$(shell find $(VPATH) -iname '*.c*'))
 basefiles := $(basename $(notdir $(srcfiles)))
 objects   := $(addsuffix .o,$(basefiles))
