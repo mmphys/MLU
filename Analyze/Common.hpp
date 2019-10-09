@@ -29,6 +29,7 @@
 #ifndef Common_hpp
 #define Common_hpp
 
+#include <cassert>
 #include <complex>
 #include <iostream>
 #include <map>
