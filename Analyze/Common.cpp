@@ -181,19 +181,23 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgn
         case Good:
         {
           TrajList & cl{Contractions[Contraction]};
-          if( cl.Filename.size() == 0 )
+          if( cl.TrajFile.size() == 0 )
             cl.Name = Contraction;
-          auto it = cl.Filename.find( traj );
-          if( it == cl.Filename.end() )
-            cl.Filename[traj] = Filename;
+          auto it = cl.TrajFile.find( traj );
+          if( it == cl.TrajFile.end() ) {
+            Common::TrajFile &tf{ cl.TrajFile[traj] };
+            tf.Filename = Filename;
+            tf.offset = 0;
+          }
           else
           {
-            if( !Filename.compare(it->second) )
+            const Common::TrajFile &tf{ it->second };
+            if( !Filename.compare( tf.Filename ) )
               std::cout << "Ignoring repetition of " << Filename << std::endl;
             else
             {
               parsed = false;
-              std::cout << "Error " << Filename << " conflicts with " << it->second << std::endl;
+              std::cout << "Error " << Filename << " conflicts with " << tf.Filename << std::endl;
             }
           }
         }

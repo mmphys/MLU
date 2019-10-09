@@ -79,11 +79,22 @@ void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::stri
                       const std::string &GroupName  = std::string(),
                       const std::string &ObjectName = std::string( "correlator" ) );
 
+struct TrajFile
+{
+  std::string Filename;  // Name of the file
+  int         offset;    // Shift the correlator by this amount;
+  bool        bImaginary; // true to use imaginary component
+  int         iMultiplier;
+  TrajFile() { offset = 0; bImaginary = false; iMultiplier = 0; }
+};
+
 // This describes one contraction and each of its trajectory files
 struct TrajList
 {
   std::string Name;                     // name of the contraction
-  std::map<int, std::string> Filename;  // list of all the files, sorted by trajectory number
+  int         momentum = 0; // Momentum in this trajectory
+  //std::map<int, std::string> Filename;  // list of all the files, sorted by trajectory number
+  std::map<int, TrajFile> TrajFile;  // list of all the files, sorted by trajectory number
 };
 
 // This is a list of all the contractions we've been asked to process

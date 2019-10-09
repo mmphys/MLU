@@ -23,12 +23,13 @@ LDFLAGS   := $(shell $(GridConf) --ldflags) $(shell $(LatAnConf) --ldflags)
 LDPATHS   := $(sort $(patsubst -L%,%,$(filter -L%,$(LDFLAGS))))
 LDFLAGS   := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(LatAnalyzeBuild)/lib/.libs $(GridPre)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
 
-srcdir    := ../Analyze
-VPATH     := $(srcdir)
-srcfiles  := $(filter-out $(srcdir)/Common.cpp,$(filter-out $(srcdir)/CommonLatAn.cpp,$(filter-out %~,$(wildcard $(srcdir)/*.c*))))
+# Make a separate executable for every source in subdirectories except build*, run* or script*
+# Except filenames starting with "Common", for which explicit target rules must be provided
+VPATH     := $(shell find .. -type d -depth 1 \! \( -iname 'build*' -or -iname 'run*' -or -iname 'script*' -or -iname '*.*' \))
+srcfiles  := $(filter-out %~,$(shell find $(VPATH) -iname '*.c*'))
 basefiles := $(basename $(notdir $(srcfiles)))
-objects   := $(addsuffix .o,$(basefiles)) Common.o
-target    := $(basefiles)
+objects   := $(addsuffix .o,$(basefiles))
+target    := $(filter-out Common%,$(basefiles))
 
 all: $(target)
 
@@ -39,9 +40,10 @@ bootstrap: bootstrap.o Common.o
 hlxml: hlxml.o Common.o
 
 clean:
-	rm -rf $(target) $(objects) $(depfile) *~ $(addsuffix .dSYM,$(basefiles))
+	rm -rf $(target) $(objects) *~ *.dSYM
 
 debug:
+	echo VPATH="$(VPATH)"
 	echo srcfiles="$(srcfiles)"
 	echo basefiles="$(basefiles)"
 	echo objects="$(objects)"
