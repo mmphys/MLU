@@ -28,6 +28,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include "../Analyze/Common.hpp"
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 
@@ -63,21 +64,7 @@ static const Quark Quarks[] = {
 };
 static constexpr int NumQuarks{ sizeof( Quarks ) / sizeof( Quarks[0] ) };
 
-struct Momentum
-{
-  const int x;
-  const int y;
-  const int z;
-  Momentum( int _x, int _y, int _z ) : x(_x), y(_y), z(_z) {}
-  inline bool isZero() const { return x==0 && y==0 && z==0; }
-  std::string to_string( const std::string &separator = Sep, bool bNegative = false ) const {
-    return std::to_string( bNegative ? -x : x ) + separator
-    + std::to_string( bNegative ? -y : y ) + separator
-    + std::to_string( bNegative ? -z : z );
-  }
-};
-
-static const Momentum Momenta[] = {
+static const Common::Momentum Momenta[] = {
   { 0, 0, 0 },
   { 1, 0, 0 },
   { 1, 1, 0 },
@@ -181,7 +168,7 @@ int main(int argc, char *argv[])
     const std::string timeSuffix{ Sep + "t" + std::to_string( t ) };
     const std::string sZ2{ "Z2" };
     // I will always need the momentum 0 Z_2 wall source for this timeslice
-    const std::string Suffix0{ timeSuffix + Sep + "p" + Sep + Momentum( 0, 0, 0 ).to_string() };
+    const std::string Suffix0{ timeSuffix + Sep + "p" + Sep + Common::Momentum( 0, 0, 0 ).to_string( Sep ) };
     const std::string srcName0{ sZ2 + Suffix0 };
     {
       MSource::Z2::Par z2Par;
@@ -201,7 +188,7 @@ int main(int argc, char *argv[])
     }
     // Loop through all momenta
     for( unsigned int p = 0; p < NumMomenta; ++p ) {
-      const std::string momentumSuffix{ Sep + "p" + Sep + Momenta[p].to_string() };
+      const std::string momentumSuffix{ Sep + "p" + Sep + Momenta[p].to_string( Sep ) };
       const std::string Suffix{ timeSuffix + momentumSuffix };
 
       // Z2 source with this momenta (doesn't need creating for momentum 0)
@@ -246,11 +233,14 @@ int main(int argc, char *argv[])
   }
 
   // execution
-  application.saveParameterFile("Z2Plateau.xml");
-#ifndef DEBUG
-  application.run(); // I only want to run this on Tesseract
-#endif
-  
+  static const std::string XmlFileName{ "Z2Plateau.xml" };
+  application.saveParameterFile( XmlFileName );
+  const Grid::Coordinate &lat{GridDefaultLatt()};
+  if( lat.size() == 4 && lat[0] == 24 && lat[1] == 24 && lat[2] == 24 && lat[3] == 64 )
+    application.run();
+  else
+    LOG(Warning) << "The parameters in " << XmlFileName << " are designed for --grid 24.24.24.64\nOn 16 nodes each config takes about 40 hours on Tesseract" << std::endl;
+
   // epilogue
   LOG(Message) << "Grid is finalizing now" << std::endl;
   Grid_finalize();

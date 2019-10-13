@@ -106,6 +106,60 @@ void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::stri
   }
 }
 
+// Read all the combinations of gamma_snk and gamma_src from hdf5 correlator
+
+void ReadComplexArray(std::vector<std::vector<std::complex<double>>> &buffer, const std::vector<Grid::Gamma::Algebra> &alg, const std::string &FileName, unsigned int tOffset)
+{
+  const unsigned int nGamma{ static_cast<unsigned int>( alg.size() )};
+  assert( nGamma > 0 && "Expected one or more gammas" );
+  const unsigned int nGammaSq{ nGamma * nGamma };
+  assert( buffer.size() == nGammaSq && "Bad number of correlators" );
+  unsigned int Nt{ static_cast<unsigned int>( buffer[0].size() ) };
+  using Meson = Grid::Hadrons::MContraction::Meson::Result;
+  std::cout << "Reading " << FileName << std::endl;
+  Grid::Hdf5Reader r( FileName );
+  std::vector<Meson> m;
+  Grid::read(r, "meson", m);
+  std::cout << "Read " << m.size() << " mesons" << std::endl;
+  std::vector<int> iCount( nGammaSq, 0 ); // Keep track of how many read
+  for( int i = 0; i < m.size(); ++i ) {
+    unsigned int iSrc = 0;
+    while( iSrc < nGamma && alg[iSrc] != m[i].gamma_src )
+      ++iSrc;
+    if( iSrc < nGamma ) {
+      unsigned int iSnk = 0;
+      while( iSnk < nGamma && alg[iSnk] != m[i].gamma_snk )
+        ++iSnk;
+      if( iSnk < nGamma ) {
+        const unsigned int iIndex{ iSnk * nGamma + iSrc };
+        if( ++iCount[iIndex] != 1 )
+          throw new std::runtime_error( "File repeats gamma indices" );
+        //std::cout << "meson[" << i << "].gamma_snk=" << m[i].gamma_snk << std::endl;
+        //std::cout << "meson[" << i << "].gamma_src=" << m[i].gamma_src << std::endl;
+        const unsigned int cSize{ static_cast<unsigned int>( m[i].corr.size() ) };
+        if( Nt == 0 ) {
+          if( cSize == 0 )
+            throw new std::runtime_error( "Empty correlator" );
+          Nt = cSize;
+          for( unsigned int j = 0; j < nGammaSq; j++ )
+            buffer[j].resize( Nt );
+        } else if( Nt != cSize )
+          throw new std::runtime_error( "Error: Nt = " + std::to_string( Nt ) + ", but just read correlator of length " + std::to_string( cSize ) );
+        for( int t = 0; t < Nt; ++t ) {
+          std::complex<double> &z = m[i].corr[ ( t + tOffset ) % Nt ];
+          if( !std::isfinite( z.real() ) || !std::isfinite( z.imag() ) )
+          throw new std::runtime_error( "Correlator contains NaNs" );
+          buffer[iIndex][t] = z;
+        }
+      }
+    }
+  }
+
+  for( unsigned int i = 0; i < nGammaSq; ++i )
+    if( iCount[i] != 1 )
+      throw new std::runtime_error( "Specified gamma structures not present in HDF5 file" );
+}
+
 enum ExtractFilenameReturn {Good, Bad, No_trajectory};
 
 // Extract the contraction name and trajectory number from filename
@@ -180,18 +234,16 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgn
       {
         case Good:
         {
-          TrajList & cl{Contractions[Contraction]};
+          /*TrajList & cl{Contractions[Contraction]};
           if( cl.TrajFile.size() == 0 )
             cl.Name = Contraction;
           auto it = cl.TrajFile.find( traj );
           if( it == cl.TrajFile.end() ) {
-            Common::TrajFile &tf{ cl.TrajFile[traj] };
-            tf.Filename = Filename;
-            tf.offset = 0;
+            cl.TrajFile.emplace( traj, new TrajFile( Filename ));
           }
           else
           {
-            const Common::TrajFile &tf{ it->second };
+            const Common::TrajFile &tf{ *it->second };
             if( !Filename.compare( tf.Filename ) )
               std::cout << "Ignoring repetition of " << Filename << std::endl;
             else
@@ -199,7 +251,7 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgn
               parsed = false;
               std::cout << "Error " << Filename << " conflicts with " << tf.Filename << std::endl;
             }
-          }
+          }*/
         }
           break;
           

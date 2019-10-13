@@ -30,6 +30,7 @@
 #define Common_hpp
 
 #include <cassert>
+#include <cctype>
 #include <complex>
 #include <iostream>
 #include <map>
@@ -37,10 +38,39 @@
 #include <vector>
 #include <H5Cpp.h>
 
+#include <LatAnalyze/Statistics/Dataset.hpp>
+
+#include <Grid/GridCore.h>
+#include <Hadrons/Application.hpp>
+#include <Hadrons/Modules.hpp>
+
 #define BEGIN_COMMON_NAMESPACE namespace Common {
 #define END_COMMON_NAMESPACE   };
 
 BEGIN_COMMON_NAMESPACE
+
+struct Momentum
+{
+  const int x;
+  const int y;
+  const int z;
+  Momentum( int _x, int _y, int _z ) : x(_x), y(_y), z(_z) {}
+  inline bool isZero() const { return x==0 && y==0 && z==0; }
+  std::string to_string( const std::string &separator, bool bNegative = false ) const {
+    return std::to_string( bNegative ? -x : x ) + separator
+    + std::to_string( bNegative ? -y : y ) + separator
+    + std::to_string( bNegative ? -z : z );
+  }
+};
+
+inline bool EqualIgnoreCase(const std::string & s1, const std::string & s2)
+{
+  const std::size_t Len{ s1.size() };
+  bool bEqual = ( s2.size() == Len );
+  for( std::size_t i = 0; bEqual && i < Len; i++ )
+    bEqual = ( s1[ i ] == s2[ i ] ) || ( std::toupper( s1[ i ] ) == std::toupper( s2[ i ] ) );
+  return bEqual;
+}
 
 class H5File : public H5::H5File {
 public:
@@ -78,14 +108,20 @@ template <typename T> inline bool IsFinite( const std::vector<T> & v )
 void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,
                       const std::string &GroupName  = std::string(),
                       const std::string &ObjectName = std::string( "correlator" ) );
+void ReadComplexArray(std::vector<std::vector<std::complex<double>>> &buffer, const std::vector<Grid::Gamma::Algebra> &alg, const std::string &FileName, unsigned int tOffset);
 
 struct TrajFile
 {
-  std::string Filename;  // Name of the file
+  const std::string Filename;  // Name of the file
   int         offset;    // Shift the correlator by this amount;
   bool        bImaginary; // true to use imaginary component
   int         iMultiplier;
-  TrajFile() { offset = 0; bImaginary = false; iMultiplier = 0; }
+  TrajFile( const std::string & Filename_, int offset_, bool bImaginary_, int iMultiplier_ )
+  : Filename{ Filename_ }, offset{offset_}, bImaginary{bImaginary_}, iMultiplier{ iMultiplier_ }{}
+  TrajFile( const std::string & Filename_ ) : TrajFile( Filename_, 0, false, 0 ) {}
+  virtual ~TrajFile() {}
+  virtual void GetCorellator( std::vector<std::complex<double>> &buffer )
+  { ReadComplexArray( buffer, Filename ); }
 };
 
 // This describes one contraction and each of its trajectory files
@@ -94,7 +130,10 @@ struct TrajList
   std::string Name;                     // name of the contraction
   int         momentum = 0; // Momentum in this trajectory
   //std::map<int, std::string> Filename;  // list of all the files, sorted by trajectory number
-  std::map<int, TrajFile> TrajFile;  // list of all the files, sorted by trajectory number
+  std::map<int, std::unique_ptr<TrajFile>> TrajFile;  // list of all the files, sorted by trajectory number
+  Latan::Dataset<Latan::DMat> data;
+  //TrajList() : data( 1 ) {} // But don't use this or you can only have 1 sample
+  TrajList( const std::string &Name_, int momentum_, std::size_t nSample ) : Name{ Name_ }, momentum{ momentum_ }, data( nSample ) {}
 };
 
 // This is a list of all the contractions we've been asked to process
