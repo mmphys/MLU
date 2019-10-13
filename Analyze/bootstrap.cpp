@@ -417,7 +417,13 @@ bool ReadCorrelatorsZ2( Common::Manifest & manifest, const std::string &Heavy, c
   static constexpr unsigned int CSkip{40};
   static constexpr unsigned int CCount{10};
   static constexpr unsigned int CEnd{CStart + CSkip * CCount};
-  static const std::string sPath{ "/home/dp008/dp008/dc-mars3/data/201910Plat/mesons/C1/Z2/" };
+  static const std::string sPath{
+#ifdef DEBUG
+    "/Users/s1786208"               // Laptop
+#else
+    "/home/dp008/dp008/dc-mars3"  // Tesseract
+#endif
+    "/data/201910Plat/mesons/C1/Z2/" };
   static const std::string Dot{ "." };    // used inside filenames
   static const std::string H5{ Dot + "h5" };    // used inside filenames
   static const std::string Sep{ "_" };    // used inside filenames
@@ -432,22 +438,25 @@ bool ReadCorrelatorsZ2( Common::Manifest & manifest, const std::string &Heavy, c
     { 2, 0, 0 },
   };
   static constexpr int NumMomenta{ sizeof( Momenta ) / sizeof( Momenta[0] ) };
+  static const std::string sMom0{ Sep + "p" + Sep + Common::Momentum(0,0,0).to_string( Sep ) };
   using Algebra = Grid::Gamma::Algebra;
   static const std::vector<Algebra> alg = { Algebra::Gamma5, Algebra::GammaTGamma5 };
+  static const std::vector<std::string> algNames = { "g5", "gT5" };
+  assert( alg.size() == algNames.size() && "Abbreviations should match gamma algebra" );
   static const int NumAlgebra{ static_cast<int>( alg.size() ) };
   static const int NumCorr{ NumAlgebra * NumAlgebra };
   std::vector<std::vector<std::complex<double>>> buffer( NumCorr );
   std::vector<std::string> CorrSuffixes( NumCorr );
   std::vector<std::string> CorrNames( NumCorr );
   std::vector<std::string> CorrNamesT( NumCorr );
-  std::vector<int>         CorrIndex( NumCorr, 0 );
-  std::vector<int>         CorrIndexT( NumCorr, 0 );
+  std::vector<int>         CorrIndex( NumCorr );
+  std::vector<int>         CorrIndexT( NumCorr );
   const unsigned int NumEnds{ Common::EqualIgnoreCase( Heavy, Light ) ? 1u : 2u };
   for( int iSrc = 0; iSrc < NumAlgebra; iSrc++ )
     for( int iSnk = 0; iSnk < NumAlgebra; iSnk++ ) {
       const int iCorr{ iSnk * NumAlgebra + iSrc };
       std::stringstream ss;
-      ss << Sep << alg[iSnk] << Sep << alg[iSrc];
+      ss << Sep << algNames[iSnk] << Sep << algNames[iSrc];
       CorrSuffixes[iCorr] = ss.str();
       buffer[iCorr].resize( Nt );
     }
@@ -455,21 +464,24 @@ bool ReadCorrelatorsZ2( Common::Manifest & manifest, const std::string &Heavy, c
   for( int iMom = 0; iMom < NumMomenta; iMom++ )
   {
     const std::string sMom{ Sep + "p" + Sep + Momenta[iMom].to_string( Sep )};
-    for( int i= 0 ; i < NumCorr; i++ ) {
-      CorrNames[i] = Heavy + Sep + Light + sMom;
-      manifest.emplace( std::make_pair( CorrNames[i], Common::TrajList( CorrNames[i], iMom, NumEnds * CCount * Nt) ) );
+    const std::string sMomNeg{ Sep + "p" + Sep + Momenta[iMom].to_string( Sep, true )};
+    for( int iCorr = 0 ; iCorr < NumCorr; iCorr++ ) {
+      CorrIndex[iCorr] = 0;
+      CorrNames[iCorr] = Heavy + Sep + Light + sMom + CorrSuffixes[iCorr];
+      manifest.emplace( std::make_pair( CorrNames[iCorr], Common::TrajList( CorrNames[iCorr], iMom, NumEnds * CCount * Nt) ) );
     }
     for( int t = 0; t < Nt; ++t ) {
       const std::string tPrefix{ Sep + "t" + std::to_string( t ) };
-      for( int i = 0 ; i < NumCorr; i++ ) {
-        CorrNamesT[i] = CorrNames[i] + tPrefix;
-        manifest.emplace( std::make_pair( CorrNamesT[i], Common::TrajList( CorrNamesT[i], iMom, NumEnds * CCount) ) );
+      for( int iCorr = 0 ; iCorr < NumCorr; iCorr++ ) {
+        CorrIndexT[iCorr] = 0;
+        CorrNamesT[iCorr] = CorrNames[iCorr] + tPrefix;
+        manifest.emplace( std::make_pair( CorrNamesT[iCorr], Common::TrajList( CorrNamesT[iCorr], iMom, NumEnds * CCount) ) );
       }
       for( unsigned int iEnd = 0; iEnd < NumEnds; iEnd++ ) {
         const std::string & Left{ iEnd == 0 ? Heavy : Light };
         const std::string & Right{ iEnd == 0 ? Light : Heavy };
         for( int iConfig = CStart; iConfig < CEnd; iConfig += CSkip ) {
-          const std::string sFileName{ sPath + sProp + Left + tPrefix + sMom + Sep + sProp + Right + tPrefix + sMom + Sink + sMom + Dot + std::to_string( iConfig ) + H5};
+          const std::string sFileName{ sPath + sProp + Left + tPrefix + sMom + Sep + sProp + Right + tPrefix + sMom0 + Sink + sMomNeg + Dot + std::to_string( iConfig ) + H5};
           try {
             Common::ReadComplexArray(buffer, alg, sFileName, 0);
             for( int iCorr = 0; iCorr < NumCorr; ++iCorr )
