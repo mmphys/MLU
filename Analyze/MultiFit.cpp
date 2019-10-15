@@ -337,7 +337,7 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
   ROOT::Minuit2::MnMigrad minimizer( *this, upar );
   Latan::DMatSample Fit( NSamples, NeedSize, 1 );
   //FOR_STAT_ARRAY( Fit, <#i#> ) {
-  for (Latan::Index i = -Fit.offset; i < Fit.size(); ++i) {
+  for (Latan::Index i = -Fit.offset; i < 0 /*Fit.size()*/; ++i) {
     idx = i;
     ROOT::Minuit2::FunctionMinimum min = minimizer();
     ROOT::Minuit2::MnUserParameterState state = min.UserState();
@@ -390,6 +390,8 @@ int main(int argc, char *argv[])
                 "initial fit time");
   opt.addOption("" , "tf"       , OptParser::OptType::value  , false,
                 "final fit time");
+  opt.addOption("" , "dti"       , OptParser::OptType::value  , true,
+                "number of fits", "1");
   opt.addOption("t" , "thinning", OptParser::OptType::value  , true,
                 "thinning of the time interval", "1");
   opt.addOption("s", "shift"    , OptParser::OptType::value  , true,
@@ -430,6 +432,7 @@ int main(int argc, char *argv[])
   }
   const int ti{ opt.optionValue<int>("ti") };
   const int tf{ opt.optionValue<int>("tf") };
+  const int dti_max{ opt.optionValue<int>("dti") };
   //int thinning            = opt.optionValue<int>("t");
   const int shift{ opt.optionValue<int>("s") };
   //Index nPar              = opt.optionValue<Index>("nPar");
@@ -475,12 +478,12 @@ int main(int argc, char *argv[])
   if( NumExponents == 0 )
     NumExponents = NumOps;
   MultiExpModel m ( Common::ReadBootstrapCorrs( FileNames, fold, shift, NumOps ), NumOps, Verbosity, outBaseFileName );
-  m.PerformFit( NumExponents, false, ti, tf );
-  if( doCorr )
-    m.PerformFit( NumExponents, true, ti, tf );
-  m.PerformFit( NumExponents, false, ti + 1, tf + 1 );
-  if( doCorr )
-    m.PerformFit( NumExponents, true, ti + 1, tf + 1 );
+  for( int dt = 0; dt < dti_max; dt++ )
+  {
+    //m.PerformFit( NumExponents, false, ti + dt, tf );
+    if( doCorr )
+      m.PerformFit( NumExponents, true, ti + dt, tf );
+  }
 
   return EXIT_SUCCESS;
 }

@@ -126,7 +126,9 @@ Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName,
       NtDest   = Fold ? NtSource / 2 + 1 : NtSource;
       std::cout << NtSource << " timeslices per correlator";
       if( Fold )
-        std::cout << " folded into " << NtDest << " timeslices with " << (Fold == 1 ? "positive" : "negative") << " parity";
+        std::cout << " folded into " << NtDest << " timeslices with "
+                  << (bAlternateFold ? "alternating, " : "")
+                  << (Fold == 1 ? "positive" : "negative") << " parity";
       std::cout << std::endl;
       ReadBuffer.resize( dim[0] * dim[1] );
       Corr.resize( NSamples );

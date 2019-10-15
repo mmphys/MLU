@@ -95,69 +95,19 @@ void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::stri
   H5::DataSet ds = g.openDataSet(ObjectName);
   H5::DataSpace dsp = ds.getSpace();
   const int nDims{dsp.getSimpleExtentNdims()};
-  if( nDims != 1 ) {
-    std::cerr << "Error: " << FileName << ", " << GroupName << ", " << ObjectName << " has " << nDims << " dimensions" << std::endl;
-    assert(0 && "Wrong number of dimensions");
-  } else {
-    hsize_t dim[1];
-    dsp.getSimpleExtentDims(dim);
-    buffer.resize(dim[0]);
-    ds.read(&buffer[0], Common::H5File::ComplexType());
-  }
-}
-
-// Read all the combinations of gamma_snk and gamma_src from hdf5 correlator
-
-void ReadComplexArray(std::vector<std::vector<std::complex<double>>> &buffer, const std::vector<Grid::Gamma::Algebra> &alg, const std::string &FileName, unsigned int tOffset)
-{
-  const unsigned int nGamma{ static_cast<unsigned int>( alg.size() )};
-  assert( nGamma > 0 && "Expected one or more gammas" );
-  const unsigned int nGammaSq{ nGamma * nGamma };
-  assert( buffer.size() == nGammaSq && "Bad number of correlators" );
-  unsigned int Nt{ static_cast<unsigned int>( buffer[0].size() ) };
-  using Meson = Grid::Hadrons::MContraction::Meson::Result;
-  std::cout << "Reading " << FileName << std::endl;
-  Grid::Hdf5Reader r( FileName );
-  std::vector<Meson> m;
-  Grid::read(r, "meson", m);
-  std::cout << "Read " << m.size() << " mesons" << std::endl;
-  std::vector<int> iCount( nGammaSq, 0 ); // Keep track of how many read
-  for( int i = 0; i < m.size(); ++i ) {
-    unsigned int iSrc = 0;
-    while( iSrc < nGamma && alg[iSrc] != m[i].gamma_src )
-      ++iSrc;
-    if( iSrc < nGamma ) {
-      unsigned int iSnk = 0;
-      while( iSnk < nGamma && alg[iSnk] != m[i].gamma_snk )
-        ++iSnk;
-      if( iSnk < nGamma ) {
-        const unsigned int iIndex{ iSnk * nGamma + iSrc };
-        if( ++iCount[iIndex] != 1 )
-          throw new std::runtime_error( "File repeats gamma indices" );
-        //std::cout << "meson[" << i << "].gamma_snk=" << m[i].gamma_snk << std::endl;
-        //std::cout << "meson[" << i << "].gamma_src=" << m[i].gamma_src << std::endl;
-        const unsigned int cSize{ static_cast<unsigned int>( m[i].corr.size() ) };
-        if( Nt == 0 ) {
-          if( cSize == 0 )
-            throw new std::runtime_error( "Empty correlator" );
-          Nt = cSize;
-          for( unsigned int j = 0; j < nGammaSq; j++ )
-            buffer[j].resize( Nt );
-        } else if( Nt != cSize )
-          throw new std::runtime_error( "Error: Nt = " + std::to_string( Nt ) + ", but just read correlator of length " + std::to_string( cSize ) );
-        for( int t = 0; t < Nt; ++t ) {
-          std::complex<double> &z = m[i].corr[ ( t + tOffset ) % Nt ];
-          if( !std::isfinite( z.real() ) || !std::isfinite( z.imag() ) )
-          throw new std::runtime_error( "Correlator contains NaNs" );
-          buffer[iIndex][t] = z;
-        }
-      }
-    }
-  }
-
-  for( unsigned int i = 0; i < nGammaSq; ++i )
-    if( iCount[i] != 1 )
-      throw new std::runtime_error( "Specified gamma structures not present in HDF5 file" );
+  if( nDims != 1 )
+    throw new std::runtime_error("Object " + ObjectName + " in " + FileName + " has " + std::to_string( nDims ) + " dimensions" );
+  hsize_t Nt;
+  dsp.getSimpleExtentDims( &Nt );
+  hsize_t BufferSize{ static_cast<hsize_t>( buffer.size() ) };
+  if( BufferSize == 0 )
+    buffer.resize( Nt );
+  else if( BufferSize != Nt )
+    throw new std::runtime_error("Object " + ObjectName + " in " + FileName + " has " + std::to_string( Nt ) + " entries, doesn't match Nt=" + std::to_string( BufferSize ) );
+  ds.read( &buffer[0], Common::H5File::ComplexType() );
+  for( hsize_t t = 0; t < Nt; ++t )
+    if( !std::isfinite( buffer[t].real() ) || !std::isfinite( buffer[t].imag() ) )
+       throw new std::runtime_error( "Error: Infinite/NaN values in " + FileName );
 }
 
 enum ExtractFilenameReturn {Good, Bad, No_trajectory};
@@ -197,7 +147,7 @@ static ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, s
 
 Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgnore)
 {
-  std::map<std::string, TrajList> & Contractions = (* this);
+  // Get the list of files to ignore
   std::vector<std::string> Ignore;
   for( std::size_t start = 0; start < sIgnore.length() ; ) {
     auto end = sIgnore.find(':', start);
@@ -212,7 +162,12 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgn
       Ignore.push_back( sIgnore.substr( start, end - start ) );
     start = end + SepLen;
   }
-  bool parsed = ( Args.size() > 0 );
+  // Now walk the list of arguments.
+  // Any file that's not in the ignore list gets added to the manifest
+  if( Args.size() == 0 )
+    return;
+  bool parsed = true;
+  std::map<std::string, TrajList> & Contractions = (* this);
   for( const std::string &Filename : Args )
   {
     // See whether this file is in the ignore list
@@ -234,7 +189,10 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgn
       {
         case Good:
         {
-          /*TrajList & cl{Contractions[Contraction]};
+          auto itc = Contractions.find( Contraction );
+          if( itc == Contractions.end() )
+            itc = Contractions.emplace( Contraction, TrajList( Contraction ) ).first;
+          TrajList & cl{ itc->second };
           if( cl.TrajFile.size() == 0 )
             cl.Name = Contraction;
           auto it = cl.TrajFile.find( traj );
@@ -251,7 +209,7 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgn
               parsed = false;
               std::cout << "Error " << Filename << " conflicts with " << tf.Filename << std::endl;
             }
-          }*/
+          }
         }
           break;
           
@@ -266,6 +224,8 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgn
       }
     }
   }
+  if( !parsed )
+    throw new std::runtime_error( "Error parsing command-line arguments" );
 }
 
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl)

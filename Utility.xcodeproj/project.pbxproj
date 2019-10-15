@@ -11,6 +11,7 @@
 		6815510D22CBE8B6009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		6815510E22CBF569009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		6816B51722D87314004CBEC4 /* broken.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6816B51622D87314004CBEC4 /* broken.cc */; };
+		681AAC8E2355D6110045F604 /* CommonGrid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681AAC8C2355D5F10045F604 /* CommonGrid.cpp */; };
 		681DC8B822F19CB000EE04A9 /* hlxml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B722F19CB000EE04A9 /* hlxml.cpp */; };
 		681DC8BB22F20FE100EE04A9 /* CommonLatAn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */; };
 		681DC8BD22F211B600EE04A9 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
@@ -104,6 +105,8 @@
 		6815510C22CBE676009AB4AD /* Common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Common.cpp; sourceTree = "<group>"; };
 		6816B51422D87314004CBEC4 /* broken */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = broken; sourceTree = BUILT_PRODUCTS_DIR; };
 		6816B51622D87314004CBEC4 /* broken.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = broken.cc; sourceTree = "<group>"; };
+		681AAC8C2355D5F10045F604 /* CommonGrid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CommonGrid.cpp; sourceTree = "<group>"; };
+		681AAC8D2355D5F10045F604 /* CommonGrid.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommonGrid.hpp; sourceTree = "<group>"; };
 		681DC8B022F19BAB00EE04A9 /* hlxml */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hlxml; sourceTree = BUILT_PRODUCTS_DIR; };
 		681DC8B722F19CB000EE04A9 /* hlxml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hlxml.cpp; sourceTree = "<group>"; };
 		681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CommonLatAn.cpp; sourceTree = "<group>"; };
@@ -112,7 +115,7 @@
 		6822E8BF22A7057400A85993 /* bootstrap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bootstrap.cpp; sourceTree = "<group>"; };
 		6822E8C722A708A200A85993 /* peramb-compare.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "peramb-compare.cpp"; sourceTree = "<group>"; };
 		6822E8C822A710FA00A85993 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
-		68374AD723537C5B000F15B1 /* bootstrap_old.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bootstrap_old.cpp; sourceTree = "<group>"; };
+		68374AD723537C5B000F15B1 /* bootstrap.cpp.old */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bootstrap.cpp.old; sourceTree = "<group>"; };
 		6842CB9722A9165C003014D2 /* build */ = {isa = PBXFileReference; lastKnownFileType = folder; path = build; sourceTree = "<group>"; };
 		6845351B23477B9D00106304 /* xmlPeramb.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlPeramb.cpp; sourceTree = "<group>"; };
 		6845352023477BBE00106304 /* xmlPeramb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlPeramb; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -225,11 +228,13 @@
 			isa = PBXGroup;
 			children = (
 				687E28CC22F313A1004F4342 /* averagesm.cpp */,
-				68374AD723537C5B000F15B1 /* bootstrap_old.cpp */,
 				6822E8BF22A7057400A85993 /* bootstrap.cpp */,
+				68374AD723537C5B000F15B1 /* bootstrap.cpp.old */,
 				687E28CD22F313A1004F4342 /* bootstrapsm.cpp */,
 				6815510C22CBE676009AB4AD /* Common.cpp */,
 				6815510B22CBE676009AB4AD /* Common.hpp */,
+				681AAC8C2355D5F10045F604 /* CommonGrid.cpp */,
+				681AAC8D2355D5F10045F604 /* CommonGrid.hpp */,
 				681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */,
 				681DC8BA22F20D8B00EE04A9 /* CommonLatAn.hpp */,
 				681DC8B722F19CB000EE04A9 /* hlxml.cpp */,
@@ -480,6 +485,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6815510E22CBF569009AB4AD /* Common.cpp in Sources */,
+				681AAC8E2355D6110045F604 /* CommonGrid.cpp in Sources */,
 				6822E8C022A7057400A85993 /* bootstrap.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

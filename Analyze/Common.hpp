@@ -31,6 +31,7 @@
 
 #include <cassert>
 #include <cctype>
+#include <climits>
 #include <complex>
 #include <iostream>
 #include <map>
@@ -40,15 +41,77 @@
 
 #include <LatAnalyze/Statistics/Dataset.hpp>
 
-#include <Grid/GridCore.h>
-#include <Hadrons/Application.hpp>
-#include <Hadrons/Modules.hpp>
-
 #define BEGIN_COMMON_NAMESPACE namespace Common {
 #define END_COMMON_NAMESPACE   };
 
 BEGIN_COMMON_NAMESPACE
 
+// For now, this is just an alias
+using Correlator = std::vector<std::complex<double>>;
+
+inline void CopyCorrelator( Correlator &dst, const Correlator &src, int iOffset = 0, bool bSwapRealImag = false )
+{
+  const std::size_t Nt{ src.size() };
+  if( Nt == 0 )
+    throw new std::runtime_error( "Can't copy an uninitialised Correlator" );
+  if( Nt > INT_MAX )
+    throw new std::runtime_error( "Correlator size > INT_MAX" );
+  if( dst.size() == 0 )
+    dst.resize( Nt );
+  else if( dst.size() != Nt )
+    throw new std::runtime_error( "Can't assign correlator of length " + std::to_string( Nt ) + " to correlator of length " + std::to_string( dst.size() ) );
+  const std::size_t dt{ ( iOffset < 0 ) ? Nt - ( -iOffset % Nt ) : iOffset % Nt };
+  for( std::size_t t = 0; t < Nt; t++ )
+  {
+    const std::complex<double> & z{ src[( t + dt ) % Nt] };
+    if( bSwapRealImag ) {
+      dst[t].real( z.imag() );
+      dst[t].imag( z.real() );
+    }
+    else
+      dst[t] = z;
+  }
+}
+
+// A vector of correlators
+class vCorrelator : public std::vector<Correlator>
+{
+public:
+  using base_type = typename std::vector<Correlator>;
+  using size_type = base_type::size_type;
+  void ResizeCorrelators( int Nt )
+  {
+    for( Correlator &c : * this )
+      c.resize( Nt );
+  }
+  // This next probably isn't needed - the assign will set the size of each Correlator
+  //vCorrelator( size_type Size, int Nt ) : base_type( Size )
+  //{ ResizeCorrelators( Nt ); }
+};
+
+// Compare two strings, case insensitive
+inline bool EqualIgnoreCase(const std::string & s1, const std::string & s2)
+{
+  const std::size_t Len{ s1.size() };
+  bool bEqual = ( s2.size() == Len );
+  for( std::size_t i = 0; bEqual && i < Len; i++ )
+    bEqual = ( s1[ i ] == s2[ i ] ) || ( std::toupper( s1[ i ] ) == std::toupper( s2[ i ] ) );
+  return bEqual;
+}
+
+// Generic conversion from a string to any type
+template<typename T> inline T FromString( const std::string &String ) {
+  T t;
+  std::istringstream iss( String );
+  if( !( iss >> t ) || ( iss >> std::ws && !iss.eof() ) )
+    throw new std::invalid_argument( String );
+  return t;
+}
+// Converting a string to a string makes a copy
+template<> inline std::string FromString<std::string>( const std::string &String )
+  { return String; }
+
+// Generic representation of momentum
 struct Momentum
 {
   const int x;
@@ -63,15 +126,7 @@ struct Momentum
   }
 };
 
-inline bool EqualIgnoreCase(const std::string & s1, const std::string & s2)
-{
-  const std::size_t Len{ s1.size() };
-  bool bEqual = ( s2.size() == Len );
-  for( std::size_t i = 0; bEqual && i < Len; i++ )
-    bEqual = ( s1[ i ] == s2[ i ] ) || ( std::toupper( s1[ i ] ) == std::toupper( s2[ i ] ) );
-  return bEqual;
-}
-
+// My implementation of H5File - adds a definition of complex type
 class H5File : public H5::H5File {
 public:
   using H5::H5File::H5File; // Inherit the base class's constructors
@@ -104,58 +159,30 @@ template <typename T> inline bool IsFinite( const std::vector<T> & v )
 }
 
 // Read a complex array from an HDF5 file
-
 void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,
                       const std::string &GroupName  = std::string(),
                       const std::string &ObjectName = std::string( "correlator" ) );
-void ReadComplexArray(std::vector<std::vector<std::complex<double>>> &buffer, const std::vector<Grid::Gamma::Algebra> &alg, const std::string &FileName, unsigned int tOffset);
 
 struct TrajFile
 {
   const std::string Filename;  // Name of the file
-  int         offset;    // Shift the correlator by this amount;
-  bool        bImaginary; // true to use imaginary component
-  int         iMultiplier;
-  TrajFile( const std::string & Filename_, int offset_, bool bImaginary_, int iMultiplier_ )
-  : Filename{ Filename_ }, offset{offset_}, bImaginary{bImaginary_}, iMultiplier{ iMultiplier_ }{}
-  TrajFile( const std::string & Filename_ ) : TrajFile( Filename_, 0, false, 0 ) {}
-  virtual ~TrajFile() {}
-  virtual void GetCorellator( std::vector<std::complex<double>> &buffer )
-  { ReadComplexArray( buffer, Filename ); }
+  explicit TrajFile( const std::string & Filename_ ) : Filename{ Filename_ } {}
 };
 
 // This describes one contraction and each of its trajectory files
 struct TrajList
 {
   std::string Name;                     // name of the contraction
-  int         momentum = 0; // Momentum in this trajectory
-  //std::map<int, std::string> Filename;  // list of all the files, sorted by trajectory number
   std::map<int, std::unique_ptr<TrajFile>> TrajFile;  // list of all the files, sorted by trajectory number
-  Latan::Dataset<Latan::DMat> data;
-  //TrajList() : data( 1 ) {} // But don't use this or you can only have 1 sample
-  TrajList( const std::string &Name_, int momentum_, std::size_t nSample ) : Name{ Name_ }, momentum{ momentum_ }, data( nSample ) {}
+  TrajList( const std::string &Name_ ) : Name{ Name_ } {}
 };
 
 // This is a list of all the contractions we've been asked to process
 class Manifest : public std::map<std::string, TrajList> {
 public:
   // Process list of files on the command-line, breaking them up into individual trajectories
-  explicit Manifest(const std::vector<std::string> &Files, const std::string &sIgnore = "");
+  Manifest( const std::vector<std::string> &Files, const std::string &sIgnore );
 };
-
-// Generic conversion from a string to any type
-template<typename T> inline T FromString( const std::string &String ) {
-  T t;
-  std::istringstream iss( String );
-  if( !( iss >> t ) || ( iss >> std::ws && !iss.eof() ) ) {
-    std::cerr << "Error converting \"" << String << "\"" << std::endl;
-    exit( EXIT_FAILURE );
-  }
-  return t;
-}
-template<> inline std::string FromString<std::string>( const std::string &String ) {
-  return String; // Yes, this makes a copy
-}
 
 struct CommandLine;
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl);

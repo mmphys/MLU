@@ -44,6 +44,24 @@ template <typename T> inline bool IsFinite( const Latan::Mat<T> & m, bool bDiago
   return true;
 }
 
+// Copy a correlator to a Latan::DMat
+inline void CopyCorrelator( Latan::DMat &dst, const Correlator &src, int iOffset = 0, bool bSwapRealImag = false )
+{
+  const std::size_t Nt{ src.size() };
+  if( Nt == 0 )
+    throw new std::runtime_error( "Can't copy an uninitialised Correlator" );
+  if( Nt > INT_MAX )
+    throw new std::runtime_error( "Correlator size > INT_MAX" );
+  dst.resize( Nt, 2 ); // LatAnalyze prefers nt * 2 real matrix
+  const std::size_t dt{ ( iOffset < 0 ) ? Nt - ( -iOffset % Nt ) : iOffset % Nt };
+  for( std::size_t t = 0; t < Nt; t++ )
+  {
+    const std::complex<double> & z{ src[( t + dt ) % Nt] };
+    dst( t, 0 ) = bSwapRealImag ? z.imag() : z.real();
+    dst( t, 1 ) = bSwapRealImag ? z.real() : z.imag();
+  }
+}
+
 // Read a list of bootstrapped correlators into a single correlator
 Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps );
 
