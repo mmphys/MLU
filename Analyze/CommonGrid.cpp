@@ -58,22 +58,22 @@ void ReadComplexArray(std::vector<std::vector<std::complex<double>>> &buffer, co
       if( iSnk < nGamma ) {
         const unsigned int iIndex{ iSnk * nGamma + iSrc };
         if( ++iCount[iIndex] != 1 )
-          throw new std::runtime_error( "File repeats gamma indices" );
+          throw std::runtime_error( "File repeats gamma indices" );
         //std::cout << "meson[" << i << "].gamma_snk=" << m[i].gamma_snk << std::endl;
         //std::cout << "meson[" << i << "].gamma_src=" << m[i].gamma_src << std::endl;
         const unsigned int cSize{ static_cast<unsigned int>( m[i].corr.size() ) };
         if( Nt == 0 ) {
           if( cSize == 0 )
-            throw new std::runtime_error( "Empty correlator" );
+            throw std::runtime_error( "Empty correlator" );
           Nt = cSize;
           for( unsigned int j = 0; j < nGammaSq; j++ )
             buffer[j].resize( Nt );
         } else if( Nt != cSize )
-          throw new std::runtime_error( "Error: Nt = " + std::to_string( Nt ) + ", but just read correlator of length " + std::to_string( cSize ) );
+          throw std::runtime_error( "Error: Nt = " + std::to_string( Nt ) + ", but just read correlator of length " + std::to_string( cSize ) );
         for( int t = 0; t < Nt; ++t ) {
           std::complex<double> &z = m[i].corr[ ( t + tOffset ) % Nt ];
           if( !std::isfinite( z.real() ) || !std::isfinite( z.imag() ) )
-            throw new std::runtime_error( "Correlator contains NaNs" );
+            throw std::runtime_error( "Correlator contains NaNs" );
           buffer[iIndex][t] = z;
         }
       }
@@ -81,7 +81,7 @@ void ReadComplexArray(std::vector<std::vector<std::complex<double>>> &buffer, co
   }
   for( unsigned int i = 0; i < nGammaSq; ++i )
     if( iCount[i] != 1 )
-      throw new std::runtime_error( "Specified gamma structures not present in HDF5 file" );
+      throw std::runtime_error( "Specified gamma structures not present in HDF5 file" );
 }
 
 END_COMMON_NAMESPACE

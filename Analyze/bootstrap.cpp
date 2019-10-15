@@ -218,7 +218,7 @@ bool PerformBootstrap( const BootstrapParams &par, Latan::Dataset<Latan::DMat> &
 {
   const bool bPerformBootstrap{ par.bSaveSummaries || par.bSaveBootstrap };
   //if( !bPerformBootstrap && !par.dumpBoot )
-    //throw new std::runtime_error( "No bootstrap to perform" );
+    //throw std::runtime_error( "No bootstrap to perform" );
   // Skip bootstrap if output exists
   static const char * pszBootstrap{"bootstrap"};
   static const std::string sBootstrap{pszBootstrap};
@@ -235,8 +235,8 @@ bool PerformBootstrap( const BootstrapParams &par, Latan::Dataset<Latan::DMat> &
   if( par.bShowAverages )
     ShowTimeSliceAvg( in );
   if( bPerformBootstrap ) {
-    if( ( par.nSample / 10 ) < in.size() )
-      throw new std::runtime_error( "nSample=" + std::to_string( par.nSample ) + " too small for dataset with " + std::to_string( in.size() ) + " elements" );
+    if( ( par.nSample / 5 ) < in.size() )
+      throw std::runtime_error( "nSample=" + std::to_string( par.nSample ) + " too small for dataset with " + std::to_string( in.size() ) + " elements" );
     std::cout << "-- resampling (" << par.nSample << " samples)..." << std::endl;
     if( par.binSize != 1 )
       in.bin( par.binSize );
@@ -476,7 +476,6 @@ int main(int argc, char *argv[])
         const unsigned int nFile{ static_cast<unsigned int>(l.TrajFile.size())};
         std::cout << "Loading " << nFile << " files for " << Contraction << std::endl;
         unsigned int j = 0; // which trajectory are we processing
-        bool bError = false;
         Common::Correlator buf;
         Latan::Dataset<Latan::DMat> data(nFile);
         for( auto it = l.TrajFile.begin(); it != l.TrajFile.end(); it++, j++ )
@@ -485,18 +484,10 @@ int main(int argc, char *argv[])
           const Common::TrajFile &tf{*it->second};
           const std::string &Filename{tf.Filename};
           std::cout << "\t" << traj << "\t" << Filename << std::endl;
-          try
-          {
-            Common::ReadComplexArray( buf, Filename );
-            Common::CopyCorrelator( data[j], buf );
-            PerformBootstrap( par, data, Contraction );
-            BootstrapCount++;
-          } catch( const std::exception &e ) {
-            std::cerr << "\tError: " << e.what() << std::endl;
-          } catch( ... ) {
-            std::cerr << "\tError while reading " << Filename << std::endl;
-            bError = true;
-          }
+          Common::ReadComplexArray( buf, Filename );
+          Common::CopyCorrelator( data[j], buf );
+          PerformBootstrap( par, data, Contraction );
+          BootstrapCount++;
         }
       }
       std::cout << "Bootstraps written for " << BootstrapCount
@@ -520,8 +511,8 @@ int main(int argc, char *argv[])
       };
       for( const Common::Momentum &m : Z2Momenta )
       {
-        Z2Bootstrap( par, m, qHeavy, qHeavy );
         Z2Bootstrap( par, m, qHeavy, qLight );
+        Z2Bootstrap( par, m, qHeavy, qHeavy );
         Z2Bootstrap( par, m, qLight, qLight );
       }
     }
@@ -529,6 +520,8 @@ int main(int argc, char *argv[])
   catch(const std::exception &e) {
     std::cerr << "Error: " << e.what() << std::endl;
     iReturn = EXIT_FAILURE;
-  }
+    } catch( ... ) {
+      std::cerr << "Error: Unknown exception" << std::endl;
+    }
   return iReturn;
 }

@@ -96,18 +96,18 @@ void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::stri
   H5::DataSpace dsp = ds.getSpace();
   const int nDims{dsp.getSimpleExtentNdims()};
   if( nDims != 1 )
-    throw new std::runtime_error("Object " + ObjectName + " in " + FileName + " has " + std::to_string( nDims ) + " dimensions" );
+    throw std::runtime_error("Object " + ObjectName + " in " + FileName + " has " + std::to_string( nDims ) + " dimensions" );
   hsize_t Nt;
   dsp.getSimpleExtentDims( &Nt );
   hsize_t BufferSize{ static_cast<hsize_t>( buffer.size() ) };
   if( BufferSize == 0 )
     buffer.resize( Nt );
   else if( BufferSize != Nt )
-    throw new std::runtime_error("Object " + ObjectName + " in " + FileName + " has " + std::to_string( Nt ) + " entries, doesn't match Nt=" + std::to_string( BufferSize ) );
+    throw std::runtime_error("Object " + ObjectName + " in " + FileName + " has " + std::to_string( Nt ) + " entries, doesn't match Nt=" + std::to_string( BufferSize ) );
   ds.read( &buffer[0], Common::H5File::ComplexType() );
   for( hsize_t t = 0; t < Nt; ++t )
     if( !std::isfinite( buffer[t].real() ) || !std::isfinite( buffer[t].imag() ) )
-       throw new std::runtime_error( "Error: Infinite/NaN values in " + FileName );
+       throw std::runtime_error( "Error: Infinite/NaN values in " + FileName );
 }
 
 enum ExtractFilenameReturn {Good, Bad, No_trajectory};
@@ -225,7 +225,7 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgn
     }
   }
   if( !parsed )
-    throw new std::runtime_error( "Error parsing command-line arguments" );
+    throw std::runtime_error( "Error parsing command-line arguments" );
 }
 
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl)
