@@ -41,6 +41,15 @@
 
 #include <LatAnalyze/Statistics/Dataset.hpp>
 
+// Default output file extension for binary data
+#ifndef DEF_FMT
+#define DEF_FMT "h5"
+#endif
+// Default output file extension for text based summaries of binary data
+#ifndef TEXT_EXT
+#define TEXT_EXT "txt"
+#endif
+
 #define BEGIN_COMMON_NAMESPACE namespace Common {
 #define END_COMMON_NAMESPACE   };
 

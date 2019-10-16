@@ -12,12 +12,15 @@ function plot_one()
 function plot_file()
 {
   local file=$1
-  local file_array=(${file//./ })
-  local corr=${file_array[0]}
+  local file_short=$file
+  local ext=${file_short//*.}
+        file_short=${file_short%.*}
+  local seed=${file_short//*.}
+        file_short=${file_short%.*}
+  local type=${file_short//*.}
+  local corr=${file_short%.*}
   local corr_escaped=${corr//\_/\\\_}
-  local type=${file_array[1]}
-  local seed=${file_array[2]}
-  local ext=${file_array[3]}
+#  local cmd="set xrange [3:16]; plot '${file}'"
   local cmd="plot '${file}'"
   if [[ $ext == "txt" ]] ; then
     case $type in

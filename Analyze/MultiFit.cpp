@@ -293,6 +293,7 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
   //minimizer.SetPrintLevel( Verbosity );
   //minimizer.SetFunction();
   //VariableIterator i;
+  // For each Exponent, I need the delta_E + a constant for each operator
   const int NeedSize{ NumExponents * ( 1 + NumOps ) };
   std::vector<double> par( NeedSize );
   double * const Energy{ par.data() };
@@ -335,9 +336,14 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
 
   //ROOT::Minuit2::VariableMetricMinimizer minimizer;
   ROOT::Minuit2::MnMigrad minimizer( *this, upar );
-  Latan::DMatSample Fit( NSamples, NeedSize, 1 );
+  Latan::DMatSample ModelParams( NSamples, NeedSize, 1 );
+  std::vector<Latan::DMatSample> ModelCorr( NumOps * NumOps );
+  for( int i = 0; i < NumOps * NumOps; i++ ) {
+    ModelCorr[i].resize( NSamples );
+    ModelCorr[i].resizeMat( Nt, 2 ); // Complex component will be zero
+  }
   //FOR_STAT_ARRAY( Fit, <#i#> ) {
-  for (Latan::Index i = -Fit.offset; i < 0 /*Fit.size()*/; ++i) {
+  for (Latan::Index i = -ModelParams.offset; i < ModelParams.size(); ++i) {
     idx = i;
     ROOT::Minuit2::FunctionMinimum min = minimizer();
     ROOT::Minuit2::MnUserParameterState state = min.UserState();
@@ -361,10 +367,33 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
     upar = state.Parameters();
     if( i == Latan::central || Verbosity > 1 )
       DumpParameters( FitResult, upar );
-    for( int j = 0; j < NeedSize; ++j )
-      Fit[i](j, 0) = upar.Value( j );
+    // Save the fit parameters for this replica
+    for( int j = 0; j < NeedSize; ++j ) {
+      par[j] = upar.Value( j ); // Need this so Energy and Coeff are up-to-date
+      ModelParams[i](j, 0) = par[j];
+    }
+    // Save the reconstructed correlator values for this replica
+    for( int snk = 0; snk < NumOps; ++snk )
+      for( int src = 0; src < NumOps; ++src ) {
+        Latan::DMatSample &mc{ ModelCorr[AlphaIndex( src, snk)] };
+        for( int t = 0; t < Nt; ++t ) {
+          double z = 0;
+          double CumulativeEnergy = 0;
+          for( int e = 0; e < NumExponents; ++e ) {
+            CumulativeEnergy -= Energy[e];
+            z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( CumulativeEnergy * t );
+          }
+          mc[i](t,0) = z;
+          mc[i](t,1) = 0;
+        }
+      }
   }
-  Latan::Io::save(Fit, OutputRunBase + "Fit.h5");
+  Latan::Io::save(ModelParams, OutputRunBase + "Model.h5");
+  for( int i = 0; i < NumOps * NumOps; i++ ) {
+    const std::string SummaryBase{ OutputRunBase + "ModelCorr_" + std::to_string( i ) };
+    Latan::Io::save(ModelCorr[i], SummaryBase + ".h5");
+    Common::MakeSummaries(ModelCorr[i], SummaryBase + ".@type@", static_cast<Latan::SeedType>( i ) );
+  }
   return true;
 }
 

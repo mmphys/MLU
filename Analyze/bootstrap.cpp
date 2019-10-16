@@ -35,148 +35,6 @@
 #ifndef DEF_NSAMPLE
 #define DEF_NSAMPLE "10000"
 #endif
-// Default output file format for bootstrap data
-#ifndef DEF_FMT
-#define DEF_FMT "h5"
-#endif
-// Default output file format for text based summaries of bootstrap data
-#ifndef TEXT_EXT
-#define TEXT_EXT "txt"
-#endif
-
-// Make a copy of str, in which token has been replaced by x
-template <typename T> std::string tokenReplaceCopy(const std::string &str, const std::string token, const T &x )
-{
-  std::string sCopy{str};
-  Latan::tokenReplace(sCopy, token, x );
-  return sCopy;
-}
-
-// Make a filename of a specific type
-std::string MakeFilename(const std::string &Base, const char *Type, Latan::SeedType Seed, const std::string &Ext)
-{
-  std::string type{Type};
-  type.append( 1, '.' );
-  type.append( std::to_string( Seed ) );
-  return tokenReplaceCopy( Base, "type", type ) + '.' + Ext;
-}
-
-static const char * SummaryNames[] = { "corr", "mass", "cosh" };//, "sinh" };
-
-// Make summary files of this data set
-void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed )//, int momentum_squared)
-{
-  const int           nt{static_cast<int>(out[Latan::central].rows())};
-  const Latan::Index  nSample{out.size()};
-  // Now make summary data files
-  std::vector<double> TmpAvg( nt );
-  std::vector<std::vector<double>> TmpSamples( nt );
-  for(int t = 0; t < nt; t++)
-    TmpSamples[t].resize( nSample );
-  static const char sep[] = " ";
-  static const char * SummaryHeader[] =
-  {
-    "# correlator\nt corr_re corr_stddev corr_im corr_im_stddev",
-    "# "   "mass\nt mass mass_low mass_high check",
-    "# cosh_mass\nt mass mass_low mass_high check",
-    //"# sinh_mass\nt mass mass_low mass_high check",
-  };
-  for(int f = 0; f < sizeof(SummaryNames)/sizeof(SummaryNames[0]); f++)
-  {
-    std::string sOutFileName{ MakeFilename(sOutFileBase, SummaryNames[f], Seed, TEXT_EXT) };
-    std::ofstream s(sOutFileName);
-    s << std::setprecision(std::numeric_limits<double>::digits10 + 1) << SummaryHeader[f] << std::endl;
-    for(int t = 0; t < nt; t++)
-    {
-      if( f == 0 )
-      {
-        double Avg = 0;
-        double StdDev = 0;
-        double AvgIm = 0;
-        double StdDevIm = 0;
-        for(int i = 0; i < nSample; i++)
-        {
-          Avg   += out[i](t,0);
-          AvgIm += out[i](t,1);
-        }
-        Avg   /= nSample;
-        AvgIm /= nSample;
-        for(int i = 0; i < nSample; i++)
-        {
-          double d = out[i](t,0) - Avg;
-          StdDev += d * d;
-          d = out[i](t,1) - AvgIm;
-          StdDevIm += d * d;
-        }
-        StdDev   /= nSample;
-        StdDevIm /= nSample;
-        StdDev    = std::sqrt( StdDev );
-        StdDevIm  = std::sqrt( StdDevIm );
-        s << t << sep << Avg << sep << StdDev << sep << AvgIm << sep << StdDevIm << sep << std::endl;
-      }
-      else
-      {
-        TmpAvg[t] = 0;
-        int Count = 0;
-        for(int i = 0; i < nSample; i++)
-        {
-          {
-            double DThis;
-            switch(f)
-            {
-              case 1: // mass
-                DThis = std::log( abs( out[i](t, 0) / out[i]((t + 1 + nt) % nt, 0) ) );
-              /*assert( momentum_squared >= 0 && momentum_squared <= 6 && "Unsupported momentum" );
-                if( momentum_squared >= 1 && momentum_squared <= 6 )
-                {
-                  // Lattice dispersion relation (not very well implemented)
-                  static const double ss_half{ sin(0.5) * sin(0.5) };
-                  static const double ss_one{ sin(1.) * sin(1.) };
-                  double sum;
-                  if( momentum_squared <= 3 )
-                    sum = ss_half * momentum_squared;
-                  else
-                    sum = ss_half * ( momentum_squared - 4 ) + ss_one;
-                  double dSinh_HalfE0{ sinh( DThis / 2 ) };
-                  DThis = 2 * asinh( sqrt( dSinh_HalfE0 * dSinh_HalfE0 - sum ) );
-                }*/
-                break;
-              case 2: // cosh mass
-                DThis = std::acosh((out[i]((t - 1 + nt) % nt, 0) + out[i]((t + 1) % nt, 0)) / (2 * out[i](t, 0)));
-                break;
-              //case 3: // sinh mass
-                //DThis = std::asinh((out[i]((t - 1 + nt) % nt, 0) - out[i]((t + 1) % nt, 0)) / (2 * //out[i](t, 0)));
-                //break;
-              default:
-                DThis = 0;
-            }
-            if( std::isfinite( DThis ) ) {
-              TmpSamples[t][Count++] = DThis;
-              TmpAvg[t] += DThis;
-            }
-          }
-        }
-        static const double NaN{ std::nan( "" ) };
-        assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
-        double dErrPlus, dErrMinus;
-        if( Count ) {
-          TmpAvg[t] /= Count;
-          const typename std::vector<double>::iterator itStart{ TmpSamples[t].begin() };
-          const typename std::vector<double>::iterator itEnd  { itStart + Count };
-          std::sort( itStart, itEnd );
-          int Index = static_cast<int>( 0.16 * Count + 0.5 );
-          dErrMinus = TmpAvg[t] - TmpSamples[t][Index];
-          dErrPlus  = TmpSamples[t][Count - Index] - TmpAvg[t];
-        } else {
-          TmpAvg[t] = NaN;
-          dErrPlus  = NaN;
-          dErrMinus = NaN;
-        }
-        s << t << sep << TmpAvg[t] << sep << dErrMinus << sep << dErrPlus << sep << ( static_cast<double>( Count ) / nSample ) << std::endl;
-      }
-    }
-  }
-}
 
 // Show me the averages for each timeslice
 void ShowTimeSliceAvg(const Latan::Dataset<Latan::DMat> &data) {
@@ -222,10 +80,10 @@ bool PerformBootstrap( const BootstrapParams &par, Latan::Dataset<Latan::DMat> &
   // Skip bootstrap if output exists
   static const char * pszBootstrap{"bootstrap"};
   static const std::string sBootstrap{pszBootstrap};
-  const std::string sOutFileBase{ tokenReplaceCopy( par.outStem, "corr", Contraction ) };
-  std::string sOutFileName{ MakeFilename( sOutFileBase, pszBootstrap, par.seed, par.OutFileExt ) };
+  const std::string sOutFileBase{ Common::tokenReplaceCopy( par.outStem, "corr", Contraction ) };
+  std::string sOutFileName{ Common::MakeFilename( sOutFileBase, pszBootstrap, par.seed, par.OutFileExt ) };
   if( Common::FileExists( sOutFileName ) || (!par.bSaveBootstrap &&
-      Common::FileExists( MakeFilename(sOutFileBase, SummaryNames[0], par.seed, TEXT_EXT) )) )
+                                             Common::FileExists( Common::MakeFilename(sOutFileBase, Common::SummaryNames[0], par.seed, TEXT_EXT) )) )
   {
     std::cout << "Skipping " << Contraction << " because output already exists" << std::endl;
     return false;
@@ -246,10 +104,10 @@ bool PerformBootstrap( const BootstrapParams &par, Latan::Dataset<Latan::DMat> &
       Latan::Io::save<Latan::DMatSample>(out, sOutFileName, Latan::File::Mode::write, sBootstrap);
     }
     if( par.bSaveSummaries )
-      MakeSummaries( out, sOutFileBase, par.seed );//, momentum_squared );
+      Common::MakeSummaries( out, sOutFileBase, par.seed );//, momentum_squared );
   }
   if( par.dumpBoot ) { // Dump the bootstrap sequences
-    std::string SeqFileName{ MakeFilename( sOutFileBase, "bootseq", par.seed, TEXT_EXT ) };
+    std::string SeqFileName{ Common::MakeFilename( sOutFileBase, "bootseq", par.seed, TEXT_EXT ) };
     std::cout << "Saving bootstrap sequence to '" << SeqFileName << "' ...";
     std::ofstream file(SeqFileName);
     file << "# bootstrap sequences" << std::endl;

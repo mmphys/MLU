@@ -35,7 +35,7 @@ all: $(target)
 
 MultiFit: MultiFit.o Common.o CommonLatAn.o
 
-bootstrap: bootstrap.o Common.o CommonGrid.o
+bootstrap: bootstrap.o Common.o CommonLatAn.o CommonGrid.o
 
 hlxml: hlxml.o Common.o
 

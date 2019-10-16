@@ -62,8 +62,24 @@ inline void CopyCorrelator( Latan::DMat &dst, const Correlator &src, int iOffset
   }
 }
 
+// Make a copy of str, in which token has been replaced by x
+template <typename T> inline std::string tokenReplaceCopy(const std::string &str, const std::string token, const T &x )
+{
+  std::string sCopy{str};
+  Latan::tokenReplace(sCopy, token, x );
+  return sCopy;
+}
+
 // Read a list of bootstrapped correlators into a single correlator
 Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps );
+
+// Make a filename of a specific type
+// The Base filename has "@type@" replaced with "Type.seed" and ".Ext" appended
+std::string MakeFilename(const std::string &Base, const char *Type, Latan::SeedType Seed, const std::string &Ext);
+
+// Make summary files of this data set
+extern const char * SummaryNames[3];
+void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed );
 
 END_COMMON_NAMESPACE
 #endif // CommonLatAn_hpp
