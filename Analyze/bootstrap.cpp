@@ -78,17 +78,15 @@ bool PerformBootstrap( const BootstrapParams &par, Latan::Dataset<Latan::DMat> &
   //if( !bPerformBootstrap && !par.dumpBoot )
     //throw std::runtime_error( "No bootstrap to perform" );
   // Skip bootstrap if output exists
-  static const char * pszBootstrap{"bootstrap"};
-  static const std::string sBootstrap{pszBootstrap};
   const std::string sOutFileBase{ Common::tokenReplaceCopy( par.outStem, "corr", Contraction ) };
-  std::string sOutFileName{ Common::MakeFilename( sOutFileBase, pszBootstrap, par.seed, par.OutFileExt ) };
-  if( Common::FileExists( sOutFileName ) || (!par.bSaveBootstrap &&
-                                             Common::FileExists( Common::MakeFilename(sOutFileBase, Common::SummaryNames[0], par.seed, TEXT_EXT) )) )
+  std::string sOutFileName{ Common::MakeFilename( sOutFileBase, Common::sBootstrap, par.seed, par.OutFileExt ) };
+  if( Common::FileExists( sOutFileName ) || (!par.bSaveBootstrap && Common::FileExists(
+      Common::MakeFilename(sOutFileBase, Common::SummaryNames[0], par.seed, TEXT_EXT))))
   {
     std::cout << "Skipping " << Contraction << " because output already exists" << std::endl;
     return false;
   }
-  // Make sure there are at least 10x more bootstrap samples than data points
+  // Make sure there are at least 5x more bootstrap samples than data points
   std::cout << Contraction << std::endl;
   if( par.bShowAverages )
     ShowTimeSliceAvg( in );
@@ -101,7 +99,7 @@ bool PerformBootstrap( const BootstrapParams &par, Latan::Dataset<Latan::DMat> &
     Latan::DMatSample out = in.bootstrapMean( par.nSample, par.seed );
     if( par.bSaveBootstrap ) {
       std::cout << "Saving sample to " << sOutFileName << std::endl;
-      Latan::Io::save<Latan::DMatSample>(out, sOutFileName, Latan::File::Mode::write, sBootstrap);
+      Latan::Io::save<Latan::DMatSample>(out, sOutFileName, Latan::File::Mode::write, Common::sBootstrap);
     }
     if( par.bSaveSummaries )
       Common::MakeSummaries( out, sOutFileBase, par.seed );//, momentum_squared );
@@ -215,7 +213,7 @@ void Z2Bootstrap( const BootstrapParams &bsParams, const Common::Momentum &mom, 
     }
     // Now perform a bootstrap of this timeslice
     for( int iCorr = 0; iCorr < NumCorr; ++iCorr )
-      PerformBootstrap( par, bsDataT[iCorr], CorrPrefix + CorrSuffixes[iCorr] + tPrefix );
+      PerformBootstrap( par, bsDataT[iCorr], CorrPrefix + tPrefix + CorrSuffixes[iCorr] );
   }
   // Now perform a bootstrap overall
   par.bSaveBootstrap = true;
@@ -232,8 +230,6 @@ void Z2Bootstrap( const BootstrapParams &bsParams, const Common::Momentum &mom, 
 
 *****************************************************************/
 
-static const char DefaultOutputStem[] = "@corr@.@type@";
-
 static void Usage( const char * pExecutableName, Latan::OptParser &opt )
 {
   std::string cmd{ pExecutableName };
@@ -241,7 +237,6 @@ static void Usage( const char * pExecutableName, Latan::OptParser &opt )
   if( pos != std::string::npos && pos < cmd.length() - 1 )
     cmd = cmd.substr( pos + 1 );
   std::cerr << "usage: " << pExecutableName << " <options> ContractionFile1 [ContractionFile2 ...]"
-  << "\nOutput stem (if present) must contain '@corr@' and '@type', e.g. '" << DefaultOutputStem << "'"
   << "\nPossible options:\n" << opt << std::endl;
 }
 
@@ -269,7 +264,7 @@ int main(int argc, char *argv[])
   opt.addOption("r", "seed"      , Latan::OptParser::OptType::value,   true,
                 "random generator seed (default: random)");
   opt.addOption("o", "output"    , Latan::OptParser::OptType::value,   true,
-                "output file", DefaultOutputStem);
+                "output file", "@corr@");
   opt.addOption("f", "format"    , Latan::OptParser::OptType::value,   true,
                 "output file format", DEF_FMT);
   opt.addOption("d", "dump-boot" , Latan::OptParser::OptType::trigger, true,
@@ -289,7 +284,7 @@ int main(int argc, char *argv[])
   if( parsed )
   {
     par.outStem = opt.optionValue("o");
-    if (par.outStem.find("@corr@") == std::string::npos or par.outStem.find("@type@") == std::string::npos)
+    if( par.outStem.find( "@corr@" ) == std::string::npos )
     {
       parsed=false;
       std::cout << "Output stem " << par.outStem << " invalid" << std::endl;

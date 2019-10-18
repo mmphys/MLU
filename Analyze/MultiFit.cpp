@@ -63,7 +63,7 @@
 class MultiExpModel : public ROOT::Minuit2::FCNBase {
 public:
   using vd_t = std::vector<double>;
-  explicit MultiExpModel( const Latan::DMatSample Corr, int NumOps, int Verbosity, const std::string &OutputBaseName );
+  explicit MultiExpModel( const Latan::DMatSample Corr, int NumOps, const std::vector<std::string> &OpNames, int Verbosity, const std::string &OutputBaseName, Common::SeedType Seed );
   virtual ~MultiExpModel() {}
   // These are part of the FCNBase interface
   virtual double Up() const { return 1.; }
@@ -73,8 +73,10 @@ public:
   bool PerformFit( int NumExponents, bool bCorrelated, int tMin, int tMax );
 private:
   const int NumOps;
+  const std::vector<std::string> &OpNames;
   const int Verbosity;
   const std::string OutputBaseName;
+  const Common::SeedType Seed;
   const int NumFiles;
   const int NSamples;
   const int Nt;
@@ -98,10 +100,12 @@ private:
   void DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &par );
 };
 
-MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, int verbosity_, const std::string &outputBaseName_ )
+MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const std::vector<std::string> &opNames_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_ )
   : NumOps{ numOps_ },
+    OpNames{ opNames_ },
     Verbosity{ verbosity_ },
     OutputBaseName{ outputBaseName_ },
+    Seed{ seed_ },
     NumFiles{ numOps_ * numOps_ },
     NSamples{ static_cast<int>( corr_.size() ) },
     Nt      { static_cast<int>( corr_[Latan::central].rows() / NumFiles ) },
@@ -270,12 +274,13 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
   tMin = TMin_;
   tMax = TMax_;
   if( bTimesChanged || bCorrelatedChanged ) {
-    OutputRunBase = OutputBaseName.empty() ? "MultiFit" : OutputBaseName;
-    OutputRunBase.append( bCorrelated ? ".corr." : ".uncorr." );
+    OutputRunBase = OutputBaseName;
+    OutputRunBase.append( 1, '.' );
+    OutputRunBase.append( bCorrelated ? "corr" : "uncorr" );
+    OutputRunBase.append( 1, '_' );
     OutputRunBase.append( std::to_string( tMin ) );
-    OutputRunBase.append( 1, '.' );
+    OutputRunBase.append( 1, '_' );
     OutputRunBase.append( std::to_string( tMax ) );
-    OutputRunBase.append( 1, '.' );
   }
   if( bTimesChanged ) {
     NtCorr = TMax_ - TMin_ + 1;
@@ -375,7 +380,7 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
     // Save the reconstructed correlator values for this replica
     for( int snk = 0; snk < NumOps; ++snk )
       for( int src = 0; src < NumOps; ++src ) {
-        Latan::DMatSample &mc{ ModelCorr[AlphaIndex( src, snk)] };
+        Latan::DMatSample &mc{ ModelCorr[AlphaIndex( src, snk )] };
         for( int t = 0; t < Nt; ++t ) {
           double z = 0;
           double CumulativeEnergy = 0;
@@ -388,12 +393,14 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
         }
       }
   }
-  Latan::Io::save(ModelParams, OutputRunBase + "Model.h5");
-  for( int i = 0; i < NumOps * NumOps; i++ ) {
-    const std::string SummaryBase{ OutputRunBase + "ModelCorr_" + std::to_string( i ) };
-    Latan::Io::save(ModelCorr[i], SummaryBase + ".h5");
-    Common::MakeSummaries(ModelCorr[i], SummaryBase + ".@type@", static_cast<Latan::SeedType>( i ) );
-  }
+  Latan::Io::save(ModelParams, Common::MakeFilename( OutputRunBase, Common::sModel, Seed, DEF_FMT ) );
+  for( int snk = 0; snk < NumOps; ++snk )
+    for( int src = 0; src < NumOps; ++src ) {
+      const int i{ AlphaIndex( src, snk ) };
+      const std::string SummaryBase{ OutputRunBase + '_' + OpNames[snk] + '_' + OpNames[src] };
+      Latan::Io::save(ModelCorr[i], Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
+      Common::MakeSummaries(ModelCorr[i], SummaryBase, Seed );
+    }
   return true;
 }
 
@@ -452,6 +459,8 @@ int main(int argc, char *argv[])
                 "number of exponents", "0");
   opt.addOption("" , "uncorr"   , OptParser::OptType::trigger, true,
                 "perform uncorrelated fit (default=correlated");
+  opt.addOption("" , "opnames"   , OptParser::OptType::trigger, true,
+                "operator names (default=op_n");
   if (!opt.parse(argc, argv) or (opt.getArgs().size() < 1) or opt.gotOption("help"))
   {
     std::cerr << "usage: " << argv[0] << " <options> <correlator file>" << std::endl;
@@ -472,7 +481,7 @@ int main(int argc, char *argv[])
   //double plotrange        = opt.optionValue<Index>("range");
   //bool doHeatmap          = opt.gotOption("h");
   const std::string model{ opt.optionValue("m") };
-  const std::string outBaseFileName{ opt.optionValue("o") };
+  std::string outBaseFileName{ opt.optionValue("o") };
   const bool doCorr{ !opt.gotOption("uncorr") };
   const int Verbosity{ opt.optionValue<int>("v") }; // 0 = normal, 1=debug, 2=save covar, 3=Every iteration
   /*Minimizer::Verbosity verbosity;
@@ -492,9 +501,7 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
   }*/
   
-  // load correlator /////////////////////////////////////////////////////////
-  const std::vector<std::string> & FileNames( opt.getArgs() );
-
+  // load correlators /////////////////////////////////////////////////////////
   const int NumFiles{ static_cast<int>( opt.getArgs().size() ) };
   int NumOps = 1; // Number of operators. Should equal square root of number of files
   while( NumOps * NumOps < NumFiles )
@@ -503,10 +510,47 @@ int main(int argc, char *argv[])
     std::cerr << "Number of files should be a perfect square" << std::endl;
     return EXIT_FAILURE;
   }
+  std::vector<std::string> OpNames;
+  Common::SeedType Seed = 0;
+  try{
+    std::vector<Common::FileNameAtt> FileNames;
+    std::size_t i = 0;
+    for( const std::string &sFileName : opt.getArgs() ) {
+      FileNames.emplace_back( sFileName, OpNames );
+      if( i == 0 ) {
+        outBaseFileName.append( FileNames[0].Base );
+        Seed = FileNames[0].Seed;
+      } else {
+        static const std::string sFile{ "File " };
+        static const std::string sBad{ " doesn't match " };
+        if( !Common::EqualIgnoreCase( FileNames[i].Base, FileNames[0].Base ) )
+          throw std::runtime_error( sFile + std::to_string( i ) + " base " + FileNames[i].Base + sBad + FileNames[0].Base );
+        if( !Common::EqualIgnoreCase( FileNames[i].Type, FileNames[0].Type ) )
+          throw std::runtime_error( sFile + std::to_string( i ) + " type " + FileNames[i].Type + sBad + FileNames[0].Type );
+        if( FileNames[i].Seed != FileNames[0].Seed )
+          throw std::runtime_error( sFile + std::to_string( i ) + " seed " + std::to_string( FileNames[i].Seed ) + sBad + std::to_string( FileNames[0].Seed ) );
+        if( !Common::EqualIgnoreCase( FileNames[i].Ext, FileNames[0].Ext ) )
+          throw std::runtime_error( sFile + std::to_string( i ) + " extension " + FileNames[i].Ext + sBad + FileNames[0].Ext );
+      }
+      i++;
+    }
+    if( OpNames.size() != NumOps )
+      throw std::runtime_error( std::to_string( OpNames.size() ) + " operators provided, but " + std::to_string( NumOps ) + " expected for " + std::to_string( NumFiles ) + " files" );
+    for( int snk = 0; snk < NumOps; ++snk )
+      for( int src = 0; src < NumOps; ++src ) {
+        Common::FileNameAtt &f{ FileNames[snk * NumOps + src] };
+        if( f.op[0] != src || f.op[1] != snk )
+          throw std::runtime_error( "Warning: Operator order should be sink-major, source minor" );
+      }
+  }
+  catch(const std::exception &e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+    return EXIT_FAILURE;
+  }
   int NumExponents{ opt.optionValue<int>( "exponents" ) };
   if( NumExponents == 0 )
     NumExponents = NumOps;
-  MultiExpModel m ( Common::ReadBootstrapCorrs( FileNames, fold, shift, NumOps ), NumOps, Verbosity, outBaseFileName );
+  MultiExpModel m ( Common::ReadBootstrapCorrs( opt.getArgs(), fold, shift, NumOps ), NumOps, OpNames, Verbosity, outBaseFileName, Seed );
   for( int dt = 0; dt < dti_max; dt++ )
   {
     //m.PerformFit( NumExponents, false, ti + dt, tf );

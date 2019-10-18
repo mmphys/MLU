@@ -31,7 +31,6 @@
 BEGIN_COMMON_NAMESPACE
 
 // Read a list of bootstrapped correlators into a single correlator
-
 static void ReadBootstrapCorrsHelper( Latan::DMat &m, std::vector<double> ReadBuffer, int iFile, int NtSource, int NtDest, int Fold, int Shift )
 {
   for( int k = 0; k < NtDest; ++k ) {
@@ -149,16 +148,6 @@ Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName,
     }
   }
   return Corr;
-}
-
-// Make a filename of a specific type
-// The Base filename has "@type@" replaced with "Type.seed" and ".Ext" appended
-std::string MakeFilename(const std::string &Base, const char *Type, Latan::SeedType Seed, const std::string &Ext)
-{
-  std::string type{Type};
-  type.append( 1, '.' );
-  type.append( std::to_string( Seed ) );
-  return tokenReplaceCopy( Base, "type", type ) + '.' + Ext;
 }
 
 const char * SummaryNames[3] = { "corr", "mass", "cosh" };//, "sinh" };

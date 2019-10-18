@@ -131,7 +131,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dti8"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti3"

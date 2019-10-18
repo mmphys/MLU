@@ -55,6 +55,34 @@
 
 BEGIN_COMMON_NAMESPACE
 
+extern const std::string sBootstrap;
+extern const std::string sModel;
+
+using SeedType = unsigned int;
+
+// Does the specified file exist?
+inline bool FileExists(const std::string& Filename)
+{
+  struct stat buf;
+  return stat(Filename.c_str(), &buf) != -1;
+}
+
+// Attributes for filenames in form base.type.seq.ext
+struct FileNameAtt
+{
+  std::string Filename; // Full name
+  std::string Base;
+  std::string Type;
+  SeedType    Seed;
+  std::string Ext;
+  std::vector<int> op;
+  explicit FileNameAtt( const std::string &Filename );
+  FileNameAtt( const std::string &Filename, std::vector<std::string> &OpNames );
+};
+
+// Make a filename "Base.Type.seed.Ext"
+std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext);
+
 // For now, this is just an alias
 using Correlator = std::vector<std::complex<double>>;
 
@@ -145,9 +173,6 @@ public:
 
 // Get first groupname from specified group
 std::string GetFirstGroupName( H5::Group & g );
-
-// Does the specified file exist?
-bool FileExists(const std::string& Filename);
 
 // Are all the floating point numbers pointed to finite
 template <typename T, typename I> inline bool IsFinite( const T * d, I n )
