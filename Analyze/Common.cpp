@@ -36,6 +36,27 @@ BEGIN_COMMON_NAMESPACE
 
 const std::string sBootstrap{ "bootstrap" };
 const std::string sModel{ "model" };
+const double NaN{ std::nan( "" ) };
+
+// Sort the list of values, then extract the lower and upper 68th percentile error bars
+void ValWithEr::Get( double Central_, std::vector<double> &Data, std::size_t Count )
+{
+  assert( Data.size() >= Count && "ValWithErr<T>::Get: data too small" );
+  Central = Central_;
+  if( Count == 0 ) {
+    ErLow = NaN;
+    ErHigh  = NaN;
+    return;
+  }
+  const typename std::vector<double>::iterator itStart{ Data.begin() };
+  const typename std::vector<double>::iterator itEnd  { itStart + Count };
+  std::sort( itStart, itEnd );
+  std::size_t Index = 0.16 * Count + 0.5;
+  if( Index >= Count )
+    Index = Count - 1;
+  ErLow  = Central - Data[Index];
+  ErHigh = Data[Count - 1 - Index] - Central;
+}
 
 // These are the attributes I like to use in my filenames
 FileNameAtt::FileNameAtt( const std::string &Filename ) : Seed( 0 )

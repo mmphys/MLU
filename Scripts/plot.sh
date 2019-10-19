@@ -20,21 +20,21 @@ function plot_file()
   local type=${file_short//*.}
   local corr=${file_short%.*}
   local corr_escaped=${corr//\_/\\\_}
-#  local cmd="set xrange [3:16]; plot '${file}'"
   local cmd="plot '${file}'"
+  cmd="set xrange [8:16]; ${cmd}"
   if [[ $ext == "txt" ]] ; then
+    local title=" ${corr_escaped} (seed=${seed})"
+    local fields="2:(\$2-\$3):(\$2+\$4) with yerrorbars"
     case $type in
-      corr) local cmd3="set title 'Im( Correlator ) ${corr_escaped} (seed=${seed})'; ${cmd} using 1:4:5 with yerrorbars"
-            local cmd2="set title 'Correlator ${corr_escaped} (seed=${seed})'; ${cmd} using 1:2:3 with yerrorbars"
-            cmd="set title 'Correlator ${corr_escaped} (seed=${seed})'; set logscale y; ${cmd} using 1:(abs(\$2)):3 with yerrorbars";;
-      mass | cosh | sinh | mass3pt ) cmd="set title '${type} ${corr_escaped} (seed=${seed})'; ${cmd} using 1:2:(\$2-\$3):(\$2+\$4) with yerrorbars";;
+      corr) title="set title 'Correlator ${title}'"
+            plot_one "${title}; ${cmd} using 1:6:(\$6-\$7):(\$6+\$8) with yerrorbars title 'imaginary' lc rgb 'red', '${file}' using 1:${fields} title 'real' lc rgb 'blue'"
+            cmd="${title}; set logscale y; ${cmd} using 1:2:(abs(\$2)-\$3):(abs(\$2)+\$4) with yerrorbars title 'real' lc rgb 'blue'";;
+      mass | cosh ) cmd="set title '${type} ${title}'; ${cmd} using 1:${fields} title '${type}' lc rgb 'red'";;
       *) echo "Unsupported file format: ${type}"
-         cmd="set title '${type} ${corr_escaped} (seed=${seed})'; ${cmd}";;
+         cmd="set title '${type} ${title}'; ${cmd}";;
     esac
   fi
   plot_one "$cmd"
-  plot_one "$cmd2"
-  plot_one "$cmd3"
 }
 
 while (( "$#" )); do

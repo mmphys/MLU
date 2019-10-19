@@ -67,6 +67,19 @@ inline bool FileExists(const std::string& Filename)
   return stat(Filename.c_str(), &buf) != -1;
 }
 
+extern const double NaN;
+
+class ValWithEr
+{
+public:
+  double Central;
+  double ErLow;
+  double ErHigh;
+  void Get( double dCentral, std::vector<double> &Data, std::size_t Count );
+  ValWithEr( double dCentral, std::vector<double> &Data, std::size_t Count )
+  { Get( dCentral, Data, Count ); }
+};
+
 // Attributes for filenames in form base.type.seq.ext
 struct FileNameAtt
 {

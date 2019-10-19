@@ -341,7 +341,7 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
 
   //ROOT::Minuit2::VariableMetricMinimizer minimizer;
   ROOT::Minuit2::MnMigrad minimizer( *this, upar );
-  Latan::DMatSample ModelParams( NSamples, NeedSize, 1 );
+  Latan::DMatSample ModelParams( NSamples, NeedSize, 2 );
   std::vector<Latan::DMatSample> ModelCorr( NumOps * NumOps );
   for( int i = 0; i < NumOps * NumOps; i++ ) {
     ModelCorr[i].resize( NSamples );
@@ -376,6 +376,7 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
     for( int j = 0; j < NeedSize; ++j ) {
       par[j] = upar.Value( j ); // Need this so Energy and Coeff are up-to-date
       ModelParams[i](j, 0) = par[j];
+      ModelParams[i](j, 1) = 0;
     }
     // Save the reconstructed correlator values for this replica
     for( int snk = 0; snk < NumOps; ++snk )
@@ -393,13 +394,21 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
         }
       }
   }
-  Latan::Io::save(ModelParams, Common::MakeFilename( OutputRunBase, Common::sModel, Seed, DEF_FMT ) );
+  std::string sModelBase{ OutputRunBase };
+  sModelBase.append( 1, '.' );
+  sModelBase.append( OpNames[0] );
+  for( std::size_t i = 1; i < OpNames.size(); i++ ) {
+    sModelBase.append( 1, '_' );
+    sModelBase.append( OpNames[i] );
+  }
+  Latan::Io::save(ModelParams, Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ));
+  //Common::SummariseBootstrap(ModelParams, sModelBase, Seed, "params" );
   for( int snk = 0; snk < NumOps; ++snk )
     for( int src = 0; src < NumOps; ++src ) {
       const int i{ AlphaIndex( src, snk ) };
-      const std::string SummaryBase{ OutputRunBase + '_' + OpNames[snk] + '_' + OpNames[src] };
+      const std::string SummaryBase{ OutputRunBase + '.' + OpNames[snk] + '_' + OpNames[src] };
       Latan::Io::save(ModelCorr[i], Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
-      Common::MakeSummaries(ModelCorr[i], SummaryBase, Seed );
+      Common::SummariseBootstrapCorr(ModelCorr[i], SummaryBase, Seed );
     }
   return true;
 }

@@ -75,7 +75,8 @@ Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName,
 
 // Make summary files of this data set
 extern const char * SummaryNames[3];
-void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed );
+// Make summary files of a bootstrap of a correlator
+void SummariseBootstrapCorr(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed );//, int momentum_squared);
 
 END_COMMON_NAMESPACE
 #endif // CommonLatAn_hpp

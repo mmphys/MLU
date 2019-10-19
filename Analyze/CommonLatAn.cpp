@@ -150,118 +150,116 @@ Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName,
   return Corr;
 }
 
+static const char sep[] = " ";
+static const char Comment[] = "# ";
+static const char NewLine[] = "\n";
+
+// Make summary files of a bootstrap of a correlator
+void SummariseBootstrap(const Latan::DMatSample &out, const std::string & sOutFileBase,
+     const std::string & sType, Latan::SeedType Seed, const std::vector<std::string> ParamNames )
+{
+/*  assert( std::isnan( Common::NaN ) && "Compiler does not support quiet NaNs" );
+  const int numParams{ static_cast<int>( ParamNames.size() ) };
+  assert( numParams == out[Latan::central].rows() && "Parameter names missing" );
+  const std::size_t   nSample{ static_cast<std::size_t>( out.size() )};
+  std::vector<double> Data( nSample );
+  std::string sOutFileName{ MakeFilename(sOutFileBase, SummaryNames[f], Seed, TEXT_EXT) };
+  std::ofstream s( sOutFileName );
+  s << Comment << sType << NewLine << Comment << sOutFileBase << "\n# Seed " << Seed
+  << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" );
+  s << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
+  for(int t = 0; t < nt; t++)
+  {
+  }
+*/}
+
 const char * SummaryNames[3] = { "corr", "mass", "cosh" };//, "sinh" };
 
-// Make summary files of this data set
-void MakeSummaries(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed )//, int momentum_squared)
+// Make summary files of a bootstrap of a correlator
+void SummariseBootstrapCorr(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed )//, int momentum_squared)
 {
-  const int           nt{static_cast<int>(out[Latan::central].rows())};
-  const Latan::Index  nSample{out.size()};
-  // Now make summary data files
-  std::vector<double> TmpAvg( nt );
-  std::vector<std::vector<double>> TmpSamples( nt );
-  for(int t = 0; t < nt; t++)
-    TmpSamples[t].resize( nSample );
-  static const char sep[] = " ";
+  static const char FieldNames[] = "t y y_low y_high y_check";
+  static const char FieldNames2[] = " im im_low im_high im_check";
   static const char * SummaryHeader[] =
   {
-    "# correlator\nt corr_re corr_stddev corr_im corr_im_stddev",
-    "# "   "mass\nt mass mass_low mass_high check",
-    "# cosh_mass\nt mass mass_low mass_high check",
-    //"# sinh_mass\nt mass mass_low mass_high check",
+    "correlator",
+    "mass",
+    "cosh mass",
+    //"sinh mass",
   };
-  for(int f = 0; f < sizeof(SummaryNames)/sizeof(SummaryNames[0]); f++)
+  const int NumSummaries{ static_cast<int>( sizeof( SummaryNames ) / sizeof( SummaryNames[0] ) ) };
+  assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
+  const int           nt{static_cast<int>(out[Latan::central].rows())};
+  const std::size_t   nSample{ static_cast<std::size_t>( out.size() )};
+  std::vector<double> Data( nSample );
+  for(int f = 0; f < NumSummaries; f++)
   {
     std::string sOutFileName{ MakeFilename(sOutFileBase, SummaryNames[f], Seed, TEXT_EXT) };
-    std::ofstream s(sOutFileName);
-    s << std::setprecision(std::numeric_limits<double>::digits10 + 1) << SummaryHeader[f] << std::endl;
+    std::ofstream s( sOutFileName );
+    s << Comment << SummaryHeader[f] << NewLine << Comment << sOutFileBase << "\n# Seed " << Seed
+      << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" )
+      << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
     for(int t = 0; t < nt; t++)
     {
+      std::size_t Count = 0;
       if( f == 0 )
       {
-        double Avg = 0;
-        double StdDev = 0;
-        double AvgIm = 0;
-        double StdDevIm = 0;
-        for(int i = 0; i < nSample; i++)
-        {
-          Avg   += out[i](t,0);
-          AvgIm += out[i](t,1);
-        }
-        Avg   /= nSample;
-        AvgIm /= nSample;
-        for(int i = 0; i < nSample; i++)
-        {
-          double d = out[i](t,0) - Avg;
-          StdDev += d * d;
-          d = out[i](t,1) - AvgIm;
-          StdDevIm += d * d;
-        }
-        StdDev   /= nSample;
-        StdDevIm /= nSample;
-        StdDev    = std::sqrt( StdDev );
-        StdDevIm  = std::sqrt( StdDevIm );
-        s << t << sep << Avg << sep << StdDev << sep << AvgIm << sep << StdDevIm << sep << std::endl;
+        for( Latan::Index i = 0; i < nSample; i++ )
+          if( std::isfinite( out[i](t, 0) ) )
+            Data[Count++] = out[i](t, 0);
+        Common::ValWithEr Re( out[Latan::central](t,0), Data, Count );
+        std::size_t ImCount = 0;
+        for( Latan::Index i = 0; i < nSample; i++ )
+          if( std::isfinite( out[i](t, 1) ) )
+            Data[ImCount++] = out[i](t, 1);
+        Common::ValWithEr Im( out[Latan::central](t,1), Data, ImCount );
+        s << t << sep << Re.Central << sep << Re.ErLow << sep << Re.ErHigh
+               << sep << ( static_cast<double>( Count ) / nSample )
+               << sep << Im.Central << sep << Im.ErLow << sep << Im.ErHigh
+               << sep << ( static_cast<double>( ImCount ) / nSample ) << std::endl;
       }
       else
       {
-        TmpAvg[t] = 0;
-        int Count = 0;
-        for(int i = 0; i < nSample; i++)
+        double dCentral = 0;
+        for( Latan::Index i = Latan::central; i < static_cast<Latan::Index>( nSample ); i++ )
         {
+          double DThis;
+          switch(f)
           {
-            double DThis;
-            switch(f)
-            {
-              case 1: // mass
-                DThis = std::log( abs( out[i](t, 0) / out[i]((t + 1 + nt) % nt, 0) ) );
+            case 1: // mass
+              DThis = std::log( abs( out[i](t, 0) / out[i]((t + 1 + nt) % nt, 0) ) );
               /*assert( momentum_squared >= 0 && momentum_squared <= 6 && "Unsupported momentum" );
-                if( momentum_squared >= 1 && momentum_squared <= 6 )
-                {
-                  // Lattice dispersion relation (not very well implemented)
-                  static const double ss_half{ sin(0.5) * sin(0.5) };
-                  static const double ss_one{ sin(1.) * sin(1.) };
-                  double sum;
-                  if( momentum_squared <= 3 )
-                    sum = ss_half * momentum_squared;
-                  else
-                    sum = ss_half * ( momentum_squared - 4 ) + ss_one;
-                  double dSinh_HalfE0{ sinh( DThis / 2 ) };
-                  DThis = 2 * asinh( sqrt( dSinh_HalfE0 * dSinh_HalfE0 - sum ) );
-                }*/
-                break;
-              case 2: // cosh mass
-                DThis = std::acosh((out[i]((t - 1 + nt) % nt, 0) + out[i]((t + 1) % nt, 0)) / (2 * out[i](t, 0)));
-                break;
+               if( momentum_squared >= 1 && momentum_squared <= 6 )
+               {
+               // Lattice dispersion relation (not very well implemented)
+               static const double ss_half{ sin(0.5) * sin(0.5) };
+               static const double ss_one{ sin(1.) * sin(1.) };
+               double sum;
+               if( momentum_squared <= 3 )
+               sum = ss_half * momentum_squared;
+               else
+               sum = ss_half * ( momentum_squared - 4 ) + ss_one;
+               double dSinh_HalfE0{ sinh( DThis / 2 ) };
+               DThis = 2 * asinh( sqrt( dSinh_HalfE0 * dSinh_HalfE0 - sum ) );
+               }*/
+              break;
+            case 2: // cosh mass
+              DThis = std::acosh((out[i]((t - 1 + nt) % nt, 0) + out[i]((t + 1) % nt, 0)) / (2 * out[i](t, 0)));
+              break;
               //case 3: // sinh mass
-                //DThis = std::asinh((out[i]((t - 1 + nt) % nt, 0) - out[i]((t + 1) % nt, 0)) / (2 * //out[i](t, 0)));
-                //break;
-              default:
-                DThis = 0;
-            }
-            if( std::isfinite( DThis ) ) {
-              TmpSamples[t][Count++] = DThis;
-              TmpAvg[t] += DThis;
-            }
+              //DThis = std::asinh((out[i]((t - 1 + nt) % nt, 0) - out[i]((t + 1) % nt, 0)) / (2 * //out[i](t, 0)));
+              //break;
+            default:
+              DThis = 0;
           }
+          if( i == Latan::central )
+            dCentral = DThis;
+          else if( std::isfinite( DThis ) )
+            Data[Count++] = DThis;
         }
-        static const double NaN{ std::nan( "" ) };
-        assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
-        double dErrPlus, dErrMinus;
-        if( Count ) {
-          TmpAvg[t] /= Count;
-          const typename std::vector<double>::iterator itStart{ TmpSamples[t].begin() };
-          const typename std::vector<double>::iterator itEnd  { itStart + Count };
-          std::sort( itStart, itEnd );
-          int Index = static_cast<int>( 0.16 * Count + 0.5 );
-          dErrMinus = TmpAvg[t] - TmpSamples[t][Index];
-          dErrPlus  = TmpSamples[t][Count - Index] - TmpAvg[t];
-        } else {
-          TmpAvg[t] = NaN;
-          dErrPlus  = NaN;
-          dErrMinus = NaN;
-        }
-        s << t << sep << TmpAvg[t] << sep << dErrMinus << sep << dErrPlus << sep << ( static_cast<double>( Count ) / nSample ) << std::endl;
+        Common::ValWithEr Re( dCentral, Data, Count );
+        s << t << sep << Re.Central << sep << Re.ErLow << sep << Re.ErHigh << sep
+          << ( static_cast<double>( Count ) / nSample ) << std::endl;
       }
     }
   }

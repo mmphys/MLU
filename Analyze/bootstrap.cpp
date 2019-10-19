@@ -102,7 +102,7 @@ bool PerformBootstrap( const BootstrapParams &par, Latan::Dataset<Latan::DMat> &
       Latan::Io::save<Latan::DMatSample>(out, sOutFileName, Latan::File::Mode::write, Common::sBootstrap);
     }
     if( par.bSaveSummaries )
-      Common::MakeSummaries( out, sOutFileBase, par.seed );//, momentum_squared );
+      Common::SummariseBootstrapCorr( out, sOutFileBase, par.seed );//, momentum_squared );
   }
   if( par.dumpBoot ) { // Dump the bootstrap sequences
     std::string SeqFileName{ Common::MakeFilename( sOutFileBase, "bootseq", par.seed, TEXT_EXT ) };

@@ -116,7 +116,6 @@
 		6822E8BF22A7057400A85993 /* bootstrap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bootstrap.cpp; sourceTree = "<group>"; };
 		6822E8C722A708A200A85993 /* peramb-compare.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "peramb-compare.cpp"; sourceTree = "<group>"; };
 		6822E8C822A710FA00A85993 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
-		68374AD723537C5B000F15B1 /* bootstrap.cpp.old */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bootstrap.cpp.old; sourceTree = "<group>"; };
 		6842CB9722A9165C003014D2 /* build */ = {isa = PBXFileReference; lastKnownFileType = folder; path = build; sourceTree = "<group>"; };
 		6845351B23477B9D00106304 /* xmlPeramb.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlPeramb.cpp; sourceTree = "<group>"; };
 		6845352023477BBE00106304 /* xmlPeramb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlPeramb; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -230,7 +229,6 @@
 			children = (
 				687E28CC22F313A1004F4342 /* averagesm.cpp */,
 				6822E8BF22A7057400A85993 /* bootstrap.cpp */,
-				68374AD723537C5B000F15B1 /* bootstrap.cpp.old */,
 				687E28CD22F313A1004F4342 /* bootstrapsm.cpp */,
 				6815510C22CBE676009AB4AD /* Common.cpp */,
 				6815510B22CBE676009AB4AD /* Common.hpp */,
