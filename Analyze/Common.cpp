@@ -46,6 +46,7 @@ void ValWithEr::Get( double Central_, std::vector<double> &Data, std::size_t Cou
   if( Count == 0 ) {
     ErLow = NaN;
     ErHigh  = NaN;
+    Check = 0;
     return;
   }
   const typename std::vector<double>::iterator itStart{ Data.begin() };
@@ -56,6 +57,7 @@ void ValWithEr::Get( double Central_, std::vector<double> &Data, std::size_t Cou
     Index = Count - 1;
   ErLow  = Central - Data[Index];
   ErHigh = Data[Count - 1 - Index] - Central;
+  Check = static_cast<double>( Count ) / Data.size();
 }
 
 // These are the attributes I like to use in my filenames

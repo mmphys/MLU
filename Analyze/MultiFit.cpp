@@ -63,15 +63,14 @@
 class MultiExpModel : public ROOT::Minuit2::FCNBase {
 public:
   using vd_t = std::vector<double>;
-  explicit MultiExpModel( const Latan::DMatSample Corr, int NumOps, const std::vector<std::string> &OpNames, int Verbosity, const std::string &OutputBaseName, Common::SeedType Seed );
+  explicit MultiExpModel( const Latan::DMatSample Corr, int NumOps, const std::vector<std::string> &OpNames, int NumExponents, int Verbosity, const std::string &OutputBaseName, Common::SeedType Seed );
   virtual ~MultiExpModel() {}
   // These are part of the FCNBase interface
   virtual double Up() const { return 1.; }
   virtual double operator()( const vd_t & ModelParameters ) const;
   //virtual void SetErrorDef(double def) {theErrorDef = def;}
   // These are definitely not part of the FCNBase interface
-  bool PerformFit( int NumExponents, bool bCorrelated, int tMin, int tMax );
-private:
+  std::vector<Common::ValWithEr> PerformFit( bool bCorrelated, int tMin, int tMax );
   const int NumOps;
   const std::vector<std::string> &OpNames;
   const int Verbosity;
@@ -80,13 +79,16 @@ private:
   const int NumFiles;
   const int NSamples;
   const int Nt;
+  const int NumExponents;
+  const int NumParams;
   const Latan::DMatSample Corr;
+  std::vector<std::string> ParamNames;
+  private:
   // These variables only used during a fit
   int tMin = -1;
   int tMax = -1;
   int NtCorr;
   int Extent;
-  int NumExponents;
   Latan::DMat Covar;
   Latan::DMat CovarInv;
   std::vector<double> VarianceInv;
@@ -100,7 +102,7 @@ private:
   void DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &par );
 };
 
-MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const std::vector<std::string> &opNames_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_ )
+MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const std::vector<std::string> &opNames_, int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_ )
   : NumOps{ numOps_ },
     OpNames{ opNames_ },
     Verbosity{ verbosity_ },
@@ -109,8 +111,17 @@ MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const 
     NumFiles{ numOps_ * numOps_ },
     NSamples{ static_cast<int>( corr_.size() ) },
     Nt      { static_cast<int>( corr_[Latan::central].rows() / NumFiles ) },
-    Corr{ corr_ }
+    NumExponents{ numExponents_ },
+    NumParams{ NumExponents * ( 1 + NumOps ) },
+    Corr{ corr_ },
+    ParamNames( NumParams )
 {
+  assert( NumExponents > 0 && "Number of exponents in the fit should be positive" );
+  for( int e = 0; e < NumExponents; e++ ) {
+    ParamNames[e] = "E_" + std::to_string( e );
+    for( int op = 0; op < NumOps; op++ )
+      ParamNames[NumExponents + MELIndex( op, e )] = "A_" + OpNames[op] + "_" + std::to_string( e );
+  }
 }
 
 // Make the covariance matrix, for only the timeslices we are interested in
@@ -195,8 +206,6 @@ void MultiExpModel::MakeCovar( void )
   // Overlap Coefficients Parameters NumExponents ... NumExponents ( NumOps + 1 ) - 1
 
 double MultiExpModel::operator()( const vd_t & par ) const {
-  const int NeedSize{ NumExponents * ( 1 + NumOps ) };
-  assert( par.size() == NeedSize && "Error: number of parameters" );
   const double * const Energy{ par.data() };
   const double * const Coeff{ Energy + NumExponents };
   // Calculate the theory errors for these model parameters
@@ -246,20 +255,16 @@ double MultiExpModel::operator()( const vd_t & par ) const {
 
 void MultiExpModel::DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &par )
 {
+  static const char NewLine[] = "\n";
+  static const char Tab[] = "\t";
   if( !msg.empty() )
-    std::cout << msg << "\n";
-  const int NeedSize{ NumExponents * ( 1 + NumOps ) };
-  assert( par.Params().size() == NeedSize && "Parameters are the wrong length" );
-  for( int e = 0; e < NumExponents; ++e ) {
-    std::cout << "E_" << e << "=" << par.Value( e );
-    for( int o = 0; o < NumOps; ++o )
-      std::cout << ", " << "op" << o << "_" << e << "=" << par.Value( NumExponents + MELIndex( o, e ) );
-    std::cout << "\n";
-  }
+    std::cout << msg << NewLine;
+  for( int p = 0; p < NumParams; p++ )
+    std::cout << Tab << ParamNames[p] << Tab << par.Value( p ) << NewLine;
 }
 
 // Perform a fit
-bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_, int TMax_ )
+std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int TMin_, int TMax_ )
 {
   std::cout << "=========================================\nPerforming "
             << ( Bcorrelated_ ? "correlated" : "uncorrelated" )
@@ -268,8 +273,6 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
   // Drop the covariance & variance if the fit timeslices change
   const bool bCorrelatedChanged{ bCorrelated != Bcorrelated_ };
   const bool bTimesChanged{ TMin_ != tMin || TMax_ != tMax };
-  assert( numExponents_ > 0 && "Number of exponents in the fit should be positive" );
-  NumExponents = numExponents_;
   bCorrelated = Bcorrelated_;
   tMin = TMin_;
   tMax = TMax_;
@@ -299,8 +302,7 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
   //minimizer.SetFunction();
   //VariableIterator i;
   // For each Exponent, I need the delta_E + a constant for each operator
-  const int NeedSize{ NumExponents * ( 1 + NumOps ) };
-  std::vector<double> par( NeedSize );
+  std::vector<double> par( NumParams );
   double * const Energy{ par.data() };
   double * const Coeff{ Energy + NumExponents };
   // Take a starting guess for the parameters - same as LatAnalyze
@@ -326,9 +328,9 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
   }
 
   // Create minimisation parameters
-  std::vector<double> Error( NeedSize, 0. );
+  std::vector<double> Error( NumParams, 0. );
   ROOT::Minuit2::MnUserParameters upar( par, Error );
-  if( Verbosity )
+  //if( Verbosity )
     DumpParameters( "Initial guess:", upar );
   //upar.SetPrecision(0.001);
   //upar.SetLowerLimit( 0, 0.1 );
@@ -341,7 +343,7 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
 
   //ROOT::Minuit2::VariableMetricMinimizer minimizer;
   ROOT::Minuit2::MnMigrad minimizer( *this, upar );
-  Latan::DMatSample ModelParams( NSamples, NeedSize, 2 );
+  Latan::DMatSample ModelParams( NSamples, NumParams, 2 );
   std::vector<Latan::DMatSample> ModelCorr( NumOps * NumOps );
   for( int i = 0; i < NumOps * NumOps; i++ ) {
     ModelCorr[i].resize( NSamples );
@@ -352,28 +354,25 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
     idx = i;
     ROOT::Minuit2::FunctionMinimum min = minimizer();
     ROOT::Minuit2::MnUserParameterState state = min.UserState();
-    //assert( minimizer.SetVariables( par.begin(), par.end() ) == NeedSize && "Error: could not set variables" );
+    //assert( minimizer.SetVariables( par.begin(), par.end() ) == NumParams && "Error: could not set variables" );
     //minimizer.SetFunction( *this );
     //ROOT::Minuit2::FunctionMinimum min = minimizer.Minimize( *this, par, Error );
     //ROOT::Minuit2::MnUserParameterState state = min.UserState();
     //bool bOK{ minimizer.Minimize() };
-    bool bOK{ state.IsValid() };
-    if( !bOK ) {
-      std::cout << "ERROR: Fit " << i << " did not converge on an answer\n";
-      return false;
-    }
+    if( !state.IsValid() )
+      throw std::runtime_error( "ERROR: Fit " + std::to_string( i ) + " did not converge on an answer\n" );
     //ROOT::Minuit2::MnUserParameters params = min.UserParameters();
     //std::cout << "Fit result:" << min << std::endl;
     const std::string FitResult{ "Fit result:" };
-    if( Verbosity > 1 ) {
-      std::cout << "state.IsValid() = " << std::boolalpha << bOK << "\n";
+    if( Verbosity > 1 )
       std::cout << FitResult << state << "\n";
-    }
     upar = state.Parameters();
-    if( i == Latan::central || Verbosity > 1 )
+    if( i == Latan::central || Verbosity > 1 ) {
       DumpParameters( FitResult, upar );
+      std::cout << "\t computing statistics\n";
+    }
     // Save the fit parameters for this replica
-    for( int j = 0; j < NeedSize; ++j ) {
+    for( int j = 0; j < NumParams; ++j ) {
       par[j] = upar.Value( j ); // Need this so Energy and Coeff are up-to-date
       ModelParams[i](j, 0) = par[j];
       ModelParams[i](j, 1) = 0;
@@ -410,7 +409,20 @@ bool MultiExpModel::PerformFit( int numExponents_, bool Bcorrelated_, int TMin_,
       Latan::Io::save(ModelCorr[i], Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
       Common::SummariseBootstrapCorr(ModelCorr[i], SummaryBase, Seed );
     }
-  return true;
+  // Return the statistics on the fit results
+  std::vector<Common::ValWithEr> Results( NumParams );
+  std::vector<double> data( NSamples );
+  for( int p = 0; p < NumParams; p++ ) {
+    double Central = ModelParams[Latan::central](p,0);
+    std::size_t Count{ 0 };
+    for( int j = 0; j < NSamples; ++j ) {
+      double d = ModelParams[j](p, 0);
+      if( std::isfinite( d ) )
+        data[Count++] = d;
+    }
+    Results[p].Get( Central, data, Count );
+  }
+  return Results;
 }
 
 /*static const char DefaultOutputStem[] = "@corr@.@type@";
@@ -522,50 +534,72 @@ int main(int argc, char *argv[])
   std::vector<std::string> OpNames;
   Common::SeedType Seed = 0;
   try{
-    std::vector<Common::FileNameAtt> FileNames;
-    std::size_t i = 0;
-    for( const std::string &sFileName : opt.getArgs() ) {
-      FileNames.emplace_back( sFileName, OpNames );
-      if( i == 0 ) {
-        outBaseFileName.append( FileNames[0].Base );
-        Seed = FileNames[0].Seed;
-      } else {
-        static const std::string sFile{ "File " };
-        static const std::string sBad{ " doesn't match " };
-        if( !Common::EqualIgnoreCase( FileNames[i].Base, FileNames[0].Base ) )
-          throw std::runtime_error( sFile + std::to_string( i ) + " base " + FileNames[i].Base + sBad + FileNames[0].Base );
-        if( !Common::EqualIgnoreCase( FileNames[i].Type, FileNames[0].Type ) )
-          throw std::runtime_error( sFile + std::to_string( i ) + " type " + FileNames[i].Type + sBad + FileNames[0].Type );
-        if( FileNames[i].Seed != FileNames[0].Seed )
-          throw std::runtime_error( sFile + std::to_string( i ) + " seed " + std::to_string( FileNames[i].Seed ) + sBad + std::to_string( FileNames[0].Seed ) );
-        if( !Common::EqualIgnoreCase( FileNames[i].Ext, FileNames[0].Ext ) )
-          throw std::runtime_error( sFile + std::to_string( i ) + " extension " + FileNames[i].Ext + sBad + FileNames[0].Ext );
+    {
+      std::vector<Common::FileNameAtt> FileNames;
+      std::size_t i = 0;
+      for( const std::string &sFileName : opt.getArgs() ) {
+        FileNames.emplace_back( sFileName, OpNames );
+        if( i == 0 ) {
+          outBaseFileName.append( FileNames[0].Base );
+          Seed = FileNames[0].Seed;
+        } else {
+          static const std::string sFile{ "File " };
+          static const std::string sBad{ " doesn't match " };
+          if( !Common::EqualIgnoreCase( FileNames[i].Base, FileNames[0].Base ) )
+            throw std::runtime_error( sFile + std::to_string( i ) + " base " + FileNames[i].Base + sBad + FileNames[0].Base );
+          if( !Common::EqualIgnoreCase( FileNames[i].Type, FileNames[0].Type ) )
+            throw std::runtime_error( sFile + std::to_string( i ) + " type " + FileNames[i].Type + sBad + FileNames[0].Type );
+          if( FileNames[i].Seed != FileNames[0].Seed )
+            throw std::runtime_error( sFile + std::to_string( i ) + " seed " + std::to_string( FileNames[i].Seed ) + sBad + std::to_string( FileNames[0].Seed ) );
+          if( !Common::EqualIgnoreCase( FileNames[i].Ext, FileNames[0].Ext ) )
+            throw std::runtime_error( sFile + std::to_string( i ) + " extension " + FileNames[i].Ext + sBad + FileNames[0].Ext );
+        }
+        i++;
       }
-      i++;
+      if( OpNames.size() != NumOps )
+        throw std::runtime_error( std::to_string( OpNames.size() ) + " operators provided, but " + std::to_string( NumOps ) + " expected for " + std::to_string( NumFiles ) + " files" );
+      for( int snk = 0; snk < NumOps; ++snk )
+        for( int src = 0; src < NumOps; ++src ) {
+          Common::FileNameAtt &f{ FileNames[snk * NumOps + src] };
+          if( f.op[0] != src || f.op[1] != snk )
+            throw std::runtime_error( "Warning: Operator order should be sink-major, source minor" );
+        }
     }
-    if( OpNames.size() != NumOps )
-      throw std::runtime_error( std::to_string( OpNames.size() ) + " operators provided, but " + std::to_string( NumOps ) + " expected for " + std::to_string( NumFiles ) + " files" );
-    for( int snk = 0; snk < NumOps; ++snk )
-      for( int src = 0; src < NumOps; ++src ) {
-        Common::FileNameAtt &f{ FileNames[snk * NumOps + src] };
-        if( f.op[0] != src || f.op[1] != snk )
-          throw std::runtime_error( "Warning: Operator order should be sink-major, source minor" );
-      }
+    int NumExponents{ opt.optionValue<int>( "exponents" ) };
+    if( NumExponents == 0 )
+      NumExponents = NumOps;
+    MultiExpModel m ( Common::ReadBootstrapCorrs( opt.getArgs(), fold, shift, NumOps ), NumOps, OpNames, NumExponents, Verbosity, outBaseFileName, Seed );
+    std::string sSummaryBase{ outBaseFileName };
+    sSummaryBase.append( 1, '.' );
+    if( doCorr )
+      sSummaryBase.append( "corr" );
+    else
+      sSummaryBase.append( "uncorr" );
+    sSummaryBase.append( 1, '.' );
+    sSummaryBase.append( OpNames[0] );
+    for( int op = 1; op < NumOps; op++ ) {
+      sSummaryBase.append( 1, '_' );
+      sSummaryBase.append( OpNames[op] );
+    }
+    static const char Sep[] = " ";
+    std::ofstream s( Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) );
+    s << "# Fit parameters\n# " << sSummaryBase << "\n# Seed " << Seed << "\nti tf"
+      << std::setprecision(std::numeric_limits<double>::digits10+2);
+    for( int p = 0; p < m.NumParams; p++ )
+      s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "_erLow" << Sep << m.ParamNames[p] << "_erHigh" << Sep << m.ParamNames[p] << "_check";
+    s << std::endl;
+    for( int dt = 0; dt < dti_max; dt++ )
+    {
+      auto params = m.PerformFit( doCorr, ti + dt, tf );
+      s << ( ti + dt ) << Sep << tf;
+      for( int p = 0; p < m.NumParams; p++ )
+        s << Sep << params[p];
+      s << std::endl;
+    }
   }
   catch(const std::exception &e) {
     std::cerr << "Error: " << e.what() << std::endl;
     return EXIT_FAILURE;
   }
-  int NumExponents{ opt.optionValue<int>( "exponents" ) };
-  if( NumExponents == 0 )
-    NumExponents = NumOps;
-  MultiExpModel m ( Common::ReadBootstrapCorrs( opt.getArgs(), fold, shift, NumOps ), NumOps, OpNames, Verbosity, outBaseFileName, Seed );
-  for( int dt = 0; dt < dti_max; dt++ )
-  {
-    //m.PerformFit( NumExponents, false, ti + dt, tf );
-    if( doCorr )
-      m.PerformFit( NumExponents, true, ti + dt, tf );
-  }
-
   return EXIT_SUCCESS;
 }

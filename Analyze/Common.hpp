@@ -75,10 +75,17 @@ public:
   double Central;
   double ErLow;
   double ErHigh;
+  double Check;
   void Get( double dCentral, std::vector<double> &Data, std::size_t Count );
+  ValWithEr() = default;
   ValWithEr( double dCentral, std::vector<double> &Data, std::size_t Count )
   { Get( dCentral, Data, Count ); }
 };
+
+inline std::ostream & operator<<( std::ostream &os, const ValWithEr &v )
+{
+  return os << v.Central << " " << v.ErLow << " " << v.ErHigh << " " << v.Check;
+}
 
 // Attributes for filenames in form base.type.seq.ext
 struct FileNameAtt
