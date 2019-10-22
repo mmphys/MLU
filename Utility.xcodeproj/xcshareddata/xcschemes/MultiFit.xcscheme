@@ -130,20 +130,20 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--dti8"
+            argument = "--ti4"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti3"
+            argument = "--dti9"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--tf16"
+            argument = "--tf15"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--tf14"
-            isEnabled = "NO">
+            argument = "--dtf5"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

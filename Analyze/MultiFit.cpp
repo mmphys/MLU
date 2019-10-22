@@ -70,7 +70,7 @@ public:
   virtual double operator()( const vd_t & ModelParameters ) const;
   //virtual void SetErrorDef(double def) {theErrorDef = def;}
   // These are definitely not part of the FCNBase interface
-  std::vector<Common::ValWithEr> PerformFit( bool bCorrelated, int tMin, int tMax );
+  std::vector<Common::ValWithEr> PerformFit( bool bCorrelated, int tMin, int tMax, double &ChiSq, int &dof );
   const int NumOps;
   const std::vector<std::string> &OpNames;
   const int Verbosity;
@@ -82,7 +82,7 @@ public:
   const int NumExponents;
   const int NumParams;
   const Latan::DMatSample Corr;
-  std::vector<std::string> ParamNames;
+  const std::vector<std::string> ParamNames;
   private:
   // These variables only used during a fit
   int tMin = -1;
@@ -100,6 +100,7 @@ public:
   inline int MELIndex( int op, int EnergyLevel) const { return EnergyLevel * NumOps + op; };
   void MakeCovar( void );
   void DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &par );
+  std::vector<std::string> MakeParamNames();
 };
 
 MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const std::vector<std::string> &opNames_, int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_ )
@@ -114,14 +115,20 @@ MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const 
     NumExponents{ numExponents_ },
     NumParams{ NumExponents * ( 1 + NumOps ) },
     Corr{ corr_ },
-    ParamNames( NumParams )
+    ParamNames( MakeParamNames() )
+{
+}
+
+std::vector<std::string> MultiExpModel::MakeParamNames()
 {
   assert( NumExponents > 0 && "Number of exponents in the fit should be positive" );
+  std::vector<std::string> Names( NumParams );
   for( int e = 0; e < NumExponents; e++ ) {
-    ParamNames[e] = "E_" + std::to_string( e );
+    Names[e] = "E" + std::to_string( e );
     for( int op = 0; op < NumOps; op++ )
-      ParamNames[NumExponents + MELIndex( op, e )] = "A_" + OpNames[op] + "_" + std::to_string( e );
+      Names[NumExponents + MELIndex( op, e )] = "A" + OpNames[op] + std::to_string( e );
   }
+  return Names;
 }
 
 // Make the covariance matrix, for only the timeslices we are interested in
@@ -174,7 +181,7 @@ void MultiExpModel::MakeCovar( void )
 #ifdef DEBUG
     std::cout << "Covariance matrix is " << Covar.rows() << " x " << Covar.cols() << "\n";
     std::cout << "Inverse covariance matrix is " << CovarInv.rows() << " x " << CovarInv.cols() << "\n";
-    if( Verbosity ) {
+    if( Verbosity > 1 ) {
       std::cout << "Correlation matrix:\n";
       for( int i = 0; i < ( NumFiles > 1 ? 1 : 0 ) * NtCorr + DEBUG_NUM; ++i ) {
         std::cout << " " << i << ":";
@@ -209,7 +216,6 @@ double MultiExpModel::operator()( const vd_t & par ) const {
   const double * const Energy{ par.data() };
   const double * const Coeff{ Energy + NumExponents };
   // Calculate the theory errors for these model parameters
-  const int Extent{ NumFiles * NtCorr };
   double ModelError[Extent]; // Should happily fit on stack
   for( int snk = 0; snk < NumOps; ++snk )
     for( int src = 0; src < NumOps; ++src )
@@ -222,7 +228,7 @@ double MultiExpModel::operator()( const vd_t & par ) const {
         }
         const int iRead{ AlphaIndex( src, snk ) * Nt + t + tMin };
         const int iWrite{ AlphaIndex( src, snk ) * NtCorr + t };
-        ModelError[iWrite] = Corr[Latan::central]( iRead, 0 ) - z;
+        ModelError[iWrite] = Corr[idx]( iRead, 0 ) - z;
       }
   static int iCall{ 0 };
   iCall++;
@@ -240,11 +246,11 @@ double MultiExpModel::operator()( const vd_t & par ) const {
     if( !bCorrelated )
       chi2 += ModelError[i] * VarianceInv[i] * ModelError[i];
     else {
-      for( int j = 0; j < Extent; ++j ) {
+      for( int j = 0; j <= i; ++j ) {
         double z = ModelError[i] * CovarInv(i, j) * ModelError[j];
         chi2 += z;
-        //if( i != j )
-        //chi2 += z;
+        if( i != j )
+          chi2 += z;
       }
     }
   }
@@ -264,7 +270,7 @@ void MultiExpModel::DumpParameters( const std::string &msg, const ROOT::Minuit2:
 }
 
 // Perform a fit
-std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int TMin_, int TMax_ )
+std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int TMin_, int TMax_, double &ChiSq, int &dof )
 {
   std::cout << "=========================================\nPerforming "
             << ( Bcorrelated_ ? "correlated" : "uncorrelated" )
@@ -338,7 +344,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     //upar.SetLowerLimit( e, 0. );
 #ifdef _DEBUG
   //upar.SetValue(0,0.184);
-  upar.Fix(0);
+  //upar.Fix(0);
 #endif
 
   //ROOT::Minuit2::VariableMetricMinimizer minimizer;
@@ -350,8 +356,9 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     ModelCorr[i].resizeMat( Nt, 2 ); // Complex component will be zero
   }
   //FOR_STAT_ARRAY( Fit, <#i#> ) {
-  for (Latan::Index i = -ModelParams.offset; i < ModelParams.size(); ++i) {
-    idx = i;
+  //for (idx = -ModelParams.offset; idx < ModelParams.size(); idx++) {
+  for (Latan::Index LoopIdx = 0; LoopIdx <= ModelParams.size(); LoopIdx++) {
+    idx = ( LoopIdx == ModelParams.size() ) ? Latan::central : LoopIdx;
     ROOT::Minuit2::FunctionMinimum min = minimizer();
     ROOT::Minuit2::MnUserParameterState state = min.UserState();
     //assert( minimizer.SetVariables( par.begin(), par.end() ) == NumParams && "Error: could not set variables" );
@@ -360,22 +367,27 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     //ROOT::Minuit2::MnUserParameterState state = min.UserState();
     //bool bOK{ minimizer.Minimize() };
     if( !state.IsValid() )
-      throw std::runtime_error( "ERROR: Fit " + std::to_string( i ) + " did not converge on an answer\n" );
+      throw std::runtime_error( "ERROR: Fit " + std::to_string( idx ) + " did not converge on an answer\n" );
     //ROOT::Minuit2::MnUserParameters params = min.UserParameters();
     //std::cout << "Fit result:" << min << std::endl;
-    const std::string FitResult{ "Fit result:" };
-    if( Verbosity > 1 )
-      std::cout << FitResult << state << "\n";
     upar = state.Parameters();
-    if( i == Latan::central || Verbosity > 1 ) {
+    if( idx == Latan::central || Verbosity > 2 ) {
+      const std::string FitResult{ "Fit result:" };
+      if( Verbosity )
+        std::cout << FitResult << state << "\n";
       DumpParameters( FitResult, upar );
-      std::cout << "\t computing statistics\n";
+    }
+    if( idx == Latan::central ) {
+      ChiSq = state.Fval();
+      dof = NSamples - NumParams;
+      std::cout << "Chi^2=" << ChiSq << ", dof=" << dof << ", chi^2/dof=" << ChiSq / dof
+                << "\n\t computing statistics\n";
     }
     // Save the fit parameters for this replica
     for( int j = 0; j < NumParams; ++j ) {
       par[j] = upar.Value( j ); // Need this so Energy and Coeff are up-to-date
-      ModelParams[i](j, 0) = par[j];
-      ModelParams[i](j, 1) = 0;
+      ModelParams[idx](j, 0) = par[j];
+      ModelParams[idx](j, 1) = 0;
     }
     // Save the reconstructed correlator values for this replica
     for( int snk = 0; snk < NumOps; ++snk )
@@ -388,8 +400,8 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
             CumulativeEnergy -= Energy[e];
             z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( CumulativeEnergy * t );
           }
-          mc[i](t,0) = z;
-          mc[i](t,1) = 0;
+          mc[idx](t,0) = z;
+          mc[idx](t,1) = 0;
         }
       }
   }
@@ -447,8 +459,10 @@ int main(int argc, char *argv[])
                 "initial fit time");
   opt.addOption("" , "tf"       , OptParser::OptType::value  , false,
                 "final fit time");
-  opt.addOption("" , "dti"       , OptParser::OptType::value  , true,
-                "number of fits", "1");
+  opt.addOption("" , "dti"       , OptParser::OptType::value , true,
+                "number of initial fits", "1");
+  opt.addOption("" , "dtf"       , OptParser::OptType::value , true,
+                "number of final fits", "1");
   opt.addOption("t" , "thinning", OptParser::OptType::value  , true,
                 "thinning of the time interval", "1");
   opt.addOption("s", "shift"    , OptParser::OptType::value  , true,
@@ -492,6 +506,7 @@ int main(int argc, char *argv[])
   const int ti{ opt.optionValue<int>("ti") };
   const int tf{ opt.optionValue<int>("tf") };
   const int dti_max{ opt.optionValue<int>("dti") };
+  const int dtf_max{ opt.optionValue<int>("dtf") };
   //int thinning            = opt.optionValue<int>("t");
   const int shift{ opt.optionValue<int>("s") };
   //Index nPar              = opt.optionValue<Index>("nPar");
@@ -582,19 +597,33 @@ int main(int argc, char *argv[])
       sSummaryBase.append( OpNames[op] );
     }
     static const char Sep[] = " ";
-    std::ofstream s( Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) );
-    s << "# Fit parameters\n# " << sSummaryBase << "\n# Seed " << Seed << "\nti tf"
-      << std::setprecision(std::numeric_limits<double>::digits10+2);
-    for( int p = 0; p < m.NumParams; p++ )
-      s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "_erLow" << Sep << m.ParamNames[p] << "_erHigh" << Sep << m.ParamNames[p] << "_check";
-    s << std::endl;
-    for( int dt = 0; dt < dti_max; dt++ )
-    {
-      auto params = m.PerformFit( doCorr, ti + dt, tf );
-      s << ( ti + dt ) << Sep << tf;
+    const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
+    if( Common::FileExists( sFitFilename ) )
+      throw std::runtime_error( "Output file " + sFitFilename + " already exists" );
+    std::ofstream s( sFitFilename );
+    s << "# Fit parameters\n# " << sSummaryBase << "\n# Seed " << Seed
+      << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
+    for( int dtf = 0; dtf < dtf_max; dtf++ ) {
+      // two blank lines at start of new data block
+      if( dtf )
+        s << "\n" << std::endl;
+      // Name the data series
+      s << "# [tf=" << ( tf + dtf ) << "]" << std::endl;
+      // Column names, with the series value embedded in the column header (best I can do atm)
+      s << "ti tf=" << ( tf + dtf );
       for( int p = 0; p < m.NumParams; p++ )
-        s << Sep << params[p];
-      s << std::endl;
+        s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "ErLow" << Sep << m.ParamNames[p] << "ErHigh" << Sep << m.ParamNames[p] << "Check";
+      s << " ChiSq Dof ChiSqPerDof" << std::endl;
+      for( int dti = 0; dti < dti_max; dti++ )
+      {
+        double ChiSq;
+        int dof;
+        auto params = m.PerformFit( doCorr, ti + dti, tf + dtf, ChiSq, dof );
+        s << ( ti + dti ) << Sep << ( tf + dtf );
+        for( int p = 0; p < m.NumParams; p++ )
+          s << Sep << params[p];
+        s << Sep << ChiSq << Sep << dof << Sep << ( ChiSq / dof ) << std::endl;
+      }
     }
   }
   catch(const std::exception &e) {
