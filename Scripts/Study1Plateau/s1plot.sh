@@ -6,5 +6,5 @@ then
   echo "FileParams defaulting to ${FileParams}"
 fi
 
-gnuplot -e "FileParams='${FileParams}'" ${0%.*}.gp
-gnuplot -e "FileParams='${FileParams}'" ${0%.*}A.gp
+#gnuplot -e "FileParams='${FileParams}'" ${0%.*}.gp
+gnuplot -e "FileParams='${FileParams%/*}/'" ${0%.*}Test.gp

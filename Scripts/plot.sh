@@ -21,7 +21,7 @@ function plot_file()
   local corr=${file_short%.*}
   local corr_escaped=${corr//\_/\\\_}
   local cmd="plot '${file}'"
-  cmd="set xrange [8:16]; ${cmd}"
+  cmd="set xrange [5.9:16.1]; ${cmd}"
   if [[ $ext == "txt" ]] ; then
     local title=" ${corr_escaped} (seed=${seed})"
     local fields="2:(\$2-\$3):(\$2+\$4) with yerrorbars"
