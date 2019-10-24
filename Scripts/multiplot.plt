@@ -1,4 +1,4 @@
-
+#!/opt/local/bin/gnuplot
 set term pdf
 
 set pointsize 0.3
