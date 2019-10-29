@@ -134,7 +134,7 @@ std::vector<std::string> MultiExpModel::MakeParamNames()
 // Make the covariance matrix, for only the timeslices we are interested in
 void MultiExpModel::MakeCovar( void )
 {
-  assert( Corr[Latan::central].rows() == NumOps * NumOps * Nt && "Bug" );
+  assert( Corr[Latan::central].rows() == NumFiles * Nt && "Bug" );
   assert( tMin >= 0 && tMin < Nt && "Error: tMin invalid" );
   assert( tMax >= 0 && tMax < Nt && "Error: tMax invalid" );
   assert( NtCorr > 1 && "Error: tMin >= tMax" );
@@ -334,7 +334,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   }
 
   // Create minimisation parameters
-  std::vector<double> Error( NumParams, 0. );
+  std::vector<double> Error( NumParams, 0.1 );
   ROOT::Minuit2::MnUserParameters upar( par, Error );
   //if( Verbosity )
     DumpParameters( "Initial guess:", upar );
@@ -379,7 +379,10 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     }
     if( idx == Latan::central ) {
       ChiSq = state.Fval();
-      dof = NSamples - NumParams;
+      dof = Extent;
+      if( bCorrelated )
+        dof *= dof;
+      dof -= NumParams;
       std::cout << "Chi^2=" << ChiSq << ", dof=" << dof << ", chi^2/dof=" << ChiSq / dof
                 << "\n\t computing statistics\n";
     }
