@@ -29,6 +29,8 @@
 #include "CommonLatAn.hpp"
 #include "MultiFit.hpp"
 
+// Uncomment the next line if your cmath doesn't define M_PI etc by default
+//#define _USE_MATH_DEFINES
 #include <cmath>
 //#include <iomanip>
 #include <ios>
@@ -62,8 +64,9 @@
 
 class MultiExpModel : public ROOT::Minuit2::FCNBase {
 public:
+  static constexpr double pi{ M_PI };
   using vd_t = std::vector<double>;
-  explicit MultiExpModel( const Latan::DMatSample Corr, int NumOps, const std::vector<std::string> &OpNames, int NumExponents, int Verbosity, const std::string &OutputBaseName, Common::SeedType Seed );
+  explicit MultiExpModel( const Latan::DMatSample Corr, int NumOps, const std::vector<std::string> &OpNames, int NumExponents, int Verbosity, const std::string &OutputBaseName, Common::SeedType Seed, bool bSaveCorr, bool bSaveModel );
   virtual ~MultiExpModel() {}
   // These are part of the FCNBase interface
   virtual double Up() const { return 1.; }
@@ -76,6 +79,8 @@ public:
   const int Verbosity;
   const std::string OutputBaseName;
   const Common::SeedType Seed;
+  const bool bSaveCorr;
+  const bool bSaveModel;
   const int NumFiles;
   const int NSamples;
   const int Nt;
@@ -103,12 +108,14 @@ public:
   std::vector<std::string> MakeParamNames();
 };
 
-MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const std::vector<std::string> &opNames_, int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_ )
+MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const std::vector<std::string> &opNames_, int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_, bool bSaveCorr_, bool bSaveModel_ )
   : NumOps{ numOps_ },
     OpNames{ opNames_ },
     Verbosity{ verbosity_ },
     OutputBaseName{ outputBaseName_ },
     Seed{ seed_ },
+    bSaveCorr{ bSaveCorr_ },
+    bSaveModel{ bSaveModel_ },
     NumFiles{ numOps_ * numOps_ },
     NSamples{ static_cast<int>( corr_.size() ) },
     Nt      { static_cast<int>( corr_[Latan::central].rows() / NumFiles ) },
@@ -302,63 +309,63 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   if( ( bCorrelated && Covar.rows() != Extent ) || ( !bCorrelated && VarianceInv.size() != Extent ) )
     MakeCovar();
 
+  // Results for each bootstrap sample
+  Latan::DMatSample ModelParams( NSamples, NumParams, 2 );      // model parameters (from the fit), NB Absolute energies
+  std::vector<Latan::DMatSample> ModelCorr( NumOps * NumOps );  // correlators resulting from the fit parameters
+  for( int i = 0; i < NumOps * NumOps; i++ ) {
+    ModelCorr[i].resize( NSamples );
+    ModelCorr[i].resizeMat( Nt, 2 ); // Complex component will be zero
+  }
+
   // Make initial guesses for the parameters
-  //ROOT::Minuit2::Minuit2Minimizer minimizer( ROOT::Minuit2::kMigrad ); // even though this is default
-  //minimizer.SetPrintLevel( Verbosity );
-  //minimizer.SetFunction();
-  //VariableIterator i;
   // For each Exponent, I need the delta_E + a constant for each operator
   std::vector<double> par( NumParams );
-  double * const Energy{ par.data() };
-  double * const Coeff{ Energy + NumExponents };
-  // Take a starting guess for the parameters - same as LatAnalyze
-  const Latan::DMat & m{ Corr[Latan::central] };
-  const int tGuess{Nt / 4};
-  Energy[0] = 0;
-  for( int snk = 0; snk < NumOps; ++snk )
-    for( int src = 0; src < NumOps; ++src ) {
-      const int i{ AlphaIndex( src, snk ) * Nt + tGuess };
-      double E0 = std::log( m( i, 0 ) / m( i + 1, 0 ) );
-      Energy[0] += E0;
-      if( snk == src )
-        Coeff[snk] = std::sqrt( std::abs( m( i, 0 ) / ( std::exp( - E0 * tGuess ) ) ) );
+  {
+    // Take a starting guess for the parameters - same as LatAnalyze
+    double * const Energy{ par.data() };
+    double * const Coeff{ Energy + NumExponents };
+    const Latan::DMat & m{ Corr[Latan::central] };
+    const int tGuess{Nt / 4};
+    Energy[0] = 0;
+    for( int snk = 0; snk < NumOps; ++snk )
+      for( int src = 0; src < NumOps; ++src ) {
+        const int i{ AlphaIndex( src, snk ) * Nt + tGuess };
+        double E0 = std::log( m( i, 0 ) / m( i + 1, 0 ) );
+        Energy[0] += E0;
+        if( snk == src )
+          Coeff[snk] = std::sqrt( std::abs( m( i, 0 ) / ( std::exp( - E0 * tGuess ) ) ) );
+      }
+    Energy[0] /= NumFiles;
+    // Now guess Higher exponents - same as LatAnalyze
+    const double MELFactor{ std::sqrt( 0.5 ) };
+    for( int e = 1; e < NumExponents; ++e ) {
+      Energy[e] = Energy[e - 1] * ( 1 << ( e - 1 ) ); // Cumulative
+      for( int o = 0; o < NumOps; ++o )
+        Coeff[ MELIndex( o, e ) ] = Coeff[ MELIndex( o, e - 1 ) ] * MELFactor;
     }
-  Energy[0] /= NumFiles;
-  // Now guess Higher exponents - same as LatAnalyze
-  const double MELFactor{ std::sqrt( 0.5 ) };
-  for( int e = 1; e < NumExponents; ++e ) {
-    //Energy[e] = 2 * Energy[e - 1]; // Absolute
-    Energy[e] = Energy[e - 1] * ( 1 << ( e - 1 ) ); // Cumulative
-    for( int o = 0; o < NumOps; ++o )
-      Coeff[ MELIndex( o, e ) ] = Coeff[ MELIndex( o, e - 1 ) ] * MELFactor;
   }
 
   // Create minimisation parameters
   std::vector<double> Error( NumParams, 0.1 );
   ROOT::Minuit2::MnUserParameters upar( par, Error );
-  //if( Verbosity )
-    DumpParameters( "Initial guess:", upar );
-  //upar.SetPrecision(0.001);
-  //upar.SetLowerLimit( 0, 0.1 );
-  //for( int e = 1; e < NumExponents; ++e )
-    //upar.SetLowerLimit( e, 0. );
 #ifdef _DEBUG
+  //upar.SetLowerLimit( 0, 0.1 );
   //upar.SetValue(0,0.184);
   //upar.Fix(0);
 #endif
+  if( Verbosity )
+    DumpParameters( "Initial guess:", upar );
 
+  //ROOT::Minuit2::Minuit2Minimizer minimizer( ROOT::Minuit2::kMigrad ); // even though this is default
+  //minimizer.SetPrintLevel( Verbosity );
+  //minimizer.SetFunction();
+  //VariableIterator i;
   //ROOT::Minuit2::VariableMetricMinimizer minimizer;
   ROOT::Minuit2::MnMigrad minimizer( *this, upar );
-  Latan::DMatSample ModelParams( NSamples, NumParams, 2 );
-  std::vector<Latan::DMatSample> ModelCorr( NumOps * NumOps );
-  for( int i = 0; i < NumOps * NumOps; i++ ) {
-    ModelCorr[i].resize( NSamples );
-    ModelCorr[i].resizeMat( Nt, 2 ); // Complex component will be zero
-  }
   //FOR_STAT_ARRAY( Fit, <#i#> ) {
   //for (idx = -ModelParams.offset; idx < ModelParams.size(); idx++) {
-  for (Latan::Index LoopIdx = 0; LoopIdx <= ModelParams.size(); LoopIdx++) {
-    idx = ( LoopIdx == ModelParams.size() ) ? Latan::central : LoopIdx;
+  for (int LoopIdx = -2; LoopIdx < NSamples; LoopIdx++) {
+    idx = ( LoopIdx < 0 ) ? Latan::central : LoopIdx;
     ROOT::Minuit2::FunctionMinimum min = minimizer();
     ROOT::Minuit2::MnUserParameterState state = min.UserState();
     //assert( minimizer.SetVariables( par.begin(), par.end() ) == NumParams && "Error: could not set variables" );
@@ -368,45 +375,54 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     //bool bOK{ minimizer.Minimize() };
     if( !state.IsValid() )
       throw std::runtime_error( "ERROR: Fit " + std::to_string( idx ) + " did not converge on an answer\n" );
-    //ROOT::Minuit2::MnUserParameters params = min.UserParameters();
-    //std::cout << "Fit result:" << min << std::endl;
-    upar = state.Parameters();
-    if( idx == Latan::central || Verbosity > 2 ) {
-      const std::string FitResult{ "Fit result:" };
-      if( Verbosity )
-        std::cout << FitResult << state << "\n";
-      DumpParameters( FitResult, upar );
-    }
-    if( idx == Latan::central ) {
-      ChiSq = state.Fval();
-      dof = Extent;
-      if( bCorrelated )
-        dof *= dof;
-      dof -= NumParams;
-      std::cout << "Chi^2=" << ChiSq << ", dof=" << dof << ", chi^2/dof=" << ChiSq / dof
-                << "\n\t computing statistics\n";
-    }
-    // Save the fit parameters for this replica
-    for( int j = 0; j < NumParams; ++j ) {
-      par[j] = upar.Value( j ); // Need this so Energy and Coeff are up-to-date
-      ModelParams[idx](j, 0) = par[j];
-      ModelParams[idx](j, 1) = 0;
-    }
-    // Save the reconstructed correlator values for this replica
-    for( int snk = 0; snk < NumOps; ++snk )
-      for( int src = 0; src < NumOps; ++src ) {
-        Latan::DMatSample &mc{ ModelCorr[AlphaIndex( src, snk )] };
-        for( int t = 0; t < Nt; ++t ) {
-          double z = 0;
-          double CumulativeEnergy = 0;
-          for( int e = 0; e < NumExponents; ++e ) {
-            CumulativeEnergy -= Energy[e];
-            z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( CumulativeEnergy * t );
-          }
-          mc[idx](t,0) = z;
-          mc[idx](t,1) = 0;
-        }
+    // Throw away the first fit result - just use it as a seed for the next fit
+    if( LoopIdx >= -1 )
+    {
+      //ROOT::Minuit2::MnUserParameters params = min.UserParameters();
+      //std::cout << "Fit result:" << min << std::endl;
+      upar = state.Parameters();
+      if( idx == Latan::central || Verbosity > 2 ) {
+        const std::string FitResult{ "Fit result:" };
+        if( Verbosity )
+          std::cout << FitResult << state << "\n";
+        DumpParameters( FitResult, upar );
       }
+      if( idx == Latan::central ) {
+        ChiSq = state.Fval();
+        dof = Extent;
+        if( bCorrelated )
+          dof *= dof;
+        dof -= NumParams;
+        std::cout << "Chi^2=" << ChiSq << ", dof=" << dof << ", chi^2/dof=" << ChiSq / dof
+                  << "\n\t computing statistics\n";
+      }
+      // Save the fit parameters for this replica
+      double Cumulative;
+      Latan::DMat & FitParams{ ModelParams[idx] };
+      for( int j = 0; j < NumParams; ++j ) {
+        double z = upar.Value( j ); // Need this so Energy and Coeff are up-to-date
+        if( j > 0 && j < NumExponents )
+          Cumulative += z;
+        else
+          Cumulative  = z;
+        FitParams(j, 0) = Cumulative;
+        FitParams(j, 1) = 0;
+      }
+      // Save the reconstructed correlator values for this replica
+      for( int snk = 0; snk < NumOps; ++snk )
+        for( int src = 0; src < NumOps; ++src ) {
+          Latan::DMat &mc{ ModelCorr[AlphaIndex( src, snk )][idx] };
+          for( int t = 0; t < Nt; ++t ) {
+            double z = 0;
+            for( int e = 0; e < NumExponents; ++e )
+              z +=   FitParams( MELIndex( src, e ) + NumExponents, 0)
+                   * FitParams( MELIndex( snk, e ) + NumExponents, 0)
+                   * std::exp( - FitParams( e, 0 ) * t );
+            mc(t,0) = z;
+            mc(t,1) = 0;
+          }
+        }
+    }
   }
   std::string sModelBase{ OutputRunBase };
   sModelBase.append( 1, '.' );
@@ -415,15 +431,49 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     sModelBase.append( 1, '_' );
     sModelBase.append( OpNames[i] );
   }
-  Latan::Io::save(ModelParams, Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ));
+  if( bSaveModel )
+    Latan::Io::save(ModelParams, Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ));
   //Common::SummariseBootstrap(ModelParams, sModelBase, Seed, "params" );
   for( int snk = 0; snk < NumOps; ++snk )
     for( int src = 0; src < NumOps; ++src ) {
       const int i{ AlphaIndex( src, snk ) };
       const std::string SummaryBase{ OutputRunBase + '.' + OpNames[snk] + '_' + OpNames[src] };
-      Latan::Io::save(ModelCorr[i], Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
+      if( bSaveCorr )
+        Latan::Io::save(ModelCorr[i], Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
       Common::SummariseBootstrapCorr(ModelCorr[i], SummaryBase, Seed );
     }
+  // Now construct my optimal model for a range of theta
+  if( NumOps == 2) {  // I've only coded for two operators
+    Latan::DMatSample OptimalCorr( NSamples, Nt, 2 );
+    for( int degrees = -90; degrees <= 90; degrees ++ )
+    {
+      //if( degrees % 3 && degrees % 5 ) continue;
+      const double theta{ pi * degrees / 180 };
+      const double costheta{ cos( theta ) };
+      const double sintheta{ sin( theta ) };
+      const double cos_sq_theta{ costheta * costheta };
+      const double sin_sq_theta{ sintheta * sintheta };
+      const double cos_sin_theta{ costheta * sintheta };
+      for (Latan::Index i = Latan::central; i < NSamples; i++) {
+        const double A_P1{ ModelParams[i](3, 0) };
+        const double A_A1{ ModelParams[i](5, 0) };
+        const double Op_PP{ cos_sq_theta / ( A_P1 * A_P1 ) };
+        const double Op_AP{ cos_sin_theta / ( A_P1 * A_A1 ) };
+        const double Op_AA{ sin_sq_theta / ( A_A1 * A_A1 ) };
+        for( int t = 0; t < Nt; t++ ) {
+          OptimalCorr[i](t,0) = Op_PP * ModelCorr[0][i](t,0) + Op_AA * ModelCorr[3][i](t,0)
+                              + Op_AP * ( ModelCorr[1][i](t,0) + ModelCorr[2][i](t,0) );
+          OptimalCorr[i](t,1) = 0;
+        }
+      }
+      std::string sOptimusPrime{ OutputRunBase };
+      sOptimusPrime.append( ".theta_" );
+      sOptimusPrime.append( std::to_string(degrees) );
+      if( bSaveCorr )
+        Latan::Io::save( OptimalCorr, Common::MakeFilename( sOptimusPrime, Common::sBootstrap, Seed, DEF_FMT ) );
+      Common::SummariseBootstrapCorr( OptimalCorr, sOptimusPrime, Seed );
+    }
+  }
   // Return the statistics on the fit results
   std::vector<Common::ValWithEr> Results( NumParams );
   std::vector<double> data( NSamples );
@@ -439,18 +489,6 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   }
   return Results;
 }
-
-/*static const char DefaultOutputStem[] = "@corr@.@type@";
-
-static void Usage( const char * pExecutableName )
-{
-  std::string cmd{ pExecutableName };
-  auto pos = cmd.find_last_of('/');
-  if( pos != std::string::npos && pos < cmd.length() - 1 )
-    cmd = cmd.substr( pos + 1 );
-  std::cerr << "usage: " << cmd << " <options> ContractionFile1 [ContractionFile2 ...]"
-  << "\nOutput stem (if present) must contain '@corr@' and '@type', e.g. '" << DefaultOutputStem << "'\n";
-}*/
 
 int main(int argc, char *argv[])
 {
@@ -499,6 +537,10 @@ int main(int argc, char *argv[])
                 "perform uncorrelated fit (default=correlated");
   opt.addOption("" , "opnames"   , OptParser::OptType::trigger, true,
                 "operator names (default=op_n");
+  opt.addOption("" , "savecorr"   , OptParser::OptType::trigger, true,
+                "save bootstrap copies of correlators");
+  opt.addOption("" , "savemodel"   , OptParser::OptType::trigger, true,
+                "save bootstrap of model fit results");
   if (!opt.parse(argc, argv) or (opt.getArgs().size() < 1) or opt.gotOption("help"))
   {
     std::cerr << "usage: " << argv[0] << " <options> <correlator file>" << std::endl;
@@ -523,6 +565,8 @@ int main(int argc, char *argv[])
   std::string outBaseFileName{ opt.optionValue("o") };
   const bool doCorr{ !opt.gotOption("uncorr") };
   const int Verbosity{ opt.optionValue<int>("v") }; // 0 = normal, 1=debug, 2=save covar, 3=Every iteration
+  const bool bSaveCorr{ opt.gotOption("savecorr") };
+  const bool bSaveModel{ opt.gotOption("savemodel") };
   /*Minimizer::Verbosity verbosity;
   switch ( Verbosity )
   {
@@ -586,7 +630,7 @@ int main(int argc, char *argv[])
     int NumExponents{ opt.optionValue<int>( "exponents" ) };
     if( NumExponents == 0 )
       NumExponents = NumOps;
-    MultiExpModel m ( Common::ReadBootstrapCorrs( opt.getArgs(), fold, shift, NumOps ), NumOps, OpNames, NumExponents, Verbosity, outBaseFileName, Seed );
+    MultiExpModel m ( Common::ReadBootstrapCorrs( opt.getArgs(), fold, shift, NumOps ), NumOps, OpNames, NumExponents, Verbosity, outBaseFileName, Seed, bSaveCorr, bSaveModel );
     std::string sSummaryBase{ outBaseFileName };
     sSummaryBase.append( 1, '.' );
     if( doCorr )
@@ -613,7 +657,7 @@ int main(int argc, char *argv[])
       // Name the data series
       s << "# [tf=" << ( tf + dtf ) << "]" << std::endl;
       // Column names, with the series value embedded in the column header (best I can do atm)
-      s << "ti tf=" << ( tf + dtf );
+      s << "tf=" << ( tf + dtf ) << Sep << "ti";
       for( int p = 0; p < m.NumParams; p++ )
         s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "ErLow" << Sep << m.ParamNames[p] << "ErHigh" << Sep << m.ParamNames[p] << "Check";
       s << " ChiSq Dof ChiSqPerDof" << std::endl;
@@ -622,7 +666,7 @@ int main(int argc, char *argv[])
         double ChiSq;
         int dof;
         auto params = m.PerformFit( doCorr, ti + dti, tf + dtf, ChiSq, dof );
-        s << ( ti + dti ) << Sep << ( tf + dtf );
+        s << ( tf + dtf ) << Sep << ( ti + dti );
         for( int p = 0; p < m.NumParams; p++ )
           s << Sep << params[p];
         s << Sep << ChiSq << Sep << dof << Sep << ( ChiSq / dof ) << std::endl;

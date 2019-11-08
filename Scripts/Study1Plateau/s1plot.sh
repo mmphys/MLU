@@ -64,7 +64,7 @@ do for [MyFieldNum = 0:1] {
   MyField="E".MyFieldNum
   set output "${PlotBase}.${PlotCorr}.".MyField.".${PlotSeq}.pdf"
   if (MyFieldNum==0) {
-    set arrow from 4.8,0.99565 to 11.2,0.99565 nohead front lc rgb "gray40" lw 0.25  dashtype "-"
+    set arrow from 4.8,0.99656 to 11.2,0.99656 nohead front lc rgb "gray40" lw 0.25  dashtype "-"
     set label "E_0=0.99656(95), ArXiv:1812.08791" at 4.9,0.99656 font "Arial,8" front textcolor "grey40" offset character 0,0.2
     TitleFieldName=MyField
   } else {
