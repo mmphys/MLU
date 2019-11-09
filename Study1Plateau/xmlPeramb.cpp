@@ -39,7 +39,7 @@ static const std::string Space{ " " };  // whitespace as field separator / human
 static const std::string GaugeFieldName{ "gauge" };
 static const std::string GaugeFieldNameSmeared{ "gauge" + Sep + "stout" };
 static const std::string UnsmearedSinkSuffix{ Sep + "unsmeared" + Sep + "sink" };
-static const std::array<std::string, 2> RhoPhi{ "rho", "phi" };
+static const std::array<std::string, 2> RhoPhi{ "Rho", "Phi" };
 static const std::string PerambPrefix{ "Peramb" + Sep };
 
 static constexpr bool bMakePeramb{ false }; // Alternative is to load the perambulators
@@ -68,12 +68,48 @@ static const Quark Quarks[] = {
 };
 static constexpr int NumQuarks{ sizeof( Quarks ) / sizeof( Quarks[0] ) };
 
+struct Contraction
+{
+  std::vector<std::string> sMomenta;
+  
+  explicit Contraction( int p )
+  {
+    // Make momenta
+    for( int px = -p; px <= p; ++px )
+      for( int py = -p; py <= p; ++py )
+        for( int pz = -p; pz <= p; ++pz )
+          if( px * px + py * py + pz * pz <= p * p)
+            sMomenta.push_back( std::to_string(px) + Space + std::to_string(py) + Space + std::to_string(pz));
+  }
+
+  void Make( Application &application, const std::string &Left, const std::string &Right)
+  {
+    static const std::string MesonDir{ "mesons/C1/Distil/" };
+    const std::string MesonFieldName{ Left + Sep + Right };
+    MContraction::A2AMesonField::Par mfPar;
+    mfPar.cacheBlock = 4;
+    mfPar.block = 100;
+    mfPar.left =  Left;
+    mfPar.right = Right;
+    mfPar.output = MesonDir + MesonFieldName;
+    mfPar.gammas = "all";
+    mfPar.mom = sMomenta;
+    application.createModule<MContraction::A2AMesonField>(MesonFieldName, mfPar);
+  }
+};
+
 int main(int argc, char *argv[])
 {
+  // We're not using C-style I/O
+  std::ios_base::sync_with_stdio(false);
   if( !bMakePeramb && !bRhoPhi ) {
-    std::cout << "Error: This would create a file that loads perambulators, but does nothing with them" << std::endl;
+    std::cout << "Error: This would create a file that loads perambulators, but does nothing with them\n";
     return 1;
   }
+  std::string RunID{ bMakePeramb ? "Make" : "Load" };
+  if( bRhoPhi )
+    RunID.append( "RhoPhi");
+
   // initialization //////////////////////////////////////////////////////////
   Grid_init(&argc, &argv);
   HadronsLogError.Active(GridLogError.isActive());
@@ -91,8 +127,8 @@ int main(int argc, char *argv[])
   Application::GlobalPar globalPar;
   globalPar.trajCounter.start    = 3000;
   globalPar.trajCounter.step     = 160;
-  globalPar.trajCounter.end      = globalPar.trajCounter.start + globalPar.trajCounter.step + 1;
-  globalPar.runId                = "HLPeramb";
+  globalPar.trajCounter.end      = globalPar.trajCounter.start + 1;
+  globalPar.runId                = RunID;
   globalPar.genetic.maxGen       = 1000;
   globalPar.genetic.maxCstGen    = 200;
   globalPar.genetic.popSize      = 20;
@@ -103,12 +139,15 @@ int main(int argc, char *argv[])
   MIO::LoadNersc::Par gaugePar;
   gaugePar.file = "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat";
   application.createModule<MIO::LoadNersc>(GaugeFieldName, gaugePar);
-  // Stout smeared field
-  MGauge::StoutSmearing::Par stoutPar;
-  stoutPar.gauge = GaugeFieldName;
-  stoutPar.steps = 3;
-  stoutPar.rho = 0.1;
-  application.createModule<MGauge::StoutSmearing>(GaugeFieldNameSmeared, stoutPar);
+  // Stout smeared gauge field
+  if( bMakePeramb )
+  {
+    MGauge::StoutSmearing::Par stoutPar;
+    stoutPar.gauge = GaugeFieldName;
+    stoutPar.steps = 3;
+    stoutPar.rho = 0.1;
+    application.createModule<MGauge::StoutSmearing>(GaugeFieldNameSmeared, stoutPar);
+  }
 
   // Action and a solver for each quark
   std::array<std::string, NumQuarks> solverName;
@@ -175,10 +214,11 @@ int main(int argc, char *argv[])
 
   // Loop through all quarks
   for (unsigned int i = 0; i < NumQuarks; ++i) {
-    const std::string Prefix{ PerambPrefix + Quarks[i].flavour + Sep };
+    const std::string Prefix{ PerambPrefix + Quarks[i].flavour };
     // Loop through all timeslices
     for (unsigned int t = 0; t < nt; t += 4) {
-      const std::string PerambName{ Prefix + std::to_string( t ) };
+      const std::string st{ Sep + std::to_string( t ) };
+      const std::string PerambName{ Prefix + st };
       if( bMakePeramb ) {
         MDistil::Perambulator::Par pPar;
         pPar.lapevec = LapEvecName;
@@ -190,82 +230,74 @@ int main(int argc, char *argv[])
         pPar.UnsmearedSinkFileName = PerambName + UnsmearedSinkSuffix;
         application.createModule<MDistil::Perambulator>(PerambName, pPar);
       } else {
+        static const std::string PerambDir{ "Peramb/C1/" };
         MIO::LoadPerambulator::Par pPar;
         pPar.nvec = Nvec;
         pPar.Distil.nnoise = noisePar.nnoise;
         pPar.Distil.tsrc = t;
+        pPar.PerambFileName = PerambDir + PerambName;
         application.createModule<MIO::LoadPerambulator>(PerambName, pPar);
       }
       if( bRhoPhi ) {
-        const std::string DVName{ "DV" + Sep + Quarks[i].flavour + Sep + std::to_string( t ) };
-        const std::string SourceName{RhoPhi[0] + Sep + Quarks[i].flavour + Sep + std::to_string( t )};
-        const std::string SinkName{ RhoPhi[1] + Sep + Quarks[i].flavour + Sep + std::to_string( t ) };
+        const std::string DVName{ "DV" + Sep + Quarks[i].flavour + st };
         MDistil::DistilVectors::Par dvPar;
         dvPar.noise = NoiseName;
         dvPar.perambulator = PerambName;
         dvPar.lapevec = LapEvecName;
-        dvPar.source = SourceName;
-        dvPar.sink = SinkName;
+        if( Quarks[i].flavour != "l" )
+          dvPar.source = RhoPhi[0] + st;
+        dvPar.sink = RhoPhi[1] + Sep + Quarks[i].flavour + st;
         dvPar.tsrc = t;
         application.createModule<MDistil::DistilVectors>(DVName, dvPar);
       }
     }
   }
   if( bRhoPhi ) {
-    // Make momenta
-    std::vector<std::string> sMomenta;
-    {
-      static constexpr int p{ 2 };
-      for( int px = -p; px <= p; ++px )
-        for( int py = -p; py <= p; ++py )
-          for( int pz = -p; pz <= p; ++pz )
-            if( px * px + py * py + pz * pz <= p * p)
-              sMomenta.push_back( std::to_string(px) + Space + std::to_string(py) + Space + std::to_string(pz));
+    Contraction contraction{ 2 };
+
+    // 16 x Rho_t_Rho_t
+    for (unsigned int t = 0; t < nt; t += 4) {
+      const std::string Left{ RhoPhi[0] + Sep + std::to_string(t) };
+      contraction.Make( application, Left, Left );
     }
-    // For each vector type
-    for( const std::string &vec : RhoPhi ) {
-      // Loop through all quarks on right / source
-      for (unsigned int qR = 0; qR < NumQuarks; ++qR) {
-        // Loop through all quarks on left / sink
-        for (unsigned int qL = 0; qL < NumQuarks; ++qL) {
-          // Loop through all timeslices
-          for (unsigned int t = 0; t < nt; t += 4) {
-            const std::string st{ Sep + std::to_string(t) };
-            //const std::string PerambLeft { PerambPrefix + Quarks[qL].flavour + st + Sep + vec};
-            //const std::string PerambRight{ PerambPrefix + Quarks[qR].flavour + st + Sep + vec};
-            const std::string Left { vec + Sep + Quarks[qL].flavour + Sep + std::to_string(t) };
-            const std::string Right{ vec + Sep + Quarks[qR].flavour + Sep + std::to_string(t) };
-            static const std::string MesonDir{ "mesons/C1/Distil/" };
-            const std::string MesonFieldName{ Left + Sep + Right };
-            MContraction::A2AMesonField::Par mfPar;
-            mfPar.cacheBlock = 4;
-            mfPar.block = 100;
-            mfPar.left =  Left;
-            mfPar.right = Right;
-            mfPar.output = MesonDir + MesonFieldName;
-            mfPar.gammas = "all";
-            mfPar.mom = sMomenta;
-            application.createModule<MContraction::A2AMesonField>(MesonFieldName, mfPar);
-          }
-        }
+
+    // 32 x Phi_q_t_Phi_q_t
+    for (unsigned int q = 0; q < NumQuarks; ++q) {
+      const std::string LeftBase{ RhoPhi[1] + Sep + Quarks[q].flavour + Sep };
+      for (unsigned int t = 0; t < nt; t += 4) {
+        const std::string Left{ LeftBase + std::to_string(t) };
+        contraction.Make( application, Left, Left );
+      }
+    }
+
+    // 128 x Phi_q_dt_Rho_t
+    for (unsigned int q = 0; q < NumQuarks; ++q) {
+      const std::string LeftBase{ RhoPhi[1] + Sep + Quarks[q].flavour + Sep };
+      for (unsigned int t = 0; t < nt; t += 4) {
+        const std::string Right{ RhoPhi[0] + Sep + std::to_string(t) };
+        for (unsigned int dt = 12; dt <= 24; dt += 4)
+          contraction.Make( application, LeftBase + std::to_string((t+dt)%nt), Right );
+      }
+    }
+
+    // 128 x Rho_dt_Phi_q_t
+    for (unsigned int q = 0; q < NumQuarks; ++q) {
+      const std::string RightBase{ RhoPhi[1] + Sep + Quarks[q].flavour + Sep };
+      for (unsigned int t = 0; t < nt; t += 4) {
+        const std::string Right{ RightBase + std::to_string(t) };
+        for (unsigned int dt = 12; dt <= 24; dt += 4)
+          contraction.Make( application, RhoPhi[0] + Sep + std::to_string((t+dt)%nt), Right );
       }
     }
   }
 
-  // execution
-  std::string Filename;
-  if( bMakePeramb )
-    Filename = "Make";
-  else
-  Filename = "Load";
-  if( bRhoPhi )
-    Filename.append( "RhoPhi" );
-  Filename.append( ".xml" );
-  application.saveParameterFile( Filename );
-//  application.saveParameterFile("Peramb.xml");
-#ifndef DEBUG
-  application.run(); // I only want to run this on Tesseract
-#endif
+  // Save the parameter file
+  application.saveParameterFile( RunID + ".xml" );
+
+  // I only want to run this if lattice size has been specified and larger than default
+  const Grid::Coordinate &lat{GridDefaultLatt()};
+  if( lat.size() == 4 && lat[0] > 8 && lat[1] > 8 && lat[2] > 8 && lat[3] > 8 )
+    application.run();
   
   // epilogue
   LOG(Message) << "Grid is finalizing now" << std::endl;

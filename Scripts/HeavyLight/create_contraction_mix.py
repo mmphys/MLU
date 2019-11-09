@@ -6,8 +6,16 @@ quarkL=['h2']
 quarkR=['l']
 quark3=['l'] #This one should always be light (in our case)
 
-PrefixUnsmeared = '/home/dp008/dp008/dc-erbe1/run/heavy_light/output/MesonSink_read_'
-DirectorySmeared = '/home/dp008/dp008/dc-mars3/data/201907HL/smeared/'
+OldStyle=False
+conf=3000
+if OldStyle:
+    # Older runs, where Felix made the unsmeared sinks, i.e. 3040, 3080, 3120
+    PrefixUnsmeared  = '/home/dp008/dp008/dc-erbe1/run/heavy_light/output/MesonSink_read_'
+    DirectorySmeared = '/home/dp008/dp008/dc-mars3/data/201907HL/smeared/'
+else:
+    # Newer runs, where I made everything, i.e. 3000, 3160
+    PrefixUnsmeared  = '/home/dp008/dp008/dc-mars3/data/201910Plat/unsmeared/C1/MesonSink_read_'
+    DirectorySmeared = '/home/dp008/dp008/dc-mars3/data/201910Plat/mesons/C1/Distil/'
 print 'PrefixUnsmeared:  ' + PrefixUnsmeared
 print 'DirectorySmeared: ' + DirectorySmeared
 print
@@ -77,9 +85,9 @@ for p2 in range(0,5):
         out.write(indent + '<output>' + OutputDir + '</output>\n')
         out.write(indent + '<trajCounter>\n')
         indent+='  '
-        out.write(indent + '<start>3200</start>\n')
-        out.write(indent + '<end>3201</end>\n')
-        out.write(indent + '<step>100</step>\n')
+        out.write(indent + '<start>' + str(conf) + '</start>\n')
+        out.write(indent + '<end>' + str(conf + 1) + '</end>\n')
+        out.write(indent + '<step>40</step>\n')
         indent=indent[:-2]
         out.write(indent + '</trajCounter>\n')
         indent=indent[:-2]
