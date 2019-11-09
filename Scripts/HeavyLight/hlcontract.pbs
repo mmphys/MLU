@@ -1,11 +1,16 @@
 # PBS job options name, compute nodes, job time)
-#PBS -N $HL_Contract_JobName
 # Select nodes
 #PBS -l select=1:ncpus=24:mpiprocs=1
 #PBS -l walltime=24:00:00
 #PBS -l place=scatter
-# [budget code]
 #PBS -A dp008
+
+# Set name of job shown in showq
+#PBS -N $HL_Contract_JobName
+
+# Email
+#PBS -m abe
+#PBS -M Michael.Marshall@ed.ac.uk
 
 # Redirect stdout and stderr to log directory
 #PBS -o ../log/
@@ -15,7 +20,7 @@
 cd ${PBS_O_WORKDIR}
 
 # Intel compilers and working version of MPI
-EnvDir=/home/dp008/dp008/shared/env
+EnvDir=/tessfs1/home/dp008/dp008/shared/env
 . ${EnvDir}/mod-intel18-impi19-tp.sh
 # MPI optimisation environment variables for Tesseract
 . ${EnvDir}/i18mpi-env.sh

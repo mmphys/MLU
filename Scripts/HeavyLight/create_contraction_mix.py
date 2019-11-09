@@ -2,7 +2,7 @@ import numpy as np
 import sys
 
 #quarks=['l','h1','h2']
-quarkL=['h2']
+quarkL=['h1']
 quarkR=['l']
 quark3=['l'] #This one should always be light (in our case)
 
