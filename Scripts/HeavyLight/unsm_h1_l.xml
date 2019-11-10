@@ -1,0 +1,6647 @@
+<?xml version="1.0"?>
+<grid>
+  <parameters>
+    <trajCounter>
+      <start>3000</start>
+      <end>3161</end>
+      <step>160</step>
+    </trajCounter>
+    <genetic>
+      <popSize>20</popSize>
+      <maxGen>1000</maxGen>
+      <maxCstGen>100</maxCstGen>
+      <mutationRate>0.1</mutationRate>
+    </genetic>
+    <runId>UnsmearedInsertions</runId>
+    <graphFile></graphFile>
+    <scheduleFile></scheduleFile>
+    <saveSchedule>false</saveSchedule>
+    <parallelWriteMaxRetry>-1</parallelWriteMaxRetry>
+  </parameters>
+  <modules>
+    <module>
+      <id>
+        <name>Sink_h1_0</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_0_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_4</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_4_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_8</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_8_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_12</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_12_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_16</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_16_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_20</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_20_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_24</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_24_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_28</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_28_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_32</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_32_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_36</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_36_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_40</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_40_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_44</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_44_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_48</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_48_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_52</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_52_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_56</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_56_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_h1_60</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_h1_60_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_0</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_0_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_4</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_4_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_8</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_8_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_12</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_12_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_16</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_16_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_20</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_20_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_24</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_24_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_28</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_28_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_32</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_32_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_36</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_36_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_40</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_40_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_44</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_44_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_48</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_48_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_52</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_52_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_56</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_56_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>Sink_l_60</name>
+        <type>MIO::LoadA2AVectors</type>
+      </id>
+      <options>
+        <filestem>Peramb/C1/Peramb_l_60_unsmeared_sink</filestem>
+        <size>240</size>
+        <multiFile>true</multiFile>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_0_12</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_0</left>
+        <right>Sink_l_12</right>
+        <output>unsmeared/C1/MesonSink_read_h1_0_l_12</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_0_16</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_0</left>
+        <right>Sink_l_16</right>
+        <output>unsmeared/C1/MesonSink_read_h1_0_l_16</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_0_20</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_0</left>
+        <right>Sink_l_20</right>
+        <output>unsmeared/C1/MesonSink_read_h1_0_l_20</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_0_24</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_0</left>
+        <right>Sink_l_24</right>
+        <output>unsmeared/C1/MesonSink_read_h1_0_l_24</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_4_16</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_4</left>
+        <right>Sink_l_16</right>
+        <output>unsmeared/C1/MesonSink_read_h1_4_l_16</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_4_20</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_4</left>
+        <right>Sink_l_20</right>
+        <output>unsmeared/C1/MesonSink_read_h1_4_l_20</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_4_24</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_4</left>
+        <right>Sink_l_24</right>
+        <output>unsmeared/C1/MesonSink_read_h1_4_l_24</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_4_28</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_4</left>
+        <right>Sink_l_28</right>
+        <output>unsmeared/C1/MesonSink_read_h1_4_l_28</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_8_20</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_8</left>
+        <right>Sink_l_20</right>
+        <output>unsmeared/C1/MesonSink_read_h1_8_l_20</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_8_24</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_8</left>
+        <right>Sink_l_24</right>
+        <output>unsmeared/C1/MesonSink_read_h1_8_l_24</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_8_28</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_8</left>
+        <right>Sink_l_28</right>
+        <output>unsmeared/C1/MesonSink_read_h1_8_l_28</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_8_32</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_8</left>
+        <right>Sink_l_32</right>
+        <output>unsmeared/C1/MesonSink_read_h1_8_l_32</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_12_24</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_12</left>
+        <right>Sink_l_24</right>
+        <output>unsmeared/C1/MesonSink_read_h1_12_l_24</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_12_28</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_12</left>
+        <right>Sink_l_28</right>
+        <output>unsmeared/C1/MesonSink_read_h1_12_l_28</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_12_32</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_12</left>
+        <right>Sink_l_32</right>
+        <output>unsmeared/C1/MesonSink_read_h1_12_l_32</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_12_36</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_12</left>
+        <right>Sink_l_36</right>
+        <output>unsmeared/C1/MesonSink_read_h1_12_l_36</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_16_28</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_16</left>
+        <right>Sink_l_28</right>
+        <output>unsmeared/C1/MesonSink_read_h1_16_l_28</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_16_32</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_16</left>
+        <right>Sink_l_32</right>
+        <output>unsmeared/C1/MesonSink_read_h1_16_l_32</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_16_36</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_16</left>
+        <right>Sink_l_36</right>
+        <output>unsmeared/C1/MesonSink_read_h1_16_l_36</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_16_40</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_16</left>
+        <right>Sink_l_40</right>
+        <output>unsmeared/C1/MesonSink_read_h1_16_l_40</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_20_32</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_20</left>
+        <right>Sink_l_32</right>
+        <output>unsmeared/C1/MesonSink_read_h1_20_l_32</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_20_36</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_20</left>
+        <right>Sink_l_36</right>
+        <output>unsmeared/C1/MesonSink_read_h1_20_l_36</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_20_40</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_20</left>
+        <right>Sink_l_40</right>
+        <output>unsmeared/C1/MesonSink_read_h1_20_l_40</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_20_44</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_20</left>
+        <right>Sink_l_44</right>
+        <output>unsmeared/C1/MesonSink_read_h1_20_l_44</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_24_36</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_24</left>
+        <right>Sink_l_36</right>
+        <output>unsmeared/C1/MesonSink_read_h1_24_l_36</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_24_40</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_24</left>
+        <right>Sink_l_40</right>
+        <output>unsmeared/C1/MesonSink_read_h1_24_l_40</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_24_44</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_24</left>
+        <right>Sink_l_44</right>
+        <output>unsmeared/C1/MesonSink_read_h1_24_l_44</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_24_48</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_24</left>
+        <right>Sink_l_48</right>
+        <output>unsmeared/C1/MesonSink_read_h1_24_l_48</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_28_40</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_28</left>
+        <right>Sink_l_40</right>
+        <output>unsmeared/C1/MesonSink_read_h1_28_l_40</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_28_44</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_28</left>
+        <right>Sink_l_44</right>
+        <output>unsmeared/C1/MesonSink_read_h1_28_l_44</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_28_48</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_28</left>
+        <right>Sink_l_48</right>
+        <output>unsmeared/C1/MesonSink_read_h1_28_l_48</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_28_52</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_28</left>
+        <right>Sink_l_52</right>
+        <output>unsmeared/C1/MesonSink_read_h1_28_l_52</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_32_44</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_32</left>
+        <right>Sink_l_44</right>
+        <output>unsmeared/C1/MesonSink_read_h1_32_l_44</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_32_48</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_32</left>
+        <right>Sink_l_48</right>
+        <output>unsmeared/C1/MesonSink_read_h1_32_l_48</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_32_52</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_32</left>
+        <right>Sink_l_52</right>
+        <output>unsmeared/C1/MesonSink_read_h1_32_l_52</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_32_56</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_32</left>
+        <right>Sink_l_56</right>
+        <output>unsmeared/C1/MesonSink_read_h1_32_l_56</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_36_48</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_36</left>
+        <right>Sink_l_48</right>
+        <output>unsmeared/C1/MesonSink_read_h1_36_l_48</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_36_52</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_36</left>
+        <right>Sink_l_52</right>
+        <output>unsmeared/C1/MesonSink_read_h1_36_l_52</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_36_56</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_36</left>
+        <right>Sink_l_56</right>
+        <output>unsmeared/C1/MesonSink_read_h1_36_l_56</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_36_60</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_36</left>
+        <right>Sink_l_60</right>
+        <output>unsmeared/C1/MesonSink_read_h1_36_l_60</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_40_52</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_40</left>
+        <right>Sink_l_52</right>
+        <output>unsmeared/C1/MesonSink_read_h1_40_l_52</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_40_56</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_40</left>
+        <right>Sink_l_56</right>
+        <output>unsmeared/C1/MesonSink_read_h1_40_l_56</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_40_60</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_40</left>
+        <right>Sink_l_60</right>
+        <output>unsmeared/C1/MesonSink_read_h1_40_l_60</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_40_0</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_40</left>
+        <right>Sink_l_0</right>
+        <output>unsmeared/C1/MesonSink_read_h1_40_l_0</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_44_56</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_44</left>
+        <right>Sink_l_56</right>
+        <output>unsmeared/C1/MesonSink_read_h1_44_l_56</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_44_60</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_44</left>
+        <right>Sink_l_60</right>
+        <output>unsmeared/C1/MesonSink_read_h1_44_l_60</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_44_0</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_44</left>
+        <right>Sink_l_0</right>
+        <output>unsmeared/C1/MesonSink_read_h1_44_l_0</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_44_4</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_44</left>
+        <right>Sink_l_4</right>
+        <output>unsmeared/C1/MesonSink_read_h1_44_l_4</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_48_60</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_48</left>
+        <right>Sink_l_60</right>
+        <output>unsmeared/C1/MesonSink_read_h1_48_l_60</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_48_0</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_48</left>
+        <right>Sink_l_0</right>
+        <output>unsmeared/C1/MesonSink_read_h1_48_l_0</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_48_4</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_48</left>
+        <right>Sink_l_4</right>
+        <output>unsmeared/C1/MesonSink_read_h1_48_l_4</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_48_8</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_48</left>
+        <right>Sink_l_8</right>
+        <output>unsmeared/C1/MesonSink_read_h1_48_l_8</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_52_0</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_52</left>
+        <right>Sink_l_0</right>
+        <output>unsmeared/C1/MesonSink_read_h1_52_l_0</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_52_4</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_52</left>
+        <right>Sink_l_4</right>
+        <output>unsmeared/C1/MesonSink_read_h1_52_l_4</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_52_8</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_52</left>
+        <right>Sink_l_8</right>
+        <output>unsmeared/C1/MesonSink_read_h1_52_l_8</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_52_12</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_52</left>
+        <right>Sink_l_12</right>
+        <output>unsmeared/C1/MesonSink_read_h1_52_l_12</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_56_4</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_56</left>
+        <right>Sink_l_4</right>
+        <output>unsmeared/C1/MesonSink_read_h1_56_l_4</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_56_8</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_56</left>
+        <right>Sink_l_8</right>
+        <output>unsmeared/C1/MesonSink_read_h1_56_l_8</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_56_12</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_56</left>
+        <right>Sink_l_12</right>
+        <output>unsmeared/C1/MesonSink_read_h1_56_l_12</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_56_16</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_56</left>
+        <right>Sink_l_16</right>
+        <output>unsmeared/C1/MesonSink_read_h1_56_l_16</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_60_8</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_60</left>
+        <right>Sink_l_8</right>
+        <output>unsmeared/C1/MesonSink_read_h1_60_l_8</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_60_12</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_60</left>
+        <right>Sink_l_12</right>
+        <output>unsmeared/C1/MesonSink_read_h1_60_l_12</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_60_16</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_60</left>
+        <right>Sink_l_16</right>
+        <output>unsmeared/C1/MesonSink_read_h1_60_l_16</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_h1_l_60_20</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_h1_60</left>
+        <right>Sink_l_20</right>
+        <output>unsmeared/C1/MesonSink_read_h1_60_l_20</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_0_12</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_0</left>
+        <right>Sink_h1_12</right>
+        <output>unsmeared/C1/MesonSink_read_l_0_h1_12</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_0_16</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_0</left>
+        <right>Sink_h1_16</right>
+        <output>unsmeared/C1/MesonSink_read_l_0_h1_16</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_0_20</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_0</left>
+        <right>Sink_h1_20</right>
+        <output>unsmeared/C1/MesonSink_read_l_0_h1_20</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_0_24</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_0</left>
+        <right>Sink_h1_24</right>
+        <output>unsmeared/C1/MesonSink_read_l_0_h1_24</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_4_16</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_4</left>
+        <right>Sink_h1_16</right>
+        <output>unsmeared/C1/MesonSink_read_l_4_h1_16</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_4_20</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_4</left>
+        <right>Sink_h1_20</right>
+        <output>unsmeared/C1/MesonSink_read_l_4_h1_20</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_4_24</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_4</left>
+        <right>Sink_h1_24</right>
+        <output>unsmeared/C1/MesonSink_read_l_4_h1_24</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_4_28</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_4</left>
+        <right>Sink_h1_28</right>
+        <output>unsmeared/C1/MesonSink_read_l_4_h1_28</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_8_20</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_8</left>
+        <right>Sink_h1_20</right>
+        <output>unsmeared/C1/MesonSink_read_l_8_h1_20</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_8_24</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_8</left>
+        <right>Sink_h1_24</right>
+        <output>unsmeared/C1/MesonSink_read_l_8_h1_24</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_8_28</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_8</left>
+        <right>Sink_h1_28</right>
+        <output>unsmeared/C1/MesonSink_read_l_8_h1_28</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_8_32</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_8</left>
+        <right>Sink_h1_32</right>
+        <output>unsmeared/C1/MesonSink_read_l_8_h1_32</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_12_24</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_12</left>
+        <right>Sink_h1_24</right>
+        <output>unsmeared/C1/MesonSink_read_l_12_h1_24</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_12_28</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_12</left>
+        <right>Sink_h1_28</right>
+        <output>unsmeared/C1/MesonSink_read_l_12_h1_28</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_12_32</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_12</left>
+        <right>Sink_h1_32</right>
+        <output>unsmeared/C1/MesonSink_read_l_12_h1_32</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_12_36</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_12</left>
+        <right>Sink_h1_36</right>
+        <output>unsmeared/C1/MesonSink_read_l_12_h1_36</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_16_28</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_16</left>
+        <right>Sink_h1_28</right>
+        <output>unsmeared/C1/MesonSink_read_l_16_h1_28</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_16_32</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_16</left>
+        <right>Sink_h1_32</right>
+        <output>unsmeared/C1/MesonSink_read_l_16_h1_32</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_16_36</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_16</left>
+        <right>Sink_h1_36</right>
+        <output>unsmeared/C1/MesonSink_read_l_16_h1_36</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_16_40</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_16</left>
+        <right>Sink_h1_40</right>
+        <output>unsmeared/C1/MesonSink_read_l_16_h1_40</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_20_32</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_20</left>
+        <right>Sink_h1_32</right>
+        <output>unsmeared/C1/MesonSink_read_l_20_h1_32</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_20_36</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_20</left>
+        <right>Sink_h1_36</right>
+        <output>unsmeared/C1/MesonSink_read_l_20_h1_36</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_20_40</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_20</left>
+        <right>Sink_h1_40</right>
+        <output>unsmeared/C1/MesonSink_read_l_20_h1_40</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_20_44</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_20</left>
+        <right>Sink_h1_44</right>
+        <output>unsmeared/C1/MesonSink_read_l_20_h1_44</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_24_36</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_24</left>
+        <right>Sink_h1_36</right>
+        <output>unsmeared/C1/MesonSink_read_l_24_h1_36</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_24_40</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_24</left>
+        <right>Sink_h1_40</right>
+        <output>unsmeared/C1/MesonSink_read_l_24_h1_40</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_24_44</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_24</left>
+        <right>Sink_h1_44</right>
+        <output>unsmeared/C1/MesonSink_read_l_24_h1_44</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_24_48</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_24</left>
+        <right>Sink_h1_48</right>
+        <output>unsmeared/C1/MesonSink_read_l_24_h1_48</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_28_40</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_28</left>
+        <right>Sink_h1_40</right>
+        <output>unsmeared/C1/MesonSink_read_l_28_h1_40</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_28_44</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_28</left>
+        <right>Sink_h1_44</right>
+        <output>unsmeared/C1/MesonSink_read_l_28_h1_44</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_28_48</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_28</left>
+        <right>Sink_h1_48</right>
+        <output>unsmeared/C1/MesonSink_read_l_28_h1_48</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_28_52</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_28</left>
+        <right>Sink_h1_52</right>
+        <output>unsmeared/C1/MesonSink_read_l_28_h1_52</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_32_44</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_32</left>
+        <right>Sink_h1_44</right>
+        <output>unsmeared/C1/MesonSink_read_l_32_h1_44</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_32_48</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_32</left>
+        <right>Sink_h1_48</right>
+        <output>unsmeared/C1/MesonSink_read_l_32_h1_48</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_32_52</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_32</left>
+        <right>Sink_h1_52</right>
+        <output>unsmeared/C1/MesonSink_read_l_32_h1_52</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_32_56</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_32</left>
+        <right>Sink_h1_56</right>
+        <output>unsmeared/C1/MesonSink_read_l_32_h1_56</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_36_48</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_36</left>
+        <right>Sink_h1_48</right>
+        <output>unsmeared/C1/MesonSink_read_l_36_h1_48</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_36_52</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_36</left>
+        <right>Sink_h1_52</right>
+        <output>unsmeared/C1/MesonSink_read_l_36_h1_52</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_36_56</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_36</left>
+        <right>Sink_h1_56</right>
+        <output>unsmeared/C1/MesonSink_read_l_36_h1_56</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_36_60</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_36</left>
+        <right>Sink_h1_60</right>
+        <output>unsmeared/C1/MesonSink_read_l_36_h1_60</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_40_52</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_40</left>
+        <right>Sink_h1_52</right>
+        <output>unsmeared/C1/MesonSink_read_l_40_h1_52</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_40_56</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_40</left>
+        <right>Sink_h1_56</right>
+        <output>unsmeared/C1/MesonSink_read_l_40_h1_56</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_40_60</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_40</left>
+        <right>Sink_h1_60</right>
+        <output>unsmeared/C1/MesonSink_read_l_40_h1_60</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_40_0</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_40</left>
+        <right>Sink_h1_0</right>
+        <output>unsmeared/C1/MesonSink_read_l_40_h1_0</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_44_56</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_44</left>
+        <right>Sink_h1_56</right>
+        <output>unsmeared/C1/MesonSink_read_l_44_h1_56</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_44_60</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_44</left>
+        <right>Sink_h1_60</right>
+        <output>unsmeared/C1/MesonSink_read_l_44_h1_60</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_44_0</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_44</left>
+        <right>Sink_h1_0</right>
+        <output>unsmeared/C1/MesonSink_read_l_44_h1_0</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_44_4</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_44</left>
+        <right>Sink_h1_4</right>
+        <output>unsmeared/C1/MesonSink_read_l_44_h1_4</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_48_60</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_48</left>
+        <right>Sink_h1_60</right>
+        <output>unsmeared/C1/MesonSink_read_l_48_h1_60</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_48_0</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_48</left>
+        <right>Sink_h1_0</right>
+        <output>unsmeared/C1/MesonSink_read_l_48_h1_0</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_48_4</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_48</left>
+        <right>Sink_h1_4</right>
+        <output>unsmeared/C1/MesonSink_read_l_48_h1_4</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_48_8</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_48</left>
+        <right>Sink_h1_8</right>
+        <output>unsmeared/C1/MesonSink_read_l_48_h1_8</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_52_0</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_52</left>
+        <right>Sink_h1_0</right>
+        <output>unsmeared/C1/MesonSink_read_l_52_h1_0</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_52_4</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_52</left>
+        <right>Sink_h1_4</right>
+        <output>unsmeared/C1/MesonSink_read_l_52_h1_4</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_52_8</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_52</left>
+        <right>Sink_h1_8</right>
+        <output>unsmeared/C1/MesonSink_read_l_52_h1_8</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_52_12</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_52</left>
+        <right>Sink_h1_12</right>
+        <output>unsmeared/C1/MesonSink_read_l_52_h1_12</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_56_4</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_56</left>
+        <right>Sink_h1_4</right>
+        <output>unsmeared/C1/MesonSink_read_l_56_h1_4</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_56_8</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_56</left>
+        <right>Sink_h1_8</right>
+        <output>unsmeared/C1/MesonSink_read_l_56_h1_8</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_56_12</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_56</left>
+        <right>Sink_h1_12</right>
+        <output>unsmeared/C1/MesonSink_read_l_56_h1_12</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_56_16</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_56</left>
+        <right>Sink_h1_16</right>
+        <output>unsmeared/C1/MesonSink_read_l_56_h1_16</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_60_8</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_60</left>
+        <right>Sink_h1_8</right>
+        <output>unsmeared/C1/MesonSink_read_l_60_h1_8</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_60_12</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_60</left>
+        <right>Sink_h1_12</right>
+        <output>unsmeared/C1/MesonSink_read_l_60_h1_12</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_60_16</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_60</left>
+        <right>Sink_h1_16</right>
+        <output>unsmeared/C1/MesonSink_read_l_60_h1_16</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+    <module>
+      <id>
+        <name>MesonSink_l_h1_60_20</name>
+        <type>MContraction::A2AMesonField</type>
+      </id>
+      <options>
+        <cacheBlock>2</cacheBlock>
+        <block>4</block>
+        <left>Sink_l_60</left>
+        <right>Sink_h1_20</right>
+        <output>unsmeared/C1/MesonSink_read_l_60_h1_20</output>
+        <gammas>all</gammas>
+        <mom>
+          <elem>-2 0 0</elem>
+          <elem>-1 -1 -1</elem>
+          <elem>-1 -1 0</elem>
+          <elem>-1 -1 1</elem>
+          <elem>-1 0 -1</elem>
+          <elem>-1 0 0</elem>
+          <elem>-1 0 1</elem>
+          <elem>-1 1 -1</elem>
+          <elem>-1 1 0</elem>
+          <elem>-1 1 1</elem>
+          <elem>0 -2 0</elem>
+          <elem>0 -1 -1</elem>
+          <elem>0 -1 0</elem>
+          <elem>0 -1 1</elem>
+          <elem>0 0 -2</elem>
+          <elem>0 0 -1</elem>
+          <elem>0 0 0</elem>
+          <elem>0 0 1</elem>
+          <elem>0 0 2</elem>
+          <elem>0 1 -1</elem>
+          <elem>0 1 0</elem>
+          <elem>0 1 1</elem>
+          <elem>0 2 0</elem>
+          <elem>1 -1 -1</elem>
+          <elem>1 -1 0</elem>
+          <elem>1 -1 1</elem>
+          <elem>1 0 -1</elem>
+          <elem>1 0 0</elem>
+          <elem>1 0 1</elem>
+          <elem>1 1 -1</elem>
+          <elem>1 1 0</elem>
+          <elem>1 1 1</elem>
+          <elem>2 0 0</elem>
+        </mom>
+      </options>
+    </module>
+  </modules>
+</grid>
