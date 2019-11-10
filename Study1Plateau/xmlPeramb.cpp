@@ -261,12 +261,15 @@ int main(int argc, char *argv[])
       contraction.Make( application, Left, Left );
     }
 
-    // 32 x Phi_q_t_Phi_q_t
-    for (unsigned int q = 0; q < NumQuarks; ++q) {
-      const std::string LeftBase{ RhoPhi[1] + Sep + Quarks[q].flavour + Sep };
-      for (unsigned int t = 0; t < nt; t += 4) {
-        const std::string Left{ LeftBase + std::to_string(t) };
-        contraction.Make( application, Left, Left );
+    // 64 x Phi_qL_t_Phi_qR_t
+    for (unsigned int qL = 0; qL < NumQuarks; ++qL) {
+      const std::string Left{ RhoPhi[1] + Sep + Quarks[qL].flavour + Sep };
+      for (unsigned int qR = 0; qR < NumQuarks; ++qR) {
+        const std::string Right{ RhoPhi[1] + Sep + Quarks[qR].flavour + Sep };
+        for (unsigned int t = 0; t < nt; t += 4) {
+          const std::string st{ std::to_string(t) };
+          contraction.Make( application, Left + st, Right + st );
+        }
       }
     }
 
