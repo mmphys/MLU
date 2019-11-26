@@ -66,21 +66,19 @@ class MultiExpModel : public ROOT::Minuit2::FCNBase {
 public:
   static constexpr double pi{ M_PI };
   using vd_t = std::vector<double>;
-  explicit MultiExpModel( const Latan::DMatSample Corr, int NumOps, const std::vector<std::string> &OpNames, int NumExponents, int Verbosity, const std::string &OutputBaseName, Common::SeedType Seed, bool bSaveCorr, bool bSaveModel );
+  explicit MultiExpModel( const Latan::DMatSample Corr, int NumOps, const std::vector<std::string> &OpNames, int NumExponents, int Verbosity, const std::string &OutputBaseName, Common::SeedType Seed );
   virtual ~MultiExpModel() {}
   // These are part of the FCNBase interface
   virtual double Up() const { return 1.; }
   virtual double operator()( const vd_t & ModelParameters ) const;
   //virtual void SetErrorDef(double def) {theErrorDef = def;}
   // These are definitely not part of the FCNBase interface
-  std::vector<Common::ValWithEr> PerformFit( bool bCorrelated, int tMin, int tMax, double &ChiSq, int &dof );
+  std::vector<Common::ValWithEr> PerformFit( bool bCorrelated, int tMin, int tMax, double &ChiSq, int &dof, bool bSaveCorr );
   const int NumOps;
   const std::vector<std::string> &OpNames;
   const int Verbosity;
   const std::string OutputBaseName;
   const Common::SeedType Seed;
-  const bool bSaveCorr;
-  const bool bSaveModel;
   const int NumFiles;
   const int NSamples;
   const int Nt;
@@ -101,21 +99,19 @@ public:
   std::string OutputRunBase;
   Latan::Index idx;
   // Helper functions
-  inline int AlphaIndex( int src, int snk) const { return snk * NumOps + src; };
+  inline int AlphaIndex( int snk, int src) const { return snk * NumOps + src; };
   inline int MELIndex( int op, int EnergyLevel) const { return EnergyLevel * NumOps + op; };
   void MakeCovar( void );
   void DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &par );
   std::vector<std::string> MakeParamNames();
 };
 
-MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const std::vector<std::string> &opNames_, int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_, bool bSaveCorr_, bool bSaveModel_ )
+MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const std::vector<std::string> &opNames_, int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_ )
   : NumOps{ numOps_ },
     OpNames{ opNames_ },
     Verbosity{ verbosity_ },
     OutputBaseName{ outputBaseName_ },
     Seed{ seed_ },
-    bSaveCorr{ bSaveCorr_ },
-    bSaveModel{ bSaveModel_ },
     NumFiles{ numOps_ * numOps_ },
     NSamples{ static_cast<int>( corr_.size() ) },
     Nt      { static_cast<int>( corr_[Latan::central].rows() / NumFiles ) },
@@ -233,8 +229,8 @@ double MultiExpModel::operator()( const vd_t & par ) const {
           CumulativeEnergy -= Energy[e];
           z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( CumulativeEnergy * ( t + tMin ) );
         }
-        const int iRead{ AlphaIndex( src, snk ) * Nt + t + tMin };
-        const int iWrite{ AlphaIndex( src, snk ) * NtCorr + t };
+        const int iRead{ AlphaIndex( snk, src ) * Nt + t + tMin };
+        const int iWrite{ AlphaIndex( snk, src ) * NtCorr + t };
         ModelError[iWrite] = Corr[idx]( iRead, 0 ) - z;
       }
   static int iCall{ 0 };
@@ -277,7 +273,7 @@ void MultiExpModel::DumpParameters( const std::string &msg, const ROOT::Minuit2:
 }
 
 // Perform a fit
-std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int TMin_, int TMax_, double &ChiSq, int &dof )
+std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int TMin_, int TMax_, double &ChiSq, int &dof, bool bSaveCorr )
 {
   std::cout << "=========================================\nPerforming "
             << ( Bcorrelated_ ? "correlated" : "uncorrelated" )
@@ -329,7 +325,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     Energy[0] = 0;
     for( int snk = 0; snk < NumOps; ++snk )
       for( int src = 0; src < NumOps; ++src ) {
-        const int i{ AlphaIndex( src, snk ) * Nt + tGuess };
+        const int i{ AlphaIndex( snk, src ) * Nt + tGuess };
         double E0 = std::log( m( i, 0 ) / m( i + 1, 0 ) );
         Energy[0] += E0;
         if( snk == src )
@@ -364,8 +360,8 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   ROOT::Minuit2::MnMigrad minimizer( *this, upar );
   //FOR_STAT_ARRAY( Fit, <#i#> ) {
   //for (idx = -ModelParams.offset; idx < ModelParams.size(); idx++) {
-  for (int LoopIdx = -2; LoopIdx < NSamples; LoopIdx++) {
-    idx = ( LoopIdx < 0 ) ? Latan::central : LoopIdx;
+  for (int LoopIdx = -1; LoopIdx < NSamples; LoopIdx++) {
+    idx = ( LoopIdx >= 0 && LoopIdx < NSamples ) ? LoopIdx : Latan::central;
     ROOT::Minuit2::FunctionMinimum min = minimizer();
     ROOT::Minuit2::MnUserParameterState state = min.UserState();
     //assert( minimizer.SetVariables( par.begin(), par.end() ) == NumParams && "Error: could not set variables" );
@@ -411,7 +407,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
       // Save the reconstructed correlator values for this replica
       for( int snk = 0; snk < NumOps; ++snk )
         for( int src = 0; src < NumOps; ++src ) {
-          Latan::DMat &mc{ ModelCorr[AlphaIndex( src, snk )][idx] };
+          Latan::DMat &mc{ ModelCorr[AlphaIndex( snk, src )][idx] };
           for( int t = 0; t < Nt; ++t ) {
             double z = 0;
             for( int e = 0; e < NumExponents; ++e )
@@ -431,19 +427,17 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     sModelBase.append( 1, '_' );
     sModelBase.append( OpNames[i] );
   }
-  if( bSaveModel )
-    Latan::Io::save(ModelParams, Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ));
+  Latan::Io::save(ModelParams, Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ));
   //Common::SummariseBootstrap(ModelParams, sModelBase, Seed, "params" );
   for( int snk = 0; snk < NumOps; ++snk )
     for( int src = 0; src < NumOps; ++src ) {
-      const int i{ AlphaIndex( src, snk ) };
+      const int i{ AlphaIndex( snk, src ) };
       const std::string SummaryBase{ OutputRunBase + '.' + OpNames[snk] + '_' + OpNames[src] };
       if( bSaveCorr )
         Latan::Io::save(ModelCorr[i], Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
       Common::SummariseBootstrapCorr(ModelCorr[i], SummaryBase, Seed );
     }
-  // Now construct my optimal model for a range of theta
-  if( NumOps == 2) {  // I've only coded for two operators
+  /*if( NumOps == 2) {  // I've only coded for two operators
     Latan::DMatSample OptimalCorr( NSamples, Nt, 2 );
     for( int degrees = -90; degrees <= 90; degrees ++ )
     {
@@ -473,7 +467,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
         Latan::Io::save( OptimalCorr, Common::MakeFilename( sOptimusPrime, Common::sBootstrap, Seed, DEF_FMT ) );
       Common::SummariseBootstrapCorr( OptimalCorr, sOptimusPrime, Seed );
     }
-  }
+  }*/
   // Return the statistics on the fit results
   std::vector<Common::ValWithEr> Results( NumParams );
   std::vector<double> data( NSamples );
@@ -537,8 +531,8 @@ int main(int argc, char *argv[])
                 "perform uncorrelated fit (default=correlated");
   opt.addOption("" , "opnames"   , OptParser::OptType::trigger, true,
                 "operator names (default=op_n");
-  opt.addOption("" , "savecorr"   , OptParser::OptType::trigger, true,
-                "save bootstrap copies of correlators");
+  opt.addOption("" , "nosave"   , OptParser::OptType::trigger, true,
+                "don't save bootstrap replicas of correlators or model");
   opt.addOption("" , "savemodel"   , OptParser::OptType::trigger, true,
                 "save bootstrap of model fit results");
   if (!opt.parse(argc, argv) or (opt.getArgs().size() < 1) or opt.gotOption("help"))
@@ -566,7 +560,6 @@ int main(int argc, char *argv[])
   const bool doCorr{ !opt.gotOption("uncorr") };
   const int Verbosity{ opt.optionValue<int>("v") }; // 0 = normal, 1=debug, 2=save covar, 3=Every iteration
   const bool bSaveCorr{ opt.gotOption("savecorr") };
-  const bool bSaveModel{ opt.gotOption("savemodel") };
   /*Minimizer::Verbosity verbosity;
   switch ( Verbosity )
   {
@@ -630,7 +623,7 @@ int main(int argc, char *argv[])
     int NumExponents{ opt.optionValue<int>( "exponents" ) };
     if( NumExponents == 0 )
       NumExponents = NumOps;
-    MultiExpModel m ( Common::ReadBootstrapCorrs( opt.getArgs(), fold, shift, NumOps ), NumOps, OpNames, NumExponents, Verbosity, outBaseFileName, Seed, bSaveCorr, bSaveModel );
+    MultiExpModel m ( Common::ReadBootstrapCorrs( opt.getArgs(), fold, shift, NumOps ), NumOps, OpNames, NumExponents, Verbosity, outBaseFileName, Seed );
     std::string sSummaryBase{ outBaseFileName };
     sSummaryBase.append( 1, '.' );
     if( doCorr )
@@ -665,7 +658,7 @@ int main(int argc, char *argv[])
       {
         double ChiSq;
         int dof;
-        auto params = m.PerformFit( doCorr, ti + dti, tf + dtf, ChiSq, dof );
+        auto params = m.PerformFit( doCorr, ti + dti, tf + dtf, ChiSq, dof, bSaveCorr );
         s << ( tf + dtf ) << Sep << ( ti + dti );
         for( int p = 0; p < m.NumParams; p++ )
           s << Sep << params[p];

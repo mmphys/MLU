@@ -62,6 +62,24 @@ inline void CopyCorrelator( Latan::DMat &dst, const Correlator &src, int iOffset
   }
 }
 
+// Copy a correlator to a Latan::DMat
+inline void CopyRealCorrelator( Latan::DMat &dst, const std::vector<double> &src, int iOffset = 0, bool bSwapRealImag = false )
+{
+  const std::size_t Nt{ src.size() };
+  if( Nt == 0 )
+    throw std::runtime_error( "Can't copy an uninitialised Correlator" );
+  if( Nt > INT_MAX )
+    throw std::runtime_error( "Correlator size > INT_MAX" );
+  dst.resize( Nt, 2 ); // LatAnalyze prefers nt * 2 real matrix
+  const std::size_t dt{ ( iOffset < 0 ) ? Nt - ( -iOffset % Nt ) : iOffset % Nt };
+  for( std::size_t t = 0; t < Nt; t++ )
+  {
+    const std::complex<double> & z{ src[( t + dt ) % Nt], 0 };
+    dst( t, 0 ) = bSwapRealImag ? z.imag() : z.real();
+    dst( t, 1 ) = bSwapRealImag ? z.real() : z.imag();
+  }
+}
+
 // Make a copy of str, in which token has been replaced by x
 template <typename T> inline std::string tokenReplaceCopy(const std::string &str, const std::string token, const T &x )
 {

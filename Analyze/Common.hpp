@@ -217,6 +217,10 @@ void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::stri
                       const std::string &GroupName  = std::string(),
                       const std::string &ObjectName = std::string( "correlator" ) );
 
+void ReadRealArray(std::vector<double> &buffer, const std::string &FileName,
+                   const std::string &GroupName  = std::string(),
+                   const std::string &ObjectName = std::string( "correlator" ) );
+
 struct TrajFile
 {
   const std::string Filename;  // Name of the file
@@ -237,9 +241,6 @@ public:
   // Process list of files on the command-line, breaking them up into individual trajectories
   Manifest( const std::vector<std::string> &Files, const std::string &sIgnore );
 };
-
-struct CommandLine;
-std::ostream& operator<<( std::ostream& os, const CommandLine &cl);
 
 struct CommandLine {
   using SwitchMap = std::map<std::string, std::vector<std::string>>;
@@ -266,6 +267,15 @@ public:
   inline bool GotSwitch( const std::string &SwitchName ) {
     return Switches.find( SwitchName ) != Switches.end(); }
 
+  inline int NumValues( const std::string &Switch ) {
+    int iNumValues{ 0 };
+    SwitchMap::const_iterator it = Switches.find( Switch );
+    if( it != Switches.end() ) {
+      iNumValues = static_cast<int>( it->second.size() );
+    }
+    return iNumValues;
+  }
+  
   template<typename T> inline T SwitchValue( const std::string &Switch, int Subscript = 0 ) {
     SwitchMap::const_iterator it = Switches.find( Switch );
     if( it == Switches.end() ) {
@@ -280,6 +290,8 @@ public:
     return FromString<T>( v[Subscript] );
   }
 };
+
+std::ostream& operator<<( std::ostream& os, const CommandLine &cl);
 
 END_COMMON_NAMESPACE
 #endif // Common_hpp

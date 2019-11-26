@@ -330,6 +330,7 @@ int main(int argc, char *argv[])
         std::cout << "Loading " << nFile << " files for " << Contraction << std::endl;
         unsigned int j = 0; // which trajectory are we processing
         Common::Correlator buf;
+        //std::vector<double> buf;
         Latan::Dataset<Latan::DMat> data(nFile);
         for( auto it = l.TrajFile.begin(); it != l.TrajFile.end(); it++, j++ )
         {
@@ -338,10 +339,12 @@ int main(int argc, char *argv[])
           const std::string &Filename{tf.Filename};
           std::cout << "\t" << traj << "\t" << Filename << std::endl;
           Common::ReadComplexArray( buf, Filename );
+          //Common::ReadRealArray( buf, Filename, "/", "bootstrap" );
           Common::CopyCorrelator( data[j], buf );
-          PerformBootstrap( par, data, Contraction );
-          BootstrapCount++;
+          //Common::CopyRealCorrelator( data[j], buf );
         }
+        PerformBootstrap( par, data, Contraction );
+        BootstrapCount++;
       }
       std::cout << "Bootstraps written for " << BootstrapCount
       << " / " << Manifest.size() << " correlators" << std::endl;
