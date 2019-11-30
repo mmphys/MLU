@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
     ModelParams = Latan::Io::load<Latan::DMatSample>(Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ));
     if( NumOps == 2) {  // I've only coded for two operators
       Latan::DMatSample OptimalCorr( NSamples, Nt, 2 );
-      for( int degrees = -180; degrees <= 180; degrees ++ )
+      for( int degrees = -90; degrees <= 90; degrees ++ )
       {
         double costheta, sintheta;
         switch( ( degrees + 360 ) % 360 ) {
@@ -214,8 +214,8 @@ int main(int argc, char *argv[])
         const double cos_sq_theta{ costheta * costheta };
         const double sin_sq_theta{ sintheta * sintheta };
         const double cos_sin_theta{ costheta * sintheta };
-        const double A_P1{ ModelParams[Latan::central](4, 0) };
-        const double A_A1{ ModelParams[Latan::central](5, 0) };
+        const double A_P1{ ModelParams[Latan::central](2, 0) };
+        const double A_A1{ ModelParams[Latan::central](3, 0) };
         for (Latan::Index i = Latan::central; i < NSamples; i++) {
           const double Op_PP{ cos_sq_theta / ( A_P1 * A_P1 ) };
           const double Op_AP{ cos_sin_theta / ( A_P1 * A_A1 ) };

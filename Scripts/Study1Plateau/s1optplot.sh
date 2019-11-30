@@ -1,12 +1,7 @@
-#!/bin/sh
+#!/opt/local/bin/bash
 
-# Default plot file
-PlotDir="$HOME/data/201910Plat/fit/Z2/"
-PlotBase="h1_l_p_0_0_0"
-PlotCorr="uncorr"
-PlotSeed="4147798751"
-ti="6"
-tf="16"
+#Pick which "optimal" correlator we're plotting
+PlotCorrName="${PlotCorr:=${mmplotdefault_corr}}_${ti:=${mmplotdefault_ti}}_${tf:=${mmplotdefault_tf}}"
 
 #PlotDir="$HOME/data/201911HLFelix/Fit/One/"
 #PlotBase="D"
@@ -15,44 +10,47 @@ tf="16"
 #ti="4"
 #tf="20"
 
-#echo "PlotDir=$PlotDir"
-#echo "PlotBase=$PlotBase"
-#echo "PlotCorr=$PlotCorr"
-#echo "PlotSeed=$PlotSeed"
-#echo "ti=$ti"
-#echo "tf=$tf"
+times="${start:=0} ${step:=10} ${stop:=90}" #Must be evaluated outside of the subshell!!
+times=`seq $times|tr '\n' ' '`
+if (( !( $start <= 90 && $stop >= 90 || $start <= -90 && $stop >= -90 ) ))
+then
+  times="90 $times"
+fi
 
 ###################################################
 # Plot the masses of the 'optimal' correlator over a range
 ###################################################
 
 gnuplot <<-EOFMark
-theta_start=90
-theta_stop=130
-theta_step=4
-# For Felix
+# Begin Felix
 #set term pdf size 5, 1.2
-#set key maxrows 4
-#set yrange [0.995:1.02]
+set key maxrows 3
+#set yrange [0.99:1.035]
+#set ytics 0.01
 #set xrange [${ti}-3.2:${tf}+.2-2]
-#For me
-set term pdf
-set xrange [${ti}-.2:${tf}+.2-2]
-#set xrange [1:30]
+# End Felix
 
-set output "${PlotBase}.${PlotCorr}.theta_".theta_start."_".theta_stop."_".theta_step.".${PlotSeed}.pdf"
+set term pdf #size 5, 1.2
+set output "${mmplotdefault_base}.${PlotCorrName}.${start}_${stop}_${step}.theta.${mmplotdefault_seed}.pdf"
+set ylabel '{/Helvetica:Italic aE}_{eff}'
+set xlabel 't/a' offset 0,1
 
-#times="0 -90 -85 -80 -75"
+times="${times}"
+numseries = words(times)
+first_offset = ( numseries - 1 ) * 0.05 / 2
+
+xr_min=${ti}+1-(first_offset+0.05); xr_max=${tf}-5+(first_offset+0.05); set xrange [xr_min:xr_max]
+#set xrange [4.8:15.4]
+set arrow from xr_min,0.99656 to xr_max,0.99656 nohead front lc rgb "gray40" lw 0.1 #lw 0.25  dashtype "-"
 
 set pointsize 0.45
 #set xlabel 'initial fit time'
 #set palette defined ( 15 "blue", 16 "red", 17 "green")
 
-#ßset title '{/Times:Italic χ}^2 per d.o.f. dependence on initial/final ${PlotCorr}elated fit times ( {/Times:Italic Γ}_5, {/Times:Italic Γ}_4 {/Times:Italic Γ}_5 on 24^3 ensemble)'
+#set title '"Optimal" operator [${PlotCorr}elated fit times ${ti} - ${tf}]'
 #set ylabel 'Chi squared per degree of freedom'
 #set logscale y
-#plot for [i=1:words(times)] "${PlotDir}${PlotBase}.${PlotCorr}_${ti}_${tf}.theta_".word(times,i).".mass.$PlotSeed.txt" \
-  using 1:2:(\$2-\$3):(\$2+\$4) with yerrorbars title "theta=".word(times,i)
-plot for [theta=theta_start:theta_stop:theta_step] "${PlotDir}${PlotBase}.${PlotCorr}_${ti}_${tf}.theta_".theta.".mass.$PlotSeed.txt" \
-  using (\$1-0.15+0.05*((theta-theta_start)/theta_step)):2:(\$2-\$3):(\$2+\$4) with yerrorbars title "theta=".theta
+plot for [i=1:words(times)] \
+ "${mmplotpath_model}${mmplotdefault_base}.${PlotCorrName}.theta_".word(times,i).".mass.$mmplotdefault_seed.$mmplotvar_dat" \
+  using (\$1-first_offset+0.05*(i-1)):2:(\$2-\$3):(\$2+\$4) with yerrorbars title "θ=".word(times,i)
 EOFMark

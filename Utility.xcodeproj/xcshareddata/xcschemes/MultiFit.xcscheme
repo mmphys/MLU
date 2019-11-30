@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/201910Plat/fit/Z2"
+      customWorkingDirectory = "$(PROJECT_DIR)/test"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -94,19 +94,19 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "../../bootstrap/Z2/h1_l_p_0_0_0_g5_g5.bootstrap.4147798751.h5"
+            argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_g5_g5.bootstrap.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "../../bootstrap/Z2/h1_l_p_0_0_0_g5_gT5.bootstrap.4147798751.h5"
+            argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_g5_gT5.bootstrap.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "../../bootstrap/Z2/h1_l_p_0_0_0_gT5_g5.bootstrap.4147798751.h5"
+            argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_gT5_g5.bootstrap.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "../../bootstrap/Z2/h1_l_p_0_0_0_gT5_gT5.bootstrap.4147798751.h5"
+            argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_gT5_gT5.bootstrap.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -134,8 +134,20 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti4 --tf15 --dti9 --dtf5"
+            argument = "--ti4 --tf15"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--ti2 --tf16"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = " --dti5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--dtf6"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
