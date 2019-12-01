@@ -14,7 +14,7 @@ times="${start:=0} ${step:=10} ${stop:=90}" #Must be evaluated outside of the su
 times=`seq $times|tr '\n' ' '`
 if (( !( $start <= 90 && $stop >= 90 || $start <= -90 && $stop >= -90 ) ))
 then
-  times="90 $times"
+  times="90 0 $times"
 fi
 
 ###################################################
@@ -39,7 +39,7 @@ times="${times}"
 numseries = words(times)
 first_offset = ( numseries - 1 ) * 0.05 / 2
 
-xr_min=${ti}+1-(first_offset+0.05); xr_max=${tf}-5+(first_offset+0.05); set xrange [xr_min:xr_max]
+xr_min=${ti}-2-(first_offset+0.05); xr_max=${tf}-5+(first_offset+0.05); set xrange [xr_min:xr_max]
 #set xrange [4.8:15.4]
 set arrow from xr_min,0.99656 to xr_max,0.99656 nohead front lc rgb "gray40" lw 0.1 #lw 0.25  dashtype "-"
 

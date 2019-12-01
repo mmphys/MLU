@@ -73,7 +73,7 @@ then
   export mmplotdefault_tf=18
 else
   export mmplotpath_corr=$HOME/data/201910Plat/bootstrap/Z2/
-  export mmplotpath_model=$HOME/src/Utility/test_exp_fit/
+  export mmplotpath_model=$HOME/src/Utility/test/
   export mmplotdefault_base=h1_l_p_0_0_0
   export mmplotdefault_seed=4147798751
   export mmplotdefault_ti=6

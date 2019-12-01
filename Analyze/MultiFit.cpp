@@ -179,7 +179,8 @@ void MultiExpModel::MakeCovar( void )
         if( x != y )
           Covar(y, x) = z;
       }
-      VarianceInv[x] = 1. / z;
+      if( y == x )
+        VarianceInv[x] = 1. / z;
     }
   }
   if( bCorrelated ) {
@@ -239,18 +240,16 @@ double MultiExpModel::operator()( const vd_t & par ) const {
       }
       for( int t = 0; t < NtCorr; ++t ) {
         double z = 0;
-        double CumulativeEnergy = 0;
         for( int e = 0; e < NumExponents; ++e ) {
-          CumulativeEnergy -= Energy[e];
           switch( ThisModel ) {
             case exp:
-              z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( CumulativeEnergy * ( t + tMin ) );
+              z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( - Energy[e] * ( t + tMin ) );
               break;
             case cosh:
-              z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( CumulativeEnergy * HalfNt ) * std::cosh( CumulativeEnergy * ( t + tMin - HalfNt ) );
+              z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( - Energy[e] * HalfNt ) * std::cosh( - Energy[e] * ( t + tMin - HalfNt ) );
               break;
             case sinh:
-              z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( CumulativeEnergy * HalfNt ) * std::sinh( CumulativeEnergy * ( t + tMin - HalfNt ) );
+              z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( - Energy[e] * HalfNt ) * std::sinh( - Energy[e] * ( t + tMin - HalfNt ) );
               break;
           }
         }
@@ -323,7 +322,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   if( bTimesChanged ) {
     NtCorr = TMax_ - TMin_ + 1;
     Extent = NumFiles * NtCorr;
-    VarianceInv.empty();
+    VarianceInv.resize( 0 );
     CovarInv.resize( 0, 0 );
     Covar.resize( 0, 0 );
   }
@@ -361,20 +360,23 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     // Now guess Higher exponents - same as LatAnalyze
     static const double MELFactor{ std::sqrt( 0.5 ) };
     for( int e = 1; e < NumExponents; ++e ) {
-      Energy[e] = Energy[e - 1] * 0.5;//( 1 << ( e - 1 ) ); // Cumulative
+      Energy[e] = Energy[e - 1] + ( Energy[e - 1] - ( e > 1 ? Energy[e - 2] : 0 ) ) * 0.5;
       for( int o = 0; o < NumOps; ++o )
         Coeff[ MELIndex( o, e ) ] = Coeff[ MELIndex( o, e - 1 ) ] * MELFactor;
     }
   }
 
+  // Make somewhere to sort the parameters
+  std::vector<std::vector<double>> SortingHat{static_cast<size_t>(NumExponents)};
+  for( int e = 0; e < NumExponents; ++e )
+    SortingHat[e].resize(static_cast<size_t>(NumOps + 1));
+
   // Create minimisation parameters
   std::vector<double> Error( NumParams, 0.1 );
   ROOT::Minuit2::MnUserParameters upar( par, Error );
-#ifdef _DEBUG
   //upar.SetLowerLimit( 0, 0.1 );
   //upar.SetValue(0,0.184);
   //upar.Fix(0);
-#endif
   //if( Verbosity )
     DumpParameters( "Initial guess:", upar );
 
@@ -386,6 +388,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   ROOT::Minuit2::MnMigrad minimizer( *this, upar );
   //FOR_STAT_ARRAY( Fit, <#i#> ) {
   //for (idx = -ModelParams.offset; idx < ModelParams.size(); idx++) {
+  const int HalfNt{ Nt - 1 }; // NB: This is half of the ORIGINAL correlator time dimension
   for (int LoopIdx = -10; LoopIdx < NSamples; LoopIdx++) {
     idx = ( LoopIdx >= 0 && LoopIdx < NSamples ) ? LoopIdx : Latan::central;
     ROOT::Minuit2::FunctionMinimum min = minimizer();
@@ -419,27 +422,64 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
                   << "\n\t computing statistics\n";
       }
       // Save the fit parameters for this replica
-      double Cumulative;
+      for( int e = 0; e < NumExponents; ++e ) {
+        // Save energy
+        SortingHat[e][0] = upar.Value( e );
+        for( int o = 0; o < NumOps; ++o )
+          SortingHat[e][o + 1] = upar.Value( MELIndex(o, e) + NumExponents );
+      }
+      std::sort(SortingHat.begin(), SortingHat.end(), [](const std::vector<double> l, const std::vector<double> r)
+                { return l[0] < r[0]; });
       Latan::DMat & FitParams{ ModelParams[idx] };
       for( int j = 0; j < NumParams; ++j ) {
-        double z = upar.Value( j ); // Need this so Energy and Coeff are up-to-date
-        if( j > 0 && j < NumExponents )
-          Cumulative += z;
-        else
-          Cumulative  = z;
-        FitParams(j, 0) = Cumulative;
+        //FitParams(j, 0) = upar.Value( j );
         FitParams(j, 1) = 0;
+      }
+      for( int e = 0; e < NumExponents; ++e ) {
+        // Save energy
+        FitParams( e, 0 ) = SortingHat[e][0];
+        for( int o = 0; o < NumOps; ++o )
+          FitParams( MELIndex(o, e) + NumExponents, 0 ) = SortingHat[e][o + 1];
       }
       // Save the reconstructed correlator values for this replica
       for( int snk = 0; snk < NumOps; ++snk )
         for( int src = 0; src < NumOps; ++src ) {
           Latan::DMat &mc{ ModelCorr[AlphaIndex( snk, src )][idx] };
+          // Check which fit model to use based on operator product parity
+          ModelType ThisModel{ Model };
+          if( bAlternating && ( snk & 1 ) != ( src & 1 ) )
+          {
+            if( ThisModel == cosh )
+              ThisModel = sinh;
+            else if( ThisModel == sinh )
+              ThisModel = cosh;
+          }
           for( int t = 0; t < Nt; ++t ) {
             double z = 0;
-            for( int e = 0; e < NumExponents; ++e )
+            for( int e = 0; e < NumExponents; ++e ) {
               z +=   FitParams( MELIndex( src, e ) + NumExponents, 0)
                    * FitParams( MELIndex( snk, e ) + NumExponents, 0)
                    * std::exp( - FitParams( e, 0 ) * t );
+              switch( ThisModel ) {
+                case exp:
+                  z += FitParams( MELIndex( src, e ) + NumExponents )
+                     * FitParams( MELIndex( snk, e ) + NumExponents )
+                     * std::exp( - FitParams( e, 0 ) * t );
+                  break;
+                case cosh:
+                  z += FitParams( MELIndex( src, e ) + NumExponents )
+                     * FitParams( MELIndex( snk, e ) + NumExponents )
+                     * std::exp( - FitParams( e, 0 ) * HalfNt )
+                     * std::cosh(- FitParams( e, 0 ) * ( t - HalfNt ) );
+                  break;
+                case sinh:
+                  z += FitParams( MELIndex( src, e ) + NumExponents )
+                     * FitParams( MELIndex( snk, e ) + NumExponents )
+                     * std::exp( - FitParams( e, 0 ) * HalfNt )
+                     * std::sinh(- FitParams( e, 0 ) * ( t - HalfNt ) );
+                  break;
+              }
+            }
             mc(t,0) = z;
             mc(t,1) = 0;
           }

@@ -123,7 +123,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--uncorr"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v2"
@@ -131,19 +131,19 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti6 --tf16"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti4 --tf15"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti2 --tf16"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = " --dti5"
-            isEnabled = "NO">
+            argument = " --dti9"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dtf6"

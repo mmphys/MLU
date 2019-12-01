@@ -19,8 +19,8 @@ YOffset(snk,src) = (snk==0 && src==1) ? -.002 : 0
 
 set pointsize 0.6
 set xlabel 'timeslice'
-#set xrange [7.8:16.2]
-set xrange [3.8:24.2]
+set xrange [${ti:=${mmplotdefault_ti}}-0.2:${tf:=${mmplotdefault_tf}}+0.2]
+#set xrange [3.8:24.2]
 
 Basename="${mmplotfile_base}.${mmplotfile_corr_all}."
 InBasename="${mmplotfile_path}".Basename
