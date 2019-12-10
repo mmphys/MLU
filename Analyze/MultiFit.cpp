@@ -552,8 +552,8 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
 
 int main(int argc, char *argv[])
 {
-  using namespace Latan;
   std::ios_base::sync_with_stdio( false );
+  using namespace Latan;
   // parse arguments /////////////////////////////////////////////////////////
   OptParser opt;
   opt.addOption("" , "ti"       , OptParser::OptType::value  , false,

@@ -69,6 +69,24 @@ inline bool FileExists(const std::string& Filename)
 
 extern const double NaN;
 
+// Are all the floating point numbers pointed to finite
+template <typename T, typename I> inline bool IsFinite( const T * d, I n )
+{
+  while( n-- )
+    if( !std::isfinite( *d++ ) )
+      return false;
+  return true;
+}
+
+// Are all the floating point numbers in this vector finite
+template <typename T> inline bool IsFinite( const std::vector<T> & v )
+{
+  for( const T n : v )
+    if( !std::isfinite( n ) )
+      return false;
+  return true;
+}
+
 class ValWithEr
 {
 public:
@@ -175,12 +193,26 @@ struct Momentum
   const int y;
   const int z;
   Momentum( int _x, int _y, int _z ) : x(_x), y(_y), z(_z) {}
-  inline bool isZero() const { return x==0 && y==0 && z==0; }
+  inline explicit operator bool() const { return x!=0 || y!=0 || z!=0; }
   std::string to_string( const std::string &separator, bool bNegative = false ) const {
     return std::to_string( bNegative ? -x : x ) + separator
     + std::to_string( bNegative ? -y : y ) + separator
     + std::to_string( bNegative ? -z : z );
   }
+};
+
+template <typename T>
+class sample
+{
+public:
+  const int NumSamples;
+  const int Nt;
+private:
+  const std::unique_ptr<T[]> m_pData;
+public:
+  sample( int NumSamples_, int Nt_ ) : NumSamples{ NumSamples_ }, Nt{ Nt_ }, m_pData{ new T[Nt * ( NumSamples + 1 )] } {}
+  T * operator[]( int Sample ) { return & m_pData[( ( Sample < 0 || Sample > NumSamples ) ? NumSamples : Sample ) * Nt]; }
+  const T * operator[]( int Sample ) const { return & m_pData[( ( Sample < 0 || Sample > NumSamples ) ? NumSamples : Sample ) * Nt]; }
 };
 
 // My implementation of H5File - adds a definition of complex type
@@ -194,31 +226,16 @@ public:
 // Get first groupname from specified group
 std::string GetFirstGroupName( H5::Group & g );
 
-// Are all the floating point numbers pointed to finite
-template <typename T, typename I> inline bool IsFinite( const T * d, I n )
-{
-  while( n-- )
-    if( !std::isfinite( *d++ ) )
-      return false;
-  return true;
-}
-
-// Are all the floating point numbers in this vector finite
-template <typename T> inline bool IsFinite( const std::vector<T> & v )
-{
-  for( const T n : v )
-    if( !std::isfinite( n ) )
-      return false;
-  return true;
-}
+// Open the specified HDF5File and group
+void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName, std::string &GroupName, unsigned int flags = H5F_ACC_RDONLY );
 
 // Read a complex array from an HDF5 file
 void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,
-                      const std::string &GroupName  = std::string(),
+                      std::string &GroupName,
                       const std::string &ObjectName = std::string( "correlator" ) );
 
 void ReadRealArray(std::vector<double> &buffer, const std::string &FileName,
-                   const std::string &GroupName  = std::string(),
+                   std::string &GroupName,
                    const std::string &ObjectName = std::string( "correlator" ) );
 
 struct TrajFile

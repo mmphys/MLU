@@ -73,14 +73,14 @@ then
   export mmplotdefault_tf=18
 else
   export mmplotpath_corr=$HOME/data/201910Plat/bootstrap/Z2/
-  export mmplotpath_model=$HOME/src/Utility/test/
+  export mmplotpath_model=$HOME/src/Utility/test_corr_fit/
   export mmplotdefault_base=h1_l_p_0_0_0
   export mmplotdefault_seed=4147798751
-  export mmplotdefault_ti=6
+  export mmplotdefault_ti=9
   export mmplotdefault_tf=19
 fi
 #
-export mmplotdefault_corr=uncorr
+export mmplotdefault_corr=corr
 export mmplotdefault_corr_all=${mmplotdefault_corr}_${mmplotdefault_ti}_${mmplotdefault_tf}
 export mmplotdefault_ops=(g5 gT5)
        mmplotdefault_ops_all=${mmplotdefault_ops[@]}

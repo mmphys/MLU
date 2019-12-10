@@ -32,14 +32,21 @@
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 
+static const std::string RunName{ "GFWall" };
+
 using namespace Grid;
 using namespace Hadrons;
 
 static const std::string Sep{ "_" };    // used inside filenames
+static const std::string SepBig{ "." };    // used inside filenames
 static const std::string Space{ " " };  // whitespace as field separator / human readable info
 
-static const std::string GaugeFieldName{"gauge"};
-static const std::string GaugeFieldNameSmeared{"gauge_stout"};
+static const std::string GaugeFieldNameUnfixed{"gauge"};
+static const std::string GaugeFieldNameUnfixedSmeared{"gauge_stout"};
+static const std::string GaugeFieldName{"gauge_fixed"};
+static const std::string GaugeFieldNameSmeared{"gauge_stout_fixed"};
+//static const std::string GaugeFieldNameSingle{"gauge_fixed_float"};
+//static const std::string GaugeFieldNameSingleSmeared{"gauge_fixed_stout_float"};
 
 struct Quark
 {
@@ -64,12 +71,20 @@ static const Quark Quarks[] = {
 };
 static constexpr int NumQuarks{ sizeof( Quarks ) / sizeof( Quarks[0] ) };
 
+static const Common::Momentum Momentum0{ 0, 0, 0 };
+
 static const Common::Momentum Momenta[] = {
-  { 0, 0, 0 },
+  { 0, 0, 0 },/*
   { 1, 0, 0 },
+  { 0, 1, 0 },
+  { 0, 0, 1 },
   { 1, 1, 0 },
+  { 1, 0, 1 },
+  { 0, 1, 1 },
   { 1, 1, 1 },
   { 2, 0, 0 },
+  { 0, 2, 0 },
+  { 0, 0, 2 },*/
 };
 static constexpr int NumMomenta{ sizeof( Momenta ) / sizeof( Momenta[0] ) };
 
@@ -86,7 +101,7 @@ int main(int argc, char *argv[])
   
   // run setup ///////////////////////////////////////////////////////////////
   Application              application;
-  const unsigned int nt{ 64 };
+  const unsigned int nt{ 1 };//64 };
   //static constexpr int NumQuarks{ 4 };
   //const std::array<std::string, NumQuarks> flavour{"l", "s", "c1", "c2"};
   //const std::array<double, NumQuarks>      mass   {.005, .04, .58  , .64};
@@ -95,9 +110,9 @@ int main(int argc, char *argv[])
   // global parameters
   Application::GlobalPar globalPar;
   globalPar.trajCounter.start    = 3000;
-  globalPar.trajCounter.end      = 4000;
+  globalPar.trajCounter.end      = 3001;
   globalPar.trajCounter.step     = 40;
-  globalPar.runId                = "Z2Plateau";
+  globalPar.runId                = RunName;
   globalPar.genetic.maxGen       = 1000;
   globalPar.genetic.maxCstGen    = 200;
   globalPar.genetic.popSize      = 20;
@@ -107,21 +122,48 @@ int main(int argc, char *argv[])
   // gauge field
   MIO::LoadNersc::Par gaugePar;
   gaugePar.file = "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat";
-  application.createModule<MIO::LoadNersc>(GaugeFieldName, gaugePar);
+  application.createModule<MIO::LoadNersc>(GaugeFieldNameUnfixed, gaugePar);
   // Stout smeared field
   MGauge::StoutSmearing::Par stoutPar;
-  stoutPar.gauge = GaugeFieldName;
+  stoutPar.gauge = GaugeFieldNameUnfixed;
   stoutPar.steps = 3;
   stoutPar.rho = 0.1;
-  application.createModule<MGauge::StoutSmearing>(GaugeFieldNameSmeared, stoutPar);
-  
-  // sink for each momentum (negative)
-  std::array<std::string, NumMomenta> SinkName;
-  for( unsigned int p = 0; p < NumMomenta; p++ ) {
+  application.createModule<MGauge::StoutSmearing>(GaugeFieldNameUnfixedSmeared, stoutPar);
+
+  // Gauge fixed versions
+  MGauge::GaugeFix::Par gfPar;
+  gfPar.alpha = 0.05;
+  gfPar.maxiter = 1e6;
+  gfPar.Omega_tol = 1e-8;
+  gfPar.Phi_tol = 1e-8;
+  gfPar.gaugeFix = MGauge::Fix::coulomb;
+  gfPar.Fourier = true;
+  gfPar.gauge = GaugeFieldNameUnfixed;
+  application.createModule<MGauge::GaugeFix>(GaugeFieldName, gfPar);
+  gfPar.gauge = GaugeFieldNameUnfixedSmeared;
+  application.createModule<MGauge::GaugeFix>(GaugeFieldNameSmeared, gfPar);
+
+  // Single-precision versions
+  //MUtilities::GaugeSinglePrecisionCast::Par g1Par;
+  //g1Par.field = GaugeFieldName;
+  //application.createModule<MUtilities::GaugeSinglePrecisionCast>(GaugeFieldNameSingle, g1Par);
+  //g1Par.field = GaugeFieldNameSmeared;
+  //application.createModule<MUtilities::GaugeSinglePrecisionCast>(GaugeFieldNameSingleSmeared, g1Par);
+
+  // The contraction sink will always have zero momentum
+  static const std::string ContractionSinkName0{ "contraction_sink_p_" + Momentum0.to_string( Sep ) };
+  {
+    MSink::ScalarPoint::Par sinkPar;
+    sinkPar.mom = Momentum0.to_string( Space );
+    application.createModule<MSink::ScalarPoint>(ContractionSinkName0, sinkPar);
+  }
+
+  // The propagator sink will always have zero momentum
+  static const std::string PropSinkName{ "prop_sink_p_" + Momentum0.to_string( Sep ) };
+  {
     MSink::Point::Par sinkPar;
-    sinkPar.mom = Momenta[p].to_string( Space, true );
-    SinkName[p] = "sink_p_" + Momenta[p].to_string( Sep, true );
-    application.createModule<MSink::ScalarPoint>(SinkName[p], sinkPar);
+    sinkPar.mom = Momentum0.to_string( Space );
+    application.createModule<MSink::Point>(PropSinkName, sinkPar);
   }
   
   // Action and a solver for each quark
@@ -164,82 +206,76 @@ int main(int argc, char *argv[])
   }
 
   // Loop through all timeslices
-  for (unsigned int t = 0; t < nt; ++t) {
-    const std::string timeSuffix{ Sep + "t" + std::to_string( t ) };
-    const std::string sZ2{ "Z2" };
-    // I will always need the momentum 0 Z_2 wall source for this timeslice
-    const std::string Suffix0{ timeSuffix + Sep + "p" + Sep + Common::Momentum( 0, 0, 0 ).to_string( Sep ) };
-    const std::string srcName0{ sZ2 + Suffix0 };
-    {
-      MSource::Z2::Par z2Par;
-      z2Par.tA = t;
-      z2Par.tB = t;
-      application.createModule<MSource::Z2>(srcName0, z2Par);
-    }
-    // I will always need the momentum 0 propagator for this timeslice
-    std::array<std::string, NumQuarks> propName0;
-    for (unsigned int i = 0; i < NumQuarks; ++i)
-    {
-      propName0[i] = "prop" + Sep + Quarks[i].flavour + Suffix0;
-      MFermion::GaugeProp::Par quarkPar;
-      quarkPar.solver = solverName[i];
-      quarkPar.source = srcName0;
-      application.createModule<MFermion::GaugeProp>(propName0[i], quarkPar);
-    }
+  for (unsigned int t = 0; t < nt; ++t)
+  {
     // Loop through all momenta
-    for( unsigned int p = 0; p < NumMomenta; ++p ) {
-      const std::string momentumSuffix{ Sep + "p" + Sep + Momenta[p].to_string( Sep ) };
-      const std::string Suffix{ timeSuffix + momentumSuffix };
+    for( unsigned int p = 0; p < NumMomenta; ++p )
+    {
+      const std::string Suffix{ Sep + "p" + Sep + Momenta[p].to_string( Sep )
+                              + Sep + "t" + Sep + std::to_string( t ) };
 
-      // Z2 source with this momenta (doesn't need creating for momentum 0)
-      const std::string srcName{ Momenta[p] ? sZ2 + Suffix : srcName0 };
-      if( Momenta[p] ) {
-        MSource::MomentumPhase::Par z2Par;
-        z2Par.src = srcName0;
-        z2Par.mom = Momenta[p].to_string( Space ) + Space + "0";
-        application.createModule<MSource::MomentumPhase>(srcName, z2Par);
+      // Source with this momenta
+      const std::string srcName{ "src" + Suffix };
+      {
+        MSource::Wall::Par srcPar;
+        srcPar.tW = t;
+        srcPar.mom = Momenta[p].to_string( Space );
+        application.createModule<MSource::Wall>(srcName, srcPar);
       }
       // Make propagators
+      std::array<std::string, NumQuarks> propNameShort;
       std::array<std::string, NumQuarks> propName;
+      for( unsigned int i = 0; i < NumQuarks; ++i )
+      {
+        propNameShort[i] = "prop" + Sep + Quarks[i].flavour;
+        propName[i] = propNameShort[i] + Suffix;
+        MFermion::GaugeProp::Par quarkPar;
+        quarkPar.solver = solverName[i];
+        quarkPar.source = srcName;
+        application.createModule<MFermion::GaugeProp>(propName[i], quarkPar);
+      }
+      // Make smeared propagators
+      std::array<std::string, NumQuarks> propNameSmearedShort;
+      std::array<std::string, NumQuarks> propNameSmeared;
       for (unsigned int i = 0; i < NumQuarks; ++i)
       {
-        if( !Momenta[p] )
-          propName[i] = propName0[i];
-        else {
-          propName[i] = "prop" + Sep + Quarks[i].flavour + Suffix;
-          MFermion::GaugeProp::Par quarkPar;
-          quarkPar.solver = solverName[i];
-          quarkPar.source = srcName;
-          application.createModule<MFermion::GaugeProp>(propName[i], quarkPar);
+        if( !Momenta[p] ) {
+          propNameSmearedShort[i] = propNameShort[i];
+          propNameSmeared[i] = propNameSmearedShort[i] + Suffix;
+        } else {
+          propNameSmearedShort[i] = "propsm" + Sep + Quarks[i].flavour;
+          propNameSmeared[i] = propNameSmearedShort[i] + Suffix;
+          MSink::Smear::Par smPar;
+          smPar.q = propName[i];
+          smPar.sink = PropSinkName;
+          application.createModule<MSink::Smear>(propNameSmeared[i], smPar);
         }
       }
-
       // contractions
       MContraction::Meson::Par mesPar;
-      std::string MesonSuffix;
       for (unsigned int i = 0; i < NumQuarks; ++i)
         for (unsigned int j = 0; j < NumQuarks; ++j)
         {
-          const std::string MesonSuffix{ propName[i] + Sep + propName0[j] + Sep + SinkName[p] };
-          mesPar.output = "mesons/C1/Z2/" + MesonSuffix;
-          mesPar.q1     = propName[i];
-          mesPar.q2     = propName0[j];
-          mesPar.gammas = "all";
-          //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
-          mesPar.sink   = SinkName[p];
-          application.createModule<MContraction::Meson>("meson" + Sep + MesonSuffix, mesPar);
+          const std::string MesonSuffix{ propNameSmearedShort[i] + Sep + propNameSmearedShort[j] + Suffix };
+          mesPar.output = "mesons/C1/" + RunName + '/' + MesonSuffix;
+          mesPar.q1     = propNameSmeared[i];
+          mesPar.q2     = propNameSmeared[j];
+          //mesPar.gammas = "all";
+          mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
+          mesPar.sink   = ContractionSinkName0;
+          application.createModule<MContraction::Meson>(MesonSuffix, mesPar);
         }
     }
   }
 
   // execution
-  static const std::string XmlFileName{ "Z2Plateau.xml" };
+  static const std::string XmlFileName{ RunName + ".xml" };
   application.saveParameterFile( XmlFileName );
   const Grid::Coordinate &lat{GridDefaultLatt()};
   if( lat.size() == 4 && lat[0] == 24 && lat[1] == 24 && lat[2] == 24 && lat[3] == 64 )
     application.run();
   else
-    LOG(Warning) << "The parameters in " << XmlFileName << " are designed for --grid 24.24.24.64\nOn 16 nodes each config takes about 40 hours on Tesseract" << std::endl;
+    LOG(Warning) << "The parameters in " << XmlFileName << " are designed for --grid 24.24.24.64" << std::endl;
 
   // epilogue
   LOG(Message) << "Grid is finalizing now" << std::endl;

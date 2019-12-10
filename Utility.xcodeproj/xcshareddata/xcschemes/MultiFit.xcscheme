@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(PROJECT_DIR)/test"
+      customWorkingDirectory = "$(PROJECT_DIR)/test_felix/fit"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -95,18 +95,22 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_g5_g5.bootstrap.4147798751.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_g5_gT5.bootstrap.4147798751.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_gT5_g5.bootstrap.4147798751.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_gT5_gT5.bootstrap.4147798751.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "../bootstrap/h1_l_p_0_0_0_g5_g5.bootstrap.123.h5 ../bootstrap/h1_l_p_0_0_0_g5_gT5.bootstrap.123.h5 ../bootstrap/h1_l_p_0_0_0_gT5_g5.bootstrap.123.h5 ../bootstrap/h1_l_p_0_0_0_gT5_gT5.bootstrap.123.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -123,7 +127,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--uncorr"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v2"
@@ -143,11 +147,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = " --dti9"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dtf6"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

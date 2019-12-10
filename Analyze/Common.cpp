@@ -182,22 +182,27 @@ std::string GetFirstGroupName( H5::Group & g )
   return std::string();
 }
 
+// Open the specified HDF5File and group
+void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName, std::string &GroupName, unsigned int flags )
+{
+  const bool bFindGroupName{ GroupName.empty() };
+  std::cout << "Opening " << FileName << ( bFindGroupName ? "" : ", group " + GroupName ) << "\n";
+  f.openFile( FileName, flags );
+  g = f.openGroup( bFindGroupName ? std::string("/") : GroupName );
+  if( bFindGroupName ) {
+    GroupName = GetFirstGroupName( g );
+    std::cout << "Group " << GroupName << "\n";
+    g = g.openGroup( GroupName );
+  }
+}
+
 // Read a complex array from an HDF5 file
 void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,
-                      const std::string &GroupName, const std::string &ObjectName )
+                      std::string &GroupName, const std::string &ObjectName )
 {
-  std::cout << "Reading complex array from " << FileName;
-  H5::H5File f(FileName, H5F_ACC_RDONLY);
-  const bool bFindGroupName{ GroupName.empty() };
-  H5::Group g = f.openGroup( bFindGroupName ? std::string("/") : GroupName );
-  std::cout << ", group ";
-  if( bFindGroupName ) {
-    std::string FirstGroupName = GetFirstGroupName( g );
-    std::cout << FirstGroupName << "\n";
-    g = g.openGroup(FirstGroupName);
-  }
-  else
-    std::cout << GroupName << "\n";
+  H5::H5File f;
+  H5::Group  g;
+  OpenHdf5FileGroup( f, g, FileName, GroupName );
   H5::DataSet ds = g.openDataSet(ObjectName);
   H5::DataSpace dsp = ds.getSpace();
   const int nDims{dsp.getSimpleExtentNdims()};
@@ -218,20 +223,11 @@ void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::stri
 
 // Read a real array from an HDF5 file
 void ReadRealArray(std::vector<double> &buffer, const std::string &FileName,
-                      const std::string &GroupName, const std::string &ObjectName )
+                      std::string &GroupName, const std::string &ObjectName )
 {
-  std::cout << "Reading real array from " << FileName;
-  H5::H5File f(FileName, H5F_ACC_RDONLY);
-  const bool bFindGroupName{ GroupName.empty() };
-  H5::Group g = f.openGroup( bFindGroupName ? std::string("/") : GroupName );
-  std::cout << ", group ";
-  if( bFindGroupName ) {
-    std::string FirstGroupName = GetFirstGroupName( g );
-    std::cout << FirstGroupName << "\n";
-    g = g.openGroup(FirstGroupName);
-  }
-  else
-    std::cout << GroupName << "\n";
+  H5::H5File f;
+  H5::Group  g;
+  OpenHdf5FileGroup( f, g, FileName, GroupName );
   H5::DataSet ds = g.openDataSet(ObjectName);
   H5::DataSpace dsp = ds.getSpace();
   const int nDims{dsp.getSimpleExtentNdims()};

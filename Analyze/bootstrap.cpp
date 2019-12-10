@@ -338,7 +338,8 @@ int main(int argc, char *argv[])
           const Common::TrajFile &tf{*it->second};
           const std::string &Filename{tf.Filename};
           std::cout << "\t" << traj << "\t" << Filename << std::endl;
-          Common::ReadComplexArray( buf, Filename );
+          std::string GroupName;
+          Common::ReadComplexArray( buf, Filename, GroupName );
           //Common::ReadRealArray( buf, Filename, "/", "bootstrap" );
           Common::CopyCorrelator( data[j], buf );
           //Common::CopyRealCorrelator( data[j], buf );

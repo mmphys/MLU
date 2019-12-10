@@ -58,21 +58,21 @@ inline bool ApproxEq( std::complex<T> x, std::complex<T> y, T epsilon, T &diffMa
   return ReDiff < epsilon && MagDiff < epsilon;
 }
 
-int TestPer(const char * pszF1, const char * pszF2, const double epsilon) {
+int TestPer(const std::string &pszF1, const std::string &pszF2, const double epsilon) {
   std::cout << "Comparing: " << pszF1 << " with " << pszF2 << std::endl;
   using Per = Grid::Hadrons::MDistil::PerambTensor;
   //std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
   //Per per1(sIndexNames,64,100,100,1,1,4);
   //Per per2(sIndexNames,64,100,100,1,1,4);
-  Per per1(Grid::Hadrons::MDistil::PerambIndexNames);
-  Per per2(Grid::Hadrons::MDistil::PerambIndexNames);
-  per1.ReadBinary( pszF1 );
-  per2.ReadBinary( pszF2 );
+  Per per1;
+  Per per2;
+  per1.read( pszF1 );
+  per2.read( pszF2 );
 
   // Cast to eigen tensor
   using PerT = typename Per::ET;
-  PerT & pt1 = per1;
-  PerT & pt2 = per2;
+  PerT & pt1{ per1.tensor };
+  PerT & pt2{ per2.tensor };
 
   //Norm of the difference and compare individual members
   PerT diff = pt1 - pt2;
@@ -108,5 +108,5 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
   static const double epsilon{opt.optionValue<double>("e")};
-  return TestPer(argv[1], argv[2], epsilon);
+  return TestPer( std::string{ argv[1] }, std::string{ argv[2] }, epsilon);
 }
