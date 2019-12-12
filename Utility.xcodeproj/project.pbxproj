@@ -833,18 +833,14 @@
 					$GridPre/include,
 					$GridBuild/Grid,
 					$Grid,
-					$GridPre/openmpi/include,
-					$GridPre/lime/include,
 				);
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;
 				LIBRARY_SEARCH_PATHS = (
-					$GridPkg/lib,
 					$GridPre/lib,
+					$GridPkg/lib,
 					$GridBuild/Grid,
 					$GridBuild/Hadrons,
-					$GridPre/openmpi/lib,
-					$GridPre/lime/lib,
 					$LatAnalyzeBuild/lib/.libs,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
@@ -930,18 +926,14 @@
 					$GridPre/include,
 					$GridBuild/Grid,
 					$Grid,
-					$GridPre/openmpi/include,
-					$GridPre/lime/include,
 				);
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;
 				LIBRARY_SEARCH_PATHS = (
-					$GridPkg/lib,
 					$GridPre/lib,
+					$GridPkg/lib,
 					$GridBuild/Grid,
 					$GridBuild/Hadrons,
-					$GridPre/openmpi/lib,
-					$GridPre/lime/lib,
 					$LatAnalyzeBuild/lib/.libs,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
