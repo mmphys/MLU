@@ -69,6 +69,10 @@ inline bool FileExists(const std::string& Filename)
 
 extern const double NaN;
 
+// test whether a type is complex
+template<typename T> struct is_complex                  : public std::false_type {};
+template<typename T> struct is_complex<std::complex<T>> : public std::true_type {};
+
 // Are all the floating point numbers pointed to finite
 template <typename T, typename I> inline bool IsFinite( const T * d, I n )
 {
@@ -201,20 +205,6 @@ struct Momentum
   }
 };
 
-template <typename T>
-class sample
-{
-public:
-  const int NumSamples;
-  const int Nt;
-private:
-  const std::unique_ptr<T[]> m_pData;
-public:
-  sample( int NumSamples_, int Nt_ ) : NumSamples{ NumSamples_ }, Nt{ Nt_ }, m_pData{ new T[Nt * ( NumSamples + 1 )] } {}
-  T * operator[]( int Sample ) { return & m_pData[( ( Sample < 0 || Sample > NumSamples ) ? NumSamples : Sample ) * Nt]; }
-  const T * operator[]( int Sample ) const { return & m_pData[( ( Sample < 0 || Sample > NumSamples ) ? NumSamples : Sample ) * Nt]; }
-};
-
 // My implementation of H5File - adds a definition of complex type
 class H5File : public H5::H5File {
 public:
@@ -228,6 +218,264 @@ std::string GetFirstGroupName( H5::Group & g );
 
 // Open the specified HDF5File and group
 void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName, std::string &GroupName, unsigned int flags = H5F_ACC_RDONLY );
+
+// Traits for samples
+template<typename ST, typename V = void> struct SampleTraits : public std::false_type{};
+template<typename ST> struct SampleTraits<ST, typename std::enable_if<std::is_floating_point<ST>::value>::type> : public std::true_type
+{
+  static constexpr bool is_complex = false;
+  using scalar_type = ST;
+};
+template<typename ST> struct SampleTraits<std::complex<ST>, typename std::enable_if<SampleTraits<ST>::value>::type> : public std::true_type
+{
+  static constexpr bool is_complex = true;
+  using scalar_type = typename SampleTraits<ST>::scalar_type;
+};
+
+// This is for a sample of correlators. There is a central replica, specified aux replicas and variable number of samples
+
+template <typename T, int NumAuxSamples_ = 0>
+class Sample
+{
+  int NumSamples_;
+  int Nt_;
+  std::unique_ptr<T[]> m_pData;
+public:
+  static constexpr int NumAuxSamples{ NumAuxSamples_ };
+  static constexpr int NumExtraSamples{ NumAuxSamples + 1 }; // Auxiliary samples + central replica
+  static constexpr int idxCentral{ -1 };
+  static constexpr int idxAux{ idxCentral - NumAuxSamples };
+  inline int NumSamples() const { return NumSamples_; }
+  inline int Nt() const { return Nt_; }
+  void resize( int NumSamples, int Nt )
+  {
+    NumSamples_ = NumSamples;
+    Nt_ = Nt;
+    m_pData.reset( new T[ static_cast<std::size_t>( NumSamples + NumExtraSamples ) * Nt ] );
+  }
+  void Read ( const std::string &FileName, std::string &GroupName );
+  void Write( const std::string &FileName, const char * pszGroupName = nullptr );
+  Sample( int NumSamples, int Nt ) { resize( NumSamples, Nt ); }
+  Sample( const std::string &FileName, std::string &GroupName ) { Read( FileName, GroupName ); }
+  T * operator[]( int Sample )
+  {
+    if( Sample < idxAux || Sample > NumSamples_ )
+      throw std::out_of_range( "Sample " + std::to_string( Sample ) );
+    return & m_pData[static_cast<std::size_t>( Sample + NumExtraSamples ) * Nt_];
+  }
+  const T * operator[]( int Sample ) const
+  {
+    if( Sample < idxAux || Sample > NumSamples_ )
+      throw std::out_of_range( "Sample " + std::to_string( Sample ) );
+    return & m_pData[static_cast<std::size_t>( Sample + NumExtraSamples ) * Nt_];
+  }
+};
+
+// Read from file. If GroupName empty, read from first group and return name in GroupName
+template <typename T, int NumAuxSamples_>
+void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &GroupName )
+{
+  H5::H5File f;
+  H5::Group  g;
+  OpenHdf5FileGroup( f, g, FileName, GroupName );
+  bool bOK = false;
+  H5E_auto2_t h5at;
+  void      * f5at_p;
+  H5::Exception::getAutoPrint(h5at, &f5at_p);
+  H5::Exception::dontPrint();
+  try // to load from LatAnalyze format
+  {
+    unsigned short att_Type;
+    H5::Attribute a;
+    a = g.openAttribute("type");
+    a.read( H5::PredType::NATIVE_USHORT, &att_Type );
+    a.close();
+    if( att_Type == 2 )
+    {
+      unsigned long  att_nSample;
+      a = g.openAttribute("nSample");
+      a.read( H5::PredType::NATIVE_ULONG, &att_nSample );
+      a.close();
+      std::vector<double> buffer;
+      for( int i = idxCentral; i < NumSamples_; i++ )
+      {
+        H5::DataSet ds = g.openDataSet( "data_" + ( i == idxCentral ? "C" : "S_" + std::to_string( i ) ) );
+        H5::DataSpace dsp = ds.getSpace();
+        int nDims{ dsp.getSimpleExtentNdims() };
+        if( nDims == 2 )
+        {
+          hsize_t Dim[2];
+          dsp.getSimpleExtentDims( Dim );
+          if( Dim[1] != 2 || Dim[0] * att_nSample > std::numeric_limits<int>::max() )
+            break;
+          if( i == idxCentral )
+          {
+            resize( static_cast<int>( att_nSample ), static_cast<int>( Dim[0] ) );
+            buffer.resize( 2 * Nt_ );
+          }
+          else if( Dim[0] != static_cast<unsigned int>( Nt_ ) )
+            break;
+          ds.read( buffer.data(), H5::PredType::NATIVE_DOUBLE );
+          if( !IsFinite( buffer ) )
+            break;
+          T * p { (*this)[i] };
+          for( int t = 0; t < Nt_ ; t++ )
+          {
+            p->real( buffer[t] );
+            p->imag( buffer[t + Nt_] );
+            p++;
+          }
+          // Check whether this is the end
+          if( i == NumSamples_ - 1 )
+          {
+            bOK = true;
+            // This format has no auxiliary rows - set them to zero
+            for( int j = idxAux; j < idxCentral; j++ )
+            {
+              p = (*this)[j];
+              for( int t = 0; t < Nt_ ; t++ )
+                p = 0;
+            }
+          }
+        }
+      }
+    }
+  }
+  catch(const H5::Exception &)
+  {
+    bOK = false;
+    H5::Exception::clearErrorStack();
+  }
+  if( !bOK )
+  {
+    try // to load from my format
+    {
+      unsigned short att_nAux;
+      H5::Attribute a;
+      a = g.openAttribute("nAux");
+      a.read( H5::PredType::NATIVE_USHORT, &att_nAux );
+      a.close();
+      if( att_nAux == NumAuxSamples )
+      {
+        unsigned int att_nSample;
+        a = g.openAttribute("nSample");
+        a.read( H5::PredType::NATIVE_UINT, &att_nSample );
+        a.close();
+        H5::DataSet ds = g.openDataSet( "data_C" );
+        H5::DataSpace dsp = ds.getSpace();
+        int nDims{ dsp.getSimpleExtentNdims() };
+        if( nDims == 1 )
+        {
+          hsize_t Dim[2];
+          dsp.getSimpleExtentDims( Dim );
+          if( Dim[0] * att_nSample <= std::numeric_limits<int>::max() )
+          {
+            resize( static_cast<int>( att_nSample ), static_cast<int>( Dim[0] ) );
+            ds.read( (*this)[idxCentral], H5File::ComplexType() );
+            dsp.close();
+            ds.close();
+            ds = g.openDataSet( "data_S" );
+            dsp = ds.getSpace();
+            nDims = dsp.getSimpleExtentNdims();
+            if( nDims == 2 )
+            {
+              dsp.getSimpleExtentDims( Dim );
+              if( Dim[0] == att_nSample && Dim[1] == static_cast<unsigned int>( Nt_ ) )
+              {
+                ds.read( (*this)[0], H5File::ComplexType() );
+                if( NumAuxSamples == 0 )
+                  bOK = true;
+                else
+                {
+                  dsp.close();
+                  ds.close();
+                  ds = g.openDataSet( "data_Aux" );
+                  dsp = ds.getSpace();
+                  nDims = dsp.getSimpleExtentNdims();
+                  if( nDims == 2 )
+                  {
+                    dsp.getSimpleExtentDims( Dim );
+                    if( Dim[0] == static_cast<unsigned int>( NumAuxSamples ) && Dim[1] == static_cast<unsigned int>( Nt_ ) )
+                    {
+                      ds.read( (*this)[idxAux], H5File::ComplexType() );
+                      bOK = true;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    catch(const H5::Exception &)
+    {
+      bOK = false;
+      H5::Exception::clearErrorStack();
+    }
+  }
+  H5::Exception::setAutoPrint(h5at, f5at_p);
+  if( !bOK )
+    throw std::runtime_error( "Unable to read sample from " + FileName );
+}
+
+template <typename T, int NumAuxSamples_>
+void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char * pszGroupName )
+{
+  const std::string GroupName{ pszGroupName == nullptr || *pszGroupName == 0 ? "/bootstrap" : pszGroupName };
+  bool bOK = false;
+  try // to write in my format
+  {
+    H5::H5File f( FileName, H5F_ACC_TRUNC );
+    H5::Group  g = f.openGroup( "/" );
+    hsize_t Dims[2];
+    Dims[0] = 1;
+    H5::DataSpace ds1( 1, Dims );
+    H5::Attribute a = g.createAttribute( "_Grid_dataset_threshold", H5::PredType::STD_U32LE, ds1);
+    int tmp{ 6 };
+    a.write( H5::PredType::NATIVE_INT, &tmp );
+    a.close();
+    g.close();
+    g = f.createGroup( GroupName );
+    a = g.createAttribute( "nAux", H5::PredType::STD_U16LE, ds1);
+    tmp = NumAuxSamples;
+    a.write( H5::PredType::NATIVE_INT, &tmp );
+    a.close();
+    a = g.createAttribute( "nSample", H5::PredType::STD_U32LE, ds1);
+    a.write( H5::PredType::NATIVE_INT, &NumSamples_ );
+    a.close();
+    ds1.close();
+    Dims[0] = Nt_;
+    ds1 = H5::DataSpace( 1, Dims );
+    H5::DataSet ds = g.createDataSet( "data_C", H5File::ComplexType(), ds1 );
+    ds.write( (*this)[idxCentral], H5File::ComplexType() );
+    ds.close();
+    ds1.close();
+    Dims[0] = NumSamples_;
+    Dims[1] = Nt_;
+    ds1 = H5::DataSpace( 2, Dims );
+    ds = g.createDataSet( "data_S", H5File::ComplexType(), ds1 );
+    ds.write( (*this)[0], H5File::ComplexType() );
+    ds.close();
+    ds1.close();
+    if( NumAuxSamples )
+    {
+      Dims[0] = NumAuxSamples;
+      ds1 = H5::DataSpace( 2, Dims );
+      ds = g.createDataSet( "data_Aux", H5File::ComplexType(), ds1 );
+      ds.write( (*this)[idxAux], H5File::ComplexType() );
+      ds.close();
+      ds1.close();
+    }
+    bOK = true;
+  }
+  catch(const H5::Exception &)
+  {
+    bOK = false;
+  }
+  if( !bOK )
+    throw std::runtime_error( "Unable to write sample to " + FileName + ", group " + GroupName );
+}
 
 // Read a complex array from an HDF5 file
 void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,

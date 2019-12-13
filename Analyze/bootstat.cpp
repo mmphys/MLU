@@ -30,10 +30,11 @@
 #include <typeinfo>
 #include "Common.hpp"
 
+using C = std::complex<double>;
+
 bool debug( int NumSamples, int Nt )
 {
-  using C = std::complex<double>;
-  Common::sample<C> a( NumSamples, Nt );
+  Common::Sample<C> a( NumSamples, Nt );
   int z = 0;
   for( int x = -1; x < NumSamples; x++ )
     for( int y = 0; y < Nt; y++ )
@@ -48,44 +49,19 @@ int main(int argc, char *argv[])
 {
   // We're not using C-style I/O
   std::ios_base::sync_with_stdio(false);
-  debug( 3, 4 );
+  //debug( 3, 4 );
   if( argc != 2 ) {
     std::cout << "usage: bootstat filename\n";
     exit(1);
   }
   const std::string FileName{ argv[1] };
-  const Common::FileNameAtt fna{ FileName };
+  //const Common::FileNameAtt fna{ FileName };
   std::cout << "Creating statistics for " << FileName << "\n";
   try {
-    H5::H5File f{ FileName, H5F_ACC_RDWR };
-    H5::Group g{ f.openGroup( "/" ) };
-    H5::Attribute a;
-    bool bOK = true;
-    H5E_auto2_t h5at;
-    void      * f5at_p;
-    H5::Exception::getAutoPrint(h5at, &f5at_p);
-    H5::Exception::dontPrint();
-    static const std::string dsThresholdName{ "_Grid_dataset_threshold" };
-    try {
-      a = g.openAttribute(dsThresholdName);
-    } catch(const H5::Exception &) {
-      bOK = false;
-      H5::Exception::clearErrorStack();
-    }
-    H5::Exception::setAutoPrint(h5at, f5at_p);
-    unsigned int dsThresholdVal{ 6 };
-    if( bOK )
-    {
-      a.read( H5::PredType::NATIVE_UINT, &dsThresholdVal );
-      std::cout << "Already exists: " << dsThresholdName << "=" << dsThresholdVal << "\n";
-      return EXIT_SUCCESS;
-    }
-    // Create the attribute as a single 32 bit unsigned int
-    std::cout << "Creating attribute: " << dsThresholdName << "=" << dsThresholdVal << "\n";
-    hsize_t dims[1] = { 1 };
-    H5::DataSpace dsAttr = H5::DataSpace( 1, dims );
-    a = g.createAttribute(dsThresholdName, H5::PredType::STD_U32LE, dsAttr );
-    a.write( H5::PredType::NATIVE_UINT, &dsThresholdVal );
+    std::string GroupName{};
+    Common::Sample<C> s( FileName, GroupName );
+    std::cout << "Loaded Nt=" << s.Nt() << " x " << s.NumSamples() << " bootstrap samples from " << GroupName << "\n";
+    s.Write( "DeleteMe.h5" );
   }
   catch(const H5::Exception &)
   {
