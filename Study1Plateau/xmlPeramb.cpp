@@ -208,8 +208,7 @@ int main(int argc, char *argv[])
 
   static const std::string NoiseName{ "Noise" };
   MDistil::Noises::Par noisePar;
-  noisePar.nnoise = 1;
-  noisePar.nvec = Nvec;
+  noisePar.DistilParams = "DistilPar_0"; // because it doesn't use tsrc
   application.createModule<MDistil::Noises>( NoiseName, noisePar );
 
   // Loop through all quarks
@@ -218,36 +217,42 @@ int main(int argc, char *argv[])
     // Loop through all timeslices
     for (unsigned int t = 0; t < nt; t += 4) {
       const std::string st{ Sep + std::to_string( t ) };
+      const std::string DistilParName{ "DistilPar" + st };
+      MDistil::DistilPar::Par distPar;
+      distPar.tsrc = t;
+      distPar.LI = Nd;
+      distPar.nnoise = 1;
+      distPar.nvec = Nvec;
+      distPar.SI = Ns;
+      distPar.TI = 1;
+      application.createModule<MDistil::DistilPar>( DistilParName, distPar );
+
       const std::string PerambName{ Prefix + st };
       if( bMakePeramb ) {
         MDistil::Perambulator::Par pPar;
         pPar.lapevec = LapEvecName;
         pPar.solver = solverName[i];
         pPar.noise = NoiseName;
-        pPar.nvec = Nvec;
-        pPar.Distil.nnoise = noisePar.nnoise;
-        pPar.Distil.tsrc = t;
+        pPar.DistilParams = DistilParName;
         pPar.UnsmearedSinkFileName = PerambName + UnsmearedSinkSuffix;
         application.createModule<MDistil::Perambulator>(PerambName, pPar);
       } else {
         static const std::string PerambDir{ "Peramb/C1/" };
         MIO::LoadPerambulator::Par pPar;
-        pPar.nvec = Nvec;
-        pPar.Distil.nnoise = noisePar.nnoise;
-        pPar.Distil.tsrc = t;
+        pPar.DistilParams = DistilParName;
         pPar.PerambFileName = PerambDir + PerambName;
         application.createModule<MIO::LoadPerambulator>(PerambName, pPar);
       }
       if( bRhoPhi ) {
         const std::string DVName{ "DV" + Sep + Quarks[i].flavour + st };
         MDistil::DistilVectors::Par dvPar;
+        dvPar.DistilParams = DistilParName;
         dvPar.noise = NoiseName;
         dvPar.perambulator = PerambName;
         dvPar.lapevec = LapEvecName;
         if( Quarks[i].flavour != "l" )
-          dvPar.source = RhoPhi[0] + st;
-        dvPar.sink = RhoPhi[1] + Sep + Quarks[i].flavour + st;
-        dvPar.tsrc = t;
+          dvPar.rho = RhoPhi[0] + st;
+        dvPar.phi = RhoPhi[1] + Sep + Quarks[i].flavour + st;
         application.createModule<MDistil::DistilVectors>(DVName, dvPar);
       }
     }

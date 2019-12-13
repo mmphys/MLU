@@ -140,12 +140,14 @@ const std::string & MesonSuffix( const std::string MesonTypeName )
 // Make a default manifest
 // Heavy-light meson decays. 2pt function with current inserted and momentum on light meson
 
-void Z2Bootstrap( const BootstrapParams &bsParams, const Common::Momentum &mom, const std::string &Heavy, const std::string &Light )
+enum StudySubject { Z2, GFWall };
+
+void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const Common::Momentum &mom, const std::string &Heavy, const std::string &Light )
 {
   static constexpr unsigned int Nt{64};
   static constexpr unsigned int CStart{3000};
   static constexpr unsigned int CSkip{40};
-  static constexpr unsigned int CCount{10};
+  static constexpr unsigned int CCount{1};//10};
   static constexpr unsigned int CEnd{CStart + CSkip * CCount};
   static const std::string sPath{
 #ifdef DEBUG
@@ -153,7 +155,8 @@ void Z2Bootstrap( const BootstrapParams &bsParams, const Common::Momentum &mom, 
 #else
     "/home/dp008/dp008/dc-mars3"  // Tesseract
 #endif
-    "/data/201910Plat/mesons/C1/Z2/" };
+    "/data/201910Plat/mesons/C1/" };
+  const std::string StudyPath{ sPath + ( Study == Z2 ? "Z2" : "GFWall" ) + "/" };
   static const std::string Dot{ "." };    // used inside filenames
   static const std::string H5{ Dot + "h5" };    // used inside filenames
   static const std::string Sep{ "_" };    // used inside filenames
@@ -194,13 +197,24 @@ void Z2Bootstrap( const BootstrapParams &bsParams, const Common::Momentum &mom, 
   par.bSaveSummaries = true;
   par.bSaveBootstrap = false;
   for( int t = 0; t < Nt; ++t ) {
-    const std::string tPrefix{ Sep + "t" + std::to_string( t ) };
+    const std::string tPrefix{ Sep + "t" + ( Study == Z2 ? "" : Sep ) + std::to_string( t ) };
     int CorrIndexT{ 0 };
     for( unsigned int iEnd = 0; iEnd < NumEnds; iEnd++ ) {
       const std::string & Left{ iEnd == 0 ? Heavy : Light };
       const std::string & Right{ iEnd == 0 ? Light : Heavy };
-      for( int iConfig = CStart; iConfig < CEnd; iConfig += CSkip ) {
-        const std::string sFileName{ sPath + sProp + Left + tPrefix + sMom + Sep + sProp + Right + tPrefix + sMom0 + Sink + sMomNeg + Dot + std::to_string( iConfig ) + H5};
+      for( int iConfig = CStart; iConfig < CEnd; iConfig += CSkip )
+      {
+        std::string sFileName{ StudyPath };
+        switch( Study )
+        {
+          case Z2:
+            sFileName.append( sProp + Left + tPrefix + sMom + Sep + sProp + Right + tPrefix + sMom0 + Sink + sMomNeg );
+            break;
+          default:
+            sFileName.append( Left + Sep + Right + sMom + tPrefix );
+            break;
+        }
+        sFileName.append( Dot + std::to_string( iConfig ) + H5 );
         Common::ReadComplexArray(buffer, alg, sFileName, 0);
         for( int iCorr = 0; iCorr < NumCorr; ++iCorr )
         {
@@ -359,18 +373,19 @@ int main(int argc, char *argv[])
       const std::string qLight{ "l" };
       std::cout << "No files specified. Making default manifest for "
       << qHeavy << " and " << qLight << std::endl;
-      static const Common::Momentum Z2Momenta[] = {
+      static const Common::Momentum StudyMomenta[] = {
         { 0, 0, 0 },
         { 1, 0, 0 },
         { 1, 1, 0 },
         { 1, 1, 1 },
         { 2, 0, 0 },
       };
-      for( const Common::Momentum &m : Z2Momenta )
+      const StudySubject Study{ GFWall };
+      for( const Common::Momentum &m : StudyMomenta )
       {
-        Z2Bootstrap( par, m, qHeavy, qLight );
-        Z2Bootstrap( par, m, qHeavy, qHeavy );
-        Z2Bootstrap( par, m, qLight, qLight );
+        Study1Bootstrap( Study, par, m, qHeavy, qLight );
+        Study1Bootstrap( Study, par, m, qHeavy, qHeavy );
+        Study1Bootstrap( Study, par, m, qLight, qLight );
       }
     }
   }
