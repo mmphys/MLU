@@ -210,7 +210,7 @@ class H5File : public H5::H5File {
 public:
   using H5::H5File::H5File; // Inherit the base class's constructors
   // Return the same HDF5 complex type Grid uses
-  static H5::CompType & ComplexType( void );
+  static H5::CompType & ComplexType( int fpsize = sizeof( double ) );
 };
 
 // Get first groupname from specified group
@@ -241,6 +241,8 @@ class Sample
   int Nt_;
   std::unique_ptr<T[]> m_pData;
 public:
+  using scalar_type = typename SampleTraits<T>::scalar_type;
+  static constexpr int scalar_size { sizeof( scalar_type ) };
   static constexpr int NumAuxSamples{ NumAuxSamples_ };
   static constexpr int NumExtraSamples{ NumAuxSamples + 1 }; // Auxiliary samples + central replica
   static constexpr int idxCentral{ -1 };
@@ -371,7 +373,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
           if( Dim[0] * att_nSample <= std::numeric_limits<int>::max() )
           {
             resize( static_cast<int>( att_nSample ), static_cast<int>( Dim[0] ) );
-            ds.read( (*this)[idxCentral], H5File::ComplexType() );
+            ds.read( (*this)[idxCentral], H5File::ComplexType( scalar_size ) );
             dsp.close();
             ds.close();
             ds = g.openDataSet( "data_S" );
@@ -382,7 +384,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
               dsp.getSimpleExtentDims( Dim );
               if( Dim[0] == att_nSample && Dim[1] == static_cast<unsigned int>( Nt_ ) )
               {
-                ds.read( (*this)[0], H5File::ComplexType() );
+                ds.read( (*this)[0], H5File::ComplexType( scalar_size ) );
                 if( NumAuxSamples == 0 )
                   bOK = true;
                 else
@@ -397,7 +399,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
                     dsp.getSimpleExtentDims( Dim );
                     if( Dim[0] == static_cast<unsigned int>( NumAuxSamples ) && Dim[1] == static_cast<unsigned int>( Nt_ ) )
                     {
-                      ds.read( (*this)[idxAux], H5File::ComplexType() );
+                      ds.read( (*this)[idxAux], H5File::ComplexType( scalar_size ) );
                       bOK = true;
                     }
                   }
@@ -447,23 +449,23 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
     ds1.close();
     Dims[0] = Nt_;
     ds1 = H5::DataSpace( 1, Dims );
-    H5::DataSet ds = g.createDataSet( "data_C", H5File::ComplexType(), ds1 );
-    ds.write( (*this)[idxCentral], H5File::ComplexType() );
+    H5::DataSet ds = g.createDataSet( "data_C", H5File::ComplexType( scalar_size ), ds1 );
+    ds.write( (*this)[idxCentral], H5File::ComplexType( scalar_size ) );
     ds.close();
     ds1.close();
     Dims[0] = NumSamples_;
     Dims[1] = Nt_;
     ds1 = H5::DataSpace( 2, Dims );
-    ds = g.createDataSet( "data_S", H5File::ComplexType(), ds1 );
-    ds.write( (*this)[0], H5File::ComplexType() );
+    ds = g.createDataSet( "data_S", H5File::ComplexType( scalar_size ), ds1 );
+    ds.write( (*this)[0], H5File::ComplexType( scalar_size ) );
     ds.close();
     ds1.close();
     if( NumAuxSamples )
     {
       Dims[0] = NumAuxSamples;
       ds1 = H5::DataSpace( 2, Dims );
-      ds = g.createDataSet( "data_Aux", H5File::ComplexType(), ds1 );
-      ds.write( (*this)[idxAux], H5File::ComplexType() );
+      ds = g.createDataSet( "data_Aux", H5File::ComplexType( scalar_size ), ds1 );
+      ds.write( (*this)[idxAux], H5File::ComplexType( scalar_size ) );
       ds.close();
       ds1.close();
     }

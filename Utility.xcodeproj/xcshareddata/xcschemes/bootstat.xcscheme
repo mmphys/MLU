@@ -54,11 +54,11 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "phiL_0_rhoL.bootstrap.987654321.h5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "NewFormat.bootstrap.987654321.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

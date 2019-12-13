@@ -153,21 +153,32 @@ std::string MakeFilename(const std::string &Base, const std::string &Type, SeedT
 static std::mutex ComplexTypeSync;
 #endif
 
-H5::CompType & H5File::ComplexType(void)
+H5::CompType & H5File::ComplexType( int fpsize )
 {
   static bool bInitialised = false;
-  static H5::CompType m_Complex(sizeof(std::complex<double>));
+  static H5::CompType m_Complexf(sizeof(std::complex<float>));
+  static H5::CompType m_Complexd(sizeof(std::complex<double>));
+  static H5::CompType m_Complexl(sizeof(std::complex<long double>));
   {
 #ifndef __INTEL_COMPILER
     std::lock_guard<std::mutex> guard( ComplexTypeSync );
 #endif
     if( !bInitialised ) {
-      m_Complex.insertMember("re", 0 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
-      m_Complex.insertMember("im", 1 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
+      m_Complexf.insertMember("re", 0 * sizeof(float), H5::PredType::NATIVE_FLOAT);
+      m_Complexf.insertMember("im", 1 * sizeof(float), H5::PredType::NATIVE_FLOAT);
+      m_Complexd.insertMember("re", 0 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
+      m_Complexd.insertMember("im", 1 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
+      m_Complexl.insertMember("re", 0 * sizeof(long double), H5::PredType::NATIVE_LDOUBLE);
+      m_Complexl.insertMember("im", 1 * sizeof(long double), H5::PredType::NATIVE_LDOUBLE);
       bInitialised = true;
     }
   }
-  return m_Complex;
+  if( fpsize == sizeof( float ) )
+    return m_Complexf;
+  if( fpsize == sizeof( double ) )
+    return m_Complexd;
+  assert( fpsize == sizeof( long double ) );
+  return m_Complexl;
 }
 
 // Get first groupname from specified group
