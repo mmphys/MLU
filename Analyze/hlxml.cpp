@@ -35,20 +35,27 @@
 //using namespace Grid;
 //using namespace Hadrons;
 
-int main(int argc, char *argv[])
+int main(int argc, const char *argv[])
 {
+  int iReturn{ EXIT_SUCCESS };
+  try
+  {
   using Common::CommandLine;
+  static const char longSwitch[]{ "balderdash" };
   const std::initializer_list<CommandLine::SwitchDef> l = {
     {"b", CommandLine::SwitchType::Multiple, nullptr},
-    {"balderdash", CommandLine::SwitchType::Single, "Hoping this not set!"},
+    {longSwitch, CommandLine::SwitchType::Single, "Hoping this not set!"},
     {"p", CommandLine::SwitchType::Single, "Porcupine" },
     {"Y", CommandLine::SwitchType::Flag, nullptr}
   };
   CommandLine cl( argc, argv, l );
   std::cout << cl << std::endl;
   std::cout << "b[1]=" << cl.SwitchValue<double>("b", 1) << std::endl;
+  std::cout << "b[2]=" << cl.SwitchValue<int>   ("b", 2) << std::endl;
   std::cout << "b[3]=" << cl.SwitchValue<int>   ("b", 3) << std::endl;
-  std::cout << "b[4]=" << cl.SwitchValue<int>   ("b", 4) << std::endl;
+  std::cout << "b[1]=" << cl.SwitchValue<std::complex<double>>("b", 1) << std::endl;
+  std::cout << longSwitch << "=" << cl.SwitchValue<std::string>(longSwitch) << std::endl;
+  std::cout << longSwitch << "[1]=" << cl.SwitchValue<std::string>(longSwitch, 1) << std::endl;
 
   // Decode command-line
   const std::string sOutFileName{ argc == 2 && argv[1] && argv[1][0] ? argv[1] : "hl_test.xml" };
@@ -71,4 +78,9 @@ int main(int argc, char *argv[])
   write(w, "global",    par.global);
   write(w, "a2aMatrix", par.a2aMatrix);
   write(w, "product",   par.product);
+  } catch (const std::exception &e) {
+    std::cerr << "Exception: " << e.what() << std::endl;
+    iReturn = EXIT_FAILURE;
+  }
+  return iReturn;
 }

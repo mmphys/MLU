@@ -22,7 +22,8 @@ function plot_file()
   local corr_escaped=${corr//\_/\\\_}
   local cmd="plot '${file}'"
 # cmd="set xrange [5.9:16.1]; ${cmd}"
-  cmd="set xrange [1:30]; ${cmd}"
+  cmd="set xrange [2:62]; ${cmd}"
+#  cmd="set term pdf; set output '${file%.*}.pdf'; ${cmd}"
   if [[ $ext == "txt" ]] ; then
     local title=" ${corr_escaped} (seed=${seed})"
     local fields="2:(\$2-\$3):(\$2+\$4) with yerrorbars"
@@ -39,7 +40,7 @@ function plot_file()
 }
 
 while (( "$#" )); do
-  echo About to plot $1
+  #echo About to plot $1
   plot_file $1
 shift
 done

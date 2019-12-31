@@ -173,7 +173,7 @@ void SummariseBootstrap(const Latan::DMatSample &out, const std::string & sOutFi
   }
 */}
 
-const char * SummaryNames[3] = { "corr", "mass", "cosh" };//, "sinh" };
+const char * SummaryNames[4] = { "corr", "mass", "cosh", "sinh" };
 
 // Make summary files of a bootstrap of a correlator
 void SummariseBootstrapCorr(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed )//, int momentum_squared)
@@ -185,7 +185,7 @@ void SummariseBootstrapCorr(const Latan::DMatSample &out, const std::string & sO
     "correlator",
     "mass",
     "cosh mass",
-    //"sinh mass",
+    "sinh mass",
   };
   const int NumSummaries{ static_cast<int>( sizeof( SummaryNames ) / sizeof( SummaryNames[0] ) ) };
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
@@ -246,9 +246,9 @@ void SummariseBootstrapCorr(const Latan::DMatSample &out, const std::string & sO
             case 2: // cosh mass
               DThis = std::acosh((out[i]((t - 1 + nt) % nt, 0) + out[i]((t + 1) % nt, 0)) / (2 * out[i](t, 0)));
               break;
-              //case 3: // sinh mass
-              //DThis = std::asinh((out[i]((t - 1 + nt) % nt, 0) - out[i]((t + 1) % nt, 0)) / (2 * //out[i](t, 0)));
-              //break;
+              case 3: // sinh mass
+              DThis = std::asinh((out[i]((t - 1 + nt) % nt, 0) - out[i]((t + 1) % nt, 0)) / (2 * out[i](t, 0)));
+              break;
             default:
               DThis = 0;
           }

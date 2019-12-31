@@ -92,7 +92,7 @@ template <typename T> inline std::string tokenReplaceCopy(const std::string &str
 Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps );
 
 // Make summary files of this data set
-extern const char * SummaryNames[3];
+extern const char * SummaryNames[4];
 // Make summary files of a bootstrap of a correlator
 void SummariseBootstrapCorr(const Latan::DMatSample &out, const std::string & sOutFileBase, Latan::SeedType Seed );//, int momentum_squared);
 

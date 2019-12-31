@@ -34,6 +34,78 @@
 
 BEGIN_COMMON_NAMESPACE
 
+namespace Gamma
+{
+  const std::array<std::string, nGamma> name{ // Long name, per Grid
+    "MinusGamma5",
+    "Gamma5",
+    "MinusGammaT",
+    "GammaT",
+    "MinusGammaTGamma5",
+    "GammaTGamma5",
+    "MinusGammaX",
+    "GammaX",
+    "MinusGammaXGamma5",
+    "GammaXGamma5",
+    "MinusGammaY",
+    "GammaY",
+    "MinusGammaYGamma5",
+    "GammaYGamma5",
+    "MinusGammaZ",
+    "GammaZ",
+    "MinusGammaZGamma5",
+    "GammaZGamma5",
+    "MinusIdentity",
+    "Identity",
+    "MinusSigmaXT",
+    "SigmaXT",
+    "MinusSigmaXY",
+    "SigmaXY",
+    "MinusSigmaXZ",
+    "SigmaXZ",
+    "MinusSigmaYT",
+    "SigmaYT",
+    "MinusSigmaYZ",
+    "SigmaYZ",
+    "MinusSigmaZT",
+    "SigmaZT",
+  };
+  const std::array<std::string, nGamma> nameShort{ // My abbreviations
+    "g-5",
+    "g5",
+    "g-T",
+    "gT",
+    "g-T5",
+    "gT5",
+    "g-X",
+    "gX",
+    "g-X5",
+    "gX5",
+    "g-Y",
+    "gY",
+    "g-Y5",
+    "gY5",
+    "g-Z",
+    "gZ",
+    "g-Z5",
+    "gZ5",
+    "g-I",
+    "gI",
+    "g-sXT",
+    "gsXT",
+    "g-sXY",
+    "gsXY",
+    "g-sXZ",
+    "gsXZ",
+    "g-sYT",
+    "gsYT",
+    "g-sYZ",
+    "gsYZ",
+    "g-sZT",
+    "gsZT",
+  };
+};
+
 const std::string sBootstrap{ "bootstrap" };
 const std::string sModel{ "model" };
 const double NaN{ std::nan( "" ) };
@@ -207,6 +279,20 @@ void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName,
   }
 }
 
+// Read the gamma algebra attribute string and make sure it's valid
+Gamma::Algebra ReadGammaAttribute( H5::Group &g, const char * pAttName )
+{
+  std::string sGamma;
+  H5::Attribute a = g.openAttribute( pAttName );
+  H5::StrType s = a.getStrType();
+  a.read( s, sGamma );
+  a.close();
+  for( int idxGamma = 0; idxGamma < Gamma::nGamma; idxGamma++ )
+    if( EqualIgnoreCase( sGamma, Gamma::name[idxGamma] ) )
+      return static_cast<Gamma::Algebra>( idxGamma );
+  throw H5::Exception( "Common::ReadGammaAttribute", "Invalid gamma algebra string" );
+}
+
 // Read a complex array from an HDF5 file
 void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,
                       std::string &GroupName, const std::string &ObjectName )
@@ -292,23 +378,8 @@ static ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, s
   return r;
 }
 
-Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgnore)
+void Manifest::Construct(const std::vector<std::string> &Args, const std::vector<std::string> &Ignore)
 {
-  // Get the list of files to ignore
-  std::vector<std::string> Ignore;
-  for( std::size_t start = 0; start < sIgnore.length() ; ) {
-    auto end = sIgnore.find(':', start);
-    std::size_t SepLen;
-    if( end == std::string::npos ) {
-      SepLen = 0;
-      end = sIgnore.length();
-    }
-    else
-      SepLen = 1;
-    if( end > start )
-      Ignore.push_back( sIgnore.substr( start, end - start ) );
-    start = end + SepLen;
-  }
   // Now walk the list of arguments.
   // Any file that's not in the ignore list gets added to the manifest
   if( Args.size() == 0 )
@@ -375,6 +446,26 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgn
     throw std::runtime_error( "Error parsing command-line arguments" );
 }
 
+Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgnore)
+{
+  // Get the list of files to ignore
+  std::vector<std::string> Ignore;
+  for( std::size_t start = 0; start < sIgnore.length() ; ) {
+    auto end = sIgnore.find(':', start);
+    std::size_t SepLen;
+    if( end == std::string::npos ) {
+      SepLen = 0;
+      end = sIgnore.length();
+    }
+    else
+      SepLen = 1;
+    if( end > start )
+      Ignore.push_back( sIgnore.substr( start, end - start ) );
+    start = end + SepLen;
+  }
+  Construct( Args, Ignore );
+}
+
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl)
 {
   os << "Command-line has " << cl.Args.size() << " arguments and " << cl.Switches.size() << " switches";
@@ -410,8 +501,14 @@ void CommandLine::SkipPastSep( const char * & p )
   }
 }
 
-CommandLine::CommandLine( int argc, char *argv[], const std::vector<SwitchDef> &defs )
+void CommandLine::Parse( int argc, const char *argv[], const std::vector<SwitchDef> &defs )
 {
+  // Save the name of the executable without any path
+  Name = argv[0];
+  auto pos = Name.find_last_of('/');
+  if( pos != std::string::npos )
+    Name = Name.substr( pos + 1 );
+  // Now parse the command-line
   bool bError{ false };
   int SwitchNo = -1; // Not waiting for switch value
   bool bInMultiChar{ false };
@@ -456,6 +553,9 @@ CommandLine::CommandLine( int argc, char *argv[], const std::vector<SwitchDef> &
         SwitchNo = -1;
         continue;
       }
+      // Swallow any trailing whitespace
+      while( *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n' )
+        p++;
       if( defs[SwitchNo].Type == SwitchType::Flag ) {
         // This is just a switch - it should not have a value
         if( *p ) {
@@ -493,8 +593,8 @@ CommandLine::CommandLine( int argc, char *argv[], const std::vector<SwitchDef> &
     bError = true;
   }
   if( bError ) {
-    std::cout << (*this) << std::endl;
-    exit( EXIT_FAILURE );
+    // std::cerr << (*this) << std::endl;
+    throw std::runtime_error( "Invalid command-line" );
   }
   // Now put defaults in for any missing switches
   for( int i = 0; i < defs.size(); i++ ) {

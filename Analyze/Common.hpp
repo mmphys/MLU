@@ -29,6 +29,7 @@
 #ifndef Common_hpp
 #define Common_hpp
 
+#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <climits>
@@ -54,6 +55,48 @@
 #define END_COMMON_NAMESPACE   };
 
 BEGIN_COMMON_NAMESPACE
+
+namespace Gamma
+{
+  enum class Algebra
+  {
+    MinusGamma5,        // 0
+    Gamma5,             // 1
+    MinusGammaT,        // 2
+    GammaT,             // 3
+    MinusGammaTGamma5,  // 4
+    GammaTGamma5,       // 5
+    MinusGammaX,        // 6
+    GammaX,             // 7
+    MinusGammaXGamma5,  // 8
+    GammaXGamma5,       // 9
+    MinusGammaY,        // 10
+    GammaY,             // 11
+    MinusGammaYGamma5,  // 12
+    GammaYGamma5,       // 13
+    MinusGammaZ,        // 14
+    GammaZ,             // 15
+    MinusGammaZGamma5,  // 16
+    GammaZGamma5,       // 17
+    MinusIdentity,      // 18
+    Identity,           // 19
+    MinusSigmaXT,       // 20
+    SigmaXT,            // 21
+    MinusSigmaXY,       // 22
+    SigmaXY,            // 23
+    MinusSigmaXZ,       // 24
+    SigmaXZ,            // 25
+    MinusSigmaYT,       // 26
+    SigmaYT,            // 27
+    MinusSigmaYZ,       // 28
+    SigmaYZ,            // 29
+    MinusSigmaZT,       // 30
+    SigmaZT,            // 31
+  };
+  static constexpr unsigned int                nGamma = 32;
+  extern const std::array<std::string, nGamma> name;      // Long name, per Grid
+  extern const std::array<std::string, nGamma> nameShort; // My abbreviations
+};
 
 extern const std::string sBootstrap;
 extern const std::string sModel;
@@ -183,7 +226,7 @@ template<typename T> inline T FromString( const std::string &String ) {
   T t;
   std::istringstream iss( String );
   if( !( iss >> t ) || ( iss >> std::ws && !iss.eof() ) )
-    throw new std::invalid_argument( String );
+    throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
   return t;
 }
 // Converting a string to a string makes a copy
@@ -203,6 +246,9 @@ struct Momentum
     + std::to_string( bNegative ? -y : y ) + separator
     + std::to_string( bNegative ? -z : z );
   }
+  std::string to_string4d( const std::string &separator, bool bNegative = false ) const {
+    return to_string( separator, bNegative ) + separator + "0";
+  }
 };
 
 // My implementation of H5File - adds a definition of complex type
@@ -219,6 +265,9 @@ std::string GetFirstGroupName( H5::Group & g );
 // Open the specified HDF5File and group
 void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName, std::string &GroupName, unsigned int flags = H5F_ACC_RDONLY );
 
+// Read the gamma algebra attribute string and make sure it's valid
+Gamma::Algebra ReadGammaAttribute( H5::Group &g, const char * pAttName );
+
 // Traits for samples
 template<typename ST, typename V = void> struct SampleTraits : public std::false_type{};
 template<typename ST> struct SampleTraits<ST, typename std::enable_if<std::is_floating_point<ST>::value>::type> : public std::true_type
@@ -231,6 +280,201 @@ template<typename ST> struct SampleTraits<std::complex<ST>, typename std::enable
   static constexpr bool is_complex = true;
   using scalar_type = typename SampleTraits<ST>::scalar_type;
 };
+
+// Correlator file. Could be either single correlator, or multiple gammas
+
+template <typename T>
+class CorrelatorFile
+{
+  int NumOps_;
+  int Nt_;
+  std::unique_ptr<T[]> m_pData;
+  std::vector<Gamma::Algebra> Alg_;
+  inline int GammaIndex( Gamma::Algebra g ) const
+  {
+    int idx;
+    for( idx = 0; idx < Alg_.size() && Alg_[idx] != g; idx++ )
+      ;
+    return idx;
+  }
+public:
+  using scalar_type = typename SampleTraits<T>::scalar_type;
+  static constexpr int scalar_size { sizeof( scalar_type ) };
+  inline int NumOps() const { return NumOps_; }
+  inline int Nt() const { return Nt_; }
+  void resize( int NumOps, int Nt )
+  {
+    if( NumOps_ != NumOps )
+      Alg_.clear();
+    if( NumOps_ != NumOps || Nt_ != Nt )
+    {
+      NumOps_ = NumOps;
+      Nt_ = Nt;
+      m_pData.reset( new T[ static_cast<std::size_t>( NumOps * NumOps ) * Nt ] );
+    }
+  }
+  CorrelatorFile() : NumOps_{0}, Nt_{0} {}
+  void Read ( const std::string &FileName, std::string &GroupName, std::vector<Gamma::Algebra> &Alg,
+             Gamma::Algebra gammaUnspecified = Gamma::Algebra::Identity );
+  //void Write( const std::string &FileName, const char * pszGroupName = nullptr );
+  T * operator[]( int Sample )
+  {
+    if( Sample < 0 || Sample >= NumOps_ * NumOps_ )
+      throw std::out_of_range( "Sample " + std::to_string( Sample ) );
+    return & m_pData[static_cast<std::size_t>( Sample ) * Nt_];
+  }
+  const T * operator[]( int Sample ) const
+  {
+    if( Sample < 0 || Sample > NumOps_ * NumOps_ )
+      throw std::out_of_range( "Sample " + std::to_string( Sample ) );
+    return & m_pData[static_cast<std::size_t>( Sample ) * Nt_];
+  }
+  T * operator()( Gamma::Algebra gSink, Gamma::Algebra gSource )
+  { return (*this)[ GammaIndex( gSink ) * NumOps_ + GammaIndex( gSource )]; }
+  const T * operator()( Gamma::Algebra gSink, Gamma::Algebra gSource ) const
+  { return (*this)[ GammaIndex( gSink ) * NumOps_ + GammaIndex( gSource )]; }
+  bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
+      static_cast<size_t>( NumOps_ * NumOps_ * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
+};
+
+// Read from file. If GroupName empty, read from first group and return name in GroupName
+template <typename T>
+void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupName,
+                              std::vector<Gamma::Algebra> &Alg, Gamma::Algebra gammaUnspecified )
+{
+  H5::H5File f;
+  H5::Group  g;
+  OpenHdf5FileGroup( f, g, FileName, GroupName );
+  bool bOK = false;
+  H5E_auto2_t h5at;
+  void      * f5at_p;
+  H5::Exception::getAutoPrint(h5at, &f5at_p);
+  H5::Exception::dontPrint();
+  try // to load a single correlator
+  {
+    if( Alg.size() == 0 || ( Alg.size() == 1 && Alg[0] == gammaUnspecified ) )
+    {
+      H5::DataSet ds = g.openDataSet( "correlator" );
+      H5::DataSpace dsp = ds.getSpace();
+      int nDims{ dsp.getSimpleExtentNdims() };
+      if( nDims == 1 )
+      {
+        hsize_t Dim[1];
+        dsp.getSimpleExtentDims( Dim );
+        if( Dim[0] <= std::numeric_limits<int>::max() )
+        {
+          resize( 1, static_cast<int>( Dim[0] ) );
+          Alg_.resize( 1, gammaUnspecified );
+          ds.read( (*this)[0], H5File::ComplexType( scalar_size ) );
+          bOK = true;
+        }
+      }
+    }
+  }
+  catch(const H5::Exception &)
+  {
+    bOK = false;
+    H5::Exception::clearErrorStack();
+  }
+  if( !bOK )
+  {
+    try // to load from array of correlators indexed by gamma matrix
+    {
+      unsigned short NumVec;
+      H5::Attribute a;
+      a = g.openAttribute("_Grid_vector_size");
+      a.read( H5::PredType::NATIVE_USHORT, &NumVec );
+      a.close();
+      // Must be a perfect square and have at least as many as entries as requested
+      const unsigned short NumFileOps{static_cast<unsigned short>( std::sqrt( NumVec ) + 0.5 )};
+      if( NumFileOps * NumFileOps == NumVec && NumFileOps >= Alg.size() )
+      {
+        bOK = true;
+        std::vector<int> count;
+        for( unsigned short i = 0; bOK && i < NumVec; i++ )
+        {
+          bOK = false;
+          H5::Group gi = g.openGroup( GroupName + "_" + std::to_string( i ) );
+          H5::DataSet ds = gi.openDataSet( "corr" );
+          H5::DataSpace dsp = ds.getSpace();
+          int nDims{ dsp.getSimpleExtentNdims() };
+          if( nDims == 1 )
+          {
+            hsize_t Dim[1];
+            dsp.getSimpleExtentDims( Dim );
+            if( Dim[0] <= std::numeric_limits<int>::max() )
+            {
+              const int ThisNt{ static_cast<int>( Dim[0] ) };
+              if( i == 0 )
+              {
+                // First correlator - resize and save operators if known
+                resize( Alg.size() ? Alg.size() : NumFileOps, ThisNt );
+                count.resize( NumOps_ * NumOps_, 0 );
+                if( Alg.size() )
+                {
+                  Alg_.resize( Alg.size() );
+                  std::copy( Alg.cbegin(), Alg.cend(), Alg_.begin() );
+                }
+                else
+                {
+                  Alg_.clear();
+                  Alg_.reserve( Alg.size() );
+                }
+              }
+              else if( ThisNt != Nt_ )
+              {
+                break;
+              }
+              // Read the gamma algebra strings and make sure they are valid
+              const Gamma::Algebra gSnk{ ReadGammaAttribute( gi, "gamma_snk" ) };
+              int idxSnk;
+              for( idxSnk = 0; idxSnk < Alg_.size() && Alg_[idxSnk] != gSnk; idxSnk++ )
+                ;
+              if( idxSnk == Alg_.size() && Alg_.size() < NumOps_ )
+                Alg_.push_back( gSnk );
+              bOK = true; // We can safely ignore gamma structures we're not interested in
+              if( idxSnk < Alg_.size() )
+              {
+                const Gamma::Algebra gSrc{ ReadGammaAttribute( gi, "gamma_src" ) };
+                int idxSrc;
+                for( idxSrc = 0; idxSrc < Alg_.size() && Alg_[idxSrc] != gSrc; idxSrc++ )
+                  ;
+                if( idxSrc == Alg_.size() && Alg_.size() < NumOps_ )
+                  Alg_.push_back( gSrc );
+                if( idxSrc < Alg_.size() )
+                {
+                  const int idx{ idxSnk * NumOps_ + idxSrc };
+                  ds.read( (*this)[idx], H5File::ComplexType( scalar_size ) );
+                  count[idx]++;
+                }
+              }
+            }
+          }
+        }
+        // Make sure that everything we wanted was loaded once and only once
+        for( int i = 0; bOK && i < NumOps_ * NumOps_; i++ )
+          if( count[i] != 1 )
+            bOK = false;
+      }
+    }
+    catch(const H5::Exception &)
+    {
+      bOK = false;
+      H5::Exception::clearErrorStack();
+    }
+  }
+  H5::Exception::setAutoPrint(h5at, f5at_p);
+  if( !bOK )
+    throw std::runtime_error( "Unable to read sample from " + FileName );
+  if( !IsFinite() )
+    throw std::runtime_error( "Values read are not all finite" );
+  // If I'm discovering which operators are in the file, copy them out
+  if( Alg.empty() )
+  {
+    Alg.resize( Alg_.size() );
+    std::copy( Alg_.cbegin(), Alg_.cend(), Alg.begin() );
+  }
+}
 
 // This is for a sample of correlators. There is a central replica, specified aux replicas and variable number of samples
 
@@ -251,14 +495,19 @@ public:
   inline int Nt() const { return Nt_; }
   void resize( int NumSamples, int Nt )
   {
-    NumSamples_ = NumSamples;
-    Nt_ = Nt;
-    m_pData.reset( new T[ static_cast<std::size_t>( NumSamples + NumExtraSamples ) * Nt ] );
+    if( NumSamples_ != NumSamples || Nt_ != Nt )
+    {
+      NumSamples_ = NumSamples;
+      Nt_ = Nt;
+      m_pData.reset( new T[ static_cast<std::size_t>( NumSamples + NumExtraSamples ) * Nt ] );
+    }
   }
+  Sample<T, NumAuxSamples_> Bootstrap( int NumSamples, SeedType Seed );
   void Read ( const std::string &FileName, std::string &GroupName );
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
-  Sample( int NumSamples, int Nt ) { resize( NumSamples, Nt ); }
-  Sample( const std::string &FileName, std::string &GroupName ) { Read( FileName, GroupName ); }
+  Sample( int NumSamples, int Nt ) : NumSamples_{0}, Nt_{0} { resize( NumSamples, Nt ); }
+  Sample( const std::string &FileName, std::string &GroupName ) : NumSamples_{0}, Nt_{0}
+    { Read( FileName, GroupName ); }
   T * operator[]( int Sample )
   {
     if( Sample < idxAux || Sample > NumSamples_ )
@@ -271,7 +520,54 @@ public:
       throw std::out_of_range( "Sample " + std::to_string( Sample ) );
     return & m_pData[static_cast<std::size_t>( Sample + NumExtraSamples ) * Nt_];
   }
+  inline void ZeroSlot( int idxSlot = idxCentral )
+  {
+    if( Nt_ )
+    {
+      T * p{ (*this)[idxSlot] };
+      for( int t = 0; t < Nt_; t++ )
+        *p++ = 0;
+    }
+  }
+  void MakeMean( int idxSlot = idxCentral )
+  {
+    ZeroSlot( idxSlot );
+    if( NumSamples_ )
+    {
+      T * const dst{ (*this)[idxSlot] };
+      const T * src{ (*this)[0] };
+      for( int i = 0; i < NumSamples_; i++ )
+        for( int t = 0; t < Nt_; t++ )
+          dst[t] += *src++;
+      for( int t = 0; t < Nt_; t++ )
+        dst[t] /= NumSamples_;
+    }
+  }
 };
+
+// Perform bootstrap
+template <typename T, int NumAuxSamples_>
+Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumSamples, SeedType Seed )
+{
+  using fint = std::uint_fast32_t;
+  std::mt19937                        engine( Seed );
+  std::uniform_int_distribution<fint> random( 0, NumSamples - 1 );
+  Sample<T, NumAuxSamples_>           boot( NumSamples, Nt_ );
+
+  // Compute the mean, then copy all the extra info to the bootstrap I will return
+  MakeMean();
+  std::copy( (*this)[idxAux], (*this)[0], boot[idxAux] );
+
+  // Now make the bootstrap replicas
+  T * dst{ boot[0] };
+  for( int i = 0; i < NumSamples; i++ )
+  {
+    const T * src{ (*this)[ random( engine ) ] };
+    for( int t = 0; t < Nt_; t++ )
+      *dst++ = *src++;
+  }
+  return boot;
+}
 
 // Read from file. If GroupName empty, read from first group and return name in GroupName
 template <typename T, int NumAuxSamples_>
@@ -504,9 +800,12 @@ struct TrajList
 
 // This is a list of all the contractions we've been asked to process
 class Manifest : public std::map<std::string, TrajList> {
+  void Construct( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore );
 public:
   // Process list of files on the command-line, breaking them up into individual trajectories
   Manifest( const std::vector<std::string> &Files, const std::string &sIgnore );
+  Manifest( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore )
+  { Construct( Files, Ignore ); }
 };
 
 struct CommandLine {
@@ -522,6 +821,7 @@ struct CommandLine {
     : Switch{ switch_ }, Type{ type_ }, Default{ default_ } {}
   };
   
+  std::string              Name;
   std::vector<std::string> Args;
   SwitchMap                Switches;
   
@@ -529,7 +829,11 @@ private:
   static void SkipPastSep( const char * & p );
   
 public:
-  CommandLine( int argc, char *argv[], const std::vector<SwitchDef> &defs );
+  void Parse( int argc, const char *argv[], const std::vector<SwitchDef> &defs );
+
+  CommandLine() = default;
+  CommandLine( int argc, const char *argv[], const std::vector<SwitchDef> &defs )
+  { Parse( argc, argv, defs ); }
 
   inline bool GotSwitch( const std::string &SwitchName ) {
     return Switches.find( SwitchName ) != Switches.end(); }
@@ -543,17 +847,20 @@ public:
     return iNumValues;
   }
   
-  template<typename T> inline T SwitchValue( const std::string &Switch, int Subscript = 0 ) {
+  inline const std::vector<std::string> & SwitchStrings( const std::string &Switch )
+  {
     SwitchMap::const_iterator it = Switches.find( Switch );
-    if( it == Switches.end() ) {
-      std::cerr << "Switch \"" << Switch << "\" not found" << std::endl;
-      exit( EXIT_FAILURE );
-    }
+    if( it == Switches.end() )
+      throw std::invalid_argument( "Switch \"" + Switch + "\" not found" );
     const std::vector<std::string> &v{ it->second };
-    if( static_cast<std::size_t>( Subscript ) >= v.size() ) {
-      std::cerr << "Switch \"" << Switch << "\", Subscript " << Subscript << " not found" << std::endl;
-      exit( EXIT_FAILURE );
-    }
+    return v;
+  }
+
+  template<typename T> inline T SwitchValue( const std::string &Switch, int Subscript = 0 )
+  {
+    const std::vector<std::string> &v{ SwitchStrings( Switch ) };
+    if( static_cast<std::size_t>( Subscript ) >= v.size() )
+      throw std::invalid_argument( "Switch " + Switch + "[" + std::to_string( Subscript ) + "] not found" );
     return FromString<T>( v[Subscript] );
   }
 };
