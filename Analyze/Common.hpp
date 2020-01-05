@@ -1,6 +1,6 @@
-/*************************************************************************************
- 
- Common utilities (no dependencies other than c++ stdlib)
+/**
+
+ Mike's lattice QCD utilities
  
  Source file: Common.hpp
  
@@ -23,24 +23,32 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  
  See the full license in the file "LICENSE" in the top level distribution directory
- *************************************************************************************/
-/*  END LEGAL */
+**/
+
+// Common utilities (no dependencies other than c++ stdlib)
 
 #ifndef Common_hpp
 #define Common_hpp
 
+#include <array>
 #include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <climits>
 #include <complex>
+#include <fstream>
 #include <iostream>
 #include <map>
+#include <random>
+#include <regex>
 #include <string>
 #include <vector>
-#include <H5Cpp.h>
 
-#include <LatAnalyze/Statistics/Dataset.hpp>
+// HDF5 Library
+#include <H5Cpp.h>
+#include <H5CompType.h>
+
+//#include <LatAnalyze/Statistics/Dataset.hpp>
 
 // Default output file extension for binary data
 #ifndef DEF_FMT
@@ -56,10 +64,21 @@
 
 BEGIN_COMMON_NAMESPACE
 
+// Compare two strings, case insensitive
+inline bool EqualIgnoreCase(const std::string & s1, const std::string & s2)
+{
+  const std::size_t Len{ s1.size() };
+  bool bEqual = ( s2.size() == Len );
+  for( std::size_t i = 0; bEqual && i < Len; i++ )
+    bEqual = ( s1[ i ] == s2[ i ] ) || ( std::toupper( s1[ i ] ) == std::toupper( s2[ i ] ) );
+  return bEqual;
+}
+
 namespace Gamma
 {
   enum class Algebra
   {
+    Unknown = -1,
     MinusGamma5,        // 0
     Gamma5,             // 1
     MinusGammaT,        // 2
@@ -96,6 +115,9 @@ namespace Gamma
   static constexpr unsigned int                nGamma = 32;
   extern const std::array<std::string, nGamma> name;      // Long name, per Grid
   extern const std::array<std::string, nGamma> nameShort; // My abbreviations
+  std::string NameShort( Algebra alg, const char * pszPrefix = nullptr );
+  std::ostream& operator<<(std::ostream& os, const Algebra &a);
+  std::istream& operator>>(std::istream& is, Algebra &a);
 };
 
 extern const std::string sBootstrap;
@@ -104,11 +126,7 @@ extern const std::string sModel;
 using SeedType = unsigned int;
 
 // Does the specified file exist?
-inline bool FileExists(const std::string& Filename)
-{
-  struct stat buf;
-  return stat(Filename.c_str(), &buf) != -1;
-}
+bool FileExists( const std::string& Filename );
 
 extern const double NaN;
 
@@ -152,21 +170,72 @@ inline std::ostream & operator<<( std::ostream &os, const ValWithEr &v )
   return os << v.Central << " " << v.ErLow << " " << v.ErHigh << " " << v.Check;
 }
 
-// Attributes for filenames in form base.type.seq.ext
+// Generic representation of momentum
+struct Momentum
+{
+  int x;
+  int y;
+  int z;
+  Momentum( int _x, int _y, int _z ) : x(_x), y(_y), z(_z) {}
+  inline explicit operator bool() const { return x!=0 || y!=0 || z!=0; }
+  inline int p2() const { return x * x + y * y + z * z; }
+  inline std::string p2_string( const std::string &separator ) const {
+    std::string s{ separator };
+    s.append( "p2" );
+    s.append( separator );
+    s.append( std::to_string( p2() ) );
+    return s;
+  }
+  std::string to_string( const std::string &separator, bool bNegative = false ) const {
+    return std::to_string( bNegative ? -x : x ) + separator
+    + std::to_string( bNegative ? -y : y ) + separator
+    + std::to_string( bNegative ? -z : z );
+  }
+  std::string to_string4d( const std::string &separator, bool bNegative = false ) const {
+    return to_string( separator, bNegative ) + separator + "0";
+  }
+};
+
+// Attributes for filenames in form base.type.seed.ext
 struct FileNameAtt
 {
-  std::string Filename; // Full name
-  std::string Base;
+  std::string Filename; // Full (and unadulterated) original filename
+  std::string Dir;      // Directory part of the filename (with trailing '/')
+  std::string Base;     // Base of the filename
   std::string Type;
-  SeedType    Seed;
+  std::string SeedString;
+  bool        bSeedNum = false;
+  SeedType    Seed = 0; // Numeric value of SeedString, but only if bSeedNum == true
   std::string Ext;
-  std::vector<int> op;
-  explicit FileNameAtt( const std::string &Filename );
-  FileNameAtt( const std::string &Filename, std::vector<std::string> &OpNames );
+  //std::vector<int> op;
+  // reset contents
+  void clear()
+  {
+    Filename.clear();
+    Dir.clear();
+    Base.clear();
+    Type.clear();
+    SeedString.clear();
+    bSeedNum = false;
+    Seed = 0;
+    Ext.clear();
+    //op.clear();
+  }
+
+  void Parse( const std::string &Filename_ );
+  FileNameAtt() = default;
+  explicit FileNameAtt( const std::string &Filename ) { Parse( Filename ); }
+  //FileNameAtt( const std::string &Filename, std::vector<std::string> &OpNames );
 };
 
 // Make a filename "Base.Type.seed.Ext"
 std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext);
+
+// Strip out timeslice info from a string if present
+void ExtractTimeslice( std::string &s, bool &bHasTimeslice, int & Timeslice );
+
+// Replace momentum in string with momentum squared if present
+void ReplaceP2( std::string &s, bool &bGotMomentum, int &P2, bool IgnoreSubsequentZero = true );
 
 // For now, this is just an alias
 using Correlator = std::vector<std::complex<double>>;
@@ -211,16 +280,6 @@ public:
   //{ ResizeCorrelators( Nt ); }
 };
 
-// Compare two strings, case insensitive
-inline bool EqualIgnoreCase(const std::string & s1, const std::string & s2)
-{
-  const std::size_t Len{ s1.size() };
-  bool bEqual = ( s2.size() == Len );
-  for( std::size_t i = 0; bEqual && i < Len; i++ )
-    bEqual = ( s1[ i ] == s2[ i ] ) || ( std::toupper( s1[ i ] ) == std::toupper( s2[ i ] ) );
-  return bEqual;
-}
-
 // Generic conversion from a string to any type
 template<typename T> inline T FromString( const std::string &String ) {
   T t;
@@ -229,27 +288,27 @@ template<typename T> inline T FromString( const std::string &String ) {
     throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
   return t;
 }
+
 // Converting a string to a string makes a copy
 template<> inline std::string FromString<std::string>( const std::string &String )
   { return String; }
 
-// Generic representation of momentum
-struct Momentum
-{
-  const int x;
-  const int y;
-  const int z;
-  Momentum( int _x, int _y, int _z ) : x(_x), y(_y), z(_z) {}
-  inline explicit operator bool() const { return x!=0 || y!=0 || z!=0; }
-  std::string to_string( const std::string &separator, bool bNegative = false ) const {
-    return std::to_string( bNegative ? -x : x ) + separator
-    + std::to_string( bNegative ? -y : y ) + separator
-    + std::to_string( bNegative ? -z : z );
+// Generic conversion from a string to an array of any type (comma or space separated)
+template<typename T> inline std::vector<T> ArrayFromString( const std::string &String ) {
+  std::string s{ String };
+  for( std::size_t pos = 0; ( pos = s.find( ',', pos ) ) != std::string::npos; )
+    s[pos] = ' ';
+  std::istringstream iss( s );
+  T t;
+  std::vector<T> v;
+  while( iss >> std::ws && !iss.eof() )
+  {
+    if( !( iss >> t ) )
+      throw std::invalid_argument( "ArrayFromString: \"" + String + "\" is not type " + typeid(T).name() );
+    v.push_back( t );
   }
-  std::string to_string4d( const std::string &separator, bool bNegative = false ) const {
-    return to_string( separator, bNegative ) + separator + "0";
-  }
-};
+  return v;
+}
 
 // My implementation of H5File - adds a definition of complex type
 class H5File : public H5::H5File {
@@ -286,10 +345,43 @@ template<typename ST> struct SampleTraits<std::complex<ST>, typename std::enable
 template <typename T>
 class CorrelatorFile
 {
-  int NumOps_;
-  int Nt_;
+  // Data members
+public:
+  using scalar_type = typename SampleTraits<T>::scalar_type;
+  static constexpr int scalar_size { sizeof( scalar_type ) };
+private:
+  int NumOps_ = 0;
+  int Nt_ = 0;
   std::unique_ptr<T[]> m_pData;
   std::vector<Gamma::Algebra> Alg_;
+public:
+  FileNameAtt Name_;
+  //std::string Prefix; // this is the processed prefix name
+  bool bHasTimeslice = false;
+  int  Timeslice_ = 0;
+  // Swap function so that this type is sortable
+  /*friend void swap( CorrelatorFile &l, CorrelatorFile &r )
+  {
+    int i;
+    i = l.NumOps_;
+    l.NumOps_ = r.NumOps_;
+    r.NumOps_ = i;
+    i = l.Nt_;
+    l.Nt_ = r.Nt_;
+    r.Nt_ = i;
+    std::swap( l.m_pData, r.m_pData );
+    std::swap( l.Alg_, r.Alg_ );
+    //swap( l.Name_, r.Name_ );
+    std::swap( l.Prefix, r.Prefix );
+    i = l.Timeslice_;
+    l.Timeslice_ = r.Timeslice_;
+    r.Timeslice_ = i;
+    bool b = l.bHasTimeslice;
+    l.bHasTimeslice = r.bHasTimeslice;
+    r.bHasTimeslice = b;
+  }*/
+  // Member functions
+private:
   inline int GammaIndex( Gamma::Algebra g ) const
   {
     int idx;
@@ -298,10 +390,10 @@ class CorrelatorFile
     return idx;
   }
 public:
-  using scalar_type = typename SampleTraits<T>::scalar_type;
-  static constexpr int scalar_size { sizeof( scalar_type ) };
   inline int NumOps() const { return NumOps_; }
   inline int Nt() const { return Nt_; }
+  inline int Timeslice() const { return bHasTimeslice ? Timeslice_ : 0; }
+  inline const std::vector<Gamma::Algebra> &Alg() { return Alg_; }
   void resize( int NumOps, int Nt )
   {
     if( NumOps_ != NumOps )
@@ -310,13 +402,16 @@ public:
     {
       NumOps_ = NumOps;
       Nt_ = Nt;
-      m_pData.reset( new T[ static_cast<std::size_t>( NumOps * NumOps ) * Nt ] );
+      if( NumOps_ == 0 || Nt_ == 0 )
+        m_pData.reset( nullptr );
+      else
+        m_pData.reset( new T[ static_cast<std::size_t>( NumOps * NumOps ) * Nt ] );
     }
   }
-  CorrelatorFile() : NumOps_{0}, Nt_{0} {}
   void Read ( const std::string &FileName, std::string &GroupName, std::vector<Gamma::Algebra> &Alg,
-             Gamma::Algebra gammaUnspecified = Gamma::Algebra::Identity );
+             const int * pTimeslice = nullptr );
   //void Write( const std::string &FileName, const char * pszGroupName = nullptr );
+  void WriteSummaries ( const std::string &Prefix, const std::vector<Common::Gamma::Algebra> &AlgSpecific );
   T * operator[]( int Sample )
   {
     if( Sample < 0 || Sample >= NumOps_ * NumOps_ )
@@ -335,13 +430,40 @@ public:
   { return (*this)[ GammaIndex( gSink ) * NumOps_ + GammaIndex( gSource )]; }
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( NumOps_ * NumOps_ * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
+  // Constructors (copy operations missing for now - add them if they become needed)
+  CorrelatorFile() {}
+  CorrelatorFile( CorrelatorFile && ) = default; // Move constructor
+  CorrelatorFile(const std::string &FileName, std::string &GroupName, std::vector<Gamma::Algebra> &Alg,
+                 int * pTimeslice = nullptr )
+  { Read( FileName, GroupName, Alg, pTimeslice ); }
+  // Operators
+  CorrelatorFile& operator=(CorrelatorFile && r) = default; // Move assignment
 };
+
+using CorrelatorFileC = CorrelatorFile<std::complex<double>>;
+using CorrelatorFileD = CorrelatorFile<double>;
 
 // Read from file. If GroupName empty, read from first group and return name in GroupName
 template <typename T>
 void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupName,
-                              std::vector<Gamma::Algebra> &Alg, Gamma::Algebra gammaUnspecified )
+                              std::vector<Gamma::Algebra> &Alg, const int * pTimeslice )
 {
+  // Parse the name. Not expecting a type, so if present, put it back on the end of Base
+  Name_.Parse( FileName );
+  if( !Name_.Type.empty() )
+  {
+    // Not sure whether I should bother doing this?
+    Name_.Base.append( 1, '.' );
+    Name_.Base.append( Name_.Type );
+    Name_.Type.clear();
+  }
+  if( !Name_.bSeedNum )
+    throw std::runtime_error( "Configuration number missing from " + FileName );
+  // Strip out timeslice info if present
+  bHasTimeslice = pTimeslice;
+  if( bHasTimeslice )
+    Timeslice_ = * pTimeslice;
+  // Now load the file
   H5::H5File f;
   H5::Group  g;
   OpenHdf5FileGroup( f, g, FileName, GroupName );
@@ -352,7 +474,7 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
   H5::Exception::dontPrint();
   try // to load a single correlator
   {
-    if( Alg.size() == 0 || ( Alg.size() == 1 && Alg[0] == gammaUnspecified ) )
+    if( Alg.size() == 0 || ( Alg.size() == 1 && Alg[0] == Gamma::Algebra::Unknown ) )
     {
       H5::DataSet ds = g.openDataSet( "correlator" );
       H5::DataSpace dsp = ds.getSpace();
@@ -364,7 +486,8 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
         if( Dim[0] <= std::numeric_limits<int>::max() )
         {
           resize( 1, static_cast<int>( Dim[0] ) );
-          Alg_.resize( 1, gammaUnspecified );
+          Alg_.resize( 1 );
+          Alg_[0] = Gamma::Algebra::Unknown;
           ds.read( (*this)[0], H5File::ComplexType( scalar_size ) );
           bOK = true;
         }
@@ -476,6 +599,82 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
   }
 }
 
+template <typename T>
+void CorrelatorFile<T>::WriteSummaries ( const std::string &Prefix, const std::vector<Gamma::Algebra> &AlgSpecific )
+{
+  static const char sep[] = " ";
+  static const char Comment[] = "# ";
+  static const char NewLine[] = "\n";
+
+  const char * SummaryNames[4] = { "corr", "mass", "cosh", "sinh" };
+
+  static const char FieldNames[] = "t y y_low y_high y_check";
+  static const char FieldNames2[] = " im im_low im_high im_check";
+  static const char * SummaryHeader[] =
+  {
+    "correlator",
+    "mass",
+    "cosh mass",
+    "sinh mass",
+  };
+
+  static const int NumSummaries{ static_cast<int>( sizeof( SummaryNames ) / sizeof( SummaryNames[0] ) ) };
+
+  assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
+  const int nt{ Nt() };
+  const std::vector<Gamma::Algebra> &Alg{ AlgSpecific.size() ? AlgSpecific : Alg_ };
+  const int NumOps{ static_cast<int>( Alg.size() ) };
+  for( int Snk = 0; Snk < NumOps; Snk++ )
+  {
+    static const char pszSep[] = "_";
+    std::string sSnk{ Common::Gamma::NameShort( Alg[Snk], pszSep ) };
+    for( int Src = 0; Src < NumOps; Src++ )
+    {
+      std::string sSrc{ Common::Gamma::NameShort( Alg[Src], pszSep ) };
+      const std::string sOutBaseShort{ Name_.Base + sSnk + sSrc };
+      const std::string sOutBase{ Prefix + sOutBaseShort };
+      for(int f = 0; f < NumSummaries; f++)
+      {
+        std::string sOutFileName{MakeFilename(sOutBase, SummaryNames[f], Name_.Seed, TEXT_EXT)};
+        std::ofstream s( sOutFileName );
+        s << Comment << SummaryHeader[f] << NewLine << Comment << sOutBaseShort << "\n# Seed "
+          << Name_.Seed << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" )
+          << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
+        const T * const pc = (*this)( Alg[Snk], Alg[Src] );
+        for( int t = 0; t < nt; t++ )
+        {
+          if( f == 0 )
+          {
+            double re = pc[t].real();
+            double im = pc[t].imag();
+            s << t << sep << re << sep << 0 << sep << 0 << sep << 1
+                   << sep << im << sep << 0 << sep << 0 << sep << 1 << std::endl;
+          }
+          else
+          {
+            double DThis;
+            switch(f)
+            {
+              case 1: // mass
+                DThis = std::log( abs( pc[t].real() / pc[(t + 1 + nt) % nt].real() ) );
+                break;
+              case 2: // cosh mass
+                DThis = std::acosh((pc[(t - 1 + nt) % nt].real() + pc[(t + 1) % nt].real()) / (2 * pc[t].real()));
+                break;
+                case 3: // sinh mass
+                DThis = std::asinh((pc[(t - 1 + nt) % nt].real() - pc[(t + 1) % nt].real()) / (2 * pc[t].real()));
+                break;
+              default:
+                DThis = 0;
+            }
+            s << t << sep << DThis << sep << 0 << sep << 0 << sep << 1 << std::endl;
+          }
+        }
+      }
+    }
+  }
+}
+
 // This is for a sample of correlators. There is a central replica, specified aux replicas and variable number of samples
 
 template <typename T, int NumAuxSamples_ = 0>
@@ -502,7 +701,9 @@ public:
       m_pData.reset( new T[ static_cast<std::size_t>( NumSamples + NumExtraSamples ) * Nt ] );
     }
   }
-  Sample<T, NumAuxSamples_> Bootstrap( int NumSamples, SeedType Seed );
+  bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
+      static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
+  Sample<T, NumAuxSamples_> Bootstrap( int NumBootSamples, SeedType Seed );
   void Read ( const std::string &FileName, std::string &GroupName );
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   Sample( int NumSamples, int Nt ) : NumSamples_{0}, Nt_{0} { resize( NumSamples, Nt ); }
@@ -545,14 +746,17 @@ public:
   }
 };
 
+using SampleC = Sample<std::complex<double>>;
+using SampleD = Sample<double>;
+
 // Perform bootstrap
 template <typename T, int NumAuxSamples_>
-Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumSamples, SeedType Seed )
+Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumBootSamples, SeedType Seed )
 {
   using fint = std::uint_fast32_t;
   std::mt19937                        engine( Seed );
-  std::uniform_int_distribution<fint> random( 0, NumSamples - 1 );
-  Sample<T, NumAuxSamples_>           boot( NumSamples, Nt_ );
+  std::uniform_int_distribution<fint> random( 0, NumSamples_ - 1 );
+  Sample<T, NumAuxSamples_>           boot( NumBootSamples, Nt_ );
 
   // Compute the mean, then copy all the extra info to the bootstrap I will return
   MakeMean();
@@ -560,7 +764,7 @@ Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumSamples, 
 
   // Now make the bootstrap replicas
   T * dst{ boot[0] };
-  for( int i = 0; i < NumSamples; i++ )
+  for( int i = 0; i < NumBootSamples; i++ )
   {
     const T * src{ (*this)[ random( engine ) ] };
     for( int t = 0; t < Nt_; t++ )
@@ -784,30 +988,6 @@ void ReadRealArray(std::vector<double> &buffer, const std::string &FileName,
                    std::string &GroupName,
                    const std::string &ObjectName = std::string( "correlator" ) );
 
-struct TrajFile
-{
-  const std::string Filename;  // Name of the file
-  explicit TrajFile( const std::string & Filename_ ) : Filename{ Filename_ } {}
-};
-
-// This describes one contraction and each of its trajectory files
-struct TrajList
-{
-  std::string Name;                     // name of the contraction
-  std::map<int, std::unique_ptr<TrajFile>> TrajFile;  // list of all the files, sorted by trajectory number
-  TrajList( const std::string &Name_ ) : Name{ Name_ } {}
-};
-
-// This is a list of all the contractions we've been asked to process
-class Manifest : public std::map<std::string, TrajList> {
-  void Construct( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore );
-public:
-  // Process list of files on the command-line, breaking them up into individual trajectories
-  Manifest( const std::vector<std::string> &Files, const std::string &sIgnore );
-  Manifest( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore )
-  { Construct( Files, Ignore ); }
-};
-
 struct CommandLine {
   using SwitchMap = std::map<std::string, std::vector<std::string>>;
   using SwitchPair = std::pair<std::string, std::vector<std::string>>;
@@ -851,7 +1031,10 @@ public:
   {
     SwitchMap::const_iterator it = Switches.find( Switch );
     if( it == Switches.end() )
-      throw std::invalid_argument( "Switch \"" + Switch + "\" not found" );
+    {
+      static const std::vector<std::string> v;
+      return v;
+    }
     const std::vector<std::string> &v{ it->second };
     return v;
   }
@@ -866,6 +1049,11 @@ public:
 };
 
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl);
+
+// Make summary files of this data set
+extern const char * SummaryNames[4];
+// Make summary files of a bootstrap of a correlator
+void SummariseBootstrapCorr(const SampleC &out, const std::string & sOutFileBase, SeedType Seed );//, int momentum_squared);
 
 END_COMMON_NAMESPACE
 #endif // Common_hpp

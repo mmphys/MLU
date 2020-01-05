@@ -18,7 +18,8 @@ CXXFLAGS  := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(LatAnalyzeBuild) $(LatAn
 CXXFLAGS  := $(filter-out -O%,$(CXXFLAGS))
 
 # De-duplicate library (-L) paths and libraries (-l), followed by other options
-LDLIBS    := -lHadrons -lGrid -lLatAnalyze -lLexers $(sort $(shell $(GridConf) --libs) $(shell $(LatAnConf) --libs))
+#LDLIBS    := -lHadrons -lGrid -lLatAnalyze -lLexers $(sort $(shell $(GridConf) --libs) $(shell $(LatAnConf) --libs))
+LDLIBS    := -lHadrons -lGrid $(sort $(shell $(GridConf) --libs) $(shell $(LatAnConf) --libs))
 LDFLAGS   := $(shell $(GridConf) --ldflags) $(shell $(LatAnConf) --ldflags)
 LDPATHS   := $(sort $(patsubst -L%,%,$(filter -L%,$(LDFLAGS))))
 LDFLAGS   := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(LatAnalyzeBuild)/lib/.libs $(GridPre)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
@@ -35,7 +36,7 @@ all: $(target)
 
 MultiFit: MultiFit.o Common.o CommonLatAn.o
 
-bootstrap: bootstrap.o Common.o CommonLatAn.o CommonGrid.o
+bootstrap: bootstrap.o Common.o
 
 hlxml: hlxml.o Common.o
 

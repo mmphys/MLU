@@ -1,6 +1,6 @@
-/*************************************************************************************
- 
- Common utilities (no dependencies other than c++ stdlib)
+/**
+
+ Mike's lattice QCD utilities
  
  Source file: Common.cpp
  
@@ -23,8 +23,9 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  
  See the full license in the file "LICENSE" in the top level distribution directory
- *************************************************************************************/
-/*  END LEGAL */
+**/
+
+// Common utilities (no dependencies other than c++ stdlib)
 
 #include "Common.hpp"
 
@@ -104,7 +105,46 @@ namespace Gamma
     "g-sZT",
     "gsZT",
   };
+
+  std::string NameShort( Algebra alg, const char * pszPrefix )
+  {
+    std::string sName;
+    if( alg != Algebra::Unknown )
+    {
+      if( pszPrefix )
+        sName.append( pszPrefix );
+      int idx = static_cast<int>( alg );
+      sName.append( ( idx >= 0 && idx < nGamma ) ? nameShort[idx] : "?" );
+    }
+    return sName;
+  }
+
+  std::ostream& operator<<(std::ostream& os, const Algebra &a)
+  {
+    return os << NameShort( a );
+  }
+
+  std::istream& operator>>(std::istream& is, Algebra &a)
+  {
+    std::string s;
+    is >> s;
+    int i;
+    for( i = 0; i < nGamma && !EqualIgnoreCase( s, nameShort[i] ); i++ )
+      ;
+    if( i < nGamma )
+      a = static_cast<Algebra>( i );
+    else
+      is.setstate( std::ios_base::failbit );
+    return is;
+  }
 };
+
+// Does the specified file exist?
+bool FileExists( const std::string& Filename )
+{
+  struct stat buf;
+  return stat(Filename.c_str(), &buf) != -1;
+}
 
 const std::string sBootstrap{ "bootstrap" };
 const std::string sModel{ "model" };
@@ -133,13 +173,15 @@ void ValWithEr::Get( double Central_, std::vector<double> &Data, std::size_t Cou
 }
 
 // These are the attributes I like to use in my filenames
-FileNameAtt::FileNameAtt( const std::string &Filename ) : Seed( 0 )
+void FileNameAtt::Parse( const std::string &Filename_ )
 {
+  clear();
+  Filename = Filename_;
   std::size_t pos = Filename.find_last_of( '/' );
   if( pos == std::string::npos )
     pos = 0;
   else
-    pos++;
+    Dir = Filename.substr( 0, ++pos );
   Base = Filename.substr( pos );
   int i = 0;
   for( ; i < 3 && ( pos = Base.find_last_of( '.' ) ) != std::string::npos ; i++ ) {
@@ -148,8 +190,10 @@ FileNameAtt::FileNameAtt( const std::string &Filename ) : Seed( 0 )
         Ext = Base.substr( pos + 1 );
         break;
       case 1:
+        SeedString = Base.substr( pos + 1 );
         try {
-          Seed = FromString<unsigned int>( Base.substr( pos + 1 ) );
+          Seed = FromString<unsigned int>( SeedString );
+          bSeedNum = true;
         } catch(...) {
           std::cout << "Ignoring invalid seed in " << Filename << std::endl;
         }
@@ -160,7 +204,7 @@ FileNameAtt::FileNameAtt( const std::string &Filename ) : Seed( 0 )
     }
     Base.resize(pos);
   }
-  if( i < 3 ) {
+  /*if( i < 3 ) {
     std::cout << "Warning: Missing type ";
     if( i < 2 ) {
       std::cout << "+ Seq ";
@@ -169,13 +213,13 @@ FileNameAtt::FileNameAtt( const std::string &Filename ) : Seed( 0 )
       }
     }
     std::cout << "in " << Filename << std::endl;
-  }
+  }*/
 }
 
 // The base should end with an operator in my list
-FileNameAtt::FileNameAtt( const std::string &Filename, std::vector<std::string> &OpNames )
-  : FileNameAtt( Filename )
+/*FileNameAtt::FileNameAtt( const std::string &Filename, std::vector<std::string> &OpNames )
 {
+  Parse( Filename );
   char Sep = '_';
   std::size_t pos = Base.find_last_of( Sep );
   if( pos != std::string::npos ) {
@@ -203,7 +247,7 @@ FileNameAtt::FileNameAtt( const std::string &Filename, std::vector<std::string> 
     }
   }
   throw std::runtime_error( "Invalid operator names at end of " + Base );
-}
+}*/
 
 // Make a filename "Base.Type.seed.Ext"
 std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext)
@@ -219,22 +263,67 @@ std::string MakeFilename(const std::string &Base, const std::string &Type, SeedT
   return s;
 }
 
-// Return the same HDF5 complex type Grid uses
-#ifndef __INTEL_COMPILER
-// mutex not available for this compiler, so initialisation not thread-safe
-static std::mutex ComplexTypeSync;
-#endif
+// Strip out timeslice info from a string if present
+void ExtractTimeslice( std::string &Prefix, bool &bHasTimeslice, int &Timeslice )
+{
+  std::smatch match;
+  static const std::regex pattern{ R"(_[tT]_?([0-9]+))" };
+  while( std::regex_search( Prefix, match, pattern  ) )
+  {
+    int ThisTimeslice = std::stoi( match[1] );
+    if( !bHasTimeslice )
+    {
+      Timeslice = std::stoi( match[1] );
+      bHasTimeslice = true;
+    }
+    else if( ThisTimeslice != Timeslice )
+      throw std::runtime_error( "Multiple momenta: " + std::to_string(Timeslice) + " and " + std::to_string(ThisTimeslice) );
+    Prefix = match.prefix();
+    Prefix.append( match.suffix() );
+  }
+}
 
+// Replace momentum with momentum squared
+void ReplaceP2( std::string &Prefix, bool &bGotMomentum, int &P2, bool IgnoreSubsequentZero )
+{
+  std::smatch match;
+  static const std::regex pattern{ R"(_[pP]_(-?[0-9]+)_(-?[0-9]+)_(-?[0-9]+))" };
+  while( std::regex_search( Prefix, match, pattern  ) )
+  {
+    int px{ std::stoi( match[1] ) };
+    int py{ std::stoi( match[2] ) };
+    int pz{ std::stoi( match[3] ) };
+    int this_p2 = px * px + py * py + pz * pz;
+    if( !bGotMomentum )
+    {
+      bGotMomentum = true;
+      P2 = this_p2;
+    }
+    else if( this_p2 && this_p2 != P2 )
+      throw std::runtime_error( "Multiple momenta: " + std::to_string(P2) + " and " + std::to_string(this_p2) );
+    Prefix = match.prefix();
+    Prefix.append( match.suffix() );
+  }
+  if( bGotMomentum )
+  {
+    Prefix.append( "_p2_" );
+    Prefix.append( std::to_string( P2 ) );
+  }
+}
+
+// Return the same HDF5 complex type Grid uses
 H5::CompType & H5File::ComplexType( int fpsize )
 {
-  static bool bInitialised = false;
   static H5::CompType m_Complexf(sizeof(std::complex<float>));
   static H5::CompType m_Complexd(sizeof(std::complex<double>));
   static H5::CompType m_Complexl(sizeof(std::complex<long double>));
   {
 #ifndef __INTEL_COMPILER
+    // mutex not available for this compiler, so initialisation not thread-safe
+    static std::mutex ComplexTypeSync;
     std::lock_guard<std::mutex> guard( ComplexTypeSync );
 #endif
+    static bool bInitialised = false;
     if( !bInitialised ) {
       m_Complexf.insertMember("re", 0 * sizeof(float), H5::PredType::NATIVE_FLOAT);
       m_Complexf.insertMember("im", 1 * sizeof(float), H5::PredType::NATIVE_FLOAT);
@@ -341,129 +430,6 @@ void ReadRealArray(std::vector<double> &buffer, const std::string &FileName,
   for( hsize_t t = 0; t < Nt; ++t )
     if( !std::isfinite( buffer[t] ) )
        throw std::runtime_error( "Error: Infinite/NaN values in " + FileName );
-}
-
-enum ExtractFilenameReturn {Good, Bad, No_trajectory};
-
-// Extract the contraction name and trajectory number from filename
-static ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, std::string &Contraction, int &traj)
-{
-  ExtractFilenameReturn r{Bad};
-  Contraction.clear();
-  traj = 0;
-  auto pos = Filename.find_last_of('/');
-  if( pos == std::string::npos )
-    pos = 0;
-  else
-    pos++;
-  auto delim = Filename.find_first_of('.', pos);
-  if( delim != std::string::npos )
-  {
-    Contraction = Filename.substr(pos, delim - pos);
-    pos = delim + 1;
-    delim = Filename.find_first_of('.', pos);
-    if( delim != std::string::npos && delim != pos )
-    {
-      r = Good;
-      while( r == Good && pos < delim )
-      {
-        auto c = Filename[pos++] - '0';
-        if( c >=0 && c < 10 )
-          traj = traj * 10 + c;
-        else
-          r = No_trajectory;
-      }
-    }
-  }
-  return r;
-}
-
-void Manifest::Construct(const std::vector<std::string> &Args, const std::vector<std::string> &Ignore)
-{
-  // Now walk the list of arguments.
-  // Any file that's not in the ignore list gets added to the manifest
-  if( Args.size() == 0 )
-    return;
-  bool parsed = true;
-  std::map<std::string, TrajList> & Contractions = (* this);
-  for( const std::string &Filename : Args )
-  {
-    // See whether this file is in the ignore list
-    std::size_t iIgnore = 0;
-    while( iIgnore < Ignore.size() && Ignore[iIgnore].compare(Filename) )
-      iIgnore++;
-    if( iIgnore < Ignore.size() )
-      std::cout << "Ignoring " << Filename << std::endl;
-    else if( !FileExists(Filename))
-    {
-      parsed = false;
-      std::cout << "Error: " << Filename << " doesn't exist" << std::endl;
-    }
-    else
-    {
-      std::string Contraction;
-      int         traj;
-      switch( ExtractFilenameParts( Filename, Contraction, traj ) )
-      {
-        case Good:
-        {
-          auto itc = Contractions.find( Contraction );
-          if( itc == Contractions.end() )
-            itc = Contractions.emplace( Contraction, TrajList( Contraction ) ).first;
-          TrajList & cl{ itc->second };
-          if( cl.TrajFile.size() == 0 )
-            cl.Name = Contraction;
-          auto it = cl.TrajFile.find( traj );
-          if( it == cl.TrajFile.end() ) {
-            cl.TrajFile.emplace( traj, new TrajFile( Filename ));
-          }
-          else
-          {
-            const Common::TrajFile &tf{ *it->second };
-            if( !Filename.compare( tf.Filename ) )
-              std::cout << "Ignoring repetition of " << Filename << std::endl;
-            else
-            {
-              parsed = false;
-              std::cout << "Error " << Filename << " conflicts with " << tf.Filename << std::endl;
-            }
-          }
-        }
-          break;
-          
-        case No_trajectory:
-          std::cout << "Ignoring non-numeric trajectory " << Filename << std::endl;
-          break;
-          
-        default:
-          parsed = false;
-          std::cout << "Error: " << Filename << " is not a contraction file" << std::endl;
-          break;
-      }
-    }
-  }
-  if( !parsed )
-    throw std::runtime_error( "Error parsing command-line arguments" );
-}
-
-Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgnore)
-{
-  // Get the list of files to ignore
-  std::vector<std::string> Ignore;
-  for( std::size_t start = 0; start < sIgnore.length() ; ) {
-    auto end = sIgnore.find(':', start);
-    std::size_t SepLen;
-    if( end == std::string::npos ) {
-      SepLen = 0;
-      end = sIgnore.length();
-    }
-    else
-      SepLen = 1;
-    if( end > start )
-      Ignore.push_back( sIgnore.substr( start, end - start ) );
-    start = end + SepLen;
-  }
-  Construct( Args, Ignore );
 }
 
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl)
@@ -603,4 +569,94 @@ void CommandLine::Parse( int argc, const char *argv[], const std::vector<SwitchD
   }
 }
 
+// Make summary files of a bootstrap of a correlator
+void SummariseBootstrapCorr(const Common::SampleC &out, const std::string & sOutFileBase, SeedType Seed )//, int momentum_squared)
+{
+  static const char sep[] = " ";
+  static const char Comment[] = "# ";
+  static const char NewLine[] = "\n";
+
+  const char * SummaryNames[4] = { "corr", "mass", "cosh", "sinh" };
+
+  static const char FieldNames[] = "t y y_low y_high y_check";
+  static const char FieldNames2[] = " im im_low im_high im_check";
+  static const char * SummaryHeader[] =
+  {
+    "correlator",
+    "mass",
+    "cosh mass",
+    "sinh mass",
+  };
+
+  static const int NumSummaries{ static_cast<int>( sizeof( SummaryNames ) / sizeof( SummaryNames[0] ) ) };
+
+  assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
+  const int nt{ out.Nt() };
+  const int nSample{ out.NumSamples() };
+  std::vector<double> Data( nSample );
+  std::vector<double> DataImag( nSample );
+  for(int f = 0; f < NumSummaries; f++)
+  {
+    std::string sOutFileName{ MakeFilename(sOutFileBase, SummaryNames[f], Seed, TEXT_EXT) };
+    std::ofstream s( sOutFileName );
+    s << Comment << SummaryHeader[f] << NewLine << Comment << sOutFileBase << "\n# Seed " << Seed
+      << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" )
+      << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
+    for(int t = 0; t < nt; t++)
+    {
+      std::size_t Count = 0;
+      if( f == 0 )
+      {
+        const std::complex<double> *pc = out[0] + t;
+        for( int i = 0; i < nSample; i++, pc += nt )
+        {
+          double re = pc->real();
+          double im = pc->imag();
+          if( std::isfinite( re ) && std::isfinite( im ) )
+          {
+            Data[Count] = re;
+            DataImag[Count] = im;
+            Count++;
+          }
+        }
+        pc = out[Common::SampleC::idxCentral] + t;
+        Common::ValWithEr Re( pc->real(), Data, Count );
+        Common::ValWithEr Im( pc->imag(), DataImag, Count );
+        s << t << sep << Re.Central << sep << Re.ErLow << sep << Re.ErHigh
+               << sep << ( static_cast<double>( Count ) / nSample )
+               << sep << Im.Central << sep << Im.ErLow << sep << Im.ErHigh
+               << sep << ( static_cast<double>( Count ) / nSample ) << std::endl;
+      }
+      else
+      {
+        double dCentral = 0;
+        for( int i = Common::SampleC::idxCentral; i < nSample; i++ )
+        {
+          double DThis;
+          switch(f)
+          {
+            case 1: // mass
+              DThis = std::log( abs( out[i][t].real() / out[i][(t + 1 + nt) % nt].real() ) );
+              break;
+            case 2: // cosh mass
+              DThis = std::acosh((out[i][(t - 1 + nt) % nt].real() + out[i][(t + 1) % nt].real()) / (2 * out[i][t].real()));
+              break;
+              case 3: // sinh mass
+              DThis = std::asinh((out[i][(t - 1 + nt) % nt].real() - out[i][(t + 1) % nt].real()) / (2 * out[i][t].real()));
+              break;
+            default:
+              DThis = 0;
+          }
+          if( i == Common::SampleC::idxCentral )
+            dCentral = DThis;
+          else if( std::isfinite( DThis ) )
+            Data[Count++] = DThis;
+        }
+        Common::ValWithEr Re( dCentral, Data, Count );
+        s << t << sep << Re.Central << sep << Re.ErLow << sep << Re.ErHigh << sep
+          << ( static_cast<double>( Count ) / nSample ) << std::endl;
+      }
+    }
+  }
+}
 END_COMMON_NAMESPACE

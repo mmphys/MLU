@@ -1,49 +1,54 @@
-/*
- * bootstrap.cpp - based on ...
- * resample.cpp, part of LatAnalyze 3
- *
- * Copyright (C) 2013 - 2016 Antonin Portelli
- *   Modified           2019 Michael Marshall
- *
- * LatAnalyze 3 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * LatAnalyze 3 is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with LatAnalyze 3.  If not, see <http://www.gnu.org/licenses/>.
- */
+/**
 
-#include "CommonGrid.hpp"
-#include "CommonLatAn.hpp"
+ Mike's lattice QCD utilities
+ 
+ Source file: bootstrap.cpp
+ 
+ Copyright (C) 2019
+ 
+ Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
+ 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ See the full license in the file "LICENSE" in the top level distribution directory
+**/
+
+// Perform a bootstrap
+
+#include "Common.hpp"
+using namespace Common;
+
+//#include "CommonGrid.hpp"
+//#include "CommonLatAn.hpp"
 
 #include <cmath>
 #include <iomanip>
 #include <mutex> // Apparently empty under __INTEL_COMPILER
-#include <LatAnalyze/Core/OptParser.hpp>
-#include <LatAnalyze/Statistics/Dataset.hpp>
-#include <LatAnalyze/Io/Io.hpp>
-#include <LatAnalyze/Io/Hdf5File.hpp>
-#include <H5CompType.h> // HDF5 Library
+#include <set>
+//#include <LatAnalyze/Core/OptParser.hpp>
+//#include <LatAnalyze/Statistics/Dataset.hpp>
+//#include <LatAnalyze/Io/Io.hpp>
+//#include <LatAnalyze/Io/Hdf5File.hpp>
 
 // Default number of bootstrap replicas
 #ifndef DEF_NSAMPLE
 #define DEF_NSAMPLE "10000"
 #endif
 
-using Algebra = Grid::Gamma::Algebra;
-static const std::vector<Algebra> alg = { Algebra::Gamma5, Algebra::GammaTGamma5 };
-static const std::vector<std::string> algNames = { "g5", "gT5" };
-static const int NumAlgebra{ static_cast<int>( alg.size() ) };
-static const int NumCorr{ NumAlgebra * NumAlgebra };
-
 // Show me the averages for each timeslice
-void ShowTimeSliceAvg(const Latan::Dataset<Latan::DMat> &data) {
+/*void ShowTimeSliceAvg(const Latan::Dataset<Latan::DMat> &data) {
   const int nFile{static_cast<int>(data.size())};
   if( !nFile )
     std::cout << "No timeslices to average over!" << std::endl;
@@ -63,64 +68,274 @@ void ShowTimeSliceAvg(const Latan::Dataset<Latan::DMat> &data) {
       std::cout << "C(" << t << ")=" << Avg[t] << std::endl;
     }
   }
+}*/
+
+struct TrajFile
+{
+  bool bHasTimeslice = false;
+  int  Timeslice;
+  TrajFile( bool bHasTimeslice_, int  Timeslice_ ) : bHasTimeslice{ bHasTimeslice_ }, Timeslice{ Timeslice_ } {}
+};
+
+// This describes one contraction and each of its trajectory files
+struct TrajList
+{
+  std::string Name;                     // name of the contraction
+  std::map<std::string, TrajFile> FileInfo; // Filenames with corresponding timeslice info
+  TrajList( const std::string &Name_ ) : Name{ Name_ } {}
+};
+
+// This is a list of all the contractions we've been asked to process
+class Manifest : public std::map<std::string, TrajList> {
+  void Construct( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore );
+public:
+  // Process list of files on the command-line, breaking them up into individual trajectories
+  Manifest( const std::vector<std::string> &Files, const std::string &sIgnore );
+  Manifest( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore )
+  { Construct( Files, Ignore ); }
+};
+
+/*enum ExtractFilenameReturn {Good, Bad, No_trajectory};
+
+// Extract the contraction name and trajectory number from filename
+static ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, std::string &Contraction, int &traj)
+{
+  ExtractFilenameReturn r{Bad};
+  Contraction.clear();
+  traj = 0;
+  auto pos = Filename.find_last_of('/');
+  if( pos == std::string::npos )
+    pos = 0;
+  else
+    pos++;
+  auto delim = Filename.find_first_of('.', pos);
+  if( delim != std::string::npos )
+  {
+    Contraction = Filename.substr(pos, delim - pos);
+    pos = delim + 1;
+    delim = Filename.find_first_of('.', pos);
+    if( delim != std::string::npos && delim != pos )
+    {
+      r = Good;
+      while( r == Good && pos < delim )
+      {
+        auto c = Filename[pos++] - '0';
+        if( c >=0 && c < 10 )
+          traj = traj * 10 + c;
+        else
+          r = No_trajectory;
+      }
+    }
+  }
+  return r;
+}*/
+
+void Manifest::Construct(const std::vector<std::string> &Args, const std::vector<std::string> &Ignore)
+{
+  // Now walk the list of arguments.
+  // Any file that's not in the ignore list gets added to the manifest
+  if( Args.size() == 0 )
+    return;
+  bool parsed = true;
+  std::map<std::string, TrajList> & Contractions = (* this);
+  for( const std::string &Filename : Args )
+  {
+    // See whether this file is in the ignore list
+    std::size_t iIgnore = 0;
+    while( iIgnore < Ignore.size() && Ignore[iIgnore].compare(Filename) )
+      iIgnore++;
+    if( iIgnore < Ignore.size() )
+      std::cout << "Ignoring " << Filename << std::endl;
+    else if( !FileExists(Filename))
+    {
+      parsed = false;
+      std::cout << "Error: " << Filename << " doesn't exist" << std::endl;
+    }
+    else
+    {
+      // Parse the name. Not expecting a type, so if present, put it back on the end of Base
+      FileNameAtt Name_{ Filename };
+      if( !Name_.Type.empty() )
+      {
+        // Not sure whether I should bother doing this?
+        Name_.Base.append( 1, '.' );
+        Name_.Base.append( Name_.Type );
+        Name_.Type.clear();
+      }
+      std::string Contraction{ Name_.Base };
+      bool bHasTimeslice{ false };
+      int Timeslice_{ 0 };
+      ExtractTimeslice( Contraction, bHasTimeslice, Timeslice_ );
+      // Replace momentum with momentum squared
+      bool bGotMomentum{ false };
+      int p2{ 0 };
+      ReplaceP2( Contraction, bGotMomentum, p2 );
+      // Look for the contraction list this file belongs to
+      auto itc = Contractions.find( Contraction );
+      if( itc == Contractions.end() )
+        itc = Contractions.emplace( Contraction, TrajList( Contraction ) ).first;
+      TrajList & cl{ itc->second };
+      auto it = cl.FileInfo.find( Name_.Filename );
+      if( it == cl.FileInfo.end() )
+        cl.FileInfo.emplace( Name_.Filename, TrajFile( bHasTimeslice, Timeslice_ ) );
+      else
+        std::cout << "Ignoring repetition of " << Name_.Filename << std::endl;
+    }
+  }
+  if( !parsed )
+    throw std::runtime_error( "Error parsing command-line arguments" );
 }
 
-struct BootstrapParams
+Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgnore)
 {
+  // Get the list of files to ignore
+  std::vector<std::string> Ignore;
+  for( std::size_t start = 0; start < sIgnore.length() ; ) {
+    auto end = sIgnore.find(':', start);
+    std::size_t SepLen;
+    if( end == std::string::npos ) {
+      SepLen = 0;
+      end = sIgnore.length();
+    }
+    else
+      SepLen = 1;
+    if( end > start )
+      Ignore.push_back( sIgnore.substr( start, end - start ) );
+    start = end + SepLen;
+  }
+  Construct( Args, Ignore );
+}
+
+class BootstrapParams
+{
+public:
   std::string outStem;
   Common::SeedType seed;
   int nSample;
   int binSize;
   bool bSaveSummaries;
   bool bSaveBootstrap;
-  bool PerformBootstrap( Latan::Dataset<Latan::DMat> &in, const std::string &Contraction ) const;
+  int PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, const std::string Prefix ) const;
+private:
+  template <class Iter> int PerformBootstrap( const Iter &first, const Iter &last, const std::string &Prefix, bool bAlignTimeslices ) const;
 };
 
-bool BootstrapParams::PerformBootstrap( Latan::Dataset<Latan::DMat> &in, const std::string &Contraction ) const//, int momentum_squared )
+template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, const std::string &Prefix, bool bAlignTimeslices ) const
 {
-  const bool bPerformBootstrap{ bSaveSummaries || bSaveBootstrap };
-  //if( !bPerformBootstrap && !dumpBoot )
-    //throw std::runtime_error( "No bootstrap to perform" );
-  // Skip bootstrap if output exists
-  const std::string sOutFileBase{ Common::tokenReplaceCopy( outStem, "corr", Contraction ) };
-  std::string sOutFileName{ Common::MakeFilename( sOutFileBase, Common::sBootstrap, seed, "h5" ) };
-  if( Common::FileExists( sOutFileName ) || (!bSaveBootstrap && Common::FileExists(
-      Common::MakeFilename(sOutFileBase, Common::SummaryNames[0], seed, TEXT_EXT))))
+  if( !bSaveSummaries && !bSaveBootstrap )
+    return 0;
+  const int NumFiles{ static_cast<int>( std::distance( first, last ) ) };
+  int iCount{ 0 };
+  const int Nt{ first->Nt() };
+  const int NumOps{ first->NumOps() };
+  const std::vector<Common::Gamma::Algebra> &Alg{ first->Alg() };
+  Common::SampleC in( NumFiles, Nt );
+  for( int Snk = 0; Snk < NumOps; Snk++ )
   {
-    std::cout << "Skipping " << Contraction << " because output already exists" << std::endl;
-    return false;
-  }
-  // Make sure there are at least 5x more bootstrap samples than data points
-  std::cout << Contraction << std::endl;
-  //if( bShowAverages )
-    //ShowTimeSliceAvg( in );
-  if( bPerformBootstrap ) {
-    if( ( nSample / 5 ) < in.size() )
-      throw std::runtime_error( "nSample=" + std::to_string( nSample ) + " too small for dataset with " + std::to_string( in.size() ) + " elements" );
-    std::cout << "-- resampling (" << nSample << " samples)..." << std::endl;
-    if( binSize != 1 )
-      in.bin( binSize );
-    Latan::DMatSample out = in.bootstrapMean( nSample, seed );
-    if( bSaveBootstrap ) {
-      std::cout << "Saving sample to " << sOutFileName << std::endl;
-      Latan::Io::save<Latan::DMatSample>(out, sOutFileName, Latan::File::Mode::write, Common::sBootstrap);
+    static const char pszSep[] = "_";
+    std::string sSnk{ Common::Gamma::NameShort( Alg[Snk], pszSep ) };
+    for( int Src = 0; Src < NumOps; Src++ )
+    {
+      std::string sSrc{ Common::Gamma::NameShort( Alg[Src], pszSep ) };
+      // Skip bootstrap if output exists
+      const std::string sOutBase{ outStem + Prefix + sSnk + sSrc };
+      const std::string sOutFile{ Common::MakeFilename( sOutBase, Common::sBootstrap, seed, DEF_FMT ) };
+      if( Common::FileExists( sOutFile ) || (!bSaveBootstrap && Common::FileExists( Common::MakeFilename(sOutBase, Common::SummaryNames[0], seed, TEXT_EXT))))
+      {
+        std::cout << sOutBase << " skipped - output already exists" << std::endl;
+      }
+      else
+      {
+        //if( bShowAverages )
+        //ShowTimeSliceAvg( in );
+        std::cout << sOutBase << " " << nSample << " samples" << std::endl;
+        assert( binSize == 1 && "Binning still needs to be implemented" );
+        // Copy the correlators into my sample, aligning timeslices if need be
+        std::complex<double> * pDst = in[0];
+        for( Iter i = first; i != last; i++ )
+        {
+          int TOffset{ bAlignTimeslices ? i->Timeslice() : 0 };
+          std::cout << "  t=" << TOffset << "\t" << i->Name_.Base << "." << i->Name_.SeedString << std::endl;
+          std::complex<double> * pSrc = (*i)( Alg[Snk], Alg[Src] ) + TOffset;
+          for( int t = 0; t < Nt; t++ )
+          {
+            *pDst++ = *pSrc++;
+            if( ++TOffset == Nt )
+              pSrc -= Nt;
+          }
+        }
+        Common::SampleC out = in.Bootstrap( nSample, seed );
+        if( bSaveBootstrap )
+        {
+          std::cout << "  Saving sample to " << sOutFile << std::endl;
+          out.Write( sOutFile );
+        }
+        if( bSaveSummaries )
+          Common::SummariseBootstrapCorr( out, sOutBase, seed );//, momentum_squared );
+        iCount++;
+      }
     }
-    if( bSaveSummaries )
-      Common::SummariseBootstrapCorr( out, sOutFileBase, seed );//, momentum_squared );
   }
-  // Dump the bootstrap sequences
-  /*if( dumpBoot )
+  return iCount;
+}
+
+int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, const std::string Prefix ) const
+{
+  if( !bSaveSummaries && !bSaveBootstrap )
+    return 0;
+  auto NumFilesRaw{ f.size() };
+  const int NumFiles{ static_cast<int>( NumFilesRaw ) };
+  if( NumFiles != NumFilesRaw || NumFiles < 1 )
+    throw std::invalid_argument( "Can't perform a bootstrap without correlators" );
+  // Make sure there are at least 5x more bootstrap samples than data points
+  if( ( nSample / 5 ) < NumFiles )
+    throw std::runtime_error( "nSample=" + std::to_string( nSample ) + " too small for dataset with " + std::to_string( NumFiles ) + " elements" );
+  int iCount{ 0 };
+  // sort all of the files by timeslice info
+  using File = Common::CorrelatorFileC;
+  std::sort( f.begin(), f.end(), [&](const File &l, const File &r)
   {
-    std::string SeqFileName{ Common::MakeFilename( sOutFileBase, "bootseq", seed, TEXT_EXT ) };
-    std::cout << "Saving bootstrap sequence to '" << SeqFileName << "' ...";
-    std::ofstream file(SeqFileName);
-    file << "# bootstrap sequences" << std::endl;
-    file << "#      bin size: " << binSize << std::endl;
-    file << "#          seed: " << std::to_string( seed ) << std::endl;
-    in.dumpBootstrapSeq(file, nSample, seed);
-    std::cout << std::endl;
-  }*/
-  return true;
+    // Sort first by timeslice
+    if( l.bHasTimeslice != r.bHasTimeslice )
+      return r.bHasTimeslice;
+    if( l.bHasTimeslice && r.bHasTimeslice && l.Timeslice_ != r.Timeslice_ )
+      return l.Timeslice_ < r.Timeslice_;
+    // Sort by trajectory
+    if( l.Name_.Seed != r.Name_.Seed )
+      return l.Name_.Seed < r.Name_.Seed;
+    // Now sort by base filename
+    return l.Name_.Base.compare( r.Name_.Base ) < 0;
+  } );
+  // Now perform bootstraps for any individual timeslices
+  using Iter = typename std::vector<Common::CorrelatorFileC>::iterator;
+  Iter first = f.begin();
+  Iter last  = f.end();
+  // If more than one timeslice, save summary info for individual timeslices
+  int Timeslice{ f[0].Timeslice() };
+  Iter i = std::find_if( first + 1, last, [Timeslice]( const File &cf ) { return cf.Timeslice() != Timeslice; } );
+  if( i != last )
+  {
+    BootstrapParams p{ *this };
+    p.bSaveSummaries = true;
+    p.bSaveBootstrap = false;
+    while( first != last )
+    {
+      std::string PrefixT{ Prefix };
+      PrefixT.append( "_t_" );
+      PrefixT.append( std::to_string( Timeslice ) );
+      iCount += p.PerformBootstrap( first, i, PrefixT, false );
+      first = i;
+      if( first != last )
+      {
+        Timeslice = first->Timeslice();
+        i = std::find_if( first + 1, last, [Timeslice]( const File &cf ) { return cf.Timeslice() != Timeslice; } );
+      }
+    }
+    first = f.begin();
+  }
+  // Now perform a single bootstrap, combining all the separate timeslices
+  iCount += PerformBootstrap( first, last, Prefix, true );
+  return iCount;
 }
 
 /*struct Momentum {
@@ -148,12 +363,19 @@ const std::string & MesonSuffix( const std::string MesonTypeName )
 
 enum StudySubject { Z2, GFWall };
 
-void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const Common::Momentum &mom, const std::string &Heavy, const std::string &Light )
+void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const Common::Momentum &mom,
+          std::vector<Common::Gamma::Algebra> Alg, const std::string &Heavy, const std::string &Light )
 {
+  /*using Algebra = Common::Gamma::Algebra;
+  static const std::vector<Algebra> alg = { Algebra::Gamma5, Algebra::GammaTGamma5 };
+  static const std::vector<std::string> algNames = { "g5", "gT5" };
+  static const int NumAlgebra{ static_cast<int>( alg.size() ) };
+  static const int NumCorr{ NumAlgebra * NumAlgebra };*/
+
   static constexpr unsigned int Nt{64};
   static constexpr unsigned int CStart{3000};
   static constexpr unsigned int CSkip{40};
-  static constexpr unsigned int CCount{3};//10};
+  static constexpr unsigned int CCount{1};//10};
   static constexpr unsigned int CEnd{CStart + CSkip * CCount};
   static const std::string sPath{
 #ifdef DEBUG
@@ -164,7 +386,7 @@ void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const
     "/data/201910Plat/mesons/C1/" };
   const std::string StudyPath{ sPath + ( Study == Z2 ? "Z2" : "GFWall" ) + "/" };
   static const std::string Dot{ "." };    // used inside filenames
-  static const std::string H5{ Dot + "h5" };    // used inside filenames
+  static const std::string H5{ Dot + DEF_FMT };    // used inside filenames
   static const std::string Sep{ "_" };    // used inside filenames
   static const std::string Space{ " " };  // whitespace as field separator / human readable info
   static const std::string Sink{ Sep + "sink" };    // used inside filenames
@@ -172,19 +394,19 @@ void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const
   static const std::string sMom0{ Sep + "p" + Sep + Common::Momentum(0,0,0).to_string( Sep ) };
   const std::string sMom{ Sep + "p" + Sep + mom.to_string( Sep )};
   const std::string sMomNeg{ Sep + "p" + Sep + mom.to_string( Sep, true )};
-  assert( alg.size() == algNames.size() && "Abbreviations should match gamma algebra" );
+  //assert( alg.size() == algNames.size() && "Abbreviations should match gamma algebra" );
   const std::string CorrPrefix{ Heavy + Sep + Light + sMom };
-  std::vector<std::string> CorrSuffixes( NumCorr );
+  /*std::vector<std::string> CorrSuffixes( NumCorr );
   for( int iSrc = 0; iSrc < NumAlgebra; iSrc++ )
     for( int iSnk = 0; iSnk < NumAlgebra; iSnk++ ) {
       const int iCorr{ iSnk * NumAlgebra + iSrc };
       std::stringstream ss;
       ss << Sep << algNames[iSnk] << Sep << algNames[iSrc];
       CorrSuffixes[iCorr] = ss.str();
-    }
-  const int TimeSliceInc{ 4 };//Study == GFWall ? 4 : 1 };
+    }*/
+  const int TimeSliceInc{ Study == GFWall ? 4 : 1 };
   const unsigned int NumEnds{ Common::EqualIgnoreCase( Heavy, Light ) ? 1u : 2u };
-  const std::size_t NumSamplesT{ NumEnds * CCount };
+  /*const std::size_t NumSamplesT{ NumEnds * CCount };
   const std::size_t NumSamples{ NumSamplesT * ( Nt / TimeSliceInc ) };
   std::vector<Latan::Dataset<Latan::DMat>> bsData( NumCorr );
   std::vector<Latan::Dataset<Latan::DMat>> bsDataT( NumCorr );
@@ -197,10 +419,12 @@ void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const
   int CorrIndex{ 0 };
   BootstrapParams par{ bsParams };
   par.bSaveSummaries = true;
-  par.bSaveBootstrap = false;
+  par.bSaveBootstrap = false;*/
+  int CorrIndex{ 0 };
+  std::vector<Common::CorrelatorFileC> InFiles( NumEnds * CCount * ( Nt / TimeSliceInc ) );
   for( int t = 0; t < Nt; t += TimeSliceInc ) {
     const std::string tPrefix{ Sep + "t" + ( Study == Z2 ? "" : Sep ) + std::to_string( t ) };
-    int CorrIndexT{ 0 };
+    //int CorrIndexT{ 0 };
     for( unsigned int iEnd = 0; iEnd < NumEnds; iEnd++ ) {
       const std::string & Left{ iEnd == 0 ? Heavy : Light };
       const std::string & Right{ iEnd == 0 ? Light : Heavy };
@@ -217,24 +441,27 @@ void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const
             break;
         }
         sFileName.append( Dot + std::to_string( iConfig ) + H5 );
-        Common::ReadComplexArray(buffer, alg, sFileName, 0);
+        /*Common::ReadComplexArray(buffer, alg, sFileName, 0);
         for( int iCorr = 0; iCorr < NumCorr; ++iCorr )
         {
           Common::CopyCorrelator( bsData[iCorr][CorrIndex], buffer[iCorr], t );
           Common::CopyCorrelator( bsDataT[iCorr][CorrIndexT], buffer[iCorr] );
         }
         CorrIndex++;
-        CorrIndexT++;
+        CorrIndexT++;*/
+        std::string GroupName;
+        InFiles[CorrIndex++].Read( sFileName, GroupName, Alg, &t );
       }
     }
     // If there's more than one configuration, perform a bootstrap of this timeslice
-    for( int iCorr = 0; CCount > 1 && iCorr < NumCorr; ++iCorr )
-      par.PerformBootstrap( bsDataT[iCorr], CorrPrefix + tPrefix + CorrSuffixes[iCorr] );
+    //for( int iCorr = 0; CCount > 1 && iCorr < NumCorr; ++iCorr )
+      //par.PerformBootstrap( bsDataT[iCorr], CorrPrefix + tPrefix + CorrSuffixes[iCorr] );
   }
   // Now perform a bootstrap overall
-  par.bSaveBootstrap = true;
+  /*par.bSaveBootstrap = true;
   for( int iCorr = 0; iCorr < NumCorr; ++iCorr )
-    par.PerformBootstrap( bsData[iCorr], CorrPrefix + CorrSuffixes[iCorr] );
+    par.PerformBootstrap( bsData[iCorr], CorrPrefix + CorrSuffixes[iCorr] );*/
+  bsParams.PerformBootstrap( InFiles, Heavy + Sep + Light );
 }
 
 /*****************************************************************
@@ -269,7 +496,7 @@ int main(const int argc, const char *argv[])
 {
   // int i = DebugTest1(); if( i ) return i;
   int iReturn{ EXIT_SUCCESS };
-  bool bShowUsage{ false };
+  bool bShowUsage{ true };
   using CL = Common::CommandLine;
   CL cl;
   try
@@ -278,26 +505,26 @@ int main(const int argc, const char *argv[])
       {"n", CL::SwitchType::Single, DEF_NSAMPLE},
       {"b", CL::SwitchType::Single, "1"},
       {"r", CL::SwitchType::Single, nullptr},
-      {"o", CL::SwitchType::Single, "@corr@" },
+      {"o", CL::SwitchType::Single, "" },
+      {"a", CL::SwitchType::Single, ""},
       {"t", CL::SwitchType::Flag, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
-    if( cl.GotSwitch( "help" ) )//|| cl.Args.size() == 0 )
-      bShowUsage = true;
-    else
+    if( !cl.GotSwitch( "help" ) )
     {
+      std::vector<Common::Gamma::Algebra> Alg = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "a" ) );
       BootstrapParams par;
       par.bSaveBootstrap = true;
       par.outStem = cl.SwitchValue<std::string>( "o" );
-      if( par.outStem.find( "@corr@" ) == std::string::npos )
+      /*if( par.outStem.find( "@corr@" ) == std::string::npos )
       {
         std::string Error{ "Output stem \"" };
         Error.append( par.outStem );
         Error.append( "\" invalid" );
         throw std::invalid_argument( Error );
-      }
+      }*/
       par.nSample = cl.SwitchValue<int>( "n" );
       par.binSize = cl.SwitchValue<int>( "b" );
       if( par.binSize != 1 )
@@ -310,39 +537,32 @@ int main(const int argc, const char *argv[])
         par.seed = rd();
       }
       par.bSaveSummaries = !cl.GotSwitch( "t" );
-      std::cout << "Creating bootstrap output " << par.outStem << ", seed=" << par.seed << std::endl;
+      std::cout << "Creating bootstrap output \"" << par.outStem << "\", seed=" << par.seed << std::endl;
+      bShowUsage = false;
       
       // If there are files specified on the command line,
       // parse the input file names, grouping by correlator, indexed by trajectory.
       if( cl.Args.size() )
       {
-        Common::Manifest Manifest{ cl.Args, cl.SwitchStrings( "x" ) };
+        Manifest Manifest{ cl.Args, cl.SwitchStrings( "x" ) };
         // Walk the list of contractions, performing a separate bootstrap for each
         int BootstrapCount = 0;
-        Latan::DMatSample out(par.nSample);
         for( auto itc = Manifest.begin(); itc != Manifest.end(); itc++ )
         {
           const std::string &Contraction{itc->first};
-          const Common::TrajList &l{itc->second};
-          const unsigned int nFile{ static_cast<unsigned int>(l.TrajFile.size())};
+          const TrajList &l{itc->second};
+          const unsigned int nFile{ static_cast<unsigned int>( l.FileInfo.size() ) };
           std::cout << "Loading " << nFile << " files for " << Contraction << std::endl;
           unsigned int j = 0; // which trajectory are we processing
-          Common::Correlator buf;
-          //std::vector<double> buf;
-          Latan::Dataset<Latan::DMat> data(nFile);
-          for( auto it = l.TrajFile.begin(); it != l.TrajFile.end(); it++, j++ )
+          std::vector<Common::CorrelatorFileC> InFiles( nFile );
+          for( auto it = l.FileInfo.begin(); it != l.FileInfo.end(); it++, j++ )
           {
-            const int &traj{it->first}; // Trajectory number
-            const Common::TrajFile &tf{*it->second};
-            const std::string &Filename{tf.Filename};
-            std::cout << "\t" << traj << "\t" << Filename << std::endl;
+            const std::string &Filename{ it->first }; // Trajectory number
+            const TrajFile &tf{ it->second };
             std::string GroupName;
-            Common::ReadComplexArray( buf, Filename, GroupName );
-            //Common::ReadRealArray( buf, Filename, "/", "bootstrap" );
-            Common::CopyCorrelator( data[j], buf );
-            //Common::CopyRealCorrelator( data[j], buf );
+            InFiles[j].Read( Filename, GroupName, Alg, tf.bHasTimeslice ? &tf.Timeslice : nullptr );
           }
-          par.PerformBootstrap( data, Contraction );
+          par.PerformBootstrap( InFiles, Contraction );
           BootstrapCount++;
         }
         std::cout << "Bootstraps written for " << BootstrapCount
@@ -358,18 +578,18 @@ int main(const int argc, const char *argv[])
         std::cout << "No files specified. Making default manifest for "
         << qHeavy << " and " << qLight << std::endl;
         static const Common::Momentum StudyMomenta[] = {
-          { 0, 0, 0 },
-          { 1, 0, 0 },/*
+          { 0, 0, 0 },/*
+          { 1, 0, 0 },
                        { 1, 1, 0 },
                        { 1, 1, 1 },
                        { 2, 0, 0 },*/
         };
-        const StudySubject Study{ GFWall };
+        const StudySubject Study{ Z2 };
         for( const Common::Momentum &m : StudyMomenta )
         {
-          Study1Bootstrap( Study, par, m, qHeavy, qLight );
-          Study1Bootstrap( Study, par, m, qHeavy, qHeavy );
-          Study1Bootstrap( Study, par, m, qLight, qLight );
+          Study1Bootstrap( Study, par, m, Alg, qHeavy, qLight );
+          Study1Bootstrap( Study, par, m, Alg, qHeavy, qHeavy );
+          Study1Bootstrap( Study, par, m, Alg, qLight, qLight );
         }
       }
     }
@@ -381,7 +601,7 @@ int main(const int argc, const char *argv[])
   } catch( ... ) {
     std::cerr << "Error: Unknown exception" << std::endl;
   }
-  if( bShowUsage || iReturn != EXIT_SUCCESS )
+  if( bShowUsage )
   {
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
     " <options> ContractionFile1 [ContractionFile2 ...]\n"
@@ -390,6 +610,7 @@ int main(const int argc, const char *argv[])
     "-b     Bin size (not implemented yet)\n"
     "-r     Random number seed (unspecified=random seed)\n"
     "-o     Output prefix\n"
+    "-a     list of gamma algebras we're interested in\n"
     "-t     don't save .Txt correlators for GNUplot\n"
     "-x     eXclude file (may be repeated)\n"
     "--help This message\n";

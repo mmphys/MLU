@@ -45,27 +45,68 @@ bool debug( int NumSamples, int Nt )
   return true;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, const char *argv[])
 {
   // We're not using C-style I/O
   std::ios_base::sync_with_stdio(false);
-  //debug( 3, 4 );
-  if( argc != 2 ) {
-    std::cout << "usage: bootstat filename\n";
-    exit(1);
-  }
-  const std::string FileName{ argv[1] };
-  //const Common::FileNameAtt fna{ FileName };
-  std::cout << "Creating statistics for " << FileName << "\n";
-  try {
-    std::string GroupName{};
-    Common::Sample<C> s( FileName, GroupName );
-    std::cout << "Loaded Nt=" << s.Nt() << " x " << s.NumSamples() << " bootstrap samples from " << GroupName << "\n";
-    s.Write( "DeleteMe.h5" );
-  }
-  catch(const H5::Exception &)
+  int iReturn{ EXIT_SUCCESS };
+  bool bShowUsage{ true };
+  using CL = Common::CommandLine;
+  CL cl;
+  try
   {
-    return EXIT_FAILURE;
+    const std::initializer_list<CL::SwitchDef> list = {
+      {"o", CL::SwitchType::Single, "" },
+      {"a", CL::SwitchType::Single, ""},
+      {"x", CL::SwitchType::Multiple, nullptr},
+      {"help", CL::SwitchType::Flag, nullptr},
+    };
+    cl.Parse( argc, argv, list );
+    std::string outStem{ cl.SwitchValue<std::string>( "o" ) };
+    std::vector<Common::Gamma::Algebra> Alg = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "a" ) );
+    std::vector<std::string> Ignore{ cl.SwitchStrings( "x" ) };
+    // If there are files specified on the command line, process each file
+    if( !cl.GotSwitch( "help" ) && cl.Args.size() )
+    {
+      bShowUsage = false;
+      std::size_t Count = 0;
+      for( const std::string &Filename : cl.Args )
+      {
+        std::size_t iIgnore = 0;
+        while( iIgnore < Ignore.size() && Ignore[iIgnore].compare(Filename) )
+          iIgnore++;
+        if( iIgnore < Ignore.size() )
+          std::cout << "Ignoring " << Filename << std::endl;
+        else if( !Common::FileExists(Filename))
+          std::cout << "Error: " << Filename << " doesn't exist" << std::endl;
+        else
+        {
+          std::string GroupName;
+          std::vector<Common::Gamma::Algebra> ThisAlg{ Alg };
+          Common::CorrelatorFileC InFile( Filename, GroupName, ThisAlg );
+          InFile.WriteSummaries(outStem, ThisAlg );
+          Count++;
+        }
+      }
+      std::cout << "Summaries written for " << Count << " correlators" << std::endl;
+    }
   }
-  return EXIT_SUCCESS;
+  catch(const std::exception &e)
+  {
+    std::cerr << "Error: " << e.what() << std::endl;
+    iReturn = EXIT_FAILURE;
+  } catch( ... ) {
+    std::cerr << "Error: Unknown exception" << std::endl;
+  }
+  if( bShowUsage )
+  {
+    ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
+    " <options> ContractionFile1 [ContractionFile2 ...]\n"
+    "Save correlator in format ready for GNUPlot, where <options> are:\n"
+    "-o     Output prefix\n"
+    "-a     list of gamma algebras we're interested in\n"
+    "-x     eXclude file (may be repeated)\n"
+    "--help This message\n";
+  }
+  return iReturn;
 }

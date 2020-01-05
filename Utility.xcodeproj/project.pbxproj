@@ -10,7 +10,6 @@
 		6815510A22CBCB74009AB4AD /* MultiFit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681550FE22CBC9B9009AB4AD /* MultiFit.cpp */; };
 		6815510D22CBE8B6009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		6815510E22CBF569009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
-		681AAC8E2355D6110045F604 /* CommonGrid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681AAC8C2355D5F10045F604 /* CommonGrid.cpp */; };
 		681DC8B822F19CB000EE04A9 /* hlxml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B722F19CB000EE04A9 /* hlxml.cpp */; };
 		681DC8BB22F20FE100EE04A9 /* CommonLatAn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */; };
 		681DC8BD22F211B600EE04A9 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
@@ -19,7 +18,6 @@
 		683451372397D40300B743CE /* xmlGFWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6834512B2397D39200B743CE /* xmlGFWall.cpp */; };
 		6845352723477BDA00106304 /* xmlPeramb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6845351B23477B9D00106304 /* xmlPeramb.cpp */; };
 		687E28D922F313F1004F4342 /* averagesm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687E28CC22F313A1004F4342 /* averagesm.cpp */; };
-		688C82F12359D15400A64702 /* CommonLatAn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */; };
 		688FEBE4238C1BE100977B09 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		688FEBE5238C1BE100977B09 /* CommonLatAn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */; };
 		688FEBED238C1C0F00977B09 /* Optimal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 683F6267238C0C240034D79D /* Optimal.cpp */; };
@@ -605,8 +603,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6815510E22CBF569009AB4AD /* Common.cpp in Sources */,
-				688C82F12359D15400A64702 /* CommonLatAn.cpp in Sources */,
-				681AAC8E2355D6110045F604 /* CommonGrid.cpp in Sources */,
 				6822E8C022A7057400A85993 /* bootstrap.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

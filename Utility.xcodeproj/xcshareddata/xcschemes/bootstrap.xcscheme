@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/201910Plat/bootstrap/GFWall"
+      customWorkingDirectory = "$PROJECT_DIR/test_bs2"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -61,6 +61,18 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
+         <CommandLineArgument
+            argument = "-ag5,gT5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_0.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_0.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_0.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_12.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_12.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_12.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_16.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_16.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_16.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_20.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_20.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_20.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_24.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_24.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_24.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_28.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_28.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_28.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_32.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_32.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_32.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_36.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_36.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_36.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_4.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_4.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_4.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_40.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_40.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_40.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_44.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_44.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_44.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_48.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_48.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_48.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_52.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_52.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_52.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_56.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_56.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_56.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_60.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_60.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_60.3080.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_8.3000.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_8.3040.h5&#10;/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_8.3080.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-x/Users/s1786208/data/201910Plat/mesons/C1/GFWall/hl/h1_l_p_0_0_0_t_4.3040.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
          <CommandLineArgument
             argument = "-r987654321"
             isEnabled = "NO">
