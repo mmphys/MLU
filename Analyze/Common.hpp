@@ -48,6 +48,9 @@
 #include <H5Cpp.h>
 #include <H5CompType.h>
 
+// Eigen dense matrices
+#include <Eigen/Dense>
+
 //#include <LatAnalyze/Statistics/Dataset.hpp>
 
 // Default output file extension for binary data
@@ -163,6 +166,16 @@ template <typename T> inline bool IsFinite( const std::vector<T> & v )
   for( const T n : v )
     if( !std::isfinite( n ) )
       return false;
+  return true;
+}
+
+// Are all the floating point numbers in this matrix finite
+template <typename T> inline bool IsFinite( const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> & m, bool bDiagonalsOnly = false )
+{
+  for( Eigen::Index row = 0; row < m.rows(); ++row )
+    for( Eigen::Index col = 0; col < m.cols(); ++col )
+      if( ( !bDiagonalsOnly || row == col ) && !std::isfinite( m( row, col ) ) )
+        return false;
   return true;
 }
 

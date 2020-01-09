@@ -34,16 +34,6 @@
 
 BEGIN_COMMON_NAMESPACE
 
-// Are all the floating point numbers in this matrix finite
-template <typename T> inline bool IsFinite( const Latan::Mat<T> & m, bool bDiagonalsOnly = false )
-{
-  for( Latan::Index row = 0; row < m.rows(); ++row )
-    for( Latan::Index col = 0; col < m.cols(); ++col )
-      if( ( !bDiagonalsOnly || row == col ) && !std::isfinite( m( row, col ) ) )
-        return false;
-  return true;
-}
-
 // Copy a correlator to a Latan::DMat
 inline void CopyCorrelator( Latan::DMat &dst, const Correlator &src, int iOffset = 0, bool bSwapRealImag = false )
 {

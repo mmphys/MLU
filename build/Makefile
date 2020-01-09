@@ -38,6 +38,8 @@ MultiFit: MultiFit.o Common.o CommonLatAn.o
 
 bootstrap: bootstrap.o Common.o
 
+corrstat: corrstat.o Common.o
+
 hlxml: hlxml.o Common.o
 
 clean:

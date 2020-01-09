@@ -26,7 +26,8 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include "CommonLatAn.hpp"
+//#include "CommonLatAn.hpp"
+#include "Common.hpp"
 #include "MultiFit.hpp"
 
 // Uncomment the next line if your cmath doesn't define M_PI etc by default
@@ -36,13 +37,13 @@
 #include <ios>
 #include <iostream>
 //#include <sys/stat.h>
-#include <LatAnalyze/Core/OptParser.hpp>
+//#include <LatAnalyze/Core/OptParser.hpp>
 //#include <LatAnalyze/Eigen/Dense>
 //#include <LatAnalyze/Functional/CompiledModel.hpp>
-#include <LatAnalyze/Io/Io.hpp>
+//#include <LatAnalyze/Io/Io.hpp>
 //#include <LatAnalyze/Statistics/MatSample.hpp>
 //#include <LatAnalyze/Core/Math.hpp>
-#include <LatAnalyze/Numerical/MinuitMinimizer.hpp>
+//#include <LatAnalyze/Numerical/MinuitMinimizer.hpp>
 //#include <LatAnalyze/Numerical/NloptMinimizer.hpp>
 //#include <LatAnalyze/Core/Plot.hpp>
 //#include <LatAnalyze/Statistics/XYSampleData.hpp>
@@ -60,13 +61,16 @@
 #define DEBUG_NUM 6
 #endif
 
+using Matrix = Eigen::MatrixXd; // dynamic sized matrix of complex double
+using SampleD = Common::SampleD; // correlator of real (double)
+
 // Minimisation for multi-exponential fit
 
 class MultiExpModel : public ROOT::Minuit2::FCNBase {
 public:
   static constexpr double pi{ M_PI };
   using vd_t = std::vector<double>;
-  explicit MultiExpModel( const Latan::DMatSample Corr, int NumOps, const std::vector<std::string> &OpNames, int NumExponents, int Verbosity, const std::string &OutputBaseName, Common::SeedType Seed, int Fold );
+  explicit MultiExpModel( SampleD &&Corr, int NumOps, const std::vector<std::string> &OpNames, int NumExponents, int Verbosity, const std::string &OutputBaseName, Common::SeedType Seed, int Fold );
   virtual ~MultiExpModel() {}
   // These are part of the FCNBase interface
   virtual double Up() const { return 1.; }
@@ -87,7 +91,7 @@ public:
   const int Nt;
   const int NumExponents;
   const int NumParams;
-  const Latan::DMatSample Corr;
+  const SampleD Corr;
   const std::vector<std::string> ParamNames;
   private:
   // These variables only used during a fit
@@ -95,12 +99,12 @@ public:
   int tMax = -1;
   int NtCorr;
   int Extent;
-  Latan::DMat Covar;
-  Latan::DMat CovarInv;
+  Matrix Covar;
+  Matrix CovarInv;
   std::vector<double> VarianceInv;
   bool bCorrelated;
   std::string OutputRunBase;
-  Latan::Index idx;
+  int idx;
   // Helper functions
   inline int AlphaIndex( int snk, int src) const { return snk * NumOps + src; };
   inline int MELIndex( int op, int EnergyLevel) const { return EnergyLevel * NumOps + op; };
@@ -109,7 +113,7 @@ public:
   std::vector<std::string> MakeParamNames();
 };
 
-MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const std::vector<std::string> &opNames_, int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_, int fold_ )
+MultiExpModel::MultiExpModel( SampleD &&corr_, int numOps_, const std::vector<std::string> &opNames_, int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_, int fold_ )
   : NumOps{ numOps_ },
     OpNames{ opNames_ },
     Verbosity{ verbosity_ },
@@ -118,11 +122,11 @@ MultiExpModel::MultiExpModel( const Latan::DMatSample corr_, int numOps_, const 
     Model{ fold_ < 0 ? ModelType::sinh : fold_ > 0 ? ModelType::cosh : ModelType::exp },
     bAlternating{ abs( fold_ ) > 1 },
     NumFiles{ numOps_ * numOps_ },
-    NSamples{ static_cast<int>( corr_.size() ) },
-    Nt      { static_cast<int>( corr_[Latan::central].rows() / NumFiles ) },
+    NSamples{ corr_.NumSamples() },
+    Nt      { corr_.Nt() / NumFiles },
     NumExponents{ numExponents_ },
     NumParams{ NumExponents * ( 1 + NumOps ) },
-    Corr{ corr_ },
+    Corr{ std::move( corr_ ) },
     ParamNames( MakeParamNames() )
 {
 }
@@ -142,7 +146,7 @@ std::vector<std::string> MultiExpModel::MakeParamNames()
 // Make the covariance matrix, for only the timeslices we are interested in
 void MultiExpModel::MakeCovar( void )
 {
-  assert( Corr[Latan::central].rows() == NumFiles * Nt && "Bug" );
+  assert( Corr.Nt() == NumFiles * Nt && "Bug" );
   assert( tMin >= 0 && tMin < Nt && "Error: tMin invalid" );
   assert( tMax >= 0 && tMax < Nt && "Error: tMax invalid" );
   assert( NtCorr > 1 && "Error: tMin >= tMax" );
@@ -201,10 +205,10 @@ void MultiExpModel::MakeCovar( void )
     }
 #endif
     if( Verbosity > 1 ) {
-      Latan::Io::save(Covar, OutputRunBase + "Covar.h5");
-      Latan::Io::save(CovarInv, OutputRunBase + "CovarInv.h5");
-      Latan::DMat CovarProd{ Covar * CovarInv };
-      Latan::Io::save(CovarProd, OutputRunBase + "CovarProd.h5");
+      //Latan::Io::save(Covar, OutputRunBase + "Covar.h5");
+      //Latan::Io::save(CovarInv, OutputRunBase + "CovarInv.h5");
+      //Latan::DMat CovarProd{ Covar * CovarInv };
+      //Latan::Io::save(CovarProd, OutputRunBase + "CovarProd.h5");
     }
     const double CondNumber{ Covar.norm() * CovarInv.norm() };
     const int CondDigits{ static_cast<int>( std::log10( CondNumber ) + 0.5 ) };

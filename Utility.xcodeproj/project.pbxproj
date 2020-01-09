@@ -777,6 +777,7 @@
 					$GridPre/include,
 					$GridBuild/Grid,
 					$Grid,
+					$Grid/Eigen,
 				);
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;
@@ -870,6 +871,7 @@
 					$GridPre/include,
 					$GridBuild/Grid,
 					$Grid,
+					$Grid/Eigen,
 				);
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;
