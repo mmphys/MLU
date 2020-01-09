@@ -169,7 +169,35 @@ void Manifest::Construct(const std::vector<std::string> &Args, const std::vector
       // Replace momentum with momentum squared
       bool bGotMomentum{ false };
       int p2{ 0 };
-      ReplaceP2( Contraction, bGotMomentum, p2 );
+      ExtractP2( Contraction, bGotMomentum, p2 );
+      // Sort all the separate, underscore delimited component parts
+      {
+        for( char &c : Contraction )
+          if( c == '_' )
+            c = ' ';
+        std::vector<std::string> vs{ ArrayFromString<std::string>( Contraction ) };
+        std::sort(vs.begin(), vs.end());
+        bool bFirst = true;
+        for( const std::string &s : vs )
+        {
+          if( bFirst )
+          {
+            bFirst = false;
+            Contraction = s;
+          }
+          else
+          {
+            Contraction.append(1, '_');
+            Contraction.append( s );
+          }
+        }
+      }
+      // Add the momentum into the correlator if it was present
+      if( bGotMomentum )
+      {
+        Contraction.append( "_p2_" );
+        Contraction.append( std::to_string( p2 ) );
+      }
       // Look for the contraction list this file belongs to
       auto itc = Contractions.find( Contraction );
       if( itc == Contractions.end() )
@@ -213,14 +241,13 @@ public:
   Common::SeedType seed;
   int nSample;
   int binSize;
-  bool bSaveSummaries;
-  bool bSaveBootstrap;
+  int TimesliceDetail;
   int PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, const std::string Prefix ) const;
 private:
-  template <class Iter> int PerformBootstrap( const Iter &first, const Iter &last, const std::string &Prefix, bool bAlignTimeslices ) const;
+  template <class Iter> int PerformBootstrap( const Iter &first, const Iter &last, const std::string &Prefix, bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries ) const;
 };
 
-template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, const std::string &Prefix, bool bAlignTimeslices ) const
+template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, const std::string &Prefix, bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries ) const
 {
   if( !bSaveSummaries && !bSaveBootstrap )
     return 0;
@@ -240,7 +267,7 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
       // Skip bootstrap if output exists
       const std::string sOutBase{ outStem + Prefix + sSnk + sSrc };
       const std::string sOutFile{ Common::MakeFilename( sOutBase, Common::sBootstrap, seed, DEF_FMT ) };
-      if( Common::FileExists( sOutFile ) || (!bSaveBootstrap && Common::FileExists( Common::MakeFilename(sOutBase, Common::SummaryNames[0], seed, TEXT_EXT))))
+      if( Common::FileExists( sOutFile ) || (!bSaveBootstrap && Common::FileExists( Common::MakeFilename(sOutBase, CorrSumm::SummaryNames[0], seed, TEXT_EXT))))
       {
         std::cout << sOutBase << " skipped - output already exists" << std::endl;
       }
@@ -248,14 +275,24 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
       {
         //if( bShowAverages )
         //ShowTimeSliceAvg( in );
-        std::cout << sOutBase << " " << nSample << " samples" << std::endl;
+        // std::cout << sOutBase << " " << nSample << " samples" << std::endl;
         assert( binSize == 1 && "Binning still needs to be implemented" );
         // Copy the correlators into my sample, aligning timeslices if need be
         std::complex<double> * pDst = in[0];
         for( Iter i = first; i != last; i++ )
         {
-          int TOffset{ bAlignTimeslices ? i->Timeslice() : 0 };
-          std::cout << "  t=" << TOffset << "\t" << i->Name_.Base << "." << i->Name_.SeedString << std::endl;
+          const int CorrelatorTimeslice{ i->Timeslice() };
+          int TOffset{ bAlignTimeslices ? CorrelatorTimeslice : 0 };
+          // Only need to say which correlators contribute for first gamma structure
+          if( Src == 0 && Snk == 0 )
+          {
+            std::cout << "  t=";
+            if( TOffset )
+              std::cout << TOffset << "->0";
+            else
+              std::cout << CorrelatorTimeslice;
+            std::cout << '\t' << i->Name_.Base << "." << i->Name_.SeedString << std::endl;
+          }
           std::complex<double> * pSrc = (*i)( Alg[Snk], Alg[Src] ) + TOffset;
           for( int t = 0; t < Nt; t++ )
           {
@@ -267,7 +304,7 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
         Common::SampleC out = in.Bootstrap( nSample, seed );
         if( bSaveBootstrap )
         {
-          std::cout << "  Saving sample to " << sOutFile << std::endl;
+          std::cout << "  " << nSample << " samples to " << sOutFile << std::endl;
           out.Write( sOutFile );
         }
         if( bSaveSummaries )
@@ -281,8 +318,6 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
 
 int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, const std::string Prefix ) const
 {
-  if( !bSaveSummaries && !bSaveBootstrap )
-    return 0;
   auto NumFilesRaw{ f.size() };
   const int NumFiles{ static_cast<int>( NumFilesRaw ) };
   if( NumFiles != NumFilesRaw || NumFiles < 1 )
@@ -310,31 +345,31 @@ int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, 
   using Iter = typename std::vector<Common::CorrelatorFileC>::iterator;
   Iter first = f.begin();
   Iter last  = f.end();
-  // If more than one timeslice, save summary info for individual timeslices
-  int Timeslice{ f[0].Timeslice() };
-  Iter i = std::find_if( first + 1, last, [Timeslice]( const File &cf ) { return cf.Timeslice() != Timeslice; } );
-  if( i != last )
+  if( TimesliceDetail > 0 )
   {
-    BootstrapParams p{ *this };
-    p.bSaveSummaries = true;
-    p.bSaveBootstrap = false;
-    while( first != last )
+    // If more than one timeslice, save summary info for individual timeslices
+    int Timeslice{ f[0].Timeslice() };
+    Iter i = std::find_if( first + 1, last, [Timeslice]( const File &cf ) { return cf.Timeslice() != Timeslice; } );
+    if( i != last )
     {
-      std::string PrefixT{ Prefix };
-      PrefixT.append( "_t_" );
-      PrefixT.append( std::to_string( Timeslice ) );
-      iCount += p.PerformBootstrap( first, i, PrefixT, false );
-      first = i;
-      if( first != last )
+      while( first != last )
       {
-        Timeslice = first->Timeslice();
-        i = std::find_if( first + 1, last, [Timeslice]( const File &cf ) { return cf.Timeslice() != Timeslice; } );
+        std::string PrefixT{ Prefix };
+        PrefixT.append( "_t_" );
+        PrefixT.append( std::to_string( Timeslice ) );
+        iCount += PerformBootstrap( first, i, PrefixT, false, TimesliceDetail > 1, true );
+        first = i;
+        if( first != last )
+        {
+          Timeslice = first->Timeslice();
+          i = std::find_if( first + 1, last, [Timeslice]( const File &cf ) { return cf.Timeslice() != Timeslice; } );
+        }
       }
+      first = f.begin();
     }
-    first = f.begin();
   }
   // Now perform a single bootstrap, combining all the separate timeslices
-  iCount += PerformBootstrap( first, last, Prefix, true );
+  iCount += PerformBootstrap( first, last, Prefix, true, true, true );
   return iCount;
 }
 
@@ -361,7 +396,7 @@ const std::string & MesonSuffix( const std::string MesonTypeName )
 // Make a default manifest
 // Heavy-light meson decays. 2pt function with current inserted and momentum on light meson
 
-enum StudySubject { Z2, GFWall };
+enum StudySubject { Z2=1, GFWall };
 
 void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const Common::Momentum &mom,
           std::vector<Common::Gamma::Algebra> Alg, const std::string &Heavy, const std::string &Light )
@@ -507,7 +542,8 @@ int main(const int argc, const char *argv[])
       {"r", CL::SwitchType::Single, nullptr},
       {"o", CL::SwitchType::Single, "" },
       {"a", CL::SwitchType::Single, ""},
-      {"t", CL::SwitchType::Flag, nullptr},
+      {"s", CL::SwitchType::Single, nullptr},
+      {"t", CL::SwitchType::Single, "1"},
       {"x", CL::SwitchType::Multiple, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
@@ -516,15 +552,10 @@ int main(const int argc, const char *argv[])
     {
       std::vector<Common::Gamma::Algebra> Alg = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "a" ) );
       BootstrapParams par;
-      par.bSaveBootstrap = true;
+      par.TimesliceDetail = cl.SwitchValue<int>( "t" );
+      if( par.TimesliceDetail < 0 || par.TimesliceDetail > 2 )
+        throw std::invalid_argument( "Timeslice detail " + std::to_string( par.TimesliceDetail ) + " invalid" );
       par.outStem = cl.SwitchValue<std::string>( "o" );
-      /*if( par.outStem.find( "@corr@" ) == std::string::npos )
-      {
-        std::string Error{ "Output stem \"" };
-        Error.append( par.outStem );
-        Error.append( "\" invalid" );
-        throw std::invalid_argument( Error );
-      }*/
       par.nSample = cl.SwitchValue<int>( "n" );
       par.binSize = cl.SwitchValue<int>( "b" );
       if( par.binSize != 1 )
@@ -536,14 +567,16 @@ int main(const int argc, const char *argv[])
         std::random_device rd;
         par.seed = rd();
       }
-      par.bSaveSummaries = !cl.GotSwitch( "t" );
-      std::cout << "Creating bootstrap output \"" << par.outStem << "\", seed=" << par.seed << std::endl;
-      bShowUsage = false;
-      
+
       // If there are files specified on the command line,
       // parse the input file names, grouping by correlator, indexed by trajectory.
+      const bool bGotStudy{ cl.GotSwitch( "s" ) };
       if( cl.Args.size() )
       {
+        if( bGotStudy )
+          throw std::invalid_argument( "Can't specify study " + cl.SwitchValue<std::string>( "s" )
+                                      + " with command-line arguments" );
+        bShowUsage = false;
         Manifest Manifest{ cl.Args, cl.SwitchStrings( "x" ) };
         // Walk the list of contractions, performing a separate bootstrap for each
         int BootstrapCount = 0;
@@ -568,28 +601,39 @@ int main(const int argc, const char *argv[])
         std::cout << "Bootstraps written for " << BootstrapCount
         << " / " << Manifest.size() << " correlators" << std::endl;
       }
-      else
+      else if( bGotStudy )
       {
-        // Nothing specified on the command-line
-        // Perform default bootstraps
-        // Heavy-light semi-leptonics
-        const std::string qHeavy{ "h1" };
-        const std::string qLight{ "l" };
-        std::cout << "No files specified. Making default manifest for "
-        << qHeavy << " and " << qLight << std::endl;
-        static const Common::Momentum StudyMomenta[] = {
-          { 0, 0, 0 },/*
-          { 1, 0, 0 },
-                       { 1, 1, 0 },
-                       { 1, 1, 1 },
-                       { 2, 0, 0 },*/
-        };
-        const StudySubject Study{ Z2 };
-        for( const Common::Momentum &m : StudyMomenta )
+        StudySubject Study{ static_cast<StudySubject>( cl.SwitchValue<int>( "s" ) ) };
+        switch( Study )
         {
-          Study1Bootstrap( Study, par, m, Alg, qHeavy, qLight );
-          Study1Bootstrap( Study, par, m, Alg, qHeavy, qHeavy );
-          Study1Bootstrap( Study, par, m, Alg, qLight, qLight );
+          case Z2:
+          case GFWall:
+          {
+            // Nothing specified on the command-line
+            // Perform default bootstraps
+            // Heavy-light semi-leptonics
+            const std::string qHeavy{ "h1" };
+            const std::string qLight{ "l" };
+            std::cout << "No files specified. Making default manifest for "
+            << qHeavy << " and " << qLight << std::endl;
+            static const Common::Momentum StudyMomenta[] = {
+              { 0, 0, 0 },/*
+              { 1, 0, 0 },
+              { 1, 1, 0 },
+              { 1, 1, 1 },
+              { 2, 0, 0 },*/
+            };
+            for( const Common::Momentum &m : StudyMomenta )
+            {
+              Study1Bootstrap( Study, par, m, Alg, qHeavy, qLight );
+              Study1Bootstrap( Study, par, m, Alg, qHeavy, qHeavy );
+              Study1Bootstrap( Study, par, m, Alg, qLight, qLight );
+            }
+          }
+            bShowUsage = false;
+            break;
+          default:
+            std::cout << "Study " << Study << " undefined\n";
         }
       }
     }
@@ -606,12 +650,13 @@ int main(const int argc, const char *argv[])
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
     " <options> ContractionFile1 [ContractionFile2 ...]\n"
     "Perform a bootstrap of the specified files, where <options> are:\n"
-    "-n     Number of samples\n"
+    "-n     Number of samples (" DEF_NSAMPLE ")\n"
     "-b     Bin size (not implemented yet)\n"
-    "-r     Random number seed (unspecified=random seed)\n"
+    "-r     Random number seed (unspecified=random)\n"
     "-o     Output prefix\n"
     "-a     list of gamma algebras we're interested in\n"
-    "-t     don't save .Txt correlators for GNUplot\n"
+    "-s     Perform bootstrap for specified study number\n"
+    "-t     timeslice detail 0 (none), 1 (.txt=default) or 2 (.txt+.h5)\n"
     "-x     eXclude file (may be repeated)\n"
     "--help This message\n";
   }

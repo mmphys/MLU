@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "68939D8023A016D200C30150"
-               BuildableName = "bootstat"
-               BlueprintName = "bootstat"
+               BuildableName = "corrstat"
+               BlueprintName = "corrstat"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,8 +46,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "68939D8023A016D200C30150"
-            BuildableName = "bootstat"
-            BlueprintName = "bootstat"
+            BuildableName = "corrstat"
+            BlueprintName = "corrstat"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -73,8 +73,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "68939D8023A016D200C30150"
-            BuildableName = "bootstat"
-            BlueprintName = "bootstat"
+            BuildableName = "corrstat"
+            BlueprintName = "corrstat"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

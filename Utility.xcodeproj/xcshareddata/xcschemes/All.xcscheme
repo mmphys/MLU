@@ -28,9 +28,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "687E28D122F313DB004F4342"
-               BuildableName = "Andrew"
-               BlueprintName = "Andrew"
+               BlueprintIdentifier = "68939D8023A016D200C30150"
+               BuildableName = "corrstat"
+               BlueprintName = "corrstat"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -70,20 +70,6 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "68939D8023A016D200C30150"
-               BuildableName = "bootstat"
-               BlueprintName = "bootstat"
-               ReferencedContainer = "container:Utility.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "681DC8AF22F19BAB00EE04A9"
                BuildableName = "hlxml"
                BlueprintName = "hlxml"
@@ -98,23 +84,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "68AC6DE522A7114900D42F70"
-               BuildableName = "peramb-compare"
-               BlueprintName = "peramb-compare"
-               ReferencedContainer = "container:Utility.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "682260F72376FA57005341E5"
-               BuildableName = "repair"
-               BlueprintName = "repair"
+               BlueprintIdentifier = "68BEFF692343A75A0031E3E3"
+               BuildableName = "xmlZ2"
+               BlueprintName = "xmlZ2"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -154,9 +126,23 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "68BEFF692343A75A0031E3E3"
-               BuildableName = "xmlZ2"
-               BlueprintName = "xmlZ2"
+               BlueprintIdentifier = "682260F72376FA57005341E5"
+               BuildableName = "repair"
+               BlueprintName = "repair"
+               ReferencedContainer = "container:Utility.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "68AC6DE522A7114900D42F70"
+               BuildableName = "peramb-compare"
+               BlueprintName = "peramb-compare"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

@@ -35,6 +35,29 @@
 
 BEGIN_COMMON_NAMESPACE
 
+// Text required for summaries of correlators
+namespace CorrSumm {
+  const char sep[] = " ";
+  const char Comment[] = "# ";
+  const char NewLine[] = "\n";
+
+  const char * SummaryNames[NumSummaries] = { "corr", "mass", "cosh", "sinh" };
+
+  const char FieldNames[] = "t y y_low y_high y_check";
+  const char FieldNames2[] = " im im_low im_high im_check";
+  const char * SummaryHeader[NumSummaries] =
+  {
+    "correlator",
+    "mass",
+    "cosh mass",
+    "sinh mass",
+  };
+};
+
+const std::string sBootstrap{ "bootstrap" };
+const std::string sModel{ "model" };
+const double NaN{ std::nan( "" ) };
+
 namespace Gamma
 {
   const std::array<std::string, nGamma> name{ // Long name, per Grid
@@ -145,10 +168,6 @@ bool FileExists( const std::string& Filename )
   struct stat buf;
   return stat(Filename.c_str(), &buf) != -1;
 }
-
-const std::string sBootstrap{ "bootstrap" };
-const std::string sModel{ "model" };
-const double NaN{ std::nan( "" ) };
 
 // Sort the list of values, then extract the lower and upper 68th percentile error bars
 void ValWithEr::Get( double Central_, std::vector<double> &Data, std::size_t Count )
@@ -283,8 +302,8 @@ void ExtractTimeslice( std::string &Prefix, bool &bHasTimeslice, int &Timeslice 
   }
 }
 
-// Replace momentum with momentum squared
-void ReplaceP2( std::string &Prefix, bool &bGotMomentum, int &P2, bool IgnoreSubsequentZero )
+// Strip out momentum info from string if present
+void ExtractP2( std::string &Prefix, bool &bGotMomentum, int &P2, bool IgnoreSubsequentZero )
 {
   std::smatch match;
   static const std::regex pattern{ R"(_[pP]_(-?[0-9]+)_(-?[0-9]+)_(-?[0-9]+))" };
@@ -303,11 +322,6 @@ void ReplaceP2( std::string &Prefix, bool &bGotMomentum, int &P2, bool IgnoreSub
       throw std::runtime_error( "Multiple momenta: " + std::to_string(P2) + " and " + std::to_string(this_p2) );
     Prefix = match.prefix();
     Prefix.append( match.suffix() );
-  }
-  if( bGotMomentum )
-  {
-    Prefix.append( "_p2_" );
-    Prefix.append( std::to_string( P2 ) );
   }
 }
 
@@ -358,14 +372,13 @@ std::string GetFirstGroupName( H5::Group & g )
 void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName, std::string &GroupName, unsigned int flags )
 {
   const bool bFindGroupName{ GroupName.empty() };
-  std::cout << "Opening " << FileName << ( bFindGroupName ? "" : ", group " + GroupName ) << "\n";
   f.openFile( FileName, flags );
   g = f.openGroup( bFindGroupName ? std::string("/") : GroupName );
   if( bFindGroupName ) {
     GroupName = GetFirstGroupName( g );
-    std::cout << "Group " << GroupName << "\n";
     g = g.openGroup( GroupName );
   }
+  std::cout << "  " << FileName << " (" << GroupName << ")\n";
 }
 
 // Read the gamma algebra attribute string and make sure it's valid
@@ -572,24 +585,7 @@ void CommandLine::Parse( int argc, const char *argv[], const std::vector<SwitchD
 // Make summary files of a bootstrap of a correlator
 void SummariseBootstrapCorr(const Common::SampleC &out, const std::string & sOutFileBase, SeedType Seed )//, int momentum_squared)
 {
-  static const char sep[] = " ";
-  static const char Comment[] = "# ";
-  static const char NewLine[] = "\n";
-
-  const char * SummaryNames[4] = { "corr", "mass", "cosh", "sinh" };
-
-  static const char FieldNames[] = "t y y_low y_high y_check";
-  static const char FieldNames2[] = " im im_low im_high im_check";
-  static const char * SummaryHeader[] =
-  {
-    "correlator",
-    "mass",
-    "cosh mass",
-    "sinh mass",
-  };
-
-  static const int NumSummaries{ static_cast<int>( sizeof( SummaryNames ) / sizeof( SummaryNames[0] ) ) };
-
+  using namespace CorrSumm;
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
   const int nt{ out.Nt() };
   const int nSample{ out.NumSamples() };

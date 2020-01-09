@@ -46,15 +46,15 @@ static const std::string GaugeFieldName{"gauge_fixed"};
 static const std::string GaugeFieldNameUnfixedSmeared{"gauge_stout"};
 static const std::string GaugeFieldNameSmeared{"gauge_stout_fixed"};
 // Should I stout smear the heavy quark gauge field?
-#define HEAVY_GAUGE_NAME GaugeFieldNameSmeared
 //#define HEAVY_GAUGE_NAME GaugeFieldName
+#define HEAVY_GAUGE_NAME GaugeFieldNameSmeared
+//#define SMEAR_THEN_FIX  // Otherwise, fix the gauge, then smear
 
 //static const std::string GaugeFieldNameSingle{"gauge_fixed_float"};
 //static const std::string GaugeFieldNameSingleSmeared{"gauge_fixed_stout_float"};
 
 // Comment this out to use the actions inherited from Z2 noise and distillation
 #define USE_ZMOBIUS
-// Comment this out to use mixed precision.
 // NB: This is only partially implemented - would need to be finished if required
 //#define USE_MIXED_PRECISION
 
@@ -71,30 +71,30 @@ struct Quark
   const char * EigenPackFilename;
 };
 
+#define RESID_LIGHT   1e-8
+#define RESID_HEAVY   1e-12
+#define MAX_ITERATION 5000
+
 #ifdef USE_ZMOBIUS
 #define LS_LIGHT    10
 #define LS_STRANGE  24
 #define LS_HEAVY    LS_LIGHT
-#define RESID_LIGHT    1e-8
-#define RESID_STRANGE  RESID_LIGHT
-#define RESID_HEAVY    RESID_STRANGE
-#define MAX_ITERATION 30000
+#define RESID_STRANGE  1e-8
+#define LIGHT_ITERATION 30000
 #else
 #define LS_LIGHT    16
 #define LS_STRANGE  LS_LIGHT
 #define LS_HEAVY    12
-#define RESID_LIGHT    1e-8
 #define RESID_STRANGE  1e-12
-#define RESID_HEAVY    RESID_STRANGE
-#define MAX_ITERATION 5000
+#define LIGHT_ITERATION 5000
 #endif
 
 static const std::string Strange{ "s" };
 static const Quark Quarks[] = {
-  {"l", 0.005, LS_LIGHT, 1.8, MAX_ITERATION, RESID_LIGHT, GaugeFieldName, nullptr},// Accidental deletion of eigenpacks \
+  {"l", 0.005, LS_LIGHT, 1.8, LIGHT_ITERATION, RESID_LIGHT, GaugeFieldName,
     "/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine"}, // light
   {Strange, 0.04, LS_STRANGE, 1.8, MAX_ITERATION, RESID_STRANGE, GaugeFieldName, nullptr}, // strange
-  // {"h1", 0.58, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, HEAVY_GAUGE_NAME, nullptr}, // charm
+  {"h1", 0.58, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, HEAVY_GAUGE_NAME, nullptr}, // charm
   // {"h2", 0.64, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, HEAVY_GAUGE_NAME, nullptr}, // charm
 };
 static constexpr int NumQuarks{ sizeof( Quarks ) / sizeof( Quarks[0] ) };
@@ -118,8 +118,9 @@ static constexpr int NumMomenta{ sizeof( Momenta ) / sizeof( Momenta[0] ) };
 
 void CreateApp( Application &application )
 {
-  const unsigned int Nt{ 64 };
-  
+  const unsigned int Nt{ 2 };//64 };
+  const unsigned int NtIncrement{ 1 };
+
   // gauge field
   MIO::LoadNersc::Par gaugePar;
   gaugePar.file = "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat";
@@ -143,13 +144,19 @@ void CreateApp( Application &application )
     if( Common::EqualIgnoreCase( Quarks[q].GaugeField, GaugeFieldNameSmeared ) )
     {
       MGauge::StoutSmearing::Par stoutPar;
-      stoutPar.gauge = GaugeFieldNameUnfixed;
       stoutPar.steps = 3;
       stoutPar.rho = 0.1;
+#ifdef SMEAR_THEN_FIX
+      stoutPar.gauge = GaugeFieldNameUnfixed;
       application.createModule<MGauge::StoutSmearing>(GaugeFieldNameUnfixedSmeared, stoutPar);
       gfPar.gauge = GaugeFieldNameUnfixedSmeared;
+      gfPar.Omega_tol = 1e-16;
+      gfPar.Phi_tol = 1e-16;
       application.createModule<MGauge::GaugeFix>(GaugeFieldNameSmeared, gfPar);
-      q = NumQuarks - 1;
+#else
+      stoutPar.gauge = GaugeFieldName;
+      application.createModule<MGauge::StoutSmearing>(GaugeFieldNameSmeared, stoutPar);
+#endif
       bNeedHeavyGaugeField = true;
       break;
     }
@@ -233,7 +240,7 @@ void CreateApp( Application &application )
 
     // eigenpacks for deflation
     std::string epackObjname;
-    if( q.EigenPackFilename )
+    if( q.EigenPackFilename && q.Ls == 16 ) // The eigenpacks expect Ls == 16
     {
       epackObjname = "epack_" + q.flavour;
       MIO::LoadFermionEigenPack::Par epPar;
@@ -295,7 +302,7 @@ void CreateApp( Application &application )
   }
   
   // Loop through all timeslices
-  for (unsigned int t = 4; t < Nt; t += 4 )
+  for (unsigned int t = NtIncrement; t < Nt; t += NtIncrement )
   {
     const std::string TimeSuffix{ Sep + "t" + Sep + std::to_string( t ) };
 
@@ -368,6 +375,7 @@ void CreateApp( Application &application )
         {
           static const std::string MyGammas{ "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)" }; // used to be "all"
           static const std::string MesonDir{ "mesons/C1/" + RunName
+            //+ "/Unsm"
           //#ifdef USE_ZMOBIUS
                                            //+ "/ZMob"
           //#endif
@@ -412,7 +420,7 @@ int main(int argc, char *argv[])
 
   // global parameters
   static const int Config{ 3000 };
-  static const int NumConfigs{ 4 };
+  static const int NumConfigs{ 1 };
   assert( NumConfigs > 0 );
   Application::GlobalPar globalPar;
   globalPar.trajCounter.start    = Config;

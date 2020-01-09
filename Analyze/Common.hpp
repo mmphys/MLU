@@ -64,6 +64,20 @@
 
 BEGIN_COMMON_NAMESPACE
 
+// Text required for summaries of correlators
+namespace CorrSumm {
+  extern const char sep[];
+  extern const char Comment[];
+  extern const char NewLine[];
+
+  static constexpr int NumSummaries{ 4 };
+  extern const char * SummaryNames[NumSummaries];
+
+  extern const char FieldNames[];
+  extern const char FieldNames2[];
+  extern const char * SummaryHeader[NumSummaries];
+};
+
 // Compare two strings, case insensitive
 inline bool EqualIgnoreCase(const std::string & s1, const std::string & s2)
 {
@@ -234,8 +248,8 @@ std::string MakeFilename(const std::string &Base, const std::string &Type, SeedT
 // Strip out timeslice info from a string if present
 void ExtractTimeslice( std::string &s, bool &bHasTimeslice, int & Timeslice );
 
-// Replace momentum in string with momentum squared if present
-void ReplaceP2( std::string &s, bool &bGotMomentum, int &P2, bool IgnoreSubsequentZero = true );
+// Strip out momentum info from string if present
+void ExtractP2( std::string &s, bool &bGotMomentum, int &P2, bool IgnoreSubsequentZero = true );
 
 // For now, this is just an alias
 using Correlator = std::vector<std::complex<double>>;
@@ -602,24 +616,7 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
 template <typename T>
 void CorrelatorFile<T>::WriteSummaries ( const std::string &Prefix, const std::vector<Gamma::Algebra> &AlgSpecific )
 {
-  static const char sep[] = " ";
-  static const char Comment[] = "# ";
-  static const char NewLine[] = "\n";
-
-  const char * SummaryNames[4] = { "corr", "mass", "cosh", "sinh" };
-
-  static const char FieldNames[] = "t y y_low y_high y_check";
-  static const char FieldNames2[] = " im im_low im_high im_check";
-  static const char * SummaryHeader[] =
-  {
-    "correlator",
-    "mass",
-    "cosh mass",
-    "sinh mass",
-  };
-
-  static const int NumSummaries{ static_cast<int>( sizeof( SummaryNames ) / sizeof( SummaryNames[0] ) ) };
-
+  using namespace CorrSumm;
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
   const int nt{ Nt() };
   const std::vector<Gamma::Algebra> &Alg{ AlgSpecific.size() ? AlgSpecific : Alg_ };
@@ -637,7 +634,7 @@ void CorrelatorFile<T>::WriteSummaries ( const std::string &Prefix, const std::v
       {
         std::string sOutFileName{MakeFilename(sOutBase, SummaryNames[f], Name_.Seed, TEXT_EXT)};
         std::ofstream s( sOutFileName );
-        s << Comment << SummaryHeader[f] << NewLine << Comment << sOutBaseShort << "\n# Seed "
+        s << Comment << SummaryHeader[f] << NewLine << Comment << sOutBaseShort << "\n# Config "
           << Name_.Seed << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" )
           << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
         const T * const pc = (*this)( Alg[Snk], Alg[Src] );
@@ -1050,8 +1047,6 @@ public:
 
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl);
 
-// Make summary files of this data set
-extern const char * SummaryNames[4];
 // Make summary files of a bootstrap of a correlator
 void SummariseBootstrapCorr(const SampleC &out, const std::string & sOutFileBase, SeedType Seed );//, int momentum_squared);
 
