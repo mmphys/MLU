@@ -383,7 +383,7 @@ void CreateApp( Application &application )
           std::string MesonSuffix{ Quarks[i].flavour + Sep + Quarks[j].flavour + Suffix };
           mesPar.output = MesonDir + MesonSuffix;
           mesPar.q1     = propNameSmeared[i];
-          mesPar.q2     = propNameSmearedNeg[j];
+          mesPar.q2     = propNameSmeared[j];
           mesPar.gammas = MyGammas;
           mesPar.sink   = ContractionSinkName0;
           application.createModule<MContraction::Meson>(MesonSuffix, mesPar);
@@ -392,7 +392,7 @@ void CreateApp( Application &application )
             MesonSuffix = Quarks[i].flavour + Sep + Quarks[j].flavour + SuffixNeg;
             mesPar.output = MesonDir + MesonSuffix;
             mesPar.q1     = propNameSmearedNeg[i];
-            mesPar.q2     = propNameSmeared[j];
+            mesPar.q2     = propNameSmearedNeg[j];
             application.createModule<MContraction::Meson>(MesonSuffix, mesPar);
           }
         }
