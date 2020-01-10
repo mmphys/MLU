@@ -62,7 +62,8 @@
 #endif
 
 using Matrix = Eigen::MatrixXd; // dynamic sized matrix of complex double
-using SampleD = Common::SampleD; // correlator of real (double)
+using SampleD = Common::SampleD; // Bootstrap sample double
+using SampleC = Common::SampleC; // Bootstrap sample std::complex<double>
 
 // Minimisation for multi-exponential fit
 
@@ -167,16 +168,16 @@ void MultiExpModel::MakeCovar( void )
     const int f1{ x / NtCorr };
     const int t1{ x % NtCorr };
     const int ReadX{ Nt * f1 + t1 + tMin };
-    const double ExpectedX{ Corr[Latan::central]( ReadX,  0 ) };
+    const double ExpectedX{ Corr[SampleD::idxCentral][ReadX] };
     const int yMin{ bCorrelated ? 0 : x };
     for( int y = yMin; y <= x; ++y ) {
       const int f2{ y / NtCorr };
       const int t2{ y % NtCorr };
       const int ReadY{ Nt * f2 + t2 + tMin };
-      const double ExpectedY{ Corr[Latan::central]( ReadY, 0 ) };
+      const double ExpectedY{ Corr[SampleD::idxCentral][ReadY] };
       double z = 0;
       for( int i = 0; i < NSamples; ++i )
-        z += ( Corr[i]( ReadX, 0 ) - ExpectedX ) * ( Corr[i]( ReadY, 0 ) - ExpectedY );
+        z += ( Corr[i][ReadX] - ExpectedX ) * ( Corr[i][ReadY] - ExpectedY );
       z /= NSamples;
       if( bCorrelated ) {
         Covar(x, y) = z;
@@ -259,7 +260,7 @@ double MultiExpModel::operator()( const vd_t & par ) const {
         }
         const int iRead{ AlphaIndex( snk, src ) * Nt + t + tMin };
         const int iWrite{ AlphaIndex( snk, src ) * NtCorr + t };
-        ModelError[iWrite] = Corr[idx]( iRead, 0 ) - z;
+        ModelError[iWrite] = Corr[idx][iRead] - z;
       }
     }
   static int iCall{ 0 };
@@ -335,12 +336,10 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     MakeCovar();
 
   // Results for each bootstrap sample
-  Latan::DMatSample ModelParams( NSamples, NumParams, 2 );      // model parameters (from the fit), NB Absolute energies
-  std::vector<Latan::DMatSample> ModelCorr( NumOps * NumOps );  // correlators resulting from the fit parameters
-  for( int i = 0; i < NumOps * NumOps; i++ ) {
-    ModelCorr[i].resize( NSamples );
-    ModelCorr[i].resizeMat( Nt, 2 ); // Complex component will be zero
-  }
+  SampleD ModelParams( NSamples, NumParams );      // model parameters (from the fit), NB Absolute energies
+  std::vector<SampleC> ModelCorr( NumOps * NumOps );  // correlators resulting from the fit parameters
+  for( int i = 0; i < NumOps * NumOps; i++ )
+    ModelCorr[i].resize( NSamples, Nt ); // Complex component will be zero
 
   // Make initial guesses for the parameters
   // For each Exponent, I need the delta_E + a constant for each operator
@@ -349,16 +348,16 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     // Take a starting guess for the parameters - same as LatAnalyze
     double * const Energy{ par.data() };
     double * const Coeff{ Energy + NumExponents };
-    const Latan::DMat & m{ Corr[Latan::central] };
+    const double * const m{ Corr[SampleD::idxCentral] };
     const int tGuess{Nt / 4};
     Energy[0] = 0;
     for( int snk = 0; snk < NumOps; ++snk )
       for( int src = 0; src < NumOps; ++src ) {
         const int i{ AlphaIndex( snk, src ) * Nt + tGuess };
-        double E0 = std::log( m( i, 0 ) / m( i + 1, 0 ) );
+        double E0 = std::log( m[i] / m[i + 1] );
         Energy[0] += E0;
         if( snk == src )
-          Coeff[MELIndex( snk, 0 )] = std::sqrt( std::abs( m( i, 0 ) / ( std::exp( - E0 * tGuess ) ) ) );
+          Coeff[MELIndex( snk, 0 )] = std::sqrt( std::abs( m[i] / ( std::exp( - E0 * tGuess ) ) ) );
       }
     Energy[0] /= NumFiles;
     // Now guess Higher exponents - same as LatAnalyze
@@ -394,7 +393,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   //for (idx = -ModelParams.offset; idx < ModelParams.size(); idx++) {
   const int HalfNt{ Nt - 1 }; // NB: This is half of the ORIGINAL correlator time dimension
   for (int LoopIdx = -10; LoopIdx < NSamples; LoopIdx++) {
-    idx = ( LoopIdx >= 0 && LoopIdx < NSamples ) ? LoopIdx : Latan::central;
+    idx = ( LoopIdx >= 0 && LoopIdx < NSamples ) ? LoopIdx : SampleD::idxCentral;
     ROOT::Minuit2::FunctionMinimum min = minimizer();
     ROOT::Minuit2::MnUserParameterState state = min.UserState();
     //assert( minimizer.SetVariables( par.begin(), par.end() ) == NumParams && "Error: could not set variables" );
@@ -410,13 +409,13 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
       //ROOT::Minuit2::MnUserParameters params = min.UserParameters();
       //std::cout << "Fit result:" << min << std::endl;
       upar = state.Parameters();
-      if( idx == Latan::central || Verbosity > 2 ) {
+      if( SampleD::idxCentral || Verbosity > 2 ) {
         const std::string FitResult{ "Fit result:" };
         if( Verbosity )
           std::cout << FitResult << state << "\n";
         DumpParameters( FitResult, upar );
       }
-      if( idx == Latan::central ) {
+      if( SampleD::idxCentral ) {
         ChiSq = state.Fval();
         dof = Extent;
         if( bCorrelated )
@@ -434,21 +433,17 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
       }
       std::sort(SortingHat.begin(), SortingHat.end(), [](const std::vector<double> l, const std::vector<double> r)
                 { return l[0] < r[0]; });
-      Latan::DMat & FitParams{ ModelParams[idx] };
-      for( int j = 0; j < NumParams; ++j ) {
-        //FitParams(j, 0) = upar.Value( j );
-        FitParams(j, 1) = 0;
-      }
+      double * const FitParams{ ModelParams[idx] };
       for( int e = 0; e < NumExponents; ++e ) {
         // Save energy
-        FitParams( e, 0 ) = SortingHat[e][0];
+        FitParams[e] = SortingHat[e][0];
         for( int o = 0; o < NumOps; ++o )
-          FitParams( MELIndex(o, e) + NumExponents, 0 ) = SortingHat[e][o + 1];
+          FitParams[MELIndex(o, e) + NumExponents] = SortingHat[e][o + 1];
       }
       // Save the reconstructed correlator values for this replica
       for( int snk = 0; snk < NumOps; ++snk )
         for( int src = 0; src < NumOps; ++src ) {
-          Latan::DMat &mc{ ModelCorr[AlphaIndex( snk, src )][idx] };
+          std::complex<double> * const mc{ ModelCorr[AlphaIndex( snk, src )][idx] };
           // Check which fit model to use based on operator product parity
           ModelType ThisModel{ Model };
           if( bAlternating && ( snk & 1 ) != ( src & 1 ) )
@@ -458,34 +453,34 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
             else if( ThisModel == sinh )
               ThisModel = cosh;
           }
-          for( int t = 0; t < Nt; ++t ) {
+          for( int t = 0; t < Nt; ++t )
+          {
             double z = 0;
             for( int e = 0; e < NumExponents; ++e ) {
-              z +=   FitParams( MELIndex( src, e ) + NumExponents, 0)
-                   * FitParams( MELIndex( snk, e ) + NumExponents, 0)
-                   * std::exp( - FitParams( e, 0 ) * t );
+              z +=   FitParams[MELIndex( src, e ) + NumExponents]
+                   * FitParams[MELIndex( snk, e ) + NumExponents]
+                   * std::exp( - FitParams[e] * t );
               switch( ThisModel ) {
                 case exp:
-                  z += FitParams( MELIndex( src, e ) + NumExponents )
-                     * FitParams( MELIndex( snk, e ) + NumExponents )
-                     * std::exp( - FitParams( e, 0 ) * t );
+                  z += FitParams[MELIndex( src, e ) + NumExponents]
+                     * FitParams[MELIndex( snk, e ) + NumExponents]
+                     * std::exp( - FitParams[e] * t );
                   break;
                 case cosh:
-                  z += FitParams( MELIndex( src, e ) + NumExponents )
-                     * FitParams( MELIndex( snk, e ) + NumExponents )
-                     * std::exp( - FitParams( e, 0 ) * HalfNt )
-                     * std::cosh(- FitParams( e, 0 ) * ( t - HalfNt ) );
+                  z += FitParams[MELIndex( src, e ) + NumExponents]
+                     * FitParams[MELIndex( snk, e ) + NumExponents]
+                     * std::exp( - FitParams[e] * HalfNt )
+                     * std::cosh(- FitParams[e] * ( t - HalfNt ) );
                   break;
                 case sinh:
-                  z += FitParams( MELIndex( src, e ) + NumExponents )
-                     * FitParams( MELIndex( snk, e ) + NumExponents )
-                     * std::exp( - FitParams( e, 0 ) * HalfNt )
-                     * std::sinh(- FitParams( e, 0 ) * ( t - HalfNt ) );
+                  z += FitParams[MELIndex( src, e ) + NumExponents]
+                     * FitParams[MELIndex( snk, e ) + NumExponents]
+                     * std::exp( - FitParams[e] * HalfNt )
+                     * std::sinh(- FitParams[e] * ( t - HalfNt ) );
                   break;
               }
             }
-            mc(t,0) = z;
-            mc(t,1) = 0;
+            mc[t] = z;
           }
         }
     }
@@ -497,14 +492,14 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     sModelBase.append( 1, '_' );
     sModelBase.append( OpNames[i] );
   }
-  Latan::Io::save(ModelParams, Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ));
+  ModelParams.Write( Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ) );
   //Common::SummariseBootstrap(ModelParams, sModelBase, Seed, "params" );
   for( int snk = 0; snk < NumOps; ++snk )
     for( int src = 0; src < NumOps; ++src ) {
       const int i{ AlphaIndex( snk, src ) };
       const std::string SummaryBase{ OutputRunBase + '.' + OpNames[snk] + '_' + OpNames[src] };
       if( bSaveCorr )
-        Latan::Io::save(ModelCorr[i], Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
+        ModelCorr[i].Write( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
       Common::SummariseBootstrapCorr(ModelCorr[i], SummaryBase, Seed );
     }
   /*if( NumOps == 2) {  // I've only coded for two operators
@@ -542,10 +537,10 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   std::vector<Common::ValWithEr> Results( NumParams );
   std::vector<double> data( NSamples );
   for( int p = 0; p < NumParams; p++ ) {
-    double Central = ModelParams[Latan::central](p,0);
+    double Central = ModelParams[SampleD::idxCentral][p];
     std::size_t Count{ 0 };
     for( int j = 0; j < NSamples; ++j ) {
-      double d = ModelParams[j](p, 0);
+      double d = ModelParams[j][p];
       if( std::isfinite( d ) )
         data[Count++] = d;
     }
@@ -554,96 +549,43 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   return Results;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, const char *argv[])
 {
   std::ios_base::sync_with_stdio( false );
-  using namespace Latan;
-  // parse arguments /////////////////////////////////////////////////////////
-  OptParser opt;
-  opt.addOption("" , "ti"       , OptParser::OptType::value  , false,
-                "initial fit time");
-  opt.addOption("" , "tf"       , OptParser::OptType::value  , false,
-                "final fit time");
-  opt.addOption("" , "dti"       , OptParser::OptType::value , true,
-                "number of initial fits", "1");
-  opt.addOption("" , "dtf"       , OptParser::OptType::value , true,
-                "number of final fits", "1");
-  opt.addOption("t" , "thinning", OptParser::OptType::value  , true,
-                "thinning of the time interval", "1");
-  opt.addOption("s", "shift"    , OptParser::OptType::value  , true,
-                "time variable shift", "0");
-  opt.addOption("m", "model"    , OptParser::OptType::value  , true,
-                "fit model (exp|exp2|exp3|cosh|cosh2|cosh3|explin|<interpreter code>)", "cosh");
-  opt.addOption("" , "nPar"     , OptParser::OptType::value  , true,
-                "number of model parameters for custom models "
-                "(-1 if irrelevant)", "-1");
-  opt.addOption("" , "svd"      , OptParser::OptType::value  , true,
-                "singular value elimination threshold", "0.");
-  opt.addOption("v", "verbosity", OptParser::OptType::value  , true,
-                "minimizer verbosity level (0|1|2)", "0");
-  opt.addOption("o", "output",    OptParser::OptType::value  , true,
-                "output base filename", "");
-  opt.addOption("" , "uncorr"   , OptParser::OptType::trigger, true,
-                "only do the uncorrelated fit");
-  opt.addOption("f", "fold"     , OptParser::OptType::value, true,
-                "fold the correlator (0=don't fold, 1=+parity, -1=-parity)", "0");
-  opt.addOption("p", "plot"     , OptParser::OptType::trigger, true,
-                "show the fit plot");
-  opt.addOption("r", "range"    , OptParser::OptType::value  , true,
-                "vertical range multiplier in plots", "20.");
-  opt.addOption("h", "heatmap"  , OptParser::OptType::trigger, true,
-                "show the fit correlation heatmap");
-  opt.addOption("", "help"      , OptParser::OptType::trigger, true,
-                "show this help message and exit");
-  opt.addOption("e", "exponents", OptParser::OptType::value  , true,
-                "number of exponents", "0");
-  opt.addOption("" , "uncorr"   , OptParser::OptType::trigger, true,
-                "perform uncorrelated fit (default=correlated");
-  opt.addOption("" , "opnames"   , OptParser::OptType::trigger, true,
-                "operator names (default=op_n");
-  opt.addOption("" , "savecorr"   , OptParser::OptType::trigger, true,
-                "save bootstrap replicas of correlators");
-  if (!opt.parse(argc, argv) or (opt.getArgs().size() < 1) or opt.gotOption("help"))
+  int iReturn{ EXIT_SUCCESS };
+  bool bShowUsage{ true };
+  using CL = Common::CommandLine;
+  CL cl;
+  try
   {
-    std::cerr << "usage: " << argv[0] << " <options> <correlator file>" << std::endl;
-    std::cerr << std::endl << "Possible options:" << std::endl << opt << std::endl;
-    
-    return EXIT_FAILURE;
-  }
-  const int ti{ opt.optionValue<int>("ti") };
-  const int tf{ opt.optionValue<int>("tf") };
-  const int dti_max{ opt.optionValue<int>("dti") };
-  const int dtf_max{ opt.optionValue<int>("dtf") };
-  //int thinning            = opt.optionValue<int>("t");
-  const int shift{ opt.optionValue<int>("s") };
-  //Index nPar              = opt.optionValue<Index>("nPar");
-  //double svdTol           = opt.optionValue<double>("svd");
-  //bool doCorr             = !opt.gotOption("uncorr");
-  const int fold{ opt.optionValue<int>("fold") };
-  //bool doPlot             = opt.gotOption("p");
-  //double plotrange        = opt.optionValue<Index>("range");
-  //bool doHeatmap          = opt.gotOption("h");
-  const std::string model{ opt.optionValue("m") };
-  std::string outBaseFileName{ opt.optionValue("o") };
-  const bool doCorr{ !opt.gotOption("uncorr") };
-  const int Verbosity{ opt.optionValue<int>("v") }; // 0 = normal, 1=debug, 2=save covar, 3=Every iteration
-  const bool bSaveCorr{ opt.gotOption("savecorr") };
-  /*Minimizer::Verbosity verbosity;
-  switch ( Verbosity )
-  {
-    case 0:
-      verbosity = Minimizer::Verbosity::Silent;
-      break;
-    case 1:
-      verbosity = Minimizer::Verbosity::Normal;
-      break;
-    case 2:
-      verbosity = Minimizer::Verbosity::Debug;
-      break;
-    default:
-      std::cerr << "error: wrong verbosity level" << std::endl;
-      return EXIT_FAILURE;
-  }*/
+    const std::initializer_list<CL::SwitchDef> list = {
+      {"ti", CL::SwitchType::Single, nullptr},
+      {"tf", CL::SwitchType::Single, nullptr},
+      {"dti", CL::SwitchType::Single, "1"},
+      {"dtf", CL::SwitchType::Single, "1"},
+      {"s", CL::SwitchType::Single, "0"},
+      {"v", CL::SwitchType::Single, "0"},
+      {"o", CL::SwitchType::Single, "" },
+      {"f", CL::SwitchType::Single, "0"},
+      {"e", CL::SwitchType::Single, "2"},
+      {"uncorr", CL::SwitchType::Flag, nullptr},
+      {"savecorr", CL::SwitchType::Flag, nullptr},
+      {"help", CL::SwitchType::Flag, nullptr},
+    };
+    cl.Parse( argc, argv, list );
+    if( !cl.GotSwitch( "help" ) && cl.Args.size() )
+    {
+      const int ti{ cl.SwitchValue<int>("ti") };
+      const int tf{ cl.SwitchValue<int>("tf") };
+      const int dti_max{ cl.SwitchValue<int>("dti") };
+      const int dtf_max{ cl.SwitchValue<int>("dtf") };
+      const int shift{ opt.optionValue<int>("s") };
+      const int fold{ opt.optionValue<int>("fold") };
+      const std::string model{ opt.optionValue("m") };
+      std::string outBaseFileName{ opt.optionValue("o") };
+      const bool doCorr{ !opt.gotOption("uncorr") };
+      const int Verbosity{ opt.optionValue<int>("v") }; // 0 = normal, 1=debug, 2=save covar, 3=Every iteration
+      const bool bSaveCorr{ opt.gotOption("savecorr") };
   
   // load correlators /////////////////////////////////////////////////////////
   const int NumFiles{ static_cast<int>( opt.getArgs().size() ) };
@@ -734,9 +676,32 @@ int main(int argc, char *argv[])
       }
     }
   }
-  catch(const std::exception &e) {
+  catch(const std::exception &e)
+  {
     std::cerr << "Error: " << e.what() << std::endl;
-    return EXIT_FAILURE;
+    iReturn = EXIT_FAILURE;
+  } catch( ... ) {
+    std::cerr << "Error: Unknown exception" << std::endl;
+    iReturn = EXIT_FAILURE;
   }
-  return EXIT_SUCCESS;
+  if( bShowUsage )
+  {
+    ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
+    " <options> Bootstrap1 [Bootstrap2 ...]\n"
+    "Perform a multi-exponential fit of the specified bootstrap replicas, where <options> are:\n"
+    "--ti   Initial fit time\n"
+    "--tf   Final   fit time\n"
+    "--dti  Number of initial fit times (default 1)\n"
+    "--dti  Number of final   fit times (default 1)\n"
+    "-s     time Shift (default 0)\n"
+    "-v     Verbosity, 0 = normal (default), 1=debug, 2=save covar, 3=Every iteration\n"
+    "-o     Output base filename\n"
+    "-f     Fold the correlator, 0=don't fold (default), 1=+parity, -1=-parity\n"
+    "-e     number of Exponents (default same as files)\n"
+    "Flags:\n"
+    "--uncorr   Uncorrelated fit (default correlated)\n"
+    "--savecorr Save bootstrap replicas of correlators\n"
+    "--help     This message\n";
+  }
+  return iReturn;
 }

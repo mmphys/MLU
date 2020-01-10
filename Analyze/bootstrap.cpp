@@ -529,6 +529,7 @@ int DebugTest1()
 
 int main(const int argc, const char *argv[])
 {
+  std::ios_base::sync_with_stdio( false );
   // int i = DebugTest1(); if( i ) return i;
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
@@ -644,6 +645,7 @@ int main(const int argc, const char *argv[])
     iReturn = EXIT_FAILURE;
   } catch( ... ) {
     std::cerr << "Error: Unknown exception" << std::endl;
+    iReturn = EXIT_FAILURE;
   }
   if( bShowUsage )
   {

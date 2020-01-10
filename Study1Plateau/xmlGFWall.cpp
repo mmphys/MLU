@@ -118,8 +118,8 @@ static constexpr int NumMomenta{ sizeof( Momenta ) / sizeof( Momenta[0] ) };
 
 void CreateApp( Application &application )
 {
-  const unsigned int Nt{ 2 };//64 };
-  const unsigned int NtIncrement{ 1 };
+  const unsigned int Nt{ 64 };
+  const unsigned int NtIncrement{ 4 };
 
   // gauge field
   MIO::LoadNersc::Par gaugePar;
@@ -302,7 +302,7 @@ void CreateApp( Application &application )
   }
   
   // Loop through all timeslices
-  for (unsigned int t = NtIncrement; t < Nt; t += NtIncrement )
+  for (unsigned int t = 0; t < Nt; t += NtIncrement )
   {
     const std::string TimeSuffix{ Sep + "t" + Sep + std::to_string( t ) };
 
@@ -440,7 +440,7 @@ int main(int argc, char *argv[])
   {
     application.run();
   }
-  else if(( 0 ))
+  else //if(( 0 ))
   {
     for( int i = 1; i < 10; i++ )
     {
