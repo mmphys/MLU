@@ -1,14 +1,9 @@
 /*************************************************************************************
  
  Create XML for a 2-pt mass plateau study using Z2 wall sources.
- Copyright (C) 2019
+ Source file: xmlGFWall.cpp
+ Copyright (C) 2019-2020
  Author: Michael Marshall<Michael.Marshall@ed.ac.uk>
- 
- Based on an original Grid test program:
- Grid physics library, www.github.com/paboyle/Grid
- Source file: Tests/Hadrons/Test_hadrons_meson_3pt.cc
- Copyright (C) 2015-2018
- Author: Antonin Portelli <antonin.portelli@me.com>
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -76,23 +71,38 @@ struct Quark
 #define MAX_ITERATION 5000
 
 #ifdef USE_ZMOBIUS
+#if !(USE_ZMOBIUS - 48)
+// Values used by Fionn on 48^3
 #define LS_LIGHT    10
 #define LS_STRANGE  24
 #define LS_HEAVY    LS_LIGHT
 #define RESID_STRANGE  1e-8
 #define LIGHT_ITERATION 30000
+#define LIGHT_EIGENPACK nullptr
 #else
+// Values for 24^3
 #define LS_LIGHT    16
 #define LS_STRANGE  LS_LIGHT
 #define LS_HEAVY    12
 #define RESID_STRANGE  1e-12
 #define LIGHT_ITERATION 5000
+#define LIGHT_EIGENPACK C1EigenPack
 #endif
+#else
+// These are the old values used by distillation
+#define LS_LIGHT    16
+#define LS_STRANGE  LS_LIGHT
+#define LS_HEAVY    12
+#define RESID_STRANGE  1e-12
+#define LIGHT_ITERATION 5000
+#define LIGHT_EIGENPACK C1EigenPack
+#endif
+
+static const char * C1EigenPack{ "/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine" };
 
 static const std::string Strange{ "s" };
 static const Quark Quarks[] = {
-  {"l", 0.005, LS_LIGHT, 1.8, LIGHT_ITERATION, RESID_LIGHT, GaugeFieldName,
-    "/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine"}, // light
+  {"l", 0.005, LS_LIGHT, 1.8, LIGHT_ITERATION, RESID_LIGHT, GaugeFieldName, LIGHT_EIGENPACK }, // light
   {Strange, 0.04, LS_STRANGE, 1.8, MAX_ITERATION, RESID_STRANGE, GaugeFieldName, nullptr}, // strange
   {"h1", 0.58, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, HEAVY_GAUGE_NAME, nullptr}, // charm
   // {"h2", 0.64, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, HEAVY_GAUGE_NAME, nullptr}, // charm
@@ -104,15 +114,15 @@ static const Common::Momentum Momentum0{ 0, 0, 0 };
 static const Common::Momentum Momenta[] = {
   { 0, 0, 0 },
   { 1, 0, 0 },
+  { 1, 1, 0 },
+  { 1, 1, 1 },
+  { 2, 0, 0 },/*
   { 0, 1, 0 },
   { 0, 0, 1 },
-  { 1, 1, 0 },
   { 1, 0, 1 },
   { 0, 1, 1 },
-  { 1, 1, 1 },
-  { 2, 0, 0 },
   { 0, 2, 0 },
-  { 0, 0, 2 },
+  { 0, 0, 2 },*/
 };
 static constexpr int NumMomenta{ sizeof( Momenta ) / sizeof( Momenta[0] ) };
 
@@ -179,9 +189,11 @@ void CreateApp( Application &application )
 
   // Action and a solver for each quark
   std::array<std::string, NumQuarks> solverName;
+  std::array<std::string, NumQuarks> propName;
   for( int i = 0; i < NumQuarks; ++i )
   {
     const Quark & q{ Quarks[i] };
+    propName[i] = "prop" + Sep + q.flavour;
     // actions
     const std::string ActionName{ "Action" + Sep + q.flavour };
     //const std::string ActionNameSingle{ ActionName + suffixSingle };
@@ -189,6 +201,7 @@ void CreateApp( Application &application )
     static const std::string boundary{"1 1 1 -1"};
     static const std::string twist{"0. 0. 0. 0."};
 #ifdef USE_ZMOBIUS
+#if !(USE_ZMOBIUS - 48)
     if( Common::EqualIgnoreCase( q.flavour, Strange ) )
     {
       MAction::ScaledDWF::Par actionPar;
@@ -228,6 +241,17 @@ void CreateApp( Application &application )
       application.createModule<MAction::ZMobiusDWF>(ActionName, actionPar);
     }
 #else
+    MAction::ScaledDWF::Par actionPar;
+    actionPar.gauge = q.GaugeField;
+    actionPar.Ls    = q.Ls;
+    actionPar.M5    = q.M5;
+    actionPar.mass  = q.mass;
+    actionPar.boundary = boundary;
+    actionPar.twist = twist;
+    actionPar.scale = 1.0;
+    application.createModule<MAction::ScaledDWF>(ActionName, actionPar);
+#endif
+#else
     MAction::DWF::Par actionPar;
     actionPar.gauge = q.GaugeField;
     actionPar.Ls    = q.Ls;
@@ -240,7 +264,7 @@ void CreateApp( Application &application )
 
     // eigenpacks for deflation
     std::string epackObjname;
-    if( q.EigenPackFilename && q.Ls == 16 ) // The eigenpacks expect Ls == 16
+    if( q.EigenPackFilename )
     {
       epackObjname = "epack_" + q.flavour;
       MIO::LoadFermionEigenPack::Par epPar;
@@ -252,7 +276,7 @@ void CreateApp( Application &application )
     }
     // solvers
     solverName[i] = "CG" + Sep + q.flavour;
-#ifdef USE_ZMOBIUS
+#if !(USE_ZMOBIUS - 48)
     if( !Common::EqualIgnoreCase( q.flavour, Strange ) )
     {
       MSolver::ZRBPrecCG::Par solverPar;
@@ -275,28 +299,22 @@ void CreateApp( Application &application )
   }
 
   // The contraction sink will always have zero momentum
-  static const std::string ContractionSinkName0{ "contraction_sink_p_" + Momentum0.to_string( Sep ) };
+  static const std::string ContractionSinkPrefix{ "contraction_sink_p_" };
+  static const std::string ContractionSinkName0{ ContractionSinkPrefix + Momentum0.to_string( Sep ) };
+  std::array<std::string,NumMomenta> ContractionSinkName;
   {
     MSink::ScalarPoint::Par sinkPar;
     sinkPar.mom = Momentum0.to_string( Space );
     application.createModule<MSink::ScalarPoint>(ContractionSinkName0, sinkPar);
-  }
-
-  // Make a propagator sink for each of the non-zero momentum
-  static std::array<std::string,NumMomenta> PropSinkName;
-  static std::array<std::string,NumMomenta> PropSinkNameNeg;
-  {
-    MSink::Point::Par sinkPar;
     for( unsigned int p = 0; p < NumMomenta; ++p )
     {
-      if( Momenta[p] )
+      if( !Momenta[p] )
+        ContractionSinkName[p] = ContractionSinkName0;
+      else
       {
-        PropSinkName[p] = "prop_sink_p_" + Momenta[p].to_string( Sep );
-        sinkPar.mom = Momenta[p].to_string( Space );
-        application.createModule<MSink::Point>(PropSinkName[p], sinkPar);
-        PropSinkNameNeg[p] = "prop_sink_p_" + Momenta[p].to_string( Sep, true );
+        ContractionSinkName[p] = ContractionSinkPrefix + Momenta[p].to_string( Sep, true );
         sinkPar.mom = Momenta[p].to_string( Space, true );
-        application.createModule<MSink::Point>(PropSinkNameNeg[p], sinkPar);
+        application.createModule<MSink::ScalarPoint>(ContractionSinkName[p], sinkPar);
       }
     }
   }
@@ -305,75 +323,92 @@ void CreateApp( Application &application )
   for (unsigned int t = 0; t < Nt; t += NtIncrement )
   {
     const std::string TimeSuffix{ Sep + "t" + Sep + std::to_string( t ) };
+    const std::string Suffix0{ Sep + "p" + Sep + Momentum0.to_string( Sep ) + TimeSuffix};
 
-    // Zero-momentum wall-source with this momenta
-    const std::string srcName{ "wallsrc" + TimeSuffix };
+    // Make zero-momentum wall-source
+    const std::string srcName0{ "wallsrc" + Suffix0 };
     {
       MSource::Wall::Par srcPar;
       srcPar.tW = t;
       srcPar.mom = Momentum0.to_string4d( Space );
-      application.createModule<MSource::Wall>(srcName, srcPar);
+      application.createModule<MSource::Wall>(srcName0, srcPar);
     }
 
-    // Zero-momentum propagators
-    std::array<std::string, NumQuarks> propNameShort;
-    std::array<std::string, NumQuarks> propName;
-    for( unsigned int i = 0; i < NumQuarks; ++i )
+    // Make propagators
+    std::array<std::string, NumQuarks> propNameUnsmeared0;
+    for (unsigned int i = 0; i < NumQuarks; ++i)
     {
-      propNameShort[i] = "prop" + Sep + Quarks[i].flavour;
-      propName[i] = propNameShort[i] + TimeSuffix;
-#ifdef USE_ZMOBIUS
+      propNameUnsmeared0[i] = propName[i] + Sep + srcName0;
+#if !(USE_ZMOBIUS - 48)
       if( !Common::EqualIgnoreCase( Quarks[i].flavour, Strange ) )
       {
         MFermion::ZGaugeProp::Par quarkPar;
         quarkPar.solver = solverName[i];
-        quarkPar.source = srcName;
-        application.createModule<MFermion::ZGaugeProp>(propName[i], quarkPar);
+        quarkPar.source = srcName0;
+        application.createModule<MFermion::ZGaugeProp>(propNameUnsmeared0[i], quarkPar);
       }
       else
 #endif
       {
         MFermion::GaugeProp::Par quarkPar;
         quarkPar.solver = solverName[i];
-        quarkPar.source = srcName;
-        application.createModule<MFermion::GaugeProp>(propName[i], quarkPar);
+        quarkPar.source = srcName0;
+        application.createModule<MFermion::GaugeProp>(propNameUnsmeared0[i], quarkPar);
       }
     }
 
     // Loop through all momenta
     for( unsigned int p = 0; p < NumMomenta; ++p )
     {
-      const std::string Suffix   { Sep + "p" + Sep + Momenta[p].to_string( Sep ) + TimeSuffix};
-      const std::string SuffixNeg{ Sep + "p" + Sep + Momenta[p].to_string( Sep, true ) + TimeSuffix};
+      const std::string Suffix{ Sep + "p" + Sep + Momenta[p].to_string( Sep ) + TimeSuffix};
 
-      // Make smeared propagators
-      std::array<std::string, NumQuarks> propNameSmearedShort;
-      std::array<std::string, NumQuarks> propNameSmeared;
-      std::array<std::string, NumQuarks> propNameSmearedNeg;
+      // Wall-source(s) with +/- this momentum
+      const std::string srcName{ Momenta[p] ? "wallsrc" + Suffix : srcName0 };
+      if( Momenta[p] )
+      {
+        MSource::Wall::Par srcPar;
+        srcPar.tW = t;
+        srcPar.mom = Momenta[p].to_string4d( Space );
+        application.createModule<MSource::Wall>(srcName, srcPar);
+      }
+
+      // Make propagators
+      std::array<std::string, NumQuarks> propNameUnsmeared;
       for (unsigned int i = 0; i < NumQuarks; ++i)
       {
-        if( !Momenta[p] ) {
-          propNameSmearedShort[i] = propNameShort[i];
-          propNameSmeared[i] = propName[i];
-          propNameSmearedNeg[i] = propName[i];
-        } else {
-          propNameSmearedShort[i] = "prop" + Sep + Quarks[i].flavour;
-          propNameSmeared[i] = propNameSmearedShort[i] + Suffix;
-          MSink::Smear::Par smPar;
-          smPar.q = propName[i];
-          smPar.sink = PropSinkName[p];
-          application.createModule<MSink::Smear>(propNameSmeared[i], smPar);
-          propNameSmearedNeg[i] = propNameSmearedShort[i] + SuffixNeg;
-          smPar.sink = PropSinkNameNeg[p];
-          application.createModule<MSink::Smear>(propNameSmearedNeg[i], smPar);
+        if( !Momenta[p] )
+        {
+          propNameUnsmeared[i] = propNameUnsmeared0[i];
+        }
+        else
+        {
+          propNameUnsmeared[i]    = propName[i] + Sep + srcName;
+#if !(USE_ZMOBIUS - 48)
+          if( !Common::EqualIgnoreCase( Quarks[i].flavour, Strange ) )
+          {
+            MFermion::ZGaugeProp::Par quarkPar;
+            quarkPar.solver = solverName[i];
+            quarkPar.source = srcName;
+            application.createModule<MFermion::ZGaugeProp>(propNameUnsmeared[i], quarkPar);
+          }
+          else
+#endif
+          {
+            MFermion::GaugeProp::Par quarkPar;
+            quarkPar.solver = solverName[i];
+            quarkPar.source = srcName;
+            application.createModule<MFermion::GaugeProp>(propNameUnsmeared[i], quarkPar);
+          }
         }
       }
+
       // contractions
       MContraction::Meson::Par mesPar;
       for (unsigned int i = 0; i < NumQuarks; ++i)
         for (unsigned int j = 0; j < NumQuarks; ++j)
         {
-          static const std::string MyGammas{ "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)" }; // used to be "all"
+          // static const std::string MyGammas{ "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)" };
+          static const std::string MyGammas{ "all" };
           static const std::string MesonDir{ "mesons/C1/" + RunName
             //+ "/Unsm"
           //#ifdef USE_ZMOBIUS
@@ -382,19 +417,11 @@ void CreateApp( Application &application )
                                            + "/" };
           std::string MesonSuffix{ Quarks[i].flavour + Sep + Quarks[j].flavour + Suffix };
           mesPar.output = MesonDir + MesonSuffix;
-          mesPar.q1     = propNameSmeared[i];
-          mesPar.q2     = propNameSmeared[j];
+          mesPar.q1     = propNameUnsmeared[i];
+          mesPar.q2     = propNameUnsmeared0[j];
           mesPar.gammas = MyGammas;
-          mesPar.sink   = ContractionSinkName0;
+          mesPar.sink   = ContractionSinkName[p];
           application.createModule<MContraction::Meson>(MesonSuffix, mesPar);
-          if( Momenta[p] )
-          {
-            MesonSuffix = Quarks[i].flavour + Sep + Quarks[j].flavour + SuffixNeg;
-            mesPar.output = MesonDir + MesonSuffix;
-            mesPar.q1     = propNameSmearedNeg[i];
-            mesPar.q2     = propNameSmearedNeg[j];
-            application.createModule<MContraction::Meson>(MesonSuffix, mesPar);
-          }
         }
     }
   }
