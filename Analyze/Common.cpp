@@ -150,14 +150,16 @@ namespace Gamma
   std::istream& operator>>(std::istream& is, Algebra &a)
   {
     std::string s;
-    is >> s;
-    int i;
-    for( i = 0; i < nGamma && !EqualIgnoreCase( s, nameShort[i] ); i++ )
-      ;
-    if( i < nGamma )
-      a = static_cast<Algebra>( i );
-    else
-      is.setstate( std::ios_base::failbit );
+    if( is >> s )
+    {
+      int i;
+      for( i = 0; i < nGamma && !EqualIgnoreCase( s, nameShort[i] ); i++ )
+        ;
+      if( i < nGamma )
+        a = static_cast<Algebra>( i );
+      else
+        is.setstate( std::ios_base::failbit );
+    }
     return is;
   }
 };
@@ -236,7 +238,7 @@ void FileNameAtt::Parse( const std::string &Filename_ )
 }
 
 // The base should end with an operator in my list
-/*FileNameAtt::FileNameAtt( const std::string &Filename, std::vector<std::string> &OpNames )
+FileNameAtt::FileNameAtt( const std::string &Filename, std::vector<std::string> &OpNames )
 {
   Parse( Filename );
   char Sep = '_';
@@ -266,7 +268,7 @@ void FileNameAtt::Parse( const std::string &Filename_ )
     }
   }
   throw std::runtime_error( "Invalid operator names at end of " + Base );
-}*/
+}
 
 // Make a filename "Base.Type.seed.Ext"
 std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext)
@@ -378,7 +380,6 @@ void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName,
     GroupName = GetFirstGroupName( g );
     g = g.openGroup( GroupName );
   }
-  std::cout << "  " << FileName << " (" << GroupName << ")\n";
 }
 
 // Read the gamma algebra attribute string and make sure it's valid
@@ -393,6 +394,43 @@ Gamma::Algebra ReadGammaAttribute( H5::Group &g, const char * pAttName )
     if( EqualIgnoreCase( sGamma, Gamma::name[idxGamma] ) )
       return static_cast<Gamma::Algebra>( idxGamma );
   throw H5::Exception( "Common::ReadGammaAttribute", "Invalid gamma algebra string" );
+}
+
+static const std::string Signal_TextEquiv_Real{ "real" };
+static const std::string Signal_TextEquiv_Imaginary{ "imaginary" };
+static const std::string Signal_TextEquiv_Unknown{ "unknown" };
+
+std::ostream& operator<<(std::ostream& os, const Signal &sig)
+{
+  switch( sig )
+  {
+    case Signal::Real:
+      os << Signal_TextEquiv_Real;
+      break;
+    case Signal::Imag:
+      os << Signal_TextEquiv_Imaginary;
+      break;
+    default:
+      os << Signal_TextEquiv_Unknown;
+      break;
+  }
+  return os;
+}
+
+std::istream& operator>>(std::istream& is, Signal &sig)
+{
+  std::string s;
+  sig = Signal::Unknown;
+  if( is >> s )
+  {
+    if( EqualIgnoreCase( s, Signal_TextEquiv_Real ) )
+      sig = Signal::Real;
+    else if( EqualIgnoreCase( s, Signal_TextEquiv_Imaginary ) )
+      sig = Signal::Imag;
+    else if( !EqualIgnoreCase( s, Signal_TextEquiv_Unknown ) )
+      is.setstate( std::ios_base::failbit );
+  }
+  return is;
 }
 
 // Read a complex array from an HDF5 file
@@ -591,12 +629,25 @@ void SummariseBootstrapCorr(const Common::SampleC &out, const std::string & sOut
   const int nSample{ out.NumSamples() };
   std::vector<double> Data( nSample );
   std::vector<double> DataImag( nSample );
+  using C = std::complex<double>;
+  using type_ReIm = double (*)( const C & );
+  type_ReIm myReal, myImag;
+  if( out.Signal_ == Signal::Imag )
+  {
+    myReal = &std::imag;
+    myImag = &std::real;
+  }
+  else
+  {
+    myReal = &std::real;
+    myImag = &std::imag;
+  }
   for(int f = 0; f < NumSummaries; f++)
   {
     std::string sOutFileName{ MakeFilename(sOutFileBase, SummaryNames[f], Seed, TEXT_EXT) };
     std::ofstream s( sOutFileName );
     s << Comment << SummaryHeader[f] << NewLine << Comment << sOutFileBase << "\n# Seed " << Seed
-      << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" )
+      << "\n# Signal " << out.Signal_ << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" )
       << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
     for(int t = 0; t < nt; t++)
     {
@@ -606,8 +657,8 @@ void SummariseBootstrapCorr(const Common::SampleC &out, const std::string & sOut
         const std::complex<double> *pc = out[0] + t;
         for( int i = 0; i < nSample; i++, pc += nt )
         {
-          double re = pc->real();
-          double im = pc->imag();
+          double re = myReal( * pc );
+          double im = myImag( * pc );
           if( std::isfinite( re ) && std::isfinite( im ) )
           {
             Data[Count] = re;
@@ -616,8 +667,8 @@ void SummariseBootstrapCorr(const Common::SampleC &out, const std::string & sOut
           }
         }
         pc = out[Common::SampleC::idxCentral] + t;
-        Common::ValWithEr Re( pc->real(), Data, Count );
-        Common::ValWithEr Im( pc->imag(), DataImag, Count );
+        Common::ValWithEr Re( myReal( * pc ), Data, Count );
+        Common::ValWithEr Im( myImag( * pc ), DataImag, Count );
         s << t << sep << Re.Central << sep << Re.ErLow << sep << Re.ErHigh
                << sep << ( static_cast<double>( Count ) / nSample )
                << sep << Im.Central << sep << Im.ErLow << sep << Im.ErHigh
@@ -632,13 +683,13 @@ void SummariseBootstrapCorr(const Common::SampleC &out, const std::string & sOut
           switch(f)
           {
             case 1: // mass
-              DThis = std::log( abs( out[i][t].real() / out[i][(t + 1 + nt) % nt].real() ) );
+              DThis = std::log( abs( myReal( out[i][t] ) / myReal( out[i][(t + 1 + nt) % nt] ) ) );
               break;
             case 2: // cosh mass
-              DThis = std::acosh((out[i][(t - 1 + nt) % nt].real() + out[i][(t + 1) % nt].real()) / (2 * out[i][t].real()));
+              DThis = std::acosh((myReal( out[i][(t - 1 + nt) % nt] ) + myReal( out[i][(t + 1) % nt] ) ) / (2 * myReal( out[i][t] )));
               break;
               case 3: // sinh mass
-              DThis = std::asinh((out[i][(t - 1 + nt) % nt].real() - out[i][(t + 1) % nt].real()) / (2 * out[i][t].real()));
+              DThis = std::asinh((myReal( out[i][(t - 1 + nt) % nt] ) - myReal( out[i][(t + 1) % nt] )) / (2 * myReal( out[i][t] )));
               break;
             default:
               DThis = 0;

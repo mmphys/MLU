@@ -567,47 +567,46 @@ int main(int argc, const char *argv[])
       {"v", CL::SwitchType::Single, "0"},
       {"o", CL::SwitchType::Single, "" },
       {"f", CL::SwitchType::Single, "0"},
-      {"e", CL::SwitchType::Single, "2"},
+      {"e", CL::SwitchType::Single, "0"},
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
-    if( !cl.GotSwitch( "help" ) && cl.Args.size() )
+    const int NumFiles{ static_cast<int>( cl.Args.size() ) };
+    if( !cl.GotSwitch( "help" ) && NumFiles )
     {
       const int ti{ cl.SwitchValue<int>("ti") };
       const int tf{ cl.SwitchValue<int>("tf") };
       const int dti_max{ cl.SwitchValue<int>("dti") };
       const int dtf_max{ cl.SwitchValue<int>("dtf") };
-      const int shift{ opt.optionValue<int>("s") };
-      const int fold{ opt.optionValue<int>("fold") };
-      const std::string model{ opt.optionValue("m") };
-      std::string outBaseFileName{ opt.optionValue("o") };
-      const bool doCorr{ !opt.gotOption("uncorr") };
-      const int Verbosity{ opt.optionValue<int>("v") }; // 0 = normal, 1=debug, 2=save covar, 3=Every iteration
-      const bool bSaveCorr{ opt.gotOption("savecorr") };
-  
-  // load correlators /////////////////////////////////////////////////////////
-  const int NumFiles{ static_cast<int>( opt.getArgs().size() ) };
-  int NumOps = 1; // Number of operators. Should equal square root of number of files
-  while( NumOps * NumOps < NumFiles )
-    NumOps++;
-  if( NumOps * NumOps != NumFiles ) {
-    std::cerr << "Number of files should be a perfect square" << std::endl;
-    return EXIT_FAILURE;
-  }
-  std::vector<std::string> OpNames;
-  Common::SeedType Seed = 0;
-  try{
-    {
-      std::vector<Common::FileNameAtt> FileNames;
+      const int shift{ cl.SwitchValue<int>("s") };
+      const int fold{ cl.SwitchValue<int>("fold") };
+      int NumExponents{ cl.SwitchValue<int>( "e" ) };
+      //const std::string model{ opt.optionValue("m") };
+      std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
+      const int Verbosity{ cl.SwitchValue<int>("v") };
+      const bool bSaveCorr{ cl.GotSwitch("savecorr") };
+      const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
+
+      int NumOps = static_cast<int>( std::sqrt( static_cast<double>( NumFiles ) ) + 0.5 );
+      if( NumOps * NumOps != NumFiles )
+        throw std::invalid_argument( "Number of files should be a perfect square" );
+
       std::size_t i = 0;
-      for( const std::string &sFileName : opt.getArgs() ) {
+      Common::SeedType Seed = 0;
+      std::vector<std::string> OpNames;
+      std::vector<Common::FileNameAtt> FileNames;
+      for( const std::string &sFileName : cl.Args )
+      {
         FileNames.emplace_back( sFileName, OpNames );
-        if( i == 0 ) {
+        if( i == 0 )
+        {
           outBaseFileName.append( FileNames[0].Base );
           Seed = FileNames[0].Seed;
-        } else {
+        }
+        else
+        {
           static const std::string sFile{ "File " };
           static const std::string sBad{ " doesn't match " };
           if( !Common::EqualIgnoreCase( FileNames[i].Base, FileNames[0].Base ) )
@@ -624,55 +623,70 @@ int main(int argc, const char *argv[])
       if( OpNames.size() != NumOps )
         throw std::runtime_error( std::to_string( OpNames.size() ) + " operators provided, but " + std::to_string( NumOps ) + " expected for " + std::to_string( NumFiles ) + " files" );
       for( int snk = 0; snk < NumOps; ++snk )
-        for( int src = 0; src < NumOps; ++src ) {
+        for( int src = 0; src < NumOps; ++src )
+        {
           Common::FileNameAtt &f{ FileNames[snk * NumOps + src] };
           if( f.op[0] != src || f.op[1] != snk )
             throw std::runtime_error( "Warning: Operator order should be sink-major, source minor" );
         }
-    }
-    int NumExponents{ opt.optionValue<int>( "exponents" ) };
-    if( NumExponents == 0 )
-      NumExponents = NumOps;
-    MultiExpModel m ( Common::ReadBootstrapCorrs( opt.getArgs(), fold, shift, NumOps ), NumOps, OpNames, NumExponents, Verbosity, outBaseFileName, Seed, fold );
-    std::string sSummaryBase{ outBaseFileName };
-    sSummaryBase.append( 1, '.' );
-    if( doCorr )
-      sSummaryBase.append( "corr" );
-    else
-      sSummaryBase.append( "uncorr" );
-    sSummaryBase.append( 1, '.' );
-    sSummaryBase.append( OpNames[0] );
-    for( int op = 1; op < NumOps; op++ ) {
-      sSummaryBase.append( 1, '_' );
-      sSummaryBase.append( OpNames[op] );
-    }
-    static const char Sep[] = " ";
-    const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
-    if( Common::FileExists( sFitFilename ) )
-      throw std::runtime_error( "Output file " + sFitFilename + " already exists" );
-    std::ofstream s( sFitFilename );
-    s << "# Fit parameters\n# " << sSummaryBase << "\n# Seed " << Seed
-      << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
-    for( int dtf = 0; dtf < dtf_max; dtf++ ) {
-      // two blank lines at start of new data block
-      if( dtf )
-        s << "\n" << std::endl;
-      // Name the data series
-      s << "# [tf=" << ( tf + dtf ) << "]" << std::endl;
-      // Column names, with the series value embedded in the column header (best I can do atm)
-      s << "tf=" << ( tf + dtf ) << Sep << "ti";
-      for( int p = 0; p < m.NumParams; p++ )
-        s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "ErLow" << Sep << m.ParamNames[p] << "ErHigh" << Sep << m.ParamNames[p] << "Check";
-      s << " ChiSq Dof ChiSqPerDof" << std::endl;
-      for( int dti = 0; dti < dti_max; dti++ )
+
+      bShowUsage = false;
+      if( NumExponents == 0 )
+        NumExponents = NumOps;
+      SampleD sd;
       {
-        double ChiSq;
-        int dof;
-        auto params = m.PerformFit( doCorr, ti + dti, tf + dtf, ChiSq, dof, bSaveCorr );
-        s << ( tf + dtf ) << Sep << ( ti + dti );
+        SampleC sc;
+        sc.Read( cl.Args, fold, shift, NumOps );
+        const int NumSamples{ sc.NumSamples() };
+        const int Nt{ sc.Nt() };
+        sd.resize( NumSamples, Nt );
+        const std::complex<double> * pSrc = sc[SampleC::idxAux];
+        double * pDst = sd[SampleD::idxAux];
+        for( int i = SampleC::idxAux; i != NumSamples; i++ )
+          for( int t = 0; t != Nt; t++ )
+            *pDst++ = (pSrc++)->real();
+      }
+      MultiExpModel m ( std::move( sd ), NumOps, OpNames, NumExponents, Verbosity, outBaseFileName, Seed, fold );
+      std::string sSummaryBase{ outBaseFileName };
+      sSummaryBase.append( 1, '.' );
+      if( doCorr )
+        sSummaryBase.append( "corr" );
+      else
+        sSummaryBase.append( "uncorr" );
+      sSummaryBase.append( 1, '.' );
+      sSummaryBase.append( OpNames[0] );
+      for( int op = 1; op < NumOps; op++ ) {
+        sSummaryBase.append( 1, '_' );
+        sSummaryBase.append( OpNames[op] );
+      }
+      static const char Sep[] = " ";
+      const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
+      if( Common::FileExists( sFitFilename ) )
+        throw std::runtime_error( "Output file " + sFitFilename + " already exists" );
+      std::ofstream s( sFitFilename );
+      s << "# Fit parameters\n# " << sSummaryBase << "\n# Seed " << Seed
+        << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
+      for( int dtf = 0; dtf < dtf_max; dtf++ ) {
+        // two blank lines at start of new data block
+        if( dtf )
+          s << "\n" << std::endl;
+        // Name the data series
+        s << "# [tf=" << ( tf + dtf ) << "]" << std::endl;
+        // Column names, with the series value embedded in the column header (best I can do atm)
+        s << "tf=" << ( tf + dtf ) << Sep << "ti";
         for( int p = 0; p < m.NumParams; p++ )
-          s << Sep << params[p];
-        s << Sep << ChiSq << Sep << dof << Sep << ( ChiSq / dof ) << std::endl;
+          s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "ErLow" << Sep << m.ParamNames[p] << "ErHigh" << Sep << m.ParamNames[p] << "Check";
+        s << " ChiSq Dof ChiSqPerDof" << std::endl;
+        for( int dti = 0; dti < dti_max; dti++ )
+        {
+          double ChiSq;
+          int dof;
+          auto params = m.PerformFit( doCorr, ti + dti, tf + dtf, ChiSq, dof, bSaveCorr );
+          s << ( tf + dtf ) << Sep << ( ti + dti );
+          for( int p = 0; p < m.NumParams; p++ )
+            s << Sep << params[p];
+          s << Sep << ChiSq << Sep << dof << Sep << ( ChiSq / dof ) << std::endl;
+        }
       }
     }
   }
@@ -697,7 +711,7 @@ int main(int argc, const char *argv[])
     "-v     Verbosity, 0 = normal (default), 1=debug, 2=save covar, 3=Every iteration\n"
     "-o     Output base filename\n"
     "-f     Fold the correlator, 0=don't fold (default), 1=+parity, -1=-parity\n"
-    "-e     number of Exponents (default same as files)\n"
+    "-e     number of Exponents (default same as number of operators)\n"
     "Flags:\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
     "--savecorr Save bootstrap replicas of correlators\n"

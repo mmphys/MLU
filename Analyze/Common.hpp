@@ -234,7 +234,7 @@ struct FileNameAtt
   bool        bSeedNum = false;
   SeedType    Seed = 0; // Numeric value of SeedString, but only if bSeedNum == true
   std::string Ext;
-  //std::vector<int> op;
+  std::vector<int> op;
   // reset contents
   void clear()
   {
@@ -246,13 +246,13 @@ struct FileNameAtt
     bSeedNum = false;
     Seed = 0;
     Ext.clear();
-    //op.clear();
+    op.clear();
   }
 
   void Parse( const std::string &Filename_ );
   FileNameAtt() = default;
   explicit FileNameAtt( const std::string &Filename ) { Parse( Filename ); }
-  //FileNameAtt( const std::string &Filename, std::vector<std::string> &OpNames );
+  FileNameAtt( const std::string &Filename, std::vector<std::string> &OpNames );
 };
 
 // Make a filename "Base.Type.seed.Ext"
@@ -354,7 +354,19 @@ void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName,
 // Read the gamma algebra attribute string and make sure it's valid
 Gamma::Algebra ReadGammaAttribute( H5::Group &g, const char * pAttName );
 
+// Enumeration describing whether signal is in complex or real part
+enum class Signal
+{
+  Unknown = 0,
+  Real,
+  Imag
+};
+
+std::ostream& operator<<(std::ostream& os, const Signal &sig);
+std::istream& operator>>(std::istream& is, Signal &sig);
+
 // Traits for samples
+// SampleTraits<ST>::value is true for supported types (floating point and complex)
 template<typename ST, typename V = void> struct SampleTraits : public std::false_type{};
 template<typename ST> struct SampleTraits<ST, typename std::enable_if<std::is_floating_point<ST>::value>::type> : public std::true_type
 {
@@ -376,6 +388,7 @@ class CorrelatorFile
 public:
   using scalar_type = typename SampleTraits<T>::scalar_type;
   static constexpr int scalar_size { sizeof( scalar_type ) };
+  static constexpr bool is_complex { SampleTraits<T>::is_complex };
 private:
   int NumOps_ = 0;
   int Nt_ = 0;
@@ -409,6 +422,11 @@ public:
   }*/
   // Member functions
 private:
+  inline void RangeCheck( int Sample ) const
+  {
+    if( Sample < 0 || Sample >= NumOps_ * NumOps_ )
+      throw std::out_of_range( "Sample " + std::to_string( Sample ) );
+  }
   inline int GammaIndex( Gamma::Algebra g ) const
   {
     int idx;
@@ -417,6 +435,37 @@ private:
     return idx;
   }
 public:
+  template <typename DontSpecialise=T>
+  inline typename std::enable_if<!SampleTraits<DontSpecialise>::is_complex, Signal>::type
+    getSignal( int Sample ) const { return ( NumOps_==0 || Nt_==0 ) ? Signal::Unknown : Signal::Real; }
+  template <typename DontSpecialise=T>
+  inline typename std::enable_if<SampleTraits<DontSpecialise>::is_complex, Signal>::type
+    getSignal( int Sample ) const
+  {
+    if( NumOps_ == 0 || Nt_ == 0 )
+      return Signal::Unknown;
+    const T * p = (*this)[Sample];
+    int cntReal{ 0 };
+    int cntImag{ 0 };
+    for( int i = 0; i < Nt_; i++ )
+    {
+      if( std::abs( p->real() ) >= std::abs( p->imag() ) )
+        cntReal++;
+      else
+        cntImag++;
+      p++;
+    }
+    const int Quorum{ Nt_ * 2 / 3 };
+    if( cntReal > Quorum )
+      return Signal::Real;
+    if( cntImag > Quorum )
+      return Signal::Imag;
+    return Signal::Unknown;
+  }
+  inline Signal getSignal( Gamma::Algebra gSink, Gamma::Algebra gSource ) const
+  {
+    return getSignal( GammaIndex( gSink ) * NumOps_ + GammaIndex( gSource ) );
+  }
   inline int NumOps() const { return NumOps_; }
   inline int Nt() const { return Nt_; }
   inline int Timeslice() const { return bHasTimeslice ? Timeslice_ : 0; }
@@ -441,20 +490,18 @@ public:
   void WriteSummaries ( const std::string &Prefix, const std::vector<Common::Gamma::Algebra> &AlgSpecific );
   T * operator[]( int Sample )
   {
-    if( Sample < 0 || Sample >= NumOps_ * NumOps_ )
-      throw std::out_of_range( "Sample " + std::to_string( Sample ) );
+    RangeCheck( Sample );
     return & m_pData[static_cast<std::size_t>( Sample ) * Nt_];
   }
   const T * operator[]( int Sample ) const
   {
-    if( Sample < 0 || Sample > NumOps_ * NumOps_ )
-      throw std::out_of_range( "Sample " + std::to_string( Sample ) );
+    RangeCheck( Sample );
     return & m_pData[static_cast<std::size_t>( Sample ) * Nt_];
   }
   T * operator()( Gamma::Algebra gSink, Gamma::Algebra gSource )
-  { return (*this)[ GammaIndex( gSink ) * NumOps_ + GammaIndex( gSource )]; }
+  { return (*this)[ GammaIndex( gSink ) * NumOps_ + GammaIndex( gSource ) ]; }
   const T * operator()( Gamma::Algebra gSink, Gamma::Algebra gSource ) const
-  { return (*this)[ GammaIndex( gSink ) * NumOps_ + GammaIndex( gSource )]; }
+  { return (*this)[ GammaIndex( gSink ) * NumOps_ + GammaIndex( gSource ) ]; }
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( NumOps_ * NumOps_ * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
   // Constructors (copy operations missing for now - add them if they become needed)
@@ -490,6 +537,11 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
   bHasTimeslice = pTimeslice;
   if( bHasTimeslice )
     Timeslice_ = * pTimeslice;
+  else
+  {
+    std::string sCopy{ Name_.Base };
+    ExtractTimeslice( sCopy, bHasTimeslice, Timeslice_ );
+  }
   // Now load the file
   H5::H5File f;
   H5::Group  g;
@@ -647,8 +699,10 @@ void CorrelatorFile<T>::WriteSummaries ( const std::string &Prefix, const std::v
       {
         std::string sOutFileName{MakeFilename(sOutBase, SummaryNames[f], Name_.Seed, TEXT_EXT)};
         std::ofstream s( sOutFileName );
-        s << Comment << SummaryHeader[f] << NewLine << Comment << sOutBaseShort << "\n# Config "
-          << Name_.Seed << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" )
+        s << Comment << SummaryHeader[f] << NewLine << Comment << sOutBaseShort
+          << NewLine << Comment << "Config " << Name_.Seed
+          << NewLine << Comment << "Signal " << this->getSignal( Alg[Snk], Alg[Src] )
+          << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" )
           << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
         const T * const pc = (*this)( Alg[Snk], Alg[Src] );
         for( int t = 0; t < nt; t++ )
@@ -694,6 +748,7 @@ class Sample
   int Nt_;
   std::unique_ptr<T[]> m_pData;
 public:
+  Signal Signal_ = Signal::Unknown;
   using scalar_type = typename SampleTraits<T>::scalar_type;
   static constexpr int scalar_size { sizeof( scalar_type ) };
   static constexpr int NumAuxSamples{ NumAuxSamples_ };
@@ -708,15 +763,19 @@ public:
     {
       NumSamples_ = NumSamples;
       Nt_ = Nt;
-      m_pData.reset( new T[ static_cast<std::size_t>( NumSamples + NumExtraSamples ) * Nt ] );
+      if( Nt == 0 )
+        m_pData.reset( nullptr );
+      else
+        m_pData.reset( new T[ static_cast<std::size_t>( NumSamples + NumExtraSamples ) * Nt ] );
     }
   }
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
-  Sample<T, NumAuxSamples_> Bootstrap( int NumBootSamples, SeedType Seed );
+  Sample<T, NumAuxSamples_> Bootstrap( int NumBootSamples, SeedType Seed, Signal sig );
   void Read ( const std::string &FileName, std::string &GroupName );
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
-  Sample( int NumSamples, int Nt ) : NumSamples_{0}, Nt_{0} { resize( NumSamples, Nt ); }
+  void Read ( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps );
+  explicit Sample( int NumSamples = 0, int Nt = 0 ) : NumSamples_{0}, Nt_{0} { resize( NumSamples, Nt ); }
   Sample( const std::string &FileName, std::string &GroupName ) : NumSamples_{0}, Nt_{0}
     { Read( FileName, GroupName ); }
   T * operator[]( int Sample )
@@ -761,12 +820,13 @@ using SampleD = Sample<double>;
 
 // Perform bootstrap
 template <typename T, int NumAuxSamples_>
-Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumBootSamples, SeedType Seed )
+Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumBootSamples, SeedType Seed, Signal sig )
 {
   using fint = std::uint_fast32_t;
   std::mt19937                        engine( Seed );
   std::uniform_int_distribution<fint> random( 0, NumSamples_ - 1 );
   Sample<T, NumAuxSamples_>           boot( NumBootSamples, Nt_ );
+  boot.Signal_ = sig;
 
   // Compute the mean, then copy all the extra info to the bootstrap I will return
   MakeMean();
@@ -774,11 +834,20 @@ Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumBootSampl
 
   // Now make the bootstrap replicas
   T * dst{ boot[0] };
-  for( int i = 0; i < NumBootSamples; i++ )
+  for( int i = 0; i < NumBootSamples; i++, dst += Nt_ )
   {
-    const T * src{ (*this)[ random( engine ) ] };
-    for( int t = 0; t < Nt_; t++ )
-      *dst++ = *src++;
+    // Initialise this sum for this bootstrap sample to zero
+    for( int t = 0; t < Nt_; t++)
+      dst[t] = 0;
+    for( int s = 0; s < NumSamples_; s++ )
+    {
+      const T * src{ (*this)[ random( engine ) ] };
+      for( int t = 0; t < Nt_; t++ )
+        dst[t] += *src++;
+    }
+    // Turn the sum into an average
+    for( int t = 0; t < Nt_; t++)
+      dst[t] /= NumSamples_;
   }
   return boot;
 }
@@ -828,7 +897,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
           else if( Dim[0] != static_cast<unsigned int>( Nt_ ) )
             break;
           ds.read( buffer.data(), H5::PredType::NATIVE_DOUBLE );
-          if( !IsFinite( buffer ) )
+          if( !IsFinite() )
             break;
           T * p { (*this)[i] };
           for( int t = 0; t < Nt_ ; t++ )
@@ -873,6 +942,23 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
         a = g.openAttribute("nSample");
         a.read( H5::PredType::NATIVE_UINT, &att_nSample );
         a.close();
+        Signal Sig{ Signal::Unknown };
+        try
+        {
+          a = g.openAttribute("Signal");
+          std::string s{};
+          H5::StrType sType = a.getStrType();
+          a.read( sType, s );
+          a.close();
+          if( EqualIgnoreCase( s, "real" ) )
+            Sig = Signal::Real;
+          else if( EqualIgnoreCase( s, "imag" ) )
+            Sig = Signal::Imag;
+        }
+        catch(const H5::Exception &)
+        {
+          H5::Exception::clearErrorStack();
+        }
         H5::DataSet ds = g.openDataSet( "data_C" );
         H5::DataSpace dsp = ds.getSpace();
         int nDims{ dsp.getSimpleExtentNdims() };
@@ -949,13 +1035,23 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
     a.close();
     g.close();
     g = f.createGroup( GroupName );
-    a = g.createAttribute( "nAux", H5::PredType::STD_U16LE, ds1);
+    a = g.createAttribute( "nAux", H5::PredType::STD_U16LE, ds1 );
     tmp = NumAuxSamples;
     a.write( H5::PredType::NATIVE_INT, &tmp );
     a.close();
-    a = g.createAttribute( "nSample", H5::PredType::STD_U32LE, ds1);
+    a = g.createAttribute( "nSample", H5::PredType::STD_U32LE, ds1 );
     a.write( H5::PredType::NATIVE_INT, &NumSamples_ );
     a.close();
+    if( Signal_ == Signal::Real || Signal_ == Signal::Imag )
+    {
+      std::stringstream ss;
+      ss << Signal_;
+      const std::string s{ ss.str() };
+      H5::StrType sType( H5::PredType::C_S1, s.length() );
+      a = g.createAttribute( "Signal", sType, ds1 );
+      a.write( sType, s );
+      a.close();
+    }
     ds1.close();
     Dims[0] = Nt_;
     ds1 = H5::DataSpace( 1, Dims );
@@ -987,6 +1083,86 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
   }
   if( !bOK )
     throw std::runtime_error( "Unable to write sample to " + FileName + ", group " + GroupName );
+}
+
+template <typename T, int NumAuxSamples_>
+void Sample<T, NumAuxSamples_>::Read( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps )
+{
+  if( abs( Fold ) > 2 )
+    throw std::runtime_error( "Error: Fold=" + std::to_string( Fold ) + " invalid" );
+  const bool bAlternateFold{ abs( Fold ) > 1 };
+  if( bAlternateFold )
+  {
+    if( Fold > 0 )
+      --Fold;
+    else
+      ++Fold;
+  }
+  const int FirstFold{ Fold };
+  const int NumFiles{ static_cast<int>( FileName.size() ) };
+  // These will be initialised when we read in the first correlator
+  int NtSource = -999; // Number of timeslices in the source file(s)
+  int NtDest   = -888; // Number of timeslices after folding
+  int NSamples = -777; // Number of bootstrap samples per correlator
+  std::vector<double> ReadBuffer;
+  SampleC f;
+  for( int i = 0; i < NumFiles; ++i )
+  {
+    std::string GroupName;
+    f.Read( FileName[i], GroupName );
+    std::cout << FileName[i] << " (" << GroupName << ")\n";
+    if( i == 0 )
+    {
+      // Initialise defaults first time around
+      NSamples = f.NumSamples();
+      NtSource = f.Nt();
+      NtDest   = Fold ? NtSource / 2 + 1 : NtSource;
+      std::cout << "\tNt=" << NtSource << " x " << NSamples << " samples";
+      if( Fold )
+        std::cout << " folded into " << NtDest << " timeslices with "
+                  << (bAlternateFold ? "alternating, " : "")
+                  << (Fold == 1 ? "positive" : "negative") << " parity";
+      std::cout << "\n";
+      resize( NSamples, NtDest * NumFiles );
+    }
+    else
+    {
+      if( NSamples != f.NumSamples() )
+        throw std::runtime_error( "Error: inconsistent number of samples" );
+      if( NtSource != f.Nt() )
+        throw std::runtime_error( "Error: inconsistent number of timeslices" );
+      if( bAlternateFold )
+      {
+        Fold = FirstFold;
+        const int row{ i / NumOps };
+        const int col{ i % NumOps };
+        if( row & 1 )
+          Fold *= -1;
+        if( col & 1 )
+          Fold *= -1;
+      }
+    }
+    // Now copy the data from this bootstrap into the combined bootstrap
+    T * pDest = (*this)[idxAux] + NtDest * i;
+    for( int i = idxAux; i < NSamples; i++, pDest += NtDest * ( NumFiles - 1 ) )
+    {
+      T * ReadBuffer = (*this)[i];
+      for( int k = 0; k < NtDest; ++k )
+      {
+        T Source1 = ReadBuffer[ ( NtSource + Shift + k ) % NtSource ];
+        if( Fold != 0 )
+        {
+          T Source2 = ReadBuffer[ ( 2 * NtSource + Shift - k ) % NtSource ];
+          if( Fold > 0 )
+            Source1 = ( Source1 + Source2 ) * 0.5;
+          else
+            Source1 = ( std::abs( Source2 ) + std::abs( Source1 ) ) * 0.5;
+            //m( Dest, 0 ) = ( Source2 - Source1 ) * 0.5;
+        }
+        *pDest++ = Source1;
+      }
+    }
+  }
 }
 
 // Read a complex array from an HDF5 file

@@ -98,12 +98,25 @@ struct Quark
 #define LIGHT_EIGENPACK C1EigenPack
 #endif
 
+//#define CAMBRIDGE
+#ifdef CAMBRIDGE
+// Unfortunately, I think this is for the C2 configuration, not C1 :(
+static const char * GaugePrefix{ "/rds/project/dirac_vol4/rds-dirac-dp008/antonin/configs/24_m0.01/ckpoint_lat" };
+static const char * C1EigenPack{ "/rds/project/dirac_vol4/rds-dirac-dp008/antonin/eigenpacks/C2/eigenpacks/eigenpack_fine_evec" };
+static const std::string OutputPrefix{ "/rds/project/dirac_vol4/rds-dirac-dp008/mike/201910Plat/" };
+#define FIRST_CONFIG 1500
+#else
+// This is the correct configuration - C1
+static const char * GaugePrefix{ "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat" };
 static const char * C1EigenPack{ "/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine" };
+static const std::string OutputPrefix{ "" };
+#define FIRST_CONFIG 3000
+#endif
 
 static const std::string Strange{ "s" };
 static const Quark Quarks[] = {
-  {"l", 0.005, LS_LIGHT, 1.8, LIGHT_ITERATION, RESID_LIGHT, GaugeFieldName, LIGHT_EIGENPACK }, // light
-  {Strange, 0.04, LS_STRANGE, 1.8, MAX_ITERATION, RESID_STRANGE, GaugeFieldName, nullptr}, // strange
+  //{"l", 0.005, LS_LIGHT, 1.8, LIGHT_ITERATION, RESID_LIGHT, GaugeFieldName, LIGHT_EIGENPACK }, // light
+  //{Strange, 0.04, LS_STRANGE, 1.8, MAX_ITERATION, RESID_STRANGE, GaugeFieldName, nullptr}, // strange
   {"h1", 0.58, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, HEAVY_GAUGE_NAME, nullptr}, // charm
   // {"h2", 0.64, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, HEAVY_GAUGE_NAME, nullptr}, // charm
 };
@@ -128,12 +141,12 @@ static constexpr int NumMomenta{ sizeof( Momenta ) / sizeof( Momenta[0] ) };
 
 void CreateApp( Application &application )
 {
-  const unsigned int Nt{ 64 };
+  const unsigned int Nt{ 4 };
   const unsigned int NtIncrement{ 4 };
 
   // gauge field
   MIO::LoadNersc::Par gaugePar;
-  gaugePar.file = "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat";
+  gaugePar.file = GaugePrefix;
   application.createModule<MIO::LoadNersc>(GaugeFieldNameUnfixed, gaugePar);
 
   // Gauge fixed versions
@@ -409,7 +422,7 @@ void CreateApp( Application &application )
         {
           // static const std::string MyGammas{ "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)" };
           static const std::string MyGammas{ "all" };
-          static const std::string MesonDir{ "mesons/C1/" + RunName
+          static const std::string MesonDir{ OutputPrefix + "mesons/C1/" + RunName
             //+ "/Unsm"
           //#ifdef USE_ZMOBIUS
                                            //+ "/ZMob"
@@ -446,7 +459,7 @@ int main(int argc, char *argv[])
   }
 
   // global parameters
-  static const int Config{ 3000 };
+  static const int Config{ FIRST_CONFIG };
   static const int NumConfigs{ 1 };
   assert( NumConfigs > 0 );
   Application::GlobalPar globalPar;

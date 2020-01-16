@@ -273,17 +273,28 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
       }
       else
       {
+        static const std::string sigBadPrefix{ " *** " };
         //if( bShowAverages )
         //ShowTimeSliceAvg( in );
         // std::cout << sOutBase << " " << nSample << " samples" << std::endl;
         assert( binSize == 1 && "Binning still needs to be implemented" );
         // Copy the correlators into my sample, aligning timeslices if need be
+        Common::Signal sig{ Signal::Unknown };
+        bool sigBad{ false };
         std::complex<double> * pDst = in[0];
         for( Iter i = first; i != last; i++ )
         {
           const int CorrelatorTimeslice{ i->Timeslice() };
           int TOffset{ bAlignTimeslices ? CorrelatorTimeslice : 0 };
           // Only need to say which correlators contribute for first gamma structure
+          const Common::Signal sigThis{ i->getSignal( Alg[Snk], Alg[Src] ) };
+          if( sigThis != sig )
+          {
+            if( sig == Signal::Unknown )
+              sig = sigThis;
+            else if( sigThis != Signal::Unknown )
+              sigBad = true;
+          }
           if( Src == 0 && Snk == 0 )
           {
             std::cout << "  t=";
@@ -291,7 +302,7 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
               std::cout << TOffset << "->0";
             else
               std::cout << CorrelatorTimeslice;
-            std::cout << '\t' << i->Name_.Base << "." << i->Name_.SeedString << std::endl;
+            std::cout << '\t' << i->Name_.Base << "." << i->Name_.SeedString << ( sigBad ? sigBadPrefix : " " ) << sigThis << std::endl;
           }
           std::complex<double> * pSrc = (*i)( Alg[Snk], Alg[Src] ) + TOffset;
           for( int t = 0; t < Nt; t++ )
@@ -301,10 +312,10 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
               pSrc -= Nt;
           }
         }
-        Common::SampleC out = in.Bootstrap( nSample, seed );
+        Common::SampleC out = in.Bootstrap( nSample, seed, sigBad ? Signal::Unknown : sig );
         if( bSaveBootstrap )
         {
-          std::cout << "  " << nSample << " samples to " << sOutFile << std::endl;
+          std::cout << "  " << nSample << ( sigBad ? sigBadPrefix : " " ) << sig << " samples to " << sOutFile << std::endl;
           out.Write( sOutFile );
         }
         if( bSaveSummaries )
@@ -335,11 +346,15 @@ int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, 
       return r.bHasTimeslice;
     if( l.bHasTimeslice && r.bHasTimeslice && l.Timeslice_ != r.Timeslice_ )
       return l.Timeslice_ < r.Timeslice_;
+    // Sort by base filename
+    {
+      int iCompare = l.Name_.Base.compare( r.Name_.Base );
+      if( iCompare )
+        return iCompare < 0;
+    }
     // Sort by trajectory
-    if( l.Name_.Seed != r.Name_.Seed )
+    //if( l.Name_.Seed != r.Name_.Seed )
       return l.Name_.Seed < r.Name_.Seed;
-    // Now sort by base filename
-    return l.Name_.Base.compare( r.Name_.Base ) < 0;
   } );
   // Now perform bootstraps for any individual timeslices
   using Iter = typename std::vector<Common::CorrelatorFileC>::iterator;
@@ -410,8 +425,8 @@ void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const
   static constexpr unsigned int Nt{64};
   static constexpr unsigned int CStart{3000};
   static constexpr unsigned int CSkip{40};
-  static constexpr unsigned int CCount{1};//10};
-  static constexpr unsigned int CEnd{CStart + CSkip * CCount};
+  const unsigned int CCount{ Study == Z2 ? 10u : 1u };//10};
+  const unsigned int CEnd{CStart + CSkip * CCount};
   static const std::string sPath{
 #ifdef DEBUG
     "/Users/s1786208"               // Laptop
@@ -496,7 +511,8 @@ void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const
   /*par.bSaveBootstrap = true;
   for( int iCorr = 0; iCorr < NumCorr; ++iCorr )
     par.PerformBootstrap( bsData[iCorr], CorrPrefix + CorrSuffixes[iCorr] );*/
-  bsParams.PerformBootstrap( InFiles, Heavy + Sep + Light );
+  bsParams.PerformBootstrap( InFiles, Heavy + Sep + Light + "_p2_" + std::to_string(
+    mom.x * mom.x + mom.y * mom.y + mom.z * mom.z ) );
 }
 
 /*****************************************************************
@@ -543,6 +559,7 @@ int main(const int argc, const char *argv[])
       {"r", CL::SwitchType::Single, nullptr},
       {"o", CL::SwitchType::Single, "" },
       {"a", CL::SwitchType::Single, ""},
+      {"g", CL::SwitchType::Single, "" },
       {"s", CL::SwitchType::Single, nullptr},
       {"t", CL::SwitchType::Single, "1"},
       {"x", CL::SwitchType::Multiple, nullptr},
@@ -593,7 +610,7 @@ int main(const int argc, const char *argv[])
           {
             const std::string &Filename{ it->first }; // Trajectory number
             const TrajFile &tf{ it->second };
-            std::string GroupName;
+            std::string GroupName{ cl.SwitchValue<std::string>( "g" ) };
             InFiles[j].Read( Filename, GroupName, Alg, tf.bHasTimeslice ? &tf.Timeslice : nullptr );
           }
           par.PerformBootstrap( InFiles, Contraction );
@@ -604,7 +621,9 @@ int main(const int argc, const char *argv[])
       }
       else if( bGotStudy )
       {
-        StudySubject Study{ static_cast<StudySubject>( cl.SwitchValue<int>( "s" ) ) };
+        const int iStudy{ cl.SwitchValue<int>( "s" ) };
+        std::cout << "Study " << iStudy << ": ";
+        const StudySubject Study{ static_cast<StudySubject>( iStudy ) };
         switch( Study )
         {
           case Z2:
@@ -615,8 +634,7 @@ int main(const int argc, const char *argv[])
             // Heavy-light semi-leptonics
             const std::string qHeavy{ "h1" };
             const std::string qLight{ "l" };
-            std::cout << "No files specified. Making default manifest for "
-            << qHeavy << " and " << qLight << std::endl;
+            std::cout << "Making manifest for " << qHeavy << " and " << qLight << std::endl;
             static const Common::Momentum StudyMomenta[] = {
               { 0, 0, 0 },/*
               { 1, 0, 0 },
@@ -634,7 +652,7 @@ int main(const int argc, const char *argv[])
             bShowUsage = false;
             break;
           default:
-            std::cout << "Study " << Study << " undefined\n";
+            std::cout << " undefined" << std::endl;
         }
       }
     }
@@ -657,6 +675,7 @@ int main(const int argc, const char *argv[])
     "-r     Random number seed (unspecified=random)\n"
     "-o     Output prefix\n"
     "-a     list of gamma algebras we're interested in\n"
+    "-g     Group name to read correlators from\n"
     "-s     Perform bootstrap for specified study number\n"
     "-t     timeslice detail 0 (none), 1 (.txt=default) or 2 (.txt+.h5)\n"
     "-x     eXclude file (may be repeated)\n"

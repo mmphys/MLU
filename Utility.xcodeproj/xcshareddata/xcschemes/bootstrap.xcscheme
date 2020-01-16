@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/201910Plat/mesons/C1/GFWall/Unsm"
+      customWorkingDirectory = "$HOME/data/201910Plat/bootstrap/testz2"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -66,6 +66,18 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-t0"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-s1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-r4147798751"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-r987654321"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -74,24 +86,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-r4147798751"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-r384600236"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-t0"
+            argument = "-oboot/"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-oboot/"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "h1_h1_p_0_0_0_t_0.3000.h5 h1_h1_p_0_0_0_t_12.3000.h5 h1_h1_p_0_0_0_t_4.3000.h5 h1_h1_p_0_0_0_t_60.3000.h5 h1_h1_p_0_0_0_t_8.3000.h5 h1_l_p_0_0_0_t_0.3000.h5 h1_l_p_0_0_0_t_12.3000.h5 h1_l_p_0_0_0_t_4.3000.h5 h1_l_p_0_0_0_t_60.3000.h5 h1_l_p_0_0_0_t_8.3000.h5 h1_s_p_0_0_0_t_0.3000.h5 h1_s_p_0_0_0_t_12.3000.h5 h1_s_p_0_0_0_t_4.3000.h5 h1_s_p_0_0_0_t_60.3000.h5 h1_s_p_0_0_0_t_8.3000.h5 l_h1_p_0_0_0_t_0.3000.h5 l_h1_p_0_0_0_t_12.3000.h5 l_h1_p_0_0_0_t_4.3000.h5 l_h1_p_0_0_0_t_60.3000.h5 l_h1_p_0_0_0_t_8.3000.h5 l_l_p_0_0_0_t_0.3000.h5 l_l_p_0_0_0_t_12.3000.h5 l_l_p_0_0_0_t_4.3000.h5 l_l_p_0_0_0_t_56.3000.h5 l_l_p_0_0_0_t_60.3000.h5 l_l_p_0_0_0_t_8.3000.h5 l_s_p_0_0_0_t_0.3000.h5 l_s_p_0_0_0_t_12.3000.h5 l_s_p_0_0_0_t_4.3000.h5 l_s_p_0_0_0_t_60.3000.h5 l_s_p_0_0_0_t_8.3000.h5 s_h1_p_0_0_0_t_0.3000.h5 s_h1_p_0_0_0_t_12.3000.h5 s_h1_p_0_0_0_t_4.3000.h5 s_h1_p_0_0_0_t_60.3000.h5 s_h1_p_0_0_0_t_8.3000.h5 s_l_p_0_0_0_t_0.3000.h5 s_l_p_0_0_0_t_12.3000.h5 s_l_p_0_0_0_t_4.3000.h5 s_l_p_0_0_0_t_60.3000.h5 s_l_p_0_0_0_t_8.3000.h5 s_s_p_0_0_0_t_0.3000.h5 s_s_p_0_0_0_t_12.3000.h5 s_s_p_0_0_0_t_16.3000.h5 s_s_p_0_0_0_t_20.3000.h5 s_s_p_0_0_0_t_4.3000.h5 s_s_p_0_0_0_t_60.3000.h5 s_s_p_0_0_0_t_8.3000.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

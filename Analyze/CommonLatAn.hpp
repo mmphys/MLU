@@ -78,8 +78,5 @@ template <typename T> inline std::string tokenReplaceCopy(const std::string &str
   return sCopy;
 }
 
-// Read a list of bootstrapped correlators into a single correlator
-Latan::DMatSample ReadBootstrapCorrs( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps );
-
 END_COMMON_NAMESPACE
 #endif // CommonLatAn_hpp

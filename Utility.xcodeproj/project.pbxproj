@@ -144,6 +144,7 @@
 		6842CB9722A9165C003014D2 /* build */ = {isa = PBXFileReference; lastKnownFileType = folder; path = build; sourceTree = "<group>"; };
 		6845351B23477B9D00106304 /* xmlPeramb.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlPeramb.cpp; sourceTree = "<group>"; };
 		6845352023477BBE00106304 /* xmlPeramb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlPeramb; sourceTree = BUILT_PRODUCTS_DIR; };
+		6852D48023CF26FB000409A1 /* Grid */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Grid; path = ../Grid; sourceTree = "<group>"; };
 		6856DC4E23C391AE0040814E /* corrstat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = corrstat.cpp; sourceTree = "<group>"; };
 		685F9D122343B19E006EE036 /* run */ = {isa = PBXFileReference; lastKnownFileType = folder; path = run; sourceTree = "<group>"; };
 		688FEBEC238C1BE100977B09 /* Optimal */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Optimal; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -230,6 +231,7 @@
 		6822E8B322A7057400A85993 = {
 			isa = PBXGroup;
 			children = (
+				6852D48023CF26FB000409A1 /* Grid */,
 				6822E8BE22A7057400A85993 /* Analyze */,
 				6842CB9722A9165C003014D2 /* build */,
 				6822E8BD22A7057400A85993 /* Products */,
