@@ -193,6 +193,71 @@ void ValWithEr::Get( double Central_, std::vector<double> &Data, std::size_t Cou
   Check = static_cast<double>( Count ) / Data.size();
 }
 
+std::string Momentum::p2_string( const std::string &separator ) const
+{
+  std::string s{ separator };
+  s.append( "p2" );
+  s.append( separator );
+  s.append( std::to_string( p2() ) );
+  return s;
+}
+
+std::string Momentum::to_string( const std::string &separator, bool bNegative ) const
+{
+  return std::to_string( bNegative ? -x : x ) + separator
+  + std::to_string( bNegative ? -y : y ) + separator
+  + std::to_string( bNegative ? -z : z );
+}
+
+std::string Momentum::to_string4d( const std::string &separator, bool bNegative ) const
+{
+  return to_string( separator, bNegative ) + separator + "0";
+}
+
+// Strip out momentum info from string if present
+bool Momentum::Extract( std::string &Prefix, bool IgnoreSubsequentZeroNeg )
+{
+  bool bGotMomentum = false;
+  std::smatch match;
+  static const std::regex pattern{ R"(_[pP]_(-?[0-9]+)_(-?[0-9]+)_(-?[0-9]+))" };
+  while( std::regex_search( Prefix, match, pattern  ) )
+  {
+    int px{ std::stoi( match[1] ) };
+    int py{ std::stoi( match[2] ) };
+    int pz{ std::stoi( match[3] ) };
+    if( !bGotMomentum )
+    {
+      bGotMomentum = true;
+      x = px;
+      y = py;
+      z = pz;
+    }
+    else if( x != px || y != py || z != pz )
+    {
+      if( IgnoreSubsequentZeroNeg && !(*this) )
+      {
+        x = px;
+        y = py;
+        z = pz;
+      }
+      else if(IgnoreSubsequentZeroNeg && ((px==0 && py==0 && pz==0) || (px==-x && py==-y && pz==-z)))
+        ;
+      else
+      {
+        static const std::string Sep{ "," };
+        static const std::string m1{ to_string( Sep ) };
+        x = px;
+        y = py;
+        z = pz;
+        throw std::runtime_error( "Multiple momenta: " + m1 + " != " + to_string( Sep ) );
+      }
+    }
+    Prefix = match.prefix();
+    Prefix.append( match.suffix() );
+  }
+  return bGotMomentum;
+}
+
 // These are the attributes I like to use in my filenames
 void FileNameAtt::Parse( const std::string &Filename_ )
 {
@@ -299,29 +364,6 @@ void ExtractTimeslice( std::string &Prefix, bool &bHasTimeslice, int &Timeslice 
     }
     else if( ThisTimeslice != Timeslice )
       throw std::runtime_error( "Multiple momenta: " + std::to_string(Timeslice) + " and " + std::to_string(ThisTimeslice) );
-    Prefix = match.prefix();
-    Prefix.append( match.suffix() );
-  }
-}
-
-// Strip out momentum info from string if present
-void ExtractP2( std::string &Prefix, bool &bGotMomentum, int &P2, bool IgnoreSubsequentZero )
-{
-  std::smatch match;
-  static const std::regex pattern{ R"(_[pP]_(-?[0-9]+)_(-?[0-9]+)_(-?[0-9]+))" };
-  while( std::regex_search( Prefix, match, pattern  ) )
-  {
-    int px{ std::stoi( match[1] ) };
-    int py{ std::stoi( match[2] ) };
-    int pz{ std::stoi( match[3] ) };
-    int this_p2 = px * px + py * py + pz * pz;
-    if( !bGotMomentum )
-    {
-      bGotMomentum = true;
-      P2 = this_p2;
-    }
-    else if( this_p2 && this_p2 != P2 )
-      throw std::runtime_error( "Multiple momenta: " + std::to_string(P2) + " and " + std::to_string(this_p2) );
     Prefix = match.prefix();
     Prefix.append( match.suffix() );
   }

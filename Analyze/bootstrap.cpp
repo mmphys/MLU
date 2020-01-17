@@ -87,12 +87,11 @@ struct TrajList
 
 // This is a list of all the contractions we've been asked to process
 class Manifest : public std::map<std::string, TrajList> {
-  void Construct( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore );
+  void Construct( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore, bool GroupLikeMomenta );
 public:
   // Process list of files on the command-line, breaking them up into individual trajectories
-  Manifest( const std::vector<std::string> &Files, const std::string &sIgnore );
-  Manifest( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore )
-  { Construct( Files, Ignore ); }
+  Manifest( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore, bool GroupLikeMomenta )
+  { Construct( Files, Ignore, GroupLikeMomenta ); }
 };
 
 /*enum ExtractFilenameReturn {Good, Bad, No_trajectory};
@@ -130,8 +129,9 @@ static ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, s
   return r;
 }*/
 
-void Manifest::Construct(const std::vector<std::string> &Args, const std::vector<std::string> &Ignore)
+void Manifest::Construct(const std::vector<std::string> &Args, const std::vector<std::string> &Ignore, bool GroupLikeMomenta)
 {
+  static const std::string Sep{ "_" };
   // Now walk the list of arguments.
   // Any file that's not in the ignore list gets added to the manifest
   if( Args.size() == 0 )
@@ -167,9 +167,8 @@ void Manifest::Construct(const std::vector<std::string> &Args, const std::vector
       int Timeslice_{ 0 };
       ExtractTimeslice( Contraction, bHasTimeslice, Timeslice_ );
       // Replace momentum with momentum squared
-      bool bGotMomentum{ false };
-      int p2{ 0 };
-      ExtractP2( Contraction, bGotMomentum, p2 );
+      Momentum mom;
+      bool bGotMomentum{ mom.Extract( Contraction ) };
       // Sort all the separate, underscore delimited component parts
       {
         for( char &c : Contraction )
@@ -195,8 +194,13 @@ void Manifest::Construct(const std::vector<std::string> &Args, const std::vector
       // Add the momentum into the correlator if it was present
       if( bGotMomentum )
       {
-        Contraction.append( "_p2_" );
-        Contraction.append( std::to_string( p2 ) );
+        if( GroupLikeMomenta )
+          Contraction.append( mom.p2_string( Sep ) );
+        else
+        {
+          Contraction.append( "_p_" );
+          Contraction.append( mom.to_string( Sep ) );
+        }
       }
       // Look for the contraction list this file belongs to
       auto itc = Contractions.find( Contraction );
@@ -212,26 +216,6 @@ void Manifest::Construct(const std::vector<std::string> &Args, const std::vector
   }
   if( !parsed )
     throw std::runtime_error( "Remove non-existent files (or use '-x filename' to eXclude)" );
-}
-
-Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgnore)
-{
-  // Get the list of files to ignore
-  std::vector<std::string> Ignore;
-  for( std::size_t start = 0; start < sIgnore.length() ; ) {
-    auto end = sIgnore.find(':', start);
-    std::size_t SepLen;
-    if( end == std::string::npos ) {
-      SepLen = 0;
-      end = sIgnore.length();
-    }
-    else
-      SepLen = 1;
-    if( end > start )
-      Ignore.push_back( sIgnore.substr( start, end - start ) );
-    start = end + SepLen;
-  }
-  Construct( Args, Ignore );
 }
 
 class BootstrapParams
@@ -334,8 +318,8 @@ int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, 
   if( NumFiles != NumFilesRaw || NumFiles < 1 )
     throw std::invalid_argument( "Can't perform a bootstrap without correlators" );
   // Make sure there are at least 5x more bootstrap samples than data points
-  if( ( nSample / 5 ) < NumFiles )
-    throw std::runtime_error( "nSample=" + std::to_string( nSample ) + " too small for dataset with " + std::to_string( NumFiles ) + " elements" );
+  //if( ( nSample / 5 ) < NumFiles )
+    //throw std::runtime_error( "nSample=" + std::to_string( nSample ) + " too small for dataset with " + std::to_string( NumFiles ) + " elements" );
   int iCount{ 0 };
   // sort all of the files by timeslice info
   using File = Common::CorrelatorFileC;
@@ -511,8 +495,7 @@ void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const
   /*par.bSaveBootstrap = true;
   for( int iCorr = 0; iCorr < NumCorr; ++iCorr )
     par.PerformBootstrap( bsData[iCorr], CorrPrefix + CorrSuffixes[iCorr] );*/
-  bsParams.PerformBootstrap( InFiles, Heavy + Sep + Light + "_p2_" + std::to_string(
-    mom.x * mom.x + mom.y * mom.y + mom.z * mom.z ) );
+  bsParams.PerformBootstrap( InFiles, Heavy + Sep + Light + mom.p2_string( Sep ) );
 }
 
 /*****************************************************************
@@ -563,6 +546,7 @@ int main(const int argc, const char *argv[])
       {"s", CL::SwitchType::Single, nullptr},
       {"t", CL::SwitchType::Single, "1"},
       {"x", CL::SwitchType::Multiple, nullptr},
+      {"p", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -595,7 +579,7 @@ int main(const int argc, const char *argv[])
           throw std::invalid_argument( "Can't specify study " + cl.SwitchValue<std::string>( "s" )
                                       + " with command-line arguments" );
         bShowUsage = false;
-        Manifest Manifest{ glob( cl.Args.begin(), cl.Args.end() ), cl.SwitchStrings( "x" ) };
+        Manifest Manifest{ glob( cl.Args.begin(), cl.Args.end() ), cl.SwitchStrings( "x" ), cl.GotSwitch( "p" ) };
         // Walk the list of contractions, performing a separate bootstrap for each
         int BootstrapCount = 0;
         for( auto itc = Manifest.begin(); itc != Manifest.end(); itc++ )
@@ -679,6 +663,7 @@ int main(const int argc, const char *argv[])
     "-s     Perform bootstrap for specified study number\n"
     "-t     timeslice detail 0 (none), 1 (.txt=default) or 2 (.txt+.h5)\n"
     "-x     eXclude file (may be repeated)\n"
+    "-p     group momenta by P^2\n"
     "--help This message\n";
   }
   return iReturn;

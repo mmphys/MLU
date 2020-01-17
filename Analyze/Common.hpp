@@ -238,23 +238,16 @@ struct Momentum
   int y;
   int z;
   Momentum( int _x, int _y, int _z ) : x(_x), y(_y), z(_z) {}
+  Momentum() : Momentum(0,0,0) {}
   inline explicit operator bool() const { return x!=0 || y!=0 || z!=0; }
+  inline bool operator==(const Momentum &m) const { return x==m.x || y==m.y || z==m.z; }
+  inline bool EqualsNeg(const Momentum &m) const { return x==-m.x || y==-m.y || z==-m.z; }
   inline int p2() const { return x * x + y * y + z * z; }
-  inline std::string p2_string( const std::string &separator ) const {
-    std::string s{ separator };
-    s.append( "p2" );
-    s.append( separator );
-    s.append( std::to_string( p2() ) );
-    return s;
-  }
-  std::string to_string( const std::string &separator, bool bNegative = false ) const {
-    return std::to_string( bNegative ? -x : x ) + separator
-    + std::to_string( bNegative ? -y : y ) + separator
-    + std::to_string( bNegative ? -z : z );
-  }
-  std::string to_string4d( const std::string &separator, bool bNegative = false ) const {
-    return to_string( separator, bNegative ) + separator + "0";
-  }
+  std::string p2_string  ( const std::string &separator ) const;
+  std::string to_string  ( const std::string &separator, bool bNegative = false ) const;
+  std::string to_string4d( const std::string &separator, bool bNegative = false ) const;
+  // Strip out momentum info from string if present
+  bool Extract( std::string &s, bool IgnoreSubsequentZeroNeg = true );
 };
 
 // Attributes for filenames in form base.type.seed.ext
@@ -294,9 +287,6 @@ std::string MakeFilename(const std::string &Base, const std::string &Type, SeedT
 
 // Strip out timeslice info from a string if present
 void ExtractTimeslice( std::string &s, bool &bHasTimeslice, int & Timeslice );
-
-// Strip out momentum info from string if present
-void ExtractP2( std::string &s, bool &bGotMomentum, int &P2, bool IgnoreSubsequentZero = true );
 
 // For now, this is just an alias
 using Correlator = std::vector<std::complex<double>>;
