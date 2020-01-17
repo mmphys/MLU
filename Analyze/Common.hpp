@@ -30,6 +30,7 @@
 #ifndef Common_hpp
 #define Common_hpp
 
+// std c++
 #include <array>
 #include <algorithm>
 #include <cassert>
@@ -43,6 +44,9 @@
 #include <regex>
 #include <string>
 #include <vector>
+
+// posix
+#include <glob.h>
 
 // HDF5 Library
 #include <H5Cpp.h>
@@ -144,6 +148,36 @@ using SeedType = unsigned int;
 
 // Does the specified file exist?
 bool FileExists( const std::string& Filename );
+
+// Wrapper for posix glob
+template<typename Iter>
+std::vector<std::string> glob( const Iter &first, const Iter &last )
+{
+  // Perform the glob
+  glob_t globBuf;
+  memset( &globBuf, 0, sizeof( globBuf ) );
+  int iFlags = GLOB_BRACE | GLOB_TILDE | GLOB_NOSORT | GLOB_NOCHECK;// | GLOB_NOMAGIC
+  for( Iter i = first; i != last; i++ )
+  {
+    const int globResult{ glob( i->c_str(), iFlags, NULL, &globBuf ) };
+    if( globResult )
+    {
+      if( globResult == GLOB_NOMATCH )
+        continue;
+      globfree( &globBuf );
+      throw std::runtime_error( "glob() returned error " + std::to_string( globResult ) );
+    }
+    iFlags |= GLOB_APPEND;
+  }
+
+  // collect all the filenames into a std::list<std::string>
+  std::vector<std::string> Filenames;
+  Filenames.reserve( globBuf.gl_pathc );
+  for( size_t i = 0; i < globBuf.gl_pathc; ++i )
+    Filenames.push_back( std::string( globBuf.gl_pathv[i] ) );
+  globfree(&globBuf);
+  return Filenames;
+}
 
 extern const double NaN;
 

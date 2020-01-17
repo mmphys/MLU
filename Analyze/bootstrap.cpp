@@ -211,7 +211,7 @@ void Manifest::Construct(const std::vector<std::string> &Args, const std::vector
     }
   }
   if( !parsed )
-    throw std::runtime_error( "Error parsing command-line arguments" );
+    throw std::runtime_error( "Remove non-existent files (or use '-x filename' to eXclude)" );
 }
 
 Manifest::Manifest(const std::vector<std::string> &Args, const std::string &sIgnore)
@@ -273,7 +273,7 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
       }
       else
       {
-        static const std::string sigBadPrefix{ " *** " };
+        static const std::string sigBadPrefix{ " ??? " };
         //if( bShowAverages )
         //ShowTimeSliceAvg( in );
         // std::cout << sOutBase << " " << nSample << " samples" << std::endl;
@@ -595,7 +595,7 @@ int main(const int argc, const char *argv[])
           throw std::invalid_argument( "Can't specify study " + cl.SwitchValue<std::string>( "s" )
                                       + " with command-line arguments" );
         bShowUsage = false;
-        Manifest Manifest{ cl.Args, cl.SwitchStrings( "x" ) };
+        Manifest Manifest{ glob( cl.Args.begin(), cl.Args.end() ), cl.SwitchStrings( "x" ) };
         // Walk the list of contractions, performing a separate bootstrap for each
         int BootstrapCount = 0;
         for( auto itc = Manifest.begin(); itc != Manifest.end(); itc++ )

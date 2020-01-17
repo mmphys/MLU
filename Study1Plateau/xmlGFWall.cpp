@@ -115,10 +115,10 @@ static const std::string OutputPrefix{ "" };
 
 static const std::string Strange{ "s" };
 static const Quark Quarks[] = {
-  //{"l", 0.005, LS_LIGHT, 1.8, LIGHT_ITERATION, RESID_LIGHT, GaugeFieldName, LIGHT_EIGENPACK }, // light
+  {"l", 0.005, LS_LIGHT, 1.8, LIGHT_ITERATION, RESID_LIGHT, GaugeFieldName, LIGHT_EIGENPACK }, // light
   //{Strange, 0.04, LS_STRANGE, 1.8, MAX_ITERATION, RESID_STRANGE, GaugeFieldName, nullptr}, // strange
   {"h1", 0.58, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, HEAVY_GAUGE_NAME, nullptr}, // charm
-  // {"h2", 0.64, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, HEAVY_GAUGE_NAME, nullptr}, // charm
+  {"h2", 0.64, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, HEAVY_GAUGE_NAME, nullptr}, // charm
 };
 static constexpr int NumQuarks{ sizeof( Quarks ) / sizeof( Quarks[0] ) };
 
@@ -141,7 +141,7 @@ static constexpr int NumMomenta{ sizeof( Momenta ) / sizeof( Momenta[0] ) };
 
 void CreateApp( Application &application )
 {
-  const unsigned int Nt{ 4 };
+  const unsigned int Nt{ 64 };
   const unsigned int NtIncrement{ 4 };
 
   // gauge field
@@ -460,12 +460,12 @@ int main(int argc, char *argv[])
 
   // global parameters
   static const int Config{ FIRST_CONFIG };
-  static const int NumConfigs{ 1 };
+  static const int NumConfigs{ 10 };
   assert( NumConfigs > 0 );
   Application::GlobalPar globalPar;
   globalPar.trajCounter.start    = Config;
   globalPar.trajCounter.step     = 40;
-  globalPar.trajCounter.end      = Config + (NumConfigs - 1) * globalPar.trajCounter.step + 1;
+  globalPar.trajCounter.end      = Config + 1;
   globalPar.runId                = RunName;
   globalPar.genetic.maxGen       = 1000;
   globalPar.genetic.maxCstGen    = 200;
@@ -482,7 +482,7 @@ int main(int argc, char *argv[])
   }
   else //if(( 0 ))
   {
-    for( int i = 1; i < 10; i++ )
+    for( int i = 1; i < NumConfigs; i++ )
     {
       globalPar.trajCounter.start += globalPar.trajCounter.step;
       globalPar.trajCounter.end   += globalPar.trajCounter.step;
