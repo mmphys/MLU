@@ -62,22 +62,22 @@ int main(int argc, const char *argv[])
   std::cout << "Building: " << sOutFileName << std::endl;
 
   // Test
-  Contractor::ContractorPar par;
+  /*Contractor::ContractorPar par;
   par.global.nt = 64;
   par.global.trajCounter.start = 3200;
   par.global.trajCounter.step = 40;
   par.global.trajCounter.end = par.global.trajCounter.start + par.global.trajCounter.step;
   par.global.output = ".";
   par.global.diskVectorDir = "tmp_";
-  par.global.diskVectorDir += "boinkly";
+  par.global.diskVectorDir += "boinkly";*/
   //std::cout << par.global << std::endl;
 
   // Write output file
   std::cout << "Writing: " << sOutFileName << std::endl;
   Grid::XmlWriter w{ sOutFileName };
-  write(w, "global",    par.global);
-  write(w, "a2aMatrix", par.a2aMatrix);
-  write(w, "product",   par.product);
+  //write(w, "global",    par.global);
+  //write(w, "a2aMatrix", par.a2aMatrix);
+  //write(w, "product",   par.product);
   } catch (const std::exception &e) {
     std::cerr << "Exception: " << e.what() << std::endl;
     iReturn = EXIT_FAILURE;

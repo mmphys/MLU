@@ -14,7 +14,7 @@ CC        ?= $(CXX)
 CXXFLAGS  := $(shell $(GridConf) --cxxflags) #$(shell $(LatAnConf) --cxxflags)
 INCLUDE   := $(sort $(patsubst -I%,%,$(filter -I%,$(CXXFLAGS))))
 #CXXFLAGS := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(LatAnalyzeBuild) $(LatAnalyze)/lib $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
-CXXFLAGS  := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(Grid)/Eigen $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
+CXXFLAGS  := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(Grid)/Eigen $(INCLUDE) $(GridPre)/include) $(filter-out -I%,$(CXXFLAGS))
 # Turn off compiler optimisation
 CXXFLAGS  := $(filter-out -O%,$(CXXFLAGS))
 
