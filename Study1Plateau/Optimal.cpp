@@ -6,122 +6,79 @@
 //  Copyright © 2019 sopa. All rights reserved.
 //
 
-#include "Optimal.hpp"
+#include <cmath>
+//#include <iomanip>
+#include <ios>
+#include <iostream>
+#include <stdio.h>
 
-int main(int argc, char *argv[])
+#include "../Analyze/Common.hpp"
+
+using SampleD = Common::SampleD;
+using SampleC = Common::SampleC;
+
+int main( int argc, const char *argv[] )
 {
-  using namespace Latan;
   std::ios_base::sync_with_stdio( false );
-  // parse arguments /////////////////////////////////////////////////////////
-  OptParser opt;
-  opt.addOption("" , "ti"       , OptParser::OptType::value  , false,
-                "initial fit time");
-  opt.addOption("" , "tf"       , OptParser::OptType::value  , false,
-                "final fit time");
-  opt.addOption("" , "dti"       , OptParser::OptType::value , true,
-                "number of initial fits", "1");
-  opt.addOption("" , "dtf"       , OptParser::OptType::value , true,
-                "number of final fits", "1");
-  opt.addOption("t" , "thinning", OptParser::OptType::value  , true,
-                "thinning of the time interval", "1");
-  opt.addOption("s", "shift"    , OptParser::OptType::value  , true,
-                "time variable shift", "0");
-  opt.addOption("m", "model"    , OptParser::OptType::value  , true,
-                "fit model (exp|exp2|exp3|cosh|cosh2|cosh3|explin|<interpreter code>)", "cosh");
-  opt.addOption("" , "nPar"     , OptParser::OptType::value  , true,
-                "number of model parameters for custom models "
-                "(-1 if irrelevant)", "-1");
-  opt.addOption("" , "svd"      , OptParser::OptType::value  , true,
-                "singular value elimination threshold", "0.");
-  opt.addOption("v", "verbosity", OptParser::OptType::value  , true,
-                "minimizer verbosity level (0|1|2)", "0");
-  opt.addOption("o", "output",    OptParser::OptType::value  , true,
-                "output base filename", "");
-  opt.addOption("" , "uncorr"   , OptParser::OptType::trigger, true,
-                "only do the uncorrelated fit");
-  opt.addOption("f", "fold"     , OptParser::OptType::value, true,
-                "fold the correlator (0=don't fold, 1=+parity, -1=-parity)", "0");
-  opt.addOption("p", "plot"     , OptParser::OptType::trigger, true,
-                "show the fit plot");
-  opt.addOption("r", "range"    , OptParser::OptType::value  , true,
-                "vertical range multiplier in plots", "20.");
-  opt.addOption("h", "heatmap"  , OptParser::OptType::trigger, true,
-                "show the fit correlation heatmap");
-  opt.addOption("", "help"      , OptParser::OptType::trigger, true,
-                "show this help message and exit");
-  opt.addOption("e", "exponents", OptParser::OptType::value  , true,
-                "number of exponents", "0");
-  opt.addOption("" , "uncorr"   , OptParser::OptType::trigger, true,
-                "perform uncorrelated fit (default=correlated");
-  opt.addOption("" , "opnames"   , OptParser::OptType::trigger, true,
-                "operator names (default=op_n");
-  opt.addOption("" , "save"   , OptParser::OptType::trigger, true,
-                "save bootstrap replicas of correlators or model");
-  opt.addOption("" , "savemodel"   , OptParser::OptType::trigger, true,
-                "save bootstrap of model fit results");
-  if (!opt.parse(argc, argv) or (opt.getArgs().size() < 1) or opt.gotOption("help"))
+  int iReturn{ EXIT_SUCCESS };
+  bool bShowUsage{ true };
+  using CL = Common::CommandLine;
+  CL cl;
+  try
   {
-    std::cerr << "usage: " << argv[0] << " <options> <correlator file>" << std::endl;
-    std::cerr << std::endl << "Possible options:" << std::endl << opt << std::endl;
-    
-    return EXIT_FAILURE;
-  }
-  const int ti{ opt.optionValue<int>("ti") };
-  const int tf{ opt.optionValue<int>("tf") };
-  const int dti_max{ opt.optionValue<int>("dti") };
-  const int dtf_max{ opt.optionValue<int>("dtf") };
-  //int thinning            = opt.optionValue<int>("t");
-  const int shift{ opt.optionValue<int>("s") };
-  //Index nPar              = opt.optionValue<Index>("nPar");
-  //double svdTol           = opt.optionValue<double>("svd");
-  //bool doCorr             = !opt.gotOption("uncorr");
-  const int fold{ opt.optionValue<int>("fold") };
-  //bool doPlot             = opt.gotOption("p");
-  //double plotrange        = opt.optionValue<Index>("range");
-  //bool doHeatmap          = opt.gotOption("h");
-  const std::string model{ opt.optionValue("m") };
-  std::string outBaseFileName{ opt.optionValue("o") };
-  const bool doCorr{ !opt.gotOption("uncorr") };
-  const int Verbosity{ opt.optionValue<int>("v") }; // 0 = normal, 1=debug, 2=save covar, 3=Every iteration
-  const bool bSave{ opt.gotOption("save") };
-  /*Minimizer::Verbosity verbosity;
-  switch ( Verbosity )
-  {
-    case 0:
-      verbosity = Minimizer::Verbosity::Silent;
-      break;
-    case 1:
-      verbosity = Minimizer::Verbosity::Normal;
-      break;
-    case 2:
-      verbosity = Minimizer::Verbosity::Debug;
-      break;
-    default:
-      std::cerr << "error: wrong verbosity level" << std::endl;
-      return EXIT_FAILURE;
-  }*/
-  
-  // load correlators /////////////////////////////////////////////////////////
-  const int NumFiles{ static_cast<int>( opt.getArgs().size() ) };
-  int NumOps = 1; // Number of operators. Should equal square root of number of files
-  while( NumOps * NumOps < NumFiles )
-    NumOps++;
-  if( NumOps * NumOps != NumFiles ) {
-    std::cerr << "Number of files should be a perfect square" << std::endl;
-    return EXIT_FAILURE;
-  }
-  std::vector<std::string> OpNames;
-  Common::SeedType Seed = 0;
-  try{
+    const std::initializer_list<CL::SwitchDef> list = {
+      {"ti", CL::SwitchType::Single, nullptr},
+      {"tf", CL::SwitchType::Single, nullptr},
+      {"dti", CL::SwitchType::Single, "1"},
+      {"dtf", CL::SwitchType::Single, "1"},
+      {"s", CL::SwitchType::Single, "0"},
+      {"v", CL::SwitchType::Single, "0"},
+      {"m", CL::SwitchType::Single, "" },
+      {"o", CL::SwitchType::Single, "" },
+      {"f", CL::SwitchType::Single, "0"},
+      {"e", CL::SwitchType::Single, "0"},
+      {"n", CL::SwitchType::Single, "0"},
+      {"uncorr", CL::SwitchType::Flag, nullptr},
+      {"savecorr", CL::SwitchType::Flag, nullptr},
+      {"help", CL::SwitchType::Flag, nullptr},
+    };
+    cl.Parse( argc, argv, list );
+    const int NumFiles{ static_cast<int>( cl.Args.size() ) };
+    if( !cl.GotSwitch( "help" ) && NumFiles )
     {
-      std::vector<Common::FileNameAtt> FileNames;
+      const int ti{ cl.SwitchValue<int>("ti") };
+      const int tf{ cl.SwitchValue<int>("tf") };
+      const int dti_max{ cl.SwitchValue<int>("dti") };
+      const int dtf_max{ cl.SwitchValue<int>("dtf") };
+      const int shift{ cl.SwitchValue<int>("s") };
+      const int fold{ cl.SwitchValue<int>("f") };
+      int NumExponents{ cl.SwitchValue<int>( "e" ) };
+      std::string modelBaseFileName{ cl.SwitchValue<std::string>("m") };
+      std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
+      const int Verbosity{ cl.SwitchValue<int>("v") };
+      const bool bSaveCorr{ cl.GotSwitch("savecorr") };
+      const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
+
+      int NumOps = static_cast<int>( std::sqrt( static_cast<double>( NumFiles ) ) + 0.5 );
+      if( NumOps * NumOps != NumFiles )
+        throw std::invalid_argument( "Number of files should be a perfect square" );
+
       std::size_t i = 0;
-      for( const std::string &sFileName : opt.getArgs() ) {
+      Common::SeedType Seed = 0;
+      std::vector<std::string> OpNames;
+      std::vector<Common::FileNameAtt> FileNames;
+      std::string sSummaryBase{};
+      for( const std::string &sFileName : cl.Args )
+      {
         FileNames.emplace_back( sFileName, OpNames );
-        if( i == 0 ) {
-          outBaseFileName.append( FileNames[0].Base );
+        if( i == 0 )
+        {
+          sSummaryBase = FileNames[0].Base;
           Seed = FileNames[0].Seed;
-        } else {
+          outBaseFileName.append( sSummaryBase );
+        }
+        else
+        {
           static const std::string sFile{ "File " };
           static const std::string sBad{ " doesn't match " };
           if( !Common::EqualIgnoreCase( FileNames[i].Base, FileNames[0].Base ) )
@@ -138,107 +95,138 @@ int main(int argc, char *argv[])
       if( OpNames.size() != NumOps )
         throw std::runtime_error( std::to_string( OpNames.size() ) + " operators provided, but " + std::to_string( NumOps ) + " expected for " + std::to_string( NumFiles ) + " files" );
       for( int snk = 0; snk < NumOps; ++snk )
-        for( int src = 0; src < NumOps; ++src ) {
+        for( int src = 0; src < NumOps; ++src )
+        {
           Common::FileNameAtt &f{ FileNames[snk * NumOps + src] };
           if( f.op[0] != src || f.op[1] != snk )
             throw std::runtime_error( "Warning: Operator order should be sink-major, source minor" );
         }
-    }
-    int NumExponents{ opt.optionValue<int>( "exponents" ) };
-    if( NumExponents == 0 )
-      NumExponents = NumOps;
-    Latan::DMatSample Corr=Common::ReadBootstrapCorrs( opt.getArgs(), fold, shift, NumOps );
-    std::string sSummaryBase{ outBaseFileName };
-    sSummaryBase.append( 1, '.' );
-    if( doCorr )
-      sSummaryBase.append( "corr" );
-    else
-      sSummaryBase.append( "uncorr" );
-    std::string OutputRunBase{sSummaryBase};
-    sSummaryBase.append( 1, '.' );
-    sSummaryBase.append( OpNames[0] );
-    for( int op = 1; op < NumOps; op++ ) {
-      sSummaryBase.append( 1, '_' );
-      sSummaryBase.append( OpNames[op] );
-    }
-    OutputRunBase.append( 1, '_' );
-    OutputRunBase.append( std::to_string( ti ) );
-    OutputRunBase.append( 1, '_' );
-    OutputRunBase.append( std::to_string( tf ) );
-    static const char Sep[] = " ";
-    const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
-    if( !Common::FileExists( sFitFilename ) )
-      throw std::runtime_error( "Output file " + sFitFilename + " already exists" );
-    const int NumFiles{ NumOps * NumOps };
-    const int NSamples{static_cast<int>(Corr.size())};
-    const int Nt      { static_cast<int>( Corr[Latan::central].rows() / NumFiles ) };
-    const int NumParams{ NumExponents * ( 1 + NumOps ) };
-    std::string sModelBase{ OutputRunBase };
-    sModelBase.append( 1, '.' );
-    sModelBase.append( OpNames[0] );
-    for( std::size_t i = 1; i < OpNames.size(); i++ ) {
-      sModelBase.append( 1, '_' );
-      sModelBase.append( OpNames[i] );
-    }
-    Latan::DMatSample ModelParams( NSamples, NumParams, 2 );
-    ModelParams = Latan::Io::load<Latan::DMatSample>(Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ));
-    if( NumOps == 2) {  // I've only coded for two operators
-      Latan::DMatSample OptimalCorr( NSamples, Nt, 2 );
-      for( int degrees = -90; degrees <= 90; degrees ++ )
+
+      bShowUsage = false;
+      if( NumExponents == 0 )
+        NumExponents = NumOps;
+      SampleD sd;
       {
-        double costheta, sintheta;
-        switch( ( degrees + 360 ) % 360 ) {
-          case 0:
-            costheta = 1;
-            sintheta = 0;
-            break;
-          case 90:
-            costheta = 0;
-            sintheta = 1;
-            break;
-          case 180:
-            costheta = -1;
-            sintheta = 0;
-            break;
-          case 270:
-            costheta = 0;
-            sintheta = -1;
-            break;
-          default:
+        SampleC sc;
+        sc.Read( cl.Args, fold, shift, NumOps, "  " );
+        const int NumSamples{ sc.NumSamples() };
+        const int Nt{ sc.Nt() };
+        sd.resize( NumSamples, Nt );
+        const std::complex<double> * pSrc = sc[SampleC::idxAux];
+        double * pDst = sd[SampleD::idxAux];
+        for( int i = SampleC::idxAux; i != NumSamples; i++ )
+          for( int t = 0; t != Nt; t++ )
+            *pDst++ = (pSrc++)->real();
+      }
+      sSummaryBase.append( 1, '.' );
+      if( doCorr )
+        sSummaryBase.append( "corr" );
+      else
+        sSummaryBase.append( "uncorr" );
+      sSummaryBase.append( 1, '_' );
+      sSummaryBase.append( std::to_string( ti ) );
+      sSummaryBase.append( 1, '_' );
+      sSummaryBase.append( std::to_string( tf ) );
+      sSummaryBase.append( 1, '.' );
+      std::string OutputRunBase{ outBaseFileName + sSummaryBase + "theta_"};
+      sSummaryBase.append( OpNames[0] );
+      for( int op = 1; op < NumOps; op++ )
+      {
+        sSummaryBase.append( 1, '_' );
+        sSummaryBase.append( OpNames[op] );
+      }
+      const int NumFiles{ NumOps * NumOps };
+      const int NSamples{ cl.SwitchValue<int>("n") <= 0 || cl.SwitchValue<int>("n") > sd.NumSamples() ? sd.NumSamples() : cl.SwitchValue<int>("n") };
+      const int Nt      { sd.Nt() / NumFiles };
+      const int NumParams{ NumExponents * ( 1 + NumOps ) };
+      std::string sModelBase{ sSummaryBase };
+      std::string GroupName;
+      SampleD ModelParams;
+      ModelParams.Read( Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ), GroupName );
+      const double A_P1{ ModelParams[SampleD::idxCentral][4] };
+      const double A_A1{ ModelParams[SampleD::idxCentral][5] };
+      ModelParams.resize( 0, 0 );
+      if( NumOps == 2)
+      {  // I've only coded for two operators
+        SampleC OptimalCorr{ NSamples, Nt };
+        for( int degrees = -90; degrees <= 90; degrees ++ )
+        {
+          double costheta, sintheta;
+          switch( ( degrees + 360 ) % 360 )
           {
-            const double theta{ M_PI * degrees / 180 };
-            costheta = cos( theta );
-            sintheta = sin( theta );
+            case 0:
+              costheta = 1;
+              sintheta = 0;
+              break;
+            case 90:
+              costheta = 0;
+              sintheta = 1;
+              break;
+            case 180:
+              costheta = -1;
+              sintheta = 0;
+              break;
+            case 270:
+              costheta = 0;
+              sintheta = -1;
+              break;
+            default:
+            {
+              const double theta{ M_PI * degrees / 180 };
+              costheta = cos( theta );
+              sintheta = sin( theta );
+            }
           }
-        }
-        const double cos_sq_theta{ costheta * costheta };
-        const double sin_sq_theta{ sintheta * sintheta };
-        const double cos_sin_theta{ costheta * sintheta };
-        const double A_P1{ ModelParams[Latan::central](4, 0) };
-        const double A_A1{ ModelParams[Latan::central](5, 0) };
-        for (Latan::Index i = Latan::central; i < NSamples; i++) {
-          const double Op_PP{ cos_sq_theta / ( A_P1 * A_P1 ) };
-          const double Op_AP{ cos_sin_theta / ( A_P1 * A_A1 ) };
-          const double Op_AA{ sin_sq_theta / ( A_A1 * A_A1 ) };
-          for( int t = 0; t < Nt; t++ ) {
-            double z = Op_PP * Corr[i](0 * Nt + t,0) + Op_AA * Corr[i](3 * Nt + t,0)
-                                + Op_AP * ( Corr[i](1 * Nt + t,0) + Corr[i](2 * Nt + t,0) );
-            OptimalCorr[i](t,0) = z;
-            OptimalCorr[i](t,1) = 0;
+          const double cos_sq_theta{ costheta * costheta };
+          const double sin_sq_theta{ sintheta * sintheta };
+          const double cos_sin_theta{ costheta * sintheta };
+          const typename SampleD::scalar_type * p = sd[SampleD::idxCentral];
+          std::complex<double> * pDst = OptimalCorr[SampleC::idxCentral];
+          for( int i = SampleD::idxCentral; i < NSamples; i++ )
+          {
+            const double Op_PP{ cos_sq_theta / ( A_P1 * A_P1 ) };
+            const double Op_AP{ cos_sin_theta / ( A_P1 * A_A1 ) };
+            const double Op_AA{ sin_sq_theta / ( A_A1 * A_A1 ) };
+            for( int t = 0; t < Nt; t++, p++ )
+              *pDst++ = Op_PP * p[0 * Nt] + Op_AA * p[3 * Nt] + Op_AP * ( p[1 * Nt] + p[2 * Nt] );
           }
+          std::string sOptimusPrime{ OutputRunBase };
+          sOptimusPrime.append( std::to_string(degrees) );
+          if( bSaveCorr )
+            OptimalCorr.Write(Common::MakeFilename(sOptimusPrime, Common::sBootstrap, Seed, DEF_FMT));
+          Common::SummariseBootstrapCorr( OptimalCorr, sOptimusPrime, Seed );
         }
-        std::string sOptimusPrime{ OutputRunBase };
-        sOptimusPrime.append( ".theta_" );
-        sOptimusPrime.append( std::to_string(degrees) );
-        if( bSave )
-          Latan::Io::save( OptimalCorr, Common::MakeFilename( sOptimusPrime, Common::sBootstrap, Seed, DEF_FMT ) );
-        Common::SummariseBootstrapCorr( OptimalCorr, sOptimusPrime, Seed );
       }
     }
   }
-  catch(const std::exception &e) {
+  catch(const std::exception &e)
+  {
     std::cerr << "Error: " << e.what() << std::endl;
-    return EXIT_FAILURE;
+    iReturn = EXIT_FAILURE;
+  } catch( ... ) {
+    std::cerr << "Error: Unknown exception" << std::endl;
+    iReturn = EXIT_FAILURE;
   }
-  return EXIT_SUCCESS;
+  if( bShowUsage )
+  {
+    ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
+    " <options> Bootstrap1 [Bootstrap2 ...]\n"
+    "Perform a multi-exponential fit of the specified bootstrap replicas, where <options> are:\n"
+    "--ti   Initial fit time\n"
+    "--tf   Final   fit time\n"
+    "--dti  Number of initial fit times (default 1)\n"
+    "--dti  Number of final   fit times (default 1)\n"
+    "-s     time Shift (default 0)\n"
+    "-v     Verbosity, 0 = normal (default), 1=debug, 2=save covar, 3=Every iteration\n"
+    "-m     Model base filename\n"
+    "-o     Output base filename\n"
+    "-f     Fold the correlator, 0=don't fold (default), 1=+parity, -1=-parity\n"
+    "-e     number of Exponents (default same as number of operators)\n"
+    "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
+    "Flags:\n"
+    "--uncorr   Uncorrelated fit (default correlated)\n"
+    "--savecorr Save bootstrap replicas of correlators\n"
+    "--help     This message\n";
+  }
+  return iReturn;
 }

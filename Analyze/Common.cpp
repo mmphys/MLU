@@ -694,6 +694,8 @@ void SummariseBootstrapCorr(const Common::SampleC &out, const std::string & sOut
   {
     std::string sOutFileName{ MakeFilename(sOutFileBase, SummaryNames[f], Seed, TEXT_EXT) };
     std::ofstream s( sOutFileName );
+    if( !s )
+      throw std::runtime_error( "Unable to create " + sOutFileName );
     s << Comment << SummaryHeader[f] << NewLine << Comment << sOutFileBase << "\n# Seed " << Seed
       << "\n# Signal " << out.Signal_ << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" )
       << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;

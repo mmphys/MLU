@@ -6,23 +6,25 @@
 #   LatAnalyzeBuild Path to LatAnalyze build directory
 
 GridConf  := $(GridBuild)/grid-config
-LatAnConf := $(LatAnalyzeBuild)/latan-config
+#LatAnConf:= $(LatAnalyzeBuild)/latan-config
 CXX       := $(shell $(GridConf) --cxx)
 CC        ?= $(CXX)
 
 # De-duplicate header include (-I) paths, followed by other options
-CXXFLAGS  := $(shell $(GridConf) --cxxflags) $(shell $(LatAnConf) --cxxflags)
+CXXFLAGS  := $(shell $(GridConf) --cxxflags) #$(shell $(LatAnConf) --cxxflags)
 INCLUDE   := $(sort $(patsubst -I%,%,$(filter -I%,$(CXXFLAGS))))
-CXXFLAGS  := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(LatAnalyzeBuild) $(LatAnalyze)/lib $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
+#CXXFLAGS := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(LatAnalyzeBuild) $(LatAnalyze)/lib $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
+CXXFLAGS  := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(Grid)/Eigen $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
 # Turn off compiler optimisation
 CXXFLAGS  := $(filter-out -O%,$(CXXFLAGS))
 
 # De-duplicate library (-L) paths and libraries (-l), followed by other options
-#LDLIBS    := -lHadrons -lGrid -lLatAnalyze -lLexers $(sort $(shell $(GridConf) --libs) $(shell $(LatAnConf) --libs))
-LDLIBS    := -lHadrons -lGrid $(sort $(shell $(GridConf) --libs) $(shell $(LatAnConf) --libs))
-LDFLAGS   := $(shell $(GridConf) --ldflags) $(shell $(LatAnConf) --ldflags)
+#LDLIBS   := -lHadrons -lGrid $(sort $(shell $(GridConf) --libs) $(shell $(LatAnConf) --libs))
+LDLIBS    := -lHadrons -lGrid $(sort $(shell $(GridConf) --libs) -lMinuit2)
+LDFLAGS   := $(shell $(GridConf) --ldflags) #$(shell $(LatAnConf) --ldflags)
 LDPATHS   := $(sort $(patsubst -L%,%,$(filter -L%,$(LDFLAGS))))
-LDFLAGS   := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(LatAnalyzeBuild)/lib/.libs $(GridPre)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
+#LDFLAGS  := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(LatAnalyzeBuild)/lib/.libs $(GridPre)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
+LDFLAGS   := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(GridPre)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
 
 # Make a separate executable for every source in subdirectories except build*, run* or script*
 # Except filenames starting with "Common", for which explicit target rules must be provided
@@ -34,13 +36,25 @@ target    := $(filter-out Common%,$(basefiles))
 
 all: $(target)
 
-MultiFit: MultiFit.o Common.o CommonLatAn.o
-
 bootstrap: bootstrap.o Common.o
 
 corrstat: corrstat.o Common.o
 
 hlxml: hlxml.o Common.o
+
+MultiFit: MultiFit.o Common.o
+
+peramb-compare: peramb-compare.o Common.o
+
+repair: repair.o Common.o
+
+Optimal: Optimal.o Common.o
+
+xmlGFWall: xmlGFWall.o Common.o
+
+xmlZ2: xmlZ2.o Common.o
+
+xmlPeramb: xmlPeramb.o Common.o
 
 clean:
 	rm -rf $(target) $(objects) *~ *.dSYM

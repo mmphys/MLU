@@ -25,6 +25,8 @@
 		68939D8923A032A900C30150 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8C722A708A200A85993 /* peramb-compare.cpp */; };
 		68EB896823475F83003A9004 /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68EB896723475F83003A9004 /* xmlZ2.cpp */; };
+		68F687E123D4A96600590270 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
+		68F687E223D4AD4700590270 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -282,11 +284,11 @@
 		68BEFF6B2343A75A0031E3E3 /* Study1Plateau */ = {
 			isa = PBXGroup;
 			children = (
+				683F6267238C0C240034D79D /* Optimal.cpp */,
+				683F6268238C0C240034D79D /* Optimal.hpp */,
 				6834512B2397D39200B743CE /* xmlGFWall.cpp */,
 				6845351B23477B9D00106304 /* xmlPeramb.cpp */,
 				68EB896723475F83003A9004 /* xmlZ2.cpp */,
-				683F6267238C0C240034D79D /* Optimal.cpp */,
-				683F6268238C0C240034D79D /* Optimal.hpp */,
 			);
 			path = Study1Plateau;
 			sourceTree = "<group>";
@@ -606,6 +608,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68F687E223D4AD4700590270 /* Common.cpp in Sources */,
 				68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -614,6 +617,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68F687E123D4A96600590270 /* Common.cpp in Sources */,
 				68EB896823475F83003A9004 /* xmlZ2.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

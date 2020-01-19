@@ -458,11 +458,10 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
           for( int t = 0; t < Nt; ++t )
           {
             double z = 0;
-            for( int e = 0; e < NumExponents; ++e ) {
-              z +=   FitParams[MELIndex( src, e ) + NumExponents]
-                   * FitParams[MELIndex( snk, e ) + NumExponents]
-                   * std::exp( - FitParams[e] * t );
-              switch( ThisModel ) {
+            for( int e = 0; e < NumExponents; ++e )
+            {
+              switch( ThisModel )
+              {
                 case exp:
                   z += FitParams[MELIndex( src, e ) + NumExponents]
                      * FitParams[MELIndex( snk, e ) + NumExponents]

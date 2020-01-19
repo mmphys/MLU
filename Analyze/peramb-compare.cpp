@@ -30,10 +30,12 @@
 #include <typeinfo>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
-#include <LatAnalyze/Core/OptParser.hpp>
+#include "Common.hpp"
 
 using namespace Grid;
 using namespace Hadrons;
+
+#define DEFAULT_EPSILON "0.00001"
 
 // Very simple iterators for Eigen tensors
 // The only way I could get these iterators to work is to put the begin() and end() functions in the Eigen namespace
@@ -96,17 +98,43 @@ int TestPer(const std::string &pszF1, const std::string &pszF2, const double eps
   return EXIT_SUCCESS;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, const char *argv[])
 {
-  Latan::OptParser opt;
-  opt.addOption("" , "help", Latan::OptParser::OptType::trigger, true, "show this help message and exit");
-  opt.addOption("e" , "epsilon", Latan::OptParser::OptType::value  , true, "comparison threshold", "0.00001");
-  if (!opt.parse(argc, argv) || (opt.getArgs().size() != 2) || opt.gotOption("help"))
+  std::ios_base::sync_with_stdio( false );
+  int iReturn{ EXIT_SUCCESS };
+  bool bShowUsage{ true };
+  using CL = Common::CommandLine;
+  CL cl;
+  try
   {
-    std::cerr << "usage: " << argv[0] << " <file_1> <file_2> <options>" << "\nPossible options:\n" << opt << std::endl;
-    
-    return EXIT_FAILURE;
+    const std::initializer_list<CL::SwitchDef> list = {
+      {"e", CL::SwitchType::Single, DEFAULT_EPSILON},
+      {"help", CL::SwitchType::Flag, nullptr},
+    };
+    cl.Parse( argc, argv, list );
+    const int NumFiles{ static_cast<int>( cl.Args.size() ) };
+    if( !cl.GotSwitch( "help" ) && NumFiles == 2 )
+    {
+      bShowUsage = false;
+      iReturn = TestPer( cl.Args[0], cl.Args[1], cl.SwitchValue<double>("e") );
+    }
   }
-  static const double epsilon{opt.optionValue<double>("e")};
-  return TestPer( std::string{ argv[1] }, std::string{ argv[2] }, epsilon);
+  catch(const std::exception &e)
+  {
+    std::cerr << "Error: " << e.what() << std::endl;
+    iReturn = EXIT_FAILURE;
+  } catch( ... ) {
+    std::cerr << "Error: Unknown exception" << std::endl;
+    iReturn = EXIT_FAILURE;
+  }
+  if( bShowUsage )
+  {
+    ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
+    " <options> Perambulator1 Perambulator2\n"
+    "Compare two perambulators, where <options> are:\n"
+    "-e     epsilon (i.e. comparison tolerance), default=" DEFAULT_EPSILON "\n"
+    "Flags:\n"
+    "--help     This message\n";
+  }
+  return iReturn;
 }
