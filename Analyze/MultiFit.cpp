@@ -71,7 +71,9 @@ class MultiExpModel : public ROOT::Minuit2::FCNBase {
 public:
   static constexpr double pi{ M_PI };
   using vd_t = std::vector<double>;
-  explicit MultiExpModel( SampleD &&Corr, int NumOps, const std::vector<std::string> &OpNames, int NumExponents, int Verbosity, const std::string &OutputBaseName, Common::SeedType Seed, int Fold );
+  explicit MultiExpModel( SampleD &&Corr, int NumOps, const std::vector<std::string> &OpNames,
+                         int NumExponents, int Verbosity, const std::string &OutputBaseName,
+                         Common::SeedType Seed, int Fold, int NSamples );
   virtual ~MultiExpModel() {}
   // These are part of the FCNBase interface
   virtual double Up() const { return 1.; }
@@ -114,7 +116,7 @@ public:
   std::vector<std::string> MakeParamNames();
 };
 
-MultiExpModel::MultiExpModel( SampleD &&corr_, int numOps_, const std::vector<std::string> &opNames_, int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_, int fold_ )
+MultiExpModel::MultiExpModel( SampleD &&corr_, int numOps_, const std::vector<std::string> &opNames_, int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_, int fold_, int nSamples_ )
   : NumOps{ numOps_ },
     OpNames{ opNames_ },
     Verbosity{ verbosity_ },
@@ -123,7 +125,7 @@ MultiExpModel::MultiExpModel( SampleD &&corr_, int numOps_, const std::vector<st
     Model{ fold_ < 0 ? ModelType::sinh : fold_ > 0 ? ModelType::cosh : ModelType::exp },
     bAlternating{ abs( fold_ ) > 1 },
     NumFiles{ numOps_ * numOps_ },
-    NSamples{ corr_.NumSamples() },
+    NSamples{ ( nSamples_ <= 0 || nSamples_ > corr_.NumSamples() ) ? corr_.NumSamples() : nSamples_ },
     Nt      { corr_.Nt() / NumFiles },
     NumExponents{ numExponents_ },
     NumParams{ NumExponents * ( 1 + NumOps ) },
@@ -392,8 +394,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   //FOR_STAT_ARRAY( Fit, <#i#> ) {
   //for (idx = -ModelParams.offset; idx < ModelParams.size(); idx++) {
   const int HalfNt{ Nt - 1 }; // NB: This is half of the ORIGINAL correlator time dimension
-  for (int LoopIdx = -10; LoopIdx < NSamples; LoopIdx++) {
-    idx = ( LoopIdx >= 0 && LoopIdx < NSamples ) ? LoopIdx : SampleD::idxCentral;
+  for (int LoopIdx = SampleD::idxCentral - 10; LoopIdx < NSamples; LoopIdx++) {
     ROOT::Minuit2::FunctionMinimum min = minimizer();
     ROOT::Minuit2::MnUserParameterState state = min.UserState();
     //assert( minimizer.SetVariables( par.begin(), par.end() ) == NumParams && "Error: could not set variables" );
@@ -402,20 +403,21 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     //ROOT::Minuit2::MnUserParameterState state = min.UserState();
     //bool bOK{ minimizer.Minimize() };
     if( !state.IsValid() )
-      throw std::runtime_error( "ERROR: Fit " + std::to_string( idx ) + " did not converge on an answer\n" );
+      throw std::runtime_error( "Fit " + std::to_string( LoopIdx ) + " did not converge" );
     // Throw away the first fit result - just use it as a seed for the next fit
-    if( LoopIdx >= -1 )
+    if( LoopIdx >= SampleD::idxCentral )
     {
+      idx = ( LoopIdx >= 0 && LoopIdx < NSamples ) ? LoopIdx : SampleD::idxCentral;
       //ROOT::Minuit2::MnUserParameters params = min.UserParameters();
       //std::cout << "Fit result:" << min << std::endl;
       upar = state.Parameters();
-      if( SampleD::idxCentral || Verbosity > 2 ) {
+      if( idx == SampleD::idxCentral || Verbosity > 2 ) {
         const std::string FitResult{ "Fit result:" };
         if( Verbosity )
           std::cout << FitResult << state << "\n";
         DumpParameters( FitResult, upar );
       }
-      if( SampleD::idxCentral ) {
+      if( idx == SampleD::idxCentral ) {
         ChiSq = state.Fval();
         dof = Extent;
         if( bCorrelated )
@@ -568,6 +570,7 @@ int main(int argc, const char *argv[])
       {"o", CL::SwitchType::Single, "" },
       {"f", CL::SwitchType::Single, "0"},
       {"e", CL::SwitchType::Single, "0"},
+      {"n", CL::SwitchType::Single, "0"},
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -581,8 +584,9 @@ int main(int argc, const char *argv[])
       const int dti_max{ cl.SwitchValue<int>("dti") };
       const int dtf_max{ cl.SwitchValue<int>("dtf") };
       const int shift{ cl.SwitchValue<int>("s") };
-      const int fold{ cl.SwitchValue<int>("fold") };
+      const int fold{ cl.SwitchValue<int>("f") };
       int NumExponents{ cl.SwitchValue<int>( "e" ) };
+      const int NSamples{ cl.SwitchValue<int>("n") };
       //const std::string model{ opt.optionValue("m") };
       std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
       const int Verbosity{ cl.SwitchValue<int>("v") };
@@ -636,7 +640,7 @@ int main(int argc, const char *argv[])
       SampleD sd;
       {
         SampleC sc;
-        sc.Read( cl.Args, fold, shift, NumOps );
+        sc.Read( cl.Args, fold, shift, NumOps, "  " );
         const int NumSamples{ sc.NumSamples() };
         const int Nt{ sc.Nt() };
         sd.resize( NumSamples, Nt );
@@ -646,7 +650,7 @@ int main(int argc, const char *argv[])
           for( int t = 0; t != Nt; t++ )
             *pDst++ = (pSrc++)->real();
       }
-      MultiExpModel m ( std::move( sd ), NumOps, OpNames, NumExponents, Verbosity, outBaseFileName, Seed, fold );
+      MultiExpModel m ( std::move( sd ), NumOps, OpNames, NumExponents, Verbosity, outBaseFileName, Seed, fold, NSamples );
       std::string sSummaryBase{ outBaseFileName };
       sSummaryBase.append( 1, '.' );
       if( doCorr )
@@ -712,6 +716,7 @@ int main(int argc, const char *argv[])
     "-o     Output base filename\n"
     "-f     Fold the correlator, 0=don't fold (default), 1=+parity, -1=-parity\n"
     "-e     number of Exponents (default same as number of operators)\n"
+    "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
     "Flags:\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
     "--savecorr Save bootstrap replicas of correlators\n"

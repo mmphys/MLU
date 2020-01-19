@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(PROJECT_DIR)/test_felix/fit"
+      customWorkingDirectory = "$HOME/data/201910Plat/fit/testZ2"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -95,23 +95,23 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_g5_g5.bootstrap.4147798751.h5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_g5_gT5.bootstrap.4147798751.h5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_gT5_g5.bootstrap.4147798751.h5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_gT5_gT5.bootstrap.4147798751.h5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "../bootstrap/h1_l_p_0_0_0_g5_g5.bootstrap.123.h5 ../bootstrap/h1_l_p_0_0_0_g5_gT5.bootstrap.123.h5 ../bootstrap/h1_l_p_0_0_0_gT5_g5.bootstrap.123.h5 ../bootstrap/h1_l_p_0_0_0_gT5_gT5.bootstrap.123.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f2"
@@ -134,12 +134,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti6 --tf16"
-            isEnabled = "NO">
+            argument = "--ti 6 --tf 16"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti4 --tf15"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti2 --tf16"
@@ -152,6 +152,10 @@
          <CommandLineArgument
             argument = "--dtf6"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-n 100"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

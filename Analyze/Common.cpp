@@ -369,6 +369,10 @@ void ExtractTimeslice( std::string &Prefix, bool &bHasTimeslice, int &Timeslice 
   }
 }
 
+const H5::PredType& H5EquivType<float>      ::predType{ H5::PredType::NATIVE_FLOAT };
+const H5::PredType& H5EquivType<double>     ::predType{ H5::PredType::NATIVE_DOUBLE };
+const H5::PredType& H5EquivType<long double>::predType{ H5::PredType::NATIVE_LDOUBLE };
+
 // Return the same HDF5 complex type Grid uses
 H5::CompType & H5File::ComplexType( int fpsize )
 {
@@ -383,12 +387,12 @@ H5::CompType & H5File::ComplexType( int fpsize )
 #endif
     static bool bInitialised = false;
     if( !bInitialised ) {
-      m_Complexf.insertMember("re", 0 * sizeof(float), H5::PredType::NATIVE_FLOAT);
-      m_Complexf.insertMember("im", 1 * sizeof(float), H5::PredType::NATIVE_FLOAT);
-      m_Complexd.insertMember("re", 0 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
-      m_Complexd.insertMember("im", 1 * sizeof(double), H5::PredType::NATIVE_DOUBLE);
-      m_Complexl.insertMember("re", 0 * sizeof(long double), H5::PredType::NATIVE_LDOUBLE);
-      m_Complexl.insertMember("im", 1 * sizeof(long double), H5::PredType::NATIVE_LDOUBLE);
+      m_Complexf.insertMember("re", 0 * sizeof(float), H5EquivType<float>::predType);
+      m_Complexf.insertMember("im", 1 * sizeof(float), H5EquivType<float>::predType);
+      m_Complexd.insertMember("re", 0 * sizeof(double), H5EquivType<double>::predType);
+      m_Complexd.insertMember("im", 1 * sizeof(double), H5EquivType<double>::predType);
+      m_Complexl.insertMember("re", 0 * sizeof(long double), H5EquivType<long double>::predType);
+      m_Complexl.insertMember("im", 1 * sizeof(long double), H5EquivType<long double>::predType);
       bInitialised = true;
     }
   }
@@ -413,7 +417,7 @@ std::string GetFirstGroupName( H5::Group & g )
 }
 
 // Open the specified HDF5File and group
-void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName, std::string &GroupName, unsigned int flags )
+void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName, std::string &GroupName, const char *PrintPrefix, unsigned int flags )
 {
   const bool bFindGroupName{ GroupName.empty() };
   f.openFile( FileName, flags );
@@ -422,6 +426,8 @@ void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName,
     GroupName = GetFirstGroupName( g );
     g = g.openGroup( GroupName );
   }
+  if( PrintPrefix )
+    std::cout << PrintPrefix << FileName << " (" << GroupName << ")\n";
 }
 
 // Read the gamma algebra attribute string and make sure it's valid
