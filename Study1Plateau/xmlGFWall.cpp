@@ -141,7 +141,8 @@ static constexpr int NumMomenta{ sizeof( Momenta ) / sizeof( Momenta[0] ) };
 
 void CreateApp( Application &application )
 {
-  const unsigned int Nt{ 64 };
+  const unsigned int NtStart{ 0 };
+  const unsigned int Nt{ 32 };
   const unsigned int NtIncrement{ 4 };
 
   // gauge field
@@ -333,7 +334,7 @@ void CreateApp( Application &application )
   }
   
   // Loop through all timeslices
-  for (unsigned int t = 0; t < Nt; t += NtIncrement )
+  for (unsigned int t = NtStart; t < Nt; t += NtIncrement )
   {
     const std::string TimeSuffix{ Sep + "t" + Sep + std::to_string( t ) };
     const std::string Suffix0{ Sep + "p" + Sep + Momentum0.to_string( Sep ) + TimeSuffix};
