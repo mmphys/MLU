@@ -51,6 +51,6 @@ set pointsize 0.45
 #set ylabel 'Chi squared per degree of freedom'
 #set logscale y
 plot for [i=1:words(times)] \
- "${mmplotpath_model}${mmplotdefault_base}.${PlotCorrName}.theta_".word(times,i).".mass.$mmplotdefault_seed.$mmplotvar_dat" \
+ "${mmplotpath_mixed}${mmplotdefault_base}.${PlotCorrName}.theta_".word(times,i).".mass.$mmplotdefault_seed.$mmplotvar_dat" \
   using (\$1-first_offset+0.05*(i-1)):2:(\$2-\$3):(\$2+\$4) with yerrorbars title "θ=".word(times,i)
 EOFMark

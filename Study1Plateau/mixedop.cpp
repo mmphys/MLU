@@ -278,7 +278,7 @@ int main( int argc, const char *argv[] )
     "Create a mixed operator from fit parameters and bootstrap replicas, where <options> are:\n"
     "-s     time Shift (default 0)\n"
     "-f     Fold the correlator, 0=don't fold (default), 1=+parity, -1=-parity\n"
-    "-p     Comma separated list of momenta, default 0_0_0"
+    "-p     Comma separated list of momenta, default 0_0_0\n"
     "-i     Input path for bootstrap replicas\n"
     "-o     Output path\n"
     "-e     number of Exponents (default same as number of operators)\n"

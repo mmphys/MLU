@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/201910Plat/fit/testZ2"
+      customWorkingDirectory = "$HOME/data/Study1/C1/Z2/fit/new"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -53,19 +53,19 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "$(HOME)/data/201910Plat/fit/Z2/h1_l_p_0_0_0.uncorr_6_16.g5_gT5.model.4147798751.h5"
+            argument = "$(HOME)/data/Study1/C1/Z2/fit/new/h1_l_p_0_0_0.uncorr_6_16.g5_gT5.model.4147798751.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "$(HOME)/data/201910Plat/fit/testZ2/h1_l_p_0_0_0.corr_9_19.g5_gT5.model.4147798751.h5"
+            argument = "$(HOME)/data/Study1/C1/Z2/fit/new/h1_l_p_0_0_0.corr_9_19.g5_gT5.model.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-p 0_0_0,1_0_0,1_1_0,1_1_1,2_0_0"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i $(HOME)/data/201910Plat/bootstrap/Z2_10000"
+            argument = "-i $(HOME)/data/Study1/C1/Z2/bootstrap/new"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
