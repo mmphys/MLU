@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "688FEBE2238C1BE100977B09"
-               BuildableName = "Optimal"
-               BlueprintName = "Optimal"
+               BuildableName = "mixedop"
+               BlueprintName = "mixedop"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,47 +46,43 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "688FEBE2238C1BE100977B09"
-            BuildableName = "Optimal"
-            BlueprintName = "Optimal"
+            BuildableName = "mixedop"
+            BlueprintName = "mixedop"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_g5_g5.bootstrap.4147798751.h5"
+            argument = "$(HOME)/data/201910Plat/fit/Z2/h1_l_p_0_0_0.uncorr_6_16.g5_gT5.model.4147798751.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "$(HOME)/data/201910Plat/fit/testZ2/h1_l_p_0_0_0.corr_9_19.g5_gT5.model.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_g5_gT5.bootstrap.4147798751.h5"
+            argument = "-p 0_0_0,1_0_0,1_1_0,1_1_1,2_0_0"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_gT5_g5.bootstrap.4147798751.h5"
+            argument = "-i $(HOME)/data/201910Plat/bootstrap/Z2_10000"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "$(HOME)/data/201910Plat/bootstrap/Z2/h1_l_p_0_0_0_gT5_gT5.bootstrap.4147798751.h5"
+            argument = "-o theta/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f2"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--uncorr"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--ti 6 --tf 16"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--savecorr"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o theta/"
-            isEnabled = "YES">
+            argument = "-n 100"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>
@@ -101,8 +97,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "688FEBE2238C1BE100977B09"
-            BuildableName = "Optimal"
-            BlueprintName = "Optimal"
+            BuildableName = "mixedop"
+            BlueprintName = "mixedop"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

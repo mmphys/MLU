@@ -62,7 +62,12 @@ PlotPathSplit()
 }
 
 export -f PlotPathSplit
-DataSet="Default"
+export mmplotdefault_base=h1_l_p_0_0_0
+export mmplotdefault_seed=4147798751
+export mmplotdefault_ti=9
+export mmplotdefault_tf=19
+
+DataSet="test"
 if [[ "$DataSet" == "Distil" ]]
 then
   export mmplotpath_corr=$HOME/data/201911HLFelix/bootstrap/Z2/
@@ -72,12 +77,13 @@ then
   export mmplotdefault_ti=3
   export mmplotdefault_tf=18
 else
-  export mmplotpath_corr=$HOME/data/201910Plat/bootstrap/Z2/
-  export mmplotpath_model=$HOME/src/Utility/test_corr_fit/
-  export mmplotdefault_base=h1_l_p_0_0_0
-  export mmplotdefault_seed=4147798751
-  export mmplotdefault_ti=9
-  export mmplotdefault_tf=19
+  DataDir=$HOME/data/Study1/C1/Z2
+  export mmplotpath_corr=$DataDir/bootstrap/$DataSet/
+  export mmplotpath_model=$DataDir/fit/$DataSet/
+  if [[ "$DataSet" == "test" ]]
+  then
+    export mmplotpath_corr=$DataDir/bootstrap/new/
+  fi
 fi
 #
 export mmplotdefault_corr=corr

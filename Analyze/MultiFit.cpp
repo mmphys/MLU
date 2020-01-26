@@ -80,7 +80,8 @@ public:
   virtual double operator()( const vd_t & ModelParameters ) const;
   //virtual void SetErrorDef(double def) {theErrorDef = def;}
   // These are definitely not part of the FCNBase interface
-  std::vector<Common::ValWithEr> PerformFit( bool bCorrelated, int tMin, int tMax, double &ChiSq, int &dof, bool bSaveCorr );
+  std::vector<Common::ValWithEr> PerformFit( bool bCorrelated, int tMin, int tMax,
+                int Skip, bool bSaveCorr, int MaxIt, double Tolerance, double &ChiSq, int &dof );
   const int NumOps;
   const std::vector<std::string> &OpNames;
   const int Verbosity;
@@ -305,7 +306,8 @@ void MultiExpModel::DumpParameters( const std::string &msg, const ROOT::Minuit2:
 }
 
 // Perform a fit
-std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int TMin_, int TMax_, double &ChiSq, int &dof, bool bSaveCorr )
+std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int TMin_, int TMax_,
+                  int Skip, bool bSaveCorr, int MaxIt, double Tolerance, double &ChiSq, int &dof )
 {
   std::cout << "=========================================\nPerforming "
             << ( Bcorrelated_ ? "correlated" : "uncorrelated" )
@@ -337,12 +339,6 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   if( ( bCorrelated && Covar.rows() != Extent ) || ( !bCorrelated && VarianceInv.size() != Extent ) )
     MakeCovar();
 
-  // Results for each bootstrap sample
-  SampleD ModelParams( NSamples, NumParams );      // model parameters (from the fit), NB Absolute energies
-  std::vector<SampleC> ModelCorr( NumOps * NumOps );  // correlators resulting from the fit parameters
-  for( int i = 0; i < NumOps * NumOps; i++ )
-    ModelCorr[i].resize( NSamples, Nt ); // Complex component will be zero
-
   // Make initial guesses for the parameters
   // For each Exponent, I need the delta_E + a constant for each operator
   std::vector<double> par( NumParams );
@@ -371,53 +367,52 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     }
   }
 
-  // Make somewhere to sort the parameters
-  std::vector<std::vector<double>> SortingHat{static_cast<size_t>(NumExponents)};
-  for( int e = 0; e < NumExponents; ++e )
-    SortingHat[e].resize(static_cast<size_t>(NumOps + 1));
-
   // Create minimisation parameters
   std::vector<double> Error( NumParams, 0.1 );
   ROOT::Minuit2::MnUserParameters upar( par, Error );
   //upar.SetLowerLimit( 0, 0.1 );
   //upar.SetValue(0,0.184);
   //upar.Fix(0);
-  //if( Verbosity )
-    DumpParameters( "Initial guess:", upar );
+  DumpParameters( "Initial guess:", upar );
+  static const int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
+  ROOT::Minuit2::MnMigrad minimizer( *this, upar, StrategyLevel );
 
-  //ROOT::Minuit2::Minuit2Minimizer minimizer( ROOT::Minuit2::kMigrad ); // even though this is default
-  //minimizer.SetPrintLevel( Verbosity );
-  //minimizer.SetFunction();
-  //VariableIterator i;
-  //ROOT::Minuit2::VariableMetricMinimizer minimizer;
-  ROOT::Minuit2::MnMigrad minimizer( *this, upar );
-  //FOR_STAT_ARRAY( Fit, <#i#> ) {
-  //for (idx = -ModelParams.offset; idx < ModelParams.size(); idx++) {
+  // Make somewhere to store the results of the fit for each bootstrap sample
+  SampleD ModelParams( NSamples, NumParams ); // Model parameters determined by fitting function
+  std::vector<std::vector<SampleC>> ModelCorr( NumOps ); // correlators resulting from the fit params
+  for( int iSnk = 0; iSnk < NumOps; iSnk++ )
+  {
+    ModelCorr[iSnk].resize( NumOps );
+    for( int iSrc = 0; iSrc < NumOps; iSrc++ )
+      ModelCorr[iSnk][iSrc].resize( NSamples, Nt ); // Complex component will be zero
+  }
+
+  // Make somewhere to sort the results of each fit by energy level
+  std::vector<std::vector<double>> SortingHat{ static_cast<size_t>( NumExponents ) };
+  for( int e = 0; e < NumExponents; ++e )
+    SortingHat[e].resize( NumOps + 1 );
+
   const int HalfNt{ Nt - 1 }; // NB: This is half of the ORIGINAL correlator time dimension
-  for (int LoopIdx = SampleD::idxCentral - 10; LoopIdx < NSamples; LoopIdx++) {
-    ROOT::Minuit2::FunctionMinimum min = minimizer();
+  for( int LoopIdx = SampleD::idxCentral - Skip; LoopIdx < NSamples; LoopIdx++ )
+  {
+    idx = ( LoopIdx >= 0 && LoopIdx < NSamples ) ? LoopIdx : SampleD::idxCentral;
+    ROOT::Minuit2::FunctionMinimum min = minimizer( MaxIt, Tolerance );
     ROOT::Minuit2::MnUserParameterState state = min.UserState();
-    //assert( minimizer.SetVariables( par.begin(), par.end() ) == NumParams && "Error: could not set variables" );
-    //minimizer.SetFunction( *this );
-    //ROOT::Minuit2::FunctionMinimum min = minimizer.Minimize( *this, par, Error );
-    //ROOT::Minuit2::MnUserParameterState state = min.UserState();
-    //bool bOK{ minimizer.Minimize() };
     if( !state.IsValid() )
       throw std::runtime_error( "Fit " + std::to_string( LoopIdx ) + " did not converge" );
-    // Throw away the first fit result - just use it as a seed for the next fit
+    // Throw away the first few fit results - just use them as a seed for the next fit
     if( LoopIdx >= SampleD::idxCentral )
     {
-      idx = ( LoopIdx >= 0 && LoopIdx < NSamples ) ? LoopIdx : SampleD::idxCentral;
-      //ROOT::Minuit2::MnUserParameters params = min.UserParameters();
-      //std::cout << "Fit result:" << min << std::endl;
       upar = state.Parameters();
-      if( idx == SampleD::idxCentral || Verbosity > 2 ) {
+      if( idx == SampleD::idxCentral || Verbosity > 2 )
+      {
         const std::string FitResult{ "Fit result:" };
         if( Verbosity )
           std::cout << FitResult << state << "\n";
         DumpParameters( FitResult, upar );
       }
-      if( idx == SampleD::idxCentral ) {
+      if( idx == SampleD::idxCentral )
+      {
         ChiSq = state.Fval();
         dof = Extent;
         if( bCorrelated )
@@ -426,26 +421,28 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
         std::cout << "Chi^2=" << ChiSq << ", dof=" << dof << ", chi^2/dof=" << ChiSq / dof
                   << "\n\t computing statistics\n";
       }
-      // Save the fit parameters for this replica
-      for( int e = 0; e < NumExponents; ++e ) {
-        // Save energy
+      // Save the fit parameters for this replica, sorted by E_0
+      for( int e = 0; e < NumExponents; ++e )
+      {
         SortingHat[e][0] = upar.Value( e );
         for( int o = 0; o < NumOps; ++o )
           SortingHat[e][o + 1] = upar.Value( MELIndex(o, e) + NumExponents );
       }
-      std::sort(SortingHat.begin(), SortingHat.end(), [](const std::vector<double> l, const std::vector<double> r)
-                { return l[0] < r[0]; });
+      std::sort( SortingHat.begin(), SortingHat.end(),
+                []( const std::vector<double> &l, const std::vector<double> &r )
+                { return l[0] < r[0]; } );
       double * const FitParams{ ModelParams[idx] };
-      for( int e = 0; e < NumExponents; ++e ) {
-        // Save energy
+      for( int e = 0; e < NumExponents; ++e )
+      {
         FitParams[e] = SortingHat[e][0];
         for( int o = 0; o < NumOps; ++o )
           FitParams[MELIndex(o, e) + NumExponents] = SortingHat[e][o + 1];
       }
       // Save the reconstructed correlator values for this replica
       for( int snk = 0; snk < NumOps; ++snk )
-        for( int src = 0; src < NumOps; ++src ) {
-          std::complex<double> * const mc{ ModelCorr[AlphaIndex( snk, src )][idx] };
+        for( int src = 0; src < NumOps; ++src )
+        {
+          std::complex<double> * const mc{ ModelCorr[snk][src][idx] };
           // Check which fit model to use based on operator product parity
           ModelType ThisModel{ Model };
           if( bAlternating && ( snk & 1 ) != ( src & 1 ) )
@@ -493,47 +490,18 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     sModelBase.append( 1, '_' );
     sModelBase.append( OpNames[i] );
   }
-  ModelParams.Write( Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ) );
+  ModelParams.Write( Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ),
+                     Common::sModel.c_str() );
   //Common::SummariseBootstrap(ModelParams, sModelBase, Seed, "params" );
   for( int snk = 0; snk < NumOps; ++snk )
-    for( int src = 0; src < NumOps; ++src ) {
-      const int i{ AlphaIndex( snk, src ) };
-      const std::string SummaryBase{ OutputRunBase + '.' + OpNames[snk] + '_' + OpNames[src] };
-      if( bSaveCorr )
-        ModelCorr[i].Write( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
-      Common::SummariseBootstrapCorr(ModelCorr[i], SummaryBase, Seed );
-    }
-  /*if( NumOps == 2) {  // I've only coded for two operators
-    Latan::DMatSample OptimalCorr( NSamples, Nt, 2 );
-    for( int degrees = -90; degrees <= 90; degrees ++ )
+    for( int src = 0; src < NumOps; ++src )
     {
-      //if( degrees % 3 && degrees % 5 ) continue;
-      const double theta{ pi * degrees / 180 };
-      const double costheta{ cos( theta ) };
-      const double sintheta{ sin( theta ) };
-      const double cos_sq_theta{ costheta * costheta };
-      const double sin_sq_theta{ sintheta * sintheta };
-      const double cos_sin_theta{ costheta * sintheta };
-      for (Latan::Index i = Latan::central; i < NSamples; i++) {
-        const double A_P1{ ModelParams[i](3, 0) };
-        const double A_A1{ ModelParams[i](5, 0) };
-        const double Op_PP{ cos_sq_theta / ( A_P1 * A_P1 ) };
-        const double Op_AP{ cos_sin_theta / ( A_P1 * A_A1 ) };
-        const double Op_AA{ sin_sq_theta / ( A_A1 * A_A1 ) };
-        for( int t = 0; t < Nt; t++ ) {
-          OptimalCorr[i](t,0) = Op_PP * ModelCorr[0][i](t,0) + Op_AA * ModelCorr[3][i](t,0)
-                              + Op_AP * ( ModelCorr[1][i](t,0) + ModelCorr[2][i](t,0) );
-          OptimalCorr[i](t,1) = 0;
-        }
-      }
-      std::string sOptimusPrime{ OutputRunBase };
-      sOptimusPrime.append( ".theta_" );
-      sOptimusPrime.append( std::to_string(degrees) );
+      const std::string SummaryBase{ OutputRunBase + '.' + OpNames[snk] + '_' + OpNames[src] };
+      Common::SampleC &c{ ModelCorr[snk][src] };
       if( bSaveCorr )
-        Latan::Io::save( OptimalCorr, Common::MakeFilename( sOptimusPrime, Common::sBootstrap, Seed, DEF_FMT ) );
-      Common::SummariseBootstrapCorr( OptimalCorr, sOptimusPrime, Seed );
+        c.Write( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
+      Common::SummariseBootstrapCorr( c, SummaryBase, Seed );
     }
-  }*/
   // Return the statistics on the fit results
   std::vector<Common::ValWithEr> Results( NumParams );
   std::vector<double> data( NSamples );
@@ -564,6 +532,9 @@ int main(int argc, const char *argv[])
       {"tf", CL::SwitchType::Single, nullptr},
       {"dti", CL::SwitchType::Single, "1"},
       {"dtf", CL::SwitchType::Single, "1"},
+      {"skip", CL::SwitchType::Single, "10"},
+      {"iter", CL::SwitchType::Single, "0"},
+      {"tol", CL::SwitchType::Single, "0.1"},
       {"s", CL::SwitchType::Single, "0"},
       {"v", CL::SwitchType::Single, "0"},
       {"o", CL::SwitchType::Single, "" },
@@ -582,6 +553,9 @@ int main(int argc, const char *argv[])
       const int tf{ cl.SwitchValue<int>("tf") };
       const int dti_max{ cl.SwitchValue<int>("dti") };
       const int dtf_max{ cl.SwitchValue<int>("dtf") };
+      const int Skip{ cl.SwitchValue<int>("skip") };
+      const int MaxIterations{ cl.SwitchValue<int>("iter") }; // Max iteration count, 0=unlimited
+      const double Tolerance{ cl.SwitchValue<double>("tol") }; // Actual tolerance is 10^{-3} * this
       const int shift{ cl.SwitchValue<int>("s") };
       const int fold{ cl.SwitchValue<int>("f") };
       int NumExponents{ cl.SwitchValue<int>( "e" ) };
@@ -595,6 +569,10 @@ int main(int argc, const char *argv[])
       int NumOps = static_cast<int>( std::sqrt( static_cast<double>( NumFiles ) ) + 0.5 );
       if( NumOps * NumOps != NumFiles )
         throw std::invalid_argument( "Number of files should be a perfect square" );
+      if( Skip < 0 )
+        throw std::invalid_argument( "Skip must be >= 0" );
+      if( MaxIterations < 0 )
+        throw std::invalid_argument( "MaxIterations must be >= 0" );
 
       std::size_t i = 0;
       Common::SeedType Seed = 0;
@@ -684,7 +662,7 @@ int main(int argc, const char *argv[])
         {
           double ChiSq;
           int dof;
-          auto params = m.PerformFit( doCorr, ti + dti, tf + dtf, ChiSq, dof, bSaveCorr );
+          auto params = m.PerformFit( doCorr, ti + dti, tf + dtf, Skip, bSaveCorr, MaxIterations, Tolerance, ChiSq, dof );
           s << ( tf + dtf ) << Sep << ( ti + dti );
           for( int p = 0; p < m.NumParams; p++ )
             s << Sep << params[p];
@@ -710,6 +688,9 @@ int main(int argc, const char *argv[])
     "--tf   Final   fit time\n"
     "--dti  Number of initial fit times (default 1)\n"
     "--dti  Number of final   fit times (default 1)\n"
+    "--skip Number of fits to throw away prior to central fit (default 10)\n"
+    "--iter Max iteration count, 0 (default) = unlimited\n"
+    "--tol  Tolerance of required fits * 10^3 (default 0.1)\n"
     "-s     time Shift (default 0)\n"
     "-v     Verbosity, 0 = normal (default), 1=debug, 2=save covar, 3=Every iteration\n"
     "-o     Output base filename\n"

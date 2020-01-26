@@ -25,7 +25,7 @@ set xrange [${ti:=${mmplotdefault_ti}}-0.2:${tf:=${mmplotdefault_tf}}+0.2]
 Basename="${mmplotfile_base}.${mmplotfile_corr_all}."
 InBasename="${mmplotfile_path}".Basename
 set output Basename."${mmplotfile_ops_all}.${mmplotfile_type}.${mmplotfile_seed}.pdf"
-set title "Masses reconstructed from ${mmplotfile_corr}elated fit on [${mmplotfile_ti},${mmplotfile_tf}] ( {/Times:Italic Γ}_5, {/Times:Italic Γ}_4 {/Times:Italic Γ}_5 on 24^3 ensemble)'
+set title "Masses reconstructed from ${mmplotfile_corr}elated fit on [${mmplotfile_ti},${mmplotfile_tf}] ( {/Times:Italic Γ}_5, {/Times:Italic Γ}_4 {/Times:Italic Γ}_5 on 24^3 ensemble)"
 set ylabel 'Synthesised correlator mass from fit'
 
 if (YOffset(0,1)!=0) {

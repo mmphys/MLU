@@ -86,6 +86,9 @@ namespace CorrSumm {
   extern const char * SummaryHeader[NumSummaries];
 };
 
+extern const std::string Underscore;
+extern const std::string Period;
+
 // Compare two strings, case insensitive
 inline bool EqualIgnoreCase(const std::string & s1, const std::string & s2)
 {
@@ -146,6 +149,59 @@ extern const std::string sBootstrap;
 extern const std::string sModel;
 
 using SeedType = unsigned int;
+
+// Generic conversion from a string to any type
+template<typename T> inline T FromString( const std::string &String ) {
+  T t;
+  std::istringstream iss( String );
+  if( !( iss >> t ) || ( iss >> std::ws && !iss.eof() ) )
+    throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
+  return t;
+}
+
+// Converting a string to a string makes a copy
+template<> inline std::string FromString<std::string>( const std::string &String )
+  { return String; }
+
+// Generic conversion from a string to an array of any type (comma or space separated)
+template<typename T> inline std::vector<T> ArrayFromString( const std::string &String ) {
+  std::string s{ String };
+  for( std::size_t pos = 0; ( pos = s.find( ',', pos ) ) != std::string::npos; )
+    s[pos] = ' ';
+  std::istringstream iss( s );
+  T t;
+  std::vector<T> v;
+  while( iss >> std::ws && !iss.eof() )
+  {
+    if( !( iss >> t ) )
+      throw std::invalid_argument( "ArrayFromString: \"" + String + "\" is not type " + typeid(T).name() );
+    v.push_back( t );
+  }
+  return v;
+}
+
+inline std::string AppendSlash( const std::string & String )
+{
+  std::string s{ String };
+  std::size_t Len = s.length();
+  if( Len && s[Len - 1] != '/' )
+    s.append( 1, '/' );
+  return s;
+}
+
+// Default delimeters for the next couple of functions
+extern const char szDefaultDelimeters[];
+
+// Remove anything past the last delimeter from string, returning the removed part in suffix
+// Return success / fail
+bool ExtractSuffix( std::string &String, std::string &Suffix, const char * pszDelimeters = nullptr );
+
+// Split String into an array using specified delimeters
+std::vector<std::string> Split( const std::string &String, const char * pszDelimeters = nullptr );
+
+// Extract suffix, then split strings. Default delimeters '.' and '_' respectively
+bool ExtractSuffixSplit( std::string &String, std::vector<std::string> &Suffii,
+                        const char * pszStringDelim = nullptr, const char * pszSuffixDelim = nullptr );
 
 // Does the specified file exist?
 bool FileExists( const std::string& Filename );
@@ -251,6 +307,9 @@ struct Momentum
   bool Extract( std::string &s, bool IgnoreSubsequentZeroNeg = true );
 };
 
+std::ostream& operator<<( std::ostream& os, const Momentum &p );
+std::istream& operator>>( std::istream& is, Momentum &p );
+
 // Attributes for filenames in form base.type.seed.ext
 struct FileNameAtt
 {
@@ -331,36 +390,6 @@ public:
   //vCorrelator( size_type Size, int Nt ) : base_type( Size )
   //{ ResizeCorrelators( Nt ); }
 };
-
-// Generic conversion from a string to any type
-template<typename T> inline T FromString( const std::string &String ) {
-  T t;
-  std::istringstream iss( String );
-  if( !( iss >> t ) || ( iss >> std::ws && !iss.eof() ) )
-    throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
-  return t;
-}
-
-// Converting a string to a string makes a copy
-template<> inline std::string FromString<std::string>( const std::string &String )
-  { return String; }
-
-// Generic conversion from a string to an array of any type (comma or space separated)
-template<typename T> inline std::vector<T> ArrayFromString( const std::string &String ) {
-  std::string s{ String };
-  for( std::size_t pos = 0; ( pos = s.find( ',', pos ) ) != std::string::npos; )
-    s[pos] = ' ';
-  std::istringstream iss( s );
-  T t;
-  std::vector<T> v;
-  while( iss >> std::ws && !iss.eof() )
-  {
-    if( !( iss >> t ) )
-      throw std::invalid_argument( "ArrayFromString: \"" + String + "\" is not type " + typeid(T).name() );
-    v.push_back( t );
-  }
-  return v;
-}
 
 template <typename T> struct H5EquivType;
 template<> struct H5EquivType<float> { static const H5::PredType& predType; };

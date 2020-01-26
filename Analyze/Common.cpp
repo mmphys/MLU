@@ -54,6 +54,8 @@ namespace CorrSumm {
   };
 };
 
+extern const std::string Underscore{ "_" };
+extern const std::string Period{ "." };
 const std::string sBootstrap{ "bootstrap" };
 const std::string sModel{ "model" };
 const double NaN{ std::nan( "" ) };
@@ -164,6 +166,101 @@ namespace Gamma
   }
 };
 
+// Default delimeters for the next couple of functions
+extern const char szDefaultDelimeters[] = " \t,";
+
+// Remove anything past the last delimeter from string, returning the removed part in suffix
+// Return success / fail
+bool ExtractSuffix( std::string &String, std::string &Suffix, const char * pszDelimeters )
+{
+  if( !pszDelimeters || !*pszDelimeters )
+    pszDelimeters = szDefaultDelimeters;
+  std::size_t NumDelims{ 0 };
+  while( pszDelimeters && pszDelimeters[NumDelims] )
+    NumDelims++;
+  const std::size_t Len{ String.length() };
+  std::size_t Start{ Len };
+  bool bFoundDelim{ false };
+  char c = 0;
+  while( !bFoundDelim && Start )
+  {
+    c = String[--Start];
+    for( std::size_t i = 0; !bFoundDelim && i < NumDelims; i++ )
+    {
+      bFoundDelim = ( pszDelimeters[i] == c );
+      if( bFoundDelim )
+      {
+        Suffix = String.substr( Start + 1 );
+        // Skip past multiple delimeters if they are all whitespace
+        if( c == ' ' || c == '\t' || c == '\r' || c == '\n' )
+        {
+          while( Start && ( String[Start - 1] == ' ' || String[Start - 1] == '\t'
+                         || String[Start - 1] == '\r' || String[Start - 1] == '\n' ) )
+            --Start;
+        }
+        String.resize( Start );
+      }
+    }
+  }
+  return bFoundDelim;
+}
+
+// Split String into an array using specified delimeters
+
+std::vector<std::string> Split( const std::string &String, const char * pszDelimeters )
+{
+  std::vector<std::string> a;
+  if( !pszDelimeters || !*pszDelimeters )
+    pszDelimeters = szDefaultDelimeters;
+  std::size_t NumDelims{ 0 };
+  while( pszDelimeters && pszDelimeters[NumDelims] )
+    NumDelims++;
+  const std::size_t Len{ String.length() };
+  std::size_t Start{ 0 };
+  while( Start < Len )
+  {
+    // Look for the next delimeter
+    std::size_t Pos{ Start };
+    bool bFoundDelim{ false };
+    char c = 0;
+    while( Pos < Len && !bFoundDelim )
+    {
+      c = String[Pos];
+      for( std::size_t i = 0; !bFoundDelim && i < NumDelims; i++ )
+        bFoundDelim = ( pszDelimeters[i] == c );
+      if( !bFoundDelim )
+        Pos++;
+    }
+    // Append this substring to list of items to return
+    a.push_back( String.substr( Start, Pos - Start ) );
+    // Skip past this delimeter
+    Start = Pos + 1;
+    // Skip past multiple delimeters if they are all whitespace
+    if( c == ' ' || c == '\t' || c == '\r' || c == '\n' )
+    {
+      while( Start < Len && ( String[Start] == ' ' || String[Start] == '\t'
+                             || String[Start] == '\r' || String[Start] == '\n' ) )
+        ++Start;
+    }
+  }
+  return a;
+}
+
+// Extract suffix, then split strings. Default delimeters '.' and '_' respectively
+bool ExtractSuffixSplit( std::string &String, std::vector<std::string> &Suffii,
+                        const char * pszStringDelim, const char * pszSuffixDelim )
+{
+  if( !pszStringDelim || !*pszStringDelim )
+    pszStringDelim = Period.c_str();
+  if( !pszSuffixDelim || !*pszSuffixDelim )
+    pszSuffixDelim = Underscore.c_str();
+  std::string Suffix;
+  const bool bExtracted{ ExtractSuffix( String, Suffix, pszStringDelim ) };
+  if( bExtracted )
+    Suffii = Split( Suffix, pszSuffixDelim );
+  return bExtracted;
+}
+
 // Does the specified file exist?
 bool FileExists( const std::string& Filename )
 {
@@ -256,6 +353,19 @@ bool Momentum::Extract( std::string &Prefix, bool IgnoreSubsequentZeroNeg )
     Prefix.append( match.suffix() );
   }
   return bGotMomentum;
+}
+
+std::ostream& operator<<( std::ostream& os, const Momentum &p )
+{
+  return os << p.to_string( Underscore );
+}
+
+std::istream& operator>>( std::istream& is, Momentum &p )
+{
+  char c = 0;
+  if(!(is>>p.x && is.get(c) && c==Underscore[0] && is>>p.y && is.get(c) && c==Underscore[0] && is>>p.z))
+    is.setstate( std::ios_base::failbit );
+  return is;
 }
 
 // These are the attributes I like to use in my filenames
