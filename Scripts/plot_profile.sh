@@ -67,7 +67,7 @@ export mmplotdefault_seed=4147798751
 export mmplotdefault_ti=9
 export mmplotdefault_tf=19
 
-DataSet="new"
+DataSet="Z2"
 if [[ "$DataSet" == "Distil" ]]
 then
   export mmplotpath_corr=$HOME/data/201911HLFelix/bootstrap/Z2/
@@ -77,15 +77,17 @@ then
   export mmplotdefault_seed=2763836222
   export mmplotdefault_ti=3
   export mmplotdefault_tf=18
-else
+elif [[ "$DataSet" == "test" ]]
+then
   DataDir=$HOME/data/Study1/C1/Z2
-  export mmplotpath_corr=$DataDir/bootstrap/$DataSet/
+  export mmplotpath_corr=$DataDir/bootstrap/
   export mmplotpath_model=$DataDir/fit/$DataSet/
-  export mmplotpath_mixed=${mmplotpath_model}mixed/
-  if [[ "$DataSet" == "test" ]]
-  then
-    export mmplotpath_corr=$DataDir/bootstrap/new/
-  fi
+  export mmplotpath_mixed=$DataDir/mixed/$DataSet/
+else
+  DataDir=$HOME/data/Study1/C1/$DataSet
+  export mmplotpath_corr=$DataDir/bootstrap/
+  export mmplotpath_model=$DataDir/fit/
+  export mmplotpath_mixed=$DataDir/mixed/
 fi
 #
 export mmplotdefault_corr=corr

@@ -40,26 +40,34 @@ using SampleC = Common::SampleC;
 static const std::string Sep{ "_" };
 static const std::string NewLine{ "\n" };
 
-static constexpr int NumMixed{ 5 };
-static const std::array<Common::Gamma::Algebra, NumMixed> MixedAlg
+struct OperatorTrait
 {
-  Common::Gamma::Algebra::Gamma5,
-  Common::Gamma::Algebra::GammaXGamma5,
-  Common::Gamma::Algebra::GammaYGamma5,
-  Common::Gamma::Algebra::GammaZGamma5,
-  Common::Gamma::Algebra::GammaTGamma5,
+  int Imag;
+  int Parity;
+  Common::Gamma::Algebra Alg;
+  OperatorTrait( int Imag_, int Parity_, Common::Gamma::Algebra Alg_ ) : Imag{Imag_}, Parity{Parity_}, Alg{Alg_} {}
+};
+
+static constexpr int NumMixed{ 5 };
+static const std::array<OperatorTrait, NumMixed> opTraits
+{
+  OperatorTrait( 0, 1, Common::Gamma::Algebra::Gamma5 ),
+  OperatorTrait( 0, -1, Common::Gamma::Algebra::GammaTGamma5 ),
+  OperatorTrait( 1, 1, Common::Gamma::Algebra::GammaXGamma5 ),
+  OperatorTrait( 1, 1, Common::Gamma::Algebra::GammaYGamma5 ),
+  OperatorTrait( 1, 1, Common::Gamma::Algebra::GammaZGamma5 ),
 };
 // The order here must match the algebra array for the model code to work
 static constexpr int idxg5{ 0 };
-static constexpr int idxgX5{ 1 };
-static constexpr int idxgY5{ 2 };
-static constexpr int idxgZ5{ 3 };
-static constexpr int idxgT5{ 4 };
+static constexpr int idxgT5{ 1 };
+static constexpr int idxgX5{ 2 };
+static constexpr int idxgY5{ 3 };
+static constexpr int idxgZ5{ 4 };
 
 struct Parameters
 {
   int shift;
-  int fold;
+  bool fold;
   int NumExponents;
   int NumSamples;
   bool bSaveCorr;
@@ -69,12 +77,14 @@ struct Parameters
 };
 
 void MixingAngle( Common::SampleC &CorrMixed,
-                  const std::array<std::array<Common::SampleC, NumMixed>, NumMixed> &Corr,
-                  const Common::SampleD &Model,
-                  int degrees, int NumSamples, int Nt )
+                  const std::array<std::array<Common::SampleD, NumMixed>, NumMixed> &Corr,
+                  const Common::SampleD &Model, int degrees )
 {
+  const int NumSamples{ CorrMixed.NumSamples() };
+  const int Nt{ CorrMixed.Nt() };
   double costheta, sintheta;
-  switch( ( degrees + 360 ) % 360 )
+  degrees = ( ( degrees ) + 360 ) % 360;
+  switch( degrees )
   {
     case 0:
       costheta = 1;
@@ -102,21 +112,21 @@ void MixingAngle( Common::SampleC &CorrMixed,
   const double cos_sq_theta{ costheta * costheta };
   const double sin_sq_theta{ sintheta * sintheta };
   const double cos_sin_theta{ costheta * sintheta };
-  const double A_P1{ Model[SampleD::idxCentral][4] };
-  const double A_A1{ Model[SampleD::idxCentral][5] };
+  const double * pModel{ Model[SampleD::idxCentral] };
+  const double A_P1{ pModel[4] };
+  const double A_A1{ pModel[5] };
   const double Op_PP{ cos_sq_theta / ( A_P1 * A_P1 ) };
   const double Op_AP{ cos_sin_theta / ( A_P1 * A_A1 ) };
   const double Op_AA{ sin_sq_theta / ( A_A1 * A_A1 ) };
-  const std::complex<double> * pPP = Corr[idxg5 ][idxg5 ][SampleC::idxCentral];
-  const std::complex<double> * pPA = Corr[idxg5 ][idxgT5][SampleC::idxCentral];
-  const std::complex<double> * pAP = Corr[idxgT5][idxg5 ][SampleC::idxCentral];
-  const std::complex<double> * pAA = Corr[idxgT5][idxgT5][SampleC::idxCentral];
-  CorrMixed.resize( NumSamples, Nt );
+  const double * pPP = Corr[idxg5 ][idxg5 ][SampleC::idxCentral];
+  const double * pPA = Corr[idxg5 ][idxgT5][SampleC::idxCentral];
+  const double * pAP = Corr[idxgT5][idxg5 ][SampleC::idxCentral];
+  const double * pAA = Corr[idxgT5][idxgT5][SampleC::idxCentral];
   std::complex<double> * pDst = CorrMixed[SampleC::idxCentral];
-  for( int i = SampleC::idxCentral; i < NumSamples; i++ )
+  for( int i = SampleC::idxCentral; i < NumSamples; i++, pModel += 6 )
   {
     for( int t = 0; t < Nt; t++ )
-      *pDst++ = Op_PP * (*pPP++).real() + Op_AA * (*pAA++).real() + Op_AP * ( ( *pAP++ + *pPA++ ).real() );
+      *pDst++ = Op_PP * *pPP++ + Op_AA * *pAA++ + Op_AP * ( *pAP++ + *pPA++ );
   }
 }
 
@@ -162,7 +172,7 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
 
   // Construct optimised model for each momentum
   Common::SampleC CorrMixed;
-  std::array<std::array<Common::SampleC, NumMixed>, NumMixed> Corr;
+  std::array<std::array<Common::SampleD, NumMixed>, NumMixed> Corr;
   std::cout << "  Base\t" << attModel.Base << "\n";
   for( const Common::Momentum &p : Par.Momenta )
   {
@@ -170,33 +180,57 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
     const std::string BaseFit{ Base + Common::Period + FitName };
     const std::string InBase{ Par.InBase + Base };
     std::cout << "  " << BaseFit << "\n";
-    int Nt         = -777;
+    int Nt       = -777;
+    int NtFolded = -888;
     // Load all of the correlators
-    for( int iSnk = 0; iSnk < NumMixed; iSnk++ )
+    for( int iSnk = 0; iSnk <= idxgT5 /*NumMixed*/; iSnk++ )
     {
       std::string InFile{ InBase };
-      InFile.append( Common::Gamma::NameShort( MixedAlg[iSnk], Common::Underscore.c_str() ) );
+      InFile.append( Common::Gamma::NameShort( opTraits[iSnk].Alg, Common::Underscore.c_str() ) );
       const std::size_t InFileLen{ InFile.length() };
-      for( int iSrc = 0; iSrc < NumMixed; iSrc++ )
+      for( int iSrc = 0; iSrc <= idxgT5 /*NumMixed*/; iSrc++ )
       {
         InFile.resize( InFileLen );
-        InFile.append( Common::Gamma::NameShort( MixedAlg[iSrc], Common::Underscore.c_str() ) );
+        InFile.append( Common::Gamma::NameShort( opTraits[iSrc].Alg, Common::Underscore.c_str() ) );
         const std::string InFileName{ Common::MakeFilename( InFile, Common::sBootstrap,
                                                            attModel.Seed, DEF_FMT ) };
         std::string GroupName;
-        Corr[iSnk][iSrc].Read( InFileName, GroupName );
+        CorrMixed.Read( InFileName, GroupName );
         std::cout << "    " << InFileName << " (" << GroupName << ")" << "\n";
         if( iSnk == 0 && iSrc == 0 )
         {
-          Nt = Corr[iSnk][iSrc].Nt();
-          NumSamples = Corr[iSnk][iSrc].NumSamples();
+          Nt = CorrMixed.Nt();
+          NtFolded = Par.fold ? Nt / 2 + 1 : Nt;
+          NumSamples = CorrMixed.NumSamples();
         }
         else
         {
-          if( Nt != Corr[iSnk][iSrc].Nt() )
+          if( Nt != CorrMixed.Nt() )
             throw std::runtime_error( "Nt!=" + std::to_string( Nt ) );
-          if( NumSamples > Corr[iSnk][iSrc].NumSamples() )
-            NumSamples = Corr[iSnk][iSrc].NumSamples();
+          if( NumSamples > CorrMixed.NumSamples() )
+            NumSamples = CorrMixed.NumSamples();
+        }
+        // Copy the appropriately folded operators to the destination
+        Corr[iSnk][iSrc].resize( NumSamples, NtFolded );
+        const int Imag{ opTraits[iSnk].Imag + opTraits[iSrc].Imag };
+        const int Parity{ opTraits[iSnk].Parity * opTraits[iSrc].Parity };
+        const std::complex<double> *pSrc = CorrMixed[SampleC::idxCentral];
+        double *pDst = Corr[iSnk][iSrc][SampleD::idxCentral];
+        for( int idx = SampleC::idxCentral; idx < NumSamples; idx++, pSrc += Nt )
+        {
+          // This is not yet correct for X, Y or Z, but should be OK for g5 / gT5
+          for( int t = 0; t < NtFolded; t++ )
+          {
+            double z1{ Imag == 1 ? pSrc[t].imag() : pSrc[t].real() };
+            if( Parity < 0 && t < Nt / 2 )
+              z1 *= -1;
+            if( Par.fold && t )
+            {
+              const double z2{ Imag == 1 ? pSrc[Nt - t].imag() : pSrc[Nt - t].real() };
+              z1 = ( z1 + z2 ) / 2;
+            }
+            *pDst++ = z1;
+          }
         }
       }
     }
@@ -207,8 +241,12 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
     for( int degrees = -90; degrees <= 90; degrees ++ )
     {
       if( !( degrees % 10 ) )
+      {
         std::cout << " " << std::to_string( degrees );
-      MixingAngle( CorrMixed, Corr, Model, degrees, NumSamples, Nt );
+        std::cout.flush();
+      }
+      CorrMixed.resize( NumSamples, NtFolded );
+      MixingAngle( CorrMixed, Corr, Model, degrees );
       OutBase.resize( OutLen );
       OutBase.append( std::to_string( degrees ) );
       if( Par.bSaveCorr )
@@ -230,12 +268,12 @@ int main( int argc, const char *argv[] )
   {
     const std::initializer_list<CL::SwitchDef> list = {
       {"s", CL::SwitchType::Single, "0"},
-      {"f", CL::SwitchType::Single, "0"},
       {"p", CL::SwitchType::Single, "0_0_0"},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"e", CL::SwitchType::Single, "0"},
       {"n", CL::SwitchType::Single, "0"},
+      {"f", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
@@ -245,7 +283,7 @@ int main( int argc, const char *argv[] )
     {
       Parameters Par;
       Par.shift = cl.SwitchValue<int>("s");
-      Par.fold = cl.SwitchValue<int>("f");
+      Par.fold = cl.GotSwitch( "f" );
       Par.InBase = Common::AppendSlash( cl.SwitchValue<std::string>("i") );
       Par.OutBase = Common::AppendSlash( cl.SwitchValue<std::string>("o") );
       Par.NumExponents = cl.SwitchValue<int>( "e" );
@@ -256,8 +294,6 @@ int main( int argc, const char *argv[] )
       Par.Momenta = Common::ArrayFromString<Common::Momentum>( cl.SwitchValue<std::string>("p") );
       if( Par.shift != 0 )
         throw std::runtime_error( "Shift option not supported yet" );
-      if( Par.fold != 0 )
-        throw std::runtime_error( "Fold option not supported yet" );
       bShowUsage = false;
       for( const std::string & ModelFile : cl.Args )
         MakeModel( ModelFile, Par );
@@ -277,13 +313,13 @@ int main( int argc, const char *argv[] )
     " <options> Model1 [Model2 ...]\n"
     "Create a mixed operator from fit parameters and bootstrap replicas, where <options> are:\n"
     "-s     time Shift (default 0)\n"
-    "-f     Fold the correlator, 0=don't fold (default), 1=+parity, -1=-parity\n"
     "-p     Comma separated list of momenta, default 0_0_0\n"
     "-i     Input path for bootstrap replicas\n"
     "-o     Output path\n"
     "-e     number of Exponents (default same as number of operators)\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
     "Flags:\n"
+    "-f     Fold the correlators before creating the combined operator\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--help     This message\n";
   }

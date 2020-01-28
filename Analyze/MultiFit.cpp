@@ -229,14 +229,17 @@ void MultiExpModel::MakeCovar( void )
   //  NB: second and subsequent energy levels are deltas
   // Overlap Coefficients Parameters NumExponents ... NumExponents ( NumOps + 1 ) - 1
 
-double MultiExpModel::operator()( const vd_t & par ) const {
+double MultiExpModel::operator()( const vd_t & par ) const
+{
   const double * const Energy{ par.data() };
   const double * const Coeff{ Energy + NumExponents };
   // Calculate the theory errors for these model parameters
   double ModelError[Extent]; // Should happily fit on stack
   const int HalfNt{ Nt - 1 }; // NB: This is half of the ORIGINAL correlator time dimension
   for( int snk = 0; snk < NumOps; ++snk )
-    for( int src = 0; src < NumOps; ++src ) {
+    for( int src = 0; src < NumOps; ++src )
+    {
+      const int alpha{ AlphaIndex( snk, src ) };
       // Check which fit model to use based on operator product parity
       ModelType ThisModel{ Model };
       if( bAlternating && ( snk & 1 ) != ( src & 1 ) )
@@ -246,43 +249,51 @@ double MultiExpModel::operator()( const vd_t & par ) const {
         else if( ThisModel == sinh )
           ThisModel = cosh;
       }
-      for( int t = 0; t < NtCorr; ++t ) {
+      for( int t = 0; t < NtCorr; ++t )
+      {
         double z = 0;
-        for( int e = 0; e < NumExponents; ++e ) {
-          switch( ThisModel ) {
-            case exp:
-              z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( - Energy[e] * ( t + tMin ) );
-              break;
+        for( int e = 0; e < NumExponents; ++e )
+        {
+          double dThis;
+          switch( ThisModel )
+          {
             case cosh:
-              z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( - Energy[e] * HalfNt ) * std::cosh( - Energy[e] * ( t + tMin - HalfNt ) );
+              dThis = std::exp( - Energy[e] * HalfNt ) * std::cosh( - Energy[e] * ( t + tMin - HalfNt ) );
               break;
             case sinh:
-              z += Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )] * std::exp( - Energy[e] * HalfNt ) * std::sinh( - Energy[e] * ( t + tMin - HalfNt ) );
+              dThis = std::exp( - Energy[e] * HalfNt ) * std::sinh( - Energy[e] * ( t + tMin - HalfNt ) );
+              break;
+            default:
+              dThis = std::exp( - Energy[e] * ( t + tMin ) );
               break;
           }
+          z += dThis * Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )];
         }
-        const int iRead{ AlphaIndex( snk, src ) * Nt + t + tMin };
-        const int iWrite{ AlphaIndex( snk, src ) * NtCorr + t };
-        ModelError[iWrite] = Corr[idx][iRead] - z;
+        const int iRead{ alpha * Nt + t + tMin };
+        z -= Corr[idx][iRead];
+        if( !std::isfinite( z ) )
+        {
+          if( Verbosity )
+          {
+            static int iOOB{ 0 };
+            std::cout << "index " << idx << ", " << ++iOOB << "th overflow\n";
+          }
+          return std::numeric_limits<double>::max();
+        }
+        const int iWrite{ alpha * NtCorr + t };
+        ModelError[iWrite] = z;
       }
     }
-  static int iCall{ 0 };
-  iCall++;
-  if( !Common::IsFinite( ModelError, Extent ) ) {
-    if( Verbosity ) {
-      static int iOOB{ 0 };
-      std::cout << "Call " << iCall << ", " << ++iOOB << "th overflow\n";
-    }
-    return std::numeric_limits<double>::max();
-  }
-
   // The inverse of a symmetric matrix is also symmetric, so only calculate half the matrix
   double chi2 = 0;
-  for( int i = 0; i < Extent; ++i ) {
+  for( int i = 0; i < Extent; ++i )
+  {
     if( !bCorrelated )
       chi2 += ModelError[i] * VarianceInv[i] * ModelError[i];
-    else {
-      for( int j = 0; j <= i; ++j ) {
+    else
+    {
+      for( int j = 0; j <= i; ++j )
+      {
         double z = ModelError[i] * CovarInv(i, j) * ModelError[j];
         chi2 += z;
         if( i != j )
@@ -291,7 +302,7 @@ double MultiExpModel::operator()( const vd_t & par ) const {
     }
   }
   if( Verbosity > 2 )
-    std::cout << "Call " << iCall << ", chi^2=" << chi2 << ", E0=" << Energy[0] << ", E1=" << Energy[1] << "\n";
+    std::cout << "index " << idx << ", chi^2=" << chi2 << ", E0=" << Energy[0] << ", E1=" << Energy[1] << "\n";
   return chi2;
 }
 
@@ -415,8 +426,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
       {
         ChiSq = state.Fval();
         dof = Extent;
-        if( bCorrelated )
-          dof *= dof;
+        //if( bCorrelated ) dof *= dof;
         dof -= NumParams;
         std::cout << "Chi^2=" << ChiSq << ", dof=" << dof << ", chi^2/dof=" << ChiSq / dof
                   << "\n\t computing statistics\n";
@@ -660,13 +670,16 @@ int main(int argc, const char *argv[])
         s << " ChiSq Dof ChiSqPerDof" << std::endl;
         for( int dti = 0; dti < dti_max; dti++ )
         {
-          double ChiSq;
-          int dof;
-          auto params = m.PerformFit( doCorr, ti + dti, tf + dtf, Skip, bSaveCorr, MaxIterations, Tolerance, ChiSq, dof );
-          s << ( tf + dtf ) << Sep << ( ti + dti );
-          for( int p = 0; p < m.NumParams; p++ )
-            s << Sep << params[p];
-          s << Sep << ChiSq << Sep << dof << Sep << ( ChiSq / dof ) << std::endl;
+          if( ti + dti < tf + dtf )
+          {
+            double ChiSq;
+            int dof;
+            auto params = m.PerformFit( doCorr, ti + dti, tf + dtf, Skip, bSaveCorr, MaxIterations, Tolerance, ChiSq, dof );
+            s << ( tf + dtf ) << Sep << ( ti + dti );
+            for( int p = 0; p < m.NumParams; p++ )
+              s << Sep << params[p];
+            s << Sep << ChiSq << Sep << dof << Sep << ( ChiSq / dof ) << std::endl;
+          }
         }
       }
     }

@@ -30,7 +30,7 @@ function plot_file()
     case $type in
       corr) title="set title 'Correlator ${title}'"
             plot_one "${title}; ${cmd} using 1:6:(\$6-\$7):(\$6+\$8) with yerrorbars title 'imaginary' lc rgb 'red', '${file}' using 1:${fields} title 'real' lc rgb 'blue'"
-            cmd="${title}; set logscale y; ${cmd} using 1:2:(abs(\$2)-\$3):(abs(\$2)+\$4) with yerrorbars title 'real' lc rgb 'blue'";;
+            cmd="${title}; set logscale y; ${cmd} using 1:(abs(\$2)):(abs(\$2)-\$3):(abs(\$2)+\$4) with yerrorbars title 'real' lc rgb 'blue'";;
       mass | cosh | sinh ) cmd="set title '${type} ${title}'; ${cmd} using 1:${fields} title '${type}' lc rgb 'red'";;
       *) echo "Unsupported file format: ${type}"
          cmd="set title '${type} ${title}'; ${cmd}";;

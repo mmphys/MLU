@@ -41,7 +41,7 @@ namespace CorrSumm {
   const char Comment[] = "# ";
   const char NewLine[] = "\n";
 
-  const char * SummaryNames[NumSummaries] = { "corr", "mass", "cosh", "sinh" };
+  const char * SummaryNames[NumSummaries] = { "corr", "mass", "cosh" };
 
   const char FieldNames[] = "t y y_low y_high y_check";
   const char FieldNames2[] = " im im_low im_high im_check";
@@ -50,7 +50,6 @@ namespace CorrSumm {
     "correlator",
     "mass",
     "cosh mass",
-    "sinh mass",
   };
 };
 
@@ -843,13 +842,10 @@ void SummariseBootstrapCorr(const Common::SampleC &out, const std::string & sOut
           switch(f)
           {
             case 1: // mass
-              DThis = std::log( abs( myReal( out[i][t] ) / myReal( out[i][(t + 1 + nt) % nt] ) ) );
+              DThis = std::log( myReal( out[i][t] ) / myReal( out[i][(t + 1 + nt) % nt] ) );
               break;
             case 2: // cosh mass
               DThis = std::acosh((myReal( out[i][(t - 1 + nt) % nt] ) + myReal( out[i][(t + 1) % nt] ) ) / (2 * myReal( out[i][t] )));
-              break;
-              case 3: // sinh mass
-              DThis = std::asinh((myReal( out[i][(t - 1 + nt) % nt] ) - myReal( out[i][(t + 1) % nt] )) / (2 * myReal( out[i][t] )));
               break;
             default:
               DThis = 0;

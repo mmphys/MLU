@@ -78,7 +78,7 @@ namespace CorrSumm {
   extern const char Comment[];
   extern const char NewLine[];
 
-  static constexpr int NumSummaries{ 4 };
+  static constexpr int NumSummaries{ 3 };
   extern const char * SummaryNames[NumSummaries];
 
   extern const char FieldNames[];
@@ -241,6 +241,14 @@ extern const double NaN;
 // test whether a type is complex
 template<typename T> struct is_complex                  : public std::false_type {};
 template<typename T> struct is_complex<std::complex<T>> : public std::true_type {};
+
+// Component-wise absolute value for complex types
+template<typename T> typename std::enable_if<is_complex<T>::value, T>::type
+ComponentAbs( T c ) { return { std::abs( c.real() ), std::abs( c.imag() ) }; }
+
+// Component-wise absolute value for scalars
+template<typename T> typename std::enable_if<!(is_complex<T>::value), T>::type
+ComponentAbs( T r ) { return std::abs( r ); }
 
 // Are all the floating point numbers pointed to finite
 template <typename T, typename I> inline bool IsFinite( const T * d, I n )
@@ -1261,14 +1269,18 @@ void Sample<T, NumAuxSamples_>::Read( const std::vector<std::string> & FileName,
       for( int k = 0; k < NtDest; ++k )
       {
         T Source1 = ReadBuffer[ ( NtSource + Shift + k ) % NtSource ];
-        if( Fold != 0 )
+        if( Fold )
         {
-          T Source2 = ReadBuffer[ ( 2 * NtSource + Shift - k ) % NtSource ];
-          if( Fold > 0 )
-            Source1 = ( Source1 + Source2 ) * 0.5;
+          if( k )
+            Source1 = std::abs( Source1 );
           else
-            Source1 = ( std::abs( Source2 ) + std::abs( Source1 ) ) * 0.5;
-            //m( Dest, 0 ) = ( Source2 - Source1 ) * 0.5;
+          {
+            T Source2 = ReadBuffer[ ( 2 * NtSource + Shift - k ) % NtSource ];
+            if( Fold > 0 )
+              Source1 = ( Source1 + Source2 ) * 0.5;
+            else
+              Source1 = ( Source2 - Source1 ) * 0.5;
+          }
         }
         *pDest++ = Source1;
       }

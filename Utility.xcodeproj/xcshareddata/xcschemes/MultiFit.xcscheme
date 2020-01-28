@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(HOME)/data/Study1/C1/Z2/fit/test"
+      customWorkingDirectory = "$(HOME)/data/Study1/C1/GFWall/fit"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -62,52 +62,36 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "phiL_0_rhoL.bootstrap.4147798751.h5"
-            isEnabled = "NO">
+            argument = "../bootstrap/h1_l_p_0_0_0_g5_g5.bootstrap.4147798751.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "phiL_0_rhoL_ax.bootstrap.4147798751.h5"
-            isEnabled = "NO">
+            argument = "../bootstrap/h1_l_p_0_0_0_g5_gT5.bootstrap.4147798751.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "phiL_ax_0_rhoL.bootstrap.4147798751.h5"
-            isEnabled = "NO">
+            argument = "../bootstrap/h1_l_p_0_0_0_gT5_g5.bootstrap.4147798751.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "phiL_ax_0_rhoL_ax.bootstrap.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "V0_16_p0_ps_ps.bootstrap.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "V0_16_p0_ps_ax.bootstrap.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "V0_16_p0_ax_ps.bootstrap.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "V0_16_p0_ax_ax.bootstrap.4147798751.h5"
-            isEnabled = "NO">
+            argument = "../bootstrap/h1_l_p_0_0_0_gT5_gT5.bootstrap.4147798751.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/Study1/C1/Z2/bootstrap/new/h1_l_p_0_0_0_g5_g5.bootstrap.4147798751.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/Study1/C1/Z2/bootstrap/new/h1_l_p_0_0_0_g5_gT5.bootstrap.4147798751.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/Study1/C1/Z2/bootstrap/new/h1_l_p_0_0_0_gT5_g5.bootstrap.4147798751.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$(HOME)/data/Study1/C1/Z2/bootstrap/new/h1_l_p_0_0_0_gT5_gT5.bootstrap.4147798751.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "../bootstrap/h1_l_p_0_0_0_g5_g5.bootstrap.123.h5 ../bootstrap/h1_l_p_0_0_0_g5_gT5.bootstrap.123.h5 ../bootstrap/h1_l_p_0_0_0_gT5_g5.bootstrap.123.h5 ../bootstrap/h1_l_p_0_0_0_gT5_gT5.bootstrap.123.h5"
@@ -155,7 +139,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-n 100"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--skip 100"
