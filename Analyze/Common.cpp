@@ -47,6 +47,7 @@ const std::string sNtUnfolded{ "NtUnfolded" };
 extern const std::string Underscore{ "_" };
 extern const std::string Period{ "." };
 const std::string sBootstrap{ "bootstrap" };
+const std::string sFold{ "fold" };
 const std::string sModel{ "model" };
 const double NaN{ std::nan( "" ) };
 
@@ -371,7 +372,7 @@ std::istream& operator>>( std::istream& is, Momentum &p )
 }
 
 // These are the attributes I like to use in my filenames
-void FileNameAtt::Parse( const std::string &Filename_ )
+void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> * pOpNames )
 {
   clear();
   Filename = Filename_;
@@ -408,49 +409,37 @@ void FileNameAtt::Parse( const std::string &Filename_ )
       NameNoExt = Base;
     i++;
   }
-  /*if( i < 3 ) {
-    std::cout << "Warning: Missing type ";
-    if( i < 2 ) {
-      std::cout << "+ Seq ";
-      if( i < 1 ) {
-        std::cout << "+ extension ";
+  // Now see whether we can extract operator names
+  if( pOpNames )
+  {
+    char Sep = '_';
+    std::size_t pos = Base.find_last_of( Sep );
+    if( pos != std::string::npos ) {
+      std::string sOp{ Base.substr( pos + 1 ) }; // Operator name
+      int iOp1 = 0;
+      while( iOp1 < pOpNames->size() && !EqualIgnoreCase( sOp, (*pOpNames)[iOp1] ) )
+        iOp1++;
+      if( iOp1 == pOpNames->size() )
+        pOpNames->emplace_back( sOp );
+      std::string sTmp{ Base.substr( 0, pos ) };  // Truncated string
+      pos = sTmp.find_last_of( Sep );
+      if( pos != std::string::npos ) {
+        sOp = sTmp.substr( pos + 1 ); // Operator name
+        int iOp2 = 0;
+        while( iOp2 < pOpNames->size() && !EqualIgnoreCase( sOp, (*pOpNames)[iOp2] ) )
+          iOp2++;
+        if( iOp2 == pOpNames->size() )
+          pOpNames->emplace_back( sOp );
+        // Got valid sink and source operators
+        op.resize( 2 );
+        op[0] = iOp1;
+        op[1] = iOp2;
+        Base.resize( pos );
+        return;
       }
     }
-    std::cout << "in " << Filename << std::endl;
-  }*/
-}
-
-// The base should end with an operator in my list
-FileNameAtt::FileNameAtt( const std::string &Filename, std::vector<std::string> &OpNames )
-{
-  Parse( Filename );
-  char Sep = '_';
-  std::size_t pos = Base.find_last_of( Sep );
-  if( pos != std::string::npos ) {
-    std::string sOp{ Base.substr( pos + 1 ) }; // Operator name
-    int iOp1 = 0;
-    while( iOp1 < OpNames.size() && !EqualIgnoreCase( sOp, OpNames[iOp1] ) )
-      iOp1++;
-    if( iOp1 == OpNames.size() )
-      OpNames.emplace_back( sOp );
-    std::string sTmp{ Base.substr( 0, pos ) };  // Truncated string
-    pos = sTmp.find_last_of( Sep );
-    if( pos != std::string::npos ) {
-      sOp = sTmp.substr( pos + 1 ); // Operator name
-      int iOp2 = 0;
-      while( iOp2 < OpNames.size() && !EqualIgnoreCase( sOp, OpNames[iOp2] ) )
-        iOp2++;
-      if( iOp2 == OpNames.size() )
-        OpNames.emplace_back( sOp );
-      // Got valid sink and source operators
-      op.resize( 2 );
-      op[0] = iOp1;
-      op[1] = iOp2;
-      Base.resize( pos );
-      return;
-    }
+    throw std::runtime_error( "Invalid operator names at end of " + Base );
   }
-  throw std::runtime_error( "Invalid operator names at end of " + Base );
 }
 
 // Make a filename "Base.Type.seed.Ext"

@@ -590,7 +590,7 @@ int main(int argc, const char *argv[])
       std::vector<Common::FileNameAtt> FileNames;
       for( const std::string &sFileName : cl.Args )
       {
-        FileNames.emplace_back( sFileName, OpNames );
+        FileNames.emplace_back( sFileName, &OpNames );
         if( i == 0 )
         {
           outBaseFileName.append( FileNames[0].Base );

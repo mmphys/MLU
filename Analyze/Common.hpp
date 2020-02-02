@@ -142,6 +142,7 @@ namespace Gamma
 };
 
 extern const std::string sBootstrap;
+extern const std::string sFold;
 extern const std::string sModel;
 
 using SeedType = unsigned int;
@@ -342,10 +343,10 @@ struct FileNameAtt
     op.clear();
   }
 
-  void Parse( const std::string &Filename_ );
+  void Parse( const std::string &Filename_, std::vector<std::string> * pOpNames = nullptr );
   FileNameAtt() = default;
-  explicit FileNameAtt( const std::string &Filename ) { Parse( Filename ); }
-  FileNameAtt( const std::string &Filename, std::vector<std::string> &OpNames );
+  explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr )
+    { Parse( Filename, pOpNames ); }
 };
 
 // Make a filename "Base.Type.seed.Ext"
@@ -957,6 +958,7 @@ class Sample
   int Nt_;
   std::unique_ptr<T[]> m_pData;
 public:
+  FileNameAtt Name_;
   int NtUnfolded = 0;
   Reality reality = Reality::Unknown;
   Parity parity = Parity::Unknown;
@@ -965,6 +967,7 @@ public:
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
   static constexpr bool is_complex { Traits::is_complex };
+  static constexpr int scalar_count { Traits::scalar_count };
   static constexpr int NumAuxSamples{ NumAuxSamples_ };
   static constexpr int NumExtraSamples{ NumAuxSamples + 1 }; // Auxiliary samples + central replica
   static constexpr int idxCentral{ -1 };
@@ -986,13 +989,16 @@ public:
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
   Sample<T, NumAuxSamples_> Bootstrap( int NumBootSamples, SeedType Seed );
-  void Read ( const std::string &FileName, std::string &GroupName, const char *PrintPrefix = nullptr );
+  void Read ( const std::string &FileName, std::string &GroupName,
+              const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr );
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
-  void Read ( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps, const char *PrintPrefix = nullptr );
+  void Read ( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps,
+              const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr );
   void WriteSummary( const std::string &sOutFileName );
   explicit Sample( int NumSamples = 0, int Nt = 0 ) : NumSamples_{0}, Nt_{0} { resize( NumSamples, Nt ); }
-  Sample( const std::string &FileName, std::string &GroupName ) : NumSamples_{0}, Nt_{0}
-    { Read( FileName, GroupName ); }
+  Sample( const std::string &FileName, std::string &GroupName,
+          const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr )
+      : NumSamples_{0}, Nt_{0} { Read( FileName, GroupName, PrintPrefix, pOpNames ); }
   T * operator[]( int Sample )
   {
     if( Sample < idxAux || Sample > NumSamples_ )
@@ -1098,8 +1104,11 @@ void Sample<T, NumAuxSamples_>::WriteSummary( const std::string &sOutFileName )
 
 // Read from file. If GroupName empty, read from first group and return name in GroupName
 template <typename T, int NumAuxSamples_>
-void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &GroupName, const char *PrintPrefix )
+void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &GroupName, const char *PrintPrefix, std::vector<std::string> * pOpNames )
 {
+  Name_.Parse( FileName, pOpNames );
+  if( !Name_.bSeedNum )
+    throw std::runtime_error( "Configuration number missing from " + FileName );
   H5::H5File f;
   H5::Group  g;
   OpenHdf5FileGroup( f, g, FileName, GroupName, PrintPrefix );
@@ -1401,7 +1410,7 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
 }
 
 template <typename T, int NumAuxSamples_>
-void Sample<T, NumAuxSamples_>::Read( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps, const char *PrintPrefix )
+void Sample<T, NumAuxSamples_>::Read( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps, const char *PrintPrefix, std::vector<std::string> * pOpNames )
 {
   if( abs( Fold ) > 2 )
     throw std::runtime_error( "Error: Fold=" + std::to_string( Fold ) + " invalid" );
@@ -1424,7 +1433,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::vector<std::string> & FileName,
   for( int i = 0; i < NumFiles; ++i )
   {
     std::string GroupName;
-    f.Read( FileName[i], GroupName, PrintPrefix );
+    f.Read( FileName[i], GroupName, PrintPrefix, pOpNames );
     if( i == 0 )
     {
       // Initialise defaults first time around
