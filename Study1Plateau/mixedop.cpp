@@ -251,7 +251,7 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
       OutBase.append( std::to_string( degrees ) );
       if( Par.bSaveCorr )
         CorrMixed.Write( Common::MakeFilename(OutBase, Common::sBootstrap, attModel.Seed, DEF_FMT ) );
-      Common::SummariseBootstrapCorr( CorrMixed, OutBase, attModel.Seed );
+      CorrMixed.WriteSummary(Common::MakeFilename(OutBase,Common::sBootstrap,attModel.Seed,TEXT_EXT));
     }
     std::cout << NewLine;
   }

@@ -77,15 +77,11 @@ namespace CorrSumm {
   extern const char sep[];
   extern const char Comment[];
   extern const char NewLine[];
-
-  static constexpr int NumSummaries{ 3 };
-  extern const char * SummaryNames[NumSummaries];
-
-  extern const char FieldNames[];
-  extern const char FieldNames2[];
-  extern const char * SummaryHeader[NumSummaries];
+  static constexpr int NumFields{ 3 };
+  extern const char * FieldNames[NumFields];
 };
 
+extern const std::string sNtUnfolded;
 extern const std::string Underscore;
 extern const std::string Period;
 
@@ -322,6 +318,7 @@ std::istream& operator>>( std::istream& is, Momentum &p );
 struct FileNameAtt
 {
   std::string Filename; // Full (and unadulterated) original filename
+  std::string NameNoExt;// Original filename, without path and without extension
   std::string Dir;      // Directory part of the filename (with trailing '/')
   std::string Base;     // Base of the filename
   std::string Type;
@@ -334,6 +331,7 @@ struct FileNameAtt
   void clear()
   {
     Filename.clear();
+    NameNoExt.clear();
     Dir.clear();
     Base.clear();
     Type.clear();
@@ -357,7 +355,7 @@ std::string MakeFilename(const std::string &Base, const std::string &Type, SeedT
 void ExtractTimeslice( std::string &s, bool &bHasTimeslice, int & Timeslice );
 
 // For now, this is just an alias
-using Correlator = std::vector<std::complex<double>>;
+/*using Correlator = std::vector<std::complex<double>>;
 
 inline void CopyCorrelator( Correlator &dst, const Correlator &src, int iOffset = 0, bool bSwapRealImag = false )
 {
@@ -397,7 +395,7 @@ public:
   // This next probably isn't needed - the assign will set the size of each Correlator
   //vCorrelator( size_type Size, int Nt ) : base_type( Size )
   //{ ResizeCorrelators( Nt ); }
-};
+};*/
 
 template <typename T> struct H5EquivType;
 template<> struct H5EquivType<float> { static const H5::PredType& predType; };
@@ -409,7 +407,13 @@ class H5File : public H5::H5File {
 public:
   using H5::H5File::H5File; // Inherit the base class's constructors
   // Return the same HDF5 complex type Grid uses
-  static H5::CompType & ComplexType( int fpsize = sizeof( double ) );
+  static H5::CompType & ComplexType( int fpsize = sizeof( std::complex<double> ) );
+  // Return the HDF5 equivalent of types I commonly use - i.e. floats and complex
+  template<typename T>typename std::enable_if<std::is_floating_point<T>::value,
+                                              const H5::DataType &>::type
+  static inline Equiv() { return H5EquivType<T>::predType; }
+  template <typename T> typename std::enable_if<is_complex<T>::value, const H5::DataType &>::type
+  static inline Equiv() { return H5File::ComplexType( sizeof( T ) ); }
 };
 
 // Get first groupname from specified group
@@ -422,30 +426,69 @@ void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName,
 Gamma::Algebra ReadGammaAttribute( H5::Group &g, const char * pAttName );
 
 // Enumeration describing whether signal is in complex or real part
-enum class Signal
+enum class Reality
 {
   Unknown = 0,
   Real,
   Imag
 };
 
-std::ostream& operator<<(std::ostream& os, const Signal &sig);
-std::istream& operator>>(std::istream& is, Signal &sig);
+extern const std::string sUnknown;
+extern const std::string sReality;
+extern const std::string Reality_TextEquiv_Real;
+extern const std::string Reality_TextEquiv_Imaginary;
+
+std::ostream& operator<<(std::ostream& os, const Reality &reality);
+std::istream& operator>>(std::istream& is, Reality &reality);
+
+// Enumeration describing whether signal is in complex or real part
+enum class Parity
+{
+  Unknown = 0,
+  Even,
+  Odd
+};
+extern const std::string sParity;
+extern const std::string Parity_TextEquiv_Even;
+extern const std::string Parity_TextEquiv_Odd;
+
+std::ostream& operator<<(std::ostream& os, const Parity &parity);
+std::istream& operator>>(std::istream& is, Parity &parity);
+
+// Enumeration describing whether signal is in complex or real part
+enum class Sign
+{
+  Unknown = 0,
+  Positive,
+  Negative
+};
+extern const std::string sSign;
+extern const std::string Sign_TextEquiv_Positive;
+extern const std::string Sign_TextEquiv_Negative;
+
+std::ostream& operator<<(std::ostream& os, const Sign &sign);
+std::istream& operator>>(std::istream& is, Sign &sign);
 
 // Traits for samples
 // SampleTraits<ST>::value is true for supported types (floating point and complex)
 template<typename ST, typename V = void> struct SampleTraits : public std::false_type{};
 template<typename ST> struct SampleTraits<ST, typename std::enable_if<std::is_floating_point<ST>::value>::type> : public std::true_type
 {
-  static constexpr bool is_complex = false;
   using scalar_type = ST;
-  static const H5::DataType& getH5Equiv() { return H5EquivType<ST>::predType; }
+  static constexpr bool is_complex = false;
+  static constexpr int scalar_count = 1;
+  static inline scalar_type * ScalarPtr( ST * p ) { return p; };
+  static inline const scalar_type * ScalarPtr( const ST * p ) { return p; };
 };
 template<typename ST> struct SampleTraits<std::complex<ST>, typename std::enable_if<SampleTraits<ST>::value>::type> : public std::true_type
 {
-  static constexpr bool is_complex = true;
   using scalar_type = typename SampleTraits<ST>::scalar_type;
-  static const H5::DataType& getH5Equiv() { return H5File::ComplexType( sizeof( scalar_type ) ); }
+  static constexpr bool is_complex = true;
+  static constexpr int scalar_count = 2;
+  static inline scalar_type * ScalarPtr( std::complex<ST> * p )
+      { return reinterpret_cast<scalar_type *>( p ); };
+  static inline const scalar_type * ScalarPtr( const std::complex<ST> * p )
+      { return reinterpret_cast<const scalar_type *>( p ); };
 };
 
 /*
@@ -469,6 +512,143 @@ CopyBuffer( const TSrc * Begin, const TSrc * End, TDst * Dst, Signal s = Signal:
 }
 */
 
+// Make a summary of the data
+// Assume there is a central replica followed by nSample copies (i.e. nSample + 1 total)
+
+template <typename T>
+void SummaryHelper( const std::string & sOutFileName, const T * pData, const int nt,
+                    const int nSample = 0,
+                    int NtUnfolded = 0,
+                    Reality reality = Reality::Unknown,
+                    Parity parity = Parity::Unknown,
+                    Sign sign = Sign::Unknown,
+                    bool t0Negated = false )
+{
+  using Traits = SampleTraits<T>;
+  using scalar_type = typename Traits::scalar_type;
+  using namespace CorrSumm;
+  assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
+  std::ofstream s( sOutFileName );
+  if( !s )
+    throw std::runtime_error( "Unable to create " + sOutFileName );
+  s << "# File " << sOutFileName << NewLine
+    << std::boolalpha << std::setprecision(std::numeric_limits<scalar_type>::digits10+2);
+  const char * psz = nullptr;
+  if( Traits::is_complex )
+  {
+    switch( sizeof( scalar_type ) )
+    {
+      case sizeof( float ):
+        psz = "std::complex<float>";
+        break;
+      case sizeof( double ):
+        psz = "std::complex<double>";
+        break;
+      case sizeof( long double ):
+        psz = "std::complex<long double>";
+        break;
+    }
+  }
+  else
+  {
+    switch( sizeof( scalar_type ) )
+    {
+      case sizeof( float ):
+        psz = "float";
+        break;
+      case sizeof( double ):
+        psz = "double";
+        break;
+      case sizeof( long double ):
+        psz = "long double";
+        break;
+    }
+  }
+  if( psz ) s << "# Representation: " << psz << NewLine;
+  if( NtUnfolded ) s << "# NtUnfolded: " << NtUnfolded << NewLine;
+  if( reality != Reality::Unknown ) s << "# Reality: " << reality << NewLine;
+  if( parity != Parity::Unknown ) s << "# Parity: " << parity << NewLine;
+  if( sign != Sign::Unknown ) s << "# Sign: " << sign << NewLine;
+  if( t0Negated ) s << "# timeslice 0 negated: " << t0Negated << NewLine;
+  // Now write all the field names
+  s << "t";
+  for( int i = 0; i < Traits::scalar_count; i++ ) // real or imaginary
+  {
+    for(int f = 0; f < NumFields; f++) // each field
+    {
+      std::string n{ FieldNames[f] };
+      if( i )
+        n.append( "_im" );
+      s << sep << n << sep << n << "_low " << n << "_high " << n << "_check";
+    }
+  }
+  s << NewLine;
+  // Now perform summaries
+  const int tMid{ NtUnfolded ? nt : nt / 2 }; // Summaries may want to change sign for -ve wave
+  scalar_type Central;
+  std::vector<scalar_type> Data( nSample );
+  for(int t = 0; t < nt; t++ )
+  {
+    // Index of previous and next timeslice relative to current timeslice
+    const int Next{ ( t == nt - 1 ? 1 - nt :  1 ) * Traits::scalar_count };
+    const int Prev{ ( t == 0      ? nt - 1 : -1 ) * Traits::scalar_count };
+    s << t;
+    for( int i = 0; i < Traits::scalar_count; i++ ) // real or imaginary
+    {
+      for(int f = 0; f < NumFields; f++) // each field
+      {
+        const scalar_type * p = Traits::ScalarPtr( pData ) + t * Traits::scalar_count + i;
+        int Count = 0;
+        for(int n = -1; n < nSample; n++, p += nt * Traits::scalar_count )
+        {
+          scalar_type d;
+          switch( f )
+          {
+            case 0:
+              d = * p;
+              break;
+            case 1: // mass
+              if( t == 0 )
+                d = NaN;
+              else if( t <= tMid )
+                d = std::log( p[Prev] / *p );
+              else
+                d = -std::log( *p / p[Next] );
+              break;
+            case 2: // cosh mass
+              d = std::acosh( ( p[Prev] + p[Next] ) / ( *p * 2 ) );
+              break;
+            default:
+              d = 0;
+          }
+          if( n == -1 )
+            Central = d;
+          else if( std::isfinite( d ) )
+            Data[Count++] = d;
+        }
+        /*if( i==0 && f==1 && t==20 )
+        {
+          std::ofstream o( "BeforeSort.txt" );
+          o << -1 << sep << Central << NewLine;
+          for( int i = 0; i < Count; i++ )
+            o << i << sep << Data[i] << NewLine;
+        }*/
+        Common::ValWithEr v( Central, Data, Count );
+        s << sep << v.Central << sep << v.ErLow << sep << v.ErHigh
+               << sep << ( static_cast<scalar_type>( Count ) / nSample );
+        /*if( i==0 && f==1 && t==20 )
+        {
+          std::ofstream o( "AfterSort.txt" );
+          o << -1 << sep << Central << NewLine;
+          for( int i = 0; i < Count; i++ )
+            o << i << sep << Data[i] << NewLine;
+        }*/
+      }
+    }
+    s << NewLine;
+  }
+}
+
 // Correlator file. Could be either single correlator, or multiple gammas
 
 template <typename T>
@@ -478,7 +658,6 @@ class CorrelatorFile
 public:
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
-  static constexpr int scalar_size { sizeof( scalar_type ) };
   static constexpr bool is_complex { Traits::is_complex };
 private:
   int NumOps_ = 0;
@@ -526,37 +705,6 @@ private:
     return idx;
   }
 public:
-  template <typename DontSpecialise=T>
-  inline typename std::enable_if<!SampleTraits<DontSpecialise>::is_complex, Signal>::type
-    getSignal( int Sample ) const { return ( NumOps_==0 || Nt_==0 ) ? Signal::Unknown : Signal::Real; }
-  template <typename DontSpecialise=T>
-  inline typename std::enable_if<SampleTraits<DontSpecialise>::is_complex, Signal>::type
-    getSignal( int Sample ) const
-  {
-    if( NumOps_ == 0 || Nt_ == 0 )
-      return Signal::Unknown;
-    const T * p = (*this)[Sample];
-    int cntReal{ 0 };
-    int cntImag{ 0 };
-    for( int i = 0; i < Nt_; i++ )
-    {
-      if( std::abs( p->real() ) >= std::abs( p->imag() ) )
-        cntReal++;
-      else
-        cntImag++;
-      p++;
-    }
-    const int Quorum{ Nt_ * 2 / 3 };
-    if( cntReal > Quorum )
-      return Signal::Real;
-    if( cntImag > Quorum )
-      return Signal::Imag;
-    return Signal::Unknown;
-  }
-  inline Signal getSignal( Gamma::Algebra gSink, Gamma::Algebra gSource ) const
-  {
-    return getSignal( GammaIndex( gSink ) * NumOps_ + GammaIndex( gSource ) );
-  }
   inline int NumOps() const { return NumOps_; }
   inline int Nt() const { return Nt_; }
   inline int Timeslice() const { return bHasTimeslice ? Timeslice_ : 0; }
@@ -578,7 +726,7 @@ public:
   void Read ( const std::string &FileName, std::string &GroupName, std::vector<Gamma::Algebra> &Alg,
              const int * pTimeslice = nullptr );
   //void Write( const std::string &FileName, const char * pszGroupName = nullptr );
-  void WriteSummaries ( const std::string &Prefix, const std::vector<Common::Gamma::Algebra> &AlgSpecific );
+  void WriteSummary(const std::string &Prefix, const std::vector<Common::Gamma::Algebra> &AlgSpecific);
   T * operator[]( int Sample )
   {
     RangeCheck( Sample );
@@ -658,7 +806,7 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
           resize( 1, static_cast<int>( Dim[0] ) );
           Alg_.resize( 1 );
           Alg_[0] = Gamma::Algebra::Unknown;
-          ds.read( (*this)[0], H5File::ComplexType( scalar_size ) );
+          ds.read( (*this)[0], H5File::ComplexType( sizeof( T ) ) );
           bOK = true;
         }
       }
@@ -737,7 +885,7 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
                 if( idxSrc < Alg_.size() )
                 {
                   const int idx{ idxSnk * NumOps_ + idxSrc };
-                  ds.read( (*this)[idx], H5File::ComplexType( scalar_size ) );
+                  ds.read( (*this)[idx], H5File::ComplexType( sizeof( T ) ) );
                   count[idx]++;
                 }
               }
@@ -770,62 +918,32 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
 }
 
 template <typename T>
-void CorrelatorFile<T>::WriteSummaries ( const std::string &Prefix, const std::vector<Gamma::Algebra> &AlgSpecific )
+void CorrelatorFile<T>::WriteSummary( const std::string &Prefix, const std::vector<Gamma::Algebra> &AlgSpecific )
 {
   using namespace CorrSumm;
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
   const int nt{ Nt() };
   const std::vector<Gamma::Algebra> &Alg{ AlgSpecific.size() ? AlgSpecific : Alg_ };
   const int NumOps{ static_cast<int>( Alg.size() ) };
+  std::string sOutFileName{ Prefix };
+  sOutFileName.append( Name_.Base );
+  std::size_t Len{ sOutFileName.length() };
+  std::string sSuffix{ 1, '.' };
+  sSuffix.append( Name_.SeedString );
+  sSuffix.append( 1, '.' );
+  sSuffix.append( TEXT_EXT );
   for( int Snk = 0; Snk < NumOps; Snk++ )
   {
     static const char pszSep[] = "_";
-    std::string sSnk{ Common::Gamma::NameShort( Alg[Snk], pszSep ) };
+    sOutFileName.resize( Len );
+    sOutFileName.append( Common::Gamma::NameShort( Alg[Snk], pszSep ) );
+    std::size_t Len2{ sOutFileName.length() };
     for( int Src = 0; Src < NumOps; Src++ )
     {
-      std::string sSrc{ Common::Gamma::NameShort( Alg[Src], pszSep ) };
-      const std::string sOutBaseShort{ Name_.Base + sSnk + sSrc };
-      const std::string sOutBase{ Prefix + sOutBaseShort };
-      for(int f = 0; f < NumSummaries; f++)
-      {
-        std::string sOutFileName{MakeFilename(sOutBase, SummaryNames[f], Name_.Seed, TEXT_EXT)};
-        std::ofstream s( sOutFileName );
-        s << Comment << SummaryHeader[f] << NewLine << Comment << sOutBaseShort
-          << NewLine << Comment << "Config " << Name_.Seed
-          << NewLine << Comment << "Signal " << this->getSignal( Alg[Snk], Alg[Src] )
-          << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" )
-          << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
-        const T * const pc = (*this)( Alg[Snk], Alg[Src] );
-        for( int t = 0; t < nt; t++ )
-        {
-          if( f == 0 )
-          {
-            double re = pc[t].real();
-            double im = pc[t].imag();
-            s << t << sep << re << sep << 0 << sep << 0 << sep << 1
-                   << sep << im << sep << 0 << sep << 0 << sep << 1 << std::endl;
-          }
-          else
-          {
-            double DThis;
-            switch(f)
-            {
-              case 1: // mass
-                DThis = std::log( abs( pc[t].real() / pc[(t + 1 + nt) % nt].real() ) );
-                break;
-              case 2: // cosh mass
-                DThis = std::acosh((pc[(t - 1 + nt) % nt].real() + pc[(t + 1) % nt].real()) / (2 * pc[t].real()));
-                break;
-                case 3: // sinh mass
-                DThis = std::asinh((pc[(t - 1 + nt) % nt].real() - pc[(t + 1) % nt].real()) / (2 * pc[t].real()));
-                break;
-              default:
-                DThis = 0;
-            }
-            s << t << sep << DThis << sep << 0 << sep << 0 << sep << 1 << std::endl;
-          }
-        }
-      }
+      sOutFileName.resize( Len2 );
+      sOutFileName.append( Common::Gamma::NameShort( Alg[Src], pszSep ) );
+      sOutFileName.append( sSuffix );
+      SummaryHelper( sOutFileName, (*this)( Alg[Snk], Alg[Src] ), nt );
     }
   }
 }
@@ -839,10 +957,13 @@ class Sample
   int Nt_;
   std::unique_ptr<T[]> m_pData;
 public:
-  Signal Signal_ = Signal::Unknown;
+  int NtUnfolded = 0;
+  Reality reality = Reality::Unknown;
+  Parity parity = Parity::Unknown;
+  Sign sign = Sign::Unknown;
+  bool t0Negated = false;
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
-  static constexpr int scalar_size { sizeof( scalar_type ) };
   static constexpr bool is_complex { Traits::is_complex };
   static constexpr int NumAuxSamples{ NumAuxSamples_ };
   static constexpr int NumExtraSamples{ NumAuxSamples + 1 }; // Auxiliary samples + central replica
@@ -864,10 +985,11 @@ public:
   }
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
-  Sample<T, NumAuxSamples_> Bootstrap( int NumBootSamples, SeedType Seed, Signal sig );
+  Sample<T, NumAuxSamples_> Bootstrap( int NumBootSamples, SeedType Seed );
   void Read ( const std::string &FileName, std::string &GroupName, const char *PrintPrefix = nullptr );
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void Read ( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps, const char *PrintPrefix = nullptr );
+  void WriteSummary( const std::string &sOutFileName );
   explicit Sample( int NumSamples = 0, int Nt = 0 ) : NumSamples_{0}, Nt_{0} { resize( NumSamples, Nt ); }
   Sample( const std::string &FileName, std::string &GroupName ) : NumSamples_{0}, Nt_{0}
     { Read( FileName, GroupName ); }
@@ -934,13 +1056,12 @@ using SampleD = Sample<double>;
 
 // Perform bootstrap
 template <typename T, int NumAuxSamples_>
-Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumBootSamples, SeedType Seed, Signal sig )
+Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumBootSamples, SeedType Seed )
 {
   using fint = std::uint_fast32_t;
   std::mt19937                        engine( Seed );
   std::uniform_int_distribution<fint> random( 0, NumSamples_ - 1 );
   Sample<T, NumAuxSamples_>           boot( NumBootSamples, Nt_ );
-  boot.Signal_ = sig;
 
   // Compute the mean, then copy all the extra info to the bootstrap I will return
   MakeMean();
@@ -964,6 +1085,15 @@ Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumBootSampl
       dst[t] /= NumSamples_;
   }
   return boot;
+}
+
+template <typename T, int NumAuxSamples_>
+void Sample<T, NumAuxSamples_>::WriteSummary( const std::string &sOutFileName )
+{
+  using namespace CorrSumm;
+  assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
+  SummaryHelper( sOutFileName, (*this)[idxCentral], Nt_, NumSamples_,
+                 NtUnfolded, reality, parity, sign, t0Negated );
 }
 
 // Read from file. If GroupName empty, read from first group and return name in GroupName
@@ -1055,18 +1185,63 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
         a = g.openAttribute("nSample");
         a.read( H5::PredType::NATIVE_UINT, &att_nSample );
         a.close();
-        Signal Sig{ Signal::Unknown };
+        NtUnfolded = 0;
         try
         {
-          a = g.openAttribute("Signal");
+          a = g.openAttribute(sNtUnfolded);
+          a.read( H5::PredType::NATIVE_INT, &NtUnfolded );
+          a.close();
+        }
+        catch(const H5::Exception &)
+        {
+          H5::Exception::clearErrorStack();
+        }
+        reality = Reality::Unknown;
+        try
+        {
+          a = g.openAttribute(sReality);
           std::string s{};
           H5::StrType sType = a.getStrType();
           a.read( sType, s );
           a.close();
-          if( EqualIgnoreCase( s, "real" ) )
-            Sig = Signal::Real;
-          else if( EqualIgnoreCase( s, "imag" ) )
-            Sig = Signal::Imag;
+          if( EqualIgnoreCase( s, Reality_TextEquiv_Real ) )
+            reality = Reality::Real;
+          else if( EqualIgnoreCase( s, Reality_TextEquiv_Imaginary ) )
+            reality = Reality::Imag;
+        }
+        catch(const H5::Exception &)
+        {
+          H5::Exception::clearErrorStack();
+        }
+        parity = Parity::Unknown;
+        try
+        {
+          a = g.openAttribute(sParity);
+          std::string s{};
+          H5::StrType sType = a.getStrType();
+          a.read( sType, s );
+          a.close();
+          if( EqualIgnoreCase( s, Parity_TextEquiv_Even ) )
+            parity = Parity::Even;
+          else if( EqualIgnoreCase( s, Parity_TextEquiv_Odd ) )
+            parity = Parity::Odd;
+        }
+        catch(const H5::Exception &)
+        {
+          H5::Exception::clearErrorStack();
+        }
+        sign = Sign::Unknown;
+        try
+        {
+          a = g.openAttribute(sSign);
+          std::string s{};
+          H5::StrType sType = a.getStrType();
+          a.read( sType, s );
+          a.close();
+          if( EqualIgnoreCase( s, Sign_TextEquiv_Positive ) )
+            sign = Sign::Positive;
+          else if( EqualIgnoreCase( s, Sign_TextEquiv_Negative ) )
+            sign = Sign::Negative;
         }
         catch(const H5::Exception &)
         {
@@ -1082,7 +1257,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
           if( Dim[0] * att_nSample <= std::numeric_limits<int>::max() )
           {
             resize( static_cast<int>( att_nSample ), static_cast<int>( Dim[0] ) );
-            const H5::DataType myType{ Traits::getH5Equiv() };
+            const H5::DataType & myType{ H5File::Equiv<T>() };
             ds.read( (*this)[idxCentral], myType );
             dsp.close();
             ds.close();
@@ -1161,20 +1336,40 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
     a = g.createAttribute( "nSample", H5::PredType::STD_U32LE, ds1 );
     a.write( H5::PredType::NATIVE_INT, &NumSamples_ );
     a.close();
-    if( Signal_ == Signal::Real || Signal_ == Signal::Imag )
+    if( NtUnfolded )
     {
-      std::stringstream ss;
-      ss << Signal_;
-      const std::string s{ ss.str() };
+      a = g.createAttribute( sNtUnfolded, H5::PredType::STD_U16LE, ds1 );
+      a.write( H5::PredType::NATIVE_INT, &NtUnfolded );
+      a.close();
+    }
+    if( reality == Reality::Real || reality == Reality::Imag )
+    {
+      const std::string &s{reality==Reality::Real?Reality_TextEquiv_Real:Reality_TextEquiv_Imaginary};
       H5::StrType sType( H5::PredType::C_S1, s.length() );
-      a = g.createAttribute( "Signal", sType, ds1 );
+      a = g.createAttribute( sReality, sType, ds1 );
+      a.write( sType, s );
+      a.close();
+    }
+    if( parity == Parity::Even || parity == Parity::Odd )
+    {
+      const std::string &s{ parity == Parity::Even ? Parity_TextEquiv_Even : Parity_TextEquiv_Odd };
+      H5::StrType sType( H5::PredType::C_S1, s.length() );
+      a = g.createAttribute( sParity, sType, ds1 );
+      a.write( sType, s );
+      a.close();
+    }
+    if( sign == Sign::Positive || sign == Sign::Negative )
+    {
+      const std::string &s{ sign == Sign::Positive ? Sign_TextEquiv_Positive : Sign_TextEquiv_Negative};
+      H5::StrType sType( H5::PredType::C_S1, s.length() );
+      a = g.createAttribute( sSign, sType, ds1 );
       a.write( sType, s );
       a.close();
     }
     ds1.close();
     Dims[0] = Nt_;
     ds1 = H5::DataSpace( 1, Dims );
-    const H5::DataType myType{ Traits::getH5Equiv() };
+    const H5::DataType &myType{ H5File::Equiv<T>() };
     H5::DataSet ds = g.createDataSet( "data_C", myType, ds1 );
     ds.write( (*this)[idxCentral], myType );
     ds.close();
@@ -1183,7 +1378,7 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
     Dims[1] = Nt_;
     ds1 = H5::DataSpace( 2, Dims );
     ds = g.createDataSet( "data_S", myType, ds1 );
-    ds.write( (*this)[0], Traits::getH5Equiv() );
+    ds.write( (*this)[0], myType );
     ds.close();
     ds1.close();
     if( NumAuxSamples )
@@ -1191,7 +1386,7 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
       Dims[0] = NumAuxSamples;
       ds1 = H5::DataSpace( 2, Dims );
       ds = g.createDataSet( "data_Aux", myType, ds1 );
-      ds.write( (*this)[idxAux], Traits::getH5Equiv() );
+      ds.write( (*this)[idxAux], myType );
       ds.close();
       ds1.close();
     }
@@ -1358,9 +1553,6 @@ public:
 };
 
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl);
-
-// Make summary files of a bootstrap of a correlator
-void SummariseBootstrapCorr(const SampleC &out, const std::string & sOutFileBase, SeedType Seed );//, int momentum_squared);
 
 END_COMMON_NAMESPACE
 #endif // Common_hpp

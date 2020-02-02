@@ -251,34 +251,24 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
       // Skip bootstrap if output exists
       const std::string sOutBase{ outStem + Prefix + sSnk + sSrc };
       const std::string sOutFile{ Common::MakeFilename( sOutBase, Common::sBootstrap, seed, DEF_FMT ) };
-      if( Common::FileExists( sOutFile ) || (!bSaveBootstrap && Common::FileExists( Common::MakeFilename(sOutBase, CorrSumm::SummaryNames[0], seed, TEXT_EXT))))
+      const std::string sSummary{ Common::MakeFilename( sOutBase, Common::sBootstrap, seed, TEXT_EXT)};
+      if( Common::FileExists( sOutFile ) || ( !bSaveBootstrap && Common::FileExists( sSummary ) ) )
       {
         std::cout << sOutBase << " skipped - output already exists" << std::endl;
       }
       else
       {
-        static const std::string sigBadPrefix{ " ??? " };
         //if( bShowAverages )
         //ShowTimeSliceAvg( in );
         // std::cout << sOutBase << " " << nSample << " samples" << std::endl;
         assert( binSize == 1 && "Binning still needs to be implemented" );
         // Copy the correlators into my sample, aligning timeslices if need be
-        Common::Signal sig{ Signal::Unknown };
-        bool sigBad{ false };
         std::complex<double> * pDst = in[0];
         for( Iter i = first; i != last; i++ )
         {
           const int CorrelatorTimeslice{ i->Timeslice() };
           int TOffset{ bAlignTimeslices ? CorrelatorTimeslice : 0 };
           // Only need to say which correlators contribute for first gamma structure
-          const Common::Signal sigThis{ i->getSignal( Alg[Snk], Alg[Src] ) };
-          if( sigThis != sig )
-          {
-            if( sig == Signal::Unknown )
-              sig = sigThis;
-            else if( sigThis != Signal::Unknown )
-              sigBad = true;
-          }
           if( Src == 0 && Snk == 0 )
           {
             std::cout << "  t=";
@@ -286,7 +276,7 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
               std::cout << TOffset << "->0";
             else
               std::cout << CorrelatorTimeslice;
-            std::cout << '\t' << i->Name_.Base << "." << i->Name_.SeedString << ( sigBad ? sigBadPrefix : " " ) << sigThis << std::endl;
+            std::cout << '\t' << i->Name_.Base << "." << i->Name_.SeedString << std::endl;
           }
           std::complex<double> * pSrc = (*i)( Alg[Snk], Alg[Src] ) + TOffset;
           for( int t = 0; t < Nt; t++ )
@@ -296,14 +286,14 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
               pSrc -= Nt;
           }
         }
-        Common::SampleC out = in.Bootstrap( nSample, seed, sigBad ? Signal::Unknown : sig );
+        Common::SampleC out = in.Bootstrap( nSample, seed );
         if( bSaveBootstrap )
         {
-          std::cout << "  " << nSample << ( sigBad ? sigBadPrefix : " " ) << sig << " samples to " << sOutFile << std::endl;
+          std::cout << "  " << nSample << " samples to " << sOutFile << std::endl;
           out.Write( sOutFile );
         }
         if( bSaveSummaries )
-          Common::SummariseBootstrapCorr( out, sOutBase, seed );//, momentum_squared );
+          out.WriteSummary( sSummary );
         iCount++;
       }
     }

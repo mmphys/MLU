@@ -510,7 +510,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
       Common::SampleC &c{ ModelCorr[snk][src] };
       if( bSaveCorr )
         c.Write( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
-      Common::SummariseBootstrapCorr( c, SummaryBase, Seed );
+      c.WriteSummary( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, TEXT_EXT ) );
     }
   // Return the statistics on the fit results
   std::vector<Common::ValWithEr> Results( NumParams );

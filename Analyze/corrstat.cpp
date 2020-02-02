@@ -84,7 +84,7 @@ int main(int argc, const char *argv[])
           std::string GroupName;
           std::vector<Common::Gamma::Algebra> ThisAlg{ Alg };
           Common::CorrelatorFileC InFile( Filename, GroupName, ThisAlg );
-          InFile.WriteSummaries(outStem, ThisAlg );
+          InFile.WriteSummary(outStem, ThisAlg );
           Count++;
         }
       }

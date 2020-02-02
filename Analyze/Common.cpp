@@ -40,19 +40,10 @@ namespace CorrSumm {
   const char sep[] = " ";
   const char Comment[] = "# ";
   const char NewLine[] = "\n";
-
-  const char * SummaryNames[NumSummaries] = { "corr", "mass", "cosh" };
-
-  const char FieldNames[] = "t y y_low y_high y_check";
-  const char FieldNames2[] = " im im_low im_high im_check";
-  const char * SummaryHeader[NumSummaries] =
-  {
-    "correlator",
-    "mass",
-    "cosh mass",
-  };
+  const char * FieldNames[NumFields] = { "corr", "exp", "cosh" };
 };
 
+const std::string sNtUnfolded{ "NtUnfolded" };
 extern const std::string Underscore{ "_" };
 extern const std::string Period{ "." };
 const std::string sBootstrap{ "bootstrap" };
@@ -272,10 +263,22 @@ void ValWithEr::Get( double Central_, std::vector<double> &Data, std::size_t Cou
 {
   assert( Data.size() >= Count && "ValWithErr<T>::Get: data too small" );
   Central = Central_;
-  if( Count == 0 ) {
-    ErLow = NaN;
-    ErHigh  = NaN;
-    Check = 0;
+  if( Count == 0 )
+  {
+    if( Data.size() == 0 )
+    {
+      // I wasn't trying to take an estimate over many samples
+      ErLow = Central;
+      ErHigh  = Central;
+      Check = 1;
+    }
+    else
+    {
+      // Tried to take an estimate over many samples, but all values NaN
+      ErLow = NaN;
+      ErHigh  = NaN;
+      Check = 0;
+    }
     return;
   }
   const typename std::vector<double>::iterator itStart{ Data.begin() };
@@ -284,8 +287,8 @@ void ValWithEr::Get( double Central_, std::vector<double> &Data, std::size_t Cou
   std::size_t Index = 0.16 * Count + 0.5;
   if( Index >= Count )
     Index = Count - 1;
-  ErLow  = Central - Data[Index];
-  ErHigh = Data[Count - 1 - Index] - Central;
+  ErLow  = Data[Index];
+  ErHigh = Data[Count - 1 - Index];
   Check = static_cast<double>( Count ) / Data.size();
 }
 
@@ -378,9 +381,12 @@ void FileNameAtt::Parse( const std::string &Filename_ )
   else
     Dir = Filename.substr( 0, ++pos );
   Base = Filename.substr( pos );
+  NameNoExt = Base;
   int i = 0;
-  for( ; i < 3 && ( pos = Base.find_last_of( '.' ) ) != std::string::npos ; i++ ) {
-    switch( i ) {
+  while( i < 3 && ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
+  {
+    switch( i )
+    {
       case 0:
         Ext = Base.substr( pos + 1 );
         break;
@@ -398,6 +404,9 @@ void FileNameAtt::Parse( const std::string &Filename_ )
         break;
     }
     Base.resize(pos);
+    if( i == 0 )
+      NameNoExt = Base;
+    i++;
   }
   /*if( i < 3 ) {
     std::cout << "Warning: Missing type ";
@@ -505,11 +514,11 @@ H5::CompType & H5File::ComplexType( int fpsize )
       bInitialised = true;
     }
   }
-  if( fpsize == sizeof( float ) )
+  if( fpsize == sizeof( std::complex<float> ) )
     return m_Complexf;
-  if( fpsize == sizeof( double ) )
+  if( fpsize == sizeof( std::complex<double> ) )
     return m_Complexd;
-  assert( fpsize == sizeof( long double ) );
+  assert( fpsize == sizeof( std::complex<long double> ) );
   return m_Complexl;
 }
 
@@ -553,40 +562,122 @@ Gamma::Algebra ReadGammaAttribute( H5::Group &g, const char * pAttName )
   throw H5::Exception( "Common::ReadGammaAttribute", "Invalid gamma algebra string" );
 }
 
-static const std::string Signal_TextEquiv_Real{ "real" };
-static const std::string Signal_TextEquiv_Imaginary{ "imaginary" };
-static const std::string Signal_TextEquiv_Unknown{ "unknown" };
+const std::string sUnknown{ "unknown" };
 
-std::ostream& operator<<(std::ostream& os, const Signal &sig)
+const std::string sReality{ "Reality" };
+const std::string Reality_TextEquiv_Real{ "real" };
+const std::string Reality_TextEquiv_Imaginary{ "imaginary" };
+
+std::ostream& operator<<(std::ostream& os, const Reality &reality)
 {
-  switch( sig )
+  switch( reality )
   {
-    case Signal::Real:
-      os << Signal_TextEquiv_Real;
+    case Reality::Real:
+      os << Reality_TextEquiv_Real;
       break;
-    case Signal::Imag:
-      os << Signal_TextEquiv_Imaginary;
+    case Reality::Imag:
+      os << Reality_TextEquiv_Imaginary;
       break;
     default:
-      os << Signal_TextEquiv_Unknown;
+      os << sUnknown;
       break;
   }
   return os;
 }
 
-std::istream& operator>>(std::istream& is, Signal &sig)
+std::istream& operator>>(std::istream& is, Reality &reality)
 {
+  reality = Reality::Unknown;
   std::string s;
-  sig = Signal::Unknown;
   if( is >> s )
   {
-    if( EqualIgnoreCase( s, Signal_TextEquiv_Real ) )
-      sig = Signal::Real;
-    else if( EqualIgnoreCase( s, Signal_TextEquiv_Imaginary ) )
-      sig = Signal::Imag;
-    else if( !EqualIgnoreCase( s, Signal_TextEquiv_Unknown ) )
+    if( EqualIgnoreCase( s, Reality_TextEquiv_Real ) )
+      reality = Reality::Real;
+    else if( EqualIgnoreCase( s, Reality_TextEquiv_Imaginary ) )
+      reality = Reality::Imag;
+    else if( !EqualIgnoreCase( s, sUnknown ) )
       is.setstate( std::ios_base::failbit );
   }
+  else
+    is.setstate( std::ios_base::failbit );
+  return is;
+}
+
+const std::string sParity{ "Parity" };
+const std::string Parity_TextEquiv_Even{ "even" };
+const std::string Parity_TextEquiv_Odd{ "odd" };
+
+std::ostream& operator<<(std::ostream& os, const Parity &parity)
+{
+  switch( parity )
+  {
+    case Parity::Even:
+      os << Parity_TextEquiv_Even;
+      break;
+    case Parity::Odd:
+      os << Parity_TextEquiv_Odd;
+      break;
+    default:
+      os << sUnknown;
+      break;
+  }
+  return os;
+}
+
+std::istream& operator>>(std::istream& is, Parity &parity)
+{
+  parity = Parity::Unknown;
+  std::string s;
+  if( is >> s )
+  {
+    if( EqualIgnoreCase( s, Parity_TextEquiv_Even ) )
+      parity = Parity::Even;
+    else if( EqualIgnoreCase( s, Parity_TextEquiv_Odd ) )
+      parity = Parity::Odd;
+    else if( !EqualIgnoreCase( s, sUnknown ) )
+      is.setstate( std::ios_base::failbit );
+  }
+  else
+    is.setstate( std::ios_base::failbit );
+  return is;
+}
+
+const std::string sSign{ "Sign" };
+const std::string Sign_TextEquiv_Positive{ "positive" };
+const std::string Sign_TextEquiv_Negative{ "negative" };
+
+std::ostream& operator<<(std::ostream& os, const Sign &sign)
+{
+  switch( sign )
+  {
+    case Sign::Positive:
+      os << Sign_TextEquiv_Positive;
+      break;
+    case Sign::Negative:
+      os << Sign_TextEquiv_Negative;
+      break;
+    default:
+      os << sUnknown;
+      break;
+  }
+  return os;
+}
+
+std::istream& operator>>(std::istream& is, Sign &sign)
+{
+  sign = Sign::Unknown;
+  std::string s;
+  if( is >> s )
+  {
+    if( EqualIgnoreCase( s, Sign_TextEquiv_Positive ) )
+      sign = Sign::Positive;
+    else if( EqualIgnoreCase( s, Sign_TextEquiv_Negative ) )
+      sign = Sign::Negative;
+    else if( !EqualIgnoreCase( s, sUnknown ) )
+      is.setstate( std::ios_base::failbit );
+  }
+  else
+    is.setstate( std::ios_base::failbit );
   return is;
 }
 
@@ -774,92 +865,6 @@ void CommandLine::Parse( int argc, const char *argv[], const std::vector<SwitchD
   for( int i = 0; i < defs.size(); i++ ) {
     if( defs[i].Type == Single && defs[i].Default && !GotSwitch( defs[i].Switch ) )
       Switches[defs[i].Switch].push_back( defs[i].Default );
-  }
-}
-
-// Make summary files of a bootstrap of a correlator
-void SummariseBootstrapCorr(const Common::SampleC &out, const std::string & sOutFileBase, SeedType Seed )//, int momentum_squared)
-{
-  using namespace CorrSumm;
-  assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
-  const int nt{ out.Nt() };
-  const int nSample{ out.NumSamples() };
-  std::vector<double> Data( nSample );
-  std::vector<double> DataImag( nSample );
-  using C = std::complex<double>;
-  using type_ReIm = double (*)( const C & );
-  type_ReIm myReal, myImag;
-  if( out.Signal_ == Signal::Imag )
-  {
-    myReal = &std::imag;
-    myImag = &std::real;
-  }
-  else
-  {
-    myReal = &std::real;
-    myImag = &std::imag;
-  }
-  for(int f = 0; f < NumSummaries; f++)
-  {
-    std::string sOutFileName{ MakeFilename(sOutFileBase, SummaryNames[f], Seed, TEXT_EXT) };
-    std::ofstream s( sOutFileName );
-    if( !s )
-      throw std::runtime_error( "Unable to create " + sOutFileName );
-    s << Comment << SummaryHeader[f] << NewLine << Comment << sOutFileBase << "\n# Seed " << Seed
-      << "\n# Signal " << out.Signal_ << NewLine << FieldNames << ( ( f == 0 ) ? FieldNames2 : "" )
-      << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
-    for(int t = 0; t < nt; t++)
-    {
-      std::size_t Count = 0;
-      if( f == 0 )
-      {
-        const std::complex<double> *pc = out[0] + t;
-        for( int i = 0; i < nSample; i++, pc += nt )
-        {
-          double re = myReal( * pc );
-          double im = myImag( * pc );
-          if( std::isfinite( re ) && std::isfinite( im ) )
-          {
-            Data[Count] = re;
-            DataImag[Count] = im;
-            Count++;
-          }
-        }
-        pc = out[Common::SampleC::idxCentral] + t;
-        Common::ValWithEr Re( myReal( * pc ), Data, Count );
-        Common::ValWithEr Im( myImag( * pc ), DataImag, Count );
-        s << t << sep << Re.Central << sep << Re.ErLow << sep << Re.ErHigh
-               << sep << ( static_cast<double>( Count ) / nSample )
-               << sep << Im.Central << sep << Im.ErLow << sep << Im.ErHigh
-               << sep << ( static_cast<double>( Count ) / nSample ) << std::endl;
-      }
-      else
-      {
-        double dCentral = 0;
-        for( int i = Common::SampleC::idxCentral; i < nSample; i++ )
-        {
-          double DThis;
-          switch(f)
-          {
-            case 1: // mass
-              DThis = std::log( myReal( out[i][t] ) / myReal( out[i][(t + 1 + nt) % nt] ) );
-              break;
-            case 2: // cosh mass
-              DThis = std::acosh((myReal( out[i][(t - 1 + nt) % nt] ) + myReal( out[i][(t + 1) % nt] ) ) / (2 * myReal( out[i][t] )));
-              break;
-            default:
-              DThis = 0;
-          }
-          if( i == Common::SampleC::idxCentral )
-            dCentral = DThis;
-          else if( std::isfinite( DThis ) )
-            Data[Count++] = DThis;
-        }
-        Common::ValWithEr Re( dCentral, Data, Count );
-        s << t << sep << Re.Central << sep << Re.ErLow << sep << Re.ErHigh << sep
-          << ( static_cast<double>( Count ) / nSample ) << std::endl;
-      }
-    }
   }
 }
 END_COMMON_NAMESPACE

@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/201910Plat/bootstrap/testZ2"
+      customWorkingDirectory = "$HOME/data/Study1/C1/Z2/bootstrap/test"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -62,7 +62,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-ag5,gT5"
+            argument = "-ag5,gT5,gx5,gy5,gz5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-agx5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -98,7 +102,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;../../mesons/C1/Z2/*5&apos;"
+            argument = "&apos;../../meson/prop_h1_*_prop_l_*_sink_p_0_0_0.*&apos; &apos;../../meson/prop_l_*_prop_h1_*_sink_p_0_0_0.*&apos;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

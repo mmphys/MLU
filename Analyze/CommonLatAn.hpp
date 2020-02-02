@@ -35,7 +35,7 @@
 BEGIN_COMMON_NAMESPACE
 
 // Copy a correlator to a Latan::DMat
-inline void CopyCorrelator( Latan::DMat &dst, const Correlator &src, int iOffset = 0, bool bSwapRealImag = false )
+/*inline void CopyCorrelator( Latan::DMat &dst, const Correlator &src, int iOffset = 0, bool bSwapRealImag = false )
 {
   const std::size_t Nt{ src.size() };
   if( Nt == 0 )
@@ -50,7 +50,7 @@ inline void CopyCorrelator( Latan::DMat &dst, const Correlator &src, int iOffset
     dst( t, 0 ) = bSwapRealImag ? z.imag() : z.real();
     dst( t, 1 ) = bSwapRealImag ? z.real() : z.imag();
   }
-}
+}*/
 
 // Copy a correlator to a Latan::DMat
 inline void CopyRealCorrelator( Latan::DMat &dst, const std::vector<double> &src, int iOffset = 0, bool bSwapRealImag = false )
