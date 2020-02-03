@@ -39,16 +39,18 @@ BEGIN_COMMON_NAMESPACE
 namespace CorrSumm {
   const char sep[] = " ";
   const char Comment[] = "# ";
-  const char NewLine[] = "\n";
   const char * FieldNames[NumFields] = { "corr", "exp", "cosh" };
 };
 
-const std::string sNtUnfolded{ "NtUnfolded" };
 extern const std::string Underscore{ "_" };
 extern const std::string Period{ "." };
+extern const std::string NewLine{ "\n" };
 const std::string sBootstrap{ "bootstrap" };
 const std::string sFold{ "fold" };
 const std::string sModel{ "model" };
+const std::string sNtUnfolded{ "NtUnfolded" };
+const std::string st0Negated{ "t0Negated" };
+const std::string sConjugated{ "Conjugated" };
 const double NaN{ std::nan( "" ) };
 
 namespace Gamma

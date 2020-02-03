@@ -76,14 +76,13 @@ BEGIN_COMMON_NAMESPACE
 namespace CorrSumm {
   extern const char sep[];
   extern const char Comment[];
-  extern const char NewLine[];
   static constexpr int NumFields{ 3 };
   extern const char * FieldNames[NumFields];
 };
 
-extern const std::string sNtUnfolded;
 extern const std::string Underscore;
 extern const std::string Period;
+extern const std::string NewLine;
 
 // Compare two strings, case insensitive
 inline bool EqualIgnoreCase(const std::string & s1, const std::string & s2)
@@ -144,6 +143,9 @@ namespace Gamma
 extern const std::string sBootstrap;
 extern const std::string sFold;
 extern const std::string sModel;
+extern const std::string sNtUnfolded;
+extern const std::string st0Negated;
+extern const std::string sConjugated;
 
 using SeedType = unsigned int;
 
@@ -518,12 +520,8 @@ CopyBuffer( const TSrc * Begin, const TSrc * End, TDst * Dst, Signal s = Signal:
 
 template <typename T>
 void SummaryHelper( const std::string & sOutFileName, const T * pData, const int nt,
-                    const int nSample = 0,
-                    int NtUnfolded = 0,
-                    Reality reality = Reality::Unknown,
-                    Parity parity = Parity::Unknown,
-                    Sign sign = Sign::Unknown,
-                    bool t0Negated = false )
+                    const int nSample = 0, const char * pszHeaderComments = nullptr,
+                    bool bFolded = false )
 {
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
@@ -566,11 +564,7 @@ void SummaryHelper( const std::string & sOutFileName, const T * pData, const int
     }
   }
   if( psz ) s << "# Representation: " << psz << NewLine;
-  if( NtUnfolded ) s << "# NtUnfolded: " << NtUnfolded << NewLine;
-  if( reality != Reality::Unknown ) s << "# Reality: " << reality << NewLine;
-  if( parity != Parity::Unknown ) s << "# Parity: " << parity << NewLine;
-  if( sign != Sign::Unknown ) s << "# Sign: " << sign << NewLine;
-  if( t0Negated ) s << "# timeslice 0 negated: " << t0Negated << NewLine;
+  if( pszHeaderComments ) s << pszHeaderComments;
   // Now write all the field names
   s << "t";
   for( int i = 0; i < Traits::scalar_count; i++ ) // real or imaginary
@@ -585,7 +579,7 @@ void SummaryHelper( const std::string & sOutFileName, const T * pData, const int
   }
   s << NewLine;
   // Now perform summaries
-  const int tMid{ NtUnfolded ? nt : nt / 2 }; // Summaries may want to change sign for -ve wave
+  const int tMid{ bFolded ? nt : nt / 2 }; // Summaries may want to change sign for -ve wave
   scalar_type Central;
   std::vector<scalar_type> Data( nSample );
   for(int t = 0; t < nt; t++ )
@@ -725,7 +719,7 @@ public:
     }
   }
   void Read ( const std::string &FileName, std::string &GroupName, std::vector<Gamma::Algebra> &Alg,
-             const int * pTimeslice = nullptr );
+             const int * pTimeslice = nullptr, const char * PrintPrefix = nullptr );
   //void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void WriteSummary(const std::string &Prefix, const std::vector<Common::Gamma::Algebra> &AlgSpecific);
   T * operator[]( int Sample )
@@ -760,7 +754,8 @@ using CorrelatorFileD = CorrelatorFile<double>;
 // Read from file. If GroupName empty, read from first group and return name in GroupName
 template <typename T>
 void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupName,
-                              std::vector<Gamma::Algebra> &Alg, const int * pTimeslice )
+                              std::vector<Gamma::Algebra> &Alg, const int * pTimeslice,
+                              const char * PrintPrefix )
 {
   // Parse the name. Not expecting a type, so if present, put it back on the end of Base
   Name_.Parse( FileName );
@@ -785,7 +780,7 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
   // Now load the file
   H5::H5File f;
   H5::Group  g;
-  OpenHdf5FileGroup( f, g, FileName, GroupName );
+  OpenHdf5FileGroup( f, g, FileName, GroupName, PrintPrefix );
   bool bOK = false;
   H5E_auto2_t h5at;
   void      * f5at_p;
@@ -954,16 +949,12 @@ void CorrelatorFile<T>::WriteSummary( const std::string &Prefix, const std::vect
 template <typename T, int NumAuxSamples_ = 0>
 class Sample
 {
+protected:
   int NumSamples_;
   int Nt_;
   std::unique_ptr<T[]> m_pData;
 public:
   FileNameAtt Name_;
-  int NtUnfolded = 0;
-  Reality reality = Reality::Unknown;
-  Parity parity = Parity::Unknown;
-  Sign sign = Sign::Unknown;
-  bool t0Negated = false;
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
   static constexpr bool is_complex { Traits::is_complex };
@@ -1034,7 +1025,7 @@ public:
         dst[t] /= NumSamples_;
     }
   }
-private:
+protected:
   template<typename ST> inline typename std::enable_if<SampleTraits<ST>::is_complex>::type
   CopyOldFormat( ST * Dest, const std::vector<double> & Src )
   {
@@ -1055,6 +1046,13 @@ private:
       *Dest++ = Src[t];
     }
   }
+public: // Override these for specialisations
+  virtual const std::string & DefaultGroupName() { return sBootstrap; }
+  virtual bool bFolded() { return false; }
+  // Descendants should call base first
+  virtual void SummaryComments( std::ostringstream & s ) {}
+  virtual void ReadAttributes( H5::Group &g ) {}
+  virtual void WriteAttributes( H5::Group &g ) {}
 };
 
 using SampleC = Sample<std::complex<double>>;
@@ -1098,8 +1096,9 @@ void Sample<T, NumAuxSamples_>::WriteSummary( const std::string &sOutFileName )
 {
   using namespace CorrSumm;
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
-  SummaryHelper( sOutFileName, (*this)[idxCentral], Nt_, NumSamples_,
-                 NtUnfolded, reality, parity, sign, t0Negated );
+  std::ostringstream s;
+  SummaryComments( s );
+  SummaryHelper( sOutFileName, (*this)[idxCentral], Nt_, NumSamples_, s.str().c_str(), bFolded() );
 }
 
 // Read from file. If GroupName empty, read from first group and return name in GroupName
@@ -1108,7 +1107,9 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
 {
   Name_.Parse( FileName, pOpNames );
   if( !Name_.bSeedNum )
-    throw std::runtime_error( "Configuration number missing from " + FileName );
+    throw std::runtime_error( "Seed missing from " + FileName );
+  if( Name_.Type.empty() )
+    throw std::runtime_error( "Type missing from " + FileName );
   H5::H5File f;
   H5::Group  g;
   OpenHdf5FileGroup( f, g, FileName, GroupName, PrintPrefix );
@@ -1194,68 +1195,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
         a = g.openAttribute("nSample");
         a.read( H5::PredType::NATIVE_UINT, &att_nSample );
         a.close();
-        NtUnfolded = 0;
-        try
-        {
-          a = g.openAttribute(sNtUnfolded);
-          a.read( H5::PredType::NATIVE_INT, &NtUnfolded );
-          a.close();
-        }
-        catch(const H5::Exception &)
-        {
-          H5::Exception::clearErrorStack();
-        }
-        reality = Reality::Unknown;
-        try
-        {
-          a = g.openAttribute(sReality);
-          std::string s{};
-          H5::StrType sType = a.getStrType();
-          a.read( sType, s );
-          a.close();
-          if( EqualIgnoreCase( s, Reality_TextEquiv_Real ) )
-            reality = Reality::Real;
-          else if( EqualIgnoreCase( s, Reality_TextEquiv_Imaginary ) )
-            reality = Reality::Imag;
-        }
-        catch(const H5::Exception &)
-        {
-          H5::Exception::clearErrorStack();
-        }
-        parity = Parity::Unknown;
-        try
-        {
-          a = g.openAttribute(sParity);
-          std::string s{};
-          H5::StrType sType = a.getStrType();
-          a.read( sType, s );
-          a.close();
-          if( EqualIgnoreCase( s, Parity_TextEquiv_Even ) )
-            parity = Parity::Even;
-          else if( EqualIgnoreCase( s, Parity_TextEquiv_Odd ) )
-            parity = Parity::Odd;
-        }
-        catch(const H5::Exception &)
-        {
-          H5::Exception::clearErrorStack();
-        }
-        sign = Sign::Unknown;
-        try
-        {
-          a = g.openAttribute(sSign);
-          std::string s{};
-          H5::StrType sType = a.getStrType();
-          a.read( sType, s );
-          a.close();
-          if( EqualIgnoreCase( s, Sign_TextEquiv_Positive ) )
-            sign = Sign::Positive;
-          else if( EqualIgnoreCase( s, Sign_TextEquiv_Negative ) )
-            sign = Sign::Negative;
-        }
-        catch(const H5::Exception &)
-        {
-          H5::Exception::clearErrorStack();
-        }
+        ReadAttributes( g );
         H5::DataSet ds = g.openDataSet( "data_C" );
         H5::DataSpace dsp = ds.getSpace();
         int nDims{ dsp.getSimpleExtentNdims() };
@@ -1323,7 +1263,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
 template <typename T, int NumAuxSamples_>
 void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char * pszGroupName )
 {
-  const std::string GroupName{ pszGroupName == nullptr || *pszGroupName == 0 ? "/bootstrap" : pszGroupName };
+  const std::string GroupName{ pszGroupName == nullptr || *pszGroupName == 0 ? DefaultGroupName() : pszGroupName };
   bool bOK = false;
   try // to write in my format
   {
@@ -1345,37 +1285,8 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
     a = g.createAttribute( "nSample", H5::PredType::STD_U32LE, ds1 );
     a.write( H5::PredType::NATIVE_INT, &NumSamples_ );
     a.close();
-    if( NtUnfolded )
-    {
-      a = g.createAttribute( sNtUnfolded, H5::PredType::STD_U16LE, ds1 );
-      a.write( H5::PredType::NATIVE_INT, &NtUnfolded );
-      a.close();
-    }
-    if( reality == Reality::Real || reality == Reality::Imag )
-    {
-      const std::string &s{reality==Reality::Real?Reality_TextEquiv_Real:Reality_TextEquiv_Imaginary};
-      H5::StrType sType( H5::PredType::C_S1, s.length() );
-      a = g.createAttribute( sReality, sType, ds1 );
-      a.write( sType, s );
-      a.close();
-    }
-    if( parity == Parity::Even || parity == Parity::Odd )
-    {
-      const std::string &s{ parity == Parity::Even ? Parity_TextEquiv_Even : Parity_TextEquiv_Odd };
-      H5::StrType sType( H5::PredType::C_S1, s.length() );
-      a = g.createAttribute( sParity, sType, ds1 );
-      a.write( sType, s );
-      a.close();
-    }
-    if( sign == Sign::Positive || sign == Sign::Negative )
-    {
-      const std::string &s{ sign == Sign::Positive ? Sign_TextEquiv_Positive : Sign_TextEquiv_Negative};
-      H5::StrType sType( H5::PredType::C_S1, s.length() );
-      a = g.createAttribute( sSign, sType, ds1 );
-      a.write( sType, s );
-      a.close();
-    }
     ds1.close();
+    WriteAttributes( g );
     Dims[0] = Nt_;
     ds1 = H5::DataSpace( 1, Dims );
     const H5::DataType &myType{ H5File::Equiv<T>() };
@@ -1491,6 +1402,174 @@ void Sample<T, NumAuxSamples_>::Read( const std::vector<std::string> & FileName,
     }
   }
 }
+
+template <typename T, int NumAuxSamples_ = 0>
+class Fold : public Sample<T, NumAuxSamples_>
+{
+public:
+  int NtUnfolded = 0;
+  Reality reality = Reality::Unknown;
+  Parity parity = Parity::Unknown;
+  Sign sign = Sign::Unknown;
+  bool t0Negated = false;
+  bool Conjugated = false;
+  virtual const std::string & DefaultGroupName() { return sFold; }
+  virtual bool bFolded() { return true; }
+  virtual void SummaryComments( std::ostringstream & s )
+  {
+    Sample<T, NumAuxSamples_>::SummaryComments( s );
+    if( NtUnfolded ) s << "# NtUnfolded: " << NtUnfolded << NewLine;
+    if( reality != Reality::Unknown ) s << "# Reality: " << reality << NewLine;
+    if( parity != Parity::Unknown ) s << "# Parity: " << parity << NewLine;
+    if( sign != Sign::Unknown ) s << "# Sign: " << sign << NewLine;
+    if( t0Negated ) s << "# timeslice 0 negated: true" << NewLine;
+    if( Conjugated ) s << "# conjugate operator average: true" << NewLine;
+  }
+  virtual void ReadAttributes( H5::Group &g )
+  {
+    Sample<T, NumAuxSamples_>::ReadAttributes( g );
+    H5::Attribute a;
+    NtUnfolded = 0;
+    try
+    {
+      a = g.openAttribute(sNtUnfolded);
+      a.read( H5::PredType::NATIVE_INT, &NtUnfolded );
+      a.close();
+    }
+    catch(const H5::Exception &)
+    {
+      H5::Exception::clearErrorStack();
+    }
+    reality = Reality::Unknown;
+    try
+    {
+      a = g.openAttribute(sReality);
+      std::string s{};
+      H5::StrType sType = a.getStrType();
+      a.read( sType, s );
+      a.close();
+      if( EqualIgnoreCase( s, Reality_TextEquiv_Real ) )
+        reality = Reality::Real;
+      else if( EqualIgnoreCase( s, Reality_TextEquiv_Imaginary ) )
+        reality = Reality::Imag;
+    }
+    catch(const H5::Exception &)
+    {
+      H5::Exception::clearErrorStack();
+    }
+    parity = Parity::Unknown;
+    try
+    {
+      a = g.openAttribute(sParity);
+      std::string s{};
+      H5::StrType sType = a.getStrType();
+      a.read( sType, s );
+      a.close();
+      if( EqualIgnoreCase( s, Parity_TextEquiv_Even ) )
+        parity = Parity::Even;
+      else if( EqualIgnoreCase( s, Parity_TextEquiv_Odd ) )
+        parity = Parity::Odd;
+    }
+    catch(const H5::Exception &)
+    {
+      H5::Exception::clearErrorStack();
+    }
+    sign = Sign::Unknown;
+    try
+    {
+      a = g.openAttribute(sSign);
+      std::string s{};
+      H5::StrType sType = a.getStrType();
+      a.read( sType, s );
+      a.close();
+      if( EqualIgnoreCase( s, Sign_TextEquiv_Positive ) )
+        sign = Sign::Positive;
+      else if( EqualIgnoreCase( s, Sign_TextEquiv_Negative ) )
+        sign = Sign::Negative;
+    }
+    catch(const H5::Exception &)
+    {
+      H5::Exception::clearErrorStack();
+    }
+    t0Negated = false;
+    std::int8_t i8;
+    try
+    {
+      a = g.openAttribute(st0Negated);
+      a.read( H5::PredType::NATIVE_INT8, &i8 );
+      a.close();
+      if( i8 )
+        t0Negated = true;
+    }
+    catch(const H5::Exception &)
+    {
+      H5::Exception::clearErrorStack();
+    }
+    Conjugated = false;
+    try
+    {
+      a = g.openAttribute(sConjugated);
+      a.read( H5::PredType::NATIVE_INT8, &i8 );
+      a.close();
+      if( i8 )
+        Conjugated = true;
+    }
+    catch(const H5::Exception &)
+    {
+      H5::Exception::clearErrorStack();
+    }
+  }
+  virtual void WriteAttributes( H5::Group &g )
+  {
+    Sample<T, NumAuxSamples_>::WriteAttributes( g );
+    const hsize_t OneDimension{ 1 };
+    H5::DataSpace ds1( 1, &OneDimension );
+    H5::Attribute a;
+    if( NtUnfolded )
+    {
+      a = g.createAttribute( sNtUnfolded, H5::PredType::STD_U16LE, ds1 );
+      a.write( H5::PredType::NATIVE_INT, &NtUnfolded );
+      a.close();
+    }
+    if( reality == Reality::Real || reality == Reality::Imag )
+    {
+      const std::string &s{reality==Reality::Real?Reality_TextEquiv_Real:Reality_TextEquiv_Imaginary};
+      H5::StrType sType( H5::PredType::C_S1, s.length() );
+      a = g.createAttribute( sReality, sType, ds1 );
+      a.write( sType, s );
+      a.close();
+    }
+    if( parity == Parity::Even || parity == Parity::Odd )
+    {
+      const std::string &s{ parity == Parity::Even ? Parity_TextEquiv_Even : Parity_TextEquiv_Odd };
+      H5::StrType sType( H5::PredType::C_S1, s.length() );
+      a = g.createAttribute( sParity, sType, ds1 );
+      a.write( sType, s );
+      a.close();
+    }
+    if( sign == Sign::Positive || sign == Sign::Negative )
+    {
+      const std::string &s{ sign == Sign::Positive ? Sign_TextEquiv_Positive : Sign_TextEquiv_Negative};
+      H5::StrType sType( H5::PredType::C_S1, s.length() );
+      a = g.createAttribute( sSign, sType, ds1 );
+      a.write( sType, s );
+      a.close();
+    }
+    const std::int8_t i8{ 1 };
+    if( t0Negated )
+    {
+      a = g.createAttribute( st0Negated, H5::PredType::STD_U8LE, ds1 );
+      a.write( H5::PredType::NATIVE_INT8, &i8 );
+      a.close();
+    }
+    if( Conjugated )
+    {
+      a = g.createAttribute( sConjugated, H5::PredType::STD_U8LE, ds1 );
+      a.write( H5::PredType::NATIVE_INT8, &i8 );
+      a.close();
+    }
+  }
+};
 
 // Read a complex array from an HDF5 file
 void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,

@@ -106,7 +106,7 @@ inline std::ostream & operator<<( std::ostream &os, const Fold &f )
 int main(int argc, const char *argv[])
 {
   using scalar = double;
-  using SR = Common::Sample<scalar>;
+  using SR = Common::Fold<scalar>;
   using SC = Common::Sample<std::complex<scalar>>;
   // We're not using C-style I/O
   std::ios_base::sync_with_stdio(false);
@@ -185,10 +185,12 @@ int main(int argc, const char *argv[])
                   *dst = ( *dst + *src ) * 0.5;
             }
             // Now fold the correlator, obeying the fold properties
+            out.NtUnfolded = Nt;
             out.parity = f.parity;
             out.reality = f.reality;
             out.sign = f.sign;
             out.t0Negated = false;
+            out.Conjugated = f.Conjugate;
             const int NtHalf{ Nt / 2 + 1 };
             out.resize( NumSamples, NtHalf );
             scalar * dst{ out[SR::idxCentral] };
