@@ -51,6 +51,9 @@ const std::string sModel{ "model" };
 const std::string sNtUnfolded{ "NtUnfolded" };
 const std::string st0Negated{ "t0Negated" };
 const std::string sConjugated{ "Conjugated" };
+const std::string sNumExponents{ "NumExponents" };
+const std::string sFactorised{ "Factorised" };
+const std::string sOpNames{ "OpNames" };
 const double NaN{ std::nan( "" ) };
 
 namespace Gamma

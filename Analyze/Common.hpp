@@ -146,6 +146,9 @@ extern const std::string sModel;
 extern const std::string sNtUnfolded;
 extern const std::string st0Negated;
 extern const std::string sConjugated;
+extern const std::string sNumExponents;
+extern const std::string sFactorised;
+extern const std::string sOpNames;
 
 using SeedType = unsigned int;
 
@@ -586,7 +589,7 @@ void SummaryHelper( const std::string & sOutFileName, const T * pData, const int
   s << NewLine;
   // Now perform summaries
   const int tMid{ bFolded ? nt : nt / 2 }; // Summaries may want to change sign for -ve wave
-  scalar_type Central;
+  scalar_type Central = -777; // Just to silence compiler warning
   std::vector<scalar_type> Data( nSample );
   for(int t = 0; t < nt; t++ )
   {
@@ -1056,6 +1059,7 @@ public: // Override these for specialisations
   // Descendants should call base first
   virtual void SummaryComments( std::ostringstream & s ) {}
   virtual void ReadAttributes( H5::Group &g ) {}
+  virtual void ValidateAttributes() {} // Called once data read to validate attributes against data
   virtual void WriteAttributes( H5::Group &g ) {}
 };
 
@@ -1250,6 +1254,8 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
           }
         }
       }
+      if( bOK )
+        ValidateAttributes();
     }
     catch(const H5::Exception &)
     {
@@ -1334,11 +1340,17 @@ public:
   Sign sign = Sign::Unknown;
   bool t0Negated = false;
   bool Conjugated = false;
+  using Base = Sample<T, NumAuxSamples_>;
+  using Base::Base;
+  /*explicit Fold( int NumSamples = 0, int Nt = 0 ) : Base::Sample( NumSamples,  Nt ) {}
+  Fold( const std::string &FileName, std::string &GroupName, const char *PrintPrefix = nullptr,
+        std::vector<std::string> * pOpNames = nullptr )
+  : Base::Sample( FileName, GroupName, PrintPrefix, pOpNames ) {}*/
   virtual const std::string & DefaultGroupName() { return sFold; }
   virtual bool bFolded() { return true; }
   virtual void SummaryComments( std::ostringstream & s )
   {
-    Sample<T, NumAuxSamples_>::SummaryComments( s );
+    Base::SummaryComments( s );
     if( NtUnfolded ) s << "# NtUnfolded: " << NtUnfolded << NewLine;
     if( reality != Reality::Unknown ) s << "# Reality: " << reality << NewLine;
     if( parity != Parity::Unknown ) s << "# Parity: " << parity << NewLine;
@@ -1348,7 +1360,7 @@ public:
   }
   virtual void ReadAttributes( H5::Group &g )
   {
-    Sample<T, NumAuxSamples_>::ReadAttributes( g );
+    Base::ReadAttributes( g );
     H5::Attribute a;
     NtUnfolded = 0;
     try
@@ -1489,6 +1501,91 @@ public:
       a.write( H5::PredType::NATIVE_INT8, &i8 );
       a.close();
     }
+  }
+};
+
+template <typename T, int NumAuxSamples_ = 0>
+class Model : public Sample<T, NumAuxSamples_>
+{
+public:
+  int NumExponents = 0;
+  bool Factorised = false;
+  std::vector<std::string> OpNames;
+  using Base = Sample<T, NumAuxSamples_>;
+  Model() : Base::Sample{} {}
+  Model( std::vector<std::string> OpNames_, int NumExponents_, bool Factorised_, int NumSamples, int Nt)
+  : Base::Sample{ NumSamples, Nt }, OpNames{ OpNames_ }, NumExponents{ NumExponents_ }, Factorised{ Factorised_ } {}
+  virtual const std::string & DefaultGroupName() { return sModel; }
+  virtual void ReadAttributes( H5::Group &g )
+  {
+    Base::ReadAttributes( g );
+    H5::Attribute a;
+    a = g.openAttribute(sNumExponents);
+    a.read( H5::PredType::NATIVE_INT, &NumExponents );
+    a.close();
+    {
+      a = g.openAttribute(sOpNames);
+      std::string s{};
+      H5::StrType sType = a.getStrType();
+      a.read( sType, s );
+      a.close();
+      OpNames = ArrayFromString<std::string>( s );
+    }
+    Factorised = false;
+    std::int8_t i8;
+    try
+    {
+      a = g.openAttribute(sFactorised);
+      a.read( H5::PredType::NATIVE_INT8, &i8 );
+      a.close();
+      if( i8 )
+        Factorised = true;
+    }
+    catch(const H5::Exception &)
+    {
+      H5::Exception::clearErrorStack();
+    }
+  }
+  virtual void ValidateAttributes()
+  {
+    Base::ValidateAttributes();
+    const int NumOps{ static_cast<int>( OpNames.size() ) };
+    const int NumExpected{ NumExponents * ( NumOps + 1 ) };
+    if( Base::Nt_ != NumExpected )
+    {
+      std::ostringstream s;
+      s << "Have " << Base::Nt_ << " parameters, but expected " << NumExpected << ", i.e. "
+        << NumExponents << " exponents * ( " << NumOps << " operators + 1 energy )";
+      throw std::runtime_error( s.str().c_str() );
+    }
+  }
+  virtual void WriteAttributes( H5::Group &g )
+  {
+    Base::WriteAttributes( g );
+    const hsize_t OneDimension{ 1 };
+    H5::DataSpace ds1( 1, &OneDimension );
+    H5::Attribute a;
+    a = g.createAttribute( sNumExponents, H5::PredType::STD_U16LE, ds1 );
+    a.write( H5::PredType::NATIVE_INT, &NumExponents );
+    a.close();
+    const std::int8_t i8{ 1 };
+    if( Factorised )
+    {
+      a = g.createAttribute( sFactorised, H5::PredType::STD_U8LE, ds1 );
+      a.write( H5::PredType::NATIVE_INT8, &i8 );
+      a.close();
+    }
+    std::string buf;
+    for( std::size_t i = 0; i < OpNames.size(); i++ )
+    {
+      if( i )
+        buf.append( 1, ' ' );
+      buf.append( OpNames[i] );
+    }
+    H5::StrType sType( H5::PredType::C_S1, buf.length() );
+    a = g.createAttribute( sOpNames, sType, ds1 );
+    a.write( sType, buf );
+    a.close();
   }
 };
 

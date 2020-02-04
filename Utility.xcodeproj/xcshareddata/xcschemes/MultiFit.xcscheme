@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(HOME)/data/Study1/C1/GFWall/fit/test"
+      customWorkingDirectory = "$(HOME)/data/Study1/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -62,20 +62,32 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i $(HOME)/data/Study1/C1/GFWall/fold/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i $(HOME)/data/Study1/C1/Z2/fold/"
+            argument = "-i GFWall/fold/h1_l_p_0_0_0_ -o GFWall/fit/test/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "h1_l_p_0_0_0_*.4147798751.h5"
+            argument = "-i Z2/fold/h1_l_p_0_0_0_ -o Z2/fit/test/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "g5_g5*5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "gT5_g5*5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "g5_gT5*5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "gT5_gT5*5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 2"
@@ -91,11 +103,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti 4"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti 6"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti 9"
@@ -115,6 +127,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = " --dti 9"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--dti 2"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -122,12 +138,20 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--delta 6"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-n 100"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--skip 100"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--tol 0.0001"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

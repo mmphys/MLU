@@ -1,52 +1,41 @@
 #!/bin/sh
 
-PlotFunction()
-{
-# Loop through all the files on the command-line performing plots
-for PlotFile; do
-PlotPathSplit "$PlotFile"
-if [[ "$mmplotfile_ext" == "txt" ]]; then #Silently skip non-text files
-#log_limit=1
-#if [[ "$mmplotfile_type" == "corr" ]]; then log_limit=2; fi
-#for(( do_log=0 ; do_log < log_limit ; do_log = do_log + 1 ))
-#do
 ###################################################
 # Make a plot of the forward and backward-propagating waves
 ###################################################
 
+PlotFunction()
+{
 gnuplot <<-EOFMark
+
 #Command-line options
+nt=${nt:-0}
+do_title="${do_title:-0}"
+my_title="${title}"
 my_xrange="${ti:-*}:${tf:-*}"
 my_yrange="${yrange:-*:*}"
 my_key="${key:-top right}"
 FieldNames="${fields:-cosh}"
 RefVal=${ref:--777}
 do_log=${log:-0}
-SaveFile=${save:-0}
-nt=${nt:-0}
+SaveFile=${SaveFile:-0}
+SaveFileName="$SaveFileName"
 
-#Full path to file
-PlotFile="$PlotFile"
-#Parsed bits of the filename
-FileName_no_ext="${mmplotfile_name_no_ext}"
-FileName="${mmplotfile_name}"
-FileBase="${mmplotfile_base}"
-FileType="${mmplotfile_type}"
-FileSeed="${mmplotfile_seed}"
-FileExt="${mmplotfile_ext}"
-
-#Where to write the file (if specified)
-OutFile=FileBase.".".FileType
-MyTitle=FileName_no_ext
+# Which field names do we plot?
 f = 1
+FieldNamesShort=""
 while (f <= words(FieldNames) ) {
-  OutFile=OutFile."_".word(FieldNames,f)
+  FieldNamesShort=FieldNamesShort."_".word(FieldNames,f)
   f=f+1
 }
+
+# Are we plotting forward and / or backward waves?
 fb_min=0
 fb_max=0
 array fb_prefix[2]
 fb_prefix[1]=""
+FBShort=""
+FBText=""
 if ( nt != 0) {
   # We want the backward propagating wave
   fb_max = 1
@@ -55,78 +44,67 @@ if ( nt != 0) {
     # We ONLY want the backward propagating wave
     nt = -nt
     fb_min = 1
-    OutFile=OutFile."_b"
-    MyTitle=MyTitle." backward"
+    FBShort="_b"
+    FBText=" backward"
   } else {
     fb_prefix[1]="fwd "
-    OutFile=OutFile."_fb"
-    MyTitle=MyTitle." forward/backward"
+    FBShort="_fb"
+    FBText=" forward/backward"
   }
 }
+
+# Are we doing a log plot?
+LogShort=""
 if( do_log ) {
-  OutFile=OutFile."_log"
-  MyTitle=MyTitle." log"
+  LogShort="_log"
 }
-OutFile=OutFile.".".FileSeed.".pdf"
-#print OutFile
 
-if( SaveFile == 1 ) {
+# Decide on a title and output filename
+if( SaveFile == 2 ) {
+  MyTitle = SaveFileName
+  SaveFileName=SaveFileName.".pdf"
+} else {
+  # We are only processing one file
+  MyTitle="${mmplotfile_name_no_ext}".FBText
+  SaveFileName="${mmplotfile_base}.${mmplotfile_type}".FieldNamesShort.LogShort.FBShort.".${mmplotfile_seed}.pdf"
+}
+
+if( SaveFile ) {
   set term pdf
-  set output OutFile
   set pointsize 0.5
+  set output SaveFileName
+  set label 1 SaveFileName noenhanced at screen 1, 0.5 center rotate font "Arial,8" front textcolor "grey40" offset character -1.3, 0
 }
 
-set key @my_key
+set key font "Arial,8" @my_key noenhanced
 set xrange[@my_xrange]
 set yrange[@my_yrange]
-set title MyTitle noenhanced
+if( do_title ) {
+  set title my_title
+} else {
+  set title MyTitle noenhanced
+}
 
 if( RefVal != -777 ) {
   set arrow from graph 0, first RefVal to graph 1, first RefVal nohead front lc rgb "gray40" lw 0.25  dashtype "-"
-  set label sprintf("%f",RefVal) at graph 0, first RefVal font "Arial,8" front textcolor "grey40" offset character 1.5, character 0.35
+  set label 2 sprintf("Ref: %f",RefVal) at screen 0, 0 font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
 }
 
-#FieldNameY="column(\"".FieldName."\")"
-#FieldNameLow="column(\"".FieldName."_low\")"
-#FieldNameHigh="column(\"".FieldName."_high\")"
-#FieldNameLow=FieldName."_low"
-#FieldNameHigh=FieldName."_high"
+#AbsMin(y,low,high)=sgn(y) < 0 ? -(high) : low
+#AbsMax(y,low,high)=sgn(y) < 0 ? -(low) : high
 
-AbsMin(y,low,high)=sgn(y) < 0 ? -(high) : low
-AbsMax(y,low,high)=sgn(y) < 0 ? -(low) : high
-
-set linetype 1 lc rgb 'blue'
-set linetype 2 lc rgb 'red'
+if( SaveFile != 2 ) {
+  # Don't do this for multi-plots, as probably best to stick to colour scheme
+  set linetype 1 lc rgb 'blue'
+  set linetype 2 lc rgb 'red'
+}
 
 if( do_log ) { set logscale y }
 
-sForBack="Fwd Back"
-plot for [fld in FieldNames] for [f=fb_min:fb_max] \
-    PlotFile using (column(1) == 0 ? 0 : f==0 ? column(1) : nt - column(1)):(column(fld)):(column(fld."_low")):(column(fld."_high")) with yerrorbars title fb_prefix[f+1].fld
-
-#if( FileType eq "corr" ) {
-  # Correlator: Plot real and imaginary on non-log scale
-#  set title "Correlator ".MyTitle noenhanced
-#  plot PlotFile using 1:2:(\$2-\$3):(\$2+\$4) with yerrorbars title 'real' lc rgb 'blue', \
-      '' using 1:6:(\$6-\$7):(\$6+\$8) with yerrorbars title 'imaginary' lc rgb 'red'
-#} else {
-  #Not a correlator
-#  if( FileType eq "mass" ) {
-#    set title "Exponential mass ".MyTitle noenhanced
-#    plot PlotFile using "t":(abs(column(FieldName))):(AbsMin(column(FieldName),column(FieldNameLow),column(FieldNameHigh))):(AbsMax(column(FieldName),column(FieldNameLow),column(FieldNameHigh))) \
-      with yerrorbars lc rgb 'blue' notitle
-#  } else {
-#    if( FileType eq "cosh" ) {
-#      MyTitle="Cosh mass ".MyTitle
-#    } else { MyTitle=FileType." ".MyTitle }
-#    set title MyTitle noenhanced
-#    plot PlotFile using "t":FieldName:(column(FieldName)-column(FieldNameLow)):(column(FieldName)+column(FieldNameHigh)) with yerrorbars lc rgb 'blue' notitle
-#  }
-#}
+plot for [File in "$PlotFile"] for [fld in FieldNames] for [f=fb_min:fb_max] \
+    File using (column(1) == 0 ? 0 : f==0 ? column(1) : nt - column(1)):(column(fld)):(column(fld."_low")):(column(fld."_high")) with yerrorbars title ( SaveFile == 2 ? File." " : "").fb_prefix[f+1].fld
 
 EOFMark
-#done
-fi; done
 }
 
 if [[ "$*" == "" ]];
@@ -140,12 +118,42 @@ then
   echo "fields Names of fields to display (default: cosh)"
   echo "ref    y-value for reference line"
   echo "log    1 to plot y on log scale"
-  echo "save   Save the plot to pdf (NB: filename will be auto generated)"
+  echo "title  Title for the plot"
+  echo "save   \"1\" to save plots to auto-generated filenames, otherwise name of pdf"
   echo "nt     Plot backward propagating wave as well (or backward only if nt<0)"
   exit 2
 fi
 
-if [[ "$pdf" == "1" ]]; then SaveFile=1; else SaveFile=0; fi
 if [[ "$nt" != "" && "$tf" == "" ]]; then tf=$(( (nt < 0 ? -nt : nt)/2 )); fi
+if [[ "$title" == "" ]]; then do_title=0; else do_title=1; fi
 
-PlotFunction $*
+# If we specify a filename, then we want a single plot
+unset SaveFileName
+if [[ "$save" == "" ]]
+then
+  SaveFile=0
+elif [[ "$save" == "1" ]]
+then
+  SaveFile=1
+else
+  # A single Filename has been specified - put all the plots in the one file
+  SaveFile=2
+  SaveFileName="${save// /_}"
+  PlotFile="$*"
+  PlotFunction
+  exit
+fi
+
+# Loop through all the files on the command-line performing plots
+for PlotFile
+do
+  PlotPathSplit "$PlotFile"
+  if [[ "$mmplotfile_ext" == "txt" ]]
+  then #Silently skip non-text files
+    #log_limit=1
+    #if [[ "$mmplotfile_type" == "corr" ]]; then log_limit=2; fi
+    #for(( do_log=0 ; do_log < log_limit ; do_log = do_log + 1 ))
+    #do
+    PlotFunction
+  fi
+done

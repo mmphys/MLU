@@ -64,10 +64,10 @@ static const char * pSrcSnk[] = { "src", "snk" };
 
 using scalar = double;
 using Fold = Common::Fold<scalar>;
-using Model = Common::Sample<scalar>;
+using Model = Common::Model<scalar>;
 using Matrix = Eigen::MatrixXd; // dynamic sized matrix of complex double
-using SampleD = Common::SampleD; // Bootstrap sample double
-using SampleC = Common::SampleC; // Bootstrap sample std::complex<double>
+//using SampleD = Common::SampleD; // Bootstrap sample double
+//using SampleC = Common::SampleC; // Bootstrap sample std::complex<double>
 
 // Minimisation for multi-exponential fit
 
@@ -75,7 +75,7 @@ class MultiExpModel : public ROOT::Minuit2::FCNBase {
 public:
   static constexpr double pi{ M_PI };
   explicit MultiExpModel( std::vector<Fold> &&Corr, const std::vector<std::string> &OpNames,
-                         const std::string &sOpNameConcat,
+                         bool bFactor, const std::string &sOpNameConcat,
                          int NumExponents, int Verbosity, const std::string &OutputBaseName,
                          Common::SeedType Seed, int NSamples );
   virtual ~MultiExpModel() {}
@@ -84,10 +84,11 @@ public:
   virtual double operator()( const std::vector<double> & ModelParameters ) const;
   //virtual void SetErrorDef(double def) {theErrorDef = def;}
   // These are definitely not part of the FCNBase interface
-  std::vector<Common::ValWithEr> PerformFit( bool bCorrelated, int tMin, int tMax,
-                int Skip, bool bSaveCorr, int MaxIt, double Tolerance, double &ChiSq, int &dof );
+  std::vector<Common::ValWithEr> PerformFit( bool bCorrelated, int tMin, int tMax, int Skip,
+        bool bSaveCorr, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
   const int NumOps;
   const std::vector<std::string> &OpNames;
+  bool bFactor;
   const std::string &sOpNameConcat;
   const int Verbosity;
   const std::string OutputBaseName;
@@ -121,10 +122,11 @@ public:
 };
 
 MultiExpModel::MultiExpModel( std::vector<Fold> &&Corr_, const std::vector<std::string> &opNames_,
-                             const std::string &sopNameConcat_,
+                             bool bfactor_, const std::string &sopNameConcat_,
                              int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_, int nSamples_ )
   : NumOps{ static_cast<int>( opNames_.size() ) },
     OpNames{ opNames_ },
+    bFactor{ bfactor_ },
     sOpNameConcat{ sopNameConcat_ },
     Verbosity{ verbosity_ },
     OutputBaseName{ outputBaseName_ },
@@ -171,14 +173,14 @@ void MultiExpModel::MakeCovar( void )
   for( int t1 = 0; t1 < NtCorr; t1++ )
   {
     const int x{ f1 * NtCorr + t1 };
-    //const int ReadX{ Nt * f1 + t1 + tMin };
-    const double ExpectedX{ Corr[f1][SampleD::idxCentral][tMin + t1] };
+    //const int x{ f1 + NumFiles * t1 };
+    const double ExpectedX{ Corr[f1][Fold::idxCentral][tMin + t1] };
     for( int f2 = bCorrelated ? 0 : f1; f2 <= f1; f2++ )
     for( int t2 = bCorrelated ? 0 : t1; t2 <= t1; t2++ )
     {
       const int y{ f2 * NtCorr + t2 };
-      //const int ReadY{ Nt * f2 + t2 + tMin };
-      const double ExpectedY{ Corr[f2][SampleD::idxCentral][tMin + t2] };
+      //const int y{ f2 + NumFiles * t2 };
+      const double ExpectedY{ Corr[f2][Fold::idxCentral][tMin + t2] };
       double z = 0;
       for( int i = 0; i < NSamples; ++i )
         z += ( Corr[f1][i][tMin + t1] - ExpectedX ) * ( Corr[f2][i][tMin + t2] - ExpectedY );
@@ -195,9 +197,11 @@ void MultiExpModel::MakeCovar( void )
   }
   if( bCorrelated )
   {
-    assert( Common::IsFinite( Covar ) && "Error: covariance matrix isn't finite" );
+    if( !Common::IsFinite( Covar ) )
+      throw std::runtime_error( "Covariance matrix isn't finite" );
     CovarInv = Covar.inverse();
-    assert( Common::IsFinite( CovarInv ) && "Error: inverse covariance matrix isn't finite" );
+    if( !Common::IsFinite( CovarInv ) )
+      throw std::runtime_error( "Inverse covariance matrix isn't finite" );
     const double CondNumber{ Covar.norm() * CovarInv.norm() };
     const int CondDigits{ static_cast<int>( std::log10( CondNumber ) + 0.5 ) };
     if( CondDigits >= 12 )
@@ -205,7 +209,8 @@ void MultiExpModel::MakeCovar( void )
     std::cout << "Covariance matrix condition number=" << CondNumber
               << ", i.e. potential loss of " << CondDigits << " digits.\n";
   }
-  assert( Common::IsFinite( VarianceInv ) && "Error: variance vector isn't finite" );
+  if( !Common::IsFinite( VarianceInv ) )
+    throw std::runtime_error( "Variance vector isn't finite" );
 }
 
 // Compute chi-squared given parameters for multi-exponential fit
@@ -224,48 +229,45 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
     SinhCoshAdjust[e] = std::exp( - Energy[e] * HalfNt );
   double ModelError[Extent]; // Should happily fit on stack
   for( int f = 0; f < NumFiles; f++ )
+  {
+    const int snk{ Corr[f].Name_.op[idxSnk] };
+    const int src{ Corr[f].Name_.op[idxSrc] };
     for( int t = 0; t < NtCorr; t++ )
     {
-      const int iWrite{ f * NtCorr + t };
-      const int snk{ Corr[f].Name_.op[idxSnk] };
-      const int src{ Corr[f].Name_.op[idxSrc] };
-      //const int alpha{ AlphaIndex( snk, src ) };
-      // Check which fit model to use based on operator product parity
-      for( int t = 0; t < NtCorr; ++t )
+      double z = 0;
+      for( int e = 0; e < NumExponents; ++e )
       {
-        double z = 0;
-        for( int e = 0; e < NumExponents; ++e )
+        double d;
+        switch( Corr[f].parity )
         {
-          double d;
-          switch( Corr[f].parity )
-          {
-            case Common::Parity::Even:
-              d = SinhCoshAdjust[e] * std::cosh( - Energy[e] * ( tMin + t - HalfNt ) );
-              break;
-            case Common::Parity::Odd:
-              d = SinhCoshAdjust[e] * std::sinh( - Energy[e] * ( tMin + t - HalfNt ) );
-              break;
-            default:
-              d = std::exp( - Energy[e] * ( tMin + t ) );
-              break;
-          }
-          z += d * Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )];
+          case Common::Parity::Even:
+            d = SinhCoshAdjust[e] * std::cosh( - Energy[e] * ( tMin + t - HalfNt ) );
+            break;
+          case Common::Parity::Odd:
+            d = SinhCoshAdjust[e] * std::sinh( - Energy[e] * ( tMin + t - HalfNt ) );
+            break;
+          default:
+            d = std::exp( - Energy[e] * ( tMin + t ) );
+            break;
         }
-        //const int iRead{ alpha * Nt + t + tMin };
-        z -= Corr[f][idx][tMin + t];
-        if( !std::isfinite( z ) )
-        {
-          if( Verbosity )
-          {
-            static int iOOB{ 0 };
-            std::cout << "index " << idx << ", " << ++iOOB << "th overflow\n";
-          }
-          return std::numeric_limits<double>::max();
-        }
-        //const int iWrite{ alpha * NtCorr + t };
-        ModelError[iWrite] = z;
+        z += d * Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )];
       }
+      //const int iRead{ alpha * Nt + t + tMin };
+      z -= Corr[f][idx][tMin + t];
+      if( !std::isfinite( z ) )
+      {
+        if( Verbosity )
+        {
+          static int iOOB{ 0 };
+          std::cout << "index " << idx << ", " << ++iOOB << "th overflow\n";
+        }
+        return std::numeric_limits<double>::max();
+      }
+      const int iWrite{ f * NtCorr + t };
+      //const int iWrite{ f + NumFiles * t };
+      ModelError[iWrite] = z;
     }
+  }
   // The inverse of a symmetric matrix is also symmetric, so only calculate half the matrix
   double chi2 = 0;
   for( int i = 0; i < Extent; ++i )
@@ -285,6 +287,8 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
   }
   if( Verbosity > 2 )
     std::cout << "index " << idx << ", chi^2=" << chi2 << ", E0=" << Energy[0] << ", E1=" << Energy[1] << "\n";
+  if( chi2 < 0 )
+    throw std::runtime_error( "Chi^2 < 0" );
   return chi2;
 }
 
@@ -300,7 +304,7 @@ void MultiExpModel::DumpParameters( const std::string &msg, const ROOT::Minuit2:
 
 // Perform a fit
 std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int TMin_, int TMax_,
-                  int Skip, bool bSaveCorr, int MaxIt, double Tolerance, double &ChiSq, int &dof )
+  int Skip, bool bSaveCorr, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof )
 {
   std::cout << "=========================================\nPerforming "
             << ( Bcorrelated_ ? "correlated" : "uncorrelated" )
@@ -341,13 +345,12 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     // Take a starting guess for the parameters - same as LatAnalyze
     double * const Energy{ par.data() };
     double * const Coeff{ Energy + NumExponents };
-    //const double * const m{ Corr[SampleD::idxCentral] };
     const int tGuess{ Nt / 4 };
     Energy[0] = 0;
     for( int f = 0; f < NumFiles; f++ )
     {
       //const int i{ AlphaIndex( snk, src ) * Nt + tGuess };
-      const double * const c{ Corr[f][SampleD::idxCentral] };
+      const double * const c{ Corr[f][Fold::idxCentral] };
       double E0 = std::log( c[tGuess] / c[tGuess + 1] );
       Energy[0] += E0;
       double MELGuess = std::sqrt( std::abs( c[tGuess] / ( std::exp( - E0 * tGuess ) ) ) );
@@ -356,7 +359,8 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     }
     Energy[0] /= NumFiles;
     // Now guess Higher exponents - same as LatAnalyze
-    static const double MELFactor{ std::sqrt( 0.5 ) };
+    //static const double MELFactor{ std::sqrt( 0.5 ) };
+    static const double MELFactor{ std::sqrt( 2 ) };
     for( int e = 1; e < NumExponents; ++e )
     {
       Energy[e] = Energy[e - 1] + ( Energy[e - 1] - ( e > 1 ? Energy[e - 2] : 0 ) ) * 0.5;
@@ -367,17 +371,17 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
 
   // Create minimisation parameters
   std::vector<double> Error( NumParams, 0.1 );
-  ROOT::Minuit2::MnUserParameters upar( par, Error );
-  //upar.SetLowerLimit( 0, 0.1 );
-  //upar.SetValue(0,0.184);
-  //upar.Fix(0);
-  DumpParameters( "Initial guess:", upar );
+  ROOT::Minuit2::MnUserParameters parInit( par, Error );
+  //parInit.SetLowerLimit( 0, 0.1 );
+  //parInit.SetValue(0,0.184);
+  //parInit.Fix(0);
+  DumpParameters( "Initial guess:", parInit );
   static const int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
-  ROOT::Minuit2::MnMigrad minimizer( *this, upar, StrategyLevel );
+  ROOT::Minuit2::MnMigrad minimizer( *this, parInit, StrategyLevel );
 
   // Make somewhere to store the results of the fit for each bootstrap sample
-  Model ModelParams( NSamples, NumParams ); // Model parameters determined by fitting function
-  std::vector<SampleD> ModelCorr( NumFiles ); // correlators resulting from the fit params
+  Model ModelParams( OpNames, NumExponents, bFactor, NSamples, NumParams );
+  std::vector<Common::SampleD> ModelCorr( NumFiles ); // correlators resulting from the fit params
   for( int f = 0; f < NumFiles; f++ )
     ModelCorr[f].resize( NSamples, Nt );
 
@@ -387,25 +391,25 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     SortingHat[e].resize( NumOps + 1 );
 
   const int HalfNt{ Nt - 1 }; // NB: This is half of the ORIGINAL correlator time dimension
-  for( int LoopIdx = SampleD::idxCentral - Skip; LoopIdx < NSamples; LoopIdx++ )
+  for( int LoopIdx = Fold::idxCentral - Skip; LoopIdx < NSamples; LoopIdx++ )
   {
-    idx = ( LoopIdx >= 0 && LoopIdx < NSamples ) ? LoopIdx : SampleD::idxCentral;
+    idx = ( LoopIdx >= 0 && LoopIdx < NSamples ) ? LoopIdx : Fold::idxCentral;
     ROOT::Minuit2::FunctionMinimum min = minimizer( MaxIt, Tolerance );
     ROOT::Minuit2::MnUserParameterState state = min.UserState();
     if( !state.IsValid() )
       throw std::runtime_error( "Fit " + std::to_string( LoopIdx ) + " did not converge" );
     // Throw away the first few fit results - just use them as a seed for the next fit
-    if( LoopIdx >= SampleD::idxCentral )
+    if( LoopIdx >= Fold::idxCentral )
     {
-      upar = state.Parameters();
-      if( idx == SampleD::idxCentral || Verbosity > 2 )
+      const ROOT::Minuit2::MnUserParameters &upar{ state.Parameters() };
+      if( idx == Fold::idxCentral || Verbosity > 2 )
       {
         const std::string FitResult{ "Fit result:" };
         if( Verbosity )
           std::cout << FitResult << state << "\n";
         DumpParameters( FitResult, upar );
       }
-      if( idx == SampleD::idxCentral )
+      if( idx == Fold::idxCentral )
       {
         ChiSq = state.Fval();
         dof = Extent;
@@ -430,6 +434,18 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
         FitParams[e] = SortingHat[e][0];
         for( int o = 0; o < NumOps; ++o )
           FitParams[MELIndex(o, e) + NumExponents] = SortingHat[e][o + 1];
+      }
+      if( idx == Fold::idxCentral )
+      {
+        // Check whether energy levels are separated by minimum separation
+        for( int e = 1; e < NumExponents; e++ )
+        {
+          double RelSep = FitParams[e] / FitParams[e - 1];
+          if( ( RelSep - 1 ) < RelEnergySep || RelSep * RelEnergySep > 1 )
+            throw std::runtime_error( "Fit failed energy separation criteria - "
+                                     + std::to_string( 1 + RelEnergySep ) + " < E_n / E_{n-1} < "
+                                     + std::to_string( 1 / RelEnergySep ) );
+        }
       }
       // Save the reconstructed correlator values for this replica
       for( int f = 0; f < NumFiles; f++ )
@@ -472,8 +488,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   std::string sModelBase{ OutputRunBase };
   sModelBase.append( 1, '.' );
   sModelBase.append( sOpNameConcat );
-  ModelParams.Write( Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ),
-                     Common::sModel.c_str() );
+  ModelParams.Write( Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ) );
   //Common::SummariseBootstrap(ModelParams, sModelBase, Seed, "params" );
   for( int f = 0; f < NumFiles; f++ )
   {
@@ -496,7 +511,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   std::vector<Common::ValWithEr> Results( NumParams );
   std::vector<double> data( NSamples );
   for( int p = 0; p < NumParams; p++ ) {
-    double Central = ModelParams[SampleD::idxCentral][p];
+    double Central = ModelParams[Fold::idxCentral][p];
     std::size_t Count{ 0 };
     for( int j = 0; j < NSamples; ++j ) {
       double d = ModelParams[j][p];
@@ -522,9 +537,11 @@ int main(int argc, const char *argv[])
       {"tf", CL::SwitchType::Single, nullptr},
       {"dti", CL::SwitchType::Single, "1"},
       {"dtf", CL::SwitchType::Single, "1"},
+      {"sep", CL::SwitchType::Single, "0.2"},
+      {"delta", CL::SwitchType::Single, "6"},
       {"skip", CL::SwitchType::Single, "10"},
       {"iter", CL::SwitchType::Single, "0"},
-      {"tol", CL::SwitchType::Single, "0.1"},
+      {"tol", CL::SwitchType::Single, "0.0001"},
       {"v", CL::SwitchType::Single, "0"},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
@@ -539,10 +556,12 @@ int main(int argc, const char *argv[])
     const int NumFiles{ static_cast<int>( cl.Args.size() ) };
     if( !cl.GotSwitch( "help" ) && NumFiles )
     {
-      const int ti{ cl.SwitchValue<int>("ti") };
-      const int tf{ cl.SwitchValue<int>("tf") };
+      const int ti_start{ cl.SwitchValue<int>("ti") };
+      const int tf_start{ cl.SwitchValue<int>("tf") };
       const int dti_max{ cl.SwitchValue<int>("dti") };
       const int dtf_max{ cl.SwitchValue<int>("dtf") };
+      const double RelEnergySep{ cl.SwitchValue<double>("sep") };
+      const int delta{ cl.SwitchValue<int>("delta") };
       const int Skip{ cl.SwitchValue<int>("skip") };
       const int MaxIterations{ cl.SwitchValue<int>("iter") }; // Max iteration count, 0=unlimited
       const double Tolerance{ cl.SwitchValue<double>("tol") }; // Actual tolerance is 10^{-3} * this
@@ -621,7 +640,7 @@ int main(int argc, const char *argv[])
         }
       }
       const int NumOps{ static_cast<int>( OpNames.size() ) };
-      MultiExpModel m ( std::move( Corr ), OpNames, sOpNameConcat, NumExponents, Verbosity, outBaseFileName, Seed, NSamples );
+      MultiExpModel m ( std::move( Corr ), OpNames, bFactor, sOpNameConcat, NumExponents, Verbosity, outBaseFileName, Seed, NSamples );
       std::string sSummaryBase{ outBaseFileName };
       sSummaryBase.append( 1, '.' );
       if( doCorr )
@@ -637,29 +656,37 @@ int main(int argc, const char *argv[])
       std::ofstream s( sFitFilename );
       s << "# Fit parameters\n# " << sSummaryBase << "\n# Seed " << Seed
         << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
-      for( int dtf = 0; dtf < dtf_max; dtf++ )
+      for( int tf = tf_start; tf - tf_start < dtf_max; tf++ )
       {
         // two blank lines at start of new data block
-        if( dtf )
+        if( tf != tf_start )
           s << "\n" << std::endl;
         // Name the data series
-        s << "# [tf=" << ( tf + dtf ) << "]" << std::endl;
+        s << "# [tf=" << tf << "]" << std::endl;
         // Column names, with the series value embedded in the column header (best I can do atm)
-        s << "tf=" << ( tf + dtf ) << Sep << "ti";
+        s << "tf=" << tf << Sep << "ti";
         for( int p = 0; p < m.NumParams; p++ )
-          s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "ErLow" << Sep << m.ParamNames[p] << "ErHigh" << Sep << m.ParamNames[p] << "Check";
+          s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "_low" << Sep << m.ParamNames[p] << "_high" << Sep << m.ParamNames[p] << "_check";
         s << " ChiSq Dof ChiSqPerDof" << std::endl;
-        for( int dti = 0; dti < dti_max; dti++ )
+        for( int ti = ti_start; ti - ti_start < dti_max; ti++ )
         {
-          if( ti + dti < tf + dtf )
+          if( tf - ti + 1 >= delta )
           {
-            double ChiSq;
-            int dof;
-            auto params = m.PerformFit( doCorr, ti + dti, tf + dtf, Skip, bSaveCorr, MaxIterations, Tolerance, ChiSq, dof );
-            s << ( tf + dtf ) << Sep << ( ti + dti );
-            for( int p = 0; p < m.NumParams; p++ )
-              s << Sep << params[p];
-            s << Sep << ChiSq << Sep << dof << Sep << ( ChiSq / dof ) << std::endl;
+            try
+            {
+              double ChiSq;
+              int dof;
+              auto params = m.PerformFit( doCorr, ti, tf, Skip, bSaveCorr, MaxIterations, Tolerance,
+                                          RelEnergySep, ChiSq, dof );
+              s << tf << Sep << ti;
+              for( int p = 0; p < m.NumParams; p++ )
+                s << Sep << params[p];
+              s << Sep << ChiSq << Sep << dof << Sep << ( ChiSq / dof ) << std::endl;
+            }
+            catch(const std::exception &e)
+            {
+              std::cout << "Error: " << e.what() << "\n";
+            }
           }
         }
       }
@@ -682,9 +709,11 @@ int main(int argc, const char *argv[])
     "--tf   Final   fit time\n"
     "--dti  Number of initial fit times (default 1)\n"
     "--dtf  Number of final   fit times (default 1)\n"
+    "--sep  Minimum relative separation between energy levels (default 0.2)\n"
+    "--delta Minimum number of timeslices in fit range (default 6)\n"
     "--skip Number of fits to throw away prior to central fit (default 10)\n"
     "--iter Max iteration count, 0 (default) = unlimited\n"
-    "--tol  Tolerance of required fits * 10^3 (default 0.1)\n"
+    "--tol  Tolerance of required fits * 10^3 (default 0.0001)\n"
     "-v     Verbosity, 0 = normal (default), 1=debug, 2=save covar, 3=Every iteration\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"

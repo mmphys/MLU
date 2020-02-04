@@ -46,9 +46,9 @@ PlotPathSplit()
         mmplotfile_base="${mmplotfile_split[@]:0:$(( ${#mmplotfile_split[@]} - 3 ))}"
       else
         mmplotfile_base="${mmplotfile_split[@]:0:$(( ${#mmplotfile_split[@]} - 5 ))}"
-        mmplotfile_ops_all="${mmplotfile_split[@]:2:1}"
+        mmplotfile_ops_all="${mmplotfile_split[@]: -4:1}"
         mmplotfile_ops=(${mmplotfile_ops_all//_/ })
-        mmplotfile_corr_all="${mmplotfile_split[@]:1:1}"
+        mmplotfile_corr_all="${mmplotfile_split[@]: -5:1}"
         local mmplotfile_tmp=(${mmplotfile_corr_all//_/ })
         if (( ${#mmplotfile_tmp[@]} != 3 ))
         then
@@ -69,8 +69,9 @@ export mmplotdefault_base=h1_l_p_0_0_0
 export mmplotdefault_seed=4147798751
 export mmplotdefault_ti=9
 export mmplotdefault_tf=19
+export mmplotdefault_corr=corr
 
-DataSet="Z2"
+DataSet="test"
 if [[ "$DataSet" == "Distil" ]]
 then
   export mmplotpath_corr=$HOME/data/201911HLFelix/bootstrap/Z2/
@@ -86,6 +87,7 @@ then
   export mmplotpath_corr=$DataDir/bootstrap/
   export mmplotpath_model=$DataDir/fit/$DataSet/
   export mmplotpath_mixed=$DataDir/mixed/$DataSet/
+  export mmplotdefault_corr=uncorr
 else
   DataDir=$HOME/data/Study1/C1/$DataSet
   export mmplotpath_corr=$DataDir/bootstrap/
@@ -93,7 +95,6 @@ else
   export mmplotpath_mixed=$DataDir/mixed/
 fi
 #
-export mmplotdefault_corr=corr
 export mmplotdefault_corr_all=${mmplotdefault_corr}_${mmplotdefault_ti}_${mmplotdefault_tf}
 export mmplotdefault_ops=(g5 gT5)
        mmplotdefault_ops_all=${mmplotdefault_ops[@]}
