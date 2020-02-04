@@ -2,6 +2,7 @@
 
 PlotPathSplit()
 {
+  unset mmplotfile_name_no_ext
   unset mmplotfile_base
   unset mmplotfile_split
   unset mmplotfile_type
@@ -28,8 +29,10 @@ PlotPathSplit()
   # Save specific components
   if (( ${#mmplotfile_split[@]} < 2 ))
   then
+    mmplotfile_name_no_ext="${mmplotfile_name}"
     mmplotfile_base="${mmplotfile_name}"
   else
+    mmplotfile_name_no_ext="${mmplotfile_name%.*}"
     mmplotfile_ext="${mmplotfile_split[@]: -1:1}"
     if (( ${#mmplotfile_split[@]} < 4 ))
     then
@@ -38,7 +41,7 @@ PlotPathSplit()
       mmplotfile_type="${mmplotfile_split[@]: -3:1}"
       mmplotfile_seed="${mmplotfile_split[@]: -2:1}"
       # If it's six words long, then dig out extra info
-      if (( ${#mmplotfile_split[@]} < 6 ))
+      if (( ${2:-4} < 6 || ${#mmplotfile_split[@]} < 6 ))
       then
         mmplotfile_base="${mmplotfile_split[@]:0:$(( ${#mmplotfile_split[@]} - 3 ))}"
       else

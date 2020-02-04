@@ -207,15 +207,21 @@ bool FileExists( const std::string& Filename );
 
 // Wrapper for posix glob
 template<typename Iter>
-std::vector<std::string> glob( const Iter &first, const Iter &last )
+std::vector<std::string> glob( const Iter &first, const Iter &last, const char * pszPrefix = nullptr )
 {
   // Perform the glob
+  std::string NameBuffer;
+  if( pszPrefix && *pszPrefix )
+    NameBuffer = pszPrefix;
+  const std::size_t PrefixLen{ NameBuffer.length() };
   glob_t globBuf;
   memset( &globBuf, 0, sizeof( globBuf ) );
   int iFlags = GLOB_BRACE | GLOB_TILDE | GLOB_NOSORT | GLOB_NOCHECK;// | GLOB_NOMAGIC
   for( Iter i = first; i != last; i++ )
   {
-    const int globResult{ glob( i->c_str(), iFlags, NULL, &globBuf ) };
+    NameBuffer.resize( PrefixLen );
+    NameBuffer.append( *i );
+    const int globResult{ glob( NameBuffer.c_str(), iFlags, NULL, &globBuf ) };
     if( globResult )
     {
       if( globResult == GLOB_NOMATCH )
@@ -983,8 +989,6 @@ public:
   void Read ( const std::string &FileName, std::string &GroupName,
               const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr );
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
-  void Read ( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps,
-              const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr );
   void WriteSummary( const std::string &sOutFileName );
   explicit Sample( int NumSamples = 0, int Nt = 0 ) : NumSamples_{0}, Nt_{0} { resize( NumSamples, Nt ); }
   Sample( const std::string &FileName, std::string &GroupName,
@@ -1318,89 +1322,6 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
   }
   if( !bOK )
     throw std::runtime_error( "Unable to write sample to " + FileName + ", group " + GroupName );
-}
-
-template <typename T, int NumAuxSamples_>
-void Sample<T, NumAuxSamples_>::Read( const std::vector<std::string> & FileName, int Fold, int Shift, int NumOps, const char *PrintPrefix, std::vector<std::string> * pOpNames )
-{
-  if( abs( Fold ) > 2 )
-    throw std::runtime_error( "Error: Fold=" + std::to_string( Fold ) + " invalid" );
-  const bool bAlternateFold{ abs( Fold ) > 1 };
-  if( bAlternateFold )
-  {
-    if( Fold > 0 )
-      --Fold;
-    else
-      ++Fold;
-  }
-  const int FirstFold{ Fold };
-  const int NumFiles{ static_cast<int>( FileName.size() ) };
-  // These will be initialised when we read in the first correlator
-  int NtSource = -999; // Number of timeslices in the source file(s)
-  int NtDest   = -888; // Number of timeslices after folding
-  int NSamples = -777; // Number of bootstrap samples per correlator
-  std::vector<double> ReadBuffer;
-  SampleC f;
-  for( int i = 0; i < NumFiles; ++i )
-  {
-    std::string GroupName;
-    f.Read( FileName[i], GroupName, PrintPrefix, pOpNames );
-    if( i == 0 )
-    {
-      // Initialise defaults first time around
-      NSamples = f.NumSamples();
-      NtSource = f.Nt();
-      NtDest   = Fold ? NtSource / 2 + 1 : NtSource;
-      std::cout << "\tNt=" << NtSource << " x " << NSamples << " samples";
-      if( Fold )
-        std::cout << " folded into " << NtDest << " timeslices with "
-                  << (bAlternateFold ? "alternating, " : "")
-                  << (Fold == 1 ? "positive" : "negative") << " parity";
-      std::cout << "\n";
-      resize( NSamples, NtDest * NumFiles );
-    }
-    else
-    {
-      if( NSamples != f.NumSamples() )
-        throw std::runtime_error( "Error: inconsistent number of samples" );
-      if( NtSource != f.Nt() )
-        throw std::runtime_error( "Error: inconsistent number of timeslices" );
-      if( bAlternateFold )
-      {
-        Fold = FirstFold;
-        const int row{ i / NumOps };
-        const int col{ i % NumOps };
-        if( row & 1 )
-          Fold *= -1;
-        if( col & 1 )
-          Fold *= -1;
-      }
-    }
-    // Now copy the data from this bootstrap into the combined bootstrap
-    T * pDest = (*this)[idxAux] + NtDest * i;
-    const T * ReadBuffer = f[idxAux];
-    for( int i = idxAux; i < NSamples; i++, pDest += NtDest * ( NumFiles - 1 ), ReadBuffer += NtSource )
-    {
-      for( int k = 0; k < NtDest; ++k )
-      {
-        T Source1 = ReadBuffer[ ( NtSource + Shift + k ) % NtSource ];
-        if( Fold )
-        {
-          if( k )
-            Source1 = std::abs( Source1 );
-          else
-          {
-            T Source2 = ReadBuffer[ ( 2 * NtSource + Shift - k ) % NtSource ];
-            if( Fold > 0 )
-              Source1 = ( Source1 + Source2 ) * 0.5;
-            else
-              Source1 = ( Source2 - Source1 ) * 0.5;
-          }
-        }
-        *pDest++ = Source1;
-      }
-    }
-  }
 }
 
 template <typename T, int NumAuxSamples_ = 0>

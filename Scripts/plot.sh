@@ -1,8 +1,7 @@
 #!/bin/sh
 
-if [[ "$pdf" == "1" ]]; then SaveFile=1; else SaveFile=0; fi
-if [[ "$nt" != "" && "$tf" == "" ]]; then tf=$(( (nt < 0 ? -nt : nt)/2 )); fi
-
+PlotFunction()
+{
 # Loop through all the files on the command-line performing plots
 for PlotFile; do
 PlotPathSplit "$PlotFile"
@@ -29,6 +28,7 @@ nt=${nt:-0}
 #Full path to file
 PlotFile="$PlotFile"
 #Parsed bits of the filename
+FileName_no_ext="${mmplotfile_name_no_ext}"
 FileName="${mmplotfile_name}"
 FileBase="${mmplotfile_base}"
 FileType="${mmplotfile_type}"
@@ -37,7 +37,7 @@ FileExt="${mmplotfile_ext}"
 
 #Where to write the file (if specified)
 OutFile=FileBase.".".FileType
-MyTitle=OutFile." (seed=".FileSeed.")"
+MyTitle=FileName_no_ext
 f = 1
 while (f <= words(FieldNames) ) {
   OutFile=OutFile."_".word(FieldNames,f)
@@ -127,3 +127,25 @@ plot for [fld in FieldNames] for [f=fb_min:fb_max] \
 EOFMark
 #done
 fi; done
+}
+
+if [[ "$*" == "" ]];
+then
+  echo "$0"
+  echo "Plot summary data."
+  echo "Precede with optional modifiers (key=value):"
+  echo "ti     Initial timeslice"
+  echo "tf     Final timeslice"
+  echo "key    location for key (default: top right)"
+  echo "fields Names of fields to display (default: cosh)"
+  echo "ref    y-value for reference line"
+  echo "log    1 to plot y on log scale"
+  echo "save   Save the plot to pdf (NB: filename will be auto generated)"
+  echo "nt     Plot backward propagating wave as well (or backward only if nt<0)"
+  exit 2
+fi
+
+if [[ "$pdf" == "1" ]]; then SaveFile=1; else SaveFile=0; fi
+if [[ "$nt" != "" && "$tf" == "" ]]; then tf=$(( (nt < 0 ? -nt : nt)/2 )); fi
+
+PlotFunction $*
