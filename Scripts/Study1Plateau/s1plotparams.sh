@@ -64,7 +64,6 @@ OutFile=OutBase.'chisq'.OutSuffix
 set output OutFile
 set label 1 OutFile noenhanced at screen 0.95, 0 right font "Arial,8" front textcolor "grey40" offset character 0, character 0.75
 set title sChiDescr." ".FitName
-unset xrange
 #set xrange [3.8:12.2]
 #set xrange [5.8:12.2]
 set ylabel sChiDescr

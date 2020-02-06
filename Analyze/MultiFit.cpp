@@ -159,6 +159,7 @@ void MultiExpModel::MakeCovar( void )
   assert( tMin >= 0 && tMin < Nt && "Error: tMin invalid" );
   assert( tMax >= 0 && tMax < Nt && "Error: tMax invalid" );
   assert( NtCorr > 1 && "Error: tMin >= tMax" );
+  assert( Extent == NumFiles * NtCorr && "Error: Extent != NumFiles * NtCorr" );
   if( bCorrelated )
   {
     std::cout << "Creating covariance matrix ...\n";
@@ -169,30 +170,38 @@ void MultiExpModel::MakeCovar( void )
   }
   // Make covariance
   VarianceInv.resize( Extent );
-  for( int f1 = 0; f1 < NumFiles; f1++ )
-  for( int t1 = 0; t1 < NtCorr; t1++ )
   {
-    const int x{ f1 * NtCorr + t1 };
-    //const int x{ f1 + NumFiles * t1 };
-    const double ExpectedX{ Corr[f1][Fold::idxCentral][tMin + t1] };
-    for( int f2 = bCorrelated ? 0 : f1; f2 <= f1; f2++ )
-    for( int t2 = bCorrelated ? 0 : t1; t2 <= t1; t2++ )
+    const scalar * CentralX = nullptr;
+    const scalar * CentralY = nullptr;
+    for( int x = 0; x < Extent; x++ )
     {
-      const int y{ f2 * NtCorr + t2 };
-      //const int y{ f2 + NumFiles * t2 };
-      const double ExpectedY{ Corr[f2][Fold::idxCentral][tMin + t2] };
-      double z = 0;
-      for( int i = 0; i < NSamples; ++i )
-        z += ( Corr[f1][i][tMin + t1] - ExpectedX ) * ( Corr[f2][i][tMin + t2] - ExpectedY );
-      z /= NSamples;
-      if( bCorrelated )
+      const int t1{ x % NtCorr };
+      if( !t1 )
+        CentralX = Corr[x / NtCorr][Fold::idxCentral] + tMin;
+      for( int y = bCorrelated ? 0 : x; y <= x; y++ )
       {
-        Covar( x, y ) = z;
-        if( x != y )
-          Covar( y, x ) = z;
+        const int t2{ y % NtCorr };
+        if( !t2 )
+          CentralY = Corr[y / NtCorr][Fold::idxCentral] + tMin;
+        double z = 0;
+        const scalar * DataX{ CentralX };
+        const scalar * DataY{ CentralY };
+        for( int i = 0; i < NSamples; i++ )
+        {
+          DataX += Nt;
+          DataY += Nt;
+          z += ( DataX[t1] - CentralX[t1] ) * ( DataY[t2] - CentralY[t2] );
+        }
+        z /= NSamples;
+        if( bCorrelated )
+        {
+          Covar( x, y ) = z;
+          if( x != y )
+            Covar( y, x ) = z;
+        }
+        if( y == x )
+          VarianceInv[x] = 1. / z;
       }
-      if( y == x )
-        VarianceInv[x] = 1. / z;
     }
   }
   if( bCorrelated )
@@ -232,6 +241,7 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
   {
     const int snk{ Corr[f].Name_.op[idxSnk] };
     const int src{ Corr[f].Name_.op[idxSrc] };
+    const scalar * CorrData = Corr[f][idx] + tMin;
     for( int t = 0; t < NtCorr; t++ )
     {
       double z = 0;
@@ -252,8 +262,7 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
         }
         z += d * Coeff[MELIndex( src, e )] * Coeff[MELIndex( snk, e )];
       }
-      //const int iRead{ alpha * Nt + t + tMin };
-      z -= Corr[f][idx][tMin + t];
+      z -= *CorrData++;
       if( !std::isfinite( z ) )
       {
         if( Verbosity )
@@ -264,7 +273,6 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
         return std::numeric_limits<double>::max();
       }
       const int iWrite{ f * NtCorr + t };
-      //const int iWrite{ f + NumFiles * t };
       ModelError[iWrite] = z;
     }
   }
@@ -288,7 +296,11 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
   if( Verbosity > 2 )
     std::cout << "index " << idx << ", chi^2=" << chi2 << ", E0=" << Energy[0] << ", E1=" << Energy[1] << "\n";
   if( chi2 < 0 )
+  {
+    //static int count{ 0 };
+    //std::cout << "Chi^2 < 0" << ++count << "\n";
     throw std::runtime_error( "Chi^2 < 0" );
+  }
   return chi2;
 }
 
@@ -375,13 +387,13 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   //parInit.SetLowerLimit( 0, 0.1 );
   //parInit.SetValue(0,0.184);
   //parInit.Fix(0);
-  DumpParameters( "Initial guess:", parInit );
+  DumpParameters( "    Initial guess:", parInit );
   static const int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
   ROOT::Minuit2::MnMigrad minimizer( *this, parInit, StrategyLevel );
 
   // Make somewhere to store the results of the fit for each bootstrap sample
   Model ModelParams( OpNames, NumExponents, bFactor, NSamples, NumParams );
-  std::vector<Common::SampleD> ModelCorr( NumFiles ); // correlators resulting from the fit params
+  std::vector<Common::Fold<double>> ModelCorr( NumFiles ); // correlators resulting from the fit params
   for( int f = 0; f < NumFiles; f++ )
     ModelCorr[f].resize( NSamples, Nt );
 
@@ -404,7 +416,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
       const ROOT::Minuit2::MnUserParameters &upar{ state.Parameters() };
       if( idx == Fold::idxCentral || Verbosity > 2 )
       {
-        const std::string FitResult{ "Fit result:" };
+        const std::string FitResult{ "    Fit result:" };
         if( Verbosity )
           std::cout << FitResult << state << "\n";
         DumpParameters( FitResult, upar );
@@ -415,7 +427,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
         dof = Extent;
         //if( bCorrelated ) dof *= dof;
         dof -= NumParams;
-        std::cout << "Chi^2=" << ChiSq << ", dof=" << dof << ", chi^2/dof=" << ChiSq / dof
+        std::cout << "    Chi^2=" << ChiSq << ", dof=" << dof << ", chi^2/dof=" << ChiSq / dof
                   << "\n\t computing statistics\n";
       }
       // Save the fit parameters for this replica, sorted by E_0
@@ -442,45 +454,45 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
         {
           double RelSep = FitParams[e] / FitParams[e - 1];
           if( ( RelSep - 1 ) < RelEnergySep || RelSep * RelEnergySep > 1 )
-            throw std::runtime_error( "Fit failed energy separation criteria - "
+            throw std::runtime_error( "Fit failed energy separation criteria: "
                                      + std::to_string( 1 + RelEnergySep ) + " < E_n / E_{n-1} < "
                                      + std::to_string( 1 / RelEnergySep ) );
         }
       }
       // Save the reconstructed correlator values for this replica
-      for( int f = 0; f < NumFiles; f++ )
       {
-        const Common::Parity parity{ Corr[f].parity };
-        const int snk{ Corr[f].Name_.op[idxSnk] };
-        const int src{ Corr[f].Name_.op[idxSrc] };
-        scalar * mc{ ModelCorr[f][idx] };
-        for( int t = 0; t < Nt; ++t )
+        double SinhCoshAdjust[NumExponents];
+        for( int e = 0; e < NumExponents; ++e )
+          SinhCoshAdjust[e] = std::exp( - FitParams[e] * HalfNt );
+        for( int f = 0; f < NumFiles; f++ )
         {
-          double z = 0;
-          for( int e = 0; e < NumExponents; ++e )
+          const Common::Parity parity{ Corr[f].parity };
+          const int snk{ Corr[f].Name_.op[idxSnk] };
+          const int src{ Corr[f].Name_.op[idxSrc] };
+          scalar * mc{ ModelCorr[f][idx] };
+          for( int t = 0; t < Nt; t++ )
           {
-            switch( parity )
+            double z = 0;
+            for( int e = 0; e < NumExponents; ++e )
             {
-              case Common::Parity::Even:
-                z += FitParams[MELIndex( src, e ) + NumExponents]
-                   * FitParams[MELIndex( snk, e ) + NumExponents]
-                   * std::exp( - FitParams[e] * HalfNt )
-                   * std::cosh(- FitParams[e] * ( t - HalfNt ) );
-                break;
-              case Common::Parity::Odd:
-                z += FitParams[MELIndex( src, e ) + NumExponents]
-                   * FitParams[MELIndex( snk, e ) + NumExponents]
-                   * std::exp( - FitParams[e] * HalfNt )
-                   * std::sinh(- FitParams[e] * ( t - HalfNt ) );
-                break;
-              default:
-                z += FitParams[MELIndex( src, e ) + NumExponents]
-                   * FitParams[MELIndex( snk, e ) + NumExponents]
-                   * std::exp( - FitParams[e] * t );
-                break;
+              double d;
+              switch( parity )
+              {
+                case Common::Parity::Even:
+                  d = SinhCoshAdjust[e] * std::cosh( - FitParams[e] * ( t - HalfNt ) );
+                  break;
+                case Common::Parity::Odd:
+                  d = SinhCoshAdjust[e] * std::sinh( - FitParams[e] * ( t - HalfNt ) );
+                  break;
+                default:
+                  d = std::exp( - FitParams[e] * t );
+                  break;
+              }
+              d *= FitParams[MELIndex(src,e)+NumExponents] * FitParams[MELIndex(snk,e)+NumExponents];
+              z += d;
             }
+            *mc++ = z;
           }
-          *mc++ = z;
         }
       }
     }
@@ -653,21 +665,10 @@ int main(int argc, const char *argv[])
       const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
       if( Common::FileExists( sFitFilename ) )
         throw std::runtime_error( "Output file " + sFitFilename + " already exists" );
-      std::ofstream s( sFitFilename );
-      s << "# Fit parameters\n# " << sSummaryBase << "\n# Seed " << Seed
-        << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
+      std::ofstream s;
       for( int tf = tf_start; tf - tf_start < dtf_max; tf++ )
       {
-        // two blank lines at start of new data block
-        if( tf != tf_start )
-          s << "\n" << std::endl;
-        // Name the data series
-        s << "# [tf=" << tf << "]" << std::endl;
-        // Column names, with the series value embedded in the column header (best I can do atm)
-        s << "tf=" << tf << Sep << "ti";
-        for( int p = 0; p < m.NumParams; p++ )
-          s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "_low" << Sep << m.ParamNames[p] << "_high" << Sep << m.ParamNames[p] << "_check";
-        s << " ChiSq Dof ChiSqPerDof" << std::endl;
+        bool bNeedHeader = true;
         for( int ti = ti_start; ti - ti_start < dti_max; ti++ )
         {
           if( tf - ti + 1 >= delta )
@@ -678,6 +679,28 @@ int main(int argc, const char *argv[])
               int dof;
               auto params = m.PerformFit( doCorr, ti, tf, Skip, bSaveCorr, MaxIterations, Tolerance,
                                           RelEnergySep, ChiSq, dof );
+              if( bNeedHeader )
+              {
+                bNeedHeader = false;
+                if( !s.is_open() )
+                {
+                  s.open( sFitFilename );
+                  s << "# Fit parameters\n# " << sSummaryBase << "\n# Seed " << Seed
+                    << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
+                }
+                else
+                {
+                  // two blank lines at start of new data block
+                  s << "\n" << std::endl;
+                }
+                // Name the data series
+                s << "# [tf=" << tf << "]" << std::endl;
+                // Column names, with the series value embedded in the column header (best I can do atm)
+                s << "tf=" << tf << Sep << "ti";
+                for( int p = 0; p < m.NumParams; p++ )
+                  s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "_low" << Sep << m.ParamNames[p] << "_high" << Sep << m.ParamNames[p] << "_check";
+                s << " ChiSq Dof ChiSqPerDof" << std::endl;
+              }
               s << tf << Sep << ti;
               for( int p = 0; p < m.NumParams; p++ )
                 s << Sep << params[p];

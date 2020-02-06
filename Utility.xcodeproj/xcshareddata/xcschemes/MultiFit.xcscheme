@@ -74,11 +74,11 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "gT5_g5*5"
+            argument = "g5_gT5*5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "g5_gT5*5"
+            argument = "gT5_g5*5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -95,7 +95,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--uncorr"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v2"
@@ -115,7 +115,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tf 15"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tf 16"
@@ -123,7 +123,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tf 19"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = " --dti 9"
@@ -135,7 +135,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dtf 6"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--delta 6"

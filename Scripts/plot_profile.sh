@@ -65,6 +65,9 @@ PlotPathSplit()
 }
 
 export -f PlotPathSplit
+export mmplotvar_dat=txt # default extension for data files in text
+
+if [[ "0" == "" ]]; then
 export mmplotdefault_base=h1_l_p_0_0_0
 export mmplotdefault_seed=4147798751
 export mmplotdefault_ti=9
@@ -99,4 +102,4 @@ export mmplotdefault_corr_all=${mmplotdefault_corr}_${mmplotdefault_ti}_${mmplot
 export mmplotdefault_ops=(g5 gT5)
        mmplotdefault_ops_all=${mmplotdefault_ops[@]}
 export mmplotdefault_ops_all=${mmplotdefault_ops_all// /_}
-export mmplotvar_dat=txt # default extension for data files in text
+fi
