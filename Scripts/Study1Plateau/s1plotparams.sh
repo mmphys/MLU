@@ -9,6 +9,8 @@ then
 else
 
 if [[ "$chi" == "" ]]; then do_chi=0; else do_chi=1; fi
+if [[ "$field" == "" ]]; then field='E'; fi
+FieldNameNoUS="${field//_/\\\\_}"
 
 ###################################################
 # Plot the extracted energy levels and chi squared / d.o.f. associated with the model
@@ -18,7 +20,10 @@ gnuplot <<-EOFMark
 
 do_chi=${do_chi:-0}
 chi_max=${chi:-0}
-NumExp=${e:=1}
+NumExp=${e:-1}
+my_key="${key:-top right}"
+FieldName="${field:-E}"
+FieldNameNoUS="${FieldNameNoUS}"
 
 set term pdf
 
@@ -26,6 +31,7 @@ set pointsize 0.6
 set xlabel 'initial fit time'
 set xrange [${ti:=*}:${tf:=*}]
 #set palette defined ( 15 "blue", 16 "red", 17 "green")
+set key @my_key
 
 sChiDescr='{/Times:Italic χ}^2 per d.o.f.'
 if( do_chi ) { sChiDescr=sChiDescr." <= ".sprintf("%g",chi_max) }
@@ -34,7 +40,8 @@ OutBase="${mmplotfile_base}.${mmplotfile_corr_all}.${mmplotfile_ops_all}."
 OutSuffix=".${mmplotfile_seed}.pdf"
 
 do for [MyFieldNum = 0:NumExp - 1] {
-  MyField="E".MyFieldNum
+  MyField=FieldName.MyFieldNum
+  MyFieldNoUS=FieldNameNoUS.MyFieldNum
   OutFile=OutBase.MyField.OutSuffix
   set output OutFile
   set label 1 OutFile noenhanced at screen 1, 0 right font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
@@ -46,12 +53,12 @@ do for [MyFieldNum = 0:NumExp - 1] {
     unset arrow
     unset label 2
     #unset yrange
-    #set yrange[1.4:2.4]
+    set yrange[1.25:1.5]
   }
-  MyTitle = MyField.FitName
+  MyTitle = MyFieldNoUS.FitName
   if( do_chi ) { MyTitle=MyTitle." (".sChiDescr.")" }
   set title MyTitle
-  set ylabel MyField.'(t)'
+  set ylabel MyFieldNoUS.'(t)'
   
   plot for [idx=0:*] "$PlotFile" index idx using (column("ti")-0.1+0.05*idx):(do_chi==0 ? column(MyField) : column("ChiSqPerDof") <= chi_max ? column(MyField) : 1/0 ):(column(MyField."_low")):(column(MyField."_high")) with yerrorbars title columnhead(1)
   #plot for [idx=0:*] "$PlotFile" index idx using (column("ti")-0.1+0.05*idx):(column(MyField)):(column(MyField."ErLow")):(column(MyField."ErHigh")) with yerrorbars title columnhead(1)

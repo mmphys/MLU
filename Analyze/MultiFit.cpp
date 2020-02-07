@@ -624,13 +624,6 @@ int main(int argc, const char *argv[])
         i++;
       }
       std::vector<std::string> OpNameOrig{ OpNames };
-      std::sort( OpNameOrig.begin(), OpNameOrig.end() );
-      std::string sOpNameConcat{ OpNameOrig[0] };
-      for( std::size_t i = 1; i < OpNameOrig.size(); i++ )
-      {
-        sOpNameConcat.append( 1, '_' );
-        sOpNameConcat.append( OpNameOrig[i] );
-      }
       if( !bFactor )
       {
         OpNames.clear();
@@ -651,7 +644,13 @@ int main(int argc, const char *argv[])
           }
         }
       }
-      const int NumOps{ static_cast<int>( OpNames.size() ) };
+      std::sort( OpNameOrig.begin(), OpNameOrig.end() );
+      std::string sOpNameConcat{ OpNameOrig[0] };
+      for( std::size_t i = 1; i < OpNameOrig.size(); i++ )
+      {
+        sOpNameConcat.append( 1, '_' );
+        sOpNameConcat.append( OpNameOrig[i] );
+      }
       MultiExpModel m ( std::move( Corr ), OpNames, bFactor, sOpNameConcat, NumExponents, Verbosity, outBaseFileName, Seed, NSamples );
       std::string sSummaryBase{ outBaseFileName };
       sSummaryBase.append( 1, '.' );
