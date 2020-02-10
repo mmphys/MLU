@@ -451,6 +451,16 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   }
 }
 
+void FileNameAtt::ParseExtra()
+{
+  std::size_t pos;
+  while( ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
+  {
+    Extra.push_back( Base.substr( pos + 1 ) );
+    Base.resize( pos );
+  }
+}
+
 // Make a filename "Base.Type.seed.Ext"
 std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext)
 {

@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study1/C1/Z2/mixed/new"
+      customWorkingDirectory = "$HOME/data/Study1/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -65,24 +65,24 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "$(HOME)/data/Study1/C1/Z2/fit/new/h1_l_p_0_0_0.corr_9_19.g5_gT5.model.4147798751.h5"
+            argument = "GFWall/fit/test/h1_l_p_0_0_0.corr_6_15.g5_gT5.model.4147798751.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i $(HOME)/data/Study1/C1/Z2/bootstrap/new"
+            argument = "-i GFWall/fold/ -o GFWall/mixed/"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "Z2/fit/new/h1_l_p_0_0_0.corr_9_19.g5_gT5.model.4147798751.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i Z2/fold/ -o Z2/mixed/"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-p 0_0_0,1_0_0,1_1_0,1_1_1,2_0_0"
             isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o mixed/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-f"
-            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--savecorr"

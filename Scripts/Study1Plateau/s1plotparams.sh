@@ -24,12 +24,14 @@ NumExp=${e:-1}
 my_key="${key:-top right}"
 FieldName="${field:-E}"
 FieldNameNoUS="${FieldNameNoUS}"
+my_yrange="${yrange:-*:*}"
 
 set term pdf
 
 set pointsize 0.6
 set xlabel 'initial fit time'
 set xrange [${ti:=*}:${tf:=*}]
+set yrange[@my_yrange]
 #set palette defined ( 15 "blue", 16 "red", 17 "green")
 set key @my_key
 

@@ -350,6 +350,7 @@ struct FileNameAtt
   SeedType    Seed = 0; // Numeric value of SeedString, but only if bSeedNum == true
   std::string Ext;
   std::vector<int> op;
+  std::vector<std::string> Extra;
   // reset contents
   void clear()
   {
@@ -363,12 +364,14 @@ struct FileNameAtt
     Seed = 0;
     Ext.clear();
     op.clear();
+    Extra.clear();
   }
 
   void Parse( const std::string &Filename_, std::vector<std::string> * pOpNames = nullptr );
   FileNameAtt() = default;
   explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr )
     { Parse( Filename, pOpNames ); }
+  void ParseExtra();
 };
 
 // Make a filename "Base.Type.seed.Ext"
@@ -1562,6 +1565,11 @@ public:
   : Base::Sample{ NumSamples, Nt }, OpNames{ OpNames_ }, NumExponents{ NumExponents_ },
     NumFiles{ NumFiles_}, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Factorised{ Factorised_ } {}
   virtual const std::string & DefaultGroupName() { return sModel; }
+  void Read ( const std::string &FileName, std::string &GroupName, const char *PrintPrefix = nullptr )
+  {
+    Base::Read( FileName, GroupName, PrintPrefix );
+    Base::Name_.ParseExtra();
+  }
   virtual void ReadAttributes( ::H5::Group &g )
   {
     Base::ReadAttributes( g );
