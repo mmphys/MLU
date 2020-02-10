@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study1/C1/Z2/fold"
+      customWorkingDirectory = "$HOME/data/Study1/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -53,11 +53,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-o./"
-            isEnabled = "YES">
+            argument = "-i Z2/bootstrap/ -o Z2/fold/test/"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i ../bootstrap/"
+            argument = "-i GFWall/bootstrap/ -o GFWall/fold/test/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -66,11 +66,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*g5_gT5*h5,norc"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*g5_gT5*h5,nor *gT5_g5*h5,nor"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

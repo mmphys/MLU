@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [[ "$pfold" == "" ]]; then pfold='../fold'; echo "fold path=$pfold"; fi
+if [[ "$pfold" == "" ]]; then pfold='../fold'; echo "default pfold=$pfold"; fi
 
 # Loop through all the model files on the command-line performing plots
 for PlotFile; do
@@ -17,12 +17,14 @@ FieldName="${field:-cosh}"
 FoldPath="${pfold}"
 Basename="${mmplotfile_base}.${mmplotfile_corr_all}."
 InBasename="${mmplotfile_path}".Basename
+my_key="${key:-top right}"
 
 #Function to return operator name
 OpName(n) = (n==0) ? "g5" : "gT5"
 OpText(n) = (n==0) ? "Γ_5" : "Γ_4 Γ_5"
 
 set term pdf
+set key @my_key
 set pointsize 0.6
 set xlabel 'timeslice'
 set xrange [${ti:-*}:${tf:-*}]

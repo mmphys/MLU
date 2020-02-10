@@ -52,6 +52,7 @@
 // HDF5 Library
 #include <H5Cpp.h>
 #include <H5CompType.h>
+#include <H5public.h>
 
 // Eigen dense matrices
 #include <Eigen/Dense>
@@ -146,9 +147,13 @@ extern const std::string sModel;
 extern const std::string sNtUnfolded;
 extern const std::string st0Negated;
 extern const std::string sConjugated;
+extern const std::string sTI;
+extern const std::string sTF;
+extern const std::string sDoF;
 extern const std::string sNumExponents;
+extern const std::string sNumFiles;
 extern const std::string sFactorised;
-extern const std::string sOpNames;
+extern const std::string sOperators;
 
 using SeedType = unsigned int;
 
@@ -258,11 +263,17 @@ ComponentAbs( T c ) { return { std::abs( c.real() ), std::abs( c.imag() ) }; }
 template<typename T> typename std::enable_if<!(is_complex<T>::value), T>::type
 ComponentAbs( T r ) { return std::abs( r ); }
 
+// IsFinite() for floats and complex types
+template<typename T> inline typename std::enable_if<is_complex<T>::value, bool>::type
+IsFinite( const T &c ) { return std::isfinite( c.real() ) && std::isfinite( c.imag() ); }
+template<typename T> inline typename std::enable_if<std::is_floating_point<T>::value, bool>::type
+IsFinite( const T &c ) { return std::isfinite( c ); }
+
 // Are all the floating point numbers pointed to finite
 template <typename T, typename I> inline bool IsFinite( const T * d, I n )
 {
   while( n-- )
-    if( !std::isfinite( *d++ ) )
+    if( !IsFinite( *d++ ) )
       return false;
   return true;
 }
@@ -270,8 +281,8 @@ template <typename T, typename I> inline bool IsFinite( const T * d, I n )
 // Are all the floating point numbers in this vector finite
 template <typename T> inline bool IsFinite( const std::vector<T> & v )
 {
-  for( const T n : v )
-    if( !std::isfinite( n ) )
+  for( const T &n : v )
+    if( !IsFinite( n ) )
       return false;
   return true;
 }
@@ -281,7 +292,7 @@ template <typename T> inline bool IsFinite( const Eigen::Matrix<T, Eigen::Dynami
 {
   for( Eigen::Index row = 0; row < m.rows(); ++row )
     for( Eigen::Index col = 0; col < m.cols(); ++col )
-      if( ( !bDiagonalsOnly || row == col ) && !std::isfinite( m( row, col ) ) )
+      if( ( !bDiagonalsOnly || row == col ) && !IsFinite( m( row, col ) ) )
         return false;
   return true;
 }
@@ -409,33 +420,64 @@ public:
   //{ ResizeCorrelators( Nt ); }
 };*/
 
-template <typename T> struct H5EquivType;
-template<> struct H5EquivType<float> { static const H5::PredType& predType; };
-template<> struct H5EquivType<double> { static const H5::PredType& predType; };
-template<> struct H5EquivType<long double> { static const H5::PredType& predType; };
-
 // My implementation of H5File - adds a definition of complex type
-class H5File : public H5::H5File {
-public:
-  using H5::H5File::H5File; // Inherit the base class's constructors
-  // Return the same HDF5 complex type Grid uses
-  static H5::CompType & ComplexType( int fpsize = sizeof( std::complex<double> ) );
-  // Return the HDF5 equivalent of types I commonly use - i.e. floats and complex
-  template<typename T>typename std::enable_if<std::is_floating_point<T>::value,
-                                              const H5::DataType &>::type
-  static inline Equiv() { return H5EquivType<T>::predType; }
-  template <typename T> typename std::enable_if<is_complex<T>::value, const H5::DataType &>::type
-  static inline Equiv() { return H5File::ComplexType( sizeof( T ) ); }
+namespace H5 {
+  template <typename T> struct Equiv;
+  template<> struct Equiv<float>       { static const ::H5::PredType& Type; };
+  template<> struct Equiv<double>      { static const ::H5::PredType& Type; };
+  template<> struct Equiv<long double> { static const ::H5::PredType& Type; };
+  template<> struct Equiv<std::string> { static const ::H5::StrType Type; };
+  template<> struct Equiv<char *>      { static const ::H5::StrType& Type; };
+  template<> struct Equiv<std::complex<float>> { static const ::H5::CompType Type; };
+  template<> struct Equiv<std::complex<double>>{ static const ::H5::CompType Type; };
+  template<> struct Equiv<std::complex<long double>>{ static const ::H5::CompType Type; };
+
+  // Open the specified HDF5File and group
+  void OpenFileGroup(::H5::H5File &f, ::H5::Group &g, const std::string &FileName, std::string &GroupName, const char *PrintPrefix = nullptr, unsigned int flags = H5F_ACC_RDONLY );
+
+  // Get first groupname from specified group
+  std::string GetFirstGroupName( ::H5::Group & g );
+
+  // Read the gamma algebra attribute string and make sure it's valid
+  Gamma::Algebra ReadGammaAttribute( ::H5::Group &g, const char * pAttName );
+
+  template<typename AttributeOrDataSet>
+  std::vector<std::string> ReadStrings( const AttributeOrDataSet &a )
+  {
+    ::H5::DataSpace dsp = a.getSpace();
+    const int rank{ dsp.getSimpleExtentNdims() };
+    if( rank != 1 )
+      throw std::runtime_error( sOperators + " number of dimensions=" + std::to_string( rank ) + ", expecting 1" );
+    hsize_t NumOps;
+    dsp.getSimpleExtentDims( &NumOps );
+    std::vector<std::string> vs( NumOps );
+    char * * MDString = new char *[NumOps];
+    for( std::size_t i = 0; i < NumOps; i++ )
+      MDString[i] = nullptr;
+    try
+    {
+      a.read( Equiv<std::string>::Type, (void *)MDString );
+    }
+    catch(...)
+    {
+      for( std::size_t i = 0; i < NumOps; i++ )
+        if( MDString[i] )
+          delete [] MDString[i];
+      delete [] MDString;
+      throw;
+    }
+    for( std::size_t i = 0; i < NumOps; i++ )
+    {
+      vs[i] = MDString[i];
+      delete [] MDString[i];
+    }
+    delete [] MDString;
+    return vs;
+  }
+
+  // Make a multi-dimensional string attribute
+  void WriteAttribute( ::H5::Group &g, const std::string &AttName, const std::vector<std::string> &vs );
 };
-
-// Get first groupname from specified group
-std::string GetFirstGroupName( H5::Group & g );
-
-// Open the specified HDF5File and group
-void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName, std::string &GroupName, const char *PrintPrefix = nullptr, unsigned int flags = H5F_ACC_RDONLY );
-
-// Read the gamma algebra attribute string and make sure it's valid
-Gamma::Algebra ReadGammaAttribute( H5::Group &g, const char * pAttName );
 
 // Enumeration describing whether signal is in complex or real part
 enum class Reality
@@ -787,20 +829,20 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
     ExtractTimeslice( sCopy, bHasTimeslice, Timeslice_ );
   }
   // Now load the file
-  H5::H5File f;
-  H5::Group  g;
-  OpenHdf5FileGroup( f, g, FileName, GroupName, PrintPrefix );
+  ::H5::H5File f;
+  ::H5::Group  g;
+  H5::OpenFileGroup( f, g, FileName, GroupName, PrintPrefix );
   bool bOK = false;
   H5E_auto2_t h5at;
   void      * f5at_p;
-  H5::Exception::getAutoPrint(h5at, &f5at_p);
-  H5::Exception::dontPrint();
+  ::H5::Exception::getAutoPrint(h5at, &f5at_p);
+  ::H5::Exception::dontPrint();
   try // to load a single correlator
   {
     if( Alg.size() == 0 || ( Alg.size() == 1 && Alg[0] == Gamma::Algebra::Unknown ) )
     {
-      H5::DataSet ds = g.openDataSet( "correlator" );
-      H5::DataSpace dsp = ds.getSpace();
+      ::H5::DataSet ds = g.openDataSet( "correlator" );
+      ::H5::DataSpace dsp = ds.getSpace();
       int nDims{ dsp.getSimpleExtentNdims() };
       if( nDims == 1 )
       {
@@ -811,25 +853,25 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
           resize( 1, static_cast<int>( Dim[0] ) );
           Alg_.resize( 1 );
           Alg_[0] = Gamma::Algebra::Unknown;
-          ds.read( (*this)[0], H5File::ComplexType( sizeof( T ) ) );
+          ds.read( (*this)[0], H5::Equiv<T>::Type );
           bOK = true;
         }
       }
     }
   }
-  catch(const H5::Exception &)
+  catch(const ::H5::Exception &)
   {
     bOK = false;
-    H5::Exception::clearErrorStack();
+    ::H5::Exception::clearErrorStack();
   }
   if( !bOK )
   {
     try // to load from array of correlators indexed by gamma matrix
     {
       unsigned short NumVec;
-      H5::Attribute a;
+      ::H5::Attribute a;
       a = g.openAttribute("_Grid_vector_size");
-      a.read( H5::PredType::NATIVE_USHORT, &NumVec );
+      a.read( ::H5::PredType::NATIVE_USHORT, &NumVec );
       a.close();
       // Must be a perfect square and have at least as many as entries as requested
       const unsigned short NumFileOps{static_cast<unsigned short>( std::sqrt( NumVec ) + 0.5 )};
@@ -840,9 +882,9 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
         for( unsigned short i = 0; bOK && i < NumVec; i++ )
         {
           bOK = false;
-          H5::Group gi = g.openGroup( GroupName + "_" + std::to_string( i ) );
-          H5::DataSet ds = gi.openDataSet( "corr" );
-          H5::DataSpace dsp = ds.getSpace();
+          ::H5::Group gi = g.openGroup( GroupName + "_" + std::to_string( i ) );
+          ::H5::DataSet ds = gi.openDataSet( "corr" );
+          ::H5::DataSpace dsp = ds.getSpace();
           int nDims{ dsp.getSimpleExtentNdims() };
           if( nDims == 1 )
           {
@@ -872,7 +914,7 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
                 break;
               }
               // Read the gamma algebra strings and make sure they are valid
-              const Gamma::Algebra gSnk{ ReadGammaAttribute( gi, "gamma_snk" ) };
+              const Gamma::Algebra gSnk{ H5::ReadGammaAttribute( gi, "gamma_snk" ) };
               int idxSnk;
               for( idxSnk = 0; idxSnk < Alg_.size() && Alg_[idxSnk] != gSnk; idxSnk++ )
                 ;
@@ -881,7 +923,7 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
               bOK = true; // We can safely ignore gamma structures we're not interested in
               if( idxSnk < Alg_.size() )
               {
-                const Gamma::Algebra gSrc{ ReadGammaAttribute( gi, "gamma_src" ) };
+                const Gamma::Algebra gSrc{ H5::ReadGammaAttribute( gi, "gamma_src" ) };
                 int idxSrc;
                 for( idxSrc = 0; idxSrc < Alg_.size() && Alg_[idxSrc] != gSrc; idxSrc++ )
                   ;
@@ -890,7 +932,7 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
                 if( idxSrc < Alg_.size() )
                 {
                   const int idx{ idxSnk * NumOps_ + idxSrc };
-                  ds.read( (*this)[idx], H5File::ComplexType( sizeof( T ) ) );
+                  ds.read( (*this)[idx], H5::Equiv<T>::Type );
                   count[idx]++;
                 }
               }
@@ -903,13 +945,13 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
             bOK = false;
       }
     }
-    catch(const H5::Exception &)
+    catch(const ::H5::Exception &)
     {
       bOK = false;
-      H5::Exception::clearErrorStack();
+      ::H5::Exception::clearErrorStack();
     }
   }
-  H5::Exception::setAutoPrint(h5at, f5at_p);
+  ::H5::Exception::setAutoPrint(h5at, f5at_p);
   if( !bOK )
     throw std::runtime_error( "Unable to read sample from " + FileName );
   if( !IsFinite() )
@@ -1058,9 +1100,9 @@ public: // Override these for specialisations
   virtual bool bFolded() { return false; }
   // Descendants should call base first
   virtual void SummaryComments( std::ostringstream & s ) {}
-  virtual void ReadAttributes( H5::Group &g ) {}
+  virtual void ReadAttributes( ::H5::Group &g ) {}
   virtual void ValidateAttributes() {} // Called once data read to validate attributes against data
-  virtual void WriteAttributes( H5::Group &g ) {}
+  virtual void WriteAttributes( ::H5::Group &g ) {}
 };
 
 using SampleC = Sample<std::complex<double>>;
@@ -1118,33 +1160,33 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
     throw std::runtime_error( "Seed missing from " + FileName );
   if( Name_.Type.empty() )
     throw std::runtime_error( "Type missing from " + FileName );
-  H5::H5File f;
-  H5::Group  g;
-  OpenHdf5FileGroup( f, g, FileName, GroupName, PrintPrefix );
+  ::H5::H5File f;
+  ::H5::Group  g;
+  H5::OpenFileGroup( f, g, FileName, GroupName, PrintPrefix );
   bool bOK{ false };
   bool bFiniteError{ false };
   H5E_auto2_t h5at;
   void      * f5at_p;
-  H5::Exception::getAutoPrint(h5at, &f5at_p);
-  H5::Exception::dontPrint();
+  ::H5::Exception::getAutoPrint(h5at, &f5at_p);
+  ::H5::Exception::dontPrint();
   try // to load from LatAnalyze format
   {
     unsigned short att_Type;
-    H5::Attribute a;
+    ::H5::Attribute a;
     a = g.openAttribute("type");
-    a.read( H5::PredType::NATIVE_USHORT, &att_Type );
+    a.read( ::H5::PredType::NATIVE_USHORT, &att_Type );
     a.close();
     if( att_Type == 2 )
     {
       unsigned long  att_nSample;
       a = g.openAttribute("nSample");
-      a.read( H5::PredType::NATIVE_ULONG, &att_nSample );
+      a.read( ::H5::PredType::NATIVE_ULONG, &att_nSample );
       a.close();
       std::vector<double> buffer;
       for( int i = idxCentral; i < NumSamples_; i++ )
       {
-        H5::DataSet ds = g.openDataSet( "data_" + ( i == idxCentral ? "C" : "S_" + std::to_string( i ) ) );
-        H5::DataSpace dsp = ds.getSpace();
+        ::H5::DataSet ds = g.openDataSet( "data_" + ( i == idxCentral ? "C" : "S_" + std::to_string( i ) ) );
+        ::H5::DataSpace dsp = ds.getSpace();
         int nDims{ dsp.getSimpleExtentNdims() };
         if( nDims == 2 )
         {
@@ -1159,7 +1201,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
           }
           else if( Dim[0] != static_cast<unsigned int>( Nt_ ) )
             break;
-          ds.read( buffer.data(), H5::PredType::NATIVE_DOUBLE );
+          ds.read( buffer.data(), ::H5::PredType::NATIVE_DOUBLE );
           if( !Common::IsFinite( buffer ) )
           {
             bFiniteError = true;
@@ -1183,29 +1225,29 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
       }
     }
   }
-  catch(const H5::Exception &)
+  catch(const ::H5::Exception &)
   {
     bOK = false;
-    H5::Exception::clearErrorStack();
+    ::H5::Exception::clearErrorStack();
   }
   if( !bOK && !bFiniteError )
   {
     try // to load from my format
     {
       unsigned short att_nAux;
-      H5::Attribute a;
+      ::H5::Attribute a;
       a = g.openAttribute("nAux");
-      a.read( H5::PredType::NATIVE_USHORT, &att_nAux );
+      a.read( ::H5::PredType::NATIVE_USHORT, &att_nAux );
       a.close();
       if( att_nAux == NumAuxSamples )
       {
         unsigned int att_nSample;
         a = g.openAttribute("nSample");
-        a.read( H5::PredType::NATIVE_UINT, &att_nSample );
+        a.read( ::H5::PredType::NATIVE_UINT, &att_nSample );
         a.close();
         ReadAttributes( g );
-        H5::DataSet ds = g.openDataSet( "data_C" );
-        H5::DataSpace dsp = ds.getSpace();
+        ::H5::DataSet ds = g.openDataSet( "data_C" );
+        ::H5::DataSpace dsp = ds.getSpace();
         int nDims{ dsp.getSimpleExtentNdims() };
         if( nDims == 1 )
         {
@@ -1214,7 +1256,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
           if( Dim[0] * att_nSample <= std::numeric_limits<int>::max() )
           {
             resize( static_cast<int>( att_nSample ), static_cast<int>( Dim[0] ) );
-            const H5::DataType & myType{ H5File::Equiv<T>() };
+            const ::H5::DataType & myType{ H5::Equiv<T>::Type };
             ds.read( (*this)[idxCentral], myType );
             dsp.close();
             ds.close();
@@ -1257,13 +1299,13 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
       if( bOK )
         ValidateAttributes();
     }
-    catch(const H5::Exception &)
+    catch(const ::H5::Exception &)
     {
       bOK = false;
-      H5::Exception::clearErrorStack();
+      ::H5::Exception::clearErrorStack();
     }
   }
-  H5::Exception::setAutoPrint(h5at, f5at_p);
+  ::H5::Exception::setAutoPrint(h5at, f5at_p);
   if( bFiniteError )
     throw std::runtime_error( "NANs in " + FileName );
   if( !bOK )
@@ -1277,36 +1319,36 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
   bool bOK = false;
   try // to write in my format
   {
-    H5::H5File f( FileName, H5F_ACC_TRUNC );
-    H5::Group  g = f.openGroup( "/" );
+    ::H5::H5File f( FileName, H5F_ACC_TRUNC );
+    ::H5::Group  g = f.openGroup( "/" );
     hsize_t Dims[2];
     Dims[0] = 1;
-    H5::DataSpace ds1( 1, Dims );
-    H5::Attribute a = g.createAttribute( "_Grid_dataset_threshold", H5::PredType::STD_U32LE, ds1);
-    int tmp{ 6 };
-    a.write( H5::PredType::NATIVE_INT, &tmp );
+    ::H5::DataSpace ds1( 1, Dims );
+    ::H5::Attribute a = g.createAttribute( "_Grid_dataset_threshold", ::H5::PredType::STD_U32LE, ds1);
+    int tmp{ 9 };
+    a.write( ::H5::PredType::NATIVE_INT, &tmp );
     a.close();
     g.close();
     g = f.createGroup( GroupName );
-    a = g.createAttribute( "nAux", H5::PredType::STD_U16LE, ds1 );
+    a = g.createAttribute( "nAux", ::H5::PredType::STD_U16LE, ds1 );
     tmp = NumAuxSamples;
-    a.write( H5::PredType::NATIVE_INT, &tmp );
+    a.write( ::H5::PredType::NATIVE_INT, &tmp );
     a.close();
-    a = g.createAttribute( "nSample", H5::PredType::STD_U32LE, ds1 );
-    a.write( H5::PredType::NATIVE_INT, &NumSamples_ );
+    a = g.createAttribute( "nSample", ::H5::PredType::STD_U32LE, ds1 );
+    a.write( ::H5::PredType::NATIVE_INT, &NumSamples_ );
     a.close();
     ds1.close();
     WriteAttributes( g );
     Dims[0] = Nt_;
-    ds1 = H5::DataSpace( 1, Dims );
-    const H5::DataType &myType{ H5File::Equiv<T>() };
-    H5::DataSet ds = g.createDataSet( "data_C", myType, ds1 );
+    ds1 = ::H5::DataSpace( 1, Dims );
+    const ::H5::DataType & myType{ H5::Equiv<T>::Type };
+    ::H5::DataSet ds = g.createDataSet( "data_C", myType, ds1 );
     ds.write( (*this)[idxCentral], myType );
     ds.close();
     ds1.close();
     Dims[0] = NumSamples_;
     Dims[1] = Nt_;
-    ds1 = H5::DataSpace( 2, Dims );
+    ds1 = ::H5::DataSpace( 2, Dims );
     ds = g.createDataSet( "data_S", myType, ds1 );
     ds.write( (*this)[0], myType );
     ds.close();
@@ -1314,7 +1356,7 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
     if( NumAuxSamples )
     {
       Dims[0] = NumAuxSamples;
-      ds1 = H5::DataSpace( 2, Dims );
+      ds1 = ::H5::DataSpace( 2, Dims );
       ds = g.createDataSet( "data_Aux", myType, ds1 );
       ds.write( (*this)[idxAux], myType );
       ds.close();
@@ -1322,7 +1364,7 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
     }
     bOK = true;
   }
-  catch(const H5::Exception &)
+  catch(const ::H5::Exception &)
   {
     bOK = false;
   }
@@ -1358,27 +1400,27 @@ public:
     if( t0Negated ) s << "# timeslice 0 negated: true" << NewLine;
     if( Conjugated ) s << "# conjugate operator average: true" << NewLine;
   }
-  virtual void ReadAttributes( H5::Group &g )
+  virtual void ReadAttributes( ::H5::Group &g )
   {
     Base::ReadAttributes( g );
-    H5::Attribute a;
+    ::H5::Attribute a;
     NtUnfolded = 0;
     try
     {
       a = g.openAttribute(sNtUnfolded);
-      a.read( H5::PredType::NATIVE_INT, &NtUnfolded );
+      a.read( ::H5::PredType::NATIVE_INT, &NtUnfolded );
       a.close();
     }
-    catch(const H5::Exception &)
+    catch(const ::H5::Exception &)
     {
-      H5::Exception::clearErrorStack();
+      ::H5::Exception::clearErrorStack();
     }
     reality = Reality::Unknown;
     try
     {
       a = g.openAttribute(sReality);
       std::string s{};
-      H5::StrType sType = a.getStrType();
+      ::H5::StrType sType = a.getStrType();
       a.read( sType, s );
       a.close();
       if( EqualIgnoreCase( s, Reality_TextEquiv_Real ) )
@@ -1386,16 +1428,16 @@ public:
       else if( EqualIgnoreCase( s, Reality_TextEquiv_Imaginary ) )
         reality = Reality::Imag;
     }
-    catch(const H5::Exception &)
+    catch(const ::H5::Exception &)
     {
-      H5::Exception::clearErrorStack();
+      ::H5::Exception::clearErrorStack();
     }
     parity = Parity::Unknown;
     try
     {
       a = g.openAttribute(sParity);
       std::string s{};
-      H5::StrType sType = a.getStrType();
+      ::H5::StrType sType = a.getStrType();
       a.read( sType, s );
       a.close();
       if( EqualIgnoreCase( s, Parity_TextEquiv_Even ) )
@@ -1403,16 +1445,16 @@ public:
       else if( EqualIgnoreCase( s, Parity_TextEquiv_Odd ) )
         parity = Parity::Odd;
     }
-    catch(const H5::Exception &)
+    catch(const ::H5::Exception &)
     {
-      H5::Exception::clearErrorStack();
+      ::H5::Exception::clearErrorStack();
     }
     sign = Sign::Unknown;
     try
     {
       a = g.openAttribute(sSign);
       std::string s{};
-      H5::StrType sType = a.getStrType();
+      ::H5::StrType sType = a.getStrType();
       a.read( sType, s );
       a.close();
       if( EqualIgnoreCase( s, Sign_TextEquiv_Positive ) )
@@ -1420,54 +1462,54 @@ public:
       else if( EqualIgnoreCase( s, Sign_TextEquiv_Negative ) )
         sign = Sign::Negative;
     }
-    catch(const H5::Exception &)
+    catch(const ::H5::Exception &)
     {
-      H5::Exception::clearErrorStack();
+      ::H5::Exception::clearErrorStack();
     }
     t0Negated = false;
     std::int8_t i8;
     try
     {
       a = g.openAttribute(st0Negated);
-      a.read( H5::PredType::NATIVE_INT8, &i8 );
+      a.read( ::H5::PredType::NATIVE_INT8, &i8 );
       a.close();
       if( i8 )
         t0Negated = true;
     }
-    catch(const H5::Exception &)
+    catch(const ::H5::Exception &)
     {
-      H5::Exception::clearErrorStack();
+      ::H5::Exception::clearErrorStack();
     }
     Conjugated = false;
     try
     {
       a = g.openAttribute(sConjugated);
-      a.read( H5::PredType::NATIVE_INT8, &i8 );
+      a.read( ::H5::PredType::NATIVE_INT8, &i8 );
       a.close();
       if( i8 )
         Conjugated = true;
     }
-    catch(const H5::Exception &)
+    catch(const ::H5::Exception &)
     {
-      H5::Exception::clearErrorStack();
+      ::H5::Exception::clearErrorStack();
     }
   }
-  virtual void WriteAttributes( H5::Group &g )
+  virtual void WriteAttributes( ::H5::Group &g )
   {
     Sample<T, NumAuxSamples_>::WriteAttributes( g );
     const hsize_t OneDimension{ 1 };
-    H5::DataSpace ds1( 1, &OneDimension );
-    H5::Attribute a;
+    ::H5::DataSpace ds1( 1, &OneDimension );
+    ::H5::Attribute a;
     if( NtUnfolded )
     {
-      a = g.createAttribute( sNtUnfolded, H5::PredType::STD_U16LE, ds1 );
-      a.write( H5::PredType::NATIVE_INT, &NtUnfolded );
+      a = g.createAttribute( sNtUnfolded, ::H5::PredType::STD_U16LE, ds1 );
+      a.write( ::H5::PredType::NATIVE_INT, &NtUnfolded );
       a.close();
     }
+    ::H5::StrType sType( ::H5::PredType::C_S1, H5T_VARIABLE );
     if( reality == Reality::Real || reality == Reality::Imag )
     {
       const std::string &s{reality==Reality::Real?Reality_TextEquiv_Real:Reality_TextEquiv_Imaginary};
-      H5::StrType sType( H5::PredType::C_S1, s.length() );
       a = g.createAttribute( sReality, sType, ds1 );
       a.write( sType, s );
       a.close();
@@ -1475,7 +1517,6 @@ public:
     if( parity == Parity::Even || parity == Parity::Odd )
     {
       const std::string &s{ parity == Parity::Even ? Parity_TextEquiv_Even : Parity_TextEquiv_Odd };
-      H5::StrType sType( H5::PredType::C_S1, s.length() );
       a = g.createAttribute( sParity, sType, ds1 );
       a.write( sType, s );
       a.close();
@@ -1483,7 +1524,6 @@ public:
     if( sign == Sign::Positive || sign == Sign::Negative )
     {
       const std::string &s{ sign == Sign::Positive ? Sign_TextEquiv_Positive : Sign_TextEquiv_Negative};
-      H5::StrType sType( H5::PredType::C_S1, s.length() );
       a = g.createAttribute( sSign, sType, ds1 );
       a.write( sType, s );
       a.close();
@@ -1491,14 +1531,14 @@ public:
     const std::int8_t i8{ 1 };
     if( t0Negated )
     {
-      a = g.createAttribute( st0Negated, H5::PredType::STD_U8LE, ds1 );
-      a.write( H5::PredType::NATIVE_INT8, &i8 );
+      a = g.createAttribute( st0Negated, ::H5::PredType::STD_U8LE, ds1 );
+      a.write( ::H5::PredType::NATIVE_INT8, &i8 );
       a.close();
     }
     if( Conjugated )
     {
-      a = g.createAttribute( sConjugated, H5::PredType::STD_U8LE, ds1 );
-      a.write( H5::PredType::NATIVE_INT8, &i8 );
+      a = g.createAttribute( sConjugated, ::H5::PredType::STD_U8LE, ds1 );
+      a.write( ::H5::PredType::NATIVE_INT8, &i8 );
       a.close();
     }
   }
@@ -1509,94 +1549,94 @@ class Model : public Sample<T, NumAuxSamples_>
 {
 public:
   int NumExponents = 0;
+  int NumFiles = 0;
+  int ti = 0;
+  int tf = 0;
+  int dof = 0;
   bool Factorised = false;
   std::vector<std::string> OpNames;
   using Base = Sample<T, NumAuxSamples_>;
   Model() : Base::Sample{} {}
-  Model( std::vector<std::string> OpNames_, int NumExponents_, bool Factorised_, int NumSamples, int Nt)
-  : Base::Sample{ NumSamples, Nt }, OpNames{ OpNames_ }, NumExponents{ NumExponents_ }, Factorised{ Factorised_ } {}
+  Model( std::vector<std::string> OpNames_, int NumExponents_, int NumFiles_, int ti_, int tf_,
+         int dof_, bool Factorised_, int NumSamples, int Nt )
+  : Base::Sample{ NumSamples, Nt }, OpNames{ OpNames_ }, NumExponents{ NumExponents_ },
+    NumFiles{ NumFiles_}, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Factorised{ Factorised_ } {}
   virtual const std::string & DefaultGroupName() { return sModel; }
-  virtual void ReadAttributes( H5::Group &g )
+  virtual void ReadAttributes( ::H5::Group &g )
   {
     Base::ReadAttributes( g );
-    H5::Attribute a;
+    ::H5::Attribute a;
     a = g.openAttribute(sNumExponents);
-    a.read( H5::PredType::NATIVE_INT, &NumExponents );
+    a.read( ::H5::PredType::NATIVE_INT, &NumExponents );
     a.close();
-    {
-      a = g.openAttribute(sOpNames);
-      std::string s{};
-      H5::StrType sType = a.getStrType();
-      a.read( sType, s );
-      a.close();
-      OpNames = ArrayFromString<std::string>( s );
-    }
-    Factorised = false;
+    a = g.openAttribute(sNumFiles);
+    a.read( ::H5::PredType::NATIVE_INT, &NumFiles );
+    a.close();
+    a = g.openAttribute(sTI);
+    a.read( ::H5::PredType::NATIVE_INT, &ti );
+    a.close();
+    a = g.openAttribute(sTF);
+    a.read( ::H5::PredType::NATIVE_INT, &tf );
+    a.close();
+    a = g.openAttribute(sDoF);
+    a.read( ::H5::PredType::NATIVE_INT, &dof );
+    a.close();
+    a = g.openAttribute(sOperators);
+    OpNames = H5::ReadStrings( a );
+    a.close();
     std::int8_t i8;
-    try
-    {
-      a = g.openAttribute(sFactorised);
-      a.read( H5::PredType::NATIVE_INT8, &i8 );
-      a.close();
-      if( i8 )
-        Factorised = true;
-    }
-    catch(const H5::Exception &)
-    {
-      H5::Exception::clearErrorStack();
-    }
+    a = g.openAttribute(sFactorised);
+    a.read( ::H5::PredType::NATIVE_INT8, &i8 );
+    a.close();
+    Factorised = ( i8 != 0 );
   }
   virtual void ValidateAttributes()
   {
     Base::ValidateAttributes();
     const int NumOps{ static_cast<int>( OpNames.size() ) };
-    const int NumExpected{ NumExponents * ( NumOps + 1 ) };
+    const int NumExpected{ NumExponents * ( NumOps + 1 ) + 1 };
     if( Base::Nt_ != NumExpected )
     {
       std::ostringstream s;
       s << "Have " << Base::Nt_ << " parameters, but expected " << NumExpected << ", i.e. "
-        << NumExponents << " exponents * ( " << NumOps << " operators + 1 energy )";
+        << NumExponents << " exponents * ( " << NumOps << " operators + 1 energy ) + chi squared per degree of freedom";
       throw std::runtime_error( s.str().c_str() );
     }
   }
-  virtual void WriteAttributes( H5::Group &g )
+  virtual void WriteAttributes( ::H5::Group &g )
   {
     Base::WriteAttributes( g );
     const hsize_t OneDimension{ 1 };
-    H5::DataSpace ds1( 1, &OneDimension );
-    H5::Attribute a;
-    a = g.createAttribute( sNumExponents, H5::PredType::STD_U16LE, ds1 );
-    a.write( H5::PredType::NATIVE_INT, &NumExponents );
+    ::H5::DataSpace ds1( 1, &OneDimension );
+    ::H5::Attribute a;
+    a = g.createAttribute( sNumExponents, ::H5::PredType::STD_U16LE, ds1 );
+    a.write( ::H5::PredType::NATIVE_INT, &NumExponents );
     a.close();
-    const std::int8_t i8{ 1 };
-    if( Factorised )
-    {
-      a = g.createAttribute( sFactorised, H5::PredType::STD_U8LE, ds1 );
-      a.write( H5::PredType::NATIVE_INT8, &i8 );
-      a.close();
-    }
-    std::string buf;
-    for( std::size_t i = 0; i < OpNames.size(); i++ )
-    {
-      if( i )
-        buf.append( 1, ' ' );
-      buf.append( OpNames[i] );
-    }
-    H5::StrType sType( H5::PredType::C_S1, buf.length() );
-    a = g.createAttribute( sOpNames, sType, ds1 );
-    a.write( sType, buf );
+    a = g.createAttribute( sNumFiles, ::H5::PredType::STD_U16LE, ds1 );
+    a.write( ::H5::PredType::NATIVE_INT, &NumFiles );
     a.close();
+    a = g.createAttribute( sTI, ::H5::PredType::STD_U16LE, ds1 );
+    a.write( ::H5::PredType::NATIVE_INT, &ti );
+    a.close();
+    a = g.createAttribute( sTF, ::H5::PredType::STD_U16LE, ds1 );
+    a.write( ::H5::PredType::NATIVE_INT, &tf );
+    a.close();
+    a = g.createAttribute( sDoF, ::H5::PredType::STD_U16LE, ds1 );
+    a.write( ::H5::PredType::NATIVE_INT, &dof );
+    a.close();
+    const std::int8_t i8{ static_cast<std::int8_t>( Factorised ? 1 : 0 ) };
+    a = g.createAttribute( sFactorised, ::H5::PredType::STD_U8LE, ds1 );
+    a.write( ::H5::PredType::NATIVE_INT8, &i8 );
+    a.close();
+    H5::WriteAttribute( g, sOperators, OpNames );
   }
 };
 
 // Read a complex array from an HDF5 file
-void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,
+template<typename T>
+void ReadArray(std::vector<T> &buffer, const std::string &FileName,
                       std::string &GroupName,
                       const std::string &ObjectName = std::string( "correlator" ) );
-
-void ReadRealArray(std::vector<double> &buffer, const std::string &FileName,
-                   std::string &GroupName,
-                   const std::string &ObjectName = std::string( "correlator" ) );
 
 struct CommandLine {
   using SwitchMap = std::map<std::string, std::vector<std::string>>;

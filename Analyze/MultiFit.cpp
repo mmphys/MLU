@@ -346,6 +346,8 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
     CovarInv.resize( 0, 0 );
     Covar.resize( 0, 0 );
   }
+  dof = Extent;
+  dof -= NumParams;
   // Make the covariance matrix / vector if need be
   if( ( bCorrelated && Covar.rows() != Extent ) || ( !bCorrelated && VarianceInv.size() != Extent ) )
     MakeCovar();
@@ -384,7 +386,9 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   // Create minimisation parameters
   std::vector<double> Error( NumParams, 0.1 );
   ROOT::Minuit2::MnUserParameters parInit( par, Error );
-  //parInit.SetLowerLimit( 0, 0.1 );
+  //for( int e = 1; e < NumExponents; ++e )
+    //for( int o = 0; o < NumOps; ++o )
+      //parInit.SetLowerLimit( NumExponents + MELIndex(o, e), 0 );
   //parInit.SetValue(0,0.184);
   //parInit.Fix(0);
   DumpParameters( "    Initial guess:", parInit );
@@ -392,7 +396,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   ROOT::Minuit2::MnMigrad minimizer( *this, parInit, StrategyLevel );
 
   // Make somewhere to store the results of the fit for each bootstrap sample
-  Model ModelParams( OpNames, NumExponents, bFactor, NSamples, NumParams );
+  Model ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, NSamples, NumParams+1 );
   std::vector<Common::Fold<double>> ModelCorr( NumFiles ); // correlators resulting from the fit params
   for( int f = 0; f < NumFiles; f++ )
     ModelCorr[f].resize( NSamples, Nt );
@@ -421,12 +425,10 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
           std::cout << FitResult << state << "\n";
         DumpParameters( FitResult, upar );
       }
+      const double ThisChiSq{ state.Fval() };
       if( idx == Fold::idxCentral )
       {
-        ChiSq = state.Fval();
-        dof = Extent;
-        //if( bCorrelated ) dof *= dof;
-        dof -= NumParams;
+        ChiSq = ThisChiSq;
         std::cout << "    Chi^2=" << ChiSq << ", dof=" << dof << ", chi^2/dof=" << ChiSq / dof
                   << "\n\t computing statistics\n";
       }
@@ -447,6 +449,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
         for( int o = 0; o < NumOps; ++o )
           FitParams[MELIndex(o, e) + NumExponents] = SortingHat[e][o + 1];
       }
+      FitParams[MELIndex(0, NumExponents) + NumExponents] = ThisChiSq / dof;
       if( idx == Fold::idxCentral )
       {
         // Check whether energy levels are separated by minimum separation

@@ -51,9 +51,13 @@ const std::string sModel{ "model" };
 const std::string sNtUnfolded{ "NtUnfolded" };
 const std::string st0Negated{ "t0Negated" };
 const std::string sConjugated{ "Conjugated" };
+const std::string sTI{ "TI" };
+const std::string sTF{ "TF" };
+const std::string sDoF{ "DoF" };
 const std::string sNumExponents{ "NumExponents" };
+const std::string sNumFiles{ "NumFiles" };
 const std::string sFactorised{ "Factorised" };
-const std::string sOpNames{ "OpNames" };
+const std::string sOperators{ "Operators" };
 const double NaN{ std::nan( "" ) };
 
 namespace Gamma
@@ -481,55 +485,26 @@ void ExtractTimeslice( std::string &Prefix, bool &bHasTimeslice, int &Timeslice 
   }
 }
 
-const H5::PredType& H5EquivType<float>      ::predType{ H5::PredType::NATIVE_FLOAT };
-const H5::PredType& H5EquivType<double>     ::predType{ H5::PredType::NATIVE_DOUBLE };
-const H5::PredType& H5EquivType<long double>::predType{ H5::PredType::NATIVE_LDOUBLE };
-
-// Return the same HDF5 complex type Grid uses
-H5::CompType & H5File::ComplexType( int fpsize )
+// Make the same HDF5 complex type Grid uses
+template<typename T> static ::H5::CompType MakeComplex()
 {
-  static H5::CompType m_Complexf(sizeof(std::complex<float>));
-  static H5::CompType m_Complexd(sizeof(std::complex<double>));
-  static H5::CompType m_Complexl(sizeof(std::complex<long double>));
-  {
-#ifndef __INTEL_COMPILER
-    // mutex not available for this compiler, so initialisation not thread-safe
-    static std::mutex ComplexTypeSync;
-    std::lock_guard<std::mutex> guard( ComplexTypeSync );
-#endif
-    static bool bInitialised = false;
-    if( !bInitialised ) {
-      m_Complexf.insertMember("re", 0 * sizeof(float), H5EquivType<float>::predType);
-      m_Complexf.insertMember("im", 1 * sizeof(float), H5EquivType<float>::predType);
-      m_Complexd.insertMember("re", 0 * sizeof(double), H5EquivType<double>::predType);
-      m_Complexd.insertMember("im", 1 * sizeof(double), H5EquivType<double>::predType);
-      m_Complexl.insertMember("re", 0 * sizeof(long double), H5EquivType<long double>::predType);
-      m_Complexl.insertMember("im", 1 * sizeof(long double), H5EquivType<long double>::predType);
-      bInitialised = true;
-    }
-  }
-  if( fpsize == sizeof( std::complex<float> ) )
-    return m_Complexf;
-  if( fpsize == sizeof( std::complex<double> ) )
-    return m_Complexd;
-  assert( fpsize == sizeof( std::complex<long double> ) );
-  return m_Complexl;
+  ::H5::CompType myComplex( sizeof( std::complex<T> ) );
+  myComplex.insertMember("re", 0 * sizeof(T), H5::Equiv<T>::Type);
+  myComplex.insertMember("im", 1 * sizeof(T), H5::Equiv<T>::Type);
+  return myComplex;
 }
 
-// Get first groupname from specified group
-std::string GetFirstGroupName( H5::Group & g )
-{
-  hsize_t n = g.getNumObjs();
-  for( hsize_t i = 0; i < n; ++i ) {
-    H5G_obj_t t = g.getObjTypeByIdx( i );
-    if( t == H5G_GROUP )
-      return g.getObjnameByIdx( i );
-  }
-  return std::string();
-}
+const ::H5::PredType& H5::Equiv<float>      ::Type{ ::H5::PredType::NATIVE_FLOAT };
+const ::H5::PredType& H5::Equiv<double>     ::Type{ ::H5::PredType::NATIVE_DOUBLE };
+const ::H5::PredType& H5::Equiv<long double>::Type{ ::H5::PredType::NATIVE_LDOUBLE };
+const ::H5::StrType   H5::Equiv<std::string>::Type{ ::H5::PredType::C_S1, H5T_VARIABLE };
+const ::H5::StrType&  H5::Equiv<char *>     ::Type{   H5::Equiv<std::string>::Type };
+const ::H5::CompType  H5::Equiv<std::complex<float>>      ::Type{ MakeComplex<float>() };
+const ::H5::CompType  H5::Equiv<std::complex<double>>     ::Type{ MakeComplex<double>() };
+const ::H5::CompType  H5::Equiv<std::complex<long double>>::Type{ MakeComplex<long double>() };
 
 // Open the specified HDF5File and group
-void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName, std::string &GroupName, const char *PrintPrefix, unsigned int flags )
+void H5::OpenFileGroup(::H5::H5File &f, ::H5::Group &g, const std::string &FileName, std::string &GroupName, const char *PrintPrefix, unsigned int flags )
 {
   const bool bFindGroupName{ GroupName.empty() };
   f.openFile( FileName, flags );
@@ -542,18 +517,43 @@ void OpenHdf5FileGroup(H5::H5File &f, H5::Group &g, const std::string &FileName,
     std::cout << PrintPrefix << FileName << " (" << GroupName << ")\n";
 }
 
+// Get first groupname from specified group
+std::string H5::GetFirstGroupName( ::H5::Group & g )
+{
+  hsize_t n = g.getNumObjs();
+  for( hsize_t i = 0; i < n; ++i ) {
+    H5G_obj_t t = g.getObjTypeByIdx( i );
+    if( t == H5G_GROUP )
+      return g.getObjnameByIdx( i );
+  }
+  return std::string();
+}
+
 // Read the gamma algebra attribute string and make sure it's valid
-Gamma::Algebra ReadGammaAttribute( H5::Group &g, const char * pAttName )
+Gamma::Algebra H5::ReadGammaAttribute( ::H5::Group &g, const char * pAttName )
 {
   std::string sGamma;
-  H5::Attribute a = g.openAttribute( pAttName );
-  H5::StrType s = a.getStrType();
+  ::H5::Attribute a = g.openAttribute( pAttName );
+  ::H5::StrType s = a.getStrType();
   a.read( s, sGamma );
   a.close();
   for( int idxGamma = 0; idxGamma < Gamma::nGamma; idxGamma++ )
     if( EqualIgnoreCase( sGamma, Gamma::name[idxGamma] ) )
       return static_cast<Gamma::Algebra>( idxGamma );
-  throw H5::Exception( "Common::ReadGammaAttribute", "Invalid gamma algebra string" );
+  throw ::H5::Exception( "Common::ReadGammaAttribute", "Invalid gamma algebra string" );
+}
+
+// Make a multi-dimensional string attribute
+void H5::WriteAttribute( ::H5::Group &g, const std::string &AttName, const std::vector<std::string> &vs)
+{
+  const char * MDString[ vs.size() ];
+  for( std::size_t i = 0; i < vs.size(); i++ )
+    MDString[i] = vs[i].c_str();
+  const hsize_t NDimension{ vs.size() };
+  ::H5::DataSpace dsN( 1, &NDimension );
+  ::H5::Attribute a{ g.createAttribute( AttName, Equiv<std::string>::Type, dsN ) };
+  a.write( Equiv<std::string>::Type, MDString );
+  a.close();
 }
 
 const std::string sUnknown{ "unknown" };
@@ -675,15 +675,16 @@ std::istream& operator>>(std::istream& is, Sign &sign)
   return is;
 }
 
-// Read a complex array from an HDF5 file
-void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::string &FileName,
-                      std::string &GroupName, const std::string &ObjectName )
+// Read an array (real or complex) from an HDF5 file
+template<typename T>
+void ReadArray(std::vector<T> &buffer, const std::string &FileName,
+               std::string &GroupName, const std::string &ObjectName )
 {
-  H5::H5File f;
-  H5::Group  g;
-  OpenHdf5FileGroup( f, g, FileName, GroupName );
-  H5::DataSet ds = g.openDataSet(ObjectName);
-  H5::DataSpace dsp = ds.getSpace();
+  ::H5::H5File f;
+  ::H5::Group  g;
+  H5::OpenFileGroup( f, g, FileName, GroupName );
+  ::H5::DataSet ds = g.openDataSet(ObjectName);
+  ::H5::DataSpace dsp = ds.getSpace();
   const int nDims{dsp.getSimpleExtentNdims()};
   if( nDims != 1 )
     throw std::runtime_error("Object " + ObjectName + " in " + FileName + " has " + std::to_string( nDims ) + " dimensions" );
@@ -694,35 +695,9 @@ void ReadComplexArray(std::vector<std::complex<double>> &buffer, const std::stri
     buffer.resize( Nt );
   else if( BufferSize != Nt )
     throw std::runtime_error("Object " + ObjectName + " in " + FileName + " has " + std::to_string( Nt ) + " entries, doesn't match Nt=" + std::to_string( BufferSize ) );
-  ds.read( &buffer[0], Common::H5File::ComplexType() );
-  for( hsize_t t = 0; t < Nt; ++t )
-    if( !std::isfinite( buffer[t].real() ) || !std::isfinite( buffer[t].imag() ) )
-       throw std::runtime_error( "Error: Infinite/NaN values in " + FileName );
-}
-
-// Read a real array from an HDF5 file
-void ReadRealArray(std::vector<double> &buffer, const std::string &FileName,
-                      std::string &GroupName, const std::string &ObjectName )
-{
-  H5::H5File f;
-  H5::Group  g;
-  OpenHdf5FileGroup( f, g, FileName, GroupName );
-  H5::DataSet ds = g.openDataSet(ObjectName);
-  H5::DataSpace dsp = ds.getSpace();
-  const int nDims{dsp.getSimpleExtentNdims()};
-  if( nDims != 1 )
-    throw std::runtime_error("Object " + ObjectName + " in " + FileName + " has " + std::to_string( nDims ) + " dimensions" );
-  hsize_t Nt;
-  dsp.getSimpleExtentDims( &Nt );
-  hsize_t BufferSize{ static_cast<hsize_t>( buffer.size() ) };
-  if( BufferSize == 0 )
-    buffer.resize( Nt );
-  else if( BufferSize != Nt )
-    throw std::runtime_error("Object " + ObjectName + " in " + FileName + " has " + std::to_string( Nt ) + " entries, doesn't match Nt=" + std::to_string( BufferSize ) );
-  ds.read( &buffer[0], H5::PredType::NATIVE_DOUBLE );
-  for( hsize_t t = 0; t < Nt; ++t )
-    if( !std::isfinite( buffer[t] ) )
-       throw std::runtime_error( "Error: Infinite/NaN values in " + FileName );
+  ds.read( &buffer[0], H5::Equiv<T>::Type );
+  if( !IsFinite( buffer ) )
+     throw std::runtime_error( "Error: Infinite/NaN values in " + FileName );
 }
 
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl)
