@@ -127,18 +127,23 @@ void MixingAngle( const Model &model, const std::array<SinkSource, ModelNumIndic
   const double A_A1_snk{ pCoeff[ss[idxgT5].Sink] };
   const double A_A1_src{ pCoeff[ss[idxgT5].Source] };
   const double Op_PP{ cos_sq_theta  / ( A_P1_snk * A_P1_src ) };
-  const double Op_PA{ cos_sin_theta / ( A_P1_snk * A_A1_src ) };
   const double Op_AP{ cos_sin_theta / ( A_A1_snk * A_P1_src ) };
+  const double Op_PA{ cos_sin_theta / ( A_P1_snk * A_A1_src ) };
   const double Op_AA{ sin_sq_theta  / ( A_A1_snk * A_A1_src ) };
-  const double * pPP = Corr[idxg5 ][idxg5 ][Sample::idxCentral];
-  const double * pPA = Corr[idxg5 ][idxgT5][Sample::idxCentral];
-  const double * pAP = Corr[idxgT5][idxg5 ][Sample::idxCentral];
-  const double * pAA = Corr[idxgT5][idxgT5][Sample::idxCentral];
+  const double * pPP{ Corr[idxg5 ][idxg5 ][Sample::idxCentral] };
+  const double * pAP{ Corr[idxgT5][idxg5 ][Sample::idxCentral] };
+  const double * pPA{ nullptr };
+  const double * pAA{ Corr[idxgT5][idxgT5][Sample::idxCentral] };
   scalar * pDst = CorrMixed[Sample::idxCentral];
+  if( !model.Factorised )
+                 pPA= Corr[idxg5 ][idxgT5][Sample::idxCentral];
   for( int i = Sample::idxCentral; i < NumSamples; i++ )//, pCoeff += model.Nt() )
   {
     for( int t = 0; t < Nt; t++ )
-      *pDst++ = Op_PP * *pPP++ + Op_AA * *pAA++ + Op_AP * *pAP++ + Op_PA * *pPA++;
+      if( model.Factorised )
+        *pDst++ = Op_PP * *pPP++ + Op_AA * *pAA++ + 2 * Op_AP * *pAP++;
+      else
+        *pDst++ = Op_PP * *pPP++ + Op_AA * *pAA++ +     Op_AP * *pAP++ + Op_PA * *pPA++;
   }
 }
 
@@ -238,12 +243,18 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
       std::string InFile{ InBase };
       InFile.append( Common::Gamma::NameShort( opTraits[iSnk].Alg, Common::Underscore.c_str() ) );
       const std::size_t InFileLen{ InFile.length() };
-      for( int iSrc = 0; iSrc <= idxgT5; iSrc++ ) // upper limit NumMixed?
+      for( int iSrc = 0; iSrc <= ( model.Factorised ? iSnk : idxgT5 ); iSrc++ ) // upper limit NumMixed?
       {
         InFile.resize( InFileLen );
         InFile.append( Common::Gamma::NameShort( opTraits[iSrc].Alg, Common::Underscore.c_str() ) );
-        const std::string InFileName{ Common::MakeFilename( InFile, Common::sFold,
-                                                           model.Name_.Seed, DEF_FMT ) };
+        std::string InFileName{ Common::MakeFilename(InFile,Common::sFold,model.Name_.Seed,DEF_FMT)};
+        if( model.Factorised && iSrc != iSnk && !Common::FileExists( InFileName ) )
+        {
+          InFileName = InBase;
+          InFileName.append( Common::Gamma::NameShort(opTraits[iSrc].Alg,Common::Underscore.c_str()) );
+          InFileName.append( Common::Gamma::NameShort(opTraits[iSnk].Alg,Common::Underscore.c_str()) );
+          InFileName = Common::MakeFilename( InFileName, Common::sFold, model.Name_.Seed, DEF_FMT );
+        }
         std::string GroupName;
         Corr[iSnk][iSrc].Read( InFileName, GroupName, "    " );
         if( iSnk == 0 && iSrc == 0 )
