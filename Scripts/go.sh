@@ -40,6 +40,6 @@ for (( ; NumFiles-- ; start += Inc )); do
   export xml=$base.xml
   #envsubst < $template.pbs > $base.pbs
   #envsubst < $template.xml > $xml
-  sed -e "s|{start}|$start|g" -e "s|{end}|$end|g" -e "s|{step}|$step|g" -e "s|{xml}|$xml|g" $template.pbs > $base.pbs
-  sed -e "s|{start}|$start|g" -e "s|{end}|$end|g" -e "s|{step}|$step|g" $template.xml > $xml
+  sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" -e "s|@xml@|$xml|g" $template.pbs > $base.pbs
+  sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" $template.xml > $xml
 done
