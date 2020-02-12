@@ -187,7 +187,7 @@ void CreateApp( Application &application )
   }
 
   // Contraction sink for all momentum
-  static const std::string ContractionSinkPrefix{ "sink_p_" };
+  static const std::string ContractionSinkPrefix{ "sink_contract_p_" };
   static const std::string ContractionSinkName0{ ContractionSinkPrefix + Momentum0.to_string( Sep ) };
   std::array<std::string,NumMomenta> ContractionSinkName;
   {
@@ -207,6 +207,27 @@ void CreateApp( Application &application )
     }
   }
   
+  // Smearing sink for all momentum
+  static const std::string SmearSinkPrefix{ "sink_smear_p_" };
+  static const std::string SmearSinkName0{ SmearSinkPrefix + Momentum0.to_string( Sep ) };
+  std::array<std::string,NumMomenta> SmearSinkName;
+  {
+    MSink::Point::Par sinkPar;
+    sinkPar.mom = Momentum0.to_string( Space );
+    application.createModule<MSink::Point>(SmearSinkName0, sinkPar);
+    for( unsigned int p = 0; p < NumMomenta; ++p )
+    {
+      if( !Momenta[p] )
+        SmearSinkName[p] = SmearSinkName0;
+      else
+      {
+        SmearSinkName[p] = SmearSinkPrefix + Momenta[p].to_string( Sep );
+        sinkPar.mom = Momenta[p].to_string( Space );
+        application.createModule<MSink::Point>(SmearSinkName[p], sinkPar);
+      }
+    }
+  }
+  
   // Loop through all timeslices
   for (unsigned int t = NtStart; t < Nt; t += NtIncrement )
   {
@@ -222,7 +243,7 @@ void CreateApp( Application &application )
       application.createModule<MSource::Wall>(srcName0, srcPar);
     }
 
-    // Make propagators
+    // Make zero-momentum propagators
     std::array<std::string, NumQuarks> propNameUnsmeared0;
     std::array<std::string, NumQuarks> propNameSmeared0;
     for (unsigned int i = 0; i < NumQuarks; ++i)
@@ -237,7 +258,7 @@ void CreateApp( Application &application )
       propNameSmeared0[i] = propName[i] + Sep + "sm" + Sep + srcName0;
       MSink::Smear::Par smearPar;
       smearPar.q = propNameUnsmeared0[i];
-      smearPar.sink = ContractionSinkName0;
+      smearPar.sink = SmearSinkName0;
       application.createModule<MSink::Smear>(propNameSmeared0[i], smearPar);
     }
 
@@ -278,7 +299,7 @@ void CreateApp( Application &application )
           propNameSmeared[i] = propName[i] + Sep + "sm" + Sep + srcName;
           MSink::Smear::Par smearPar;
           smearPar.q = propNameUnsmeared[i];
-          smearPar.sink = ContractionSinkName0; // we don't need momentum here
+          smearPar.sink = SmearSinkName0; // we don't need momentum here
           application.createModule<MSink::Smear>(propNameSmeared[i], smearPar);
         }
       }
@@ -298,12 +319,12 @@ void CreateApp( Application &application )
           mesPar.q2     = propNameUnsmeared[j];
           mesPar.sink   = ContractionSinkName[p];
           application.createModule<MContraction::Meson>(TypeMesonSuffix, mesPar);
-          // Wall-wall (NB: contraction sink not actually used in this case)
+          // Wall-wall
           TypeMesonSuffix = "ww_" + MesonSuffix;
           mesPar.output = MesonDir + TypeMesonSuffix;
           mesPar.q1     = propNameSmeared[i];
           mesPar.q2     = propNameSmeared[j];
-          mesPar.sink   = ContractionSinkName0;
+          mesPar.sink   = ContractionSinkName0; // NB: sink not actually used (with sliced propagators)
           application.createModule<MContraction::Meson>(TypeMesonSuffix, mesPar);
         }
     }
