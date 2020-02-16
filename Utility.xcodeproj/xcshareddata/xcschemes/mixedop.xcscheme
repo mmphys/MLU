@@ -69,7 +69,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i GFWall/fold/ -o GFWall/mixed/"
+            argument = "-i GFWall/fold/ -o GFWall/mixed/test"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -91,6 +91,10 @@
          <CommandLineArgument
             argument = "-n 100"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--rep"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

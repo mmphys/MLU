@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study1/C1/Z2/bootstrap/test"
+      customWorkingDirectory = "$HOME/data/Study1/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -90,7 +90,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-oboot/"
+            argument = "-o boot/"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -102,7 +102,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;../../meson/prop_h1_*_prop_l_*_sink_p_0_0_0.*&apos; &apos;../../meson/prop_l_*_prop_h1_*_sink_p_0_0_0.*&apos;"
+            argument = "-o Z2/bootstrap/test/ -i Z2/meson/prop_ &apos;h1_*_prop_l_*_sink_p_0_0_0.*&apos; &apos;l_*_prop_h1_*_sink_p_0_0_0.*&apos;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

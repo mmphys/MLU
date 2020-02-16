@@ -86,12 +86,11 @@ struct TrajList
 };
 
 // This is a list of all the contractions we've been asked to process
-class Manifest : public std::map<std::string, TrajList> {
-  void Construct( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore, bool GroupLikeMomenta );
-public:
+struct Manifest : public std::map<std::string, TrajList>
+{
   // Process list of files on the command-line, breaking them up into individual trajectories
-  Manifest( const std::vector<std::string> &Files, const std::vector<std::string> &Ignore, bool GroupLikeMomenta )
-  { Construct( Files, Ignore, GroupLikeMomenta ); }
+  Manifest(const std::vector<std::string> &Files, const std::vector<std::string> &Ignore,
+           bool Factorised, bool GroupLikeMomenta);
 };
 
 /*enum ExtractFilenameReturn {Good, Bad, No_trajectory};
@@ -129,7 +128,8 @@ static ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, s
   return r;
 }*/
 
-void Manifest::Construct(const std::vector<std::string> &Args, const std::vector<std::string> &Ignore, bool GroupLikeMomenta)
+Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::string> &Ignore,
+                   bool Factorised, bool GroupLikeMomenta)
 {
   static const std::string Sep{ "_" };
   // Now walk the list of arguments.
@@ -170,25 +170,19 @@ void Manifest::Construct(const std::vector<std::string> &Args, const std::vector
       Momentum mom;
       bool bGotMomentum{ mom.Extract( Contraction ) };
       // Sort all the separate, underscore delimited component parts
+      if( Factorised )
       {
         for( char &c : Contraction )
           if( c == '_' )
             c = ' ';
         std::vector<std::string> vs{ ArrayFromString<std::string>( Contraction ) };
+        Contraction.clear();
         std::sort(vs.begin(), vs.end());
-        bool bFirst = true;
-        for( const std::string &s : vs )
+        for( int i = 0; i < vs.size(); i++ )
         {
-          if( bFirst )
-          {
-            bFirst = false;
-            Contraction = s;
-          }
-          else
-          {
+          if( i )
             Contraction.append(1, '_');
-            Contraction.append( s );
-          }
+          Contraction.append( vs[i] );
         }
       }
       // Add the momentum into the correlator if it was present
@@ -385,10 +379,12 @@ const std::string & MesonSuffix( const std::string MesonTypeName )
 // Make a default manifest
 // Heavy-light meson decays. 2pt function with current inserted and momentum on light meson
 
-enum StudySubject { Z2=1, GFWall };
+enum StudySubject { Z2=1, GFWW, GFPW };
+static constexpr int NumStudySubjects{ 3 };
 
-void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const Common::Momentum &mom,
-          std::vector<Common::Gamma::Algebra> Alg, const std::string &Heavy, const std::string &Light )
+void Study1Bootstrap( StudySubject Study, const std::string &StudyPath, const BootstrapParams &bsParams,
+                      const Common::Momentum &mom, std::vector<Common::Gamma::Algebra> Alg,
+                      const std::string &Heavy, const std::string &Light, bool Factorised )
 {
   /*using Algebra = Common::Gamma::Algebra;
   static const std::vector<Algebra> alg = { Algebra::Gamma5, Algebra::GammaTGamma5 };
@@ -401,14 +397,6 @@ void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const
   static constexpr unsigned int CSkip{40};
   const unsigned int CCount{ Study == Z2 ? 10u : 1u };//10};
   const unsigned int CEnd{CStart + CSkip * CCount};
-  static const std::string sPath{
-#ifdef DEBUG
-    "/Users/s1786208"               // Laptop
-#else
-    "/home/dp008/dp008/dc-mars3"  // Tesseract
-#endif
-    "/data/201910Plat/mesons/C1/" };
-  const std::string StudyPath{ sPath + ( Study == Z2 ? "Z2" : "GFWall" ) + "/" };
   static const std::string Dot{ "." };    // used inside filenames
   static const std::string H5{ Dot + DEF_FMT };    // used inside filenames
   static const std::string Sep{ "_" };    // used inside filenames
@@ -428,8 +416,8 @@ void Study1Bootstrap( StudySubject Study, const BootstrapParams &bsParams, const
       ss << Sep << algNames[iSnk] << Sep << algNames[iSrc];
       CorrSuffixes[iCorr] = ss.str();
     }*/
-  const int TimeSliceInc{ Study == GFWall ? 4 : 1 };
-  const unsigned int NumEnds{ Common::EqualIgnoreCase( Heavy, Light ) ? 1u : 2u };
+  const int TimeSliceInc{ Study == Z2 ? 1 : 4 };
+  const unsigned int NumEnds{ Factorised && !Common::EqualIgnoreCase( Heavy, Light ) ? 2u : 1u };
   /*const std::size_t NumSamplesT{ NumEnds * CCount };
   const std::size_t NumSamples{ NumSamplesT * ( Nt / TimeSliceInc ) };
   std::vector<Latan::Dataset<Latan::DMat>> bsData( NumCorr );
@@ -530,12 +518,14 @@ int main(const int argc, const char *argv[])
       {"n", CL::SwitchType::Single, DEF_NSAMPLE},
       {"b", CL::SwitchType::Single, "1"},
       {"r", CL::SwitchType::Single, nullptr},
+      {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"a", CL::SwitchType::Single, ""},
       {"g", CL::SwitchType::Single, "" },
       {"s", CL::SwitchType::Single, nullptr},
       {"t", CL::SwitchType::Single, "1"},
       {"x", CL::SwitchType::Multiple, nullptr},
+      {"f", CL::SwitchType::Flag, nullptr},
       {"p", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
@@ -547,6 +537,7 @@ int main(const int argc, const char *argv[])
       par.TimesliceDetail = cl.SwitchValue<int>( "t" );
       if( par.TimesliceDetail < 0 || par.TimesliceDetail > 2 )
         throw std::invalid_argument( "Timeslice detail " + std::to_string( par.TimesliceDetail ) + " invalid" );
+      const std::string InStem{ cl.SwitchValue<std::string>( "i" ) };
       par.outStem = cl.SwitchValue<std::string>( "o" );
       par.nSample = cl.SwitchValue<int>( "n" );
       par.binSize = cl.SwitchValue<int>( "b" );
@@ -569,7 +560,8 @@ int main(const int argc, const char *argv[])
           throw std::invalid_argument( "Can't specify study " + cl.SwitchValue<std::string>( "s" )
                                       + " with command-line arguments" );
         bShowUsage = false;
-        Manifest Manifest{ glob( cl.Args.begin(), cl.Args.end() ), cl.SwitchStrings( "x" ), cl.GotSwitch( "p" ) };
+        Manifest Manifest{ glob( cl.Args.begin(), cl.Args.end(), InStem.c_str() ),
+                           cl.SwitchStrings( "x" ), cl.GotSwitch( "f" ), cl.GotSwitch( "p" ) };
         // Walk the list of contractions, performing a separate bootstrap for each
         int BootstrapCount = 0;
         for( auto itc = Manifest.begin(); itc != Manifest.end(); itc++ )
@@ -601,7 +593,8 @@ int main(const int argc, const char *argv[])
         switch( Study )
         {
           case Z2:
-          case GFWall:
+          case GFWW:
+          case GFPW:
           {
             // Nothing specified on the command-line
             // Perform default bootstraps
@@ -610,17 +603,20 @@ int main(const int argc, const char *argv[])
             const std::string qLight{ "l" };
             std::cout << "Making manifest for " << qHeavy << " and " << qLight << std::endl;
             static const Common::Momentum StudyMomenta[] = {
-              { 0, 0, 0 },/*
+              { 0, 0, 0 },
               { 1, 0, 0 },
               { 1, 1, 0 },
               { 1, 1, 1 },
-              { 2, 0, 0 },*/
+              { 2, 0, 0 },
             };
+            const bool Factorised{ Study != GFPW };
             for( const Common::Momentum &m : StudyMomenta )
             {
-              Study1Bootstrap( Study, par, m, Alg, qHeavy, qLight );
-              Study1Bootstrap( Study, par, m, Alg, qHeavy, qHeavy );
-              Study1Bootstrap( Study, par, m, Alg, qLight, qLight );
+              Study1Bootstrap( Study, InStem, par, m, Alg, qHeavy, qLight, Factorised );
+              if( !Factorised )
+                Study1Bootstrap( Study, InStem, par, m, Alg, qLight, qHeavy, false );
+              Study1Bootstrap( Study, InStem, par, m, Alg, qHeavy, qHeavy, false );
+              Study1Bootstrap( Study, InStem, par, m, Alg, qLight, qLight, false );
             }
           }
             bShowUsage = false;
@@ -647,12 +643,14 @@ int main(const int argc, const char *argv[])
     "-n     Number of samples (" DEF_NSAMPLE ")\n"
     "-b     Bin size (not implemented yet)\n"
     "-r     Random number seed (unspecified=random)\n"
+    "-i     Input  prefix\n"
     "-o     Output prefix\n"
     "-a     list of gamma algebras we're interested in\n"
     "-g     Group name to read correlators from\n"
     "-s     Perform bootstrap for specified study number\n"
     "-t     timeslice detail 0 (none), 1 (.txt=default) or 2 (.txt+.h5)\n"
     "-x     eXclude file (may be repeated)\n"
+    "-f     Factorised (sort correlator component parts and group)"
     "-p     group momenta by P^2\n"
     "--help This message\n";
   }

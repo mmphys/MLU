@@ -79,6 +79,7 @@ struct Parameters
 {
   int NumSamples;
   bool bSaveCorr;
+  bool bAllReplicas;
   std::string InBase;
   std::string OutBase;
   std::vector<Common::Momentum> Momenta;
@@ -86,7 +87,7 @@ struct Parameters
 
 void MixingAngle( const Model &model, const std::array<SinkSource, ModelNumIndices> &ss,
                   const std::array<std::array<Fold, NumMixed>, NumMixed> &Corr, Sample &CorrMixed,
-                  int degrees )
+                  int degrees, bool bAllReplicas )
 {
   const int NumParams{ model.Nt() };
   const int NumSamples{ CorrMixed.NumSamples() };
@@ -122,23 +123,35 @@ void MixingAngle( const Model &model, const std::array<SinkSource, ModelNumIndic
   const double sin_sq_theta{ sintheta * sintheta };
   const double cos_sin_theta{ costheta * sintheta };
   const double * pCoeff{ model[Model::idxCentral] + ( model.NumExponents + model.OpNames.size() ) };
-  const double A_P1_snk{ pCoeff[ss[idxg5 ].Sink] };
-  const double A_P1_src{ pCoeff[ss[idxg5 ].Source] };
-  const double A_A1_snk{ pCoeff[ss[idxgT5].Sink] };
-  const double A_A1_src{ pCoeff[ss[idxgT5].Source] };
-  const double Op_PP{ cos_sq_theta  / ( A_P1_snk * A_P1_src ) };
-  const double Op_AP{ cos_sin_theta / ( A_A1_snk * A_P1_src ) };
-  const double Op_PA{ cos_sin_theta / ( A_P1_snk * A_A1_src ) };
-  const double Op_AA{ sin_sq_theta  / ( A_A1_snk * A_A1_src ) };
   const double * pPP{ Corr[idxg5 ][idxg5 ][Sample::idxCentral] };
   const double * pAP{ Corr[idxgT5][idxg5 ][Sample::idxCentral] };
   const double * pPA{ nullptr };
   const double * pAA{ Corr[idxgT5][idxgT5][Sample::idxCentral] };
   scalar * pDst = CorrMixed[Sample::idxCentral];
+  double A_P1_snk{ 0 };
+  double A_P1_src{ 0 };
+  double A_A1_snk{ 0 };
+  double A_A1_src{ 0 };
+  double Op_PP{ 0 };
+  double Op_AP{ 0 };
+  double Op_PA{ 0 };
+  double Op_AA{ 0 };
   if( !model.Factorised )
                  pPA= Corr[idxg5 ][idxgT5][Sample::idxCentral];
   for( int i = Sample::idxCentral; i < NumSamples; i++ )//, pCoeff += model.Nt() )
   {
+    if( bAllReplicas || i == Sample::idxCentral )
+    {
+      A_P1_snk = pCoeff[ss[idxg5 ].Sink];
+      A_P1_src = pCoeff[ss[idxg5 ].Source];
+      A_A1_snk = pCoeff[ss[idxgT5].Sink];
+      A_A1_src = pCoeff[ss[idxgT5].Source];
+      Op_PP = cos_sq_theta  / ( A_P1_snk * A_P1_src );
+      Op_AP = cos_sin_theta / ( A_A1_snk * A_P1_src );
+      Op_PA = cos_sin_theta / ( A_P1_snk * A_A1_src );
+      Op_AA = sin_sq_theta  / ( A_A1_snk * A_A1_src );
+      pCoeff += NumParams;
+    }
     for( int t = 0; t < Nt; t++ )
       if( model.Factorised )
         *pDst++ = Op_PP * *pPP++ + Op_AA * *pAA++ + 2 * Op_AP * *pAP++;
@@ -280,7 +293,7 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
         std::cout.flush();
       }
       CorrMixed.resize( NumSamples, Nt );
-      MixingAngle( model, idxOp, Corr, CorrMixed, degrees );
+      MixingAngle( model, idxOp, Corr, CorrMixed, degrees, Par.bAllReplicas );
       Out.resize( OutLen );
       Out.append( std::to_string( degrees ) );
       if( Par.bSaveCorr )
@@ -305,6 +318,7 @@ int main( int argc, const char *argv[] )
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"n", CL::SwitchType::Single, "0"},
+      {"rep", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
@@ -316,6 +330,7 @@ int main( int argc, const char *argv[] )
       Par.InBase = Common::AppendSlash( cl.SwitchValue<std::string>("i") );
       Par.OutBase = Common::AppendSlash( cl.SwitchValue<std::string>("o") );
       Par.NumSamples = cl.SwitchValue<int>("n");
+      Par.bAllReplicas = cl.GotSwitch("rep");
       Par.bSaveCorr = cl.GotSwitch("savecorr");
       Par.Momenta = Common::ArrayFromString<Common::Momentum>( cl.SwitchValue<std::string>("p") );
       if( Par.NumSamples < 0 )
@@ -343,6 +358,7 @@ int main( int argc, const char *argv[] )
     "-o     Output path\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
     "Flags:\n"
+    "--rep      Use per replica values of overlap constants in construction of model\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--help     This message\n";
   }

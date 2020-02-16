@@ -153,6 +153,7 @@ extern const std::string sDoF;
 extern const std::string sNumExponents;
 extern const std::string sNumFiles;
 extern const std::string sFactorised;
+extern const std::string sCovarFrozen;
 extern const std::string sOperators;
 
 using SeedType = unsigned int;
@@ -1557,13 +1558,14 @@ public:
   int tf = 0;
   int dof = 0;
   bool Factorised = false;
+  bool CovarFrozen = false;
   std::vector<std::string> OpNames;
   using Base = Sample<T, NumAuxSamples_>;
   Model() : Base::Sample{} {}
   Model( std::vector<std::string> OpNames_, int NumExponents_, int NumFiles_, int ti_, int tf_,
-         int dof_, bool Factorised_, int NumSamples, int Nt )
+         int dof_, bool Factorised_, bool CovarFrozen_, int NumSamples, int Nt )
   : Base::Sample{ NumSamples, Nt }, OpNames{ OpNames_ }, NumExponents{ NumExponents_ },
-    NumFiles{ NumFiles_}, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Factorised{ Factorised_ } {}
+    NumFiles{ NumFiles_}, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Factorised{ Factorised_ }, CovarFrozen{ CovarFrozen_ } {}
   virtual const std::string & DefaultGroupName() { return sModel; }
   void Read ( const std::string &FileName, std::string &GroupName, const char *PrintPrefix = nullptr )
   {
@@ -1597,6 +1599,10 @@ public:
     a.read( ::H5::PredType::NATIVE_INT8, &i8 );
     a.close();
     Factorised = ( i8 != 0 );
+    a = g.openAttribute(sCovarFrozen);
+    a.read( ::H5::PredType::NATIVE_INT8, &i8 );
+    a.close();
+    CovarFrozen = ( i8 != 0 );
   }
   virtual void ValidateAttributes()
   {
@@ -1632,8 +1638,12 @@ public:
     a = g.createAttribute( sDoF, ::H5::PredType::STD_U16LE, ds1 );
     a.write( ::H5::PredType::NATIVE_INT, &dof );
     a.close();
-    const std::int8_t i8{ static_cast<std::int8_t>( Factorised ? 1 : 0 ) };
+    std::int8_t i8{ static_cast<std::int8_t>( Factorised ? 1 : 0 ) };
     a = g.createAttribute( sFactorised, ::H5::PredType::STD_U8LE, ds1 );
+    a.write( ::H5::PredType::NATIVE_INT8, &i8 );
+    a.close();
+    i8 = static_cast<std::int8_t>( CovarFrozen ? 1 : 0 );
+    a = g.createAttribute( sCovarFrozen, ::H5::PredType::STD_U8LE, ds1 );
     a.write( ::H5::PredType::NATIVE_INT8, &i8 );
     a.close();
     H5::WriteAttribute( g, sOperators, OpNames );

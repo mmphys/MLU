@@ -84,8 +84,9 @@ public:
   virtual double operator()( const std::vector<double> & ModelParameters ) const;
   //virtual void SetErrorDef(double def) {theErrorDef = def;}
   // These are definitely not part of the FCNBase interface
-  std::vector<Common::ValWithEr> PerformFit( bool bCorrelated, int tMin, int tMax, int Skip,
-        bool bSaveCorr, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
+  std::vector<Common::ValWithEr> PerformFit(bool bCorrelated, bool bFreezeCovar, int tMin, int tMax,
+                                            int Skip, bool bSaveCorr, int MaxIt, double Tolerance,
+                                            double RelEnergySep, double &ChiSq, int &dof );
   const int NumOps;
   const std::vector<std::string> &OpNames;
   bool bFactor;
@@ -156,52 +157,46 @@ std::vector<std::string> MultiExpModel::MakeParamNames()
 // Make the covariance matrix, for only the timeslices we are interested in
 void MultiExpModel::MakeCovar( void )
 {
-  assert( tMin >= 0 && tMin < Nt && "Error: tMin invalid" );
-  assert( tMax >= 0 && tMax < Nt && "Error: tMax invalid" );
-  assert( NtCorr > 1 && "Error: tMin >= tMax" );
-  assert( Extent == NumFiles * NtCorr && "Error: Extent != NumFiles * NtCorr" );
-  if( bCorrelated )
-  {
-    std::cout << "Creating covariance matrix ...\n";
-    Covar.resize( Extent, Extent );
-    CovarInv.resize( Extent, Extent );
-    if( Verbosity )
-      std::cout << "Covariance matrix is " << Covar.rows() << " x " << Covar.cols() << "\n";
-  }
+  const int NumBoot{ Corr[0].NumSamples() };
   // Make covariance
-  VarianceInv.resize( Extent );
+  const scalar * CentralX = nullptr;
+  const scalar * CentralY = nullptr;
+  const scalar * ReplicaX = nullptr;
+  const scalar * ReplicaY = nullptr;
+  for( int x = 0; x < Extent; x++ )
   {
-    const scalar * CentralX = nullptr;
-    const scalar * CentralY = nullptr;
-    for( int x = 0; x < Extent; x++ )
+    const int t1{ x % NtCorr };
+    if( !t1 )
     {
-      const int t1{ x % NtCorr };
-      if( !t1 )
-        CentralX = Corr[x / NtCorr][Fold::idxCentral] + tMin;
-      for( int y = bCorrelated ? 0 : x; y <= x; y++ )
+      CentralX = Corr[x / NtCorr][idx] + tMin;
+      ReplicaX = Corr[x / NtCorr][ 0 ] + tMin;
+    }
+    for( int y = bCorrelated ? 0 : x; y <= x; y++ )
+    {
+      const int t2{ y % NtCorr };
+      if( !t2 )
       {
-        const int t2{ y % NtCorr };
-        if( !t2 )
-          CentralY = Corr[y / NtCorr][Fold::idxCentral] + tMin;
-        double z = 0;
-        const scalar * DataX{ CentralX };
-        const scalar * DataY{ CentralY };
-        for( int i = 0; i < NSamples; i++ )
-        {
-          DataX += Nt;
-          DataY += Nt;
-          z += ( DataX[t1] - CentralX[t1] ) * ( DataY[t2] - CentralY[t2] );
-        }
-        z /= NSamples;
-        if( bCorrelated )
-        {
-          Covar( x, y ) = z;
-          if( x != y )
-            Covar( y, x ) = z;
-        }
-        if( y == x )
-          VarianceInv[x] = 1. / z;
+        CentralY = Corr[y / NtCorr][idx] + tMin;
+        ReplicaY = Corr[y / NtCorr][ 0 ] + tMin;
       }
+      double z = 0;
+      const scalar * DataX{ ReplicaX };
+      const scalar * DataY{ ReplicaY };
+      for( int i = 0; i < NumBoot; i++ )
+      {
+        z += ( DataX[t1] - CentralX[t1] ) * ( DataY[t2] - CentralY[t2] );
+        DataX += Nt;
+        DataY += Nt;
+      }
+      z /= NumBoot;
+      if( bCorrelated )
+      {
+        Covar( x, y ) = z;
+        if( x != y )
+          Covar( y, x ) = z;
+      }
+      if( y == x )
+        VarianceInv[x] = 1. / z;
     }
   }
   if( bCorrelated )
@@ -211,12 +206,15 @@ void MultiExpModel::MakeCovar( void )
     CovarInv = Covar.inverse();
     if( !Common::IsFinite( CovarInv ) )
       throw std::runtime_error( "Inverse covariance matrix isn't finite" );
-    const double CondNumber{ Covar.norm() * CovarInv.norm() };
-    const int CondDigits{ static_cast<int>( std::log10( CondNumber ) + 0.5 ) };
-    if( CondDigits >= 12 )
-      std::cout << "WARNING see https://en.wikipedia.org/wiki/Condition_number\n";
-    std::cout << "Covariance matrix condition number=" << CondNumber
-              << ", i.e. potential loss of " << CondDigits << " digits.\n";
+    if( idx == Fold::idxCentral )
+    {
+      const double CondNumber{ Covar.norm() * CovarInv.norm() };
+      const int CondDigits{ static_cast<int>( std::log10( CondNumber ) + 0.5 ) };
+      if( CondDigits >= 12 )
+        std::cout << "WARNING see https://en.wikipedia.org/wiki/Condition_number\n";
+      std::cout << "Covariance matrix condition number=" << CondNumber
+                << ", i.e. potential loss of " << CondDigits << " digits.\n";
+    }
   }
   if( !Common::IsFinite( VarianceInv ) )
     throw std::runtime_error( "Variance vector isn't finite" );
@@ -299,7 +297,7 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
   {
     //static int count{ 0 };
     //std::cout << "Chi^2 < 0" << ++count << "\n";
-    throw std::runtime_error( "Chi^2 < 0" );
+    throw std::runtime_error( "Chi^2 < 0 on replica " + std::to_string( idx ) );
   }
   return chi2;
 }
@@ -315,42 +313,30 @@ void MultiExpModel::DumpParameters( const std::string &msg, const ROOT::Minuit2:
 }
 
 // Perform a fit
-std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int TMin_, int TMax_,
-  int Skip, bool bSaveCorr, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof )
+std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, bool bFreezeCovar,
+                    int TMin_, int TMax_, int Skip, bool bSaveCorr, int MaxIt,
+                    double Tolerance, double RelEnergySep, double &ChiSq, int &dof )
 {
   std::cout << "=========================================\nPerforming "
             << ( Bcorrelated_ ? "correlated" : "uncorrelated" )
             << " fit on timeslices " << TMin_ << " to " << TMax_ << "\n";
-
-  // Drop the covariance & variance if the fit timeslices change
-  const bool bCorrelatedChanged{ bCorrelated != Bcorrelated_ };
-  const bool bTimesChanged{ TMin_ != tMin || TMax_ != tMax };
   bCorrelated = Bcorrelated_;
   tMin = TMin_;
   tMax = TMax_;
-  if( bTimesChanged || bCorrelatedChanged )
-  {
-    OutputRunBase = OutputBaseName;
-    OutputRunBase.append( 1, '.' );
-    OutputRunBase.append( bCorrelated ? "corr" : "uncorr" );
-    OutputRunBase.append( 1, '_' );
-    OutputRunBase.append( std::to_string( tMin ) );
-    OutputRunBase.append( 1, '_' );
-    OutputRunBase.append( std::to_string( tMax ) );
-  }
-  if( bTimesChanged )
-  {
-    NtCorr = TMax_ - TMin_ + 1;
-    Extent = NumFiles * NtCorr;
-    VarianceInv.resize( 0 );
-    CovarInv.resize( 0, 0 );
-    Covar.resize( 0, 0 );
-  }
+  OutputRunBase = OutputBaseName;
+  OutputRunBase.append( 1, '.' );
+  OutputRunBase.append( bCorrelated ? "corr" : "uncorr" );
+  OutputRunBase.append( 1, '_' );
+  OutputRunBase.append( std::to_string( tMin ) );
+  OutputRunBase.append( 1, '_' );
+  OutputRunBase.append( std::to_string( tMax ) );
+  NtCorr = TMax_ - TMin_ + 1;
+  Extent = NumFiles * NtCorr;
+  VarianceInv.resize( Extent );
+  CovarInv.resize( Extent, Extent );
+  Covar.resize( Extent, Extent );
   dof = Extent;
   dof -= NumParams;
-  // Make the covariance matrix / vector if need be
-  if( ( bCorrelated && Covar.rows() != Extent ) || ( !bCorrelated && VarianceInv.size() != Extent ) )
-    MakeCovar();
 
   // Make initial guesses for the parameters
   // For each Exponent, I need the delta_E + a constant for each operator
@@ -396,7 +382,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   ROOT::Minuit2::MnMigrad minimizer( *this, parInit, StrategyLevel );
 
   // Make somewhere to store the results of the fit for each bootstrap sample
-  Model ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, NSamples, NumParams+1 );
+  Model ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, NSamples, NumParams+1 );
   std::vector<Common::Fold<double>> ModelCorr( NumFiles ); // correlators resulting from the fit params
   for( int f = 0; f < NumFiles; f++ )
     ModelCorr[f].resize( NSamples, Nt );
@@ -409,7 +395,17 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
   const int HalfNt{ Nt - 1 }; // NB: This is half of the ORIGINAL correlator time dimension
   for( int LoopIdx = Fold::idxCentral - Skip; LoopIdx < NSamples; LoopIdx++ )
   {
-    idx = ( LoopIdx >= 0 && LoopIdx < NSamples ) ? LoopIdx : Fold::idxCentral;
+    if(    LoopIdx ==Fold::idxCentral - Skip )
+    {
+      idx = Fold::idxCentral;
+      MakeCovar();
+    }
+    else if( LoopIdx >= 0 && LoopIdx < NSamples )
+    {
+      idx = LoopIdx;
+      if( !bFreezeCovar )
+        MakeCovar();
+    }
     ROOT::Minuit2::FunctionMinimum min = minimizer( MaxIt, Tolerance );
     ROOT::Minuit2::MnUserParameterState state = min.UserState();
     if( !state.IsValid() )
@@ -540,7 +536,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, int
 
 int main(int argc, const char *argv[])
 {
-  std::ios_base::sync_with_stdio( false );
+  // Can't do this because of Minuit2     std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;
@@ -564,6 +560,7 @@ int main(int argc, const char *argv[])
       {"n", CL::SwitchType::Single, "0"},
       {"f", CL::SwitchType::Flag, nullptr},
       {"uncorr", CL::SwitchType::Flag, nullptr},
+      {"freeze", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
@@ -588,6 +585,7 @@ int main(int argc, const char *argv[])
       //const std::string model{ opt.optionValue("m") };
       const bool bFactor{ cl.GotSwitch( "f" ) };
       const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
+      const bool bFreezeCovar{ cl.GotSwitch( "freeze" ) };
       const bool bSaveCorr{ cl.GotSwitch("savecorr") };
 
       if( Skip < 0 )
@@ -623,6 +621,12 @@ int main(int argc, const char *argv[])
             throw std::runtime_error(sFile+"seed "+Corr[i].Name_.SeedString+sBad+Corr[0].Name_.SeedString);
           if( !Common::EqualIgnoreCase( Corr[i].Name_.Ext, Corr[0].Name_.Ext ) )
             throw std::runtime_error( sFile+"extension "+Corr[i].Name_.Ext+sBad+Corr[0].Name_.Ext );
+          if( Corr[i].Nt() != Corr[0].Nt() )
+            throw std::runtime_error( sFile + "Nt=" + std::to_string( Corr[i].Nt() )
+                                      + sBad + std::to_string( Corr[0].Nt() ) );
+          if( Corr[i].NumSamples() != Corr[0].NumSamples() )
+            throw std::runtime_error( sFile + "NumSamples=" + std::to_string( Corr[i].NumSamples() )
+                                      + sBad + std::to_string( Corr[0].NumSamples() ) );
         }
         i++;
       }
@@ -679,8 +683,8 @@ int main(int argc, const char *argv[])
             {
               double ChiSq;
               int dof;
-              auto params = m.PerformFit( doCorr, ti, tf, Skip, bSaveCorr, MaxIterations, Tolerance,
-                                          RelEnergySep, ChiSq, dof );
+              auto params = m.PerformFit(doCorr, bFreezeCovar, ti, tf, Skip, bSaveCorr, MaxIterations,
+                                         Tolerance, RelEnergySep, ChiSq, dof);
               if( bNeedHeader )
               {
                 bNeedHeader = false;
@@ -747,6 +751,7 @@ int main(int argc, const char *argv[])
     "Flags:\n"
     "-f         Factorising operators (default non-factorising)\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
+    "--freeze   Freeze the covariance matrix/variance on the central replica\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--help     This message\n";
   }

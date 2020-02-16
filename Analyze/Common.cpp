@@ -57,6 +57,7 @@ const std::string sDoF{ "DoF" };
 const std::string sNumExponents{ "NumExponents" };
 const std::string sNumFiles{ "NumFiles" };
 const std::string sFactorised{ "Factorised" };
+const std::string sCovarFrozen{ "CovarFrozen" };
 const std::string sOperators{ "Operators" };
 const double NaN{ std::nan( "" ) };
 

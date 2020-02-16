@@ -108,7 +108,7 @@ static constexpr int NumMomenta{ sizeof( Momenta ) / sizeof( Momenta[0] ) };
 void CreateApp( Application &application )
 {
   const unsigned int NtStart{ 0 };
-  const unsigned int Nt{ 4 };//64 };
+  const unsigned int Nt{ 32 };//64 };
   const unsigned int NtIncrement{ 4 };
 
   // gauge field
@@ -310,17 +310,17 @@ void CreateApp( Application &application )
       for (unsigned int i = 0; i < NumQuarks; ++i)
         for (unsigned int j = 0; j < NumQuarks; ++j)
         {
-          static const std::string MesonDir{ OutputPrefix + "mesons/C1/" + RunName + "/" };
+          static const std::string MesonDir{ OutputPrefix + "mesons/C1/" }; //+ RunName + "/" };
           // Wall-point
           std::string MesonSuffix{ Quarks[i].flavour + Sep + Quarks[j].flavour + Suffix };
-          std::string TypeMesonSuffix{ "wp_" + MesonSuffix };
+          std::string TypeMesonSuffix{ "GFWP/" + MesonSuffix };
           mesPar.output = MesonDir + TypeMesonSuffix;
           mesPar.q1     = propNameUnsmeared0[i];
           mesPar.q2     = propNameUnsmeared[j];
           mesPar.sink   = ContractionSinkName[p];
           application.createModule<MContraction::Meson>(TypeMesonSuffix, mesPar);
           // Wall-wall
-          TypeMesonSuffix = "ww_" + MesonSuffix;
+          TypeMesonSuffix = "GFWW/" + MesonSuffix;
           mesPar.output = MesonDir + TypeMesonSuffix;
           mesPar.q1     = propNameSmeared[i];
           mesPar.q2     = propNameSmeared[j];
