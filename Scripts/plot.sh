@@ -20,6 +20,7 @@ RefVal=${ref:--777}
 do_log=${log:-0}
 SaveFile=${SaveFile:-0}
 SaveFileName="$SaveFileName"
+do_offset=${offset:-0.05}
 
 # Which field names do we plot?
 f = 1
@@ -101,8 +102,17 @@ if( SaveFile != 2 ) {
 
 if( do_log ) { set logscale y }
 
-plot for [File in "$PlotFile"] for [fld in FieldNames] for [f=fb_min:fb_max] \
-    File using (column(1) == 0 ? 0 : f==0 ? column(1) : nt - column(1)):(column(fld)):(column(fld."_low")):(column(fld."_high")) with yerrorbars title ( SaveFile == 2 ? File." " : "").fb_prefix[f+1].fld
+PlotFile="$PlotFile"
+
+# Work out how much to offset each series by
+NumFiles=words(PlotFile)
+NumFields=words(FieldNames)
+NumFB=fb_max - fb_min + 1
+XF1=do_offset
+XF2=(1 - NumFields*NumFB*NumFiles)/2*XF1
+
+plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] \
+    word(PlotFile,File) using ((column(1) == 0 ? 0 : f==0 ? column(1) : nt - column(1))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2):(column(word(FieldNames,fld))):(column(word(FieldNames,fld)."_low")):(column(word(FieldNames,fld)."_high")) with yerrorbars title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)
 
 EOFMark
 }
@@ -119,6 +129,7 @@ then
   echo "ref    y-value for reference line"
   echo "log    1 to plot y on log scale"
   echo "title  Title for the plot"
+  echo "offset X-axis offset between series, 0 to disable (default: 0.05)"
   echo "save   \"1\" to save plots to auto-generated filenames, otherwise name of pdf"
   echo "nt     Plot backward propagating wave as well (or backward only if nt<0)"
   exit 2

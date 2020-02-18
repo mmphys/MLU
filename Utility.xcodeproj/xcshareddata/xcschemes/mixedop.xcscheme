@@ -57,6 +57,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-e-1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "$(HOME)/data/Study1/C1/Z2/fit/original_corr/h1_l_p_0_0_0.corr_9_19.g5_gT5.model.4147798751.h5"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -94,7 +98,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rep"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

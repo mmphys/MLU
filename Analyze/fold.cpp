@@ -154,8 +154,7 @@ int main(int argc, const char *argv[])
           else
           {
             std::vector<std::string> OpNames;
-            std::string GroupName;
-            SC in{ FileName, GroupName, pIndent, &OpNames };
+            SC in{ FileName, pIndent, &OpNames };
             const int Nt{ in.Nt() };
             const int NumSamples{ in.NumSamples() };
             if( f.Conjugate )
@@ -174,10 +173,14 @@ int main(int argc, const char *argv[])
               ConjFileName.append( in.Name_.SeedString );
               ConjFileName.append( Common::Period );
               ConjFileName.append( in.Name_.Ext );
-              SC in2{ ConjFileName, GroupName, "+ " };
+              SC in2{ ConjFileName, "+ " };
               if( in2.NumSamples() != NumSamples || in2.Nt() != Nt )
                 throw std::runtime_error( "Incompatible boostrap samples:\n  "
                                          + FileName + "\n+ " + ConjFileName );
+              if( in2.Seed_ != in.Seed_ )
+                throw std::runtime_error( "Seed " + std::to_string( in2.Seed_ ) + " doesn't match " + std::to_string( in2.Seed_ ) );
+              if( !Common::EqualIgnoreCase( in2.SeedMachine_, in.SeedMachine_ ) )
+                throw std::runtime_error( "Machine " + in2.SeedMachine_ + " doesn't match " + in.SeedMachine_ );
               std::complex<scalar> * dst{ in[SC::idxCentral] };
               const std::complex<scalar> * src{ in2[SC::idxCentral] };
               for( int s = SC::idxCentral; s < NumSamples; s++ )
@@ -217,6 +220,9 @@ int main(int argc, const char *argv[])
               }
               src += SC::scalar_count * Nt;
             }
+            out.Seed_ = in.Seed_;
+            out.SeedMachine_ = in.SeedMachine_;
+            out.MakeCorrSummary( nullptr );
             // Now save the folded correlator
             std::string OutFileName{ outPrefix };
             OutFileName.append( in.Name_.Base );

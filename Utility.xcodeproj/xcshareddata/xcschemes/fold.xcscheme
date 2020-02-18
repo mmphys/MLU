@@ -53,12 +53,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i Z2/bootstrap/ -o Z2/fold/test/"
-            isEnabled = "NO">
+            argument = "-i Z2/bootstrap/test/ -o Z2/fold/test/"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i GFWall/bootstrap/ -o GFWall/fold/test/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*g5_g5*h5,per *gT5_gT5*h5,per"
@@ -66,11 +66,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*g5_gT5*h5,norc"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*g5_gT5*h5,nor *gT5_g5*h5,nor"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

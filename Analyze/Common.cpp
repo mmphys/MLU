@@ -59,6 +59,12 @@ const std::string sNumFiles{ "NumFiles" };
 const std::string sFactorised{ "Factorised" };
 const std::string sCovarFrozen{ "CovarFrozen" };
 const std::string sOperators{ "Operators" };
+const std::string sAuxNames{ "AuxNames" };
+const std::string sSummaryNames{ "SummaryNames" };
+const std::string sColumnNames{ "ColumnNames" };
+const std::string sSeed{ "Seed" };
+const std::string sSeedMachine{ "SeedMachine" };
+const std::vector<std::string> sCorrSummaryNames{ "corr", "bias", "exp", "cosh" };
 const double NaN{ std::nan( "" ) };
 
 namespace Gamma
@@ -267,6 +273,17 @@ bool FileExists( const std::string& Filename )
 {
   struct stat buf;
   return stat(Filename.c_str(), &buf) != -1;
+}
+
+// Wrapper for posix gethostname()
+std::string GetHostName()
+{
+  char Buffer[256];
+  const int BufLen{ sizeof( Buffer ) - 1 };
+  if( gethostname( Buffer, BufLen ) )
+    throw std::runtime_error( "gethostname() returned error " + std::to_string( errno ) );
+  Buffer[BufLen] = 0;
+  return std::string( Buffer );
 }
 
 // Sort the list of values, then extract the lower and upper 68th percentile error bars
@@ -515,17 +532,21 @@ const ::H5::CompType  H5::Equiv<std::complex<double>>     ::Type{ MakeComplex<do
 const ::H5::CompType  H5::Equiv<std::complex<long double>>::Type{ MakeComplex<long double>() };
 
 // Open the specified HDF5File and group
-void H5::OpenFileGroup(::H5::H5File &f, ::H5::Group &g, const std::string &FileName, std::string &GroupName, const char *PrintPrefix, unsigned int flags )
+void H5::OpenFileGroup(::H5::H5File &f, ::H5::Group &g, const std::string &FileName, const char *PrintPrefix,
+                       std::string * pGroupName, unsigned int flags)
 {
-  const bool bFindGroupName{ GroupName.empty() };
+  const bool bFindGroupName{ !pGroupName || pGroupName->empty() };
+  std::string localGroupName;
+  if( !pGroupName )
+    pGroupName = &localGroupName;
   f.openFile( FileName, flags );
-  g = f.openGroup( bFindGroupName ? std::string("/") : GroupName );
+  g = f.openGroup( bFindGroupName ? std::string("/") : *pGroupName );
   if( bFindGroupName ) {
-    GroupName = GetFirstGroupName( g );
-    g = g.openGroup( GroupName );
+    *pGroupName = GetFirstGroupName( g );
+    g = g.openGroup( *pGroupName );
   }
   if( PrintPrefix )
-    std::cout << PrintPrefix << FileName << " (" << GroupName << ")\n";
+    std::cout << PrintPrefix << FileName << " (" << *pGroupName << ")\n";
 }
 
 // Get first groupname from specified group
@@ -688,12 +709,12 @@ std::istream& operator>>(std::istream& is, Sign &sign)
 
 // Read an array (real or complex) from an HDF5 file
 template<typename T>
-void ReadArray(std::vector<T> &buffer, const std::string &FileName,
-               std::string &GroupName, const std::string &ObjectName )
+void ReadArray(std::vector<T> &buffer, const std::string &FileName, const std::string &ObjectName,
+               const char *PrintPrefix, std::string * pGroupName )
 {
   ::H5::H5File f;
   ::H5::Group  g;
-  H5::OpenFileGroup( f, g, FileName, GroupName );
+  H5::OpenFileGroup( f, g, FileName, PrintPrefix, pGroupName );
   ::H5::DataSet ds = g.openDataSet(ObjectName);
   ::H5::DataSpace dsp = ds.getSpace();
   const int nDims{dsp.getSimpleExtentNdims()};

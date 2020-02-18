@@ -81,9 +81,8 @@ int main(int argc, const char *argv[])
           std::cout << "Error: " << Filename << " doesn't exist" << std::endl;
         else
         {
-          std::string GroupName;
           std::vector<Common::Gamma::Algebra> ThisAlg{ Alg };
-          Common::CorrelatorFileC InFile( Filename, GroupName, ThisAlg );
+          Common::CorrelatorFileC InFile( Filename, ThisAlg, nullptr, "Summarising " );
           InFile.WriteSummary(outStem, ThisAlg );
           Count++;
         }

@@ -78,6 +78,7 @@ struct SinkSource
 struct Parameters
 {
   int NumSamples;
+  int Exponent;
   bool bSaveCorr;
   bool bAllReplicas;
   std::string InBase;
@@ -87,7 +88,7 @@ struct Parameters
 
 void MixingAngle( const Model &model, const std::array<SinkSource, ModelNumIndices> &ss,
                   const std::array<std::array<Fold, NumMixed>, NumMixed> &Corr, Sample &CorrMixed,
-                  int degrees, bool bAllReplicas )
+                  int degrees, bool bAllReplicas, int Exponent )
 {
   const int NumParams{ model.Nt() };
   const int NumSamples{ CorrMixed.NumSamples() };
@@ -122,7 +123,7 @@ void MixingAngle( const Model &model, const std::array<SinkSource, ModelNumIndic
   const double cos_sq_theta{ costheta * costheta };
   const double sin_sq_theta{ sintheta * sintheta };
   const double cos_sin_theta{ costheta * sintheta };
-  const double * pCoeff{ model[Model::idxCentral] + ( model.NumExponents + model.OpNames.size() ) };
+  const double * pCoeff{ model[Model::idxCentral] + model.NumExponents + Exponent * model.OpNames.size() };
   const double * pPP{ Corr[idxg5 ][idxg5 ][Sample::idxCentral] };
   const double * pAP{ Corr[idxgT5][idxg5 ][Sample::idxCentral] };
   const double * pPA{ nullptr };
@@ -198,14 +199,16 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
 {
   // Load Model
   Model model;
-  std::string GroupName;
-  model.Read( ModelFile, GroupName, "Read model " );
+  model.Read( ModelFile, "Read model " );
 
   // Validate the model
   std::array<SinkSource, ModelNumIndices> idxOp;
   ValidateModelOps( model, idxOp );
   if( model.NumExponents < 2 )
     throw std::runtime_error( "NumExponents=" + std::to_string( model.NumExponents ) + ", at least 2 required" );
+  const int Exponent{ Par.Exponent >= 0 ? Par.Exponent : Par.Exponent + model.NumExponents };
+  if( Exponent < 0 || Exponent >= model.NumExponents )
+    throw std::runtime_error( "NumExponents=" + std::to_string( model.NumExponents ) + ", excited state " + std::to_string( Par.Exponent ) + " not available for model" );
   const int FileOps{ static_cast<int>( model.OpNames.size() ) };
   {
     const int NtExpected{ model.NumExponents * ( FileOps + 1 ) + 1 };
@@ -268,8 +271,7 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
           InFileName.append( Common::Gamma::NameShort(opTraits[iSnk].Alg,Common::Underscore.c_str()) );
           InFileName = Common::MakeFilename( InFileName, Common::sFold, model.Name_.Seed, DEF_FMT );
         }
-        std::string GroupName;
-        Corr[iSnk][iSrc].Read( InFileName, GroupName, "    " );
+        Corr[iSnk][iSrc].Read( InFileName, "    " );
         if( iSnk == 0 && iSrc == 0 )
           Nt = Corr[iSnk][iSrc].Nt();
         else
@@ -293,11 +295,12 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
         std::cout.flush();
       }
       CorrMixed.resize( NumSamples, Nt );
-      MixingAngle( model, idxOp, Corr, CorrMixed, degrees, Par.bAllReplicas );
+      MixingAngle( model, idxOp, Corr, CorrMixed, degrees, Par.bAllReplicas, Exponent );
       Out.resize( OutLen );
       Out.append( std::to_string( degrees ) );
       if( Par.bSaveCorr )
         CorrMixed.Write( Common::MakeFilename(Out, Common::sBootstrap, model.Name_.Seed, DEF_FMT));
+      CorrMixed.MakeCorrSummary( nullptr );
       CorrMixed.WriteSummary(Common::MakeFilename(Out,Common::sBootstrap,model.Name_.Seed,TEXT_EXT));
     }
     std::cout << NewLine;
@@ -318,6 +321,7 @@ int main( int argc, const char *argv[] )
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"n", CL::SwitchType::Single, "0"},
+      {"e", CL::SwitchType::Single, "0"},
       {"rep", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -330,6 +334,7 @@ int main( int argc, const char *argv[] )
       Par.InBase = Common::AppendSlash( cl.SwitchValue<std::string>("i") );
       Par.OutBase = Common::AppendSlash( cl.SwitchValue<std::string>("o") );
       Par.NumSamples = cl.SwitchValue<int>("n");
+      Par.Exponent = cl.SwitchValue<int>("e");
       Par.bAllReplicas = cl.GotSwitch("rep");
       Par.bSaveCorr = cl.GotSwitch("savecorr");
       Par.Momenta = Common::ArrayFromString<Common::Momentum>( cl.SwitchValue<std::string>("p") );
@@ -357,6 +362,7 @@ int main( int argc, const char *argv[] )
     "-i     Input path for folded bootstrap replicas\n"
     "-o     Output path\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
+    "-e     Which excited state to use in model (default 0), -ve counts from highest state"
     "Flags:\n"
     "--rep      Use per replica values of overlap constants in construction of model\n"
     "--savecorr Save bootstrap replicas of correlators\n"

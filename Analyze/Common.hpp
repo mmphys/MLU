@@ -48,6 +48,7 @@
 
 // posix
 #include <glob.h>
+#include <unistd.h>
 
 // HDF5 Library
 #include <H5Cpp.h>
@@ -155,6 +156,13 @@ extern const std::string sNumFiles;
 extern const std::string sFactorised;
 extern const std::string sCovarFrozen;
 extern const std::string sOperators;
+extern const std::string sAuxNames;
+extern const std::string sSummaryNames;
+extern const std::string sColumnNames;
+extern const std::string sSeed;
+extern const std::string sSeedMachine;
+
+extern const std::vector<std::string> sCorrSummaryNames;
 
 using SeedType = unsigned int;
 
@@ -249,6 +257,9 @@ std::vector<std::string> glob( const Iter &first, const Iter &last, const char *
   globfree(&globBuf);
   return Filenames;
 }
+
+// Wrapper for posix gethostname()
+std::string GetHostName();
 
 extern const double NaN;
 
@@ -436,8 +447,13 @@ namespace H5 {
   template<> struct Equiv<std::complex<double>>{ static const ::H5::CompType Type; };
   template<> struct Equiv<std::complex<long double>>{ static const ::H5::CompType Type; };
 
-  // Open the specified HDF5File and group
-  void OpenFileGroup(::H5::H5File &f, ::H5::Group &g, const std::string &FileName, std::string &GroupName, const char *PrintPrefix = nullptr, unsigned int flags = H5F_ACC_RDONLY );
+  /**
+   Open the specified HDF5File
+   Read from the specified group name (if pGroupName is non-null and *pGroupName not empty)
+   Otherwise read from the first group in the file, returning the group name if pGroupName not null
+   */
+  void OpenFileGroup(::H5::H5File &f, ::H5::Group &g, const std::string &FileName, const char *PrintPrefix = nullptr,
+                     std::string * pGroupName = nullptr, unsigned int flags = H5F_ACC_RDONLY);
 
   // Get first groupname from specified group
   std::string GetFirstGroupName( ::H5::Group & g );
@@ -570,19 +586,12 @@ CopyBuffer( const TSrc * Begin, const TSrc * End, TDst * Dst, Signal s = Signal:
 }
 */
 
-// Make a summary of the data
-// Assume there is a central replica followed by nSample copies (i.e. nSample + 1 total)
-
 template <typename T>
-void SummaryHelper( const std::string & sOutFileName, const T * pData, const int nt,
-                    const int nSample = 0, const char * pszHeaderComments = nullptr,
-                    bool bFolded = false )
+void SummaryHeader( std::ostream &s, const std::string & sOutFileName, const char * pszHeaderComments )
 {
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
-  using namespace CorrSumm;
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
-  std::ofstream s( sOutFileName );
   if( !s )
     throw std::runtime_error( "Unable to create " + sOutFileName );
   s << "# File " << sOutFileName << NewLine
@@ -620,6 +629,21 @@ void SummaryHelper( const std::string & sOutFileName, const T * pData, const int
   }
   if( psz ) s << "# Representation: " << psz << NewLine;
   if( pszHeaderComments ) s << pszHeaderComments;
+}
+
+// Make a summary of the data
+// Assume there is a central replica followed by nSample copies (i.e. nSample + 1 total)
+
+template <typename T>
+void SummaryHelper( const std::string & sOutFileName, const T * pData, const int nt,
+                    const int nSample = 0, const char * pszHeaderComments = nullptr,
+                    bool bFolded = false )
+{
+  using Traits = SampleTraits<T>;
+  using scalar_type = typename Traits::scalar_type;
+  using namespace CorrSumm;
+  std::ofstream s( sOutFileName );
+  SummaryHeader<T>( s, sOutFileName, pszHeaderComments );
   // Now write all the field names
   s << "t";
   for( int i = 0; i < Traits::scalar_count; i++ ) // real or imaginary
@@ -773,8 +797,8 @@ public:
         m_pData.reset( new T[ static_cast<std::size_t>( NumOps * NumOps ) * Nt ] );
     }
   }
-  void Read ( const std::string &FileName, std::string &GroupName, std::vector<Gamma::Algebra> &Alg,
-             const int * pTimeslice = nullptr, const char * PrintPrefix = nullptr );
+  void Read (const std::string &FileName, std::vector<Gamma::Algebra> &Alg, const int * pTimeslice = nullptr,
+             const char * PrintPrefix = nullptr, std::string *pGroupName = nullptr);
   //void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void WriteSummary(const std::string &Prefix, const std::vector<Common::Gamma::Algebra> &AlgSpecific);
   T * operator[]( int Sample )
@@ -796,9 +820,9 @@ public:
   // Constructors (copy operations missing for now - add them if they become needed)
   CorrelatorFile() {}
   CorrelatorFile( CorrelatorFile && ) = default; // Move constructor
-  CorrelatorFile(const std::string &FileName, std::string &GroupName, std::vector<Gamma::Algebra> &Alg,
-                 int * pTimeslice = nullptr )
-  { Read( FileName, GroupName, Alg, pTimeslice ); }
+  CorrelatorFile(const std::string &FileName, std::vector<Gamma::Algebra> &Alg, const int * pTimeslice = nullptr,
+                 const char * PrintPrefix = nullptr, std::string *pGroupName = nullptr)
+  { Read( FileName, Alg, pTimeslice, PrintPrefix, pGroupName ); }
   // Operators
   CorrelatorFile& operator=(CorrelatorFile && r) = default; // Move assignment
 };
@@ -808,9 +832,8 @@ using CorrelatorFileD = CorrelatorFile<double>;
 
 // Read from file. If GroupName empty, read from first group and return name in GroupName
 template <typename T>
-void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupName,
-                              std::vector<Gamma::Algebra> &Alg, const int * pTimeslice,
-                              const char * PrintPrefix )
+void CorrelatorFile<T>::Read( const std::string &FileName, std::vector<Gamma::Algebra> &Alg, const int * pTimeslice,
+                              const char * PrintPrefix, std::string *pGroupName )
 {
   // Parse the name. Not expecting a type, so if present, put it back on the end of Base
   Name_.Parse( FileName );
@@ -835,7 +858,10 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
   // Now load the file
   ::H5::H5File f;
   ::H5::Group  g;
-  H5::OpenFileGroup( f, g, FileName, GroupName, PrintPrefix );
+  std::string localGroupName;
+  if( !pGroupName )
+    pGroupName = &localGroupName;
+  H5::OpenFileGroup( f, g, FileName, PrintPrefix, pGroupName );
   bool bOK = false;
   H5E_auto2_t h5at;
   void      * f5at_p;
@@ -886,7 +912,7 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::string &GroupNam
         for( unsigned short i = 0; bOK && i < NumVec; i++ )
         {
           bOK = false;
-          ::H5::Group gi = g.openGroup( GroupName + "_" + std::to_string( i ) );
+          ::H5::Group gi = g.openGroup( *pGroupName + "_" + std::to_string( i ) );
           ::H5::DataSet ds = gi.openDataSet( "corr" );
           ::H5::DataSpace dsp = ds.getSpace();
           int nDims{ dsp.getSimpleExtentNdims() };
@@ -999,59 +1025,114 @@ void CorrelatorFile<T>::WriteSummary( const std::string &Prefix, const std::vect
   }
 }
 
-// This is for a sample of correlators. There is a central replica, specified aux replicas and variable number of samples
+/**
+ This is for a sample of anything, but usually a sample of correlators.
+ There is always a central replica (specified by user, not calculated as average) in addition to NumSamples copies
+ If AuxNames are specified, then there are 3 * AuxNames.count() auxiliarry records (value, low and high)
+ Fields are in memory in reverse order, so that index -1 is always the central value
+*/
 
-template <typename T, int NumAuxSamples_ = 0>
+template <typename T>
 class Sample
 {
-protected:
-  int NumSamples_;
-  int Nt_;
-  std::unique_ptr<T[]> m_pData;
 public:
-  FileNameAtt Name_;
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
   static constexpr bool is_complex { Traits::is_complex };
   static constexpr int scalar_count { Traits::scalar_count };
-  static constexpr int NumAuxSamples{ NumAuxSamples_ };
-  static constexpr int NumExtraSamples{ NumAuxSamples + 1 }; // Auxiliary samples + central replica
   static constexpr int idxCentral{ -1 };
-  static constexpr int idxAux{ idxCentral - NumAuxSamples };
+protected:
+  int NumSamples_;
+  int Nt_;
+  std::unique_ptr<T[]> m_pData;
+  std::vector<std::string> AuxNames;
+  int NumExtraSamples; // Same length as AuxNames, but minimum of 1 for central replica
+  std::vector<std::string> SummaryNames;
+  std::unique_ptr<scalar_type[]> m_pSummaryData;
+  std::vector<std::string> ColumnNames;
+  inline void AllocSummaryBuffer( std::size_t NewSize )
+  {
+    NewSize *= ( is_complex ? 2 : 1 ) * 4;
+    const std::size_t OldSize{ SummaryNames.size() * Nt_ * ( is_complex ? 2 : 1 ) * 3 };
+    if( NewSize != OldSize )
+    {
+      if( NewSize )
+        m_pSummaryData.reset( new scalar_type[ NewSize ] );
+      else
+        m_pSummaryData.reset( nullptr );
+    }
+  }
+public:
+  FileNameAtt Name_;
+  SeedType Seed_ = 0; // This is only ever set by the bootstrap code
+  std::string SeedMachine_; // name of the machine that ran the bootstrap
   inline int NumSamples() const { return NumSamples_; }
   inline int Nt() const { return Nt_; }
-  void resize( int NumSamples, int Nt )
+  void SetSummaryNames( const std::vector<std::string> &summaryNames_ )
   {
-    if( NumSamples_ != NumSamples || Nt_ != Nt )
+    AllocSummaryBuffer( summaryNames_.size() * Nt_ );
+    SummaryNames = summaryNames_;
+    if( is_complex )
+      for( const std::string & s : summaryNames_ )
+        SummaryNames.push_back( s + "_im" );
+  }
+  void SetColumnNames( const std::vector<std::string> &columnNames_ )
+  {
+    if( columnNames_.size() != Nt_ )
+      throw std::runtime_error( "There should be names for " + std::to_string( Nt_ ) + " columns" );
+    ColumnNames = columnNames_;
+  }
+  void resize( int NumSamples, int Nt, std::vector<std::string> * pAuxNames = nullptr )
+  {
+    const int NewNumExtraSamples{ static_cast<int>( pAuxNames && pAuxNames->size() ? pAuxNames->size() : 1 ) };
+    if( Nt_ != Nt )
+    {
+      AllocSummaryBuffer( SummaryNames.size() * Nt );
+      ColumnNames.clear();
+    }
+    if( NumSamples_ != NumSamples || Nt_ != Nt || NumExtraSamples != NewNumExtraSamples )
     {
       NumSamples_ = NumSamples;
       Nt_ = Nt;
+      NumExtraSamples = NewNumExtraSamples;
       if( Nt == 0 )
         m_pData.reset( nullptr );
       else
         m_pData.reset( new T[ static_cast<std::size_t>( NumSamples + NumExtraSamples ) * Nt ] );
     }
+    if( pAuxNames )
+      AuxNames = * pAuxNames;
+    else
+      AuxNames.clear();
   }
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
-  Sample<T, NumAuxSamples_> Bootstrap( int NumBootSamples, SeedType Seed );
-  void Read ( const std::string &FileName, std::string &GroupName,
-              const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr );
+  Sample<T> Bootstrap( int NumBootSamples, SeedType Seed, std::vector<std::string> * pAuxNames = nullptr );
+  void Read (const std::string &FileName, const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr,
+             std::string * pGroupName = nullptr );
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
+  void MakeCorrSummary( const char * pAvgName );
   void WriteSummary( const std::string &sOutFileName );
-  explicit Sample( int NumSamples = 0, int Nt = 0 ) : NumSamples_{0}, Nt_{0} { resize( NumSamples, Nt ); }
-  Sample( const std::string &FileName, std::string &GroupName,
-          const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr )
-      : NumSamples_{0}, Nt_{0} { Read( FileName, GroupName, PrintPrefix, pOpNames ); }
-  T * operator[]( int Sample )
+  explicit Sample(int NumSamples = 0, int Nt = 0, std::vector<std::string> * pAuxNames = nullptr,
+                  std::vector<std::string> * pSummaryNames = nullptr)
+    : NumSamples_{0}, Nt_{0}, NumExtraSamples{0}
   {
-    if( Sample < idxAux || Sample > NumSamples_ )
+    resize( NumSamples, Nt, pAuxNames );
+    if( pSummaryNames )
+      SetSummaryNames( *pSummaryNames );
+  }
+  Sample(const std::string &FileName, const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr,
+         std::string * pGroupName = nullptr)
+      : NumSamples_{0}, Nt_{0}, NumExtraSamples{0} { Read( FileName, PrintPrefix, pOpNames, pGroupName ); }
+  inline T * operator[]( int Sample )
+  {
+    if( Sample < -NumExtraSamples || Sample > NumSamples_ )
       throw std::out_of_range( "Sample " + std::to_string( Sample ) );
     return & m_pData[static_cast<std::size_t>( Sample + NumExtraSamples ) * Nt_];
   }
-  const T * operator[]( int Sample ) const
+  inline const T * operator[]( int Sample ) const
   {
-    if( Sample < idxAux || Sample > NumSamples_ )
+    if( Sample < -NumExtraSamples || Sample > NumSamples_ )
       throw std::out_of_range( "Sample " + std::to_string( Sample ) );
     return & m_pData[static_cast<std::size_t>( Sample + NumExtraSamples ) * Nt_];
   }
@@ -1103,27 +1184,36 @@ public: // Override these for specialisations
   virtual const std::string & DefaultGroupName() { return sBootstrap; }
   virtual bool bFolded() { return false; }
   // Descendants should call base first
-  virtual void SummaryComments( std::ostringstream & s ) {}
+  virtual void SummaryComments( std::ostringstream & s )
+  {
+    if( Seed_ ) s << "# Seed: " << Seed_ << NewLine;
+    else if( !Name_.SeedString.empty() ) s << "# Seed: " << Name_.SeedString << NewLine;
+    if( !SeedMachine_.empty() ) s << "# Seed machine: " << SeedMachine_ << NewLine;
+  }
   virtual void ReadAttributes( ::H5::Group &g ) {}
   virtual void ValidateAttributes() {} // Called once data read to validate attributes against data
-  virtual void WriteAttributes( ::H5::Group &g ) {}
+  virtual int WriteAttributes( ::H5::Group &g ) { return 0; }
 };
 
 using SampleC = Sample<std::complex<double>>;
 using SampleD = Sample<double>;
 
-// Perform bootstrap
-template <typename T, int NumAuxSamples_>
-Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumBootSamples, SeedType Seed )
+/**
+ Perform bootstrap
+ Compute the mean on this sample, saving this as the centra value
+ Returned sample has specified extra fields ... but only the central value is copied from original
+ */
+template <typename T>
+Sample<T> Sample<T>::Bootstrap( int NumBootSamples, SeedType Seed, std::vector<std::string> * pAuxNames )
 {
   using fint = std::uint_fast32_t;
   std::mt19937                        engine( Seed );
   std::uniform_int_distribution<fint> random( 0, NumSamples_ - 1 );
-  Sample<T, NumAuxSamples_>           boot( NumBootSamples, Nt_ );
+  Sample<T> boot( NumBootSamples, Nt_, pAuxNames ? pAuxNames : &AuxNames );
 
   // Compute the mean, then copy all the extra info to the bootstrap I will return
   MakeMean();
-  std::copy( (*this)[idxAux], (*this)[0], boot[idxAux] );
+  std::copy( (*this)[idxCentral], (*this)[0], boot[idxCentral] );
 
   // Now make the bootstrap replicas
   T * dst{ boot[0] };
@@ -1142,22 +1232,125 @@ Sample<T, NumAuxSamples_> Sample<T, NumAuxSamples_>::Bootstrap( int NumBootSampl
     for( int t = 0; t < Nt_; t++)
       dst[t] /= NumSamples_;
   }
+  boot.Seed_ = Seed;
+  boot.SeedMachine_ = GetHostName();
   return boot;
 }
 
-template <typename T, int NumAuxSamples_>
-void Sample<T, NumAuxSamples_>::WriteSummary( const std::string &sOutFileName )
+template <typename T>
+void Sample<T>::WriteSummary( const std::string &sOutFileName )
 {
   using namespace CorrSumm;
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
-  std::ostringstream s;
-  SummaryComments( s );
-  SummaryHelper( sOutFileName, (*this)[idxCentral], Nt_, NumSamples_, s.str().c_str(), bFolded() );
+  if( SummaryNames.empty() )
+    throw std::runtime_error( "Summaries can't be written because they've not been created" );
+  std::ostringstream ss;
+  SummaryComments( ss );
+  //SummaryHelper( sOutFileName, (*this)[idxCentral], Nt_, NumSamples_, ss.str().c_str(), bFolded() );
+  std::ofstream s( sOutFileName );
+  SummaryHeader<T>( s, sOutFileName, ss.str().c_str() );
+  // Now write all the field names
+  const std::string Sep{ " " };
+  s << "t";
+  for( const std::string &n : SummaryNames )
+    s << Sep << n << Sep << n << "_low " << n << "_high " << n << "_check";
+  s << NewLine;
+  for( int t = 0; t < Nt_; t++ )
+  {
+    s << t;
+    const scalar_type * p{ m_pSummaryData.get() + t };
+    for( std::size_t f = 0; f < SummaryNames.size(); f++, p += 4 * Nt_ )
+      s << Sep << *p << Sep << p[Nt_] << Sep << p[Nt_*2] << Sep << p[Nt_*3];
+    s << NewLine;
+  }
+}
+
+// Make a summary of the data
+// If a name is specified, simply save the central replica
+// Otherwise, calculate exp and cosh mass as well
+
+template <typename T>
+void Sample<T>::MakeCorrSummary( const char * pAvgName )
+{
+  assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
+  // Now perform summaries
+  const int NumFields{ pAvgName ? 2 : static_cast<int>( sCorrSummaryNames.size() ) };
+  if( pAvgName )
+  {
+    std::string s1{ pAvgName };
+    std::string s2{ "bias" };
+    std::vector<std::string> v{ s1, s2 };
+    SetSummaryNames( v );
+  }
+  else
+    SetSummaryNames( sCorrSummaryNames );
+  const int tMid{ bFolded() ? Nt_ : Nt_ / 2 };
+  std::vector<scalar_type> Data( NumSamples_ );
+  scalar_type * pDest = m_pSummaryData.get();
+  for( int i = 0; i < Traits::scalar_count; i++ ) // real or imaginary
+  {
+    for(int f = 0; f < NumFields; f++, pDest += 3 * Nt_) // each field
+    {
+      for(int t = 0; t < Nt_; t++, pDest++ )
+      {
+        if( f != 1 )
+        {
+          // Index of previous and next timeslice relative to current timeslice
+          const int Next{ ( t == Nt_ - 1 ? 1 - Nt_ :  1 ) * scalar_count };
+          const int Prev{ ( t == 0       ? Nt_ - 1 : -1 ) * scalar_count };
+          const scalar_type * p = Traits::ScalarPtr( (*this)[idxCentral] ) + t * scalar_count + i;
+          int Count = 0;
+          for(int n = idxCentral; n < NumSamples_; n++, p += Nt_ * scalar_count )
+          {
+            scalar_type d;
+            switch( f )
+            {
+              case 0: // central value
+                d = * p;
+                break;
+              case 2: // exponential mass
+                if( t == 0 )
+                  d = NaN;
+                else if( t <= tMid )
+                  d = std::log( p[Prev] / *p );
+                else
+                  d = -std::log( *p / p[Next] );
+                break;
+              case 3: // cosh mass
+                d = std::acosh( ( p[Prev] + p[Next] ) / ( *p * 2 ) );
+                break;
+              default:
+                d = 0;
+            }
+            if( n == idxCentral )
+              *pDest = d;
+            else if( std::isfinite( d ) )
+              Data[Count++] = d;
+          }
+          Common::ValWithEr v( *pDest, Data, Count );
+          pDest[Nt_    ] = v.ErLow;
+          pDest[Nt_ * 2] = v.ErHigh;
+          pDest[Nt_ * 3] = static_cast<scalar_type>( Count ) / NumSamples_;
+          if( f == 0 )
+          {
+            scalar_type d = 0;
+            for( int i = 0; i < Count; i++ )
+              d += Data[i];
+            d /= Count;
+            pDest[Nt_ * 4] = d;
+            pDest[Nt_ * 5] = pDest[Nt_ * 1];
+            pDest[Nt_ * 6] = pDest[Nt_ * 2];
+            pDest[Nt_ * 7] = pDest[Nt_ * 3];
+          }
+        }
+      }
+    }
+  }
 }
 
 // Read from file. If GroupName empty, read from first group and return name in GroupName
-template <typename T, int NumAuxSamples_>
-void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &GroupName, const char *PrintPrefix, std::vector<std::string> * pOpNames )
+template <typename T>
+void Sample<T>::Read(const std::string &FileName, const char *PrintPrefix, std::vector<std::string> * pOpNames, std::string *pGroupName)
 {
   Name_.Parse( FileName, pOpNames );
   if( !Name_.bSeedNum )
@@ -1166,7 +1359,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
     throw std::runtime_error( "Type missing from " + FileName );
   ::H5::H5File f;
   ::H5::Group  g;
-  H5::OpenFileGroup( f, g, FileName, GroupName, PrintPrefix );
+  H5::OpenFileGroup( f, g, FileName, PrintPrefix, pGroupName );
   bool bOK{ false };
   bool bFiniteError{ false };
   H5E_auto2_t h5at;
@@ -1218,7 +1411,7 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
           {
             bOK = true;
             // This format has no auxiliary rows - set them to zero
-            for( int j = idxAux; j < idxCentral; j++ )
+            for( int j = -NumExtraSamples; j < idxCentral; j++ )
             {
               p = (*this)[j];
               for( int t = 0; t < Nt_ ; t++ )
@@ -1243,25 +1436,89 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
       a = g.openAttribute("nAux");
       a.read( ::H5::PredType::NATIVE_USHORT, &att_nAux );
       a.close();
-      if( att_nAux == NumAuxSamples )
+      unsigned int att_nSample;
+      a = g.openAttribute("nSample");
+      a.read( ::H5::PredType::NATIVE_UINT, &att_nSample );
+      a.close();
+      Seed_ = 0;
+      try
       {
-        unsigned int att_nSample;
-        a = g.openAttribute("nSample");
-        a.read( ::H5::PredType::NATIVE_UINT, &att_nSample );
+        unsigned int tmp;
+        a = g.openAttribute( sSeed );
+        a.read( ::H5::PredType::NATIVE_UINT, &tmp );
         a.close();
+        Seed_ = tmp;
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+      }
+      SeedMachine_.clear();
+      try
+      {
+        // Auxiliary names should match the number of auxiliary records
+        a = g.openAttribute( sSeedMachine );
+        a.read( H5::Equiv<std::string>::Type, SeedMachine_ );
+        a.close();
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+      }
+      std::vector<std::string> myAuxNames;
+      try
+      {
+        // Auxiliary names should match the number of auxiliary records
+        a = g.openAttribute(sAuxNames);
+        myAuxNames = H5::ReadStrings( a );
+        a.close();
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+      }
+      std::vector<std::string> mySummaryNames;
+      try
+      {
+        // Auxiliary names should match the number of auxiliary records
+        a = g.openAttribute(sSummaryNames);
+        mySummaryNames = H5::ReadStrings( a );
+        a.close();
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+      }
+      std::vector<std::string> myColumnNames;
+      try
+      {
+        // Auxiliary names should match the number of auxiliary records
+        a = g.openAttribute(sColumnNames);
+        myColumnNames = H5::ReadStrings( a );
+        a.close();
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+      }
+      const unsigned short ExpectedNAux{ static_cast<unsigned short>( myAuxNames.size() ? myAuxNames.size() - 1 : 0 ) };
+      if( att_nAux == ExpectedNAux )
+      {
         ReadAttributes( g );
         ::H5::DataSet ds = g.openDataSet( "data_C" );
         ::H5::DataSpace dsp = ds.getSpace();
         int nDims{ dsp.getSimpleExtentNdims() };
-        if( nDims == 1 )
+        if( ( att_nAux == 0 && nDims == 1 ) || ( att_nAux != 0 && nDims == 2 ) )
         {
           hsize_t Dim[2];
           dsp.getSimpleExtentDims( Dim );
-          if( Dim[0] * att_nSample <= std::numeric_limits<int>::max() )
+          if( ( att_nAux == 0 && Dim[0] * ( att_nSample + 1 ) <= std::numeric_limits<int>::max() )
+           || ( att_nAux != 0 && Dim[0] == att_nAux + 1 && Dim[1] * ( att_nAux + 1 + att_nSample ) <= std::numeric_limits<int>::max() ) )
           {
-            resize( static_cast<int>( att_nSample ), static_cast<int>( Dim[0] ) );
-            const ::H5::DataType & myType{ H5::Equiv<T>::Type };
-            ds.read( (*this)[idxCentral], myType );
+            SummaryNames = mySummaryNames;
+            resize( static_cast<int>( att_nSample ), static_cast<int>( Dim[ att_nAux == 0 ? 0 : 1 ] ), &myAuxNames );
+            ColumnNames = myColumnNames;
+            ds.read( (*this)[-NumExtraSamples], H5::Equiv<T>::Type );
             dsp.close();
             ds.close();
             ds = g.openDataSet( "data_S" );
@@ -1272,26 +1529,25 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
               dsp.getSimpleExtentDims( Dim );
               if( Dim[0] == att_nSample && Dim[1] == static_cast<unsigned int>( Nt_ ) )
               {
-                ds.read( (*this)[0], myType );
-                if( NumAuxSamples == 0 )
+                ds.read( (*this)[0], H5::Equiv<T>::Type );
+                if( !IsFinite() )
+                  bFiniteError = true;
+                else if( SummaryNames.empty() )
                   bOK = true;
                 else
                 {
                   dsp.close();
                   ds.close();
-                  ds = g.openDataSet( "data_Aux" );
+                  ds = g.openDataSet( "Summary" );
                   dsp = ds.getSpace();
                   nDims = dsp.getSimpleExtentNdims();
                   if( nDims == 2 )
                   {
                     dsp.getSimpleExtentDims( Dim );
-                    if( Dim[0] == static_cast<unsigned int>( NumAuxSamples ) && Dim[1] == static_cast<unsigned int>( Nt_ ) )
+                    if( Dim[0] == SummaryNames.size() * 4 && Dim[1] == static_cast<unsigned int>(Nt_) )
                     {
-                      ds.read( (*this)[idxAux], myType );
-                      if( !IsFinite() )
-                        bFiniteError = true;
-                      else
-                        bOK = true;
+                      ds.read( m_pSummaryData.get(), H5::Equiv<scalar_type>::Type );
+                      bOK = true;
                     }
                   }
                 }
@@ -1316,56 +1572,84 @@ void Sample<T, NumAuxSamples_>::Read( const std::string &FileName, std::string &
     throw std::runtime_error( "Unable to read sample from " + FileName );
 }
 
-template <typename T, int NumAuxSamples_>
-void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char * pszGroupName )
+template <typename T>
+void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
 {
   const std::string GroupName{ pszGroupName == nullptr || *pszGroupName == 0 ? DefaultGroupName() : pszGroupName };
   bool bOK = false;
   try // to write in my format
   {
     ::H5::H5File f( FileName, H5F_ACC_TRUNC );
-    ::H5::Group  g = f.openGroup( "/" );
     hsize_t Dims[2];
     Dims[0] = 1;
     ::H5::DataSpace ds1( 1, Dims );
-    ::H5::Attribute a = g.createAttribute( "_Grid_dataset_threshold", ::H5::PredType::STD_U32LE, ds1);
-    int tmp{ 9 };
-    a.write( ::H5::PredType::NATIVE_INT, &tmp );
-    a.close();
-    g.close();
-    g = f.createGroup( GroupName );
-    a = g.createAttribute( "nAux", ::H5::PredType::STD_U16LE, ds1 );
-    tmp = NumAuxSamples;
+    ::H5::Group g = f.createGroup( GroupName );
+    ::H5::Attribute a = g.createAttribute( "nAux", ::H5::PredType::STD_U16LE, ds1 );
+    int tmp{ NumExtraSamples - 1 };
     a.write( ::H5::PredType::NATIVE_INT, &tmp );
     a.close();
     a = g.createAttribute( "nSample", ::H5::PredType::STD_U32LE, ds1 );
     a.write( ::H5::PredType::NATIVE_INT, &NumSamples_ );
     a.close();
-    ds1.close();
-    WriteAttributes( g );
-    Dims[0] = Nt_;
-    ds1 = ::H5::DataSpace( 1, Dims );
-    const ::H5::DataType & myType{ H5::Equiv<T>::Type };
-    ::H5::DataSet ds = g.createDataSet( "data_C", myType, ds1 );
-    ds.write( (*this)[idxCentral], myType );
+    if( Seed_ )
+    {
+      const unsigned int tmp{ Seed_ };
+      a = g.createAttribute( sSeed, sizeof( Seed_ ) == 4 ? ::H5::PredType::STD_U32LE : ::H5::PredType::STD_U64LE, ds1 );
+      a.write( ::H5::PredType::NATIVE_UINT, &tmp );
+      a.close();
+    }
+    if( !SeedMachine_.empty() )
+    {
+      a = g.createAttribute( sSeedMachine, H5::Equiv<std::string>::Type, ds1 );
+      a.write( H5::Equiv<std::string>::Type, SeedMachine_ );
+      a.close();
+    }
+    if( AuxNames.size() )
+      H5::WriteAttribute( g, sAuxNames, AuxNames );
+    if( SummaryNames.size() )
+      H5::WriteAttribute( g, sSummaryNames, SummaryNames );
+    if( ColumnNames.size() )
+      H5::WriteAttribute( g, sColumnNames, ColumnNames );
+    int NumAttributes = 10 + WriteAttributes( g );
+    ::H5::DataSpace dsp;
+    if( NumExtraSamples == 1 )
+    {
+      Dims[0] = Nt_;
+      dsp = ::H5::DataSpace( 1, Dims );
+    }
+    else
+    {
+      Dims[0] = NumExtraSamples;
+      Dims[1] = Nt_;
+      dsp = ::H5::DataSpace( 2, Dims );
+    }
+    ::H5::DataSet ds = g.createDataSet( "data_C", H5::Equiv<T>::Type, dsp );
+    ds.write( (*this)[-NumExtraSamples], H5::Equiv<T>::Type );
     ds.close();
-    ds1.close();
+    dsp.close();
     Dims[0] = NumSamples_;
     Dims[1] = Nt_;
-    ds1 = ::H5::DataSpace( 2, Dims );
-    ds = g.createDataSet( "data_S", myType, ds1 );
-    ds.write( (*this)[0], myType );
+    dsp = ::H5::DataSpace( 2, Dims );
+    ds = g.createDataSet( "data_S", H5::Equiv<T>::Type, dsp );
+    ds.write( (*this)[0], H5::Equiv<T>::Type );
     ds.close();
-    ds1.close();
-    if( NumAuxSamples )
+    dsp.close();
+    if( SummaryNames.size() )
     {
-      Dims[0] = NumAuxSamples;
-      ds1 = ::H5::DataSpace( 2, Dims );
-      ds = g.createDataSet( "data_Aux", myType, ds1 );
-      ds.write( (*this)[idxAux], myType );
+      Dims[0] = SummaryNames.size() * 4;
+      Dims[1] = Nt_;
+      dsp = ::H5::DataSpace( 2, Dims );
+      ds = g.createDataSet( "Summary", H5::Equiv<scalar_type>::Type, dsp );
+      ds.write( m_pSummaryData.get(), H5::Equiv<scalar_type>::Type );
       ds.close();
-      ds1.close();
+      dsp.close();
     }
+    g = f.openGroup( "/" );
+    a = g.createAttribute( "_Grid_dataset_threshold", ::H5::PredType::STD_U32LE, ds1);
+    a.write( ::H5::PredType::NATIVE_INT, &NumAttributes );
+    a.close();
+    ds1.close();
+    g.close();
     bOK = true;
   }
   catch(const ::H5::Exception &)
@@ -1376,8 +1660,8 @@ void Sample<T, NumAuxSamples_>::Write( const std::string &FileName, const char *
     throw std::runtime_error( "Unable to write sample to " + FileName + ", group " + GroupName );
 }
 
-template <typename T, int NumAuxSamples_ = 0>
-class Fold : public Sample<T, NumAuxSamples_>
+template <typename T>
+class Fold : public Sample<T>
 {
 public:
   int NtUnfolded = 0;
@@ -1386,7 +1670,7 @@ public:
   Sign sign = Sign::Unknown;
   bool t0Negated = false;
   bool Conjugated = false;
-  using Base = Sample<T, NumAuxSamples_>;
+  using Base = Sample<T>;
   using Base::Base;
   /*explicit Fold( int NumSamples = 0, int Nt = 0 ) : Base::Sample( NumSamples,  Nt ) {}
   Fold( const std::string &FileName, std::string &GroupName, const char *PrintPrefix = nullptr,
@@ -1424,8 +1708,7 @@ public:
     {
       a = g.openAttribute(sReality);
       std::string s{};
-      ::H5::StrType sType = a.getStrType();
-      a.read( sType, s );
+      a.read( H5::Equiv<std::string>::Type, s );
       a.close();
       if( EqualIgnoreCase( s, Reality_TextEquiv_Real ) )
         reality = Reality::Real;
@@ -1441,8 +1724,7 @@ public:
     {
       a = g.openAttribute(sParity);
       std::string s{};
-      ::H5::StrType sType = a.getStrType();
-      a.read( sType, s );
+      a.read( H5::Equiv<std::string>::Type, s );
       a.close();
       if( EqualIgnoreCase( s, Parity_TextEquiv_Even ) )
         parity = Parity::Even;
@@ -1458,8 +1740,7 @@ public:
     {
       a = g.openAttribute(sSign);
       std::string s{};
-      ::H5::StrType sType = a.getStrType();
-      a.read( sType, s );
+      a.read( H5::Equiv<std::string>::Type, s );
       a.close();
       if( EqualIgnoreCase( s, Sign_TextEquiv_Positive ) )
         sign = Sign::Positive;
@@ -1498,9 +1779,9 @@ public:
       ::H5::Exception::clearErrorStack();
     }
   }
-  virtual void WriteAttributes( ::H5::Group &g )
+  virtual int WriteAttributes( ::H5::Group &g )
   {
-    Sample<T, NumAuxSamples_>::WriteAttributes( g );
+    int iReturn = Sample<T>::WriteAttributes( g ) + 6;
     const hsize_t OneDimension{ 1 };
     ::H5::DataSpace ds1( 1, &OneDimension );
     ::H5::Attribute a;
@@ -1510,26 +1791,25 @@ public:
       a.write( ::H5::PredType::NATIVE_INT, &NtUnfolded );
       a.close();
     }
-    ::H5::StrType sType( ::H5::PredType::C_S1, H5T_VARIABLE );
     if( reality == Reality::Real || reality == Reality::Imag )
     {
       const std::string &s{reality==Reality::Real?Reality_TextEquiv_Real:Reality_TextEquiv_Imaginary};
-      a = g.createAttribute( sReality, sType, ds1 );
-      a.write( sType, s );
+      a = g.createAttribute( sReality, H5::Equiv<std::string>::Type, ds1 );
+      a.write( H5::Equiv<std::string>::Type, s );
       a.close();
     }
     if( parity == Parity::Even || parity == Parity::Odd )
     {
       const std::string &s{ parity == Parity::Even ? Parity_TextEquiv_Even : Parity_TextEquiv_Odd };
-      a = g.createAttribute( sParity, sType, ds1 );
-      a.write( sType, s );
+      a = g.createAttribute( sParity, H5::Equiv<std::string>::Type, ds1 );
+      a.write( H5::Equiv<std::string>::Type, s );
       a.close();
     }
     if( sign == Sign::Positive || sign == Sign::Negative )
     {
       const std::string &s{ sign == Sign::Positive ? Sign_TextEquiv_Positive : Sign_TextEquiv_Negative};
-      a = g.createAttribute( sSign, sType, ds1 );
-      a.write( sType, s );
+      a = g.createAttribute( sSign, H5::Equiv<std::string>::Type, ds1 );
+      a.write( H5::Equiv<std::string>::Type, s );
       a.close();
     }
     const std::int8_t i8{ 1 };
@@ -1545,11 +1825,12 @@ public:
       a.write( ::H5::PredType::NATIVE_INT8, &i8 );
       a.close();
     }
+    return iReturn;
   }
 };
 
-template <typename T, int NumAuxSamples_ = 0>
-class Model : public Sample<T, NumAuxSamples_>
+template <typename T>
+class Model : public Sample<T>
 {
 public:
   int NumExponents = 0;
@@ -1560,16 +1841,16 @@ public:
   bool Factorised = false;
   bool CovarFrozen = false;
   std::vector<std::string> OpNames;
-  using Base = Sample<T, NumAuxSamples_>;
+  using Base = Sample<T>;
   Model() : Base::Sample{} {}
   Model( std::vector<std::string> OpNames_, int NumExponents_, int NumFiles_, int ti_, int tf_,
          int dof_, bool Factorised_, bool CovarFrozen_, int NumSamples, int Nt )
   : Base::Sample{ NumSamples, Nt }, OpNames{ OpNames_ }, NumExponents{ NumExponents_ },
     NumFiles{ NumFiles_}, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Factorised{ Factorised_ }, CovarFrozen{ CovarFrozen_ } {}
   virtual const std::string & DefaultGroupName() { return sModel; }
-  void Read ( const std::string &FileName, std::string &GroupName, const char *PrintPrefix = nullptr )
+  void Read ( const std::string &FileName, const char *PrintPrefix = nullptr, std::string *pGroupName =nullptr )
   {
-    Base::Read( FileName, GroupName, PrintPrefix );
+    Base::Read( FileName, PrintPrefix, nullptr, pGroupName );
     Base::Name_.ParseExtra();
   }
   virtual void ReadAttributes( ::H5::Group &g )
@@ -1617,9 +1898,9 @@ public:
       throw std::runtime_error( s.str().c_str() );
     }
   }
-  virtual void WriteAttributes( ::H5::Group &g )
+  virtual int WriteAttributes( ::H5::Group &g )
   {
-    Base::WriteAttributes( g );
+    int iReturn = Base::WriteAttributes( g ) + 8;
     const hsize_t OneDimension{ 1 };
     ::H5::DataSpace ds1( 1, &OneDimension );
     ::H5::Attribute a;
@@ -1647,14 +1928,14 @@ public:
     a.write( ::H5::PredType::NATIVE_INT8, &i8 );
     a.close();
     H5::WriteAttribute( g, sOperators, OpNames );
+    return iReturn;
   }
 };
 
 // Read a complex array from an HDF5 file
 template<typename T>
-void ReadArray(std::vector<T> &buffer, const std::string &FileName,
-                      std::string &GroupName,
-                      const std::string &ObjectName = std::string( "correlator" ) );
+void ReadArray(std::vector<T> &buffer, const std::string &FileName, const std::string &ObjectName = std::string( "correlator" ),
+               const char *PrintPrefix = nullptr, std::string * pGroupName = nullptr );
 
 struct CommandLine {
   using SwitchMap = std::map<std::string, std::vector<std::string>>;

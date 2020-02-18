@@ -281,6 +281,7 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
           }
         }
         Common::SampleC out = in.Bootstrap( nSample, seed );
+        out.MakeCorrSummary( nullptr );
         if( bSaveBootstrap )
         {
           std::cout << "  " << nSample << " samples to " << sOutFile << std::endl;
@@ -380,7 +381,6 @@ const std::string & MesonSuffix( const std::string MesonTypeName )
 // Heavy-light meson decays. 2pt function with current inserted and momentum on light meson
 
 enum StudySubject { Z2=1, GFWW, GFPW };
-static constexpr int NumStudySubjects{ 3 };
 
 void Study1Bootstrap( StudySubject Study, const std::string &StudyPath, const BootstrapParams &bsParams,
                       const Common::Momentum &mom, std::vector<Common::Gamma::Algebra> Alg,
@@ -461,8 +461,7 @@ void Study1Bootstrap( StudySubject Study, const std::string &StudyPath, const Bo
         }
         CorrIndex++;
         CorrIndexT++;*/
-        std::string GroupName;
-        InFiles[CorrIndex++].Read( sFileName, GroupName, Alg, &t );
+        InFiles[CorrIndex++].Read( sFileName, Alg, &t );
       }
     }
     // If there's more than one configuration, perform a bootstrap of this timeslice
@@ -485,29 +484,9 @@ void Study1Bootstrap( StudySubject Study, const std::string &StudyPath, const Bo
 
 *****************************************************************/
 
-#ifdef DEBUG
-int DebugTest1()
-{
-  std::string File1{ "../../mesons/C1/Z2/prop_h1_t0_p_0_0_0_prop_h1_t0_p_0_0_0_sink_p_0_0_0.3000.h5" };
-  std::string File2{ "../../../201907HL/contract/c2p0_h1_l_p2_0/sink_0_l_0.0.source_0_0.3200.h5" };
-  Common::CorrelatorFile<std::complex<double>> f;
-  std::string GroupName;
-  std::vector<Common::Gamma::Algebra> Alg{ Common::Gamma::Algebra::Gamma5, Common::Gamma::Algebra::GammaTGamma5};
-  f.Read( File1, GroupName, Alg );
-  Alg.clear();
-  GroupName.clear();
-  f.Read( File1, GroupName, Alg );
-  Alg.clear();
-  GroupName.clear();
-  f.Read( File2, GroupName, Alg );
-  return 1;
-}
-#endif
-
 int main(const int argc, const char *argv[])
 {
   std::ios_base::sync_with_stdio( false );
-  // int i = DebugTest1(); if( i ) return i;
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;
@@ -577,7 +556,7 @@ int main(const int argc, const char *argv[])
             const std::string &Filename{ it->first }; // Trajectory number
             const TrajFile &tf{ it->second };
             std::string GroupName{ cl.SwitchValue<std::string>( "g" ) };
-            InFiles[j].Read( Filename, GroupName, Alg, tf.bHasTimeslice ? &tf.Timeslice : nullptr );
+            InFiles[j].Read( Filename, Alg, tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName );
           }
           par.PerformBootstrap( InFiles, Contraction );
           BootstrapCount++;

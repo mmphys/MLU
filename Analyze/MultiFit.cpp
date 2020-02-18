@@ -383,9 +383,15 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, boo
 
   // Make somewhere to store the results of the fit for each bootstrap sample
   Model ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, NSamples, NumParams+1 );
+  ModelParams.Seed_ = Corr[0].Seed_;
+  ModelParams.SeedMachine_ = Corr[0].SeedMachine_;
   std::vector<Common::Fold<double>> ModelCorr( NumFiles ); // correlators resulting from the fit params
   for( int f = 0; f < NumFiles; f++ )
+  {
     ModelCorr[f].resize( NSamples, Nt );
+    ModelCorr[f].Seed_ = ModelParams.Seed_;
+    ModelCorr[f].SeedMachine_ = ModelParams.SeedMachine_;
+  }
 
   // Make somewhere to sort the results of each fit by energy level
   std::vector<std::vector<double>> SortingHat{ static_cast<size_t>( NumExponents ) };
@@ -499,8 +505,14 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, boo
   std::string sModelBase{ OutputRunBase };
   sModelBase.append( 1, '.' );
   sModelBase.append( sOpNameConcat );
+  ModelParams.MakeCorrSummary( "Params" );
+  {
+    std::vector<std::string> ColNames{ ParamNames };
+    ColNames.push_back( "ChiSqPerDof" );
+    ModelParams.SetColumnNames( ColNames );
+  }
   ModelParams.Write( Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ) );
-  //Common::SummariseBootstrap(ModelParams, sModelBase, Seed, "params" );
+  //ModelParams.WriteSummary( Common::MakeFilename( sModelBase, Common::sModel, Seed, TEXT_EXT ) );
   for( int f = 0; f < NumFiles; f++ )
   {
     const int snk{ Corr[f].Name_.op[idxSnk] };
@@ -516,6 +528,7 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, boo
     const std::string SummaryBase{ OutputRunBase + '.' + sSink + '_' + sSrc };
     if( bSaveCorr )
       ModelCorr[f].Write( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
+    ModelCorr[f].MakeCorrSummary( nullptr );
     ModelCorr[f].WriteSummary( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, TEXT_EXT ));
   }
   // Return the statistics on the fit results
@@ -601,9 +614,8 @@ int main(int argc, const char *argv[])
       std::cout << "Loading folded correlators\n";
       for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
       {
-        std::string GroupName;
         Corr.emplace_back();
-        Corr[i].Read( sFileName, GroupName, "  ", &OpNames );
+        Corr[i].Read( sFileName, "  ", &OpNames );
         if( i == 0 )
         {
           outBaseFileName.append( Corr[0].Name_.Base );
