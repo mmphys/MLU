@@ -196,11 +196,24 @@ void MultiExpModel::MakeCovar( void )
           Covar( y, x ) = z;
       }
       if( y == x )
-        VarianceInv[x] = 1. / z;
+        VarianceInv[x] = 1. / sqrt( z );
     }
   }
   if( bCorrelated )
   {
+    // Turn covariance matrix into correlation matrix
+    for( int x = 0; x < Extent; x++ )
+      for( int y = 0; y <= x; y++ )
+      {
+        if( y == x )
+          Covar( x, y ) = 1.;
+        else
+        {
+          double z = Covar( x, y ) * VarianceInv[x] * VarianceInv[y];
+          Covar( x, y ) = z;
+          Covar( y, x ) = z;
+        }
+      }
     if( !Common::IsFinite( Covar ) )
       throw std::runtime_error( "Covariance matrix isn't finite" );
     CovarInv = Covar.inverse();
@@ -271,7 +284,7 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
         return std::numeric_limits<double>::max();
       }
       const int iWrite{ f * NtCorr + t };
-      ModelError[iWrite] = z;
+      ModelError[iWrite] = z * VarianceInv[iWrite];
     }
   }
   // The inverse of a symmetric matrix is also symmetric, so only calculate half the matrix
@@ -279,7 +292,7 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
   for( int i = 0; i < Extent; ++i )
   {
     if( !bCorrelated )
-      chi2 += ModelError[i] * VarianceInv[i] * ModelError[i];
+      chi2 += ModelError[i] * ModelError[i];
     else
     {
       for( int j = 0; j <= i; ++j )
