@@ -70,10 +70,6 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i Z2/fold/test/h1_l_p_0_0_0_ -o Z2/fit/test/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "g5_g5*5"
             isEnabled = "YES">
          </CommandLineArgument>

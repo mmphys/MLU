@@ -321,7 +321,7 @@ int main( int argc, const char *argv[] )
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"n", CL::SwitchType::Single, "0"},
-      {"e", CL::SwitchType::Single, "0"},
+      {"e", CL::SwitchType::Single, "-1"},
       {"rep", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -362,7 +362,7 @@ int main( int argc, const char *argv[] )
     "-i     Input path for folded bootstrap replicas\n"
     "-o     Output path\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
-    "-e     Which excited state to use in model (default 0), -ve counts from highest state"
+    "-e     Which excited state to use in model (default -1), -ve counts from highest state"
     "Flags:\n"
     "--rep      Use per replica values of overlap constants in construction of model\n"
     "--savecorr Save bootstrap replicas of correlators\n"

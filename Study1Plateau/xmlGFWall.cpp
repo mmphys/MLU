@@ -82,7 +82,7 @@ static const std::string OutputPrefix{ "" };
 static const std::string Strange{ "s" };
 static const Quark Quarks[] = {
   {"l", 0.005, LS_LIGHT, 1.8, LIGHT_ITERATION, RESID_LIGHT, GaugeFieldName, LIGHT_EIGENPACK }, // light
-  //{Strange, 0.04, LS_STRANGE, 1.8, MAX_ITERATION, RESID_STRANGE, GaugeFieldName, nullptr}, // strange
+  {Strange, 0.04, LS_STRANGE, 1.8, MAX_ITERATION, RESID_STRANGE, GaugeFieldName, nullptr}, // strange
   {"h1", 0.58, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, GaugeFieldNameSmeared, nullptr}, // charm
   //{"h2", 0.64, LS_HEAVY, 1.0, MAX_ITERATION, RESID_HEAVY, GaugeFieldNameSmeared, nullptr}, // charm
 };
