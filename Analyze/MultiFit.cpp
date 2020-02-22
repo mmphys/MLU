@@ -84,9 +84,9 @@ public:
   virtual double operator()( const std::vector<double> & ModelParameters ) const;
   //virtual void SetErrorDef(double def) {theErrorDef = def;}
   // These are definitely not part of the FCNBase interface
-  std::vector<Common::ValWithEr> PerformFit(bool bCorrelated, bool bFreezeCovar, int tMin, int tMax,
-                                            int Skip, bool bSaveCorr, int MaxIt, double Tolerance,
-                                            double RelEnergySep, double &ChiSq, int &dof );
+  std::vector<Common::ValWithEr<scalar>>
+    PerformFit(bool bCorrelated, bool bFreezeCovar, int tMin, int tMax, int Skip, bool bSaveCorr,
+               int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
   const int NumOps;
   const std::vector<std::string> &OpNames;
   bool bFactor;
@@ -149,7 +149,7 @@ std::vector<std::string> MultiExpModel::MakeParamNames()
   for( int e = 0; e < NumExponents; e++ ) {
     Names[e] = "E" + std::to_string( e );
     for( int op = 0; op < NumOps; op++ )
-      Names[NumExponents + MELIndex( op, e )] = "A" + OpNames[op] + std::to_string( e );
+      Names[NumExponents + MELIndex( op, e )] = OpNames[op] + std::to_string( e );
   }
   return Names;
 }
@@ -321,12 +321,23 @@ void MultiExpModel::DumpParameters( const std::string &msg, const ROOT::Minuit2:
   static const char Tab[] = "\t";
   if( !msg.empty() )
     std::cout << msg << NewLine;
+  std::size_t FieldLen{ 0 };
   for( int p = 0; p < NumParams; p++ )
-    std::cout << Tab << ParamNames[p] << Tab << par.Value( p ) << NewLine;
+  {
+    std::size_t ThisLen = ParamNames[p].length();
+    if( FieldLen < ThisLen )
+      FieldLen = ThisLen;
+  }
+  FieldLen += 4;
+  for( int p = 0; p < NumParams; p++ )
+  {
+    std::string sep( FieldLen - ParamNames[p].length(), ' ' );
+    std::cout << Tab << ParamNames[p] << sep << par.Value( p ) << NewLine;
+  }
 }
 
 // Perform a fit
-std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, bool bFreezeCovar,
+std::vector<Common::ValWithEr<scalar>> MultiExpModel::PerformFit( bool Bcorrelated_, bool bFreezeCovar,
                     int TMin_, int TMax_, int Skip, bool bSaveCorr, int MaxIt,
                     double Tolerance, double RelEnergySep, double &ChiSq, int &dof )
 {
@@ -351,6 +362,40 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, boo
   dof = Extent;
   dof -= NumParams;
 
+  // Make somewhere to store the results of the fit for each bootstrap sample
+  Model ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, NSamples, NumParams+1 );
+  ModelParams.Seed_ = Corr[0].Seed_;
+  ModelParams.SeedMachine_ = Corr[0].SeedMachine_;
+  {
+    std::vector<std::string> ColNames{ ParamNames };
+    ColNames.push_back( "ChiSqPerDof" );
+    ModelParams.SetColumnNames( ColNames );
+  }
+
+  // See whether this fit already exists
+  bool bPerformFit{ true };
+  std::string sModelBase{ OutputRunBase };
+  sModelBase.append( 1, '.' );
+  sModelBase.append( sOpNameConcat );
+  const std::string ModelFileName{ Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ) };
+  if( Common::FileExists( ModelFileName ) )
+  {
+    Model PreBuilt;
+    PreBuilt.Read( ModelFileName, "Pre-built: " );
+    if( !PreBuilt.Compatible( NumExponents, dof, tMin, tMax, OpNames ) )
+      throw std::runtime_error( "Pre-existing fits not compatible with parameters from this run" );
+    bPerformFit = PreBuilt.NewParamsMorePrecise( bFreezeCovar, NSamples );
+    if( !bPerformFit )
+    {
+      ChiSq = dof * PreBuilt.getSummaryData()[NumParams].Central; // Last summary has chi squared per dof
+      ModelParams = std::move( PreBuilt );
+    }
+    else
+      std::cout << "Overwriting\n";
+  }
+
+  if( bPerformFit )
+  {
   // Make initial guesses for the parameters
   // For each Exponent, I need the delta_E + a constant for each operator
   std::vector<double> par( NumParams );
@@ -394,10 +439,6 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, boo
   static const int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
   ROOT::Minuit2::MnMigrad minimizer( *this, parInit, StrategyLevel );
 
-  // Make somewhere to store the results of the fit for each bootstrap sample
-  Model ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, NSamples, NumParams+1 );
-  ModelParams.Seed_ = Corr[0].Seed_;
-  ModelParams.SeedMachine_ = Corr[0].SeedMachine_;
   std::vector<Common::Fold<double>> ModelCorr( NumFiles ); // correlators resulting from the fit params
   for( int f = 0; f < NumFiles; f++ )
   {
@@ -439,6 +480,17 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, boo
         if( Verbosity )
           std::cout << FitResult << state << "\n";
         DumpParameters( FitResult, upar );
+#ifdef DEBUG_COMPARE_WITH_PREVIOUS
+        std::vector<double> vd;
+        Common::ReadArray( vd,
+                  "/Users/s1786208/data/Study1/C1/GFWall/fit/test_thaw/"
+                  "h1_l_p_0_0_0.corr_6_15.g5_gT5.model.4147798751.h5",
+                  "data_C" );
+        std::cout << "    Ratios (new/old):\n";
+        for( int i = 0; i < 10; i++ )
+          std::cout << "\t" << i << ": " << ( upar.Value( i ) / vd[i] ) << "\n";
+        std::cout << "Set breakpoint here\n";
+#endif
       }
       const double ThisChiSq{ state.Fval() };
       if( idx == Fold::idxCentral )
@@ -515,16 +567,8 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, boo
       }
     }
   }
-  std::string sModelBase{ OutputRunBase };
-  sModelBase.append( 1, '.' );
-  sModelBase.append( sOpNameConcat );
   ModelParams.MakeCorrSummary( "Params" );
-  {
-    std::vector<std::string> ColNames{ ParamNames };
-    ColNames.push_back( "ChiSqPerDof" );
-    ModelParams.SetColumnNames( ColNames );
-  }
-  ModelParams.Write( Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ) );
+  ModelParams.Write( ModelFileName );
   //ModelParams.WriteSummary( Common::MakeFilename( sModelBase, Common::sModel, Seed, TEXT_EXT ) );
   for( int f = 0; f < NumFiles; f++ )
   {
@@ -544,13 +588,15 @@ std::vector<Common::ValWithEr> MultiExpModel::PerformFit( bool Bcorrelated_, boo
     ModelCorr[f].MakeCorrSummary( nullptr );
     ModelCorr[f].WriteSummary( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, TEXT_EXT ));
   }
+  }
   // Return the statistics on the fit results
-  std::vector<Common::ValWithEr> Results( NumParams );
-  std::vector<double> data( NSamples );
+  const int NumSummaries{ ModelParams.NumSamples() }; // because we might have read back an old fit
+  std::vector<Common::ValWithEr<scalar>> Results( NumParams );
+  std::vector<double> data( NumSummaries );
   for( int p = 0; p < NumParams; p++ ) {
     double Central = ModelParams[Fold::idxCentral][p];
     std::size_t Count{ 0 };
-    for( int j = 0; j < NSamples; ++j ) {
+    for( int j = 0; j < NumSummaries; ++j ) {
       double d = ModelParams[j][p];
       if( std::isfinite( d ) )
         data[Count++] = d;
@@ -694,8 +740,8 @@ int main(int argc, const char *argv[])
       sSummaryBase.append( sOpNameConcat );
       static const char Sep[] = " ";
       const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
-      if( Common::FileExists( sFitFilename ) )
-        throw std::runtime_error( "Output file " + sFitFilename + " already exists" );
+      //if( Common::FileExists( sFitFilename ) )
+        //throw std::runtime_error( "Output file " + sFitFilename + " already exists" );
       std::ofstream s;
       for( int tf = tf_start; tf - tf_start < dtf_max; tf++ )
       {
@@ -716,8 +762,8 @@ int main(int argc, const char *argv[])
                 if( !s.is_open() )
                 {
                   s.open( sFitFilename );
-                  s << "# Fit parameters\n# " << sSummaryBase << "\n# Seed " << Seed
-                    << std::setprecision(std::numeric_limits<double>::digits10+2) << std::endl;
+                  Common::SummaryHeader<scalar>( s, sSummaryBase );
+                  s << "# Seed " << Seed << std::endl;
                 }
                 else
                 {

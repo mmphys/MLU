@@ -145,6 +145,7 @@ namespace Gamma
 extern const std::string sBootstrap;
 extern const std::string sFold;
 extern const std::string sModel;
+extern const std::string sParams;
 extern const std::string sNtUnfolded;
 extern const std::string st0Negated;
 extern const std::string sConjugated;
@@ -309,22 +310,24 @@ template <typename T> inline bool IsFinite( const Eigen::Matrix<T, Eigen::Dynami
   return true;
 }
 
+template <typename T = double>
 class ValWithEr
 {
 public:
-  double Central;
-  double ErLow;
-  double ErHigh;
-  double Check;
-  void Get( double dCentral, std::vector<double> &Data, std::size_t Count );
+  T Central;
+  T Low;
+  T High;
+  T Check;
+  void Get( T dCentral, std::vector<T> &Data, std::size_t Count );
   ValWithEr() = default;
-  ValWithEr( double dCentral, std::vector<double> &Data, std::size_t Count )
+  ValWithEr( T dCentral, std::vector<T> &Data, std::size_t Count )
   { Get( dCentral, Data, Count ); }
 };
 
-inline std::ostream & operator<<( std::ostream &os, const ValWithEr &v )
+template <typename T>
+inline std::ostream & operator<<( std::ostream &os, const ValWithEr<T> &v )
 {
-  return os << v.Central << " " << v.ErLow << " " << v.ErHigh << " " << v.Check;
+  return os << v.Central << " " << v.Low << " " << v.High << " " << v.Check;
 }
 
 // Generic representation of momentum
@@ -443,9 +446,12 @@ namespace H5 {
   template<> struct Equiv<long double> { static const ::H5::PredType& Type; };
   template<> struct Equiv<std::string> { static const ::H5::StrType Type; };
   template<> struct Equiv<char *>      { static const ::H5::StrType& Type; };
-  template<> struct Equiv<std::complex<float>> { static const ::H5::CompType Type; };
-  template<> struct Equiv<std::complex<double>>{ static const ::H5::CompType Type; };
+  template<> struct Equiv<std::complex<float>>      { static const ::H5::CompType Type; };
+  template<> struct Equiv<std::complex<double>>     { static const ::H5::CompType Type; };
   template<> struct Equiv<std::complex<long double>>{ static const ::H5::CompType Type; };
+  template<> struct Equiv<ValWithEr<float>>         { static const ::H5::CompType Type; };
+  template<> struct Equiv<ValWithEr<double>>        { static const ::H5::CompType Type; };
+  template<> struct Equiv<ValWithEr<long double>>   { static const ::H5::CompType Type; };
 
   /**
    Open the specified HDF5File
@@ -465,6 +471,7 @@ namespace H5 {
   std::vector<std::string> ReadStrings( const AttributeOrDataSet &a )
   {
     ::H5::DataSpace dsp = a.getSpace();
+    const ::H5::StrType aType = a.getStrType();
     const int rank{ dsp.getSimpleExtentNdims() };
     if( rank != 1 )
       throw std::runtime_error( sOperators + " number of dimensions=" + std::to_string( rank ) + ", expecting 1" );
@@ -476,7 +483,7 @@ namespace H5 {
       MDString[i] = nullptr;
     try
     {
-      a.read( Equiv<std::string>::Type, (void *)MDString );
+      a.read( aType, (void *)MDString );
     }
     catch(...)
     {
@@ -587,14 +594,15 @@ CopyBuffer( const TSrc * Begin, const TSrc * End, TDst * Dst, Signal s = Signal:
 */
 
 template <typename T>
-void SummaryHeader( std::ostream &s, const std::string & sOutFileName, const char * pszHeaderComments )
+void SummaryHeader(std::ostream &s, const std::string & sOutFileName,
+                   const char * pszHeaderComments = nullptr)
 {
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
   if( !s )
     throw std::runtime_error( "Unable to create " + sOutFileName );
-  s << "# File " << sOutFileName << NewLine
+  s << "# Summary: " << sOutFileName << NewLine
     << std::boolalpha << std::setprecision(std::numeric_limits<scalar_type>::digits10+2);
   const char * psz = nullptr;
   if( Traits::is_complex )
@@ -707,9 +715,8 @@ void SummaryHelper( const std::string & sOutFileName, const T * pData, const int
           for( int i = 0; i < Count; i++ )
             o << i << sep << Data[i] << NewLine;
         }*/
-        Common::ValWithEr v( Central, Data, Count );
-        s << sep << v.Central << sep << v.ErLow << sep << v.ErHigh
-               << sep << ( static_cast<scalar_type>( Count ) / nSample );
+        Common::ValWithEr<scalar_type> v( Central, Data, Count );
+        s << sep << v;
         /*if( i==0 && f==1 && t==20 )
         {
           std::ofstream o( "AfterSort.txt" );
@@ -1048,16 +1055,17 @@ protected:
   std::vector<std::string> AuxNames;
   int NumExtraSamples; // Same length as AuxNames, but minimum of 1 for central replica
   std::vector<std::string> SummaryNames;
-  std::unique_ptr<scalar_type[]> m_pSummaryData;
+  std::unique_ptr<ValWithEr<scalar_type>[]> m_pSummaryData;
   std::vector<std::string> ColumnNames;
   inline void AllocSummaryBuffer( std::size_t NewSize )
   {
-    NewSize *= ( is_complex ? 2 : 1 ) * 4;
-    const std::size_t OldSize{ SummaryNames.size() * Nt_ * ( is_complex ? 2 : 1 ) * 3 };
+    if( is_complex )
+      NewSize *= 2;
+    const std::size_t OldSize{ SummaryNames.size() * Nt_ * ( is_complex ? 2 : 1 ) };
     if( NewSize != OldSize )
     {
       if( NewSize )
-        m_pSummaryData.reset( new scalar_type[ NewSize ] );
+        m_pSummaryData.reset( new ValWithEr<scalar_type>[ NewSize ] );
       else
         m_pSummaryData.reset( nullptr );
     }
@@ -1068,6 +1076,13 @@ public:
   std::string SeedMachine_; // name of the machine that ran the bootstrap
   inline int NumSamples() const { return NumSamples_; }
   inline int Nt() const { return Nt_; }
+  inline ValWithEr<scalar_type> * getSummaryData( int idx = 0 )
+  {
+    const int iSize{ static_cast<int>( SummaryNames.size() ) };
+    if( Nt_ == 0 || idx < 0 || idx >= iSize )
+      throw "Summary " + std::to_string(idx) + "/" + std::to_string(iSize) + " doesn't exist";
+    return m_pSummaryData.get() + idx * Nt_;
+  }
   void SetSummaryNames( const std::vector<std::string> &summaryNames_ )
   {
     AllocSummaryBuffer( summaryNames_.size() * Nt_ );
@@ -1082,6 +1097,7 @@ public:
       throw std::runtime_error( "There should be names for " + std::to_string( Nt_ ) + " columns" );
     ColumnNames = columnNames_;
   }
+  const std::vector<std::string> & GetColumnNames() const { return ColumnNames; }
   void resize( int NumSamples, int Nt, std::vector<std::string> * pAuxNames = nullptr )
   {
     const int NewNumExtraSamples{ static_cast<int>( pAuxNames && pAuxNames->size() ? pAuxNames->size() : 1 ) };
@@ -1107,7 +1123,8 @@ public:
   }
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
-  Sample<T> Bootstrap( int NumBootSamples, SeedType Seed, std::vector<std::string> * pAuxNames = nullptr );
+  Sample<T> Bootstrap(int NumBootSamples, SeedType Seed, const std::string * pMachineName = nullptr,
+                      std::vector<std::string> * pAuxNames = nullptr);
   void Read (const std::string &FileName, const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr,
              std::string * pGroupName = nullptr );
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
@@ -1184,8 +1201,9 @@ public: // Override these for specialisations
   virtual const std::string & DefaultGroupName() { return sBootstrap; }
   virtual bool bFolded() { return false; }
   // Descendants should call base first
-  virtual void SummaryComments( std::ostringstream & s )
+  virtual void SummaryComments( std::ostream & s )
   {
+    s << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha;
     if( Seed_ ) s << "# Seed: " << Seed_ << NewLine;
     else if( !Name_.SeedString.empty() ) s << "# Seed: " << Name_.SeedString << NewLine;
     if( !SeedMachine_.empty() ) s << "# Seed machine: " << SeedMachine_ << NewLine;
@@ -1200,11 +1218,12 @@ using SampleD = Sample<double>;
 
 /**
  Perform bootstrap
- Compute the mean on this sample, saving this as the centra value
+ Compute the mean on this sample, saving this as the central value
  Returned sample has specified extra fields ... but only the central value is copied from original
  */
 template <typename T>
-Sample<T> Sample<T>::Bootstrap( int NumBootSamples, SeedType Seed, std::vector<std::string> * pAuxNames )
+Sample<T> Sample<T>::Bootstrap(int NumBootSamples, SeedType Seed, const std::string * pMachineName,
+                               std::vector<std::string> * pAuxNames)
 {
   using fint = std::uint_fast32_t;
   std::mt19937                        engine( Seed );
@@ -1233,7 +1252,10 @@ Sample<T> Sample<T>::Bootstrap( int NumBootSamples, SeedType Seed, std::vector<s
       dst[t] /= NumSamples_;
   }
   boot.Seed_ = Seed;
-  boot.SeedMachine_ = GetHostName();
+  if( pMachineName && ! pMachineName->empty() )
+    boot.SeedMachine_ = *pMachineName;
+  else
+    boot.SeedMachine_ = GetHostName();
   return boot;
 }
 
@@ -1244,23 +1266,21 @@ void Sample<T>::WriteSummary( const std::string &sOutFileName )
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
   if( SummaryNames.empty() )
     throw std::runtime_error( "Summaries can't be written because they've not been created" );
-  std::ostringstream ss;
-  SummaryComments( ss );
-  //SummaryHelper( sOutFileName, (*this)[idxCentral], Nt_, NumSamples_, ss.str().c_str(), bFolded() );
   std::ofstream s( sOutFileName );
-  SummaryHeader<T>( s, sOutFileName, ss.str().c_str() );
+  SummaryHeader<T>( s, sOutFileName );
+  SummaryComments( s );
   // Now write all the field names
   const std::string Sep{ " " };
   s << "t";
   for( const std::string &n : SummaryNames )
     s << Sep << n << Sep << n << "_low " << n << "_high " << n << "_check";
   s << NewLine;
-  for( int t = 0; t < Nt_; t++ )
+  const ValWithEr<scalar_type> * p{ m_pSummaryData.get() };
+  for( int t = 0; t < Nt_; t++, p++ )
   {
     s << t;
-    const scalar_type * p{ m_pSummaryData.get() + t };
-    for( std::size_t f = 0; f < SummaryNames.size(); f++, p += 4 * Nt_ )
-      s << Sep << *p << Sep << p[Nt_] << Sep << p[Nt_*2] << Sep << p[Nt_*3];
+    for( std::size_t f = 0; f < SummaryNames.size(); f++ )
+      s << Sep << p[f * Nt_];
     s << NewLine;
   }
 }
@@ -1286,10 +1306,10 @@ void Sample<T>::MakeCorrSummary( const char * pAvgName )
     SetSummaryNames( sCorrSummaryNames );
   const int tMid{ bFolded() ? Nt_ : Nt_ / 2 };
   std::vector<scalar_type> Data( NumSamples_ );
-  scalar_type * pDest = m_pSummaryData.get();
+  ValWithEr<scalar_type> * pDest = m_pSummaryData.get();
   for( int i = 0; i < Traits::scalar_count; i++ ) // real or imaginary
   {
-    for(int f = 0; f < NumFields; f++, pDest += 3 * Nt_) // each field
+    for(int f = 0; f < NumFields; f++) // each field
     {
       for(int t = 0; t < Nt_; t++, pDest++ )
       {
@@ -1323,24 +1343,19 @@ void Sample<T>::MakeCorrSummary( const char * pAvgName )
                 d = 0;
             }
             if( n == idxCentral )
-              *pDest = d;
+              pDest->Central = d;
             else if( std::isfinite( d ) )
               Data[Count++] = d;
           }
-          Common::ValWithEr v( *pDest, Data, Count );
-          pDest[Nt_    ] = v.ErLow;
-          pDest[Nt_ * 2] = v.ErHigh;
-          pDest[Nt_ * 3] = static_cast<scalar_type>( Count ) / NumSamples_;
+          pDest->Get( pDest->Central, Data, Count );
           if( f == 0 )
           {
+            pDest[Nt_] = *pDest;
             scalar_type d = 0;
             for( int i = 0; i < Count; i++ )
               d += Data[i];
             d /= Count;
-            pDest[Nt_ * 4] = d;
-            pDest[Nt_ * 5] = pDest[Nt_ * 1];
-            pDest[Nt_ * 6] = pDest[Nt_ * 2];
-            pDest[Nt_ * 7] = pDest[Nt_ * 3];
+            pDest[Nt_].Central = d;
           }
         }
       }
@@ -1410,13 +1425,11 @@ void Sample<T>::Read(const std::string &FileName, const char *PrintPrefix, std::
           if( i == NumSamples_ - 1 )
           {
             bOK = true;
+            p = (*this)[-NumExtraSamples];
             // This format has no auxiliary rows - set them to zero
             for( int j = -NumExtraSamples; j < idxCentral; j++ )
-            {
-              p = (*this)[j];
               for( int t = 0; t < Nt_ ; t++ )
-                p = 0;
-            }
+                *p++ = 0;
           }
         }
       }
@@ -1458,7 +1471,7 @@ void Sample<T>::Read(const std::string &FileName, const char *PrintPrefix, std::
       {
         // Auxiliary names should match the number of auxiliary records
         a = g.openAttribute( sSeedMachine );
-        a.read( H5::Equiv<std::string>::Type, SeedMachine_ );
+        a.read( a.getStrType(), SeedMachine_ );
         a.close();
       }
       catch(const ::H5::Exception &)
@@ -1504,7 +1517,18 @@ void Sample<T>::Read(const std::string &FileName, const char *PrintPrefix, std::
       const unsigned short ExpectedNAux{ static_cast<unsigned short>( myAuxNames.size() ? myAuxNames.size() - 1 : 0 ) };
       if( att_nAux == ExpectedNAux )
       {
-        ReadAttributes( g );
+        try
+        {
+          ReadAttributes( g );
+        }
+        catch(const std::exception &e)
+        {
+          throw;
+        }
+        catch(...)
+        {
+          throw std::runtime_error( "Extended attributes for " + DefaultGroupName() + " missing" );
+        }
         ::H5::DataSet ds = g.openDataSet( "data_C" );
         ::H5::DataSpace dsp = ds.getSpace();
         int nDims{ dsp.getSimpleExtentNdims() };
@@ -1544,9 +1568,9 @@ void Sample<T>::Read(const std::string &FileName, const char *PrintPrefix, std::
                   if( nDims == 2 )
                   {
                     dsp.getSimpleExtentDims( Dim );
-                    if( Dim[0] == SummaryNames.size() * 4 && Dim[1] == static_cast<unsigned int>(Nt_) )
+                    if( Dim[0] == SummaryNames.size() && Dim[1] == static_cast<unsigned int>(Nt_) )
                     {
-                      ds.read( m_pSummaryData.get(), H5::Equiv<scalar_type>::Type );
+                      ds.read( m_pSummaryData.get(), H5::Equiv<ValWithEr<scalar_type>>::Type );
                       bOK = true;
                     }
                   }
@@ -1636,11 +1660,11 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
     dsp.close();
     if( SummaryNames.size() )
     {
-      Dims[0] = SummaryNames.size() * 4;
+      Dims[0] = SummaryNames.size();
       Dims[1] = Nt_;
       dsp = ::H5::DataSpace( 2, Dims );
-      ds = g.createDataSet( "Summary", H5::Equiv<scalar_type>::Type, dsp );
-      ds.write( m_pSummaryData.get(), H5::Equiv<scalar_type>::Type );
+      ds = g.createDataSet( "Summary", H5::Equiv<ValWithEr<scalar_type>>::Type, dsp );
+      ds.write( m_pSummaryData.get(), H5::Equiv<ValWithEr<scalar_type>>::Type );
       ds.close();
       dsp.close();
     }
@@ -1678,7 +1702,7 @@ public:
   : Base::Sample( FileName, GroupName, PrintPrefix, pOpNames ) {}*/
   virtual const std::string & DefaultGroupName() { return sFold; }
   virtual bool bFolded() { return true; }
-  virtual void SummaryComments( std::ostringstream & s )
+  virtual void SummaryComments( std::ostream & s )
   {
     Base::SummaryComments( s );
     if( NtUnfolded ) s << "# NtUnfolded: " << NtUnfolded << NewLine;
@@ -1708,7 +1732,7 @@ public:
     {
       a = g.openAttribute(sReality);
       std::string s{};
-      a.read( H5::Equiv<std::string>::Type, s );
+      a.read( a.getStrType(), s );
       a.close();
       if( EqualIgnoreCase( s, Reality_TextEquiv_Real ) )
         reality = Reality::Real;
@@ -1724,7 +1748,7 @@ public:
     {
       a = g.openAttribute(sParity);
       std::string s{};
-      a.read( H5::Equiv<std::string>::Type, s );
+      a.read( a.getStrType(), s );
       a.close();
       if( EqualIgnoreCase( s, Parity_TextEquiv_Even ) )
         parity = Parity::Even;
@@ -1740,7 +1764,7 @@ public:
     {
       a = g.openAttribute(sSign);
       std::string s{};
-      a.read( H5::Equiv<std::string>::Type, s );
+      a.read( a.getStrType(), s );
       a.close();
       if( EqualIgnoreCase( s, Sign_TextEquiv_Positive ) )
         sign = Sign::Positive;
@@ -1848,6 +1872,20 @@ public:
   : Base::Sample{ NumSamples, Nt }, OpNames{ OpNames_ }, NumExponents{ NumExponents_ },
     NumFiles{ NumFiles_}, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Factorised{ Factorised_ }, CovarFrozen{ CovarFrozen_ } {}
   virtual const std::string & DefaultGroupName() { return sModel; }
+  // Are the new parameters compatible with the pre-performed fit?
+  inline bool Compatible(int numExponents_, int Dof_, int Ti_, int Tf_,
+                         const std::vector<std::string> &opNames_) const
+  {
+    return std::tie( NumExponents , dof , ti , tf , OpNames  )
+        == std::tie( numExponents_, Dof_, Ti_, Tf_, opNames_ );
+  }
+  inline bool NewParamsMorePrecise( bool covarFrozen_, int NumSamples ) const
+  {
+    // Unfreezing the covariance matrix makes a big difference!
+    if( ( CovarFrozen && !covarFrozen_ ) || ( !CovarFrozen && covarFrozen_ ) )
+      return CovarFrozen;
+    return NumSamples > Base::NumSamples_;
+  }
   void Read ( const std::string &FileName, const char *PrintPrefix = nullptr, std::string *pGroupName =nullptr )
   {
     Base::Read( FileName, PrintPrefix, nullptr, pGroupName );
@@ -1929,6 +1967,14 @@ public:
     a.close();
     H5::WriteAttribute( g, sOperators, OpNames );
     return iReturn;
+  }
+  virtual void SummaryComments( std::ostream & s )
+  {
+    Base::SummaryComments( s );
+    s << "# NumExponents: " << NumExponents << NewLine
+      << "# NumFiles: " << NumFiles << NewLine
+      << "# Factorised: " << Factorised << NewLine
+      << "# Frozen covariance: " << CovarFrozen << NewLine;
   }
 };
 

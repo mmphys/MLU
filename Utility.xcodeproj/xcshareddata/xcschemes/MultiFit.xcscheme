@@ -147,11 +147,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-n 100"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--skip 100"
-            isEnabled = "YES">
+            argument = "--skip 3"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--freeze"

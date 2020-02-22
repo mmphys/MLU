@@ -70,6 +70,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "686EC70124003EA40084D04D"
+               BuildableName = "FitSummary"
+               BlueprintName = "FitSummary"
+               ReferencedContainer = "container:Utility.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "688FEBE2238C1BE100977B09"
                BuildableName = "mixedop"
                BlueprintName = "mixedop"

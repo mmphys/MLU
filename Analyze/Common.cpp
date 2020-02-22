@@ -29,6 +29,7 @@
 
 #include "Common.hpp"
 
+#include <cstddef>
 #include <mutex> // Apparently empty under __INTEL_COMPILER
 #include <sys/stat.h>
 #include <H5CompType.h>
@@ -48,6 +49,7 @@ extern const std::string NewLine{ "\n" };
 const std::string sBootstrap{ "bootstrap" };
 const std::string sFold{ "fold" };
 const std::string sModel{ "model" };
+const std::string sParams{ "params" };
 const std::string sNtUnfolded{ "NtUnfolded" };
 const std::string st0Negated{ "t0Negated" };
 const std::string sConjugated{ "Conjugated" };
@@ -287,38 +289,43 @@ std::string GetHostName()
 }
 
 // Sort the list of values, then extract the lower and upper 68th percentile error bars
-void ValWithEr::Get( double Central_, std::vector<double> &Data, std::size_t Count )
+template<typename T>
+void ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count )
 {
-  assert( Data.size() >= Count && "ValWithErr<T>::Get: data too small" );
+  assert( Data.size() >= Count && "ValWithErr<T>::Get() data too small" );
   Central = Central_;
   if( Count == 0 )
   {
     if( Data.size() == 0 )
     {
       // I wasn't trying to take an estimate over many samples
-      ErLow = Central;
-      ErHigh  = Central;
+      Low = Central;
+      High  = Central;
       Check = 1;
     }
     else
     {
       // Tried to take an estimate over many samples, but all values NaN
-      ErLow = NaN;
-      ErHigh  = NaN;
+      Low = NaN;
+      High  = NaN;
       Check = 0;
     }
     return;
   }
-  const typename std::vector<double>::iterator itStart{ Data.begin() };
-  const typename std::vector<double>::iterator itEnd  { itStart + Count };
+  const typename std::vector<T>::iterator itStart{ Data.begin() };
+  const typename std::vector<T>::iterator itEnd  { itStart + Count };
   std::sort( itStart, itEnd );
   std::size_t Index = 0.16 * Count + 0.5;
   if( Index >= Count )
     Index = Count - 1;
-  ErLow  = Data[Index];
-  ErHigh = Data[Count - 1 - Index];
-  Check = static_cast<double>( Count ) / Data.size();
+  Low  = Data[Index];
+  High = Data[Count - 1 - Index];
+  Check = static_cast<T>( Count ) / Data.size();
 }
+
+template class ValWithEr<float>;
+template class ValWithEr<double>;
+template class ValWithEr<long double>;
 
 std::string Momentum::p2_string( const std::string &separator ) const
 {
@@ -522,6 +529,17 @@ template<typename T> static ::H5::CompType MakeComplex()
   return myComplex;
 }
 
+// Make an HDF5 type representing a value with an error
+template<typename T> static ::H5::CompType MakeValWithEr()
+{
+  ::H5::CompType myType( sizeof( ValWithEr<T> ) );
+  myType.insertMember("Central", offsetof(ValWithEr<T>, Central), H5::Equiv<T>::Type);
+  myType.insertMember("Low",     offsetof(ValWithEr<T>, Low    ), H5::Equiv<T>::Type);
+  myType.insertMember("High",    offsetof(ValWithEr<T>, High   ), H5::Equiv<T>::Type);
+  myType.insertMember("Check",   offsetof(ValWithEr<T>, Check  ), H5::Equiv<T>::Type);
+  return myType;
+}
+
 const ::H5::PredType& H5::Equiv<float>      ::Type{ ::H5::PredType::NATIVE_FLOAT };
 const ::H5::PredType& H5::Equiv<double>     ::Type{ ::H5::PredType::NATIVE_DOUBLE };
 const ::H5::PredType& H5::Equiv<long double>::Type{ ::H5::PredType::NATIVE_LDOUBLE };
@@ -530,6 +548,9 @@ const ::H5::StrType&  H5::Equiv<char *>     ::Type{   H5::Equiv<std::string>::Ty
 const ::H5::CompType  H5::Equiv<std::complex<float>>      ::Type{ MakeComplex<float>() };
 const ::H5::CompType  H5::Equiv<std::complex<double>>     ::Type{ MakeComplex<double>() };
 const ::H5::CompType  H5::Equiv<std::complex<long double>>::Type{ MakeComplex<long double>() };
+const ::H5::CompType  H5::Equiv<ValWithEr<float>>      ::Type{ MakeValWithEr<float>() };
+const ::H5::CompType  H5::Equiv<ValWithEr<double>>     ::Type{ MakeValWithEr<double>() };
+const ::H5::CompType  H5::Equiv<ValWithEr<long double>>::Type{ MakeValWithEr<long double>() };
 
 // Open the specified HDF5File and group
 void H5::OpenFileGroup(::H5::H5File &f, ::H5::Group &g, const std::string &FileName, const char *PrintPrefix,
@@ -708,9 +729,11 @@ std::istream& operator>>(std::istream& is, Sign &sign)
 }
 
 // Read an array (real or complex) from an HDF5 file
-template<typename T>
-void ReadArray(std::vector<T> &buffer, const std::string &FileName, const std::string &ObjectName,
-               const char *PrintPrefix, std::string * pGroupName )
+#define template_ReadArrayArgs( T ) \
+std::vector<T> &buffer, const std::string &FileName, const std::string &ObjectName, \
+const char *PrintPrefix, std::string * pGroupName
+
+template<typename T> void ReadArray( template_ReadArrayArgs( T ) )
 {
   ::H5::H5File f;
   ::H5::Group  g;
@@ -731,6 +754,14 @@ void ReadArray(std::vector<T> &buffer, const std::string &FileName, const std::s
   if( !IsFinite( buffer ) )
      throw std::runtime_error( "Error: Infinite/NaN values in " + FileName );
 }
+
+// Make sure all the specialisations I support are instantiated
+template void ReadArray<float>( template_ReadArrayArgs( float ) );
+template void ReadArray<double>( template_ReadArrayArgs( double ) );
+template void ReadArray<long double>( template_ReadArrayArgs( long double ) );
+template void ReadArray<std::complex<float>>( template_ReadArrayArgs( std::complex<float> ) );
+template void ReadArray<std::complex<double>>( template_ReadArrayArgs( std::complex<double> ) );
+template void ReadArray<std::complex<long double>>( template_ReadArrayArgs(std::complex<long double>));
 
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl)
 {

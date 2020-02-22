@@ -44,11 +44,15 @@ hlxml: hlxml.o Common.o
 
 MultiFit: MultiFit.o Common.o
 
+FitSummary: FitSummary.o Common.o
+
+fold: fold.o Common.o
+
 peramb-compare: peramb-compare.o Common.o
 
 repair: repair.o Common.o
 
-Optimal: Optimal.o Common.o
+mixedop: mixedop.o Common.o
 
 xmlGFWall: xmlGFWall.o Common.o
 

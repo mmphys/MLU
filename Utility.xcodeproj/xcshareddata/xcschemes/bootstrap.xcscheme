@@ -63,19 +63,19 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-ag5,gT5,gx5,gy5,gz5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-f"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ag5,gT5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-t0"
-            isEnabled = "YES">
+            argument = "-f"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t1"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-r4147798751"

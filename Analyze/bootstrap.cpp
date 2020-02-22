@@ -216,6 +216,7 @@ class BootstrapParams
 {
 public:
   std::string outStem;
+  std::string MachineName;
   Common::SeedType seed;
   int nSample;
   int binSize;
@@ -280,7 +281,7 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
               pSrc -= Nt;
           }
         }
-        Common::SampleC out = in.Bootstrap( nSample, seed );
+        Common::SampleC out = in.Bootstrap( nSample, seed, &MachineName );
         out.MakeCorrSummary( nullptr );
         if( bSaveBootstrap )
         {
@@ -489,6 +490,7 @@ int main(const int argc, const char *argv[])
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
+  const std::string MachineName{ Common::GetHostName() };
   using CL = Common::CommandLine;
   CL cl;
   try
@@ -502,7 +504,8 @@ int main(const int argc, const char *argv[])
       {"a", CL::SwitchType::Single, ""},
       {"g", CL::SwitchType::Single, "" },
       {"s", CL::SwitchType::Single, nullptr},
-      {"t", CL::SwitchType::Single, "1"},
+      {"t", CL::SwitchType::Single, "0"},
+      {"m", CL::SwitchType::Single, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
       {"f", CL::SwitchType::Flag, nullptr},
       {"p", CL::SwitchType::Flag, nullptr},
@@ -520,6 +523,13 @@ int main(const int argc, const char *argv[])
       par.outStem = cl.SwitchValue<std::string>( "o" );
       par.nSample = cl.SwitchValue<int>( "n" );
       par.binSize = cl.SwitchValue<int>( "b" );
+      const bool bFactorised{ !cl.GotSwitch( "f" ) }; // Add the switch to turn this off
+      if( cl.GotSwitch( "m" ) )
+        par.MachineName = cl.SwitchValue<std::string>( "m" );
+      else
+        par.MachineName = MachineName;
+      if( par.MachineName.empty() )
+        throw std::invalid_argument( "Machine name can't be empty" );
       if( par.binSize != 1 )
         throw std::invalid_argument( "Binning not implemented yet" );
       if( cl.GotSwitch( "r" ) )
@@ -540,7 +550,7 @@ int main(const int argc, const char *argv[])
                                       + " with command-line arguments" );
         bShowUsage = false;
         Manifest Manifest{ glob( cl.Args.begin(), cl.Args.end(), InStem.c_str() ),
-                           cl.SwitchStrings( "x" ), cl.GotSwitch( "f" ), cl.GotSwitch( "p" ) };
+                           cl.SwitchStrings( "x" ), bFactorised, cl.GotSwitch( "p" ) };
         // Walk the list of contractions, performing a separate bootstrap for each
         int BootstrapCount = 0;
         for( auto itc = Manifest.begin(); itc != Manifest.end(); itc++ )
@@ -627,9 +637,10 @@ int main(const int argc, const char *argv[])
     "-a     list of gamma algebras we're interested in\n"
     "-g     Group name to read correlators from\n"
     "-s     Perform bootstrap for specified study number\n"
-    "-t     timeslice detail 0 (none), 1 (.txt=default) or 2 (.txt+.h5)\n"
+    "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"
+    "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
-    "-f     Factorised (sort correlator component parts and group)"
+    "-f     Disable Factorisation (default: sort correlator component parts and group)\n"
     "-p     group momenta by P^2\n"
     "--help This message\n";
   }
