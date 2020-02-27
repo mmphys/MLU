@@ -65,24 +65,24 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "GFWall/fit/test/h1_l_p_0_0_0.corr_6_15.g5_gT5.model.4147798751.h5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i GFWall/fold/ -o GFWall/mixed/test"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "Z2/fit/new/h1_l_p_0_0_0.corr_9_19.g5_gT5.model.4147798751.h5"
+            argument = "GFWW/fit/h1_l_p_0_0_0.corr_4_7.g5_gT5.model.4147798751.h5"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i GFWW/fold/ -o GFWW/mixed/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "Z2/fit/h1_l_p_0_0_0.corr_9_15.g5_gT5.model.4147798751.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i Z2/fold/ -o Z2/mixed/"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-p 0_0_0,1_0_0,1_1_0,1_1_1,2_0_0"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--savecorr"

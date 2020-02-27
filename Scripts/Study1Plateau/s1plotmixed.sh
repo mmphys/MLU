@@ -36,11 +36,13 @@ FieldTitle="$field_title"
 PlotPrefix="$PlotPrefix"
 PlotSuffix="$PlotSuffix"
 my_xrange="${ti:-*}:${tf:-*}"
+#my_key="${key:-bottom right}"
+my_key="${key:-top right}"
 times="${times}"
 
 # Begin Felix
 #set term pdf size 5, 1.2
-set key bottom right maxrows 3
+set key @my_key maxrows 3
 #set yrange [0.99:1.035]
 #set ytics 0.01
 #set xrange [${ti}-3.2:${tf}+.2-2]

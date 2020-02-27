@@ -63,11 +63,11 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-ag5,gT5,gx5,gy5,gz5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ag5,gT5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f"
@@ -82,31 +82,11 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-r987654321"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-r4096292664"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-r384600236"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o boot/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-s1"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "h1_h1_p_0_0_0_t_0.3000.h5 h1_h1_p_0_0_0_t_12.3000.h5 h1_h1_p_0_0_0_t_4.3000.h5 h1_h1_p_0_0_0_t_60.3000.h5 h1_h1_p_0_0_0_t_8.3000.h5 h1_l_p_0_0_0_t_0.3000.h5 h1_l_p_0_0_0_t_12.3000.h5 h1_l_p_0_0_0_t_4.3000.h5 h1_l_p_0_0_0_t_60.3000.h5 h1_l_p_0_0_0_t_8.3000.h5 h1_s_p_0_0_0_t_0.3000.h5 h1_s_p_0_0_0_t_12.3000.h5 h1_s_p_0_0_0_t_4.3000.h5 h1_s_p_0_0_0_t_60.3000.h5 h1_s_p_0_0_0_t_8.3000.h5 l_h1_p_0_0_0_t_0.3000.h5 l_h1_p_0_0_0_t_12.3000.h5 l_h1_p_0_0_0_t_4.3000.h5 l_h1_p_0_0_0_t_60.3000.h5 l_h1_p_0_0_0_t_8.3000.h5 l_l_p_0_0_0_t_0.3000.h5 l_l_p_0_0_0_t_12.3000.h5 l_l_p_0_0_0_t_4.3000.h5 l_l_p_0_0_0_t_56.3000.h5 l_l_p_0_0_0_t_60.3000.h5 l_l_p_0_0_0_t_8.3000.h5 l_s_p_0_0_0_t_0.3000.h5 l_s_p_0_0_0_t_12.3000.h5 l_s_p_0_0_0_t_4.3000.h5 l_s_p_0_0_0_t_60.3000.h5 l_s_p_0_0_0_t_8.3000.h5 s_h1_p_0_0_0_t_0.3000.h5 s_h1_p_0_0_0_t_12.3000.h5 s_h1_p_0_0_0_t_4.3000.h5 s_h1_p_0_0_0_t_60.3000.h5 s_h1_p_0_0_0_t_8.3000.h5 s_l_p_0_0_0_t_0.3000.h5 s_l_p_0_0_0_t_12.3000.h5 s_l_p_0_0_0_t_4.3000.h5 s_l_p_0_0_0_t_60.3000.h5 s_l_p_0_0_0_t_8.3000.h5 s_s_p_0_0_0_t_0.3000.h5 s_s_p_0_0_0_t_12.3000.h5 s_s_p_0_0_0_t_16.3000.h5 s_s_p_0_0_0_t_20.3000.h5 s_s_p_0_0_0_t_4.3000.h5 s_s_p_0_0_0_t_60.3000.h5 s_s_p_0_0_0_t_8.3000.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o Z2/bootstrap/test/ -i Z2/meson/prop_ &apos;h1_*_prop_l_*_sink_p_0_0_0.*&apos; &apos;l_*_prop_h1_*_sink_p_0_0_0.*&apos;"
+            argument = "-o Z2/bootstrap/test/ -i Z2/meson/prop_ &apos;h1_*_prop_l_*&apos; &apos;l_*_prop_h1_*&apos;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

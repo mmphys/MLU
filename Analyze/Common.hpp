@@ -1083,6 +1083,20 @@ public:
       throw "Summary " + std::to_string(idx) + "/" + std::to_string(iSize) + " doesn't exist";
     return m_pSummaryData.get() + idx * Nt_;
   }
+  inline const ValWithEr<scalar_type> * getSummaryData( int idx = 0 ) const
+  {
+    const int iSize{ static_cast<int>( SummaryNames.size() ) };
+    if( Nt_ == 0 || idx < 0 || idx >= iSize )
+      throw "Summary " + std::to_string(idx) + "/" + std::to_string(iSize) + " doesn't exist";
+    return m_pSummaryData.get() + idx * Nt_;
+  }
+  void WriteSummaryData( std::ostream &s, int idx = 0 ) const
+  {
+    s << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha;
+    const ValWithEr<scalar_type> * p{ getSummaryData( idx ) };
+    for( int t = 0; t < Nt_; t++ )
+      s << ( t == 0 ? "" : " " ) << *p++;
+  }
   void SetSummaryNames( const std::vector<std::string> &summaryNames_ )
   {
     AllocSummaryBuffer( summaryNames_.size() * Nt_ );
@@ -1096,6 +1110,26 @@ public:
     if( columnNames_.size() != Nt_ )
       throw std::runtime_error( "There should be names for " + std::to_string( Nt_ ) + " columns" );
     ColumnNames = columnNames_;
+  }
+  void WriteColumnNames( std::ostream &s ) const
+  {
+    const std::string Sep{ " " };
+    if( Nt_ == 0 )
+      throw std::runtime_error( "Can't write header - Nt_ = 0" );
+    std::string Buffer{ "t" };
+    const std::size_t BufferLen{ Buffer.size() };
+    const std::string * ps{ &Buffer };
+    for( std::size_t t = 0; t < Nt_; t++ )
+    {
+      if( ColumnNames.empty() )
+      {
+        Buffer.resize( BufferLen );
+        Buffer.append( std::to_string( t ) );
+      }
+      else
+        ps = &ColumnNames[t];
+      s << ( t == 0 ? "" : Sep ) << *ps << Sep << *ps << "_low" << Sep << *ps << "_high" << Sep << *ps << "_check";
+    }
   }
   const std::vector<std::string> & GetColumnNames() const { return ColumnNames; }
   void resize( int NumSamples, int Nt, std::vector<std::string> * pAuxNames = nullptr )
@@ -1201,7 +1235,7 @@ public: // Override these for specialisations
   virtual const std::string & DefaultGroupName() { return sBootstrap; }
   virtual bool bFolded() { return false; }
   // Descendants should call base first
-  virtual void SummaryComments( std::ostream & s )
+  virtual void SummaryComments( std::ostream & s ) const
   {
     s << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha;
     if( Seed_ ) s << "# Seed: " << Seed_ << NewLine;
@@ -1702,7 +1736,7 @@ public:
   : Base::Sample( FileName, GroupName, PrintPrefix, pOpNames ) {}*/
   virtual const std::string & DefaultGroupName() { return sFold; }
   virtual bool bFolded() { return true; }
-  virtual void SummaryComments( std::ostream & s )
+  virtual void SummaryComments( std::ostream & s ) const
   {
     Base::SummaryComments( s );
     if( NtUnfolded ) s << "# NtUnfolded: " << NtUnfolded << NewLine;
@@ -1968,7 +2002,7 @@ public:
     H5::WriteAttribute( g, sOperators, OpNames );
     return iReturn;
   }
-  virtual void SummaryComments( std::ostream & s )
+  virtual void SummaryComments( std::ostream & s ) const
   {
     Base::SummaryComments( s );
     s << "# NumExponents: " << NumExponents << NewLine

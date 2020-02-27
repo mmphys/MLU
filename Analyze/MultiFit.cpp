@@ -621,7 +621,7 @@ int main(int argc, const char *argv[])
       {"dti", CL::SwitchType::Single, "1"},
       {"dtf", CL::SwitchType::Single, "1"},
       {"sep", CL::SwitchType::Single, "0.2"},
-      {"delta", CL::SwitchType::Single, "6"},
+      {"delta", CL::SwitchType::Single, "2"},
       {"skip", CL::SwitchType::Single, "10"},
       {"iter", CL::SwitchType::Single, "0"},
       {"tol", CL::SwitchType::Single, "0.0001"},
@@ -773,15 +773,15 @@ int main(int argc, const char *argv[])
                 // Name the data series
                 s << "# [tf=" << tf << "]" << std::endl;
                 // Column names, with the series value embedded in the column header (best I can do atm)
-                s << "tf=" << tf << Sep << "ti";
+                s << "tf=" << tf << Sep << "ti" << Sep << "dof";
                 for( int p = 0; p < m.NumParams; p++ )
                   s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "_low" << Sep << m.ParamNames[p] << "_high" << Sep << m.ParamNames[p] << "_check";
-                s << " ChiSq Dof ChiSqPerDof" << std::endl;
+                s << " ChiSqPerDof" << std::endl;
               }
-              s << tf << Sep << ti;
+              s << tf << Sep << ti << Sep << dof;
               for( int p = 0; p < m.NumParams; p++ )
                 s << Sep << params[p];
-              s << Sep << ChiSq << Sep << dof << Sep << ( ChiSq / dof ) << std::endl;
+              s << Sep << ( ChiSq / dof ) << std::endl;
             }
             catch(const std::exception &e)
             {
@@ -810,7 +810,7 @@ int main(int argc, const char *argv[])
     "--dti  Number of initial fit times (default 1)\n"
     "--dtf  Number of final   fit times (default 1)\n"
     "--sep  Minimum relative separation between energy levels (default 0.2)\n"
-    "--delta Minimum number of timeslices in fit range (default 6)\n"
+    "--delta Minimum number of timeslices in fit range (default 2)\n"
     "--skip Number of fits to throw away prior to central fit (default 10)\n"
     "--iter Max iteration count, 0 (default) = unlimited\n"
     "--tol  Tolerance of required fits * 10^3 (default 0.0001)\n"

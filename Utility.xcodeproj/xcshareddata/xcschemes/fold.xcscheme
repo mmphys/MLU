@@ -53,11 +53,15 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i Z2/bootstrap/test/ -o Z2/fold/test/"
+            argument = "-i Z2/bootstrap/ -o Z2/fold/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i GFWW/bootstrap/ -o GFWW/fold/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i GFWall/bootstrap/ -o GFWall/fold/test/"
+            argument = "-i GFWP/bootstrap/ -o GFWP/fold/"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

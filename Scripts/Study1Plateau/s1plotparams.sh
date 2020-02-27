@@ -18,28 +18,38 @@ FieldNameNoUS="${field//_/\\\\_}"
 
 gnuplot <<-EOFMark
 
+PlotFile="$PlotFile"
 do_chi=${do_chi:-0}
 chi_max=${chi:-0}
 NumExp=${e:-1}
-my_key="${key:-top right}"
+#my_key="${key:-top right}"
+my_key="${key:-bottom left}"
 FieldName="${field:-E}"
 FieldNameNoUS="${FieldNameNoUS}"
 my_yrange="${yrange:-*:*}"
 
-set term pdf
-
-set pointsize 0.6
-set xlabel 'initial fit time'
-set xrange [${ti:=*}:${tf:=*}]
-set yrange[@my_yrange]
-#set palette defined ( 15 "blue", 16 "red", 17 "green")
-set key @my_key
-
 sChiDescr='{/Times:Italic χ}^2 per d.o.f.'
-if( do_chi ) { sChiDescr=sChiDescr." <= ".sprintf("%g",chi_max) }
+if( do_chi ) { sChiDescr=sChiDescr." (≤ ".sprintf("%g",chi_max).")" }
 FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit using ${mmplotfile_ops_all//_/ }"
 OutBase="${mmplotfile_base}.${mmplotfile_corr_all}.${mmplotfile_ops_all}."
 OutSuffix=".${mmplotfile_seed}.pdf"
+
+set term pdf
+set pointsize 0.6
+set xlabel sChiDescr
+set xrange [*:${chi:-*}]
+set yrange[@my_yrange]
+#set palette defined ( 15 "blue", 16 "red", 17 "green")
+set key @my_key
+set logscale x
+
+stats PlotFile using 2 nooutput
+NBlock=STATS_blocks
+
+YField='(do_chi==0 ? column(MyField) : (column("ChiSqPerDof") <= chi_max ? column(MyField) : 1/0))'
+YFieldLow='(do_chi==0 ? column(MyField."_low") : (column("ChiSqPerDof") <= chi_max ? column(MyField."_low") : 1/0))'
+YFieldHigh='(do_chi==0 ? column(MyField."_high") : (column("ChiSqPerDof") <= chi_max ? column(MyField."_high") : 1/0))'
+WithLabels='with labels font "Arial,6" offset char 0,'
 
 do for [MyFieldNum = 0:NumExp - 1] {
   MyField=FieldName.MyFieldNum
@@ -50,35 +60,42 @@ do for [MyFieldNum = 0:NumExp - 1] {
   if (MyFieldNum==0) {
     set arrow from graph 0, first 0.99656 to graph 1, first 0.99656 nohead front lc rgb "gray40" lw 0.25  dashtype "-"
     set label 2 "E_0=0.99656(95), ArXiv:1812.08791" at screen 0, 0 font "Arial,8" front textcolor "grey40" offset character 1, character 0.75
-    #set yrange[0.95:1.05]
   } else {
     unset arrow
     unset label 2
-    #unset yrange
-    set yrange[1.25:1.5]
   }
   MyTitle = MyFieldNoUS.FitName
-  if( do_chi ) { MyTitle=MyTitle." (".sChiDescr.")" }
   set title MyTitle
   set ylabel MyFieldNoUS.'(t)'
   
-  plot for [idx=0:*] "$PlotFile" index idx using (column("ti")-0.1+0.05*idx):(do_chi==0 ? column(MyField) : column("ChiSqPerDof") <= chi_max ? column(MyField) : 1/0 ):(column(MyField."_low")):(column(MyField."_high")) with yerrorbars title columnhead(1)
-  #plot for [idx=0:*] "$PlotFile" index idx using (column("ti")-0.1+0.05*idx):(column(MyField)):(column(MyField."ErLow")):(column(MyField."ErHigh")) with yerrorbars title columnhead(1)
+  plot \
+    for [idx=0:NBlock-1] PlotFile index idx using \
+      "ChiSqPerDof":@YField:@YFieldLow:@YFieldHigh with yerrorbars title columnheader(1), \
+    for [idx=0:NBlock-1] ''       index idx using "ChiSqPerDof":@YFieldHigh:"tf" @WithLabels 0.5 notitle
 }
 
 unset arrow
 unset label 2
+unset xrange
+unset logscale x
+#set yrange [*:${chi:-*}]
 unset yrange
 OutFile=OutBase.'chisq'.OutSuffix
 set output OutFile
 set label 1 OutFile noenhanced at screen 0.95, 0 right font "Arial,8" front textcolor "grey40" offset character 0, character 0.75
 set title sChiDescr." ".FitName
-#set xrange [3.8:12.2]
-#set xrange [5.8:12.2]
 set ylabel sChiDescr
+set xlabel 'Increasing '.sChiDescr
+set key top left
+unset xtics
+
+XField='(do_chi==0 ? column(1) : (column("ChiSqPerDof") <= chi_max ? column(1) : 1/0))'
 
 MyField="ChiSqPerDof"
-plot for [idx=0:*] "$PlotFile" index idx using (column("ti")-0.1+0.05*idx):(do_chi==0 ? column(MyField) : column("ChiSqPerDof") <= chi_max ? column(MyField) : 1/0 ):(column(-2)+1):(column(-2)+1) with linespoints pt variable lc variable title columnhead(1)
+plot \
+  for [idx=0:NBlock-1] PlotFile index idx using \
+    @XField:@YField:@YFieldLow:@YFieldHigh with yerrorbars title columnheader(1), \
+  for [idx=0:NBlock-1] ''       index idx using @XField:@YFieldHigh:"tf" @WithLabels 0.75 notitle
 EOFMark
 
 fi

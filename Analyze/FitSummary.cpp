@@ -28,16 +28,39 @@
 
 #include "Common.hpp"
 
-//#include <ios>
+#include <set>
 
 using scalar = double;
 using Model = Common::Model<scalar>;
 
 using FitTimes = std::pair<int, int>;
+struct FitData
+{
+  scalar ChisqPerDof;
+  int ti;
+  int tf;
+  int dof;
+  std::string Parameters;
+  int ChiSeq = 0;
+  FitData() = default;
+  FitData( scalar ChisqPerDof_, int ti_, int tf_, int dof_, const std::string &Parameters_ )
+  : ChisqPerDof{ ChisqPerDof_ }, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Parameters{ Parameters_ } {}
+};
 
-using Detail = std::map<FitTimes, std::string>;
+struct Detail
+{
+  std::map<FitTimes, FitData> Fits;
+  int Nt;
+  std::string ColumnNames;
+  std::string Comments;
+  Common::SeedType Seed;
+  std::string SeedMachine;
+};
 
 using Summary = std::map<std::string, Detail>;
+
+using chisqdof_ti_tf = std::tuple<scalar, int, int>;
+using SortByDof = std::map<chisqdof_ti_tf, std::string>;
 
 int main(int argc, const char *argv[])
 {
@@ -62,41 +85,29 @@ int main(int argc, const char *argv[])
 
       bShowUsage = false;
       Summary Sum;
+      // Read every model, saving all the data I'll need to reconstruct the summary
       for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
       {
         Common::FileNameAtt n{ sFileName, };
         n.ParseExtra();
         std::size_t NumExtra{ n.Extra.size() };
         std::string sFitType;
-        bool bOK = false;
-        int t[2];
-        if( !Common::FileExists( sFileName ) )
-          std::cout << sFileName << " doesn't exist\n";
-        else if( NumExtra )
+        try
         {
+          if( !Common::FileExists( sFileName ) )
+            throw std::runtime_error( "doesn't exist" );
+          else if( !NumExtra )
+            throw std::runtime_error( "doesn't include fit type in name" );
           sFitType = n.Extra[NumExtra - 1];
-          bOK = Common::FileExists( sFileName );
-          for( int i = 0; bOK && i < 2 ; i++ )
+          for( int i = 0; i < 2 ; i++ )
           {
-            bOK = false;
             std::size_t pos = sFitType.find_last_of( '_' );
-            if( pos != std::string::npos )
-            {
-              std::stringstream ss{ sFitType.substr( pos + 1 ) };
-              if( ss >> t[i] )
-              {
-                sFitType.resize( pos );
-                bOK = true;
-              }
-            }
+            if( pos == std::string::npos )
+              break;
+            sFitType.resize( pos );
           }
-          if( !bOK )
-            std::cout << "No timestamp info in " << sFileName << "\n";
-        }
-        if( bOK )
-        {
-          std::string sOutFile{ outBaseFileName };
-          sOutFile.append( n.Base );
+          // The master key for this record is the base filename of the output
+          std::string sOutFile{ n.Base };
           sOutFile.append( 1, '.' );
           sOutFile.append( sFitType );
           for( std::size_t i = NumExtra - 1; i-- > 0; )
@@ -104,85 +115,101 @@ int main(int argc, const char *argv[])
             sOutFile.append( 1, '.' );
             sOutFile.append( n.Extra[i] );
           }
-          sOutFile.append( 1, '.' );
-          sOutFile.append( Common::sParams );
-          sOutFile.append( 1, '.' );
-          sOutFile.append( n.SeedString );
-          sOutFile.append( 1, '.' );
-          sOutFile.append( TEXT_EXT );
-
-          // Add this filename to the correct list
-          //std::cout << sOutFile << " " << t[1] << "-" << t[0] << "\n";
-          Sum[sOutFile].emplace( std::make_pair( std::make_pair( t[0], t[1] ), sFileName ) );
+          Detail & Det{ Sum[sOutFile] };
+          // Check the model characteristics
+          Model m;
+          m.Read( sFileName, " " );
+          std::ostringstream ss;
+          m.WriteColumnNames( ss );
+          if( Det.Fits.empty() )
+          {
+            Det.Nt = m.Nt();
+            Det.ColumnNames = ss.str();
+            ss.str("");
+            m.SummaryComments( ss );
+            ss << "# column(1) is the row order when sorted by ChiSqPerDof\n";
+            Det.Comments = ss.str();
+            Det.Seed = m.Seed_;
+            Det.SeedMachine = m.SeedMachine_;
+          }
+          else
+          {
+            if( Det.Nt != m.Nt() || !Common::EqualIgnoreCase( Det.ColumnNames, ss.str() ) )
+              throw std::runtime_error( "Fit column names don't match" );
+            if( Det.Seed != m.Seed_ || !Common::EqualIgnoreCase( Det.SeedMachine, m.SeedMachine_ ) )
+              throw std::runtime_error( "Fit seeds don't match" );
+          }
+          // Save the summary of the parameters for this file
+          ss.str("");
+          m.WriteSummaryData( ss );
+          Det.Fits.emplace( std::make_pair(std::make_pair( m.ti, m.tf ),
+                                           FitData(m.getSummaryData()[Det.Nt-1].Central,
+                                                   m.ti, m.tf, m.dof, ss.str())));
+        }
+        catch( const std::exception &e )
+        {
+          std::cout << sFileName << " Error: " << e.what() << std::endl;
         }
       }
-      // Now make each summary file
+      // Now process the list of summary files we need to make
       static const std::string Sep{ " " };
       static const std::string sIndent{ "  " };
       for( Summary::iterator it = Sum.begin(); it != Sum.end(); ++it )
       {
-        const std::string &sSummaryName{ it->first };
+        const std::string &sSummaryName{ outBaseFileName + it->first };
+        std::cout << sSummaryName << "\n";
         Detail &Det{ it->second };
-        std::cout << "Making " << sSummaryName << "\n";
-        std::ofstream s;
-        Model m;
-        std::size_t tf_last = std::numeric_limits<int>::min();
-        for( Detail::iterator dt = Det.begin(); dt != Det.end(); ++dt )
+        // Sort the fits by chi-squared
+        std::set<chisqdof_ti_tf> vChiSort;
+        for( auto dt = Det.Fits.begin(); dt != Det.Fits.end(); ++dt )
         {
-          const FitTimes &Fit{ dt->first };
-          const std::string &sModelName{ dt->second };
-          const int ti{ Fit.second };
-          const int tf{ Fit.first };
-          std::cout << sIndent << ti << "-" << tf;
-          bool bOK{ false };
-          try
+          const FitData &d{ dt->second };
+          vChiSort.emplace( d.ChisqPerDof, d.ti, d.tf );
+        }
+        // Update the fits with sorted sequence number for chi-squared and save sorted file
+        std::string sFileName=Common::MakeFilename( sSummaryName, Common::sParams + "_sort", Det.Seed, TEXT_EXT );
+        std::ofstream s( sFileName );
+        Common::SummaryHeader<scalar>( s, sFileName );
+        s << Det.Comments;
+        s << "ChiSeq ti tf dof " << Det.ColumnNames << "\n";
+        int ChiSeq{ 0 };
+        for( auto dt = vChiSort.begin(); dt != vChiSort.end(); ++dt )
+        {
+          const chisqdof_ti_tf &z{ *dt };
+          FitData & d{ Det.Fits[std::make_pair( std::get<1>( z ), std::get<2>( z ) )] };
+          d.ChiSeq = ChiSeq++;
+          s << d.ChiSeq << Sep << d.ti << Sep << d.tf << Sep << d.dof << Sep << d.Parameters << "\n";
+        }
+        s.close();
+        // Now make the output file
+        sFileName=Common::MakeFilename( sSummaryName, Common::sParams, Det.Seed, TEXT_EXT );
+        std::size_t t_last = std::numeric_limits<int>::min();
+        for( auto dt = Det.Fits.begin(); dt != Det.Fits.end(); ++dt )
+        {
+          const FitData &d{ dt->second };
+          // Write header before each block
+          if( t_last != d.ti )
           {
-            m.Read( sModelName, " " );
-            bOK = true;
-          }
-          catch (const std::exception &e)
-          {
-            std::cout << sIndent << "Error: " << e.what() << "\n";
-          }
-          catch (...)
-          {
-            std::cout << sIndent << "Not a model - ignoring\n";
-          }
-          if( bOK )
-          {
-            const std::vector<std::string> &ParamNames{ m.GetColumnNames() };
-            const int NumParams{ static_cast<int>( ParamNames.size() ) };
-            // Write header before each block
-            if( tf_last != tf )
+            t_last = d.ti;
+            if( !s.is_open() )
             {
-              tf_last = tf;
-              if( !s.is_open() )
-              {
-                s.open( sSummaryName );
-                Common::SummaryHeader<scalar>( s, sSummaryName );
-                m.SummaryComments( s );
-              }
-              else
-              {
-                // two blank lines at start of new data block
-                s << "\n" << std::endl;
-              }
-              // Name the data series
-              s << "# [tf=" << tf << "]" << std::endl;
-              // Column names, with the series value embedded in the column header (best I can do atm)
-              s << "tf=" << tf << Sep << "ti";
-              for( int p = 0; p < NumParams; p++ )
-                s << Sep << ParamNames[p] << Sep << ParamNames[p] << "_low" << Sep << ParamNames[p]
-                  << "_high" << Sep << ParamNames[p] << "_check";
-              s << " ChiSq Dof" << std::endl;
+              s.open( sFileName );
+              Common::SummaryHeader<scalar>( s, sFileName );
+              s << Det.Comments;
+              s << "# columnheader(1) is the block (index) title\n";
             }
-            // Now write this row
-            const Common::ValWithEr<scalar> * pSum{ m.getSummaryData() };
-            s << tf << Sep << ti;
-            for( int p = 0; p < NumParams; p++ )
-              s << Sep << *pSum++;
-            s << Sep << ( pSum[-1].Central * m.dof ) << Sep << m.dof << std::endl;
+            else
+            {
+              // two blank lines at start of new data block
+              s << "\n\n";
+            }
+            // Name the data series
+            s << "# [ti=" << d.ti << "]\n";
+            // Column names, with the series value embedded in the column header (best I can do atm)
+            s << "ti=" << d.ti << " ti tf dof " << Det.ColumnNames << "\n";
           }
+          // Now write this row
+          s << d.ChiSeq << Sep << d.ti << Sep << d.tf << Sep << d.dof << Sep << d.Parameters << "\n";
         }
       }
     }

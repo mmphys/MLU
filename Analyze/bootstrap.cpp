@@ -640,7 +640,7 @@ int main(const int argc, const char *argv[])
     "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
-    "-f     Disable Factorisation (default: sort correlator component parts and group)\n"
+    "-f     Disable Factorisation (default: sort correlator components and group)\n"
     "-p     group momenta by P^2\n"
     "--help This message\n";
   }

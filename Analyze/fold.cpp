@@ -30,7 +30,7 @@
 #include <typeinfo>
 #include "Common.hpp"
 
-struct Fold
+struct FoldProp
 {
   Common::Reality reality = Common::Reality::Real;
   Common::Parity parity = Common::Parity::Even;
@@ -93,11 +93,11 @@ struct Fold
       throw std::runtime_error( "Option string '" + s + "' invalid" );
     }
   }
-  Fold() = default;
-  explicit Fold( const char * pc, std::size_t Len ) { Parse( pc, Len ); }
+  FoldProp() = default;
+  explicit FoldProp( const char * pc, std::size_t Len ) { Parse( pc, Len ); }
 };
 
-inline std::ostream & operator<<( std::ostream &os, const Fold &f )
+inline std::ostream & operator<<( std::ostream &os, const FoldProp &f )
 {
   return os << f.reality << ", " << f.parity << ", " << f.sign << (f.t0Abs ? ", abs( C(0) )" : "" )
             << ( f.Conjugate ? " and conjugate operators" : "" );
@@ -106,7 +106,7 @@ inline std::ostream & operator<<( std::ostream &os, const Fold &f )
 int main(int argc, const char *argv[])
 {
   using scalar = double;
-  using SR = Common::Fold<scalar>;
+  using Fold = Common::Fold<scalar>;
   using SC = Common::Sample<std::complex<scalar>>;
   // We're not using C-style I/O
   std::ios_base::sync_with_stdio(false);
@@ -130,12 +130,12 @@ int main(int argc, const char *argv[])
       bShowUsage = false;
       const std::size_t inFileNameLen{ inFileName.length() };
       std::size_t Count = 0;
-      SR out;
+      Fold out;
       for( const std::string &Arg : cl.Args )
       {
         inFileName.resize( inFileNameLen );
         // Look for a comma
-        Fold f;
+        FoldProp f;
         std::size_t pos = Arg.find_last_of(',');
         if( pos == std::string::npos )
           inFileName.append( Arg );
@@ -144,7 +144,7 @@ int main(int argc, const char *argv[])
           f.Parse( &Arg[pos + 1], Arg.length() - pos - 1 );
           inFileName.append( Arg.c_str(), pos );
         }
-        std::cout << "Fold: " << f << std::endl;
+        std::cout << "FoldProp: " << f << std::endl;
         static const char pIndent[] = "  ";
         std::vector<std::string> FileList{ Common::glob( &inFileName, &inFileName + 1 ) };
         for( const std::string & FileName : FileList )
@@ -196,7 +196,7 @@ int main(int argc, const char *argv[])
             out.Conjugated = f.Conjugate;
             const int NtHalf{ Nt / 2 + 1 };
             out.resize( NumSamples, NtHalf );
-            scalar * dst{ out[SR::idxCentral] };
+            scalar * dst{ out[Fold::idxCentral] };
             const scalar * src{ SC::Traits::ScalarPtr( in[SC::idxCentral] )};
             if( f.reality == Common::Reality::Imag )
               src++;
@@ -259,12 +259,17 @@ int main(int argc, const char *argv[])
   if( bShowUsage )
   {
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
-    " <options> ContractionFile1 [ContractionFile2 ...]\n"
+    " <options> BootstrapFile1,<FoldOptions1> [ContractionFile2,<FoldOptions2> ...]\n"
     "Save correlator in format ready for GNUPlot, where <options> are:\n"
+    "-i     Input prefix\n"
     "-o     Output prefix\n"
-    "-a     list of gamma algebras we're interested in\n"
-    "-x     eXclude file (may be repeated)\n"
-    "--help This message\n";
+    "--help This message\n"
+    "and <FoldOptions> is a case-insensitive string consisting of zero or more of\n"
+    "R/I    Real (default) or imaginary\n"
+    "E/O    Even (default) or Odd\n"
+    "P/N    Positive (default) or Negative in first half of timeslices\n"
+    "0      Disable taking the absolute value of timeslice 0. Default: take abs(c(0))\n"
+    "C      Fold the Conjugate operators together with this, i.e. swap source and sink\n";
   }
   return iReturn;
 }

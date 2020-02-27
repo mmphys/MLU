@@ -305,7 +305,6 @@
 		6822E8BE22A7057400A85993 /* Analyze */ = {
 			isa = PBXGroup;
 			children = (
-				686EC70924003ED30084D04D /* FitSummary.cpp */,
 				6822E8BF22A7057400A85993 /* bootstrap.cpp */,
 				6815510C22CBE676009AB4AD /* Common.cpp */,
 				6815510B22CBE676009AB4AD /* Common.hpp */,
@@ -314,6 +313,7 @@
 				681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */,
 				681DC8BA22F20D8B00EE04A9 /* CommonLatAn.hpp */,
 				6856DC4E23C391AE0040814E /* corrstat.cpp */,
+				686EC70924003ED30084D04D /* FitSummary.cpp */,
 				68B21CBF23E720AF00D93480 /* fold.cpp */,
 				681DC8B722F19CB000EE04A9 /* hlxml.cpp */,
 				681550FE22CBC9B9009AB4AD /* MultiFit.cpp */,
