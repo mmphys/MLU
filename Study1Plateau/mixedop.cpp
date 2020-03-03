@@ -37,7 +37,6 @@
 using scalar = double;
 using Model  = Common::Model <scalar>;
 using Fold   = Common::Fold  <scalar>;
-using Sample = Common::Sample<scalar>;
 
 static const std::string Sep{ "_" };
 static const std::string NewLine{ "\n" };
@@ -84,10 +83,13 @@ struct Parameters
   std::string InBase;
   std::string OutBase;
   std::vector<Common::Momentum> Momenta;
+  int tmin;
+  int tmax;
+  int step;
 };
 
 void MixingAngle( const Model &model, const std::array<SinkSource, ModelNumIndices> &ss,
-                  const std::array<std::array<Fold, NumMixed>, NumMixed> &Corr, Sample &CorrMixed,
+                  const std::array<std::array<Fold, NumMixed>, NumMixed> &Corr, Fold &CorrMixed,
                   int degrees, bool bAllReplicas, int Exponent )
 {
   const int NumParams{ model.Nt() };
@@ -124,11 +126,11 @@ void MixingAngle( const Model &model, const std::array<SinkSource, ModelNumIndic
   const double sin_sq_theta{ sintheta * sintheta };
   const double cos_sin_theta{ costheta * sintheta };
   const double * pCoeff{ model[Model::idxCentral] + model.NumExponents + Exponent * model.OpNames.size() };
-  const double * pPP{ Corr[idxg5 ][idxg5 ][Sample::idxCentral] };
-  const double * pAP{ Corr[idxgT5][idxg5 ][Sample::idxCentral] };
+  const double * pPP{ Corr[idxg5 ][idxg5 ][Fold::idxCentral] };
+  const double * pAP{ Corr[idxgT5][idxg5 ][Fold::idxCentral] };
   const double * pPA{ nullptr };
-  const double * pAA{ Corr[idxgT5][idxgT5][Sample::idxCentral] };
-  scalar * pDst = CorrMixed[Sample::idxCentral];
+  const double * pAA{ Corr[idxgT5][idxgT5][Fold::idxCentral] };
+  scalar * pDst = CorrMixed[Fold::idxCentral];
   double A_P1_snk{ 0 };
   double A_P1_src{ 0 };
   double A_A1_snk{ 0 };
@@ -138,10 +140,10 @@ void MixingAngle( const Model &model, const std::array<SinkSource, ModelNumIndic
   double Op_PA{ 0 };
   double Op_AA{ 0 };
   if( !model.Factorised )
-                 pPA= Corr[idxg5 ][idxgT5][Sample::idxCentral];
-  for( int i = Sample::idxCentral; i < NumSamples; i++ )//, pCoeff += model.Nt() )
+                 pPA= Corr[idxg5 ][idxgT5][Fold::idxCentral];
+  for( int i = Fold::idxCentral; i < NumSamples; i++ )//, pCoeff += model.Nt() )
   {
-    if( bAllReplicas || i == Sample::idxCentral )
+    if( bAllReplicas || i == Fold::idxCentral )
     {
       A_P1_snk = pCoeff[ss[idxg5 ].Sink];
       A_P1_src = pCoeff[ss[idxg5 ].Source];
@@ -218,8 +220,11 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
 
   // Base name doesn't have momentum
   std::string Base{ model.Name_.Base };
-  Common::Momentum fileMom;
-  const bool bGotFileMom{ fileMom.Extract( Base ) };
+  std::vector<Common::Momentum> fileMom{ 1 };
+  const bool bGotFileMom{ fileMom[0].Extract( Base ) };
+  if( !Par.Momenta.size() && ! bGotFileMom )
+    throw std::runtime_error( "Momentum needs to be specified" );
+  const std::vector<Common::Momentum> &MyMomenta{ Par.Momenta.size() ? Par.Momenta : fileMom };
 
 #ifdef DEBUG
   std::cout << "  Base: " << model.Name_.Base << NewLine;
@@ -228,19 +233,18 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
 #endif
   std::cout << "  Fit: " << ( model.Factorised ? "F" : "Unf" ) << "actorised, ti=" << model.ti << ", tf=" << model.tf << NewLine;
   if( bGotFileMom )
-    std::cout << "  File Momentum: " << fileMom << NewLine;
+    std::cout << "  File Momentum: " << fileMom[0] << NewLine;
   for( std::size_t i = 0; i < model.OpNames.size(); i++ )
     std::cout << "  File op[" << i << "]: " << model.OpNames[i] << NewLine;
   // NumSamples is the maximum of user selected and what's in the file
-  int NumSamples{ Par.NumSamples > 0 && Par.NumSamples < model.NumSamples() ? Par.NumSamples : model.NumSamples() };
-  std::cout << "  Count " << NumSamples << NewLine;
+  int NumSamples{ -999 };
 
   // Construct optimised model for each momentum
-  Sample CorrMixed;
+  Fold CorrMixed;
   std::array<std::array<Fold, NumMixed>, NumMixed> Corr;
   Base.append( "_p_" );
   const std::size_t BaseLen{ Base.length() };
-  for( const Common::Momentum &p : Par.Momenta )
+  for( const Common::Momentum &p : MyMomenta )
   {
     Base.resize( BaseLen );
     Base.append( p.to_string( Sep ) );
@@ -273,21 +277,33 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
         }
         Corr[iSnk][iSrc].Read( InFileName, "    " );
         if( iSnk == 0 && iSrc == 0 )
+        {
           Nt = Corr[iSnk][iSrc].Nt();
+          CorrMixed.Seed_ = Corr[iSnk][iSrc].Seed_;
+          CorrMixed.SeedMachine_ = Corr[iSnk][iSrc].SeedMachine_;
+          NumSamples = ( Par.NumSamples > 0 && Par.NumSamples < Corr[iSnk][iSrc].NumSamples() )
+                       ? Par.NumSamples : Corr[iSnk][iSrc].NumSamples();
+          if( Par.bAllReplicas && NumSamples > model.NumSamples() )
+            NumSamples = model.NumSamples();
+        }
         else
         {
           if( Nt != Corr[iSnk][iSrc].Nt() )
             throw std::runtime_error( "Nt " + std::to_string( Corr[iSnk][iSrc].Nt() ) + "!=" + std::to_string( Nt ) );
+          if( CorrMixed.Seed_ != Corr[iSnk][iSrc].Seed_ )
+            throw std::runtime_error( "Seed " + std::to_string( Corr[iSnk][iSrc].Seed_ ) + "!=" + std::to_string( CorrMixed.Seed_ ) );
+          if( !Common::EqualIgnoreCase( CorrMixed.SeedMachine_, Corr[iSnk][iSrc].SeedMachine_ ) )
+            throw std::runtime_error( "Machine " + Corr[iSnk][iSrc].SeedMachine_ + "!=" + CorrMixed.SeedMachine_ );
+          if( NumSamples > Corr[iSnk][iSrc].NumSamples() )
+            NumSamples = Corr[iSnk][iSrc].NumSamples();
         }
-        if( NumSamples > Corr[iSnk][iSrc].NumSamples() )
-          NumSamples = Corr[iSnk][iSrc].NumSamples();
       }
     }
     std::string Out{ Par.OutBase + BaseFit };
     std::cout << "    Writing " << NumSamples << " samples to " << Out << NewLine << "   ";
     Out.append( ".theta_" );
     const std::size_t OutLen{ Out.length() };
-    for( int degrees = -90; degrees <= 90; degrees ++ )
+    for( int degrees = Par.tmin; ; degrees+=Par.step )
     {
       if( !( degrees % 10 ) )
       {
@@ -295,13 +311,22 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
         std::cout.flush();
       }
       CorrMixed.resize( NumSamples, Nt );
+      CorrMixed.NtUnfolded = Corr[0][0].NtUnfolded;
+      CorrMixed.parity = Common::Parity::Unknown;
+      CorrMixed.reality = Common::Reality::Real;
+      CorrMixed.sign = Common::Sign::Positive;
+      CorrMixed.Conjugated = false;
+      CorrMixed.t0Negated = false;
       MixingAngle( model, idxOp, Corr, CorrMixed, degrees, Par.bAllReplicas, Exponent );
       Out.resize( OutLen );
       Out.append( std::to_string( degrees ) );
+      Out.append( "_m_m" );
+      CorrMixed.MakeCorrSummary( nullptr );
       if( Par.bSaveCorr )
         CorrMixed.Write( Common::MakeFilename(Out, Common::sBootstrap, model.Name_.Seed, DEF_FMT));
-      CorrMixed.MakeCorrSummary( nullptr );
       CorrMixed.WriteSummary(Common::MakeFilename(Out,Common::sBootstrap,model.Name_.Seed,TEXT_EXT));
+      if( degrees == Par.tmax )
+        break;
     }
     std::cout << NewLine;
   }
@@ -317,11 +342,14 @@ int main( int argc, const char *argv[] )
   try
   {
     const std::initializer_list<CL::SwitchDef> list = {
-      {"p", CL::SwitchType::Single, "0_0_0"},
+      {"p", CL::SwitchType::Single, nullptr},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"n", CL::SwitchType::Single, "0"},
       {"e", CL::SwitchType::Single, "-1"},
+      {"tmin", CL::SwitchType::Single, "-90"},
+      {"tmax", CL::SwitchType::Single, "90"},
+      {"step", CL::SwitchType::Single, "1"},
       {"rep", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -337,9 +365,15 @@ int main( int argc, const char *argv[] )
       Par.Exponent = cl.SwitchValue<int>("e");
       Par.bAllReplicas = cl.GotSwitch("rep");
       Par.bSaveCorr = cl.GotSwitch("savecorr");
-      Par.Momenta = Common::ArrayFromString<Common::Momentum>( cl.SwitchValue<std::string>("p") );
+      if( cl.GotSwitch( "p" ) )
+        Par.Momenta = Common::ArrayFromString<Common::Momentum>( cl.SwitchValue<std::string>("p") );
+      Par.tmin = cl.SwitchValue<int>("tmin");
+      Par.tmax = cl.SwitchValue<int>("tmax");
+      Par.step = std::abs( cl.SwitchValue<int>("step") );
       if( Par.NumSamples < 0 )
         throw std::runtime_error( "NumSamples must be >= 0" );
+      if( Par.tmin > Par.tmax )
+        Par.step *= -1;
       bShowUsage = false;
       for( const std::string & ModelFile : cl.Args )
         MakeModel( ModelFile, Par );
@@ -358,11 +392,14 @@ int main( int argc, const char *argv[] )
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
     " <options> Model1 [Model2 ...]\n"
     "Create a mixed operator from fit parameters and bootstrap replicas, where <options> are:\n"
-    "-p     Comma separated list of momenta, default 0_0_0\n"
+    "-p     Comma separated list of momenta (default: same as model file)\n"
     "-i     Input path for folded bootstrap replicas\n"
     "-o     Output path\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
     "-e     Which excited state to use in model (default -1), -ve counts from highest state"
+    "--tmin Minimum theta (default -90)\n"
+    "--tmax Maximum theta (default  90)\n"
+    "--step Steps between theta (default 1)\n"
     "Flags:\n"
     "--rep      Use per replica values of overlap constants in construction of model\n"
     "--savecorr Save bootstrap replicas of correlators\n"

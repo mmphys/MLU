@@ -26,28 +26,6 @@ do_timax=${do_timax}
 timax=${timax:-0}
 num=${num:-15}
 
-MyField="E0"
-E0=0.99656
-L=24
-kFactorSq=2 * pi / L
-kFactorSq=kFactorSq * kFactorSq
-#Momentum from k_x^2 + k_y^2 + k_z^2
-#Momentum(KDotK)=kFactor * sqrt(KDotK)
-#Dispersion relation from p
-disp2(KDotK)=KDotK >= 5 ? NaN : E0 * E0 + kFactorSq * ( KDotK > 5 ? 5 : int(KDotK) )
-disp(KDotK)=sqrt(disp2(KDotK))
-#Lattice dispersion relation
-#Delta=1/L
-SinhSqE0=sinh(E0/2)
-SinhSqE0=SinhSqE0 * SinhSqE0
-K1Factor=sin(pi/L)
-K1Factor=K1Factor*K1Factor
-K2Factor=sin(2*pi/L)
-K2Factor=K2Factor*K2Factor
-SinSum(KDotK)=KDotK < 1 ? 0 : KDotK < 4 ? int( KDotK ) * K1Factor : K2Factor + int(KDotK-4) * K1Factor;
-LatDisp(KDotK)=KDotK >= 5 ? NaN : 2*asinh(sqrt(SinhSqE0 + SinSum(KDotK)))
-LatDisp2(KDotK)=LatDisp(KDotK)*LatDisp(KDotK)
-
 filename(n)=q1."_".q2."_p_".word("0_0_0 1_0_0 1_1_0 1_1_1 2_0_0",n+1).".".fit.".params_sort.".seed.".txt"
 
 SeriesName(n)="ti=".n
@@ -70,6 +48,45 @@ do for [i=0:4] {
 if( do_timin ) { TIMin = TIMin < timin ? timin : TIMin }
 if( do_timax ) { TIMax = TIMax > timax ? timax : TIMax }
 #print "TIMin=".sprintf("%g",TIMin)." TIMax=".sprintf("%g",TIMax)
+
+#Work out best fit of E0 in range
+Condition='count > 0 ? 1/0 : '
+if( do_timin ) { Condition=Condition.'column("ti") < TIMin ? 1/0 : ' }
+if( do_timax ) { Condition=Condition.'column("ti") > TIMax ? 1/0 : ' }
+if( do_chi ) { Condition=Condition.'column("ChiSqPerDof") > chi_max ? 1/0 : ' }
+count=0
+stats filename(0) using (@Condition (count=count + 1, column("E0"))) nooutput
+E0=STATS_min
+count=0
+stats filename(0) using (@Condition (count=count + 1, column("ti"))) nooutput
+WhichTI=int(STATS_min)
+count=0
+stats filename(0) using (@Condition (count=count + 1, column("tf"))) nooutput
+WhichTF=int(STATS_min)
+#print 'STATS_min='.gprintf("%g",STATS_min).' STATS_max='.gprintf("%g",STATS_max)
+
+MyField="E0"
+#E0=0.99656
+L=24
+kFactorSq=2 * pi / L
+kFactorSq=kFactorSq * kFactorSq
+#Momentum from k_x^2 + k_y^2 + k_z^2
+#Momentum(KDotK)=kFactor * sqrt(KDotK)
+#Dispersion relation from p
+disp2(KDotK)=KDotK >= 5 ? NaN : E0 * E0 + kFactorSq * ( KDotK > 5 ? 5 : int(KDotK) )
+disp(KDotK)=sqrt(disp2(KDotK))
+#Lattice dispersion relation
+#Delta=1/L
+SinhSqE0=sinh(E0/2)
+SinhSqE0=SinhSqE0 * SinhSqE0
+K1Factor=sin(pi/L)
+K1Factor=K1Factor*K1Factor
+K2Factor=sin(2*pi/L)
+K2Factor=K2Factor*K2Factor
+SinSum(KDotK)=KDotK < 1 ? 0 : KDotK < 4 ? int( KDotK ) * K1Factor : K2Factor + int(KDotK-4) * K1Factor;
+LatDisp(KDotK)=KDotK >= 5 ? NaN : 2*asinh(sqrt(SinhSqE0 + SinSum(KDotK)))
+LatDisp2(KDotK)=LatDisp(KDotK)*LatDisp(KDotK)
+
 
 sChiDescr='{/Times:Italic χ}^2 per d.o.f.'
 
@@ -106,7 +123,8 @@ MySeries='column("ti") - TIMin + 1'
 WithLabels='with labels font "Arial,6" offset char 0,'
 
 #set label "Dispersion: (a E_0)^2 + (2 {/Times:Italic π} a / L)^2 k^2" at graph 1, graph 0 font "Arial,12" front textcolor "grey40" offset character -1.5, character 1.5 right
-set label "E_0=0.99656(95), ArXiv:1812.08791" at graph 1, graph 0 font "Arial,8" front textcolor "grey40" offset character -1, character 1 right
+#set label "E_0=0.99656(95), ArXiv:1812.08791" at graph 1, graph 0 font "Arial,8" front textcolor "grey40" offset character -1, character 1 right
+set label 'E_0='.gprintf("%g",E0).' from fit at ti='.WhichTI.', tf='.WhichTF at graph 1, graph 0 font "Arial,8" front textcolor "grey40" offset character -1, character 1 right
 set xrange [0:6]
 set samples 1000
 MyScale=1./num < 0.08 ? 0.08 : 1./num

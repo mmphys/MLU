@@ -62,8 +62,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i GFWW/fold/h1_l_p_0_0_0_ -o GFWW/fit/"
+            argument = "-i GFWP/fold/h1_l_p_2_0_0_ -o GFWP/fit/"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i GFWW/fold/h1_l_p_0_0_0_ -o GFWW/fit/"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i Z2/fold/h1_l_p_0_0_0_ -o Z2/fit/"
@@ -75,47 +79,47 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "gT5_g5*5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti 2"
-            isEnabled = "YES">
+            argument = "--ti 4"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti 7"
-            isEnabled = "NO">
+            argument = "--ti 6"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti 9"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--tf 7"
-            isEnabled = "YES">
+            argument = "--tf 12"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tf 15"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--tf 19"
-            isEnabled = "NO">
+            argument = "--tf 20"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = " --dti 6"
+            argument = "--dti 7"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dti 2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dtf 6"
@@ -127,11 +131,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--delta 2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-n 100"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--skip 3"

@@ -69,7 +69,7 @@ set title FieldTitle." from mixed operator ".PlotPrefix noenhanced
 #set logscale y
 FieldLow=FieldName."_low"
 FieldHigh=FieldName."_high"
-print "${mmplotfile_path}".PlotPrefix."theta_".word(times,1).".bootstrap".PlotSuffix."$mmplotvar_dat"
+#print "${mmplotfile_path}".PlotPrefix."theta_".word(times,1).".bootstrap".PlotSuffix."$mmplotvar_dat"
 plot for [i=1:words(times)] \
  "${mmplotfile_path}".PlotPrefix."theta_".word(times,i).".bootstrap".PlotSuffix."$mmplotvar_dat" \
   using (column("t")-first_offset+0.05*(i-1)):(column(FieldName)):(column(FieldLow)):(column(FieldHigh)) with yerrorbars title "θ=".word(times,i)

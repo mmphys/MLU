@@ -89,7 +89,7 @@ int main(int argc, const char *argv[])
       for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
       {
         Common::FileNameAtt n{ sFileName, };
-        n.ParseExtra();
+        n.ParseExtra( 2 );
         std::size_t NumExtra{ n.Extra.size() };
         std::string sFitType;
         try

@@ -65,6 +65,18 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--savecorr --tmin=-45 --tmax=-45 --step=0"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "GFWP/fit/h1_l_p_0_0_0.corr_6_20.g5_gT5.model.4147798751.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i GFWP/fold/ -o GFWP/mixed/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "GFWW/fit/h1_l_p_0_0_0.corr_4_7.g5_gT5.model.4147798751.h5"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -74,18 +86,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "Z2/fit/h1_l_p_0_0_0.corr_9_15.g5_gT5.model.4147798751.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i Z2/fold/ -o Z2/mixed/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-p 0_0_0,1_0_0,1_1_0,1_1_1,2_0_0"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--savecorr"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

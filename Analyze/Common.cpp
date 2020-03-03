@@ -476,10 +476,10 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   }
 }
 
-void FileNameAtt::ParseExtra()
+void FileNameAtt::ParseExtra( unsigned int MaxElements )
 {
   std::size_t pos;
-  while( ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
+  while( MaxElements-- && ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
   {
     Extra.push_back( Base.substr( pos + 1 ) );
     Base.resize( pos );

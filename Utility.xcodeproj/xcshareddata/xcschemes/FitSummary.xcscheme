@@ -58,6 +58,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i Z2/fit -o Z2/fit"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i GFWP/disp -o GFWP/disp"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

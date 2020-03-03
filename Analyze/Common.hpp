@@ -386,7 +386,7 @@ struct FileNameAtt
   FileNameAtt() = default;
   explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr )
     { Parse( Filename, pOpNames ); }
-  void ParseExtra();
+  void ParseExtra( unsigned int MaxElements = UINT_MAX );
 };
 
 // Make a filename "Base.Type.seed.Ext"
