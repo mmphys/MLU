@@ -344,6 +344,7 @@ int main( int argc, const char *argv[] )
     const std::initializer_list<CL::SwitchDef> list = {
       {"p", CL::SwitchType::Single, nullptr},
       {"i", CL::SwitchType::Single, "" },
+      {"m", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"n", CL::SwitchType::Single, "0"},
       {"e", CL::SwitchType::Single, "-1"},
@@ -359,6 +360,7 @@ int main( int argc, const char *argv[] )
     if( !cl.GotSwitch( "help" ) && NumFiles )
     {
       Parameters Par;
+      const std::string modelBase{ cl.SwitchValue<std::string>("m") };
       Par.InBase = Common::AppendSlash( cl.SwitchValue<std::string>("i") );
       Par.OutBase = Common::AppendSlash( cl.SwitchValue<std::string>("o") );
       Par.NumSamples = cl.SwitchValue<int>("n");
@@ -375,7 +377,7 @@ int main( int argc, const char *argv[] )
       if( Par.tmin > Par.tmax )
         Par.step *= -1;
       bShowUsage = false;
-      for( const std::string & ModelFile : cl.Args )
+      for(const std::string &ModelFile : Common::glob(cl.Args.begin(),cl.Args.end(),modelBase.c_str()))
         MakeModel( ModelFile, Par );
     }
   }
@@ -394,9 +396,10 @@ int main( int argc, const char *argv[] )
     "Create a mixed operator from fit parameters and bootstrap replicas, where <options> are:\n"
     "-p     Comma separated list of momenta (default: same as model file)\n"
     "-i     Input path for folded bootstrap replicas\n"
+    "-m     Input path for model files\n"
     "-o     Output path\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
-    "-e     Which excited state to use in model (default -1), -ve counts from highest state"
+    "-e     Which excited state to use in model (default -1), -ve counts from highest state\n"
     "--tmin Minimum theta (default -90)\n"
     "--tmax Maximum theta (default  90)\n"
     "--step Steps between theta (default 1)\n"

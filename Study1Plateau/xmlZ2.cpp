@@ -102,6 +102,7 @@ int main(int argc, char *argv[])
   globalPar.genetic.maxCstGen    = 200;
   globalPar.genetic.popSize      = 20;
   globalPar.genetic.mutationRate = .1;
+  globalPar.saveSchedule = false;
   application.setPar(globalPar);
   
   // gauge field
@@ -164,8 +165,8 @@ int main(int argc, char *argv[])
   }
 
   // Loop through all timeslices
-  for (unsigned int t = 0; t < nt; ++t) {
-    const std::string timeSuffix{ Sep + "t" + std::to_string( t ) };
+  for (unsigned int t = 0; t < nt; t+=4) {
+    const std::string timeSuffix{ Sep + "t" + Sep + std::to_string( t ) };
     const std::string sZ2{ "Z2" };
     // I will always need the momentum 0 Z_2 wall source for this timeslice
     const std::string Suffix0{ timeSuffix + Sep + "p" + Sep + Common::Momentum( 0, 0, 0 ).to_string( Sep ) };
@@ -189,7 +190,7 @@ int main(int argc, char *argv[])
     // Loop through all momenta
     for( unsigned int p = 0; p < NumMomenta; ++p ) {
       const std::string momentumSuffix{ Sep + "p" + Sep + Momenta[p].to_string( Sep ) };
-      const std::string Suffix{ timeSuffix + momentumSuffix };
+      const std::string Suffix{ momentumSuffix + timeSuffix };
 
       // Z2 source with this momenta (doesn't need creating for momentum 0)
       const std::string srcName{ Momenta[p] ? sZ2 + Suffix : srcName0 };
@@ -220,7 +221,8 @@ int main(int argc, char *argv[])
       for (unsigned int i = 0; i < NumQuarks; ++i)
         for (unsigned int j = 0; j < NumQuarks; ++j)
         {
-          const std::string MesonSuffix{ propName[i] + Sep + propName0[j] + Sep + SinkName[p] };
+          //const std::string MesonSuffix{ propName[i] + Sep + propName0[j] + Sep + SinkName[p] };
+          const std::string MesonSuffix{ Quarks[i].flavour + Sep + Quarks[j].flavour + Suffix };
           mesPar.output = "mesons/C1/Z2/" + MesonSuffix;
           mesPar.q1     = propName[i];
           mesPar.q2     = propName0[j];
@@ -233,7 +235,7 @@ int main(int argc, char *argv[])
   }
 
   // execution
-  static const std::string XmlFileName{ "Z2Plateau.xml" };
+  static const std::string XmlFileName{ "Z2.template.xml" };
   application.saveParameterFile( XmlFileName );
   const Grid::Coordinate &lat{GridDefaultLatt()};
   if( lat.size() == 4 && lat[0] == 24 && lat[1] == 24 && lat[2] == 24 && lat[3] == 64 )

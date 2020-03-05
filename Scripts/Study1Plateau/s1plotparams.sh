@@ -36,6 +36,7 @@ my_key="${key:-bottom left}"
 my_yrange="${yrange:-*:*}"
 MyColumnHeadings="${MyColumnHeadings}"
 MyColumnHeadingsNoUS="${MyColumnHeadingsNoUS}"
+my_xtics="${xtics}"
 
 # Find a column marked E0
 MyColumnHeadings=system("awk '/^#/ {next}; {print \$0;exit}' ".PlotFile)
@@ -61,11 +62,12 @@ OutSuffix=".${mmplotfile_seed}.pdf"
 set term pdf
 set pointsize 0.6
 set xlabel sChiDescr
-set xrange [*:${chi:-*}]
+#set xrange [*:${chi:-*}]
 set yrange[@my_yrange]
 #set palette defined ( 15 "blue", 16 "red", 17 "green")
 set key @my_key
-set logscale x
+#set logscale x
+if( my_xtics ne "" ) { set xtics @my_xtics }
 
 stats PlotFile using "ti" nooutput
 NBlock=STATS_blocks
@@ -99,9 +101,9 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   
   plot \
     for [idx=0:NBlock-1] PlotFile index idx using \
-      "ChiSqPerDof":(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \
+      (@Condition column("ChiSqPerDof")):(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \
       with yerrorbars title columnheader(1), \
-    for [idx=0:NBlock-1] '' index idx using "ChiSqPerDof":(@Condition column(MyField."_high")):(column("tf")) \
+    for [idx=0:NBlock-1] '' index idx using (@Condition column("ChiSqPerDof")):(@Condition column(MyField."_high")):(column("tf")) \
       @WithLabels 0.5 notitle
 
   if (MyField eq "E0") { unset arrow; unset label 2 }

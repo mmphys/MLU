@@ -62,7 +62,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i GFWP/fold/h1_l_p_2_0_0_ -o GFWP/fit/"
+            argument = "-i GFWP/fold/h1_l_p_0_0_0_ -o GFWP/fit/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -95,15 +95,15 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti 6"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--ti 10"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti 9"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "--tf 12"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tf 15"
@@ -111,7 +111,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tf 20"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dti 7"
@@ -127,7 +127,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dtf 9"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--delta 2"
@@ -135,7 +135,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-n 100"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--skip 3"
