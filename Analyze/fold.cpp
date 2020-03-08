@@ -267,7 +267,7 @@ int main(int argc, const char *argv[])
     "and <FoldOptions> is a case-insensitive string consisting of zero or more of\n"
     "r/i    Real (default) or imaginary\n"
     "e/o    Even (default) or Odd\n"
-    "p/c    Positive (default) or Negative in first half of timeslices\n"
+    "p/n    Positive (default) or Negative in first half of timeslices\n"
     "0      Disable taking the absolute value of timeslice 0. Default: take abs(c(0))\n"
     "c      Fold Conjugate operators (i.e. swap source and sink) together\n";
   }
