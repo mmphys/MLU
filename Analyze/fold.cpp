@@ -265,11 +265,11 @@ int main(int argc, const char *argv[])
     "-o     Output prefix\n"
     "--help This message\n"
     "and <FoldOptions> is a case-insensitive string consisting of zero or more of\n"
-    "R/I    Real (default) or imaginary\n"
-    "E/O    Even (default) or Odd\n"
-    "P/N    Positive (default) or Negative in first half of timeslices\n"
+    "r/i    Real (default) or imaginary\n"
+    "e/o    Even (default) or Odd\n"
+    "p/c    Positive (default) or Negative in first half of timeslices\n"
     "0      Disable taking the absolute value of timeslice 0. Default: take abs(c(0))\n"
-    "C      Fold the Conjugate operators together with this, i.e. swap source and sink\n";
+    "c      Fold Conjugate operators (i.e. swap source and sink) together\n";
   }
   return iReturn;
 }
