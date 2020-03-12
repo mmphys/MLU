@@ -30,79 +30,6 @@
 #include <typeinfo>
 #include "Common.hpp"
 
-struct FoldProp
-{
-  Common::Reality reality = Common::Reality::Real;
-  Common::Parity parity = Common::Parity::Even;
-  Common::Sign sign = Common::Sign::Positive;
-  bool t0Abs = true;
-  bool Conjugate = false;
-  void Parse( const char * const pc, std::size_t const Len )
-  {
-    bool bOK = true;
-    static constexpr int NumOptions{ 8 };
-    static const char Options[] = "RIEOPN0C";
-    int iCount[NumOptions];
-    for( int i = 0; i < NumOptions; i++ )
-      iCount[i] = 0;
-    for( int i = 0; bOK && i < Len; i++ )
-    {
-      char c = pc[i];
-      if( c >= 'a' && c <= 'z' )
-        c -= 'a' - 'A';
-      int idx = 0;
-      while( idx < NumOptions && c != Options[idx] )
-        idx++;
-      if( idx < NumOptions )
-        iCount[idx]++;
-      else
-        bOK = false;
-    }
-    if( bOK )
-    {
-      if( iCount[0] == 1 && iCount[1] == 0 )
-        reality = Common::Reality::Real;
-      else if( iCount[0] == 0 && iCount[1] == 1 )
-        reality = Common::Reality::Imag;
-      else if( iCount[0] != 0 || iCount[1] != 0 )
-        bOK = false;
-      if( iCount[2] == 1 && iCount[3] == 0 )
-        parity = Common::Parity::Even;
-      else if( iCount[2] == 0 && iCount[3] == 1 )
-        parity = Common::Parity::Odd;
-      else if( iCount[2] != 0 || iCount[3] != 0 )
-        bOK = false;
-      if( iCount[4] == 1 && iCount[5] == 0 )
-        sign = Common::Sign::Positive;
-      else if( iCount[4] == 0 && iCount[5] == 1 )
-        sign = Common::Sign::Negative;
-      else if( iCount[4] != 0 || iCount[5] != 0 )
-        bOK = false;
-      if( iCount[6] == 1 )
-        t0Abs = false;
-      else if( iCount[6] != 0 )
-        bOK = false;
-      if( iCount[7] == 1 )
-        Conjugate = true;
-      else if( iCount[7] != 0 )
-        bOK = false;
-    }
-    if( !bOK )
-    {
-      const std::string s{ pc, Len };
-      throw std::runtime_error( "Option string '" + s + "' invalid" );
-    }
-  }
-  FoldProp() = default;
-  explicit FoldProp( const char * pc, std::size_t Len ) { Parse( pc, Len ); }
-};
-
-inline std::ostream & operator<<( std::ostream &os, const FoldProp &f )
-{
-  return os << f.reality << ", " << f.parity << ", " << f.sign << (f.t0Abs ? ", abs( C(0) )" : "" )
-            << ( f.Conjugate ? " and conjugate operators" : "" );
-}
-
 int main(int argc, const char *argv[])
 {
   using scalar = double;
@@ -117,6 +44,7 @@ int main(int argc, const char *argv[])
   try
   {
     const std::initializer_list<CL::SwitchDef> list = {
+      {"a", CL::SwitchType::Single, nullptr },
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"help", CL::SwitchType::Flag, nullptr},
@@ -135,7 +63,7 @@ int main(int argc, const char *argv[])
       {
         inFileName.resize( inFileNameLen );
         // Look for a comma
-        FoldProp f;
+        Common::FoldProp f;
         std::size_t pos = Arg.find_last_of(',');
         if( pos == std::string::npos )
           inFileName.append( Arg );
@@ -189,16 +117,16 @@ int main(int argc, const char *argv[])
             }
             // Now fold the correlator, obeying the fold properties
             out.NtUnfolded = Nt;
-            out.parity = f.parity;
-            out.reality = f.reality;
-            out.sign = f.sign;
+            out.parity = f.rps.parity;
+            out.reality = f.rps.reality;
+            out.sign = f.rps.sign;
             out.t0Negated = false;
             out.Conjugated = f.Conjugate;
             const int NtHalf{ Nt / 2 + 1 };
             out.resize( NumSamples, NtHalf );
             scalar * dst{ out[Fold::idxCentral] };
             const scalar * src{ SC::Traits::ScalarPtr( in[SC::idxCentral] )};
-            if( f.reality == Common::Reality::Imag )
+            if( f.rps.reality == Common::Reality::Imag )
               src++;
             for( int s = SC::idxCentral; s < NumSamples; s++ )
             {
@@ -212,11 +140,11 @@ int main(int argc, const char *argv[])
               // Now do all the other timeslices
               for( int t = 1; t < NtHalf; t++ )
               {
-                if( f.parity == Common::Parity::Odd )
+                if( f.rps.parity == Common::Parity::Odd )
                   d = src[t * SC::scalar_count] - src[(Nt - t) * SC::scalar_count];
                 else
                   d = src[t * SC::scalar_count] + src[(Nt - t) * SC::scalar_count];
-                *dst++ = d * ( f.sign == Common::Sign::Negative ? -0.5 : 0.5 );
+                *dst++ = d * ( f.rps.sign == Common::Sign::Negative ? -0.5 : 0.5 );
               }
               src += SC::scalar_count * Nt;
             }
@@ -261,13 +189,14 @@ int main(int argc, const char *argv[])
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
     " <options> BootstrapFile1,<FoldOptions1> [ContractionFile2,<FoldOptions2> ...]\n"
     "Save correlator in format ready for GNUPlot, where <options> are:\n"
+    "-a     Perform Average rather than treat forward/backward/conjugate separately\n"
     "-i     Input prefix\n"
     "-o     Output prefix\n"
     "--help This message\n"
     "and <FoldOptions> is a case-insensitive string consisting of zero or more of\n"
     "r/i    Real (default) or imaginary\n"
     "e/o    Even (default) or Odd\n"
-    "p/n    Positive (default) or Negative in first half of timeslices\n"
+    "p/n0    Positive (default) or Negative in first half of timeslices\n"
     "0      Disable taking the absolute value of timeslice 0. Default: take abs(c(0))\n"
     "c      Fold Conjugate operators (i.e. swap source and sink) together\n";
   }

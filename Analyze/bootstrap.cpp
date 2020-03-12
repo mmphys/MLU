@@ -70,6 +70,48 @@ using namespace Common;
   }
 }*/
 
+enum StudySubject { Z2=1, GFWW, GFPW };
+
+struct OperatorAttributes
+{
+  Common::Gamma::Algebra alg;
+  Common::RPS rps;
+};
+
+const OperatorAttributes DefaultOperatorAttributes[]{
+  {Common::Gamma::Algebra::Gamma5, { Common::Reality::Real, Common::Parity::Even, Common::Sign::Negative} },
+  {Common::Gamma::Algebra::GammaTGamma5, { Common::Reality::Real, Common::Parity::Odd,  Common::Sign::Positive} },
+  {Common::Gamma::Algebra::GammaXGamma5, { Common::Reality::Imag, Common::Parity::Even, Common::Sign::Positive} },
+  {Common::Gamma::Algebra::GammaYGamma5, { Common::Reality::Imag, Common::Parity::Even, Common::Sign::Positive} },
+  {Common::Gamma::Algebra::GammaZGamma5, { Common::Reality::Imag, Common::Parity::Even, Common::Sign::Positive} },
+};
+static constexpr int NumDefaultOperatorAttributes{ sizeof( DefaultOperatorAttributes ) / sizeof( DefaultOperatorAttributes[0] )  };
+
+// Get the attributes of the specified product of operators
+const Common::RPS &DefaultOperatorAttribute( Common::Gamma::Algebra Alg )
+{
+  for( int i = 0; i < NumDefaultOperatorAttributes; i++ )
+    if( DefaultOperatorAttributes[i].alg == Alg )
+      return DefaultOperatorAttributes[i].rps;
+  std::stringstream ss;
+  ss << "I don't know how to fold " << Alg;
+  throw std::runtime_error( ss.str() );
+}
+
+#ifdef DEBUG_TEST
+bool Debug()
+{
+  for( int i = 0; i < NumDefaultOperatorAttributes; i++ )
+    for( int j = 0; j < NumDefaultOperatorAttributes; j++ )
+    {
+      Common::RPS rps{ DefaultOperatorAttributes[i].rps * DefaultOperatorAttributes[j].rps };
+      std::cout << DefaultOperatorAttributes[i].alg << "-" << DefaultOperatorAttributes[j].alg
+                << ": " << rps << "\n";
+    }
+  return true;
+}
+#endif
+
 struct TrajFile
 {
   bool bHasTimeslice = false;
@@ -221,48 +263,78 @@ public:
   int nSample;
   int binSize;
   int TimesliceDetail;
+  bool bFactorised;
+  bool bFold;
+  bool bT0Abs;
   int PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, const std::string Prefix ) const;
+  void Study1Bootstrap(StudySubject Study, const std::string &StudyPath, const Common::Momentum &mom,
+                       std::vector<Common::Gamma::Algebra> Alg,
+                       const std::string &Heavy, const std::string &Light, bool Factorised) const;
+
 private:
   template <class Iter> int PerformBootstrap( const Iter &first, const Iter &last, const std::string &Prefix, bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries ) const;
 };
 
 template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, const std::string &Prefix, bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries ) const
 {
+  static const std::string sBlanks{ "  " };
   if( !bSaveSummaries && !bSaveBootstrap )
     return 0;
   const int NumFiles{ static_cast<int>( std::distance( first, last ) ) };
+  if( NumFiles % binSize )
+  {
+    //throw std::runtime_error(  std::to_string(NumFiles) + " files not divisible by bin size " + std::to_string(binSize) );
+    std::cout << "Warning: last bin partially filled (" << ( NumFiles % binSize ) << " correlators)\n";
+  }
   int iCount{ 0 };
   const int Nt{ first->Nt() };
+  const int NtHalf{ Nt / 2 + 1 };
+  const int NtDest{ bFold ? NtHalf : Nt };
+  const int FoldFactor{ bFold ? 2 : 1 };
   const int NumOps{ first->NumOps() };
+  const std::string &sType{ bFold ? Common::sFold : Common::sBootstrap };
   const std::vector<Common::Gamma::Algebra> &Alg{ first->Alg() };
-  Common::SampleC in( NumFiles, Nt );
   for( int Snk = 0; Snk < NumOps; Snk++ )
   {
     static const char pszSep[] = "_";
     std::string sSnk{ Common::Gamma::NameShort( Alg[Snk], pszSep ) };
-    for( int Src = 0; Src < NumOps; Src++ )
+    for( int Src = 0; Src < ( bFactorised ? Snk + 1 : NumOps ); Src++ )
     {
       std::string sSrc{ Common::Gamma::NameShort( Alg[Src], pszSep ) };
       // Skip bootstrap if output exists
       const std::string sOutBase{ outStem + Prefix + sSnk + sSrc };
-      const std::string sOutFile{ Common::MakeFilename( sOutBase, Common::sBootstrap, seed, DEF_FMT ) };
-      const std::string sSummary{ Common::MakeFilename( sOutBase, Common::sBootstrap, seed, TEXT_EXT)};
+      const std::string sOutFile{ Common::MakeFilename( sOutBase, sType, seed, DEF_FMT ) };
+      const std::string sSummary{ Common::MakeFilename( sOutBase, sType, seed, TEXT_EXT)};
       if( Common::FileExists( sOutFile ) || ( !bSaveBootstrap && Common::FileExists( sSummary ) ) )
       {
-        std::cout << sOutBase << " skipped - output already exists" << std::endl;
+        std::cout << sBlanks << sOutBase << " skipped - output already exists" << std::endl;
       }
       else
       {
-        //if( bShowAverages )
-        //ShowTimeSliceAvg( in );
-        // std::cout << sOutBase << " " << nSample << " samples" << std::endl;
-        assert( binSize == 1 && "Binning still needs to be implemented" );
         // Copy the correlators into my sample, aligning timeslices if need be
-        std::complex<double> * pDst = in[0];
-        for( Iter i = first; i != last; i++ )
+        const bool bDifferent{ Snk != Src };
+        const int OpFactor{ ( bFactorised && bDifferent ) ? 2 : 1 };
+        Common::SampleC in( ( NumFiles * OpFactor * FoldFactor + binSize - 1 ) / binSize, NtDest );
+        using Fold = Common::Fold<double>;
+        Fold f;
+        if( bFold )
         {
-          const int CorrelatorTimeslice{ i->Timeslice() };
-          int TOffset{ bAlignTimeslices ? CorrelatorTimeslice : 0 };
+          const Common::RPS att{DefaultOperatorAttribute(Alg[Src])*DefaultOperatorAttribute(Alg[Snk])};
+          f.resize( nSample, NtDest );
+          f.NtUnfolded = Nt;
+          f.parity = att.parity;
+          f.reality = att.reality;
+          f.sign = att.sign;
+          f.Conjugated = bFactorised;
+          f.t0Negated = false;
+        }
+        int Bin{0};
+        std::complex<double> * pDst = in[0];
+        for( Iter it = first; it != last; )
+        {
+          Common::CorrelatorFileC &file{ *it++ };
+          const int CorrelatorTimeslice{ file.Timeslice() };
+          const int TOffset{ bAlignTimeslices ? CorrelatorTimeslice : 0 };
           // Only need to say which correlators contribute for first gamma structure
           if( Src == 0 && Snk == 0 )
           {
@@ -271,25 +343,84 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
               std::cout << TOffset << "->0";
             else
               std::cout << CorrelatorTimeslice;
-            std::cout << '\t' << i->Name_.Base << "." << i->Name_.SeedString << std::endl;
+            std::cout << '\t' << file.Name_.Base << "." << file.Name_.SeedString << std::endl;
           }
-          std::complex<double> * pSrc = (*i)( Alg[Snk], Alg[Src] ) + TOffset;
-          for( int t = 0; t < Nt; t++ )
+          for( int o = 0; o < OpFactor; o++ )
           {
-            *pDst++ = *pSrc++;
-            if( ++TOffset == Nt )
-              pSrc -= Nt;
+            const std::complex<double> * const pSrc = file( Alg[o ? Src : Snk], Alg[o ? Snk : Src] );
+            for( int h = 0; h < FoldFactor; h++ )
+            {
+              for( int t = 0; t < NtDest; t++ )
+              {
+                const std::ptrdiff_t idx{ ( ( h == 0 ? t : Nt - t ) + TOffset ) % Nt };
+                std::complex<double> z{ pSrc[ idx ] };
+                if( bFold && t != 0 )
+                {
+                  if( h && f.parity == Common::Parity::Odd )
+                    z = -z;
+                  if( f.sign == Common::Sign::Negative )
+                    z = -z;
+                }
+                if( Bin )
+                  pDst[t] += z;
+                else
+                  pDst[t]  = z;
+              }
+              // If we are binning, divide by number of items in this bin. Make sure to do the last bin
+              if( ++Bin == binSize || ( o == OpFactor - 1 && h == FoldFactor - 1 && it == last ) )
+              {
+                if( binSize == 1 )
+                  pDst += NtDest;
+                else
+                  for( int t = 0; t < NtDest; t++ )
+                    *pDst++ /= binSize;
+                Bin = 0;
+              }
+            }
           }
         }
-        Common::SampleC out = in.Bootstrap( nSample, seed, &MachineName );
-        out.MakeCorrSummary( nullptr );
         if( bSaveBootstrap )
+          std::cout << sBlanks << nSample << " samples to " << sOutFile << std::endl;
+        Common::SampleC out = in.Bootstrap( nSample, seed, &MachineName );
+        if( bFold )
         {
-          std::cout << "  " << nSample << " samples to " << sOutFile << std::endl;
-          out.Write( sOutFile );
+          double * dst{ f[Fold::idxCentral] };
+          const double * src{ SampleC::Traits::ScalarPtr( out[SampleC::idxCentral] )};
+          if( f.reality == Common::Reality::Imag )
+            src++;
+          for( int s = SampleC::idxCentral; s < nSample; s++ )
+          {
+            // Timeslice 0 is a little special
+            double d = *src++;
+            src++;
+            if( s == SampleC::idxCentral && bT0Abs && d < 0 )
+              f.t0Negated = true;
+            if( f.t0Negated )
+              d = std::abs( d );
+            *dst++ = d;
+            // Now do all the other timeslices
+            for( int t = 1; t < NtHalf; t++ )
+            {
+              *dst++ = *src++;
+              src++;
+            }
+          }
+          f.Seed_ = out.Seed_;
+          f.SeedMachine_ = out.SeedMachine_;
+          f.MakeCorrSummary( nullptr );
+          if( bSaveBootstrap )
+            f.Write( sOutFile );
+          if( bSaveSummaries )
+            f.WriteSummary( sSummary );
         }
-        if( bSaveSummaries )
-          out.WriteSummary( sSummary );
+        else
+        {
+          out.MakeCorrSummary( nullptr );
+          if( bSaveBootstrap )
+            out.Write( sOutFile );
+          if( bSaveSummaries )
+            out.WriteSummary( sSummary );
+        }
         iCount++;
       }
     }
@@ -381,11 +512,9 @@ const std::string & MesonSuffix( const std::string MesonTypeName )
 // Make a default manifest
 // Heavy-light meson decays. 2pt function with current inserted and momentum on light meson
 
-enum StudySubject { Z2=1, GFWW, GFPW };
-
-void Study1Bootstrap( StudySubject Study, const std::string &StudyPath, const BootstrapParams &bsParams,
+void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &StudyPath,
                       const Common::Momentum &mom, std::vector<Common::Gamma::Algebra> Alg,
-                      const std::string &Heavy, const std::string &Light, bool Factorised )
+                      const std::string &Heavy, const std::string &Light, bool Factorised ) const
 {
   /*using Algebra = Common::Gamma::Algebra;
   static const std::vector<Algebra> alg = { Algebra::Gamma5, Algebra::GammaTGamma5 };
@@ -473,7 +602,7 @@ void Study1Bootstrap( StudySubject Study, const std::string &StudyPath, const Bo
   /*par.bSaveBootstrap = true;
   for( int iCorr = 0; iCorr < NumCorr; ++iCorr )
     par.PerformBootstrap( bsData[iCorr], CorrPrefix + CorrSuffixes[iCorr] );*/
-  bsParams.PerformBootstrap( InFiles, Heavy + Sep + Light + mom.p2_string( Sep ) );
+  PerformBootstrap( InFiles, Heavy + Sep + Light + mom.p2_string( Sep ) );
 }
 
 /*****************************************************************
@@ -495,6 +624,10 @@ int main(const int argc, const char *argv[])
   CL cl;
   try
   {
+#ifdef DEBUG_TEST
+    if( Debug() )
+      return iReturn;
+#endif
     const std::initializer_list<CL::SwitchDef> list = {
       {"n", CL::SwitchType::Single, DEF_NSAMPLE},
       {"b", CL::SwitchType::Single, "1"},
@@ -507,8 +640,11 @@ int main(const int argc, const char *argv[])
       {"t", CL::SwitchType::Single, "0"},
       {"m", CL::SwitchType::Single, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
-      {"f", CL::SwitchType::Flag, nullptr},
       {"p", CL::SwitchType::Flag, nullptr},
+      {"f", CL::SwitchType::Flag, nullptr},
+      {"h", CL::SwitchType::Flag, nullptr},
+      {"z", CL::SwitchType::Flag, nullptr},
+      {"q", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -523,15 +659,16 @@ int main(const int argc, const char *argv[])
       par.outStem = cl.SwitchValue<std::string>( "o" );
       par.nSample = cl.SwitchValue<int>( "n" );
       par.binSize = cl.SwitchValue<int>( "b" );
-      const bool bFactorised{ !cl.GotSwitch( "f" ) }; // Add the switch to turn this off
+      par.bFactorised = cl.GotSwitch( "f" );
+      par.bFold = cl.GotSwitch( "h" );
+      par.bT0Abs = !cl.GotSwitch( "z" ); // Add the switch to turn this off
+      const bool bSwapQuarks{ !cl.GotSwitch( "q" ) }; // Add the switch to turn this off
       if( cl.GotSwitch( "m" ) )
         par.MachineName = cl.SwitchValue<std::string>( "m" );
       else
         par.MachineName = MachineName;
       if( par.MachineName.empty() )
         throw std::invalid_argument( "Machine name can't be empty" );
-      if( par.binSize != 1 )
-        throw std::invalid_argument( "Binning not implemented yet" );
       if( cl.GotSwitch( "r" ) )
         par.seed = cl.SwitchValue<Common::SeedType>( "r" );
       else
@@ -550,7 +687,7 @@ int main(const int argc, const char *argv[])
                                       + " with command-line arguments" );
         bShowUsage = false;
         Manifest Manifest{ glob( cl.Args.begin(), cl.Args.end(), InStem.c_str() ),
-                           cl.SwitchStrings( "x" ), bFactorised, cl.GotSwitch( "p" ) };
+                           cl.SwitchStrings( "x" ), bSwapQuarks, cl.GotSwitch( "p" ) };
         // Walk the list of contractions, performing a separate bootstrap for each
         int BootstrapCount = 0;
         for( auto itc = Manifest.begin(); itc != Manifest.end(); itc++ )
@@ -568,8 +705,15 @@ int main(const int argc, const char *argv[])
             std::string GroupName{ cl.SwitchValue<std::string>( "g" ) };
             InFiles[j].Read( Filename, Alg, tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName );
           }
-          par.PerformBootstrap( InFiles, Contraction );
-          BootstrapCount++;
+          try
+          {
+            par.PerformBootstrap( InFiles, Contraction );
+            BootstrapCount++;
+          }
+          catch(const std::exception &e)
+          {
+            std::cerr << "Error: " << e.what() << std::endl;
+          }
         }
         std::cout << "Bootstraps written for " << BootstrapCount
         << " / " << Manifest.size() << " correlators" << std::endl;
@@ -601,11 +745,11 @@ int main(const int argc, const char *argv[])
             const bool Factorised{ Study != GFPW };
             for( const Common::Momentum &m : StudyMomenta )
             {
-              Study1Bootstrap( Study, InStem, par, m, Alg, qHeavy, qLight, Factorised );
+              par.Study1Bootstrap( Study, InStem, m, Alg, qHeavy, qLight, Factorised );
               if( !Factorised )
-                Study1Bootstrap( Study, InStem, par, m, Alg, qLight, qHeavy, false );
-              Study1Bootstrap( Study, InStem, par, m, Alg, qHeavy, qHeavy, false );
-              Study1Bootstrap( Study, InStem, par, m, Alg, qLight, qLight, false );
+                par.Study1Bootstrap( Study, InStem, m, Alg, qLight, qHeavy, false );
+              par.Study1Bootstrap( Study, InStem, m, Alg, qHeavy, qHeavy, false );
+              par.Study1Bootstrap( Study, InStem, m, Alg, qLight, qLight, false );
             }
           }
             bShowUsage = false;
@@ -630,7 +774,7 @@ int main(const int argc, const char *argv[])
     " <options> ContractionFile1 [ContractionFile2 ...]\n"
     "Perform a bootstrap of the specified files, where <options> are:\n"
     "-n     Number of samples (" DEF_NSAMPLE ")\n"
-    "-b     Bin size (not implemented yet)\n"
+    "-b     Bin size (default 1, i.e. no binning)\n"
     "-r     Random number seed (unspecified=random)\n"
     "-i     Input  prefix\n"
     "-o     Output prefix\n"
@@ -640,8 +784,11 @@ int main(const int argc, const char *argv[])
     "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
-    "-f     Disable Factorisation (default: sort correlator components and group)\n"
     "-p     group momenta by P^2\n"
+    "-f     Factorising operators (e.g. g5-gT5 same as gT5-g5)\n"
+    "-h     Take forward/backward Half-waves as separate bootstrap inputs (i.e. fold)\n"
+    "-z     Disable taking the absolute value of C(0) when folding\n"
+    "-q     Disable Quark factorisation (default: sort correlator components & group)\n"
     "--help This message\n";
   }
   return iReturn;

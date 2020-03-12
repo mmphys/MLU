@@ -71,7 +71,7 @@ FieldLow=FieldName."_low"
 FieldHigh=FieldName."_high"
 #print "${mmplotfile_path}".PlotPrefix."theta_".word(times,1).".bootstrap".PlotSuffix."$mmplotvar_dat"
 plot for [i=1:words(times)] \
- "${mmplotfile_path}".PlotPrefix."theta_".word(times,i).".bootstrap".PlotSuffix."$mmplotvar_dat" \
+ "${mmplotfile_path}".PlotPrefix."theta_".word(times,i)."_${mmplotfile_ops[@]: -2:1}_${mmplotfile_ops[@]: -1:1}.bootstrap".PlotSuffix."$mmplotvar_dat" \
   using (column("t")-first_offset+0.05*(i-1)):(column(FieldName)):(column(FieldLow)):(column(FieldHigh)) with yerrorbars title "θ=".word(times,i)
 EOFMark
 fi;fi;done

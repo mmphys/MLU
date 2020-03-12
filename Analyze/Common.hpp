@@ -395,49 +395,6 @@ std::string MakeFilename(const std::string &Base, const std::string &Type, SeedT
 // Strip out timeslice info from a string if present
 void ExtractTimeslice( std::string &s, bool &bHasTimeslice, int & Timeslice );
 
-// For now, this is just an alias
-/*using Correlator = std::vector<std::complex<double>>;
-
-inline void CopyCorrelator( Correlator &dst, const Correlator &src, int iOffset = 0, bool bSwapRealImag = false )
-{
-  const std::size_t Nt{ src.size() };
-  if( Nt == 0 )
-    throw new std::runtime_error( "Can't copy an uninitialised Correlator" );
-  if( Nt > INT_MAX )
-    throw new std::runtime_error( "Correlator size > INT_MAX" );
-  if( dst.size() == 0 )
-    dst.resize( Nt );
-  else if( dst.size() != Nt )
-    throw new std::runtime_error( "Can't assign correlator of length " + std::to_string( Nt ) + " to correlator of length " + std::to_string( dst.size() ) );
-  const std::size_t dt{ ( iOffset < 0 ) ? Nt - ( -iOffset % Nt ) : iOffset % Nt };
-  for( std::size_t t = 0; t < Nt; t++ )
-  {
-    const std::complex<double> & z{ src[( t + dt ) % Nt] };
-    if( bSwapRealImag ) {
-      dst[t].real( z.imag() );
-      dst[t].imag( z.real() );
-    }
-    else
-      dst[t] = z;
-  }
-}
-
-// A vector of correlators
-class vCorrelator : public std::vector<Correlator>
-{
-public:
-  using base_type = typename std::vector<Correlator>;
-  using size_type = base_type::size_type;
-  void ResizeCorrelators( int Nt )
-  {
-    for( Correlator &c : * this )
-      c.resize( Nt );
-  }
-  // This next probably isn't needed - the assign will set the size of each Correlator
-  //vCorrelator( size_type Size, int Nt ) : base_type( Size )
-  //{ ResizeCorrelators( Nt ); }
-};*/
-
 // My implementation of H5File - adds a definition of complex type
 namespace H5 {
   template <typename T> struct Equiv;
@@ -509,10 +466,18 @@ namespace H5 {
 // Enumeration describing whether signal is in complex or real part
 enum class Reality
 {
+  Imag = -1,
   Unknown = 0,
-  Real,
-  Imag
+  Real
 };
+inline Reality operator*( const Reality l, const Reality r )
+{
+  if( ( l != Reality::Imag && l != Reality::Real ) || ( r != Reality::Imag && r != Reality::Real ) )
+    return Reality::Unknown;
+  if( l == r )
+    return Reality::Real;
+  return Reality::Imag;
+}
 
 extern const std::string sUnknown;
 extern const std::string sReality;
@@ -525,10 +490,18 @@ std::istream& operator>>(std::istream& is, Reality &reality);
 // Enumeration describing whether signal is in complex or real part
 enum class Parity
 {
-  Unknown = 0,
-  Even,
-  Odd
+  Odd = -1,
+  Unknown,
+  Even
 };
+inline Parity operator*( const Parity l, const Parity r )
+{
+  if( ( l != Parity::Even && l != Parity::Odd ) || ( r != Parity::Even && r != Parity::Odd ) )
+    return Parity::Unknown;
+  if( l == r )
+    return Parity::Even;
+  return Parity::Odd;
+}
 extern const std::string sParity;
 extern const std::string Parity_TextEquiv_Even;
 extern const std::string Parity_TextEquiv_Odd;
@@ -539,16 +512,118 @@ std::istream& operator>>(std::istream& is, Parity &parity);
 // Enumeration describing whether signal is in complex or real part
 enum class Sign
 {
+  Negative = -1,
   Unknown = 0,
-  Positive,
-  Negative
+  Positive
 };
+inline Sign operator*( const Sign l, const Sign r )
+{
+  if( ( l != Sign::Positive && l != Sign::Negative ) || ( r != Sign::Positive && r != Sign::Negative ) )
+    return Sign::Unknown;
+  if( l == r )
+    return Sign::Positive;
+  return Sign::Negative;
+}
 extern const std::string sSign;
 extern const std::string Sign_TextEquiv_Positive;
 extern const std::string Sign_TextEquiv_Negative;
 
 std::ostream& operator<<(std::ostream& os, const Sign &sign);
 std::istream& operator>>(std::istream& is, Sign &sign);
+
+struct RPS
+{
+  Common::Reality reality;
+  Common::Parity  parity;
+  Common::Sign    sign;
+};
+
+inline RPS operator*( const RPS &l, const RPS &r )
+{
+  RPS rps;
+  rps.reality = l.reality * r.reality;
+  rps.parity = l.parity * r.parity;
+  rps.sign = l.sign * r.sign;
+  if( l.reality == Common::Reality::Imag && r.reality == Common::Reality::Imag )
+    rps.sign = rps.sign * Common::Sign::Negative;
+  return rps;
+}
+inline std::ostream& operator<<(std::ostream& os, const RPS &rps)
+{
+  os << rps.reality << ", " << rps.parity << ", " << rps.sign;
+  return os;
+}
+
+struct FoldProp
+{
+  RPS rps;
+  bool t0Abs = true;
+  bool Conjugate = false;
+  void Parse( const char * const pc, std::size_t const Len )
+  {
+    bool bOK = true;
+    static constexpr int NumOptions{ 8 };
+    static const char Options[] = "RIEOPN0C";
+    int iCount[NumOptions];
+    for( int i = 0; i < NumOptions; i++ )
+      iCount[i] = 0;
+    for( int i = 0; bOK && i < Len; i++ )
+    {
+      char c = pc[i];
+      if( c >= 'a' && c <= 'z' )
+        c -= 'a' - 'A';
+      int idx = 0;
+      while( idx < NumOptions && c != Options[idx] )
+        idx++;
+      if( idx < NumOptions )
+        iCount[idx]++;
+      else
+        bOK = false;
+    }
+    if( bOK )
+    {
+      if( iCount[0] == 1 && iCount[1] == 0 )
+        rps.reality = Common::Reality::Real;
+      else if( iCount[0] == 0 && iCount[1] == 1 )
+        rps.reality = Common::Reality::Imag;
+      else if( iCount[0] != 0 || iCount[1] != 0 )
+        bOK = false;
+      if( iCount[2] == 1 && iCount[3] == 0 )
+        rps.parity = Common::Parity::Even;
+      else if( iCount[2] == 0 && iCount[3] == 1 )
+        rps.parity = Common::Parity::Odd;
+      else if( iCount[2] != 0 || iCount[3] != 0 )
+        bOK = false;
+      if( iCount[4] == 1 && iCount[5] == 0 )
+        rps.sign = Common::Sign::Positive;
+      else if( iCount[4] == 0 && iCount[5] == 1 )
+        rps.sign = Common::Sign::Negative;
+      else if( iCount[4] != 0 || iCount[5] != 0 )
+        bOK = false;
+      if( iCount[6] == 1 )
+        t0Abs = false;
+      else if( iCount[6] != 0 )
+        bOK = false;
+      if( iCount[7] == 1 )
+        Conjugate = true;
+      else if( iCount[7] != 0 )
+        bOK = false;
+    }
+    if( !bOK )
+    {
+      const std::string s{ pc, Len };
+      throw std::runtime_error( "Option string '" + s + "' invalid" );
+    }
+  }
+  FoldProp() = default;
+  explicit FoldProp( const char * pc, std::size_t Len ) { Parse( pc, Len ); }
+};
+
+inline std::ostream & operator<<( std::ostream &os, const FoldProp &f )
+{
+  return os << f.rps << (f.t0Abs ? ", abs( C(0) )" : "" )
+            << ( f.Conjugate ? " and conjugate operators" : "" );
+}
 
 // Traits for samples
 // SampleTraits<ST>::value is true for supported types (floating point and complex)
@@ -804,8 +879,9 @@ public:
         m_pData.reset( new T[ static_cast<std::size_t>( NumOps * NumOps ) * Nt ] );
     }
   }
-  void Read (const std::string &FileName, std::vector<Gamma::Algebra> &Alg, const int * pTimeslice = nullptr,
-             const char * PrintPrefix = nullptr, std::string *pGroupName = nullptr);
+  void Read (const std::string &FileName, std::vector<Gamma::Algebra> &Alg,
+             const int * pTimeslice = nullptr, const char * PrintPrefix = nullptr,
+             std::string *pGroupName = nullptr);
   //void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void WriteSummary(const std::string &Prefix, const std::vector<Common::Gamma::Algebra> &AlgSpecific);
   T * operator[]( int Sample )
