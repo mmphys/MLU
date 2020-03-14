@@ -360,7 +360,8 @@ std::vector<Common::ValWithEr<scalar>> MultiExpModel::PerformFit( bool Bcorrelat
   CovarInv.resize( Extent, Extent );
   Covar.resize( Extent, Extent );
   dof = Extent;
-  dof -= NumParams;
+  // If there's only one file, then there's no info for the operators to factorise
+  dof -= NumFiles == 1 ? NumExponents * 2 : NumParams;
 
   // Make somewhere to store the results of the fit for each bootstrap sample
   Model ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, NSamples, NumParams+1 );
@@ -621,7 +622,7 @@ int main(int argc, const char *argv[])
       {"dti", CL::SwitchType::Single, "1"},
       {"dtf", CL::SwitchType::Single, "1"},
       {"sep", CL::SwitchType::Single, "0.2"},
-      {"delta", CL::SwitchType::Single, "2"},
+      {"delta", CL::SwitchType::Single, "3"},
       {"skip", CL::SwitchType::Single, "10"},
       {"iter", CL::SwitchType::Single, "0"},
       {"tol", CL::SwitchType::Single, "0.0001"},
@@ -810,7 +811,7 @@ int main(int argc, const char *argv[])
     "--dti  Number of initial fit times (default 1)\n"
     "--dtf  Number of final   fit times (default 1)\n"
     "--sep  Minimum relative separation between energy levels (default 0.2)\n"
-    "--delta Minimum number of timeslices in fit range (default 2)\n"
+    "--delta Minimum number of timeslices in fit range (default 3)\n"
     "--skip Number of fits to throw away prior to central fit (default 10)\n"
     "--iter Max iteration count, 0 (default) = unlimited\n"
     "--tol  Tolerance of required fits * 10^3 (default 0.0001)\n"

@@ -92,6 +92,7 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   set output OutFile
   set label 1 OutFile noenhanced at screen 1, 0 right font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
   if (MyField eq "E0") {
+    set object 1 rect from graph 0, first 0.99561 to graph 1, first 0.99751 fs solid 0.05 noborder fc rgb "gray10" behind
     set arrow from graph 0, first 0.99656 to graph 1, first 0.99656 nohead front lc rgb "gray40" lw 0.25  dashtype "-"
     set label 2 "E_0=0.99656(95), ArXiv:1812.08791" at screen 0, 0 font "Arial,8" front textcolor "grey40" offset character 1, character 0.75
   }
@@ -106,7 +107,7 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
     for [idx=0:NBlock-1] '' index idx using (@Condition column("ChiSqPerDof")):(@Condition column(MyField."_high")):(column("tf")) \
       @WithLabels 0.5 notitle
 
-  if (MyField eq "E0") { unset arrow; unset label 2 }
+  if (MyField eq "E0") { unset object 1; unset arrow; unset label 2 }
   FieldOffset=FieldOffset + 4
 }
 

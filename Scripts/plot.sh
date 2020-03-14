@@ -17,6 +17,7 @@ my_yrange="${yrange:-*:*}"
 my_key="${key:-top right}"
 FieldNames="${fields:-cosh}"
 RefVal=${ref:--777}
+RefErr=${err:--777}
 RefText="Ref: ${reftext:-${ref}}"
 do_log=${log:-0}
 SaveFile=${SaveFile:-0}
@@ -88,6 +89,9 @@ if( do_title ) {
 }
 
 if( RefVal != -777 ) {
+  if( RefErr != -777 ) {
+    set object 1 rect from graph 0, first RefVal - RefErr to graph 1, first RefVal + RefErr fs solid 0.05 noborder fc rgb "gray10" behind
+  }
   set arrow from graph 0, first RefVal to graph 1, first RefVal nohead front lc rgb "gray40" lw 0.25  dashtype "-"
   set label 2 RefText at screen 0, 0 font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
 }
