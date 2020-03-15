@@ -36,6 +36,7 @@ FieldTitle="$field_title"
 PlotPrefix="$PlotPrefix"
 PlotSuffix="$PlotSuffix"
 my_xrange="${ti:-*}:${tf:-*}"
+my_yrange="${yrange:-*:*}"
 #my_key="${key:-bottom right}"
 my_key="${key:-top right}"
 times="${times}"
@@ -52,11 +53,13 @@ set term pdf #size 5, 1.2
 set output PlotPrefix."theta.${start}_${stop}_${step}.".FieldName.PlotSuffix."pdf"
 set ylabel '{/Helvetica:Italic aE}_{eff}'
 set xlabel 't/a' offset 0,1
+set yrange [@my_yrange]
 
 numseries = words(times)
 first_offset = ( numseries - 1 ) * 0.05 / 2
 
 set xrange [@my_xrange]
+set object 1 rect from graph 0, first 0.99561 to graph 1, first 0.99751 fs solid 0.05 noborder fc rgb "gray10" behind
 set arrow from graph 0, first 0.99656 to graph 1, first 0.99656 nohead front lc rgb "gray40" lw 0.25  dashtype "-"
 set label 2 "E_0=0.99656(95), ArXiv:1812.08791" at screen 0, 0 font "Arial,8" front textcolor "grey40" offset character 1, character 0.75
 

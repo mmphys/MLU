@@ -15,6 +15,7 @@ else
 if [[ "$chi" == "" ]]; then do_chi=0; else do_chi=1; fi
 if [[ "$timin" == "" ]]; then do_timin=0; else do_timin=1; fi
 if [[ "$timax" == "" ]]; then do_timax=0; else do_timax=1; fi
+if [[ "$log" == "" ]]; then do_log=0; else let do_log=$log; fi
 MyColumnHeadings=`awk '/^#/ {next}; {print \$0;exit}' $PlotFile`
 MyColumnHeadingsNoUS="${MyColumnHeadings//_/\\\\_}"
 
@@ -37,6 +38,7 @@ my_yrange="${yrange:-*:*}"
 MyColumnHeadings="${MyColumnHeadings}"
 MyColumnHeadingsNoUS="${MyColumnHeadingsNoUS}"
 my_xtics="${xtics}"
+do_log=${do_log}
 
 # Find a column marked E0
 MyColumnHeadings=system("awk '/^#/ {next}; {print \$0;exit}' ".PlotFile)
@@ -63,14 +65,15 @@ set term pdf
 set pointsize 0.6
 set xlabel sChiDescr
 #set xrange [*:${chi:-*}]
-set yrange[@my_yrange]
 #set palette defined ( 15 "blue", 16 "red", 17 "green")
 set key @my_key
-#set logscale x
+if( do_log ) { set logscale x }
 if( my_xtics ne "" ) { set xtics @my_xtics }
 
 stats PlotFile using "ti" nooutput
 NBlock=STATS_blocks
+
+set yrange[@my_yrange]
 
 #YField='(do_chi==0 ? column(MyField) : (column("ChiSqPerDof") <= chi_max ? column(MyField) : 1/0))'
 #YFieldLow='(do_chi==0 ? column(MyField."_low") : (column("ChiSqPerDof") <= chi_max ? column(MyField."_low") : 1/0))'

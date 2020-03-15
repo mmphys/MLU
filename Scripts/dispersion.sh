@@ -17,7 +17,8 @@ gnuplot <<-EOFMark
 q1="${q1:-h1}"
 q2="${q2:-l}"
 seed="${seed:-4147798751}"
-fit="${fit:-corr.g5_gT5}"
+#fit="${fit:-corr.g5_gT5}"
+fit="${fit:-*}"
 do_chi=${do_chi}
 chi_max=${chi:-0}
 do_timin=${do_timin}
@@ -26,7 +27,11 @@ do_timax=${do_timax}
 timax=${timax:-0}
 num=${num:-15}
 
-filename(n)=q1."_".q2."_p_".word("0_0_0 1_0_0 1_1_0 1_1_1 2_0_0",n+1).".".fit.".params_sort.".seed.".txt"
+OutFileName=q1."_".q2
+if( fit ne "*" && fit ne "" ) { OutFileName=OutFileName.'.'.fit }
+OutFileName=OutFileName.".disp.4147798751.pdf"
+
+filename(n)=system("ls ".q1."_".q2."_p_".word("0_0_0 1_0_0 1_1_0 1_1_1 2_0_0",n+1).".".fit.".params_sort.".seed.".txt")
 
 SeriesName(n)="ti=".n
 
@@ -91,7 +96,7 @@ LatDisp2(KDotK)=LatDisp(KDotK)*LatDisp(KDotK)
 sChiDescr='{/Times:Italic χ}^2 per d.o.f.'
 
 set term pdf
-set output q1."_".q2.".".fit.".disp.4147798751.pdf"
+set output OutFileName
 
 #set xrange[${xrange:=-0.2:4.2}]
 MyTitle="a E_{eff} vs k^2 (".q1."-".q2.")"
