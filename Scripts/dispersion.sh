@@ -7,6 +7,8 @@ else
 if [[ "$chi" == "" ]]; then do_chi=0; else do_chi=1; fi
 if [[ "$timin" == "" ]]; then do_timin=0; else do_timin=1; fi
 if [[ "$timax" == "" ]]; then do_timax=0; else do_timax=1; fi
+if [[ "$tfmin" == "" ]]; then do_tfmin=0; else do_tfmin=1; fi
+if [[ "$tfmax" == "" ]]; then do_tfmax=0; else do_tfmax=1; fi
 
 ###################################################
 # Make a plot of the simulated correlator masses
@@ -25,7 +27,14 @@ do_timin=${do_timin}
 timin=${timin:-0}
 do_timax=${do_timax}
 timax=${timax:-0}
+do_tfmin=${do_tfmin}
+tfmin=${tfmin:-0}
+do_tfmax=${do_tfmax}
+tfmax=${tfmax:-0}
 num=${num:-15}
+RefVal=${ref:--777}
+RefText="E_0=${ref}"
+if( "${reftext}" ne "" ) { RefText=RefText." ${reftext}" }
 
 OutFileName=q1."_".q2
 if( fit ne "*" && fit ne "" ) { OutFileName=OutFileName.'.'.fit }
@@ -55,10 +64,13 @@ if( do_timax ) { TIMax = TIMax > timax ? timax : TIMax }
 #print "TIMin=".sprintf("%g",TIMin)." TIMax=".sprintf("%g",TIMax)
 
 #Work out best fit of E0 in range
-Condition='count > 0 ? 1/0 : '
-if( do_timin ) { Condition=Condition.'column("ti") < TIMin ? 1/0 : ' }
-if( do_timax ) { Condition=Condition.'column("ti") > TIMax ? 1/0 : ' }
-if( do_chi ) { Condition=Condition.'column("ChiSqPerDof") > chi_max ? 1/0 : ' }
+TestClause=''
+if( do_timin ) { TestClause=TestClause.'column("ti") < TIMin ? 1/0 : ' }
+if( do_timax ) { TestClause=TestClause.'column("ti") > TIMax ? 1/0 : ' }
+if( do_tfmin ) { TestClause=TestClause.'column("tf") < tfmin ? 1/0 : ' }
+if( do_tfmax ) { TestClause=TestClause.'column("tf") > tfmax ? 1/0 : ' }
+if( do_chi   ) { TestClause=TestClause.'column("ChiSqPerDof") > chi_max ? 1/0 : ' }
+Condition='count > 0 ? 1/0 : '.TestClause
 count=0
 stats filename(0) using (@Condition (count=count + 1, column("E0"))) nooutput
 E0=STATS_min
@@ -114,10 +126,7 @@ set pointsize 0.5
 
 #MyOffset='i + (idx == last_idx ? count : (last_idx=idx, idx==0 ? (count=0,count) : count)) * MyScale'
 MyOffset='i + (last_idx == i ? count : (last_idx=i,count=0,count)) * MyScale'
-Condition='count >= num ? 1/0 : '
-if( do_timin ) { Condition=Condition.'column("ti") < TIMin ? 1/0 : ' }
-if( do_timax ) { Condition=Condition.'column("ti") > TIMax ? 1/0 : ' }
-if( do_chi ) { Condition=Condition.'column("ChiSqPerDof") > chi_max ? 1/0 : ' }
+Condition='count >= num ? 1/0 : '.TestClause
 #YField='column(MyField)*column(MyField)'
 YField='column(MyField)'
 #YFieldLow='column(MyField."_low")*column(MyField."_low")'
@@ -129,7 +138,8 @@ WithLabels='with labels font "Arial,6" offset char 0,'
 
 #set label "Dispersion: (a E_0)^2 + (2 {/Times:Italic π} a / L)^2 k^2" at graph 1, graph 0 font "Arial,12" front textcolor "grey40" offset character -1.5, character 1.5 right
 #set label "E_0=0.99656(95), ArXiv:1812.08791" at graph 1, graph 0 font "Arial,8" front textcolor "grey40" offset character -1, character 1 right
-set label 'E_0='.gprintf("%g",E0).' from fit at ti='.WhichTI.', tf='.WhichTF at graph 1, graph 0 font "Arial,8" front textcolor "grey40" offset character -1, character 1 right
+if( RefVal == -777 ) { RefText='E_0='.gprintf("%g",E0).' from fit at ti='.WhichTI.', tf='.WhichTF }
+set label RefText at graph 1, graph 0 font "Arial,8" front textcolor "grey40" offset character -1, character 1 right
 set xrange [0:6]
 set samples 1000
 MyScale=1./num < 0.08 ? 0.08 : 1./num

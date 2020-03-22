@@ -332,7 +332,7 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
         std::complex<double> * pDst = in[0];
         for( Iter it = first; it != last; )
         {
-          Common::CorrelatorFileC &file{ *it++ };
+          const Common::CorrelatorFileC &file{ *it++ };
           const int CorrelatorTimeslice{ file.Timeslice() };
           const int TOffset{ bAlignTimeslices ? CorrelatorTimeslice : 0 };
           // Only need to say which correlators contribute for first gamma structure

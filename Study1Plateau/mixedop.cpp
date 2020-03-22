@@ -41,7 +41,7 @@ using Fold   = Common::Fold  <scalar>;
 static const std::string Sep{ "_" };
 static const std::string NewLine{ "\n" };
 
-struct OperatorTrait
+/*struct OperatorTrait
 {
   //int Imag;
   //int Parity;
@@ -58,13 +58,13 @@ static const std::array<OperatorTrait, NumMixed> opTraits
   OperatorTrait( 1, 1, Common::Gamma::Algebra::GammaXGamma5 ),
   OperatorTrait( 1, 1, Common::Gamma::Algebra::GammaYGamma5 ),
   OperatorTrait( 1, 1, Common::Gamma::Algebra::GammaZGamma5 ),
-};
+};*/
 // The order here must match the algebra array for the model code to work
 static constexpr int idxg5{ 0 };
 static constexpr int idxgT5{ 1 };
-static constexpr int idxgX5{ 2 };
-static constexpr int idxgY5{ 3 };
-static constexpr int idxgZ5{ 4 };
+//static constexpr int idxgX5{ 2 };
+//static constexpr int idxgY5{ 3 };
+//static constexpr int idxgZ5{ 4 };
 
 static constexpr int ModelNumIndices{ 2 }; // Model should include operators with these indices
 
@@ -88,9 +88,16 @@ struct Parameters
   int step;
 };
 
+struct ModelOps
+{
+  std::vector<std::string> Names;
+  int Index( const std::string &Op ) const;
+  ModelOps( const Model &model, std::array<SinkSource, ModelNumIndices> &ss );
+};
+
 void MixingAngle( const Model &model, const std::array<SinkSource, ModelNumIndices> &ss,
-                  const std::array<std::array<Fold, NumMixed>, NumMixed> &Corr, Fold &CorrMixed,
-                  int degrees, bool bAllReplicas, int Exponent )
+                  const std::array<std::array<Fold, ModelNumIndices>, ModelNumIndices> &Corr,
+                 Fold &CorrMixed, int degrees, bool bAllReplicas, int Exponent )
 {
   const int NumParams{ model.Nt() };
   const int NumSamples{ CorrMixed.NumSamples() };
@@ -163,37 +170,84 @@ void MixingAngle( const Model &model, const std::array<SinkSource, ModelNumIndic
   }
 }
 
-int OpIndex( const Model &model, const std::string &Op )
+int ModelOps::Index( const std::string &Op ) const
 {
   int j = 0;
-  while( j < model.OpNames.size() && !Common::EqualIgnoreCase( model.OpNames[j], Op ) )
+  while( j < Names.size() && !Common::EqualIgnoreCase( Names[j], Op ) )
     j++;
-  if( j >= model.OpNames.size() )
+  if( j >= Names.size() )
     throw std::runtime_error( "Model doesn't contain operator " + Op );
   return j;
 }
 
 // Find the indices in the file for the operators I need
-void ValidateModelOps( const Model &model, std::array<SinkSource, ModelNumIndices> &ss )
+ModelOps::ModelOps( const Model &model, std::array<SinkSource, ModelNumIndices> &ss )
 {
   // Do we have the right number of operators
   const int NumOps{ ModelNumIndices * ( model.Factorised ? 1 : 2 ) };
   if( model.OpNames.size() != NumOps )
     throw std::runtime_error( "Expecting " + std::to_string( NumOps ) + " operators, but model has " + std::to_string( model.OpNames.size() ) );
   // Are they the right operators
-  for( int i = 0; i < ModelNumIndices; i++ )
+  if( model.Factorised )
   {
-    const std::string &sOp{ Common::Gamma::nameShort[ static_cast<int>( opTraits[i].Alg ) ] };
-    if( model.Factorised )
+    Names = model.OpNames;
+    for( int i = 0; i < NumOps; i++ )
     {
-      ss[i].Source = OpIndex( model, sOp );
-      ss[i].Sink = ss[i].Source;
+      ss[i].Source = i;
+      ss[i].Sink = i;
     }
-    else
+  }
+  else
+  {
+    SinkSource Count[ModelNumIndices];
+    for( int i = 0; i < ModelNumIndices; i++ )
     {
-      ss[i].Source = OpIndex( model, sOp + "_src" );
-      ss[i].Sink = OpIndex( model, sOp + "_snk" );
+      Count[i].Sink = 0;
+      Count[i].Source = 0;
     }
+    for( int i = 0; i < NumOps; i++ )
+    {
+      std::string sOp{ model.OpNames[i] };
+      bool bOK{ false };
+      bool bSource{ false };
+      std::size_t p = sOp.length();
+      if( p > 4 )
+      {
+        std::string Suffix{ sOp.substr( p - 4, 4 ) };
+        if( Common::EqualIgnoreCase( Suffix, "_src" ) )
+        {
+          bOK = true;
+          bSource = true;
+        }
+        else if( Common::EqualIgnoreCase( Suffix, "_snk" ) )
+          bOK = true;
+      }
+      if( !bOK )
+        throw new std::runtime_error( "Operator " + sOp + " does not end in _src or _snk" );
+      sOp.resize( p - 4 );
+      int idx{ 0 };
+      while( idx < Names.size() && !Common::EqualIgnoreCase( sOp, Names[i] ) )
+        ++idx;
+      if( idx == Names.size() )
+      {
+        if( idx == ModelNumIndices )
+          throw new std::runtime_error( "Too many operators in model" );
+        Names.push_back( sOp );
+      }
+      if( bSource )
+      {
+        ss[idx].Source = i;
+        Count[idx].Source++;
+      }
+      else
+      {
+        ss[idx].Sink = i;
+        Count[idx].Sink++;
+      }
+    }
+    for( int i = 0; i < ModelNumIndices; i++ )
+      if( Count[i].Sink != 1 || Count[i].Source != 1 )
+        throw new std::runtime_error( "Expected 1 _src and 1 _snk for each operator" );
   }
 }
 
@@ -205,7 +259,7 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
 
   // Validate the model
   std::array<SinkSource, ModelNumIndices> idxOp;
-  ValidateModelOps( model, idxOp );
+  ModelOps modelOps( model, idxOp );
   if( model.NumExponents < 2 )
     throw std::runtime_error( "NumExponents=" + std::to_string( model.NumExponents ) + ", at least 2 required" );
   const int Exponent{ Par.Exponent >= 0 ? Par.Exponent : Par.Exponent + model.NumExponents };
@@ -241,7 +295,7 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
 
   // Construct optimised model for each momentum
   Fold CorrMixed;
-  std::array<std::array<Fold, NumMixed>, NumMixed> Corr;
+  std::array<std::array<Fold, ModelNumIndices>, ModelNumIndices> Corr;
   Base.append( "_p_" );
   const std::size_t BaseLen{ Base.length() };
   for( const Common::Momentum &p : MyMomenta )
@@ -261,18 +315,22 @@ void MakeModel( const std::string & ModelFile, const Parameters & Par )
     for( int iSnk = 0; iSnk <= idxgT5 ; iSnk++ ) // upper limit NumMixed?
     {
       std::string InFile{ InBase };
-      InFile.append( Common::Gamma::NameShort( opTraits[iSnk].Alg, Common::Underscore.c_str() ) );
+      InFile.append( 1, '_' );
+      InFile.append( modelOps.Names[iSnk] );
       const std::size_t InFileLen{ InFile.length() };
       for( int iSrc = 0; iSrc <= ( model.Factorised ? iSnk : idxgT5 ); iSrc++ ) // upper limit NumMixed?
       {
         InFile.resize( InFileLen );
-        InFile.append( Common::Gamma::NameShort( opTraits[iSrc].Alg, Common::Underscore.c_str() ) );
+        InFile.append( 1, '_' );
+        InFile.append( modelOps.Names[iSrc] );
         std::string InFileName{ Common::MakeFilename(InFile,Common::sFold,model.Name_.Seed,DEF_FMT)};
         if( model.Factorised && iSrc != iSnk && !Common::FileExists( InFileName ) )
         {
           InFileName = InBase;
-          InFileName.append( Common::Gamma::NameShort(opTraits[iSrc].Alg,Common::Underscore.c_str()) );
-          InFileName.append( Common::Gamma::NameShort(opTraits[iSnk].Alg,Common::Underscore.c_str()) );
+          InFileName.append( 1, '_' );
+          InFileName.append( modelOps.Names[iSrc] );
+          InFileName.append( 1, '_' );
+          InFileName.append( modelOps.Names[iSnk] );
           InFileName = Common::MakeFilename( InFileName, Common::sFold, model.Name_.Seed, DEF_FMT );
         }
         Corr[iSnk][iSrc].Read( InFileName, "    " );

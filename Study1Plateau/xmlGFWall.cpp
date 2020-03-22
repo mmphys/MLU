@@ -74,6 +74,9 @@ struct Quark
 #define RESID_HEAVY   1e-12
 #define MAX_ITERATION 5000
 
+// If I want to use scaled DWF, set the scale here
+//#define DWF_SCALE 1.
+
 // This is the correct configuration - C1
 static const char * GaugePrefix{ "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat" };
 static const char * C1EigenPack{ "/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine" };
@@ -154,15 +157,21 @@ void CreateApp( Application &application )
     // set fermion boundary conditions to be periodic space, antiperiodic time.
     static const std::string boundary{"1 1 1 -1"};
     static const std::string twist{"0. 0. 0. 0."};
-    MAction::ScaledDWF::Par actionPar;
+#ifndef DWF_SCALE
+    using QuarkAction = MAction::DWF;
+    QuarkAction::Par actionPar;
+#else
+    using QuarkAction = MAction::ScaledDWF;
+    QuarkAction::Par actionPar;
+    actionPar.scale = DWF_SCALE;
+#endif
     actionPar.gauge = q.GaugeField;
     actionPar.Ls    = q.Ls;
     actionPar.M5    = q.M5;
     actionPar.mass  = q.mass;
     actionPar.boundary = boundary;
     actionPar.twist = twist;
-    actionPar.scale = 1.0;
-    application.createModule<MAction::ScaledDWF>(ActionName, actionPar);
+    application.createModule<QuarkAction>(ActionName, actionPar);
 
     // eigenpacks for deflation
     std::string epackObjname;

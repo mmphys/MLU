@@ -86,10 +86,18 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "Z2/fit/h1_l_p_0_0_0.corr_9_23.g5_gT5.model.4147798751.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i Z2/fold/ -o Z2/mixed/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "GFWPZ2/fit/h1_l_p_0_0_0.corr_8_21.PP_PW.model.4147798751.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i GFWPZ2/fold/ -o GFWPZ2/mixed/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
