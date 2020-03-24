@@ -97,7 +97,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i GFWPZ2/fold/ -o GFWPZ2/mixed/"
+            argument = "-i GFWPZ2/fold/ -o GFWPZ2/mixed2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
