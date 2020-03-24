@@ -106,14 +106,16 @@ class MixedOp
 protected:
   const Parameters & Par;
   const Model &model;
+  const int NumParams;
+  const int Exponent;
   Fold CorrMixed;
   std::vector<std::string> OpNames;
-  const int Exponent;
   // Set by LoadCorrelators()
   int NumSamples; // maximum of a) user parameters b) raw correlators c) model (if doing all replicas)
   int Nt;
 
   MixedOp( const Model &model_, const Parameters &par );
+  virtual const std::string & Description() = 0;
   void CheckCorrelators( Fold &Corr, const std::string &InFileName, bool bFirst );
   virtual void ValidateOpNames() = 0;
   virtual void LoadCorrelators( const std::string &InBase ) = 0;
@@ -124,6 +126,7 @@ public:
 };
 
 MixedOp::MixedOp( const Model &model_, const Parameters &par ) : Par{ par }, model{ model_ },
+  NumParams{ model.Nt() },
   Exponent{ Par.Exponent >= 0 ? Par.Exponent : Par.Exponent + model.NumExponents }
 {
   if( model.NumExponents < 2 )
@@ -132,8 +135,9 @@ MixedOp::MixedOp( const Model &model_, const Parameters &par ) : Par{ par }, mod
     throw std::runtime_error( "NumExponents=" + std::to_string( model.NumExponents ) + ", excited state " + std::to_string( Par.Exponent ) + " not available for model" );
   const int FileOps{ static_cast<int>( model.OpNames.size() ) };
   const int NtExpected{ model.NumExponents * ( FileOps + 1 ) + 1 };
-  if( model.Nt() < NtExpected - 1 || model.Nt() > NtExpected )
-  throw std::runtime_error( "Number of parameters=" + std::to_string( model.Nt() ) + ", " + std::to_string( NtExpected ) + " expected" );
+  if( NumParams < NtExpected - 1 || NumParams > NtExpected )
+  throw std::runtime_error("Number of parameters=" + std::to_string( NumParams ) + ", "
+                           + std::to_string( NtExpected ) + " expected");
 }
 
 // Keep track of info on correlators as they are loaded
@@ -179,10 +183,17 @@ protected:
 
   MixedOp_SS( const Model &model_, const Parameters &par ) : MixedOp( model_, par ) {}
   virtual ~MixedOp_SS() = default;
+  virtual const std::string & Description();
   virtual void ValidateOpNames();
   virtual void LoadCorrelators( const std::string &InBase );
   virtual void MixingAngle(double costheta, double sintheta);
 };
+
+const std::string & MixedOp_SS::Description()
+{
+  static const std::string s{ "source & sink" };
+  return s;
+}
 
 // Find the indices in the file for the operators I need
 void MixedOp_SS::ValidateOpNames()
@@ -286,9 +297,6 @@ void MixedOp_SS::LoadCorrelators( const std::string &InBase )
 
 void MixedOp_SS::MixingAngle(double costheta, double sintheta)
 {
-  const int NumParams{ model.Nt() };
-  const int NumSamples{ CorrMixed.NumSamples() };
-  const int Nt{ CorrMixed.Nt() };
   const double cos_sq_theta{ costheta * costheta };
   const double sin_sq_theta{ sintheta * sintheta };
   const double cos_sin_theta{ costheta * sintheta };
@@ -334,12 +342,20 @@ class MixedOp_S : public MixedOp
 {
   friend void MixedOp::Make( const Model &model_, const Parameters & Par );
 protected:
+  std::array<Fold, ModelNumIndices> Corr;
   MixedOp_S( const Model &model_, const Parameters &par ) : MixedOp( model_, par ) {}
   virtual ~MixedOp_S() = default;
+  virtual const std::string &Description();
   virtual void ValidateOpNames();
   virtual void LoadCorrelators( const std::string &InBase );
-  virtual void MixingAngle(double costheta, double sintheta) {}
+  virtual void MixingAngle(double costheta, double sintheta);
 };
+
+const std::string &MixedOp_S::Description()
+{
+  static const std::string s{ "sink" };
+  return s;
+}
 
 // Find the indices in the file for the operators I need
 void MixedOp_S::ValidateOpNames()
@@ -354,6 +370,53 @@ void MixedOp_S::ValidateOpNames()
 
 void MixedOp_S::LoadCorrelators( const std::string &InBase )
 {
+  // Load all of the correlators
+  std::string InFile{ InBase };
+  InFile.append( 1, '_' );
+  InFile.append( OpNames[0] );
+  const std::size_t InFileLen{ InFile.length() };
+  for( int iSrc = 0; iSrc < ModelNumIndices; iSrc++ )
+  {
+    InFile.resize( InFileLen );
+    InFile.append( 1, '_' );
+    InFile.append( OpNames[iSrc] );
+    std::string InFileName{ Common::MakeFilename(InFile,Common::sFold,model.Name_.Seed,DEF_FMT)};
+    if( iSrc && !Common::FileExists( InFileName ) )
+    {
+      InFileName = InBase;
+      InFileName.append( 1, '_' );
+      InFileName.append( OpNames[iSrc] );
+      InFileName.append( 1, '_' );
+      InFileName.append( OpNames[0] );
+      InFileName = Common::MakeFilename( InFileName, Common::sFold, model.Name_.Seed, DEF_FMT );
+    }
+    CheckCorrelators( Corr[iSrc], InFileName, iSrc == 0 );
+  }
+}
+
+void MixedOp_S::MixingAngle(double costheta, double sintheta)
+{
+  const double * pCoeff{ model[Model::idxCentral] + model.NumExponents + Exponent * model.OpNames.size() };
+  const double * pPP{ Corr[0][Fold::idxCentral] };
+  const double * pPW{ Corr[1][Fold::idxCentral] };
+  scalar * pDst = CorrMixed[Fold::idxCentral];
+  double A_PP{ 0 };
+  double A_PW{ 0 };
+  double Op_PP{ 0 };
+  double Op_PW{ 0 };
+  for( int i = Fold::idxCentral; i < NumSamples; i++ )
+  {
+    if( Par.bAllReplicas || i == Fold::idxCentral )
+    {
+      A_PP = pCoeff[0];
+      A_PW = pCoeff[1];
+      Op_PP = costheta / ( A_PP * A_PP );
+      Op_PW = sintheta / ( A_PP * A_PW );
+      pCoeff += NumParams;
+    }
+    for( int t = 0; t < Nt; t++ )
+      *pDst++ = Op_PP * *pPP++ + Op_PW * *pPW++;
+  }
 }
 
 void MixedOp::Make( const Model &model_, const Parameters & Par )
@@ -413,7 +476,8 @@ void MixedOp::Make( const Model &model_, const Parameters & Par )
     mixed->CorrMixed.resize( mixed->NumSamples, mixed->Nt );
 
     std::string Out{ Par.OutBase + BaseFit };
-    std::cout << "    Writing " << mixed->NumSamples << " samples to " << Out << NewLine << "   ";
+    std::cout << "    Writing " << mixed->NumSamples << " samples of " << mixed->Description()
+              << " mixed operator to:\n    " << Out << NewLine << "   ";
     Out.append( ".theta_" );
     const std::size_t OutLen{ Out.length() };
     for( int degrees = Par.tmin; ; degrees+=Par.step )
