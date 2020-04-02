@@ -62,8 +62,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i GFWP/fold/h1_l_p_0_0_0_ -o GFWP/fit/"
+            argument = "-i GFWPZ2/fold/h1_l_p_0_0_0_ -o GFWPZ2/fit/"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i GFWP/fold/h1_l_p_0_0_0_ -o GFWP/fit/"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i GFWW/fold/h1_l_p_0_0_0_ -o GFWW/fit/"

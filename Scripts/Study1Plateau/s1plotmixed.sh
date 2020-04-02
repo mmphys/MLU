@@ -37,6 +37,7 @@ PlotPrefix="$PlotPrefix"
 PlotSuffix="$PlotSuffix"
 my_xrange="${ti:-*}:${tf:-*}"
 my_yrange="${yrange:-*:*}"
+my_xtics="${xtics}"
 #my_key="${key:-bottom right}"
 my_key="${key:-top right}"
 times="${times}"
@@ -54,6 +55,7 @@ set output PlotPrefix."theta.${start}_${stop}_${step}.".FieldName.PlotSuffix."pd
 set ylabel '{/Helvetica:Italic aE}_{eff}'
 set xlabel 't/a' offset 0,1
 set yrange [@my_yrange]
+if( my_xtics ne "" ) { set xtics @my_xtics }
 
 numseries = words(times)
 first_offset = ( numseries - 1 ) * 0.05 / 2

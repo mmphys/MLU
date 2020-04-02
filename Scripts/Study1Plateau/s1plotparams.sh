@@ -12,7 +12,7 @@ then
   echo "Not params file: $mmplotfile_name"
 else
 
-if [[ "$chi" == "" ]]; then do_chi=0; else do_chi=1; fi
+if [[ "$stat" == "" ]]; then do_stat=0; else do_stat=1; fi
 if [[ "$timin" == "" ]]; then do_timin=0; else do_timin=1; fi
 if [[ "$timax" == "" ]]; then do_timax=0; else do_timax=1; fi
 if [[ "$log" == "" ]]; then do_log=0; else let do_log=$log; fi
@@ -20,15 +20,15 @@ MyColumnHeadings=`awk '/^#/ {next}; {print \$0;exit}' $PlotFile`
 MyColumnHeadingsNoUS="${MyColumnHeadings//_/\\\\_}"
 
 ###################################################
-# Plot the extracted energy levels and chi squared / d.o.f. associated with the model
+# Plot the extracted energy levels and test statistic associated with the model
 ###################################################
 
 gnuplot <<-EOFMark
 
 PlotFile="$PlotFile"
 PlotFileSort="${mmplotfile_path}${mmplotfile_base}.${mmplotfile_type}_sort.${mmplotfile_seed}.${mmplotfile_ext}"
-do_chi=${do_chi:-0}
-chi_max=${chi:-0}
+do_stat=${do_stat:-0}
+stat_limit=${stat:-0}
 do_timin=${do_timin}
 TIMin=${timin:-0}
 do_timax=${do_timax}
@@ -39,6 +39,7 @@ MyColumnHeadings="${MyColumnHeadings}"
 MyColumnHeadingsNoUS="${MyColumnHeadingsNoUS}"
 my_xtics="${xtics}"
 do_log=${do_log}
+xAxisName="${xaxis:-pvalue ChiSqPerDof}"
 
 # Find a column marked E0
 MyColumnHeadings=system("awk '/^#/ {next}; {print \$0;exit}' ".PlotFile)
@@ -55,16 +56,42 @@ NumExp=1
 while( word(MyColumnHeadings,FieldOffset+NumExp*4) eq "E".NumExp ) { NumExp=NumExp+1 }
 #print "NumExp=".NumExp
 
-sChiDescr='{/Times:Italic χ}^2 per d.o.f.'
-if( do_chi ) { sChiDescr=sChiDescr." (≤ ".sprintf("%g",chi_max).")" }
+# Now look for x-axis fields. Prefer fields at the start
+xAxisNum=words(xAxisName) + 1
+xAxisOffset=1
+xAxisCol=-1
+while( xAxisNum > 1 && word(MyColumnHeadings,xAxisOffset) ne "" ) {
+  i = 1
+  while( word(xAxisName,i) ne "" && word(xAxisName,i) ne word(MyColumnHeadings,xAxisOffset) ) {i=i+1}
+  if( word(xAxisName,i) ne "" ) { xAxisNum=i; xAxisCol=xAxisOffset }
+  xAxisOffset=xAxisOffset+1
+}
+if( xAxisCol==-1 ) {
+  print "Error: couldn't find statistic column in: ".xAxisName
+  exit gnuplot
+}
+xAxisName=word(xAxisName,xAxisNum)
+#print "xAxisName=".xAxisName.", xAxisNum=".xAxisNum.", xAxisCol=".xAxisCol
+if( xAxisName eq "ChiSqPerDof" ) {
+  sStatDescr='{/Times:Italic χ}^2 per d.o.f.'
+  sStatCond='>'
+  sStatCondHuman='≤'
+} else {
+  sStatDescr=xAxisName
+  sStatCond='<'
+  sStatCondHuman='≥'
+  if( do_stat == 0 ) { stat_limit=0.05; do_stat=1 }
+}
+
+if( do_stat ) { sStatDescr=sStatDescr.' ('.sStatCondHuman.' '.sprintf("%g",stat_limit).")" }
 FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit using ${mmplotfile_ops_all//_/ }"
 OutBase="${mmplotfile_base}.${mmplotfile_corr_all}.${mmplotfile_ops_all}."
 OutSuffix=".${mmplotfile_seed}.pdf"
 
 set term pdf
 set pointsize 0.6
-set xlabel sChiDescr
-#set xrange [*:${chi:-*}]
+set xlabel sStatDescr
+#set xrange [*:${stat:-*}]
 #set palette defined ( 15 "blue", 16 "red", 17 "green")
 set key @my_key
 if( do_log ) { set logscale x }
@@ -75,14 +102,11 @@ NBlock=STATS_blocks
 
 set yrange[@my_yrange]
 
-#YField='(do_chi==0 ? column(MyField) : (column("ChiSqPerDof") <= chi_max ? column(MyField) : 1/0))'
-#YFieldLow='(do_chi==0 ? column(MyField."_low") : (column("ChiSqPerDof") <= chi_max ? column(MyField."_low") : 1/0))'
-#YFieldHigh='(do_chi==0 ? column(MyField."_high") : (column("ChiSqPerDof") <= chi_max ? column(MyField."_high") : 1/0))'
 Condition=''
 AppendCondition( s1, s2 )=s1.( strlen(s1) ? ' || ' : '' ).s2
 if( do_timin ) { Condition=AppendCondition(Condition, 'column("ti") < TIMin' ) }
 if( do_timax ) { Condition=AppendCondition(Condition, 'column("ti") > TIMax' ) }
-if( do_chi ) { Condition=AppendCondition(Condition, 'column("ChiSqPerDof") > chi_max' ) }
+if( do_stat ) { Condition=AppendCondition(Condition, 'column(xAxisCol) '.sStatCond.' stat_limit' ) }
 if( strlen( Condition ) ) { Condition=Condition.' ? NaN : ' }
 
 WithLabels='with labels font "Arial,6" offset char 0,'
@@ -101,13 +125,13 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   }
   MyTitle = MyFieldNoUS.FitName
   set title MyTitle
-  set ylabel MyFieldNoUS.'(t)'
+  set ylabel MyFieldNoUS
   
   plot \
     for [idx=0:NBlock-1] PlotFile index idx using \
-      (@Condition column("ChiSqPerDof")):(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \
+      (@Condition column(xAxisCol)):(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \
       with yerrorbars title columnheader(1), \
-    for [idx=0:NBlock-1] '' index idx using (@Condition column("ChiSqPerDof")):(@Condition column(MyField."_high")):(column("tf")) \
+    for [idx=0:NBlock-1] '' index idx using (@Condition column(xAxisCol)):(@Condition column(MyField."_high")):(column("tf")) \
       @WithLabels 0.5 notitle
 
   if (MyField eq "E0") { unset object 1; unset arrow; unset label 2 }
@@ -116,18 +140,18 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
 
 unset xrange
 unset logscale x
-#set yrange [*:${chi:-*}]
+#set yrange [*:${stat:-*}]
 unset yrange
-OutFile=OutBase.'chisq'.OutSuffix
+OutFile=OutBase.xAxisName.'-seq'.OutSuffix
 set output OutFile
-set label 1 OutFile noenhanced at screen 0.95, 0 right font "Arial,8" front textcolor "grey40" offset character 0, character 0.75
-set title sChiDescr." ".FitName
-set ylabel sChiDescr
-set xlabel 'Increasing '.sChiDescr
+set label 1 OutFile noenhanced at screen 1, 0 right font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
+set title sStatDescr." ".FitName
+set ylabel sStatDescr
+set xlabel 'Sequence'
 set key top left
 unset xtics
 
-MyField="ChiSqPerDof"
+MyField=xAxisName
 plot \
   for [idx=0:NBlock-1] PlotFile index idx using \
     (@Condition column(1)):(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \

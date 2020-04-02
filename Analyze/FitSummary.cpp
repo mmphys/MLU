@@ -29,6 +29,8 @@
 #include "Common.hpp"
 
 #include <set>
+#include <gsl/gsl_randist.h>
+#include <gsl/gsl_cdf.h>
 
 using scalar = double;
 using Model = Common::Model<scalar>;
@@ -36,15 +38,15 @@ using Model = Common::Model<scalar>;
 using FitTimes = std::pair<int, int>;
 struct FitData
 {
-  scalar ChisqPerDof;
+  scalar SortBy;
   int ti;
   int tf;
   int dof;
   std::string Parameters;
   int ChiSeq = 0;
   FitData() = default;
-  FitData( scalar ChisqPerDof_, int ti_, int tf_, int dof_, const std::string &Parameters_ )
-  : ChisqPerDof{ ChisqPerDof_ }, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Parameters{ Parameters_ } {}
+  FitData( scalar sortBy_, int ti_, int tf_, int dof_, const std::string &Parameters_ )
+  : SortBy{ sortBy_ }, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Parameters{ Parameters_ } {}
 };
 
 struct Detail
@@ -118,9 +120,12 @@ int main(int argc, const char *argv[])
           Detail & Det{ Sum[sOutFile] };
           // Check the model characteristics
           Model m;
-          m.Read( sFileName, " " );
+          m.Read( sFileName, "" );
+          if( m.dof < 1 )
+            throw std::runtime_error("dof=" + std::to_string( m.dof ) + " i.e. extrapolation, not fit");
           std::ostringstream ss;
           m.WriteColumnNames( ss );
+          ss << " pvalue pvalue_low pvalue_high pvalue_check";
           if( Det.Fits.empty() )
           {
             Det.Nt = m.Nt();
@@ -142,9 +147,15 @@ int main(int argc, const char *argv[])
           // Save the summary of the parameters for this file
           ss.str("");
           m.WriteSummaryData( ss );
+          const Common::ValWithEr<scalar> * const pChisqDof{ m.getSummaryData() + Det.Nt-1 };
+          scalar QValue = gsl_cdf_chisq_Q( pChisqDof->Central * m.dof, m.dof );
+          const std::string Sep{ " " };
+          ss << Sep << QValue
+             << Sep << gsl_cdf_chisq_Q( pChisqDof->Low * m.dof, m.dof )
+             << Sep << gsl_cdf_chisq_Q( pChisqDof->High * m.dof, m.dof )
+             << Sep << pChisqDof->Check;
           Det.Fits.emplace( std::make_pair(std::make_pair( m.ti, m.tf ),
-                                           FitData(m.getSummaryData()[Det.Nt-1].Central,
-                                                   m.ti, m.tf, m.dof, ss.str())));
+                                           FitData(1 - QValue, m.ti, m.tf, m.dof, ss.str())));
         }
         catch( const std::exception &e )
         {
@@ -164,7 +175,7 @@ int main(int argc, const char *argv[])
         for( auto dt = Det.Fits.begin(); dt != Det.Fits.end(); ++dt )
         {
           const FitData &d{ dt->second };
-          vChiSort.emplace( d.ChisqPerDof, d.ti, d.tf );
+          vChiSort.emplace( d.SortBy, d.ti, d.tf );
         }
         // Update the fits with sorted sequence number for chi-squared and save sorted file
         std::string sFileName=Common::MakeFilename( sSummaryName, Common::sParams + "_sort", Det.Seed, TEXT_EXT );
