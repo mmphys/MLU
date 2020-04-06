@@ -86,7 +86,7 @@ public:
   // These are definitely not part of the FCNBase interface
   std::vector<Common::ValWithEr<scalar>>
     PerformFit(bool bCorrelated, bool bFreezeCovar, int tMin, int tMax, int Skip, bool bSaveCorr,
-               int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
+          bool bSaveCorrel, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
   const int NumOps;
   const std::vector<std::string> &OpNames;
   bool bFactor;
@@ -338,7 +338,7 @@ void MultiExpModel::DumpParameters( const std::string &msg, const ROOT::Minuit2:
 
 // Perform a fit
 std::vector<Common::ValWithEr<scalar>> MultiExpModel::PerformFit( bool Bcorrelated_, bool bFreezeCovar,
-                    int TMin_, int TMax_, int Skip, bool bSaveCorr, int MaxIt,
+                    int TMin_, int TMax_, int Skip, bool bSaveCorr, bool bSaveCorrel, int MaxIt,
                     double Tolerance, double RelEnergySep, double &ChiSq, int &dof )
 {
   std::cout << "=========================================\nPerforming "
@@ -589,6 +589,29 @@ std::vector<Common::ValWithEr<scalar>> MultiExpModel::PerformFit( bool Bcorrelat
     ModelCorr[f].MakeCorrSummary( nullptr );
     ModelCorr[f].WriteSummary( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, TEXT_EXT ));
   }
+    if( bCorrelated && bSaveCorrel )
+    {
+      const std::string Sep{ " " };
+      const std::string NewLine{ "\n" };
+      const std::string FileName{ Common::MakeFilename( sModelBase, "cormat", Seed, TEXT_EXT ) };
+      std::ofstream s{ FileName };
+      s << "# Correlation matrix\n# Files: " << NumFiles << "\n# NtCorr: " << NtCorr
+        << "\n# plot '" << FileName << "' matrix columnheaders rowheaders with image pixels"
+        << NewLine << Extent;
+      for( int f = 0; f < NumFiles; f++ )
+        for( int t = 0; t < NtCorr; t++ )
+          s << Sep << OpNames[f] << t + tMin;
+      s << NewLine;
+      for( int f = 0; f < NumFiles; f++ )
+        for( int t = 0; t < NtCorr; t++ )
+        {
+          int i = f * NtCorr + t;
+          s << OpNames[f] << t + tMin;
+          for( int j = 0; j < Extent; j++ )
+            s << Sep << Covar( i, j );
+          s << NewLine;
+        }
+    }
   }
   // Return the statistics on the fit results
   const int NumSummaries{ ModelParams.NumSamples() }; // because we might have read back an old fit
@@ -635,6 +658,7 @@ int main(int argc, const char *argv[])
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"freeze", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
+      {"savecmat", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -660,6 +684,7 @@ int main(int argc, const char *argv[])
       const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
       const bool bFreezeCovar{ cl.GotSwitch( "freeze" ) };
       const bool bSaveCorr{ cl.GotSwitch("savecorr") };
+      const bool bSaveCorrel{ cl.GotSwitch("savecmat") };
 
       if( Skip < 0 )
         throw std::invalid_argument( "Skip must be >= 0" );
@@ -755,8 +780,8 @@ int main(int argc, const char *argv[])
             {
               double ChiSq;
               int dof;
-              auto params = m.PerformFit(doCorr, bFreezeCovar, ti, tf, Skip, bSaveCorr, MaxIterations,
-                                         Tolerance, RelEnergySep, ChiSq, dof);
+              auto params = m.PerformFit(doCorr, bFreezeCovar, ti, tf, Skip, bSaveCorr, bSaveCorrel,
+                                         MaxIterations, Tolerance, RelEnergySep, ChiSq, dof);
               if( bNeedHeader )
               {
                 bNeedHeader = false;
@@ -825,6 +850,7 @@ int main(int argc, const char *argv[])
     "--uncorr   Uncorrelated fit (default correlated)\n"
     "--freeze   Freeze the covariance matrix/variance on the central replica\n"
     "--savecorr Save bootstrap replicas of correlators\n"
+    "--savecmat Save correlation matrix\n"
     "--help     This message\n";
   }
   return iReturn;

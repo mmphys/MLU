@@ -154,6 +154,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--savecorrel"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--uncorr"
             isEnabled = "NO">
          </CommandLineArgument>
