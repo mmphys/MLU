@@ -62,6 +62,10 @@ if( do_log ) {
   LogShort="_log"
 }
 
+PlotFile="$PlotFile"
+NumFiles=words(PlotFile)
+FileType="${mmplotfile_type}"
+
 # Decide on a title and output filename
 if( SaveFile == 2 ) {
   MyTitle = SaveFileName
@@ -69,11 +73,17 @@ if( SaveFile == 2 ) {
 } else {
   # We are only processing one file
   MyTitle="${mmplotfile_name_no_ext}".FBText
-  SaveFileName="${mmplotfile_base}.${mmplotfile_type}".FieldNamesShort.LogShort.FBShort.".${mmplotfile_seed}.pdf"
+  SaveFileName="${mmplotfile_base}.".FileType
+  if( FileType ne "cormat" ) { SaveFileName=SaveFileName.FieldNamesShort.LogShort.FBShort }
+  SaveFileName=SaveFileName.".${mmplotfile_seed}.pdf"
 }
 
 if( SaveFile ) {
-  set term pdf
+  if( NumFiles==1 && FileType eq "cormat" ) {
+    set term pdf size 7.25,7 fontscale 0.4
+  } else {
+    set term pdf
+  }
   set pointsize 0.5
   set output SaveFileName
   set label 1 SaveFileName noenhanced at screen 1, 0.5 center rotate by -90 font "Arial,8" front textcolor "grey40" offset character -1.3, 0
@@ -107,18 +117,18 @@ if( SaveFile != 2 ) {
 
 if( do_log ) { set logscale y }
 
-PlotFile="$PlotFile"
-
 # Work out how much to offset each series by
-NumFiles=words(PlotFile)
 NumFields=words(FieldNames)
 NumFB=fb_max - fb_min + 1
 XF1=do_offset
 XF2=(1 - NumFields*NumFB*NumFiles)/2*XF1
 
-plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] \
+if( NumFiles==1 && FileType eq "cormat" ) {
+  plot PlotFile matrix columnheaders rowheaders with image pixels
+} else {
+  plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] \
     word(PlotFile,File) using ((column(1) == 0 ? 0 : f==0 ? column(1) : nt - column(1))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2):(column(word(FieldNames,fld))):(column(word(FieldNames,fld)."_low")):(column(word(FieldNames,fld)."_high")) with yerrorbars title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)
-
+}
 EOFMark
 }
 
