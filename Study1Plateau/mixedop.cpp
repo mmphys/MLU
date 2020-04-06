@@ -79,6 +79,7 @@ enum ModelType : int { DiagSinkSource, DiagSourceOnly };
 struct Parameters
 {
   ModelType modelType;
+  std::string modelArgs;
   int NumSamples;
   int Exponent;
   bool bSaveCorr;
@@ -342,8 +343,10 @@ class MixedOp_S : public MixedOp
 {
   friend void MixedOp::Make( const Model &model_, const Parameters & Par );
 protected:
+  std::string sSink;
   std::array<Fold, ModelNumIndices> Corr;
-  MixedOp_S( const Model &model_, const Parameters &par ) : MixedOp( model_, par ) {}
+  MixedOp_S( const Model &model_, const Parameters &par, const std::string &Sink )
+  : MixedOp( model_, par ), sSink{ Sink } {}
   virtual ~MixedOp_S() = default;
   virtual const std::string &Description();
   virtual void ValidateOpNames();
@@ -373,7 +376,7 @@ void MixedOp_S::LoadCorrelators( const std::string &InBase )
   // Load all of the correlators
   std::string InFile{ InBase };
   InFile.append( 1, '_' );
-  InFile.append( OpNames[0] );
+  InFile.append( sSink );
   const std::size_t InFileLen{ InFile.length() };
   for( int iSrc = 0; iSrc < ModelNumIndices; iSrc++ )
   {
@@ -387,7 +390,7 @@ void MixedOp_S::LoadCorrelators( const std::string &InBase )
       InFileName.append( 1, '_' );
       InFileName.append( OpNames[iSrc] );
       InFileName.append( 1, '_' );
-      InFileName.append( OpNames[0] );
+      InFileName.append( sSink );
       InFileName = Common::MakeFilename( InFileName, Common::sFold, model.Name_.Seed, DEF_FMT );
     }
     CheckCorrelators( Corr[iSrc], InFileName, iSrc == 0 );
@@ -443,16 +446,40 @@ void MixedOp::Make( const Model &model_, const Parameters & Par )
 
   // Now make our mixed operator
   std::unique_ptr<MixedOp> mixed;
-  switch( Par.modelType )
   {
-    case DiagSinkSource:
-      mixed.reset( new MixedOp_SS( model_, Par ) );
-      break;
-    case DiagSourceOnly:
-      mixed.reset( new MixedOp_S( model_, Par ) );
-      break;
-    default:
-      throw std::runtime_error( "Model type " + std::to_string( Par.modelType ) + " not supported" );
+    std::istringstream s{ Par.modelArgs };
+    switch( Par.modelType )
+    {
+      case DiagSinkSource:
+        mixed.reset( new MixedOp_SS( model_, Par ) );
+        break;
+      case DiagSourceOnly:
+      {
+        std::string sSink;
+        s >> std::noskipws;
+        for( char c; s >> c; )
+        {
+          if( c == ',' || std::isspace( c ) )
+            break;
+          sSink.append( 1, c );
+        }
+        s >> std::skipws;
+        if( sSink.empty() )
+          sSink = "PP";
+        mixed.reset( new MixedOp_S( model_, Par, sSink ) );
+        break;
+      }
+      default:
+        throw std::runtime_error( "Model type " + std::to_string( Par.modelType ) + " not supported" );
+    }
+    if( !s.eof() )
+      s >> std::ws;
+    if( !s.eof() )
+    {
+      std::string sExtra;
+      std::getline( s, sExtra );
+      throw std::runtime_error( "Unexpected model argument \"" + sExtra + "\"" );
+    }
   }
   // Validate the model
   mixed->ValidateOpNames();
@@ -560,7 +587,32 @@ int main( int argc, const char *argv[] )
     {
       Parameters Par;
       const std::string modelBase{ cl.SwitchValue<std::string>("m") };
-      Par.modelType = static_cast<ModelType>( cl.SwitchValue<int>("a") );
+      {
+        const std::string sMT{ cl.SwitchValue<std::string>("a") };
+        std::istringstream s{ sMT };
+        int i;
+        if( ! ( s >> i ) )
+        {
+          if( i == 0 )
+            throw std::runtime_error( "Model type \"" + sMT + "\" must start with an integer" );
+          // C++11: overflow or underflow has occurred, i set to min or max
+          s.clear();
+        }
+        Par.modelType = static_cast<ModelType>( i );
+        // optional comma, followed by model options
+        char c;
+        if( s >> c )
+        {
+          if( c != ',' )
+            s.unget();
+          else
+            s >> std::ws;
+        }
+        if( s.eof() )
+          Par.modelArgs.clear();
+        else
+          getline( s, Par.modelArgs );
+      }
       Par.InBase = Common::AppendSlash( cl.SwitchValue<std::string>("i") );
       Par.OutBase = Common::AppendSlash( cl.SwitchValue<std::string>("o") );
       Par.NumSamples = cl.SwitchValue<int>("n");

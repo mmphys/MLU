@@ -76,7 +76,7 @@ if( SaveFile ) {
   set term pdf
   set pointsize 0.5
   set output SaveFileName
-  set label 1 SaveFileName noenhanced at screen 1, 0.5 center rotate font "Arial,8" front textcolor "grey40" offset character -1.3, 0
+  set label 1 SaveFileName noenhanced at screen 1, 0.5 center rotate by -90 font "Arial,8" front textcolor "grey40" offset character -1.3, 0
 }
 
 set key font "Arial,8" @my_key noenhanced

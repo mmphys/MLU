@@ -105,7 +105,8 @@ LatDisp(KDotK)=KDotK >= 5 ? NaN : 2*asinh(sqrt(SinhSqE0 + SinSum(KDotK)))
 LatDisp2(KDotK)=LatDisp(KDotK)*LatDisp(KDotK)
 
 
-sChiDescr='{/Times:Italic χ}^2 per d.o.f.'
+#sChiDescr='{/Times:Italic χ}^2 per d.o.f.'
+sChiDescr='p-value'
 
 set term pdf
 set output OutFileName

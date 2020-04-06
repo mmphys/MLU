@@ -117,7 +117,8 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   OutFile=OutBase.MyField.OutSuffix
   #print "MyField=".MyField.", OutFile=".OutFile
   set output OutFile
-  set label 1 OutFile noenhanced at screen 1, 0 right font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
+  #set label 1 OutFile noenhanced at screen 1, 0 right font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
+  set label 1 OutFile noenhanced at screen 1, 0.5 center rotate by -90 font "Arial,8" front textcolor "grey40" offset character -1.5, character 0
   if (MyField eq "E0") {
     set object 1 rect from graph 0, first 0.99561 to graph 1, first 0.99751 fs solid 0.05 noborder fc rgb "gray10" behind
     set arrow from graph 0, first 0.99656 to graph 1, first 0.99656 nohead front lc rgb "gray40" lw 0.25  dashtype "-"
