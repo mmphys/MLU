@@ -66,6 +66,11 @@ const std::string sSummaryNames{ "SummaryNames" };
 const std::string sColumnNames{ "ColumnNames" };
 const std::string sSeed{ "Seed" };
 const std::string sSeedMachine{ "SeedMachine" };
+const std::string sSampleSize{ "SampleSize" };
+const std::string sConfigCount{ "ConfigCount" };
+const std::string sFileList{ "FileList" };
+const std::string sBootstrapList{ "BootstrapList" };
+const std::string sBinSize{ "BinSize" };
 const std::vector<std::string> sCorrSummaryNames{ "corr", "bias", "exp", "cosh" };
 const double NaN{ std::nan( "" ) };
 
@@ -540,6 +545,15 @@ template<typename T> static ::H5::CompType MakeValWithEr()
   return myType;
 }
 
+// Make an HDF5 type representing a config number and count
+static ::H5::CompType MakeConfigCount()
+{
+  ::H5::CompType myType( sizeof( ConfigCount ) );
+  myType.insertMember("Config", offsetof(ConfigCount, Config), ::H5::PredType::NATIVE_UINT32);
+  myType.insertMember("Count",  offsetof(ConfigCount, Count ), ::H5::PredType::NATIVE_UINT32);
+  return myType;
+}
+
 const ::H5::PredType& H5::Equiv<float>      ::Type{ ::H5::PredType::NATIVE_FLOAT };
 const ::H5::PredType& H5::Equiv<double>     ::Type{ ::H5::PredType::NATIVE_DOUBLE };
 const ::H5::PredType& H5::Equiv<long double>::Type{ ::H5::PredType::NATIVE_LDOUBLE };
@@ -551,6 +565,7 @@ const ::H5::CompType  H5::Equiv<std::complex<long double>>::Type{ MakeComplex<lo
 const ::H5::CompType  H5::Equiv<ValWithEr<float>>      ::Type{ MakeValWithEr<float>() };
 const ::H5::CompType  H5::Equiv<ValWithEr<double>>     ::Type{ MakeValWithEr<double>() };
 const ::H5::CompType  H5::Equiv<ValWithEr<long double>>::Type{ MakeValWithEr<long double>() };
+const ::H5::CompType  H5::Equiv<ConfigCount> ::Type{ MakeConfigCount() };
 
 // Open the specified HDF5File and group
 void H5::OpenFileGroup(::H5::H5File &f, ::H5::Group &g, const std::string &FileName, const char *PrintPrefix,

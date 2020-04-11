@@ -330,11 +330,26 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
         }
         int Bin{0};
         std::complex<double> * pDst = in[0];
+        std::map<int, int> ConfigCount;
+        std::vector<std::string> FileList;
+        FileList.reserve( last - first );
         for( Iter it = first; it != last; )
         {
           const Common::CorrelatorFileC &file{ *it++ };
           const int CorrelatorTimeslice{ file.Timeslice() };
           const int TOffset{ bAlignTimeslices ? CorrelatorTimeslice : 0 };
+          {
+            // increment count
+            assert( sizeof( int ) == sizeof( file.Name_.Seed ) );
+            const int ConfigNum{ static_cast<int>( file.Name_.Seed ) };
+            auto p = ConfigCount.find( ConfigNum );
+            if( p == ConfigCount.end() )
+              ConfigCount.insert( { ConfigNum, 1 } );
+            else
+              p->second++;
+            // Save info about this file
+            FileList.emplace_back( file.Name_.Filename );
+          }
           // Only need to say which correlators contribute for first gamma structure
           if( Src == 0 && Snk == 0 )
           {
@@ -382,6 +397,13 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
         if( bSaveBootstrap )
           std::cout << sBlanks << nSample << " samples to " << sOutFile << std::endl;
         Common::SampleC out = in.Bootstrap( nSample, seed, &MachineName );
+        // Now save the audit data for the bootstrap
+        out.ConfigCount.reserve( ConfigCount.size() );
+        for( auto it = ConfigCount.begin(); it != ConfigCount.end(); ++it )
+          out.ConfigCount.emplace_back( it->first, it->second );
+        out.SampleSize = static_cast<int>( ( FileList.size() + binSize - 1 ) / binSize );
+        out.binSize = binSize;
+        out.FileList = std::move( FileList );
         if( bFold )
         {
           double * dst{ f[Fold::idxCentral] };
@@ -408,6 +430,10 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
           f.Seed_ = out.Seed_;
           f.SeedMachine_ = out.SeedMachine_;
           f.MakeCorrSummary( nullptr );
+          f.SampleSize = out.SampleSize;
+          f.binSize = out.binSize;
+          f.FileList = std::move( out.FileList );
+          f.ConfigCount = std::move( out.ConfigCount );
           if( bSaveBootstrap )
             f.Write( sOutFile );
           if( bSaveSummaries )

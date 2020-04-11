@@ -57,11 +57,19 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i GFWW/bootstrap/ -o GFWW/fold/"
+            argument = "-i Z2/boot35/ -o Z2/fold35/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i GFWP/bootstrap/ -o GFWP/fold/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i GFWP/boot35/ -o GFWP/fold35/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i GFWW/bootstrap/ -o GFWW/fold/"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

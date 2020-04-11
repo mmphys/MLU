@@ -63,19 +63,19 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-ag5,gT5,gx5,gy5,gz5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-ag5,gT5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-f"
+            argument = "-ag5,gT5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-f"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-h"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t1"
@@ -90,8 +90,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o Z2/bootstrap/ -i Z2/meson/ &apos;h1_l_p_1_1_1*&apos; &apos;l_h1_p_1_1_1*&apos;"
+            argument = "-o Z2/boot35/ -i Z2/meson/ &apos;h1_l_p_0_0_0*&apos; &apos;l_h1_p_0_0_0*&apos;"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o GFWP/boot35/ &apos;GFWP/meson/*_p_0_0_0_*.h5&apos; &apos;GFWall/meson/*_p_0_0_0_*.h5&apos;"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-b 4"

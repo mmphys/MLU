@@ -162,6 +162,11 @@ extern const std::string sSummaryNames;
 extern const std::string sColumnNames;
 extern const std::string sSeed;
 extern const std::string sSeedMachine;
+extern const std::string sSampleSize;
+extern const std::string sConfigCount;
+extern const std::string sFileList;
+extern const std::string sBootstrapList;
+extern const std::string sBinSize;
 
 extern const std::vector<std::string> sCorrSummaryNames;
 
@@ -395,6 +400,17 @@ std::string MakeFilename(const std::string &Base, const std::string &Type, SeedT
 // Strip out timeslice info from a string if present
 void ExtractTimeslice( std::string &s, bool &bHasTimeslice, int & Timeslice );
 
+struct ConfigCount {
+  int         Config;
+  int         Count = 0;
+  ConfigCount( int Config_, int Count_ ) : Config{ Config_ }, Count{ Count_ } {}
+  ConfigCount() = default;
+  ConfigCount( const ConfigCount & ) = default;
+  ConfigCount( ConfigCount && ) = default;
+  ConfigCount& operator=( const ConfigCount & ) = default;
+  ConfigCount& operator=( ConfigCount && ) = default;
+};
+
 // My implementation of H5File - adds a definition of complex type
 namespace H5 {
   template <typename T> struct Equiv;
@@ -409,6 +425,7 @@ namespace H5 {
   template<> struct Equiv<ValWithEr<float>>         { static const ::H5::CompType Type; };
   template<> struct Equiv<ValWithEr<double>>        { static const ::H5::CompType Type; };
   template<> struct Equiv<ValWithEr<long double>>   { static const ::H5::CompType Type; };
+  template<> struct Equiv<ConfigCount> { static const ::H5::CompType Type; };
 
   /**
    Open the specified HDF5File
@@ -1009,7 +1026,7 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::vector<Gamma::Al
               if( i == 0 )
               {
                 // First correlator - resize and save operators if known
-                resize( Alg.size() ? Alg.size() : NumFileOps, ThisNt );
+                resize( Alg.size() ? static_cast<int>( Alg.size() ) : NumFileOps, ThisNt );
                 count.resize( NumOps_ * NumOps_, 0 );
                 if( Alg.size() )
                 {
@@ -1150,6 +1167,10 @@ public:
   FileNameAtt Name_;
   SeedType Seed_ = 0; // This is only ever set by the bootstrap code
   std::string SeedMachine_; // name of the machine that ran the bootstrap
+  int binSize = 1;
+  int SampleSize = 0; // Number of samples (after binning) used to create bootstrap
+  std::vector<Common::ConfigCount> ConfigCount; // Info on every config in the bootstrap in order
+  std::vector<std::string> FileList; // Info on every config in the bootstrap in order
   inline int NumSamples() const { return NumSamples_; }
   inline int Nt() const { return Nt_; }
   inline ValWithEr<scalar_type> * getSummaryData( int idx = 0 )
@@ -1624,6 +1645,63 @@ void Sample<T>::Read(const std::string &FileName, const char *PrintPrefix, std::
       {
         ::H5::Exception::clearErrorStack();
       }
+      SampleSize = 0;
+      try
+      {
+        int tmp;
+        a = g.openAttribute( sSampleSize );
+        a.read( ::H5::PredType::NATIVE_INT, &tmp );
+        a.close();
+        SampleSize = tmp;
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+      }
+      binSize = 1;
+      try
+      {
+        int tmp;
+        a = g.openAttribute( sBinSize );
+        a.read( ::H5::PredType::NATIVE_INT, &tmp );
+        a.close();
+        binSize = tmp;
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+      }
+      std::vector<std::string> myFileList;
+      try
+      {
+        a = g.openAttribute(sFileList);
+        myFileList = H5::ReadStrings( a );
+        a.close();
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+      }
+      std::vector<Common::ConfigCount> myConfigCount;
+      try
+      {
+        a = g.openAttribute(sConfigCount);
+        ::H5::DataSpace dsp = a.getSpace();
+        const int rank{ dsp.getSimpleExtentNdims() };
+        if( rank != 1 )
+          throw std::runtime_error( sConfigCount + " number of dimensions=" + std::to_string( rank ) + ", expecting 1" );
+        hsize_t NumConfig;
+        dsp.getSimpleExtentDims( &NumConfig );
+        if( NumConfig > std::numeric_limits<int>::max() )
+          throw std::runtime_error( sConfigCount + " too many items in ConfigCount: " + std::to_string( NumConfig ) );
+        myConfigCount.resize( NumConfig );
+        a.read( H5::Equiv<Common::ConfigCount>::Type, &myConfigCount[0] );
+        a.close();
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+      }
       const unsigned short ExpectedNAux{ static_cast<unsigned short>( myAuxNames.size() ? myAuxNames.size() - 1 : 0 ) };
       if( att_nAux == ExpectedNAux )
       {
@@ -1649,9 +1727,11 @@ void Sample<T>::Read(const std::string &FileName, const char *PrintPrefix, std::
           if( ( att_nAux == 0 && Dim[0] * ( att_nSample + 1 ) <= std::numeric_limits<int>::max() )
            || ( att_nAux != 0 && Dim[0] == att_nAux + 1 && Dim[1] * ( att_nAux + 1 + att_nSample ) <= std::numeric_limits<int>::max() ) )
           {
-            SummaryNames = mySummaryNames;
+            SummaryNames = std::move( mySummaryNames );
             resize( static_cast<int>( att_nSample ), static_cast<int>( Dim[ att_nAux == 0 ? 0 : 1 ] ), &myAuxNames );
-            ColumnNames = myColumnNames;
+            ColumnNames = std::move( myColumnNames );
+            FileList = std::move( myFileList );
+            ConfigCount = std::move( myConfigCount );
             ds.read( (*this)[-NumExtraSamples], H5::Equiv<T>::Type );
             dsp.close();
             ds.close();
@@ -1725,27 +1805,68 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
     a = g.createAttribute( "nSample", ::H5::PredType::STD_U32LE, ds1 );
     a.write( ::H5::PredType::NATIVE_INT, &NumSamples_ );
     a.close();
+    int NumAttributes = 2;
     if( Seed_ )
     {
       const unsigned int tmp{ Seed_ };
       a = g.createAttribute( sSeed, sizeof( Seed_ ) == 4 ? ::H5::PredType::STD_U32LE : ::H5::PredType::STD_U64LE, ds1 );
       a.write( ::H5::PredType::NATIVE_UINT, &tmp );
       a.close();
+      NumAttributes++;
     }
     if( !SeedMachine_.empty() )
     {
       a = g.createAttribute( sSeedMachine, H5::Equiv<std::string>::Type, ds1 );
       a.write( H5::Equiv<std::string>::Type, SeedMachine_ );
       a.close();
+      NumAttributes++;
     }
     if( AuxNames.size() )
+    {
       H5::WriteAttribute( g, sAuxNames, AuxNames );
+      NumAttributes++;
+    }
     if( SummaryNames.size() )
+    {
       H5::WriteAttribute( g, sSummaryNames, SummaryNames );
+      NumAttributes++;
+    }
     if( ColumnNames.size() )
+    {
       H5::WriteAttribute( g, sColumnNames, ColumnNames );
-    int NumAttributes = 10 + WriteAttributes( g );
+      NumAttributes++;
+    }
+    if( SampleSize )
+    {
+      a = g.createAttribute( sSampleSize, ::H5::PredType::STD_U32LE, ds1 );
+      a.write( ::H5::PredType::NATIVE_INT, &SampleSize );
+      a.close();
+      NumAttributes++;
+    }
+    if( binSize != 1 )
+    {
+      a = g.createAttribute( sBinSize, ::H5::PredType::STD_I32LE, ds1 );
+      a.write( ::H5::PredType::NATIVE_INT, &binSize );
+      a.close();
+      NumAttributes++;
+    }
     ::H5::DataSpace dsp;
+    if( ConfigCount.size() )
+    {
+      Dims[0] = ConfigCount.size();
+      dsp = ::H5::DataSpace( 1, Dims );
+      a = g.createAttribute( sConfigCount, H5::Equiv<Common::ConfigCount>::Type, dsp );
+      a.write( H5::Equiv<Common::ConfigCount>::Type, &ConfigCount[0] );
+      a.close();
+      dsp.close();
+      NumAttributes++;
+    }
+    if( FileList.size() )
+    {
+      H5::WriteAttribute( g, sFileList, FileList );
+      NumAttributes++;
+    }
+    NumAttributes += WriteAttributes( g );
     if( NumExtraSamples == 1 )
     {
       Dims[0] = Nt_;
@@ -1804,6 +1925,7 @@ public:
   Sign sign = Sign::Unknown;
   bool t0Negated = false;
   bool Conjugated = false;
+  std::vector<std::string> BootstrapList;
   using Base = Sample<T>;
   using Base::Base;
   /*explicit Fold( int NumSamples = 0, int Nt = 0 ) : Base::Sample( NumSamples,  Nt ) {}
@@ -1912,10 +2034,21 @@ public:
     {
       ::H5::Exception::clearErrorStack();
     }
+    BootstrapList.clear();
+    try
+    {
+      a = g.openAttribute(sBootstrapList);
+      BootstrapList = H5::ReadStrings( a );
+      a.close();
+    }
+    catch(const ::H5::Exception &)
+    {
+      ::H5::Exception::clearErrorStack();
+    }
   }
   virtual int WriteAttributes( ::H5::Group &g )
   {
-    int iReturn = Sample<T>::WriteAttributes( g ) + 6;
+    int iReturn = Sample<T>::WriteAttributes( g );
     const hsize_t OneDimension{ 1 };
     ::H5::DataSpace ds1( 1, &OneDimension );
     ::H5::Attribute a;
@@ -1924,6 +2057,7 @@ public:
       a = g.createAttribute( sNtUnfolded, ::H5::PredType::STD_U16LE, ds1 );
       a.write( ::H5::PredType::NATIVE_INT, &NtUnfolded );
       a.close();
+      iReturn++;
     }
     if( reality == Reality::Real || reality == Reality::Imag )
     {
@@ -1931,6 +2065,7 @@ public:
       a = g.createAttribute( sReality, H5::Equiv<std::string>::Type, ds1 );
       a.write( H5::Equiv<std::string>::Type, s );
       a.close();
+      iReturn++;
     }
     if( parity == Parity::Even || parity == Parity::Odd )
     {
@@ -1938,6 +2073,7 @@ public:
       a = g.createAttribute( sParity, H5::Equiv<std::string>::Type, ds1 );
       a.write( H5::Equiv<std::string>::Type, s );
       a.close();
+      iReturn++;
     }
     if( sign == Sign::Positive || sign == Sign::Negative )
     {
@@ -1945,6 +2081,7 @@ public:
       a = g.createAttribute( sSign, H5::Equiv<std::string>::Type, ds1 );
       a.write( H5::Equiv<std::string>::Type, s );
       a.close();
+      iReturn++;
     }
     const std::int8_t i8{ 1 };
     if( t0Negated )
@@ -1952,12 +2089,19 @@ public:
       a = g.createAttribute( st0Negated, ::H5::PredType::STD_U8LE, ds1 );
       a.write( ::H5::PredType::NATIVE_INT8, &i8 );
       a.close();
+      iReturn++;
     }
     if( Conjugated )
     {
       a = g.createAttribute( sConjugated, ::H5::PredType::STD_U8LE, ds1 );
       a.write( ::H5::PredType::NATIVE_INT8, &i8 );
       a.close();
+      iReturn++;
+    }
+    if( BootstrapList.size() )
+    {
+      H5::WriteAttribute( g, sBootstrapList, BootstrapList );
+      iReturn++;
     }
     return iReturn;
   }
