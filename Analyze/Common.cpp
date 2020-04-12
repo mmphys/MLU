@@ -43,9 +43,11 @@ namespace CorrSumm {
   const char * FieldNames[NumFields] = { "corr", "exp", "cosh" };
 };
 
+extern const std::string Space{ " " };
 extern const std::string Underscore{ "_" };
 extern const std::string Period{ "." };
 extern const std::string NewLine{ "\n" };
+extern const std::string Comma{ "," };
 const std::string sBootstrap{ "bootstrap" };
 const std::string sFold{ "fold" };
 const std::string sModel{ "model" };

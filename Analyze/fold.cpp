@@ -149,13 +149,22 @@ int main(int argc, const char *argv[])
               if( FSize2 == FSize )
               {
                 // Same length - merge the lists like a zipper
+                std::string sAlt;
+                sAlt.append( OpNames[in.Name_.op[1]] );
+                sAlt.append( Common::Underscore );
+                sAlt.append( OpNames[in.Name_.op[0]] );
+                sAlt.append( Common::Comma );
+                sAlt.append( OpNames[in.Name_.op[0]] );
+                sAlt.append( Common::Underscore );
+                sAlt.append( OpNames[in.Name_.op[1]] );
                 myFileList.reserve( FSize + FSize2 );
                 auto p1 = in .FileList.begin();
                 auto p2 = in2.FileList.begin();
-                for( std::size_t i = 0; i < FSize; i++ )
+                for( std::size_t i = 0; i < FSize; ++i, ++p1, ++p2 )
                 {
-                  myFileList.emplace_back( *p1++ );
-                  myFileList.emplace_back( *p2++ );
+                  bool bSame{ Common::EqualIgnoreCase(*p1, *p2) };
+                  myFileList.emplace_back( *p1 );
+                  myFileList.emplace_back( bSame ? sAlt : *p2 );
                 }
               }
               else

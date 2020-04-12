@@ -82,9 +82,11 @@ namespace CorrSumm {
   extern const char * FieldNames[NumFields];
 };
 
+extern const std::string Space;
 extern const std::string Underscore;
 extern const std::string Period;
 extern const std::string NewLine;
+extern const std::string Comma;
 
 // Compare two strings, case insensitive
 inline bool EqualIgnoreCase(const std::string & s1, const std::string & s2)
