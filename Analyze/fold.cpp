@@ -108,42 +108,7 @@ int main(int argc, const char *argv[])
               ConjFileName.append( Common::Period );
               ConjFileName.append( in.Name_.Ext );
               SC in2{ ConjFileName, "+ " };
-              static const std::string sNE{ " != " };
-              static const std::string sPrefix{ "Incompatible boostrap samples - " };
-              std::string sSuffix{ ":\n  " + FileName + "\n+ " + ConjFileName };
-              if( in2.NumSamples() != NumSamples )
-                throw std::runtime_error( sPrefix + "NumSamples " + std::to_string(in2.NumSamples()) +
-                                         sNE + std::to_string(NumSamples) + sSuffix );
-              if( in2.Nt() != Nt )
-                throw std::runtime_error( sPrefix + "Nt " + std::to_string(in2.Nt()) +
-                                         sNE + std::to_string(Nt) + sSuffix );
-              if( in2.Seed_ != in.Seed_ )
-                throw std::runtime_error( "Seed " + std::to_string( in2.Seed_ ) + sNE + std::to_string( in2.Seed_ ) );
-              if( !Common::EqualIgnoreCase( in2.SeedMachine_, in.SeedMachine_ ) )
-                throw std::runtime_error( "Machine " + in2.SeedMachine_ + sNE + in.SeedMachine_ );
-              if( in2.SampleSize && in.SampleSize && in2.SampleSize != in.SampleSize )
-                throw std::runtime_error( sPrefix + "SampleSize " + std::to_string(in2.SampleSize) +
-                                         sNE + std::to_string(in.SampleSize) + sSuffix );
-              const std::size_t CSize { in .ConfigCount.size() };
-              const std::size_t CSize2{ in2.ConfigCount.size() };
-              if( CSize && CSize2 )
-              {
-                if( CSize2 != CSize )
-                  throw std::runtime_error( sPrefix + "Number of configs " +
-                                      std::to_string(CSize2) + sNE + std::to_string(CSize) + sSuffix );
-                for( std::size_t i = 0; i < CSize; i++ )
-                {
-                  const Common::ConfigCount &l{ in .ConfigCount[i] };
-                  const Common::ConfigCount &r{ in2.ConfigCount[i] };
-                  if( r.Config != l.Config )
-                    throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
-                                             sNE + std::to_string(l.Config) + sSuffix );
-                  if( r.Count != l.Count )
-                    throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
-                                             ", NumTimeslices " + std::to_string(r.Count) + sNE +
-                                             std::to_string(l.Count) + sSuffix );
-                }
-              }
+              in.IsCompatible( in2 );
               const std::size_t FSize { in .FileList.size() };
               const std::size_t FSize2{ in2.FileList.size() };
               if( FSize2 == FSize )
@@ -170,7 +135,7 @@ int main(int argc, const char *argv[])
               else
               {
                 std::cout << pIndent << "Warning: bootstrap FileLists uneven length, "
-                          << std::to_string( FSize2 ) << sNE << std::to_string( FSize )
+                          << std::to_string( FSize2 ) << Common::sNE << std::to_string( FSize )
                           << ". Appending lists" << std::endl;
                 myFileList = in.FileList;
                 myFileList.insert( myFileList.end(), in2.FileList.begin(), in2.FileList.end() );

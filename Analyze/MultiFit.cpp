@@ -710,22 +710,7 @@ int main(int argc, const char *argv[])
         }
         else
         {
-          static const std::string sFile{ "File " + std::to_string( i ) + " " };
-          static const std::string sBad{ " doesn't match " };
-          if( !Common::EqualIgnoreCase( Corr[i].Name_.Base, Corr[0].Name_.Base ) )
-            throw std::runtime_error( sFile+"base "+Corr[i].Name_.Base+sBad+Corr[0].Name_.Base );
-          if( !Common::EqualIgnoreCase( Corr[i].Name_.Type, Corr[0].Name_.Type ) )
-            throw std::runtime_error( sFile+"type "+Corr[i].Name_.Type+sBad+Corr[0].Name_.Type );
-          if( Corr[i].Name_.Seed != Corr[0].Name_.Seed )
-            throw std::runtime_error(sFile+"seed "+Corr[i].Name_.SeedString+sBad+Corr[0].Name_.SeedString);
-          if( !Common::EqualIgnoreCase( Corr[i].Name_.Ext, Corr[0].Name_.Ext ) )
-            throw std::runtime_error( sFile+"extension "+Corr[i].Name_.Ext+sBad+Corr[0].Name_.Ext );
-          if( Corr[i].Nt() != Corr[0].Nt() )
-            throw std::runtime_error( sFile + "Nt=" + std::to_string( Corr[i].Nt() )
-                                      + sBad + std::to_string( Corr[0].Nt() ) );
-          if( Corr[i].NumSamples() != Corr[0].NumSamples() )
-            throw std::runtime_error( sFile + "NumSamples=" + std::to_string( Corr[i].NumSamples() )
-                                      + sBad + std::to_string( Corr[0].NumSamples() ) );
+          Corr[0].IsCompatible( Corr[i], true );
         }
         i++;
       }

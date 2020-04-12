@@ -169,6 +169,7 @@ extern const std::string sConfigCount;
 extern const std::string sFileList;
 extern const std::string sBootstrapList;
 extern const std::string sBinSize;
+extern const std::string sNE;
 
 extern const std::vector<std::string> sCorrSummaryNames;
 
@@ -1256,6 +1257,7 @@ public:
   }
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
+  void IsCompatible( Sample<T> &o, bool bCompareBase = false ) const;
   Sample<T> Bootstrap(int NumBootSamples, SeedType Seed, const std::string * pMachineName = nullptr,
                       std::vector<std::string> * pAuxNames = nullptr);
   void Read (const std::string &FileName, const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr,
@@ -1348,6 +1350,52 @@ public: // Override these for specialisations
 
 using SampleC = Sample<std::complex<double>>;
 using SampleD = Sample<double>;
+
+template <typename T>
+void Sample<T>::IsCompatible( Sample<T> &o, bool bCompareBase ) const
+{
+  static const std::string sPrefix{ "Incompatible " + sBootstrap + " samples - " };
+  std::string sSuffix{ ":\n  " + Name_.Filename + "\n+ " + o.Name_.Filename };
+  if( bCompareBase && !Common::EqualIgnoreCase( o.Name_.Base, Name_.Base ) )
+    throw std::runtime_error( sPrefix + "base " + o.Name_.Base + sNE + Name_.Base + sSuffix );
+  if( !Common::EqualIgnoreCase( o.Name_.Type, Name_.Type ) )
+    throw std::runtime_error( sPrefix + "type " + o.Name_.Type + sNE + Name_.Type + sSuffix );
+  if( !Common::EqualIgnoreCase( o.Name_.Ext, Name_.Ext ) )
+    throw std::runtime_error( sPrefix + "extension " + o.Name_.Ext + sNE + Name_.Ext + sSuffix );
+  if( o.NumSamples() != NumSamples_ )
+    throw std::runtime_error( sPrefix + "NumSamples " + std::to_string(o.NumSamples()) +
+                             sNE + std::to_string(NumSamples_) + sSuffix );
+  if( o.Nt() != Nt_ )
+    throw std::runtime_error( sPrefix + "Nt " + std::to_string(o.Nt()) +
+                             sNE + std::to_string(Nt_) + sSuffix );
+  if( o.Seed_ != Seed_ )
+    throw std::runtime_error( "Seed " + std::to_string( o.Seed_ ) + sNE + std::to_string( Seed_ ) );
+  if( !Common::EqualIgnoreCase( o.SeedMachine_, SeedMachine_ ) )
+    throw std::runtime_error( "Machine " + o.SeedMachine_ + sNE + SeedMachine_ );
+  if( o.SampleSize && SampleSize && o.SampleSize != SampleSize )
+    throw std::runtime_error( sPrefix + "SampleSize " + std::to_string(o.SampleSize) +
+                             sNE + std::to_string(SampleSize) + sSuffix );
+  const std::size_t CSize {   ConfigCount.size() };
+  const std::size_t CSizeO{ o.ConfigCount.size() };
+  if( CSize && CSizeO )
+  {
+    if( CSizeO != CSize )
+      throw std::runtime_error( sPrefix + "Number of configs " +
+                          std::to_string(CSizeO) + sNE + std::to_string(CSize) + sSuffix );
+    for( std::size_t i = 0; i < CSize; i++ )
+    {
+      const Common::ConfigCount &l{   ConfigCount[i] };
+      const Common::ConfigCount &r{ o.ConfigCount[i] };
+      if( r.Config != l.Config )
+        throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
+                                 sNE + std::to_string(l.Config) + sSuffix );
+      if( r.Count != l.Count )
+        throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
+                                 ", NumTimeslices " + std::to_string(r.Count) + sNE +
+                                 std::to_string(l.Count) + sSuffix );
+    }
+  }
+}
 
 /**
  Perform bootstrap

@@ -73,6 +73,7 @@ const std::string sConfigCount{ "ConfigCount" };
 const std::string sFileList{ "FileList" };
 const std::string sBootstrapList{ "BootstrapList" };
 const std::string sBinSize{ "BinSize" };
+const std::string sNE{ " != " };
 const std::vector<std::string> sCorrSummaryNames{ "corr", "bias", "exp", "cosh" };
 const double NaN{ std::nan( "" ) };
 
