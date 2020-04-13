@@ -62,6 +62,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i GFWPZ2/fit -o GFWPZ2/fit"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i GFWPZ2/fit35 -o GFWPZ2/fit35test"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

@@ -372,6 +372,8 @@ std::vector<Common::ValWithEr<scalar>> MultiExpModel::PerformFit( bool Bcorrelat
     ColNames.push_back( "ChiSqPerDof" );
     ModelParams.SetColumnNames( ColNames );
   }
+  for( const Fold &f : Corr )
+    ModelParams.FileList.emplace_back( f.Name_.Filename );
 
   // See whether this fit already exists
   bool bPerformFit{ true };
@@ -466,7 +468,7 @@ std::vector<Common::ValWithEr<scalar>> MultiExpModel::PerformFit( bool Bcorrelat
         {
           const std::string Sep{ " " };
           const std::string NewLine{ "\n" };
-          const std::string FileName{ Common::MakeFilename( sModelBase, "cormat", Seed, TEXT_EXT ) };
+          const std::string FileName{Common::MakeFilename(sModelBase,Common::sCormat,Seed,TEXT_EXT)};
           std::ofstream s{ FileName };
           s << "# Correlation matrix\n# Files: " << NumFiles << "\n# NtCorr: " << NtCorr
             << "\n# gnuplot: plot '" << FileName
@@ -710,7 +712,7 @@ int main(int argc, const char *argv[])
         }
         else
         {
-          Corr[0].IsCompatible( Corr[i], true );
+          Corr[0].IsCompatible( Corr[i], nullptr, true );
         }
         i++;
       }

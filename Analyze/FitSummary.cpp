@@ -39,17 +39,19 @@ using FitTimes = std::pair<int, int>;
 struct FitData
 {
   scalar SortBy;
+  scalar Stat;
   int ti;
   int tf;
   int dof;
   std::string Parameters;
-  int ChiSeq = 0;
+  std::size_t idxModel;
+  int Seq = 0;
   FitData() = default;
-  FitData( scalar sortBy_, int ti_, int tf_, int dof_, const std::string &Parameters_ )
-  : SortBy{ sortBy_ }, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Parameters{ Parameters_ } {}
+  FitData(scalar sortBy_,scalar stat_,int ti_,int tf_,int dof_,const std::string &Parameters_,std::size_t idx_Model)
+  : SortBy{sortBy_},Stat{stat_},ti{ti_},tf{tf_},dof{dof_},Parameters{Parameters_},idxModel{idx_Model}{}
 };
 
-struct Detail
+/*struct Detail
 {
   std::map<FitTimes, FitData> Fits;
   int Nt;
@@ -59,14 +61,111 @@ struct Detail
   std::string SeedMachine;
 };
 
-using Summary = std::map<std::string, Detail>;
+using Summary = std::map<std::string, Detail>;*/
+using FitMap = std::map<FitTimes, FitData>;
 
 using chisqdof_ti_tf = std::tuple<scalar, int, int>;
 using SortByDof = std::map<chisqdof_ti_tf, std::string>;
 
+// When I first parse file names, I split them into separate lists for each base
+using BaseList = std::map<std::string, std::vector<std::string>>;
+using Matrix = Eigen::MatrixXd; // dynamic sized matrix of complex double
+
+void SaveCMat(const std::vector<Model> &Corr, const int NumBoot, const std::string &sFileName,
+              const std::vector<int> &OpIndices)
+{
+  // Make covariance
+  const int idx{ Model::idxCentral };
+  const int NtCorr{ static_cast<int>( OpIndices.size() ) };
+  const int NumFiles{ static_cast<int>( Corr.size() ) };
+  const int Extent{ NtCorr * NumFiles };
+  std::vector<scalar> VarianceInv( Extent );
+  Matrix Covar( Extent, Extent );
+  for( int x = 0; x < Extent; x++ )
+  {
+    const int ix{ OpIndices[x / NumFiles] };
+    const Model &CorrX{ Corr[x % NumFiles] };
+    const scalar * CentralX = CorrX[idx];
+    const scalar * ReplicaX = CorrX[ 0 ];
+    const int NtX { CorrX.Nt() };
+    for( int y = 0; y <= x; y++ )
+    {
+      const int iy{ OpIndices[y / NumFiles] };
+      const Model &CorrY{ Corr[y % NumFiles] };
+      const scalar * CentralY = CorrY[idx];
+      const scalar * ReplicaY = CorrY[ 0 ];
+      const int NtY { CorrY.Nt() };
+      double z = 0;
+      const scalar * DataX{ ReplicaX };
+      const scalar * DataY{ ReplicaY };
+      for( int i = 0; i < NumBoot; i++ )
+      {
+        z += ( DataX[ix] - CentralX[ix] ) * ( DataY[iy] - CentralY[iy] );
+        DataX += NtX;
+        DataY += NtY;
+      }
+      z /= NumBoot;
+      Covar( x, y ) = z;
+      if( x != y )
+        Covar( y, x ) = z;
+      if( y == x )
+        VarianceInv[x] = 1. / sqrt( z );
+    }
+  }
+  // Turn covariance matrix into correlation matrix
+  for( int x = 0; x < Extent; x++ )
+    for( int y = 0; y <= x; y++ )
+    {
+      if( y == x )
+        Covar( x, y ) = 1.;
+      else
+      {
+        double z = Covar( x, y ) * VarianceInv[x] * VarianceInv[y];
+        Covar( x, y ) = z;
+        Covar( y, x ) = z;
+      }
+    }
+  if( !Common::IsFinite( Covar ) )
+    throw std::runtime_error( "Covariance matrix isn't finite" );
+  // Now write file
+  std::ofstream s{ sFileName };
+  s << "# Correlation matrix\n# Files: " << NumFiles << "\n# Operators: " << NtCorr
+    << "\n# gnuplot: plot '" << sFileName
+    << "' matrix columnheaders rowheaders with image pixels" << Common::NewLine << Extent;
+  std::vector<std::string> sOpNames;
+  for( int o = 0; o < NtCorr; o++ )
+  {
+    for( int f = 0; f < NumFiles; f++ )
+    {
+      std::string sOp{ "\"" + Corr[f].GetColumnNames()[OpIndices[o]] };
+      sOp.append( 1, ' ' );
+      sOp.append( std::to_string( Corr[f].ti ) );
+      sOp.append( 1, ',' );
+      sOp.append( std::to_string( Corr[f].tf ) );
+      sOp.append( 1, '"' );
+      s << Common::Space << sOp;
+      sOpNames.push_back( sOp );
+    }
+  }
+  s << Common::NewLine;
+  for( int o = 0; o < NtCorr; o++ )
+    for( int f = 0; f < NumFiles; f++ )
+    {
+      const int i{ o * NumFiles + f };
+      s << sOpNames[i];
+      for( int j = 0; j < Extent; j++ )
+        s << Common::Space << Covar( i, j );
+      s << Common::NewLine;
+    }
+}
+
 int main(int argc, const char *argv[])
 {
   std::ios_base::sync_with_stdio( false );
+  const std::string &Sep{ Common::Space };
+  const std::string &NL{ Common::NewLine };
+  static const std::string sIndent{ "  " };
+  static const std::string sError{ "Error: " };
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;
@@ -76,48 +175,68 @@ int main(int argc, const char *argv[])
     const std::initializer_list<CL::SwitchDef> list = {
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
+      {"p", CL::SwitchType::Single, "0.05" },
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
     const int NumFiles{ static_cast<int>( cl.Args.size() ) };
+    BaseList lBase;
+    const std::string outBaseFileName{ Common::AppendSlash( cl.SwitchValue<std::string>("o") ) };
+    const scalar Threshold{ cl.SwitchValue<scalar>("p") };
     if( !cl.GotSwitch( "help" ) && NumFiles )
     {
       const std::string inBase{ Common::AppendSlash( cl.SwitchValue<std::string>("i") ) };
-      std::string outBaseFileName{ Common::AppendSlash( cl.SwitchValue<std::string>("o") ) };
-
       bShowUsage = false;
-      Summary Sum;
-      // Read every model, saving all the data I'll need to reconstruct the summary
+      // Parse the command line, splitting into separate lists for each base
       for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
       {
         Common::FileNameAtt n{ sFileName, };
         n.ParseExtra( 2 );
         std::size_t NumExtra{ n.Extra.size() };
         std::string sFitType;
+        if( !Common::FileExists( sFileName ) )
+          std::cout << sFileName << Sep << sError << "doesn't exist" << NL;
+        else if( !NumExtra )
+          std::cout << sFileName << Sep << sError << "doesn't include fit type in name" << NL;
+        sFitType = n.Extra[NumExtra - 1];
+        for( int i = 0; i < 2 ; i++ )
+        {
+          std::size_t pos = sFitType.find_last_of( '_' );
+          if( pos == std::string::npos )
+            break;
+          sFitType.resize( pos );
+        }
+        // The master key for this record is the base filename of the output
+        std::string sOutFile{ n.Base };
+        sOutFile.append( 1, '.' );
+        sOutFile.append( sFitType );
+        for( std::size_t i = NumExtra - 1; i-- > 0; )
+        {
+          sOutFile.append( 1, '.' );
+          sOutFile.append( n.Extra[i] );
+        }
+        lBase[sOutFile].emplace_back( std::move( sFileName ) );
+      }
+    }
+    // Process every base name and it's list of models separately
+    for( BaseList::iterator it = lBase.begin(); it != lBase.end(); ++it )
+    {
+      const std::string &sOutFile{ it->first };
+      const std::vector<std::string> ModelFileName{ it->second };
+      const std::string &sSummaryName{ outBaseFileName + sOutFile };
+      std::cout << sSummaryName << NL;
+      std::vector<Model> Models;
+      Models.reserve( ModelFileName.size() );
+      // Read every model, saving all the data I'll need to reconstruct the summary
+      int NumSamples{ 0 };
+      std::string ColumnNames;
+      std::string Comments;
+      Common::SeedType Seed{ 0 };
+      FitMap Fits;
+      for( const std::string &sFileName : ModelFileName )
+      {
         try
         {
-          if( !Common::FileExists( sFileName ) )
-            throw std::runtime_error( "doesn't exist" );
-          else if( !NumExtra )
-            throw std::runtime_error( "doesn't include fit type in name" );
-          sFitType = n.Extra[NumExtra - 1];
-          for( int i = 0; i < 2 ; i++ )
-          {
-            std::size_t pos = sFitType.find_last_of( '_' );
-            if( pos == std::string::npos )
-              break;
-            sFitType.resize( pos );
-          }
-          // The master key for this record is the base filename of the output
-          std::string sOutFile{ n.Base };
-          sOutFile.append( 1, '.' );
-          sOutFile.append( sFitType );
-          for( std::size_t i = NumExtra - 1; i-- > 0; )
-          {
-            sOutFile.append( 1, '.' );
-            sOutFile.append( n.Extra[i] );
-          }
-          Detail & Det{ Sum[sOutFile] };
           // Check the model characteristics
           Model m;
           m.Read( sFileName, "" );
@@ -126,76 +245,70 @@ int main(int argc, const char *argv[])
           std::ostringstream ss;
           m.WriteColumnNames( ss );
           ss << " pvalue pvalue_low pvalue_high pvalue_check";
-          if( Det.Fits.empty() )
+          if( Models.empty() )
           {
-            Det.Nt = m.Nt();
-            Det.ColumnNames = ss.str();
+            ColumnNames = ss.str();
             ss.str("");
             m.SummaryComments( ss );
             ss << "# column(1) is the row order when sorted by ChiSqPerDof\n";
-            Det.Comments = ss.str();
-            Det.Seed = m.Seed_;
-            Det.SeedMachine = m.SeedMachine_;
+            Comments = ss.str();
+            Seed = m.Name_.Seed;
           }
           else
           {
-            if( Det.Nt != m.Nt() || !Common::EqualIgnoreCase( Det.ColumnNames, ss.str() ) )
+            Models[0].IsCompatible( m, &NumSamples );
+            if( !Common::EqualIgnoreCase( ColumnNames, ss.str() ) )
               throw std::runtime_error( "Fit column names don't match" );
-            if( Det.Seed != m.Seed_ || !Common::EqualIgnoreCase( Det.SeedMachine, m.SeedMachine_ ) )
-              throw std::runtime_error( "Fit seeds don't match" );
           }
           // Save the summary of the parameters for this file
           ss.str("");
           m.WriteSummaryData( ss );
-          const Common::ValWithEr<scalar> * const pChisqDof{ m.getSummaryData() + Det.Nt-1 };
+          const Common::ValWithEr<scalar> * const pChisqDof{ m.getSummaryData() + m.Nt()-1 };
           scalar QValue = gsl_cdf_chisq_Q( pChisqDof->Central * m.dof, m.dof );
-          const std::string Sep{ " " };
           ss << Sep << QValue
              << Sep << gsl_cdf_chisq_Q( pChisqDof->Low * m.dof, m.dof )
              << Sep << gsl_cdf_chisq_Q( pChisqDof->High * m.dof, m.dof )
              << Sep << pChisqDof->Check;
-          Det.Fits.emplace( std::make_pair(std::make_pair( m.ti, m.tf ),
-                                           FitData(1 - QValue, m.ti, m.tf, m.dof, ss.str())));
+          Fits.emplace( std::make_pair(std::make_pair( m.ti, m.tf ),
+                                  FitData(1-QValue,QValue,m.ti,m.tf,m.dof,ss.str(),Models.size())));
+          Models.emplace_back( std::move( m ) );
         }
         catch( const std::exception &e )
         {
-          std::cout << sFileName << " Error: " << e.what() << std::endl;
+          //std::cout << sFileName << Sep << sError << e.what() << NL;
+          std::cout << sIndent << sError << e.what() << NL;
         }
       }
-      // Now process the list of summary files we need to make
-      static const std::string Sep{ " " };
-      static const std::string sIndent{ "  " };
-      for( Summary::iterator it = Sum.begin(); it != Sum.end(); ++it )
+      // Update the fits with sorted sequence number for chi-squared and save sorted file
       {
-        const std::string &sSummaryName{ outBaseFileName + it->first };
-        std::cout << sSummaryName << "\n";
-        Detail &Det{ it->second };
         // Sort the fits by chi-squared
         std::set<chisqdof_ti_tf> vChiSort;
-        for( auto dt = Det.Fits.begin(); dt != Det.Fits.end(); ++dt )
+        for( auto dt = Fits.begin(); dt != Fits.end(); ++dt )
         {
           const FitData &d{ dt->second };
           vChiSort.emplace( d.SortBy, d.ti, d.tf );
         }
-        // Update the fits with sorted sequence number for chi-squared and save sorted file
-        std::string sFileName=Common::MakeFilename( sSummaryName, Common::sParams + "_sort", Det.Seed, TEXT_EXT );
+        std::string sFileName=Common::MakeFilename(sSummaryName,Common::sParams+"_sort",Seed,TEXT_EXT);
         std::ofstream s( sFileName );
         Common::SummaryHeader<scalar>( s, sFileName );
-        s << Det.Comments;
-        s << "ChiSeq ti tf dof " << Det.ColumnNames << "\n";
+        s << Comments;
+        s << "Seq ti tf dof " << ColumnNames << NL;
         int ChiSeq{ 0 };
-        for( auto dt = vChiSort.begin(); dt != vChiSort.end(); ++dt )
+        for( const chisqdof_ti_tf &z : vChiSort )
         {
-          const chisqdof_ti_tf &z{ *dt };
-          FitData & d{ Det.Fits[std::make_pair( std::get<1>( z ), std::get<2>( z ) )] };
-          d.ChiSeq = ChiSeq++;
-          s << d.ChiSeq << Sep << d.ti << Sep << d.tf << Sep << d.dof << Sep << d.Parameters << "\n";
+          FitData & d{ Fits[std::make_pair( std::get<1>( z ), std::get<2>( z ) )] };
+          d.Seq = ChiSeq++;
+          s << d.Seq << Sep << d.ti << Sep << d.tf << Sep << d.dof << Sep << d.Parameters << NL;
         }
-        s.close();
-        // Now make the output file
-        sFileName=Common::MakeFilename( sSummaryName, Common::sParams, Det.Seed, TEXT_EXT );
+      }
+      // Now make the output file with blocks for each ti, sorted by tf
+      std::vector<Model> CorrModels;
+      CorrModels.reserve( Models.size() );
+      {
+        std::ofstream s;
+        std::string sFileName=Common::MakeFilename( sSummaryName, Common::sParams, Seed, TEXT_EXT );
         std::size_t t_last = std::numeric_limits<int>::min();
-        for( auto dt = Det.Fits.begin(); dt != Det.Fits.end(); ++dt )
+        for( auto dt = Fits.begin(); dt != Fits.end(); ++dt )
         {
           const FitData &d{ dt->second };
           // Write header before each block
@@ -206,7 +319,7 @@ int main(int argc, const char *argv[])
             {
               s.open( sFileName );
               Common::SummaryHeader<scalar>( s, sFileName );
-              s << Det.Comments;
+              s << Comments;
               s << "# columnheader(1) is the block (index) title\n";
             }
             else
@@ -217,20 +330,58 @@ int main(int argc, const char *argv[])
             // Name the data series
             s << "# [ti=" << d.ti << "]\n";
             // Column names, with the series value embedded in the column header (best I can do atm)
-            s << "ti=" << d.ti << " ti tf dof " << Det.ColumnNames << "\n";
+            s << "ti=" << d.ti << " ti tf dof " << ColumnNames << NL;
           }
           // Now write this row
-          s << d.ChiSeq << Sep << d.ti << Sep << d.tf << Sep << d.dof << Sep << d.Parameters << "\n";
+          s << d.Seq << Sep << d.ti << Sep << d.tf << Sep << d.dof << Sep << d.Parameters << NL;
+          // If the statistic is above threshold, include it in correlation matrix
+          if( d.Stat >= Threshold )
+            CorrModels.emplace_back( std::move( Models[d.idxModel] ) );
         }
+      }
+      // Now plot the correlation matrix for selected models
+      Models.clear();
+      try
+      {
+        if( !CorrModels.empty() )
+        {
+          const Model &m{ CorrModels[0] };
+          const int NumOperators{ static_cast<int>( m.OpNames.size() ) };
+          std::vector<int> OpIndices{};
+          OpIndices.reserve( m.NumExponents * NumOperators );
+          for( int o = 0; o < NumOperators; o++ )
+            for( int e = 0; e < m.NumExponents; e++ )
+              OpIndices.push_back( m.GetColumnIndex( m.OpNames[o] + std::to_string(e) ) );
+          std::string sFileName=Common::MakeFilename( sSummaryName, Common::sCormat, Seed, TEXT_EXT );
+          std::cout << "Making " << sFileName << NL;
+          SaveCMat( CorrModels, NumSamples, sFileName, OpIndices );
+          if( m.NumExponents > 1 )
+          {
+            OpIndices.clear();
+            for( int e = 0; e < m.NumExponents; e++ )
+            {
+              OpIndices.push_back( e );
+              for( int o = 0; o < NumOperators; o++ )
+                OpIndices.push_back( m.GetColumnIndex( m.OpNames[o] + std::to_string(e) ) );
+            }
+            sFileName=Common::MakeFilename(sSummaryName+".excited", Common::sCormat, Seed, TEXT_EXT );
+            std::cout << "Making " << sFileName << NL;
+            SaveCMat( CorrModels, NumSamples, sFileName, OpIndices );
+          }
+        }
+      }
+      catch( const std::exception &e )
+      {
+        std::cout << sIndent << sError << e.what() << NL;
       }
     }
   }
   catch(const std::exception &e)
   {
-    std::cerr << "Error: " << e.what() << std::endl;
+    std::cerr << sError << e.what() << std::endl;
     iReturn = EXIT_FAILURE;
   } catch( ... ) {
-    std::cerr << "Error: Unknown exception" << std::endl;
+    std::cerr << sError << "Unknown exception" << std::endl;
     iReturn = EXIT_FAILURE;
   }
   if( bShowUsage )
@@ -240,6 +391,7 @@ int main(int argc, const char *argv[])
     "Summarise the fits contained in each model (ready for plotting), where <options> are:\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
+    "-p     p-value threshold for covariance matrix\n"
     "Flags:\n"
     "--help     This message\n";
   }

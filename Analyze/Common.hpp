@@ -148,6 +148,7 @@ extern const std::string sBootstrap;
 extern const std::string sFold;
 extern const std::string sModel;
 extern const std::string sParams;
+extern const std::string sCormat;
 extern const std::string sNtUnfolded;
 extern const std::string st0Negated;
 extern const std::string sConjugated;
@@ -1232,6 +1233,13 @@ public:
     }
   }
   const std::vector<std::string> & GetColumnNames() const { return ColumnNames; }
+  int GetColumnIndex( const std::string & ColumnName ) const
+  {
+    for( int i = 0; i < ColumnNames.size(); i++ )
+      if( EqualIgnoreCase( ColumnNames[i], ColumnName ) )
+        return i;
+    throw std::runtime_error( "Column " + ColumnName + " not found" );
+  }
   void resize( int NumSamples, int Nt, std::vector<std::string> * pAuxNames = nullptr )
   {
     const int NewNumExtraSamples{ static_cast<int>( pAuxNames && pAuxNames->size() ? pAuxNames->size() : 1 ) };
@@ -1257,7 +1265,7 @@ public:
   }
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
-  void IsCompatible( Sample<T> &o, bool bCompareBase = false ) const;
+  void IsCompatible( Sample<T> &o, int * pNumSamples = nullptr, bool bCompareBase = false ) const;
   Sample<T> Bootstrap(int NumBootSamples, SeedType Seed, const std::string * pMachineName = nullptr,
                       std::vector<std::string> * pAuxNames = nullptr);
   void Read (const std::string &FileName, const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr,
@@ -1351,8 +1359,9 @@ public: // Override these for specialisations
 using SampleC = Sample<std::complex<double>>;
 using SampleD = Sample<double>;
 
+// Initialise *pNumSamples either to 0, or to the size of the first Sample before first call
 template <typename T>
-void Sample<T>::IsCompatible( Sample<T> &o, bool bCompareBase ) const
+void Sample<T>::IsCompatible( Sample<T> &o, int * pNumSamples, bool bCompareBase ) const
 {
   static const std::string sPrefix{ "Incompatible " + sBootstrap + " samples - " };
   std::string sSuffix{ ":\n  " + Name_.Filename + "\n+ " + o.Name_.Filename };
@@ -1362,7 +1371,14 @@ void Sample<T>::IsCompatible( Sample<T> &o, bool bCompareBase ) const
     throw std::runtime_error( sPrefix + "type " + o.Name_.Type + sNE + Name_.Type + sSuffix );
   if( !Common::EqualIgnoreCase( o.Name_.Ext, Name_.Ext ) )
     throw std::runtime_error( sPrefix + "extension " + o.Name_.Ext + sNE + Name_.Ext + sSuffix );
-  if( o.NumSamples() != NumSamples_ )
+  if( pNumSamples )
+  {
+    if( *pNumSamples == 0 || *pNumSamples > NumSamples_)
+      *pNumSamples = NumSamples_;
+    if( *pNumSamples > o.NumSamples() )
+      *pNumSamples = o.NumSamples();
+  }
+  else if( o.NumSamples() != NumSamples_ )
     throw std::runtime_error( sPrefix + "NumSamples " + std::to_string(o.NumSamples()) +
                              sNE + std::to_string(NumSamples_) + sSuffix );
   if( o.Nt() != Nt_ )

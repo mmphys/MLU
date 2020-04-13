@@ -52,6 +52,7 @@ const std::string sBootstrap{ "bootstrap" };
 const std::string sFold{ "fold" };
 const std::string sModel{ "model" };
 const std::string sParams{ "params" };
+const std::string sCormat{ "cormat" };
 const std::string sNtUnfolded{ "NtUnfolded" };
 const std::string st0Negated{ "t0Negated" };
 const std::string sConjugated{ "Conjugated" };

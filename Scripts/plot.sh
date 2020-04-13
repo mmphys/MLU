@@ -124,7 +124,8 @@ XF1=do_offset
 XF2=(1 - NumFields*NumFB*NumFiles)/2*XF1
 
 if( NumFiles==1 && FileType eq "cormat" ) {
-  set xtics rotate
+  set xtics rotate noenhanced
+  set ytics noenhanced
   plot PlotFile matrix columnheaders rowheaders with image pixels
 } else {
   plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] \
