@@ -69,8 +69,12 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;*.h5&apos;"
+            argument = "h1_l_p_0_0_0.corr_8_17.PP_PW.model.4147798751.h5"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;*.h5&apos;"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

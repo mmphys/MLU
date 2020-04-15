@@ -72,7 +72,7 @@ using BaseList = std::map<std::string, std::vector<std::string>>;
 using Matrix = Eigen::MatrixXd; // dynamic sized matrix of complex double
 
 void SaveCMat(const std::vector<Model> &Corr, const int NumBoot, const std::string &sFileName,
-              const std::vector<int> &OpIndices)
+              const std::vector<int> &OpIndices, bool bInvertNeg )
 {
   // Make covariance
   const int idx{ Model::idxCentral };
@@ -100,7 +100,11 @@ void SaveCMat(const std::vector<Model> &Corr, const int NumBoot, const std::stri
       const scalar * DataY{ ReplicaY };
       for( int i = 0; i < NumBoot; i++ )
       {
-        z += ( DataX[ix] - CentralX[ix] ) * ( DataY[iy] - CentralY[iy] );
+        scalar zThis = ( DataX[ix] - CentralX[ix] ) * ( DataY[iy] - CentralY[iy] );
+        if( bInvertNeg && (   ( CentralX[ix] <  0 && CentralY[iy] >= 0 )
+                           || ( CentralX[ix] >= 0 && CentralY[iy] <  0 ) ) )
+          zThis = -zThis;
+        z += zThis;
         DataX += NtX;
         DataY += NtY;
       }
@@ -253,6 +257,7 @@ int main(int argc, const char *argv[])
             ss << "# column(1) is the row order when sorted by ChiSqPerDof\n";
             Comments = ss.str();
             Seed = m.Name_.Seed;
+            NumSamples = m.NumSamples();
           }
           else
           {
@@ -354,7 +359,7 @@ int main(int argc, const char *argv[])
               OpIndices.push_back( m.GetColumnIndex( m.OpNames[o] + std::to_string(e) ) );
           std::string sFileName=Common::MakeFilename( sSummaryName, Common::sCormat, Seed, TEXT_EXT );
           std::cout << "Making " << sFileName << NL;
-          SaveCMat( CorrModels, NumSamples, sFileName, OpIndices );
+          SaveCMat( CorrModels, NumSamples, sFileName, OpIndices, true );
           if( m.NumExponents > 1 )
           {
             OpIndices.clear();
@@ -366,7 +371,7 @@ int main(int argc, const char *argv[])
             }
             sFileName=Common::MakeFilename(sSummaryName+".excited", Common::sCormat, Seed, TEXT_EXT );
             std::cout << "Making " << sFileName << NL;
-            SaveCMat( CorrModels, NumSamples, sFileName, OpIndices );
+            SaveCMat( CorrModels, NumSamples, sFileName, OpIndices, true );
           }
         }
       }

@@ -14,6 +14,7 @@ do_title="${do_title:-0}"
 my_title="${title}"
 my_xrange="${ti:-*}:${tf:-*}"
 my_yrange="${yrange:-*:*}"
+my_cbrange="${cbrange:--1:1}"
 my_key="${key:-top right}"
 FieldNames="${fields:-cosh}"
 RefVal=${ref:--777}
@@ -126,6 +127,7 @@ XF2=(1 - NumFields*NumFB*NumFiles)/2*XF1
 if( NumFiles==1 && FileType eq "cormat" ) {
   set xtics rotate noenhanced
   set ytics noenhanced
+  set cbrange [@my_cbrange]
   plot PlotFile matrix columnheaders rowheaders with image pixels
 } else {
   plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] \
