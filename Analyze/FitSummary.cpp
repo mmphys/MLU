@@ -72,7 +72,7 @@ using BaseList = std::map<std::string, std::vector<std::string>>;
 using Matrix = Eigen::MatrixXd; // dynamic sized matrix of complex double
 
 void SaveCMat(const std::vector<Model> &Corr, const int NumBoot, const std::string &sFileName,
-              const std::vector<int> &OpIndices, bool bInvertNeg )
+              const std::vector<int> &OpIndices, bool bInvertNeg, bool bSingleModel )
 {
   // Make covariance
   const int idx{ Model::idxCentral };
@@ -133,19 +133,32 @@ void SaveCMat(const std::vector<Model> &Corr, const int NumBoot, const std::stri
     throw std::runtime_error( "Covariance matrix isn't finite" );
   // Now write file
   std::ofstream s{ sFileName };
-  s << "# Correlation matrix\n# Files: " << NumFiles << "\n# Operators: " << NtCorr
-    << "\n# gnuplot: plot '" << sFileName
+  s << "# Correlation matrix\n# Files: " << NumFiles << Common::NewLine;
+  for( int i = 0; i < NumFiles; i++ )
+    s << "# File" << ( i + 1 ) << ": " << Corr[i].Name_.Filename << Common::NewLine;
+  s << "# Operators: " << NtCorr;
+  for( int o = 0; o < NtCorr; o++ )
+    s << " " << Corr[0].GetColumnNames()[OpIndices[o]];
+  s << "\n# gnuplot: plot '" << sFileName
     << "' matrix columnheaders rowheaders with image pixels" << Common::NewLine << Extent;
   std::vector<std::string> sOpNames;
   for( int o = 0; o < NtCorr; o++ )
   {
+    const int iColumn{ OpIndices[o] };
     for( int f = 0; f < NumFiles; f++ )
     {
-      std::string sOp{ "\"" + Corr[f].GetColumnNames()[OpIndices[o]] };
-      sOp.append( 1, ' ' );
-      sOp.append( std::to_string( Corr[f].ti ) );
-      sOp.append( 1, ',' );
-      sOp.append( std::to_string( Corr[f].tf ) );
+      const bool bThisNeg{ Corr[f][idx][iColumn] < 0 };
+      std::string sOp{ "\"" + Corr[f].GetColumnNames()[iColumn] };
+      if( bThisNeg )
+        sOp.append( 1, '-' );
+      if( !bSingleModel )
+      {
+        if( !bThisNeg )
+          sOp.append( 1, ' ' );
+        sOp.append( std::to_string( Corr[f].ti ) );
+        sOp.append( 1, ',' );
+        sOp.append( std::to_string( Corr[f].tf ) );
+      }
       sOp.append( 1, '"' );
       s << Common::Space << sOp;
       sOpNames.push_back( sOp );
@@ -307,11 +320,12 @@ int main(int argc, const char *argv[])
         }
       }
       // Now make the output file with blocks for each ti, sorted by tf
+      const bool bSingleModel{ Models.size() == 1 };
       std::vector<Model> CorrModels;
       CorrModels.reserve( Models.size() );
       {
         std::ofstream s;
-        std::string sFileName=Common::MakeFilename( sSummaryName, Common::sParams, Seed, TEXT_EXT );
+        const std::string sFileName{Common::MakeFilename(sSummaryName,Common::sParams,Seed,TEXT_EXT)};
         std::size_t t_last = std::numeric_limits<int>::min();
         for( auto dt = Fits.begin(); dt != Fits.end(); ++dt )
         {
@@ -351,27 +365,44 @@ int main(int argc, const char *argv[])
         if( !CorrModels.empty() )
         {
           const Model &m{ CorrModels[0] };
-          const int NumOperators{ static_cast<int>( m.OpNames.size() ) };
-          std::vector<int> OpIndices{};
-          OpIndices.reserve( m.NumExponents * NumOperators );
-          for( int o = 0; o < NumOperators; o++ )
-            for( int e = 0; e < m.NumExponents; e++ )
-              OpIndices.push_back( m.GetColumnIndex( m.OpNames[o] + std::to_string(e) ) );
-          std::string sFileName=Common::MakeFilename( sSummaryName, Common::sCormat, Seed, TEXT_EXT );
-          std::cout << "Making " << sFileName << NL;
-          SaveCMat( CorrModels, NumSamples, sFileName, OpIndices, true );
-          if( m.NumExponents > 1 )
+          std::string BaseName;
+          if( bSingleModel )
           {
-            OpIndices.clear();
-            for( int e = 0; e < m.NumExponents; e++ )
+            BaseName = m.Name_.Base;
+            for( std::size_t i = m.Name_.Extra.size(); i > 0; )
             {
-              OpIndices.push_back( e );
-              for( int o = 0; o < NumOperators; o++ )
-                OpIndices.push_back( m.GetColumnIndex( m.OpNames[o] + std::to_string(e) ) );
+              BaseName.append( 1, '.' );
+              BaseName.append( m.Name_.Extra[--i] );
             }
-            sFileName=Common::MakeFilename(sSummaryName+".excited", Common::sCormat, Seed, TEXT_EXT );
+          }
+          else
+            BaseName = sSummaryName;
+          for( int i = 0; i < 2; i++ )
+          {
+            const int NumOperators{ static_cast<int>( m.OpNames.size() ) };
+            std::vector<int> OpIndices{};
+            OpIndices.clear();
+            OpIndices.reserve( m.NumExponents * NumOperators );
+            for( int o = 0; o < NumOperators; o++ )
+              for( int e = 0; e < m.NumExponents; e++ )
+                OpIndices.push_back( m.GetColumnIndex( m.OpNames[o] + std::to_string(e) ) );
+            std::string sFileName=Common::MakeFilename(BaseName+".small",Common::sCormat,Seed,TEXT_EXT);
             std::cout << "Making " << sFileName << NL;
-            SaveCMat( CorrModels, NumSamples, sFileName, OpIndices, true );
+            SaveCMat( CorrModels, NumSamples, sFileName, OpIndices, i, bSingleModel );
+            if( m.NumExponents > 1 )
+            {
+              OpIndices.clear();
+              for( int e = 0; e < m.NumExponents; e++ )
+              {
+                OpIndices.push_back( e );
+                for( int o = 0; o < NumOperators; o++ )
+                  OpIndices.push_back( m.GetColumnIndex( m.OpNames[o] + std::to_string(e) ) );
+              }
+              sFileName=Common::MakeFilename(BaseName, Common::sCormat, Seed, TEXT_EXT );
+              std::cout << "Making " << sFileName << NL;
+              SaveCMat( CorrModels, NumSamples, sFileName, OpIndices, i, bSingleModel );
+            }
+            BaseName.append( ".cpos" );
           }
         }
       }
@@ -398,7 +429,7 @@ int main(int argc, const char *argv[])
     "-o     Output filename prefix\n"
     "-p     p-value threshold for covariance matrix\n"
     "Flags:\n"
-    "--help     This message\n";
+    "--help This message\n";
   }
   return iReturn;
 }
