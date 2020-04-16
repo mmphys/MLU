@@ -881,13 +881,13 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					$LatAnalyzeBuild,
-					$LatAnalyze/lib,
 					$GridPkg/include,
 					$GridPre/include,
 					$GridBuild/Grid,
 					$Grid,
 					$Grid/Eigen,
+					$LatAnalyzeBuild,
+					$LatAnalyze/lib,
 				);
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;
@@ -975,13 +975,13 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					$LatAnalyzeBuild,
-					$LatAnalyze/lib,
 					$GridPkg/include,
 					$GridPre/include,
 					$GridBuild/Grid,
 					$Grid,
 					$Grid/Eigen,
+					$LatAnalyzeBuild,
+					$LatAnalyze/lib,
 				);
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;
