@@ -32,6 +32,11 @@
 #include "Common.hpp"
 #include <LatAnalyze/Statistics/Dataset.hpp>
 
+/**
+ For any binaries that  include this file, add the following libraries to the build:
+ -lLatAnalyze
+ */
+
 BEGIN_COMMON_NAMESPACE
 
 // Copy a correlator to a Latan::DMat
