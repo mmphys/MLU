@@ -7020,9 +7020,9 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
+					$Hadrons,
 					"$Grid/build$(CONFIGURATION)/Grid",
 					$Grid,
-					$Hadrons/Hadrons,
 					$GridPre/include,
 					$GridPkg/include,
 					$LatAnalyze,
@@ -7031,6 +7031,8 @@
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;
 				LIBRARY_SEARCH_PATHS = (
+					"$Grid/build$(CONFIGURATION)/Grid",
+					"$Hadrons/build$(CONFIGURATION)/Hadrons",
 					"$GridPre/$(CONFIGURATION)/lib",
 					$GridPre/lib,
 					$GridPkg/lib,
@@ -7111,9 +7113,9 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
+					$Hadrons,
 					"$Grid/build$(CONFIGURATION)/Grid",
 					$Grid,
-					$Hadrons/Hadrons,
 					$GridPre/include,
 					$GridPkg/include,
 					$LatAnalyze,
@@ -7122,6 +7124,8 @@
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;
 				LIBRARY_SEARCH_PATHS = (
+					"$Grid/build$(CONFIGURATION)/Grid",
+					"$Hadrons/build$(CONFIGURATION)/Hadrons",
 					"$GridPre/$(CONFIGURATION)/lib",
 					$GridPre/lib,
 					$GridPkg/lib,

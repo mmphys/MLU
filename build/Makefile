@@ -8,13 +8,13 @@
 GridConf  := $(GridBuild)/grid-config
 #LatAnConf:= $(LatAnalyzeBuild)/latan-config
 CXX       := $(shell $(GridConf) --cxx)
-CC        ?= $(CXX)
+CC        := $(CXX)
 
 # De-duplicate header include (-I) paths, followed by other options
 CXXFLAGS  := $(shell $(GridConf) --cxxflags) #$(shell $(LatAnConf) --cxxflags)
 INCLUDE   := $(sort $(patsubst -I%,%,$(filter -I%,$(CXXFLAGS))))
 #CXXFLAGS := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(LatAnalyzeBuild) $(LatAnalyze)/lib $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
-CXXFLAGS  := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(Grid)/Eigen $(INCLUDE) $(GridPre)/include) $(filter-out -I%,$(CXXFLAGS))
+CXXFLAGS  := $(addprefix -I,$(Hadrons) $(GridBuild)/Grid $(Grid) $(GridPre)/include $(GridPkg)/include $(LatAnalyze) $(Grid)/Eigen $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
 # Turn off compiler optimisation
 CXXFLAGS  := $(filter-out -O%,$(CXXFLAGS))
 
@@ -24,7 +24,7 @@ LDLIBS    := -lHadrons -lGrid $(sort $(shell $(GridConf) --libs) -lMinuit2 -lgsl
 LDFLAGS   := $(shell $(GridConf) --ldflags) #$(shell $(LatAnConf) --ldflags)
 LDPATHS   := $(sort $(patsubst -L%,%,$(filter -L%,$(LDFLAGS))))
 #LDFLAGS  := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(LatAnalyzeBuild)/lib/.libs $(GridPre)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
-LDFLAGS   := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(GridPre)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
+LDFLAGS   := $(addprefix -L,$(GridBuild)/Grid $(HadronsBuild)/Hadrons $(GridPre)/lib $(GridPkg)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
 
 # Make a separate executable for every source in subdirectories except build*, run* or script*
 # Except filenames starting with "Common", for which explicit target rules must be provided
