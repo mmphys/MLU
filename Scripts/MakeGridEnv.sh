@@ -4,6 +4,9 @@ if [[ "$Grid"    == "" ]] ; then echo '$Grid not set'   ; exit 1; fi
 if [[ "$Hadrons" == "" ]] ; then echo '$Hadrons not set'; exit 1; fi
 if [[ "$GridPre" == "" ]] ; then echo '$GridPre not set'; exit 1; fi
 
+# Make wildcard failures return empty strings (not the unmodified wildcard string)
+shopt -s nullglob
+
 # Grid
 echo 'Grid source located in '$Grid
 for MyEnv in $Grid/build*
