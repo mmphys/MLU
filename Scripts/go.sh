@@ -32,15 +32,25 @@ fi
 #echo "num=$num, step=$step"
 
 bOK=1
-template="${1%.}"
-if [[ ! -e $template.pbs ]]; then bOK=0; echo "$template.pbs missing"; fi
-if [[ ! -e $template.xml ]]; then bOK=0; echo "$template.xml missing"; fi
+template="template"
+base="${1%.}" # Get rid of a trailing full-stop if present
+if   [[ -e $base.$template.sh  ]]; then jobext="sh" ; jobDescr="GPU"
+elif [[ -e $base.$template.pbs ]]; then jobext="pbs"; jobDescr="CPU"
+else
+  bOK=0
+  echo "Neither $base.$template.sh nor $base.$template.pbs found"
+fi
+if [[ ! -e $base.$template.xml ]]; then bOK=0; echo "$base.$template.xml missing"; fi
 if (( ! bOK )); then exit; fi
+
+templscript=$base.$template.$jobext
+templxml=$base.$template.xml
+echo "Making $NumFiles $jobDescr jobs"
 
 for (( ; NumFiles-- ; start += Inc )); do
   end=$(( start + ( num - 1 ) * step + 1 ))
-  base=${template//.*}.$start
-  xml=$base.xml
-  sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" -e "s|@xml@|$xml|g" -e "s|@wall@|$wall|g" $template.pbs > $base.pbs
-  sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" $template.xml > $xml
+  jobscript=$base.$start.$jobext
+  jobxml=$base.$start.xml
+  sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" -e "s|@xml@|$jobxml|g" -e "s|@wall@|$wall|g" $templscript > $jobscript
+  sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" $templxml > $jobxml
 done

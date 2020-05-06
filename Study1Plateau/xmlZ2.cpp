@@ -73,20 +73,9 @@ static const Common::Momentum Momenta[] = {
 };
 static constexpr int NumMomenta{ sizeof( Momenta ) / sizeof( Momenta[0] ) };
 
-int main(int argc, char *argv[])
+void Make( Application &application, unsigned int nt, bool bRandom, bool bEigenpackEnable )
 {
-  // initialization //////////////////////////////////////////////////////////
-  Grid_init(&argc, &argv);
-  HadronsLogError.Active(GridLogError.isActive());
-  HadronsLogWarning.Active(GridLogWarning.isActive());
-  HadronsLogMessage.Active(GridLogMessage.isActive());
-  HadronsLogIterative.Active(GridLogIterative.isActive());
-  HadronsLogDebug.Active(GridLogDebug.isActive());
-  LOG(Message) << "Grid initialized" << std::endl;
-  
   // run setup ///////////////////////////////////////////////////////////////
-  Application              application;
-  const unsigned int nt{ 64 };
   //static constexpr int NumQuarks{ 4 };
   //const std::array<std::string, NumQuarks> flavour{"l", "s", "c1", "c2"};
   //const std::array<double, NumQuarks>      mass   {.005, .04, .58  , .64};
@@ -95,7 +84,7 @@ int main(int argc, char *argv[])
   // global parameters
   Application::GlobalPar globalPar;
   globalPar.trajCounter.start    = 3000;
-  globalPar.trajCounter.end      = 4000;
+  globalPar.trajCounter.end      = 3001;
   globalPar.trajCounter.step     = 40;
   globalPar.runId                = "Z2Plateau";
   globalPar.genetic.maxGen       = 1000;
@@ -106,9 +95,17 @@ int main(int argc, char *argv[])
   application.setPar(globalPar);
   
   // gauge field
-  MIO::LoadNersc::Par gaugePar;
-  gaugePar.file = "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat";
-  application.createModule<MIO::LoadNersc>(GaugeFieldName, gaugePar);
+  if( bRandom )
+  {
+    application.createModule<MGauge::Unit>(GaugeFieldName);
+  }
+  else
+  {
+    MIO::LoadNersc::Par gaugePar;
+    gaugePar.file = "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat";
+    application.createModule<MIO::LoadNersc>(GaugeFieldName, gaugePar);
+  }
+
   // Stout smeared field
   MGauge::StoutSmearing::Par stoutPar;
   stoutPar.gauge = GaugeFieldName;
@@ -146,7 +143,7 @@ int main(int argc, char *argv[])
     
     // solvers
     MSolver::RBPrecCG::Par solverPar;
-    if( q.EigenPackFilename ) {
+    if( !bRandom && bEigenpackEnable && q.EigenPackFilename ) {
       // eigenpacks for deflation
       MIO::LoadFermionEigenPack::Par epPar;
       epPar.filestem = q.EigenPackFilename;
@@ -165,6 +162,7 @@ int main(int argc, char *argv[])
   }
 
   // Loop through all timeslices
+  static const std::string sPropPrefix{ "prop" + Sep };
   for (unsigned int t = 0; t < nt; t+=4) {
     const std::string timeSuffix{ Sep + "t" + Sep + std::to_string( t ) };
     const std::string sZ2{ "Z2" };
@@ -181,7 +179,7 @@ int main(int argc, char *argv[])
     std::array<std::string, NumQuarks> propName0;
     for (unsigned int i = 0; i < NumQuarks; ++i)
     {
-      propName0[i] = "prop" + Sep + Quarks[i].flavour + Suffix0;
+      propName0[i] = sPropPrefix + Quarks[i].flavour + Suffix0;
       MFermion::GaugeProp::Par quarkPar;
       quarkPar.solver = solverName[i];
       quarkPar.source = srcName0;
@@ -207,7 +205,7 @@ int main(int argc, char *argv[])
         if( !Momenta[p] )
           propName[i] = propName0[i];
         else {
-          propName[i] = "prop" + Sep + Quarks[i].flavour + Suffix;
+          propName[i] = sPropPrefix + Quarks[i].flavour + Suffix;
           MFermion::GaugeProp::Par quarkPar;
           quarkPar.solver = solverName[i];
           quarkPar.source = srcName;
@@ -233,19 +231,57 @@ int main(int argc, char *argv[])
         }
     }
   }
+}
 
-  // execution
-  static const std::string XmlFileName{ "Z2.template.xml" };
-  application.saveParameterFile( XmlFileName );
+int main(int argc, char *argv[])
+{
+  int iReturn = EXIT_SUCCESS;
+  std::cout << "main() :: before Debug()" << std::endl;
+
+  // initialization //////////////////////////////////////////////////////////
+  Grid_init(&argc, &argv);
+  HadronsLogError.Active(GridLogError.isActive());
+  HadronsLogWarning.Active(GridLogWarning.isActive());
+  HadronsLogMessage.Active(GridLogMessage.isActive());
+  HadronsLogIterative.Active(GridLogIterative.isActive());
+  HadronsLogDebug.Active(GridLogDebug.isActive());
+
   const Grid::Coordinate &lat{GridDefaultLatt()};
-  if( lat.size() == 4 && lat[0] == 24 && lat[1] == 24 && lat[2] == 24 && lat[3] == 64 )
-    application.run();
-  else
-    LOG(Warning) << "The parameters in " << XmlFileName << " are designed for --grid 24.24.24.64\nOn 16 nodes each config takes about 40 hours on Tesseract" << std::endl;
+  const unsigned int nt{ lat.size() < 4 ? 64 : static_cast<unsigned int>( lat[3] ) };
+  const bool bRandom{ GridCmdOptionExists( argv, argv + argc, "-r" ) };
+  const bool bEigenpackEnable{ !GridCmdOptionExists( argv, argv + argc, "-e" ) };
+  LOG(Message)
+    << std::boolalpha
+    << "nt=" << std::to_string( nt )
+    << ", Random gauge " << bRandom
+    << ", Eigen packs " << bEigenpackEnable
+    << std::endl;
+
+  try
+  {
+    Application application;
+    Make( application, nt, bRandom, bEigenpackEnable );
+
+    // execution
+    static const std::string XmlFileName{ "Z2.template.xml" };
+    application.saveParameterFile( XmlFileName );
+    if( bRandom || ( lat.size() == 4 && lat[0] == 24 && lat[1] == 24 && lat[2] == 24 && lat[3] == 64 ) )
+      application.run();
+    else
+      LOG(Warning) << "The parameters in " << XmlFileName << " are designed for --grid 24.24.24.64\nOn 16 nodes each config takes about 40 hours on Tesseract" << std::endl;
+  }
+  catch(const std::exception &e)
+  {
+    std::cerr << "Error: " << e.what() << std::endl;
+    iReturn = EXIT_FAILURE;
+  } catch( ... ) {
+    std::cerr << "Error: Unknown exception" << std::endl;
+    iReturn = EXIT_FAILURE;
+  }
 
   // epilogue
   LOG(Message) << "Grid is finalizing now" << std::endl;
   Grid_finalize();
   
-  return EXIT_SUCCESS;
+  return iReturn;
 }

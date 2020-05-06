@@ -16,7 +16,12 @@
 		681DC8BD22F211B600EE04A9 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		682260FF2376FAAA005341E5 /* repair.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682260F22376F586005341E5 /* repair.cpp */; };
 		6822E8C022A7057400A85993 /* bootstrap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8BF22A7057400A85993 /* bootstrap.cpp */; };
+		6827A13C24630F0F0036F0AC /* OpenQcdIOChromaReference.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13A24630F0F0036F0AC /* OpenQcdIOChromaReference.h */; };
+		6827A13D24630F0F0036F0AC /* OpenQcdIO.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13B24630F0F0036F0AC /* OpenQcdIO.h */; };
+		6827A13F24630FA90036F0AC /* Lattice_basis.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13E24630FA90036F0AC /* Lattice_basis.h */; };
 		683275B523D220FD003773C0 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
+		68338D47246140D400B6292E /* xml3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68338D3B2461402200B6292E /* xml3pt.cpp */; };
+		68338D48246141A600B6292E /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		6850CEA4244A1C3100A53DC8 /* Cartesian_base.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CA28244A1C2F00A53DC8 /* Cartesian_base.h */; };
 		6850CEA5244A1C3100A53DC8 /* Cartesian_full.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CA29244A1C2F00A53DC8 /* Cartesian_full.h */; };
 		6850CEA6244A1C3100A53DC8 /* Cartesian.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CA2A244A1C2F00A53DC8 /* Cartesian.h */; };
@@ -1148,6 +1153,13 @@
 		6850D589244A234500A53DC8 /* LoadDistilNoise.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6850D4DF244A234400A53DC8 /* LoadDistilNoise.cpp */; };
 		6850D58A244A234500A53DC8 /* LoadBinary.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6850D4E0244A234400A53DC8 /* LoadBinary.hpp */; };
 		6856DC4F23C391AE0040814E /* corrstat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6856DC4E23C391AE0040814E /* corrstat.cpp */; };
+		68578F302450A36200CC2A1D /* RemezGeneral.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68578F2B2450A36100CC2A1D /* RemezGeneral.cc */; };
+		68578F312450A36200CC2A1D /* JacobiPolynomial.h in Headers */ = {isa = PBXBuildFile; fileRef = 68578F2C2450A36100CC2A1D /* JacobiPolynomial.h */; };
+		68578F322450A36200CC2A1D /* ZMobius.h in Headers */ = {isa = PBXBuildFile; fileRef = 68578F2D2450A36100CC2A1D /* ZMobius.h */; };
+		68578F332450A36200CC2A1D /* RemezGeneral.h in Headers */ = {isa = PBXBuildFile; fileRef = 68578F2E2450A36200CC2A1D /* RemezGeneral.h */; };
+		68578F342450A36200CC2A1D /* ZMobius.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68578F2F2450A36200CC2A1D /* ZMobius.cc */; };
+		68578F372450A3B200CC2A1D /* BiCGSTABMixedPrec.h in Headers */ = {isa = PBXBuildFile; fileRef = 68578F352450A3B200CC2A1D /* BiCGSTABMixedPrec.h */; };
+		68578F382450A3B200CC2A1D /* BiCGSTAB.h in Headers */ = {isa = PBXBuildFile; fileRef = 68578F362450A3B200CC2A1D /* BiCGSTAB.h */; };
 		686EC70A24003ED30084D04D /* FitSummary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686EC70924003ED30084D04D /* FitSummary.cpp */; };
 		686EC70B240041E90084D04D /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		688FEBE4238C1BE100977B09 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
@@ -1163,6 +1175,7 @@
 		68B96265244AE52800E5CF09 /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96261244AE50100E5CF09 /* xmlZ2.cpp */; };
 		68B96266244AE52C00E5CF09 /* xmlGFWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96262244AE50100E5CF09 /* xmlGFWall.cpp */; };
 		68B96267244AE53100E5CF09 /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96263244AE50100E5CF09 /* mixedop.cpp */; };
+		68E2C301245B20B8009E7BE5 /* Test_serialisation.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68E2C2F5245B2068009E7BE5 /* Test_serialisation.cc */; };
 		68F687E123D4A96600590270 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		68F687E223D4AD4700590270 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 /* End PBXBuildFile section */
@@ -1205,6 +1218,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		6822E8BA22A7057400A85993 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		68338D3E2461408900B6292E /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -1312,6 +1334,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		68E2C2F8245B2097009E7BE5 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -1340,6 +1371,11 @@
 		6822E8BF22A7057400A85993 /* bootstrap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bootstrap.cpp; sourceTree = "<group>"; };
 		6822E8C722A708A200A85993 /* peramb-compare.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "peramb-compare.cpp"; sourceTree = "<group>"; };
 		6822E8C822A710FA00A85993 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
+		6827A13A24630F0F0036F0AC /* OpenQcdIOChromaReference.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenQcdIOChromaReference.h; sourceTree = "<group>"; };
+		6827A13B24630F0F0036F0AC /* OpenQcdIO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenQcdIO.h; sourceTree = "<group>"; };
+		6827A13E24630FA90036F0AC /* Lattice_basis.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lattice_basis.h; sourceTree = "<group>"; };
+		68338D3B2461402200B6292E /* xml3pt.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xml3pt.cpp; sourceTree = "<group>"; };
+		68338D402461408900B6292E /* xml3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xml3pt; sourceTree = BUILT_PRODUCTS_DIR; };
 		683451302397D3C200B743CE /* xmlGFWall */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlGFWall; sourceTree = BUILT_PRODUCTS_DIR; };
 		6842CB9722A9165C003014D2 /* build */ = {isa = PBXFileReference; lastKnownFileType = folder; path = build; sourceTree = "<group>"; };
 		6845352023477BBE00106304 /* xmlPeramb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlPeramb; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2381,7 +2417,7 @@
 		6850D27A244A230800A53DC8 /* TimerArray.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TimerArray.hpp; sourceTree = "<group>"; };
 		6850D27B244A230800A53DC8 /* Module.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Module.hpp; sourceTree = "<group>"; };
 		6850D27C244A230800A53DC8 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
-		6850D27D244A230800A53DC8 /* NamedTensor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NamedTensor.hpp; sourceTree = "<group>"; };
+		6850D27D244A230800A53DC8 /* NamedTensor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.cpp.h; path = NamedTensor.hpp; sourceTree = "<group>"; };
 		6850D27E244A230800A53DC8 /* Graph.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Graph.hpp; sourceTree = "<group>"; };
 		6850D27F244A230800A53DC8 /* A2AMatrix.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = A2AMatrix.hpp; sourceTree = "<group>"; };
 		6850D280244A230800A53DC8 /* add_module.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = add_module.sh; sourceTree = "<group>"; };
@@ -2574,6 +2610,13 @@
 		6850D4DF244A234400A53DC8 /* LoadDistilNoise.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadDistilNoise.cpp; sourceTree = "<group>"; };
 		6850D4E0244A234400A53DC8 /* LoadBinary.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LoadBinary.hpp; sourceTree = "<group>"; };
 		6856DC4E23C391AE0040814E /* corrstat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = corrstat.cpp; sourceTree = "<group>"; };
+		68578F2B2450A36100CC2A1D /* RemezGeneral.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RemezGeneral.cc; sourceTree = "<group>"; };
+		68578F2C2450A36100CC2A1D /* JacobiPolynomial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JacobiPolynomial.h; sourceTree = "<group>"; };
+		68578F2D2450A36100CC2A1D /* ZMobius.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZMobius.h; sourceTree = "<group>"; };
+		68578F2E2450A36200CC2A1D /* RemezGeneral.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RemezGeneral.h; sourceTree = "<group>"; };
+		68578F2F2450A36200CC2A1D /* ZMobius.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ZMobius.cc; sourceTree = "<group>"; };
+		68578F352450A3B200CC2A1D /* BiCGSTABMixedPrec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BiCGSTABMixedPrec.h; sourceTree = "<group>"; };
+		68578F362450A3B200CC2A1D /* BiCGSTAB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BiCGSTAB.h; sourceTree = "<group>"; };
 		685F9D122343B19E006EE036 /* run */ = {isa = PBXFileReference; lastKnownFileType = folder; path = run; sourceTree = "<group>"; };
 		686EC70224003EA40084D04D /* FitSummary */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FitSummary; sourceTree = BUILT_PRODUCTS_DIR; };
 		686EC70924003ED30084D04D /* FitSummary.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitSummary.cpp; sourceTree = "<group>"; };
@@ -2596,6 +2639,9 @@
 		68B96262244AE50100E5CF09 /* xmlGFWall.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlGFWall.cpp; sourceTree = "<group>"; };
 		68B96263244AE50100E5CF09 /* mixedop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mixedop.cpp; sourceTree = "<group>"; };
 		68BEFF6A2343A75A0031E3E3 /* xmlZ2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlZ2; sourceTree = BUILT_PRODUCTS_DIR; };
+		68E2C2F4245B204B009E7BE5 /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tests; path = ../Grid/tests; sourceTree = "<group>"; };
+		68E2C2F5245B2068009E7BE5 /* Test_serialisation.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_serialisation.cc; path = ../Grid/tests/IO/Test_serialisation.cc; sourceTree = "<group>"; };
+		68E2C2FA245B2097009E7BE5 /* Test_serialisation */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_serialisation; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2628,6 +2674,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		6822E8B922A7057400A85993 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68338D3D2461408900B6292E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -2725,6 +2778,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		68E2C2F7245B2097009E7BE5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -2746,11 +2806,13 @@
 			isa = PBXGroup;
 			children = (
 				6850CA26244A1C2F00A53DC8 /* Grid */,
+				68E2C2F3245B2029009E7BE5 /* Grid_tests */,
 				6850D25A244A230800A53DC8 /* Hadrons */,
 				68B96234244AE11400E5CF09 /* Hadrons_utilities */,
 				6804C180244C782C008E272B /* Hadrons_tests */,
 				6822E8BE22A7057400A85993 /* Analyze */,
 				68B9625F244AE50100E5CF09 /* Study1Plateau */,
+				68338D3A24613EE600B6292E /* Study2_3pt */,
 				6822E8C822A710FA00A85993 /* Scripts */,
 				6842CB9722A9165C003014D2 /* build */,
 				685F9D122343B19E006EE036 /* run */,
@@ -2779,6 +2841,8 @@
 				68B9624B244AE36300E5CF09 /* HadronsXmlRun */,
 				68B96257244AE3BC00E5CF09 /* HadronsXmlValidate */,
 				6804C18C244C78AF008E272B /* Test_hadrons_meson_3pt */,
+				68E2C2FA245B2097009E7BE5 /* Test_serialisation */,
+				68338D402461408900B6292E /* xml3pt */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2803,6 +2867,14 @@
 				682260F22376F586005341E5 /* repair.cpp */,
 			);
 			path = Analyze;
+			sourceTree = "<group>";
+		};
+		68338D3A24613EE600B6292E /* Study2_3pt */ = {
+			isa = PBXGroup;
+			children = (
+				68338D3B2461402200B6292E /* xml3pt.cpp */,
+			);
+			path = Study2_3pt;
 			sourceTree = "<group>";
 		};
 		6850CA26244A1C2F00A53DC8 /* Grid */ = {
@@ -2950,22 +3022,22 @@
 		6850CA57244A1C2F00A53DC8 /* utils */ = {
 			isa = PBXGroup;
 			children = (
-				6850CA58244A1C2F00A53DC8 /* Utils.h */,
-				6850CA59244A1C2F00A53DC8 /* Metric.h */,
-				6850CA5A244A1C2F00A53DC8 /* SUnTwoIndex.h */,
-				6850CA5B244A1C2F00A53DC8 /* BaryonUtils.h */,
-				6850CA5C244A1C2F00A53DC8 /* ScalarObjs.h */,
-				6850CA5D244A1C2F00A53DC8 /* CovariantSmearing.h */,
-				6850CA5E244A1C2F00A53DC8 /* SpaceTimeGrid.h */,
-				6850CA5F244A1C2F00A53DC8 /* SUnAdjoint.h */,
-				6850CA60244A1C2F00A53DC8 /* CovariantLaplacian.h */,
-				6850CA61244A1C2F00A53DC8 /* SUn.h */,
-				6850CA62244A1C2F00A53DC8 /* GaugeFix.h */,
-				6850CA63244A1C2F00A53DC8 /* WilsonLoops.h */,
-				6850CA64244A1C2F00A53DC8 /* CovariantCshift.h */,
-				6850CA65244A1C2F00A53DC8 /* LinalgUtils.h */,
 				6850CA66244A1C2F00A53DC8 /* A2Autils.h */,
+				6850CA5B244A1C2F00A53DC8 /* BaryonUtils.h */,
+				6850CA64244A1C2F00A53DC8 /* CovariantCshift.h */,
+				6850CA60244A1C2F00A53DC8 /* CovariantLaplacian.h */,
+				6850CA5D244A1C2F00A53DC8 /* CovariantSmearing.h */,
+				6850CA62244A1C2F00A53DC8 /* GaugeFix.h */,
+				6850CA65244A1C2F00A53DC8 /* LinalgUtils.h */,
+				6850CA59244A1C2F00A53DC8 /* Metric.h */,
+				6850CA5C244A1C2F00A53DC8 /* ScalarObjs.h */,
 				6850CA67244A1C2F00A53DC8 /* SpaceTimeGrid.cc */,
+				6850CA5E244A1C2F00A53DC8 /* SpaceTimeGrid.h */,
+				6850CA61244A1C2F00A53DC8 /* SUn.h */,
+				6850CA5F244A1C2F00A53DC8 /* SUnAdjoint.h */,
+				6850CA5A244A1C2F00A53DC8 /* SUnTwoIndex.h */,
+				6850CA58244A1C2F00A53DC8 /* Utils.h */,
+				6850CA63244A1C2F00A53DC8 /* WilsonLoops.h */,
 			);
 			path = utils;
 			sourceTree = "<group>";
@@ -3042,52 +3114,52 @@
 		6850CA8A244A1C2F00A53DC8 /* fermion */ = {
 			isa = PBXGroup;
 			children = (
-				6850CA8B244A1C2F00A53DC8 /* CayleyFermion5D.h */,
-				6850CA8C244A1C2F00A53DC8 /* OverlapWilsonPartialFractionTanhFermion.h */,
-				6850CA8D244A1C2F00A53DC8 /* OverlapWilsonCayleyZolotarevFermion.h */,
-				6850CA8E244A1C2F00A53DC8 /* FermionOperatorImpl.h */,
-				6850CA8F244A1C2F00A53DC8 /* MADWF.h */,
-				6850CA90244A1C2F00A53DC8 /* WilsonKernels.h */,
-				6850CA91244A1C2F00A53DC8 /* MobiusFermion.h */,
-				6850CA92244A1C2F00A53DC8 /* instantiation */,
-				6850CB5B244A1C2F00A53DC8 /* FermionCore.h */,
-				6850CB5C244A1C2F00A53DC8 /* DomainWallVec5dImpl.h */,
-				6850CB5D244A1C2F00A53DC8 /* StaggeredImpl.h */,
-				6850CB5E244A1C2F00A53DC8 /* WilsonTMFermion.h */,
-				6850CB5F244A1C2F00A53DC8 /* SchurDiagTwoKappa.h */,
-				6850CB60244A1C2F00A53DC8 /* FermionOperator.h */,
-				6850CB61244A1C2F00A53DC8 /* ShamirZolotarevFermion.h */,
-				6850CB62244A1C2F00A53DC8 /* PauliVillarsInverters.h */,
-				6850CB63244A1C2F00A53DC8 /* PartialFractionFermion5D.h */,
-				6850CB64244A1C2F00A53DC8 /* WilsonFermion5D.h */,
-				6850CB65244A1C2F00A53DC8 /* WilsonCloverFermion.h */,
-				6850CB66244A1C2F00A53DC8 /* OverlapWilsonPartialFractionZolotarevFermion.h */,
-				6850CB67244A1C2F00A53DC8 /* StaggeredVec5dImpl.h */,
-				6850CB68244A1C2F00A53DC8 /* ZMobiusFermion.h */,
-				6850CB69244A1C2F00A53DC8 /* DomainWallEOFAFermion.h */,
+				6850CB9B244A1C2F00A53DC8 /* deprecated */,
 				6850CB6A244A1C2F00A53DC8 /* implementation */,
-				6850CB86244A1C2F00A53DC8 /* Fermion.h */,
-				6850CB87244A1C2F00A53DC8 /* MobiusZolotarevFermion.h */,
-				6850CB88244A1C2F00A53DC8 /* ContinuedFractionFermion5D.h */,
-				6850CB89244A1C2F00A53DC8 /* g5HermitianLinop.h */,
+				6850CA92244A1C2F00A53DC8 /* instantiation */,
 				6850CB8A244A1C2F00A53DC8 /* AbstractEOFAFermion.h */,
-				6850CB8B244A1C2F00A53DC8 /* ScaledShamirFermion.h */,
-				6850CB8C244A1C2F00A53DC8 /* OverlapWilsonContfracTanhFermion.h */,
-				6850CB8D244A1C2F00A53DC8 /* GparityWilsonImpl.h */,
+				6850CA8B244A1C2F00A53DC8 /* CayleyFermion5D.h */,
+				6850CB88244A1C2F00A53DC8 /* ContinuedFractionFermion5D.h */,
+				6850CB69244A1C2F00A53DC8 /* DomainWallEOFAFermion.h */,
 				6850CB8E244A1C2F00A53DC8 /* DomainWallFermion.h */,
+				6850CB5C244A1C2F00A53DC8 /* DomainWallVec5dImpl.h */,
+				6850CB86244A1C2F00A53DC8 /* Fermion.h */,
+				6850CB5B244A1C2F00A53DC8 /* FermionCore.h */,
+				6850CB60244A1C2F00A53DC8 /* FermionOperator.h */,
+				6850CA8E244A1C2F00A53DC8 /* FermionOperatorImpl.h */,
 				6850CB8F244A1C2F00A53DC8 /* FourierAcceleratedPV.h */,
-				6850CB90244A1C2F00A53DC8 /* OverlapWilsonContfracZolotarevFermion.h */,
-				6850CB91244A1C2F00A53DC8 /* WilsonTMFermion5D.h */,
-				6850CB92244A1C2F00A53DC8 /* StaggeredKernels.h */,
-				6850CB93244A1C2F00A53DC8 /* WilsonCompressor.h */,
-				6850CB94244A1C2F00A53DC8 /* MobiusEOFAFermion.h */,
-				6850CB95244A1C2F00A53DC8 /* WilsonImpl.h */,
-				6850CB96244A1C2F00A53DC8 /* WilsonFermion.h */,
-				6850CB97244A1C2F00A53DC8 /* OverlapWilsonCayleyTanhFermion.h */,
+				6850CB89244A1C2F00A53DC8 /* g5HermitianLinop.h */,
+				6850CB8D244A1C2F00A53DC8 /* GparityWilsonImpl.h */,
 				6850CB98244A1C2F00A53DC8 /* ImprovedStaggeredFermion.h */,
 				6850CB99244A1C2F00A53DC8 /* ImprovedStaggeredFermion5D.h */,
+				6850CA8F244A1C2F00A53DC8 /* MADWF.h */,
+				6850CB94244A1C2F00A53DC8 /* MobiusEOFAFermion.h */,
+				6850CA91244A1C2F00A53DC8 /* MobiusFermion.h */,
+				6850CB87244A1C2F00A53DC8 /* MobiusZolotarevFermion.h */,
+				6850CB97244A1C2F00A53DC8 /* OverlapWilsonCayleyTanhFermion.h */,
+				6850CA8D244A1C2F00A53DC8 /* OverlapWilsonCayleyZolotarevFermion.h */,
+				6850CB8C244A1C2F00A53DC8 /* OverlapWilsonContfracTanhFermion.h */,
+				6850CB90244A1C2F00A53DC8 /* OverlapWilsonContfracZolotarevFermion.h */,
+				6850CA8C244A1C2F00A53DC8 /* OverlapWilsonPartialFractionTanhFermion.h */,
+				6850CB66244A1C2F00A53DC8 /* OverlapWilsonPartialFractionZolotarevFermion.h */,
+				6850CB63244A1C2F00A53DC8 /* PartialFractionFermion5D.h */,
+				6850CB62244A1C2F00A53DC8 /* PauliVillarsInverters.h */,
 				6850CB9A244A1C2F00A53DC8 /* Reconstruct5Dprop.h */,
-				6850CB9B244A1C2F00A53DC8 /* deprecated */,
+				6850CB8B244A1C2F00A53DC8 /* ScaledShamirFermion.h */,
+				6850CB5F244A1C2F00A53DC8 /* SchurDiagTwoKappa.h */,
+				6850CB61244A1C2F00A53DC8 /* ShamirZolotarevFermion.h */,
+				6850CB5D244A1C2F00A53DC8 /* StaggeredImpl.h */,
+				6850CB92244A1C2F00A53DC8 /* StaggeredKernels.h */,
+				6850CB67244A1C2F00A53DC8 /* StaggeredVec5dImpl.h */,
+				6850CB65244A1C2F00A53DC8 /* WilsonCloverFermion.h */,
+				6850CB93244A1C2F00A53DC8 /* WilsonCompressor.h */,
+				6850CB96244A1C2F00A53DC8 /* WilsonFermion.h */,
+				6850CB64244A1C2F00A53DC8 /* WilsonFermion5D.h */,
+				6850CB95244A1C2F00A53DC8 /* WilsonImpl.h */,
+				6850CA90244A1C2F00A53DC8 /* WilsonKernels.h */,
+				6850CB5E244A1C2F00A53DC8 /* WilsonTMFermion.h */,
+				6850CB91244A1C2F00A53DC8 /* WilsonTMFermion5D.h */,
+				6850CB68244A1C2F00A53DC8 /* ZMobiusFermion.h */,
 			);
 			path = fermion;
 			sourceTree = "<group>";
@@ -3095,48 +3167,48 @@
 		6850CA92244A1C2F00A53DC8 /* instantiation */ = {
 			isa = PBXGroup;
 			children = (
-				6850CA93244A1C2F00A53DC8 /* WilsonImplD */,
+				6850CAD9244A1C2F00A53DC8 /* CayleyFermion5DInstantiation.cc.master */,
+				6850CAF9244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiation.cc.master */,
+				6850CB45244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiation.cc.master */,
 				6850CA9F244A1C2F00A53DC8 /* generate_instantiations.sh */,
-				6850CAA0244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiation.cc.master */,
-				6850CAA1244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiation.cc.master */,
-				6850CAA2244A1C2F00A53DC8 /* WilsonImplFH */,
-				6850CAAE244A1C2F00A53DC8 /* WilsonFermionInstantiation.cc */,
-				6850CAAF244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc.master */,
-				6850CAB0244A1C2F00A53DC8 /* ZWilsonImplDF */,
-				6850CAB9244A1C2F00A53DC8 /* WilsonAdjImplD */,
+				6850CB07244A1C2F00A53DC8 /* GparityWilsonImplD */,
+				6850CB1B244A1C2F00A53DC8 /* GparityWilsonImplDF */,
+				6850CACC244A1C2F00A53DC8 /* GparityWilsonImplF */,
 				6850CABF244A1C2F00A53DC8 /* GparityWilsonImplFH */,
 				6850CACB244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc */,
-				6850CACC244A1C2F00A53DC8 /* GparityWilsonImplF */,
-				6850CAD8244A1C2F00A53DC8 /* WilsonKernelsInstantiationAsm.cc */,
-				6850CAD9244A1C2F00A53DC8 /* CayleyFermion5DInstantiation.cc.master */,
-				6850CADA244A1C2F00A53DC8 /* ZWilsonImplD */,
-				6850CAE3244A1C2F00A53DC8 /* StaggeredKernelsInstantiation.cc */,
-				6850CAE4244A1C2F00A53DC8 /* WilsonTwoIndexAntiSymmetricImplD */,
-				6850CAEA244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparity.cc.master */,
-				6850CAEB244A1C2F00A53DC8 /* WilsonTwoIndexSymmetricImplF */,
+				6850CAAF244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc.master */,
 				6850CAF1244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiation.cc */,
+				6850CAA0244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiation.cc.master */,
+				6850CB39244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiation.cc.master */,
+				6850CAA1244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiation.cc.master */,
+				6850CB3A244A1C2F00A53DC8 /* StaggeredImplD */,
 				6850CAF2244A1C2F00A53DC8 /* StaggeredImplF */,
+				6850CAE3244A1C2F00A53DC8 /* StaggeredKernelsInstantiation.cc */,
+				6850CB14244A1C2F00A53DC8 /* StaggeredKernelsInstantiation.cc.master */,
+				6850CAB9244A1C2F00A53DC8 /* WilsonAdjImplD */,
+				6850CB15244A1C2F00A53DC8 /* WilsonAdjImplF */,
 				6850CAF7244A1C2F00A53DC8 /* WilsonCloverFermionInstantiation.cc.master */,
 				6850CAF8244A1C2F00A53DC8 /* WilsonFermion5DInstantiation.cc */,
-				6850CAF9244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiation.cc.master */,
-				6850CAFA244A1C2F00A53DC8 /* WilsonKernelsInstantiation.cc.master */,
-				6850CAFB244A1C2F00A53DC8 /* WilsonImplF */,
-				6850CB07244A1C2F00A53DC8 /* GparityWilsonImplD */,
 				6850CB13244A1C2F00A53DC8 /* WilsonFermion5DInstantiation.cc.master */,
-				6850CB14244A1C2F00A53DC8 /* StaggeredKernelsInstantiation.cc.master */,
-				6850CB15244A1C2F00A53DC8 /* WilsonAdjImplF */,
-				6850CB1B244A1C2F00A53DC8 /* GparityWilsonImplDF */,
+				6850CAAE244A1C2F00A53DC8 /* WilsonFermionInstantiation.cc */,
+				6850CB53244A1C2F00A53DC8 /* WilsonFermionInstantiation.cc.master */,
+				6850CA93244A1C2F00A53DC8 /* WilsonImplD */,
+				6850CB46244A1C2F00A53DC8 /* WilsonImplDF */,
+				6850CAFB244A1C2F00A53DC8 /* WilsonImplF */,
+				6850CAA2244A1C2F00A53DC8 /* WilsonImplFH */,
+				6850CB5A244A1C2F00A53DC8 /* WilsonKernelsInstantiation.cc */,
+				6850CAFA244A1C2F00A53DC8 /* WilsonKernelsInstantiation.cc.master */,
+				6850CAD8244A1C2F00A53DC8 /* WilsonKernelsInstantiationAsm.cc */,
+				6850CAEA244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparity.cc.master */,
+				6850CB52244A1C2F00A53DC8 /* WilsonTMFermionInstantiation.cc.master */,
+				6850CAE4244A1C2F00A53DC8 /* WilsonTwoIndexAntiSymmetricImplD */,
+				6850CB54244A1C2F00A53DC8 /* WilsonTwoIndexAntiSymmetricImplF */,
+				6850CB3F244A1C2F00A53DC8 /* WilsonTwoIndexSymmetricImplD */,
+				6850CAEB244A1C2F00A53DC8 /* WilsonTwoIndexSymmetricImplF */,
+				6850CADA244A1C2F00A53DC8 /* ZWilsonImplD */,
+				6850CAB0244A1C2F00A53DC8 /* ZWilsonImplDF */,
 				6850CB27244A1C2F00A53DC8 /* ZWilsonImplF */,
 				6850CB30244A1C2F00A53DC8 /* ZWilsonImplFH */,
-				6850CB39244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiation.cc.master */,
-				6850CB3A244A1C2F00A53DC8 /* StaggeredImplD */,
-				6850CB3F244A1C2F00A53DC8 /* WilsonTwoIndexSymmetricImplD */,
-				6850CB45244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiation.cc.master */,
-				6850CB46244A1C2F00A53DC8 /* WilsonImplDF */,
-				6850CB52244A1C2F00A53DC8 /* WilsonTMFermionInstantiation.cc.master */,
-				6850CB53244A1C2F00A53DC8 /* WilsonFermionInstantiation.cc.master */,
-				6850CB54244A1C2F00A53DC8 /* WilsonTwoIndexAntiSymmetricImplF */,
-				6850CB5A244A1C2F00A53DC8 /* WilsonKernelsInstantiation.cc */,
 			);
 			path = instantiation;
 			sourceTree = "<group>";
@@ -3442,33 +3514,33 @@
 		6850CB6A244A1C2F00A53DC8 /* implementation */ = {
 			isa = PBXGroup;
 			children = (
-				6850CB6B244A1C2F00A53DC8 /* MobiusEOFAFermionImplementation.h */,
-				6850CB6C244A1C2F00A53DC8 /* WilsonKernelsHandGparityImplementation.h */,
 				6850CB6D244A1C2F00A53DC8 /* CayleyFermion5Dcache.h */,
-				6850CB6E244A1C2F00A53DC8 /* WilsonFermion5DImplementation.h */,
-				6850CB6F244A1C2F00A53DC8 /* WilsonCloverFermionImplementation.h */,
-				6850CB70244A1C2F00A53DC8 /* WilsonKernelsAsmBody.h.ab */,
-				6850CB71244A1C2F00A53DC8 /* CayleyFermion5Dvec.h */,
-				6850CB72244A1C2F00A53DC8 /* WilsonKernelsImplementation.h */,
-				6850CB73244A1C2F00A53DC8 /* MobiusEOFAFermionCache.h */,
-				6850CB74244A1C2F00A53DC8 /* PartialFractionFermion5DImplementation.h */,
-				6850CB75244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DImplementation.h */,
-				6850CB76244A1C2F00A53DC8 /* WilsonKernelsHandImplementation.h */,
-				6850CB77244A1C2F00A53DC8 /* DomainWallEOFAFermionCache.h */,
-				6850CB78244A1C2F00A53DC8 /* ContinuedFractionFermion5DImplementation.h */,
-				6850CB79244A1C2F00A53DC8 /* WilsonTMFermionImplementation.h */,
-				6850CB7A244A1C2F00A53DC8 /* WilsonKernelsAsmQPX.h */,
-				6850CB7B244A1C2F00A53DC8 /* StaggeredKernelsAsm.h */,
-				6850CB7C244A1C2F00A53DC8 /* WilsonFermionImplementation.h */,
 				6850CB7D244A1C2F00A53DC8 /* CayleyFermion5DImplementation.h */,
+				6850CB71244A1C2F00A53DC8 /* CayleyFermion5Dvec.h */,
+				6850CB78244A1C2F00A53DC8 /* ContinuedFractionFermion5DImplementation.h */,
+				6850CB77244A1C2F00A53DC8 /* DomainWallEOFAFermionCache.h */,
+				6850CB83244A1C2F00A53DC8 /* DomainWallEOFAFermionImplementation.h */,
+				6850CB75244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DImplementation.h */,
 				6850CB7E244A1C2F00A53DC8 /* ImprovedStaggeredFermionImplementation.h */,
-				6850CB7F244A1C2F00A53DC8 /* WilsonKernelsAsmBody.h.abc */,
+				6850CB73244A1C2F00A53DC8 /* MobiusEOFAFermionCache.h */,
+				6850CB6B244A1C2F00A53DC8 /* MobiusEOFAFermionImplementation.h */,
+				6850CB74244A1C2F00A53DC8 /* PartialFractionFermion5DImplementation.h */,
+				6850CB7B244A1C2F00A53DC8 /* StaggeredKernelsAsm.h */,
+				6850CB84244A1C2F00A53DC8 /* StaggeredKernelsHand.h */,
 				6850CB80244A1C2F00A53DC8 /* StaggeredKernelsImplementation.h */,
+				6850CB6F244A1C2F00A53DC8 /* WilsonCloverFermionImplementation.h */,
+				6850CB6E244A1C2F00A53DC8 /* WilsonFermion5DImplementation.h */,
+				6850CB7C244A1C2F00A53DC8 /* WilsonFermionImplementation.h */,
 				6850CB81244A1C2F00A53DC8 /* WilsonKernelsAsmAvx512.h */,
 				6850CB82244A1C2F00A53DC8 /* WilsonKernelsAsmBody.h */,
-				6850CB83244A1C2F00A53DC8 /* DomainWallEOFAFermionImplementation.h */,
-				6850CB84244A1C2F00A53DC8 /* StaggeredKernelsHand.h */,
+				6850CB70244A1C2F00A53DC8 /* WilsonKernelsAsmBody.h.ab */,
+				6850CB7F244A1C2F00A53DC8 /* WilsonKernelsAsmBody.h.abc */,
 				6850CB85244A1C2F00A53DC8 /* WilsonKernelsAsmImplementation.h */,
+				6850CB7A244A1C2F00A53DC8 /* WilsonKernelsAsmQPX.h */,
+				6850CB6C244A1C2F00A53DC8 /* WilsonKernelsHandGparityImplementation.h */,
+				6850CB76244A1C2F00A53DC8 /* WilsonKernelsHandImplementation.h */,
+				6850CB72244A1C2F00A53DC8 /* WilsonKernelsImplementation.h */,
+				6850CB79244A1C2F00A53DC8 /* WilsonTMFermionImplementation.h */,
 			);
 			path = implementation;
 			sourceTree = "<group>";
@@ -3584,18 +3656,23 @@
 		6850CBD4244A1C2F00A53DC8 /* approx */ = {
 			isa = PBXGroup;
 			children = (
-				6850CBD5244A1C2F00A53DC8 /* LICENSE */,
-				6850CBD6244A1C2F00A53DC8 /* Remez.h */,
-				6850CBD7244A1C2F00A53DC8 /* bigfloat.h */,
 				6850CBD8244A1C2F00A53DC8 /* bigfloat_double.h */,
-				6850CBD9244A1C2F00A53DC8 /* MultiShiftFunction.h */,
-				6850CBDA244A1C2F00A53DC8 /* Zolotarev.h */,
-				6850CBDB244A1C2F00A53DC8 /* README */,
-				6850CBDC244A1C2F00A53DC8 /* Forecast.h */,
-				6850CBDD244A1C2F00A53DC8 /* Remez.cc */,
-				6850CBDE244A1C2F00A53DC8 /* Zolotarev.cc */,
-				6850CBDF244A1C2F00A53DC8 /* MultiShiftFunction.cc */,
+				6850CBD7244A1C2F00A53DC8 /* bigfloat.h */,
 				6850CBE0244A1C2F00A53DC8 /* Chebyshev.h */,
+				6850CBDC244A1C2F00A53DC8 /* Forecast.h */,
+				68578F2C2450A36100CC2A1D /* JacobiPolynomial.h */,
+				6850CBD5244A1C2F00A53DC8 /* LICENSE */,
+				6850CBDF244A1C2F00A53DC8 /* MultiShiftFunction.cc */,
+				6850CBD9244A1C2F00A53DC8 /* MultiShiftFunction.h */,
+				6850CBDB244A1C2F00A53DC8 /* README */,
+				6850CBDD244A1C2F00A53DC8 /* Remez.cc */,
+				6850CBD6244A1C2F00A53DC8 /* Remez.h */,
+				68578F2B2450A36100CC2A1D /* RemezGeneral.cc */,
+				68578F2E2450A36200CC2A1D /* RemezGeneral.h */,
+				68578F2F2450A36200CC2A1D /* ZMobius.cc */,
+				68578F2D2450A36100CC2A1D /* ZMobius.h */,
+				6850CBDE244A1C2F00A53DC8 /* Zolotarev.cc */,
+				6850CBDA244A1C2F00A53DC8 /* Zolotarev.h */,
 			);
 			path = approx;
 			sourceTree = "<group>";
@@ -3603,28 +3680,30 @@
 		6850CBE2244A1C2F00A53DC8 /* iterative */ = {
 			isa = PBXGroup;
 			children = (
-				6850CBE3244A1C2F00A53DC8 /* PrecConjugateResidual.h */,
-				6850CBE4244A1C2F00A53DC8 /* ConjugateResidual.h */,
-				6850CBE5244A1C2F00A53DC8 /* ConjugateGradientMixedPrec.h */,
-				6850CBE6244A1C2F00A53DC8 /* MinimalResidual.h */,
-				6850CBE7244A1C2F00A53DC8 /* PrecGeneralisedConjugateResidual.h */,
-				6850CBE8244A1C2F00A53DC8 /* LocalCoherenceLanczos.h */,
-				6850CBE9244A1C2F00A53DC8 /* PowerMethod.h */,
-				6850CBEA244A1C2F00A53DC8 /* BlockConjugateGradient.h */,
-				6850CBEB244A1C2F00A53DC8 /* SchurRedBlack.h */,
-				6850CBEC244A1C2F00A53DC8 /* CommunicationAvoidingGeneralisedMinimalResidual.h */,
-				6850CBED244A1C2F00A53DC8 /* FlexibleCommunicationAvoidingGeneralisedMinimalResidual.h */,
-				6850CBEE244A1C3000A53DC8 /* ConjugateGradientMultiShift.h */,
-				6850CBEF244A1C3000A53DC8 /* NormalEquations.h */,
-				6850CBF0244A1C3000A53DC8 /* QuasiMinimalResidual.h */,
-				6850CBF1244A1C3000A53DC8 /* GeneralisedMinimalResidual.h */,
-				6850CBF2244A1C3000A53DC8 /* FlexibleGeneralisedMinimalResidual.h */,
 				6850CBF3244A1C3000A53DC8 /* AdefGeneric.h */,
-				6850CBF4244A1C3000A53DC8 /* Deflation.h */,
-				6850CBF5244A1C3000A53DC8 /* ImplicitlyRestartedLanczos.h */,
-				6850CBF6244A1C3000A53DC8 /* MixedPrecisionFlexibleGeneralisedMinimalResidual.h */,
+				68578F362450A3B200CC2A1D /* BiCGSTAB.h */,
+				68578F352450A3B200CC2A1D /* BiCGSTABMixedPrec.h */,
+				6850CBEA244A1C2F00A53DC8 /* BlockConjugateGradient.h */,
+				6850CBEC244A1C2F00A53DC8 /* CommunicationAvoidingGeneralisedMinimalResidual.h */,
 				6850CBF7244A1C3000A53DC8 /* ConjugateGradient.h */,
+				6850CBE5244A1C2F00A53DC8 /* ConjugateGradientMixedPrec.h */,
+				6850CBEE244A1C3000A53DC8 /* ConjugateGradientMultiShift.h */,
 				6850CBF8244A1C3000A53DC8 /* ConjugateGradientReliableUpdate.h */,
+				6850CBE4244A1C2F00A53DC8 /* ConjugateResidual.h */,
+				6850CBF4244A1C3000A53DC8 /* Deflation.h */,
+				6850CBED244A1C2F00A53DC8 /* FlexibleCommunicationAvoidingGeneralisedMinimalResidual.h */,
+				6850CBF2244A1C3000A53DC8 /* FlexibleGeneralisedMinimalResidual.h */,
+				6850CBF1244A1C3000A53DC8 /* GeneralisedMinimalResidual.h */,
+				6850CBF5244A1C3000A53DC8 /* ImplicitlyRestartedLanczos.h */,
+				6850CBE8244A1C2F00A53DC8 /* LocalCoherenceLanczos.h */,
+				6850CBE6244A1C2F00A53DC8 /* MinimalResidual.h */,
+				6850CBF6244A1C3000A53DC8 /* MixedPrecisionFlexibleGeneralisedMinimalResidual.h */,
+				6850CBEF244A1C3000A53DC8 /* NormalEquations.h */,
+				6850CBE9244A1C2F00A53DC8 /* PowerMethod.h */,
+				6850CBE3244A1C2F00A53DC8 /* PrecConjugateResidual.h */,
+				6850CBE7244A1C2F00A53DC8 /* PrecGeneralisedConjugateResidual.h */,
+				6850CBF0244A1C3000A53DC8 /* QuasiMinimalResidual.h */,
+				6850CBEB244A1C2F00A53DC8 /* SchurRedBlack.h */,
 			);
 			path = iterative;
 			sourceTree = "<group>";
@@ -3757,30 +3836,30 @@
 		6850CC45244A1C3000A53DC8 /* unsupported */ = {
 			isa = PBXGroup;
 			children = (
-				6850CC46244A1C3000A53DC8 /* MatrixFunctions */,
+				6850CC4C244A1C3000A53DC8 /* CXX11 */,
+				6850CCBF244A1C3000A53DC8 /* src */,
 				6850CC47244A1C3000A53DC8 /* AdolcForward */,
 				6850CC48244A1C3000A53DC8 /* AlignedVector3 */,
-				6850CC49244A1C3000A53DC8 /* OpenGLSupport */,
-				6850CC4A244A1C3000A53DC8 /* LevenbergMarquardt */,
-				6850CC4B244A1C3000A53DC8 /* CMakeLists.txt */,
-				6850CC4C244A1C3000A53DC8 /* CXX11 */,
-				6850CCAF244A1C3000A53DC8 /* AutoDiff */,
-				6850CCB0244A1C3000A53DC8 /* NumericalDiff */,
-				6850CCB1244A1C3000A53DC8 /* NonLinearOptimization */,
 				6850CCB2244A1C3000A53DC8 /* ArpackSupport */,
-				6850CCB3244A1C3000A53DC8 /* Skyline */,
+				6850CCAF244A1C3000A53DC8 /* AutoDiff */,
 				6850CCB4244A1C3000A53DC8 /* BVH */,
-				6850CCB5244A1C3000A53DC8 /* SpecialFunctions */,
-				6850CCB6244A1C3000A53DC8 /* Splines */,
-				6850CCB7244A1C3000A53DC8 /* KroneckerProduct */,
-				6850CCB8244A1C3000A53DC8 /* IterativeSolvers */,
-				6850CCB9244A1C3000A53DC8 /* FFT */,
+				6850CC4B244A1C3000A53DC8 /* CMakeLists.txt */,
 				6850CCBA244A1C3000A53DC8 /* EulerAngles */,
-				6850CCBB244A1C3000A53DC8 /* SparseExtra */,
-				6850CCBC244A1C3000A53DC8 /* Polynomials */,
+				6850CCB9244A1C3000A53DC8 /* FFT */,
+				6850CCB8244A1C3000A53DC8 /* IterativeSolvers */,
+				6850CCB7244A1C3000A53DC8 /* KroneckerProduct */,
+				6850CC4A244A1C3000A53DC8 /* LevenbergMarquardt */,
+				6850CC46244A1C3000A53DC8 /* MatrixFunctions */,
 				6850CCBD244A1C3000A53DC8 /* MoreVectorization */,
 				6850CCBE244A1C3000A53DC8 /* MPRealSupport */,
-				6850CCBF244A1C3000A53DC8 /* src */,
+				6850CCB1244A1C3000A53DC8 /* NonLinearOptimization */,
+				6850CCB0244A1C3000A53DC8 /* NumericalDiff */,
+				6850CC49244A1C3000A53DC8 /* OpenGLSupport */,
+				6850CCBC244A1C3000A53DC8 /* Polynomials */,
+				6850CCB3244A1C3000A53DC8 /* Skyline */,
+				6850CCBB244A1C3000A53DC8 /* SparseExtra */,
+				6850CCB5244A1C3000A53DC8 /* SpecialFunctions */,
+				6850CCB6244A1C3000A53DC8 /* Splines */,
 			);
 			path = unsupported;
 			sourceTree = "<group>";
@@ -3788,12 +3867,12 @@
 		6850CC4C244A1C3000A53DC8 /* CXX11 */ = {
 			isa = PBXGroup;
 			children = (
-				6850CC4D244A1C3000A53DC8 /* Tensor.orig */,
-				6850CC4E244A1C3000A53DC8 /* CMakeLists.txt */,
-				6850CC4F244A1C3000A53DC8 /* ThreadPool */,
-				6850CC50244A1C3000A53DC8 /* TensorSymmetry */,
-				6850CC51244A1C3000A53DC8 /* Tensor */,
 				6850CC52244A1C3000A53DC8 /* src */,
+				6850CC4E244A1C3000A53DC8 /* CMakeLists.txt */,
+				6850CC51244A1C3000A53DC8 /* Tensor */,
+				6850CC4D244A1C3000A53DC8 /* Tensor.orig */,
+				6850CC50244A1C3000A53DC8 /* TensorSymmetry */,
+				6850CC4F244A1C3000A53DC8 /* ThreadPool */,
 			);
 			path = CXX11;
 			sourceTree = "<group>";
@@ -3801,10 +3880,10 @@
 		6850CC52244A1C3000A53DC8 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				6850CC53244A1C3000A53DC8 /* util */,
-				6850CC59244A1C3000A53DC8 /* ThreadPool */,
-				6850CC62244A1C3000A53DC8 /* TensorSymmetry */,
 				6850CC68244A1C3000A53DC8 /* Tensor */,
+				6850CC62244A1C3000A53DC8 /* TensorSymmetry */,
+				6850CC59244A1C3000A53DC8 /* ThreadPool */,
+				6850CC53244A1C3000A53DC8 /* util */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -3858,76 +3937,76 @@
 		6850CC68244A1C3000A53DC8 /* Tensor */ = {
 			isa = PBXGroup;
 			children = (
-				6850CC69244A1C3000A53DC8 /* TensorRandom.h */,
-				6850CC6A244A1C3000A53DC8 /* TensorUInt128.h */,
-				6850CC6B244A1C3000A53DC8 /* TensorConversion.h */,
-				6850CC6C244A1C3000A53DC8 /* TensorSyclExprConstructor.h */,
-				6850CC6D244A1C3000A53DC8 /* TensorEvalTo.h */,
-				6850CC6E244A1C3000A53DC8 /* TensorSycl.h */,
-				6850CC6F244A1C3000A53DC8 /* TensorMorphing.h */,
-				6850CC70244A1C3000A53DC8 /* TensorSyclExtractAccessor.h */,
-				6850CC71244A1C3000A53DC8 /* TensorCostModel.h */,
-				6850CC72244A1C3000A53DC8 /* TensorContraction.h */,
-				6850CC73244A1C3000A53DC8 /* TensorFunctors.h */,
-				6850CC74244A1C3000A53DC8 /* TensorReductionCuda.h */,
-				6850CC75244A1C3000A53DC8 /* TensorExpr.h */,
-				6850CC76244A1C3000A53DC8 /* TensorContractionThreadPool.h */,
-				6850CC77244A1C3000A53DC8 /* TensorInflation.h */,
-				6850CC78244A1C3000A53DC8 /* TensorDeviceDefault.h */,
-				6850CC79244A1C3000A53DC8 /* TensorRef.h */,
-				6850CC7A244A1C3000A53DC8 /* TensorFixedSize.h */,
-				6850CC7B244A1C3000A53DC8 /* TensorMacros.h */,
-				6850CC7C244A1C3000A53DC8 /* TensorBroadcasting.h */,
-				6850CC7D244A1C3000A53DC8 /* TensorCustomOp.h */,
+				6850CC8D244A1C3000A53DC8 /* README.md */,
+				6850CCA8244A1C3000A53DC8 /* Tensor.h */,
 				6850CC7E244A1C3000A53DC8 /* TensorArgMax.h */,
-				6850CC7F244A1C3000A53DC8 /* TensorIndexList.h */,
+				6850CCAE244A1C3000A53DC8 /* TensorAssign.h */,
+				6850CC9E244A1C3000A53DC8 /* TensorBase.h */,
+				6850CC7C244A1C3000A53DC8 /* TensorBroadcasting.h */,
+				6850CCA0244A1C3000A53DC8 /* TensorChipping.h */,
+				6850CCAD244A1C3000A53DC8 /* TensorConcatenation.h */,
+				6850CC72244A1C3000A53DC8 /* TensorContraction.h */,
+				6850CC89244A1C3000A53DC8 /* TensorContractionBlocking.h */,
+				6850CCA6244A1C3000A53DC8 /* TensorContractionCuda.h */,
+				6850CCA1244A1C3000A53DC8 /* TensorContractionMapper.h */,
+				6850CC76244A1C3000A53DC8 /* TensorContractionThreadPool.h */,
+				6850CC6B244A1C3000A53DC8 /* TensorConversion.h */,
+				6850CC8B244A1C3000A53DC8 /* TensorConvolution.h */,
+				6850CC71244A1C3000A53DC8 /* TensorCostModel.h */,
+				6850CC7D244A1C3000A53DC8 /* TensorCustomOp.h */,
+				6850CCA4244A1C3000A53DC8 /* TensorDevice.h */,
+				6850CC87244A1C3000A53DC8 /* TensorDeviceCuda.h */,
+				6850CC78244A1C3000A53DC8 /* TensorDeviceDefault.h */,
+				6850CC91244A1C3000A53DC8 /* TensorDeviceSycl.h */,
+				6850CC9D244A1C3000A53DC8 /* TensorDeviceThreadPool.h */,
+				6850CCA7244A1C3000A53DC8 /* TensorDimensionList.h */,
+				6850CCA5244A1C3000A53DC8 /* TensorDimensions.h */,
+				6850CC6D244A1C3000A53DC8 /* TensorEvalTo.h */,
+				6850CC8C244A1C3000A53DC8 /* TensorEvaluator.h */,
+				6850CC96244A1C3000A53DC8 /* TensorExecutor.h */,
+				6850CC75244A1C3000A53DC8 /* TensorExpr.h */,
+				6850CC92244A1C3000A53DC8 /* TensorFFT.h */,
+				6850CC7A244A1C3000A53DC8 /* TensorFixedSize.h */,
+				6850CCAB244A1C3000A53DC8 /* TensorForcedEval.h */,
+				6850CC8E244A1C3000A53DC8 /* TensorForwardDeclarations.h */,
+				6850CC73244A1C3000A53DC8 /* TensorFunctors.h */,
+				6850CC8A244A1C3000A53DC8 /* TensorGenerator.h */,
+				6850CC9B244A1C3000A53DC8 /* TensorGlobalFunctions.h */,
 				6850CC80244A1C3000A53DC8 /* TensorImagePatch.h */,
+				6850CC7F244A1C3000A53DC8 /* TensorIndexList.h */,
+				6850CC77244A1C3000A53DC8 /* TensorInflation.h */,
+				6850CC88244A1C3000A53DC8 /* TensorInitializer.h */,
 				6850CC81244A1C3000A53DC8 /* TensorIntDiv.h */,
+				6850CCAC244A1C3000A53DC8 /* TensorIO.h */,
+				6850CC93244A1C3000A53DC8 /* TensorLayoutSwap.h */,
+				6850CC7B244A1C3000A53DC8 /* TensorMacros.h */,
+				6850CC95244A1C3000A53DC8 /* TensorMap.h */,
+				6850CC8F244A1C3000A53DC8 /* TensorMeta.h */,
+				6850CC6F244A1C3000A53DC8 /* TensorMorphing.h */,
+				6850CC90244A1C3000A53DC8 /* TensorPadding.h */,
+				6850CC99244A1C3000A53DC8 /* TensorPatch.h */,
+				6850CC69244A1C3000A53DC8 /* TensorRandom.h */,
+				6850CC86244A1C3000A53DC8 /* TensorReduction.h */,
+				6850CC74244A1C3000A53DC8 /* TensorReductionCuda.h */,
+				6850CCA3244A1C3000A53DC8 /* TensorReductionSycl.h */,
+				6850CC79244A1C3000A53DC8 /* TensorRef.h */,
+				6850CC85244A1C3000A53DC8 /* TensorReverse.h */,
+				6850CC9C244A1C3000A53DC8 /* TensorScan.h */,
 				6850CC82244A1C3000A53DC8 /* TensorShuffling.h */,
+				6850CC9F244A1C3000A53DC8 /* TensorStorage.h */,
+				6850CC97244A1C3000A53DC8 /* TensorStriding.h */,
+				6850CC6E244A1C3000A53DC8 /* TensorSycl.h */,
+				6850CC94244A1C3000A53DC8 /* TensorSyclConvertToDeviceExpression.h */,
+				6850CC6C244A1C3000A53DC8 /* TensorSyclExprConstructor.h */,
+				6850CC70244A1C3000A53DC8 /* TensorSyclExtractAccessor.h */,
+				6850CCAA244A1C3000A53DC8 /* TensorSyclExtractFunctors.h */,
+				6850CC98244A1C3000A53DC8 /* TensorSyclLeafCount.h */,
 				6850CC83244A1C3000A53DC8 /* TensorSyclPlaceHolderExpr.h */,
 				6850CC84244A1C3000A53DC8 /* TensorSyclRun.h */,
-				6850CC85244A1C3000A53DC8 /* TensorReverse.h */,
-				6850CC86244A1C3000A53DC8 /* TensorReduction.h */,
-				6850CC87244A1C3000A53DC8 /* TensorDeviceCuda.h */,
-				6850CC88244A1C3000A53DC8 /* TensorInitializer.h */,
-				6850CC89244A1C3000A53DC8 /* TensorContractionBlocking.h */,
-				6850CC8A244A1C3000A53DC8 /* TensorGenerator.h */,
-				6850CC8B244A1C3000A53DC8 /* TensorConvolution.h */,
-				6850CC8C244A1C3000A53DC8 /* TensorEvaluator.h */,
-				6850CC8D244A1C3000A53DC8 /* README.md */,
-				6850CC8E244A1C3000A53DC8 /* TensorForwardDeclarations.h */,
-				6850CC8F244A1C3000A53DC8 /* TensorMeta.h */,
-				6850CC90244A1C3000A53DC8 /* TensorPadding.h */,
-				6850CC91244A1C3000A53DC8 /* TensorDeviceSycl.h */,
-				6850CC92244A1C3000A53DC8 /* TensorFFT.h */,
-				6850CC93244A1C3000A53DC8 /* TensorLayoutSwap.h */,
-				6850CC94244A1C3000A53DC8 /* TensorSyclConvertToDeviceExpression.h */,
-				6850CC95244A1C3000A53DC8 /* TensorMap.h */,
-				6850CC96244A1C3000A53DC8 /* TensorExecutor.h */,
-				6850CC97244A1C3000A53DC8 /* TensorStriding.h */,
-				6850CC98244A1C3000A53DC8 /* TensorSyclLeafCount.h */,
-				6850CC99244A1C3000A53DC8 /* TensorPatch.h */,
 				6850CC9A244A1C3000A53DC8 /* TensorSyclTuple.h */,
-				6850CC9B244A1C3000A53DC8 /* TensorGlobalFunctions.h */,
-				6850CC9C244A1C3000A53DC8 /* TensorScan.h */,
-				6850CC9D244A1C3000A53DC8 /* TensorDeviceThreadPool.h */,
-				6850CC9E244A1C3000A53DC8 /* TensorBase.h */,
-				6850CC9F244A1C3000A53DC8 /* TensorStorage.h */,
-				6850CCA0244A1C3000A53DC8 /* TensorChipping.h */,
-				6850CCA1244A1C3000A53DC8 /* TensorContractionMapper.h */,
 				6850CCA2244A1C3000A53DC8 /* TensorTraits.h */,
-				6850CCA3244A1C3000A53DC8 /* TensorReductionSycl.h */,
-				6850CCA4244A1C3000A53DC8 /* TensorDevice.h */,
-				6850CCA5244A1C3000A53DC8 /* TensorDimensions.h */,
-				6850CCA6244A1C3000A53DC8 /* TensorContractionCuda.h */,
-				6850CCA7244A1C3000A53DC8 /* TensorDimensionList.h */,
-				6850CCA8244A1C3000A53DC8 /* Tensor.h */,
+				6850CC6A244A1C3000A53DC8 /* TensorUInt128.h */,
 				6850CCA9244A1C3000A53DC8 /* TensorVolumePatch.h */,
-				6850CCAA244A1C3000A53DC8 /* TensorSyclExtractFunctors.h */,
-				6850CCAB244A1C3000A53DC8 /* TensorForcedEval.h */,
-				6850CCAC244A1C3000A53DC8 /* TensorIO.h */,
-				6850CCAD244A1C3000A53DC8 /* TensorConcatenation.h */,
-				6850CCAE244A1C3000A53DC8 /* TensorAssign.h */,
 			);
 			path = Tensor;
 			sourceTree = "<group>";
@@ -3935,23 +4014,23 @@
 		6850CCBF244A1C3000A53DC8 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				6850CCC0244A1C3000A53DC8 /* MatrixFunctions */,
-				6850CCC7244A1C3000A53DC8 /* LevenbergMarquardt */,
 				6850CCCE244A1C3000A53DC8 /* AutoDiff */,
-				6850CCD2244A1C3000A53DC8 /* NumericalDiff */,
-				6850CCD4244A1C3000A53DC8 /* NonLinearOptimization */,
-				6850CCE0244A1C3000A53DC8 /* Skyline */,
 				6850CCE7244A1C3000A53DC8 /* BVH */,
+				6850CD15244A1C3000A53DC8 /* Eigenvalues */,
+				6850CD04244A1C3000A53DC8 /* EulerAngles */,
+				6850CD01244A1C3000A53DC8 /* FFT */,
+				6850CCF9244A1C3000A53DC8 /* IterativeSolvers */,
+				6850CCF7244A1C3000A53DC8 /* KroneckerProduct */,
+				6850CCC7244A1C3000A53DC8 /* LevenbergMarquardt */,
+				6850CCC0244A1C3000A53DC8 /* MatrixFunctions */,
+				6850CD13244A1C3000A53DC8 /* MoreVectorization */,
+				6850CCD4244A1C3000A53DC8 /* NonLinearOptimization */,
+				6850CCD2244A1C3000A53DC8 /* NumericalDiff */,
+				6850CD0F244A1C3000A53DC8 /* Polynomials */,
+				6850CCE0244A1C3000A53DC8 /* Skyline */,
+				6850CD08244A1C3000A53DC8 /* SparseExtra */,
 				6850CCEA244A1C3000A53DC8 /* SpecialFunctions */,
 				6850CCF3244A1C3000A53DC8 /* Splines */,
-				6850CCF7244A1C3000A53DC8 /* KroneckerProduct */,
-				6850CCF9244A1C3000A53DC8 /* IterativeSolvers */,
-				6850CD01244A1C3000A53DC8 /* FFT */,
-				6850CD04244A1C3000A53DC8 /* EulerAngles */,
-				6850CD08244A1C3000A53DC8 /* SparseExtra */,
-				6850CD0F244A1C3000A53DC8 /* Polynomials */,
-				6850CD13244A1C3000A53DC8 /* MoreVectorization */,
-				6850CD15244A1C3000A53DC8 /* Eigenvalues */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -4162,31 +4241,31 @@
 		6850CD2A244A1C3000A53DC8 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				6850CD2B244A1C3000A53DC8 /* CholmodSupport */,
-				6850CD2D244A1C3000A53DC8 /* misc */,
-				6850CD35244A1C3000A53DC8 /* Core */,
-				6850CDC7244A1C3000A53DC8 /* SparseLU */,
-				6850CDD9244A1C3000A53DC8 /* OrderingMethods */,
-				6850CDDD244A1C3000A53DC8 /* plugins */,
-				6850CDE5244A1C3000A53DC8 /* Householder */,
-				6850CDE9244A1C3000A53DC8 /* PardisoSupport */,
-				6850CDEB244A1C3000A53DC8 /* SparseCore */,
-				6850CE0A244A1C3000A53DC8 /* Jacobi */,
-				6850CE0C244A1C3000A53DC8 /* SPQRSupport */,
-				6850CE0E244A1C3000A53DC8 /* QR */,
-				6850CE15244A1C3000A53DC8 /* SparseQR */,
-				6850CE17244A1C3000A53DC8 /* SVD */,
 				6850CE1D244A1C3000A53DC8 /* Cholesky */,
-				6850CE21244A1C3000A53DC8 /* UmfPackSupport */,
-				6850CE23244A1C3000A53DC8 /* IterativeLinearSolvers */,
-				6850CE2C244A1C3000A53DC8 /* LU */,
-				6850CE34244A1C3000A53DC8 /* Geometry */,
-				6850CE45244A1C3000A53DC8 /* SuperLUSupport */,
-				6850CE47244A1C3000A53DC8 /* MetisSupport */,
-				6850CE49244A1C3000A53DC8 /* StlSupport */,
-				6850CE4E244A1C3000A53DC8 /* SparseCholesky */,
+				6850CD2B244A1C3000A53DC8 /* CholmodSupport */,
+				6850CD35244A1C3000A53DC8 /* Core */,
 				6850CE51244A1C3000A53DC8 /* Eigenvalues */,
+				6850CE34244A1C3000A53DC8 /* Geometry */,
+				6850CDE5244A1C3000A53DC8 /* Householder */,
+				6850CE23244A1C3000A53DC8 /* IterativeLinearSolvers */,
+				6850CE0A244A1C3000A53DC8 /* Jacobi */,
+				6850CE2C244A1C3000A53DC8 /* LU */,
+				6850CE47244A1C3000A53DC8 /* MetisSupport */,
+				6850CD2D244A1C3000A53DC8 /* misc */,
+				6850CDD9244A1C3000A53DC8 /* OrderingMethods */,
+				6850CDE9244A1C3000A53DC8 /* PardisoSupport */,
 				6850CE60244A1C3000A53DC8 /* PaStiXSupport */,
+				6850CDDD244A1C3000A53DC8 /* plugins */,
+				6850CE0E244A1C3000A53DC8 /* QR */,
+				6850CE4E244A1C3000A53DC8 /* SparseCholesky */,
+				6850CDEB244A1C3000A53DC8 /* SparseCore */,
+				6850CDC7244A1C3000A53DC8 /* SparseLU */,
+				6850CE15244A1C3000A53DC8 /* SparseQR */,
+				6850CE0C244A1C3000A53DC8 /* SPQRSupport */,
+				6850CE49244A1C3000A53DC8 /* StlSupport */,
+				6850CE45244A1C3000A53DC8 /* SuperLUSupport */,
+				6850CE17244A1C3000A53DC8 /* SVD */,
+				6850CE21244A1C3000A53DC8 /* UmfPackSupport */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -4203,12 +4282,12 @@
 			isa = PBXGroup;
 			children = (
 				6850CD2E244A1C3000A53DC8 /* blas.h */,
-				6850CD2F244A1C3000A53DC8 /* lapacke.h */,
-				6850CD30244A1C3000A53DC8 /* Kernel.h */,
-				6850CD31244A1C3000A53DC8 /* RealSvd2x2.h */,
 				6850CD32244A1C3000A53DC8 /* Image.h */,
+				6850CD30244A1C3000A53DC8 /* Kernel.h */,
 				6850CD33244A1C3000A53DC8 /* lapack.h */,
 				6850CD34244A1C3000A53DC8 /* lapacke_mangling.h */,
+				6850CD2F244A1C3000A53DC8 /* lapacke.h */,
+				6850CD31244A1C3000A53DC8 /* RealSvd2x2.h */,
 			);
 			path = misc;
 			sourceTree = "<group>";
@@ -4216,77 +4295,77 @@
 		6850CD35244A1C3000A53DC8 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				6850CD36244A1C3000A53DC8 /* Reverse.h */,
-				6850CD37244A1C3000A53DC8 /* ConditionEstimator.h */,
-				6850CD38244A1C3000A53DC8 /* PermutationMatrix.h */,
-				6850CD39244A1C3000A53DC8 /* Assign.h */,
-				6850CD3A244A1C3000A53DC8 /* MathFunctionsImpl.h */,
-				6850CD3B244A1C3000A53DC8 /* CwiseUnaryOp.h */,
-				6850CD3C244A1C3000A53DC8 /* DiagonalMatrix.h */,
-				6850CD3D244A1C3000A53DC8 /* VectorBlock.h */,
-				6850CD3E244A1C3000A53DC8 /* ReturnByValue.h */,
-				6850CD3F244A1C3000A53DC8 /* Solve.h */,
-				6850CD40244A1C3000A53DC8 /* products */,
-				6850CD56244A1C3000A53DC8 /* Product.h */,
-				6850CD57244A1C3000A53DC8 /* util */,
-				6850CD64244A1C3000A53DC8 /* MatrixBase.h */,
-				6850CD65244A1C3000A53DC8 /* Stride.h */,
-				6850CD66244A1C3000A53DC8 /* Map.h */,
-				6850CD67244A1C3000A53DC8 /* ForceAlignedAccess.h */,
-				6850CD68244A1C3000A53DC8 /* MathFunctions.h */,
-				6850CD69244A1C3000A53DC8 /* functors */,
-				6850CD70244A1C3000A53DC8 /* SelfCwiseBinaryOp.h */,
-				6850CD71244A1C3000A53DC8 /* BandMatrix.h */,
-				6850CD72244A1C3000A53DC8 /* Inverse.h */,
-				6850CD73244A1C3000A53DC8 /* Assign_MKL.h */,
-				6850CD74244A1C3000A53DC8 /* Swap.h */,
-				6850CD75244A1C3000A53DC8 /* ProductEvaluators.h */,
-				6850CD76244A1C3000A53DC8 /* MapBase.h */,
-				6850CD77244A1C3000A53DC8 /* Matrix.h */,
-				6850CD78244A1C3000A53DC8 /* EigenBase.h */,
-				6850CD79244A1C3000A53DC8 /* StableNorm.h */,
-				6850CD7A244A1C3000A53DC8 /* GenericPacketMath.h */,
-				6850CD7B244A1C3000A53DC8 /* CwiseBinaryOp.h */,
-				6850CD7C244A1C3000A53DC8 /* Visitor.h */,
-				6850CD7D244A1C3000A53DC8 /* DenseStorage.h */,
-				6850CD7E244A1C3000A53DC8 /* DiagonalProduct.h */,
-				6850CD7F244A1C3000A53DC8 /* CwiseUnaryView.h */,
-				6850CD80244A1C3000A53DC8 /* NoAlias.h */,
-				6850CD81244A1C3000A53DC8 /* DenseCoeffsBase.h */,
-				6850CD82244A1C3000A53DC8 /* Fuzzy.h */,
-				6850CD83244A1C3000A53DC8 /* TriangularMatrix.h */,
-				6850CD84244A1C3000A53DC8 /* IO.h */,
 				6850CD85244A1C3000A53DC8 /* arch */,
+				6850CD69244A1C3000A53DC8 /* functors */,
+				6850CD40244A1C3000A53DC8 /* products */,
+				6850CD57244A1C3000A53DC8 /* util */,
 				6850CDA9244A1C3000A53DC8 /* Array.h */,
-				6850CDAA244A1C3000A53DC8 /* SolverBase.h */,
-				6850CDAB244A1C3000A53DC8 /* AssignEvaluator.h */,
-				6850CDAC244A1C3000A53DC8 /* Replicate.h */,
-				6850CDAD244A1C3000A53DC8 /* CoreIterators.h */,
 				6850CDAE244A1C3000A53DC8 /* ArrayBase.h */,
-				6850CDAF244A1C3000A53DC8 /* Block.h */,
-				6850CDB0244A1C3000A53DC8 /* Dot.h */,
-				6850CDB1244A1C3000A53DC8 /* PlainObjectBase.h */,
-				6850CDB2244A1C3000A53DC8 /* SelfAdjointView.h */,
-				6850CDB3244A1C3000A53DC8 /* GeneralProduct.h */,
-				6850CDB4244A1C3000A53DC8 /* SolveTriangular.h */,
-				6850CDB5244A1C3000A53DC8 /* CoreEvaluators.h */,
-				6850CDB6244A1C3000A53DC8 /* CwiseNullaryOp.h */,
-				6850CDB7244A1C3000A53DC8 /* VectorwiseOp.h */,
 				6850CDB8244A1C3000A53DC8 /* ArrayWrapper.h */,
+				6850CD73244A1C3000A53DC8 /* Assign_MKL.h */,
+				6850CD39244A1C3000A53DC8 /* Assign.h */,
+				6850CDAB244A1C3000A53DC8 /* AssignEvaluator.h */,
+				6850CD71244A1C3000A53DC8 /* BandMatrix.h */,
+				6850CDAF244A1C3000A53DC8 /* Block.h */,
 				6850CDB9244A1C3000A53DC8 /* BooleanRedux.h */,
-				6850CDBA244A1C3000A53DC8 /* Transpositions.h */,
-				6850CDBB244A1C3000A53DC8 /* NestByValue.h */,
-				6850CDBC244A1C3000A53DC8 /* Ref.h */,
-				6850CDBD244A1C3000A53DC8 /* Transpose.h */,
-				6850CDBE244A1C3000A53DC8 /* Redux.h */,
-				6850CDBF244A1C3000A53DC8 /* NumTraits.h */,
 				6850CDC0244A1C3000A53DC8 /* CommaInitializer.h */,
-				6850CDC1244A1C3000A53DC8 /* GlobalFunctions.h */,
-				6850CDC2244A1C3000A53DC8 /* Random.h */,
-				6850CDC3244A1C3000A53DC8 /* Diagonal.h */,
-				6850CDC4244A1C3000A53DC8 /* DenseBase.h */,
+				6850CD37244A1C3000A53DC8 /* ConditionEstimator.h */,
+				6850CDB5244A1C3000A53DC8 /* CoreEvaluators.h */,
+				6850CDAD244A1C3000A53DC8 /* CoreIterators.h */,
+				6850CD7B244A1C3000A53DC8 /* CwiseBinaryOp.h */,
+				6850CDB6244A1C3000A53DC8 /* CwiseNullaryOp.h */,
 				6850CDC5244A1C3000A53DC8 /* CwiseTernaryOp.h */,
+				6850CD3B244A1C3000A53DC8 /* CwiseUnaryOp.h */,
+				6850CD7F244A1C3000A53DC8 /* CwiseUnaryView.h */,
+				6850CDC4244A1C3000A53DC8 /* DenseBase.h */,
+				6850CD81244A1C3000A53DC8 /* DenseCoeffsBase.h */,
+				6850CD7D244A1C3000A53DC8 /* DenseStorage.h */,
+				6850CDC3244A1C3000A53DC8 /* Diagonal.h */,
+				6850CD3C244A1C3000A53DC8 /* DiagonalMatrix.h */,
+				6850CD7E244A1C3000A53DC8 /* DiagonalProduct.h */,
+				6850CDB0244A1C3000A53DC8 /* Dot.h */,
+				6850CD78244A1C3000A53DC8 /* EigenBase.h */,
+				6850CD67244A1C3000A53DC8 /* ForceAlignedAccess.h */,
+				6850CD82244A1C3000A53DC8 /* Fuzzy.h */,
+				6850CDB3244A1C3000A53DC8 /* GeneralProduct.h */,
+				6850CD7A244A1C3000A53DC8 /* GenericPacketMath.h */,
+				6850CDC1244A1C3000A53DC8 /* GlobalFunctions.h */,
+				6850CD72244A1C3000A53DC8 /* Inverse.h */,
+				6850CD84244A1C3000A53DC8 /* IO.h */,
+				6850CD66244A1C3000A53DC8 /* Map.h */,
+				6850CD76244A1C3000A53DC8 /* MapBase.h */,
+				6850CD68244A1C3000A53DC8 /* MathFunctions.h */,
+				6850CD3A244A1C3000A53DC8 /* MathFunctionsImpl.h */,
+				6850CD77244A1C3000A53DC8 /* Matrix.h */,
+				6850CD64244A1C3000A53DC8 /* MatrixBase.h */,
+				6850CDBB244A1C3000A53DC8 /* NestByValue.h */,
+				6850CD80244A1C3000A53DC8 /* NoAlias.h */,
+				6850CDBF244A1C3000A53DC8 /* NumTraits.h */,
+				6850CD38244A1C3000A53DC8 /* PermutationMatrix.h */,
+				6850CDB1244A1C3000A53DC8 /* PlainObjectBase.h */,
+				6850CD56244A1C3000A53DC8 /* Product.h */,
+				6850CD75244A1C3000A53DC8 /* ProductEvaluators.h */,
+				6850CDC2244A1C3000A53DC8 /* Random.h */,
+				6850CDBE244A1C3000A53DC8 /* Redux.h */,
+				6850CDBC244A1C3000A53DC8 /* Ref.h */,
+				6850CDAC244A1C3000A53DC8 /* Replicate.h */,
+				6850CD3E244A1C3000A53DC8 /* ReturnByValue.h */,
+				6850CD36244A1C3000A53DC8 /* Reverse.h */,
 				6850CDC6244A1C3000A53DC8 /* Select.h */,
+				6850CDB2244A1C3000A53DC8 /* SelfAdjointView.h */,
+				6850CD70244A1C3000A53DC8 /* SelfCwiseBinaryOp.h */,
+				6850CD3F244A1C3000A53DC8 /* Solve.h */,
+				6850CDAA244A1C3000A53DC8 /* SolverBase.h */,
+				6850CDB4244A1C3000A53DC8 /* SolveTriangular.h */,
+				6850CD79244A1C3000A53DC8 /* StableNorm.h */,
+				6850CD65244A1C3000A53DC8 /* Stride.h */,
+				6850CD74244A1C3000A53DC8 /* Swap.h */,
+				6850CDBD244A1C3000A53DC8 /* Transpose.h */,
+				6850CDBA244A1C3000A53DC8 /* Transpositions.h */,
+				6850CD83244A1C3000A53DC8 /* TriangularMatrix.h */,
+				6850CD3D244A1C3000A53DC8 /* VectorBlock.h */,
+				6850CDB7244A1C3000A53DC8 /* VectorwiseOp.h */,
+				6850CD7C244A1C3000A53DC8 /* Visitor.h */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -4755,6 +4834,7 @@
 			children = (
 				6850CE69244A1C3000A53DC8 /* Lattice_arith.h */,
 				6850CE73244A1C3000A53DC8 /* Lattice_base.h */,
+				6827A13E24630FA90036F0AC /* Lattice_basis.h */,
 				6850CE67244A1C3000A53DC8 /* Lattice_comparison_utils.h */,
 				6850CE74244A1C3000A53DC8 /* Lattice_comparison.h */,
 				6850CE6A244A1C3000A53DC8 /* Lattice_conformable.h */,
@@ -4786,6 +4866,8 @@
 				6850CE7C244A1C3000A53DC8 /* IldgIOtypes.h */,
 				6850CE7D244A1C3000A53DC8 /* MetaData.h */,
 				6850CE7A244A1C3000A53DC8 /* NerscIO.h */,
+				6827A13B24630F0F0036F0AC /* OpenQcdIO.h */,
+				6827A13A24630F0F0036F0AC /* OpenQcdIOChromaReference.h */,
 			);
 			path = parallelIO;
 			sourceTree = "<group>";
@@ -5217,12 +5299,21 @@
 		68B9625F244AE50100E5CF09 /* Study1Plateau */ = {
 			isa = PBXGroup;
 			children = (
+				68B96263244AE50100E5CF09 /* mixedop.cpp */,
+				68B96262244AE50100E5CF09 /* xmlGFWall.cpp */,
 				68B96260244AE50100E5CF09 /* xmlPeramb.cpp */,
 				68B96261244AE50100E5CF09 /* xmlZ2.cpp */,
-				68B96262244AE50100E5CF09 /* xmlGFWall.cpp */,
-				68B96263244AE50100E5CF09 /* mixedop.cpp */,
 			);
 			path = Study1Plateau;
+			sourceTree = "<group>";
+		};
+		68E2C2F3245B2029009E7BE5 /* Grid_tests */ = {
+			isa = PBXGroup;
+			children = (
+				68E2C2F4245B204B009E7BE5 /* tests */,
+				68E2C2F5245B2068009E7BE5 /* Test_serialisation.cc */,
+			);
+			name = Grid_tests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -5447,6 +5538,7 @@
 				6850CFF7244A1C3100A53DC8 /* HMC.h in Headers */,
 				6850D18D244A1C3200A53DC8 /* Diagonal.h in Headers */,
 				6850D08C244A1C3100A53DC8 /* TensorDeviceDefault.h in Headers */,
+				68578F372450A3B200CC2A1D /* BiCGSTABMixedPrec.h in Headers */,
 				6850D212244A1C3200A53DC8 /* MatrixBaseEigenvalues.h in Headers */,
 				6850D112244A1C3200A53DC8 /* DiagonalMatrix.h in Headers */,
 				6850CED8244A1C3100A53DC8 /* LinalgUtils.h in Headers */,
@@ -5671,10 +5763,12 @@
 				6850D062244A1C3100A53DC8 /* l1p.h in Headers */,
 				6850D0F1244A1C3100A53DC8 /* ConstrainedConjGrad.h in Headers */,
 				6850D178244A1C3200A53DC8 /* ArrayBase.h in Headers */,
+				6827A13F24630FA90036F0AC /* Lattice_basis.h in Headers */,
 				6850D200244A1C3200A53DC8 /* StdDeque.h in Headers */,
 				6850D137244A1C3200A53DC8 /* ReenableStupidWarnings.h in Headers */,
 				6850D12B244A1C3200A53DC8 /* Product.h in Headers */,
 				6850D06A244A1C3100A53DC8 /* Cshift_none.h in Headers */,
+				6827A13C24630F0F0036F0AC /* OpenQcdIOChromaReference.h in Headers */,
 				6850D1B7244A1C3200A53DC8 /* SparseDiagonalProduct.h in Headers */,
 				6850D12C244A1C3200A53DC8 /* NonMPL2.h in Headers */,
 				6850CED9244A1C3100A53DC8 /* A2Autils.h in Headers */,
@@ -5696,6 +5790,7 @@
 				6850D189244A1C3200A53DC8 /* NumTraits.h in Headers */,
 				6850D192244A1C3200A53DC8 /* SparseLU_kernel_bmod.h in Headers */,
 				6850CF91244A1C3100A53DC8 /* impl.h in Headers */,
+				68578F312450A36200CC2A1D /* JacobiPolynomial.h in Headers */,
 				6850D22F244A1C3200A53DC8 /* json.hpp in Headers */,
 				6850D22E244A1C3200A53DC8 /* IldgIO.h in Headers */,
 				6850D1AB244A1C3200A53DC8 /* MatrixCwiseUnaryOps.h in Headers */,
@@ -5906,6 +6001,7 @@
 				6850D0D1244A1C3100A53DC8 /* chkder.h in Headers */,
 				6850D16C244A1C3200A53DC8 /* Complex.h in Headers */,
 				6850CF50244A1C3100A53DC8 /* impl.h in Headers */,
+				68578F322450A36200CC2A1D /* ZMobius.h in Headers */,
 				6850D01E244A1C3100A53DC8 /* MinimalResidual.h in Headers */,
 				6850CEE9244A1C3100A53DC8 /* PlaqPlusRectangleAction.h in Headers */,
 				6850D047244A1C3100A53DC8 /* Tensor_reality.h in Headers */,
@@ -5944,6 +6040,7 @@
 				6850D12A244A1C3200A53DC8 /* SelfadjointMatrixMatrix.h in Headers */,
 				6850D16A244A1C3200A53DC8 /* MathFunctions.h in Headers */,
 				6850D02E244A1C3100A53DC8 /* MixedPrecisionFlexibleGeneralisedMinimalResidual.h in Headers */,
+				68578F382450A3B200CC2A1D /* BiCGSTAB.h in Headers */,
 				6850D04D244A1C3100A53DC8 /* Tensor_exp.h in Headers */,
 				6850CEB8244A1C3100A53DC8 /* Profiling.h in Headers */,
 				6850D01D244A1C3100A53DC8 /* ConjugateGradientMixedPrec.h in Headers */,
@@ -5966,6 +6063,7 @@
 				6850D006244A1C3100A53DC8 /* GaugeConfiguration.h in Headers */,
 				6850D133244A1C3200A53DC8 /* DisableStupidWarnings.h in Headers */,
 				6850D23B244A1C3200A53DC8 /* GridCore.h in Headers */,
+				6827A13D24630F0F0036F0AC /* OpenQcdIO.h in Headers */,
 				6850D012244A1C3100A53DC8 /* bigfloat_double.h in Headers */,
 				6850CEAB244A1C3100A53DC8 /* PerfCount.h in Headers */,
 				6850D0CA244A1C3100A53DC8 /* LMpar.h in Headers */,
@@ -5991,6 +6089,7 @@
 				6850D079244A1C3100A53DC8 /* TemplateGroupTheory.h in Headers */,
 				6850CFFD244A1C3100A53DC8 /* ObservableModules.h in Headers */,
 				6850D1C7244A1C3200A53DC8 /* SparseTranspose.h in Headers */,
+				68578F332450A36200CC2A1D /* RemezGeneral.h in Headers */,
 				6850D14A244A1C3200A53DC8 /* Matrix.h in Headers */,
 				6850D20F244A1C3200A53DC8 /* ComplexSchur.h in Headers */,
 			);
@@ -6195,6 +6294,23 @@
 			name = bootstrap;
 			productName = Utility;
 			productReference = 6822E8BC22A7057400A85993 /* bootstrap */;
+			productType = "com.apple.product-type.tool";
+		};
+		68338D3F2461408900B6292E /* xml3pt */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 68338D442461408900B6292E /* Build configuration list for PBXNativeTarget "xml3pt" */;
+			buildPhases = (
+				68338D3C2461408900B6292E /* Sources */,
+				68338D3D2461408900B6292E /* Frameworks */,
+				68338D3E2461408900B6292E /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = xml3pt;
+			productName = xml3pt;
+			productReference = 68338D402461408900B6292E /* xml3pt */;
 			productType = "com.apple.product-type.tool";
 		};
 		6834512F2397D3C200B743CE /* xmlGFWall */ = {
@@ -6418,6 +6534,23 @@
 			productReference = 68BEFF6A2343A75A0031E3E3 /* xmlZ2 */;
 			productType = "com.apple.product-type.tool";
 		};
+		68E2C2F9245B2097009E7BE5 /* Test_serialisation */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 68E2C2FE245B2097009E7BE5 /* Build configuration list for PBXNativeTarget "Test_serialisation" */;
+			buildPhases = (
+				68E2C2F6245B2097009E7BE5 /* Sources */,
+				68E2C2F7245B2097009E7BE5 /* Frameworks */,
+				68E2C2F8245B2097009E7BE5 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Test_serialisation;
+			productName = Test_serialisation;
+			productReference = 68E2C2FA245B2097009E7BE5 /* Test_serialisation */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -6442,6 +6575,9 @@
 					};
 					6822E8BB22A7057400A85993 = {
 						CreatedOnToolsVersion = 10.2.1;
+					};
+					68338D3F2461408900B6292E = {
+						CreatedOnToolsVersion = 11.4.1;
 					};
 					6834512F2397D3C200B743CE = {
 						CreatedOnToolsVersion = 11.2.1;
@@ -6479,6 +6615,9 @@
 					68BEFF692343A75A0031E3E3 = {
 						CreatedOnToolsVersion = 11.0;
 					};
+					68E2C2F9245B2097009E7BE5 = {
+						CreatedOnToolsVersion = 11.4.1;
+					};
 				};
 			};
 			buildConfigurationList = 6822E8B722A7057400A85993 /* Build configuration list for PBXProject "Utility" */;
@@ -6497,20 +6636,22 @@
 				68B21CC323E720DF00D93480 /* fold */,
 				68939D8023A016D200C30150 /* corrstat */,
 				6815510222CBCB61009AB4AD /* MultiFit */,
+				686EC70124003EA40084D04D /* FitSummary */,
+				682260F72376FA57005341E5 /* repair */,
+				68AC6DE522A7114900D42F70 /* peramb-compare */,
 				688FEBE2238C1BE100977B09 /* mixedop */,
 				681DC8AF22F19BAB00EE04A9 /* hlxml */,
 				68BEFF692343A75A0031E3E3 /* xmlZ2 */,
 				6834512F2397D3C200B743CE /* xmlGFWall */,
 				6845351F23477BBE00106304 /* xmlPeramb */,
-				682260F72376FA57005341E5 /* repair */,
-				68AC6DE522A7114900D42F70 /* peramb-compare */,
-				686EC70124003EA40084D04D /* FitSummary */,
+				68338D3F2461408900B6292E /* xml3pt */,
 				6850CA1A244A1BDA00A53DC8 /* Grid */,
 				6850D24E244A209200A53DC8 /* Hadrons */,
 				68B9623E244AE1EA00E5CF09 /* HadronsContractor */,
 				68B9624A244AE36300E5CF09 /* HadronsXmlRun */,
 				68B96256244AE3BC00E5CF09 /* HadronsXmlValidate */,
 				6804C18B244C78AF008E272B /* Test_hadrons_meson_3pt */,
+				68E2C2F9245B2097009E7BE5 /* Test_serialisation */,
 			);
 		};
 /* End PBXProject section */
@@ -6557,6 +6698,15 @@
 			files = (
 				6815510E22CBF569009AB4AD /* Common.cpp in Sources */,
 				6822E8C022A7057400A85993 /* bootstrap.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68338D3C2461408900B6292E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68338D47246140D400B6292E /* xml3pt.cpp in Sources */,
+				68338D48246141A600B6292E /* Common.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6614,6 +6764,7 @@
 				6850CF8B244A1C3100A53DC8 /* ImprovedStaggeredFermionInstantiationStaggeredImplD.cc in Sources */,
 				6850CF07244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonImplD.cc in Sources */,
 				6850CF01244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonImplD.cc in Sources */,
+				68578F342450A36200CC2A1D /* ZMobius.cc in Sources */,
 				6850CF00244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonImplD.cc in Sources */,
 				6850CF6F244A1C3100A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850D22D244A1C3200A53DC8 /* BinaryIO.cc in Sources */,
@@ -6684,6 +6835,7 @@
 				6850CF71244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850CF59244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplF.cc in Sources */,
 				6850CF69244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonAdjImplF.cc in Sources */,
+				68578F302450A36200CC2A1D /* RemezGeneral.cc in Sources */,
 				6850CF9E244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonTwoIndexAntiSymmetricImplF.cc in Sources */,
 				6850CF0D244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplFH.cc in Sources */,
 				6850CFA2244A1C3100A53DC8 /* WilsonKernelsInstantiation.cc in Sources */,
@@ -6930,6 +7082,14 @@
 			files = (
 				68F687E123D4A96600590270 /* Common.cpp in Sources */,
 				68B96265244AE52800E5CF09 /* xmlZ2.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68E2C2F6245B2097009E7BE5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68E2C301245B20B8009E7BE5 /* Test_serialisation.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7263,6 +7423,22 @@
 			};
 			name = Release;
 		};
+		68338D452461408900B6292E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		68338D462461408900B6292E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		683451352397D3C200B743CE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -7307,8 +7483,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				DSTROOT = "$Grid/build$(CONFIGURATION)/Grid";
 				EXCLUDED_SOURCE_FILE_NAMES = (
-					"$(Grid)/Grid/communicator/Communicator_none.cc",
-					"$(Grid)/Grid/communicator/SharedMemoryNone.cc",
+					"$(Grid)/Grid/communicator/Communicator_mpi3.cc",
+					"$(Grid)/Grid/communicator/SharedMemoryMPI.cc",
 				);
 				EXECUTABLE_PREFIX = lib;
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
@@ -7337,8 +7513,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				DSTROOT = "$Grid/build$(CONFIGURATION)/Grid";
 				EXCLUDED_SOURCE_FILE_NAMES = (
-					"$(Grid)/Grid/communicator/Communicator_none.cc",
-					"$(Grid)/Grid/communicator/SharedMemoryNone.cc",
+					"$(Grid)/Grid/communicator/Communicator_mpi3.cc",
+					"$(Grid)/Grid/communicator/SharedMemoryMPI.cc",
 				);
 				EXECUTABLE_PREFIX = lib;
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
@@ -7571,6 +7747,22 @@
 			};
 			name = Release;
 		};
+		68E2C2FF245B2097009E7BE5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		68E2C300245B2097009E7BE5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -7624,6 +7816,15 @@
 			buildConfigurations = (
 				6822E8C422A7057400A85993 /* Debug */,
 				6822E8C522A7057400A85993 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		68338D442461408900B6292E /* Build configuration list for PBXNativeTarget "xml3pt" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				68338D452461408900B6292E /* Debug */,
+				68338D462461408900B6292E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -7741,6 +7942,15 @@
 			buildConfigurations = (
 				68BEFF6E2343A75A0031E3E3 /* Debug */,
 				68BEFF6F2343A75A0031E3E3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		68E2C2FE245B2097009E7BE5 /* Build configuration list for PBXNativeTarget "Test_serialisation" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				68E2C2FF245B2097009E7BE5 /* Debug */,
+				68E2C300245B2097009E7BE5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

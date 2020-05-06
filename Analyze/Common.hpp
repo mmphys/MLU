@@ -137,8 +137,8 @@ namespace Gamma
     SigmaZT,            // 31
   };
   static constexpr unsigned int                nGamma = 32;
-  extern const std::array<std::string, nGamma> name;      // Long name, per Grid
-  extern const std::array<std::string, nGamma> nameShort; // My abbreviations
+  extern const std::array<const std::string, nGamma> name;      // Long name, per Grid
+  extern const std::array<const std::string, nGamma> nameShort; // My abbreviations
   std::string NameShort( Algebra alg, const char * pszPrefix = nullptr );
   std::ostream& operator<<(std::ostream& os, const Algebra &a);
   std::istream& operator>>(std::istream& is, Algebra &a);
@@ -228,6 +228,9 @@ std::vector<std::string> Split( const std::string &String, const char * pszDelim
 // Extract suffix, then split strings. Default delimeters '.' and '_' respectively
 bool ExtractSuffixSplit( std::string &String, std::vector<std::string> &Suffii,
                         const char * pszStringDelim = nullptr, const char * pszSuffixDelim = nullptr );
+
+// Dump the environment to stdout, prefixed by optional message
+void DumpEnv(int argc, const char * const *argv, const char * pStr = nullptr );
 
 // Does the specified file exist?
 bool FileExists( const std::string& Filename );

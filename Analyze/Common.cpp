@@ -80,7 +80,7 @@ const double NaN{ std::nan( "" ) };
 
 namespace Gamma
 {
-  const std::array<std::string, nGamma> name{ // Long name, per Grid
+  const std::array<const std::string, nGamma> name{ // Long name, per Grid
     "MinusGamma5",
     "Gamma5",
     "MinusGammaT",
@@ -114,7 +114,7 @@ namespace Gamma
     "MinusSigmaZT",
     "SigmaZT",
   };
-  const std::array<std::string, nGamma> nameShort{ // My abbreviations
+  const std::array<const std::string, nGamma> nameShort{ // My abbreviations
     "g-5",
     "g5",
     "g-T",
@@ -277,6 +277,26 @@ bool ExtractSuffixSplit( std::string &String, std::vector<std::string> &Suffii,
   if( bExtracted )
     Suffii = Split( Suffix, pszSuffixDelim );
   return bExtracted;
+}
+
+// Dump the environment to stdout, prefixed by optional message
+void DumpEnv(int argc, const char * const *argv, const char * pStr )
+{
+  static const char sIndent2[]{ "    " };
+  static const char * sIndent1{ sIndent2 + 2 };
+  static const char sQuote[]{ "\"" };
+  if( pStr )
+    std::cout << pStr << std::endl;
+  std::cout << sIndent1 << argc << " arguments:" << std::endl;
+  for( int i = 0; i < argc; i++ )
+  {
+    std::cout << sIndent2 << "argv[" << i << "] = ";
+    if( argv[i] )
+      std::cout << sQuote << argv[i] << sQuote;
+    else
+      std::cout << "nullptr";
+    std::cout << std::endl;
+  }
 }
 
 // Does the specified file exist?
