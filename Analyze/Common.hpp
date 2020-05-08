@@ -351,6 +351,7 @@ struct Momentum
   Momentum( int _x, int _y, int _z ) : x(_x), y(_y), z(_z) {}
   Momentum() : Momentum(0,0,0) {}
   inline explicit operator bool() const { return x!=0 || y!=0 || z!=0; }
+  inline Momentum operator-() const { return Momentum(-x, -y, -z); }
   inline bool operator==(const Momentum &m) const { return x==m.x || y==m.y || z==m.z; }
   inline bool EqualsNeg(const Momentum &m) const { return x==-m.x || y==-m.y || z==-m.z; }
   inline int p2() const { return x * x + y * y + z * z; }

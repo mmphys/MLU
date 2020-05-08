@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "68B9624A244AE36300E5CF09"
-               BuildableName = "HadronsXmlRun"
-               BlueprintName = "HadronsXmlRun"
+               BlueprintIdentifier = "68B96256244AE3BC00E5CF09"
+               BuildableName = "HadronsXmlValidate"
+               BlueprintName = "HadronsXmlValidate"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,27 +45,15 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "68B9624A244AE36300E5CF09"
-            BuildableName = "HadronsXmlRun"
-            BlueprintName = "HadronsXmlRun"
+            BlueprintIdentifier = "68B96256244AE3BC00E5CF09"
+            BuildableName = "HadronsXmlValidate"
+            BlueprintName = "HadronsXmlValidate"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "Study1/Z2.template.xml"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "Felix/distil.xml"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--threads 2"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--log Error,Warning,Message,Debug"
+            argument = "Study2/h1_s_3pt.xml"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
@@ -80,9 +68,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "68B9624A244AE36300E5CF09"
-            BuildableName = "HadronsXmlRun"
-            BlueprintName = "HadronsXmlRun"
+            BlueprintIdentifier = "68B96256244AE3BC00E5CF09"
+            BuildableName = "HadronsXmlValidate"
+            BlueprintName = "HadronsXmlValidate"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
