@@ -195,9 +195,8 @@ template<typename T> inline std::vector<T> ArrayFromString( const std::string &S
   for( std::size_t pos = 0; ( pos = s.find( ',', pos ) ) != std::string::npos; )
     s[pos] = ' ';
   std::istringstream iss( s );
-  T t;
   std::vector<T> v;
-  while( iss >> std::ws && !iss.eof() )
+  for( T t; iss >> std::ws && !iss.eof(); )
   {
     if( !( iss >> t ) )
       throw std::invalid_argument( "ArrayFromString: \"" + String + "\" is not type " + typeid(T).name() );

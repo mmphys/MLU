@@ -52,14 +52,20 @@ struct Quark
   const char * EigenPackFilename = nullptr;
 };
 
-
-static const Quark Quarks[] = {
+static const std::vector<Quark> Quarks{
   // {"l" , 0.005, 16, 1.8, 5000, 1e-8, false, "/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine"},
   {"s" , 0.04, 16, 1.8, 5000, 1e-12},
   {"h1", 0.58, 12, 1.0, 5000, 1e-12, true}, // charm
   // {"h2", 0.64, 12, 1.0, 5000, 1e-12, true},  // charm
 };
-static constexpr int NumQuarks{ sizeof( Quarks ) / sizeof( Quarks[0] ) };
+
+static const std::vector<Common::Momentum> Momenta{
+  { 0, 0, 0 },
+  { 1, 0, 0 },
+  { 2, 0, 0 },
+  //{ 1, 1, 0 },
+  //{ 1, 1, 1 },
+};
 
 static const Gamma::Algebra algInsert[] = {
   Gamma::Algebra::Gamma5,
@@ -554,54 +560,31 @@ void ModContractCurrent::AddDependencies( HModList &ModList ) const
 
 class xml3pt
 {
-protected:
-  static constexpr int iL{ 0 }; // Offset within internal structures indexed by quark
-  static constexpr int iH{ 1 };
-  const Quark &qh;
-  const Quark &ql;
-  const int p0; // This is the offset into Momenta for momentum 0
-  std::vector<Common::Momentum> Momenta;
-  int NumMomenta;
 public:
   Application application;
 protected:
-  Application Setup();
-  std::array<std::string, NumQuarks> solverName;
+  Application Setup( bool bRandom );
 public:
-  unsigned int nt;
-  bool bRandom;
-  bool bEigenpackEnable;
-  xml3pt( const Quark &qH, const Quark &qL, const std::initializer_list<Common::Momentum> &mom )
-  : qh{qH}, ql{qL}, p0{0}, Momenta{mom}, application{Setup()} {}
-  void Make();
-  void NewMake();
+  explicit xml3pt( bool bRandom ) : application{ Setup( bRandom ) } {}
+  void Make(const std::vector<Quark> &Quarks, const std::vector<Common::Momentum> &mom,
+            unsigned int nt, bool bEigenpackEnable);
 };
 
-Application xml3pt::Setup()
+// One-time initialisation
+Application xml3pt::Setup( bool bRandom )
 {
-  // Make sure momentum list starts with 0
-  NumMomenta = static_cast<int>( Momenta.size() );
-  if( NumMomenta == 0 )
-  {
-    Momenta.emplace_back( 0, 0, 0 );
-    ++NumMomenta;
-  }
-  else if( Momenta[p0].p2() )
-    throw std::runtime_error( "The first momentum must be 0" );
-
   // global parameters
   Application::GlobalPar globalPar;
   globalPar.trajCounter.start    = 3000;
   globalPar.trajCounter.end      = 3001;
   globalPar.trajCounter.step     = 40;
-  globalPar.runId                = qh.flavour + Sep + ql.flavour + Sep + "3pt";
+  globalPar.runId                = "h1_s_3pt";
   globalPar.genetic.maxGen       = 1000;
   globalPar.genetic.maxCstGen    = 200;
   globalPar.genetic.popSize      = 20;
   globalPar.genetic.mutationRate = .1;
   globalPar.saveSchedule = false;
   Application application(globalPar);
-  
   // gauge field
   if( bRandom )
   {
@@ -613,239 +596,36 @@ Application xml3pt::Setup()
     gaugePar.file = "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat";
     application.createModule<MIO::LoadNersc>(GaugeFieldName, gaugePar);
   }
-
   return application;
 }
 
-void xml3pt::NewMake()
+void xml3pt::Make(const std::vector<Quark> &Quarks, const std::vector<Common::Momentum> &mom,
+                  unsigned int nt, bool bEigenpackEnable)
 {
   HModList l( application, nt, bEigenpackEnable );
-  for( unsigned int t = 0; t < 4/*nt*/; t+=4 )
+  //for( unsigned int t = 0; t < nt; t+=4 )
+  unsigned int t = 8;
   {
-    for( unsigned int p = 0; p < NumMomenta; ++p )
+    for( const Common::Momentum &p : mom )
     {
-      static const SourceT Type{ Z2 };
-      l.TakeOwnership( new ModContract( Type, qh, ql, Momenta[p], t ) );
-      for( int deltaT = 12; deltaT <= 20; deltaT += 4 )
+      for( const Quark &q1 : Quarks )
       {
-        for( int j = 0; j < NumInsert; j++ )
+        for( const Quark &q2 : Quarks )
         {
-          l.TakeOwnership( new ModContractCurrent( Type, qh, ql, Momenta[p], t, j, deltaT ) );
-        }
-      }
-    }
-  }
-}
-
-void xml3pt::Make()
-{
-  // run setup ///////////////////////////////////////////////////////////////
-  //static constexpr int NumQuarks{ 4 };
-  //const std::array<std::string, NumQuarks> flavour{"l", "s", "c1", "c2"};
-  //const std::array<double, NumQuarks>      mass   {.005, .04, .58  , .64};
-  //const unsigned int nt{static_cast<unsigned int>(GridDefaultLatt()[Tp])};
-  
-  // sink for each momentum (negative)
-  std::vector<std::string> SinkPos( NumMomenta );
-  std::vector<std::string> SinkNeg( NumMomenta );
-  for( unsigned int p = 0; p < NumMomenta; p++ )
-  {
-    const std::string SinkPrefix{ "sink_p_" };
-    MSink::Point::Par sinkPar;
-    sinkPar.mom = Momenta[p].to_string( Space );
-    SinkPos[p] = SinkPrefix + Momenta[p].to_string( Sep );
-    application.createModule<MSink::ScalarPoint>(SinkPos[p], sinkPar);
-    if( Momenta[p].p2() )
-    {
-      sinkPar.mom = Momenta[p].to_string( Space, true );
-      SinkNeg[p] = SinkPrefix + Momenta[p].to_string( Sep, true );
-      application.createModule<MSink::ScalarPoint>(SinkNeg[p], sinkPar);
-    }
-    else
-      SinkNeg[p] = SinkPos[p];
-  }
-  
-  // Loop through all timeslices
-  static const std::string sPropPrefix{ "prop" + Sep };
-  const unsigned int deltaT{ nt / 4 };
-  for (unsigned int t = 0; t < 1/*nt*/; t+=4)
-  {
-    const std::string timeSuffix{ Sep + "t" + Sep + std::to_string( t ) };
-    const std::string sZ2{ "Z2" };
-    // I will always need the momentum 0 Z_2 wall source for this timeslice
-    const std::string Suffix0{ timeSuffix + Sep + "p" + Sep + Common::Momentum( 0, 0, 0 ).to_string( Sep ) };
-    const std::string srcName0{ sZ2 + Suffix0 };
-    {
-      MSource::Z2::Par z2Par;
-      z2Par.tA = t;
-      z2Par.tB = t;
-      application.createModule<MSource::Z2>(srcName0, z2Par);
-    }
-    // I will always need the momentum 0 propagator for this timeslice
-    std::array<std::string, NumQuarks> propName0;
-    std::array<std::array<std::string, NumInsert>, NumQuarks> SeqSrcName0;
-    std::array<std::array<std::string, NumInsert>, NumQuarks> SeqPropName0;
-    for (unsigned int i = 0; i < NumQuarks; ++i)
-    {
-      
-      propName0[i] = sPropPrefix + Quarks[i].flavour + Suffix0;
-      MFermion::GaugeProp::Par quarkPar;
-      quarkPar.solver = solverName[i];
-      quarkPar.source = srcName0;
-      application.createModule<MFermion::GaugeProp>(propName0[i], quarkPar);
-      // I also need a sequential source and propagator for each quark
-      MSource::SeqGamma::Par seqPar;
-      seqPar.q   = propName0[i];
-      seqPar.tA  = ( t + deltaT ) % nt;
-      seqPar.tB  = seqPar.tA;
-      seqPar.mom = Common::Momentum( 0, 0, 0 ).to_string4d( Space );
-      for( int j = 0; j < NumInsert; j++ )
-      {
-        /*switch( j )
-        {
-          case 0:
-            seqPar.mom = "0 0 0 1";
-            break;
-          case 1:
-            seqPar.mom = Common::Momentum( 1, 0, 0 ).to_string4d( Space );
-            break;
-          case 2:
-            seqPar.mom = Common::Momentum( 0, 1, 0 ).to_string4d( Space );
-            break;
-          case 3:
-            seqPar.mom = Common::Momentum( 0, 0, 1 ).to_string4d( Space );
-            break;
-        }*/
-        seqPar.gamma = algInsert[j];
-        SeqSrcName0[i][j] = sZ2 + Sep + *(algInsertName[j]) + Sep + Quarks[i].flavour + Suffix0;
-        application.createModule<MSource::SeqGamma>(SeqSrcName0[i][j], seqPar);
-        quarkPar.source = SeqSrcName0[i][j];
-        SeqPropName0[i][j] = sPropPrefix + SeqSrcName0[i][j];
-        application.createModule<MFermion::GaugeProp>(SeqPropName0[i][j], quarkPar);
-      }
-    }
-    // Loop through all momenta
-    for( unsigned int p = 0; p < NumMomenta; ++p ) {
-      const std::string momentumSuffix{ Sep + "p" + Sep + Momenta[p].to_string( Sep ) };
-      const std::string Suffix{ momentumSuffix + timeSuffix };
-
-      // Z2 source with this momenta (doesn't need creating for momentum 0)
-      const std::string srcName{ Momenta[p] ? sZ2 + Suffix : srcName0 };
-      if( Momenta[p] ) {
-        MSource::MomentumPhase::Par z2Par;
-        z2Par.src = srcName0;
-        z2Par.mom = Momenta[p].to_string( Space ) + Space + "0";
-        application.createModule<MSource::MomentumPhase>(srcName, z2Par);
-      }
-      // Make propagators
-      std::array<std::string, NumQuarks> propName;
-      for (unsigned int i = 0; i < NumQuarks; ++i)
-      {
-        if( !Momenta[p] )
-          propName[i] = propName0[i];
-        else {
-          propName[i] = sPropPrefix + Quarks[i].flavour + Suffix;
-          MFermion::GaugeProp::Par quarkPar;
-          quarkPar.solver = solverName[i];
-          quarkPar.source = srcName;
-          application.createModule<MFermion::GaugeProp>(propName[i], quarkPar);
-        }
-      }
-
-      // contractions
-      MContraction::Meson::Par mesPar;
-      std::string MesonSuffix;
-      for (unsigned int i = 0; i < NumQuarks; ++i)
-        for (unsigned int j = 0; j < NumQuarks; ++j)
-        {
-          static const std::string sMeson{ "meson" };
-          static const std::string baseOutput{ "mesons/C1/Z2/" };
-          //const std::string MesonSuffix{ propName[i] + Sep + propName0[j] + Sep + SinkNeg[p] };
-          const std::string MesonSuffix{ Quarks[i].flavour + Sep + Quarks[j].flavour + Suffix };
-          mesPar.output = baseOutput + "2pt/" + MesonSuffix;
-          mesPar.q1     = propName[i];
-          mesPar.q2     = propName0[j];
-          mesPar.gammas = "all";
-          //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
-          mesPar.sink   = SinkNeg[p];
-          application.createModule<MContraction::Meson>(sMeson + Sep + MesonSuffix, mesPar);
-          for (unsigned int k = 0; k < NumInsert; ++k)
+          static const SourceT Type{ Z2 };
+          l.TakeOwnership( new ModContract( Type, q1, q2, p, t ) );
+          for( int deltaT = 12; deltaT <= 20; deltaT += 4 )
           {
-            const std::string MesonSuffix3pt{Quarks[i].flavour+Sep+Quarks[j].flavour+Sep+*(algInsertName[k])+Suffix};
-            mesPar.output = baseOutput + "3pt/" + MesonSuffix3pt;
-            mesPar.q2     = SeqPropName0[j][k];
-            application.createModule<MContraction::Meson>(sMeson + Sep + MesonSuffix3pt, mesPar);
+            for( int j = 0; j < NumInsert; j++ )
+            {
+              l.TakeOwnership( new ModContractCurrent( Type, q1, q2, p, t, j, deltaT ) );
+            }
           }
         }
+      }
     }
   }
 }
-
-#ifdef TEST_DEBUG_NEW
-static thread_local bool bUseDevice{ false };
-
-struct DebugNewHeader
-{
-  std::size_t szBufSize;
-  bool bOnDevice;
-};
-static constexpr std::size_t DebugNewHeaderSize = ( sizeof( DebugNewHeader ) + 15 ) & (~15);
-
-std::ostream& operator<<(std::ostream& os, const DebugNewHeader &h)
-{
-  return os << &h << ": " << h.szBufSize << " bytes of " << ( h.bOnDevice ? "device" : "host" ) << " memory";
-}
-
-void * DebugNew( std::size_t size )
-{
-  DebugNewHeader * pHeader = static_cast<DebugNewHeader *>( std::malloc( size + DebugNewHeaderSize ) );
-  pHeader->szBufSize = size + DebugNewHeaderSize;
-  pHeader->bOnDevice = bUseDevice;
-  std::cout << "DebugNew( " << size << " ) = " << *pHeader << std::endl;
-  return reinterpret_cast<char *>( pHeader ) + DebugNewHeaderSize;
-}
-
-void DebugDelete( void * mem )
-{
-  DebugNewHeader * pHeader = reinterpret_cast<DebugNewHeader *>( static_cast<char *>( mem ) - DebugNewHeaderSize );
-  std::cout << "DebugDelete( " << mem << " ) = " << *pHeader << std::endl;
-  std::free( pHeader );
-}
-
-void * operator new( std::size_t size ) { return DebugNew( size ); }
-void operator delete( void * mem ) { DebugDelete( mem ); }
-
-class CTest
-{
-public:
-  using Scalar = Grid::ComplexD;
-  using ET = Eigen::Tensor<Scalar, 6, Eigen::RowMajor>;
-  std::vector<Scalar> v;
-  //std::vector<Scalar,Grid::alignedAllocator<Scalar>> vGrid;
-  std::vector<Scalar> vGrid;
-  ET tensor;
-  Eigen::TensorMap<ET> tMap;
-  CTest();
-  static void * operator new( std::size_t size ) { return DebugNew( size ); }
-  static void operator delete( void * mem ) { DebugDelete( mem ); }
-};
-
-CTest::CTest() : v(2), vGrid(8*1*2*3*4*5), tensor(8,1,2,3,4,5), tMap(&vGrid[0],8,1,2,3,4,5)
-{
-  std::cout << "CTest::CTest" << std::endl;
-}
-
-bool Debug()
-{
-  CTest t1;
-  bUseDevice = true;
-  std::unique_ptr<CTest> pBingo{ new CTest };
-  t1.tensor.resize(1,2,1,2,1,2);
-  bUseDevice = false;
-  t1.tensor.resize(2,2,2,2,2,2);
-  return true;
-}
-#endif
 
 int main(int argc, char *argv[])
 {
@@ -863,32 +643,24 @@ int main(int argc, char *argv[])
   HadronsLogIterative.Active(GridLogIterative.isActive());
   HadronsLogDebug.Active(GridLogDebug.isActive());
   const Grid::Coordinate &lat{GridDefaultLatt()};
-  static const std::initializer_list<Common::Momentum> mom{
-    { 0, 0, 0 },
-    { 1, 0, 0 },
-    { 2, 0, 0 },
-    //{ 1, 1, 0 },
-    //{ 1, 1, 1 },
-  };
-  xml3pt x( Quarks[1], Quarks[0], mom );
-  x.bRandom = GridCmdOptionExists( argv, argv + argc, "-r" );
-  x.bEigenpackEnable = !x.bRandom && !GridCmdOptionExists( argv, argv + argc, "-e" );
-  x.nt = lat.size() < 4 ? 64 : static_cast<unsigned int>( lat[3] );
+  const bool bRandom{ GridCmdOptionExists( argv, argv + argc, "-r" ) };
+  const bool bEigenpackEnable{ !bRandom && !GridCmdOptionExists( argv, argv + argc, "-e" ) };
+  const unsigned int nt{ lat.size() < 4 ? 64 : static_cast<unsigned int>( lat[3] ) };
   LOG(Message)
     << std::boolalpha
-    << "nt=" << std::to_string( x.nt )
-    << ", Random gauge " << x.bRandom
-    << ", Eigen packs " << x.bEigenpackEnable
+    << "nt=" << std::to_string( nt )
+    << ", Random gauge " << bRandom
+    << ", Eigen packs " << bEigenpackEnable
     << std::endl;
-
   try
   {
-    x.NewMake();
+    xml3pt x( bRandom );
+    x.Make( Quarks, Momenta, nt, bEigenpackEnable );
 
     // execution
     static const std::string XmlFileName{ x.application.getPar().runId + ".xml" };
     x.application.saveParameterFile( XmlFileName );
-    if( x.bRandom || ( lat.size() == 4 && lat[0] == 24 && lat[1] == 24 && lat[2] == 24 && lat[3] == 64 ) )
+    if( bRandom || ( lat.size() == 4 && lat[0] == 24 && lat[1] == 24 && lat[2] == 24 && lat[3] == 64 ) )
       x.application.run();
     else
       LOG(Warning) << "The parameters in " << XmlFileName << " are designed for --grid 24.24.24.64" << std::endl;
