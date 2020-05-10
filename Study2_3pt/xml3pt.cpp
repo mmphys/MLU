@@ -155,7 +155,7 @@ public:
   inline const std::string &Name() const { return name; };
   HMod() { name.reserve( 80 ); }
   virtual ~HMod() = default;
-  virtual void AddDependencies( HModList &ModList ) const {};
+  virtual bool AddDependencies( HModList &ModList ) const { return true; };
 };
 
 class HModList
@@ -180,11 +180,8 @@ const std::string HModList::TakeOwnership( HMod *pHMod )
   assert( pHMod && "HModList::TakeOwnership() : Null pointer" );
   std::string ModName{ pHMod->Name() };
   auto it{ list.find( ModName ) };
-  if( it == list.end() )
-  {
-    pHMod->AddDependencies( *this );
+  if( it == list.end() && pHMod->AddDependencies( *this ) )
     list.emplace( std::make_pair( ModName, std::unique_ptr<HMod>( pHMod ) ) );
-  }
   else
     delete pHMod;
   return ModName;
@@ -202,7 +199,7 @@ protected:
   Common::Momentum p;
 public:
   ModSink(const SourceT Type, const Common::Momentum &p);
-  virtual void AddDependencies( HModList &ModList ) const;
+  virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 const std::string ModSink::Prefix{ "Sink" };
@@ -213,11 +210,12 @@ ModSink::ModSink(const SourceT type_, const Common::Momentum &p_) : Type{type_},
   AppendP( name, p );
 }
 
-void ModSink::AddDependencies( HModList &ModList ) const
+bool ModSink::AddDependencies( HModList &ModList ) const
 {
   MSink::Point::Par sinkPar;
   sinkPar.mom = p.to_string( Space );
   ModList.application.createModule<MSink::ScalarPoint>(Name(), sinkPar);
+  return true;
 }
 
 /**************************
@@ -232,7 +230,7 @@ protected:
   int t;
 public:
   ModSource(const SourceT Type, int t);
-  virtual void AddDependencies( HModList &ModList ) const;
+  virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 const std::string ModSource::Prefix{ "Source" };
@@ -244,12 +242,13 @@ ModSource::ModSource(const SourceT type_, int t_) : Type{type_}, t{t_}
   AppendT( name, t );
 }
 
-void ModSource::AddDependencies( HModList &ModList ) const
+bool ModSource::AddDependencies( HModList &ModList ) const
 {
   MSource::Z2::Par z2Par;
   z2Par.tA = t;
   z2Par.tB = t;
   ModList.application.createModule<MSource::Z2>(name, z2Par);
+  return true;
 }
 
 /**************************
@@ -260,7 +259,7 @@ class ModStoutGauge : public HMod
 {
 public:
   ModStoutGauge();
-  virtual void AddDependencies( HModList &ModList ) const;
+  virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 ModStoutGauge::ModStoutGauge()
@@ -269,7 +268,7 @@ ModStoutGauge::ModStoutGauge()
   Append( name, "stout" );
 }
 
-void ModStoutGauge::AddDependencies( HModList &ModList ) const
+bool ModStoutGauge::AddDependencies( HModList &ModList ) const
 {
   // Stout smeared field
   MGauge::StoutSmearing::Par stoutPar;
@@ -277,6 +276,7 @@ void ModStoutGauge::AddDependencies( HModList &ModList ) const
   stoutPar.steps = 3;
   stoutPar.rho = 0.1;
   ModList.application.createModule<MGauge::StoutSmearing>(name, stoutPar);
+  return true;
 }
 
 /**************************
@@ -290,7 +290,7 @@ protected:
   const Quark &q;
 public:
   ModAction(const Quark &q);
-  virtual void AddDependencies( HModList &ModList ) const;
+  virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 const std::string ModAction::Prefix{ "DWF" };
@@ -301,7 +301,7 @@ ModAction::ModAction(const Quark &q_) : q{q_}
   Append( name, q.flavour );
 }
 
-void ModAction::AddDependencies( HModList &ModList ) const
+bool ModAction::AddDependencies( HModList &ModList ) const
 {
   MAction::DWF::Par actionPar;
   actionPar.gauge = q.bGaugeSmear ? ModList.TakeOwnership(new ModStoutGauge()) : GaugeFieldName;
@@ -314,6 +314,7 @@ void ModAction::AddDependencies( HModList &ModList ) const
   actionPar.boundary = boundary;
   actionPar.twist = twist;
   ModList.application.createModule<MAction::DWF>(name, actionPar);
+  return true;
 }
 
 /**************************
@@ -327,7 +328,7 @@ protected:
   const Quark &q;
 public:
   ModSolver(const Quark &q);
-  virtual void AddDependencies( HModList &ModList ) const;
+  virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 const std::string ModSolver::Prefix{ "CG" };
@@ -338,7 +339,7 @@ ModSolver::ModSolver(const Quark &q_) : q{q_}
   Append( name, q.flavour );
 }
 
-void ModSolver::AddDependencies( HModList &ModList ) const
+bool ModSolver::AddDependencies( HModList &ModList ) const
 {
   // solvers
   MSolver::RBPrecCG::Par solverPar;
@@ -357,6 +358,7 @@ void ModSolver::AddDependencies( HModList &ModList ) const
   solverPar.residual     = q.residual;
   solverPar.maxIteration = q.maxIteration;
   ModList.application.createModule<MSolver::RBPrecCG>(name, solverPar);
+  return true;
 }
 
 /**************************
@@ -375,7 +377,7 @@ protected:
   int t;
 public:
   ModSeqSource(const SourceT Type, int Current, int deltaT, const Quark &q, const Common::Momentum &p, int t);
-  virtual void AddDependencies( HModList &ModList ) const;
+  virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 class ModProp : public HMod
@@ -392,7 +394,7 @@ public:
   ModProp(const SourceT Type, const Quark &q, const Common::Momentum &p, int t, int Current, int deltaT);
   ModProp(const SourceT Type, const Quark &q, const Common::Momentum &p, int t)
   : ModProp(Type, q, p, t, std::numeric_limits<int>::max(), 0) {}
-  virtual void AddDependencies( HModList &ModList ) const;
+  virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 const std::string ModSeqSource::Prefix{ "SeqSource" };
@@ -410,7 +412,7 @@ ModSeqSource::ModSeqSource(const SourceT type_, int current_, int deltaT_,
   AppendPT( name, t, p );
 }
 
-void ModSeqSource::AddDependencies( HModList &ModList ) const
+bool ModSeqSource::AddDependencies( HModList &ModList ) const
 {
   MSource::SeqGamma::Par seqPar;
   seqPar.q = ModList.TakeOwnership( new ModProp( Type, q, p, t ) );
@@ -419,6 +421,7 @@ void ModSeqSource::AddDependencies( HModList &ModList ) const
   seqPar.mom = p.to_string4d( Space );
   seqPar.gamma = algInsert[Current];
   ModList.application.createModule<MSource::SeqGamma>(name, seqPar);
+  return true;
 }
 
 /**************************
@@ -442,7 +445,7 @@ ModProp::ModProp(const SourceT type_, const Quark &q_, const Common::Momentum &p
   AppendPT( name, t, p );
 }
 
-void ModProp::AddDependencies( HModList &ModList ) const
+bool ModProp::AddDependencies( HModList &ModList ) const
 {
   MFermion::GaugeProp::Par quarkPar;
   quarkPar.source = ModList.TakeOwnership( ( Current != std::numeric_limits<int>::max() )
@@ -450,6 +453,7 @@ void ModProp::AddDependencies( HModList &ModList ) const
                     : static_cast<HMod *>( new ModSource( Type, t ) ) );
   quarkPar.solver = ModList.TakeOwnership( new ModSolver( q ) );
   ModList.application.createModule<MFermion::GaugeProp>(name, quarkPar);
+  return true;
 }
 
 /**************************
@@ -477,7 +481,7 @@ public:
   ModContract(const SourceT Type, const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_, int Current_, int deltaT);
   ModContract(const SourceT Type, const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_)
   : ModContract(Type, q1_, q2_, p_, t_, std::numeric_limits<int>::max(), 0) {}
-  virtual void AddDependencies( HModList &ModList ) const;
+  virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 const std::string ModContract::Prefix{ "meson" };
@@ -506,7 +510,7 @@ ModContract::ModContract(const SourceT type_, const Quark &q1_, const Quark &q2_
   Append( name, s );
 }
 
-void ModContract::AddDependencies( HModList &ModList ) const
+bool ModContract::AddDependencies( HModList &ModList ) const
 {
   MContraction::Meson::Par mesPar;
   mesPar.output = FileName;
@@ -516,6 +520,7 @@ void ModContract::AddDependencies( HModList &ModList ) const
   mesPar.q1 = ModList.TakeOwnership(new ModProp( Type, q1, p, t ));
   mesPar.q2 = ModList.TakeOwnership(new ModProp( Type, q2, Common::Momentum(0,0,0), t ));
   ModList.application.createModule<MContraction::Meson>(name, mesPar);
+  return true;
 }
 
 /**************************
@@ -527,16 +532,18 @@ class ModContractCurrent : public ModContract
 public:
   ModContractCurrent(const SourceT Type, const Quark &q1, const Quark &q2, const Common::Momentum &p, int t, int Current, int deltaT)
   : ModContract(Type, q1, q2, p, t, Current, deltaT) {}
-  virtual void AddDependencies( HModList &ModList ) const;
+  virtual bool AddDependencies( HModList &ModList ) const;
 };
 
-void ModContractCurrent::AddDependencies( HModList &ModList ) const
+bool ModContractCurrent::AddDependencies( HModList &ModList ) const
 {
+  bool bReturn;
   if( q1.mass == q2.mass )
   {
-    LOG(Error) << "Mass of " << q1.flavour << " and " << q2.flavour << " are both "
+    LOG(Error) << "t=" << t << ", p=" << p << ", dT=" << deltaT << ", gamma=" << *algInsertName[Current] << ". Mass of " << q1.flavour << " and " << q2.flavour << " are both "
       << q1.mass << ". Skipping 3pt contraction"
       << std::endl;
+    bReturn = false;
   }
   else
   {
@@ -551,7 +558,9 @@ void ModContractCurrent::AddDependencies( HModList &ModList ) const
     mesPar.q2 = ModList.TakeOwnership(q1Heavy ? new ModProp( Type, q2, p, t, Current, deltaT )
                                       : new ModProp( Type, q2, Common::Momentum(0,0,0), t ));
     ModList.application.createModule<MContraction::Meson>(name, mesPar);
+    bReturn = true;
   }
+  return bReturn;
 }
 
 /**************************
@@ -603,14 +612,15 @@ void xml3pt::Make(const std::vector<Quark> &Quarks, const std::vector<Common::Mo
                   unsigned int nt, bool bEigenpackEnable)
 {
   HModList l( application, nt, bEigenpackEnable );
-  //for( unsigned int t = 0; t < nt; t+=4 )
-  unsigned int t = 8;
+  for( const Quark &q1 : Quarks )
   {
-    for( const Common::Momentum &p : mom )
+    for( const Quark &q2 : Quarks )
     {
-      for( const Quark &q1 : Quarks )
+      //for( unsigned int t = 0; t < nt; t+=4 )
+      for( unsigned int t = 28; t < 44; t+=4 )
+      //unsigned int t = 8;
       {
-        for( const Quark &q2 : Quarks )
+        for( const Common::Momentum &p : mom )
         {
           static const SourceT Type{ Z2 };
           l.TakeOwnership( new ModContract( Type, q1, q2, p, t ) );
