@@ -538,14 +538,14 @@ public:
 bool ModContractCurrent::AddDependencies( HModList &ModList ) const
 {
   bool bReturn;
-  if( q1.mass == q2.mass )
+  /*if( q1.mass == q2.mass )
   {
     LOG(Error) << "t=" << t << ", p=" << p << ", dT=" << deltaT << ", gamma=" << *algInsertName[Current] << ". Mass of " << q1.flavour << " and " << q2.flavour << " are both "
       << q1.mass << ". Skipping 3pt contraction"
       << std::endl;
     bReturn = false;
   }
-  else
+  else*/
   {
     MContraction::Meson::Par mesPar;
     mesPar.output = FileName;
@@ -617,7 +617,7 @@ void xml3pt::Make(const std::vector<Quark> &Quarks, const std::vector<Common::Mo
     for( const Quark &q2 : Quarks )
     {
       //for( unsigned int t = 0; t < nt; t+=4 )
-      for( unsigned int t = 28; t < 44; t+=4 )
+      for( unsigned int t = 44; t < nt; t+=4 )
       //unsigned int t = 8;
       {
         for( const Common::Momentum &p : mom )

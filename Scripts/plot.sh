@@ -12,6 +12,8 @@ gnuplot <<-EOFMark
 nt=${nt:-0}
 do_title="${do_title:-0}"
 my_title="${title}"
+my_x_axis="${x:-column(1)}"
+xargs="${xargs}"
 my_xrange="${ti:-*}:${tf:-*}"
 my_yrange="${yrange:-*:*}"
 my_cbrange="${cbrange:--1:1}"
@@ -131,7 +133,7 @@ if( NumFiles==1 && FileType eq "cormat" ) {
   plot PlotFile matrix columnheaders rowheaders with image pixels
 } else {
   plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] \
-    word(PlotFile,File) using ((column(1) == 0 ? 0 : f==0 ? column(1) : nt - column(1))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2):(column(word(FieldNames,fld))):(column(word(FieldNames,fld)."_low")):(column(word(FieldNames,fld)."_high")) with yerrorbars title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)
+    word(PlotFile,File) using (((@my_x_axis) == 0 ? 0 : f==0 ? (@my_x_axis) : nt - (@my_x_axis))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2):(column(word(FieldNames,fld))):(column(word(FieldNames,fld)."_low")):(column(word(FieldNames,fld)."_high")) with yerrorbars title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)
 }
 EOFMark
 }
@@ -151,6 +153,7 @@ then
   echo "offset X-axis offset between series, 0 to disable (default: 0.05)"
   echo "save   \"1\" to save plots to auto-generated filenames, otherwise name of pdf"
   echo "nt     Plot backward propagating wave as well (or backward only if nt<0)"
+  echo "x      definition of field for x-axis. Normally 'column(1)', but try, say 'column(1) / 12'"
   exit 2
 fi
 

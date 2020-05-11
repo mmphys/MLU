@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study1/C1"
+      customWorkingDirectory = "$HOME/data/Study2/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -70,6 +70,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-cgT,gx,gy,gz"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-f"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -91,6 +95,22 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o Z2/boot35/ -i Z2/meson/ &apos;h1_l_p_0_0_0*&apos; &apos;l_h1_p_0_0_0*&apos;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;2pt/*.h5&apos;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;3pt/h1_s_*.h5&apos;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;3pt/s_h1_*.h5&apos;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i Z2/ -o Z2/bootstrap/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

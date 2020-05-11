@@ -123,8 +123,16 @@ struct TrajFile
 struct TrajList
 {
   std::string Name;                     // name of the contraction
+  std::string sShortPrefix;
+  std::string sShortSuffix;
+  std::vector<Common::Gamma::Algebra> Alg;
+  bool bHasDeltaT;
+  int DeltaT;
   std::map<std::string, TrajFile> FileInfo; // Filenames with corresponding timeslice info
-  TrajList( const std::string &Name_ ) : Name{ Name_ } {}
+  TrajList(const std::string &Name_, const std::string &sShortPrefix_, const std::string &sShortSuffix_,
+           std::vector<Common::Gamma::Algebra> Alg_, bool bHasDeltaT_, int DeltaT_)
+  : Name{Name_}, sShortPrefix{sShortPrefix_}, sShortSuffix{ sShortSuffix_}, Alg{Alg_},
+    bHasDeltaT{bHasDeltaT_}, DeltaT{DeltaT_} {}
 };
 
 // This is a list of all the contractions we've been asked to process
@@ -132,7 +140,7 @@ struct Manifest : public std::map<std::string, TrajList>
 {
   // Process list of files on the command-line, breaking them up into individual trajectories
   Manifest(const std::vector<std::string> &Files, const std::vector<std::string> &Ignore,
-           bool Factorised, bool GroupLikeMomenta);
+           bool bSwapQuarks, bool GroupLikeMomenta);
 };
 
 /*enum ExtractFilenameReturn {Good, Bad, No_trajectory};
@@ -171,12 +179,12 @@ static ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, s
 }*/
 
 Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::string> &Ignore,
-                   bool Factorised, bool GroupLikeMomenta)
+                   bool bSwapQuarks, bool GroupLikeMomenta)
 {
   static const std::string Sep{ "_" };
   // Now walk the list of arguments.
   // Any file that's not in the ignore list gets added to the manifest
-  if( Args.size() == 0 )
+  if( Args.empty() )
     return;
   bool parsed = true;
   std::map<std::string, TrajList> & Contractions = (* this);
@@ -204,15 +212,22 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
         Name_.Base.append( Name_.Type );
         Name_.Type.clear();
       }
+      // Extract attributes from contraction name
       std::string Contraction{ Name_.Base };
+      Momentum mom;
+      bool bGotMomentum{ mom.Extract( Contraction ) };
       bool bHasTimeslice{ false };
       int Timeslice_{ 0 };
       ExtractTimeslice( Contraction, bHasTimeslice, Timeslice_ );
-      // Replace momentum with momentum squared
-      Momentum mom;
-      bool bGotMomentum{ mom.Extract( Contraction ) };
+      bool bHasDeltaT{ false };
+      int DeltaT{ 0 };
+      ExtractDeltaT( Contraction, bHasDeltaT, DeltaT );
+      std::vector<Common::Gamma::Algebra> vAlg{ ExtractGamma( Contraction ) };
+      if( vAlg.size() > 1 )
+        throw std::runtime_error( "Multiple gamma insertions unsupported" );
+      bool b3pt{ bHasDeltaT || !vAlg.empty() };
       // Sort all the separate, underscore delimited component parts
-      if( Factorised )
+      if( !b3pt && bSwapQuarks )
       {
         for( char &c : Contraction )
           if( c == '_' )
@@ -227,21 +242,32 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
           Contraction.append( vs[i] );
         }
       }
+      // Add attributes back into contraction string
+      const std::string sShortPrefix{ Contraction };
+      for( Common::Gamma::Algebra a : vAlg )
+        Contraction.append( Gamma::NameShort( a, Sep.c_str() ) );
+      if( bHasDeltaT )
+      {
+        Contraction.append( "_dt_" );
+        Contraction.append( std::to_string( DeltaT ) );
+      }
       // Add the momentum into the correlator if it was present
+      std::string sShortSuffix;
       if( bGotMomentum )
       {
         if( GroupLikeMomenta )
-          Contraction.append( mom.p2_string( Sep ) );
+          sShortSuffix = mom.p2_string( Sep );
         else
         {
-          Contraction.append( "_p_" );
-          Contraction.append( mom.to_string( Sep ) );
+          sShortSuffix = "_p_";
+          sShortSuffix.append( mom.to_string( Sep ) );
         }
+        Contraction.append( sShortSuffix );
       }
       // Look for the contraction list this file belongs to
       auto itc = Contractions.find( Contraction );
       if( itc == Contractions.end() )
-        itc = Contractions.emplace( Contraction, TrajList( Contraction ) ).first;
+        itc = Contractions.emplace( Contraction, TrajList( Contraction, sShortPrefix, sShortSuffix, std::move(vAlg), bHasDeltaT, DeltaT ) ).first;
       TrajList & cl{ itc->second };
       auto it = cl.FileInfo.find( Name_.Filename );
       if( it == cl.FileInfo.end() )
@@ -266,16 +292,20 @@ public:
   bool bFactorised;
   bool bFold;
   bool bT0Abs;
-  int PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, const std::string Prefix ) const;
+  int PerformBootstrap(std::vector<Common::CorrelatorFileC> &f, const TrajList &Traj ) const;
   void Study1Bootstrap(StudySubject Study, const std::string &StudyPath, const Common::Momentum &mom,
                        std::vector<Common::Gamma::Algebra> Alg,
                        const std::string &Heavy, const std::string &Light, bool Factorised) const;
 
 private:
-  template <class Iter> int PerformBootstrap( const Iter &first, const Iter &last, const std::string &Prefix, bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries ) const;
+  template <class Iter>
+  int PerformBootstrap(const Iter &first, const Iter &last, const TrajList &Traj, const std::string &Suffix,
+                       bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries) const;
 };
 
-template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, const std::string &Prefix, bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries ) const
+template <class Iter>
+int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const TrajList &Traj,
+                  const std::string &Suffix, bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries) const
 {
   static const std::string sBlanks{ "  " };
   if( !bSaveSummaries && !bSaveBootstrap )
@@ -286,21 +316,44 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
     //throw std::runtime_error(  std::to_string(NumFiles) + " files not divisible by bin size " + std::to_string(binSize) );
     std::cout << "Warning: last bin partially filled (" << ( NumFiles % binSize ) << " correlators)\n";
   }
+  const bool b3pt{ !Traj.Alg.empty() };
+  std::string Prefix;
+  if( b3pt )
+  {
+    if( Traj.Alg.size() > 1 )
+      throw std::runtime_error( "I don't know how to handle more than one current insertion at a time" );
+    Prefix = Traj.sShortPrefix;
+  }
+  else
+  {
+    Prefix = Traj.Name + Suffix;
+  }
   int iCount{ 0 };
   const int Nt{ first->Nt() };
   const int NtHalf{ Nt / 2 + 1 };
   const int NtDest{ bFold ? NtHalf : Nt };
   const int FoldFactor{ bFold ? 2 : 1 };
-  const int NumOps{ first->NumOps() };
   const std::string &sType{ bFold ? Common::sFold : Common::sBootstrap };
-  const std::vector<Common::Gamma::Algebra> &Alg{ first->Alg() };
-  for( int Snk = 0; Snk < NumOps; Snk++ )
+  const std::vector<Common::Gamma::Algebra> &AlgSrc{ first->AlgSrc() };
+  const std::vector<Common::Gamma::Algebra> &AlgSnk{ first->AlgSnk() };
+  for( int Snk = 0; Snk < first->NumSnk(); Snk++ )
   {
     static const char pszSep[] = "_";
-    std::string sSnk{ Common::Gamma::NameShort( Alg[Snk], pszSep ) };
-    for( int Src = 0; Src < ( bFactorised ? Snk + 1 : NumOps ); Src++ )
+    std::string sSnk{ Common::Gamma::NameShort( AlgSnk[Snk], pszSep ) };
+    if( b3pt )
     {
-      std::string sSrc{ Common::Gamma::NameShort( Alg[Src], pszSep ) };
+      if( Traj.bHasDeltaT )
+      {
+        sSnk.append( "_dt_" );
+        sSnk.append( std::to_string( Traj.DeltaT ) );
+      }
+      sSnk.append( Traj.sShortSuffix );
+      sSnk.append( Suffix );
+      sSnk.append( Common::Gamma::NameShort( Traj.Alg[0], pszSep ) );
+    }
+    for( int Src = 0; Src < ( ( !b3pt && bFactorised ) ? Snk + 1 : first->NumSrc() ); Src++ )
+    {
+      std::string sSrc{ Common::Gamma::NameShort( AlgSrc[Src], pszSep ) };
       // Skip bootstrap if output exists
       const std::string sOutBase{ outStem + Prefix + sSnk + sSrc };
       const std::string sOutFile{ Common::MakeFilename( sOutBase, sType, seed, DEF_FMT ) };
@@ -313,13 +366,14 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
       {
         // Copy the correlators into my sample, aligning timeslices if need be
         const bool bDifferent{ Snk != Src };
-        const int OpFactor{ ( bFactorised && bDifferent ) ? 2 : 1 };
+        const int OpFactor{ ( !b3pt && bFactorised && bDifferent ) ? 2 : 1 };
         Common::SampleC in( ( NumFiles * OpFactor * FoldFactor + binSize - 1 ) / binSize, NtDest );
         using Fold = Common::Fold<double>;
         Fold f;
         if( bFold )
         {
-          const Common::RPS att{DefaultOperatorAttribute(Alg[Src])*DefaultOperatorAttribute(Alg[Snk])};
+          // I haven't updated the folding code for 3 point functions ... folding should perhaps be deleted
+          const Common::RPS att{DefaultOperatorAttribute(AlgSrc[Src])*DefaultOperatorAttribute(AlgSnk[Snk])};
           f.resize( nSample, NtDest );
           f.NtUnfolded = Nt;
           f.parity = att.parity;
@@ -362,7 +416,7 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
           }
           for( int o = 0; o < OpFactor; o++ )
           {
-            const std::complex<double> * const pSrc = file( Alg[o ? Src : Snk], Alg[o ? Snk : Src] );
+            const std::complex<double> * const pSrc = file( AlgSnk[o ? Src : Snk], AlgSrc[o ? Snk : Src] );
             for( int h = 0; h < FoldFactor; h++ )
             {
               for( int t = 0; t < NtDest; t++ )
@@ -454,8 +508,9 @@ template <class Iter> int BootstrapParams::PerformBootstrap( const Iter &first, 
   return iCount;
 }
 
-int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, const std::string Prefix ) const
+int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, const TrajList &Traj ) const
 {
+  //const std::string& Prefix{ Traj.Name };
   auto NumFilesRaw{ f.size() };
   const int NumFiles{ static_cast<int>( NumFilesRaw ) };
   if( NumFiles != NumFilesRaw || NumFiles < 1 )
@@ -496,10 +551,9 @@ int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, 
     {
       while( first != last )
       {
-        std::string PrefixT{ Prefix };
-        PrefixT.append( "_t_" );
+        std::string PrefixT{ "_t_" };
         PrefixT.append( std::to_string( Timeslice ) );
-        iCount += PerformBootstrap( first, i, PrefixT, false, TimesliceDetail > 1, true );
+        iCount += PerformBootstrap( first, i, Traj, PrefixT, false, TimesliceDetail > 1, true );
         first = i;
         if( first != last )
         {
@@ -511,7 +565,7 @@ int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, 
     }
   }
   // Now perform a single bootstrap, combining all the separate timeslices
-  iCount += PerformBootstrap( first, last, Prefix, true, true, true );
+  iCount += PerformBootstrap( first, last, Traj, "", true, true, true );
   return iCount;
 }
 
@@ -617,7 +671,7 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
         }
         CorrIndex++;
         CorrIndexT++;*/
-        InFiles[CorrIndex++].Read( sFileName, Alg, &t );
+        InFiles[CorrIndex++].Read( sFileName, Alg, Alg, &t );
       }
     }
     // If there's more than one configuration, perform a bootstrap of this timeslice
@@ -628,7 +682,9 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
   /*par.bSaveBootstrap = true;
   for( int iCorr = 0; iCorr < NumCorr; ++iCorr )
     par.PerformBootstrap( bsData[iCorr], CorrPrefix + CorrSuffixes[iCorr] );*/
-  PerformBootstrap( InFiles, Heavy + Sep + Light + mom.p2_string( Sep ) );
+  const std::string sShortPrefix{ Heavy + Sep + Light };
+  const std::string sShortSuffix{ mom.p2_string( Sep ) };
+  PerformBootstrap( InFiles, TrajList( sShortPrefix + sShortSuffix, sShortPrefix, sShortSuffix, {}, false, 0 ) );
 }
 
 /*****************************************************************
@@ -661,6 +717,7 @@ int main(const int argc, const char *argv[])
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"a", CL::SwitchType::Single, ""},
+      {"c", CL::SwitchType::Single, ""},
       {"g", CL::SwitchType::Single, "" },
       {"s", CL::SwitchType::Single, nullptr},
       {"t", CL::SwitchType::Single, "0"},
@@ -677,6 +734,7 @@ int main(const int argc, const char *argv[])
     if( !cl.GotSwitch( "help" ) )
     {
       std::vector<Common::Gamma::Algebra> Alg = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "a" ) );
+      std::vector<Common::Gamma::Algebra> Alg3pt = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "c" ) );
       BootstrapParams par;
       par.TimesliceDetail = cl.SwitchValue<int>( "t" );
       if( par.TimesliceDetail < 0 || par.TimesliceDetail > 2 )
@@ -721,6 +779,7 @@ int main(const int argc, const char *argv[])
           const std::string &Contraction{itc->first};
           const TrajList &l{itc->second};
           const unsigned int nFile{ static_cast<unsigned int>( l.FileInfo.size() ) };
+          const bool b3pt{ !l.Alg.empty() };
           std::cout << "Loading " << nFile << " files for " << Contraction << std::endl;
           unsigned int j = 0; // which trajectory are we processing
           std::vector<Common::CorrelatorFileC> InFiles( nFile );
@@ -729,11 +788,11 @@ int main(const int argc, const char *argv[])
             const std::string &Filename{ it->first }; // Trajectory number
             const TrajFile &tf{ it->second };
             std::string GroupName{ cl.SwitchValue<std::string>( "g" ) };
-            InFiles[j].Read( Filename, Alg, tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName );
+            InFiles[j].Read( Filename, b3pt ? Alg3pt : Alg, Alg, tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName );
           }
           try
           {
-            par.PerformBootstrap( InFiles, Contraction );
+            par.PerformBootstrap( InFiles, l );
             BootstrapCount++;
           }
           catch(const std::exception &e)
@@ -804,7 +863,8 @@ int main(const int argc, const char *argv[])
     "-r     Random number seed (unspecified=random)\n"
     "-i     Input  prefix\n"
     "-o     Output prefix\n"
-    "-a     list of gamma algebras we're interested in\n"
+    "-a     list of gamma algebras we're interested in at source (and sink for 2pt)\n"
+    "-c     list of gamma algebras for current insertion in 3pt functions\n"
     "-g     Group name to read correlators from\n"
     "-s     Perform bootstrap for specified study number\n"
     "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"

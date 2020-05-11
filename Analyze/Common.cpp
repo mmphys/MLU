@@ -415,8 +415,9 @@ bool Momentum::Extract( std::string &Prefix, bool IgnoreSubsequentZeroNeg )
         throw std::runtime_error( "Multiple momenta: " + m1 + " != " + to_string( Sep ) );
       }
     }
+    const std::string sSuffix{ match.suffix() };
     Prefix = match.prefix();
-    Prefix.append( match.suffix() );
+    Prefix.append( sSuffix );
   }
   return bGotMomentum;
 }
@@ -529,24 +530,65 @@ std::string MakeFilename(const std::string &Base, const std::string &Type, SeedT
   return s;
 }
 
+// If present, remove integer preceded by Token from a string
+void ExtractInteger( std::string &Prefix, bool &bHasValue, int &Value, const std::string Token )
+{
+  std::smatch match;
+  const std::regex pattern{ "_" + Token + "_?([0-9]+)" };
+  while( std::regex_search( Prefix, match, pattern  ) )
+  {
+    int ThisValue = std::stoi( match[1] );
+    if( !bHasValue )
+    {
+      Value = ThisValue;
+      bHasValue = true;
+    }
+    else if( ThisValue != Value )
+      throw std::runtime_error( "Multiple regex " + Token + ": " + std::to_string(Value) + " and " + std::to_string(ThisValue) );
+    const std::string sSuffix{ match.suffix() };
+    Prefix = match.prefix();
+    Prefix.append( sSuffix );
+  }
+}
+
 // Strip out timeslice info from a string if present
 void ExtractTimeslice( std::string &Prefix, bool &bHasTimeslice, int &Timeslice )
 {
+  ExtractInteger( Prefix, bHasTimeslice, Timeslice, "[tT]" );
+}
+
+// Strip out DeltaT from a string if present
+void ExtractDeltaT( std::string &Prefix, bool &bHasDeltaT, int &DeltaT )
+{
+  ExtractInteger( Prefix, bHasDeltaT, DeltaT, "[dD][tT]" );
+}
+
+// Remove any gammas from Prefix
+std::vector<Gamma::Algebra> ExtractGamma( std::string &Prefix )
+{
+  std::vector<Gamma::Algebra> v;
   std::smatch match;
-  static const std::regex pattern{ R"(_[tT]_?([0-9]+))" };
-  while( std::regex_search( Prefix, match, pattern  ) )
+  static const std::regex pattern{ "_(g[a-zA-Z5]+)" };
+  bool bSearchResult{ std::regex_search( Prefix, match, pattern ) };
+  while( bSearchResult )
   {
-    int ThisTimeslice = std::stoi( match[1] );
-    if( !bHasTimeslice )
+    Gamma::Algebra a;
+    std::stringstream ss( match[1] );
+    std::size_t Pos;
+    if( ss >> a && ( ss.eof() || ( ss >> std::ws && ss.eof() ) ) )
     {
-      Timeslice = std::stoi( match[1] );
-      bHasTimeslice = true;
+      // This is a gamma algebra, so take it out of the string
+      v.push_back( a );
+      const std::string sSuffix{ match.suffix() };
+      Prefix = match.prefix();
+      Pos = Prefix.length();
+      Prefix.append( sSuffix );
     }
-    else if( ThisTimeslice != Timeslice )
-      throw std::runtime_error( "Multiple momenta: " + std::to_string(Timeslice) + " and " + std::to_string(ThisTimeslice) );
-    Prefix = match.prefix();
-    Prefix.append( match.suffix() );
+    else
+      Pos = match[0].second - Prefix.cbegin();
+    bSearchResult = std::regex_search( Prefix.cbegin() + Pos, Prefix.cend(), match, pattern );
   }
+  return v;
 }
 
 // Make the same HDF5 complex type Grid uses

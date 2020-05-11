@@ -404,8 +404,17 @@ struct FileNameAtt
 // Make a filename "Base.Type.seed.Ext"
 std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext);
 
+// If present, remove integer preceded by Token from a string
+void ExtractInteger( std::string &Prefix, bool &bHasValue, int &Value, const std::string Token );
+
 // Strip out timeslice info from a string if present
 void ExtractTimeslice( std::string &s, bool &bHasTimeslice, int & Timeslice );
+
+// Strip out DeltaT from a string if present
+void ExtractDeltaT( std::string &Prefix, bool &bHasDeltaT, int &DeltaT );
+
+// Remove any gammas from Prefix
+std::vector<Gamma::Algebra> ExtractGamma( std::string &Prefix );
 
 struct ConfigCount {
   int         Config;
@@ -840,10 +849,12 @@ public:
   using scalar_type = typename Traits::scalar_type;
   static constexpr bool is_complex { Traits::is_complex };
 private:
-  int NumOps_ = 0;
+  int NumSnk_ = 0;
+  int NumSrc_ = 0;
   int Nt_ = 0;
   std::unique_ptr<T[]> m_pData;
-  std::vector<Gamma::Algebra> Alg_;
+  std::vector<Gamma::Algebra> AlgSnk_;
+  std::vector<Gamma::Algebra> AlgSrc_;
 public:
   FileNameAtt Name_;
   //std::string Prefix; // this is the processed prefix name
@@ -874,40 +885,57 @@ public:
 private:
   inline void RangeCheck( int Sample ) const
   {
-    if( Sample < 0 || Sample >= NumOps_ * NumOps_ )
+    if( Sample < 0 || Sample >= NumSnk_ * NumSrc_ )
       throw std::out_of_range( "Sample " + std::to_string( Sample ) );
   }
-  inline int GammaIndex( Gamma::Algebra g ) const
+  inline int SinkIndex( Gamma::Algebra g ) const
   {
     int idx;
-    for( idx = 0; idx < Alg_.size() && Alg_[idx] != g; idx++ )
+    for( idx = 0; idx < AlgSnk_.size() && AlgSnk_[idx] != g; idx++ )
+      ;
+    return idx;
+  }
+  inline int SourceIndex( Gamma::Algebra g ) const
+  {
+    int idx;
+    for( idx = 0; idx < AlgSrc_.size() && AlgSrc_[idx] != g; idx++ )
       ;
     return idx;
   }
 public:
-  inline int NumOps() const { return NumOps_; }
+  inline int NumSnk() const { return NumSnk_; }
+  inline int NumSrc() const { return NumSrc_; }
+  inline int NumOps() const { return NumSnk() * NumSrc(); }
   inline int Nt() const { return Nt_; }
   inline int Timeslice() const { return bHasTimeslice ? Timeslice_ : 0; }
-  inline const std::vector<Gamma::Algebra> &Alg() { return Alg_; }
-  void resize( int NumOps, int Nt )
+  inline const std::vector<Gamma::Algebra> &AlgSnk() const { return AlgSnk_; }
+  inline const std::vector<Gamma::Algebra> &AlgSrc() const { return AlgSrc_; }
+  void resize( int NumSnk, int NumSrc, int Nt )
   {
-    if( NumOps_ != NumOps )
-      Alg_.clear();
-    if( NumOps_ != NumOps || Nt_ != Nt )
+    const std::size_t OldMemSize{ static_cast<std::size_t>( NumSnk_ ) * NumSrc_ * Nt_ };
+    const std::size_t NewMemSize{ static_cast<std::size_t>( NumSnk  ) * NumSrc  * Nt  };
+    if( NumSnk_ != NumSnk || NumSrc_ != NumSrc )
     {
-      NumOps_ = NumOps;
-      Nt_ = Nt;
-      if( NumOps_ == 0 || Nt_ == 0 )
+      AlgSnk_.clear();
+      AlgSrc_.clear();
+      NumSnk_ = NumSnk;
+      NumSrc_ = NumSrc;
+    }
+    Nt_ = Nt;
+    if( OldMemSize != NewMemSize )
+    {
+      if( NewMemSize == 0 )
         m_pData.reset( nullptr );
       else
-        m_pData.reset( new T[ static_cast<std::size_t>( NumOps * NumOps ) * Nt ] );
+        m_pData.reset( new T[ NewMemSize ] );
     }
   }
-  void Read (const std::string &FileName, std::vector<Gamma::Algebra> &Alg,
+  void Read (const std::string &FileName, std::vector<Gamma::Algebra> &AlgSnk, std::vector<Gamma::Algebra> &AlgSrc,
              const int * pTimeslice = nullptr, const char * PrintPrefix = nullptr,
              std::string *pGroupName = nullptr);
   //void Write( const std::string &FileName, const char * pszGroupName = nullptr );
-  void WriteSummary(const std::string &Prefix, const std::vector<Common::Gamma::Algebra> &AlgSpecific);
+  void WriteSummary(const std::string &Prefix, const std::vector<Gamma::Algebra> &AlgSnk,
+                    const std::vector<Gamma::Algebra> &AlgSrc);
   T * operator[]( int Sample )
   {
     RangeCheck( Sample );
@@ -919,17 +947,17 @@ public:
     return & m_pData[static_cast<std::size_t>( Sample ) * Nt_];
   }
   T * operator()( Gamma::Algebra gSink, Gamma::Algebra gSource )
-  { return (*this)[ GammaIndex( gSink ) * NumOps_ + GammaIndex( gSource ) ]; }
+  { return (*this)[ SinkIndex( gSink ) * NumSrc_ + SourceIndex( gSource ) ]; }
   const T * operator()( Gamma::Algebra gSink, Gamma::Algebra gSource ) const
-  { return (*this)[ GammaIndex( gSink ) * NumOps_ + GammaIndex( gSource ) ]; }
+  { return (*this)[ SinkIndex( gSink ) * NumSrc_ + SourceIndex( gSource ) ]; }
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
-      static_cast<size_t>( NumOps_ * NumOps_ * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
+      static_cast<size_t>( NumSnk_ * NumSrc_ * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
   // Constructors (copy operations missing for now - add them if they become needed)
   CorrelatorFile() {}
   CorrelatorFile( CorrelatorFile && ) = default; // Move constructor
-  CorrelatorFile(const std::string &FileName, std::vector<Gamma::Algebra> &Alg, const int * pTimeslice = nullptr,
-                 const char * PrintPrefix = nullptr, std::string *pGroupName = nullptr)
-  { Read( FileName, Alg, pTimeslice, PrintPrefix, pGroupName ); }
+  CorrelatorFile(const std::string &FileName, std::vector<Gamma::Algebra> &AlgSnk, std::vector<Gamma::Algebra> &AlgSrc,
+                 const int * pTimeslice = nullptr, const char * PrintPrefix = nullptr, std::string *pGroupName = nullptr)
+  { Read( FileName, AlgSnk, AlgSrc, pTimeslice, PrintPrefix, pGroupName ); }
   // Operators
   CorrelatorFile& operator=(CorrelatorFile && r) = default; // Move assignment
 };
@@ -939,9 +967,11 @@ using CorrelatorFileD = CorrelatorFile<double>;
 
 // Read from file. If GroupName empty, read from first group and return name in GroupName
 template <typename T>
-void CorrelatorFile<T>::Read( const std::string &FileName, std::vector<Gamma::Algebra> &Alg, const int * pTimeslice,
-                              const char * PrintPrefix, std::string *pGroupName )
+void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Algebra> &AlgSnk,
+                             std::vector<Gamma::Algebra> &AlgSrc, const int * pTimeslice,
+                             const char * PrintPrefix, std::string *pGroupName)
 {
+  const bool bSameAlgebras{&AlgSnk == &AlgSrc};
   // Parse the name. Not expecting a type, so if present, put it back on the end of Base
   Name_.Parse( FileName );
   if( !Name_.Type.empty() )
@@ -976,7 +1006,8 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::vector<Gamma::Al
   ::H5::Exception::dontPrint();
   try // to load a single correlator
   {
-    if( Alg.size() == 0 || ( Alg.size() == 1 && Alg[0] == Gamma::Algebra::Unknown ) )
+    if( ( AlgSnk.empty() || ( AlgSnk.size() == 1 && AlgSnk[0] == Gamma::Algebra::Unknown ) )
+      && ( AlgSrc.empty() || ( AlgSrc.size() == 1 && AlgSrc[0] == Gamma::Algebra::Unknown ) ) )
     {
       ::H5::DataSet ds = g.openDataSet( "correlator" );
       ::H5::DataSpace dsp = ds.getSpace();
@@ -987,9 +1018,14 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::vector<Gamma::Al
         dsp.getSimpleExtentDims( Dim );
         if( Dim[0] <= std::numeric_limits<int>::max() )
         {
-          resize( 1, static_cast<int>( Dim[0] ) );
-          Alg_.resize( 1 );
-          Alg_[0] = Gamma::Algebra::Unknown;
+          resize( 1, 1, static_cast<int>( Dim[0] ) );
+          AlgSnk_.resize( 1 );
+          AlgSnk_[0] = Gamma::Algebra::Unknown;
+          if( !bSameAlgebras )
+          {
+            AlgSrc_.resize( 1 );
+            AlgSrc_[0] = Gamma::Algebra::Unknown;
+          }
           ds.read( (*this)[0], H5::Equiv<T>::Type );
           bOK = true;
         }
@@ -1012,11 +1048,11 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::vector<Gamma::Al
       a.close();
       // Must be a perfect square and have at least as many as entries as requested
       const unsigned short NumFileOps{static_cast<unsigned short>( std::sqrt( NumVec ) + 0.5 )};
-      if( NumFileOps * NumFileOps == NumVec && NumFileOps >= Alg.size() )
+      if( NumFileOps * NumFileOps == NumVec && NumFileOps >= AlgSnk.size() && NumFileOps >= AlgSrc.size() )
       {
         bOK = true;
         std::vector<int> count;
-        for( unsigned short i = 0; bOK && i < NumVec; i++ )
+        for( unsigned short i = 0; bOK && i < NumVec; i++ ) // Loop through all vectors in file
         {
           bOK = false;
           ::H5::Group gi = g.openGroup( *pGroupName + "_" + std::to_string( i ) );
@@ -1033,17 +1069,29 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::vector<Gamma::Al
               if( i == 0 )
               {
                 // First correlator - resize and save operators if known
-                resize( Alg.size() ? static_cast<int>( Alg.size() ) : NumFileOps, ThisNt );
-                count.resize( NumOps_ * NumOps_, 0 );
-                if( Alg.size() )
+                resize(AlgSnk.size() ? static_cast<int>( AlgSnk.size() ) : NumFileOps,
+                       AlgSrc.size() ? static_cast<int>( AlgSrc.size() ) : NumFileOps,
+                       ThisNt);
+                count.resize( NumSnk_ * NumSrc_, 0 ); // I want to check each operator combination appears once only
+                if( AlgSnk.size() )
                 {
-                  Alg_.resize( Alg.size() );
-                  std::copy( Alg.cbegin(), Alg.cend(), Alg_.begin() );
+                  AlgSnk_.resize( AlgSnk.size() );
+                  std::copy( AlgSnk.cbegin(), AlgSnk.cend(), AlgSnk_.begin() );
                 }
                 else
                 {
-                  Alg_.clear();
-                  Alg_.reserve( Alg.size() );
+                  AlgSnk_.clear();
+                  AlgSnk_.reserve( NumFileOps );
+                }
+                if( AlgSrc.size() )
+                {
+                  AlgSrc_.resize( AlgSrc.size() );
+                  std::copy( AlgSrc.cbegin(), AlgSrc.cend(), AlgSrc_.begin() );
+                }
+                else
+                {
+                  AlgSrc_.clear();
+                  AlgSrc_.reserve( NumFileOps );
                 }
               }
               else if( ThisNt != Nt_ )
@@ -1053,22 +1101,22 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::vector<Gamma::Al
               // Read the gamma algebra strings and make sure they are valid
               const Gamma::Algebra gSnk{ H5::ReadGammaAttribute( gi, "gamma_snk" ) };
               int idxSnk;
-              for( idxSnk = 0; idxSnk < Alg_.size() && Alg_[idxSnk] != gSnk; idxSnk++ )
+              for( idxSnk = 0; idxSnk < AlgSnk_.size() && AlgSnk_[idxSnk] != gSnk; idxSnk++ )
                 ;
-              if( idxSnk == Alg_.size() && Alg_.size() < NumOps_ )
-                Alg_.push_back( gSnk );
+              if( idxSnk == AlgSnk_.size() && AlgSnk_.size() < NumSnk_ )
+                AlgSnk_.push_back( gSnk );
               bOK = true; // We can safely ignore gamma structures we're not interested in
-              if( idxSnk < Alg_.size() )
+              if( idxSnk < AlgSnk_.size() )
               {
                 const Gamma::Algebra gSrc{ H5::ReadGammaAttribute( gi, "gamma_src" ) };
                 int idxSrc;
-                for( idxSrc = 0; idxSrc < Alg_.size() && Alg_[idxSrc] != gSrc; idxSrc++ )
+                for( idxSrc = 0; idxSrc < AlgSrc_.size() && AlgSrc_[idxSrc] != gSrc; idxSrc++ )
                   ;
-                if( idxSrc == Alg_.size() && Alg_.size() < NumOps_ )
-                  Alg_.push_back( gSrc );
-                if( idxSrc < Alg_.size() )
+                if( idxSrc == AlgSrc_.size() && AlgSrc_.size() < NumSrc_ )
+                  AlgSrc_.push_back( gSrc );
+                if( idxSrc < AlgSrc_.size() )
                 {
-                  const int idx{ idxSnk * NumOps_ + idxSrc };
+                  const int idx{ idxSnk * NumSrc_ + idxSrc };
                   ds.read( (*this)[idx], H5::Equiv<T>::Type );
                   count[idx]++;
                 }
@@ -1077,7 +1125,7 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::vector<Gamma::Al
           }
         }
         // Make sure that everything we wanted was loaded once and only once
-        for( int i = 0; bOK && i < NumOps_ * NumOps_; i++ )
+        for( int i = 0; bOK && i < NumSrc_ * NumSnk_; i++ )
           if( count[i] != 1 )
             bOK = false;
       }
@@ -1093,22 +1141,32 @@ void CorrelatorFile<T>::Read( const std::string &FileName, std::vector<Gamma::Al
     throw std::runtime_error( "Unable to read sample from " + FileName );
   if( !IsFinite() )
     throw std::runtime_error( "Values read are not all finite" );
-  // If I'm discovering which operators are in the file, copy them out
-  if( Alg.empty() )
+  // If I'm discovering which operators are in the file, copy them back to caller
+  // Bear in mind that caller may have passed in the same array for each gamma algebra
+  bool bCopyBackSrc{ AlgSrc.empty() };
+  bool bCopyBackSnk{ !bSameAlgebras && AlgSnk.empty() };
+  if( bCopyBackSrc )
   {
-    Alg.resize( Alg_.size() );
-    std::copy( Alg_.cbegin(), Alg_.cend(), Alg.begin() );
+    AlgSrc.resize( AlgSrc_.size() );
+    std::copy( AlgSrc_.cbegin(), AlgSrc_.cend(), AlgSrc.begin() );
+  }
+  if( bCopyBackSnk )
+  {
+    AlgSnk.resize( AlgSnk_.size() );
+    std::copy( AlgSnk_.cbegin(), AlgSnk_.cend(), AlgSnk.begin() );
   }
 }
 
 template <typename T>
-void CorrelatorFile<T>::WriteSummary( const std::string &Prefix, const std::vector<Gamma::Algebra> &AlgSpecific )
+void CorrelatorFile<T>::WriteSummary( const std::string &Prefix, const std::vector<Gamma::Algebra> &AlgSnk, const std::vector<Gamma::Algebra> &AlgSrc )
 {
   using namespace CorrSumm;
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
   const int nt{ Nt() };
-  const std::vector<Gamma::Algebra> &Alg{ AlgSpecific.size() ? AlgSpecific : Alg_ };
-  const int NumOps{ static_cast<int>( Alg.size() ) };
+  const std::vector<Gamma::Algebra> &MySnk{ AlgSnk.size() ? AlgSnk : AlgSnk_ };
+  const std::vector<Gamma::Algebra> &MySrc{ AlgSrc.size() ? AlgSrc : AlgSrc_ };
+  const int NumSnk{ static_cast<int>( MySnk.size() ) };
+  const int NumSrc{ static_cast<int>( MySrc.size() ) };
   std::string sOutFileName{ Prefix };
   sOutFileName.append( Name_.Base );
   std::size_t Len{ sOutFileName.length() };
@@ -1116,18 +1174,18 @@ void CorrelatorFile<T>::WriteSummary( const std::string &Prefix, const std::vect
   sSuffix.append( Name_.SeedString );
   sSuffix.append( 1, '.' );
   sSuffix.append( TEXT_EXT );
-  for( int Snk = 0; Snk < NumOps; Snk++ )
+  for( int Snk = 0; Snk < NumSnk; Snk++ )
   {
     static const char pszSep[] = "_";
     sOutFileName.resize( Len );
-    sOutFileName.append( Common::Gamma::NameShort( Alg[Snk], pszSep ) );
+    sOutFileName.append( Common::Gamma::NameShort( AlgSnk[Snk], pszSep ) );
     std::size_t Len2{ sOutFileName.length() };
-    for( int Src = 0; Src < NumOps; Src++ )
+    for( int Src = 0; Src < NumSrc; Src++ )
     {
       sOutFileName.resize( Len2 );
-      sOutFileName.append( Common::Gamma::NameShort( Alg[Src], pszSep ) );
+      sOutFileName.append( Common::Gamma::NameShort( AlgSrc[Src], pszSep ) );
       sOutFileName.append( sSuffix );
-      SummaryHelper( sOutFileName, (*this)( Alg[Snk], Alg[Src] ), nt );
+      SummaryHelper( sOutFileName, (*this)( AlgSnk[Snk], AlgSrc[Src] ), nt );
     }
   }
 }
