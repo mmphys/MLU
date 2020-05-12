@@ -19,6 +19,14 @@
 		6827A13C24630F0F0036F0AC /* OpenQcdIOChromaReference.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13A24630F0F0036F0AC /* OpenQcdIOChromaReference.h */; };
 		6827A13D24630F0F0036F0AC /* OpenQcdIO.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13B24630F0F0036F0AC /* OpenQcdIO.h */; };
 		6827A13F24630FA90036F0AC /* Lattice_basis.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13E24630FA90036F0AC /* Lattice_basis.h */; };
+		682D061C246A958D0052D780 /* Loop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D061A246A958D0052D780 /* Loop.cpp */; };
+		682D061D246A958D0052D780 /* Loop.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682D061B246A958D0052D780 /* Loop.hpp */; };
+		682D0620246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D061E246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp */; };
+		682D0621246A95AA0052D780 /* CheckerboardSpinColorDiagonal.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682D061F246A95AA0052D780 /* CheckerboardSpinColorDiagonal.hpp */; };
+		682D0624246A95CA0052D780 /* Z2Diluted.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682D0622246A95CA0052D780 /* Z2Diluted.hpp */; };
+		682D0625246A95CA0052D780 /* Z2Diluted.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D0623246A95CA0052D780 /* Z2Diluted.cpp */; };
+		682D0628246A95E50052D780 /* VectorUnpack.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682D0626246A95E40052D780 /* VectorUnpack.hpp */; };
+		682D0629246A95E50052D780 /* VectorUnpack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D0627246A95E50052D780 /* VectorUnpack.cpp */; };
 		683275B523D220FD003773C0 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		68338D47246140D400B6292E /* xml3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68338D3B2461402200B6292E /* xml3pt.cpp */; };
 		68338D48246141A600B6292E /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
@@ -1384,6 +1392,14 @@
 		6827A13A24630F0F0036F0AC /* OpenQcdIOChromaReference.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenQcdIOChromaReference.h; sourceTree = "<group>"; };
 		6827A13B24630F0F0036F0AC /* OpenQcdIO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenQcdIO.h; sourceTree = "<group>"; };
 		6827A13E24630FA90036F0AC /* Lattice_basis.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lattice_basis.h; sourceTree = "<group>"; };
+		682D061A246A958D0052D780 /* Loop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Loop.cpp; sourceTree = "<group>"; };
+		682D061B246A958D0052D780 /* Loop.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Loop.hpp; sourceTree = "<group>"; };
+		682D061E246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CheckerboardSpinColorDiagonal.cpp; sourceTree = "<group>"; };
+		682D061F246A95AA0052D780 /* CheckerboardSpinColorDiagonal.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CheckerboardSpinColorDiagonal.hpp; sourceTree = "<group>"; };
+		682D0622246A95CA0052D780 /* Z2Diluted.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Z2Diluted.hpp; sourceTree = "<group>"; };
+		682D0623246A95CA0052D780 /* Z2Diluted.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Z2Diluted.cpp; sourceTree = "<group>"; };
+		682D0626246A95E40052D780 /* VectorUnpack.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VectorUnpack.hpp; sourceTree = "<group>"; };
+		682D0627246A95E50052D780 /* VectorUnpack.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VectorUnpack.cpp; sourceTree = "<group>"; };
 		68338D3B2461402200B6292E /* xml3pt.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xml3pt.cpp; sourceTree = "<group>"; };
 		68338D402461408900B6292E /* xml3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xml3pt; sourceTree = BUILT_PRODUCTS_DIR; };
 		683451302397D3C200B743CE /* xmlGFWall */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlGFWall; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -5044,6 +5060,8 @@
 				6850D436244A234300A53DC8 /* DiscLoop.hpp */,
 				6850D429244A234300A53DC8 /* Gamma3pt.cpp */,
 				6850D438244A234300A53DC8 /* Gamma3pt.hpp */,
+				682D061A246A958D0052D780 /* Loop.cpp */,
+				682D061B246A958D0052D780 /* Loop.hpp */,
 				6850D430244A234300A53DC8 /* Meson.cpp */,
 				6850D433244A234300A53DC8 /* Meson.hpp */,
 				6850D434244A234300A53DC8 /* SigmaToNucleonEye.cpp */,
@@ -5098,6 +5116,8 @@
 				6850D453244A234300A53DC8 /* Wall.hpp */,
 				6850D447244A234300A53DC8 /* Z2.cpp */,
 				6850D455244A234300A53DC8 /* Z2.hpp */,
+				682D0623246A95CA0052D780 /* Z2Diluted.cpp */,
+				682D0622246A95CA0052D780 /* Z2Diluted.hpp */,
 			);
 			path = MSource;
 			sourceTree = "<group>";
@@ -5157,6 +5177,8 @@
 		6850D47F244A234300A53DC8 /* MNoise */ = {
 			isa = PBXGroup;
 			children = (
+				682D061E246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp */,
+				682D061F246A95AA0052D780 /* CheckerboardSpinColorDiagonal.hpp */,
 				6850D484244A234300A53DC8 /* FullVolumeSpinColorDiagonal.cpp */,
 				6850D482244A234300A53DC8 /* FullVolumeSpinColorDiagonal.hpp */,
 				6850D483244A234300A53DC8 /* SparseSpinColorDiagonal.cpp */,
@@ -5174,6 +5196,8 @@
 				6850D487244A234400A53DC8 /* PrecisionCast.hpp */,
 				6850D48A244A234400A53DC8 /* RandomVectors.cpp */,
 				6850D488244A234400A53DC8 /* RandomVectors.hpp */,
+				682D0627246A95E50052D780 /* VectorUnpack.cpp */,
+				682D0626246A95E40052D780 /* VectorUnpack.hpp */,
 			);
 			path = MUtilities;
 			sourceTree = "<group>";
@@ -6143,7 +6167,9 @@
 				6850D574244A234500A53DC8 /* Utils.hpp in Headers */,
 				6850D54B244A234500A53DC8 /* PerambFromSolve.hpp in Headers */,
 				6850D420244A230A00A53DC8 /* A2AVectors.hpp in Headers */,
+				682D0628246A95E50052D780 /* VectorUnpack.hpp in Headers */,
 				6850D562244A234500A53DC8 /* ScaledDWF.hpp in Headers */,
+				682D0624246A95CA0052D780 /* Z2Diluted.hpp in Headers */,
 				6850D546244A234500A53DC8 /* LapEvec.hpp in Headers */,
 				6850D570244A234500A53DC8 /* EMT.hpp in Headers */,
 				6850D57E244A234500A53DC8 /* LoadDistilNoise.hpp in Headers */,
@@ -6154,6 +6180,7 @@
 				6850D52E244A234500A53DC8 /* Random.hpp in Headers */,
 				6850D367244A230A00A53DC8 /* TimerArray.hpp in Headers */,
 				6850D36E244A230A00A53DC8 /* Exceptions.hpp in Headers */,
+				682D0621246A95AA0052D780 /* CheckerboardSpinColorDiagonal.hpp in Headers */,
 				6850D561244A234500A53DC8 /* ZMobiusDWF.hpp in Headers */,
 				6850D548244A234500A53DC8 /* Noises.hpp in Headers */,
 				6850D543244A234500A53DC8 /* ChargedProp.hpp in Headers */,
@@ -6205,6 +6232,7 @@
 				6850D50E244A234500A53DC8 /* SeqAslash.hpp in Headers */,
 				6850D34F244A230A00A53DC8 /* Factory.hpp in Headers */,
 				6850D556244A234500A53DC8 /* FourQuark.hpp in Headers */,
+				682D061D246A958D0052D780 /* Loop.hpp in Headers */,
 				6850D55E244A234500A53DC8 /* MobiusDWF.hpp in Headers */,
 				6850D421244A230A00A53DC8 /* EigenPack.hpp in Headers */,
 				6850D368244A230A00A53DC8 /* Module.hpp in Headers */,
@@ -6969,6 +6997,7 @@
 				6850D558244A234500A53DC8 /* ScaledDWF.cpp in Sources */,
 				6850D539244A234500A53DC8 /* SparseSpinColorDiagonal.cpp in Sources */,
 				6850D572244A234500A53DC8 /* StochFreeField.cpp in Sources */,
+				682D0625246A95CA0052D780 /* Z2Diluted.cpp in Sources */,
 				6850D52F244A234500A53DC8 /* StoutSmearing.cpp in Sources */,
 				6850D568244A234500A53DC8 /* Grad.cpp in Sources */,
 				6850D588244A234500A53DC8 /* LoadPerambulator.cpp in Sources */,
@@ -6979,12 +7008,14 @@
 				6850D56B244A234500A53DC8 /* TrMag.cpp in Sources */,
 				6850D522244A234500A53DC8 /* MixedPrecisionRBPrecCG.cpp in Sources */,
 				6850D50C244A234500A53DC8 /* Point.cpp in Sources */,
+				682D061C246A958D0052D780 /* Loop.cpp in Sources */,
 				6850D4FB244A234500A53DC8 /* EMLepton.cpp in Sources */,
 				6850D567244A234500A53DC8 /* TransProj.cpp in Sources */,
 				6850D53A244A234500A53DC8 /* FullVolumeSpinColorDiagonal.cpp in Sources */,
 				6850D36C244A230A00A53DC8 /* TimerArray.cpp in Sources */,
 				6850D4F1244A234500A53DC8 /* A2AFourQuarkContraction.cpp in Sources */,
 				6850D54D244A234500A53DC8 /* PerambFromSolve.cpp in Sources */,
+				682D0629246A95E50052D780 /* VectorUnpack.cpp in Sources */,
 				6850D4FA244A234500A53DC8 /* A2ALoop.cpp in Sources */,
 				6850D553244A234500A53DC8 /* FourQuark.cpp in Sources */,
 				6850D532244A234500A53DC8 /* Unit.cpp in Sources */,
@@ -7023,6 +7054,7 @@
 				6850D52B244A234500A53DC8 /* GaugeFix.cpp in Sources */,
 				6850D581244A234500A53DC8 /* LoadA2AMatrixDiskVector.cpp in Sources */,
 				6850D4F8244A234500A53DC8 /* SigmaToNucleonNonEye.cpp in Sources */,
+				682D0620246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp in Sources */,
 				6850D550244A234500A53DC8 /* Noises.cpp in Sources */,
 				6850D503244A234500A53DC8 /* Momentum.cpp in Sources */,
 				6850D504244A234500A53DC8 /* SeqConserved.cpp in Sources */,
