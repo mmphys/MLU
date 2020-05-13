@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(HOME)/data/Study1/C1"
+      customWorkingDirectory = "$(HOME)/data/Study1/C1/Z2"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -62,20 +62,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i GFWPZ2/fold/h1_l_p_0_0_0_ -o GFWPZ2/fit/"
+            argument = "-i fold/h1_s_p_0_0_0_ -o fit/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i fold35/h1_l_p_0_0_0_ -o debug/"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i GFWP/fold/h1_l_p_0_0_0_ -o GFWP/fit/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i GFWW/fold/h1_l_p_0_0_0_ -o GFWW/fit/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i Z2/fold/h1_l_p_0_0_0_ -o Z2/fit/"
-            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "g5_g5*5 g5_gT5*5 gT5_gT5*5"
@@ -83,11 +75,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "gT5_g5*5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 2"
@@ -99,22 +91,22 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti 6"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti 10"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--tf 12"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--tf 15"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--tf 20"
+            argument = "--tf 12"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--tf 15"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--tf 21"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -131,7 +123,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dtf 9"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--delta 2"

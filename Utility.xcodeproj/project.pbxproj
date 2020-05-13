@@ -12,7 +12,6 @@
 		6815510D22CBE8B6009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		6815510E22CBF569009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		681DC8B822F19CB000EE04A9 /* hlxml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B722F19CB000EE04A9 /* hlxml.cpp */; };
-		681DC8BB22F20FE100EE04A9 /* CommonLatAn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */; };
 		681DC8BD22F211B600EE04A9 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		682260FF2376FAAA005341E5 /* repair.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682260F22376F586005341E5 /* repair.cpp */; };
 		6822E8C022A7057400A85993 /* bootstrap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8BF22A7057400A85993 /* bootstrap.cpp */; };
@@ -1172,7 +1171,6 @@
 		686EC70B240041E90084D04D /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		687726942466C49E00D46AEF /* Debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687726872466C32D00D46AEF /* Debug.cpp */; };
 		688FEBE4238C1BE100977B09 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
-		688FEBE5238C1BE100977B09 /* CommonLatAn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */; };
 		68939D8923A032A900C30150 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8C722A708A200A85993 /* peramb-compare.cpp */; };
 		68B21CCB23E7210E00D93480 /* fold.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B21CBF23E720AF00D93480 /* fold.cpp */; };
@@ -2494,7 +2492,7 @@
 		6850D444244A234300A53DC8 /* EMLepton.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = EMLepton.hpp; sourceTree = "<group>"; };
 		6850D445244A234300A53DC8 /* FreeProp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FreeProp.cpp; sourceTree = "<group>"; };
 		6850D447244A234300A53DC8 /* Z2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Z2.cpp; sourceTree = "<group>"; };
-		6850D448244A234300A53DC8 /* SeqGamma.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SeqGamma.hpp; sourceTree = "<group>"; };
+		6850D448244A234300A53DC8 /* SeqGamma.hpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.cpp.h; path = SeqGamma.hpp; sourceTree = "<group>"; };
 		6850D449244A234300A53DC8 /* Momentum.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Momentum.cpp; sourceTree = "<group>"; };
 		6850D44A244A234300A53DC8 /* SeqConserved.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SeqConserved.cpp; sourceTree = "<group>"; };
 		6850D44B244A234300A53DC8 /* Convolution.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Convolution.hpp; sourceTree = "<group>"; };
@@ -4440,18 +4438,18 @@
 		6850CD57244A1C3000A53DC8 /* util */ = {
 			isa = PBXGroup;
 			children = (
-				6850CD58244A1C3000A53DC8 /* NonMPL2.h */,
 				6850CD59244A1C3000A53DC8 /* BlasUtil.h */,
-				6850CD5A244A1C3000A53DC8 /* StaticAssert.h */,
 				6850CD5B244A1C3000A53DC8 /* Constants.h */,
-				6850CD5C244A1C3000A53DC8 /* XprHelper.h */,
-				6850CD5D244A1C3000A53DC8 /* MKL_support.h */,
-				6850CD5E244A1C3000A53DC8 /* Macros.h */,
 				6850CD5F244A1C3000A53DC8 /* DisableStupidWarnings.h */,
 				6850CD60244A1C3000A53DC8 /* ForwardDeclarations.h */,
+				6850CD5E244A1C3000A53DC8 /* Macros.h */,
 				6850CD61244A1C3000A53DC8 /* Memory.h */,
 				6850CD62244A1C3000A53DC8 /* Meta.h */,
+				6850CD5D244A1C3000A53DC8 /* MKL_support.h */,
+				6850CD58244A1C3000A53DC8 /* NonMPL2.h */,
 				6850CD63244A1C3000A53DC8 /* ReenableStupidWarnings.h */,
+				6850CD5A244A1C3000A53DC8 /* StaticAssert.h */,
+				6850CD5C244A1C3000A53DC8 /* XprHelper.h */,
 			);
 			path = util;
 			sourceTree = "<group>";
@@ -6742,7 +6740,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6815510D22CBE8B6009AB4AD /* Common.cpp in Sources */,
-				681DC8BB22F20FE100EE04A9 /* CommonLatAn.cpp in Sources */,
 				6815510A22CBCB74009AB4AD /* MultiFit.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -7105,7 +7102,6 @@
 			files = (
 				68B96267244AE53100E5CF09 /* mixedop.cpp in Sources */,
 				688FEBE4238C1BE100977B09 /* Common.cpp in Sources */,
-				688FEBE5238C1BE100977B09 /* CommonLatAn.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

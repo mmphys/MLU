@@ -164,16 +164,17 @@ protected:
   std::map<std::string,std::unique_ptr<HMod>> list;
 public:
   // These are used by modules when adding dependencies
-  Application &application;
   const int nt;
-  bool bEigenpackEnable;
+  const bool bEigenpackEnable;
+  const bool bRandom;
+  Application &application;
 public:
-  HModList( Application &application, int nt, bool bEigenpackEnable );
+  HModList( Application &application, int nt, bool bEigenpackEnable, bool bRandom );
   const std::string TakeOwnership( HMod *pHMod );
 };
 
-HModList::HModList( Application &application_, int nt_, bool bEigenpackEnable_ )
-: application{application_}, nt{nt_}, bEigenpackEnable{bEigenpackEnable_} {}
+HModList::HModList( Application &application_, int nt_, bool bEigenpackEnable_, bool bRandom_ )
+: nt{nt_}, bEigenpackEnable{bEigenpackEnable_}, bRandom{bRandom_}, application{application_} {}
 
 const std::string HModList::TakeOwnership( HMod *pHMod )
 {
@@ -356,7 +357,7 @@ bool ModSolver::AddDependencies( HModList &ModList ) const
   }
   solverPar.action       = ModList.TakeOwnership( new ModAction( q ) );
   solverPar.residual     = q.residual;
-  solverPar.maxIteration = q.maxIteration;
+  solverPar.maxIteration = ModList.bRandom ? q.maxIteration / 10 : q.maxIteration;
   ModList.application.createModule<MSolver::RBPrecCG>(name, solverPar);
   return true;
 }
@@ -570,11 +571,12 @@ bool ModContractCurrent::AddDependencies( HModList &ModList ) const
 class xml3pt
 {
 public:
+  const bool bRandom;
   Application application;
 protected:
   Application Setup( bool bRandom );
 public:
-  explicit xml3pt( bool bRandom ) : application{ Setup( bRandom ) } {}
+  explicit xml3pt( bool bRandom_ ) : bRandom{bRandom_}, application{ Setup( bRandom ) } {}
   void Make(const std::vector<Quark> &Quarks, const std::vector<Common::Momentum> &mom,
             unsigned int nt, bool bEigenpackEnable);
 };
@@ -588,7 +590,7 @@ Application xml3pt::Setup( bool bRandom )
   globalPar.trajCounter.end      = 3001;
   globalPar.trajCounter.step     = 40;
   globalPar.runId                = "h1_s_3pt";
-  globalPar.genetic.maxGen       = 1000;
+  globalPar.genetic.maxGen       = bRandom ? 10 : 1000;
   globalPar.genetic.maxCstGen    = 200;
   globalPar.genetic.popSize      = 20;
   globalPar.genetic.mutationRate = .1;
@@ -597,7 +599,7 @@ Application xml3pt::Setup( bool bRandom )
   // gauge field
   if( bRandom )
   {
-    application.createModule<MGauge::Unit>(GaugeFieldName);
+    application.createModule<MGauge::Random>(GaugeFieldName);
   }
   else
   {
@@ -611,13 +613,13 @@ Application xml3pt::Setup( bool bRandom )
 void xml3pt::Make(const std::vector<Quark> &Quarks, const std::vector<Common::Momentum> &mom,
                   unsigned int nt, bool bEigenpackEnable)
 {
-  HModList l( application, nt, bEigenpackEnable );
+  HModList l( application, nt, bEigenpackEnable, bRandom );
   for( const Quark &q1 : Quarks )
   {
     for( const Quark &q2 : Quarks )
     {
-      //for( unsigned int t = 0; t < nt; t+=4 )
-      for( unsigned int t = 44; t < nt; t+=4 )
+      for( unsigned int t = 0; t < nt; t+=4 )
+      //for( unsigned int t = 44; t < nt; t+=4 )
       //unsigned int t = 8;
       {
         for( const Common::Momentum &p : mom )

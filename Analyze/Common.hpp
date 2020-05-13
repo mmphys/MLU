@@ -2419,7 +2419,8 @@ public:
   {
     const std::vector<std::string> &v{ SwitchStrings( Switch ) };
     if( static_cast<std::size_t>( Subscript ) >= v.size() )
-      throw std::invalid_argument( "Switch " + Switch + "[" + std::to_string( Subscript ) + "] not found" );
+      throw std::invalid_argument("Switch " + Switch + ( Subscript ? "[" + std::to_string( Subscript ) + "]" : "" )
+                                  + " not found");
     return FromString<T>( v[Subscript] );
   }
 };

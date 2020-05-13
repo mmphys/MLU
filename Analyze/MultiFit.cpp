@@ -224,8 +224,8 @@ void MultiExpModel::MakeCovar( void )
       const double CondNumber{ Covar.norm() * CovarInv.norm() };
       const int CondDigits{ static_cast<int>( std::log10( CondNumber ) + 0.5 ) };
       if( CondDigits >= 12 )
-        std::cout << "WARNING see https://en.wikipedia.org/wiki/Condition_number\n";
-      std::cout << "Covariance matrix condition number=" << CondNumber
+        std::cout << "    WARNING see https://en.wikipedia.org/wiki/Condition_number\n";
+      std::cout << "    Covariance matrix condition number=" << CondNumber
                 << ", i.e. potential loss of " << CondDigits << " digits.\n";
     }
   }
@@ -524,8 +524,7 @@ std::vector<Common::ValWithEr<scalar>> MultiExpModel::PerformFit( bool Bcorrelat
         if( idx == Fold::idxCentral )
         {
           ChiSq = ThisChiSq;
-          std::cout << "    Chi^2=" << ChiSq << ", dof=" << dof << ", chi^2/dof=" << ChiSq / dof
-          << "\n\t computing statistics\n";
+          std::cout << "    Chi^2=" << ChiSq << ", dof=" << dof << ", chi^2/dof=" << ChiSq / dof << "\n";
         }
         // Save the fit parameters for this replica, sorted by E_0
         for( int e = 0; e < NumExponents; ++e )
@@ -765,6 +764,9 @@ int main(int argc, const char *argv[])
         {
           if( tf - ti + 1 >= delta )
           {
+            // Log what file we're processing and when we started
+            const std::chrono::system_clock::time_point start{ std::chrono::system_clock::now() };
+            std::time_t now = std::chrono::system_clock::to_time_t( start );
             try
             {
               double ChiSq;
@@ -802,6 +804,16 @@ int main(int argc, const char *argv[])
             {
               std::cout << "Error: " << e.what() << "\n";
             }
+            // Mention that we're finished, what the time is and how long it took
+            const std::chrono::system_clock::time_point stop{ std::chrono::system_clock::now() };
+            now = std::chrono::system_clock::to_time_t( stop );
+            const std::chrono::duration<double> duration_seconds = stop - start;
+            //const double hours{ ( duration_seconds.count() + 0.5 ) / 3600 };
+            std::string sNow{ std::ctime( &now ) };
+            while( sNow.length() && sNow[sNow.length() - 1] == '\n' )
+              sNow.resize( sNow.length() - 1 );
+            std::cout << sNow << ". Total duration " << std::fixed << std::setprecision(1)
+                      << duration_seconds.count() << " seconds." << std::endl;
           }
         }
       }
