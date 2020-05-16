@@ -76,7 +76,6 @@ class Fitter;
 class MultiExpModel : public ROOT::Minuit2::FCNBase
 {
 public:
-  static constexpr int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
   const Fitter &parent;
   // These variables change on each iteration
   int idx;
@@ -85,18 +84,21 @@ public:
   std::vector<double> VarianceInv;
   std::vector<std::vector<double>> SortingHat;
 protected:
+  const int MaxIt;
+  const double Tolerance;
   const bool bFreezeCovar;
-  const bool bCorrelated;
+  bool bCorrelated;
   std::vector<Common::Fold<double>> &ModelCorr; // Fill this with data for model correlator
-  const ROOT::Minuit2::MnUserParameters &parInitialGuess;
+  const ROOT::Minuit2::MnStrategy &Strategy;
+  ROOT::Minuit2::VariableMetricMinimizer Minimiser;
   // Helper functions
   void MakeCovar( void );
 public:
-  MultiExpModel(const Fitter &fitter, const ROOT::Minuit2::MnUserParameters &parInitialGuess,
-                std::vector<Common::Fold<double>> &ModelCorr, bool bFreezeCovar, bool bCorrelated);
-  void UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess, int MaxIt, double Tolerance );
-  void FitOne( const int idx, Model &ModelParams, const std::string &SaveCorMatFileName,
-               int MaxIt, double Tolerance, double RelEnergySep, int dof, double &ChiSq );
+  MultiExpModel( const Fitter &fitter, int MaxIt, double Tolerance, bool bFreezeCovar, bool bCorrelated,
+                 const ROOT::Minuit2::MnStrategy &Strategy, std::vector<Common::Fold<double>> &ModelCorr );
+  void UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess );
+  void FitOne( const int idx, const ROOT::Minuit2::MnUserParameters &parGuess, Model &ModelParams,
+               const std::string &SaveCorMatFileName, double RelEnergySep, int dof, double &ChiSq );
 // These are part of the FCNBase interface
   virtual double Up() const { return 1.; }
   virtual double operator()( const std::vector<double> &ModelParameters ) const;
@@ -133,7 +135,7 @@ public:
   //inline int AlphaIndex( int snk, int src) const { return snk * NumOps + src; };
   std::vector<std::string> MakeParamNames() const;
   inline int MELIndex( int op, int EnergyLevel) const { return EnergyLevel * NumOps + op; };
-  void DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &par ) const;
+  void DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &parGuess ) const;
 
 public:
   explicit Fitter( std::vector<Fold> &&Corr, const std::vector<std::string> &OpNames,
@@ -146,21 +148,23 @@ public:
           bool bSaveCMat, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
 };
 
-MultiExpModel::MultiExpModel(const Fitter &fitter_, const ROOT::Minuit2::MnUserParameters &parInitialGuess_,
-                             std::vector<Common::Fold<double>> &ModelCorr_, bool bFreezeCovar_, bool bCorrelated_)
+MultiExpModel::MultiExpModel( const Fitter &fitter_, int MaxIt_, double Tolerance_, bool bFreezeCovar_, bool bCorrelated_,
+                              const ROOT::Minuit2::MnStrategy &Strategy_, std::vector<Common::Fold<double>> &ModelCorr_)
 : parent{ fitter_ },
   idx{ Fold::idxCentral },
-  SortingHat{ static_cast<size_t>( fitter_.NumExponents ) },
+  VarianceInv( fitter_.Extent ),
+  SortingHat( fitter_.NumExponents ),
+  MaxIt{MaxIt_},
+  Tolerance{Tolerance_},
   bFreezeCovar{bFreezeCovar_},
   bCorrelated{bCorrelated_},
-  ModelCorr{ModelCorr_},
-  parInitialGuess{ parInitialGuess_ }
+  ModelCorr( ModelCorr_ ),
+  Strategy{Strategy_}
 {
-  VarianceInv.resize( parent.Extent );
   if( bCorrelated )
   {
-    CovarInv.resize( parent.Extent, parent.Extent );
     Covar.resize( parent.Extent, parent.Extent );
+    CovarInv.resize( parent.Extent, parent.Extent );
   }
   if( bFreezeCovar )
     MakeCovar();
@@ -239,8 +243,8 @@ void MultiExpModel::MakeCovar( void )
       const double CondNumber{ Covar.norm() * CovarInv.norm() };
       const int CondDigits{ static_cast<int>( std::log10( CondNumber ) + 0.5 ) };
       if( CondDigits >= 12 )
-        std::cout << "    WARNING see https://en.wikipedia.org/wiki/Condition_number\n";
-      std::cout << "    Covariance matrix condition number " << CondNumber
+        std::cout << "WARNING see https://en.wikipedia.org/wiki/Condition_number\n";
+      std::cout << "Covariance matrix condition number " << CondNumber
                 << ", potential loss of " << CondDigits << " digits\n";
     }
   }
@@ -249,27 +253,38 @@ void MultiExpModel::MakeCovar( void )
 }
 
 // Perform an uncorrelated fit on the central timeslice to update parameters guessed
-void MultiExpModel::UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess, int MaxIt, double Tolerance )
+void MultiExpModel::UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess )
 {
-  if( !bFreezeCovar )
-    MakeCovar();
-  ROOT::Minuit2::MnMigrad minimizer( *this, parInitialGuess, StrategyLevel );
-  ROOT::Minuit2::FunctionMinimum min = minimizer( MaxIt, Tolerance );
-  ROOT::Minuit2::MnUserParameterState state = min.UserState();
-  if( !state.IsValid() )
-    throw std::runtime_error( "Uncorrelated fit on central replica did not converge" );
-  // Save the parameters and errors as the updated guess
-  const ROOT::Minuit2::MnUserParameters &upar{ state.Parameters() };
-  for( int i = 0; i < parent.NumParams; ++i )
+  bool bSaveCorrelated{ bCorrelated };
+  bCorrelated = false;
+  idx = Fold::idxCentral;
+  try
   {
-    parGuess.SetValue( i, upar.Value( i ) );
-    parGuess.SetError( i, upar.Error( i ) );
+    if( !bFreezeCovar )
+      MakeCovar();
+    ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, parGuess, Strategy, MaxIt, Tolerance );
+    const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
+    if( !state.IsValid() )
+      throw std::runtime_error( "Uncorrelated fit for initial guess (on central replica) did not converge" );
+    // Save the parameters and errors as the updated guess
+    const ROOT::Minuit2::MnUserParameters &upar{ state.Parameters() };
+    for( int i = 0; i < parent.NumParams; ++i )
+    {
+      parGuess.SetValue( i, upar.Value( i ) );
+      parGuess.SetError( i, upar.Error( i ) );
+    }
   }
+  catch(...)
+  {
+    bCorrelated = bSaveCorrelated;
+    throw;
+  }
+  bCorrelated = bSaveCorrelated;
 }
 
-// Perform a fit. Only central fit updates ChiSq
-void MultiExpModel::FitOne(const int idx_, Model &ModelParams, const std::string &SaveCorMatFileName,
-                           int MaxIt, double Tolerance, double RelEnergySep, int dof, double &ChiSq)
+// Perform a fit. NB: Only the fit on central replica updates ChiSq
+void MultiExpModel::FitOne( const int idx_, const ROOT::Minuit2::MnUserParameters &parGuess, Model &ModelParams,
+                            const std::string &SaveCorMatFileName, double RelEnergySep, int dof, double &ChiSq )
 {
   idx = idx_;
   // Re-use correlation matrix from uncorrelated fit, or from central replica if frozen
@@ -300,15 +315,16 @@ void MultiExpModel::FitOne(const int idx_, Model &ModelParams, const std::string
         s << NewLine;
       }
   }
-  ROOT::Minuit2::MnMigrad minimizer( *this, parInitialGuess, StrategyLevel );
-  ROOT::Minuit2::FunctionMinimum min = minimizer( MaxIt, Tolerance );
-  ROOT::Minuit2::MnUserParameterState state = min.UserState();
+  ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize(*this, parGuess, Strategy, MaxIt, Tolerance);
+  const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
   if( !state.IsValid() )
-    throw std::runtime_error( "Fit " + std::to_string( idx ) + " did not converge" );
+    throw std::runtime_error( "Fit on replica " + std::to_string( idx ) + " did not converge" );
   const ROOT::Minuit2::MnUserParameters &upar{ state.Parameters() };
   if( idx == Fold::idxCentral || parent.Verbosity > 2 )
   {
-    const std::string FitResult{ std::string(4, ' ') + (bCorrelated ? "C" : "Unc" ) + "orrelated fit result:" };
+    static const std::string FitResultUncorr{ "Uncorrelated fit result:" };
+    static const std::string FitResultCorr  {   "Correlated fit result:" };
+    const std::string &FitResult{ bCorrelated ? FitResultCorr : FitResultUncorr };
     if( parent.Verbosity )
       std::cout << FitResult << state << "\n";
     parent.DumpParameters( FitResult, upar );
@@ -328,7 +344,7 @@ void MultiExpModel::FitOne(const int idx_, Model &ModelParams, const std::string
   if( idx == Fold::idxCentral )
   {
     ChiSq = ThisChiSq;
-    std::cout << "    Chi^2=" << ThisChiSq << ", dof=" << dof << ", chi^2/dof=" << ThisChiSq / dof << "\n";
+    std::cout << "Chi^2=" << ThisChiSq << ", dof=" << dof << ", chi^2/dof=" << ThisChiSq / dof << "\n";
   }
   // Save the fit parameters for this replica, sorted by E_0
   for( int e = 0; e < parent.NumExponents; ++e )
@@ -513,25 +529,11 @@ std::vector<std::string> Fitter::MakeParamNames() const
   return Names;
 }
 
-void Fitter::DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &par ) const
+void Fitter::DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &parGuess ) const
 {
-  static const char NewLine[] = "\n";
-  static const char Tab[] = "\t";
   if( !msg.empty() )
-    std::cout << msg << NewLine;
-  std::size_t FieldLen{ 0 };
-  for( int p = 0; p < NumParams; p++ )
-  {
-    std::size_t ThisLen = ParamNames[p].length();
-    if( FieldLen < ThisLen )
-      FieldLen = ThisLen;
-  }
-  FieldLen += 4;
-  for( int p = 0; p < NumParams; p++ )
-  {
-    std::string sep( FieldLen - ParamNames[p].length(), ' ' );
-    std::cout << Tab << ParamNames[p] << sep << par.Value( p ) << " +/- " << par.Error( p ) << NewLine;
-  }
+    std::cout << msg;
+  std::cout << parGuess;
 }
 
 // Perform a fit
@@ -612,14 +614,15 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
     }
     // Make initial guesses for the parameters
     // For each Exponent, I need the delta_E + a constant for each operator
-    std::vector<double> par( NumParams );
-    std::vector<double> Error( NumParams ); // I actually have no idea what the parameter errors are
-    static constexpr double ErrorFactor = 0.1;
+    ROOT::Minuit2::MnUserParameters parGuess;
     {
+      static constexpr double ErrorFactor = 0.1; // I actually have no idea what the parameter errors are
+      std::vector<double> GuessValue( NumParams );
+      std::vector<double> GuessError( NumParams );
       // Take a starting guess for the parameters - same as LatAnalyze
-      double * const Energy{ par.data() };
+      double * const Energy{ GuessValue.data() };
       double * const Coeff{ Energy + NumExponents };
-      double * const EnergyErr{ Error.data() };
+      double * const EnergyErr{ GuessError.data() };
       double * const CoeffErr{ EnergyErr + NumExponents };
       const int tGuess{ Nt / 4 };
       Energy[0] = 0;
@@ -653,24 +656,12 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
           CoeffErr[i] = Coeff[i] * ErrorFactor;
         }
       }
+      for( int i = 0; i < NumParams; ++i )
+      {
+        parGuess.Add( ParamNames[i], GuessValue[i], GuessError[i] );
+      }
     }
-    
-    // Create minimisation parameters
-    ROOT::Minuit2::MnUserParameters parInit( par, Error );
-    Error.clear();
-    //for( int e = 1; e < NumExponents; ++e )
-    //for( int o = 0; o < NumOps; ++o )
-    //parInit.SetLowerLimit( NumExponents + MELIndex(o, e), 0 );
-    //parInit.SetValue(0,0.184);
-    //parInit.Fix(0);
-    DumpParameters( "    Initial guess:", parInit );
-    if( bCorrelated )
-    {
-      // Perform an uncorrelated fit on the central replica, and use that as the guess for every replica
-      MultiExpModel fitModel( *this, parInit, ModelCorr, bFreezeCovar, false );
-      fitModel.UpdateGuess( parInit, MaxIt, Tolerance );
-      DumpParameters( "    Uncorrelated fit on central replica:", parInit );
-    }
+    DumpParameters( "Initial guess:", parGuess );
     // Protected by CancelCritSec
     {
       int Abort{0};
@@ -679,22 +670,48 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
       {
         try
         {
-          MultiExpModel fitModel( *this, parInit, ModelCorr, bFreezeCovar, bCorrelated );
-          #pragma omp for schedule(dynamic)
-          for( int idx = Fold::idxCentral; idx < NSamples; ++idx )
+          // fitModel only throws an exception if the correlation matrix is frozen and bad
+          // ... which will either happen for all threads or none
+          static constexpr int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
+          ROOT::Minuit2::MnStrategy Strategy( StrategyLevel );
+          MultiExpModel fitModel( *this, MaxIt, Tolerance, bFreezeCovar, bCorrelated, Strategy, ModelCorr );
+          if( bCorrelated )
           {
-            try
+            #pragma omp single
             {
-              // Use uncorrelated fit as guess for correlated fit
-              if( !Abort )
-                fitModel.FitOne( idx, ModelParams, idx == Fold::idxCentral ? SaveCorrMatrixFileName : "",
-                                 MaxIt, Tolerance, RelEnergySep, dof, ChiSq );
-            }
-            catch(const std::exception &e)
-            {
-              #pragma omp critical(CancelCritSec)
+              // Perform an uncorrelated fit on the central replica, and use that as the guess for every replica
+              try
               {
-                if( !Abort ) { Abort = 1; sError = e.what(); }
+                fitModel.UpdateGuess( parGuess );
+                DumpParameters( "Uncorrelated fit on central replica:", parGuess );
+              }
+              catch(const std::exception &e)
+              {
+                #pragma omp critical(CancelCritSec)
+                {
+                  if( !Abort ) { Abort = 1; sError = e.what(); }
+                }
+              }
+            }
+          }
+          if( !Abort )
+          {
+            #pragma omp for schedule(dynamic)
+            for( int idx = Fold::idxCentral; idx < NSamples; ++idx )
+            {
+              try
+              {
+                // Use uncorrelated fit as guess for correlated fit
+                if( !Abort )
+                  fitModel.FitOne( idx, parGuess, ModelParams, idx == Fold::idxCentral ? SaveCorrMatrixFileName : "",
+                                   RelEnergySep, dof, ChiSq );
+              }
+              catch(const std::exception &e)
+              {
+                #pragma omp critical(CancelCritSec)
+                {
+                  if( !Abort ) { Abort = 1; sError = e.what(); }
+                }
               }
             }
           }
