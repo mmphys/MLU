@@ -58,8 +58,6 @@
 // Eigen dense matrices
 #include <Eigen/Dense>
 
-//#include <LatAnalyze/Statistics/Dataset.hpp>
-
 // Default output file extension for binary data
 #ifndef DEF_FMT
 #define DEF_FMT "h5"

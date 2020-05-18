@@ -33,20 +33,8 @@
 // Uncomment the next line if your cmath doesn't define M_PI etc by default
 //#define _USE_MATH_DEFINES
 #include <cmath>
-//#include <iomanip>
 #include <ios>
-#include <iostream>
 //#include <sys/stat.h>
-//#include <LatAnalyze/Core/OptParser.hpp>
-//#include <LatAnalyze/Eigen/Dense>
-//#include <LatAnalyze/Functional/CompiledModel.hpp>
-//#include <LatAnalyze/Io/Io.hpp>
-//#include <LatAnalyze/Statistics/MatSample.hpp>
-//#include <LatAnalyze/Core/Math.hpp>
-//#include <LatAnalyze/Numerical/MinuitMinimizer.hpp>
-//#include <LatAnalyze/Numerical/NloptMinimizer.hpp>
-//#include <LatAnalyze/Core/Plot.hpp>
-//#include <LatAnalyze/Statistics/XYSampleData.hpp>
 
 #include <Minuit2/FCNBase.h>
 #include <Minuit2/Minuit2Minimizer.h>
@@ -64,16 +52,38 @@ static const char * pSrcSnk[] = { "src", "snk" };
 
 using scalar = double;
 using Fold = Common::Fold<scalar>;
-using Model = Common::Model<scalar>;
+using Correlators = std::vector<Fold>;
+using ModelFile = Common::Model<scalar>;
 using Matrix = Eigen::MatrixXd; // dynamic sized matrix of complex double
-//using SampleD = Common::SampleD; // Bootstrap sample double
-//using SampleC = Common::SampleC; // Bootstrap sample std::complex<double>
 
 // Forward declaration of fitter for multi-exponential fit
 class Fitter;
 
+// This represents the model I'm fitting to
+// When I introduce multiple models, this needs to split into base and derived classes
+// NB: One of these will be instantiated per ThreadFitter (for thread safety)
+class Model
+{
+public:
+  const int Nt;
+  const int HalfNt;
+  const int NumFiles;
+  const int NumExponents;
+protected:
+  std::vector<std::vector<int>> snk;
+  std::vector<std::vector<int>> src;
+  std::vector<Common::Parity> parity;
+  std::vector<double> SinhCoshAdjust;
+  const double * Energy;
+  const double * Coeff;
+public:
+  Model( const Fitter &parent );
+  void Init( const std::vector<double> &ModelParameters );
+  double operator()( int f, int t ) const;
+};
+
 // Several of these will be running at the same time on different threads during a fit
-class MultiExpModel : public ROOT::Minuit2::FCNBase
+class FitterThread : public ROOT::Minuit2::FCNBase
 {
 public:
   const Fitter &parent;
@@ -88,16 +98,17 @@ protected:
   const double Tolerance;
   const bool bFreezeCovar;
   bool bCorrelated;
-  std::vector<Common::Fold<double>> &ModelCorr; // Fill this with data for model correlator
+  Correlators &CorrSynthetic; // Fill this with data for model correlator
   const ROOT::Minuit2::MnStrategy &Strategy;
   ROOT::Minuit2::VariableMetricMinimizer Minimiser;
+  mutable Model model;
   // Helper functions
   void MakeCovar( void );
 public:
-  MultiExpModel( const Fitter &fitter, int MaxIt, double Tolerance, bool bFreezeCovar, bool bCorrelated,
-                 const ROOT::Minuit2::MnStrategy &Strategy, std::vector<Common::Fold<double>> &ModelCorr );
+  FitterThread( const Fitter &fitter, int MaxIt, double Tolerance, bool bFreezeCovar, bool bCorrelated,
+                 const ROOT::Minuit2::MnStrategy &Strategy, Correlators &CorrSynthetic );
   void UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess );
-  void FitOne( const int idx, const ROOT::Minuit2::MnUserParameters &parGuess, Model &ModelParams,
+  void FitOne( const int idx, const ROOT::Minuit2::MnUserParameters &parGuess, ModelFile &ModelParams,
                const std::string &SaveCorMatFileName, double RelEnergySep, int dof, double &ChiSq );
 // These are part of the FCNBase interface
   virtual double Up() const { return 1.; }
@@ -121,7 +132,7 @@ public:
   const int Nt;
   const int NumExponents;
   const int NumParams;
-  const std::vector<Fold> Corr;
+  const Correlators Corr;
   const std::vector<std::string> ParamNames;
 
   // These variables set once at the start of each fit
@@ -138,7 +149,7 @@ public:
   void DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &parGuess ) const;
 
 public:
-  explicit Fitter( std::vector<Fold> &&Corr, const std::vector<std::string> &OpNames,
+  explicit Fitter( Correlators &&Corr, const std::vector<std::string> &OpNames,
                          bool bFactor, const std::string &sOpNameConcat,
                          int NumExponents, int Verbosity, const std::string &OutputBaseName,
                          Common::SeedType Seed, int NSamples );
@@ -148,8 +159,64 @@ public:
           bool bSaveCMat, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
 };
 
-MultiExpModel::MultiExpModel( const Fitter &fitter_, int MaxIt_, double Tolerance_, bool bFreezeCovar_, bool bCorrelated_,
-                              const ROOT::Minuit2::MnStrategy &Strategy_, std::vector<Common::Fold<double>> &ModelCorr_)
+Model::Model( const Fitter &parent )
+: Nt{parent.Nt},
+  HalfNt{ Nt - 1 }, // NB: This is half of the ORIGINAL correlator time dimension
+  NumFiles{parent.NumFiles},
+  NumExponents{parent.NumExponents},
+  snk(NumFiles),
+  src(NumFiles),
+  parity(NumFiles),
+  SinhCoshAdjust(NumExponents)
+{
+  for( int f = 0; f < NumFiles; f++ )
+  {
+    auto &Corr{ parent.Corr[f] };
+    parity[f] = Corr.parity;
+    auto &Op{ Corr.Name_.op };
+    snk[f].resize( NumExponents );
+    src[f].resize( NumExponents );
+    for( int e = 0; e < NumExponents; ++e )
+    {
+      snk[f][e] = parent.MELIndex( Op[idxSnk], e );
+      src[f][e] = parent.MELIndex( Op[idxSrc], e );
+    }
+  }
+}
+
+void Model::Init( const std::vector<double> &ModelParameters )
+{
+  Energy = ModelParameters.data();
+  Coeff  = Energy + NumExponents;
+  for( int e = 0; e < NumExponents; ++e )
+    SinhCoshAdjust[e] = std::exp( - Energy[e] * HalfNt );
+}
+
+double Model::operator()( int f, int t ) const
+{
+  double z = 0;
+  for( int e = 0; e < NumExponents; ++e )
+  {
+    double d;
+    switch( parity[f] )
+    {
+      case Common::Parity::Even:
+        d = SinhCoshAdjust[e] * std::cosh( - Energy[e] * ( t - HalfNt ) );
+        break;
+      case Common::Parity::Odd:
+        d = SinhCoshAdjust[e] * std::sinh( - Energy[e] * ( t - HalfNt ) );
+        break;
+      default:
+        d = std::exp( - Energy[e] * ( t ) );
+        break;
+    }
+    z += d * Coeff[src[f][e]] * Coeff[snk[f][e]];
+  }
+  return z;
+}
+
+FitterThread::FitterThread( const Fitter &fitter_, int MaxIt_, double Tolerance_, bool bFreezeCovar_, bool bCorrelated_,
+                              const ROOT::Minuit2::MnStrategy &Strategy_, Correlators &CorrSynthetic_)
 : parent{ fitter_ },
   idx{ Fold::idxCentral },
   VarianceInv( fitter_.Extent ),
@@ -158,8 +225,9 @@ MultiExpModel::MultiExpModel( const Fitter &fitter_, int MaxIt_, double Toleranc
   Tolerance{Tolerance_},
   bFreezeCovar{bFreezeCovar_},
   bCorrelated{bCorrelated_},
-  ModelCorr( ModelCorr_ ),
-  Strategy{Strategy_}
+  CorrSynthetic( CorrSynthetic_ ),
+  Strategy{Strategy_},
+  model( fitter_ )
 {
   if( bCorrelated )
   {
@@ -174,7 +242,7 @@ MultiExpModel::MultiExpModel( const Fitter &fitter_, int MaxIt_, double Toleranc
 }
 
 // Make the covariance matrix, for only the timeslices we are interested in
-void MultiExpModel::MakeCovar( void )
+void FitterThread::MakeCovar( void )
 {
   const int NumBoot{ parent.Corr[0].NumSamples() };
   // Make covariance
@@ -253,7 +321,7 @@ void MultiExpModel::MakeCovar( void )
 }
 
 // Perform an uncorrelated fit on the central timeslice to update parameters guessed
-void MultiExpModel::UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess )
+void FitterThread::UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess )
 {
   bool bSaveCorrelated{ bCorrelated };
   bCorrelated = false;
@@ -283,7 +351,7 @@ void MultiExpModel::UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess )
 }
 
 // Perform a fit. NB: Only the fit on central replica updates ChiSq
-void MultiExpModel::FitOne( const int idx_, const ROOT::Minuit2::MnUserParameters &parGuess, Model &ModelParams,
+void FitterThread::FitOne( const int idx_, const ROOT::Minuit2::MnUserParameters &parGuess, ModelFile &ModelParams,
                             const std::string &SaveCorMatFileName, double RelEnergySep, int dof, double &ChiSq )
 {
   idx = idx_;
@@ -325,9 +393,9 @@ void MultiExpModel::FitOne( const int idx_, const ROOT::Minuit2::MnUserParameter
     static const std::string FitResultUncorr{ "Uncorrelated fit result:" };
     static const std::string FitResultCorr  {   "Correlated fit result:" };
     const std::string &FitResult{ bCorrelated ? FitResultCorr : FitResultUncorr };
-    if( parent.Verbosity )
-      std::cout << FitResult << state << "\n";
     parent.DumpParameters( FitResult, upar );
+    if( parent.Verbosity )
+      std::cout << state << "\n";
 #ifdef DEBUG_COMPARE_WITH_PREVIOUS
     std::vector<double> vd;
     Common::ReadArray( vd,
@@ -364,9 +432,9 @@ void MultiExpModel::FitOne( const int idx_, const ROOT::Minuit2::MnUserParameter
       FitParams[parent.MELIndex(o, e) + parent.NumExponents] = SortingHat[e][o + 1];
   }
   FitParams[parent.MELIndex(0, parent.NumExponents) + parent.NumExponents] = ThisChiSq / dof;
+  // Check whether energy levels are separated by minimum separation
   if( idx == Fold::idxCentral )
   {
-    // Check whether energy levels are separated by minimum separation
     for( int e = 1; e < parent.NumExponents; e++ )
     {
       double RelSep = FitParams[e] / FitParams[e - 1];
@@ -377,41 +445,16 @@ void MultiExpModel::FitOne( const int idx_, const ROOT::Minuit2::MnUserParameter
     }
   }
   // Save the reconstructed correlator values for this replica
+  std::vector<double> ParamsCopy( parent.NumParams );
+  for( int p = 0; p < parent.NumParams; ++p )
+    ParamsCopy[p] = FitParams[p];
+  model.Init( ParamsCopy );
+  for( int f = 0; f < parent.NumFiles; f++ )
   {
-    const int HalfNt{ parent.Nt - 1 }; // NB: This is half of the ORIGINAL correlator time dimension
-    double SinhCoshAdjust[parent.NumExponents];
-    for( int e = 0; e < parent.NumExponents; ++e )
-      SinhCoshAdjust[e] = std::exp( - FitParams[e] * HalfNt );
-    for( int f = 0; f < parent.NumFiles; f++ )
+    scalar * mc{ CorrSynthetic[f][idx] };
+    for( int t = 0; t < parent.Nt; t++ )
     {
-      const Common::Parity parity{ parent.Corr[f].parity };
-      const int snk{ parent.Corr[f].Name_.op[idxSnk] };
-      const int src{ parent.Corr[f].Name_.op[idxSrc] };
-      scalar * mc{ ModelCorr[f][idx] };
-      for( int t = 0; t < parent.Nt; t++ )
-      {
-        double z = 0;
-        for( int e = 0; e < parent.NumExponents; ++e )
-        {
-          double d;
-          switch( parity )
-          {
-            case Common::Parity::Even:
-              d = SinhCoshAdjust[e] * std::cosh( - FitParams[e] * ( t - HalfNt ) );
-              break;
-            case Common::Parity::Odd:
-              d = SinhCoshAdjust[e] * std::sinh( - FitParams[e] * ( t - HalfNt ) );
-              break;
-            default:
-              d = std::exp( - FitParams[e] * t );
-              break;
-          }
-          d *=   FitParams[ parent.MELIndex( src, e ) + parent.NumExponents ]
-               * FitParams[ parent.MELIndex( snk, e ) + parent.NumExponents ];
-          z += d;
-        }
-        *mc++ = z;
-      }
+      *mc++ = model( f, t );
     }
   }
 }
@@ -421,42 +464,17 @@ void MultiExpModel::FitOne( const int idx_, const ROOT::Minuit2::MnUserParameter
   //  NB: second and subsequent energy levels are deltas
   // Overlap Coefficients Parameters NumExponents ... NumExponents ( NumOps + 1 ) - 1
 
-double MultiExpModel::operator()( const std::vector<double> & par ) const
+double FitterThread::operator()( const std::vector<double> & par ) const
 {
-  const double * const Energy{ par.data() };
-  const double * const Coeff{ Energy + parent.NumExponents };
-  // Calculate the theory errors for these model parameters
-  const int HalfNt{ parent.Nt - 1 }; // NB: This is half of the ORIGINAL correlator time dimension
-  double SinhCoshAdjust[parent.NumExponents];
-  for( int e = 0; e < parent.NumExponents; ++e )
-    SinhCoshAdjust[e] = std::exp( - Energy[e] * HalfNt );
   double ModelError[parent.Extent]; // Should happily fit on stack
-  for( int f = 0; f < parent.NumFiles; f++ )
+  model.Init( par );
+  int iWrite{ 0 };
+  for( int f = 0; f < parent.NumFiles; ++f )
   {
-    const int snk{ parent.Corr[f].Name_.op[idxSnk] };
-    const int src{ parent.Corr[f].Name_.op[idxSrc] };
     const scalar * CorrData = parent.Corr[f][idx] + parent.tMin;
-    for( int t = 0; t < parent.NtCorr; t++ )
+    for( int t = 0; t < parent.NtCorr; ++t, ++iWrite )
     {
-      double z = 0;
-      for( int e = 0; e < parent.NumExponents; ++e )
-      {
-        double d;
-        switch( parent.Corr[f].parity )
-        {
-          case Common::Parity::Even:
-            d = SinhCoshAdjust[e] * std::cosh( - Energy[e] * ( parent.tMin + t - HalfNt ) );
-            break;
-          case Common::Parity::Odd:
-            d = SinhCoshAdjust[e] * std::sinh( - Energy[e] * ( parent.tMin + t - HalfNt ) );
-            break;
-          default:
-            d = std::exp( - Energy[e] * ( parent.tMin + t ) );
-            break;
-        }
-        z += d * Coeff[parent.MELIndex( src, e )] * Coeff[parent.MELIndex( snk, e )];
-      }
-      z -= *CorrData++;
+      double z = model( f, t + parent.tMin ) - *CorrData++;
       if( !std::isfinite( z ) )
       {
         if( parent.Verbosity )
@@ -465,7 +483,6 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
         }
         return std::numeric_limits<double>::max();
       }
-      const int iWrite{ f * parent.NtCorr + t };
       ModelError[iWrite] = z * VarianceInv[iWrite];
     }
   }
@@ -486,8 +503,6 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
       }
     }
   }
-  if( parent.Verbosity > 2 )
-    std::cout << "index " << idx << ", chi^2=" << chi2 << ", E0=" << Energy[0] << ", E1=" << Energy[1] << "\n";
   if( chi2 < 0 )
   {
     //static int count{ 0 };
@@ -497,7 +512,7 @@ double MultiExpModel::operator()( const std::vector<double> & par ) const
   return chi2;
 }
 
-Fitter::Fitter( std::vector<Fold> &&Corr_, const std::vector<std::string> &opNames_,
+Fitter::Fitter( Correlators &&Corr_, const std::vector<std::string> &opNames_,
                              bool bfactor_, const std::string &sopNameConcat_,
                              int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_, int nSamples_ )
   : NumOps{ static_cast<int>( opNames_.size() ) },
@@ -559,7 +574,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
   dof -= NumFiles == 1 ? NumExponents * 2 : NumParams;
 
   // Make somewhere to store the results of the fit for each bootstrap sample
-  Model ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, NSamples, NumParams+1 );
+  ModelFile ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, NSamples, NumParams+1 );
   ModelParams.Seed_ = Corr[0].Seed_;
   ModelParams.SeedMachine_ = Corr[0].SeedMachine_;
   {
@@ -585,7 +600,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
   const std::string ModelFileName{ Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ) };
   if( Common::FileExists( ModelFileName ) )
   {
-    Model PreBuilt;
+    ModelFile PreBuilt;
     PreBuilt.Read( ModelFileName, "Pre-built: " );
     if( !PreBuilt.Compatible( NumExponents, dof, tMin, tMax, OpNames ) )
       throw std::runtime_error( "Pre-existing fits not compatible with parameters from this run" );
@@ -605,12 +620,12 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
     const std::string SaveCorrMatrixFileName{ bCorrelated && bSaveCMat
                             ? Common::MakeFilename( sModelBase, Common::sCormat, Seed, TEXT_EXT ) : "" };
     // Make somewhere to hold the correlators corresponding to the fitted model
-    std::vector<Common::Fold<double>> ModelCorr( NumFiles ); // correlators resulting from the fit params
+    Correlators CorrSynthetic( NumFiles ); // correlators resulting from the fit params
     for( int f = 0; f < NumFiles; f++ )
     {
-      ModelCorr[f].resize( NSamples, Nt );
-      ModelCorr[f].Seed_ = ModelParams.Seed_;
-      ModelCorr[f].SeedMachine_ = ModelParams.SeedMachine_;
+      CorrSynthetic[f].resize( NSamples, Nt );
+      CorrSynthetic[f].Seed_ = ModelParams.Seed_;
+      CorrSynthetic[f].SeedMachine_ = ModelParams.SeedMachine_;
     }
     // Make initial guesses for the parameters
     // For each Exponent, I need the delta_E + a constant for each operator
@@ -670,11 +685,11 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
       {
         try
         {
-          // fitModel only throws an exception if the correlation matrix is frozen and bad
+          // fitThread only throws an exception if the correlation matrix is frozen and bad
           // ... which will either happen for all threads or none
           static constexpr int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
           ROOT::Minuit2::MnStrategy Strategy( StrategyLevel );
-          MultiExpModel fitModel( *this, MaxIt, Tolerance, bFreezeCovar, bCorrelated, Strategy, ModelCorr );
+          FitterThread fitThread( *this, MaxIt, Tolerance, bFreezeCovar, bCorrelated, Strategy, CorrSynthetic );
           if( bCorrelated )
           {
             #pragma omp single
@@ -682,7 +697,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
               // Perform an uncorrelated fit on the central replica, and use that as the guess for every replica
               try
               {
-                fitModel.UpdateGuess( parGuess );
+                fitThread.UpdateGuess( parGuess );
                 DumpParameters( "Uncorrelated fit on central replica:", parGuess );
               }
               catch(const std::exception &e)
@@ -703,7 +718,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
               {
                 // Use uncorrelated fit as guess for correlated fit
                 if( !Abort )
-                  fitModel.FitOne( idx, parGuess, ModelParams, idx == Fold::idxCentral ? SaveCorrMatrixFileName : "",
+                  fitThread.FitOne( idx, parGuess, ModelParams, idx == Fold::idxCentral ? SaveCorrMatrixFileName : "",
                                    RelEnergySep, dof, ChiSq );
               }
               catch(const std::exception &e)
@@ -744,9 +759,9 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
         sSrc.resize( pos );
       const std::string SummaryBase{ OutputRunBase + '.' + sSink + '_' + sSrc };
       if( bSaveCorr )
-        ModelCorr[f].Write( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
-      ModelCorr[f].MakeCorrSummary( nullptr );
-      ModelCorr[f].WriteSummary( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, TEXT_EXT ));
+        CorrSynthetic[f].Write( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
+      CorrSynthetic[f].MakeCorrSummary( nullptr );
+      CorrSynthetic[f].WriteSummary( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, TEXT_EXT ));
     }
   }
   // Return the statistics on the fit results
@@ -831,7 +846,7 @@ int main(int argc, const char *argv[])
       std::size_t i = 0;
       Common::SeedType Seed = 0;
       std::vector<std::string> OpNames;
-      std::vector<Fold> Corr;
+      Correlators Corr;
       std::cout << "Loading folded correlators\n";
       for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
       {
