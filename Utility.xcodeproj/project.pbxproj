@@ -1170,6 +1170,8 @@
 		686EC70A24003ED30084D04D /* FitSummary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686EC70924003ED30084D04D /* FitSummary.cpp */; };
 		686EC70B240041E90084D04D /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		687726942466C49E00D46AEF /* Debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687726872466C32D00D46AEF /* Debug.cpp */; };
+		6878F23D2472CCDB0016DEB2 /* SeqGammaWall.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6878F23B2472CCDB0016DEB2 /* SeqGammaWall.hpp */; };
+		6878F23E2472CCDB0016DEB2 /* SeqGammaWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6878F23C2472CCDB0016DEB2 /* SeqGammaWall.cpp */; };
 		688FEBE4238C1BE100977B09 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		68939D8923A032A900C30150 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8C722A708A200A85993 /* peramb-compare.cpp */; };
@@ -2647,6 +2649,8 @@
 		687726872466C32D00D46AEF /* Debug.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Debug.cpp; sourceTree = "<group>"; };
 		687726882466C32D00D46AEF /* Debug.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Debug.hpp; sourceTree = "<group>"; };
 		6877268D2466C48000D46AEF /* Debug */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Debug; sourceTree = BUILT_PRODUCTS_DIR; };
+		6878F23B2472CCDB0016DEB2 /* SeqGammaWall.hpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.cpp.h; path = SeqGammaWall.hpp; sourceTree = "<group>"; };
+		6878F23C2472CCDB0016DEB2 /* SeqGammaWall.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SeqGammaWall.cpp; sourceTree = "<group>"; };
 		688FEBEC238C1BE100977B09 /* mixedop */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mixedop; sourceTree = BUILT_PRODUCTS_DIR; };
 		68939D8123A016D200C30150 /* corrstat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = corrstat; sourceTree = BUILT_PRODUCTS_DIR; };
 		68AC6DE622A7114900D42F70 /* peramb-compare */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "peramb-compare"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -5110,6 +5114,8 @@
 				6850D457244A234300A53DC8 /* SeqConserved.hpp */,
 				6850D456244A234300A53DC8 /* SeqGamma.cpp */,
 				6850D448244A234300A53DC8 /* SeqGamma.hpp */,
+				6878F23C2472CCDB0016DEB2 /* SeqGammaWall.cpp */,
+				6878F23B2472CCDB0016DEB2 /* SeqGammaWall.hpp */,
 				6850D450244A234300A53DC8 /* Wall.cpp */,
 				6850D453244A234300A53DC8 /* Wall.hpp */,
 				6850D447244A234300A53DC8 /* Z2.cpp */,
@@ -6157,6 +6163,7 @@
 				6850D555244A234500A53DC8 /* Amputate.hpp in Headers */,
 				6850D573244A234500A53DC8 /* TrPhi.hpp in Headers */,
 				6850D538244A234500A53DC8 /* FullVolumeSpinColorDiagonal.hpp in Headers */,
+				6878F23D2472CCDB0016DEB2 /* SeqGammaWall.hpp in Headers */,
 				6850D369244A230A00A53DC8 /* NamedTensor.hpp in Headers */,
 				6850D502244A234500A53DC8 /* SeqGamma.hpp in Headers */,
 				6850D571244A234500A53DC8 /* TwoPoint.hpp in Headers */,
@@ -7074,6 +7081,7 @@
 				6850D51F244A234500A53DC8 /* RBPrecCG.cpp in Sources */,
 				6850D53E244A234500A53DC8 /* PrecisionCast.cpp in Sources */,
 				6850D4E2244A234500A53DC8 /* DiscLoop.cpp in Sources */,
+				6878F23E2472CCDB0016DEB2 /* SeqGammaWall.cpp in Sources */,
 				6850D563244A234500A53DC8 /* DWF.cpp in Sources */,
 				6850D34D244A230A00A53DC8 /* Exceptions.cpp in Sources */,
 			);

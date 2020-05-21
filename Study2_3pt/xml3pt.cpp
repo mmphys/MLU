@@ -36,8 +36,17 @@ static const std::string Space{ " " };  // whitespace as field separator / human
 
 static const std::string GaugeFieldName{"gauge"};
 
-enum SourceT { Z2, GFPW };
+enum SourceT : int { Z2, GFPW };
 static const std::array<std::string, 2> SourceTName{ "Z2", "GFPW" };
+
+std::ostream& operator<<(std::ostream& os, const SourceT Type)
+{
+  if( Type >= 0 && Type < SourceTName.size() )
+    os << SourceTName[Type];
+  else
+    os << "SourceT_Unknown_" << std::to_string( Type );
+  return os;
+}
 
 struct Quark
 {
@@ -52,19 +61,24 @@ struct Quark
   const char * EigenPackFilename = nullptr;
 };
 
-static const std::vector<Quark> Quarks{
-  // {"l" , 0.005, 16, 1.8, 5000, 1e-8, false, "/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine"},
-  {"s" , 0.04, 16, 1.8, 5000, 1e-12},
-  {"h1", 0.58, 12, 1.0, 5000, 1e-12, true}, // charm
-  // {"h2", 0.64, 12, 1.0, 5000, 1e-12, true},  // charm
-};
+static const std::string GaugePathName{ "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat" };
+static const char EigenPackC1_l[] = "/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine";
+static const Quark Quark_l {"l" , 0.005, 16, 1.8, 5000, 1e-8, false, EigenPackC1_l};
+static const Quark Quark_s {"s" , 0.04, 16, 1.8, 5000, 1e-12};
+static const Quark Quark_h0{"h0", 0.50, 12, 1.0, 5000, 1e-12, true};
+static const Quark Quark_h1{"h1", 0.58, 12, 1.0, 5000, 1e-12, true};
+static const Quark Quark_h2{"h2", 0.64, 12, 1.0, 5000, 1e-12, true};
+static const Quark Quark_h3{"h3", 0.69, 12, 1.0, 5000, 1e-12, true};
+
+static const std::array<const Quark *, 1> SpectatorQuarks{ &Quark_s };
+static const std::vector<const Quark *> HeavyQuarks{ &Quark_h0, &Quark_h1, &Quark_h2, &Quark_h3 };
 
 static const std::vector<Common::Momentum> Momenta{
   { 0, 0, 0 },
-  { 1, 0, 0 },
-  { 2, 0, 0 },
+  //{ 1, 0, 0 },
   //{ 1, 1, 0 },
   //{ 1, 1, 1 },
+  //{ 2, 0, 0 },
 };
 
 static const Gamma::Algebra algInsert[] = {
@@ -125,6 +139,11 @@ inline void AppendP( std::string &sDest, const Common::Momentum &p )
   Append( sDest, 'p', p.to_string( Sep ) );
 }
 
+inline void AppendPSeq( std::string &sDest, const Common::Momentum &p )
+{
+  Append( sDest, "ps", p.to_string( Sep ) );
+}
+
 inline void AppendT( std::string &sDest, int t )
 {
   Append( sDest, 't', t );
@@ -140,6 +159,19 @@ inline void AppendDeltaT( std::string &sDest, int t )
 {
   Append( sDest, "dt", t );
 }
+
+/**************************
+ Parameters that apply to the entire application being built
+**************************/
+
+struct AppParams
+{
+  unsigned int nt;
+  bool bEigenpackEnable;
+  bool bRandom;
+  AppParams( unsigned int nt_, bool bEigenpackEnable_, bool bRandom_ )
+  : nt{nt_}, bEigenpackEnable{bEigenpackEnable_}, bRandom{bRandom_} {}
+};
 
 /**************************
  Generic classes for a list of dependencies
@@ -164,17 +196,13 @@ protected:
   std::map<std::string,std::unique_ptr<HMod>> list;
 public:
   // These are used by modules when adding dependencies
-  const int nt;
-  const bool bEigenpackEnable;
-  const bool bRandom;
   Application &application;
+  const AppParams &params;
 public:
-  HModList( Application &application, int nt, bool bEigenpackEnable, bool bRandom );
+  HModList( Application &application_, const AppParams &params_ )
+  : application{application_}, params{params_} {}
   const std::string TakeOwnership( HMod *pHMod );
 };
-
-HModList::HModList( Application &application_, int nt_, bool bEigenpackEnable_, bool bRandom_ )
-: nt{nt_}, bEigenpackEnable{bEigenpackEnable_}, bRandom{bRandom_}, application{application_} {}
 
 const std::string HModList::TakeOwnership( HMod *pHMod )
 {
@@ -194,11 +222,10 @@ const std::string HModList::TakeOwnership( HMod *pHMod )
 
 class ModSink : public HMod
 {
-protected:
-  static const std::string Prefix;
-  SourceT Type;
-  Common::Momentum p;
 public:
+  static const std::string Prefix;
+  const SourceT Type;
+  const Common::Momentum p;
   ModSink(const SourceT Type, const Common::Momentum &p);
   virtual bool AddDependencies( HModList &ModList ) const;
 };
@@ -225,30 +252,55 @@ bool ModSink::AddDependencies( HModList &ModList ) const
 
 class ModSource : public HMod
 {
-protected:
-  static const std::string Prefix;
-  SourceT Type;
-  int t;
 public:
-  ModSource(const SourceT Type, int t);
+  static const std::string Prefix;
+  const SourceT Type;
+  const Common::Momentum p;
+  const int t;
+  ModSource(const SourceT Type, const Common::Momentum &p, int t);
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 const std::string ModSource::Prefix{ "Source" };
 
-ModSource::ModSource(const SourceT type_, int t_) : Type{type_}, t{t_}
+ModSource::ModSource(const SourceT type_, const Common::Momentum &p_, int t_) : Type{type_}, p{p_}, t{t_}
 {
   name = Prefix;
   Append( name, SourceTName[Type] );
-  AppendT( name, t );
+  AppendPT( name, t, p );
 }
 
 bool ModSource::AddDependencies( HModList &ModList ) const
 {
-  MSource::Z2::Par z2Par;
-  z2Par.tA = t;
-  z2Par.tB = t;
-  ModList.application.createModule<MSource::Z2>(name, z2Par);
+  switch( Type )
+  {
+    case Z2:
+      if( p )
+      {
+        MSource::MomentumPhase::Par par;
+        par.src = ModList.TakeOwnership( new ModSource( Type, Common::Momentum(0,0,0), t ) );
+        par.mom = p.to_string4d( Common::Space );
+        ModList.application.createModule<MSource::MomentumPhase>(name, par);
+      }
+      else
+      {
+        MSource::Z2::Par par;
+        par.tA = t;
+        par.tB = t;
+        ModList.application.createModule<MSource::Z2>(name, par);
+      }
+      break;
+    case GFPW:
+      {
+        MSource::Wall::Par par;
+        par.tW = t;
+        par.mom = p.to_string4d( Common::Space );
+        ModList.application.createModule<MSource::Wall>(name, par);
+      }
+      break;
+    default:
+      return false;
+  }
   return true;
 }
 
@@ -286,10 +338,9 @@ bool ModStoutGauge::AddDependencies( HModList &ModList ) const
 
 class ModAction : public HMod
 {
-protected:
+public:
   static const std::string Prefix;
   const Quark &q;
-public:
   ModAction(const Quark &q);
   virtual bool AddDependencies( HModList &ModList ) const;
 };
@@ -324,10 +375,9 @@ bool ModAction::AddDependencies( HModList &ModList ) const
 
 class ModSolver : public HMod
 {
-protected:
+public:
   static const std::string Prefix;
   const Quark &q;
-public:
   ModSolver(const Quark &q);
   virtual bool AddDependencies( HModList &ModList ) const;
 };
@@ -344,7 +394,7 @@ bool ModSolver::AddDependencies( HModList &ModList ) const
 {
   // solvers
   MSolver::RBPrecCG::Par solverPar;
-  if( ModList.bEigenpackEnable && q.EigenPackFilename )
+  if( ModList.params.bEigenpackEnable && q.EigenPackFilename )
   {
     // eigenpacks for deflation
     MIO::LoadFermionEigenPack::Par epPar;
@@ -357,71 +407,8 @@ bool ModSolver::AddDependencies( HModList &ModList ) const
   }
   solverPar.action       = ModList.TakeOwnership( new ModAction( q ) );
   solverPar.residual     = q.residual;
-  solverPar.maxIteration = ModList.bRandom ? q.maxIteration / 10 : q.maxIteration;
+  solverPar.maxIteration = ModList.params.bRandom ? q.maxIteration / 10 : q.maxIteration;
   ModList.application.createModule<MSolver::RBPrecCG>(name, solverPar);
-  return true;
-}
-
-/**************************
- Sequential Source
-**************************/
-
-class ModSeqSource : public HMod
-{
-protected:
-  static const std::string Prefix;
-  SourceT Type;
-  int Current;
-  int deltaT;
-  const Quark &q;
-  Common::Momentum p;
-  int t;
-public:
-  ModSeqSource(const SourceT Type, int Current, int deltaT, const Quark &q, const Common::Momentum &p, int t);
-  virtual bool AddDependencies( HModList &ModList ) const;
-};
-
-class ModProp : public HMod
-{
-protected:
-  static const std::string Prefix;
-  SourceT Type;
-  const Quark &q;
-  Common::Momentum p;
-  int t;
-  int Current;
-  int deltaT;
-public:
-  ModProp(const SourceT Type, const Quark &q, const Common::Momentum &p, int t, int Current, int deltaT);
-  ModProp(const SourceT Type, const Quark &q, const Common::Momentum &p, int t)
-  : ModProp(Type, q, p, t, std::numeric_limits<int>::max(), 0) {}
-  virtual bool AddDependencies( HModList &ModList ) const;
-};
-
-const std::string ModSeqSource::Prefix{ "SeqSource" };
-
-ModSeqSource::ModSeqSource(const SourceT type_, int current_, int deltaT_,
-                           const Quark &q_, const Common::Momentum &p_, int t_)
-: Type{type_}, Current{current_}, deltaT{deltaT_}, q{q_}, p{p_}, t{t_}
-{
-  name.reserve( 80 );
-  name = Prefix;
-  Append( name, Type );
-  Append( name, *algInsertName[Current] );
-  AppendDeltaT( name, deltaT );
-  Append( name, q.flavour );
-  AppendPT( name, t, p );
-}
-
-bool ModSeqSource::AddDependencies( HModList &ModList ) const
-{
-  MSource::SeqGamma::Par seqPar;
-  seqPar.q = ModList.TakeOwnership( new ModProp( Type, q, p, t ) );
-  seqPar.tA  = ( t + deltaT ) % ModList.nt;
-  seqPar.tB  = seqPar.tA;
-  seqPar.mom = p.to_string4d( Space );
-  seqPar.gamma = algInsert[Current];
-  ModList.application.createModule<MSource::SeqGamma>(name, seqPar);
   return true;
 }
 
@@ -429,89 +416,166 @@ bool ModSeqSource::AddDependencies( HModList &ModList ) const
  Propagator
 **************************/
 
+class ModProp : public HMod
+{
+public:
+  static const std::string Prefix;
+  const SourceT Type;
+  const Quark &q;
+  const Common::Momentum p;
+  const int t;
+  ModProp( const SourceT Type, const Quark &q, const Common::Momentum &p, int t );
+  virtual bool AddDependencies( HModList &ModList ) const;
+};
+
 const std::string ModProp::Prefix{ "Prop" };
 
-ModProp::ModProp(const SourceT type_, const Quark &q_, const Common::Momentum &p_, int t_, int current_, int deltaT_)
-: Type{type_}, q{q_}, t{t_}, p{p_}, Current{current_}, deltaT(deltaT_)
+ModProp::ModProp( const SourceT type_, const Quark &q_, const Common::Momentum &p_, int t_ )
+: Type{type_}, q{q_}, p{p_}, t{t_}
 {
-  name.reserve( 64 );
   name = Prefix;
   Append( name, Type );
   Append( name, q.flavour );
-  if( Current != std::numeric_limits<int>::max() )
-  {
-    Append( name, *algInsertName[Current] );
-    AppendDeltaT( name, deltaT );
-  }
   AppendPT( name, t, p );
 }
 
 bool ModProp::AddDependencies( HModList &ModList ) const
 {
+  MFermion::GaugeProp::Par par;
+  par.source = ModList.TakeOwnership( new ModSource( Type, p, t ) );
+  par.solver = ModList.TakeOwnership( new ModSolver( q ) );
+  ModList.application.createModule<MFermion::GaugeProp>(name, par);
+  return true;
+}
+
+/**************************
+ Sequential Source
+**************************/
+
+class ModSourceSeq : public HMod
+{
+public:
+  static const std::string Prefix;
+  const SourceT Type;
+  const int Current;
+  const int deltaT;
+  const Common::Momentum pSeq;
+  const Quark &q;
+  const Common::Momentum p;
+  const int t;
+  ModSourceSeq( const SourceT Type, int Current, int deltaT, const Common::Momentum &pSeq,
+                const Quark &q, const Common::Momentum &p, int t );
+  virtual bool AddDependencies( HModList &ModList ) const;
+};
+
+const std::string ModSourceSeq::Prefix{ ModSource::Prefix + "Seq" };
+
+ModSourceSeq::ModSourceSeq( const SourceT type_, int current_, int deltaT_, const Common::Momentum &pSeq_,
+                            const Quark &q_, const Common::Momentum &p_, int t_ )
+: Type{type_}, Current{current_}, deltaT{deltaT_}, pSeq{pSeq_}, q{q_}, p{p_}, t{t_}
+{
+  name = Prefix;
+  Append( name, Type );
+  Append( name, *algInsertName[Current] );
+  AppendDeltaT( name, deltaT );
+  AppendPSeq( name, pSeq );
+  Append( name, q.flavour );
+  AppendPT( name, t, p );
+}
+
+bool ModSourceSeq::AddDependencies( HModList &ModList ) const
+{
+  MSource::SeqGamma::Par seqPar;
+  seqPar.q = ModList.TakeOwnership( new ModProp( Type, q, p, t ) );
+  seqPar.tA  = ( t + deltaT ) % ModList.params.nt;
+  seqPar.tB  = seqPar.tA;
+  seqPar.mom = pSeq.to_string4d( Space );
+  seqPar.gamma = algInsert[Current];
+  ModList.application.createModule<MSource::SeqGamma>(name, seqPar);
+  return true;
+}
+
+/**************************
+ Sequential propagator
+**************************/
+
+class ModPropSeq : public HMod
+{
+public:
+  static const std::string Prefix;
+  const SourceT Type;
+  const Quark &qSeq;
+  const int Current;
+  const int deltaT;
+  const Common::Momentum pSeq;
+  const Quark &q;
+  const Common::Momentum p;
+  const int t;
+  ModPropSeq( const SourceT type, const Quark &qSeq, int current, int deltaT, const Common::Momentum &pSeq,
+              const Quark &q, const Common::Momentum &p, int t );
+  virtual bool AddDependencies( HModList &ModList ) const;
+};
+
+const std::string ModPropSeq::Prefix{ ModProp::Prefix + "Seq" };
+
+ModPropSeq::ModPropSeq( const SourceT type_, const Quark &qSeq_, int current_, int deltaT_, const Common::Momentum &pSeq_,
+                        const Quark &q_, const Common::Momentum &p_, int t_ )
+: Type{type_}, qSeq{qSeq_}, Current{current_}, deltaT{deltaT_}, pSeq{pSeq_}, q{q_}, p{p_}, t{t_}
+{
+  name = Prefix;
+  Append( name, Type );
+  Append( name, qSeq.flavour );
+  Append( name, *algInsertName[Current] );
+  AppendDeltaT( name, deltaT );
+  AppendPSeq( name, pSeq );
+  Append( name, q.flavour );
+  AppendPT( name, t, p );
+}
+
+bool ModPropSeq::AddDependencies( HModList &ModList ) const
+{
   MFermion::GaugeProp::Par quarkPar;
-  quarkPar.source = ModList.TakeOwnership( ( Current != std::numeric_limits<int>::max() )
-                    ? static_cast<HMod *>( new ModSeqSource( Type, Current, deltaT, q, p, t ) )
-                    : static_cast<HMod *>( new ModSource( Type, t ) ) );
-  quarkPar.solver = ModList.TakeOwnership( new ModSolver( q ) );
+  quarkPar.source = ModList.TakeOwnership( new ModSourceSeq( Type, Current, deltaT, pSeq, q, p, t ) );
+  quarkPar.solver = ModList.TakeOwnership( new ModSolver( qSeq ) );
   ModList.application.createModule<MFermion::GaugeProp>(name, quarkPar);
   return true;
 }
 
 /**************************
- Generic contraction
+ 2pt contraction
 **************************/
 
-class ModContract : public HMod
+const std::string ContractionPrefix{ "meson" };
+const std::string ContractionBaseOutput{ "mesons/C1/" };
+
+class ModContract2pt : public HMod
 {
 protected:
-  static const std::string Prefix;
-  static const std::string PrefixType2pt;
-  static const std::string PrefixType3pt;
-  static const std::string baseOutput;
-  const bool b3pt;
-  const std::string PrefixType;
+  std::string FileName;
+public:
   const SourceT Type;
   const Quark &q1;
   const Quark &q2;
   const Common::Momentum p;
   const int t;
-  const int Current;
-  const int deltaT;
-  std::string FileName;
-public:
-  ModContract(const SourceT Type, const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_, int Current_, int deltaT);
-  ModContract(const SourceT Type, const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_)
-  : ModContract(Type, q1_, q2_, p_, t_, std::numeric_limits<int>::max(), 0) {}
+  ModContract2pt(const SourceT Type, const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_);
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
-const std::string ModContract::Prefix{ "meson" };
-const std::string ModContract::PrefixType2pt{ "2pt" };
-const std::string ModContract::PrefixType3pt{ "3pt" };
-const std::string ModContract::baseOutput{ "mesons/C1/" };
-
-ModContract::ModContract(const SourceT type_, const Quark &q1_, const Quark &q2_,
-                         const Common::Momentum &p_, int t_, int Current_, int deltaT_)
-: b3pt{Current_ != std::numeric_limits<int>::max()},
-  PrefixType{SourceTName[type_] + Sep + ( b3pt ? PrefixType3pt : PrefixType2pt ) },
-  Type{type_}, q1{q1_}, q2{q2_}, p{p_}, t{t_}, Current{Current_}, deltaT(deltaT_)
+ModContract2pt::ModContract2pt(const SourceT type_, const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_)
+: Type{type_}, q1{q1_}, q2{q2_}, p{p_}, t{t_}
 {
   std::string s{q1.flavour};
   Append( s, q2.flavour );
-  if( b3pt )
-  {
-    Append( s, *algInsertName[Current_] );
-    AppendDeltaT( s, deltaT );
-  }
   AppendPT( s, t, p );
-
-  FileName = baseOutput + PrefixType + "/" + s;
-  name = Prefix;
+  const std::string PrefixType{ SourceTName[type_] + Sep + "2pt" };
+  FileName = ContractionBaseOutput + PrefixType + "/" + s;
+  name = ContractionPrefix;
   Append( name, PrefixType );
   Append( name, s );
 }
 
-bool ModContract::AddDependencies( HModList &ModList ) const
+bool ModContract2pt::AddDependencies( HModList &ModList ) const
 {
   MContraction::Meson::Par mesPar;
   mesPar.output = FileName;
@@ -528,109 +592,138 @@ bool ModContract::AddDependencies( HModList &ModList ) const
  Three-point contraction
 **************************/
 
-class ModContractCurrent : public ModContract
+class ModContract3pt : public HMod
 {
+protected:
+  std::string FileName;
 public:
-  ModContractCurrent(const SourceT Type, const Quark &q1, const Quark &q2, const Common::Momentum &p, int t, int Current, int deltaT)
-  : ModContract(Type, q1, q2, p, t, Current, deltaT) {}
+  const SourceT Type;
+  const Quark &qSnk;
+  const Quark &qSrc;
+  const Quark &qSpectator;
+  const Common::Momentum p;
+  const int t;
+  const bool bCurrentAnti;
+  const int Current;
+  const int deltaT;
+  ModContract3pt( const SourceT Type, const Quark &qSnk, const Quark &qSrc, const Quark &qSpectator,
+                  const Common::Momentum &p, int t, bool bCurrentAnti, int Current, int deltaT );
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
-bool ModContractCurrent::AddDependencies( HModList &ModList ) const
+ModContract3pt::ModContract3pt( const SourceT type_, const Quark &qSnk_, const Quark &qSrc_, const Quark &qSpectator_,
+                                const Common::Momentum &p_, int t_, bool bCurrentAnti_, int Current_, int deltaT_)
+: Type{type_}, qSnk{qSnk_}, qSrc{qSrc_}, qSpectator{qSpectator_},
+  p{p_}, t{t_}, bCurrentAnti{bCurrentAnti_}, Current{Current_}, deltaT(deltaT_)
 {
-  bool bReturn;
-  /*if( q1.mass == q2.mass )
-  {
-    LOG(Error) << "t=" << t << ", p=" << p << ", dT=" << deltaT << ", gamma=" << *algInsertName[Current] << ". Mass of " << q1.flavour << " and " << q2.flavour << " are both "
-      << q1.mass << ". Skipping 3pt contraction"
-      << std::endl;
-    bReturn = false;
-  }
-  else*/
-  {
-    MContraction::Meson::Par mesPar;
-    mesPar.output = FileName;
-    //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
-    mesPar.gammas = "all";
-    mesPar.sink = ModList.TakeOwnership(new ModSink( Type, -p ));
-    bool q1Heavy{ q1.mass >= q2.mass };
-    mesPar.q1 = ModList.TakeOwnership(q1Heavy ? new ModProp( Type, q1, Common::Momentum(0,0,0), t )
-                                      : new ModProp( Type, q1, p, t, Current, deltaT ));
-    mesPar.q2 = ModList.TakeOwnership(q1Heavy ? new ModProp( Type, q2, p, t, Current, deltaT )
-                                      : new ModProp( Type, q2, Common::Momentum(0,0,0), t ));
-    ModList.application.createModule<MContraction::Meson>(name, mesPar);
-    bReturn = true;
-  }
-  return bReturn;
+  std::string s{bCurrentAnti ? "anti" : "quark" };
+  Append( s, qSnk.flavour );
+  Append( s, qSrc.flavour );
+  Append( s, *algInsertName[Current_] );
+  AppendDeltaT( s, deltaT );
+  AppendPT( s, t, p );
+  const std::string PrefixType{ SourceTName[type_] + Sep + "3pt" + Sep + qSpectator.flavour };
+  FileName = ContractionBaseOutput + PrefixType + "/" + s;
+  name = ContractionPrefix;
+  Append( name, PrefixType );
+  Append( name, s );
+}
+
+bool ModContract3pt::AddDependencies( HModList &ModList ) const
+{
+  MContraction::Meson::Par par;
+  par.output = FileName;
+  //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
+  par.gammas = "all";
+  par.sink = ModList.TakeOwnership(new ModSink( Type, p ));
+  std::string qSeq{ ModList.TakeOwnership( new ModPropSeq( Type, qSnk, Current, deltaT, -p,
+                                                           qSpectator, Common::Momentum(0,0,0), t ) ) };
+  std::string q{ ModList.TakeOwnership( new ModProp( Type, qSrc, Common::Momentum(0,0,0), t ) ) };
+  par.q1 = bCurrentAnti ? qSeq : q;
+  par.q2 = bCurrentAnti ? q    : qSeq;
+  ModList.application.createModule<MContraction::Meson>(name, par);
+  return true;
 }
 
 /**************************
  Make application
 **************************/
 
-class xml3pt
+class AppMaker
 {
 public:
-  const bool bRandom;
+  const AppParams params;
   Application application;
+  HModList l;
 protected:
-  Application Setup( bool bRandom );
+  Application Setup( const std::string &RunID );
 public:
-  explicit xml3pt( bool bRandom_ ) : bRandom{bRandom_}, application{ Setup( bRandom ) } {}
-  void Make(const std::vector<Quark> &Quarks, const std::vector<Common::Momentum> &mom,
-            unsigned int nt, bool bEigenpackEnable);
+  explicit AppMaker( unsigned int nt_, bool bEigenpackEnable_, bool bRandom_, const std::string &RunID )
+  : params(nt_, bEigenpackEnable_, bRandom_), application{Setup( RunID )}, l(application, params) {}
+  void Make( SourceT Type, const Quark &qSpectator, const std::vector<Common::Momentum> &mom );
 };
 
 // One-time initialisation
-Application xml3pt::Setup( bool bRandom )
+Application AppMaker::Setup( const std::string &RunID )
 {
   // global parameters
   Application::GlobalPar globalPar;
   globalPar.trajCounter.start    = 3000;
   globalPar.trajCounter.end      = 3001;
   globalPar.trajCounter.step     = 40;
-  globalPar.runId                = "h1_s_3pt";
-  globalPar.genetic.maxGen       = bRandom ? 10 : 1000;
+  globalPar.runId                = RunID;
+  globalPar.genetic.maxGen       = params.bRandom ? 10 : 1000;
   globalPar.genetic.maxCstGen    = 200;
   globalPar.genetic.popSize      = 20;
   globalPar.genetic.mutationRate = .1;
   globalPar.saveSchedule = false;
   Application application(globalPar);
   // gauge field
-  if( bRandom )
+  if( params.bRandom )
   {
     application.createModule<MGauge::Random>(GaugeFieldName);
   }
   else
   {
     MIO::LoadNersc::Par gaugePar;
-    gaugePar.file = "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat";
+    gaugePar.file = GaugePathName;
     application.createModule<MIO::LoadNersc>(GaugeFieldName, gaugePar);
   }
   return application;
 }
 
-void xml3pt::Make(const std::vector<Quark> &Quarks, const std::vector<Common::Momentum> &mom,
-                  unsigned int nt, bool bEigenpackEnable)
+void AppMaker::Make( SourceT Type, const Quark &qSpectator, const std::vector<Common::Momentum> &mom )
 {
-  HModList l( application, nt, bEigenpackEnable, bRandom );
-  for( const Quark &q1 : Quarks )
+  for( unsigned int t = 0; t < params.nt; t+=4 )
+  //for( unsigned int t = 44; t < nt; t+=4 )
+  //unsigned int t = 8;
   {
-    for( const Quark &q2 : Quarks )
+    for( const Quark *qSnk : HeavyQuarks )
     {
-      for( unsigned int t = 0; t < nt; t+=4 )
-      //for( unsigned int t = 44; t < nt; t+=4 )
-      //unsigned int t = 8;
+      for( const Quark *qSrc : HeavyQuarks )
       {
         for( const Common::Momentum &p : mom )
         {
-          static const SourceT Type{ Z2 };
-          l.TakeOwnership( new ModContract( Type, q1, q2, p, t ) );
-          for( int deltaT = 12; deltaT <= 20; deltaT += 4 )
+          for( int qSpectatorAnti = 0; qSpectatorAnti < 2; ++qSpectatorAnti )
           {
-            for( int j = 0; j < NumInsert; j++ )
+            // 2pt functions
+            if( qSpectatorAnti )
             {
-              l.TakeOwnership( new ModContractCurrent( Type, q1, q2, p, t, j, deltaT ) );
+              l.TakeOwnership( new ModContract2pt( Type, *qSrc, qSpectator, p, t ) );
+              l.TakeOwnership( new ModContract2pt( Type, *qSnk, qSpectator, p, t ) );
+            }
+            else
+            {
+              l.TakeOwnership( new ModContract2pt( Type, qSpectator, *qSrc, p, t ) );
+              l.TakeOwnership( new ModContract2pt( Type, qSpectator, *qSnk, p, t ) );
+            }
+            static const std::vector<int> deltaTList{ 12, 14, 16, 20 };
+            for( int deltaT : deltaTList )
+            {
+              for( int j = 0; j < NumInsert; j++ )
+              {
+                l.TakeOwnership( new ModContract3pt( Type, *qSnk, *qSrc, qSpectator, p, t, qSpectatorAnti, j, deltaT ) );
+              }
             }
           }
         }
@@ -658,24 +751,41 @@ int main(int argc, char *argv[])
   const bool bRandom{ GridCmdOptionExists( argv, argv + argc, "-r" ) };
   const bool bEigenpackEnable{ !bRandom && !GridCmdOptionExists( argv, argv + argc, "-e" ) };
   const unsigned int nt{ lat.size() < 4 ? 64 : static_cast<unsigned int>( lat[3] ) };
-  LOG(Message)
-    << std::boolalpha
-    << "nt=" << std::to_string( nt )
-    << ", Random gauge " << bRandom
-    << ", Eigen packs " << bEigenpackEnable
-    << std::endl;
   try
   {
-    xml3pt x( bRandom );
-    x.Make( Quarks, Momenta, nt, bEigenpackEnable );
-
-    // execution
-    static const std::string XmlFileName{ x.application.getPar().runId + ".xml" };
-    x.application.saveParameterFile( XmlFileName );
-    if( bRandom || ( lat.size() == 4 && lat[0] == 24 && lat[1] == 24 && lat[2] == 24 && lat[3] == 64 ) )
-      x.application.run();
-    else
-      LOG(Warning) << "The parameters in " << XmlFileName << " are designed for --grid 24.24.24.64" << std::endl;
+    SourceT Type;
+    {
+      std::string s{ GridCmdOptionPayload( argv, argv + argc, "-t" ) };
+      int i{ Z2 };
+      GridCmdOptionInt( s, i );
+      Type = static_cast<SourceT>( i );
+    }
+    if( Type < 0 || Type >= SourceTName.size() )
+      throw std::runtime_error( "Unrecognised type " + std::to_string( Type ) );
+    LOG(Message)
+      << std::boolalpha
+      << "nt=" << std::to_string( nt )
+      << ", Random gauge " << bRandom
+      << ", Eigen packs " << bEigenpackEnable
+      << ", Type " << Type
+      << std::endl;
+    for( const Quark *qSpectator : SpectatorQuarks )
+    {
+      //for( int Type = 0; Type < SourceTName.size(); ++Type )
+      {
+        const std::string RunID{ "S2" + SourceTName[Type] + Sep + qSpectator->flavour };
+        AppMaker x( nt, bEigenpackEnable, bRandom, RunID );
+        x.Make( Type, *qSpectator, Momenta );
+        // save
+        static const std::string XmlFileName{ RunID + ".xml" };
+        x.application.saveParameterFile( XmlFileName );
+        // execute
+        if( bRandom || ( lat.size() == 4 && lat[0] == 24 && lat[1] == 24 && lat[2] == 24 && lat[3] == 64 ) )
+          x.application.run();
+        else
+          LOG(Warning) << "The parameters in " << XmlFileName << " are designed for --grid 24.24.24.64" << std::endl;
+      }
+    }
   }
   catch(const std::exception &e)
   {
