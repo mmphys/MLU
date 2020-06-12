@@ -75,10 +75,10 @@ static const std::vector<const Quark *> HeavyQuarks{ &Quark_h0, &Quark_h1, &Quar
 
 static const std::vector<Common::Momentum> Momenta{
   { 0, 0, 0 },
-  //{ 1, 0, 0 },
-  //{ 1, 1, 0 },
-  //{ 1, 1, 1 },
-  //{ 2, 0, 0 },
+  { 1, 0, 0 },
+  { 1, 1, 0 },
+  { 1, 1, 1 },
+  { 2, 0, 0 },
 };
 
 static const Gamma::Algebra algInsert[] = {
@@ -171,6 +171,8 @@ struct AppParams
   bool bRandom;
   AppParams( unsigned int nt_, bool bEigenpackEnable_, bool bRandom_ )
   : nt{nt_}, bEigenpackEnable{bEigenpackEnable_}, bRandom{bRandom_} {}
+  inline int TimeBound( int t ) const
+  { return t < 0 ? nt - ((-t) % nt) : t % nt; }
 };
 
 /**************************
@@ -466,6 +468,8 @@ public:
   ModSourceSeq( const SourceT Type, int Current, int deltaT, const Common::Momentum &pSeq,
                 const Quark &q, const Common::Momentum &p, int t );
   virtual bool AddDependencies( HModList &ModList ) const;
+protected:
+  template<typename T> void AddDependenciesT( HModList &ModList ) const;
 };
 
 const std::string ModSourceSeq::Prefix{ ModSource::Prefix + "Seq" };
@@ -483,15 +487,23 @@ ModSourceSeq::ModSourceSeq( const SourceT type_, int current_, int deltaT_, cons
   AppendPT( name, t, p );
 }
 
-bool ModSourceSeq::AddDependencies( HModList &ModList ) const
+template<typename T> void ModSourceSeq::AddDependenciesT( HModList &ModList ) const
 {
-  MSource::SeqGamma::Par seqPar;
+  typename T::Par seqPar;
   seqPar.q = ModList.TakeOwnership( new ModProp( Type, q, p, t ) );
-  seqPar.tA  = ( t + deltaT ) % ModList.params.nt;
+  seqPar.tA  = ModList.params.TimeBound( t + deltaT );
   seqPar.tB  = seqPar.tA;
   seqPar.mom = pSeq.to_string4d( Space );
   seqPar.gamma = algInsert[Current];
-  ModList.application.createModule<MSource::SeqGamma>(name, seqPar);
+  ModList.application.createModule<T>(name, seqPar);
+}
+
+bool ModSourceSeq::AddDependencies( HModList &ModList ) const
+{
+  //if( Type == SourceT::Z2 )
+    AddDependenciesT<MSource::SeqGamma>( ModList );
+  //else
+    //AddDependenciesT<MSource::SeqGammaWall>( ModList );
   return true;
 }
 
@@ -546,7 +558,7 @@ bool ModPropSeq::AddDependencies( HModList &ModList ) const
 **************************/
 
 const std::string ContractionPrefix{ "meson" };
-const std::string ContractionBaseOutput{ "mesons/C1/" };
+const std::string ContractionBaseOutput{ "meson/C1/" };
 
 class ModContract2pt : public HMod
 {
@@ -590,6 +602,7 @@ bool ModContract2pt::AddDependencies( HModList &ModList ) const
 
 /**************************
  Three-point contraction
+ heavy quark at time t, decaying to slightly lighter heavy quark at t + deltaT
 **************************/
 
 class ModContract3pt : public HMod
@@ -631,16 +644,18 @@ ModContract3pt::ModContract3pt( const SourceT type_, const Quark &qSnk_, const Q
 
 bool ModContract3pt::AddDependencies( HModList &ModList ) const
 {
+  const int tf{ ModList.params.TimeBound( t + deltaT ) };
   MContraction::Meson::Par par;
   par.output = FileName;
   //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
   par.gammas = "all";
-  par.sink = ModList.TakeOwnership(new ModSink( Type, p ));
-  std::string qSeq{ ModList.TakeOwnership( new ModPropSeq( Type, qSnk, Current, deltaT, -p,
-                                                           qSpectator, Common::Momentum(0,0,0), t ) ) };
-  std::string q{ ModList.TakeOwnership( new ModProp( Type, qSrc, Common::Momentum(0,0,0), t ) ) };
-  par.q1 = bCurrentAnti ? qSeq : q;
-  par.q2 = bCurrentAnti ? q    : qSeq;
+  par.sink = ModList.TakeOwnership(new ModSink( Type, -p ));
+  static const Common::Momentum p0(0,0,0);
+  std::string qSeq{ ModList.TakeOwnership( new ModPropSeq( Type, qSrc, Current, -deltaT, p0,
+                                                           qSpectator, bCurrentAnti ? p0 : p, tf ) ) };
+  std::string q{ ModList.TakeOwnership( new ModProp( Type, qSnk, bCurrentAnti ? p : p0, tf ) ) };
+  par.q1 = bCurrentAnti ? q    : qSeq;
+  par.q2 = bCurrentAnti ? qSeq : q;
   ModList.application.createModule<MContraction::Meson>(name, par);
   return true;
 }
@@ -698,31 +713,32 @@ void AppMaker::Make( SourceT Type, const Quark &qSpectator, const std::vector<Co
   //for( unsigned int t = 44; t < nt; t+=4 )
   //unsigned int t = 8;
   {
-    for( const Quark *qSnk : HeavyQuarks )
+    for( int qH1 = 0; qH1 < HeavyQuarks.size(); ++qH1 )
     {
-      for( const Quark *qSrc : HeavyQuarks )
+      for( int qH2 = 0; qH2 <= qH1; ++qH2 )
       {
         for( const Common::Momentum &p : mom )
         {
-          for( int qSpectatorAnti = 0; qSpectatorAnti < 2; ++qSpectatorAnti )
+          const bool InsertCurrentInAntiQuark{ true };
+          //for( int InsertCurrentInAntiQuark = 0; InsertCurrentInAntiQuark < 2; ++InsertCurrentInAntiQuark )
           {
             // 2pt functions
-            if( qSpectatorAnti )
+            if( InsertCurrentInAntiQuark )
             {
-              l.TakeOwnership( new ModContract2pt( Type, *qSrc, qSpectator, p, t ) );
-              l.TakeOwnership( new ModContract2pt( Type, *qSnk, qSpectator, p, t ) );
+              l.TakeOwnership( new ModContract2pt( Type, qSpectator, *HeavyQuarks[qH1], p, t ) );
+              l.TakeOwnership( new ModContract2pt( Type, qSpectator, *HeavyQuarks[qH2], p, t ) );
             }
             else
             {
-              l.TakeOwnership( new ModContract2pt( Type, qSpectator, *qSrc, p, t ) );
-              l.TakeOwnership( new ModContract2pt( Type, qSpectator, *qSnk, p, t ) );
+              l.TakeOwnership( new ModContract2pt( Type, *HeavyQuarks[qH1], qSpectator, p, t ) );
+              l.TakeOwnership( new ModContract2pt( Type, *HeavyQuarks[qH2], qSpectator, p, t ) );
             }
             static const std::vector<int> deltaTList{ 12, 14, 16, 20 };
             for( int deltaT : deltaTList )
             {
               for( int j = 0; j < NumInsert; j++ )
               {
-                l.TakeOwnership( new ModContract3pt( Type, *qSnk, *qSrc, qSpectator, p, t, qSpectatorAnti, j, deltaT ) );
+                l.TakeOwnership( new ModContract3pt( Type, *HeavyQuarks[qH2], *HeavyQuarks[qH1], qSpectator, p, l.params.TimeBound( t - deltaT ), InsertCurrentInAntiQuark, j, deltaT ) );
               }
             }
           }
@@ -773,7 +789,7 @@ int main(int argc, char *argv[])
     {
       //for( int Type = 0; Type < SourceTName.size(); ++Type )
       {
-        const std::string RunID{ "S2" + SourceTName[Type] + Sep + qSpectator->flavour };
+        const std::string RunID{ "S2" + SourceTName[Type] + qSpectator->flavour };
         AppMaker x( nt, bEigenpackEnable, bRandom, RunID );
         x.Make( Type, *qSpectator, Momenta );
         // save

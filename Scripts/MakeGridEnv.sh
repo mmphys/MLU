@@ -9,7 +9,7 @@ shopt -s nullglob
 
 # Grid
 echo 'Grid source located in '$Grid
-for MyEnv in $Grid/build*
+for MyEnv in $Grid/build${GridSelect:-*}
 do
   ShortEnv=${MyEnv#${Grid}/build}
   Dest=$GridPre/$ShortEnv
@@ -44,7 +44,7 @@ done
 
 # Hadrons
 echo 'Hadrons source located in '$Hadrons
-for MyEnv in $Hadrons/build*
+for MyEnv in $Hadrons/build{GridSelect:-*}
 do
   ShortEnv=${MyEnv#${Hadrons}/build}
   Dest=$GridPre/$ShortEnv
