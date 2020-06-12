@@ -44,7 +44,7 @@ done
 
 # Hadrons
 echo 'Hadrons source located in '$Hadrons
-for MyEnv in $Hadrons/build{GridSelect:-*}
+for MyEnv in $Hadrons/build${GridSelect:-*}
 do
   ShortEnv=${MyEnv#${Hadrons}/build}
   Dest=$GridPre/$ShortEnv
