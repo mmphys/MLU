@@ -913,8 +913,8 @@ int main(int argc, const char *argv[])
           if( tf - ti + 1 >= delta )
           {
             // Log what file we're processing and when we started
-            const std::chrono::system_clock::time_point start{ std::chrono::system_clock::now() };
-            std::time_t now = std::chrono::system_clock::to_time_t( start );
+	    std::time_t then;
+	    std::time( &then );
             try
             {
               double ChiSq;
@@ -953,16 +953,15 @@ int main(int argc, const char *argv[])
               std::cout << "Error: " << e.what() << "\n";
             }
             // Mention that we're finished, what the time is and how long it took
-            const std::chrono::system_clock::time_point stop{ std::chrono::system_clock::now() };
-            now = std::chrono::system_clock::to_time_t( stop );
-            const std::chrono::duration<double> duration_seconds = stop - start;
-            //const double hours{ ( duration_seconds.count() + 0.5 ) / 3600 };
+	    std::time_t now;
+	    std::time( &now );
+	    double dNumSecs = std::difftime( now, then );
             std::string sNow{ std::ctime( &now ) };
             while( sNow.length() && sNow[sNow.length() - 1] == '\n' )
               sNow.resize( sNow.length() - 1 );
             std::stringstream ss;
             ss << sNow << ". Total duration " << std::fixed << std::setprecision(1)
-                      << duration_seconds.count() << " seconds.\n";
+                       << dNumSecs << " seconds.\n";
             std::cout << ss.str();
           }
         }

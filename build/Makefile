@@ -40,13 +40,17 @@ bootstrap: bootstrap.o Common.o
 
 corrstat: corrstat.o Common.o
 
-hlxml: hlxml.o Common.o
+Debug: Debug.o Common.o
 
-MultiFit: MultiFit.o Common.o
+hlxml: hlxml.o Common.o
 
 FitSummary: FitSummary.o Common.o
 
 fold: fold.o Common.o
+
+hlxml: hlxml.o Common.o
+
+MultiFit: MultiFit.o Common.o
 
 peramb-compare: peramb-compare.o Common.o
 
@@ -56,9 +60,11 @@ mixedop: mixedop.o Common.o
 
 xmlGFWall: xmlGFWall.o Common.o
 
+xmlPeramb: xmlPeramb.o Common.o
+
 xmlZ2: xmlZ2.o Common.o
 
-xmlPeramb: xmlPeramb.o Common.o
+xml3pt: xml3pt.o Common.o
 
 clean:
 	rm -rf $(target) $(objects) *~ *.dSYM
