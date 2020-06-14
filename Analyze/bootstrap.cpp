@@ -392,7 +392,7 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
         {
           const Common::CorrelatorFileC &file{ *it++ };
           const int CorrelatorTimeslice{ file.Timeslice() };
-          const int TOffset{ bAlignTimeslices ? ( bBackwardsWave ? Nt - CorrelatorTimeslice : CorrelatorTimeslice ) : 0 };
+          const int TOffset{ bAlignTimeslices ? ( bBackwardsWave ? ( Nt - CorrelatorTimeslice ) % Nt : CorrelatorTimeslice ) : 0 };
           {
             // increment count
             assert( sizeof( int ) == sizeof( file.Name_.Seed ) );
@@ -873,7 +873,7 @@ int main(const int argc, const char *argv[])
     "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
-    "Flags:"
+    "Flags:\n"
     "-v     Backwards propagating wave (adjust timeslice by -t)"
     "-p     group momenta by P^2\n"
     "-f     Factorising operators (e.g. g5-gT5 same as gT5-g5)\n"
