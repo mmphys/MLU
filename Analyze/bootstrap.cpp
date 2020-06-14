@@ -292,6 +292,7 @@ public:
   bool bFactorised;
   bool bFold;
   bool bT0Abs;
+  bool bBackwardsWave;
   int PerformBootstrap(std::vector<Common::CorrelatorFileC> &f, const TrajList &Traj ) const;
   void Study1Bootstrap(StudySubject Study, const std::string &StudyPath, const Common::Momentum &mom,
                        std::vector<Common::Gamma::Algebra> Alg,
@@ -391,7 +392,7 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
         {
           const Common::CorrelatorFileC &file{ *it++ };
           const int CorrelatorTimeslice{ file.Timeslice() };
-          const int TOffset{ bAlignTimeslices ? CorrelatorTimeslice : 0 };
+          const int TOffset{ bAlignTimeslices ? ( bBackwardsWave ? Nt - CorrelatorTimeslice : CorrelatorTimeslice ) : 0 };
           {
             // increment count
             assert( sizeof( int ) == sizeof( file.Name_.Seed ) );
@@ -723,6 +724,7 @@ int main(const int argc, const char *argv[])
       {"t", CL::SwitchType::Single, "0"},
       {"m", CL::SwitchType::Single, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
+      {"v", CL::SwitchType::Flag, nullptr},
       {"p", CL::SwitchType::Flag, nullptr},
       {"f", CL::SwitchType::Flag, nullptr},
       {"h", CL::SwitchType::Flag, nullptr},
@@ -746,6 +748,7 @@ int main(const int argc, const char *argv[])
       par.bFactorised = cl.GotSwitch( "f" );
       par.bFold = cl.GotSwitch( "h" );
       par.bT0Abs = !cl.GotSwitch( "z" ); // Add the switch to turn this off
+      par.bBackwardsWave = cl.GotSwitch( "b" );
       const bool bSwapQuarks{ !cl.GotSwitch( "q" ) }; // Add the switch to turn this off
       if( cl.GotSwitch( "m" ) )
         par.MachineName = cl.SwitchValue<std::string>( "m" );
@@ -870,6 +873,8 @@ int main(const int argc, const char *argv[])
     "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
+    "Flags:"
+    "-v     Backwards propagating wave (adjust timeslice by -t)"
     "-p     group momenta by P^2\n"
     "-f     Factorising operators (e.g. g5-gT5 same as gT5-g5)\n"
     "-h     Take forward/backward Half-waves as separate bootstrap inputs (i.e. fold)\n"
