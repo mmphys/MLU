@@ -72,6 +72,13 @@
 
 BEGIN_COMMON_NAMESPACE
 
+// Check that a stream is empty ... or only contains white space to end of stream
+template <class _CharT, class _Traits>
+inline bool StreamEmpty( std::basic_istream<_CharT, _Traits> & s )
+{
+  return !s.ios_base::fail() && ( s.eof() || ( s >> std::ws && s.eof() ) );
+}
+
 // Text required for summaries of correlators
 namespace CorrSumm {
   extern const char sep[];
@@ -178,7 +185,7 @@ using SeedType = unsigned int;
 template<typename T> inline T FromString( const std::string &String ) {
   T t;
   std::istringstream iss( String );
-  if( !( iss >> t ) || ( iss >> std::ws && !iss.eof() ) )
+  if( !( iss >> t && StreamEmpty( iss ) ) )
     throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
   return t;
 }
@@ -194,7 +201,7 @@ template<typename T> inline std::vector<T> ArrayFromString( const std::string &S
     s[pos] = ' ';
   std::istringstream iss( s );
   std::vector<T> v;
-  for( T t; iss >> std::ws && !iss.eof(); )
+  for( T t; !StreamEmpty( iss ); )
   {
     if( !( iss >> t ) )
       throw std::invalid_argument( "ArrayFromString: \"" + String + "\" is not type " + typeid(T).name() );

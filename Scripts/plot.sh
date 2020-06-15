@@ -118,6 +118,7 @@ if( SaveFile != 2 ) {
   set linetype 2 lc rgb 'red'
 }
 
+# The logging variable becomes a log
 if( do_log ) { set logscale y }
 
 # Work out how much to offset each series by
@@ -132,8 +133,27 @@ if( NumFiles==1 && FileType eq "cormat" ) {
   set cbrange [@my_cbrange]
   plot PlotFile matrix columnheaders rowheaders with image pixels
 } else {
+  if( do_log ) {
   plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] \
-    word(PlotFile,File) using (((@my_x_axis) == 0 ? 0 : f==0 ? (@my_x_axis) : nt - (@my_x_axis))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2):(column(word(FieldNames,fld))):(column(word(FieldNames,fld)."_low")):(column(word(FieldNames,fld)."_high")) with yerrorbars title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)
+    word(PlotFile,File) using (((@my_x_axis) == 0 ? 0 : f==0 ? (@my_x_axis) : \
+    nt - (@my_x_axis))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : \
+    (abs(column(word(FieldNames,fld)))) : \
+    (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( \
+        sgn(column(word(FieldNames,fld))) ? "_low" : "_high" ))) : \
+    (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( \
+        sgn(column(word(FieldNames,fld))) ? "_high" : "_low" ))) \
+    with yerrorbars \
+    title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)
+  } else {
+  plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] \
+    word(PlotFile,File) using (((@my_x_axis) == 0 ? 0 : f==0 ? (@my_x_axis) : \
+    nt - (@my_x_axis))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : \
+    (column(word(FieldNames,fld))) : \
+    (column(word(FieldNames,fld)."_low")) : \
+    (column(word(FieldNames,fld)."_high")) \
+    with yerrorbars \
+    title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)
+  }
 }
 EOFMark
 }
@@ -148,7 +168,7 @@ then
   echo "key    location for key (default: top right)"
   echo "fields Names of fields to display (default: cosh)"
   echo "ref    y-value for reference line"
-  echo "log    1 to plot y on log scale"
+  echo "log    1 to plot y on log scale, -1 to negate before plotting"
   echo "title  Title for the plot"
   echo "offset X-axis offset between series, 0 to disable (default: 0.05)"
   echo "save   \"1\" to save plots to auto-generated filenames, otherwise name of pdf"

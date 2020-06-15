@@ -48,17 +48,40 @@ std::ostream& operator<<(std::ostream& os, const SourceT Type)
   return os;
 }
 
-struct Quark
+std::istream& operator>>(std::istream& is, SourceT &Type)
 {
-  std::string flavour;
-  double mass;
-  unsigned int Ls;
-  double M5;
-  // Solver parameters
-  int maxIteration;
-  double residual;
-  const bool bGaugeSmear = false;
-  const char * EigenPackFilename = nullptr;
+  std::string s;
+  if( is >> s )
+  {
+    int i;
+    for(i = 0; i < SourceTName.size() && !Common::EqualIgnoreCase( s, SourceTName[i] ); i++)
+      ;
+    if( i < SourceTName.size() )
+      Type = static_cast<SourceT>( i );
+    else
+      is.setstate( std::ios_base::failbit );
+  }
+  return is;
+}
+
+struct Quark: Serializable {
+GRID_SERIALIZABLE_CLASS_MEMBERS(Quark,
+                                std::string,  flavour,
+                                double,       mass,
+                                unsigned int, Ls,
+                                double,       M5,
+                                // Solver parameters
+                                int,          maxIteration,
+                                double,       residual,
+                                bool,         GaugeSmear,
+                                std::string,  EigenPackFilename )
+public:
+  Quark() = default;
+  Quark(std::string flavour_, double mass_, unsigned int Ls_, double M5_, int maxIteration_,
+        double residual_, bool GaugeSmear_ = false, const char * EigenPackFilename_ = nullptr)
+  : flavour{flavour_}, mass{mass_}, Ls{Ls_}, M5{M5_}, maxIteration{maxIteration_},
+    residual{residual_}, GaugeSmear{GaugeSmear_},
+    EigenPackFilename{EigenPackFilename_ ? EigenPackFilename_ : "" } {}
 };
 
 static const std::string GaugePathName{ "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat" };
@@ -70,16 +93,9 @@ static const Quark Quark_h1{"h1", 0.58, 12, 1.0, 5000, 1e-12, true};
 static const Quark Quark_h2{"h2", 0.64, 12, 1.0, 5000, 1e-12, true};
 static const Quark Quark_h3{"h3", 0.69, 12, 1.0, 5000, 1e-12, true};
 
-static const std::array<const Quark *, 1> SpectatorQuarks{ &Quark_s };
-static const std::vector<const Quark *> HeavyQuarks{ &Quark_h0, &Quark_h1, &Quark_h2, &Quark_h3 };
+std::vector<Quark> SampleQuarks{ Quark_h0, Quark_h1 };
 
-static const std::vector<Common::Momentum> Momenta{
-  { 0, 0, 0 },
-  { 1, 0, 0 },
-  { 1, 1, 0 },
-  { 1, 1, 1 },
-  { 2, 0, 0 },
-};
+static const std::vector<const Quark *> HeavyQuarks{ &Quark_h0, &Quark_h1, &Quark_h2, &Quark_h3 };
 
 static const Gamma::Algebra algInsert[] = {
   Gamma::Algebra::Gamma5,
@@ -97,6 +113,22 @@ static const std::array<const std::string *, NumInsert> algInsertName {
   //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaX ) ],
   //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaY ) ],
   //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaZ ) ],
+};
+
+struct RunPar: Serializable {
+    GRID_SERIALIZABLE_CLASS_MEMBERS(RunPar,
+      Grid::Hadrons::Application::TrajRange,      trajCounter,
+      Grid::Hadrons::VirtualMachine::GeneticPar,  genetic,
+                                    std::string,  ScheduleFile,
+                                    int,          Nt,
+      Grid::Hadrons::Application::TrajRange,      Timeslices,
+                                    std::string,  Type,
+                                    std::string,  Momenta,
+                                    std::string,  deltaT,
+                                    std::string,  Lattice,
+                                    std::string,  Gauge,
+                                    bool,         HeavyQuark,
+                                    bool,         HeavyAnti)
 };
 
 inline void Append( std::string &sDest, const std::string &s )
@@ -166,13 +198,13 @@ inline void AppendDeltaT( std::string &sDest, int t )
 
 struct AppParams
 {
-  unsigned int nt;
-  bool bEigenpackEnable;
-  bool bRandom;
-  AppParams( unsigned int nt_, bool bEigenpackEnable_, bool bRandom_ )
-  : nt{nt_}, bEigenpackEnable{bEigenpackEnable_}, bRandom{bRandom_} {}
+  RunPar Run;
+  SourceT Type;
+  std::string RunID;
+  std::vector<Quark> HeavyQuarks;
+  std::vector<Quark> SpectatorQuarks;
   inline int TimeBound( int t ) const
-  { return t < 0 ? nt - ((-t) % nt) : t % nt; }
+  { return t < 0 ? Run.Nt - ((-t) % Run.Nt) : t % Run.Nt; }
 };
 
 /**************************
@@ -358,7 +390,7 @@ ModAction::ModAction(const Quark &q_) : q{q_}
 bool ModAction::AddDependencies( HModList &ModList ) const
 {
   MAction::DWF::Par actionPar;
-  actionPar.gauge = q.bGaugeSmear ? ModList.TakeOwnership(new ModStoutGauge()) : GaugeFieldName;
+  actionPar.gauge = q.GaugeSmear ? ModList.TakeOwnership(new ModStoutGauge()) : GaugeFieldName;
   actionPar.Ls    = q.Ls;
   actionPar.M5    = q.M5;
   actionPar.mass  = q.mass;
@@ -396,7 +428,7 @@ bool ModSolver::AddDependencies( HModList &ModList ) const
 {
   // solvers
   MSolver::RBPrecCG::Par solverPar;
-  if( ModList.params.bEigenpackEnable && q.EigenPackFilename )
+  if( ModList.params.Run.Gauge.length() && q.EigenPackFilename.length() )
   {
     // eigenpacks for deflation
     MIO::LoadFermionEigenPack::Par epPar;
@@ -409,7 +441,7 @@ bool ModSolver::AddDependencies( HModList &ModList ) const
   }
   solverPar.action       = ModList.TakeOwnership( new ModAction( q ) );
   solverPar.residual     = q.residual;
-  solverPar.maxIteration = ModList.params.bRandom ? q.maxIteration / 10 : q.maxIteration;
+  solverPar.maxIteration = ModList.params.Run.Gauge.empty() ? q.maxIteration / 10 : q.maxIteration;
   ModList.application.createModule<MSolver::RBPrecCG>(name, solverPar);
   return true;
 }
@@ -558,7 +590,7 @@ bool ModPropSeq::AddDependencies( HModList &ModList ) const
 **************************/
 
 const std::string ContractionPrefix{ "meson" };
-const std::string ContractionBaseOutput{ "meson/C1/" };
+const std::string ContractionBaseOutput{ "C1/meson/" };
 
 class ModContract2pt : public HMod
 {
@@ -616,20 +648,20 @@ public:
   const Quark &qSpectator;
   const Common::Momentum p;
   const int t;
-  const bool bCurrentAnti;
+  const bool bHeavyAnti;
   const int Current;
   const int deltaT;
   ModContract3pt( const SourceT Type, const Quark &qSnk, const Quark &qSrc, const Quark &qSpectator,
-                  const Common::Momentum &p, int t, bool bCurrentAnti, int Current, int deltaT );
+                  const Common::Momentum &p, int t, bool bHeavyAnti, int Current, int deltaT );
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 ModContract3pt::ModContract3pt( const SourceT type_, const Quark &qSnk_, const Quark &qSrc_, const Quark &qSpectator_,
-                                const Common::Momentum &p_, int t_, bool bCurrentAnti_, int Current_, int deltaT_)
+                                const Common::Momentum &p_, int t_, bool bHeavyAnti_, int Current_, int deltaT_)
 : Type{type_}, qSnk{qSnk_}, qSrc{qSrc_}, qSpectator{qSpectator_},
-  p{p_}, t{t_}, bCurrentAnti{bCurrentAnti_}, Current{Current_}, deltaT(deltaT_)
+  p{p_}, t{t_}, bHeavyAnti{bHeavyAnti_}, Current{Current_}, deltaT(deltaT_)
 {
-  std::string s{bCurrentAnti ? "anti" : "quark" };
+  std::string s{bHeavyAnti ? "anti" : "quark" };
   Append( s, qSnk.flavour );
   Append( s, qSrc.flavour );
   Append( s, *algInsertName[Current_] );
@@ -652,10 +684,10 @@ bool ModContract3pt::AddDependencies( HModList &ModList ) const
   par.sink = ModList.TakeOwnership(new ModSink( Type, -p ));
   static const Common::Momentum p0(0,0,0);
   std::string qSeq{ ModList.TakeOwnership( new ModPropSeq( Type, qSrc, Current, -deltaT, p0,
-                                                           qSpectator, bCurrentAnti ? p0 : p, tf ) ) };
-  std::string q{ ModList.TakeOwnership( new ModProp( Type, qSnk, bCurrentAnti ? p : p0, tf ) ) };
-  par.q1 = bCurrentAnti ? q    : qSeq;
-  par.q2 = bCurrentAnti ? qSeq : q;
+                                                           qSpectator, bHeavyAnti ? p0 : p, tf ) ) };
+  std::string q{ ModList.TakeOwnership( new ModProp( Type, qSnk, bHeavyAnti ? p : p0, tf ) ) };
+  par.q2 = bHeavyAnti ? q    : qSeq;
+  par.q1 = bHeavyAnti ? qSeq : q;
   ModList.application.createModule<MContraction::Meson>(name, par);
   return true;
 }
@@ -667,78 +699,83 @@ bool ModContract3pt::AddDependencies( HModList &ModList ) const
 class AppMaker
 {
 public:
-  const AppParams params;
   Application application;
   HModList l;
 protected:
-  Application Setup( const std::string &RunID );
+  Application Setup( const AppParams &params );
 public:
-  explicit AppMaker( unsigned int nt_, bool bEigenpackEnable_, bool bRandom_, const std::string &RunID )
-  : params(nt_, bEigenpackEnable_, bRandom_), application{Setup( RunID )}, l(application, params) {}
-  void Make( SourceT Type, const Quark &qSpectator, const std::vector<Common::Momentum> &mom );
+  explicit AppMaker( const AppParams &params )
+  : application{ Setup( params ) }, l( application, params ) {}
+  void Make();
 };
 
 // One-time initialisation
-Application AppMaker::Setup( const std::string &RunID )
+Application AppMaker::Setup( const AppParams &params )
 {
   // global parameters
   Application::GlobalPar globalPar;
-  globalPar.trajCounter.start    = 3000;
-  globalPar.trajCounter.end      = 3001;
-  globalPar.trajCounter.step     = 40;
-  globalPar.runId                = RunID;
-  globalPar.genetic.maxGen       = params.bRandom ? 10 : 1000;
-  globalPar.genetic.maxCstGen    = 200;
-  globalPar.genetic.popSize      = 20;
-  globalPar.genetic.mutationRate = .1;
+  globalPar.trajCounter  = params.Run.trajCounter;
+  globalPar.runId        = params.RunID;
+  globalPar.genetic      = params.Run.genetic;
   globalPar.saveSchedule = false;
-  Application application(globalPar);
+  Application application( globalPar );
   // gauge field
-  if( params.bRandom )
+  if( params.Run.Gauge.empty() )
   {
-    application.createModule<MGauge::Random>(GaugeFieldName);
+    application.createModule<MGauge::Random>( GaugeFieldName );
   }
   else
   {
     MIO::LoadNersc::Par gaugePar;
-    gaugePar.file = GaugePathName;
-    application.createModule<MIO::LoadNersc>(GaugeFieldName, gaugePar);
+    gaugePar.file = params.Run.Gauge;
+    application.createModule<MIO::LoadNersc>( GaugeFieldName, gaugePar );
   }
   return application;
 }
 
-void AppMaker::Make( SourceT Type, const Quark &qSpectator, const std::vector<Common::Momentum> &mom )
+void AppMaker::Make()
 {
-  for( unsigned int t = 0; t < params.nt; t+=4 )
-  //for( unsigned int t = 44; t < nt; t+=4 )
-  //unsigned int t = 8;
+  const std::vector<Common::Momentum>
+              Momenta{ Common::ArrayFromString<Common::Momentum>( l.params.Run.Momenta ) };
+  if( Momenta.empty() )
+    throw std::runtime_error( "There should be at least one momentum" );
+  const std::vector<int> deltaTList{ Common::ArrayFromString<int>( l.params.Run.deltaT ) };
+  if( Momenta.empty() )
+    throw std::runtime_error( "There should be at least one deltaT" );
+  for( const Quark &qSpectator : l.params.SpectatorQuarks )
   {
-    for( int qH1 = 0; qH1 < HeavyQuarks.size(); ++qH1 )
+    for( unsigned int t = l.params.Run.Timeslices.start; t < l.params.Run.Timeslices.end; t += l.params.Run.Timeslices.step )
     {
-      for( int qH2 = 0; qH2 <= qH1; ++qH2 )
+      for( const Common::Momentum &p : Momenta )
       {
-        for( const Common::Momentum &p : mom )
+        for( const Quark &qH1 : l.params.HeavyQuarks )
         {
-          const bool InsertCurrentInAntiQuark{ true };
-          //for( int InsertCurrentInAntiQuark = 0; InsertCurrentInAntiQuark < 2; ++InsertCurrentInAntiQuark )
+          for( const Quark &qH2 : l.params.HeavyQuarks )
           {
-            // 2pt functions
-            if( InsertCurrentInAntiQuark )
+            for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
+                     iHeavy <= l.params.Run.HeavyAnti  ? 1 : 0; ++iHeavy )
             {
-              l.TakeOwnership( new ModContract2pt( Type, qSpectator, *HeavyQuarks[qH1], p, t ) );
-              l.TakeOwnership( new ModContract2pt( Type, qSpectator, *HeavyQuarks[qH2], p, t ) );
-            }
-            else
-            {
-              l.TakeOwnership( new ModContract2pt( Type, *HeavyQuarks[qH1], qSpectator, p, t ) );
-              l.TakeOwnership( new ModContract2pt( Type, *HeavyQuarks[qH2], qSpectator, p, t ) );
-            }
-            static const std::vector<int> deltaTList{ 12, 14, 16, 20 };
-            for( int deltaT : deltaTList )
-            {
-              for( int j = 0; j < NumInsert; j++ )
+              const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
+              if( !p || qH1.mass >= qH2.mass )
               {
-                l.TakeOwnership( new ModContract3pt( Type, *HeavyQuarks[qH2], *HeavyQuarks[qH1], qSpectator, p, l.params.TimeBound( t - deltaT ), InsertCurrentInAntiQuark, j, deltaT ) );
+                // 2pt functions
+                if( bHeavyAnti )
+                {
+                  l.TakeOwnership( new ModContract2pt( l.params.Type, qSpectator, qH1, p, t ) );
+                  l.TakeOwnership( new ModContract2pt( l.params.Type, qSpectator, qH2, p, t ) );
+                }
+                else
+                {
+                  l.TakeOwnership( new ModContract2pt( l.params.Type, qH1, qSpectator, p, t ) );
+                  l.TakeOwnership( new ModContract2pt( l.params.Type, qH2, qSpectator, p, t ) );
+                }
+                for( int deltaT : deltaTList )
+                {
+                  for( int j = 0; j < NumInsert; j++ )
+                  {
+                    l.TakeOwnership( new ModContract3pt( l.params.Type, qH1, qH2, qSpectator, p, l.params.TimeBound( t - deltaT ), bHeavyAnti, j, deltaT ) );
+                  }
+                }
               }
             }
           }
@@ -746,6 +783,31 @@ void AppMaker::Make( SourceT Type, const Quark &qSpectator, const std::vector<Co
       }
     }
   }
+}
+
+std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType )
+{
+  static const std::string sQuark{ "Quark" };
+  std::string TagName{ "Num" };
+  TagName.append( qType );
+  TagName.append( sQuark );
+  int NumQuarks;
+  read( r, TagName, NumQuarks );
+  if( NumQuarks < 1 )
+    throw std::runtime_error( "At least one " + qType + " quark must be specified" );
+  TagName = qType;
+  TagName.append( sQuark );
+  const std::size_t PrefixLen{ TagName.length() };
+  Quark q;
+  std::vector<Quark> vq;
+  for( int i = 0; i < NumQuarks; ++i )
+  {
+    TagName.resize( PrefixLen );
+    TagName.append( std::to_string( i ) );
+    read( r, TagName, q );
+    vq.push_back( q );
+  }
+  return vq;
 }
 
 int main(int argc, char *argv[])
@@ -756,6 +818,14 @@ int main(int argc, char *argv[])
   if( Debug() ) return iReturn;
   #endif
 
+  // See whether parameter file exists
+  if( argc < 2 )
+  {
+    std::cout << "1st argument should be Parameter.xml filename" << std::endl;
+    return EXIT_FAILURE;
+  }
+  const std::string sXmlFilename{ argv[1] };
+
   // initialization //////////////////////////////////////////////////////////
   Grid_init(&argc, &argv);
   HadronsLogError.Active(GridLogError.isActive());
@@ -764,43 +834,52 @@ int main(int argc, char *argv[])
   HadronsLogIterative.Active(GridLogIterative.isActive());
   HadronsLogDebug.Active(GridLogDebug.isActive());
   const Grid::Coordinate &lat{GridDefaultLatt()};
-  const bool bRandom{ GridCmdOptionExists( argv, argv + argc, "-r" ) };
-  const bool bEigenpackEnable{ !bRandom && !GridCmdOptionExists( argv, argv + argc, "-e" ) };
-  const unsigned int nt{ lat.size() < 4 ? 64 : static_cast<unsigned int>( lat[3] ) };
   try
   {
-    SourceT Type;
+    static const std::string sXmlTopLevel{ "Study2" };
+    static const std::string sXmlTagName{ "RunPar" };
+    AppParams params;
     {
-      std::string s{ GridCmdOptionPayload( argv, argv + argc, "-t" ) };
-      int i{ Z2 };
-      GridCmdOptionInt( s, i );
-      Type = static_cast<SourceT>( i );
+      XmlReader r( sXmlFilename, false, sXmlTopLevel );
+      read( r, sXmlTagName, params.Run );
+      params.HeavyQuarks     = ReadQuarks( r, "Heavy" );
+      params.SpectatorQuarks = ReadQuarks( r, "Spectator" );
+      // Check the type
+      std::istringstream ss( params.Run.Type );
+      if( ! ( ss >> params.Type && Common::StreamEmpty( ss ) ) )
+        throw std::runtime_error( "Unrecognised type \"" + params.Run.Type + "\"" );
+      // Make the runID
+      params.RunID = "S2" + params.Run.Type;
+      for( const Quark &q : params.SpectatorQuarks )
+        params.RunID.append( q.flavour );
+      // Make sure at least one of CurrentQuark and CurrentAnti specified
+      if( !params.Run.HeavyQuark && !params.Run.HeavyQuark )
+        throw std::runtime_error( "At least one of HeavyQuark and HeavyAnti must be true" );
     }
-    if( Type < 0 || Type >= SourceTName.size() )
-      throw std::runtime_error( "Unrecognised type " + std::to_string( Type ) );
-    LOG(Message)
-      << std::boolalpha
-      << "nt=" << std::to_string( nt )
-      << ", Random gauge " << bRandom
-      << ", Eigen packs " << bEigenpackEnable
-      << ", Type " << Type
-      << std::endl;
-    for( const Quark *qSpectator : SpectatorQuarks )
+
+    AppMaker x( params );
+    x.Make();
+    // Is the lattice the same size as specified in the job?
+    std::vector<int> Lattice = Common::ArrayFromString<int>( params.Run.Lattice );
+    bool bRun = Lattice.size() == lat.size();
+    for( int i = 0; bRun && i < Lattice.size(); ++i )
+      if( lat[i] != Lattice[i] )
+        bRun = false;
+    // Run or save the job
+    if( !bRun )
+      x.application.saveParameterFile( params.RunID + ".xml" );
+    else
     {
-      //for( int Type = 0; Type < SourceTName.size(); ++Type )
+      const std::string ScheduleFile{ params.Run.ScheduleFile.empty()
+                                      ? params.RunID + ".sched" : params.Run.ScheduleFile };
+      if( Common::FileExists( ScheduleFile ) )
+        x.application.loadSchedule( ScheduleFile );
+      else
       {
-        const std::string RunID{ "S2" + SourceTName[Type] + qSpectator->flavour };
-        AppMaker x( nt, bEigenpackEnable, bRandom, RunID );
-        x.Make( Type, *qSpectator, Momenta );
-        // save
-        static const std::string XmlFileName{ RunID + ".xml" };
-        x.application.saveParameterFile( XmlFileName );
-        // execute
-        if( bRandom || ( lat.size() == 4 && lat[0] == 24 && lat[1] == 24 && lat[2] == 24 && lat[3] == 64 ) )
-          x.application.run();
-        else
-          LOG(Warning) << "The parameters in " << XmlFileName << " are designed for --grid 24.24.24.64" << std::endl;
+        x.application.schedule();
+        x.application.saveSchedule( ScheduleFile );
       }
+      x.application.run();
     }
   }
   catch(const std::exception &e)

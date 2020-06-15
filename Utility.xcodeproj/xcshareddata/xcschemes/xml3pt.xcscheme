@@ -53,12 +53,16 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
+            argument = "xml3pt.xml"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--grid 8.8.8.64"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t 1"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-r --grid 4.4.4.8"
