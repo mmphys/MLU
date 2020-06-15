@@ -392,7 +392,7 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
         {
           const Common::CorrelatorFileC &file{ *it++ };
           const int CorrelatorTimeslice{ file.Timeslice() };
-          const int TOffset{ bAlignTimeslices ? ( bBackwardsWave ? ( Nt - CorrelatorTimeslice ) % Nt : CorrelatorTimeslice ) : 0 };
+          const int TOffset{ bAlignTimeslices ? ( bBackwardsWave ? (Nt-CorrelatorTimeslice)%Nt : CorrelatorTimeslice ) : 0 };
           {
             // increment count
             assert( sizeof( int ) == sizeof( file.Name_.Seed ) );
@@ -748,7 +748,7 @@ int main(const int argc, const char *argv[])
       par.bFactorised = cl.GotSwitch( "f" );
       par.bFold = cl.GotSwitch( "h" );
       par.bT0Abs = !cl.GotSwitch( "z" ); // Add the switch to turn this off
-      par.bBackwardsWave = cl.GotSwitch( "b" );
+      par.bBackwardsWave = cl.GotSwitch( "v" );
       const bool bSwapQuarks{ !cl.GotSwitch( "q" ) }; // Add the switch to turn this off
       if( cl.GotSwitch( "m" ) )
         par.MachineName = cl.SwitchValue<std::string>( "m" );
