@@ -8,6 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		6804C193244C78C8008E272B /* Test_hadrons_meson_3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C185244C7864008E272B /* Test_hadrons_meson_3pt.cpp */; };
+		6809611724982ACE007F8DB3 /* StatLogger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6809611224982ACD007F8DB3 /* StatLogger.cpp */; };
+		6809611824982ACE007F8DB3 /* Database.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6809611324982ACD007F8DB3 /* Database.cpp */; };
+		6809611924982ACE007F8DB3 /* StatLogger.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6809611424982ACD007F8DB3 /* StatLogger.hpp */; };
+		6809611A24982ACE007F8DB3 /* SqlEntry.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6809611524982ACE007F8DB3 /* SqlEntry.hpp */; };
+		6809611B24982ACE007F8DB3 /* Database.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6809611624982ACE007F8DB3 /* Database.hpp */; };
+		6809612024982C11007F8DB3 /* sqlite3.c in Sources */ = {isa = PBXBuildFile; fileRef = 6809611D24982C11007F8DB3 /* sqlite3.c */; };
+		6809612324982CD4007F8DB3 /* sqlite3ext.h in Headers */ = {isa = PBXBuildFile; fileRef = 6809611F24982C11007F8DB3 /* sqlite3ext.h */; };
+		6809612424982CE5007F8DB3 /* sqlite3.h in Headers */ = {isa = PBXBuildFile; fileRef = 6809611E24982C11007F8DB3 /* sqlite3.h */; };
 		6815510A22CBCB74009AB4AD /* MultiFit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681550FE22CBC9B9009AB4AD /* MultiFit.cpp */; };
 		6815510D22CBE8B6009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		6815510E22CBF569009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
@@ -1374,6 +1382,14 @@
 		6804C186244C7864008E272B /* Test_distil.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_distil.cpp; path = ../Hadrons/tests/Test_distil.cpp; sourceTree = "<group>"; };
 		6804C187244C7864008E272B /* Test_sigma_to_nucleon.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_sigma_to_nucleon.cpp; path = ../Hadrons/tests/Test_sigma_to_nucleon.cpp; sourceTree = "<group>"; };
 		6804C18C244C78AF008E272B /* Test_hadrons_meson_3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_hadrons_meson_3pt; sourceTree = BUILT_PRODUCTS_DIR; };
+		6809611224982ACD007F8DB3 /* StatLogger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = StatLogger.cpp; sourceTree = "<group>"; };
+		6809611324982ACD007F8DB3 /* Database.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Database.cpp; sourceTree = "<group>"; };
+		6809611424982ACD007F8DB3 /* StatLogger.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = StatLogger.hpp; sourceTree = "<group>"; };
+		6809611524982ACE007F8DB3 /* SqlEntry.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SqlEntry.hpp; sourceTree = "<group>"; };
+		6809611624982ACE007F8DB3 /* Database.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Database.hpp; sourceTree = "<group>"; };
+		6809611D24982C11007F8DB3 /* sqlite3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sqlite3.c; sourceTree = "<group>"; };
+		6809611E24982C11007F8DB3 /* sqlite3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sqlite3.h; sourceTree = "<group>"; };
+		6809611F24982C11007F8DB3 /* sqlite3ext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sqlite3ext.h; sourceTree = "<group>"; };
 		681550FD22CBC9B9009AB4AD /* MultiFit.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MultiFit.hpp; sourceTree = "<group>"; };
 		681550FE22CBC9B9009AB4AD /* MultiFit.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MultiFit.cpp; sourceTree = "<group>"; };
 		6815510322CBCB61009AB4AD /* MultiFit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MultiFit; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2842,6 +2858,16 @@
 				6804C187244C7864008E272B /* Test_sigma_to_nucleon.cpp */,
 			);
 			name = Hadrons_tests;
+			sourceTree = "<group>";
+		};
+		6809611C24982C11007F8DB3 /* sqlite */ = {
+			isa = PBXGroup;
+			children = (
+				6809611D24982C11007F8DB3 /* sqlite3.c */,
+				6809611E24982C11007F8DB3 /* sqlite3.h */,
+				6809611F24982C11007F8DB3 /* sqlite3ext.h */,
+			);
+			path = sqlite;
 			sourceTree = "<group>";
 		};
 		6822E8B322A7057400A85993 = {
@@ -4989,12 +5015,15 @@
 			isa = PBXGroup;
 			children = (
 				6850D423244A234300A53DC8 /* Modules */,
+				6809611C24982C11007F8DB3 /* sqlite */,
 				6850D27F244A230800A53DC8 /* A2AMatrix.hpp */,
 				6850D34A244A230A00A53DC8 /* A2AVectors.hpp */,
 				6850D262244A230800A53DC8 /* add_module_template.sh */,
 				6850D280244A230800A53DC8 /* add_module.sh */,
 				6850D286244A230800A53DC8 /* Application.cpp */,
 				6850D25E244A230800A53DC8 /* Application.hpp */,
+				6809611324982ACD007F8DB3 /* Database.cpp */,
+				6809611624982ACE007F8DB3 /* Database.hpp */,
 				6850D284244A230800A53DC8 /* DilutedNoise.hpp */,
 				6850D348244A230A00A53DC8 /* DiskVector.hpp */,
 				6850D34B244A230A00A53DC8 /* EigenPack.hpp */,
@@ -5018,6 +5047,9 @@
 				6850D285244A230800A53DC8 /* modules.inc */,
 				6850D27D244A230800A53DC8 /* NamedTensor.hpp */,
 				6850D264244A230800A53DC8 /* Solver.hpp */,
+				6809611524982ACE007F8DB3 /* SqlEntry.hpp */,
+				6809611224982ACD007F8DB3 /* StatLogger.cpp */,
+				6809611424982ACD007F8DB3 /* StatLogger.hpp */,
 				6850D281244A230800A53DC8 /* TimerArray.cpp */,
 				6850D27A244A230800A53DC8 /* TimerArray.hpp */,
 				6850D346244A230A00A53DC8 /* VirtualMachine.cpp */,
@@ -6164,6 +6196,7 @@
 				6850D513244A234500A53DC8 /* Gauss.hpp in Headers */,
 				6850D4E7244A234500A53DC8 /* A2AAslashField.hpp in Headers */,
 				6850D509244A234500A53DC8 /* Point.hpp in Headers */,
+				6809611B24982ACE007F8DB3 /* Database.hpp in Headers */,
 				6850D4F9244A234500A53DC8 /* WeakNonEye3pt.hpp in Headers */,
 				6850D422244A230A00A53DC8 /* ModuleFactory.hpp in Headers */,
 				6850D555244A234500A53DC8 /* Amputate.hpp in Headers */,
@@ -6183,6 +6216,7 @@
 				6850D546244A234500A53DC8 /* LapEvec.hpp in Headers */,
 				6850D570244A234500A53DC8 /* EMT.hpp in Headers */,
 				6850D57E244A234500A53DC8 /* LoadDistilNoise.hpp in Headers */,
+				6809611924982ACE007F8DB3 /* StatLogger.hpp in Headers */,
 				6850D4E6244A234500A53DC8 /* Baryon.hpp in Headers */,
 				6850D4EA244A234500A53DC8 /* A2ALoop.hpp in Headers */,
 				6850D580244A234500A53DC8 /* LoadA2AVectors.hpp in Headers */,
@@ -6223,12 +6257,14 @@
 				6850D41E244A230A00A53DC8 /* DiskVector.hpp in Headers */,
 				6850D36D244A230A00A53DC8 /* Modules.hpp in Headers */,
 				6850D4EF244A234500A53DC8 /* Meson.hpp in Headers */,
+				6809611A24982ACE007F8DB3 /* SqlEntry.hpp in Headers */,
 				6850D57B244A234500A53DC8 /* LoadEigenPack.hpp in Headers */,
 				6850D530244A234500A53DC8 /* GaugeFix.hpp in Headers */,
 				6850D560244A234500A53DC8 /* WilsonClover.hpp in Headers */,
 				6850D56F244A234500A53DC8 /* TrMag.hpp in Headers */,
 				6850D51E244A234500A53DC8 /* A2AAslashVectors.hpp in Headers */,
 				6850D551244A234500A53DC8 /* DistilPar.hpp in Headers */,
+				6809612324982CD4007F8DB3 /* sqlite3ext.h in Headers */,
 				6850D353244A230A00A53DC8 /* Solver.hpp in Headers */,
 				6850D508244A234500A53DC8 /* JacobiSmear.hpp in Headers */,
 				6850D53C244A234500A53DC8 /* PrecisionCast.hpp in Headers */,
@@ -6243,6 +6279,7 @@
 				6850D50E244A234500A53DC8 /* SeqAslash.hpp in Headers */,
 				6850D34F244A230A00A53DC8 /* Factory.hpp in Headers */,
 				6850D556244A234500A53DC8 /* FourQuark.hpp in Headers */,
+				6809612424982CE5007F8DB3 /* sqlite3.h in Headers */,
 				682D061D246A958D0052D780 /* Loop.hpp in Headers */,
 				6850D55E244A234500A53DC8 /* MobiusDWF.hpp in Headers */,
 				6850D421244A230A00A53DC8 /* EigenPack.hpp in Headers */,
@@ -7024,6 +7061,7 @@
 				6850D567244A234500A53DC8 /* TransProj.cpp in Sources */,
 				6850D53A244A234500A53DC8 /* FullVolumeSpinColorDiagonal.cpp in Sources */,
 				6850D36C244A230A00A53DC8 /* TimerArray.cpp in Sources */,
+				6809611724982ACE007F8DB3 /* StatLogger.cpp in Sources */,
 				6850D4F1244A234500A53DC8 /* A2AFourQuarkContraction.cpp in Sources */,
 				6850D54D244A234500A53DC8 /* PerambFromSolve.cpp in Sources */,
 				6860B983248E77CD0049C0DE /* SeqGammaWall.cpp in Sources */,
@@ -7053,6 +7091,7 @@
 				6850D366244A230A00A53DC8 /* Module.cpp in Sources */,
 				6850D510244A234500A53DC8 /* SeqGamma.cpp in Sources */,
 				6850D51D244A234500A53DC8 /* A2AVectors.cpp in Sources */,
+				6809612024982C11007F8DB3 /* sqlite3.c in Sources */,
 				6850D52D244A234500A53DC8 /* FundtoHirep.cpp in Sources */,
 				6850D54E244A234500A53DC8 /* LapEvec.cpp in Sources */,
 				6850D4F6244A234500A53DC8 /* Baryon.cpp in Sources */,
@@ -7070,6 +7109,7 @@
 				682D0620246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp in Sources */,
 				6850D550244A234500A53DC8 /* Noises.cpp in Sources */,
 				6850D503244A234500A53DC8 /* Momentum.cpp in Sources */,
+				6809611824982ACE007F8DB3 /* Database.cpp in Sources */,
 				6850D504244A234500A53DC8 /* SeqConserved.cpp in Sources */,
 				6850D41D244A230A00A53DC8 /* VirtualMachine.cpp in Sources */,
 				6850D587244A234500A53DC8 /* LoadNersc.cpp in Sources */,
