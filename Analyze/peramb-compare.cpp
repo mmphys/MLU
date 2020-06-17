@@ -60,24 +60,28 @@ inline bool ApproxEq( std::complex<T> x, std::complex<T> y, T epsilon, T &diffMa
   return ReDiff < epsilon && MagDiff < epsilon;
 }
 
-int TestPer(const std::string &pszF1, const std::string &pszF2, const double epsilon) {
+static constexpr int PerIndices{ 6 };
+using PerSizes = std::array<int, PerIndices>;
+
+int TestPer(const std::string &pszF1, const std::string &pszF2, const double epsilon, const PerSizes &sizes)
+{
   std::cout << "Comparing: " << pszF1 << " with " << pszF2 << std::endl;
   using Per = Grid::Hadrons::MDistil::PerambTensor;
   //std::array<std::string,6> sIndexNames{"Nt", "nvec", "LI", "nnoise", "Nt_inv", "SI"};
   //Per per1(sIndexNames,64,100,100,1,1,4);
   //Per per2(sIndexNames,64,100,100,1,1,4);
-  Per per1;
-  Per per2;
+  Per per1( sizes[0], sizes[1], sizes[2], sizes[3], sizes[4], sizes[5] );
+  Per per2( sizes[0], sizes[1], sizes[2], sizes[3], sizes[4], sizes[5] );
   per1.read( pszF1 );
   per2.read( pszF2 );
 
   // Cast to eigen tensor
-  using PerT = typename Per::ET;
+  using PerT = typename Eigen::TensorMap<Per::ET>;
   PerT & pt1{ per1.tensor };
   PerT & pt2{ per2.tensor };
 
   //Norm of the difference and compare individual members
-  PerT diff = pt1 - pt2;
+  Per::ET diff = pt1 - pt2;
   //Eigen::Tensor<double, 0, PerT::Options> dResult = (pt1 == pt2).all();
   int i = 0;
   double dSum = 0;
@@ -112,11 +116,17 @@ int main(int argc, const char *argv[])
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
-    const int NumFiles{ static_cast<int>( cl.Args.size() ) };
+    const int NumFiles{ static_cast<int>( cl.Args.size() - PerIndices ) };
     if( !cl.GotSwitch( "help" ) && NumFiles == 2 )
     {
+      PerSizes Sizes;
+      for( int i = 0; i < PerIndices; i++ )
+      {
+        std::stringstream ss( cl.Args[i + NumFiles] );
+        ss >> Sizes[i];
+      }
       bShowUsage = false;
-      iReturn = TestPer( cl.Args[0], cl.Args[1], cl.SwitchValue<double>("e") );
+      iReturn = TestPer( cl.Args[0], cl.Args[1], cl.SwitchValue<double>("e"), Sizes );
     }
   }
   catch(const std::exception &e)
@@ -130,7 +140,7 @@ int main(int argc, const char *argv[])
   if( bShowUsage )
   {
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
-    " <options> Perambulator1 Perambulator2\n"
+    " <options> Perambulator1 Perambulator2 size1 size2 size3 size4 size5 size6\n"
     "Compare two perambulators, where <options> are:\n"
     "-e     epsilon (i.e. comparison tolerance), default=" DEFAULT_EPSILON "\n"
     "Flags:\n"
