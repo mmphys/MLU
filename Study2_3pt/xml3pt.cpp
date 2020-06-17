@@ -118,6 +118,7 @@ static const std::array<const std::string *, NumInsert> algInsertName {
 struct RunPar: Serializable {
     GRID_SERIALIZABLE_CLASS_MEMBERS(RunPar,
       Grid::Hadrons::Application::TrajRange,      trajCounter,
+      Grid::Hadrons::Application::DatabasePar,    database,
       Grid::Hadrons::VirtualMachine::GeneticPar,  genetic,
                                     std::string,  ScheduleFile,
                                     int,          Nt,
@@ -677,6 +678,7 @@ ModContract3pt::ModContract3pt( const SourceT type_, const Quark &qSnk_, const Q
 bool ModContract3pt::AddDependencies( HModList &ModList ) const
 {
   const int tf{ ModList.params.TimeBound( t + deltaT ) };
+  const bool bInvertSeq{ bHeavyAnti }; // Do we invert the sequential prop? ... or normal prop?
   MContraction::Meson::Par par;
   par.output = FileName;
   //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
@@ -715,8 +717,9 @@ Application AppMaker::Setup( const AppParams &params )
   // global parameters
   Application::GlobalPar globalPar;
   globalPar.trajCounter  = params.Run.trajCounter;
-  globalPar.runId        = params.RunID;
+  globalPar.database     = params.Run.database;
   globalPar.genetic      = params.Run.genetic;
+  globalPar.runId        = params.RunID;
   globalPar.saveSchedule = false;
   Application application( globalPar );
   // gauge field

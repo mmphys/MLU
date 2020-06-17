@@ -1181,6 +1181,7 @@
 		6860B984248E77CD0049C0DE /* SeqGammaWall.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6860B982248E77CC0049C0DE /* SeqGammaWall.hpp */; };
 		686EC70A24003ED30084D04D /* FitSummary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686EC70924003ED30084D04D /* FitSummary.cpp */; };
 		686EC70B240041E90084D04D /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
+		687588BB2499501900E38728 /* Test_hadrons_spectrum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C182244C7863008E272B /* Test_hadrons_spectrum.cpp */; };
 		687726942466C49E00D46AEF /* Debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687726872466C32D00D46AEF /* Debug.cpp */; };
 		688FEBE4238C1BE100977B09 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		68939D8923A032A900C30150 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
@@ -1273,6 +1274,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		686EC70024003EA40084D04D /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		687588B22499500100E38728 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -1382,6 +1392,7 @@
 		6804C186244C7864008E272B /* Test_distil.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_distil.cpp; path = ../Hadrons/tests/Test_distil.cpp; sourceTree = "<group>"; };
 		6804C187244C7864008E272B /* Test_sigma_to_nucleon.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_sigma_to_nucleon.cpp; path = ../Hadrons/tests/Test_sigma_to_nucleon.cpp; sourceTree = "<group>"; };
 		6804C18C244C78AF008E272B /* Test_hadrons_meson_3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_hadrons_meson_3pt; sourceTree = BUILT_PRODUCTS_DIR; };
+		680566CE24991A2000478344 /* Test_database.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_database.cpp; path = ../Hadrons/tests/Test_database.cpp; sourceTree = "<group>"; };
 		6809611224982ACD007F8DB3 /* StatLogger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = StatLogger.cpp; sourceTree = "<group>"; };
 		6809611324982ACD007F8DB3 /* Database.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Database.cpp; sourceTree = "<group>"; };
 		6809611424982ACD007F8DB3 /* StatLogger.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = StatLogger.hpp; sourceTree = "<group>"; };
@@ -2668,6 +2679,7 @@
 		6860B982248E77CC0049C0DE /* SeqGammaWall.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SeqGammaWall.hpp; sourceTree = "<group>"; };
 		686EC70224003EA40084D04D /* FitSummary */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FitSummary; sourceTree = BUILT_PRODUCTS_DIR; };
 		686EC70924003ED30084D04D /* FitSummary.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitSummary.cpp; sourceTree = "<group>"; };
+		687588B42499500100E38728 /* Test_hadrons_spectrum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_hadrons_spectrum; sourceTree = BUILT_PRODUCTS_DIR; };
 		687726872466C32D00D46AEF /* Debug.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Debug.cpp; sourceTree = "<group>"; };
 		687726882466C32D00D46AEF /* Debug.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Debug.hpp; sourceTree = "<group>"; };
 		6877268D2466C48000D46AEF /* Debug */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Debug; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2773,6 +2785,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		687588B12499500100E38728 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6877268A2466C48000D46AEF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -2849,6 +2868,7 @@
 		6804C180244C782C008E272B /* Hadrons_tests */ = {
 			isa = PBXGroup;
 			children = (
+				680566CE24991A2000478344 /* Test_database.cpp */,
 				6804C181244C7863008E272B /* Test_diskvector.cpp */,
 				6804C186244C7864008E272B /* Test_distil.cpp */,
 				6804C184244C7864008E272B /* Test_free_prop.cpp */,
@@ -2912,6 +2932,7 @@
 				68E2C2FA245B2097009E7BE5 /* Test_serialisation */,
 				68338D402461408900B6292E /* xml3pt */,
 				6877268D2466C48000D46AEF /* Debug */,
+				687588B42499500100E38728 /* Test_hadrons_spectrum */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -6498,6 +6519,23 @@
 			productReference = 686EC70224003EA40084D04D /* FitSummary */;
 			productType = "com.apple.product-type.tool";
 		};
+		687588B32499500100E38728 /* Test_hadrons_spectrum */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 687588BA2499500100E38728 /* Build configuration list for PBXNativeTarget "Test_hadrons_spectrum" */;
+			buildPhases = (
+				687588B02499500100E38728 /* Sources */,
+				687588B12499500100E38728 /* Frameworks */,
+				687588B22499500100E38728 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Test_hadrons_spectrum;
+			productName = Test_hadrons_spectrum;
+			productReference = 687588B42499500100E38728 /* Test_hadrons_spectrum */;
+			productType = "com.apple.product-type.tool";
+		};
 		6877268C2466C48000D46AEF /* Debug */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 687726912466C48000D46AEF /* Build configuration list for PBXNativeTarget "Debug" */;
@@ -6711,6 +6749,9 @@
 					686EC70124003EA40084D04D = {
 						CreatedOnToolsVersion = 11.3.1;
 					};
+					687588B32499500100E38728 = {
+						CreatedOnToolsVersion = 11.5;
+					};
 					6877268C2466C48000D46AEF = {
 						CreatedOnToolsVersion = 11.4.1;
 					};
@@ -6773,6 +6814,7 @@
 				6804C18B244C78AF008E272B /* Test_hadrons_meson_3pt */,
 				68E2C2F9245B2097009E7BE5 /* Test_serialisation */,
 				6877268C2466C48000D46AEF /* Debug */,
+				687588B32499500100E38728 /* Test_hadrons_spectrum */,
 			);
 		};
 /* End PBXProject section */
@@ -7141,6 +7183,14 @@
 			files = (
 				686EC70B240041E90084D04D /* Common.cpp in Sources */,
 				686EC70A24003ED30084D04D /* FitSummary.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		687588B02499500100E38728 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				687588BB2499501900E38728 /* Test_hadrons_spectrum.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7755,6 +7805,22 @@
 			};
 			name = Release;
 		};
+		687588B82499500100E38728 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		687588B92499500100E38728 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		687726922466C48000D46AEF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -8036,6 +8102,15 @@
 			buildConfigurations = (
 				686EC70624003EA40084D04D /* Debug */,
 				686EC70724003EA40084D04D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		687588BA2499500100E38728 /* Build configuration list for PBXNativeTarget "Test_hadrons_spectrum" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				687588B82499500100E38728 /* Debug */,
+				687588B92499500100E38728 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
