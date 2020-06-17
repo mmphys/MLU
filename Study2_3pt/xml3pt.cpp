@@ -83,7 +83,7 @@ public:
     residual{residual_}, GaugeSmear{GaugeSmear_},
     EigenPackFilename{EigenPackFilename_ ? EigenPackFilename_ : "" } {}
 };
-
+/*
 static const std::string GaugePathName{ "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat" };
 static const char EigenPackC1_l[] = "/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine";
 static const Quark Quark_l {"l" , 0.005, 16, 1.8, 5000, 1e-8, false, EigenPackC1_l};
@@ -92,11 +92,7 @@ static const Quark Quark_h0{"h0", 0.50, 12, 1.0, 5000, 1e-12, true};
 static const Quark Quark_h1{"h1", 0.58, 12, 1.0, 5000, 1e-12, true};
 static const Quark Quark_h2{"h2", 0.64, 12, 1.0, 5000, 1e-12, true};
 static const Quark Quark_h3{"h3", 0.69, 12, 1.0, 5000, 1e-12, true};
-
-std::vector<Quark> SampleQuarks{ Quark_h0, Quark_h1 };
-
-static const std::vector<const Quark *> HeavyQuarks{ &Quark_h0, &Quark_h1, &Quark_h2, &Quark_h3 };
-
+*/
 static const Gamma::Algebra algInsert[] = {
   Gamma::Algebra::Gamma5,
   Gamma::Algebra::GammaTGamma5,
@@ -113,23 +109,6 @@ static const std::array<const std::string *, NumInsert> algInsertName {
   //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaX ) ],
   //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaY ) ],
   //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaZ ) ],
-};
-
-struct RunPar: Serializable {
-    GRID_SERIALIZABLE_CLASS_MEMBERS(RunPar,
-      Grid::Hadrons::Application::TrajRange,      trajCounter,
-      Grid::Hadrons::Application::DatabasePar,    database,
-      Grid::Hadrons::VirtualMachine::GeneticPar,  genetic,
-                                    std::string,  ScheduleFile,
-                                    int,          Nt,
-      Grid::Hadrons::Application::TrajRange,      Timeslices,
-                                    std::string,  Type,
-                                    std::string,  Momenta,
-                                    std::string,  deltaT,
-                                    std::string,  Lattice,
-                                    std::string,  Gauge,
-                                    bool,         HeavyQuark,
-                                    bool,         HeavyAnti)
 };
 
 inline void Append( std::string &sDest, const std::string &s )
@@ -199,14 +178,126 @@ inline void AppendDeltaT( std::string &sDest, int t )
 
 struct AppParams
 {
+  struct databaseOptions: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(databaseOptions,
+                                  std::string,  resultDb,
+                                  bool,         makeStatDb,
+                                  std::string,  applicationDbPrefix )
+    };
+
+  struct RunPar: Serializable {
+      GRID_SERIALIZABLE_CLASS_MEMBERS(RunPar,
+        Grid::Hadrons::Application::TrajRange,      trajCounter,
+        Grid::Hadrons::VirtualMachine::GeneticPar,  genetic,
+                                   databaseOptions, dbOptions,
+                                      std::string,  ScheduleFile,
+                                      int,          Nt,
+        Grid::Hadrons::Application::TrajRange,      Timeslices,
+                                      std::string,  Type,
+                                      std::string,  Momenta,
+                                      std::string,  deltaT,
+                                      std::string,  Lattice,
+                                      std::string,  Gauge,
+                                      bool,         HeavyQuark,
+                                      bool,         HeavyAnti)
+  };
+
   RunPar Run;
   SourceT Type;
-  std::string RunID;
   std::vector<Quark> HeavyQuarks;
   std::vector<Quark> SpectatorQuarks;
+  std::vector<Common::Momentum> Momenta;
+  std::vector<int> deltaT;
   inline int TimeBound( int t ) const
   { return t < 0 ? Run.Nt - ((-t) % Run.Nt) : t % Run.Nt; }
+  AppParams( const std::string sXmlFilename );
+  std::string ShortID() const;
+  std::string RunID() const;
+protected:
+  static std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType );
 };
+
+AppParams::AppParams( const std::string sXmlFilename )
+{
+  static const std::string sXmlTopLevel{ "Study2" };
+  static const std::string sXmlTagName{ "RunPar" };
+  XmlReader r( sXmlFilename, false, sXmlTopLevel );
+  read( r, sXmlTagName, Run );
+  HeavyQuarks     = ReadQuarks( r, "Heavy" );
+  SpectatorQuarks = ReadQuarks( r, "Spectator" );
+  Momenta = Common::ArrayFromString<Common::Momentum>( Run.Momenta );
+  deltaT = Common::ArrayFromString<int>( Run.deltaT );
+  // Check the type
+  std::istringstream ss( Run.Type );
+  if( ! ( ss >> Type && Common::StreamEmpty( ss ) ) )
+    throw std::runtime_error( "Unrecognised type \"" + Run.Type + "\"" );
+  // Check parameters make sense
+  if( !Run.HeavyQuark && !Run.HeavyAnti )
+    throw std::runtime_error( "At least one of HeavyQuark and HeavyAnti must be true" );
+  if( Momenta.empty() )
+    throw std::runtime_error( "There should be at least one momentum" );
+  if( deltaT.empty() )
+    throw std::runtime_error( "There should be at least one deltaT" );
+}
+
+std::vector<Quark> AppParams::ReadQuarks( XmlReader &r, const std::string &qType )
+{
+  static const std::string sQuark{ "Quark" };
+  std::string TagName{ "Num" };
+  TagName.append( qType );
+  TagName.append( sQuark );
+  int NumQuarks;
+  read( r, TagName, NumQuarks );
+  if( NumQuarks < 1 )
+    throw std::runtime_error( "At least one " + qType + " quark must be specified" );
+  TagName = qType;
+  TagName.append( sQuark );
+  const std::size_t PrefixLen{ TagName.length() };
+  Quark q;
+  std::vector<Quark> vq;
+  for( int i = 0; i < NumQuarks; ++i )
+  {
+    TagName.resize( PrefixLen );
+    TagName.append( std::to_string( i ) );
+    read( r, TagName, q );
+    vq.push_back( q );
+  }
+  return vq;
+}
+
+// Make a brief name for the job, not necessarily unique, but likely to identify the job
+// ... for use as a base filename
+std::string AppParams::ShortID() const
+{
+  std::ostringstream s;
+  s << "S2" << Type;
+  for( const Quark &q : SpectatorQuarks )
+    s << q.flavour;
+  return s.str();
+}
+
+// Make a unique RunID string that completely describes the run
+std::string AppParams::RunID() const
+{
+  std::ostringstream s;
+  s << Type;
+  for( const Quark &q : SpectatorQuarks )
+    s << Sep << q.flavour;
+  if( Run.HeavyQuark )
+    s << Sep << "quark";
+  if( Run.HeavyAnti )
+    s << Sep << "anti";
+  for( const Quark &q : HeavyQuarks )
+    s << Sep << q.flavour;
+  s << Sep << "t" << Sep << Run.Timeslices.start << Sep << Run.Timeslices.end << Sep << Run.Timeslices.step;
+  s << Sep << "p";
+  for( const Common::Momentum &p : Momenta )
+    s << Sep << p.to_string( Sep );
+  s << Sep << "dT";
+  for( int dT : deltaT )
+    s << Sep << std::to_string( dT );
+  return s.str();
+}
 
 /**************************
  Generic classes for a list of dependencies
@@ -610,10 +701,11 @@ public:
 ModContract2pt::ModContract2pt(const SourceT type_, const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_)
 : Type{type_}, q1{q1_}, q2{q2_}, p{p_}, t{t_}
 {
-  std::string s{q1.flavour};
+  std::string s{SourceTName[type_]};
+  Append( s, q1.flavour );
   Append( s, q2.flavour );
   AppendPT( s, t, p );
-  const std::string PrefixType{ SourceTName[type_] + Sep + "2pt" };
+  const std::string PrefixType{ "2pt" };
   FileName = ContractionBaseOutput + PrefixType + "/" + s;
   name = ContractionPrefix;
   Append( name, PrefixType );
@@ -626,16 +718,20 @@ bool ModContract2pt::AddDependencies( HModList &ModList ) const
   mesPar.output = FileName;
   //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
   mesPar.gammas = "all";
-  mesPar.sink = ModList.TakeOwnership(new ModSink( Type, -p ));
-  mesPar.q1 = ModList.TakeOwnership(new ModProp( Type, q1, p, t ));
-  mesPar.q2 = ModList.TakeOwnership(new ModProp( Type, q2, Common::Momentum(0,0,0), t ));
+  // Ensure the lighter propagator has positive momentum -> fewer inversions
+  const bool bq1Light{ q1.mass <= q2.mass };
+  mesPar.q1 = ModList.TakeOwnership(new ModProp( Type, q1, bq1Light ? p : -p, t ));
+  mesPar.q2 = ModList.TakeOwnership(new ModProp( Type, q2, bq1Light ? -p : p, t ));
+  mesPar.sink = ModList.TakeOwnership(new ModSink( Type, bq1Light ? -p : p ));
   ModList.application.createModule<MContraction::Meson>(name, mesPar);
   return true;
 }
 
 /**************************
  Three-point contraction
- heavy quark at time t, decaying to slightly lighter heavy quark at t + deltaT
+ Quark qSrc at time t, decaying to quark qDst via current insertion at time (t + deltaT), with spectator anti-quark
+ NB: if bHeavyAnti is true, then qSrc and qDst are anti-quarks and spectator is quark
+ Momentum p is for the source, -p at the current and 0 at the sink (this could change later)
 **************************/
 
 class ModContract3pt : public HMod
@@ -662,13 +758,14 @@ ModContract3pt::ModContract3pt( const SourceT type_, const Quark &qSnk_, const Q
 : Type{type_}, qSnk{qSnk_}, qSrc{qSrc_}, qSpectator{qSpectator_},
   p{p_}, t{t_}, bHeavyAnti{bHeavyAnti_}, Current{Current_}, deltaT(deltaT_)
 {
-  std::string s{bHeavyAnti ? "anti" : "quark" };
+  std::string s{SourceTName[type_]};
+  Append( s, bHeavyAnti ? "anti" : "quark" );
   Append( s, qSnk.flavour );
   Append( s, qSrc.flavour );
   Append( s, *algInsertName[Current_] );
   AppendDeltaT( s, deltaT );
   AppendPT( s, t, p );
-  const std::string PrefixType{ SourceTName[type_] + Sep + "3pt" + Sep + qSpectator.flavour };
+  const std::string PrefixType{ "3pt" + Sep + qSpectator.flavour };
   FileName = ContractionBaseOutput + PrefixType + "/" + s;
   name = ContractionPrefix;
   Append( name, PrefixType );
@@ -677,19 +774,27 @@ ModContract3pt::ModContract3pt( const SourceT type_, const Quark &qSnk_, const Q
 
 bool ModContract3pt::AddDependencies( HModList &ModList ) const
 {
-  const int tf{ ModList.params.TimeBound( t + deltaT ) };
-  const bool bInvertSeq{ bHeavyAnti }; // Do we invert the sequential prop? ... or normal prop?
+  static const Common::Momentum p0(0,0,0);
   MContraction::Meson::Par par;
   par.output = FileName;
   //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
   par.gammas = "all";
-  par.sink = ModList.TakeOwnership(new ModSink( Type, -p ));
-  static const Common::Momentum p0(0,0,0);
-  std::string qSeq{ ModList.TakeOwnership( new ModPropSeq( Type, qSrc, Current, -deltaT, p0,
-                                                           qSpectator, bHeavyAnti ? p0 : p, tf ) ) };
-  std::string q{ ModList.TakeOwnership( new ModProp( Type, qSnk, bHeavyAnti ? p : p0, tf ) ) };
-  par.q2 = bHeavyAnti ? q    : qSeq;
-  par.q1 = bHeavyAnti ? qSeq : q;
+  // Ensure the spectator propagator has positive momentum -> fewer inversions
+  std::string q   { ModList.TakeOwnership( new ModProp( Type, qSrc, -p, t ) ) };
+  std::string qSeq{ ModList.TakeOwnership( new ModPropSeq( Type, qSnk, Current, deltaT, p0,
+                                                           qSpectator, p, t ) ) };
+  if( bHeavyAnti )
+  {
+    par.q1 = qSeq;
+    par.q2 = q;
+    par.sink = ModList.TakeOwnership( new ModSink( Type, -p ) );
+  }
+  else
+  {
+    par.q1 = q;
+    par.q2 = qSeq;
+    par.sink = ModList.TakeOwnership( new ModSink( Type, p ) );
+  }
   ModList.application.createModule<MContraction::Meson>(name, par);
   return true;
 }
@@ -717,10 +822,16 @@ Application AppMaker::Setup( const AppParams &params )
   // global parameters
   Application::GlobalPar globalPar;
   globalPar.trajCounter  = params.Run.trajCounter;
-  globalPar.database     = params.Run.database;
   globalPar.genetic      = params.Run.genetic;
-  globalPar.runId        = params.RunID;
-  globalPar.saveSchedule = false;
+  globalPar.runId        = params.ShortID();
+  // database options
+  globalPar.database.resultDb   = params.Run.dbOptions.resultDb;
+  globalPar.database.makeStatDb = params.Run.dbOptions.makeStatDb;
+  globalPar.database.applicationDb = params.Run.dbOptions.applicationDbPrefix + params.RunID() + ".db";
+  globalPar.database.restoreModules = false;
+  globalPar.database.restoreMemoryProfile = false;
+  globalPar.database.restoreSchedule = false;
+  globalPar.saveSchedule = true;
   Application application( globalPar );
   // gauge field
   if( params.Run.Gauge.empty() )
@@ -738,18 +849,11 @@ Application AppMaker::Setup( const AppParams &params )
 
 void AppMaker::Make()
 {
-  const std::vector<Common::Momentum>
-              Momenta{ Common::ArrayFromString<Common::Momentum>( l.params.Run.Momenta ) };
-  if( Momenta.empty() )
-    throw std::runtime_error( "There should be at least one momentum" );
-  const std::vector<int> deltaTList{ Common::ArrayFromString<int>( l.params.Run.deltaT ) };
-  if( Momenta.empty() )
-    throw std::runtime_error( "There should be at least one deltaT" );
   for( const Quark &qSpectator : l.params.SpectatorQuarks )
   {
     for( unsigned int t = l.params.Run.Timeslices.start; t < l.params.Run.Timeslices.end; t += l.params.Run.Timeslices.step )
     {
-      for( const Common::Momentum &p : Momenta )
+      for( const Common::Momentum &p : l.params.Momenta )
       {
         for( const Quark &qH1 : l.params.HeavyQuarks )
         {
@@ -772,11 +876,12 @@ void AppMaker::Make()
                   l.TakeOwnership( new ModContract2pt( l.params.Type, qH1, qSpectator, p, t ) );
                   l.TakeOwnership( new ModContract2pt( l.params.Type, qH2, qSpectator, p, t ) );
                 }
-                for( int deltaT : deltaTList )
+                for( int deltaT : l.params.deltaT )
                 {
                   for( int j = 0; j < NumInsert; j++ )
                   {
-                    l.TakeOwnership( new ModContract3pt( l.params.Type, qH1, qH2, qSpectator, p, l.params.TimeBound( t - deltaT ), bHeavyAnti, j, deltaT ) );
+                    l.TakeOwnership( new ModContract3pt( l.params.Type, qH1, qH2, qSpectator, p,
+                                                         t, bHeavyAnti, j, deltaT ) );
                   }
                 }
               }
@@ -786,31 +891,6 @@ void AppMaker::Make()
       }
     }
   }
-}
-
-std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType )
-{
-  static const std::string sQuark{ "Quark" };
-  std::string TagName{ "Num" };
-  TagName.append( qType );
-  TagName.append( sQuark );
-  int NumQuarks;
-  read( r, TagName, NumQuarks );
-  if( NumQuarks < 1 )
-    throw std::runtime_error( "At least one " + qType + " quark must be specified" );
-  TagName = qType;
-  TagName.append( sQuark );
-  const std::size_t PrefixLen{ TagName.length() };
-  Quark q;
-  std::vector<Quark> vq;
-  for( int i = 0; i < NumQuarks; ++i )
-  {
-    TagName.resize( PrefixLen );
-    TagName.append( std::to_string( i ) );
-    read( r, TagName, q );
-    vq.push_back( q );
-  }
-  return vq;
 }
 
 int main(int argc, char *argv[])
@@ -839,27 +919,7 @@ int main(int argc, char *argv[])
   const Grid::Coordinate &lat{GridDefaultLatt()};
   try
   {
-    static const std::string sXmlTopLevel{ "Study2" };
-    static const std::string sXmlTagName{ "RunPar" };
-    AppParams params;
-    {
-      XmlReader r( sXmlFilename, false, sXmlTopLevel );
-      read( r, sXmlTagName, params.Run );
-      params.HeavyQuarks     = ReadQuarks( r, "Heavy" );
-      params.SpectatorQuarks = ReadQuarks( r, "Spectator" );
-      // Check the type
-      std::istringstream ss( params.Run.Type );
-      if( ! ( ss >> params.Type && Common::StreamEmpty( ss ) ) )
-        throw std::runtime_error( "Unrecognised type \"" + params.Run.Type + "\"" );
-      // Make the runID
-      params.RunID = "S2" + params.Run.Type;
-      for( const Quark &q : params.SpectatorQuarks )
-        params.RunID.append( q.flavour );
-      // Make sure at least one of CurrentQuark and CurrentAnti specified
-      if( !params.Run.HeavyQuark && !params.Run.HeavyQuark )
-        throw std::runtime_error( "At least one of HeavyQuark and HeavyAnti must be true" );
-    }
-
+    const AppParams params( sXmlFilename );
     AppMaker x( params );
     x.Make();
     // Is the lattice the same size as specified in the job?
@@ -870,20 +930,9 @@ int main(int argc, char *argv[])
         bRun = false;
     // Run or save the job
     if( !bRun )
-      x.application.saveParameterFile( params.RunID + ".xml" );
+      x.application.saveParameterFile( params.RunID() + ".xml" );
     else
-    {
-      const std::string ScheduleFile{ params.Run.ScheduleFile.empty()
-                                      ? params.RunID + ".sched" : params.Run.ScheduleFile };
-      if( Common::FileExists( ScheduleFile ) )
-        x.application.loadSchedule( ScheduleFile );
-      else
-      {
-        x.application.schedule();
-        x.application.saveSchedule( ScheduleFile );
-      }
       x.application.run();
-    }
   }
   catch(const std::exception &e)
   {
