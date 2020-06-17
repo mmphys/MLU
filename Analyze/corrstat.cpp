@@ -82,8 +82,8 @@ int main(int argc, const char *argv[])
         else
         {
           std::vector<Common::Gamma::Algebra> ThisAlg{ Alg };
-          Common::CorrelatorFileC InFile( Filename, ThisAlg, nullptr, "Summarising " );
-          InFile.WriteSummary(outStem, ThisAlg );
+          Common::CorrelatorFileC InFile( Filename, ThisAlg, ThisAlg, nullptr, "Summarising " );
+          InFile.WriteSummary(outStem, ThisAlg, ThisAlg );
           Count++;
         }
       }

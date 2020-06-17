@@ -27,7 +27,7 @@
 /*  END LEGAL */
 
 #include "Common.hpp"
-#include <Hadrons/Utilities/Contractor.hpp>
+#include <Hadrons/../utilities/Contractor.hpp>
 //#include <Hadrons/Application.hpp>
 //#include <Hadrons/Modules.hpp>
 //#include <LatAnalyze/Core/OptParser.hpp>

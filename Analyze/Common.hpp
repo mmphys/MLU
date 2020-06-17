@@ -76,7 +76,7 @@ BEGIN_COMMON_NAMESPACE
 template <class _CharT, class _Traits>
 inline bool StreamEmpty( std::basic_istream<_CharT, _Traits> & s )
 {
-  return !s.ios_base::fail() && ( s.eof() || ( s >> std::ws && s.eof() ) );
+  return !s.fail() && ( s.eof() || ( s >> std::ws && s.eof() ) );
 }
 
 // Text required for summaries of correlators
