@@ -33,6 +33,7 @@ using namespace Hadrons;
 
 static const std::string Sep{ "_" };    // used inside filenames
 static const std::string Space{ " " };  // whitespace as field separator / human readable info
+static const Common::Momentum p0(0,0,0);
 
 static const std::string GaugeFieldName{"gauge"};
 
@@ -718,11 +719,9 @@ bool ModContract2pt::AddDependencies( HModList &ModList ) const
   mesPar.output = FileName;
   //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
   mesPar.gammas = "all";
-  // Ensure the lighter propagator has positive momentum -> fewer inversions
-  const bool bq1Light{ q1.mass <= q2.mass };
-  mesPar.q1 = ModList.TakeOwnership(new ModProp( Type, q1, bq1Light ? p : -p, t ));
-  mesPar.q2 = ModList.TakeOwnership(new ModProp( Type, q2, bq1Light ? -p : p, t ));
-  mesPar.sink = ModList.TakeOwnership(new ModSink( Type, bq1Light ? -p : p ));
+  mesPar.q1 = ModList.TakeOwnership(new ModProp( Type, q1, p, t ));
+  mesPar.q2 = ModList.TakeOwnership(new ModProp( Type, q2, p0, t ));
+  mesPar.sink = ModList.TakeOwnership(new ModSink( Type, -p ));
   ModList.application.createModule<MContraction::Meson>(name, mesPar);
   return true;
 }
@@ -774,27 +773,22 @@ ModContract3pt::ModContract3pt( const SourceT type_, const Quark &qSnk_, const Q
 
 bool ModContract3pt::AddDependencies( HModList &ModList ) const
 {
-  static const Common::Momentum p0(0,0,0);
   MContraction::Meson::Par par;
   par.output = FileName;
   //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
   par.gammas = "all";
-  // Ensure the spectator propagator has positive momentum -> fewer inversions
-  std::string q   { ModList.TakeOwnership( new ModProp( Type, qSrc, -p, t ) ) };
-  std::string qSeq{ ModList.TakeOwnership( new ModPropSeq( Type, qSnk, Current, deltaT, p0,
-                                                           qSpectator, p, t ) ) };
-  if( bHeavyAnti )
+  const bool bInvertSeq{ !bHeavyAnti };
+  if( bInvertSeq )
   {
-    par.q1 = qSeq;
-    par.q2 = q;
-    par.sink = ModList.TakeOwnership( new ModSink( Type, -p ) );
+    par.q1 = ModList.TakeOwnership( new ModProp( Type, qSrc, p, t ) );
+    par.q2 = ModList.TakeOwnership(new ModPropSeq( Type, qSnk, Current, deltaT, p0, qSpectator,p0, t ));
   }
   else
   {
-    par.q1 = q;
-    par.q2 = qSeq;
-    par.sink = ModList.TakeOwnership( new ModSink( Type, p ) );
+    par.q1 = ModList.TakeOwnership(new ModPropSeq( Type, qSnk, Current, deltaT, p0, qSpectator, p, t ));
+    par.q2 = ModList.TakeOwnership( new ModProp( Type, qSrc, p0, t ) );
   }
+  par.sink = ModList.TakeOwnership( new ModSink( Type, -p ) );
   ModList.application.createModule<MContraction::Meson>(name, par);
   return true;
 }
@@ -853,40 +847,44 @@ void AppMaker::Make()
   {
     for( unsigned int t = l.params.Run.Timeslices.start; t < l.params.Run.Timeslices.end; t += l.params.Run.Timeslices.step )
     {
-      for( const Common::Momentum &p : l.params.Momenta )
+      for( Common::Momentum p : l.params.Momenta )
       {
-        for( const Quark &qH1 : l.params.HeavyQuarks )
+        for( int pDoNeg = 0; pDoNeg < ( p ? 2 : 1 ); ++pDoNeg )
         {
-          for( const Quark &qH2 : l.params.HeavyQuarks )
+          for( const Quark &qH1 : l.params.HeavyQuarks )
           {
-            for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
-                     iHeavy <= l.params.Run.HeavyAnti  ? 1 : 0; ++iHeavy )
+            for( const Quark &qH2 : l.params.HeavyQuarks )
             {
-              const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
-              if( !p || qH1.mass >= qH2.mass )
+              for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
+                       iHeavy <= l.params.Run.HeavyAnti  ? 1 : 0; ++iHeavy )
               {
-                // 2pt functions
-                if( bHeavyAnti )
+                const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
+                if( !p || qH1.mass >= qH2.mass )
                 {
-                  l.TakeOwnership( new ModContract2pt( l.params.Type, qSpectator, qH1, p, t ) );
-                  l.TakeOwnership( new ModContract2pt( l.params.Type, qSpectator, qH2, p, t ) );
-                }
-                else
-                {
-                  l.TakeOwnership( new ModContract2pt( l.params.Type, qH1, qSpectator, p, t ) );
-                  l.TakeOwnership( new ModContract2pt( l.params.Type, qH2, qSpectator, p, t ) );
-                }
-                for( int deltaT : l.params.deltaT )
-                {
-                  for( int j = 0; j < NumInsert; j++ )
+                  // 2pt functions
+                  //if( bHeavyAnti )
+                  //{
+                    l.TakeOwnership( new ModContract2pt( l.params.Type, qSpectator, qH1, p, t ) );
+                    l.TakeOwnership( new ModContract2pt( l.params.Type, qSpectator, qH2, p, t ) );
+                  //}
+                  //else
+                  //{
+                    l.TakeOwnership( new ModContract2pt( l.params.Type, qH1, qSpectator, p, t ) );
+                    l.TakeOwnership( new ModContract2pt( l.params.Type, qH2, qSpectator, p, t ) );
+                  //}
+                  for( int deltaT : l.params.deltaT )
                   {
-                    l.TakeOwnership( new ModContract3pt( l.params.Type, qH1, qH2, qSpectator, p,
-                                                         t, bHeavyAnti, j, deltaT ) );
+                    for( int j = 0; j < NumInsert; j++ )
+                    {
+                      l.TakeOwnership( new ModContract3pt( l.params.Type, qH1, qH2, qSpectator, p,
+                                                           t, bHeavyAnti, j, deltaT ) );
+                    }
                   }
                 }
               }
             }
           }
+          p = -p;
         }
       }
     }
