@@ -679,7 +679,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
     DumpParameters( "Initial guess:", parGuess );
     // Protected by CancelCritSec
     {
-      int Abort{0};
+      volatile bool Abort{ false };
       std::string sError;
       #pragma omp parallel default(shared)
       {
@@ -700,12 +700,16 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
                 fitThread.UpdateGuess( parGuess );
                 DumpParameters( "Uncorrelated fit on central replica:", parGuess );
               }
-              catch(const std::exception &e)
+              catch( const std::exception &e )
               {
-                #pragma omp critical(CancelCritSec)
+                bool WasAbort;
+                #pragma omp atomic capture
                 {
-                  if( !Abort ) { Abort = 1; sError = e.what(); }
+                  WasAbort = Abort;
+                  Abort = true;
                 }
+                if( !WasAbort )
+                  sError = e.what();
               }
             }
           }
@@ -717,26 +721,37 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
               try
               {
                 // Use uncorrelated fit as guess for correlated fit
-                if( !Abort )
+                bool WasAbort;
+                #pragma omp atomic read
+                  WasAbort = Abort;
+                if( !WasAbort )
                   fitThread.FitOne( idx, parGuess, ModelParams, idx == Fold::idxCentral ? SaveCorrMatrixFileName : "",
                                    RelEnergySep, dof, ChiSq );
               }
-              catch(const std::exception &e)
+              catch( const std::exception &e )
               {
-                #pragma omp critical(CancelCritSec)
+                bool WasAbort;
+                #pragma omp atomic capture
                 {
-                  if( !Abort ) { Abort = 1; sError = e.what(); }
+                  WasAbort = Abort;
+                  Abort = true;
                 }
+                if( !WasAbort )
+                  sError = e.what();
               }
             }
           }
         }
-        catch(const std::exception &e)
+         catch( const std::exception &e )
         {
-          #pragma omp critical(CancelCritSec)
+          bool WasAbort;
+          #pragma omp atomic capture
           {
-            if( !Abort ) { Abort = 1; sError = e.what(); }
+            WasAbort = Abort;
+            Abort = true;
           }
+          if( !WasAbort )
+            sError = e.what();
         }
       }
       if( Abort )
