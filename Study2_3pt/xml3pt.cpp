@@ -200,7 +200,8 @@ struct AppParams
                                       std::string,  Lattice,
                                       std::string,  Gauge,
                                       bool,         HeavyQuark,
-                                      bool,         HeavyAnti)
+                                      bool,         HeavyAnti,
+                                      std::string,  OutputBase)
   };
 
   RunPar Run;
@@ -683,7 +684,6 @@ bool ModPropSeq::AddDependencies( HModList &ModList ) const
 **************************/
 
 const std::string ContractionPrefix{ "meson" };
-const std::string ContractionBaseOutput{ "C1/meson/" };
 
 class ModContract2pt : public HMod
 {
@@ -695,11 +695,13 @@ public:
   const Quark &q2;
   const Common::Momentum p;
   const int t;
-  ModContract2pt(const SourceT Type, const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_);
+  ModContract2pt(const std::string &OutputBase, const SourceT Type,
+                 const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_);
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
-ModContract2pt::ModContract2pt(const SourceT type_, const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_)
+ModContract2pt::ModContract2pt(const std::string &OutputBase, const SourceT type_,
+                               const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_)
 : Type{type_}, q1{q1_}, q2{q2_}, p{p_}, t{t_}
 {
   std::string s{SourceTName[type_]};
@@ -707,7 +709,7 @@ ModContract2pt::ModContract2pt(const SourceT type_, const Quark &q1_, const Quar
   Append( s, q2.flavour );
   AppendPT( s, t, p );
   const std::string PrefixType{ "2pt" };
-  FileName = ContractionBaseOutput + PrefixType + "/" + s;
+  FileName = OutputBase + PrefixType + "/" + s;
   name = ContractionPrefix;
   Append( name, PrefixType );
   Append( name, s );
@@ -747,13 +749,15 @@ public:
   const bool bHeavyAnti;
   const int Current;
   const int deltaT;
-  ModContract3pt( const SourceT Type, const Quark &qSnk, const Quark &qSrc, const Quark &qSpectator,
+  ModContract3pt( const std::string &OutputBase, const SourceT Type,
+                  const Quark &qSnk, const Quark &qSrc, const Quark &qSpectator,
                   const Common::Momentum &p, int t, bool bHeavyAnti, int Current, int deltaT );
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
-ModContract3pt::ModContract3pt( const SourceT type_, const Quark &qSnk_, const Quark &qSrc_, const Quark &qSpectator_,
-                                const Common::Momentum &p_, int t_, bool bHeavyAnti_, int Current_, int deltaT_)
+ModContract3pt::ModContract3pt(const std::string &OutputBase, const SourceT type_,
+                               const Quark &qSnk_, const Quark &qSrc_, const Quark &qSpectator_,
+                               const Common::Momentum &p_, int t_, bool bHeavyAnti_, int Current_, int deltaT_)
 : Type{type_}, qSnk{qSnk_}, qSrc{qSrc_}, qSpectator{qSpectator_},
   p{p_}, t{t_}, bHeavyAnti{bHeavyAnti_}, Current{Current_}, deltaT(deltaT_)
 {
@@ -765,7 +769,7 @@ ModContract3pt::ModContract3pt( const SourceT type_, const Quark &qSnk_, const Q
   AppendDeltaT( s, deltaT );
   AppendPT( s, t, p );
   const std::string PrefixType{ "3pt" + Sep + qSpectator.flavour };
-  FileName = ContractionBaseOutput + PrefixType + "/" + s;
+  FileName = OutputBase + PrefixType + "/" + s;
   name = ContractionPrefix;
   Append( name, PrefixType );
   Append( name, s );
@@ -830,7 +834,7 @@ Application AppMaker::Setup( const AppParams &params )
   // gauge field
   if( params.Run.Gauge.empty() )
   {
-    application.createModule<MGauge::Random>( GaugeFieldName );
+    application.createModule<MGauge::Unit>( GaugeFieldName );
   }
   else
   {
@@ -864,19 +868,24 @@ void AppMaker::Make()
                   // 2pt functions
                   //if( bHeavyAnti )
                   //{
-                    l.TakeOwnership( new ModContract2pt( l.params.Type, qSpectator, qH1, p, t ) );
-                    l.TakeOwnership( new ModContract2pt( l.params.Type, qSpectator, qH2, p, t ) );
+                    l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type,
+                                                         qSpectator, qH1, p, t ) );
+                    l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type,
+                                                         qSpectator, qH2, p, t ) );
                   //}
                   //else
                   //{
-                    l.TakeOwnership( new ModContract2pt( l.params.Type, qH1, qSpectator, p, t ) );
-                    l.TakeOwnership( new ModContract2pt( l.params.Type, qH2, qSpectator, p, t ) );
+                    l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type,
+                                                         qH1, qSpectator, p, t ) );
+                    l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type,
+                                                         qH2, qSpectator, p, t ) );
                   //}
                   for( int deltaT : l.params.deltaT )
                   {
                     for( int j = 0; j < NumInsert; j++ )
                     {
-                      l.TakeOwnership( new ModContract3pt( l.params.Type, qH1, qH2, qSpectator, p,
+                      l.TakeOwnership( new ModContract3pt( l.params.Run.OutputBase, l.params.Type,
+                                                           qH1, qH2, qSpectator, p,
                                                            t, bHeavyAnti, j, deltaT ) );
                     }
                   }
