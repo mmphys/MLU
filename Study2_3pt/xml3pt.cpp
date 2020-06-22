@@ -535,7 +535,7 @@ bool ModSolver::AddDependencies( HModList &ModList ) const
   }
   solverPar.action       = ModList.TakeOwnership( new ModAction( q ) );
   solverPar.residual     = q.residual;
-  solverPar.maxIteration = ModList.params.Run.Gauge.empty() ? q.maxIteration / 10 : q.maxIteration;
+  solverPar.maxIteration = q.maxIteration;
   ModList.application.createModule<MSolver::RBPrecCG>(name, solverPar);
   return true;
 }
