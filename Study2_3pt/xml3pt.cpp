@@ -484,7 +484,7 @@ ModAction::ModAction(const Quark &q_) : q{q_}
 bool ModAction::AddDependencies( HModList &ModList ) const
 {
   MAction::DWF::Par actionPar;
-  const bool Unit{ ModList.params.Run.Gauge.empty() }
+  const bool Unit{ ModList.params.Run.Gauge.empty() };
   actionPar.gauge = q.GaugeSmear && !Unit ? ModList.TakeOwnership(new ModStoutGauge()) : GaugeFieldName;
   actionPar.Ls    = q.Ls;
   actionPar.M5    = q.M5;

@@ -874,7 +874,7 @@ int main(const int argc, const char *argv[])
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
-    "-v     Backwards propagating wave (adjust timeslice by -t)"
+    "-v     Backwards propagating wave (adjust timeslice by -t)\n"
     "-p     group momenta by P^2\n"
     "-f     Factorising operators (e.g. g5-gT5 same as gT5-g5)\n"
     "-h     Take forward/backward Half-waves as separate bootstrap inputs (i.e. fold)\n"
