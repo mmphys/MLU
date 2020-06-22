@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$PROJECT_DIR/run"
+      customWorkingDirectory = "$PROJECT_DIR/run2"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -53,12 +53,20 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "phiL_0_rhoL.bootstrap.987654321.h5"
+            argument = "-ag5,gT5,gX"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "phiL_0_rhoL.bootstrap.987654321.h5"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "NewFormat.bootstrap.987654321.h5"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "GFPW_quark_h3_h0_gT5_dt_16_p_0_0_0_t_0.3000.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

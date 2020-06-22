@@ -1175,7 +1175,7 @@ void CorrelatorFile<T>::WriteSummary( const std::string &Prefix, const std::vect
   std::string sOutFileName{ Prefix };
   sOutFileName.append( Name_.Base );
   std::size_t Len{ sOutFileName.length() };
-  std::string sSuffix{ 1, '.' };
+  std::string sSuffix( 1, '.' );
   sSuffix.append( Name_.SeedString );
   sSuffix.append( 1, '.' );
   sSuffix.append( TEXT_EXT );
