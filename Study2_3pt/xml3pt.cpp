@@ -724,7 +724,7 @@ bool ModContract2pt::AddDependencies( HModList &ModList ) const
   mesPar.gammas = "all";
   mesPar.q1 = ModList.TakeOwnership(new ModProp( Type, q1, p, t ));
   mesPar.q2 = ModList.TakeOwnership(new ModProp( Type, q2, p0, t ));
-  mesPar.sink = ModList.TakeOwnership(new ModSink( Type, p ));
+  mesPar.sink = ModList.TakeOwnership(new ModSink( Type, -p ));
   ModList.application.createModule<MContraction::Meson>(name, mesPar);
   return true;
 }
@@ -793,7 +793,7 @@ bool ModContract3pt::AddDependencies( HModList &ModList ) const
     par.q1 = ModList.TakeOwnership(new ModPropSeq( Type, qSnk, Current, deltaT, p0, qSpectator, p, t ));
     par.q2 = ModList.TakeOwnership( new ModProp( Type, qSrc, p0, t ) );
   }
-  par.sink = ModList.TakeOwnership( new ModSink( Type, p ) );
+  par.sink = ModList.TakeOwnership( new ModSink( Type, -p ) );
   ModList.application.createModule<MContraction::Meson>(name, par);
   return true;
 }

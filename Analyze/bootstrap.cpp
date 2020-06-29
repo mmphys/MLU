@@ -439,11 +439,11 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
               // If we are binning, divide by number of items in this bin. Make sure to do the last bin
               if( ++Bin == binSize || ( o == OpFactor - 1 && h == FoldFactor - 1 && it == last ) )
               {
-                if( binSize == 1 )
+                if( Bin == 1 )
                   pDst += NtDest;
                 else
                   for( int t = 0; t < NtDest; t++ )
-                    *pDst++ /= binSize;
+                    *pDst++ /= Bin;
                 Bin = 0;
               }
             }

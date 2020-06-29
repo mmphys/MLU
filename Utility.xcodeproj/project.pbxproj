@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6800C11B24A5F74B00DF2BA1 /* A2ASmearedMesonField.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6800C11924A5F74B00DF2BA1 /* A2ASmearedMesonField.cpp */; };
+		6800C11C24A5F74B00DF2BA1 /* A2ASmearedMesonField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6800C11A24A5F74B00DF2BA1 /* A2ASmearedMesonField.hpp */; };
 		6804C193244C78C8008E272B /* Test_hadrons_meson_3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C185244C7864008E272B /* Test_hadrons_meson_3pt.cpp */; };
 		6809611724982ACE007F8DB3 /* StatLogger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6809611224982ACD007F8DB3 /* StatLogger.cpp */; };
 		6809611824982ACE007F8DB3 /* Database.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6809611324982ACD007F8DB3 /* Database.cpp */; };
@@ -1197,6 +1199,23 @@
 		68B96265244AE52800E5CF09 /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96261244AE50100E5CF09 /* xmlZ2.cpp */; };
 		68B96266244AE52C00E5CF09 /* xmlGFWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96262244AE50100E5CF09 /* xmlGFWall.cpp */; };
 		68B96267244AE53100E5CF09 /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96263244AE50100E5CF09 /* mixedop.cpp */; };
+		68D0E9CD24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */; };
+		68D0E9D524A34F4B00834C1C /* MemoryManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9CE24A34F4A00834C1C /* MemoryManager.h */; };
+		68D0E9D624A34F4B00834C1C /* MemoryManagerCache.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68D0E9CF24A34F4A00834C1C /* MemoryManagerCache.cc */; };
+		68D0E9D724A34F4B00834C1C /* MemoryManagerShared.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68D0E9D024A34F4B00834C1C /* MemoryManagerShared.cc */; };
+		68D0E9D824A34F4B00834C1C /* Allocator.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9D124A34F4B00834C1C /* Allocator.h */; };
+		68D0E9D924A34F4B00834C1C /* MemoryStats.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68D0E9D224A34F4B00834C1C /* MemoryStats.cc */; };
+		68D0E9DA24A34F4B00834C1C /* MemoryStats.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9D324A34F4B00834C1C /* MemoryStats.h */; };
+		68D0E9DB24A34F4B00834C1C /* MemoryManager.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68D0E9D424A34F4B00834C1C /* MemoryManager.cc */; };
+		68D0E9DD24A34F6400834C1C /* Cshift_table.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68D0E9DC24A34F6400834C1C /* Cshift_table.cc */; };
+		68D0E9DF24A34F7A00834C1C /* Lattice_view.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9DE24A34F7A00834C1C /* Lattice_view.h */; };
+		68D0E9E124A34FD900834C1C /* NaiveStaggeredFermion.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9E024A34FD900834C1C /* NaiveStaggeredFermion.h */; };
+		68D0E9E324A34FFE00834C1C /* NaiveStaggeredFermionImplementation.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9E224A34FFE00834C1C /* NaiveStaggeredFermionImplementation.h */; };
+		68D0E9E624A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68D0E9E424A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc */; };
+		68D0E9E824A3547800834C1C /* NaiveStaggeredFermionInstantiationStaggeredImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68D0E9E724A3547800834C1C /* NaiveStaggeredFermionInstantiationStaggeredImplD.cc */; };
+		68D0E9EC24A354F000834C1C /* ThreadReduction.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9E924A354EF00834C1C /* ThreadReduction.h */; };
+		68D0E9ED24A354F000834C1C /* Accelerator.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68D0E9EA24A354EF00834C1C /* Accelerator.cc */; };
+		68D0E9EE24A354F000834C1C /* Accelerator.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9EB24A354EF00834C1C /* Accelerator.h */; };
 		68E2C301245B20B8009E7BE5 /* Test_serialisation.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68E2C2F5245B2068009E7BE5 /* Test_serialisation.cc */; };
 		68F687E123D4A96600590270 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		68F687E223D4AD4700590270 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
@@ -1386,6 +1405,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6800C11924A5F74B00DF2BA1 /* A2ASmearedMesonField.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = A2ASmearedMesonField.cpp; sourceTree = "<group>"; };
+		6800C11A24A5F74B00DF2BA1 /* A2ASmearedMesonField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = A2ASmearedMesonField.hpp; sourceTree = "<group>"; };
 		6804C181244C7863008E272B /* Test_diskvector.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_diskvector.cpp; path = ../Hadrons/tests/Test_diskvector.cpp; sourceTree = "<group>"; };
 		6804C182244C7863008E272B /* Test_hadrons_spectrum.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_hadrons_spectrum.cpp; path = ../Hadrons/tests/Test_hadrons_spectrum.cpp; sourceTree = "<group>"; };
 		6804C183244C7863008E272B /* Test_QED.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_QED.cpp; path = ../Hadrons/tests/Test_QED.cpp; sourceTree = "<group>"; };
@@ -1410,6 +1431,7 @@
 		6815510C22CBE676009AB4AD /* Common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Common.cpp; sourceTree = "<group>"; };
 		681AAC8C2355D5F10045F604 /* CommonGrid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CommonGrid.cpp; sourceTree = "<group>"; };
 		681AAC8D2355D5F10045F604 /* CommonGrid.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommonGrid.hpp; sourceTree = "<group>"; };
+		681DC24724A38D1900AF1EA5 /* xml3pt.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = xml3pt.xml; sourceTree = "<group>"; };
 		681DC8B022F19BAB00EE04A9 /* hlxml */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hlxml; sourceTree = BUILT_PRODUCTS_DIR; };
 		681DC8B722F19CB000EE04A9 /* hlxml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hlxml.cpp; sourceTree = "<group>"; };
 		681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CommonLatAn.cpp; sourceTree = "<group>"; };
@@ -2706,6 +2728,24 @@
 		68B96262244AE50100E5CF09 /* xmlGFWall.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlGFWall.cpp; sourceTree = "<group>"; };
 		68B96263244AE50100E5CF09 /* mixedop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mixedop.cpp; sourceTree = "<group>"; };
 		68BEFF6A2343A75A0031E3E3 /* xmlZ2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlZ2; sourceTree = BUILT_PRODUCTS_DIR; };
+		68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrecGeneralisedConjugateResidualNonHermitian.h; sourceTree = "<group>"; };
+		68D0E9CE24A34F4A00834C1C /* MemoryManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MemoryManager.h; sourceTree = "<group>"; };
+		68D0E9CF24A34F4A00834C1C /* MemoryManagerCache.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MemoryManagerCache.cc; sourceTree = "<group>"; };
+		68D0E9D024A34F4B00834C1C /* MemoryManagerShared.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MemoryManagerShared.cc; sourceTree = "<group>"; };
+		68D0E9D124A34F4B00834C1C /* Allocator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Allocator.h; sourceTree = "<group>"; };
+		68D0E9D224A34F4B00834C1C /* MemoryStats.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MemoryStats.cc; sourceTree = "<group>"; };
+		68D0E9D324A34F4B00834C1C /* MemoryStats.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MemoryStats.h; sourceTree = "<group>"; };
+		68D0E9D424A34F4B00834C1C /* MemoryManager.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MemoryManager.cc; sourceTree = "<group>"; };
+		68D0E9DC24A34F6400834C1C /* Cshift_table.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Cshift_table.cc; sourceTree = "<group>"; };
+		68D0E9DE24A34F7A00834C1C /* Lattice_view.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lattice_view.h; sourceTree = "<group>"; };
+		68D0E9E024A34FD900834C1C /* NaiveStaggeredFermion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NaiveStaggeredFermion.h; sourceTree = "<group>"; };
+		68D0E9E224A34FFE00834C1C /* NaiveStaggeredFermionImplementation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NaiveStaggeredFermionImplementation.h; sourceTree = "<group>"; };
+		68D0E9E424A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NaiveStaggeredFermionInstantiation.cc; sourceTree = "<group>"; };
+		68D0E9E524A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc.master */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = NaiveStaggeredFermionInstantiation.cc.master; sourceTree = "<group>"; };
+		68D0E9E724A3547800834C1C /* NaiveStaggeredFermionInstantiationStaggeredImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NaiveStaggeredFermionInstantiationStaggeredImplD.cc; sourceTree = "<group>"; };
+		68D0E9E924A354EF00834C1C /* ThreadReduction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadReduction.h; sourceTree = "<group>"; };
+		68D0E9EA24A354EF00834C1C /* Accelerator.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Accelerator.cc; sourceTree = "<group>"; };
+		68D0E9EB24A354EF00834C1C /* Accelerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Accelerator.h; sourceTree = "<group>"; };
 		68E2C2F4245B204B009E7BE5 /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tests; path = ../Grid/tests; sourceTree = "<group>"; };
 		68E2C2F5245B2068009E7BE5 /* Test_serialisation.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_serialisation.cc; path = ../Grid/tests/IO/Test_serialisation.cc; sourceTree = "<group>"; };
 		68E2C2FA245B2097009E7BE5 /* Test_serialisation */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_serialisation; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2969,6 +3009,7 @@
 			isa = PBXGroup;
 			children = (
 				68338D3B2461402200B6292E /* xml3pt.cpp */,
+				681DC24724A38D1900AF1EA5 /* xml3pt.xml */,
 			);
 			path = Study2_3pt;
 			sourceTree = "<group>";
@@ -3162,15 +3203,15 @@
 		6850CA71244A1C2F00A53DC8 /* action */ = {
 			isa = PBXGroup;
 			children = (
-				6850CA72244A1C2F00A53DC8 /* ActionSet.h */,
-				6850CA73244A1C2F00A53DC8 /* ActionBase.h */,
-				6850CA74244A1C2F00A53DC8 /* Action.h */,
-				6850CA75244A1C2F00A53DC8 /* ActionCore.h */,
+				6850CA8A244A1C2F00A53DC8 /* fermion */,
 				6850CA76244A1C2F00A53DC8 /* gauge */,
 				6850CA7D244A1C2F00A53DC8 /* pseudofermion */,
-				6850CA8A244A1C2F00A53DC8 /* fermion */,
 				6850CBA2244A1C2F00A53DC8 /* scalar */,
+				6850CA74244A1C2F00A53DC8 /* Action.h */,
+				6850CA73244A1C2F00A53DC8 /* ActionBase.h */,
+				6850CA75244A1C2F00A53DC8 /* ActionCore.h */,
 				6850CBA7244A1C2F00A53DC8 /* ActionParams.h */,
+				6850CA72244A1C2F00A53DC8 /* ActionSet.h */,
 			);
 			path = action;
 			sourceTree = "<group>";
@@ -3232,6 +3273,7 @@
 				6850CB94244A1C2F00A53DC8 /* MobiusEOFAFermion.h */,
 				6850CA91244A1C2F00A53DC8 /* MobiusFermion.h */,
 				6850CB87244A1C2F00A53DC8 /* MobiusZolotarevFermion.h */,
+				68D0E9E024A34FD900834C1C /* NaiveStaggeredFermion.h */,
 				6850CB97244A1C2F00A53DC8 /* OverlapWilsonCayleyTanhFermion.h */,
 				6850CA8D244A1C2F00A53DC8 /* OverlapWilsonCayleyZolotarevFermion.h */,
 				6850CB8C244A1C2F00A53DC8 /* OverlapWilsonContfracTanhFermion.h */,
@@ -3276,6 +3318,8 @@
 				6850CAF1244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiation.cc */,
 				6850CAA0244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiation.cc.master */,
 				6850CB39244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiation.cc.master */,
+				68D0E9E424A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc */,
+				68D0E9E524A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc.master */,
 				6850CAA1244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiation.cc.master */,
 				6850CB3A244A1C2F00A53DC8 /* StaggeredImplD */,
 				6850CAF2244A1C2F00A53DC8 /* StaggeredImplF */,
@@ -3557,10 +3601,11 @@
 		6850CB3A244A1C2F00A53DC8 /* StaggeredImplD */ = {
 			isa = PBXGroup;
 			children = (
-				6850CB3B244A1C2F00A53DC8 /* StaggeredKernelsInstantiationStaggeredImplD.cc */,
+				6850CB3E244A1C2F00A53DC8 /* impl.h */,
 				6850CB3C244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiationStaggeredImplD.cc */,
 				6850CB3D244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiationStaggeredImplD.cc */,
-				6850CB3E244A1C2F00A53DC8 /* impl.h */,
+				68D0E9E724A3547800834C1C /* NaiveStaggeredFermionInstantiationStaggeredImplD.cc */,
+				6850CB3B244A1C2F00A53DC8 /* StaggeredKernelsInstantiationStaggeredImplD.cc */,
 			);
 			path = StaggeredImplD;
 			sourceTree = "<group>";
@@ -3620,6 +3665,7 @@
 				6850CB7E244A1C2F00A53DC8 /* ImprovedStaggeredFermionImplementation.h */,
 				6850CB73244A1C2F00A53DC8 /* MobiusEOFAFermionCache.h */,
 				6850CB6B244A1C2F00A53DC8 /* MobiusEOFAFermionImplementation.h */,
+				68D0E9E224A34FFE00834C1C /* NaiveStaggeredFermionImplementation.h */,
 				6850CB74244A1C2F00A53DC8 /* PartialFractionFermion5DImplementation.h */,
 				6850CB7B244A1C2F00A53DC8 /* StaggeredKernelsAsm.h */,
 				6850CB84244A1C2F00A53DC8 /* StaggeredKernelsHand.h */,
@@ -3798,6 +3844,7 @@
 				6850CBE9244A1C2F00A53DC8 /* PowerMethod.h */,
 				6850CBE3244A1C2F00A53DC8 /* PrecConjugateResidual.h */,
 				6850CBE7244A1C2F00A53DC8 /* PrecGeneralisedConjugateResidual.h */,
+				68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */,
 				6850CBF0244A1C3000A53DC8 /* QuasiMinimalResidual.h */,
 				6850CBEB244A1C2F00A53DC8 /* SchurRedBlack.h */,
 			);
@@ -3885,6 +3932,7 @@
 				6850CC38244A1C3000A53DC8 /* Cshift_common.h */,
 				6850CC35244A1C3000A53DC8 /* Cshift_mpi.h */,
 				6850CC37244A1C3000A53DC8 /* Cshift_none.h */,
+				68D0E9DC24A34F6400834C1C /* Cshift_table.cc */,
 				6850CC36244A1C3000A53DC8 /* Cshift.h */,
 			);
 			path = cshift;
@@ -4947,6 +4995,7 @@
 				6850CE66244A1C3000A53DC8 /* Lattice_transfer.h */,
 				6850CE76244A1C3000A53DC8 /* Lattice_transpose.h */,
 				6850CE6C244A1C3000A53DC8 /* Lattice_unary.h */,
+				68D0E9DE24A34F7A00834C1C /* Lattice_view.h */,
 				6850CE65244A1C3000A53DC8 /* Lattice_where.h */,
 				6850CE78244A1C3000A53DC8 /* Lattice.h */,
 			);
@@ -4979,7 +5028,10 @@
 		6850CE82244A1C3000A53DC8 /* threads */ = {
 			isa = PBXGroup;
 			children = (
+				68D0E9EA24A354EF00834C1C /* Accelerator.cc */,
+				68D0E9EB24A354EF00834C1C /* Accelerator.h */,
 				6850CE83244A1C3000A53DC8 /* Pragmas.h */,
+				68D0E9E924A354EF00834C1C /* ThreadReduction.h */,
 				6850CE84244A1C3000A53DC8 /* Threads.h */,
 			);
 			path = threads;
@@ -4990,6 +5042,13 @@
 			children = (
 				6850CE87244A1C3100A53DC8 /* AlignedAllocator.cc */,
 				6850CE88244A1C3100A53DC8 /* AlignedAllocator.h */,
+				68D0E9D124A34F4B00834C1C /* Allocator.h */,
+				68D0E9D424A34F4B00834C1C /* MemoryManager.cc */,
+				68D0E9CE24A34F4A00834C1C /* MemoryManager.h */,
+				68D0E9CF24A34F4A00834C1C /* MemoryManagerCache.cc */,
+				68D0E9D024A34F4B00834C1C /* MemoryManagerShared.cc */,
+				68D0E9D224A34F4B00834C1C /* MemoryStats.cc */,
+				68D0E9D324A34F4B00834C1C /* MemoryStats.h */,
 			);
 			path = allocator;
 			sourceTree = "<group>";
@@ -5109,6 +5168,8 @@
 		6850D424244A234300A53DC8 /* MContraction */ = {
 			isa = PBXGroup;
 			children = (
+				6800C11924A5F74B00DF2BA1 /* A2ASmearedMesonField.cpp */,
+				6800C11A24A5F74B00DF2BA1 /* A2ASmearedMesonField.hpp */,
 				6850D43B244A234300A53DC8 /* A2AAslashField.cpp */,
 				6850D42B244A234300A53DC8 /* A2AAslashField.hpp */,
 				6850D435244A234300A53DC8 /* A2AFourQuarkContraction.cpp */,
@@ -5441,6 +5502,7 @@
 			files = (
 				6850D002244A1C3100A53DC8 /* mods.h in Headers */,
 				6850D0C7244A1C3100A53DC8 /* MatrixSquareRoot.h in Headers */,
+				68D0E9D824A34F4B00834C1C /* Allocator.h in Headers */,
 				6850CEFB244A1C3100A53DC8 /* MADWF.h in Headers */,
 				6850D130244A1C3200A53DC8 /* XprHelper.h in Headers */,
 				6850CEDD244A1C3100A53DC8 /* Dirac.h in Headers */,
@@ -5478,6 +5540,7 @@
 				6850D172244A1C3200A53DC8 /* Complex.h in Headers */,
 				6850D0C0244A1C3100A53DC8 /* TensorConcatenation.h in Headers */,
 				6850D075244A1C3100A53DC8 /* RunQueue.h in Headers */,
+				68D0E9D524A34F4B00834C1C /* MemoryManager.h in Headers */,
 				6850D10F244A1C3200A53DC8 /* Assign.h in Headers */,
 				6850D1B2244A1C3200A53DC8 /* CompressedStorage.h in Headers */,
 				6850D11B244A1C3200A53DC8 /* GeneralMatrixMatrix.h in Headers */,
@@ -5595,6 +5658,7 @@
 				6850D0ED244A1C3100A53DC8 /* KroneckerTensorProduct.h in Headers */,
 				6850D0F5244A1C3200A53DC8 /* ei_kissfft_impl.h in Headers */,
 				6850D1BF244A1C3200A53DC8 /* SparseFuzzy.h in Headers */,
+				68D0E9EE24A354F000834C1C /* Accelerator.h in Headers */,
 				6850CFF4244A1C3100A53DC8 /* BinaryCheckpointer.h in Headers */,
 				6850D0F3244A1C3100A53DC8 /* GMRES.h in Headers */,
 				6850CEAA244A1C3100A53DC8 /* Stat.h in Headers */,
@@ -5622,6 +5686,7 @@
 				6850CFB1244A1C3100A53DC8 /* DomainWallEOFAFermion.h in Headers */,
 				6850D1A3244A1C3200A53DC8 /* Eigen_Colamd.h in Headers */,
 				6850D111244A1C3200A53DC8 /* CwiseUnaryOp.h in Headers */,
+				68D0E9DA24A34F4B00834C1C /* MemoryStats.h in Headers */,
 				6850CFD1244A1C3100A53DC8 /* OverlapWilsonContfracTanhFermion.h in Headers */,
 				6850D0CD244A1C3100A53DC8 /* AutoDiffJacobian.h in Headers */,
 				6850D0DD244A1C3100A53DC8 /* SkylineStorage.h in Headers */,
@@ -5638,6 +5703,7 @@
 				6850D0A0244A1C3100A53DC8 /* TensorEvaluator.h in Headers */,
 				6850D088244A1C3100A53DC8 /* TensorReductionCuda.h in Headers */,
 				6850D045244A1C3100A53DC8 /* Tensor_class.h in Headers */,
+				68D0E9E324A34FFE00834C1C /* NaiveStaggeredFermionImplementation.h in Headers */,
 				6850CEFA244A1C3100A53DC8 /* FermionOperatorImpl.h in Headers */,
 				6850CFBA244A1C3100A53DC8 /* PartialFractionFermion5DImplementation.h in Headers */,
 				6850CFCF244A1C3100A53DC8 /* AbstractEOFAFermion.h in Headers */,
@@ -5747,6 +5813,7 @@
 				6850D241244A1C3200A53DC8 /* BaseIO.h in Headers */,
 				6850D191244A1C3200A53DC8 /* SparseLU_Utils.h in Headers */,
 				6850CFC8244A1C3100A53DC8 /* DomainWallEOFAFermionImplementation.h in Headers */,
+				68D0E9CD24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h in Headers */,
 				6850D011244A1C3100A53DC8 /* bigfloat.h in Headers */,
 				6850D160244A1C3200A53DC8 /* PacketMathHalf.h in Headers */,
 				6850CFB6244A1C3100A53DC8 /* WilsonCloverFermionImplementation.h in Headers */,
@@ -5886,6 +5953,7 @@
 				6850D06A244A1C3100A53DC8 /* Cshift_none.h in Headers */,
 				6827A13C24630F0F0036F0AC /* OpenQcdIOChromaReference.h in Headers */,
 				6850D1B7244A1C3200A53DC8 /* SparseDiagonalProduct.h in Headers */,
+				68D0E9E124A34FD900834C1C /* NaiveStaggeredFermion.h in Headers */,
 				6850D12C244A1C3200A53DC8 /* NonMPL2.h in Headers */,
 				6850CED9244A1C3100A53DC8 /* A2Autils.h in Headers */,
 				6850D169244A1C3200A53DC8 /* PacketMath.h in Headers */,
@@ -6074,6 +6142,7 @@
 				6850CEA4244A1C3100A53DC8 /* Cartesian_base.h in Headers */,
 				6850D17A244A1C3200A53DC8 /* Dot.h in Headers */,
 				6850D14D244A1C3200A53DC8 /* GenericPacketMath.h in Headers */,
+				68D0E9EC24A354F000834C1C /* ThreadReduction.h in Headers */,
 				6850D23F244A1C3200A53DC8 /* Hdf5IO.h in Headers */,
 				6850D100244A1C3200A53DC8 /* PolynomialSolver.h in Headers */,
 				6850D1CB244A1C3200A53DC8 /* ConservativeSparseSparseProduct.h in Headers */,
@@ -6187,6 +6256,7 @@
 				6850D0AD244A1C3100A53DC8 /* TensorSyclTuple.h in Headers */,
 				6850D132244A1C3200A53DC8 /* Macros.h in Headers */,
 				6850D107244A1C3200A53DC8 /* Kernel.h in Headers */,
+				68D0E9DF24A34F7A00834C1C /* Lattice_view.h in Headers */,
 				6850CEC7244A1C3100A53DC8 /* hmc_observable.h in Headers */,
 				6850D07F244A1C3100A53DC8 /* TensorConversion.h in Headers */,
 				6850CFE7244A1C3100A53DC8 /* ScalarInteractionAction.h in Headers */,
@@ -6330,6 +6400,7 @@
 				6850D518244A234500A53DC8 /* Point.hpp in Headers */,
 				6850D51B244A234500A53DC8 /* MixedPrecisionRBPrecCG.hpp in Headers */,
 				6850D4F5244A234500A53DC8 /* WeakMesonDecayKl2.hpp in Headers */,
+				6800C11C24A5F74B00DF2BA1 /* A2ASmearedMesonField.hpp in Headers */,
 				6850D586244A234500A53DC8 /* LoadCoarseEigenPack.hpp in Headers */,
 				6850D529244A234500A53DC8 /* UnitEm.hpp in Headers */,
 				6850D517244A234500A53DC8 /* Smear.hpp in Headers */,
@@ -6975,9 +7046,11 @@
 				6850CF44244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonTwoIndexAntiSymmetricImplD.cc in Sources */,
 				6850CF2C244A1C3100A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplFH.cc in Sources */,
 				6850CF6B244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonAdjImplF.cc in Sources */,
+				68D0E9E824A3547800834C1C /* NaiveStaggeredFermionInstantiationStaggeredImplD.cc in Sources */,
 				6850CF74244A1C3100A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850D23E244A1C3200A53DC8 /* XmlIO.cc in Sources */,
 				6850CEAC244A1C3100A53DC8 /* Stat.cc in Sources */,
+				68D0E9ED24A354F000834C1C /* Accelerator.cc in Sources */,
 				6850CF3B244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplD.cc in Sources */,
 				6850CF93244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplDF.cc in Sources */,
 				6850CF64244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplD.cc in Sources */,
@@ -6985,6 +7058,7 @@
 				6850CF7B244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplF.cc in Sources */,
 				6850CEDA244A1C3100A53DC8 /* SpaceTimeGrid.cc in Sources */,
 				6850CF78244A1C3100A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplDF.cc in Sources */,
+				68D0E9D724A34F4B00834C1C /* MemoryManagerShared.cc in Sources */,
 				6850CF1D244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonAdjImplD.cc in Sources */,
 				6850CF6E244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850CF1F244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonAdjImplD.cc in Sources */,
@@ -6993,6 +7067,7 @@
 				6850CF99244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplDF.cc in Sources */,
 				6850CF1C244A1C3100A53DC8 /* WilsonFermion5DInstantiationZWilsonImplDF.cc in Sources */,
 				6850CF67244A1C3100A53DC8 /* WilsonFermionInstantiationGparityWilsonImplD.cc in Sources */,
+				68D0E9DD24A34F6400834C1C /* Cshift_table.cc in Sources */,
 				6850D037244A1C3100A53DC8 /* SharedMemory.cc in Sources */,
 				6850CF57244A1C3100A53DC8 /* WilsonFermion5DInstantiationWilsonImplF.cc in Sources */,
 				6850CF34244A1C3100A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplF.cc in Sources */,
@@ -7022,8 +7097,10 @@
 				6850CEBA244A1C3100A53DC8 /* version.cc in Sources */,
 				6850CF87244A1C3100A53DC8 /* WilsonKernelsInstantiationZWilsonImplFH.cc in Sources */,
 				6850CF14244A1C3100A53DC8 /* WilsonFermionInstantiation.cc in Sources */,
+				68D0E9D624A34F4B00834C1C /* MemoryManagerCache.cc in Sources */,
 				6850CF46244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonTwoIndexAntiSymmetricImplD.cc in Sources */,
 				6850CF1E244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonAdjImplD.cc in Sources */,
+				68D0E9E624A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc in Sources */,
 				6850CF55244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonImplF.cc in Sources */,
 				6850CF92244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonImplDF.cc in Sources */,
 				6850CF9B244A1C3100A53DC8 /* CayleyFermion5DInstantiationWilsonImplDF.cc in Sources */,
@@ -7050,10 +7127,12 @@
 				6850CF49244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonTwoIndexSymmetricImplF.cc in Sources */,
 				6850CF58244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonImplF.cc in Sources */,
 				6850CF2A244A1C3100A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplFH.cc in Sources */,
+				68D0E9DB24A34F4B00834C1C /* MemoryManager.cc in Sources */,
 				6850CF18244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplDF.cc in Sources */,
 				6850CF68244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplD.cc in Sources */,
 				6850CF48244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonTwoIndexSymmetricImplF.cc in Sources */,
 				6850CF7D244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplF.cc in Sources */,
+				68D0E9D924A34F4B00834C1C /* MemoryStats.cc in Sources */,
 				6850CF53244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplF.cc in Sources */,
 				6850CF5F244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplD.cc in Sources */,
 				6850CF30244A1C3100A53DC8 /* WilsonFermionInstantiationGparityWilsonImplF.cc in Sources */,
@@ -7139,6 +7218,7 @@
 				6850D575244A234500A53DC8 /* TwoPointNPR.cpp in Sources */,
 				6850D549244A234500A53DC8 /* DistilPar.cpp in Sources */,
 				6850D366244A230A00A53DC8 /* Module.cpp in Sources */,
+				6800C11B24A5F74B00DF2BA1 /* A2ASmearedMesonField.cpp in Sources */,
 				6850D510244A234500A53DC8 /* SeqGamma.cpp in Sources */,
 				6850D51D244A234500A53DC8 /* A2AVectors.cpp in Sources */,
 				6809612024982C11007F8DB3 /* sqlite3.c in Sources */,
@@ -7412,7 +7492,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -7518,7 +7598,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -7688,6 +7768,7 @@
 		6850CA24244A1BDA00A53DC8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CODE_SIGN_STYLE = Automatic;
 				DSTROOT = "$Grid/build$(CONFIGURATION)/Grid";
 				EXCLUDED_SOURCE_FILE_NAMES = (
@@ -7718,6 +7799,7 @@
 		6850CA25244A1BDA00A53DC8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CODE_SIGN_STYLE = Automatic;
 				DSTROOT = "$Grid/build$(CONFIGURATION)/Grid";
 				EXCLUDED_SOURCE_FILE_NAMES = (
@@ -7748,6 +7830,7 @@
 		6850D258244A209200A53DC8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CODE_SIGN_STYLE = Automatic;
 				DSTROOT = "$Hadrons/build$(CONFIGURATION)/Hadrons";
 				EXECUTABLE_PREFIX = lib;
@@ -7774,6 +7857,7 @@
 		6850D259244A209200A53DC8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CODE_SIGN_STYLE = Automatic;
 				DSTROOT = "$Hadrons/build$(CONFIGURATION)/Hadrons";
 				EXECUTABLE_PREFIX = lib;
