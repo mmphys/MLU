@@ -1199,6 +1199,8 @@
 		68B96265244AE52800E5CF09 /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96261244AE50100E5CF09 /* xmlZ2.cpp */; };
 		68B96266244AE52C00E5CF09 /* xmlGFWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96262244AE50100E5CF09 /* xmlGFWall.cpp */; };
 		68B96267244AE53100E5CF09 /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96263244AE50100E5CF09 /* mixedop.cpp */; };
+		68CEF13D24AA72B400A841F9 /* BaryonGamma3pt.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */; };
+		68CEF13E24AA72B400A841F9 /* BaryonGamma3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */; };
 		68D0E9CD24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */; };
 		68D0E9D524A34F4B00834C1C /* MemoryManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9CE24A34F4A00834C1C /* MemoryManager.h */; };
 		68D0E9D624A34F4B00834C1C /* MemoryManagerCache.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68D0E9CF24A34F4A00834C1C /* MemoryManagerCache.cc */; };
@@ -2728,6 +2730,8 @@
 		68B96262244AE50100E5CF09 /* xmlGFWall.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlGFWall.cpp; sourceTree = "<group>"; };
 		68B96263244AE50100E5CF09 /* mixedop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mixedop.cpp; sourceTree = "<group>"; };
 		68BEFF6A2343A75A0031E3E3 /* xmlZ2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlZ2; sourceTree = BUILT_PRODUCTS_DIR; };
+		68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BaryonGamma3pt.hpp; sourceTree = "<group>"; };
+		68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BaryonGamma3pt.cpp; sourceTree = "<group>"; };
 		68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrecGeneralisedConjugateResidualNonHermitian.h; sourceTree = "<group>"; };
 		68D0E9CE24A34F4A00834C1C /* MemoryManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MemoryManager.h; sourceTree = "<group>"; };
 		68D0E9CF24A34F4A00834C1C /* MemoryManagerCache.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MemoryManagerCache.cc; sourceTree = "<group>"; };
@@ -5168,8 +5172,6 @@
 		6850D424244A234300A53DC8 /* MContraction */ = {
 			isa = PBXGroup;
 			children = (
-				6800C11924A5F74B00DF2BA1 /* A2ASmearedMesonField.cpp */,
-				6800C11A24A5F74B00DF2BA1 /* A2ASmearedMesonField.hpp */,
 				6850D43B244A234300A53DC8 /* A2AAslashField.cpp */,
 				6850D42B244A234300A53DC8 /* A2AAslashField.hpp */,
 				6850D435244A234300A53DC8 /* A2AFourQuarkContraction.cpp */,
@@ -5178,8 +5180,12 @@
 				6850D42E244A234300A53DC8 /* A2ALoop.hpp */,
 				6850D432244A234300A53DC8 /* A2AMesonField.cpp */,
 				6850D42F244A234300A53DC8 /* A2AMesonField.hpp */,
+				6800C11924A5F74B00DF2BA1 /* A2ASmearedMesonField.cpp */,
+				6800C11A24A5F74B00DF2BA1 /* A2ASmearedMesonField.hpp */,
 				6850D43A244A234300A53DC8 /* Baryon.cpp */,
 				6850D42A244A234300A53DC8 /* Baryon.hpp */,
+				68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */,
+				68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */,
 				6850D426244A234300A53DC8 /* DiscLoop.cpp */,
 				6850D436244A234300A53DC8 /* DiscLoop.hpp */,
 				6850D429244A234300A53DC8 /* Gamma3pt.cpp */,
@@ -6330,6 +6336,7 @@
 				6850D520244A234500A53DC8 /* Guesser.hpp in Headers */,
 				6850D4F2244A234500A53DC8 /* DiscLoop.hpp in Headers */,
 				6850D577244A234500A53DC8 /* Grad.hpp in Headers */,
+				68CEF13D24AA72B400A841F9 /* BaryonGamma3pt.hpp in Headers */,
 				6850D511244A234500A53DC8 /* SeqConserved.hpp in Headers */,
 				6850D4E8244A234500A53DC8 /* SigmaToNucleonNonEye.hpp in Headers */,
 				6850D559244A234500A53DC8 /* DWF.hpp in Headers */,
@@ -7195,6 +7202,7 @@
 				6850D54D244A234500A53DC8 /* PerambFromSolve.cpp in Sources */,
 				6860B983248E77CD0049C0DE /* SeqGammaWall.cpp in Sources */,
 				682D0629246A95E50052D780 /* VectorUnpack.cpp in Sources */,
+				68CEF13E24AA72B400A841F9 /* BaryonGamma3pt.cpp in Sources */,
 				6850D4FA244A234500A53DC8 /* A2ALoop.cpp in Sources */,
 				6850D553244A234500A53DC8 /* FourQuark.cpp in Sources */,
 				6850D532244A234500A53DC8 /* Unit.cpp in Sources */,
