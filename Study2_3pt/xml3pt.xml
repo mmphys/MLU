@@ -21,21 +21,23 @@
     <Timeslices>
       <start>0</start>
       <end>64</end>
+      <!--<end>4</end>-->
       <step>4</step>
     </Timeslices>
-    <Type>Z2</Type>
+    <Type>GFPW</Type>
     <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
-    <!--<Momenta>0_0_0</Momenta>-->
     <deltaT>12 14 16 20</deltaT>
     <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>
     <OutputBase>C1/meson/</OutputBase>
-    <!--<Momenta>0_0_0 1_0_0 2_0_0</Momenta>
+    <!--<Momenta>1_0_0</Momenta>
     <deltaT>16</deltaT>
     <Gauge></Gauge>
     <OutputBase>C1/unit/</OutputBase>-->
     <Lattice>24 24 24 64</Lattice>
-    <HeavyQuark>false</HeavyQuark>
-    <HeavyAnti>true</HeavyAnti>
+    <HeavyQuark>true</HeavyQuark>
+    <HeavyAnti>false</HeavyAnti>
+    <SinkPoint>true</SinkPoint>
+    <SinkWall>true</SinkWall>
   </RunPar>
   <NumHeavyQuark>4</NumHeavyQuark>
   <!--<NumHeavyQuark>1</NumHeavyQuark>-->

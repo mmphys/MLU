@@ -45,7 +45,7 @@ std::ostream& operator<<(std::ostream& os, const SourceT Type)
   if( Type >= 0 && Type < SourceTName.size() )
     os << SourceTName[Type];
   else
-    os << "SourceT_Unknown_" << std::to_string( Type );
+    os << "SourceTUnknown" << std::to_string( Type );
   return os;
 }
 
@@ -63,6 +63,67 @@ std::istream& operator>>(std::istream& is, SourceT &Type)
       is.setstate( std::ios_base::failbit );
   }
   return is;
+}
+
+enum SinkT : int { Point, Wall };
+static const std::array<std::string, 2> SinkTName{ "point", "wall" };
+//const std::string &sSinkPoint{ SinkTName[SinkT::Point] };
+//const std::string &sSinkWall { SinkTName[SinkT::Wall ] };
+
+std::ostream& operator<<(std::ostream& os, const SinkT Type)
+{
+  if( Type >= 0 && Type < SinkTName.size() )
+    os << SinkTName[Type];
+  else
+    os << "SinkTUnknown" << std::to_string( Type );
+  return os;
+}
+
+std::istream& operator>>(std::istream& is, SinkT &Type)
+{
+  std::string s;
+  if( is >> s )
+  {
+    int i;
+    for(i = 0; i < SinkTName.size() && !Common::EqualIgnoreCase( s, SinkTName[i] ); i++)
+      ;
+    if( i < SinkTName.size() )
+      Type = static_cast<SinkT>( i );
+    else
+      is.setstate( std::ios_base::failbit );
+  }
+  return is;
+}
+
+inline const std::string &FilePrefix( const SourceT Type, const SinkT Sink )
+{
+  if( Type == SourceT::Z2 )
+  {
+    if( Sink == SinkT::Point )
+    {
+      static const std::string s{ "Z2" };
+      return s;
+    }
+    else if( Sink == SinkT::Wall )
+    {
+      static const std::string s{ "Z2WP" };
+      return s;
+    }
+  }
+  else if( Type == SourceT::GFPW )
+  {
+    if( Sink == SinkT::Point )
+    {
+      static const std::string s{ "GFPW" };
+      return s;
+    }
+    else if( Sink == SinkT::Wall )
+    {
+      static const std::string s{ "GFWW" };
+      return s;
+    }
+  }
+  assert( 0 && "Unknown sink/source" );
 }
 
 struct Quark: Serializable {
@@ -147,6 +208,11 @@ inline void Append( std::string &sDest, SourceT Type )
   Append( sDest, SourceTName[Type] );
 }
 
+inline void Append( std::string &sDest, SinkT Type )
+{
+  Append( sDest, SinkTName[Type] );
+}
+
 inline void AppendP( std::string &sDest, const Common::Momentum &p )
 {
   Append( sDest, 'p', p.to_string( Sep ) );
@@ -201,6 +267,8 @@ struct AppParams
                                       std::string,  Gauge,
                                       bool,         HeavyQuark,
                                       bool,         HeavyAnti,
+                                      bool,         SinkPoint,
+                                      bool,         SinkWall,
                                       std::string,  OutputBase)
   };
 
@@ -236,6 +304,8 @@ AppParams::AppParams( const std::string sXmlFilename )
   // Check parameters make sense
   if( !Run.HeavyQuark && !Run.HeavyAnti )
     throw std::runtime_error( "At least one of HeavyQuark and HeavyAnti must be true" );
+  if( !Run.SinkPoint && !Run.SinkWall )
+    throw std::runtime_error( "At least one of SinkPoint and SinkWall must be true" );
   if( Momenta.empty() )
     throw std::runtime_error( "There should be at least one momentum" );
   if( deltaT.empty() )
@@ -289,6 +359,10 @@ std::string AppParams::RunID() const
     s << Sep << "quark";
   if( Run.HeavyAnti )
     s << Sep << "anti";
+  if( Run.SinkPoint )
+    s << Sep << SinkT::Point;
+  if( Run.SinkWall )
+    s << Sep << SinkT::Wall;
   for( const Quark &q : HeavyQuarks )
     s << Sep << q.flavour;
   s << Sep << "t" << Sep << Run.Timeslices.start << Sep << Run.Timeslices.end << Sep << Run.Timeslices.step;
@@ -352,15 +426,14 @@ class ModSink : public HMod
 {
 public:
   static const std::string Prefix;
-  const SourceT Type;
   const Common::Momentum p;
-  ModSink(const SourceT Type, const Common::Momentum &p);
+  ModSink(const Common::Momentum &p);
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 const std::string ModSink::Prefix{ "Sink" };
 
-ModSink::ModSink(const SourceT type_, const Common::Momentum &p_) : Type{type_}, p{p_}
+ModSink::ModSink(const Common::Momentum &p_) : p{p_}
 {
   name = Prefix;
   AppendP( name, p );
@@ -368,9 +441,38 @@ ModSink::ModSink(const SourceT type_, const Common::Momentum &p_) : Type{type_},
 
 bool ModSink::AddDependencies( HModList &ModList ) const
 {
-  MSink::Point::Par sinkPar;
+  MSink::ScalarPoint::Par sinkPar;
   sinkPar.mom = p.to_string( Space );
   ModList.application.createModule<MSink::ScalarPoint>(Name(), sinkPar);
+  return true;
+}
+
+/**************************
+ Point sink
+**************************/
+
+class ModSinkSmear : public HMod
+{
+public:
+  static const std::string Prefix;
+  const Common::Momentum p;
+  ModSinkSmear(const Common::Momentum &p);
+  virtual bool AddDependencies( HModList &ModList ) const;
+};
+
+const std::string ModSinkSmear::Prefix{ "Sink_Smear" };
+
+ModSinkSmear::ModSinkSmear(const Common::Momentum &p_) : p{p_}
+{
+  name = Prefix;
+  AppendP( name, p );
+}
+
+bool ModSinkSmear::AddDependencies( HModList &ModList ) const
+{
+  MSink::Point::Par sinkPar;
+  sinkPar.mom = p.to_string( Space );
+  ModList.application.createModule<MSink::Point>(Name(), sinkPar);
   return true;
 }
 
@@ -550,30 +652,50 @@ class ModProp : public HMod
 public:
   static const std::string Prefix;
   const SourceT Type;
+  const SinkT Sink;
   const Quark &q;
   const Common::Momentum p;
   const int t;
-  ModProp( const SourceT Type, const Quark &q, const Common::Momentum &p, int t );
+  ModProp( SourceT Type, SinkT Sink, const Quark &q, const Common::Momentum &p, int t );
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 const std::string ModProp::Prefix{ "Prop" };
 
-ModProp::ModProp( const SourceT type_, const Quark &q_, const Common::Momentum &p_, int t_ )
-: Type{type_}, q{q_}, p{p_}, t{t_}
+ModProp::ModProp( SourceT type_, SinkT sink_, const Quark &q_, const Common::Momentum &p_, int t_ )
+: Type{type_}, Sink{sink_}, q{q_}, p{p_}, t{t_}
 {
   name = Prefix;
   Append( name, Type );
+  if( Sink != SinkT::Point )
+    Append( name, Sink );
   Append( name, q.flavour );
   AppendPT( name, t, p );
 }
 
 bool ModProp::AddDependencies( HModList &ModList ) const
 {
-  MFermion::GaugeProp::Par par;
-  par.source = ModList.TakeOwnership( new ModSource( Type, p, t ) );
-  par.solver = ModList.TakeOwnership( new ModSolver( q ) );
-  ModList.application.createModule<MFermion::GaugeProp>(name, par);
+  switch( Sink )
+  {
+    case SinkT::Point:
+    {
+      MFermion::GaugeProp::Par par;
+      par.source = ModList.TakeOwnership( new ModSource( Type, p, t ) );
+      par.solver = ModList.TakeOwnership( new ModSolver( q ) );
+      ModList.application.createModule<MFermion::GaugeProp>(name, par);
+    }
+      break;
+    case SinkT::Wall:
+    {
+      MSink::Smear::Par smearPar;
+      smearPar.q = ModList.TakeOwnership( new ModProp( Type, SinkT::Point, q, p, t ) );
+      smearPar.sink = ModList.TakeOwnership( new ModSinkSmear( p0 ) );
+      ModList.application.createModule<MSink::Smear>(name, smearPar);
+    }
+      break;
+    default:
+      assert( 0 && "Unknown Sink type" );
+  }
   return true;
 }
 
@@ -586,13 +708,14 @@ class ModSourceSeq : public HMod
 public:
   static const std::string Prefix;
   const SourceT Type;
+  const SinkT Sink;
   const int Current;
   const int deltaT;
   const Common::Momentum pSeq;
   const Quark &q;
   const Common::Momentum p;
   const int t;
-  ModSourceSeq( const SourceT Type, int Current, int deltaT, const Common::Momentum &pSeq,
+  ModSourceSeq( SourceT Type, SinkT Sink, int Current, int deltaT, const Common::Momentum &pSeq,
                 const Quark &q, const Common::Momentum &p, int t );
   virtual bool AddDependencies( HModList &ModList ) const;
 protected:
@@ -601,12 +724,14 @@ protected:
 
 const std::string ModSourceSeq::Prefix{ ModSource::Prefix + "Seq" };
 
-ModSourceSeq::ModSourceSeq( const SourceT type_, int current_, int deltaT_, const Common::Momentum &pSeq_,
+ModSourceSeq::ModSourceSeq( const SourceT type_, const SinkT sink_,
+                            int current_, int deltaT_, const Common::Momentum &pSeq_,
                             const Quark &q_, const Common::Momentum &p_, int t_ )
-: Type{type_}, Current{current_}, deltaT{deltaT_}, pSeq{pSeq_}, q{q_}, p{p_}, t{t_}
+: Type{type_}, Sink{sink_}, Current{current_}, deltaT{deltaT_}, pSeq{pSeq_}, q{q_}, p{p_}, t{t_}
 {
   name = Prefix;
   Append( name, Type );
+  Append( name, Sink );
   Append( name, *algInsertName[Current] );
   AppendDeltaT( name, deltaT );
   AppendPSeq( name, pSeq );
@@ -617,7 +742,7 @@ ModSourceSeq::ModSourceSeq( const SourceT type_, int current_, int deltaT_, cons
 template<typename T> void ModSourceSeq::AddDependenciesT( HModList &ModList ) const
 {
   typename T::Par seqPar;
-  seqPar.q = ModList.TakeOwnership( new ModProp( Type, q, p, t ) );
+  seqPar.q = ModList.TakeOwnership( new ModProp( Type, SinkT::Point, q, p, t ) );
   seqPar.tA  = ModList.params.TimeBound( t + deltaT );
   seqPar.tB  = seqPar.tA;
   seqPar.mom = pSeq.to_string4d( Space );
@@ -627,10 +752,17 @@ template<typename T> void ModSourceSeq::AddDependenciesT( HModList &ModList ) co
 
 bool ModSourceSeq::AddDependencies( HModList &ModList ) const
 {
-  //if( Type == SourceT::Z2 )
-    AddDependenciesT<MSource::SeqGamma>( ModList );
-  //else
-    //AddDependenciesT<MSource::SeqGammaWall>( ModList );
+  switch( Sink )
+  {
+    case SinkT::Point:
+      AddDependenciesT<MSource::SeqGamma>( ModList );
+      break;
+    case SinkT::Wall:
+      AddDependenciesT<MSource::SeqGammaWall>( ModList );
+      break;
+    default:
+      assert( 0 && "Unknown sink type" );
+  }
   return true;
 }
 
@@ -643,6 +775,7 @@ class ModPropSeq : public HMod
 public:
   static const std::string Prefix;
   const SourceT Type;
+  const SinkT Sink;
   const Quark &qSeq;
   const int Current;
   const int deltaT;
@@ -650,19 +783,22 @@ public:
   const Quark &q;
   const Common::Momentum p;
   const int t;
-  ModPropSeq( const SourceT type, const Quark &qSeq, int current, int deltaT, const Common::Momentum &pSeq,
+  ModPropSeq( const SourceT type, const SinkT Sink,
+              const Quark &qSeq, int current, int deltaT, const Common::Momentum &pSeq,
               const Quark &q, const Common::Momentum &p, int t );
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 const std::string ModPropSeq::Prefix{ ModProp::Prefix + "Seq" };
 
-ModPropSeq::ModPropSeq( const SourceT type_, const Quark &qSeq_, int current_, int deltaT_, const Common::Momentum &pSeq_,
+ModPropSeq::ModPropSeq( const SourceT type_, const SinkT sink_,
+                        const Quark &qSeq_, int current_, int deltaT_, const Common::Momentum &pSeq_,
                         const Quark &q_, const Common::Momentum &p_, int t_ )
-: Type{type_}, qSeq{qSeq_}, Current{current_}, deltaT{deltaT_}, pSeq{pSeq_}, q{q_}, p{p_}, t{t_}
+: Type{type_},Sink{sink_},qSeq{qSeq_},Current{current_},deltaT{deltaT_},pSeq{pSeq_},q{q_},p{p_},t{t_}
 {
   name = Prefix;
   Append( name, Type );
+  Append( name, Sink );
   Append( name, qSeq.flavour );
   Append( name, *algInsertName[Current] );
   AppendDeltaT( name, deltaT );
@@ -674,7 +810,7 @@ ModPropSeq::ModPropSeq( const SourceT type_, const Quark &qSeq_, int current_, i
 bool ModPropSeq::AddDependencies( HModList &ModList ) const
 {
   MFermion::GaugeProp::Par quarkPar;
-  quarkPar.source = ModList.TakeOwnership( new ModSourceSeq( Type, Current, deltaT, pSeq, q, p, t ) );
+  quarkPar.source = ModList.TakeOwnership( new ModSourceSeq( Type,Sink,Current,deltaT,pSeq,q,p,t ) );
   quarkPar.solver = ModList.TakeOwnership( new ModSolver( qSeq ) );
   ModList.application.createModule<MFermion::GaugeProp>(name, quarkPar);
   return true;
@@ -691,21 +827,23 @@ class ModContract2pt : public HMod
 protected:
   std::string FileName;
 public:
+  static const std::string Prefix;
   const SourceT Type;
+  const SinkT Sink;
   const Quark &q1;
   const Quark &q2;
   const Common::Momentum p;
   const int t;
-  ModContract2pt(const std::string &OutputBase, const SourceT Type,
+  ModContract2pt(const std::string &OutputBase, const SourceT Type, const SinkT Sink,
                  const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_);
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
-ModContract2pt::ModContract2pt(const std::string &OutputBase, const SourceT type_,
+ModContract2pt::ModContract2pt(const std::string &OutputBase, const SourceT type_, const SinkT sink_,
                                const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_)
-: Type{type_}, q1{q1_}, q2{q2_}, p{p_}, t{t_}
+: Type{type_}, Sink{sink_}, q1{q1_}, q2{q2_}, p{p_}, t{t_}
 {
-  std::string s{SourceTName[type_]};
+  std::string s{ FilePrefix( Type, Sink ) };
   Append( s, q1.flavour );
   Append( s, q2.flavour );
   AppendPT( s, t, p );
@@ -722,9 +860,11 @@ bool ModContract2pt::AddDependencies( HModList &ModList ) const
   mesPar.output = FileName;
   //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
   mesPar.gammas = "all";
-  mesPar.q1 = ModList.TakeOwnership(new ModProp( Type, q1, p, t ));
-  mesPar.q2 = ModList.TakeOwnership(new ModProp( Type, q2, p0, t ));
-  mesPar.sink = ModList.TakeOwnership(new ModSink( Type, -p ));
+  const Common::Momentum p_q2  { Sink == SinkT::Wall ? p  : p0 };
+  const Common::Momentum p_sink{ Sink == SinkT::Wall ? p0 : -p };
+  mesPar.q1 = ModList.TakeOwnership(new ModProp( Type, Sink, q1, p, t ));
+  mesPar.q2 = ModList.TakeOwnership(new ModProp( Type, Sink, q2, p_q2, t ));
+  mesPar.sink = ModList.TakeOwnership(new ModSink( p_sink ));
   ModList.application.createModule<MContraction::Meson>(name, mesPar);
   return true;
 }
@@ -742,6 +882,7 @@ protected:
   std::string FileName;
 public:
   const SourceT Type;
+  const SinkT Sink;
   const Quark &qSnk;
   const Quark &qSrc;
   const Quark &qSpectator;
@@ -750,19 +891,19 @@ public:
   const bool bHeavyAnti;
   const int Current;
   const int deltaT;
-  ModContract3pt( const std::string &OutputBase, const SourceT Type,
+  ModContract3pt( const std::string &OutputBase, const SourceT Type, const SinkT Sink,
                   const Quark &qSnk, const Quark &qSrc, const Quark &qSpectator,
                   const Common::Momentum &p, int t, bool bHeavyAnti, int Current, int deltaT );
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
-ModContract3pt::ModContract3pt(const std::string &OutputBase, const SourceT type_,
+ModContract3pt::ModContract3pt(const std::string &OutputBase, const SourceT type_, const SinkT sink_,
                                const Quark &qSnk_, const Quark &qSrc_, const Quark &qSpectator_,
                                const Common::Momentum &p_, int t_, bool bHeavyAnti_, int Current_, int deltaT_)
-: Type{type_}, qSnk{qSnk_}, qSrc{qSrc_}, qSpectator{qSpectator_},
+: Type{type_}, Sink{sink_}, qSnk{qSnk_}, qSrc{qSrc_}, qSpectator{qSpectator_},
   p{p_}, t{t_}, bHeavyAnti{bHeavyAnti_}, Current{Current_}, deltaT(deltaT_)
 {
-  std::string s{SourceTName[type_]};
+  std::string s{ FilePrefix( Type, Sink ) };
   Append( s, bHeavyAnti ? "anti" : "quark" );
   Append( s, qSnk.flavour );
   Append( s, qSrc.flavour );
@@ -785,15 +926,15 @@ bool ModContract3pt::AddDependencies( HModList &ModList ) const
   const bool bInvertSeq{ !bHeavyAnti };
   if( bInvertSeq )
   {
-    par.q1 = ModList.TakeOwnership( new ModProp( Type, qSrc, p, t ) );
-    par.q2 = ModList.TakeOwnership(new ModPropSeq( Type, qSnk, Current, deltaT, p0, qSpectator,p0, t ));
+    par.q1 = ModList.TakeOwnership( new ModProp( Type, SinkT::Point, qSrc, p, t ) );
+    par.q2 = ModList.TakeOwnership(new ModPropSeq( Type, Sink, qSnk, Current, deltaT, p0, qSpectator,p0, t ));
   }
   else
   {
-    par.q1 = ModList.TakeOwnership(new ModPropSeq( Type, qSnk, Current, deltaT, p0, qSpectator, p, t ));
-    par.q2 = ModList.TakeOwnership( new ModProp( Type, qSrc, p0, t ) );
+    par.q1 = ModList.TakeOwnership(new ModPropSeq( Type, Sink, qSnk, Current, deltaT, p0, qSpectator, p, t ));
+    par.q2 = ModList.TakeOwnership( new ModProp( Type, SinkT::Point, qSrc, p0, t ) );
   }
-  par.sink = ModList.TakeOwnership( new ModSink( Type, -p ) );
+  par.sink = ModList.TakeOwnership( new ModSink( -p ) );
   ModList.application.createModule<MContraction::Meson>(name, par);
   return true;
 }
@@ -852,49 +993,53 @@ void AppMaker::Make()
   {
     for( unsigned int t = l.params.Run.Timeslices.start; t < l.params.Run.Timeslices.end; t += l.params.Run.Timeslices.step )
     {
-      for( Common::Momentum p : l.params.Momenta )
+      for(int iSink = l.params.Run.SinkPoint ? 0 : 1; iSink <= l.params.Run.SinkWall ? 1  : 0; iSink++)
       {
-        for( int pDoNeg = 0; pDoNeg < ( p ? 2 : 1 ); ++pDoNeg )
+        const SinkT Sink{ iSink ? SinkT::Wall : SinkT::Point };
+        for( Common::Momentum p : l.params.Momenta )
         {
-          for( const Quark &qH1 : l.params.HeavyQuarks )
+          for( int pDoNeg = 0; pDoNeg < ( p ? 2 : 1 ); ++pDoNeg )
           {
-            for( const Quark &qH2 : l.params.HeavyQuarks )
+            for( const Quark &qH1 : l.params.HeavyQuarks )
             {
-              for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
-                       iHeavy <= l.params.Run.HeavyAnti  ? 1 : 0; ++iHeavy )
+              for( const Quark &qH2 : l.params.HeavyQuarks )
               {
-                const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
-                if( !p || qH1.mass >= qH2.mass )
+                for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
+                         iHeavy <= l.params.Run.HeavyAnti  ? 1 : 0; ++iHeavy )
                 {
-                  // 2pt functions
-                  //if( bHeavyAnti )
-                  //{
-                    l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type,
-                                                         qSpectator, qH1, p, t ) );
-                    l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type,
-                                                         qSpectator, qH2, p, t ) );
-                  //}
-                  //else
-                  //{
-                    l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type,
-                                                         qH1, qSpectator, p, t ) );
-                    l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type,
-                                                         qH2, qSpectator, p, t ) );
-                  //}
-                  for( int deltaT : l.params.deltaT )
+                  const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
+                  if( !p || qH1.mass >= qH2.mass )
                   {
-                    for( int j = 0; j < NumInsert; j++ )
+                    // 2pt functions
+                    //if( bHeavyAnti )
+                    //{
+                      l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
+                                                           qSpectator, qH1, p, t ) );
+                      l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
+                                                           qSpectator, qH2, p, t ) );
+                    //}
+                    //else
+                    //{
+                      l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
+                                                           qH1, qSpectator, p, t ) );
+                      l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
+                                                           qH2, qSpectator, p, t ) );
+                    //}
+                    for( int deltaT : l.params.deltaT )
                     {
-                      l.TakeOwnership( new ModContract3pt( l.params.Run.OutputBase, l.params.Type,
-                                                           qH1, qH2, qSpectator, p,
-                                                           t, bHeavyAnti, j, deltaT ) );
+                      for( int j = 0; j < NumInsert; j++ )
+                      {
+                        l.TakeOwnership( new ModContract3pt( l.params.Run.OutputBase, l.params.Type, Sink,
+                                                             qH1, qH2, qSpectator, p,
+                                                             t, bHeavyAnti, j, deltaT ) );
+                      }
                     }
                   }
                 }
               }
             }
+            p = -p;
           }
-          p = -p;
         }
       }
     }
