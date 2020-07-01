@@ -70,7 +70,8 @@ using namespace Common;
   }
 }*/
 
-enum StudySubject { Z2=1, GFWW, GFPW };
+enum StudySubject{ Z2=1, GFWW, GFPW };
+enum GroupMomenta{ None, Squared, Abs };
 
 struct OperatorAttributes
 {
@@ -116,7 +117,10 @@ struct TrajFile
 {
   bool bHasTimeslice = false;
   int  Timeslice;
-  TrajFile( bool bHasTimeslice_, int  Timeslice_ ) : bHasTimeslice{ bHasTimeslice_ }, Timeslice{ Timeslice_ } {}
+  bool bGotMomentum = false;
+  Common::Momentum p;
+  TrajFile( bool bHasTimeslice_, int Timeslice_, bool bGotMomentum_, Common::Momentum p_ )
+  : bHasTimeslice{bHasTimeslice_}, Timeslice{Timeslice_}, bGotMomentum{bGotMomentum_}, p{p_} {}
 };
 
 // This describes one contraction and each of its trajectory files
@@ -140,7 +144,7 @@ struct Manifest : public std::map<std::string, TrajList>
 {
   // Process list of files on the command-line, breaking them up into individual trajectories
   Manifest(const std::vector<std::string> &Files, const std::vector<std::string> &Ignore,
-           bool bSwapQuarks, bool GroupLikeMomenta);
+           bool bSwapQuarks, const GroupMomenta GroupP);
 };
 
 /*enum ExtractFilenameReturn {Good, Bad, No_trajectory};
@@ -179,7 +183,7 @@ static ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, s
 }*/
 
 Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::string> &Ignore,
-                   bool bSwapQuarks, bool GroupLikeMomenta)
+                   bool bSwapQuarks, const GroupMomenta GroupP)
 {
   static const std::string Sep{ "_" };
   // Now walk the list of arguments.
@@ -255,12 +259,18 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
       std::string sShortSuffix;
       if( bGotMomentum )
       {
-        if( GroupLikeMomenta )
-          sShortSuffix = mom.p2_string( Sep );
-        else
+        sShortSuffix = "_p_";
+        switch( GroupP )
         {
-          sShortSuffix = "_p_";
-          sShortSuffix.append( mom.to_string( Sep ) );
+          case GroupMomenta::Squared:
+            sShortSuffix = mom.p2_string( Sep );
+            break;
+          case GroupMomenta::Abs:
+            sShortSuffix.append( mom.abs().to_string( Sep ) );
+            break;
+          default:
+            sShortSuffix.append( mom.to_string( Sep ) );
+            break;
         }
         Contraction.append( sShortSuffix );
       }
@@ -271,7 +281,7 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
       TrajList & cl{ itc->second };
       auto it = cl.FileInfo.find( Name_.Filename );
       if( it == cl.FileInfo.end() )
-        cl.FileInfo.emplace( Name_.Filename, TrajFile( bHasTimeslice, Timeslice_ ) );
+        cl.FileInfo.emplace( Name_.Filename, TrajFile( bHasTimeslice, Timeslice_, bGotMomentum, mom ) );
       else
         std::cout << "Ignoring repetition of " << Name_.Filename << std::endl;
     }
@@ -725,7 +735,8 @@ int main(const int argc, const char *argv[])
       {"m", CL::SwitchType::Single, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
       {"v", CL::SwitchType::Flag, nullptr},
-      {"p", CL::SwitchType::Flag, nullptr},
+      {"p2",CL::SwitchType::Flag, nullptr},
+      {"pa",CL::SwitchType::Flag, nullptr},
       {"f", CL::SwitchType::Flag, nullptr},
       {"h", CL::SwitchType::Flag, nullptr},
       {"z", CL::SwitchType::Flag, nullptr},
@@ -736,7 +747,8 @@ int main(const int argc, const char *argv[])
     if( !cl.GotSwitch( "help" ) )
     {
       std::vector<Common::Gamma::Algebra> Alg = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "a" ) );
-      std::vector<Common::Gamma::Algebra> Alg3pt = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "c" ) );
+      std::vector<bool> Alg3ptNeg;
+      std::vector<Common::Gamma::Algebra> Alg3pt = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "c" ), &Alg3ptNeg );
       BootstrapParams par;
       par.TimesliceDetail = cl.SwitchValue<int>( "t" );
       if( par.TimesliceDetail < 0 || par.TimesliceDetail > 2 )
@@ -749,7 +761,19 @@ int main(const int argc, const char *argv[])
       par.bFold = cl.GotSwitch( "h" );
       par.bT0Abs = !cl.GotSwitch( "z" ); // Add the switch to turn this off
       par.bBackwardsWave = cl.GotSwitch( "v" );
-      const bool bSwapQuarks{ !cl.GotSwitch( "q" ) }; // Add the switch to turn this off
+      const bool bSwapQuarks{ !cl.GotSwitch( "q" ) }; // Presence of switch turns this off
+      GroupMomenta GroupP{ GroupMomenta::None };
+      {
+        const bool p2{ cl.GotSwitch( "p2" ) };
+        if( cl.GotSwitch( "pa" ) )
+        {
+          if( p2 )
+            throw std::invalid_argument( "Can't group momenta by both p^2 and abs( p )" );
+          GroupP = GroupMomenta::Abs;
+        }
+        else if( p2 )
+          GroupP = GroupMomenta::Squared;
+      }
       if( cl.GotSwitch( "m" ) )
         par.MachineName = cl.SwitchValue<std::string>( "m" );
       else
@@ -774,7 +798,7 @@ int main(const int argc, const char *argv[])
                                       + " with command-line arguments" );
         bShowUsage = false;
         Manifest Manifest{ glob( cl.Args.begin(), cl.Args.end(), InStem.c_str() ),
-                           cl.SwitchStrings( "x" ), bSwapQuarks, cl.GotSwitch( "p" ) };
+                           cl.SwitchStrings( "x" ), bSwapQuarks, GroupP };
         // Walk the list of contractions, performing a separate bootstrap for each
         int BootstrapCount = 0;
         for( auto itc = Manifest.begin(); itc != Manifest.end(); itc++ )
@@ -791,7 +815,9 @@ int main(const int argc, const char *argv[])
             const std::string &Filename{ it->first }; // Trajectory number
             const TrajFile &tf{ it->second };
             std::string GroupName{ cl.SwitchValue<std::string>( "g" ) };
-            InFiles[j].Read( Filename, b3pt ? Alg3pt : Alg, Alg, tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName );
+            InFiles[j].Read( Filename, b3pt ? Alg3pt : Alg, Alg,
+                            tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName,
+                            b3pt && tf.bGotMomentum && tf.p.IsNeg() ? &Alg3ptNeg : nullptr );
           }
           try
           {
@@ -875,7 +901,8 @@ int main(const int argc, const char *argv[])
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
     "-v     Backwards propagating wave (adjust timeslice by -t)\n"
-    "-p     group momenta by P^2\n"
+    "--p2   group momenta by P^2\n"
+    "--pa   group momenta by Abs( p )\n"
     "-f     Factorising operators (e.g. g5-gT5 same as gT5-g5)\n"
     "-h     Take forward/backward Half-waves as separate bootstrap inputs (i.e. fold)\n"
     "-z     Disable taking the absolute value of C(0) when folding\n"

@@ -67,59 +67,43 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ag5,gT5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-ag5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-cgT,gx,gy,gz"
+            argument = "-cgT,-gx,gy,gz"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-f"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-h"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-t1"
-            isEnabled = "NO">
+            argument = "--pa -q"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-r4147798751"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-s1"
-            isEnabled = "NO">
+            argument = "-r1835672416"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o Z2/boot35/ -i Z2/meson/ &apos;h1_l_p_0_0_0*&apos; &apos;l_h1_p_0_0_0*&apos;"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;2pt/*.h5&apos;"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "&apos;3pt/h1_s_*.h5&apos;"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "&apos;3pt/s_h1_*.h5&apos;"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-i Z2/ -o Z2/bootstrap/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o GFWP/boot35/ &apos;GFWP/meson/*_p_0_0_0_*.h5&apos; &apos;GFWall/meson/*_p_0_0_0_*.h5&apos;"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-b 4"
-            isEnabled = "NO">
+            argument = "-i meson/3pt_s/ -o boot_test/3pt_s/ &apos;*.h5&apos;"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

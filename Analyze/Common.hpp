@@ -76,7 +76,7 @@ BEGIN_COMMON_NAMESPACE
 template <class _CharT, class _Traits>
 inline bool StreamEmpty( std::basic_istream<_CharT, _Traits> & s )
 {
-  return !s.fail() && ( s.eof() || ( s >> std::ws && s.eof() ) );
+  return s.eof() || ( s >> std::ws && s.eof() );
 }
 
 // Text required for summaries of correlators
@@ -195,17 +195,26 @@ template<> inline std::string FromString<std::string>( const std::string &String
   { return String; }
 
 // Generic conversion from a string to an array of any type (comma or space separated)
-template<typename T> inline std::vector<T> ArrayFromString( const std::string &String ) {
+template<typename T>
+inline std::vector<T> ArrayFromString( const std::string &String, std::vector<bool> *pNeg = nullptr )
+{
   std::string s{ String };
   for( std::size_t pos = 0; ( pos = s.find( ',', pos ) ) != std::string::npos; )
     s[pos] = ' ';
   std::istringstream iss( s );
   std::vector<T> v;
+  if( pNeg )
+    pNeg->clear();
   for( T t; !StreamEmpty( iss ); )
   {
+    bool bSign{ pNeg && iss.peek() == '-' };
+    if( bSign )
+      assert( iss.get() == '-' );
     if( !( iss >> t ) )
       throw std::invalid_argument( "ArrayFromString: \"" + String + "\" is not type " + typeid(T).name() );
     v.push_back( t );
+    if( pNeg )
+      pNeg->push_back( bSign );
   }
   return v;
 }
@@ -356,7 +365,9 @@ struct Momentum
   Momentum() : Momentum(0,0,0) {}
   inline explicit operator bool() const { return x!=0 || y!=0 || z!=0; }
   inline Momentum operator-() const { return Momentum(-x, -y, -z); }
+  inline Momentum abs() const { return Momentum( x<0?-x:x, y<0?-y:y, z<0?-z:z ); }
   inline bool operator==(const Momentum &m) const { return x==m.x || y==m.y || z==m.z; }
+  inline bool IsNeg() const { return x<0 || ( x==0 && ( y<0 || ( y==0 && z < 0 ))); }
   inline bool EqualsNeg(const Momentum &m) const { return x==-m.x || y==-m.y || z==-m.z; }
   inline int p2() const { return x * x + y * y + z * z; }
   std::string p2_string  ( const std::string &separator ) const;
@@ -937,7 +948,7 @@ public:
   }
   void Read (const std::string &FileName, std::vector<Gamma::Algebra> &AlgSnk, std::vector<Gamma::Algebra> &AlgSrc,
              const int * pTimeslice = nullptr, const char * PrintPrefix = nullptr,
-             std::string *pGroupName = nullptr);
+             std::string *pGroupName = nullptr, std::vector<bool> *pAlgSnkNeg = nullptr);
   //void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void WriteSummary(const std::string &Prefix, const std::vector<Gamma::Algebra> &AlgSnk,
                     const std::vector<Gamma::Algebra> &AlgSrc);
@@ -974,9 +985,16 @@ using CorrelatorFileD = CorrelatorFile<double>;
 template <typename T>
 void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Algebra> &AlgSnk,
                              std::vector<Gamma::Algebra> &AlgSrc, const int * pTimeslice,
-                             const char * PrintPrefix, std::string *pGroupName)
+                             const char * PrintPrefix, std::string *pGroupName,
+                             std::vector<bool> *pAlgSnkNeg)
 {
   const bool bSameAlgebras{&AlgSnk == &AlgSrc};
+  if( pAlgSnkNeg )
+  {
+    assert( pAlgSnkNeg->size() == AlgSnk.size() );
+    assert( pAlgSnkNeg->size() && "Algebras unknown. Negating makes no sense" );
+    assert( !bSameAlgebras && "Work out whether two negatives make a positive, then implement" );
+  }
   // Parse the name. Not expecting a type, so if present, put it back on the end of Base
   Name_.Parse( FileName );
   if( !Name_.Type.empty() )
@@ -1031,7 +1049,12 @@ void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Alg
             AlgSrc_.resize( 1 );
             AlgSrc_[0] = Gamma::Algebra::Unknown;
           }
-          ds.read( (*this)[0], H5::Equiv<T>::Type );
+          T * const pData{ (*this)[0] };
+          ds.read( pData, H5::Equiv<T>::Type );
+          // Negate this correlator if requested
+          if( pAlgSnkNeg && (*pAlgSnkNeg)[0] )
+            for( int i = 0; i < Nt_; i++ )
+              pData[i] = -pData[i];
           bOK = true;
         }
       }
@@ -1122,8 +1145,12 @@ void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Alg
                 if( idxSrc < AlgSrc_.size() )
                 {
                   const int idx{ idxSnk * NumSrc_ + idxSrc };
-                  ds.read( (*this)[idx], H5::Equiv<T>::Type );
+                  T * const pData{ (*this)[idx] };
+                  ds.read( pData, H5::Equiv<T>::Type );
                   count[idx]++;
+                  if( pAlgSnkNeg && (*pAlgSnkNeg)[idxSnk] )
+                    for( int i = 0; i < Nt_; i++ )
+                      pData[i] = -pData[i];
                 }
               }
             }
