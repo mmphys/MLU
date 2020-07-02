@@ -302,6 +302,7 @@ public:
   bool bFactorised;
   bool bFold;
   bool bT0Abs;
+  bool bVerboseSummaries;
   bool bBackwardsWave;
   int PerformBootstrap(std::vector<Common::CorrelatorFileC> &f, const TrajList &Traj ) const;
   void Study1Bootstrap(StudySubject Study, const std::string &StudyPath, const Common::Momentum &mom,
@@ -510,7 +511,7 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
           if( bSaveBootstrap )
             out.Write( sOutFile );
           if( bSaveSummaries )
-            out.WriteSummary( sSummary );
+            out.WriteSummary( sSummary, bVerboseSummaries );
         }
         iCount++;
       }
@@ -735,6 +736,7 @@ int main(const int argc, const char *argv[])
       {"m", CL::SwitchType::Single, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
       {"v", CL::SwitchType::Flag, nullptr},
+      {"w", CL::SwitchType::Flag, nullptr},
       {"p2",CL::SwitchType::Flag, nullptr},
       {"pa",CL::SwitchType::Flag, nullptr},
       {"f", CL::SwitchType::Flag, nullptr},
@@ -760,7 +762,8 @@ int main(const int argc, const char *argv[])
       par.bFactorised = cl.GotSwitch( "f" );
       par.bFold = cl.GotSwitch( "h" );
       par.bT0Abs = !cl.GotSwitch( "z" ); // Add the switch to turn this off
-      par.bBackwardsWave = cl.GotSwitch( "v" );
+      par.bVerboseSummaries = cl.GotSwitch( "v" );
+      par.bBackwardsWave = cl.GotSwitch( "w" );
       const bool bSwapQuarks{ !cl.GotSwitch( "q" ) }; // Presence of switch turns this off
       GroupMomenta GroupP{ GroupMomenta::None };
       {
@@ -900,7 +903,8 @@ int main(const int argc, const char *argv[])
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
-    "-v     Backwards propagating wave (adjust timeslice by -t)\n"
+    "-v     Verbose summaries (include file list)\n"
+    "-w     backWards propagating Wave (adjust timeslice by -t)\n"
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"
     "-f     Factorising operators (e.g. g5-gT5 same as gT5-g5)\n"

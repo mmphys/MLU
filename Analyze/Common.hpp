@@ -443,6 +443,11 @@ struct ConfigCount {
   ConfigCount& operator=( ConfigCount && ) = default;
 };
 
+inline std::ostream & operator<<( std::ostream &os, const ConfigCount &cc )
+{
+  return os << "{" << cc.Config << "," << cc.Count << "}";
+}
+
 // My implementation of H5File - adds a definition of complex type
 namespace H5 {
   template <typename T> struct Equiv;
@@ -1365,7 +1370,7 @@ public:
              std::string * pGroupName = nullptr );
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void MakeCorrSummary( const char * pAvgName );
-  void WriteSummary( const std::string &sOutFileName );
+  void WriteSummary( const std::string &sOutFileName, bool bVerboseSummary = false );
   explicit Sample(int NumSamples = 0, int Nt = 0, std::vector<std::string> * pAuxNames = nullptr,
                   std::vector<std::string> * pSummaryNames = nullptr)
     : NumSamples_{0}, Nt_{0}, NumExtraSamples{0}
@@ -1437,12 +1442,27 @@ public: // Override these for specialisations
   virtual const std::string & DefaultGroupName() { return sBootstrap; }
   virtual bool bFolded() { return false; }
   // Descendants should call base first
-  virtual void SummaryComments( std::ostream & s ) const
+  virtual void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const
   {
+    static const char SeedPrefix[] = "# Seed: ";
     s << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha;
-    if( Seed_ ) s << "# Seed: " << Seed_ << NewLine;
-    else if( !Name_.SeedString.empty() ) s << "# Seed: " << Name_.SeedString << NewLine;
+    if( Seed_ ) s << SeedPrefix << Seed_ << NewLine;
+    else if( !Name_.SeedString.empty() ) s << SeedPrefix << Name_.SeedString << NewLine;
     if( !SeedMachine_.empty() ) s << "# Seed machine: " << SeedMachine_ << NewLine;
+    if( !ConfigCount.empty() )
+    {
+      s << "# Configs: " << ConfigCount.size();
+      for( const Common::ConfigCount &cc : ConfigCount )
+        s << ", " << cc;
+      s << NewLine;
+    }
+    if( bVerboseSummary )
+    {
+      s << "# FileCount: " << FileList.size() << NewLine;
+      std::size_t i = 0;
+      for( const std::string &f : FileList )
+        s << "# File " << i++ << ": " << f << NewLine;
+    }
   }
   virtual void ReadAttributes( ::H5::Group &g ) {}
   virtual void ValidateAttributes() {} // Called once data read to validate attributes against data
@@ -1550,7 +1570,7 @@ Sample<T> Sample<T>::Bootstrap(int NumBootSamples, SeedType Seed, const std::str
 }
 
 template <typename T>
-void Sample<T>::WriteSummary( const std::string &sOutFileName )
+void Sample<T>::WriteSummary( const std::string &sOutFileName, bool bVerboseSummary )
 {
   using namespace CorrSumm;
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
@@ -1558,7 +1578,7 @@ void Sample<T>::WriteSummary( const std::string &sOutFileName )
     throw std::runtime_error( "Summaries can't be written because they've not been created" );
   std::ofstream s( sOutFileName );
   SummaryHeader<T>( s, sOutFileName );
-  SummaryComments( s );
+  SummaryComments( s, bVerboseSummary );
   // Now write all the field names
   const std::string Sep{ " " };
   s << "t";

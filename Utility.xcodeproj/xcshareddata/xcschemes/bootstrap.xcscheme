@@ -62,6 +62,10 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
+            argument = "-v"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-ag5,gT5,gx5,gy5,gz5"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -74,12 +78,16 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-cgT,-gx,gy,gz"
+            argument = "-q -cgT,gx,gy,gz"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--pa -q"
-            isEnabled = "YES">
+            argument = "-q -cgT,-gx,-gy,-gz"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--pa"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-r4147798751"
