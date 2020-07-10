@@ -2,8 +2,8 @@
 <Study2>
   <RunPar>
     <trajCounter>
-      <start>3040</start>
-      <end>3041</end>
+      <start>3000</start>
+      <end>3001</end>
       <step>40</step>
     </trajCounter>
     <genetic>
@@ -20,27 +20,36 @@
     <Nt>64</Nt>
     <Timeslices>
       <start>0</start>
-      <end>64</end>
-      <!--<end>4</end>-->
+      <end>4</end>
+      <!--<end>64</end>-->
       <step>4</step>
     </Timeslices>
     <Type>GFPW</Type>
-    <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
+    <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
     <deltaT>12 14 16 20</deltaT>
-    <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>
-    <OutputBase>C1/meson/</OutputBase>
-    <!--<Momenta>1_0_0</Momenta>
+    <OutputBase>C1/meson/</OutputBase>-->
+    <Momenta>1_0_0</Momenta>
     <deltaT>16</deltaT>
-    <Gauge></Gauge>
-    <OutputBase>C1/unit/</OutputBase>-->
-    <Lattice>24 24 24 64</Lattice>
+    <OutputBase>C1/unit/</OutputBase>
+    <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>
+    <GaugeFix>
+      <gauge>Unused</gauge>
+      <alpha>0.05</alpha>
+      <maxiter>1000000</maxiter>
+      <Omega_tol>1e-08</Omega_tol>
+      <Phi_tol>1e-08</Phi_tol>
+      <gaugeFix>coulomb</gaugeFix>
+      <Fourier>true</Fourier>
+    </GaugeFix>
     <HeavyQuark>true</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
     <SinkPoint>true</SinkPoint>
     <SinkWall>true</SinkWall>
+    <!--<Run>true</Run>-->
+    <Run>false</Run>
   </RunPar>
-  <NumHeavyQuark>4</NumHeavyQuark>
-  <!--<NumHeavyQuark>1</NumHeavyQuark>-->
+  <NumHeavyQuark>1</NumHeavyQuark>
+  <!--<NumHeavyQuark>4</NumHeavyQuark>-->
   <HeavyQuark0>
     <flavour>h0</flavour>
     <mass>0.50</mass>
