@@ -20,7 +20,7 @@ CXXFLAGS  := $(filter-out -O%,$(CXXFLAGS))
 
 # De-duplicate library (-L) paths and libraries (-l), followed by other options
 #LDLIBS   := -lHadrons -lGrid $(sort $(shell $(GridConf) --libs) $(shell $(LatAnConf) --libs))
-LDLIBS    := -lHadrons -lGrid $(sort $(shell $(GridConf) --libs) -lMinuit2 -lgsl)
+LDLIBS    := -lHadrons -lGrid $(sort $(shell $(GridConf) --libs) -lMinuit2 -lgsl -lgslcblas)
 LDFLAGS   := $(shell $(GridConf) --ldflags) #$(shell $(LatAnConf) --ldflags)
 LDPATHS   := $(sort $(patsubst -L%,%,$(filter -L%,$(LDFLAGS))))
 #LDFLAGS  := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(LatAnalyzeBuild)/lib/.libs $(GridPre)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
