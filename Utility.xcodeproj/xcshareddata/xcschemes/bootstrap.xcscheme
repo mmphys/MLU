@@ -62,10 +62,6 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-v"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-ag5,gT5,gx5,gy5,gz5"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -78,11 +74,11 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-q -cgT,gx,gy,gz"
+            argument = "-cgT,gx,gy,gz"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-q -cgT,-gx,-gy,-gz"
+            argument = "cgT,-gx,-gy,-gz"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -114,6 +110,13 @@
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "OMP_NUM_THREADS"
+            value = "2"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

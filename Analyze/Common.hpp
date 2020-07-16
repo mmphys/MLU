@@ -170,6 +170,7 @@ extern const std::string sSummaryNames;
 extern const std::string sColumnNames;
 extern const std::string sSeed;
 extern const std::string sSeedMachine;
+extern const std::string sRandom;
 extern const std::string sSampleSize;
 extern const std::string sConfigCount;
 extern const std::string sFileList;
@@ -1240,6 +1241,7 @@ class Sample
 public:
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
+  using fint = std::uint_fast32_t;
   static constexpr bool is_complex { Traits::is_complex };
   static constexpr int scalar_count { Traits::scalar_count };
   static constexpr int idxCentral{ -1 };
@@ -1247,6 +1249,7 @@ protected:
   int NumSamples_;
   int Nt_;
   std::unique_ptr<T[]> m_pData;
+  std::unique_ptr<fint[]> m_pRandNum; // Random numbers used to generate the bootstrap sample
   std::vector<std::string> AuxNames;
   int NumExtraSamples; // Same length as AuxNames, but minimum of 1 for central replica
   std::vector<std::string> SummaryNames;
@@ -1355,6 +1358,7 @@ public:
         m_pData.reset( nullptr );
       else
         m_pData.reset( new T[ static_cast<std::size_t>( NumSamples + NumExtraSamples ) * Nt ] );
+      m_pRandNum.reset( nullptr );
     }
     if( pAuxNames )
       AuxNames = * pAuxNames;
@@ -1544,23 +1548,42 @@ Sample<T> Sample<T>::Bootstrap(int NumBootSamples, SeedType Seed, const std::str
   MakeMean();
   std::copy( (*this)[idxCentral], (*this)[0], boot[idxCentral] );
 
-  // Now make the bootstrap replicas
+  // Master thread can choose random samples while other threads bootstrap
   T * dst{ boot[0] };
-  for( int i = 0; i < NumBootSamples; i++, dst += Nt_ )
+  fint * rnd{ new fint[ static_cast<std::size_t>( NumBootSamples ) * NumSamples_ ] };
+  boot.m_pRandNum.reset( rnd );
+  auto start = std::chrono::steady_clock::now();
+  #pragma omp parallel
+  #pragma omp single
   {
-    // Initialise this sum for this bootstrap sample to zero
-    for( int t = 0; t < Nt_; t++)
-      dst[t] = 0;
-    for( int s = 0; s < NumSamples_; s++ )
+    for( int i = 0; i < NumBootSamples; i++, dst += Nt_, rnd += NumSamples_ )
     {
-      const T * src{ (*this)[ random( engine ) ] };
-      for( int t = 0; t < Nt_; t++ )
-        dst[t] += *src++;
+      // Generate the random numbers for this sample
+      for( int s = 0; s < NumSamples_; s++ )
+        rnd[s] = random( engine );
+      // Schedule a task to perform the bootstrap for this replica
+      #pragma omp task firstprivate( dst, rnd )
+      {
+        for( int s = 0; s < NumSamples_; s++ )
+        {
+          const T * src{ (*this)[ rnd[s] ] };
+          for( int t = 0; t < Nt_; t++ )
+          {
+            if( !s )
+              dst[t]  = *src++;
+            else
+              dst[t] += *src++;
+          }
+        }
+        // Turn the sum into an average
+        if( NumSamples_ > 1 )
+          for( int t = 0; t < Nt_; t++)
+            dst[t] /= NumSamples_;
+      }
     }
-    // Turn the sum into an average
-    for( int t = 0; t < Nt_; t++)
-      dst[t] /= NumSamples_;
   }
+  auto diff = std::chrono::steady_clock::now() - start;
+  std::cout << "  bootstrapping with " << omp_get_num_threads() << " threads took " << std::chrono::duration <double, std::milli> (diff).count() << " ms\n";
   boot.Seed_ = Seed;
   if( pMachineName && ! pMachineName->empty() )
     boot.SeedMachine_ = *pMachineName;
@@ -2075,6 +2098,19 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
       dsp = ::H5::DataSpace( 2, Dims );
       ds = g.createDataSet( "Summary", H5::Equiv<ValWithEr<scalar_type>>::Type, dsp );
       ds.write( m_pSummaryData.get(), H5::Equiv<ValWithEr<scalar_type>>::Type );
+      ds.close();
+      dsp.close();
+    }
+    if( m_pRandNum )
+    {
+      Dims[0] = NumSamples_;
+      Dims[1] = SampleSize;
+      dsp = ::H5::DataSpace( 2, Dims );
+      // The values in this table go from 0 ... NumSamples_ + 1, so choose a space-minimising sie in the file
+      ds = g.createDataSet( sRandom, NumSamples_<=static_cast<int>(std::numeric_limits<std::uint16_t>::max())+1
+                            ? ::H5::PredType::STD_U16LE : ::H5::PredType::STD_U32LE, dsp );
+      ds.write( m_pRandNum.get(), sizeof( std::uint_fast32_t ) == 4 ? ::H5::PredType::STD_U32LE
+                                                                    : ::H5::PredType::STD_U64LE );
       ds.close();
       dsp.close();
     }

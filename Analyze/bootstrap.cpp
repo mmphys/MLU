@@ -300,10 +300,7 @@ public:
   int binSize;
   int TimesliceDetail;
   bool bFactorised;
-  bool bFold;
-  bool bT0Abs;
   bool bVerboseSummaries;
-  bool bBackwardsWave;
   int PerformBootstrap(std::vector<Common::CorrelatorFileC> &f, const TrajList &Traj ) const;
   void Study1Bootstrap(StudySubject Study, const std::string &StudyPath, const Common::Momentum &mom,
                        std::vector<Common::Gamma::Algebra> Alg,
@@ -342,10 +339,6 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
   }
   int iCount{ 0 };
   const int Nt{ first->Nt() };
-  const int NtHalf{ Nt / 2 + 1 };
-  const int NtDest{ bFold ? NtHalf : Nt };
-  const int FoldFactor{ bFold ? 2 : 1 };
-  const std::string &sType{ bFold ? Common::sFold : Common::sBootstrap };
   const std::vector<Common::Gamma::Algebra> &AlgSrc{ first->AlgSrc() };
   const std::vector<Common::Gamma::Algebra> &AlgSnk{ first->AlgSnk() };
   for( int Snk = 0; Snk < first->NumSnk(); Snk++ )
@@ -368,8 +361,8 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
       std::string sSrc{ Common::Gamma::NameShort( AlgSrc[Src], pszSep ) };
       // Skip bootstrap if output exists
       const std::string sOutBase{ outStem + Prefix + sSnk + sSrc };
-      const std::string sOutFile{ Common::MakeFilename( sOutBase, sType, seed, DEF_FMT ) };
-      const std::string sSummary{ Common::MakeFilename( sOutBase, sType, seed, TEXT_EXT)};
+      const std::string sOutFile{ Common::MakeFilename( sOutBase, sBootstrap, seed, DEF_FMT ) };
+      const std::string sSummary{ Common::MakeFilename( sOutBase, sBootstrap, seed, TEXT_EXT)};
       if( Common::FileExists( sOutFile ) || ( !bSaveBootstrap && Common::FileExists( sSummary ) ) )
       {
         std::cout << sBlanks << sOutBase << " skipped - output already exists" << std::endl;
@@ -379,21 +372,7 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
         // Copy the correlators into my sample, aligning timeslices if need be
         const bool bDifferent{ Snk != Src };
         const int OpFactor{ ( !b3pt && bFactorised && bDifferent ) ? 2 : 1 };
-        Common::SampleC in( ( NumFiles * OpFactor * FoldFactor + binSize - 1 ) / binSize, NtDest );
-        using Fold = Common::Fold<double>;
-        Fold f;
-        if( bFold )
-        {
-          // I haven't updated the folding code for 3 point functions ... folding should perhaps be deleted
-          const Common::RPS att{DefaultOperatorAttribute(AlgSrc[Src])*DefaultOperatorAttribute(AlgSnk[Snk])};
-          f.resize( nSample, NtDest );
-          f.NtUnfolded = Nt;
-          f.parity = att.parity;
-          f.reality = att.reality;
-          f.sign = att.sign;
-          f.Conjugated = bFactorised;
-          f.t0Negated = false;
-        }
+        Common::SampleC in( ( NumFiles * OpFactor + binSize - 1 ) / binSize, Nt );
         int Bin{0};
         std::complex<double> * pDst = in[0];
         std::map<int, int> ConfigCount;
@@ -403,7 +382,7 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
         {
           const Common::CorrelatorFileC &file{ *it++ };
           const int CorrelatorTimeslice{ file.Timeslice() };
-          const int TOffset{ bAlignTimeslices ? ( bBackwardsWave ? (Nt-CorrelatorTimeslice)%Nt : CorrelatorTimeslice ) : 0 };
+          const int TOffset{ bAlignTimeslices ? CorrelatorTimeslice : 0 };
           {
             // increment count
             assert( sizeof( int ) == sizeof( file.Name_.Seed ) );
@@ -423,40 +402,30 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
             if( TOffset )
               std::cout << TOffset << "->0";
             else
-              std::cout << CorrelatorTimeslice;
+              std::cout << CorrelatorTimeslice << "   "; // Add spaces for visual alignment
             std::cout << '\t' << file.Name_.Base << "." << file.Name_.SeedString << std::endl;
           }
           for( int o = 0; o < OpFactor; o++ )
           {
             const std::complex<double> * const pSrc = file( AlgSnk[o ? Src : Snk], AlgSrc[o ? Snk : Src] );
-            for( int h = 0; h < FoldFactor; h++ )
+            for( int t = 0; t < Nt; t++ )
             {
-              for( int t = 0; t < NtDest; t++ )
-              {
-                const std::ptrdiff_t idx{ ( ( h == 0 ? t : Nt - t ) + TOffset ) % Nt };
-                std::complex<double> z{ pSrc[ idx ] };
-                if( bFold && t != 0 )
-                {
-                  if( h && f.parity == Common::Parity::Odd )
-                    z = -z;
-                  if( f.sign == Common::Sign::Negative )
-                    z = -z;
-                }
-                if( Bin )
-                  pDst[t] += z;
-                else
-                  pDst[t]  = z;
-              }
-              // If we are binning, divide by number of items in this bin. Make sure to do the last bin
-              if( ++Bin == binSize || ( o == OpFactor - 1 && h == FoldFactor - 1 && it == last ) )
-              {
-                if( Bin == 1 )
-                  pDst += NtDest;
-                else
-                  for( int t = 0; t < NtDest; t++ )
-                    *pDst++ /= Bin;
-                Bin = 0;
-              }
+              const std::ptrdiff_t idx{ ( t + TOffset ) % Nt };
+              std::complex<double> z{ pSrc[ idx ] };
+              if( Bin )
+                pDst[t] += z;
+              else
+                pDst[t]  = z;
+            }
+            // If we are binning, divide by number of items in this bin. Make sure to do the last bin
+            if( ++Bin == binSize || ( it == last && o == OpFactor - 1 ) )
+            {
+              if( Bin == 1 )
+                pDst += Nt;
+              else
+                for( int t = 0; t < Nt; t++ )
+                  *pDst++ /= Bin;
+              Bin = 0;
             }
           }
         }
@@ -470,49 +439,11 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
         out.SampleSize = static_cast<int>( ( FileList.size() + binSize - 1 ) / binSize );
         out.binSize = binSize;
         out.FileList = std::move( FileList );
-        if( bFold )
-        {
-          double * dst{ f[Fold::idxCentral] };
-          const double * src{ SampleC::Traits::ScalarPtr( out[SampleC::idxCentral] )};
-          if( f.reality == Common::Reality::Imag )
-            src++;
-          for( int s = SampleC::idxCentral; s < nSample; s++ )
-          {
-            // Timeslice 0 is a little special
-            double d = *src++;
-            src++;
-            if( s == SampleC::idxCentral && bT0Abs && d < 0 )
-              f.t0Negated = true;
-            if( f.t0Negated )
-              d = std::abs( d );
-            *dst++ = d;
-            // Now do all the other timeslices
-            for( int t = 1; t < NtHalf; t++ )
-            {
-              *dst++ = *src++;
-              src++;
-            }
-          }
-          f.Seed_ = out.Seed_;
-          f.SeedMachine_ = out.SeedMachine_;
-          f.MakeCorrSummary( nullptr );
-          f.SampleSize = out.SampleSize;
-          f.binSize = out.binSize;
-          f.FileList = std::move( out.FileList );
-          f.ConfigCount = std::move( out.ConfigCount );
-          if( bSaveBootstrap )
-            f.Write( sOutFile );
-          if( bSaveSummaries )
-            f.WriteSummary( sSummary );
-        }
-        else
-        {
-          out.MakeCorrSummary( nullptr );
-          if( bSaveBootstrap )
-            out.Write( sOutFile );
-          if( bSaveSummaries )
-            out.WriteSummary( sSummary, bVerboseSummaries );
-        }
+        out.MakeCorrSummary( nullptr );
+        if( bSaveBootstrap )
+          out.Write( sOutFile );
+        if( bSaveSummaries )
+          out.WriteSummary( sSummary, bVerboseSummaries );
         iCount++;
       }
     }
@@ -729,20 +660,17 @@ int main(const int argc, const char *argv[])
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"a", CL::SwitchType::Single, ""},
-      {"c", CL::SwitchType::Single, ""},
+      {"c", CL::SwitchType::Single, nullptr},
       {"g", CL::SwitchType::Single, "" },
       {"s", CL::SwitchType::Single, nullptr},
       {"t", CL::SwitchType::Single, "0"},
       {"m", CL::SwitchType::Single, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
-      {"v", CL::SwitchType::Flag, nullptr},
-      {"w", CL::SwitchType::Flag, nullptr},
+      {"terse", CL::SwitchType::Flag, nullptr},
       {"p2",CL::SwitchType::Flag, nullptr},
       {"pa",CL::SwitchType::Flag, nullptr},
       {"f", CL::SwitchType::Flag, nullptr},
-      {"h", CL::SwitchType::Flag, nullptr},
-      {"z", CL::SwitchType::Flag, nullptr},
-      {"q", CL::SwitchType::Flag, nullptr},
+      {"sort", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -750,7 +678,10 @@ int main(const int argc, const char *argv[])
     {
       std::vector<Common::Gamma::Algebra> Alg = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "a" ) );
       std::vector<bool> Alg3ptNeg;
-      std::vector<Common::Gamma::Algebra> Alg3pt = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "c" ), &Alg3ptNeg );
+      std::vector<Common::Gamma::Algebra> Alg3pt;
+      const bool b3pt{ cl.GotSwitch( "c" ) };
+      if( b3pt )
+        Alg3pt = Common::ArrayFromString<Common::Gamma::Algebra>(cl.SwitchValue<std::string>( "c" ), &Alg3ptNeg);
       BootstrapParams par;
       par.TimesliceDetail = cl.SwitchValue<int>( "t" );
       if( par.TimesliceDetail < 0 || par.TimesliceDetail > 2 )
@@ -760,11 +691,10 @@ int main(const int argc, const char *argv[])
       par.nSample = cl.SwitchValue<int>( "n" );
       par.binSize = cl.SwitchValue<int>( "b" );
       par.bFactorised = cl.GotSwitch( "f" );
-      par.bFold = cl.GotSwitch( "h" );
-      par.bT0Abs = !cl.GotSwitch( "z" ); // Add the switch to turn this off
-      par.bVerboseSummaries = cl.GotSwitch( "v" );
-      par.bBackwardsWave = cl.GotSwitch( "w" );
-      const bool bSwapQuarks{ !cl.GotSwitch( "q" ) }; // Presence of switch turns this off
+      par.bVerboseSummaries = !cl.GotSwitch( "terse" );
+      bool bSwapQuarks{ cl.GotSwitch( "sort" ) };
+      if( b3pt )
+        bSwapQuarks = !bSwapQuarks;
       GroupMomenta GroupP{ GroupMomenta::None };
       {
         const bool p2{ cl.GotSwitch( "p2" ) };
@@ -895,22 +825,19 @@ int main(const int argc, const char *argv[])
     "-r     Random number seed (unspecified=random)\n"
     "-i     Input  prefix\n"
     "-o     Output prefix\n"
-    "-a     list of gamma algebras we're interested in at source (and sink for 2pt)\n"
-    "-c     list of gamma algebras for current insertion in 3pt functions\n"
+    "-a     list of gamma Algebras we're interested in at source (and sink for 2pt)\n"
+    "-c     list of gamma algebras for current insertion         (Enable 3-pt mode)\n"
     "-g     Group name to read correlators from\n"
     "-s     Perform bootstrap for specified study number\n"
     "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
-    "-v     Verbose summaries (include file list)\n"
-    "-w     backWards propagating Wave (adjust timeslice by -t)\n"
+    "--terse Terse summaries (no file list)\n"
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"
     "-f     Factorising operators (e.g. g5-gT5 same as gT5-g5)\n"
-    "-h     Take forward/backward Half-waves as separate bootstrap inputs (i.e. fold)\n"
-    "-z     Disable taking the absolute value of C(0) when folding\n"
-    "-q     Disable Quark factorisation (default: sort correlator components & group)\n"
+    "--sort Disable(enable) sort correlator before group in 2pt(3pt) mode\n"
     "--help This message\n";
   }
   return iReturn;

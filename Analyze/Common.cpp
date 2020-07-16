@@ -69,6 +69,7 @@ const std::string sSummaryNames{ "SummaryNames" };
 const std::string sColumnNames{ "ColumnNames" };
 const std::string sSeed{ "Seed" };
 const std::string sSeedMachine{ "SeedMachine" };
+const std::string sRandom{ "Random" };
 const std::string sSampleSize{ "SampleSize" };
 const std::string sConfigCount{ "ConfigCount" };
 const std::string sFileList{ "FileList" };
