@@ -626,6 +626,8 @@ const ::H5::PredType& H5::Equiv<double>     ::Type{ ::H5::PredType::NATIVE_DOUBL
 const ::H5::PredType& H5::Equiv<long double>::Type{ ::H5::PredType::NATIVE_LDOUBLE };
 const ::H5::StrType   H5::Equiv<std::string>::Type{ ::H5::PredType::C_S1, H5T_VARIABLE };
 const ::H5::StrType&  H5::Equiv<char *>     ::Type{   H5::Equiv<std::string>::Type };
+const ::H5::PredType& H5::Equiv<std::uint_fast32_t>::Type{ sizeof( std::uint_fast32_t ) == 4
+                                                    ? ::H5::PredType::STD_U32LE : ::H5::PredType::STD_U64LE };
 const ::H5::CompType  H5::Equiv<std::complex<float>>      ::Type{ MakeComplex<float>() };
 const ::H5::CompType  H5::Equiv<std::complex<double>>     ::Type{ MakeComplex<double>() };
 const ::H5::CompType  H5::Equiv<std::complex<long double>>::Type{ MakeComplex<long double>() };

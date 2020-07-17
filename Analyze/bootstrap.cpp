@@ -297,6 +297,8 @@ public:
   std::string MachineName;
   Common::SeedType seed;
   int nSample;
+  bool binAuto;
+  bool binOld;
   int binSize;
   int TimesliceDetail;
   bool bFactorised;
@@ -316,15 +318,45 @@ template <class Iter>
 int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const TrajList &Traj,
                   const std::string &Suffix, bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries) const
 {
+  using File = Common::CorrelatorFileC;
   static const std::string sBlanks{ "  " };
-  if( !bSaveSummaries && !bSaveBootstrap )
-    return 0;
   const int NumFiles{ static_cast<int>( std::distance( first, last ) ) };
-  if( NumFiles % binSize )
+  if( NumFiles == 0 || ( !bSaveSummaries && !bSaveBootstrap ) )
+    return 0;
+  // Count how many files there are for each config - needs to work regardless of sort
+  assert( sizeof( int ) == sizeof( Common::SeedType ) );
+  using CCMap = std::map<int, int>;
+  CCMap ConfigCount;
+  for( Iter it = first; it != last; ++it )
   {
-    //throw std::runtime_error(  std::to_string(NumFiles) + " files not divisible by bin size " + std::to_string(binSize) );
-    std::cout << "Warning: last bin partially filled (" << ( NumFiles % binSize ) << " correlators)\n";
+    const int ConfigNum{ static_cast<int>( it->Name_.Seed ) };
+    auto p = ConfigCount.find( ConfigNum );
+    if( p == ConfigCount.end() )
+      ConfigCount.insert( { ConfigNum, 1 } );
+    else
+      p->second++;
   }
+  const int NumConfigs{ static_cast<int>( ConfigCount.size() ) };
+  // Sort ... unless we want the old sort order (e.g. to check old results can be replicated)
+  if( !binOld )
+  {
+    // sort all of the files by config, then timeslice
+    std::sort( first, last, [&](const File &l, const File &r)
+    {
+      // Sort by trajectory
+      if( l.Name_.Seed != r.Name_.Seed )
+        return l.Name_.Seed < r.Name_.Seed;
+      // Sort by timeslice
+      if( l.bHasTimeslice != r.bHasTimeslice )
+        return r.bHasTimeslice;
+      if( l.bHasTimeslice && r.bHasTimeslice && l.Timeslice_ != r.Timeslice_ )
+        return l.Timeslice_ < r.Timeslice_;
+      // Sort by base filename
+      return l.Name_.Base.compare( r.Name_.Base ) < 0;
+    } );
+  }
+  if( !binAuto && NumFiles % binSize )
+    std::cout << "Warning: last bin partially filled (" << ( NumFiles % binSize ) << " of " << binSize << ")\n";
   const bool b3pt{ !Traj.Alg.empty() };
   std::string Prefix;
   if( b3pt )
@@ -372,39 +404,28 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
         // Copy the correlators into my sample, aligning timeslices if need be
         const bool bDifferent{ Snk != Src };
         const int OpFactor{ ( !b3pt && bFactorised && bDifferent ) ? 2 : 1 };
-        Common::SampleC in( ( NumFiles * OpFactor + binSize - 1 ) / binSize, Nt );
+        // If we are determining the bin size automatically, it depends on whether we have more than one config
+        int binSize{ ( binAuto ? 1 : this->binSize ) * OpFactor };
+        int NumBinnedSamples{ ( NumFiles + binSize - 1 ) / binSize };
+        auto itCC{ ConfigCount.begin() };
+        if( binAuto && NumConfigs > 1 ) // && bAlignTimeslices )
+        {
+          binSize = itCC->second * OpFactor;
+          NumBinnedSamples = static_cast<int>( ConfigCount.size() );
+        }
+        int binSize0{ binSize };
+        Common::SampleC in( NumBinnedSamples, Nt );
         int Bin{0};
+        int WhichBin{0};
         std::complex<double> * pDst = in[0];
-        std::map<int, int> ConfigCount;
         std::vector<std::string> FileList;
-        FileList.reserve( last - first );
+        FileList.reserve( NumFiles );
         for( Iter it = first; it != last; )
         {
           const Common::CorrelatorFileC &file{ *it++ };
           const int CorrelatorTimeslice{ file.Timeslice() };
           const int TOffset{ bAlignTimeslices ? CorrelatorTimeslice : 0 };
-          {
-            // increment count
-            assert( sizeof( int ) == sizeof( file.Name_.Seed ) );
-            const int ConfigNum{ static_cast<int>( file.Name_.Seed ) };
-            auto p = ConfigCount.find( ConfigNum );
-            if( p == ConfigCount.end() )
-              ConfigCount.insert( { ConfigNum, 1 } );
-            else
-              p->second++;
-            // Save info about this file
-            FileList.emplace_back( file.Name_.Filename );
-          }
-          // Only need to say which correlators contribute for first gamma structure
-          if( Src == 0 && Snk == 0 )
-          {
-            std::cout << "  t=";
-            if( TOffset )
-              std::cout << TOffset << "->0";
-            else
-              std::cout << CorrelatorTimeslice << "   "; // Add spaces for visual alignment
-            std::cout << '\t' << file.Name_.Base << "." << file.Name_.SeedString << std::endl;
-          }
+          FileList.emplace_back( file.Name_.Filename );
           for( int o = 0; o < OpFactor; o++ )
           {
             const std::complex<double> * const pSrc = file( AlgSnk[o ? Src : Snk], AlgSrc[o ? Snk : Src] );
@@ -426,6 +447,13 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
                 for( int t = 0; t < Nt; t++ )
                   *pDst++ /= Bin;
               Bin = 0;
+              if( it != last && binAuto && NumConfigs > 1 )
+              {
+                const int newBinSize{ (++itCC)->second * OpFactor };
+                if( binSize0 && binSize0 != newBinSize )
+                  binSize0 = 0;
+                binSize = newBinSize;
+              }
             }
           }
         }
@@ -437,7 +465,7 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
         for( auto it = ConfigCount.begin(); it != ConfigCount.end(); ++it )
           out.ConfigCount.emplace_back( it->first, it->second );
         out.SampleSize = static_cast<int>( ( FileList.size() + binSize - 1 ) / binSize );
-        out.binSize = binSize;
+        out.binSize = binSize0;
         out.FileList = std::move( FileList );
         out.MakeCorrSummary( nullptr );
         if( bSaveBootstrap )
@@ -462,31 +490,32 @@ int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, 
   //if( ( nSample / 5 ) < NumFiles )
     //throw std::runtime_error( "nSample=" + std::to_string( nSample ) + " too small for dataset with " + std::to_string( NumFiles ) + " elements" );
   int iCount{ 0 };
-  // sort all of the files by timeslice info
   using File = Common::CorrelatorFileC;
-  std::sort( f.begin(), f.end(), [&](const File &l, const File &r)
-  {
-    // Sort first by timeslice
-    if( l.bHasTimeslice != r.bHasTimeslice )
-      return r.bHasTimeslice;
-    if( l.bHasTimeslice && r.bHasTimeslice && l.Timeslice_ != r.Timeslice_ )
-      return l.Timeslice_ < r.Timeslice_;
-    // Sort by base filename
-    {
-      int iCompare = l.Name_.Base.compare( r.Name_.Base );
-      if( iCompare )
-        return iCompare < 0;
-    }
-    // Sort by trajectory
-    //if( l.Name_.Seed != r.Name_.Seed )
-      return l.Name_.Seed < r.Name_.Seed;
-  } );
   // Now perform bootstraps for any individual timeslices
   using Iter = typename std::vector<Common::CorrelatorFileC>::iterator;
   Iter first = f.begin();
   Iter last  = f.end();
+  // sort files by timeslice if we are doing timeslice summaries ... or old sort order asked for
+  if( binOld || TimesliceDetail > 0 )
+    std::sort( f.begin(), f.end(), [&](const File &l, const File &r)
+    {
+      // Sort first by timeslice
+      if( l.bHasTimeslice != r.bHasTimeslice )
+        return r.bHasTimeslice;
+      if( l.bHasTimeslice && r.bHasTimeslice && l.Timeslice_ != r.Timeslice_ )
+        return l.Timeslice_ < r.Timeslice_;
+      // Sort by base filename
+      {
+        int iCompare = l.Name_.Base.compare( r.Name_.Base );
+        if( iCompare )
+          return iCompare < 0;
+      }
+      // Sort by trajectory
+      //if( l.Name_.Seed != r.Name_.Seed )
+        return l.Name_.Seed < r.Name_.Seed;
+    } );
   if( TimesliceDetail > 0 )
-  {
+    {
     // If more than one timeslice, save summary info for individual timeslices
     int Timeslice{ f[0].Timeslice() };
     Iter i = std::find_if( first + 1, last, [Timeslice]( const File &cf ) { return cf.Timeslice() != Timeslice; } );
@@ -639,6 +668,21 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
 
 *****************************************************************/
 
+// Helper function to load one file. Will be called by multiple omp threads
+
+void LoadFile( Common::CorrelatorFileC &Corr, std::vector<Common::Gamma::Algebra> &Alg,
+               const std::string &Filename, const TrajFile &tf, const std::string &DefaultGroup,
+               std::vector<Common::Gamma::Algebra> &Alg3pt, const std::vector<bool> &Alg3ptNeg )
+{
+  std::string GroupName{ DefaultGroup };
+  std::cout << "  t=" << tf.Timeslice << ( ( tf.bHasTimeslice && tf.Timeslice ) ? "->0" : "   " )
+            << '\t' << Filename << std::endl;
+  const bool b3pt{ !Alg3pt.empty() };
+  Corr.Read( Filename, b3pt ? Alg3pt : Alg, Alg,
+                  tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName,
+                  b3pt && tf.bGotMomentum && tf.p.IsNeg() ? &Alg3ptNeg : nullptr );
+}
+
 int main(const int argc, const char *argv[])
 {
   std::ios_base::sync_with_stdio( false );
@@ -655,7 +699,7 @@ int main(const int argc, const char *argv[])
 #endif
     const std::initializer_list<CL::SwitchDef> list = {
       {"n", CL::SwitchType::Single, DEF_NSAMPLE},
-      {"b", CL::SwitchType::Single, "1"},
+      {"b", CL::SwitchType::Single, nullptr},
       {"r", CL::SwitchType::Single, nullptr},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
@@ -679,9 +723,13 @@ int main(const int argc, const char *argv[])
       std::vector<Common::Gamma::Algebra> Alg = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "a" ) );
       std::vector<bool> Alg3ptNeg;
       std::vector<Common::Gamma::Algebra> Alg3pt;
-      const bool b3pt{ cl.GotSwitch( "c" ) };
-      if( b3pt )
+      if( cl.GotSwitch( "c" ) )
+      {
         Alg3pt = Common::ArrayFromString<Common::Gamma::Algebra>(cl.SwitchValue<std::string>( "c" ), &Alg3ptNeg);
+        if( Alg3pt.empty() )
+          throw std::invalid_argument( "At least one current must be specified for three-point function" );
+      }
+      const bool b3pt{ !Alg3pt.empty() };
       BootstrapParams par;
       par.TimesliceDetail = cl.SwitchValue<int>( "t" );
       if( par.TimesliceDetail < 0 || par.TimesliceDetail > 2 )
@@ -689,9 +737,24 @@ int main(const int argc, const char *argv[])
       const std::string InStem{ cl.SwitchValue<std::string>( "i" ) };
       par.outStem = cl.SwitchValue<std::string>( "o" );
       par.nSample = cl.SwitchValue<int>( "n" );
-      par.binSize = cl.SwitchValue<int>( "b" );
+      // Binning
+      static const char binSwitch[] = "b";
+      par.binOld = false;
+      par.binAuto = !cl.GotSwitch( binSwitch );
+      if( !par.binAuto )
+      {
+        par.binSize = cl.SwitchValue<int>( binSwitch );
+        if( par.binSize == 0 )
+          par.binAuto = true;
+        else if( par.binSize < 0 )
+        {
+          par.binSize = -par.binSize;
+          par.binOld = true;
+        }
+      }
       par.bFactorised = cl.GotSwitch( "f" );
       par.bVerboseSummaries = !cl.GotSwitch( "terse" );
+      const std::string &DefaultGroup{ cl.SwitchValue<std::string>( "g" ) };
       bool bSwapQuarks{ cl.GotSwitch( "sort" ) };
       if( b3pt )
         bSwapQuarks = !bSwapQuarks;
@@ -739,18 +802,28 @@ int main(const int argc, const char *argv[])
           const std::string &Contraction{itc->first};
           const TrajList &l{itc->second};
           const unsigned int nFile{ static_cast<unsigned int>( l.FileInfo.size() ) };
-          const bool b3pt{ !l.Alg.empty() };
           std::cout << "Loading " << nFile << " files for " << Contraction << std::endl;
-          unsigned int j = 0; // which trajectory are we processing
+          // Load the first file in the master thread, so the algebra can be discovered
           std::vector<Common::CorrelatorFileC> InFiles( nFile );
-          for( auto it = l.FileInfo.begin(); it != l.FileInfo.end(); it++, j++ )
+          typename std::map<std::string, TrajFile>::const_iterator it = l.FileInfo.begin();
+          LoadFile( InFiles[0], Alg, it->first, it->second, DefaultGroup, Alg3pt, Alg3ptNeg );
+          //#pragma omp parallel
+          //#pragma omp single
           {
-            const std::string &Filename{ it->first }; // Trajectory number
-            const TrajFile &tf{ it->second };
-            std::string GroupName{ cl.SwitchValue<std::string>( "g" ) };
-            InFiles[j].Read( Filename, b3pt ? Alg3pt : Alg, Alg,
-                            tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName,
-                            b3pt && tf.bGotMomentum && tf.p.IsNeg() ? &Alg3ptNeg : nullptr );
+            for( unsigned int j = 1; ++it != l.FileInfo.end(); ++j )
+            {
+              {
+                const std::string &Filename{ it->first }; // Trajectory number
+                const TrajFile &tf{ it->second };
+                std::cout << "  t=" << tf.Timeslice << ( ( tf.bHasTimeslice && tf.Timeslice ) ? "->0" : "   " )
+                          << '\t' << Filename << std::endl;
+              }
+              //#pragma omp task firstprivate( j, it )
+              {
+                std::string GroupName{ DefaultGroup };
+                LoadFile( InFiles[j], Alg, it->first, it->second, DefaultGroup, Alg3pt, Alg3ptNeg );
+              }
+            }
           }
           try
           {
@@ -821,7 +894,8 @@ int main(const int argc, const char *argv[])
     " <options> ContractionFile1 [ContractionFile2 ...]\n"
     "Perform a bootstrap of the specified files, where <options> are:\n"
     "-n     Number of samples (" DEF_NSAMPLE ")\n"
-    "-b     Bin size (default 1, i.e. no binning)\n"
+    "-b     Bin size: 0 (default)=auto: 1 config=no binning, else one bin per config\n"
+    "               < 0 for old sort order (timeslice, filename, config)\n"
     "-r     Random number seed (unspecified=random)\n"
     "-i     Input  prefix\n"
     "-o     Output prefix\n"

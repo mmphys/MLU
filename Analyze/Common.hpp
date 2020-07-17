@@ -457,6 +457,7 @@ namespace H5 {
   template<> struct Equiv<long double> { static const ::H5::PredType& Type; };
   template<> struct Equiv<std::string> { static const ::H5::StrType Type; };
   template<> struct Equiv<char *>      { static const ::H5::StrType& Type; };
+  template<> struct Equiv<std::uint_fast32_t>{ static const ::H5::PredType& Type; };
   template<> struct Equiv<std::complex<float>>      { static const ::H5::CompType Type; };
   template<> struct Equiv<std::complex<double>>     { static const ::H5::CompType Type; };
   template<> struct Equiv<std::complex<long double>>{ static const ::H5::CompType Type; };
@@ -954,7 +955,7 @@ public:
   }
   void Read (const std::string &FileName, std::vector<Gamma::Algebra> &AlgSnk, std::vector<Gamma::Algebra> &AlgSrc,
              const int * pTimeslice = nullptr, const char * PrintPrefix = nullptr,
-             std::string *pGroupName = nullptr, std::vector<bool> *pAlgSnkNeg = nullptr);
+             std::string *pGroupName = nullptr, const std::vector<bool> *pAlgSnkNeg = nullptr);
   //void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void WriteSummary(const std::string &Prefix, const std::vector<Gamma::Algebra> &AlgSnk,
                     const std::vector<Gamma::Algebra> &AlgSrc);
@@ -992,7 +993,7 @@ template <typename T>
 void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Algebra> &AlgSnk,
                              std::vector<Gamma::Algebra> &AlgSrc, const int * pTimeslice,
                              const char * PrintPrefix, std::string *pGroupName,
-                             std::vector<bool> *pAlgSnkNeg)
+                             const std::vector<bool> *pAlgSnkNeg)
 {
   const bool bSameAlgebras{&AlgSnk == &AlgSrc};
   if( pAlgSnkNeg )
@@ -1050,11 +1051,12 @@ void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Alg
           resize( 1, 1, static_cast<int>( Dim[0] ) );
           AlgSnk_.resize( 1 );
           AlgSnk_[0] = Gamma::Algebra::Unknown;
-          if( !bSameAlgebras )
-          {
-            AlgSrc_.resize( 1 );
-            AlgSrc_[0] = Gamma::Algebra::Unknown;
-          }
+          AlgSrc_.resize( 1 );
+          AlgSrc_[0] = Gamma::Algebra::Unknown;
+          if( AlgSnk.empty() )
+            AlgSnk.push_back( Gamma::Algebra::Unknown );
+          if( !bSameAlgebras && AlgSrc.empty() )
+            AlgSrc.push_back( Gamma::Algebra::Unknown );
           T * const pData{ (*this)[0] };
           ds.read( pData, H5::Equiv<T>::Type );
           // Negate this correlator if requested
@@ -1453,6 +1455,8 @@ public: // Override these for specialisations
     if( Seed_ ) s << SeedPrefix << Seed_ << NewLine;
     else if( !Name_.SeedString.empty() ) s << SeedPrefix << Name_.SeedString << NewLine;
     if( !SeedMachine_.empty() ) s << "# Seed machine: " << SeedMachine_ << NewLine;
+    s << "# Bootstrap: " << NumSamples_ << NewLine << "# SampleSize: " << SampleSize << NewLine;
+    if( binSize != 1 ) s << "# BinSize: " << binSize << NewLine;
     if( !ConfigCount.empty() )
     {
       s << "# Configs: " << ConfigCount.size();
@@ -1539,7 +1543,6 @@ template <typename T>
 Sample<T> Sample<T>::Bootstrap(int NumBootSamples, SeedType Seed, const std::string * pMachineName,
                                std::vector<std::string> * pAuxNames)
 {
-  using fint = std::uint_fast32_t;
   std::mt19937                        engine( Seed );
   std::uniform_int_distribution<fint> random( 0, NumSamples_ - 1 );
   Sample<T> boot( NumBootSamples, Nt_, pAuxNames ? pAuxNames : &AuxNames );
@@ -1553,9 +1556,11 @@ Sample<T> Sample<T>::Bootstrap(int NumBootSamples, SeedType Seed, const std::str
   fint * rnd{ new fint[ static_cast<std::size_t>( NumBootSamples ) * NumSamples_ ] };
   boot.m_pRandNum.reset( rnd );
   auto start = std::chrono::steady_clock::now();
+  int nthreads;
   #pragma omp parallel
   #pragma omp single
   {
+    nthreads = omp_get_num_threads();
     for( int i = 0; i < NumBootSamples; i++, dst += Nt_, rnd += NumSamples_ )
     {
       // Generate the random numbers for this sample
@@ -1583,7 +1588,7 @@ Sample<T> Sample<T>::Bootstrap(int NumBootSamples, SeedType Seed, const std::str
     }
   }
   auto diff = std::chrono::steady_clock::now() - start;
-  std::cout << "  bootstrapping with " << omp_get_num_threads() << " threads took " << std::chrono::duration <double, std::milli> (diff).count() << " ms\n";
+  std::cout << "  bootstrapping with " << nthreads << " threads took " << std::chrono::duration <double, std::milli> (diff).count() << " ms\n";
   boot.Seed_ = Seed;
   if( pMachineName && ! pMachineName->empty() )
     boot.SeedMachine_ = *pMachineName;
@@ -1948,22 +1953,47 @@ void Sample<T>::Read(const std::string &FileName, const char *PrintPrefix, std::
                 ds.read( (*this)[0], H5::Equiv<T>::Type );
                 if( !IsFinite() )
                   bFiniteError = true;
-                else if( SummaryNames.empty() )
-                  bOK = true;
                 else
                 {
-                  dsp.close();
-                  ds.close();
-                  ds = g.openDataSet( "Summary" );
-                  dsp = ds.getSpace();
-                  nDims = dsp.getSimpleExtentNdims();
-                  if( nDims == 2 )
+                  try
                   {
-                    dsp.getSimpleExtentDims( Dim );
-                    if( Dim[0] == SummaryNames.size() && Dim[1] == static_cast<unsigned int>(Nt_) )
+                    dsp.close();
+                    ds.close();
+                    ds = g.openDataSet( sRandom );
+                    dsp = ds.getSpace();
+                    if( dsp.getSimpleExtentNdims() == 2 )
                     {
-                      ds.read( m_pSummaryData.get(), H5::Equiv<ValWithEr<scalar_type>>::Type );
-                      bOK = true;
+                      dsp.getSimpleExtentDims( Dim );
+                      if( Dim[0] == att_nSample && Dim[1] == SampleSize )
+                      {
+                        fint * rnd{ new fint[ static_cast<std::size_t>( att_nSample ) * SampleSize ] };
+                        m_pRandNum.reset( rnd );
+                        ds.read( m_pRandNum.get(), H5::Equiv<std::uint_fast32_t>::Type );
+                      }
+                    }
+                  }
+                  catch(const ::H5::Exception &)
+                  {
+                    ::H5::Exception::clearErrorStack();
+                    m_pRandNum.reset( nullptr );
+                  }
+                  if( SummaryNames.empty() )
+                    bOK = true;
+                  else
+                  {
+                    dsp.close();
+                    ds.close();
+                    ds = g.openDataSet( "Summary" );
+                    dsp = ds.getSpace();
+                    nDims = dsp.getSimpleExtentNdims();
+                    if( nDims == 2 )
+                    {
+                      dsp.getSimpleExtentDims( Dim );
+                      if( Dim[0] == SummaryNames.size() && Dim[1] == static_cast<unsigned int>(Nt_) )
+                      {
+                        ds.read( m_pSummaryData.get(), H5::Equiv<ValWithEr<scalar_type>>::Type );
+                        bOK = true;
+                      }
                     }
                   }
                 }
@@ -2107,10 +2137,10 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
       Dims[1] = SampleSize;
       dsp = ::H5::DataSpace( 2, Dims );
       // The values in this table go from 0 ... NumSamples_ + 1, so choose a space-minimising sie in the file
-      ds = g.createDataSet( sRandom, NumSamples_<=static_cast<int>(std::numeric_limits<std::uint16_t>::max())+1
-                            ? ::H5::PredType::STD_U16LE : ::H5::PredType::STD_U32LE, dsp );
-      ds.write( m_pRandNum.get(), sizeof( std::uint_fast32_t ) == 4 ? ::H5::PredType::STD_U32LE
-                                                                    : ::H5::PredType::STD_U64LE );
+      ds = g.createDataSet( sRandom, SampleSize<=static_cast<int>(std::numeric_limits<std::uint8_t>::max())+1
+        ? ::H5::PredType::STD_U8LE : SampleSize<=static_cast<int>(std::numeric_limits<std::uint16_t>::max())+1
+        ? ::H5::PredType::STD_U16LE: ::H5::PredType::STD_U32LE, dsp );
+      ds.write( m_pRandNum.get(), H5::Equiv<std::uint_fast32_t>::Type );
       ds.close();
       dsp.close();
     }
