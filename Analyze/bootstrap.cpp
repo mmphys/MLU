@@ -416,7 +416,6 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
         int binSize0{ binSize };
         Common::SampleC in( NumBinnedSamples, Nt );
         int Bin{0};
-        int WhichBin{0};
         std::complex<double> * pDst = in[0];
         std::vector<std::string> FileList;
         FileList.reserve( NumFiles );
@@ -668,21 +667,6 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
 
 *****************************************************************/
 
-// Helper function to load one file. Will be called by multiple omp threads
-
-void LoadFile( Common::CorrelatorFileC &Corr, std::vector<Common::Gamma::Algebra> &Alg,
-               const std::string &Filename, const TrajFile &tf, const std::string &DefaultGroup,
-               std::vector<Common::Gamma::Algebra> &Alg3pt, const std::vector<bool> &Alg3ptNeg )
-{
-  std::string GroupName{ DefaultGroup };
-  std::cout << "  t=" << tf.Timeslice << ( ( tf.bHasTimeslice && tf.Timeslice ) ? "->0" : "   " )
-            << '\t' << Filename << std::endl;
-  const bool b3pt{ !Alg3pt.empty() };
-  Corr.Read( Filename, b3pt ? Alg3pt : Alg, Alg,
-                  tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName,
-                  b3pt && tf.bGotMomentum && tf.p.IsNeg() ? &Alg3ptNeg : nullptr );
-}
-
 int main(const int argc, const char *argv[])
 {
   std::ios_base::sync_with_stdio( false );
@@ -715,6 +699,7 @@ int main(const int argc, const char *argv[])
       {"pa",CL::SwitchType::Flag, nullptr},
       {"f", CL::SwitchType::Flag, nullptr},
       {"sort", CL::SwitchType::Flag, nullptr},
+      {"show", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -756,6 +741,7 @@ int main(const int argc, const char *argv[])
       par.bVerboseSummaries = !cl.GotSwitch( "terse" );
       const std::string &DefaultGroup{ cl.SwitchValue<std::string>( "g" ) };
       bool bSwapQuarks{ cl.GotSwitch( "sort" ) };
+      bool bShowOnly{ cl.GotSwitch( "show" ) };
       if( b3pt )
         bSwapQuarks = !bSwapQuarks;
       GroupMomenta GroupP{ GroupMomenta::None };
@@ -804,35 +790,31 @@ int main(const int argc, const char *argv[])
           const unsigned int nFile{ static_cast<unsigned int>( l.FileInfo.size() ) };
           std::cout << "Loading " << nFile << " files for " << Contraction << std::endl;
           // Load the first file in the master thread, so the algebra can be discovered
-          std::vector<Common::CorrelatorFileC> InFiles( nFile );
-          typename std::map<std::string, TrajFile>::const_iterator it = l.FileInfo.begin();
-          LoadFile( InFiles[0], Alg, it->first, it->second, DefaultGroup, Alg3pt, Alg3ptNeg );
-          //#pragma omp parallel
-          //#pragma omp single
+          const bool b3pt{ !Alg3pt.empty() };
+          if( !bShowOnly )
           {
-            for( unsigned int j = 1; ++it != l.FileInfo.end(); ++j )
+            std::vector<Common::CorrelatorFileC> InFiles( nFile );
+            typename std::map<std::string, TrajFile>::const_iterator it = l.FileInfo.begin();
+            for( unsigned int j = 0; it != l.FileInfo.end(); ++j, ++it )
             {
-              {
-                const std::string &Filename{ it->first }; // Trajectory number
-                const TrajFile &tf{ it->second };
-                std::cout << "  t=" << tf.Timeslice << ( ( tf.bHasTimeslice && tf.Timeslice ) ? "->0" : "   " )
-                          << '\t' << Filename << std::endl;
-              }
-              //#pragma omp task firstprivate( j, it )
-              {
-                std::string GroupName{ DefaultGroup };
-                LoadFile( InFiles[j], Alg, it->first, it->second, DefaultGroup, Alg3pt, Alg3ptNeg );
-              }
+              const std::string &Filename{ it->first }; // Trajectory number
+              const TrajFile &tf{ it->second };
+              std::cout << "  t=" << tf.Timeslice << ( ( tf.bHasTimeslice && tf.Timeslice ) ? "->0" : "   " )
+                        << '\t' << Filename << std::endl;
+              std::string GroupName{ DefaultGroup };
+              InFiles[j].Read( Filename, b3pt ? Alg3pt : Alg, Alg,
+                               tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName,
+                               b3pt && tf.bGotMomentum && tf.p.IsNeg() ? &Alg3ptNeg : nullptr );
             }
-          }
-          try
-          {
-            par.PerformBootstrap( InFiles, l );
-            BootstrapCount++;
-          }
-          catch(const std::exception &e)
-          {
-            std::cerr << "Error: " << e.what() << std::endl;
+            try
+            {
+              par.PerformBootstrap( InFiles, l );
+              BootstrapCount++;
+            }
+            catch(const std::exception &e)
+            {
+              std::cerr << "Error: " << e.what() << std::endl;
+            }
           }
         }
         std::cout << "Bootstraps written for " << BootstrapCount
@@ -912,6 +894,7 @@ int main(const int argc, const char *argv[])
     "--pa   group momenta by Abs( p )\n"
     "-f     Factorising operators (e.g. g5-gT5 same as gT5-g5)\n"
     "--sort Disable(enable) sort correlator before group in 2pt(3pt) mode\n"
+    "--show Show how files would be bootstrapped, but don't execute\n"
     "--help This message\n";
   }
   return iReturn;
