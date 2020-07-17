@@ -119,8 +119,9 @@ struct TrajFile
   int  Timeslice;
   bool bGotMomentum = false;
   Common::Momentum p;
-  TrajFile( bool bHasTimeslice_, int Timeslice_, bool bGotMomentum_, Common::Momentum p_ )
-  : bHasTimeslice{bHasTimeslice_}, Timeslice{Timeslice_}, bGotMomentum{bGotMomentum_}, p{p_} {}
+  int Config;
+  TrajFile( bool bHasTimeslice_, int Timeslice_, bool bGotMomentum_, Common::Momentum p_, int Config_ )
+  : bHasTimeslice{bHasTimeslice_}, Timeslice{Timeslice_}, bGotMomentum{bGotMomentum_}, p{p_}, Config{Config_} {}
 };
 
 // This describes one contraction and each of its trajectory files
@@ -209,6 +210,8 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
     {
       // Parse the name. Not expecting a type, so if present, put it back on the end of Base
       FileNameAtt Name_{ Filename };
+      if( !Name_.bSeedNum )
+        throw std::runtime_error( "Contraction files must contain a configuration number" );
       if( !Name_.Type.empty() )
       {
         // Not sure whether I should bother doing this?
@@ -281,13 +284,33 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
       TrajList & cl{ itc->second };
       auto it = cl.FileInfo.find( Name_.Filename );
       if( it == cl.FileInfo.end() )
-        cl.FileInfo.emplace( Name_.Filename, TrajFile( bHasTimeslice, Timeslice_, bGotMomentum, mom ) );
+        cl.FileInfo.emplace(Name_.Filename,TrajFile( bHasTimeslice, Timeslice_, bGotMomentum, mom, Name_.Seed));
       else
         std::cout << "Ignoring repetition of " << Name_.Filename << std::endl;
     }
   }
   if( !parsed )
     throw std::runtime_error( "Remove non-existent files (or use '-x filename' to eXclude)" );
+}
+
+template <class Iter>
+std::vector<Common::ConfigCount> CountConfigs( const Iter &first, const Iter &last )
+{
+  std::vector<Common::ConfigCount> cc;
+  using CCMap = std::map<int, int>;
+  CCMap ConfigCount;
+  for( Iter it = first; it != last; ++it )
+  {
+    const int ConfigNum{ static_cast<int>( it->Name_.Seed ) };
+    auto p = ConfigCount.find( ConfigNum );
+    if( p == ConfigCount.end() )
+      ConfigCount.insert( { ConfigNum, 1 } );
+    else
+      p->second++;
+  }
+  for( auto it = ConfigCount.begin(); it != ConfigCount.end(); ++it )
+    cc.emplace_back( it->first, it->second );
+  return cc;
 }
 
 class BootstrapParams
@@ -326,16 +349,7 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
   // Count how many files there are for each config - needs to work regardless of sort
   assert( sizeof( int ) == sizeof( Common::SeedType ) );
   using CCMap = std::map<int, int>;
-  CCMap ConfigCount;
-  for( Iter it = first; it != last; ++it )
-  {
-    const int ConfigNum{ static_cast<int>( it->Name_.Seed ) };
-    auto p = ConfigCount.find( ConfigNum );
-    if( p == ConfigCount.end() )
-      ConfigCount.insert( { ConfigNum, 1 } );
-    else
-      p->second++;
-  }
+  const std::vector<Common::ConfigCount> ConfigCount{ CountConfigs( first, last ) };
   const int NumConfigs{ static_cast<int>( ConfigCount.size() ) };
   // Sort ... unless we want the old sort order (e.g. to check old results can be replicated)
   if( !binOld )
@@ -407,15 +421,15 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
         // If we are determining the bin size automatically, it depends on whether we have more than one config
         int binSize{ ( binAuto ? 1 : this->binSize ) * OpFactor };
         int NumBinnedSamples{ ( NumFiles + binSize - 1 ) / binSize };
-        auto itCC{ ConfigCount.begin() };
         if( binAuto && NumConfigs > 1 ) // && bAlignTimeslices )
         {
-          binSize = itCC->second * OpFactor;
+          binSize = ConfigCount[0].Count * OpFactor;
           NumBinnedSamples = static_cast<int>( ConfigCount.size() );
         }
         int binSize0{ binSize };
         Common::SampleC in( NumBinnedSamples, Nt );
         int Bin{0};
+        int WhichBin{0};
         std::complex<double> * pDst = in[0];
         std::vector<std::string> FileList;
         FileList.reserve( NumFiles );
@@ -448,7 +462,7 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
               Bin = 0;
               if( it != last && binAuto && NumConfigs > 1 )
               {
-                const int newBinSize{ (++itCC)->second * OpFactor };
+                const int newBinSize{ ConfigCount[++WhichBin].Count * OpFactor };
                 if( binSize0 && binSize0 != newBinSize )
                   binSize0 = 0;
                 binSize = newBinSize;
@@ -460,9 +474,7 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
           std::cout << sBlanks << nSample << " samples to " << sOutFile << std::endl;
         Common::SampleC out = in.Bootstrap( nSample, seed, &MachineName );
         // Now save the audit data for the bootstrap
-        out.ConfigCount.reserve( ConfigCount.size() );
-        for( auto it = ConfigCount.begin(); it != ConfigCount.end(); ++it )
-          out.ConfigCount.emplace_back( it->first, it->second );
+        out.ConfigCount = ConfigCount;
         out.SampleSize = static_cast<int>( ( FileList.size() + binSize - 1 ) / binSize );
         out.binSize = binSize0;
         out.FileList = std::move( FileList );
@@ -783,16 +795,40 @@ int main(const int argc, const char *argv[])
                            cl.SwitchStrings( "x" ), bSwapQuarks, GroupP };
         // Walk the list of contractions, performing a separate bootstrap for each
         int BootstrapCount = 0;
+        if( bShowOnly )
+          std::cout << "Contraction, Files, Configs, Config..., Count..." << Common::NewLine;
         for( auto itc = Manifest.begin(); itc != Manifest.end(); itc++ )
         {
           const std::string &Contraction{itc->first};
           const TrajList &l{itc->second};
           const unsigned int nFile{ static_cast<unsigned int>( l.FileInfo.size() ) };
-          std::cout << "Loading " << nFile << " files for " << Contraction << std::endl;
-          // Load the first file in the master thread, so the algebra can be discovered
-          const bool b3pt{ !Alg3pt.empty() };
-          if( !bShowOnly )
+          if( bShowOnly )
           {
+            // Count each configuration
+            using CCMap = std::map<int, int>;
+            CCMap ConfigCount;
+            for( auto it = l.FileInfo.begin(); it != l.FileInfo.end(); ++it )
+            {
+              const int ConfigNum{ static_cast<int>( it->second.Config ) };
+              auto p = ConfigCount.find( ConfigNum );
+              if( p == ConfigCount.end() )
+                ConfigCount.insert( { ConfigNum, 1 } );
+              else
+                p->second++;
+            }
+            //Print a summary of each configuration
+            static const std::string SepTab{ ",\t" };
+            std::cout << Contraction << SepTab << nFile << SepTab << ConfigCount.size();
+            for( auto it = ConfigCount.begin(); it != ConfigCount.end(); ++it )
+              std::cout << Common::Comma << it->first;
+            for( auto it = ConfigCount.begin(); it != ConfigCount.end(); ++it )
+              std::cout << Common::Comma << it->second;
+            std::cout << Common::NewLine;
+          }
+          else
+          {
+            std::cout << "Loading " << nFile << " files for " << Contraction << Common::NewLine;
+            const bool b3pt{ !Alg3pt.empty() };
             std::vector<Common::CorrelatorFileC> InFiles( nFile );
             typename std::map<std::string, TrajFile>::const_iterator it = l.FileInfo.begin();
             for( unsigned int j = 0; it != l.FileInfo.end(); ++j, ++it )
