@@ -589,9 +589,11 @@ std::istream& operator>>(std::istream& is, Sign &sign);
 
 struct RPS
 {
-  Common::Reality reality = Common::Reality::Unknown;
-  Common::Parity  parity = Common::Parity::Unknown;
-  Common::Sign    sign = Common::Sign::Unknown;
+  Reality reality = Reality::Unknown;
+  Parity  parity = Parity::Unknown;
+  Sign    sign = Sign::Unknown;
+  RPS(){};
+  RPS( Reality reality_, Parity parity_, Sign sign_ ) : reality{reality_}, parity{parity_}, sign{sign_} {}
 };
 
 inline RPS operator*( const RPS &l, const RPS &r )
