@@ -589,9 +589,9 @@ std::istream& operator>>(std::istream& is, Sign &sign);
 
 struct RPS
 {
-  Common::Reality reality;
-  Common::Parity  parity;
-  Common::Sign    sign;
+  Common::Reality reality = Common::Reality::Unknown;
+  Common::Parity  parity = Common::Parity::Unknown;
+  Common::Sign    sign = Common::Sign::Unknown;
 };
 
 inline RPS operator*( const RPS &l, const RPS &r )
@@ -615,9 +615,10 @@ struct FoldProp
   RPS rps;
   bool t0Abs = true;
   bool Conjugate = false;
-  void Parse( const char * const pc, std::size_t const Len )
+  bool Parse( const char * const pc, std::size_t const Len )
   {
     bool bOK = true;
+    bool bRealImagOnly = true;
     static constexpr int NumOptions{ 8 };
     static const char Options[] = "RIEOPN0C";
     int iCount[NumOptions];
@@ -670,6 +671,10 @@ struct FoldProp
       const std::string s{ pc, Len };
       throw std::runtime_error( "Option string '" + s + "' invalid" );
     }
+    for( int i = 2; bRealImagOnly && i < NumOptions; ++i )
+      if( iCount[i] )
+        bRealImagOnly = false;
+    return bRealImagOnly;
   }
   FoldProp() = default;
   explicit FoldProp( const char * pc, std::size_t Len ) { Parse( pc, Len ); }
@@ -1280,6 +1285,7 @@ public:
   std::vector<std::string> FileList; // Info on every config in the bootstrap in order
   inline int NumSamples() const { return NumSamples_; }
   inline int Nt() const { return Nt_; }
+  inline const fint * RandNum() const { return m_pRandNum.get(); };
   inline ValWithEr<scalar_type> * getSummaryData( int idx = 0 )
   {
     const int iSize{ static_cast<int>( SummaryNames.size() ) };
@@ -1370,6 +1376,7 @@ public:
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
   void IsCompatible( Sample<T> &o, int * pNumSamples = nullptr, bool bCompareBase = false ) const;
+  template <typename U> void CopyAttributes( const Sample<U> &o );
   Sample<T> Bootstrap(int NumBootSamples, SeedType Seed, const std::string * pMachineName = nullptr,
                       std::vector<std::string> * pAuxNames = nullptr);
   void Read (const std::string &FileName, const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr,
@@ -1505,13 +1512,28 @@ void Sample<T>::IsCompatible( Sample<T> &o, int * pNumSamples, bool bCompareBase
   if( o.Nt() != Nt_ )
     throw std::runtime_error( sPrefix + "Nt " + std::to_string(o.Nt()) +
                              sNE + std::to_string(Nt_) + sSuffix );
-  if( o.Seed_ != Seed_ )
-    throw std::runtime_error( "Seed " + std::to_string( o.Seed_ ) + sNE + std::to_string( Seed_ ) );
-  if( !Common::EqualIgnoreCase( o.SeedMachine_, SeedMachine_ ) )
-    throw std::runtime_error( "Machine " + o.SeedMachine_ + sNE + SeedMachine_ );
   if( o.SampleSize && SampleSize && o.SampleSize != SampleSize )
     throw std::runtime_error( sPrefix + "SampleSize " + std::to_string(o.SampleSize) +
                              sNE + std::to_string(SampleSize) + sSuffix );
+  if( m_pRandNum && o.m_pRandNum )
+  {
+    // Compare the actual random numbers
+    const std::size_t Len{ static_cast<std::size_t>( NumSamples_ ) * SampleSize };
+    const fint * l{ m_pRandNum.get() };
+    const fint * r{ o.m_pRandNum.get() };
+    std::size_t i = 0;
+    while( i < Len && l[i] == r[i] )
+      ++i;
+    if( i != Len )
+      throw std::runtime_error( "Random number seeds don't match" );
+  }
+  else
+  {
+    if( o.Seed_ != Seed_ )
+      throw std::runtime_error( "Seed " + std::to_string( o.Seed_ ) + sNE + std::to_string( Seed_ ) );
+    if( !Common::EqualIgnoreCase( o.SeedMachine_, SeedMachine_ ) )
+      throw std::runtime_error( "Machine " + o.SeedMachine_ + sNE + SeedMachine_ );
+  }
   const std::size_t CSize {   ConfigCount.size() };
   const std::size_t CSizeO{ o.ConfigCount.size() };
   if( CSize && CSizeO )
@@ -1532,6 +1554,34 @@ void Sample<T>::IsCompatible( Sample<T> &o, int * pNumSamples, bool bCompareBase
                                  std::to_string(l.Count) + sSuffix );
     }
   }
+}
+
+// Take ownership of the FileList
+template <typename T>
+template <typename U> void Sample<T>::CopyAttributes( const Sample<U> &in )
+{
+  binSize = in.binSize;
+  SampleSize = in.SampleSize;
+  ConfigCount = in.ConfigCount;
+  if( FileList.empty() )
+    FileList = in.FileList;
+  // Copy the random numbers for this sample
+  Seed_ = in.Seed_;
+  SeedMachine_ = in.SeedMachine_;
+  const fint * pSrc{ in.RandNum() };
+  if( pSrc )
+  {
+    if( NumSamples_ > in.NumSamples() )
+      throw std::runtime_error( "Can't copy random numbers from a smaller sample" );
+    const std::size_t Len{ static_cast<std::size_t>( NumSamples_ ) * SampleSize };
+    fint * pDst{ new fint[ Len ] };
+    m_pRandNum.reset( pDst );
+    const fint * pSrc{ in.RandNum() };
+    for( std::size_t i = 0; i < Len; ++i )
+      pDst[i] = pSrc[i];
+  }
+  else
+    m_pRandNum.reset( nullptr );
 }
 
 /**

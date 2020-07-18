@@ -44,7 +44,6 @@ int main(int argc, const char *argv[])
   try
   {
     const std::initializer_list<CL::SwitchDef> list = {
-      {"a", CL::SwitchType::Single, nullptr },
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"help", CL::SwitchType::Flag, nullptr},
@@ -65,11 +64,12 @@ int main(int argc, const char *argv[])
         // Look for a comma
         Common::FoldProp f;
         std::size_t pos = Arg.find_last_of(',');
+        bool bRealImagOnly{ true };
         if( pos == std::string::npos )
           inFileName.append( Arg );
         else
         {
-          f.Parse( &Arg[pos + 1], Arg.length() - pos - 1 );
+          bRealImagOnly = f.Parse( &Arg[pos + 1], Arg.length() - pos - 1 );
           inFileName.append( Arg.c_str(), pos );
         }
         std::cout << "FoldProp: " << f << std::endl;
@@ -86,9 +86,9 @@ int main(int argc, const char *argv[])
             const int Nt{ in.Nt() };
             const int NumSamples{ in.NumSamples() };
             std::vector<std::string> myFileList;
-            out.binSize = in.binSize;
             out.BootstrapList.clear();
             out.BootstrapList.emplace_back( FileName );
+            int BinSize2{ 0 };
             if( !f.Conjugate )
               myFileList = in.FileList;
             else
@@ -108,6 +108,7 @@ int main(int argc, const char *argv[])
               ConjFileName.append( Common::Period );
               ConjFileName.append( in.Name_.Ext );
               SC in2{ ConjFileName, "+ " };
+              BinSize2 = in2.binSize;
               in.IsCompatible( in2 );
               const std::size_t FSize { in .FileList.size() };
               const std::size_t FSize2{ in2.FileList.size() };
@@ -145,47 +146,62 @@ int main(int argc, const char *argv[])
               for( int s = SC::idxCentral; s < NumSamples; s++ )
                 for( int t = 0; t < Nt; t++, dst++, src++ )
                   *dst = ( *dst + *src ) * 0.5;
-              out.binSize *= 2;
               out.BootstrapList.emplace_back( ConjFileName );
             }
             // Now fold the correlator, obeying the fold properties
+            const int NtHalf{ bRealImagOnly ? Nt : Nt / 2 + 1 };
+            out.resize( NumSamples, NtHalf );
+            out.FileList = std::move( myFileList );
+            out.CopyAttributes( in );
             out.NtUnfolded = Nt;
-            out.parity = f.rps.parity;
-            out.reality = f.rps.reality;
-            out.sign = f.rps.sign;
             out.t0Negated = false;
             out.Conjugated = f.Conjugate;
-            const int NtHalf{ Nt / 2 + 1 };
-            out.resize( NumSamples, NtHalf );
-            out.SampleSize = in.SampleSize;
-            out.ConfigCount = in.ConfigCount;
-            out.FileList = std::move( myFileList );
             scalar * dst{ out[Fold::idxCentral] };
             const scalar * src{ SC::Traits::ScalarPtr( in[SC::idxCentral] )};
             if( f.rps.reality == Common::Reality::Imag )
               src++;
-            for( int s = SC::idxCentral; s < NumSamples; s++ )
+            else
+              f.rps.reality = Common::Reality::Real;
+            if( bRealImagOnly )
             {
-              // Timeslice 0 is a little special
-              scalar d = *src;
-              if( s == SC::idxCentral && f.t0Abs && d < 0 )
-                out.t0Negated = true;
-              if( out.t0Negated )
-                d = std::abs( d );
-              *dst++ = d;
-              // Now do all the other timeslices
-              for( int t = 1; t < NtHalf; t++ )
+              std::size_t Len{ ( static_cast<std::size_t>( NumSamples ) + 1 ) * Nt };
+              for( std::size_t i = 0; i < Len; ++i )
               {
-                if( f.rps.parity == Common::Parity::Odd )
-                  d = src[t * SC::scalar_count] - src[(Nt - t) * SC::scalar_count];
-                else
-                  d = src[t * SC::scalar_count] + src[(Nt - t) * SC::scalar_count];
-                *dst++ = d * ( f.rps.sign == Common::Sign::Negative ? -0.5 : 0.5 );
+                *dst++ = *src;
+                src += SC::scalar_count;
               }
-              src += SC::scalar_count * Nt;
             }
-            out.Seed_ = in.Seed_;
-            out.SeedMachine_ = in.SeedMachine_;
+            else
+            {
+              out.binSize += BinSize2;
+              if( f.rps.parity != Common::Parity::Odd )
+                f.rps.parity = Common::Parity::Even;
+              if( f.rps.sign != Common::Sign::Negative )
+                f.rps.sign = Common::Sign::Positive;
+              for( int s = SC::idxCentral; s < NumSamples; s++ )
+              {
+                // Timeslice 0 is a little special
+                scalar d = *src;
+                if( s == SC::idxCentral && f.t0Abs && d < 0 )
+                  out.t0Negated = true;
+                if( out.t0Negated )
+                  d = std::abs( d );
+                *dst++ = d;
+                // Now do all the other timeslices
+                for( int t = 1; t < NtHalf; t++ )
+                {
+                  if( f.rps.parity == Common::Parity::Odd )
+                    d = src[t * SC::scalar_count] - src[(Nt - t) * SC::scalar_count];
+                  else
+                    d = src[t * SC::scalar_count] + src[(Nt - t) * SC::scalar_count];
+                  *dst++ = d * ( f.rps.sign == Common::Sign::Negative ? -0.5 : 0.5 );
+                }
+                src += SC::scalar_count * Nt;
+              }
+            }
+            out.reality = f.rps.reality;
+            out.parity = f.rps.parity;
+            out.sign = f.rps.sign;
             out.MakeCorrSummary( nullptr );
             // Now save the folded correlator
             std::string OutFileName{ outPrefix };
@@ -232,9 +248,10 @@ int main(int argc, const char *argv[])
     "and <FoldOptions> is a case-insensitive string consisting of zero or more of\n"
     "r/i    Real (default) or imaginary\n"
     "e/o    Even (default) or Odd\n"
-    "p/n0    Positive (default) or Negative in first half of timeslices\n"
+    "p/n0   Positive (default) or Negative in first half of timeslices\n"
     "0      Disable taking the absolute value of timeslice 0. Default: take abs(c(0))\n"
-    "c      Fold Conjugate operators (i.e. swap source and sink) together\n";
+    "c      Fold Conjugate operators (i.e. swap source and sink) together\n"
+    "NB: If <FoldOptions> is missing (or only contains r/i), no folding occurs\n";
   }
   return iReturn;
 }
