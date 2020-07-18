@@ -754,7 +754,7 @@ int main(const int argc, const char *argv[])
       const std::string &DefaultGroup{ cl.SwitchValue<std::string>( "g" ) };
       bool bSwapQuarks{ cl.GotSwitch( "sort" ) };
       bool bShowOnly{ cl.GotSwitch( "show" ) };
-      if( b3pt )
+      if( !b3pt )
         bSwapQuarks = !bSwapQuarks;
       GroupMomenta GroupP{ GroupMomenta::None };
       {
