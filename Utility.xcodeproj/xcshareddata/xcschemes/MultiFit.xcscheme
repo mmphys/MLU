@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(HOME)/data/Study1/C1/Z2"
+      customWorkingDirectory = "$(HOME)/data/Study1/C1/next25"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -66,12 +66,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i fold35/h1_l_p_0_0_0_ -o debug/"
+            argument = "-i fold/GFWPZ2/h1_l_p_0_0_0_ -o debug/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "g5P_g5P*h5 g5P_g5W*h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "g5_g5*5 g5_gT5*5 gT5_gT5*5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "gT5_g5*5"

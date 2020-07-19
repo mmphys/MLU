@@ -2409,7 +2409,7 @@ class Model : public Sample<T>
 {
 public:
   int NumExponents = 0;
-  int NumFiles = 0;
+  int NumFiles = 0; // TODO: this duplicates FileList ... but FileList optional and added later ...
   int ti = 0;
   int tf = 0;
   int dof = 0;

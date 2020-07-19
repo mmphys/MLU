@@ -575,15 +575,14 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
 
   // Make somewhere to store the results of the fit for each bootstrap sample
   ModelFile ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, NSamples, NumParams+1 );
-  ModelParams.Seed_ = Corr[0].Seed_;
-  ModelParams.SeedMachine_ = Corr[0].SeedMachine_;
+  for( const Fold &f : Corr )
+    ModelParams.FileList.emplace_back( f.Name_.Filename );
+  ModelParams.CopyAttributes( Corr[0] );
   {
     std::vector<std::string> ColNames{ ParamNames };
     ColNames.push_back( "ChiSqPerDof" );
     ModelParams.SetColumnNames( ColNames );
   }
-  for( const Fold &f : Corr )
-    ModelParams.FileList.emplace_back( f.Name_.Filename );
 
   // See whether this fit already exists
   bool bPerformFit{ true };
