@@ -121,6 +121,7 @@ protected:
   virtual void ValidateOpNames() = 0;
   virtual void LoadCorrelators( const std::string &InBase ) = 0;
   virtual void MixingAngle(double costheta, double sintheta) = 0;
+  void DoOneAngle( int degrees, std::string &Out, std::size_t OutLen );
 public:
   virtual ~MixedOp() = default;
   static void Make( const Model &model_, const Parameters & Par );
@@ -422,6 +423,51 @@ void MixedOp_S::MixingAngle(double costheta, double sintheta)
   }
 }
 
+void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen )
+{
+  if( !( degrees % 10 ) )
+  {
+    std::cout << " " << std::to_string( degrees );
+    std::cout.flush();
+  }
+  double costheta, sintheta;
+  const int degrees2 = degrees < 0 ? ( 360 - (-degrees) % 360 ) : degrees % 360;
+  switch( degrees2 )
+  {
+    case 0:
+      costheta = 1;
+      sintheta = 0;
+      break;
+    case 90:
+      costheta = 0;
+      sintheta = 1;
+      break;
+    case 180:
+      costheta = -1;
+      sintheta = 0;
+      break;
+    case 270:
+      costheta = 0;
+      sintheta = -1;
+      break;
+    default:
+    {
+      const double theta{ M_PI * degrees2 / 180 };
+      costheta = cos( theta );
+      sintheta = sin( theta );
+    }
+  }
+  MixingAngle( costheta, sintheta );
+  Out.resize( OutLen );
+  Out.append( std::to_string( degrees ) );
+  Out.append( "_m_m" );
+  CorrMixed.MakeCorrSummary( nullptr );
+  const Common::SeedType Seed{ model.Name_.Seed };
+  if( Par.bSaveCorr )
+    CorrMixed.Write( Common::MakeFilename( Out, Common::sBootstrap, Seed, DEF_FMT ) );
+  CorrMixed.WriteSummary( Common::MakeFilename( Out, Common::sBootstrap, Seed, TEXT_EXT ) );
+}
+
 void MixedOp::Make( const Model &model_, const Parameters & Par )
 {
   // Extract momentum from model name to get our base name.
@@ -465,7 +511,7 @@ void MixedOp::Make( const Model &model_, const Parameters & Par )
         }
         s >> std::skipws;
         if( sSink.empty() )
-          sSink = "PP";
+          sSink = model_.OpNames[0];
         mixed.reset( new MixedOp_S( model_, Par, sSink ) );
         break;
       }
@@ -507,52 +553,27 @@ void MixedOp::Make( const Model &model_, const Parameters & Par )
               << " mixed operator to:\n    " << Out << NewLine << "   ";
     Out.append( ".theta_" );
     const std::size_t OutLen{ Out.length() };
+    bool bDo0  = true;
+    bool bDo90 = true;
     for( int degrees = Par.tmin; ; degrees+=Par.step )
     {
-      if( !( degrees % 10 ) )
-      {
-        std::cout << " " << std::to_string( degrees );
-        std::cout.flush();
-      }
-      double costheta, sintheta;
-      const int degrees2 = degrees < 0 ? ( 360 - (-degrees) % 360 ) : degrees % 360;
-      switch( degrees2 )
+      mixed->DoOneAngle( degrees, Out, OutLen );
+      switch( degrees )
       {
         case 0:
-          costheta = 1;
-          sintheta = 0;
+          bDo0 = false;
           break;
         case 90:
-          costheta = 0;
-          sintheta = 1;
+          bDo0 = false;
           break;
-        case 180:
-          costheta = -1;
-          sintheta = 0;
-          break;
-        case 270:
-          costheta = 0;
-          sintheta = -1;
-          break;
-        default:
-        {
-          const double theta{ M_PI * degrees2 / 180 };
-          costheta = cos( theta );
-          sintheta = sin( theta );
-        }
       }
-      mixed->MixingAngle( costheta, sintheta );
-      Out.resize( OutLen );
-      Out.append( std::to_string( degrees ) );
-      Out.append( "_m_m" );
-      mixed->CorrMixed.MakeCorrSummary( nullptr );
-      const Common::SeedType Seed{ mixed->model.Name_.Seed };
-      if( Par.bSaveCorr )
-        mixed->CorrMixed.Write( Common::MakeFilename( Out, Common::sBootstrap, Seed, DEF_FMT ) );
-      mixed->CorrMixed.WriteSummary( Common::MakeFilename( Out, Common::sBootstrap, Seed, TEXT_EXT ) );
       if( degrees >= Par.tmax )
         break;
     }
+    if( bDo0 )
+      mixed->DoOneAngle( 0, Out, OutLen );
+    if( bDo90 )
+      mixed->DoOneAngle( 90, Out, OutLen );
     std::cout << NewLine;
   }
 }
