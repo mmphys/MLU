@@ -53,71 +53,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "$(HOME)/data/Study1/C1/Z2/fit/original_uncorr/h1_l_p_0_0_0.uncorr_6_16.g5_gT5.model.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "$(HOME)/data/Study1/C1/Z2/fit/original_corr/h1_l_p_0_0_0.corr_9_19.g5_gT5.model.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i $(HOME)/data/Study1/C1/Z2/bootstrap/original"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--savecorr --tmin=-45 --tmax=-45 --step=0"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "GFWP/fit/h1_l_p_0_0_0.corr_6_20.g5_gT5.model.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i GFWP/fold/ -o GFWP/mixed/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "GFWW/fit/h1_l_p_0_0_0.corr_4_7.g5_gT5.model.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i GFWW/fold/ -o GFWW/mixed/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "Z2/fit/h1_l_p_0_0_0.corr_9_23.g5_gT5.model.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i Z2/fold/ -o Z2/mixed/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "GFWPZ2/fit/h1_l_p_0_0_0.corr_8_21.PP_PW.model.4147798751.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i GFWPZ2/fold/ -o GFWPZ2/mixedA/ -a &apos;1, AP&apos;"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-p 0_0_0,1_0_0,1_1_0,1_1_1,2_0_0"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-n 100"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--rep"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "next25/fit/h1_l_p_0_0_0.corr_11_17.g5P_g5W.model.1835672416.h5"
+            argument = "-a1 -i PW35b0/fold/ -o PW35b0/mixed/ PW35b0/fit/h1_l_p_0_0_0.corr_11_19.g5P_g5W.model.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i next25/fold/GFWPZ2/ -o next25/mixed/ -a 1"
+            argument = "--savecorr --tmin=-45 --tmax=-45 --step=0"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

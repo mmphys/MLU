@@ -37,8 +37,8 @@ static const Common::Momentum p0(0,0,0);
 
 static const std::string GaugeFieldName{"gauge"};
 
-enum SourceT : int { Z2, GFPW }; // Sorry, GFPW really just means gauge-fixed source, but too late ...
-static const std::array<std::string, 2> SourceTName{ "Z2", "GFPW" };
+enum SourceT : int { Z2, GF };
+static const std::array<std::string, 2> SourceTName{ "Z2", "GF" };
 
 std::ostream& operator<<(std::ostream& os, const SourceT Type)
 {
@@ -110,7 +110,7 @@ inline const std::string &FilePrefix( const SourceT Type, const SinkT Sink )
       return s;
     }
   }
-  else if( Type == SourceT::GFPW )
+  else if( Type == SourceT::GF )
   {
     if( Sink == SinkT::Point )
     {
@@ -164,7 +164,7 @@ public:
   const Quark &q;
   QuarkType( const SourceT type_, const SinkT sink_, const Quark &Q ) : Type{type_}, Sink{sink_}, q{Q}{}
   QuarkType( const QuarkType &qt ) : QuarkType( qt.Type, qt.Sink, qt.q ) {}
-  inline bool GaugeFixed() const { return Type == SourceT::GFPW || Sink == SinkT::Wall; }
+  inline bool GaugeFixed() const { return Type == SourceT::GF || Sink == SinkT::Wall; }
   inline std::string GaugeFixedName( const std::string &s ) const
   {
     std::string sAdjusted{ s };
@@ -286,10 +286,12 @@ struct AppParams
                                       std::string,  OutputBase,
                                       std::string,  Gauge,
              Grid::Hadrons::MGauge::GaugeFix::Par,  GaugeFix,
+                                      bool,         TwoPoint,
                                       bool,         HeavyQuark,
                                       bool,         HeavyAnti,
                                       bool,         SinkPoint,
                                       bool,         SinkWall,
+                                      bool,         DoNegativeMomenta,
                                       bool,         Run)
   };
 
@@ -317,20 +319,23 @@ AppParams::AppParams( const std::string sXmlFilename )
   HeavyQuarks     = ReadQuarks( r, "Heavy" );
   SpectatorQuarks = ReadQuarks( r, "Spectator" );
   Momenta = Common::ArrayFromString<Common::Momentum>( Run.Momenta );
-  deltaT = Common::ArrayFromString<int>( Run.deltaT );
   // Check the type
   std::istringstream ss( Run.Type );
   if( ! ( ss >> Type && Common::StreamEmpty( ss ) ) )
     throw std::runtime_error( "Unrecognised type \"" + Run.Type + "\"" );
   // Check parameters make sense
-  if( !Run.HeavyQuark && !Run.HeavyAnti )
-    throw std::runtime_error( "At least one of HeavyQuark and HeavyAnti must be true" );
+  if( !( Run.TwoPoint || Run.HeavyQuark ||Run.HeavyAnti ) )
+    throw std::runtime_error( "At least one must be true of: TwoPoint; HeavyQuark; or HeavyAnti" );
   if( !Run.SinkPoint && !Run.SinkWall )
     throw std::runtime_error( "At least one of SinkPoint and SinkWall must be true" );
   if( Momenta.empty() )
     throw std::runtime_error( "There should be at least one momentum" );
-  if( deltaT.empty() )
-    throw std::runtime_error( "There should be at least one deltaT" );
+  if( Run.HeavyQuark || Run.HeavyAnti )
+  {
+    deltaT = Common::ArrayFromString<int>( Run.deltaT );
+    if( deltaT.empty() )
+      throw std::runtime_error( "There should be at least one deltaT" );
+  }
 }
 
 std::vector<Quark> AppParams::ReadQuarks( XmlReader &r, const std::string &qType )
@@ -364,6 +369,10 @@ std::string AppParams::ShortID() const
 {
   std::ostringstream s;
   s << "S2" << Type;
+  // I originally defined the GF type as GFPW
+  // Make sure the runID doesn't change, because it's the seed for random number generation
+  if( Type == SourceT::GF )
+    s << "PW";
   for( const Quark &q : SpectatorQuarks )
     s << q.flavour;
   return s.str();
@@ -374,25 +383,32 @@ std::string AppParams::RunID() const
 {
   std::ostringstream s;
   s << Type;
+  if( Run.SinkPoint )
+    s << "P";
+  if( Run.SinkWall )
+    s << "W";
   for( const Quark &q : SpectatorQuarks )
     s << Sep << q.flavour;
+  if( Run.TwoPoint )
+    s << Sep << "2pt";
   if( Run.HeavyQuark )
     s << Sep << "quark";
   if( Run.HeavyAnti )
     s << Sep << "anti";
-  if( Run.SinkPoint )
-    s << Sep << SinkT::Point;
-  if( Run.SinkWall )
-    s << Sep << SinkT::Wall;
   for( const Quark &q : HeavyQuarks )
     s << Sep << q.flavour;
   s << Sep << "t" << Sep << Run.Timeslices.start << Sep << Run.Timeslices.end << Sep << Run.Timeslices.step;
+  if( !Run.DoNegativeMomenta )
+    s << Sep << "pos";
   s << Sep << "p";
   for( const Common::Momentum &p : Momenta )
     s << Sep << p.to_string( Sep );
-  s << Sep << "dT";
-  for( int dT : deltaT )
-    s << Sep << std::to_string( dT );
+  if( Run.HeavyQuark || Run.HeavyAnti )
+  {
+    s << Sep << "dT";
+    for( int dT : deltaT )
+      s << Sep << std::to_string( dT );
+  }
   return s.str();
 }
 
@@ -541,7 +557,7 @@ bool ModSource::AddDependencies( HModList &ModList ) const
         ModList.application.createModule<MSource::Z2>(name, par);
       }
       break;
-    case GFPW:
+    case GF:
       {
         MSource::Wall::Par par;
         par.tW = t;
@@ -663,13 +679,14 @@ bool ModSolver::AddDependencies( HModList &ModList ) const
   MSolver::RBPrecCG::Par solverPar;
   if( ModList.params.Run.Gauge.length() && qt.q.EigenPackFilename.length() )
   {
-    assert( !qt.GaugeFixed() && "Work out what to do with gaugeXform parameter" );
     // eigenpacks for deflation
     MIO::LoadFermionEigenPack::Par epPar;
     epPar.filestem = qt.q.EigenPackFilename;
     epPar.multiFile = false;
     epPar.size = 600;
     epPar.Ls = qt.q.Ls;
+    if( qt.GaugeFixed() )
+      epPar.gaugeXform = ModList.TakeOwnership( new ModGauge( true, false ) ) + "_xform";
     solverPar.eigenPack = "epack_" + qt.Flavour();
     ModList.application.createModule<MIO::LoadFermionEigenPack>(solverPar.eigenPack, epPar);
   }
@@ -1030,10 +1047,17 @@ void AppMaker::Make()
         const SinkT Sink{ iSink ? SinkT::Wall : SinkT::Point };
         for( Common::Momentum p : l.params.Momenta )
         {
-          for( int pDoNeg = 0; pDoNeg < ( p ? 2 : 1 ); ++pDoNeg )
+          for( int pDoNeg = 0; pDoNeg < ( ( l.params.Run.DoNegativeMomenta && p ) ? 2 : 1 ); ++pDoNeg )
           {
             for( const Quark &qH1 : l.params.HeavyQuarks )
             {
+              if( l.params.Run.TwoPoint )
+              {
+                l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
+                                                       qSpectator, qH1, p, t ) );
+                l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
+                                                       qH1, qSpectator, p, t ) );
+              }
               for( const Quark &qH2 : l.params.HeavyQuarks )
               {
                 for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
@@ -1042,21 +1066,6 @@ void AppMaker::Make()
                   const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
                   if( !p || qH1.mass >= qH2.mass )
                   {
-                    // 2pt functions
-                    //if( bHeavyAnti )
-                    //{
-                      l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
-                                                           qSpectator, qH1, p, t ) );
-                      l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
-                                                           qSpectator, qH2, p, t ) );
-                    //}
-                    //else
-                    //{
-                      l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
-                                                           qH1, qSpectator, p, t ) );
-                      l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
-                                                           qH2, qSpectator, p, t ) );
-                    //}
                     for( int deltaT : l.params.deltaT )
                     {
                       for( int j = 0; j < NumInsert; j++ )
@@ -1107,6 +1116,11 @@ int main(int argc, char *argv[])
     AppMaker x( params );
     x.Make();
     // Run or save the job
+    if( params.Run.SinkWall && !params.Run.SinkPoint )
+    {
+      LOG(Warning) << "Creation of wall sinks necessitates creation of point sinks." << std::endl;
+      LOG(Warning) << "Are you sure you don't want to save point sinks?" << std::endl;
+    }
     if( !params.Run.Run )
       x.application.saveParameterFile( params.RunID() + ".xml" );
     else

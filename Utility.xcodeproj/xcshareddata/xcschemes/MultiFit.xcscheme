@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(HOME)/data/Study1/C1/next25"
+      customWorkingDirectory = "$(HOME)/data/Study1/C1/PW35b0"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -67,11 +67,15 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i fold/GFWPZ2/h1_l_p_0_0_0_ -o debug/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o fit_mixed/ mixed/h1_l_p_0_0_0.corr_11_19.theta_-45_m_m.bootstrap.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "g5P_g5P*h5 g5P_g5W*h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "g5_g5*5 g5_gT5*5 gT5_gT5*5"
@@ -87,7 +91,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti 4"
@@ -102,12 +106,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--tf 12"
-            isEnabled = "NO">
+            argument = "--tf 13"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tf 15"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tf 21"
@@ -115,7 +119,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dti 7"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dti 2"
@@ -126,8 +130,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--dtf 9"
-            isEnabled = "NO">
+            argument = "--dtf 10"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--delta 2"

@@ -1377,7 +1377,8 @@ public:
   }
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
-  void IsCompatible( Sample<T> &o, int * pNumSamples = nullptr, bool bCompareBase = false ) const;
+  template <typename U>
+  void IsCompatible( const Sample<U> &o, int * pNumSamples = nullptr/*, bool bCompareBase = true*/ ) const;
   template <typename U> void CopyAttributes( const Sample<U> &o );
   Sample<T> Bootstrap(int NumBootSamples, SeedType Seed, const std::string * pMachineName = nullptr,
                       std::vector<std::string> * pAuxNames = nullptr);
@@ -1490,12 +1491,12 @@ using SampleC = Sample<std::complex<double>>;
 using SampleD = Sample<double>;
 
 // Initialise *pNumSamples either to 0, or to the size of the first Sample before first call
-template <typename T>
-void Sample<T>::IsCompatible( Sample<T> &o, int * pNumSamples, bool bCompareBase ) const
+template <typename T> template <typename U>
+void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples/*, bool bCompareBase*/ ) const
 {
   static const std::string sPrefix{ "Incompatible " + sBootstrap + " samples - " };
   std::string sSuffix{ ":\n  " + Name_.Filename + "\n+ " + o.Name_.Filename };
-  if( bCompareBase && !Common::EqualIgnoreCase( o.Name_.Base, Name_.Base ) )
+  if( /*bCompareBase &&*/ !Common::EqualIgnoreCase( o.Name_.Base, Name_.Base ) )
     throw std::runtime_error( sPrefix + "base " + o.Name_.Base + sNE + Name_.Base + sSuffix );
   if( !Common::EqualIgnoreCase( o.Name_.Type, Name_.Type ) )
     throw std::runtime_error( sPrefix + "type " + o.Name_.Type + sNE + Name_.Type + sSuffix );

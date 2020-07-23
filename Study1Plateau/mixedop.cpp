@@ -84,6 +84,7 @@ struct Parameters
   int Exponent;
   bool bSaveCorr;
   bool bAllReplicas;
+  bool bTryConjugate;
   std::string InBase;
   std::string OutBase;
   std::vector<Common::Momentum> Momenta;
@@ -111,17 +112,21 @@ protected:
   const int Exponent;
   Fold CorrMixed;
   std::vector<std::string> OpNames;
+  std::vector<std::string> FileOpNames; // Operator names that came from the filenames ... somewhat redundant
   // Set by LoadCorrelators()
   int NumSamples; // maximum of a) user parameters b) raw correlators c) model (if doing all replicas)
   int Nt;
 
   MixedOp( const Model &model_, const Parameters &par );
   virtual const std::string & Description() = 0;
-  void CheckCorrelators( Fold &Corr, const std::string &InFileName, bool bFirst );
+  void LoadCorrelator( Fold &Corr, const std::string &InFileName );
+  void LoadCorrelatorComplete();
   virtual void ValidateOpNames() = 0;
   virtual void LoadCorrelators( const std::string &InBase ) = 0;
   virtual void MixingAngle(double costheta, double sintheta) = 0;
-  void DoOneAngle( int degrees, std::string &Out, std::size_t OutLen );
+  virtual const Fold & Corr0() const = 0;
+  virtual void AppendModelOps( std::string &s ) const = 0;
+  void DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, bool bPrint = true );
 public:
   virtual ~MixedOp() = default;
   static void Make( const Model &model_, const Parameters & Par );
@@ -143,14 +148,13 @@ MixedOp::MixedOp( const Model &model_, const Parameters &par ) : Par{ par }, mod
 }
 
 // Keep track of info on correlators as they are loaded
-void MixedOp::CheckCorrelators( Fold &Corr, const std::string &InFileName, bool bFirst )
+void MixedOp::LoadCorrelator( Fold &Corr, const std::string &InFileName )
 {
-  Corr.Read( InFileName, "    " );
-  if( bFirst )
+  Corr.Read( InFileName, "    ", &FileOpNames );
+  CorrMixed.FileList.push_back( InFileName );
+  if( &Corr == &Corr0() )
   {
     Nt = Corr.Nt();
-    CorrMixed.Seed_ = Corr.Seed_;
-    CorrMixed.SeedMachine_ = Corr.SeedMachine_;
     NumSamples = ( Par.NumSamples > 0 && Par.NumSamples < Corr.NumSamples() )
                  ? Par.NumSamples : Corr.NumSamples();
     if( Par.bAllReplicas && NumSamples > model.NumSamples() )
@@ -164,15 +168,14 @@ void MixedOp::CheckCorrelators( Fold &Corr, const std::string &InFileName, bool 
   }
   else
   {
-    if( Nt != Corr.Nt() )
-      throw std::runtime_error( "Nt " + std::to_string( Corr.Nt() ) + "!=" + std::to_string( Nt ) );
-    if( CorrMixed.Seed_ != Corr.Seed_ )
-      throw std::runtime_error( "Seed " + std::to_string( Corr.Seed_ ) + "!=" + std::to_string( CorrMixed.Seed_ ) );
-    if( !Common::EqualIgnoreCase( CorrMixed.SeedMachine_, Corr.SeedMachine_ ) )
-      throw std::runtime_error( "Machine " + Corr.SeedMachine_ + "!=" + CorrMixed.SeedMachine_ );
-    if( NumSamples > Corr.NumSamples() )
-      NumSamples = Corr.NumSamples();
+    Corr0().IsCompatible( Corr, &NumSamples );
   }
+}
+
+void MixedOp::LoadCorrelatorComplete()
+{
+  CorrMixed.resize( NumSamples, Nt );
+  CorrMixed.CopyAttributes( Corr0() );
 }
 
 // Mixed operator at sink and source
@@ -182,14 +185,24 @@ class MixedOp_SS : public MixedOp
 protected:
   std::array<SinkSource, ModelNumIndices> ss;
   std::array<std::array<Fold, ModelNumIndices>, ModelNumIndices> Corr;
-
-  MixedOp_SS( const Model &model_, const Parameters &par ) : MixedOp( model_, par ) {}
+  virtual const Fold & Corr0() const { return Corr[0][0]; }
+  virtual void AppendModelOps( std::string &s ) const;
+  MixedOp_SS( const Model &model_, const Parameters &par ) : MixedOp( model_, par )
+  {
+    if( !par.modelArgs.empty() )
+      throw std::runtime_error( "Unexpected model argument \"" + par.modelArgs + "\"" );
+  }
   virtual ~MixedOp_SS() = default;
   virtual const std::string & Description();
   virtual void ValidateOpNames();
   virtual void LoadCorrelators( const std::string &InBase );
   virtual void MixingAngle(double costheta, double sintheta);
 };
+
+void MixedOp_SS::AppendModelOps( std::string &s ) const
+{
+  assert( 0 && "Check naming for source and sink-mixed op" );
+}
 
 const std::string & MixedOp_SS::Description()
 {
@@ -292,7 +305,7 @@ void MixedOp_SS::LoadCorrelators( const std::string &InBase )
         InFileName.append( OpNames[iSnk] );
         InFileName = Common::MakeFilename( InFileName, Common::sFold, model.Name_.Seed, DEF_FMT );
       }
-      CheckCorrelators( Corr[iSnk][iSrc], InFileName, iSnk == 0 && iSrc == 0 );
+      LoadCorrelator( Corr[iSnk][iSrc], InFileName );
     }
   }
 }
@@ -346,8 +359,10 @@ class MixedOp_S : public MixedOp
 protected:
   std::string sSink;
   std::array<Fold, ModelNumIndices> Corr;
-  MixedOp_S( const Model &model_, const Parameters &par, const std::string &Sink )
-  : MixedOp( model_, par ), sSink{ Sink } {}
+  virtual const Fold & Corr0() const { return Corr[0]; }
+  virtual void AppendModelOps( std::string &s ) const;
+  MixedOp_S( const Model &model_, const Parameters &par )
+  : MixedOp( model_, par ), sSink{ Par.modelArgs.empty() ? model_.OpNames[0] : Par.modelArgs } {}
   virtual ~MixedOp_S() = default;
   virtual const std::string &Description();
   virtual void ValidateOpNames();
@@ -355,9 +370,17 @@ protected:
   virtual void MixingAngle(double costheta, double sintheta);
 };
 
+void MixedOp_S::AppendModelOps( std::string &s ) const
+{
+  s.append( sSink );
+  s.append( 1, '_' );
+  s.append( OpNames[0] );
+  s.append( OpNames[1] );
+}
+
 const std::string &MixedOp_S::Description()
 {
-  static const std::string s{ "sink" };
+  static const std::string s{ "source" };
   return s;
 }
 
@@ -367,8 +390,9 @@ void MixedOp_S::ValidateOpNames()
   // Do we have the right number of operators
   if( !model.Factorised )
     throw std::runtime_error( "Model must be factorised" );
-  if( model.OpNames.size() != 2 )
-    throw std::runtime_error( "Expecting 2 operators, but model has " + std::to_string( model.OpNames.size() ) );
+  if( model.OpNames.size() != ModelNumIndices )
+    throw std::runtime_error( "Expecting " + std::to_string( ModelNumIndices )
+                             + " operators, but model has " + std::to_string( model.OpNames.size() ) );
   OpNames = model.OpNames;
 }
 
@@ -378,23 +402,24 @@ void MixedOp_S::LoadCorrelators( const std::string &InBase )
   std::string InFile{ InBase };
   InFile.append( 1, '_' );
   InFile.append( sSink );
+  InFile.append( 1, '_' );
   const std::size_t InFileLen{ InFile.length() };
   for( int iSrc = 0; iSrc < ModelNumIndices; iSrc++ )
   {
     InFile.resize( InFileLen );
-    InFile.append( 1, '_' );
     InFile.append( OpNames[iSrc] );
-    std::string InFileName{ Common::MakeFilename(InFile,Common::sFold,model.Name_.Seed,DEF_FMT)};
-    if( iSrc && !Common::FileExists( InFileName ) )
+    std::string InFileName{ Common::MakeFilename( InFile, Common::sFold, model.Name_.Seed, DEF_FMT ) };
+    if(!Common::FileExists( InFileName ) && Par.bTryConjugate && !Common::EqualIgnoreCase( sSink, OpNames[iSrc]))
     {
-      InFileName = InBase;
+      std::cout << "Warning: loading conjugate of " << InFileName << Common::NewLine;
+      std::string InFileName{ InBase };
       InFileName.append( 1, '_' );
       InFileName.append( OpNames[iSrc] );
       InFileName.append( 1, '_' );
       InFileName.append( sSink );
       InFileName = Common::MakeFilename( InFileName, Common::sFold, model.Name_.Seed, DEF_FMT );
     }
-    CheckCorrelators( Corr[iSrc], InFileName, iSrc == 0 );
+    LoadCorrelator( Corr[iSrc], InFileName );
   }
 }
 
@@ -423,9 +448,9 @@ void MixedOp_S::MixingAngle(double costheta, double sintheta)
   }
 }
 
-void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen )
+void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, bool bPrint )
 {
-  if( !( degrees % 10 ) )
+  if( bPrint )
   {
     std::cout << " " << std::to_string( degrees );
     std::cout.flush();
@@ -460,7 +485,8 @@ void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen )
   MixingAngle( costheta, sintheta );
   Out.resize( OutLen );
   Out.append( std::to_string( degrees ) );
-  Out.append( "_m_m" );
+  Out.append( 1, '.' );
+  AppendModelOps( Out );
   CorrMixed.MakeCorrSummary( nullptr );
   const Common::SeedType Seed{ model.Name_.Seed };
   if( Par.bSaveCorr )
@@ -493,38 +519,16 @@ void MixedOp::Make( const Model &model_, const Parameters & Par )
   // Now make our mixed operator
   std::unique_ptr<MixedOp> mixed;
   {
-    std::istringstream s{ Par.modelArgs };
     switch( Par.modelType )
     {
       case DiagSinkSource:
         mixed.reset( new MixedOp_SS( model_, Par ) );
         break;
       case DiagSourceOnly:
-      {
-        std::string sSink;
-        s >> std::noskipws;
-        for( char c; s >> c; )
-        {
-          if( c == ',' || std::isspace( c ) )
-            break;
-          sSink.append( 1, c );
-        }
-        s >> std::skipws;
-        if( sSink.empty() )
-          sSink = model_.OpNames[0];
-        mixed.reset( new MixedOp_S( model_, Par, sSink ) );
+        mixed.reset( new MixedOp_S( model_, Par ) );
         break;
-      }
       default:
         throw std::runtime_error( "Model type " + std::to_string( Par.modelType ) + " not supported" );
-    }
-    if( !s.eof() )
-      s >> std::ws;
-    if( !s.eof() )
-    {
-      std::string sExtra;
-      std::getline( s, sExtra );
-      throw std::runtime_error( "Unexpected model argument \"" + sExtra + "\"" );
     }
   }
   // Validate the model
@@ -546,7 +550,7 @@ void MixedOp::Make( const Model &model_, const Parameters & Par )
     const std::string InBase{ Par.InBase + Base };
     std::cout << "  " << BaseFit << "\n";
     mixed->LoadCorrelators( InBase );
-    mixed->CorrMixed.resize( mixed->NumSamples, mixed->Nt );
+    mixed->LoadCorrelatorComplete();
 
     std::string Out{ Par.OutBase + BaseFit };
     std::cout << "    Writing " << mixed->NumSamples << " samples of " << mixed->Description()
@@ -557,17 +561,17 @@ void MixedOp::Make( const Model &model_, const Parameters & Par )
     bool bDo90 = true;
     for( int degrees = Par.tmin; ; degrees+=Par.step )
     {
-      mixed->DoOneAngle( degrees, Out, OutLen );
+      mixed->DoOneAngle( degrees, Out, OutLen, degrees == Par.tmin || !( degrees % 10 ) );
       switch( degrees )
       {
         case 0:
           bDo0 = false;
           break;
         case 90:
-          bDo0 = false;
+          bDo90 = false;
           break;
       }
-      if( degrees >= Par.tmax )
+      if( Par.step == 0 || degrees >= Par.tmax )
         break;
     }
     if( bDo0 )
@@ -598,6 +602,7 @@ int main( int argc, const char *argv[] )
       {"tmin", CL::SwitchType::Single, "-90"},
       {"tmax", CL::SwitchType::Single, "90"},
       {"step", CL::SwitchType::Single, "1"},
+      {"c", CL::SwitchType::Flag, nullptr},
       {"rep", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -607,38 +612,33 @@ int main( int argc, const char *argv[] )
     if( !cl.GotSwitch( "help" ) && NumFiles )
     {
       Parameters Par;
-      const std::string modelBase{ cl.SwitchValue<std::string>("m") };
       {
         const std::string sMT{ cl.SwitchValue<std::string>("a") };
         std::istringstream s{ sMT };
         int i;
         if( ! ( s >> i ) )
-        {
-          if( i == 0 )
-            throw std::runtime_error( "Model type \"" + sMT + "\" must start with an integer" );
-          // C++11: overflow or underflow has occurred, i set to min or max
-          s.clear();
-        }
+          throw std::runtime_error( "Model type \"" + sMT + "\" must start with an integer" );
         Par.modelType = static_cast<ModelType>( i );
         // optional comma, followed by model options
-        char c;
-        if( s >> c )
+        if( !Common::StreamEmpty( s ) )
         {
-          if( c != ',' )
-            s.unget();
-          else
-            s >> std::ws;
-        }
-        if( s.eof() )
-          Par.modelArgs.clear();
-        else
+          // Read an optional comma, tiptoeing around whitespace
+          if( s.peek() == ',' )
+          {
+            s.get();
+            if( Common::StreamEmpty( s ) )
+              throw std::runtime_error( "Model parameter empty (trailing comma)" );
+          }
           getline( s, Par.modelArgs );
+        }
       }
+      const std::string modelBase{ cl.SwitchValue<std::string>("m") };
       Par.InBase = Common::AppendSlash( cl.SwitchValue<std::string>("i") );
       Par.OutBase = Common::AppendSlash( cl.SwitchValue<std::string>("o") );
       Par.NumSamples = cl.SwitchValue<int>("n");
       Par.Exponent = cl.SwitchValue<int>("e");
       Par.bAllReplicas = cl.GotSwitch("rep");
+      Par.bTryConjugate = cl.GotSwitch("c");
       Par.bSaveCorr = cl.GotSwitch("savecorr");
       if( cl.GotSwitch( "p" ) )
         Par.Momenta = Common::ArrayFromString<Common::Momentum>( cl.SwitchValue<std::string>("p") );
@@ -682,6 +682,7 @@ int main( int argc, const char *argv[] )
     "--tmax Maximum theta (default  90)\n"
     "--step Steps between theta (default 1)\n"
     "Flags:\n"
+    "-c         Try loading Conjugate operator if bootstrap sample missing"
     "--rep      Use per replica values of overlap constants in construction of model\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--help     This message\n";

@@ -155,8 +155,8 @@ public:
                          Common::SeedType Seed, int NSamples );
   virtual ~Fitter() {}
   std::vector<Common::ValWithEr<scalar>>
-    PerformFit(bool bCorrelated, bool bFreezeCovar, int tMin, int tMax, int Skip, bool bSaveCorr,
-          bool bSaveCMat, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
+  PerformFit(bool bCorrelated, bool SimpleGuess, bool bFreezeCovar, int tMin, int tMax, int Skip, bool bSaveCorr,
+             bool bSaveCMat, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
 };
 
 Model::Model( const Fitter &parent )
@@ -396,17 +396,6 @@ void FitterThread::FitOne( const int idx_, const ROOT::Minuit2::MnUserParameters
     parent.DumpParameters( FitResult, upar );
     if( parent.Verbosity )
       std::cout << state << "\n";
-#ifdef DEBUG_COMPARE_WITH_PREVIOUS
-    std::vector<double> vd;
-    Common::ReadArray( vd,
-                      "/Users/s1786208/data/Study1/C1/GFWall/fit/test_thaw/"
-                      "h1_l_p_0_0_0.corr_6_15.g5_gT5.model.4147798751.h5",
-                      "data_C" );
-    std::cout << "    Ratios (new/old):\n";
-    for( int i = 0; i < 10; i++ )
-      std::cout << "\t" << i << ": " << ( upar.Value( i ) / vd[i] ) << "\n";
-    std::cout << "Set breakpoint here\n";
-#endif
   }
   const double ThisChiSq{ state.Fval() };
   if( idx == Fold::idxCentral )
@@ -552,7 +541,7 @@ void Fitter::DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUser
 }
 
 // Perform a fit
-std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bool bFreezeCovar,
+std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bool SimpleGuess, bool bFreezeCovar,
                     int TMin_, int TMax_, int Skip, bool bSaveCorr, bool bSaveCMat, int MaxIt,
                     double Tolerance, double RelEnergySep, double &ChiSq, int &dof )
 {
@@ -562,7 +551,11 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
        << "correlated fit on timeslices " << TMin_ << " to " << TMax_
        << " using " << omp_get_max_threads() << " Open MP threads";
     const std::string &sMsg{ ss.str() };
-    std::cout << std::string( sMsg.length(), '=' ) << "\n" << sMsg << "\n";
+    std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine;
+    if( SimpleGuess )
+      std::cout << "Using simple guess for each replica";
+    else
+      std::cout << "Using uncorrelated fit as guess for each replica";
   }
   bCorrelated = Bcorrelated_;
   tMin = TMin_;
@@ -600,7 +593,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
   if( Common::FileExists( ModelFileName ) )
   {
     ModelFile PreBuilt;
-    PreBuilt.Read( ModelFileName, "Pre-built: " );
+    PreBuilt.Read( ModelFileName, "\nPre-built: " );
     if( !PreBuilt.Compatible( NumExponents, dof, tMin, tMax, OpNames ) )
       throw std::runtime_error( "Pre-existing fits not compatible with parameters from this run" );
     bPerformFit = PreBuilt.NewParamsMorePrecise( bFreezeCovar, NSamples );
@@ -689,7 +682,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
           static constexpr int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
           ROOT::Minuit2::MnStrategy Strategy( StrategyLevel );
           FitterThread fitThread( *this, MaxIt, Tolerance, bFreezeCovar, bCorrelated, Strategy, CorrSynthetic );
-          if( bCorrelated )
+          if( bCorrelated && !SimpleGuess )
           {
             #pragma omp single
             {
@@ -821,6 +814,7 @@ int main(int argc, const char *argv[])
       {"n", CL::SwitchType::Single, "0"},
       {"f", CL::SwitchType::Flag, nullptr},
       {"uncorr", CL::SwitchType::Flag, nullptr},
+      {"guess", CL::SwitchType::Flag, nullptr},
       {"freeze", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"savecmat", CL::SwitchType::Flag, nullptr},
@@ -847,6 +841,7 @@ int main(int argc, const char *argv[])
       //const std::string model{ opt.optionValue("m") };
       const bool bFactor{ cl.GotSwitch( "f" ) };
       const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
+      const bool bSimpleGuess{ cl.GotSwitch( "guess" ) };
       const bool bFreezeCovar{ cl.GotSwitch( "freeze" ) };
       const bool bSaveCorr{ cl.GotSwitch("savecorr") };
       const bool bSaveCMat{ cl.GotSwitch("savecmat") };
@@ -873,7 +868,7 @@ int main(int argc, const char *argv[])
         }
         else
         {
-          Corr[0].IsCompatible( Corr[i], nullptr, true );
+          Corr[0].IsCompatible( Corr[i] );
         }
         i++;
       }
@@ -933,7 +928,7 @@ int main(int argc, const char *argv[])
             {
               double ChiSq;
               int dof;
-              auto params = m.PerformFit(doCorr, bFreezeCovar, ti, tf, Skip, bSaveCorr, bSaveCMat,
+              auto params = m.PerformFit(doCorr, bSimpleGuess, bFreezeCovar, ti, tf, Skip, bSaveCorr, bSaveCMat,
                                          MaxIterations, Tolerance, RelEnergySep, ChiSq, dof);
               if( bNeedHeader )
               {
@@ -1012,6 +1007,7 @@ int main(int argc, const char *argv[])
     "Flags:\n"
     "-f         Factorising operators (default non-factorising)\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
+    "--guess    Make simple guess (default use uncorrelated fit) for each replica\n"
     "--freeze   Freeze the covariance matrix/variance on the central replica\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--savecmat Save correlation matrix\n"

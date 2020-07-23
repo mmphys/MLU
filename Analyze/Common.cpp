@@ -477,8 +477,8 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   // Now see whether we can extract operator names
   if( pOpNames )
   {
-    char Sep = '_';
-    std::size_t pos = Base.find_last_of( Sep );
+    char Sep[] = "_.";
+    std::size_t pos = Base.find_last_of( Sep, std::string::npos, 1 );
     if( pos != std::string::npos ) {
       std::string sOp{ Base.substr( pos + 1 ) }; // Operator name
       int iOp1 = 0;
@@ -487,7 +487,7 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
       if( iOp1 == pOpNames->size() )
         pOpNames->emplace_back( sOp );
       std::string sTmp{ Base.substr( 0, pos ) };  // Truncated string
-      pos = sTmp.find_last_of( Sep );
+      pos = sTmp.find_last_of( Sep, std::string::npos, 2 );
       if( pos != std::string::npos ) {
         sOp = sTmp.substr( pos + 1 ); // Operator name
         int iOp2 = 0;

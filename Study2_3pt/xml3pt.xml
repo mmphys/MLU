@@ -20,17 +20,17 @@
     <Nt>64</Nt>
     <Timeslices>
       <start>0</start>
-      <end>4</end>
-      <!--<end>64</end>-->
+      <end>64</end>
+      <!--<end>4</end>-->
       <step>4</step>
     </Timeslices>
-    <Type>GFPW</Type>
-    <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
+    <Type>GF</Type>
+    <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
     <deltaT>12 14 16 20</deltaT>
-    <OutputBase>C1/meson/</OutputBase>-->
-    <Momenta>1_0_0</Momenta>
+    <OutputBase>C1/meson/</OutputBase>
+    <!--<Momenta>1_0_0</Momenta>
     <deltaT>16</deltaT>
-    <OutputBase>C1/unit/</OutputBase>
+    <OutputBase>C1/unit/</OutputBase>-->
     <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>
     <GaugeFix>
       <gauge>Unused</gauge>
@@ -41,18 +41,20 @@
       <gaugeFix>coulomb</gaugeFix>
       <Fourier>true</Fourier>
     </GaugeFix>
+    <TwoPoint>true</TwoPoint>
     <HeavyQuark>true</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
     <SinkPoint>true</SinkPoint>
     <SinkWall>true</SinkWall>
+    <DoNegativeMomenta>true</DoNegativeMomenta>
     <!--<Run>true</Run>-->
     <Run>false</Run>
   </RunPar>
-  <NumHeavyQuark>1</NumHeavyQuark>
-  <!--<NumHeavyQuark>4</NumHeavyQuark>-->
+  <NumHeavyQuark>4</NumHeavyQuark>
+  <!--<NumHeavyQuark>1</NumHeavyQuark>-->
   <HeavyQuark0>
-    <flavour>h0</flavour>
-    <mass>0.50</mass>
+    <flavour>h1</flavour>
+    <mass>0.58</mass>
     <Ls>12</Ls>
     <M5>1.0</M5>
     <maxIteration>5000</maxIteration>
@@ -61,8 +63,8 @@
     <EigenPackFilename></EigenPackFilename>
   </HeavyQuark0>
   <HeavyQuark1>
-    <flavour>h1</flavour>
-    <mass>0.58</mass>
+    <flavour>h0</flavour>
+    <mass>0.50</mass>
     <Ls>12</Ls>
     <M5>1.0</M5>
     <maxIteration>5000</maxIteration>
