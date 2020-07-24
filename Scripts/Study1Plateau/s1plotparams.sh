@@ -39,7 +39,7 @@ MyColumnHeadings="${MyColumnHeadings}"
 MyColumnHeadingsNoUS="${MyColumnHeadingsNoUS}"
 my_xtics="${xtics}"
 do_log=${do_log}
-xAxisName="${xaxis:-pvalue ChiSqPerDof}"
+xAxisName="${xaxis:-pvalueH pvalue ChiSqPerDof}"
 
 # Find a column marked E0
 MyColumnHeadings=system("awk '/^#/ {next}; {print \$0;exit}' ".PlotFile)
@@ -86,7 +86,7 @@ if( xAxisName eq "ChiSqPerDof" ) {
 if( do_stat ) { sStatDescr=sStatDescr.' ('.sStatCondHuman.' '.sprintf("%g",stat_limit).")" }
 FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit using ${mmplotfile_ops_all//_/ }"
 OutBase="${mmplotfile_base}.${mmplotfile_corr_all}.${mmplotfile_ops_all}."
-OutSuffix=".${mmplotfile_seed}.pdf"
+OutSuffix="_".xAxisName.".${mmplotfile_seed}.pdf"
 
 set term pdf
 set pointsize 0.6

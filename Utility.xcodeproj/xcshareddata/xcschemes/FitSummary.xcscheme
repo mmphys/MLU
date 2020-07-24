@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "/Users/s1786208/data/Study1/C1"
+      customWorkingDirectory = "$HOME/data/Study1/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -53,23 +53,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i GFWall/fit/test -o GFWall/fit/test"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i Z2/fit -o Z2/fit"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i GFWPZ2/fit -o GFWPZ2/fit"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i GFWPZ2/fit35 -o GFWPZ2/fit35test"
+            argument = "-i PW35b0/fit/ -o PW35b0/fit/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "h1_l_p_0_0_0.corr_8_17.PP_PW.model.4147798751.h5"
+            argument = "h1_l_p_0_0_0.*.model.*.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

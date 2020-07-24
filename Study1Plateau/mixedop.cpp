@@ -485,7 +485,7 @@ void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, boo
   MixingAngle( costheta, sintheta );
   Out.resize( OutLen );
   Out.append( std::to_string( degrees ) );
-  Out.append( 1, '.' );
+  Out.append( 1, '_' );
   AppendModelOps( Out );
   CorrMixed.MakeCorrSummary( nullptr );
   const Common::SeedType Seed{ model.Name_.Seed };

@@ -134,6 +134,7 @@ public:
   const int NumParams;
   const Correlators Corr;
   const std::vector<std::string> ParamNames;
+  const bool bMLENorm;
 
   // These variables set once at the start of each fit
   int tMin = -1;
@@ -152,10 +153,10 @@ public:
   explicit Fitter( Correlators &&Corr, const std::vector<std::string> &OpNames,
                          bool bFactor, const std::string &sOpNameConcat,
                          int NumExponents, int Verbosity, const std::string &OutputBaseName,
-                         Common::SeedType Seed, int NSamples );
+                         Common::SeedType Seed, int NSamples, bool bMLENorm );
   virtual ~Fitter() {}
   std::vector<Common::ValWithEr<scalar>>
-  PerformFit(bool bCorrelated, bool SimpleGuess, bool bFreezeCovar, int tMin, int tMax, int Skip, bool bSaveCorr,
+  PerformFit(bool bCorrelated, bool bSimpleGuess, bool bFreezeCovar, int tMin, int tMax, int Skip, bool bSaveCorr,
              bool bSaveCMat, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
 };
 
@@ -215,8 +216,8 @@ double Model::operator()( int f, int t ) const
   return z;
 }
 
-FitterThread::FitterThread( const Fitter &fitter_, int MaxIt_, double Tolerance_, bool bFreezeCovar_, bool bCorrelated_,
-                              const ROOT::Minuit2::MnStrategy &Strategy_, Correlators &CorrSynthetic_)
+FitterThread::FitterThread( const Fitter &fitter_, int MaxIt_, double Tolerance_, bool bFreezeCovar_,
+                      bool bCorrelated_, const ROOT::Minuit2::MnStrategy &Strategy_, Correlators &CorrSynthetic_)
 : parent{ fitter_ },
   idx{ Fold::idxCentral },
   VarianceInv( fitter_.Extent ),
@@ -245,6 +246,7 @@ FitterThread::FitterThread( const Fitter &fitter_, int MaxIt_, double Tolerance_
 void FitterThread::MakeCovar( void )
 {
   const int NumBoot{ parent.Corr[0].NumSamples() };
+  const int Normalisation{ parent.bMLENorm ? NumBoot : NumBoot - 1 };
   // Make covariance
   const scalar * CentralX = nullptr;
   const scalar * CentralY = nullptr;
@@ -261,7 +263,7 @@ void FitterThread::MakeCovar( void )
     for( int y = bCorrelated ? 0 : x; y <= x; y++ )
     {
       const int t2{ y % parent.NtCorr };
-      if( !t2 )
+      if( !t2 || !bCorrelated )
       {
         CentralY = parent.Corr[y / parent.NtCorr][idx] + parent.tMin;
         ReplicaY = parent.Corr[y / parent.NtCorr][ 0 ] + parent.tMin;
@@ -275,7 +277,7 @@ void FitterThread::MakeCovar( void )
         DataX += parent.Nt;
         DataY += parent.Nt;
       }
-      z /= NumBoot;
+      z /= Normalisation;
       if( bCorrelated )
       {
         Covar( x, y ) = z;
@@ -359,8 +361,8 @@ void FitterThread::FitOne( const int idx_, const ROOT::Minuit2::MnUserParameters
   if( !bFreezeCovar )
     MakeCovar();
 
-  // Save correlation matrix for central replica if requested
-  // NB: Do this here so that only one thread writes the file
+  // Save correlation matrix for central replica
+  // NB: file name will only be empty on the central replica, so only one thread will do this
   if( bCorrelated && !SaveCorMatFileName.empty() )
   {
     const std::string Sep{ " " };
@@ -503,7 +505,7 @@ double FitterThread::operator()( const std::vector<double> & par ) const
 
 Fitter::Fitter( Correlators &&Corr_, const std::vector<std::string> &opNames_,
                              bool bfactor_, const std::string &sopNameConcat_,
-                             int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_, int nSamples_ )
+                             int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_, int nSamples_, bool bMLENorm_ )
   : NumOps{ static_cast<int>( opNames_.size() ) },
     OpNames{ opNames_ },
     bFactor{ bfactor_ },
@@ -517,7 +519,8 @@ Fitter::Fitter( Correlators &&Corr_, const std::vector<std::string> &opNames_,
     NumExponents{ numExponents_ },
     NumParams{ NumExponents * ( 1 + NumOps ) },
     Corr{ std::move( Corr_ ) },
-    ParamNames( MakeParamNames() )
+    ParamNames( MakeParamNames() ),
+    bMLENorm{ bMLENorm_ }
 {
 }
 
@@ -541,7 +544,7 @@ void Fitter::DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUser
 }
 
 // Perform a fit
-std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bool SimpleGuess, bool bFreezeCovar,
+std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bool bSimpleGuess, bool bFreezeCovar,
                     int TMin_, int TMax_, int Skip, bool bSaveCorr, bool bSaveCMat, int MaxIt,
                     double Tolerance, double RelEnergySep, double &ChiSq, int &dof )
 {
@@ -552,7 +555,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
        << " using " << omp_get_max_threads() << " Open MP threads";
     const std::string &sMsg{ ss.str() };
     std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine;
-    if( SimpleGuess )
+    if( bSimpleGuess )
       std::cout << "Using simple guess for each replica";
     else
       std::cout << "Using uncorrelated fit as guess for each replica";
@@ -682,7 +685,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
           static constexpr int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
           ROOT::Minuit2::MnStrategy Strategy( StrategyLevel );
           FitterThread fitThread( *this, MaxIt, Tolerance, bFreezeCovar, bCorrelated, Strategy, CorrSynthetic );
-          if( bCorrelated && !SimpleGuess )
+          if( bCorrelated && !bSimpleGuess )
           {
             #pragma omp single
             {
@@ -815,6 +818,7 @@ int main(int argc, const char *argv[])
       {"f", CL::SwitchType::Flag, nullptr},
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"guess", CL::SwitchType::Flag, nullptr},
+      {"mlenorm", CL::SwitchType::Flag, nullptr},
       {"freeze", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"savecmat", CL::SwitchType::Flag, nullptr},
@@ -900,7 +904,8 @@ int main(int argc, const char *argv[])
         sOpNameConcat.append( 1, '_' );
         sOpNameConcat.append( OpNameOrig[i] );
       }
-      Fitter m ( std::move( Corr ), OpNames, bFactor, sOpNameConcat, NumExponents, Verbosity, outBaseFileName, Seed, NSamples );
+      Fitter m ( std::move( Corr ), OpNames, bFactor, sOpNameConcat, NumExponents, Verbosity, outBaseFileName,
+                 Seed, NSamples, cl.GotSwitch( "mlenorm" ) );
       std::string sSummaryBase{ outBaseFileName };
       sSummaryBase.append( 1, '.' );
       if( doCorr )
@@ -1008,6 +1013,7 @@ int main(int argc, const char *argv[])
     "-f         Factorising operators (default non-factorising)\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
     "--guess    Make simple guess (default use uncorrelated fit) for each replica\n"
+    "--mlenorm  MLE normalisation 1/N_boot for corr matrix. Default: 1/(N_boot - 1)\n"
     "--freeze   Freeze the covariance matrix/variance on the central replica\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--savecmat Save correlation matrix\n"

@@ -261,7 +261,7 @@ int main(int argc, const char *argv[])
             throw std::runtime_error("dof=" + std::to_string( m.dof ) + " i.e. extrapolation, not fit");
           std::ostringstream ss;
           m.WriteColumnNames( ss );
-          ss << " pvalue pvalue_low pvalue_high pvalue_check";
+          ss << " pvalue pvalue_low pvalue_high pvalue_check pvalueH pvalueH_low pvalueH_high pvalueH_check";
           if( Models.empty() )
           {
             ColumnNames = ss.str();
@@ -281,12 +281,33 @@ int main(int argc, const char *argv[])
           // Save the summary of the parameters for this file
           ss.str("");
           m.WriteSummaryData( ss );
-          const Common::ValWithEr<scalar> * const pChisqDof{ m.getSummaryData() + m.Nt()-1 };
+          using vEr = Common::ValWithEr<scalar>;
+          const vEr * const pChisqDof{ m.getSummaryData() + m.Nt()-1 };
+          // Chi squared statistic and Q-value (probability of a worse statistic)
+          // There is a deliberate inversion here: high statistic => low q-value
           scalar QValue = gsl_cdf_chisq_Q( pChisqDof->Central * m.dof, m.dof );
           ss << Sep << QValue
-             << Sep << gsl_cdf_chisq_Q( pChisqDof->Low * m.dof, m.dof )
              << Sep << gsl_cdf_chisq_Q( pChisqDof->High * m.dof, m.dof )
+             << Sep << gsl_cdf_chisq_Q( pChisqDof->Low * m.dof, m.dof )
              << Sep << pChisqDof->Check;
+          // Hotelling t statistic and Q-value
+          const int Extent{(m.tf-m.ti+1)*m.NumFiles}; // Extent of covariance matrix, i.e. # data points in fit
+          const int p{ Extent - m.dof }; // Number of params in fit
+          scalar tFactor{ static_cast<scalar>( m.dof * m.dof ) / ( p * ( Extent - 1 ) ) };
+          const vEr Hotelling{pChisqDof->Central * tFactor, pChisqDof->High * tFactor, pChisqDof->Low * tFactor};
+          /*std::cout << "Debug:\n"
+          << "\n\tm.dof = " << m.dof << "\tExtent = " << Extent << Common::NewLine
+          << "\tstatic_cast<scalar>( m.dof * m.dof ) = " << static_cast<scalar>( m.dof * m.dof )
+          << "\n\tp * ( Extent - 1 ) = " << ( p * ( Extent - 1 ) )
+          << "\n\ttFactor = " << tFactor
+          << "\n\t*pChisqDof = " << *pChisqDof
+          << "\n\tHotelling = " << Hotelling
+          << Common::NewLine;*/
+          ss << Sep << gsl_cdf_fdist_Q( Hotelling.Central, p, m.dof )
+             << Sep << gsl_cdf_fdist_Q( Hotelling.Low, p, m.dof )
+             << Sep << gsl_cdf_fdist_Q( Hotelling.High, p, m.dof )
+             << Sep << pChisqDof->Check;
+          // save the model in my list
           Fits.emplace( std::make_pair(std::make_pair( m.ti, m.tf ),
                                   FitData(1-QValue,QValue,m.ti,m.tf,m.dof,ss.str(),Models.size())));
           Models.emplace_back( std::move( m ) );

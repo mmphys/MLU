@@ -348,7 +348,11 @@ public:
   ValWithEr() = default;
   ValWithEr( T dCentral, std::vector<T> &Data, std::size_t Count )
   { Get( dCentral, Data, Count ); }
+  ValWithEr( T Central, T Low, T High, T Check = 1 );
 };
+
+template <typename T> ValWithEr<T>::ValWithEr( T central_, T low_, T high_, T check_ )
+: Central{central_}, Low{low_}, High{high_}, Check{check_} {}
 
 template <typename T>
 inline std::ostream & operator<<( std::ostream &os, const ValWithEr<T> &v )
