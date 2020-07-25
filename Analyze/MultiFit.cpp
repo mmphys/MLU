@@ -45,6 +45,8 @@
 #include <Minuit2/MinimumState.h>
 #include <Minuit2/MnPrint.h>
 
+//#define DEBUG_DISABLE_OMP
+
 // Indices for operators in correlator names
 static constexpr int idxSrc{ 0 };
 static constexpr int idxSnk{ 1 };
@@ -107,9 +109,10 @@ protected:
 public:
   FitterThread( const Fitter &fitter, int MaxIt, double Tolerance, bool bFreezeCovar, bool bCorrelated,
                  const ROOT::Minuit2::MnStrategy &Strategy, Correlators &CorrSynthetic );
-  void UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess );
-  void FitOne( const int idx, const ROOT::Minuit2::MnUserParameters &parGuess, ModelFile &ModelParams,
-               const std::string &SaveCorMatFileName, double RelEnergySep, int dof, double &ChiSq );
+  void ReplicaMessage( int iFitNum = std::numeric_limits<int>::lowest() ) const;
+  void UpdateGuess( ROOT::Minuit2::MnUserParameterState &parGuess, int MaxGuesses );
+  void FitOne( const int idx, const int MaxGuesses, const ROOT::Minuit2::MnUserParameterState &parGuess,
+              ModelFile &ModelParams, const std::string &SaveCorMatFileName, double RelEnergySep, int dof, double &ChiSq );
 // These are part of the FCNBase interface
   virtual double Up() const { return 1.; }
   virtual double operator()( const std::vector<double> &ModelParameters ) const;
@@ -134,7 +137,6 @@ public:
   const int NumParams;
   const Correlators Corr;
   const std::vector<std::string> ParamNames;
-  const bool bMLENorm;
 
   // These variables set once at the start of each fit
   int tMin = -1;
@@ -147,16 +149,15 @@ public:
   //inline int AlphaIndex( int snk, int src) const { return snk * NumOps + src; };
   std::vector<std::string> MakeParamNames() const;
   inline int MELIndex( int op, int EnergyLevel) const { return EnergyLevel * NumOps + op; };
-  void DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &parGuess ) const;
 
 public:
   explicit Fitter( Correlators &&Corr, const std::vector<std::string> &OpNames,
                          bool bFactor, const std::string &sOpNameConcat,
                          int NumExponents, int Verbosity, const std::string &OutputBaseName,
-                         Common::SeedType Seed, int NSamples, bool bMLENorm );
+                         Common::SeedType Seed, int NSamples );
   virtual ~Fitter() {}
   std::vector<Common::ValWithEr<scalar>>
-  PerformFit(bool bCorrelated, bool bSimpleGuess, bool bFreezeCovar, int tMin, int tMax, int Skip, bool bSaveCorr,
+  PerformFit(bool bCorrelated, bool bFreezeCovar, int tMin, int tMax, int Retry, bool bSaveCorr,
              bool bSaveCMat, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
 };
 
@@ -242,11 +243,21 @@ FitterThread::FitterThread( const Fitter &fitter_, int MaxIt_, double Tolerance_
     SortingHat[e].resize( parent.NumOps + 1 );
 }
 
+void FitterThread::ReplicaMessage( int iFitNum ) const
+{
+  std::cout << ( bCorrelated ? "C" : "Unc" ) << "orrelated fit ";
+  if( iFitNum != std::numeric_limits<int>::lowest() )
+    std::cout << iFitNum << Common::Space;
+  if( idx == Fold::idxCentral )
+    std::cout << "on central replica:";
+  else
+    std::cout << "on replica" << idx << ":";
+}
+
 // Make the covariance matrix, for only the timeslices we are interested in
 void FitterThread::MakeCovar( void )
 {
   const int NumBoot{ parent.Corr[0].NumSamples() };
-  const int Normalisation{ parent.bMLENorm ? NumBoot : NumBoot - 1 };
   // Make covariance
   const scalar * CentralX = nullptr;
   const scalar * CentralY = nullptr;
@@ -277,7 +288,7 @@ void FitterThread::MakeCovar( void )
         DataX += parent.Nt;
         DataY += parent.Nt;
       }
-      z /= Normalisation;
+      z /= NumBoot;
       if( bCorrelated )
       {
         Covar( x, y ) = z;
@@ -323,7 +334,7 @@ void FitterThread::MakeCovar( void )
 }
 
 // Perform an uncorrelated fit on the central timeslice to update parameters guessed
-void FitterThread::UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess )
+void FitterThread::UpdateGuess( ROOT::Minuit2::MnUserParameterState &parGuess, int MaxGuesses )
 {
   bool bSaveCorrelated{ bCorrelated };
   bCorrelated = false;
@@ -332,17 +343,32 @@ void FitterThread::UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess )
   {
     if( !bFreezeCovar )
       MakeCovar();
-    ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, parGuess, Strategy, MaxIt, Tolerance );
-    const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
-    if( !state.IsValid() )
-      throw std::runtime_error( "Uncorrelated fit for initial guess (on central replica) did not converge" );
-    // Save the parameters and errors as the updated guess
-    const ROOT::Minuit2::MnUserParameters &upar{ state.Parameters() };
-    for( int i = 0; i < parent.NumParams; ++i )
+    double dLastGuess = -747;
+    int iNumGuesses{ 0 };
+    while( iNumGuesses++ <= MaxGuesses )
     {
-      parGuess.SetValue( i, upar.Value( i ) );
-      parGuess.SetError( i, upar.Error( i ) );
+      ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, parGuess, Strategy, MaxIt, Tolerance );
+      const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
+      if( !state.IsValid() )
+        throw std::runtime_error( "Uncorrelated fit for initial guess (on central replica) did not converge" );
+      parGuess = state;
+      if( dLastGuess == parGuess.Fval() )
+        break;
+      dLastGuess = parGuess.Fval();
+      if( parent.Verbosity )
+      {
+        ReplicaMessage( iNumGuesses );
+        if( parent.Verbosity > 1 )
+          std::cout << parGuess;
+        else
+          std::cout << parGuess.Parameters();
+      }
     }
+    ReplicaMessage( iNumGuesses );
+    if( parent.Verbosity > 1 )
+      std::cout << parGuess;
+    else
+      std::cout << parGuess.Parameters();
   }
   catch(...)
   {
@@ -353,8 +379,8 @@ void FitterThread::UpdateGuess( ROOT::Minuit2::MnUserParameters &parGuess )
 }
 
 // Perform a fit. NB: Only the fit on central replica updates ChiSq
-void FitterThread::FitOne( const int idx_, const ROOT::Minuit2::MnUserParameters &parGuess, ModelFile &ModelParams,
-                            const std::string &SaveCorMatFileName, double RelEnergySep, int dof, double &ChiSq )
+void FitterThread::FitOne( const int idx_, const int MaxGuesses, const ROOT::Minuit2::MnUserParameterState &parGuess,
+                ModelFile &ModelParams, const std::string &SaveCorMatFileName, double RelEnergySep, int dof, double &ChiSq )
 {
   idx = idx_;
   // Re-use correlation matrix from uncorrelated fit, or from central replica if frozen
@@ -385,20 +411,39 @@ void FitterThread::FitOne( const int idx_, const ROOT::Minuit2::MnUserParameters
         s << NewLine;
       }
   }
-  ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize(*this, parGuess, Strategy, MaxIt, Tolerance);
-  const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
-  if( !state.IsValid() )
-    throw std::runtime_error( "Fit on replica " + std::to_string( idx ) + " did not converge" );
-  const ROOT::Minuit2::MnUserParameters &upar{ state.Parameters() };
-  if( idx == Fold::idxCentral || parent.Verbosity > 2 )
+
+  // Call the minimiser until it provides the same answer twice
+  ROOT::Minuit2::MnUserParameterState state;
+  double dLastGuess = -747;
+  int iNumGuesses{ 0 };
+  while( iNumGuesses <= MaxGuesses )
   {
-    static const std::string FitResultUncorr{ "Uncorrelated fit result:" };
-    static const std::string FitResultCorr  {   "Correlated fit result:" };
-    const std::string &FitResult{ bCorrelated ? FitResultCorr : FitResultUncorr };
-    parent.DumpParameters( FitResult, upar );
-    if( parent.Verbosity )
-      std::cout << state << "\n";
+    ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize(*this, iNumGuesses++ ? state : parGuess,Strategy,MaxIt,Tolerance);
+    const ROOT::Minuit2::MnUserParameterState &stateResult{ min.UserState() };
+    if( !stateResult.IsValid() )
+      throw std::runtime_error( "Fit on replica " + std::to_string( idx ) + " did not converge" );
+    state = stateResult;
+    if( dLastGuess == state.Fval() )
+      break;
+    dLastGuess = state.Fval();
+    if( idx == Fold::idxCentral && parent.Verbosity )
+    {
+      ReplicaMessage( iNumGuesses );
+      if( parent.Verbosity > 1 )
+        std::cout << state;
+      else
+        std::cout << state.Parameters();
+    }
   }
+  if( idx == Fold::idxCentral )
+  {
+    ReplicaMessage( iNumGuesses );
+    if( parent.Verbosity > 1 )
+      std::cout << state;
+    else
+      std::cout << state.Parameters();
+  }
+  const ROOT::Minuit2::MnUserParameters &upar{ state.Parameters() };
   const double ThisChiSq{ state.Fval() };
   if( idx == Fold::idxCentral )
   {
@@ -467,13 +512,7 @@ double FitterThread::operator()( const std::vector<double> & par ) const
     {
       double z = model( f, t + parent.tMin ) - *CorrData++;
       if( !std::isfinite( z ) )
-      {
-        if( parent.Verbosity )
-        {
-          std::cout << "Bootstrap replica " << idx << ", timeslice " << t << " overflow\n";
-        }
         return std::numeric_limits<double>::max();
-      }
       ModelError[iWrite] = z * VarianceInv[iWrite];
     }
   }
@@ -504,8 +543,8 @@ double FitterThread::operator()( const std::vector<double> & par ) const
 }
 
 Fitter::Fitter( Correlators &&Corr_, const std::vector<std::string> &opNames_,
-                             bool bfactor_, const std::string &sopNameConcat_,
-                             int numExponents_, int verbosity_, const std::string &outputBaseName_, Common::SeedType seed_, int nSamples_, bool bMLENorm_ )
+                bool bfactor_, const std::string &sopNameConcat_, int numExponents_, int verbosity_,
+                const std::string &outputBaseName_, Common::SeedType seed_, int nSamples_ )
   : NumOps{ static_cast<int>( opNames_.size() ) },
     OpNames{ opNames_ },
     bFactor{ bfactor_ },
@@ -519,8 +558,7 @@ Fitter::Fitter( Correlators &&Corr_, const std::vector<std::string> &opNames_,
     NumExponents{ numExponents_ },
     NumParams{ NumExponents * ( 1 + NumOps ) },
     Corr{ std::move( Corr_ ) },
-    ParamNames( MakeParamNames() ),
-    bMLENorm{ bMLENorm_ }
+    ParamNames( MakeParamNames() )
 {
 }
 
@@ -536,16 +574,9 @@ std::vector<std::string> Fitter::MakeParamNames() const
   return Names;
 }
 
-void Fitter::DumpParameters( const std::string &msg, const ROOT::Minuit2::MnUserParameters &parGuess ) const
-{
-  if( !msg.empty() )
-    std::cout << msg;
-  std::cout << parGuess;
-}
-
 // Perform a fit
-std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bool bSimpleGuess, bool bFreezeCovar,
-                    int TMin_, int TMax_, int Skip, bool bSaveCorr, bool bSaveCMat, int MaxIt,
+std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bool bFreezeCovar,
+                    int TMin_, int TMax_, int Retry, bool bSaveCorr, bool bSaveCMat, int MaxIt,
                     double Tolerance, double RelEnergySep, double &ChiSq, int &dof )
 {
   {
@@ -554,11 +585,8 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
        << "correlated fit on timeslices " << TMin_ << " to " << TMax_
        << " using " << omp_get_max_threads() << " Open MP threads";
     const std::string &sMsg{ ss.str() };
-    std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine;
-    if( bSimpleGuess )
-      std::cout << "Using simple guess for each replica";
-    else
-      std::cout << "Using uncorrelated fit as guess for each replica";
+    std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine
+              << "Using uncorrelated fit as guess for each replica\n";
   }
   bCorrelated = Bcorrelated_;
   tMin = TMin_;
@@ -619,12 +647,12 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
     for( int f = 0; f < NumFiles; f++ )
     {
       CorrSynthetic[f].resize( NSamples, Nt );
-      CorrSynthetic[f].Seed_ = ModelParams.Seed_;
-      CorrSynthetic[f].SeedMachine_ = ModelParams.SeedMachine_;
+      CorrSynthetic[f].FileList.push_back( ModelFileName );
+      CorrSynthetic[f].CopyAttributes( Corr[f] );
     }
     // Make initial guesses for the parameters
     // For each Exponent, I need the delta_E + a constant for each operator
-    ROOT::Minuit2::MnUserParameters parGuess;
+    ROOT::Minuit2::MnUserParameterState parGuess;
     {
       static constexpr double ErrorFactor = 0.1; // I actually have no idea what the parameter errors are
       std::vector<double> GuessValue( NumParams );
@@ -671,12 +699,14 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
         parGuess.Add( ParamNames[i], GuessValue[i], GuessError[i] );
       }
     }
-    DumpParameters( "Initial guess:", parGuess );
+    std::cout << "Initial guess:" << parGuess.Parameters();
     // Protected by CancelCritSec
     {
       volatile bool Abort{ false };
       std::string sError;
+#ifndef DEBUG_DISABLE_OMP
       #pragma omp parallel default(shared)
+#endif
       {
         try
         {
@@ -685,20 +715,23 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
           static constexpr int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
           ROOT::Minuit2::MnStrategy Strategy( StrategyLevel );
           FitterThread fitThread( *this, MaxIt, Tolerance, bFreezeCovar, bCorrelated, Strategy, CorrSynthetic );
-          if( bCorrelated && !bSimpleGuess )
+          if( bCorrelated )
           {
+#ifndef DEBUG_DISABLE_OMP
             #pragma omp single
+#endif
             {
               // Perform an uncorrelated fit on the central replica, and use that as the guess for every replica
               try
               {
-                fitThread.UpdateGuess( parGuess );
-                DumpParameters( "Uncorrelated fit on central replica:", parGuess );
+                fitThread.UpdateGuess( parGuess, Retry + 10 );
               }
               catch( const std::exception &e )
               {
                 bool WasAbort;
+#ifndef DEBUG_DISABLE_OMP
                 #pragma omp atomic capture
+#endif
                 {
                   WasAbort = Abort;
                   Abort = true;
@@ -708,39 +741,44 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
               }
             }
           }
-          if( !Abort )
+#ifndef DEBUG_DISABLE_OMP
+          #pragma omp for schedule(dynamic)
+#endif
+          for( int idx = Fold::idxCentral; idx < NSamples; ++idx )
           {
-            #pragma omp for schedule(dynamic)
-            for( int idx = Fold::idxCentral; idx < NSamples; ++idx )
+            try
             {
-              try
+              // Use uncorrelated fit as guess for correlated fit
+              bool WasAbort;
+#ifndef DEBUG_DISABLE_OMP
+              #pragma omp atomic read
+#endif
+                WasAbort = Abort;
+              if( !WasAbort )
+                fitThread.FitOne( idx, Retry, parGuess, ModelParams, idx == Fold::idxCentral ? SaveCorrMatrixFileName : "",
+                                 RelEnergySep, dof, ChiSq );
+            }
+            catch( const std::exception &e )
+            {
+              bool WasAbort;
+#ifndef DEBUG_DISABLE_OMP
+              #pragma omp atomic capture
+#endif
               {
-                // Use uncorrelated fit as guess for correlated fit
-                bool WasAbort;
-                #pragma omp atomic read
-                  WasAbort = Abort;
-                if( !WasAbort )
-                  fitThread.FitOne( idx, parGuess, ModelParams, idx == Fold::idxCentral ? SaveCorrMatrixFileName : "",
-                                   RelEnergySep, dof, ChiSq );
+                WasAbort = Abort;
+                Abort = true;
               }
-              catch( const std::exception &e )
-              {
-                bool WasAbort;
-                #pragma omp atomic capture
-                {
-                  WasAbort = Abort;
-                  Abort = true;
-                }
-                if( !WasAbort )
-                  sError = e.what();
-              }
+              if( !WasAbort )
+                sError = e.what();
             }
           }
         }
-         catch( const std::exception &e )
+        catch( const std::exception &e )
         {
           bool WasAbort;
+#ifndef DEBUG_DISABLE_OMP
           #pragma omp atomic capture
+#endif
           {
             WasAbort = Abort;
             Abort = true;
@@ -807,7 +845,7 @@ int main(int argc, const char *argv[])
       {"dtf", CL::SwitchType::Single, "1"},
       {"sep", CL::SwitchType::Single, "0.2"},
       {"delta", CL::SwitchType::Single, "3"},
-      {"skip", CL::SwitchType::Single, "10"},
+      {"retry", CL::SwitchType::Single, "10"},
       {"iter", CL::SwitchType::Single, "0"},
       {"tol", CL::SwitchType::Single, "0.0001"},
       {"v", CL::SwitchType::Single, "0"},
@@ -817,8 +855,6 @@ int main(int argc, const char *argv[])
       {"n", CL::SwitchType::Single, "0"},
       {"f", CL::SwitchType::Flag, nullptr},
       {"uncorr", CL::SwitchType::Flag, nullptr},
-      {"guess", CL::SwitchType::Flag, nullptr},
-      {"mlenorm", CL::SwitchType::Flag, nullptr},
       {"freeze", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"savecmat", CL::SwitchType::Flag, nullptr},
@@ -834,7 +870,7 @@ int main(int argc, const char *argv[])
       const int dtf_max{ cl.SwitchValue<int>("dtf") };
       const double RelEnergySep{ cl.SwitchValue<double>("sep") };
       const int delta{ cl.SwitchValue<int>("delta") };
-      const int Skip{ cl.SwitchValue<int>("skip") };
+      const int Retry{ cl.SwitchValue<int>("retry") };
       const int MaxIterations{ cl.SwitchValue<int>("iter") }; // Max iteration count, 0=unlimited
       const double Tolerance{ cl.SwitchValue<double>("tol") }; // Actual tolerance is 10^{-3} * this
       const int Verbosity{ cl.SwitchValue<int>("v") };
@@ -845,13 +881,12 @@ int main(int argc, const char *argv[])
       //const std::string model{ opt.optionValue("m") };
       const bool bFactor{ cl.GotSwitch( "f" ) };
       const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
-      const bool bSimpleGuess{ cl.GotSwitch( "guess" ) };
       const bool bFreezeCovar{ cl.GotSwitch( "freeze" ) };
       const bool bSaveCorr{ cl.GotSwitch("savecorr") };
       const bool bSaveCMat{ cl.GotSwitch("savecmat") };
 
-      if( Skip < 0 )
-        throw std::invalid_argument( "Skip must be >= 0" );
+      if( Retry < 0 )
+        throw std::invalid_argument( "Retry must be >= 0" );
       if( MaxIterations < 0 )
         throw std::invalid_argument( "MaxIterations must be >= 0" );
 
@@ -905,7 +940,7 @@ int main(int argc, const char *argv[])
         sOpNameConcat.append( OpNameOrig[i] );
       }
       Fitter m ( std::move( Corr ), OpNames, bFactor, sOpNameConcat, NumExponents, Verbosity, outBaseFileName,
-                 Seed, NSamples, cl.GotSwitch( "mlenorm" ) );
+                 Seed, NSamples );
       std::string sSummaryBase{ outBaseFileName };
       sSummaryBase.append( 1, '.' );
       if( doCorr )
@@ -933,7 +968,7 @@ int main(int argc, const char *argv[])
             {
               double ChiSq;
               int dof;
-              auto params = m.PerformFit(doCorr, bSimpleGuess, bFreezeCovar, ti, tf, Skip, bSaveCorr, bSaveCMat,
+              auto params = m.PerformFit(doCorr, bFreezeCovar, ti, tf, Retry, bSaveCorr, bSaveCMat,
                                          MaxIterations, Tolerance, RelEnergySep, ChiSq, dof);
               if( bNeedHeader )
               {
@@ -1001,10 +1036,10 @@ int main(int argc, const char *argv[])
     "--dtf  Number of final   fit times (default 1)\n"
     "--sep  Minimum relative separation between energy levels (default 0.2)\n"
     "--delta Minimum number of timeslices in fit range (default 3)\n"
-    "--skip Number of fits to throw away prior to central fit (default 10)\n"
+    "--retry Maximum number of times to retry fits (default 10)\n"
     "--iter Max iteration count, 0 (default) = unlimited\n"
     "--tol  Tolerance of required fits * 10^3 (default 0.0001)\n"
-    "-v     Verbosity, 0 = normal (default), 1=debug, 2=save covar, 3=Every iteration\n"
+    "-v     Verbosity, 0 (default)=central fit results, 1=all fits, 2=detailed\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
     "-e     number of Exponents (default 1)\n"
@@ -1012,8 +1047,6 @@ int main(int argc, const char *argv[])
     "Flags:\n"
     "-f         Factorising operators (default non-factorising)\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
-    "--guess    Make simple guess (default use uncorrelated fit) for each replica\n"
-    "--mlenorm  MLE normalisation 1/N_boot for corr matrix. Default: 1/(N_boot - 1)\n"
     "--freeze   Freeze the covariance matrix/variance on the central replica\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--savecmat Save correlation matrix\n"

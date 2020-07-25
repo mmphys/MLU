@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(HOME)/data/Study1/C1/PW35b0"
+      customWorkingDirectory = "$(HOME)/data/Study1/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -62,16 +62,20 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i fold/h1_s_p_0_0_0_ -o fit/"
-            isEnabled = "NO">
+            argument = "--ti 11 --tf 17 -i GFWPZ2/fold35/h1_l_p_0_0_0_ PP_PP*h5 PP_PW*h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i fold/GFWPZ2/h1_l_p_0_0_0_ -o debug/"
+            argument = "-o GFWPZ2/fit35test/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o fit/ -i fold/h1_l_p_0_0_0_ g5P_g5P.fold.*.h5 g5P_g5W.fold.*.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o fit_mixed/ mixed/h1_l_p_0_0_0.corr_11_19.theta_-45_m_m.bootstrap.1835672416.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "g5P_g5P*h5 g5P_g5W*h5"
@@ -91,15 +95,15 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 2"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti 4"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti 6"
-            isEnabled = "YES">
+            argument = "--ti 7"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti 10"
@@ -107,7 +111,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tf 13"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tf 15"
@@ -119,7 +123,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dti 7"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dti 2"
@@ -131,7 +135,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--dtf 10"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--delta 2"
@@ -142,7 +146,11 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--skip 3"
+            argument = "--uncorr"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--retry 0"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -158,23 +166,14 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--uncorr"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-v2"
+            argument = "-v 2"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
          <EnvironmentVariable
-            key = ""
-            value = ""
-            isEnabled = "YES">
-         </EnvironmentVariable>
-         <EnvironmentVariable
             key = "OMP_NUM_THREADS"
-            value = "1"
+            value = "2"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>
