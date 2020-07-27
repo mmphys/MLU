@@ -414,13 +414,31 @@ struct FileNameAtt
     op.clear();
     Extra.clear();
   }
-
+  void swap( FileNameAtt &o )
+  {
+    std::swap( Filename, o.Filename );
+    std::swap( NameNoExt, o.NameNoExt );
+    std::swap( Dir, o.Dir );
+    std::swap( Base, o.Base );
+    std::swap( Type, o.Type );
+    std::swap( SeedString, o.SeedString );
+    std::swap( bSeedNum, o.bSeedNum );
+    std::swap( Seed, o.Seed );
+    std::swap( Ext, o.Ext );
+    std::swap( op, o.op );
+    std::swap( Extra, o.Extra );
+  }
   void Parse( const std::string &Filename_, std::vector<std::string> * pOpNames = nullptr );
   FileNameAtt() = default;
   explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr )
     { Parse( Filename, pOpNames ); }
   void ParseExtra( unsigned int MaxElements = UINT_MAX );
 };
+
+inline void swap( FileNameAtt &l, FileNameAtt &r )
+{
+  l.swap( r );
+}
 
 // Make a filename "Base.Type.seed.Ext"
 std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext);
@@ -895,26 +913,19 @@ public:
   bool bHasTimeslice = false;
   int  Timeslice_ = 0;
   // Swap function so that this type is sortable
-  /*friend void swap( CorrelatorFile &l, CorrelatorFile &r )
+  void swap( CorrelatorFile &o )
   {
-    int i;
-    i = l.NumOps_;
-    l.NumOps_ = r.NumOps_;
-    r.NumOps_ = i;
-    i = l.Nt_;
-    l.Nt_ = r.Nt_;
-    r.Nt_ = i;
-    std::swap( l.m_pData, r.m_pData );
-    std::swap( l.Alg_, r.Alg_ );
-    //swap( l.Name_, r.Name_ );
-    std::swap( l.Prefix, r.Prefix );
-    i = l.Timeslice_;
-    l.Timeslice_ = r.Timeslice_;
-    r.Timeslice_ = i;
-    bool b = l.bHasTimeslice;
-    l.bHasTimeslice = r.bHasTimeslice;
-    r.bHasTimeslice = b;
-  }*/
+    using std::swap;
+    swap( NumSnk_, o.NumSnk_ );
+    swap( NumSrc_, o.NumSrc_ );
+    swap( Nt_, o.Nt_ );
+    swap( m_pData, o.m_pData );
+    swap( AlgSnk_, o.AlgSnk_ );
+    swap( AlgSrc_, o.AlgSrc_ );
+    Name_.swap( o.Name_ );
+    swap( bHasTimeslice, o.bHasTimeslice );
+    swap( Timeslice_, o.Timeslice_ );
+  }
   // Member functions
 private:
   inline void RangeCheck( int Sample ) const
@@ -995,6 +1006,12 @@ public:
   // Operators
   CorrelatorFile& operator=(CorrelatorFile && r) = default; // Move assignment
 };
+
+template <typename T>
+inline void swap( CorrelatorFile<T> &l, CorrelatorFile<T> &r )
+{
+  l.swap( r );
+}
 
 using CorrelatorFileC = CorrelatorFile<std::complex<double>>;
 using CorrelatorFileD = CorrelatorFile<double>;
@@ -1281,6 +1298,7 @@ protected:
         m_pSummaryData.reset( nullptr );
     }
   }
+  void Bootstrap( Sample<T> &boot );
 public:
   FileNameAtt Name_;
   SeedType Seed_ = 0; // This is only ever set by the bootstrap code
@@ -1384,8 +1402,8 @@ public:
   template <typename U>
   void IsCompatible( const Sample<U> &o, int * pNumSamples = nullptr/*, bool bCompareBase = true*/ ) const;
   template <typename U> void CopyAttributes( const Sample<U> &o );
-  Sample<T> Bootstrap(int NumBootSamples, SeedType Seed, const std::string * pMachineName = nullptr,
-                      std::vector<std::string> * pAuxNames = nullptr);
+  void Bootstrap( Sample<T> &boot, SeedType Seed, const std::string * pMachineName = nullptr );
+  template <typename U> void Bootstrap( Sample<T> &boot, const Sample<U> &Random );
   void Read (const std::string &FileName, const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr,
              std::string * pGroupName = nullptr );
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
@@ -1454,7 +1472,7 @@ protected:
     for( int t = 0; t < Nt_; t++ )
     {
       if( Src[t + Nt_] )
-        throw new std::runtime_error( "Complex sample has imaginary component" );
+        throw std::runtime_error( "Complex sample has imaginary component" );
       *Dest++ = Src[t];
     }
   }
@@ -1596,62 +1614,78 @@ template <typename U> void Sample<T>::CopyAttributes( const Sample<U> &in )
  Compute the mean on this sample, saving this as the central value
  Returned sample has specified extra fields ... but only the central value is copied from original
  */
-template <typename T>
-Sample<T> Sample<T>::Bootstrap(int NumBootSamples, SeedType Seed, const std::string * pMachineName,
-                               std::vector<std::string> * pAuxNames)
+template <typename T> void Sample<T>::Bootstrap( Sample<T> &boot )
 {
-  std::mt19937                        engine( Seed );
-  std::uniform_int_distribution<fint> random( 0, NumSamples_ - 1 );
-  Sample<T> boot( NumBootSamples, Nt_, pAuxNames ? pAuxNames : &AuxNames );
+  boot.SampleSize = NumSamples_;
 
   // Compute the mean, then copy all the extra info to the bootstrap I will return
   MakeMean();
   std::copy( (*this)[idxCentral], (*this)[0], boot[idxCentral] );
 
   // Master thread can choose random samples while other threads bootstrap
+  const fint * pRandom{ boot.m_pRandNum.get() };
   T * dst{ boot[0] };
-  fint * rnd{ new fint[ static_cast<std::size_t>( NumBootSamples ) * NumSamples_ ] };
-  boot.m_pRandNum.reset( rnd );
-  auto start = std::chrono::steady_clock::now();
-  int nthreads;
-  #pragma omp parallel
-  #pragma omp single
+  for( int i = 0; i < boot.NumSamples_; ++i, dst += Nt_ )
   {
-    nthreads = omp_get_num_threads();
-    for( int i = 0; i < NumBootSamples; i++, dst += Nt_, rnd += NumSamples_ )
+    for( int s = 0; s < NumSamples_; ++s )
     {
-      // Generate the random numbers for this sample
-      for( int s = 0; s < NumSamples_; s++ )
-        rnd[s] = random( engine );
-      // Schedule a task to perform the bootstrap for this replica
-      #pragma omp task firstprivate( dst, rnd )
+      const T * src{ (*this)[ *pRandom++ ] };
+      for( int t = 0; t < Nt_; t++ )
       {
-        for( int s = 0; s < NumSamples_; s++ )
-        {
-          const T * src{ (*this)[ rnd[s] ] };
-          for( int t = 0; t < Nt_; t++ )
-          {
-            if( !s )
-              dst[t]  = *src++;
-            else
-              dst[t] += *src++;
-          }
-        }
-        // Turn the sum into an average
-        if( NumSamples_ > 1 )
-          for( int t = 0; t < Nt_; t++)
-            dst[t] /= NumSamples_;
+        if( !s )
+          dst[t]  = *src++;
+        else
+          dst[t] += *src++;
       }
     }
+    // Turn the sum into an average
+    if( NumSamples_ > 1 )
+      for( int t = 0; t < Nt_; ++t)
+        dst[t] /= NumSamples_;
   }
-  auto diff = std::chrono::steady_clock::now() - start;
-  std::cout << "  bootstrapping with " << nthreads << " threads took " << std::chrono::duration <double, std::milli> (diff).count() << " ms\n";
+}
+
+// Generate a new set of random numbers to use for the seed
+template <typename T> void Sample<T>::Bootstrap( Sample<T> &boot, SeedType Seed, const std::string * pMachineName )
+{
+  const std::size_t RandomLen{ static_cast<std::size_t>( boot.NumSamples_ ) * static_cast<std::size_t>( NumSamples_ ) };
+  assert( RandomLen && "Can't bootstrap nothing" );
   boot.Seed_ = Seed;
   if( pMachineName && ! pMachineName->empty() )
     boot.SeedMachine_ = *pMachineName;
   else
     boot.SeedMachine_ = GetHostName();
-  return boot;
+  // Generate the random numbers
+  fint * pRandom{ new fint[ RandomLen ] };
+  boot.m_pRandNum.reset( pRandom );
+  std::mt19937                        engine( Seed );
+  std::uniform_int_distribution<fint> random( 0, NumSamples_ - 1 );
+  for( std::size_t i = 0; i < RandomLen; i++ )
+    pRandom[i] = random( engine );
+  Bootstrap( boot );
+}
+
+template <typename T> template <typename U> void Sample<T>::Bootstrap( Sample<T> &boot, const Sample<U> &Random )
+{
+  const std::size_t RandomLen{ static_cast<std::size_t>( boot.NumSamples_ ) * static_cast<std::size_t>( NumSamples_ ) };
+  assert( RandomLen && "Can't bootstrap nothing" );
+  const fint * pSrc{ Random.m_pRandNum.get() };
+  if( !pSrc )
+    throw std::runtime_error( "No random numbers in " + Random.Name_.Filename );
+  if( Random.SampleSize != NumSamples_ )
+    throw std::runtime_error( "Random numbers are for SampleSize " + std::to_string(Random.SampleSize)
+                                 + " not " + std::to_string( NumSamples_ ) );
+  if( Random.NumSamples_ < boot.NumSamples_ )
+    throw std::runtime_error( "Not enough Random numbers for " + std::to_string( boot.NumSamples_ )
+                                  + " samples. Only " + std::to_string( Random.NumSamples_ ) + " available" );
+  boot.Seed_ = Random.Seed_;
+  boot.SeedMachine_ = Random.SeedMachine_;
+  // Copy the random numbers
+  fint * pRandom{ new fint[ RandomLen ] };
+  boot.m_pRandNum.reset( pRandom );
+  for( std::size_t i = 0; i < RandomLen; i++ )
+    pRandom[i] = pSrc[i];
+  Bootstrap( boot );
 }
 
 template <typename T>
@@ -2566,10 +2600,10 @@ public:
   CommandLine( int argc, const char *argv[], const std::vector<SwitchDef> &defs )
   { Parse( argc, argv, defs ); }
 
-  inline bool GotSwitch( const std::string &SwitchName ) {
+  inline bool GotSwitch( const std::string &SwitchName ) const {
     return Switches.find( SwitchName ) != Switches.end(); }
 
-  inline int NumValues( const std::string &Switch ) {
+  inline int NumValues( const std::string &Switch ) const {
     int iNumValues{ 0 };
     SwitchMap::const_iterator it = Switches.find( Switch );
     if( it != Switches.end() ) {
@@ -2578,7 +2612,7 @@ public:
     return iNumValues;
   }
   
-  inline const std::vector<std::string> & SwitchStrings( const std::string &Switch )
+  inline const std::vector<std::string> & SwitchStrings( const std::string &Switch ) const
   {
     SwitchMap::const_iterator it = Switches.find( Switch );
     if( it == Switches.end() )
@@ -2590,7 +2624,7 @@ public:
     return v;
   }
 
-  template<typename T> inline T SwitchValue( const std::string &Switch, int Subscript = 0 )
+  template<typename T> inline T SwitchValue( const std::string &Switch, int Subscript = 0 ) const
   {
     const std::vector<std::string> &v{ SwitchStrings( Switch ) };
     if( static_cast<std::size_t>( Subscript ) >= v.size() )

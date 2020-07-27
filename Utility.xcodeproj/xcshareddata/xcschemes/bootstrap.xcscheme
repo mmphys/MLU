@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study2/C1"
+      customWorkingDirectory = "$HOME/data/Study1/C1/test"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -75,7 +75,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT,gx,gy,gz"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "cgT,-gx,-gy,-gz"
@@ -83,15 +83,19 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--pa"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-r4147798751"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-r1835672416"
+            argument = "-r bootstrap_old/h1_l_p_0_0_0_g5P_g5W.bootstrap.4147798751.h5"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-r1835672416"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o Z2/boot35/ -i Z2/meson/ &apos;h1_l_p_0_0_0*&apos; &apos;l_h1_p_0_0_0*&apos;"
@@ -102,29 +106,34 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o GFWP/boot35/ &apos;GFWP/meson/*_p_0_0_0_*.h5&apos; &apos;GFWall/meson/*_p_0_0_0_*.h5&apos;"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i meson/3pt_s/ -o boot_test/3pt_s/ &apos;*.h5&apos;"
+            argument = "-o bootstrap/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-b-1"
+            argument = "&apos;GFWall/meson/*_p_0_0_0_*.h5&apos;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;GFWP/meson/*_p_0_0_0_*.h5&apos;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i meson/3pt_s/ -o boot_test/3pt_s/ &apos;*.h5&apos;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-b1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--border Old"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--show"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "OMP_NUM_THREADS"
-            value = "2"
-            isEnabled = "NO">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

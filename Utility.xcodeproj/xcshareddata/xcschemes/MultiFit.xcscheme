@@ -62,12 +62,16 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--ti 11 --tf 17 -i GFWPZ2/fold35/h1_l_p_0_0_0_ PP_PP*h5 PP_PW*h5"
+            argument = "--ti 11 --tf 17 -o GFWPZ2/fit35test/ -i GFWPZ2/fold35/h1_l_p_0_0_0_ PP_PP*h5 PP_PW*h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o GFWPZ2/fit35test/"
-            isEnabled = "YES">
+            argument = "-o fit_test/ -i fold/h1_l_p_0_0_0_"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--ti 7 --tf 13 -o next25/fit_test/ -i next25/fold/GFWPZ2/h1_l_p_0_0_0_ g5P_g5P&apos;*&apos;h5 g5P_g5W&apos;*&apos;h5"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o fit/ -i fold/h1_l_p_0_0_0_ g5P_g5P.fold.*.h5 g5P_g5W.fold.*.h5"
@@ -102,7 +106,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti 7"
+            argument = "--ti 6"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -147,7 +151,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--uncorr"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--retry 0"
@@ -167,7 +171,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v 2"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

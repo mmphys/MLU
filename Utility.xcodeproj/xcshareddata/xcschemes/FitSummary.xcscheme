@@ -54,6 +54,10 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-i PW35b0/fit/ -o PW35b0/fit/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i PW35b0/fit_mixed/ -o PW35b0/fit_mixed/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

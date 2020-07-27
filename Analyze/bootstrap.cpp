@@ -73,6 +73,27 @@ using namespace Common;
 enum StudySubject{ Z2=1, GFWW, GFPW };
 enum GroupMomenta{ None, Squared, Abs };
 
+enum BinOrder{ Auto, Old, VeryOld };
+
+std::istream& operator>>(std::istream& is, BinOrder &binOrder )
+{
+  std::string s;
+  if( is >> s )
+  {
+    if( EqualIgnoreCase( s, "Old" ) )
+      binOrder = BinOrder::Old;
+    else if( EqualIgnoreCase( s, "VeryOld" ) )
+      binOrder = BinOrder::VeryOld;
+    else if( EqualIgnoreCase( s, "Auto" ) )
+      binOrder = BinOrder::Auto;
+    else
+      is.setstate( std::ios_base::failbit );
+  }
+  else
+    is.setstate( std::ios_base::failbit );
+  return is;
+}
+
 struct OperatorAttributes
 {
   Common::Gamma::Algebra alg;
@@ -319,9 +340,10 @@ public:
   std::string outStem;
   std::string MachineName;
   Common::SeedType seed;
+  Common::SampleC RandomSample;
   int nSample;
   bool binAuto;
-  bool binOld;
+  BinOrder binOrder;
   int binSize;
   int TimesliceDetail;
   bool bFactorised;
@@ -352,7 +374,7 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
   const std::vector<Common::ConfigCount> ConfigCount{ CountConfigs( first, last ) };
   const int NumConfigs{ static_cast<int>( ConfigCount.size() ) };
   // Sort ... unless we want the old sort order (e.g. to check old results can be replicated)
-  if( !binOld )
+  if( binOrder == BinOrder::Auto )
   {
     // sort all of the files by config, then timeslice
     std::sort( first, last, [&](const File &l, const File &r)
@@ -426,19 +448,20 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
           binSize = ConfigCount[0].Count * OpFactor;
           NumBinnedSamples = static_cast<int>( ConfigCount.size() );
         }
-        int binSize0{ binSize };
+        Common::SampleC out( nSample, Nt );
+        out.ConfigCount = ConfigCount;
+        out.FileList.reserve( NumFiles );
+        out.binSize = binSize;
         Common::SampleC in( NumBinnedSamples, Nt );
         int Bin{0};
         int WhichBin{0};
         std::complex<double> * pDst = in[0];
-        std::vector<std::string> FileList;
-        FileList.reserve( NumFiles );
         for( Iter it = first; it != last; )
         {
           const Common::CorrelatorFileC &file{ *it++ };
           const int CorrelatorTimeslice{ file.Timeslice() };
           const int TOffset{ bAlignTimeslices ? CorrelatorTimeslice : 0 };
-          FileList.emplace_back( file.Name_.Filename );
+          out.FileList.emplace_back( file.Name_.Filename );
           for( int o = 0; o < OpFactor; o++ )
           {
             const std::complex<double> * const pSrc = file( AlgSnk[o ? Src : Snk], AlgSrc[o ? Snk : Src] );
@@ -463,21 +486,19 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
               if( it != last && binAuto && NumConfigs > 1 )
               {
                 const int newBinSize{ ConfigCount[++WhichBin].Count * OpFactor };
-                if( binSize0 && binSize0 != newBinSize )
-                  binSize0 = 0;
+                if( out.binSize && out.binSize != newBinSize )
+                  out.binSize = 0; // Indicates the bin size varies per ConfigCount
                 binSize = newBinSize;
               }
             }
           }
         }
-        if( bSaveBootstrap )
-          std::cout << sBlanks << nSample << " samples to " << sOutFile << std::endl;
-        Common::SampleC out = in.Bootstrap( nSample, seed, &MachineName );
+        std::cout << sBlanks << nSample << " samples to " << sOutFile << std::endl;
+        if( RandomSample.RandNum() )
+          in.Bootstrap( out, RandomSample );
+        else
+          in.Bootstrap( out, seed, &MachineName );
         // Now save the audit data for the bootstrap
-        out.ConfigCount = ConfigCount;
-        out.SampleSize = static_cast<int>( ( FileList.size() + binSize - 1 ) / binSize );
-        out.binSize = binSize0;
-        out.FileList = std::move( FileList );
         out.MakeCorrSummary( nullptr );
         if( bSaveBootstrap )
           out.Write( sOutFile );
@@ -507,7 +528,8 @@ int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, 
   Iter first = f.begin();
   Iter last  = f.end();
   // sort files by timeslice if we are doing timeslice summaries ... or old sort order asked for
-  if( binOld || TimesliceDetail > 0 )
+  if( binOrder != BinOrder::Auto || TimesliceDetail > 0 )
+  {
     std::sort( f.begin(), f.end(), [&](const File &l, const File &r)
     {
       // Sort first by timeslice
@@ -515,16 +537,20 @@ int BootstrapParams::PerformBootstrap( std::vector<Common::CorrelatorFileC> &f, 
         return r.bHasTimeslice;
       if( l.bHasTimeslice && r.bHasTimeslice && l.Timeslice_ != r.Timeslice_ )
         return l.Timeslice_ < r.Timeslice_;
-      // Sort by base filename
+      // Very old sort order was config then filename
+      if( binOrder == BinOrder::VeryOld )
       {
-        int iCompare = l.Name_.Base.compare( r.Name_.Base );
-        if( iCompare )
-          return iCompare < 0;
+        if( l.Name_.Seed != r.Name_.Seed )
+          return l.Name_.Seed < r.Name_.Seed;
+        return l.Name_.Base.compare( r.Name_.Base ) < 0;
       }
-      // Sort by trajectory
-      //if( l.Name_.Seed != r.Name_.Seed )
-        return l.Name_.Seed < r.Name_.Seed;
+      // More recent sort order is filename then config
+      int iCompare = l.Name_.Base.compare( r.Name_.Base );
+      if( iCompare )
+        return iCompare < 0;
+      return l.Name_.Seed < r.Name_.Seed;
     } );
+  }
   if( TimesliceDetail > 0 )
     {
     // If more than one timeslice, save summary info for individual timeslices
@@ -695,7 +721,8 @@ int main(const int argc, const char *argv[])
 #endif
     const std::initializer_list<CL::SwitchDef> list = {
       {"n", CL::SwitchType::Single, DEF_NSAMPLE},
-      {"b", CL::SwitchType::Single, nullptr},
+      {"b", CL::SwitchType::Single, "0"},
+      {"border", CL::SwitchType::Single, "Auto"},
       {"r", CL::SwitchType::Single, nullptr},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
@@ -706,12 +733,12 @@ int main(const int argc, const char *argv[])
       {"t", CL::SwitchType::Single, "0"},
       {"m", CL::SwitchType::Single, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
-      {"terse", CL::SwitchType::Flag, nullptr},
+      {"f", CL::SwitchType::Flag, nullptr},
       {"p2",CL::SwitchType::Flag, nullptr},
       {"pa",CL::SwitchType::Flag, nullptr},
-      {"f", CL::SwitchType::Flag, nullptr},
-      {"sort", CL::SwitchType::Flag, nullptr},
       {"show", CL::SwitchType::Flag, nullptr},
+      {"sort", CL::SwitchType::Flag, nullptr},
+      {"terse", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -735,20 +762,13 @@ int main(const int argc, const char *argv[])
       par.outStem = cl.SwitchValue<std::string>( "o" );
       par.nSample = cl.SwitchValue<int>( "n" );
       // Binning
-      static const char binSwitch[] = "b";
-      par.binOld = false;
-      par.binAuto = !cl.GotSwitch( binSwitch );
-      if( !par.binAuto )
-      {
-        par.binSize = cl.SwitchValue<int>( binSwitch );
-        if( par.binSize == 0 )
-          par.binAuto = true;
-        else if( par.binSize < 0 )
-        {
-          par.binSize = -par.binSize;
-          par.binOld = true;
-        }
-      }
+      par.binSize = cl.SwitchValue<int>( "b" );
+      par.binAuto = par.binSize == 0;
+      if( par.binSize < 0 )
+        throw std::runtime_error( "Bin size must be positive if specified" );
+      par.binOrder = cl.SwitchValue<BinOrder>( "border" );
+      if( par.binAuto && par.binOrder != BinOrder::Auto )
+        throw std::runtime_error( "Auto binning only works with Auto order" );
       par.bFactorised = cl.GotSwitch( "f" );
       par.bVerboseSummaries = !cl.GotSwitch( "terse" );
       const std::string &DefaultGroup{ cl.SwitchValue<std::string>( "g" ) };
@@ -775,7 +795,24 @@ int main(const int argc, const char *argv[])
       if( par.MachineName.empty() )
         throw std::invalid_argument( "Machine name can't be empty" );
       if( cl.GotSwitch( "r" ) )
-        par.seed = cl.SwitchValue<Common::SeedType>( "r" );
+      {
+        bool bGotSeed{ true };
+        try
+        {
+          par.seed = cl.SwitchValue<Common::SeedType>( "r" );
+        }
+        catch(const std::exception &e)
+        {
+          bGotSeed = false;
+        }
+        if( !bGotSeed )
+        {
+          par.RandomSample.Read( cl.SwitchValue<std::string>( "r" ) );
+          if( !par.RandomSample.RandNum() )
+            throw std::runtime_error( "No random numbers in " + cl.SwitchValue<std::string>( "r" ) );
+          par.seed = par.RandomSample.Seed_;
+        }
+      }
       else
       {
         std::random_device rd;
@@ -912,8 +949,9 @@ int main(const int argc, const char *argv[])
     " <options> ContractionFile1 [ContractionFile2 ...]\n"
     "Perform a bootstrap of the specified files, where <options> are:\n"
     "-n     Number of samples (" DEF_NSAMPLE ")\n"
-    "-b     Bin size: 0 (default)=auto: 1 config=no binning, else one bin per config\n"
-    "               < 0 for old sort order (timeslice, filename, config)\n"
+    "-b     Bin size, or 0 (default)=auto (1 config=no binning, else 1 bin/config)\n"
+    "--border Bin Order: `Auto' (default)=config then timeslice then filename\n"
+    "        `Old'=timeslice/filename/config, `VeryOld'=timeslice/config/filename\n"
     "-r     Random number seed (unspecified=random)\n"
     "-i     Input  prefix\n"
     "-o     Output prefix\n"
@@ -925,12 +963,12 @@ int main(const int argc, const char *argv[])
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
-    "--terse Terse summaries (no file list)\n"
+    "-f     Factorising operators (e.g. g5-gT5 same as gT5-g5)\n"
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"
-    "-f     Factorising operators (e.g. g5-gT5 same as gT5-g5)\n"
-    "--sort Disable(enable) sort correlator before group in 2pt(3pt) mode\n"
     "--show Show how files would be bootstrapped, but don't execute\n"
+    "--sort Disable(enable) sort correlator before group in 2pt(3pt) mode\n"
+    "--terse Terse summaries (no file list)\n"
     "--help This message\n";
   }
   return iReturn;

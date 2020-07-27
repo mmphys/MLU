@@ -557,8 +557,8 @@ void MixedOp::Make( const Model &model_, const Parameters & Par )
               << " mixed operator to:\n    " << Out << NewLine << "   ";
     Out.append( ".theta_" );
     const std::size_t OutLen{ Out.length() };
-    bool bDo0  = true;
-    bool bDo90 = true;
+    bool bDo0  = !Par.bSaveCorr; // If we're not saving the correlators, always do 0 and 90 degrees
+    bool bDo90 = bDo0;
     for( int degrees = Par.tmin; ; degrees+=Par.step )
     {
       mixed->DoOneAngle( degrees, Out, OutLen, degrees == Par.tmin || !( degrees % 10 ) );
