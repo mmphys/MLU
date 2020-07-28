@@ -412,7 +412,6 @@ void FitterThread::FitOne( const int idx_, const int MaxGuesses, const ROOT::Min
 
   // Call the minimiser until it provides the same answer twice
   ROOT::Minuit2::MnUserParameterState Guess( parGuess.Parameters() );
-  ROOT::Minuit2::MnUserParameters upar;
   double dTestStat = -747;
   int iNumGuesses{ 0 };
   bool bFinished{ false };
@@ -422,26 +421,31 @@ void FitterThread::FitOne( const int idx_, const int MaxGuesses, const ROOT::Min
     const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
     if( !state.IsValid() )
       throw std::runtime_error( "Fit on replica " + std::to_string( idx ) + " did not converge" );
-    Guess = state;
     double dNewTestStat{ state.Fval() };
-    if( iNumGuesses != 1 )
+    if( MaxGuesses == 0 )
+      bFinished = true;
+    else if( iNumGuesses != 1 )
       bFinished = ( dTestStat == dNewTestStat );
     dTestStat = dNewTestStat;
-    if( bFinished || MaxGuesses == 0 )
-      upar = state.Parameters();
     if( idx == Fold::idxCentral && ( bFinished || parent.Verbosity ) )
       ReplicaMessage( state, dof, iNumGuesses );
+    if( bFinished )
+    {
+      // We're finished. Save the fit parameters for this replica, sorted by E_0
+      const ROOT::Minuit2::MnUserParameters &upar{ state.Parameters() };
+      for( int e = 0; e < parent.NumExponents; ++e )
+      {
+        SortingHat[e][0] = upar.Value( e );
+        for( int o = 0; o < parent.NumOps; ++o )
+          SortingHat[e][o + 1] = upar.Value( parent.MELIndex(o, e) + parent.NumExponents );
+      }
+    }
+    else
+      Guess = state;
   }
   // Central replica: Save the test statistic and show result in log
   if( idx == Fold::idxCentral )
     ChiSq = dTestStat;
-  // Save the fit parameters for this replica, sorted by E_0
-  for( int e = 0; e < parent.NumExponents; ++e )
-  {
-    SortingHat[e][0] = upar.Value( e );
-    for( int o = 0; o < parent.NumOps; ++o )
-      SortingHat[e][o + 1] = upar.Value( parent.MELIndex(o, e) + parent.NumExponents );
-  }
   std::sort( SortingHat.begin(), SortingHat.end(),
             []( const std::vector<double> &l, const std::vector<double> &r )
             { return l[0] < r[0]; } );
