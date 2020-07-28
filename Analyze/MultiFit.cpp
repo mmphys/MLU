@@ -109,7 +109,7 @@ protected:
 public:
   FitterThread( const Fitter &fitter, int MaxIt, double Tolerance, bool bFreezeCovar, bool bCorrelated,
                  const ROOT::Minuit2::MnStrategy &Strategy, Correlators &CorrSynthetic );
-  void ReplicaMessage( double dTestStat, int dof, int iFitNum ) const;
+  void ReplicaMessage( const ROOT::Minuit2::MnUserParameterState &state, int dof, int iFitNum ) const;
   void UpdateGuess( ROOT::Minuit2::MnUserParameterState &parGuess, int MaxGuesses, int dof );
   void FitOne( const int idx, const int MaxGuesses, const ROOT::Minuit2::MnUserParameterState &parGuess,
               ModelFile &ModelParams, const std::string &SaveCorMatFileName, double RelEnergySep, int dof, double &ChiSq );
@@ -243,16 +243,22 @@ FitterThread::FitterThread( const Fitter &fitter_, int MaxIt_, double Tolerance_
     SortingHat[e].resize( parent.NumOps + 1 );
 }
 
-void FitterThread::ReplicaMessage( double dTestStat, int dof, int iFitNum ) const
+void FitterThread::ReplicaMessage( const ROOT::Minuit2::MnUserParameterState &state, int dof, int iFitNum ) const
 {
-  std::cout << ( bCorrelated ? "C" : "Unc" ) << "orrelated fit "  << iFitNum <<  " on ";
-  if( idx == Fold::idxCentral )
-    std::cout << "central replica";
-  else
-    std::cout << "replica" << idx;
   std::stringstream ss;
-  ss << std::fixed << std::setprecision( std::numeric_limits<double>::max_digits10 ) << dTestStat;
-  std::cout << " dof=" << dof << " chi^2=" << ss.str();
+  ss << ( bCorrelated ? "C" : "Unc" ) << "orrelated fit "  << iFitNum <<  " on ";
+  if( idx == Fold::idxCentral )
+    ss << "central replica";
+  else
+    ss << "replica" << idx;
+  double ChiSq{ state.Fval() };
+  ss << std::setprecision( std::numeric_limits<double>::max_digits10 ) << ", calls " << state.NFcn() << ", chi^2 " << ChiSq
+     << Common::NewLine << "edm " << state.Edm() << ", dof " << dof << ", chi^2/dof " << ( ChiSq / dof );
+  std::cout << ss.str();
+  if( parent.Verbosity > 1 )
+    std::cout << state;
+  else
+    std::cout << state.Parameters();
 }
 
 // Make the covariance matrix, for only the timeslices we are interested in
@@ -346,30 +352,21 @@ void FitterThread::UpdateGuess( ROOT::Minuit2::MnUserParameterState &parGuess, i
       MakeCovar();
     double dTestStat = -747;
     int iNumGuesses{ 0 };
-    while( iNumGuesses++ <= MaxGuesses )
+    bool bFinished{ false };
+    while( !bFinished && iNumGuesses++ <= MaxGuesses )
     {
       ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, parGuess, Strategy, MaxIt, Tolerance );
       const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
       if( !state.IsValid() )
         throw std::runtime_error( "Uncorrelated fit for initial guess (on central replica) did not converge" );
       parGuess = state;
-      if( iNumGuesses != 1 && dTestStat == parGuess.Fval() )
-        break;
-      dTestStat = parGuess.Fval();
-      if( parent.Verbosity )
-      {
-        ReplicaMessage( dTestStat, dof, iNumGuesses );
-        if( parent.Verbosity > 1 )
-          std::cout << parGuess;
-        else
-          std::cout << parGuess.Parameters();
-      }
+      double dNewTestStat{ state.Fval() };
+      if( iNumGuesses != 1 )
+        bFinished = ( dTestStat == dNewTestStat );
+      dTestStat = dNewTestStat;
+      if( bFinished || parent.Verbosity )
+        ReplicaMessage( state, dof, iNumGuesses );
     }
-    ReplicaMessage( dTestStat, dof, iNumGuesses );
-    if( parent.Verbosity > 1 )
-      std::cout << parGuess;
-    else
-      std::cout << parGuess.Parameters();
   }
   catch(...)
   {
@@ -414,39 +411,30 @@ void FitterThread::FitOne( const int idx_, const int MaxGuesses, const ROOT::Min
   }
 
   // Call the minimiser until it provides the same answer twice
-  ROOT::Minuit2::MnUserParameterState state;
+  ROOT::Minuit2::MnUserParameterState Guess( parGuess.Parameters() );
+  ROOT::Minuit2::MnUserParameters upar;
   double dTestStat = -747;
   int iNumGuesses{ 0 };
-  while( iNumGuesses <= MaxGuesses )
+  bool bFinished{ false };
+  while( !bFinished && iNumGuesses++ <= MaxGuesses )
   {
-    ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize(*this, iNumGuesses++ ? state : parGuess,Strategy,MaxIt,Tolerance);
-    const ROOT::Minuit2::MnUserParameterState &stateResult{ min.UserState() };
-    if( !stateResult.IsValid() )
+    ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, Guess, Strategy, MaxIt, Tolerance );
+    const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
+    if( !state.IsValid() )
       throw std::runtime_error( "Fit on replica " + std::to_string( idx ) + " did not converge" );
-    state = stateResult;
-    if( iNumGuesses != 1 && dTestStat == state.Fval() )
-      break;
-    dTestStat = state.Fval();
-    if( idx == Fold::idxCentral && parent.Verbosity )
-    {
-      ReplicaMessage( dTestStat, dof, iNumGuesses );
-      if( parent.Verbosity > 1 )
-        std::cout << state;
-      else
-        std::cout << state.Parameters();
-    }
+    Guess = state;
+    double dNewTestStat{ state.Fval() };
+    if( iNumGuesses != 1 )
+      bFinished = ( dTestStat == dNewTestStat );
+    dTestStat = dNewTestStat;
+    if( bFinished || MaxGuesses == 0 )
+      upar = state.Parameters();
+    if( idx == Fold::idxCentral && ( bFinished || parent.Verbosity ) )
+      ReplicaMessage( state, dof, iNumGuesses );
   }
   // Central replica: Save the test statistic and show result in log
-  const ROOT::Minuit2::MnUserParameters &upar{ state.Parameters() };
   if( idx == Fold::idxCentral )
-  {
     ChiSq = dTestStat;
-    ReplicaMessage( dTestStat, dof, iNumGuesses );
-    if( parent.Verbosity > 1 )
-      std::cout << state;
-    else
-      std::cout << upar;
-  }
   // Save the fit parameters for this replica, sorted by E_0
   for( int e = 0; e < parent.NumExponents; ++e )
   {

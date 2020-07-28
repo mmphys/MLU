@@ -154,7 +154,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--retry 0"
+            argument = "--retry=0"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -170,7 +170,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-v 2"
+            argument = "-v 1"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
