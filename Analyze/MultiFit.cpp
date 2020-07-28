@@ -585,6 +585,8 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
   dof = Extent;
   // If there's only one file, then there's no info for the operators to factorise
   dof -= NumFiles == 1 ? NumExponents * 2 : NumParams;
+  if( dof <= 0 )
+    throw std::runtime_error( "Fit from " + std::to_string( tMin ) + " to " + std::to_string( tMax ) + " has no degrees of freedom" );
 
   // Make somewhere to store the results of the fit for each bootstrap sample
   ModelFile ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, NSamples, NumParams+1 );
