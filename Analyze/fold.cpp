@@ -107,7 +107,7 @@ int main(int argc, const char *argv[])
               ConjFileName.append( in.Name_.SeedString );
               ConjFileName.append( Common::Period );
               ConjFileName.append( in.Name_.Ext );
-              SC in2{ ConjFileName, "+ " };
+              SC in2{ ConjFileName, "+ ", &OpNames };
               BinSize2 = in2.binSize;
               in.IsCompatible( in2 );
               const std::size_t FSize { in .FileList.size() };
