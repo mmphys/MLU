@@ -355,7 +355,7 @@ void FitterThread::UpdateGuess( ROOT::Minuit2::MnUserParameterState &parGuess, i
     bool bFinished{ false };
     while( !bFinished && iNumGuesses++ <= MaxGuesses )
     {
-      ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, parGuess, Strategy, MaxIt, Tolerance );
+      ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, parGuess, Strategy, MaxIt, Tolerance * 1000 );
       const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
       if( !state.IsValid() )
         throw std::runtime_error( "Uncorrelated fit for initial guess (on central replica) did not converge" );
@@ -417,7 +417,7 @@ void FitterThread::FitOne( const int idx_, const int MaxGuesses, const ROOT::Min
   bool bFinished{ false };
   while( !bFinished && iNumGuesses++ <= MaxGuesses )
   {
-    ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, Guess, Strategy, MaxIt, Tolerance );
+    ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, Guess, Strategy, MaxIt, Tolerance * 1000 );
     const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
     if( !state.IsValid() )
       throw std::runtime_error( "Fit on replica " + std::to_string( idx ) + " did not converge" );
@@ -572,10 +572,14 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
     std::stringstream ss;
     ss << "Performing " << ( Bcorrelated_ ? "" : "un" )
        << "correlated fit on timeslices " << TMin_ << " to " << TMax_
+#ifdef DEBUG_DISABLE_OMP
+       << " with Open MP disabled";
+#else
        << " using " << omp_get_max_threads() << " Open MP threads";
+#endif
     const std::string &sMsg{ ss.str() };
     std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine
-              << "Using uncorrelated fit as guess for each replica\n";
+              << "Tolerance " << Tolerance << ". Using uncorrelated fit as guess for each replica\n";
   }
   bCorrelated = Bcorrelated_;
   tMin = TMin_;
@@ -838,7 +842,7 @@ int main(int argc, const char *argv[])
       {"delta", CL::SwitchType::Single, "3"},
       {"retry", CL::SwitchType::Single, "10"},
       {"iter", CL::SwitchType::Single, "0"},
-      {"tol", CL::SwitchType::Single, "0.0001"},
+      {"tol", CL::SwitchType::Single, "1e-7"},
       {"v", CL::SwitchType::Single, "0"},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
@@ -863,7 +867,7 @@ int main(int argc, const char *argv[])
       const int delta{ cl.SwitchValue<int>("delta") };
       const int Retry{ cl.SwitchValue<int>("retry") };
       const int MaxIterations{ cl.SwitchValue<int>("iter") }; // Max iteration count, 0=unlimited
-      const double Tolerance{ cl.SwitchValue<double>("tol") }; // Actual tolerance is 10^{-3} * this
+      const double Tolerance{ cl.SwitchValue<double>("tol") };
       const int Verbosity{ cl.SwitchValue<int>("v") };
       const std::string inBase{ cl.SwitchValue<std::string>("i") };
       std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
@@ -1029,7 +1033,7 @@ int main(int argc, const char *argv[])
     "--delta Minimum number of timeslices in fit range (default 3)\n"
     "--retry Maximum number of times to retry fits (default 10)\n"
     "--iter Max iteration count, 0 (default) = unlimited\n"
-    "--tol  Tolerance of required fits * 10^3 (default 0.0001)\n"
+    "--tol  Tolerance of required fits (default 1e-7)\n"
     "-v     Verbosity, 0 (default)=central fit results, 1=all fits, 2=detailed\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
