@@ -397,30 +397,37 @@ template<> struct GSLTraits<std::complex<float>>
 #define COMMON_GSL_TYPE double
 #define COMMON_GSL_BLAS( x ) gsl_blas_d ## x
 #define COMMON_GSL_BLAS_REAL( x ) gsl_blas_d ## x
+#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_d ## x
 #define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _ ## func
 #define COMMON_GSL_OPTIONAL
+#define COMMON_GSL_DOUBLE
 #include "CommonGSL.hpp"
+#undef COMMON_GSL_DOUBLE
+#undef COMMON_GSL_OPTIONAL
 #define COMMON_GSL_TYPE float
 #define COMMON_GSL_BLAS( x ) gsl_blas_s ## x
 #define COMMON_GSL_BLAS_REAL( x ) gsl_blas_s ## x
+#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_s ## x
 #define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _float ## _ ## func
-#undef COMMON_GSL_OPTIONAL
 #include "CommonGSL.hpp"
 #define COMMON_GSL_TYPE std::complex<double>
 #define COMMON_GSL_BLAS( x ) gsl_blas_z ## x
 #define COMMON_GSL_BLAS_REAL( x ) gsl_blas_dz ## x
+#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_z ## x ## u
 #define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _complex ## _ ## func
 #define COMMON_GSL_OPTIONAL
 #include "CommonGSL.hpp"
+#undef COMMON_GSL_OPTIONAL
 #define COMMON_GSL_TYPE std::complex<float>
 #define COMMON_GSL_BLAS( x ) gsl_blas_c ## x
 #define COMMON_GSL_BLAS_REAL( x ) gsl_blas_sc ## x
+#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_c ## x ## c
 #define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _complex_float ## _ ## func
-#undef COMMON_GSL_OPTIONAL
 #include "CommonGSL.hpp"
 #undef COMMON_GSL_TYPE
 #undef COMMON_GSL_BLAS
 #undef COMMON_GSL_BLAS_REAL
+#undef COMMON_GSL_BLAS_CPLX
 #undef COMMON_GSL_FUNC
 
 template <typename T = double>
