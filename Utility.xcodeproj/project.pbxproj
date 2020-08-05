@@ -1441,6 +1441,7 @@
 		6809611D24982C11007F8DB3 /* sqlite3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sqlite3.c; sourceTree = "<group>"; };
 		6809611E24982C11007F8DB3 /* sqlite3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sqlite3.h; sourceTree = "<group>"; };
 		6809611F24982C11007F8DB3 /* sqlite3ext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sqlite3ext.h; sourceTree = "<group>"; };
+		680C64DF24D56162000DD948 /* CommonGSL.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommonGSL.hpp; sourceTree = "<group>"; };
 		681550FD22CBC9B9009AB4AD /* MultiFit.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MultiFit.hpp; sourceTree = "<group>"; };
 		681550FE22CBC9B9009AB4AD /* MultiFit.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MultiFit.cpp; sourceTree = "<group>"; };
 		6815510322CBCB61009AB4AD /* MultiFit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MultiFit; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3008,6 +3009,7 @@
 				6815510B22CBE676009AB4AD /* Common.hpp */,
 				681AAC8C2355D5F10045F604 /* CommonGrid.cpp */,
 				681AAC8D2355D5F10045F604 /* CommonGrid.hpp */,
+				680C64DF24D56162000DD948 /* CommonGSL.hpp */,
 				681DC8B922F20D8A00EE04A9 /* CommonLatAn.cpp */,
 				681DC8BA22F20D8B00EE04A9 /* CommonLatAn.hpp */,
 				6856DC4E23C391AE0040814E /* corrstat.cpp */,

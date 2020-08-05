@@ -36,6 +36,37 @@
 
 BEGIN_COMMON_NAMESPACE
 
+// I will use the GNU Scientific Library, but I will have GSL errors throw exceptions
+class GSLLibraryGlobal
+{
+private:
+  gsl_error_handler_t * pOldErrorHandler;
+  static void GSLErrorHandler(const char * reason, const char * file, int line, int gsl_errno );
+
+public:
+  GSLLibraryGlobal();
+  ~GSLLibraryGlobal();
+};
+
+GSLLibraryGlobal gslLibraryGlobal;
+
+GSLLibraryGlobal::GSLLibraryGlobal()
+{
+  pOldErrorHandler = gsl_set_error_handler( GSLErrorHandler );
+}
+
+GSLLibraryGlobal::~GSLLibraryGlobal()
+{
+  gsl_set_error_handler( pOldErrorHandler );
+}
+
+void GSLLibraryGlobal::GSLErrorHandler(const char * reason, const char * file, int line, int gsl_errno )
+{
+  std::stringstream ss;
+  ss << "gsl: " << file << ":" << line << ": errno " << gsl_errno << ": " << reason;
+  throw std::runtime_error( ss.str() );
+}
+
 // Text required for summaries of correlators
 namespace CorrSumm {
   const char sep[] = " ";

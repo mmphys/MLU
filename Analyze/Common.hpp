@@ -50,6 +50,17 @@
 #include <glob.h>
 #include <unistd.h>
 
+// GSL
+#define HAVE_INLINE
+#define GSL_RANGE_CHECK_OFF
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_block.h>
+#include <gsl/gsl_cblas.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h>
+
 // HDF5 Library
 #include <H5Cpp.h>
 #include <H5CompType.h>
@@ -326,7 +337,7 @@ template <typename T> inline bool IsFinite( const std::vector<T> & v )
   return true;
 }
 
-// Are all the floating point numbers in this matrix finite
+// Are all the floating point numbers in this Eigen::matrix finite
 template <typename T> inline bool IsFinite( const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> & m, bool bDiagonalsOnly = false )
 {
   for( Eigen::Index row = 0; row < m.rows(); ++row )
@@ -335,6 +346,82 @@ template <typename T> inline bool IsFinite( const Eigen::Matrix<T, Eigen::Dynami
         return false;
   return true;
 }
+
+// My support for vectors and matrices - wrapper for GSL
+template <typename T> struct GSLTraits;
+template <typename T> struct Vector;
+template <typename T> struct Matrix;
+
+template<> struct GSLTraits<double>
+{
+  using Scalar     = double;
+  using Real       = double;
+  using GSLScalar  = double;
+  using GSLBlockType  = gsl_block;
+  using GSLVectorType = gsl_vector;
+  using GSLMatrixType = gsl_matrix;
+};
+
+template<> struct GSLTraits<float>
+{
+  using Scalar     = float;
+  using Real       = float;
+  using GSLScalar  = float;
+  using GSLBlockType  = gsl_block_float;
+  using GSLVectorType = gsl_vector_float;
+  using GSLMatrixType = gsl_matrix_float;
+};
+
+template<> struct GSLTraits<std::complex<double>>
+{
+  using Scalar     = std::complex<double>;
+  using Real       = double;
+  using GSLScalar  = gsl_complex;
+  using GSLBlockType  = gsl_block_complex;
+  using GSLVectorType = gsl_vector_complex;
+  using GSLMatrixType = gsl_matrix_complex;
+};
+
+template<> struct GSLTraits<std::complex<float>>
+{
+  using Scalar     = std::complex<float>;
+  using Real       = float;
+  using GSLScalar  = gsl_complex_float;
+  using GSLBlockType  = gsl_block_complex_float;
+  using GSLVectorType = gsl_vector_complex_float;
+  using GSLMatrixType = gsl_matrix_complex_float;
+};
+
+//#define EXPAND(...) __VA_ARGS__
+
+#define COMMON_GSL_TYPE double
+#define COMMON_GSL_BLAS( x ) gsl_blas_d ## x
+#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_d ## x
+#define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _ ## func
+#define COMMON_GSL_OPTIONAL
+#include "CommonGSL.hpp"
+#define COMMON_GSL_TYPE float
+#define COMMON_GSL_BLAS( x ) gsl_blas_s ## x
+#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_s ## x
+#define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _float ## _ ## func
+#undef COMMON_GSL_OPTIONAL
+#include "CommonGSL.hpp"
+#define COMMON_GSL_TYPE std::complex<double>
+#define COMMON_GSL_BLAS( x ) gsl_blas_z ## x
+#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_dz ## x
+#define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _complex ## _ ## func
+#define COMMON_GSL_OPTIONAL
+#include "CommonGSL.hpp"
+#define COMMON_GSL_TYPE std::complex<float>
+#define COMMON_GSL_BLAS( x ) gsl_blas_c ## x
+#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_sc ## x
+#define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _complex_float ## _ ## func
+#undef COMMON_GSL_OPTIONAL
+#include "CommonGSL.hpp"
+#undef COMMON_GSL_TYPE
+#undef COMMON_GSL_BLAS
+#undef COMMON_GSL_BLAS_REAL
+#undef COMMON_GSL_FUNC
 
 template <typename T = double>
 class ValWithEr

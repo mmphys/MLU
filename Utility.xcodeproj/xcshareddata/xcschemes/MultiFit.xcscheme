@@ -94,6 +94,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--gsl"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-f"
             isEnabled = "YES">
          </CommandLineArgument>
@@ -162,7 +166,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--tol 1e-5"
+            argument = "--tol 1e-12"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

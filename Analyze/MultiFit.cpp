@@ -33,6 +33,7 @@
 // Uncomment the next line if your cmath doesn't define M_PI etc by default
 //#define _USE_MATH_DEFINES
 #include <cmath>
+#include <cstring>
 #include <ios>
 //#include <sys/stat.h>
 
@@ -45,18 +46,146 @@
 #include <Minuit2/MinimumState.h>
 #include <Minuit2/MnPrint.h>
 
-//#define DEBUG_DISABLE_OMP
+#include <gsl/gsl_multifit_nlinear.h>
+
+#define DEBUG_DISABLE_OMP
 
 // Indices for operators in correlator names
 static constexpr int idxSrc{ 0 };
 static constexpr int idxSnk{ 1 };
 static const char * pSrcSnk[] = { "src", "snk" };
 
+enum class FitterType{ Minuit2, GSL };
+
+static const std::string sFitterTypeMinuit2{ "Minuit2" };
+static const std::string sFitterTypeGSL{ "GSL" };
+
+inline std::ostream & operator<<( std::ostream &os, const FitterType f )
+{
+  switch( f )
+  {
+    case FitterType::Minuit2:
+      os << sFitterTypeMinuit2;
+      break;
+    case FitterType::GSL:
+      os << sFitterTypeGSL;
+      break;
+    default:
+      os.setstate( std::ios_base::failbit );
+      break;
+  }
+  return os;
+}
+
 using scalar = double;
 using Fold = Common::Fold<scalar>;
 using Correlators = std::vector<Fold>;
 using ModelFile = Common::Model<scalar>;
-using Matrix = Eigen::MatrixXd; // dynamic sized matrix of complex double
+//using Matrix = Eigen::MatrixXd; // dynamic sized matrix of complex double
+using Matrix = Common::Matrix<scalar>;
+using Vector = Common::Vector<scalar>;
+
+class Parameters
+{
+public:
+  struct Parameter
+  {
+    std::string Name;
+    scalar      Value;
+    scalar      Error;
+    Parameter() {} // Random Value and Error is ok - would like this to show up
+    Parameter( const std::string &name_, scalar value_, scalar error_ ) : Name{name_}, Value{value_}, Error{error_} {}
+  };
+  std::size_t MaxLen;
+  std::vector<Parameter>  Params;
+protected:
+  inline void CheckLength( const std::string &name_ )
+  {
+    std::size_t Len = name_.length();
+    if( MaxLen < Len )
+      MaxLen = Len;
+  }
+public:
+  // constructors
+  explicit Parameters( std::size_t Num = 0 ) : MaxLen{ 0 }, Params( Num ){};
+  Parameters( const Parameters &p ) : Params( p.Params ) { MaxLen = p.MaxLen; }
+  Parameters( const ROOT::Minuit2::MnUserParameters &Minuit2Params ) : MaxLen{ 0 } { *this = Minuit2Params; }
+  Parameters( const ROOT::Minuit2::MnUserParameterState &Minuit2State ) : Parameters( Minuit2State.Parameters() ) {}
+  inline Parameters& operator=( const ROOT::Minuit2::MnUserParameters &Minuit2Params );
+  inline Parameters& operator=( const ROOT::Minuit2::MnUserParameterState &State ) { return *this=State.Parameters(); };
+  inline Parameter & operator[]( std::size_t i ) { return Params[i]; }
+  inline void Add( const std::string &name_, scalar value_, scalar error_ )
+  {
+    Params.emplace_back( name_, value_, error_ );
+    CheckLength( name_ );
+  }
+  inline scalar Value( std::size_t i ) const { return Params[i].Value; }
+};
+
+inline std::ostream & operator<<( std::ostream &os, const Parameters &Params )
+{
+  using Parameter = Parameters::Parameter;
+  os << Common::NewLine;
+  for( const Parameter &p : Params.Params )
+    os << std::string( Params.MaxLen - p.Name.length() + 2, ' ' ) << p.Name
+       << Common::Space << p.Value << "\t+/- " << p.Error << Common::NewLine;
+  return os;
+}
+
+Parameters & Parameters::operator=( const ROOT::Minuit2::MnUserParameters &Minuit2Params )
+{
+  Params.clear();
+  MaxLen = 0;
+  const std::vector<ROOT::Minuit2::MinuitParameter> & params{ Minuit2Params.Parameters() };
+  Params.reserve( params.size() );
+  for( const ROOT::Minuit2::MinuitParameter &p : params )
+    Add( p.GetName(), p.Value(), p.Error() );
+  return *this;
+}
+
+struct ParamState
+{
+  bool bValid;
+  Parameters parameters;
+  scalar TestStat;
+  unsigned int NumCalls;
+  scalar edm;
+  bool bGotMinuit2State;
+  ROOT::Minuit2::MnUserParameterState Minuit2State;
+  ParamState( Parameters parameters_ ) : bValid{false}, bGotMinuit2State{false}, parameters( parameters_ ) {}
+  ParamState( const ROOT::Minuit2::MnUserParameterState &State )
+  : bValid{State.IsValid()}, parameters( State ), TestStat{State.Fval()}, NumCalls{State.NFcn()}, edm{State.Edm()},
+    bGotMinuit2State{true}, Minuit2State{State} {}
+  bool IsValid() const { return bValid; }
+  inline ParamState& operator=( const ROOT::Minuit2::MnUserParameterState &State )
+  {
+    bValid = State.IsValid();
+    if( bValid )
+    {
+      parameters = State.Parameters();
+      TestStat = State.Fval();
+      NumCalls = State.NFcn();
+      edm = State.Edm();
+    }
+    bGotMinuit2State = true;
+    Minuit2State = State;
+    return *this;
+  };
+  const Parameters &Parameters() const { return parameters; }
+  scalar Fval() const { return TestStat; }
+  unsigned int NFcn() const { return NumCalls; }
+  scalar Edm() const { return edm; }
+  void Add( const std::string &name_, scalar value_, scalar error_ ) { parameters.Add( name_, value_, error_ ); }
+};
+
+inline std::ostream & operator<<( std::ostream &os, const ParamState &State )
+{
+  if( State.bGotMinuit2State )
+    os << State.Minuit2State;
+  else
+    os << State.Parameters() << "Add more detailed state logging here\n";
+  return os;
+}
 
 // Forward declaration of fitter for multi-exponential fit
 class Fitter;
@@ -71,21 +200,24 @@ public:
   const int HalfNt;
   const int NumFiles;
   const int NumExponents;
+  const int NumOps;
 protected:
   std::vector<std::vector<int>> snk;
   std::vector<std::vector<int>> src;
   std::vector<Common::Parity> parity;
   std::vector<double> SinhCoshAdjust;
-  const double * Energy;
-  const double * Coeff;
+  Vector Energy;
+  Vector Coeff;
 public:
   Model( const Fitter &parent );
-  void Init( const std::vector<double> &ModelParameters );
-  double operator()( int f, int t ) const;
+  void Init( const scalar * ModelParameters, std::size_t NumParams, std::size_t Stride = 1 );
+  inline void Init( const Vector &x ) { Init( x.data, x.size, x.stride ); }
+  inline double operator()( int f, int t ) const;
+  inline double Derivative( int f, int t, int p ) const;
 };
 
 // Several of these will be running at the same time on different threads during a fit
-class FitterThread : public ROOT::Minuit2::FCNBase
+class FitterThread
 {
 public:
   const Fitter &parent;
@@ -93,35 +225,43 @@ public:
   int idx;
   Matrix Covar;
   Matrix CovarInv;
-  std::vector<double> VarianceInv;
+  Vector VarianceInv;
+  mutable Vector Error;
   std::vector<std::vector<double>> SortingHat;
 protected:
-  const int MaxIt;
-  const double Tolerance;
-  const bool bFreezeCovar;
   bool bCorrelated;
+  ModelFile &ModelParams; // Fill this with parameters for each replica
   Correlators &CorrSynthetic; // Fill this with data for model correlator
-  const ROOT::Minuit2::MnStrategy &Strategy;
-  ROOT::Minuit2::VariableMetricMinimizer Minimiser;
-  mutable Model model;
+  mutable Model model; // mutable only because Minuit2 operator() is const
   // Helper functions
-  void MakeCovar( void );
 public:
-  FitterThread( const Fitter &fitter, int MaxIt, double Tolerance, bool bFreezeCovar, bool bCorrelated,
-                 const ROOT::Minuit2::MnStrategy &Strategy, Correlators &CorrSynthetic );
-  void ReplicaMessage( const ROOT::Minuit2::MnUserParameterState &state, int dof, int iFitNum ) const;
-  void UpdateGuess( ROOT::Minuit2::MnUserParameterState &parGuess, int MaxGuesses, int dof );
-  void FitOne( const int idx, const int MaxGuesses, const ROOT::Minuit2::MnUserParameterState &parGuess,
-              ModelFile &ModelParams, const std::string &SaveCorMatFileName, double RelEnergySep, int dof, double &ChiSq );
-// These are part of the FCNBase interface
-  virtual double Up() const { return 1.; }
-  virtual double operator()( const std::vector<double> &ModelParameters ) const;
-  //virtual void SetErrorDef(double def) {theErrorDef = def;}
+  FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &ModelParams, Correlators &CorrSynthetic );
+  virtual ~FitterThread() {}
+  virtual void MakeCovar( void ); // call the base class if you override this!
+  inline std::string ReplicaString( int iFitNum ) const
+  {
+    std::string sError{ bCorrelated ? "C" : "Unc" };
+    sError.append( "orrelated fit " + std::to_string( iFitNum ) + " on " );
+    if( idx == Fold::idxCentral )
+      sError.append( "central replica" );
+    else
+      sError.append( "replica " + std::to_string( idx ) );
+    return sError;
+  }
+  void ReplicaMessage( const ParamState &state, int iFitNum ) const;
+  bool SaveError( Vector &ModelError ) const;
+  bool SaveJacobian( Matrix &Jacobian ) const;
+  void UpdateGuess( Parameters &parGuess, int MaxGuesses );
+  scalar RepeatFit( ParamState &Guess, int MaxGuesses );
+  scalar FitOne( int idx, int MaxGuesses, const Parameters &parGuess, const std::string &SaveCorMatFileName );
+  // Implement this to support a new type of fitter
+  virtual void Minimise( ParamState &Guess, int iNumGuesses ) = 0;
 };
 
 class Fitter
 {
 public:
+  const FitterType fitType;
   //static constexpr double pi{ M_PI };
   const int NumOps;
   const std::vector<std::string> &OpNames;
@@ -130,6 +270,13 @@ public:
   const int Verbosity;
   const std::string OutputBaseName;
   const Common::SeedType Seed;
+  const bool bFreezeCovar;
+  const bool bSaveCorr;
+  const bool bSaveCMat;
+  const int Retry;
+  const int MaxIt;
+  const double Tolerance;
+  const double RelEnergySep;
   const int NumFiles;
   const int NSamples;
   const int Nt;
@@ -143,6 +290,7 @@ public:
   int tMax = -1;
   int NtCorr;
   int Extent;
+  int dof;
   bool bCorrelated;
 
   // Helper functions
@@ -151,14 +299,13 @@ public:
   inline int MELIndex( int op, int EnergyLevel) const { return EnergyLevel * NumOps + op; };
 
 public:
-  explicit Fitter( Correlators &&Corr, const std::vector<std::string> &OpNames,
-                         bool bFactor, const std::string &sOpNameConcat,
-                         int NumExponents, int Verbosity, const std::string &OutputBaseName,
-                         Common::SeedType Seed, int NSamples );
+  explicit Fitter( FitterType fitType, Correlators &&Corr, const std::vector<std::string> &OpNames, bool bFactor,
+                   const std::string &sOpNameConcat, int NumExponents, int Verbosity, const std::string &OutputBaseName,
+                   Common::SeedType Seed, bool bFreezeCovar, bool bSaveCorr, bool bSaveCMat,
+                   int Retry, int MaxIt, double Tolerance, double RelEnergySep, int NSamples );
   virtual ~Fitter() {}
   std::vector<Common::ValWithEr<scalar>>
-  PerformFit(bool bCorrelated, bool bFreezeCovar, int tMin, int tMax, int Retry, bool bSaveCorr,
-             bool bSaveCMat, int MaxIt, double Tolerance, double RelEnergySep, double &ChiSq, int &dof );
+  PerformFit(bool bCorrelated, int tMin, int tMax, double &ChiSq, int &dof );
 };
 
 Model::Model( const Fitter &parent )
@@ -166,6 +313,7 @@ Model::Model( const Fitter &parent )
   HalfNt{ Nt - 1 }, // NB: This is half of the ORIGINAL correlator time dimension
   NumFiles{parent.NumFiles},
   NumExponents{parent.NumExponents},
+  NumOps{parent.NumOps},
   snk(NumFiles),
   src(NumFiles),
   parity(NumFiles),
@@ -186,10 +334,11 @@ Model::Model( const Fitter &parent )
   }
 }
 
-void Model::Init( const std::vector<double> &ModelParameters )
+void Model::Init( const scalar * ModelParameters, std::size_t NumParams, std::size_t Stride )
 {
-  Energy = ModelParameters.data();
-  Coeff  = Energy + NumExponents;
+  scalar * data{ const_cast<scalar *>( ModelParameters ) };
+  Energy.MapView( data, NumExponents, Stride );
+  Coeff.MapView( data + NumExponents * Stride, NumExponents * NumOps, Stride );
   for( int e = 0; e < NumExponents; ++e )
     SinhCoshAdjust[e] = std::exp( - Energy[e] * HalfNt );
 }
@@ -217,18 +366,75 @@ double Model::operator()( int f, int t ) const
   return z;
 }
 
-FitterThread::FitterThread( const Fitter &fitter_, int MaxIt_, double Tolerance_, bool bFreezeCovar_,
-                      bool bCorrelated_, const ROOT::Minuit2::MnStrategy &Strategy_, Correlators &CorrSynthetic_)
+double Model::Derivative( int f, int t, int p ) const
+{
+  double d = 0;
+  if( p < NumExponents )
+  {
+    // Derivative wrt Energy
+    const int e{p};
+    switch( parity[f] )
+    {
+      case Common::Parity::Even:
+        d = - HalfNt * SinhCoshAdjust[e] * std::cosh( - Energy[e] * ( t - HalfNt ) );
+        break;
+      case Common::Parity::Odd:
+        d = - HalfNt * SinhCoshAdjust[e] * std::sinh( - Energy[e] * ( t - HalfNt ) );
+        break;
+      default:
+        d = -t * std::exp( - Energy[e] * t );
+        break;
+    }
+    d *= Coeff[src[f][e]] * Coeff[snk[f][e]];
+  }
+  else
+  {
+    // Derivative wrt overlap coefficient
+    p -= NumExponents;
+    const int e{ p / NumOps };
+    //const int o{ p % NumOps };
+    // Work out whether this operator is source or sink or both
+    double OtherOverlap = 0;
+    int Factor{ 0 };
+    if( snk[f][e] == p )
+    {
+      OtherOverlap = Coeff[src[f][e]];
+      ++Factor;
+    }
+    if( src[f][e] == p )
+    {
+      OtherOverlap = Coeff[snk[f][e]]; // Doesn't matter if we do this twice ... it's the same operator!
+      ++Factor;
+    }
+    if( Factor )
+    {
+      switch( parity[f] )
+      {
+        case Common::Parity::Even:
+          d = SinhCoshAdjust[e] * std::cosh( - Energy[e] * ( t - HalfNt ) );
+          break;
+        case Common::Parity::Odd:
+          d = SinhCoshAdjust[e] * std::sinh( - Energy[e] * ( t - HalfNt ) );
+          break;
+        default:
+          d = std::exp( - Energy[e] * t );
+          break;
+      }
+      d *= Factor * OtherOverlap;
+    }
+  }
+  return d;
+}
+
+FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile &modelParams_, Correlators &CorrSynthetic_ )
 : parent{ fitter_ },
   idx{ Fold::idxCentral },
   VarianceInv( fitter_.Extent ),
+  Error( fitter_.Extent ),
   SortingHat( fitter_.NumExponents ),
-  MaxIt{MaxIt_},
-  Tolerance{Tolerance_},
-  bFreezeCovar{bFreezeCovar_},
   bCorrelated{bCorrelated_},
+  ModelParams{modelParams_},
   CorrSynthetic( CorrSynthetic_ ),
-  Strategy{Strategy_},
   model( fitter_ )
 {
   if( bCorrelated )
@@ -236,29 +442,56 @@ FitterThread::FitterThread( const Fitter &fitter_, int MaxIt_, double Tolerance_
     Covar.resize( parent.Extent, parent.Extent );
     CovarInv.resize( parent.Extent, parent.Extent );
   }
-  if( bFreezeCovar )
-    MakeCovar();
   // Make somewhere to sort the results of each fit by energy level
   for( int e = 0; e < parent.NumExponents; ++e )
     SortingHat[e].resize( parent.NumOps + 1 );
 }
 
-void FitterThread::ReplicaMessage( const ROOT::Minuit2::MnUserParameterState &state, int dof, int iFitNum ) const
+void FitterThread::ReplicaMessage( const ParamState &state, int iFitNum ) const
 {
-  std::stringstream ss;
-  ss << ( bCorrelated ? "C" : "Unc" ) << "orrelated fit "  << iFitNum <<  " on ";
-  if( idx == Fold::idxCentral )
-    ss << "central replica";
-  else
-    ss << "replica" << idx;
   double ChiSq{ state.Fval() };
-  ss << std::setprecision( std::numeric_limits<double>::max_digits10 ) << ", calls " << state.NFcn() << ", chi^2 " << ChiSq
-     << Common::NewLine << "edm " << state.Edm() << ", dof " << dof << ", chi^2/dof " << ( ChiSq / dof );
-  std::cout << ss.str();
+  std::cout << Common::NewLine << ReplicaString( iFitNum ) << ", calls " << state.NFcn() << ", chi^2 " << ChiSq
+            << Common::NewLine << "edm " << state.Edm() << ", dof " << parent.dof << ", chi^2/dof " << ( ChiSq / parent.dof );
   if( parent.Verbosity > 1 )
     std::cout << state;
   else
     std::cout << state.Parameters();
+}
+
+bool FitterThread::SaveError( Vector &ModelError ) const
+{
+  int iWrite{ 0 };
+  for( int f = 0; f < parent.NumFiles; ++f )
+  {
+    const scalar * CorrData = parent.Corr[f][idx] + parent.tMin;
+    for( int t = 0; t < parent.NtCorr; ++t, ++iWrite )
+    {
+      double z = ( model( f, t + parent.tMin ) - *CorrData++ ) * VarianceInv[iWrite];
+      if( !std::isfinite( z ) )
+        return false;
+      ModelError[iWrite] = z;
+    }
+  }
+  return true;
+}
+
+bool FitterThread::SaveJacobian( Matrix &Jacobian ) const
+{
+  int iWrite{ 0 };
+  for( int f = 0; f < parent.NumFiles; ++f )
+  {
+    for( int t = 0; t < parent.NtCorr; ++t, ++iWrite )
+    {
+      for( int p = 0; p < parent.NumParams; ++p )
+      {
+        double z = model.Derivative( f, t + parent.tMin, p ) * VarianceInv[iWrite];
+        if( !std::isfinite( z ) )
+          return false;
+        Jacobian( iWrite, p ) = z;
+      }
+    }
+  }
+  return true;
 }
 
 // Make the covariance matrix, for only the timeslices we are interested in
@@ -321,10 +554,10 @@ void FitterThread::MakeCovar( void )
           Covar( y, x ) = z;
         }
       }
-    if( !Common::IsFinite( Covar ) )
+    if( !Covar.IsFinite() )
       throw std::runtime_error( "Covariance matrix isn't finite" );
     CovarInv = Covar.inverse();
-    if( !Common::IsFinite( CovarInv ) )
+    if( !CovarInv.IsFinite() )
       throw std::runtime_error( "Inverse covariance matrix isn't finite" );
     if( idx == Fold::idxCentral )
     {
@@ -336,37 +569,43 @@ void FitterThread::MakeCovar( void )
                 << ", potential loss of " << CondDigits << " digits\n";
     }
   }
-  if( !Common::IsFinite( VarianceInv ) )
+  if( !VarianceInv.IsFinite() )
     throw std::runtime_error( "Variance vector isn't finite" );
 }
 
+scalar FitterThread::RepeatFit( ParamState &Guess, int MaxGuesses )
+{
+  if( !parent.bFreezeCovar )
+    MakeCovar();
+  // Call the minimiser until it provides the same answer twice
+  double dTestStat = -747;
+  int iNumGuesses{ 0 };
+  bool bFinished{ false };
+  while( !bFinished && iNumGuesses++ <= MaxGuesses )
+  {
+    Minimise( Guess, iNumGuesses );
+    double dNewTestStat{ Guess.Fval() };
+    if( MaxGuesses == 0 )
+      bFinished = true;
+    else if( iNumGuesses != 1 )
+      bFinished = ( dTestStat == dNewTestStat );
+    dTestStat = dNewTestStat;
+    if( idx == Fold::idxCentral && ( bFinished || parent.Verbosity ) )
+      ReplicaMessage( Guess, iNumGuesses );
+  }
+  return dTestStat;
+}
+
 // Perform an uncorrelated fit on the central timeslice to update parameters guessed
-void FitterThread::UpdateGuess( ROOT::Minuit2::MnUserParameterState &parGuess, int MaxGuesses, int dof )
+void FitterThread::UpdateGuess( Parameters &Guess, int MaxGuesses )
 {
   bool bSaveCorrelated{ bCorrelated };
   bCorrelated = false;
   idx = Fold::idxCentral;
+  ParamState ThisGuess( Guess );
   try
   {
-    if( !bFreezeCovar )
-      MakeCovar();
-    double dTestStat = -747;
-    int iNumGuesses{ 0 };
-    bool bFinished{ false };
-    while( !bFinished && iNumGuesses++ <= MaxGuesses )
-    {
-      ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, parGuess, Strategy, MaxIt, Tolerance * 1000 );
-      const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
-      if( !state.IsValid() )
-        throw std::runtime_error( "Uncorrelated fit for initial guess (on central replica) did not converge" );
-      parGuess = state;
-      double dNewTestStat{ state.Fval() };
-      if( iNumGuesses != 1 )
-        bFinished = ( dTestStat == dNewTestStat );
-      dTestStat = dNewTestStat;
-      if( bFinished || parent.Verbosity )
-        ReplicaMessage( state, dof, iNumGuesses );
-    }
+    RepeatFit( ThisGuess, MaxGuesses );
   }
   catch(...)
   {
@@ -374,17 +613,47 @@ void FitterThread::UpdateGuess( ROOT::Minuit2::MnUserParameterState &parGuess, i
     throw;
   }
   bCorrelated = bSaveCorrelated;
+  Guess = ThisGuess.Parameters();
 }
 
 // Perform a fit. NB: Only the fit on central replica updates ChiSq
-void FitterThread::FitOne( const int idx_, const int MaxGuesses, const ROOT::Minuit2::MnUserParameterState &parGuess,
-                ModelFile &ModelParams, const std::string &SaveCorMatFileName, double RelEnergySep, int dof, double &ChiSq )
+scalar FitterThread::FitOne( int idx_, int MaxGuesses, const Parameters &parGuess, const std::string &SaveCorMatFileName )
 {
   idx = idx_;
-  // Re-use correlation matrix from uncorrelated fit, or from central replica if frozen
-  if( !bFreezeCovar )
-    MakeCovar();
-
+  // Perform fit
+  ParamState Result{ parGuess };
+  scalar dTestStat = RepeatFit( Result, MaxGuesses );
+  // Save the fit parameters for this replica, sorted by E_0
+  for( int e = 0; e < parent.NumExponents; ++e )
+  {
+    SortingHat[e][0] = Result.parameters[e].Value;
+    for( int o = 0; o < parent.NumOps; ++o )
+      SortingHat[e][o + 1] = Result.parameters[parent.MELIndex(o, e) + parent.NumExponents].Value;
+  }
+  std::sort( SortingHat.begin(), SortingHat.end(),
+            []( const std::vector<double> &l, const std::vector<double> &r )
+            { return l[0] < r[0]; } );
+  double * const FitParams{ ModelParams[idx] };
+  for( int e = 0; e < parent.NumExponents; ++e )
+  {
+    FitParams[e] = SortingHat[e][0];
+    for( int o = 0; o < parent.NumOps; ++o )
+      FitParams[parent.MELIndex(o, e) + parent.NumExponents] = SortingHat[e][o + 1];
+  }
+  FitParams[parent.MELIndex(0, parent.NumExponents) + parent.NumExponents] = dTestStat / parent.dof;
+  // Check whether energy levels are separated by minimum separation
+  if( idx == Fold::idxCentral )
+  {
+    for( int e = 1; e < parent.NumExponents; e++ )
+    {
+      double RelSep = FitParams[e] / FitParams[e - 1];
+      if( ( RelSep - 1 ) < parent.RelEnergySep || RelSep * parent.RelEnergySep > 1 )
+        throw std::runtime_error( "Fit failed energy separation criteria: "
+                                 + std::to_string( 1 + parent.RelEnergySep ) + " < E_n / E_{n-1} < "
+                                 + std::to_string( 1 / parent.RelEnergySep ) );
+    }
+  }
+  
   // Save correlation matrix for central replica
   // NB: file name will only be empty on the central replica, so only one thread will do this
   if( bCorrelated && !SaveCorMatFileName.empty() )
@@ -410,70 +679,8 @@ void FitterThread::FitOne( const int idx_, const int MaxGuesses, const ROOT::Min
       }
   }
 
-  // Call the minimiser until it provides the same answer twice
-  ROOT::Minuit2::MnUserParameterState Guess( parGuess.Parameters() );
-  double dTestStat = -747;
-  int iNumGuesses{ 0 };
-  bool bFinished{ false };
-  while( !bFinished && iNumGuesses++ <= MaxGuesses )
-  {
-    ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, Guess, Strategy, MaxIt, Tolerance * 1000 );
-    const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
-    if( !state.IsValid() )
-      throw std::runtime_error( "Fit on replica " + std::to_string( idx ) + " did not converge" );
-    double dNewTestStat{ state.Fval() };
-    if( MaxGuesses == 0 )
-      bFinished = true;
-    else if( iNumGuesses != 1 )
-      bFinished = ( dTestStat == dNewTestStat );
-    dTestStat = dNewTestStat;
-    if( idx == Fold::idxCentral && ( bFinished || parent.Verbosity ) )
-      ReplicaMessage( state, dof, iNumGuesses );
-    if( bFinished )
-    {
-      // We're finished. Save the fit parameters for this replica, sorted by E_0
-      const ROOT::Minuit2::MnUserParameters &upar{ state.Parameters() };
-      for( int e = 0; e < parent.NumExponents; ++e )
-      {
-        SortingHat[e][0] = upar.Value( e );
-        for( int o = 0; o < parent.NumOps; ++o )
-          SortingHat[e][o + 1] = upar.Value( parent.MELIndex(o, e) + parent.NumExponents );
-      }
-    }
-    else
-      Guess = state;
-  }
-  // Central replica: Save the test statistic and show result in log
-  if( idx == Fold::idxCentral )
-    ChiSq = dTestStat;
-  std::sort( SortingHat.begin(), SortingHat.end(),
-            []( const std::vector<double> &l, const std::vector<double> &r )
-            { return l[0] < r[0]; } );
-  double * const FitParams{ ModelParams[idx] };
-  for( int e = 0; e < parent.NumExponents; ++e )
-  {
-    FitParams[e] = SortingHat[e][0];
-    for( int o = 0; o < parent.NumOps; ++o )
-      FitParams[parent.MELIndex(o, e) + parent.NumExponents] = SortingHat[e][o + 1];
-  }
-  FitParams[parent.MELIndex(0, parent.NumExponents) + parent.NumExponents] = dTestStat / dof;
-  // Check whether energy levels are separated by minimum separation
-  if( idx == Fold::idxCentral )
-  {
-    for( int e = 1; e < parent.NumExponents; e++ )
-    {
-      double RelSep = FitParams[e] / FitParams[e - 1];
-      if( ( RelSep - 1 ) < RelEnergySep || RelSep * RelEnergySep > 1 )
-        throw std::runtime_error( "Fit failed energy separation criteria: "
-                                 + std::to_string( 1 + RelEnergySep ) + " < E_n / E_{n-1} < "
-                                 + std::to_string( 1 / RelEnergySep ) );
-    }
-  }
   // Save the reconstructed correlator values for this replica
-  std::vector<double> ParamsCopy( parent.NumParams );
-  for( int p = 0; p < parent.NumParams; ++p )
-    ParamsCopy[p] = FitParams[p];
-  model.Init( ParamsCopy );
+  model.Init( FitParams, parent.NumParams );
   for( int f = 0; f < parent.NumFiles; f++ )
   {
     scalar * mc{ CorrSynthetic[f][idx] };
@@ -482,40 +689,51 @@ void FitterThread::FitOne( const int idx_, const int MaxGuesses, const ROOT::Min
       *mc++ = model( f, t );
     }
   }
+  return dTestStat;
 }
+
+// Several of these will be running at the same time on different threads during a fit
+class FitterThreadMinuit2 : public FitterThread, ROOT::Minuit2::FCNBase
+{
+protected:
+  static constexpr unsigned int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
+  static const ROOT::Minuit2::MnStrategy Strategy;
+  ROOT::Minuit2::VariableMetricMinimizer Minimiser;
+  // Helper functions
+public:
+  FitterThreadMinuit2( const Fitter &fitter_, bool bCorrelated_, ModelFile &modelParams_, Correlators &CorrSynthetic_ )
+  : FitterThread( fitter_, bCorrelated_, modelParams_, CorrSynthetic_ ) {}
+  virtual ~FitterThreadMinuit2() {}
+  // These are part of the FCNBase interface
+  virtual double Up() const { return 1.; }
+  virtual double operator()( const std::vector<double> &ModelParameters ) const;
+  //virtual void SetErrorDef(double def) {theErrorDef = def;}
+  virtual void Minimise( ParamState &Guess, int iNumGuesses );
+};
+
+const ROOT::Minuit2::MnStrategy FitterThreadMinuit2::Strategy( FitterThreadMinuit2::StrategyLevel );
 
 // Compute chi-squared given parameters for multi-exponential fit
   // Energy Levels        Parameters 0 ... NumExponents - 1
   //  NB: second and subsequent energy levels are deltas
   // Overlap Coefficients Parameters NumExponents ... NumExponents ( NumOps + 1 ) - 1
 
-double FitterThread::operator()( const std::vector<double> & par ) const
+double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
 {
-  double ModelError[parent.Extent]; // Should happily fit on stack
-  model.Init( par );
-  int iWrite{ 0 };
-  for( int f = 0; f < parent.NumFiles; ++f )
-  {
-    const scalar * CorrData = parent.Corr[f][idx] + parent.tMin;
-    for( int t = 0; t < parent.NtCorr; ++t, ++iWrite )
-    {
-      double z = model( f, t + parent.tMin ) - *CorrData++;
-      if( !std::isfinite( z ) )
-        return std::numeric_limits<double>::max();
-      ModelError[iWrite] = z * VarianceInv[iWrite];
-    }
-  }
+  model.Init( par.data(), par.size() );
+  if( !SaveError( Error ) )
+    return std::numeric_limits<double>::max();
   // The inverse of a symmetric matrix is also symmetric, so only calculate half the matrix
   double chi2 = 0;
   for( int i = 0; i < parent.Extent; ++i )
   {
     if( !bCorrelated )
-      chi2 += ModelError[i] * ModelError[i];
+      chi2 += Error[i] * Error[i];
     else
     {
       for( int j = 0; j <= i; ++j )
       {
-        double z = ModelError[i] * CovarInv(i, j) * ModelError[j];
+        double z = Error[i] * CovarInv(i, j) * Error[j];
         chi2 += z;
         if( i != j )
           chi2 += z;
@@ -531,16 +749,178 @@ double FitterThread::operator()( const std::vector<double> & par ) const
   return chi2;
 }
 
-Fitter::Fitter( Correlators &&Corr_, const std::vector<std::string> &opNames_,
-                bool bfactor_, const std::string &sopNameConcat_, int numExponents_, int verbosity_,
-                const std::string &outputBaseName_, Common::SeedType seed_, int nSamples_ )
-  : NumOps{ static_cast<int>( opNames_.size() ) },
+void FitterThreadMinuit2::Minimise( ParamState &Guess, int iNumGuesses )
+{
+  ROOT::Minuit2::MnUserParameters Minuit2Par;
+  if( !Guess.bGotMinuit2State )
+    for( const Parameters::Parameter & p : Guess.parameters.Params )
+      Minuit2Par.Add( p.Name, p.Value, p.Error );
+  ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, Guess.bGotMinuit2State ? Guess.Minuit2State : Minuit2Par,
+                                                           Strategy, parent.MaxIt, parent.Tolerance * 1000 );
+  const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
+  if( !state.IsValid() )
+    throw std::runtime_error( ReplicaString( iNumGuesses ) + " did not converge" );
+  Guess = state;
+}
+
+// Several of these will be running at the same time on different threads during a fit
+class FitterThreadGSL : public FitterThread
+{
+protected:
+  Vector vGuess;
+  Matrix Cholesky;
+  gsl_multifit_nlinear_fdf fdf;
+  gsl_multifit_nlinear_workspace * ws;
+  int ConvergeReason;
+  int  f( const Vector &x, Vector &f_ );
+  int df( const Vector &x, Matrix &J );
+  using Me = FitterThreadGSL;
+  static int  sf( const gsl_vector * x, void *data, gsl_vector * f_ )
+  { return reinterpret_cast<Me*>(data)->f( *reinterpret_cast<const Vector*>(x), *reinterpret_cast<Vector*>(f_) ); }
+  static int sdf( const gsl_vector * x, void *data, gsl_matrix * J  )
+  { return reinterpret_cast<Me*>(data)->df( *reinterpret_cast<const Vector*>(x), *reinterpret_cast<Matrix*>(J) ); }
+public:
+  FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, ModelFile &modelParams_, Correlators &CorrSynthetic_ );
+  virtual ~FitterThreadGSL();
+  virtual void Minimise( ParamState &Guess, int iNumGuesses );
+  virtual void MakeCovar( void ); // I need Cholesky decomposition as well
+};
+
+FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, ModelFile &modelParams_,
+                                  Correlators &CorrSynthetic_ )
+: FitterThread( fitter_, bCorrelated_, modelParams_, CorrSynthetic_ ), vGuess( parent.NumParams ),
+  Cholesky( parent.Extent, parent.Extent )
+{
+  // Define my finite difference function
+  std::memset( &fdf, 0, sizeof( fdf ) );
+  /* define the function to be minimized */
+  fdf.f = &sf;
+  //fdf.df = &sdf; // Analytic derivatives
+  fdf.n = parent.Extent;
+  fdf.p = parent.NumParams;
+  fdf.params = this;
+
+  /* allocate workspace with default parameters */
+  gsl_multifit_nlinear_parameters fdf_params{ gsl_multifit_nlinear_default_parameters() };
+  ws = gsl_multifit_nlinear_alloc( gsl_multifit_nlinear_trust, &fdf_params, fdf.n, fdf.p );
+}
+
+FitterThreadGSL::~FitterThreadGSL()
+{
+  if( ws )
+    gsl_multifit_nlinear_free( ws );
+}
+
+void FitterThreadGSL::MakeCovar( void )
+{
+  FitterThread::MakeCovar();
+  // Now save cholesky decomposition (square root) of inverse covariance matrix
+  if( bCorrelated )
+  {
+    Cholesky = CovarInv.Cholesky();
+    // Now make the upper triangle the scaled transpose (which we need for Jacobian)
+    for( int i = 0; i < parent.Extent; ++i )
+      for( int j = i; j < parent.Extent; ++j )
+      {
+        double z = VarianceInv[j];
+        if( i != j )
+          z *= Cholesky( j, i );
+        Cholesky( i, j ) = z;
+      }
+  }
+}
+
+int FitterThreadGSL::f( const Vector &x, Vector &f )
+{
+  assert( x.size == parent.NumParams && "Parameter vector is not the right size" );
+  assert( f.size == parent.Extent && "Result vector is not the right size" );
+  model.Init( x );
+  if( !SaveError( f ) )
+    throw std::runtime_error( "Error computing residuals" );
+  if( bCorrelated )
+  {
+    f.blas_trmv(CblasLower, CblasNoTrans, CblasNonUnit, Cholesky);
+    //std::cout << Covar << Common::NewLine << Common::NewLine << Common::NewLine << CovarInv << Common::NewLine;
+  }
+  return 0;
+}
+
+int FitterThreadGSL::df( const Vector &x, Matrix &J )
+{
+  assert( x.size == parent.NumParams && "Parameter vector is not the right size" );
+  assert( J.size1 == parent.Extent && "Jacobian rows != data points" );
+  assert( J.size2 == parent.NumParams && "Parameter columns != parameters" );
+  model.Init( x );
+  if( !SaveJacobian( J ) )
+    throw std::runtime_error( "Error computing Jacobian" );
+  if( bCorrelated )
+  {
+    J.blas_trmm( CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1, Cholesky );
+    //std::cout << Covar << Common::NewLine << Common::NewLine << Common::NewLine << CovarInv << Common::NewLine;
+  }
+  return 0;
+}
+
+void FitterThreadGSL::Minimise( ParamState &Guess, int iNumGuesses )
+{
+  std::size_t i = 0;
+  for( const Parameters::Parameter & p : Guess.parameters.Params )
+    vGuess[i++] = p.Value;
+
+  /* initialize solver with starting point and weights */
+  gsl_multifit_nlinear_init( &vGuess, &fdf, ws );
+
+  /* compute initial cost function */
+  //f = gsl_multifit_nlinear_residual(w);
+  //gsl_blas_ddot(f, f, &chisq0);
+
+  /* solve the system with a maximum of 100 iterations */
+  const auto tol = parent.Tolerance;
+  Guess.bValid = false;
+  gsl_multifit_nlinear_driver( parent.MaxIt ? parent.MaxIt : std::numeric_limits<std::size_t>::max(), // Infinite
+                               tol, tol, tol, nullptr, nullptr, &ConvergeReason, ws );
+  Guess.bValid = true;
+  if( idx == Fold::idxCentral )
+    std::cout << "Reason for stopping: " << ( ConvergeReason == 1 ? "step size" : "gradient" ) << Common::NewLine;
+  {
+    const std::size_t nIter{ gsl_multifit_nlinear_niter( ws ) };
+    Guess.NumCalls = nIter < std::numeric_limits<unsigned int>::max() ? static_cast<unsigned int>( nIter ) : std::numeric_limits<unsigned int>::max();
+  }
+  const Vector &vResidual{ * reinterpret_cast<Vector *>( gsl_multifit_nlinear_residual( ws ) ) };
+  gsl_blas_ddot( &vResidual, &vResidual, &Guess.TestStat );
+  i = 0;
+  const Vector &vResult{ * reinterpret_cast<Vector *>( gsl_multifit_nlinear_position( ws ) ) };
+  Matrix &mJacobian{ * reinterpret_cast<Matrix *>( gsl_multifit_nlinear_jac( ws ) ) };
+  Matrix mErrors( parent.NumParams, parent.NumParams );
+  if( bCorrelated )
+    mJacobian.blas_trmm( CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit, 1, Cholesky );
+  gsl_multifit_nlinear_covar( &mJacobian, 0, &mErrors );
+  for( Parameters::Parameter & p : Guess.parameters.Params )
+  {
+    p.Error = mErrors( i, i );
+    p.Value = vResult[i++];
+  }
+}
+
+Fitter::Fitter( FitterType fitType_, Correlators &&Corr_, const std::vector<std::string> &opNames_, bool bfactor_,
+                const std::string &sopNameConcat_, int numExponents_, int verbosity_, const std::string &outputBaseName_,
+                Common::SeedType seed_, bool bFreezeCovar_, bool bSaveCorr_, bool bSaveCMat_,
+                int Retry_, int MaxIt_, double Tolerance_, double RelEnergySep_, int nSamples_)
+  : fitType{fitType_},
+    NumOps{ static_cast<int>( opNames_.size() ) },
     OpNames{ opNames_ },
     bFactor{ bfactor_ },
     sOpNameConcat{ sopNameConcat_ },
     Verbosity{ verbosity_ },
     OutputBaseName{ outputBaseName_ },
     Seed{ seed_ },
+    bFreezeCovar{bFreezeCovar_},
+    bSaveCorr{bSaveCorr_},
+    bSaveCMat{bSaveCMat_},
+    Retry{Retry_},
+    MaxIt{MaxIt_},
+    Tolerance{Tolerance_},
+    RelEnergySep{RelEnergySep_},
     NumFiles{ static_cast<int>( Corr_.size() ) },
     NSamples{ ( nSamples_ <= 0 || nSamples_ > Corr_[0].NumSamples() ) ? Corr_[0].NumSamples() : nSamples_ },
     Nt      { Corr_[0].Nt() },
@@ -549,6 +929,14 @@ Fitter::Fitter( Correlators &&Corr_, const std::vector<std::string> &opNames_,
     Corr{ std::move( Corr_ ) },
     ParamNames( MakeParamNames() )
 {
+  switch( fitType )
+  {
+    case FitterType::Minuit2:
+    case FitterType::GSL:
+      break;
+    default:
+      throw std::runtime_error( "Unknown FitterType " + std::to_string( static_cast<int>( fitType ) ) );
+  }
 }
 
 std::vector<std::string> Fitter::MakeParamNames() const
@@ -564,14 +952,11 @@ std::vector<std::string> Fitter::MakeParamNames() const
 }
 
 // Perform a fit
-std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bool bFreezeCovar,
-                    int TMin_, int TMax_, int Retry, bool bSaveCorr, bool bSaveCMat, int MaxIt,
-                    double Tolerance, double RelEnergySep, double &ChiSq, int &dof )
+std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, int TMin_, int TMax_, double &ChiSq, int &dof_ )
 {
   {
     std::stringstream ss;
-    ss << "Performing " << ( Bcorrelated_ ? "" : "un" )
-       << "correlated fit on timeslices " << TMin_ << " to " << TMax_
+    ss << ( Bcorrelated_ ? "C" : "unc" ) << "correlated " << fitType << " fit on timeslices " << TMin_ << " to " << TMax_
 #ifdef DEBUG_DISABLE_OMP
        << " with Open MP disabled";
 #else
@@ -591,6 +976,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
   dof -= NumFiles == 1 ? NumExponents * 2 : NumParams;
   if( dof <= 0 )
     throw std::runtime_error( "Fit from " + std::to_string( tMin ) + " to " + std::to_string( tMax ) + " has no degrees of freedom" );
+  dof_ = dof;
 
   // Make somewhere to store the results of the fit for each bootstrap sample
   ModelFile ModelParams( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, NSamples, NumParams+1 );
@@ -647,7 +1033,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
     }
     // Make initial guesses for the parameters
     // For each Exponent, I need the delta_E + a constant for each operator
-    ROOT::Minuit2::MnUserParameterState parGuess;
+    Parameters parGuess;
     {
       static constexpr double ErrorFactor = 0.1; // I actually have no idea what the parameter errors are
       std::vector<double> GuessValue( NumParams );
@@ -694,7 +1080,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
         parGuess.Add( ParamNames[i], GuessValue[i], GuessError[i] );
       }
     }
-    std::cout << "Initial guess:" << parGuess.Parameters();
+    std::cout << "Initial guess:" << parGuess;
     // Protected by CancelCritSec
     {
       volatile bool Abort{ false };
@@ -707,9 +1093,19 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
         {
           // fitThread only throws an exception if the correlation matrix is frozen and bad
           // ... which will either happen for all threads or none
-          static constexpr int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
-          ROOT::Minuit2::MnStrategy Strategy( StrategyLevel );
-          FitterThread fitThread( *this, MaxIt, Tolerance, bFreezeCovar, bCorrelated, Strategy, CorrSynthetic );
+          std::unique_ptr<FitterThread> ft;
+          switch( fitType )
+          {
+            case FitterType::Minuit2:
+              ft.reset( new FitterThreadMinuit2( *this, bCorrelated, ModelParams, CorrSynthetic ) );
+              break;
+            case FitterType::GSL:
+              ft.reset( new FitterThreadGSL( *this, bCorrelated, ModelParams, CorrSynthetic ) );
+              break;
+          }
+          FitterThread &fitThread( *ft.get() );
+          if( bFreezeCovar )
+            fitThread.MakeCovar();
           if( bCorrelated )
           {
 #ifndef DEBUG_DISABLE_OMP
@@ -719,7 +1115,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
               // Perform an uncorrelated fit on the central replica, and use that as the guess for every replica
               try
               {
-                fitThread.UpdateGuess( parGuess, Retry + 10, dof );
+                fitThread.UpdateGuess( parGuess, Retry + 10 );
               }
               catch( const std::exception &e )
               {
@@ -750,8 +1146,11 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, bo
 #endif
                 WasAbort = Abort;
               if( !WasAbort )
-                fitThread.FitOne( idx, Retry, parGuess, ModelParams, idx == Fold::idxCentral ? SaveCorrMatrixFileName : "",
-                                 RelEnergySep, dof, ChiSq );
+              {
+                scalar z{ fitThread.FitOne( idx, Retry, parGuess, idx == Fold::idxCentral ? SaveCorrMatrixFileName : "" ) };
+                if( idx == Fold::idxCentral )
+                  ChiSq = z;
+              }
             }
             catch( const std::exception &e )
             {
@@ -853,6 +1252,7 @@ int main(int argc, const char *argv[])
       {"freeze", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"savecmat", CL::SwitchType::Flag, nullptr},
+      {"gsl", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -879,6 +1279,7 @@ int main(int argc, const char *argv[])
       const bool bFreezeCovar{ cl.GotSwitch( "freeze" ) };
       const bool bSaveCorr{ cl.GotSwitch("savecorr") };
       const bool bSaveCMat{ cl.GotSwitch("savecmat") };
+      const FitterType fitType{ cl.GotSwitch("gsl") ? FitterType::GSL : FitterType::Minuit2 };
 
       if( Retry < 0 )
         throw std::invalid_argument( "Retry must be >= 0" );
@@ -890,7 +1291,7 @@ int main(int argc, const char *argv[])
       Common::SeedType Seed = 0;
       std::vector<std::string> OpNames;
       Correlators Corr;
-      std::cout << "Loading folded correlators\n";
+      std::cout << std::setprecision( 13 /*std::numeric_limits<double>::max_digits10*/ ) << "Loading folded correlators\n";
       for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
       {
         Corr.emplace_back();
@@ -906,9 +1307,10 @@ int main(int argc, const char *argv[])
         }
         i++;
       }
-      std::vector<std::string> OpNameOrig{ OpNames };
+      std::vector<std::string> OpNameOrig{ OpNames }; // List of all the operator names referred to in the file
       if( !bFactor )
       {
+        // OpNames become a list of all the Op_src or Op_snk combinations actually used
         OpNames.clear();
         for( Fold & f : Corr )
         {
@@ -934,8 +1336,8 @@ int main(int argc, const char *argv[])
         sOpNameConcat.append( 1, '_' );
         sOpNameConcat.append( OpNameOrig[i] );
       }
-      Fitter m ( std::move( Corr ), OpNames, bFactor, sOpNameConcat, NumExponents, Verbosity, outBaseFileName,
-                 Seed, NSamples );
+      Fitter m( fitType, std::move( Corr ), OpNames, bFactor, sOpNameConcat, NumExponents, Verbosity, outBaseFileName,
+                Seed, bFreezeCovar, bSaveCorr, bSaveCMat, Retry, MaxIterations, Tolerance, RelEnergySep, NSamples );
       std::string sSummaryBase{ outBaseFileName };
       sSummaryBase.append( 1, '.' );
       if( doCorr )
@@ -963,8 +1365,7 @@ int main(int argc, const char *argv[])
             {
               double ChiSq;
               int dof;
-              auto params = m.PerformFit(doCorr, bFreezeCovar, ti, tf, Retry, bSaveCorr, bSaveCMat,
-                                         MaxIterations, Tolerance, RelEnergySep, ChiSq, dof);
+              auto params = m.PerformFit( doCorr, ti, tf, ChiSq, dof );
               if( bNeedHeader )
               {
                 bNeedHeader = false;
@@ -1041,6 +1442,7 @@ int main(int argc, const char *argv[])
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
     "Flags:\n"
     "-f         Factorising operators (default non-factorising)\n"
+    "--gsl      Use GSL fitter\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
     "--freeze   Freeze the covariance matrix/variance on the central replica\n"
     "--savecorr Save bootstrap replicas of correlators\n"
