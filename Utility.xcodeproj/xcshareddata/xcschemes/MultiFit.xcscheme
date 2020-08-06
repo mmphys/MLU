@@ -158,7 +158,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--retry=0"
+            argument = "--retry=1"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

@@ -109,6 +109,11 @@ public:
 
 std::ostream & operator<<( std::ostream &os, const Parameters &Params );
 
+struct GSLState
+{
+  int ConvergeReason;
+};
+
 struct ParamState
 {
   bool bValid;
@@ -118,7 +123,9 @@ struct ParamState
   scalar edm;
   bool bGotMinuit2State;
   ROOT::Minuit2::MnUserParameterState Minuit2State;
-  ParamState( Parameters parameters_ ) : bValid{false}, bGotMinuit2State{false}, parameters( parameters_ ) {}
+  bool bGotGSLState;
+  GSLState gslState;
+  ParamState( Parameters parameters_ ) : bValid{false}, bGotMinuit2State{false}, bGotGSLState{false}, parameters( parameters_ ) {}
   ParamState( const ROOT::Minuit2::MnUserParameterState &State )
   : bValid{State.IsValid()}, parameters( State ), TestStat{State.Fval()}, NumCalls{State.NFcn()}, edm{State.Edm()},
     bGotMinuit2State{true}, Minuit2State{State} {}
@@ -196,7 +203,7 @@ protected:
 public:
   FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &ModelParams, Correlators &CorrSynthetic );
   virtual ~FitterThread() {}
-  void MakeCovar();
+  void MakeCovar( int idx, bool bShowOutput = false ); // Switch to this index
   inline std::string ReplicaString( int iFitNum ) const
   {
     std::string sError{ bCorrelated ? "C" : "Unc" };
@@ -210,54 +217,14 @@ public:
   void ReplicaMessage( const ParamState &state, int iFitNum ) const;
   bool SaveError( Vector &ModelError ) const;
   bool SaveJacobian( Matrix &Jacobian ) const;
-  void UpdateGuess( Parameters &parGuess, int MaxGuesses );
   scalar RepeatFit( ParamState &Guess, int MaxGuesses );
-  scalar FitOne( int idx, int MaxGuesses, const Parameters &parGuess, const std::string &SaveCorMatFileName );
+  void UpdateGuess( Parameters &parGuess );
+  scalar FitOne( const Parameters &parGuess, const std::string &SaveCorMatFileName );
   // Implement this to support a new type of fitter
   virtual void Minimise( ParamState &Guess, int iNumGuesses ) = 0;
   virtual void MakeCovarCorrelated() = 0;
-};
-
-// Several of these will be running at the same time on different threads during a fit
-class FitterThreadMinuit2 : public FitterThread, ROOT::Minuit2::FCNBase
-{
-protected:
-  static constexpr unsigned int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
-  static const ROOT::Minuit2::MnStrategy Strategy;
-  ROOT::Minuit2::VariableMetricMinimizer Minimiser;
-  // Helper functions
-public:
-  FitterThreadMinuit2( const Fitter &fitter_, bool bCorrelated_, ModelFile &modelParams_, Correlators &CorrSynthetic_ )
-  : FitterThread( fitter_, bCorrelated_, modelParams_, CorrSynthetic_ ) {}
-  virtual ~FitterThreadMinuit2() {}
-  // These are part of the FCNBase interface
-  virtual double Up() const { return 1.; }
-  virtual double operator()( const std::vector<double> &ModelParameters ) const;
-  //virtual void SetErrorDef(double def) {theErrorDef = def;}
-  virtual void Minimise( ParamState &Guess, int iNumGuesses );
-  virtual void MakeCovarCorrelated();
-};
-
-// Several of these will be running at the same time on different threads during a fit
-class FitterThreadGSL : public FitterThread
-{
-protected:
-  Vector vGuess;
-  gsl_multifit_nlinear_fdf fdf;
-  gsl_multifit_nlinear_workspace * ws;
-  int ConvergeReason;
-  int  f( const Vector &x, Vector &f_ );
-  int df( const Vector &x, Matrix &J );
-  using Me = FitterThreadGSL;
-  static int  sf( const gsl_vector * x, void *data, gsl_vector * f_ )
-  { return reinterpret_cast<Me*>(data)->f( *reinterpret_cast<const Vector*>(x), *reinterpret_cast<Vector*>(f_) ); }
-  static int sdf( const gsl_vector * x, void *data, gsl_matrix * J  )
-  { return reinterpret_cast<Me*>(data)->df( *reinterpret_cast<const Vector*>(x), *reinterpret_cast<Matrix*>(J) ); }
-public:
-  FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, ModelFile &modelParams_, Correlators &CorrSynthetic_ );
-  virtual ~FitterThreadGSL();
-  virtual void Minimise( ParamState &Guess, int iNumGuesses );
-  virtual void MakeCovarCorrelated();
+  virtual int NumRetriesGuess() const = 0;
+  virtual int NumRetriesFit() const = 0;
 };
 
 class Fitter
@@ -308,6 +275,51 @@ public:
   virtual ~Fitter() {}
   std::vector<Common::ValWithEr<scalar>>
   PerformFit(bool bCorrelated, int tMin, int tMax, double &ChiSq, int &dof );
+};
+
+// Several of these will be running at the same time on different threads during a fit
+class FitterThreadMinuit2 : public FitterThread, ROOT::Minuit2::FCNBase
+{
+protected:
+  static constexpr unsigned int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
+  static const ROOT::Minuit2::MnStrategy Strategy;
+  ROOT::Minuit2::VariableMetricMinimizer Minimiser;
+  // Helper functions
+public:
+  FitterThreadMinuit2( const Fitter &fitter_, bool bCorrelated_, ModelFile &modelParams_, Correlators &CorrSynthetic_ )
+  : FitterThread( fitter_, bCorrelated_, modelParams_, CorrSynthetic_ ) {}
+  virtual ~FitterThreadMinuit2() {}
+  // These are part of the FCNBase interface
+  virtual double Up() const { return 1.; }
+  virtual double operator()( const std::vector<double> &ModelParameters ) const;
+  //virtual void SetErrorDef(double def) {theErrorDef = def;}
+  virtual void Minimise( ParamState &Guess, int iNumGuesses );
+  virtual void MakeCovarCorrelated();
+  virtual int NumRetriesGuess() const { return parent.Retry ? parent.Retry + 10 : 15; };
+  virtual int NumRetriesFit() const { return parent.Retry ? parent.Retry : 5; };
+};
+
+// Several of these will be running at the same time on different threads during a fit
+class FitterThreadGSL : public FitterThread
+{
+protected:
+  Vector vGuess;
+  gsl_multifit_nlinear_fdf fdf;
+  gsl_multifit_nlinear_workspace * ws;
+  int  f( const Vector &x, Vector &f_ );
+  int df( const Vector &x, Matrix &J );
+  using Me = FitterThreadGSL;
+  static int  sf( const gsl_vector * x, void *data, gsl_vector * f_ )
+  { return reinterpret_cast<Me*>(data)->f( *reinterpret_cast<const Vector*>(x), *reinterpret_cast<Vector*>(f_) ); }
+  static int sdf( const gsl_vector * x, void *data, gsl_matrix * J  )
+  { return reinterpret_cast<Me*>(data)->df( *reinterpret_cast<const Vector*>(x), *reinterpret_cast<Matrix*>(J) ); }
+public:
+  FitterThreadGSL( const Fitter &Fitter, bool bCorrelated, ModelFile &ModelParams, Correlators &CorrSynthetic );
+  virtual ~FitterThreadGSL();
+  virtual void Minimise( ParamState &Guess, int iNumGuesses );
+  virtual void MakeCovarCorrelated();
+  virtual int NumRetriesGuess() const { return parent.Retry; };
+  virtual int NumRetriesFit() const { return parent.Retry; };
 };
 
 #endif // MultiFit_hpp
