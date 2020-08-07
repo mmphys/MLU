@@ -58,7 +58,6 @@ inline std::ostream & operator<<( std::ostream &os, const FitterType f )
 std::ostream & operator<<( std::ostream &os, const Parameters &Params )
 {
   using Parameter = Parameters::Parameter;
-  os << Common::NewLine;
   for( const Parameter &p : Params.Params )
     os << std::string( Params.MaxLen - p.Name.length() + 2, ' ' ) << p.Name
        << Common::Space << p.Value << "\t+/- " << p.Error << Common::NewLine;
@@ -70,7 +69,13 @@ std::ostream & operator<<( std::ostream &os, const ParamState &State )
   if( State.bGotMinuit2State )
     os << State.Minuit2State;
   else
-    os << State.Parameters() << "Add more detailed state logging here\n";
+  {
+    os << State.Parameters();
+    if( State.bGotGSLState )
+    {
+      os << "";
+    }
+  }
   return os;
 }
 
@@ -102,14 +107,19 @@ Model::Model( const Fitter &parent )
 
 void Model::Init( const scalar * ModelParameters, std::size_t NumParams, std::size_t Stride )
 {
-  scalar * data{ const_cast<scalar *>( ModelParameters ) };
-  Energy.MapView( data, NumExponents, Stride );
-  Coeff.MapView( data + NumExponents * Stride, NumExponents * NumOps, Stride );
-  for( int e = 0; e < NumExponents; ++e )
-    SinhCoshAdjust[e] = std::exp( - Energy[e] * HalfNt );
-  /*std::cout << "E[0]=" << Energy[0] << ", E[1]=" << Energy[1]
-            << " A[0]=" << Coeff[0] << ", A[1]=" << Coeff[1]
-            << " A[2]=" << Coeff[2] << ", A[3]=" << Coeff[3] << "\n";*/
+  Vector NewParams;
+  NewParams.MapView( const_cast<scalar *>( ModelParameters ), NumParams, Stride );
+  if( NewParams != Params )
+  {
+    Params = NewParams;
+    Energy.MapView( &Params[0], NumExponents, Params.stride );
+    Coeff.MapView( &Params[NumExponents], NumExponents * NumOps, Params.stride );
+    for( int e = 0; e < NumExponents; ++e )
+      SinhCoshAdjust[e] = std::exp( - Energy[e] * HalfNt );
+    /*std::cout << "E[0]=" << Energy[0] << ", E[1]=" << Energy[1]
+              << " A[0]=" << Coeff[0] << ", A[1]=" << Coeff[1]
+              << " A[2]=" << Coeff[2] << ", A[3]=" << Coeff[3] << "\n";*/
+  }
 }
 
 double Model::operator()( int f, int t ) const
@@ -180,10 +190,10 @@ double Model::Derivative( int f, int t, int p ) const
       switch( parity[f] )
       {
         case Common::Parity::Even:
-          d = SinhCoshAdjust[e] * std::cosh( - Energy[e] * ( t - HalfNt ) );
+          d = 0.5 * SinhCoshAdjust[e] * std::cosh( - Energy[e] * ( t - HalfNt ) );
           break;
         case Common::Parity::Odd:
-          d = SinhCoshAdjust[e] * std::sinh( - Energy[e] * ( t - HalfNt ) );
+          d = 0.5 * SinhCoshAdjust[e] * std::sinh( - Energy[e] * ( t - HalfNt ) );
           break;
         default:
           d = std::exp( - Energy[e] * t );
@@ -213,10 +223,16 @@ FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile 
 void FitterThread::ReplicaMessage( const ParamState &state, int iFitNum ) const
 {
   double ChiSq{ state.Fval() };
-  std::cout << Common::NewLine << ReplicaString( iFitNum ) << ", calls " << state.NFcn() << ", chi^2 " << ChiSq
-            << Common::NewLine << "edm " << state.Edm() << ", dof " << parent.dof << ", chi^2/dof " << ( ChiSq / parent.dof );
+  std::cout << ReplicaString( iFitNum ) << ", calls " << state.NFcn() << ", chi^2 " << ChiSq << Common::NewLine;
+  if( state.bGotMinuit2State )
+    std::cout << "edm " << state.Edm() << ", ";
+  std::cout << "dof " << parent.dof << ", chi^2/dof " << ( ChiSq / parent.dof );
   if( state.bGotGSLState )
-    std::cout << ", Stop: " << ( state.gslState.ConvergeReason == 1 ? "step size" : "gradient" );
+  {
+    std::cout << ", Stop: " << ( state.gslState.ConvergeReason == 1 ? "step size" : "gradient" )
+              << ", f()=" << state.gslState.nevalf << ", df()=" << state.gslState.nevaldf;
+  }
+  std::cout << Common::NewLine;
   if( parent.Verbosity > 1 )
     std::cout << state;
   else
@@ -240,7 +256,7 @@ bool FitterThread::SaveError( Vector &ModelError ) const
   return true;
 }
 
-bool FitterThread::SaveJacobian( Matrix &Jacobian ) const
+bool FitterThread::AnalyticJacobian( Matrix &Jacobian ) const
 {
   int iWrite{ 0 };
   for( int f = 0; f < parent.NumFiles; ++f )
@@ -255,6 +271,17 @@ bool FitterThread::SaveJacobian( Matrix &Jacobian ) const
         Jacobian( iWrite, p ) = z;
       }
     }
+  }
+  if( bCorrelated )
+  {
+    Jacobian.blas_trmm( CblasLeft, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
+    //std::cout << Covar << Common::NewLine << Common::NewLine << Common::NewLine << CovarInv << Common::NewLine;
+  }
+  else
+  {
+    for( int i = 0; i < parent.Extent; ++i )
+      for( int j = 0; j < parent.NumParams; ++j )
+        Jacobian( i, j ) *= CholeskyDiag[i];
   }
   return true;
 }
@@ -332,11 +359,9 @@ void FitterThread::MakeCovar( int idx_, bool bShowOutput )
     {
       const double CondNumber{ Cholesky.CholeskyRCond() };
       const int CondDigits{ static_cast<int>( 0.5 - std::log10( CondNumber ) ) };
-      std::cout << Common::NewLine;
+      //std::cout << Common::NewLine;
       if( CondDigits >= 12 )
-        std::cout << "WARNING see https://en.wikipedia.org/wiki/Condition_number\n"
-        "  and https://www.gnu.org/software/gsl/doc/html/linalg.html#cholesky-decomposition\n"
-        "  gsl_linalg_cholesky_rcond\n";
+        std::cout << "WARNING see https://www.gnu.org/software/gsl/doc/html/linalg.html#cholesky-decomposition\n";
       std::cout << "Covariance reciprocal condition number " << CondNumber
                 << ", ~" << CondDigits << " digits\n";
     }
@@ -517,7 +542,8 @@ FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, Mode
   std::memset( &fdf, 0, sizeof( fdf ) );
   /* define the function to be minimized */
   fdf.f = &sf;
-  //fdf.df = &sdf; // Analytic derivatives
+  if( !parent.bNumericDerivatives )
+    fdf.df = &sdf; // Analytic derivatives
   fdf.n = parent.Extent;
   fdf.p = parent.NumParams;
   fdf.params = this;
@@ -565,19 +591,8 @@ int FitterThreadGSL::df( const Vector &x, Matrix &J )
   assert( J.size1 == parent.Extent && "Jacobian rows != data points" );
   assert( J.size2 == parent.NumParams && "Parameter columns != parameters" );
   model.Init( x );
-  if( !SaveJacobian( J ) )
+  if( !AnalyticJacobian( J ) )
     throw std::runtime_error( "Error computing Jacobian" );
-  if( bCorrelated )
-  {
-    J.blas_trmm( CblasLeft, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
-    //std::cout << Covar << Common::NewLine << Common::NewLine << Common::NewLine << CovarInv << Common::NewLine;
-  }
-  else
-  {
-    for( int i = 0; i < parent.Extent; ++i )
-      for( int j = 0; j < parent.NumParams; ++j )
-        J( i, j ) *= CholeskyDiag[i];
-  }
   return 0;
 }
 
@@ -591,7 +606,7 @@ void FitterThreadGSL::Minimise( ParamState &Guess, int iNumGuesses )
   gsl_multifit_nlinear_init( &vGuess, &fdf, ws );
 
   /* compute initial cost function */
-  if( idx == Fold::idxCentral )
+  if( idx == Fold::idxCentral && parent.Verbosity > 1 )
   {
     const Vector &vResidual{ * reinterpret_cast<Vector *>( gsl_multifit_nlinear_residual( ws ) ) };
     gsl_blas_ddot( &vResidual, &vResidual, &Guess.TestStat );
@@ -608,6 +623,8 @@ void FitterThreadGSL::Minimise( ParamState &Guess, int iNumGuesses )
   {
     const std::size_t nIter{ gsl_multifit_nlinear_niter( ws ) };
     Guess.NumCalls = nIter < std::numeric_limits<unsigned int>::max() ? static_cast<unsigned int>( nIter ) : std::numeric_limits<unsigned int>::max();
+    Guess.gslState.nevalf = fdf.nevalf;
+    Guess.gslState.nevaldf = fdf.nevaldf;
   }
   const Vector &vResidual{ * reinterpret_cast<Vector *>( gsl_multifit_nlinear_residual( ws ) ) };
   gsl_blas_ddot( &vResidual, &vResidual, &Guess.TestStat );
@@ -621,13 +638,36 @@ void FitterThreadGSL::Minimise( ParamState &Guess, int iNumGuesses )
     p.Error = std::sqrt( mErrors( i, i ) );
     p.Value = vResult[i++];
   }
+#ifdef DEBUG_NUM_VS_ANALYTIC_JACOBIAN
+  if((1) && !fdf.df )
+  {
+    Matrix MyJacobian( parent.Extent, parent.NumParams );
+    AnalyticJacobian( MyJacobian );
+    std::cout << Common::NewLine << "GSL Jacobian:\n" << mJacobian << Common::NewLine
+              << "My Jacobian:\n" << MyJacobian << Common::NewLine;
+    MyJacobian.cols(); // Debug breakpoint here
+  }
+#endif
+}
+
+std::string FitterThreadGSL::Description() const
+{
+  std::stringstream ss;
+  ss << gsl_multifit_nlinear_name( ws ) << "/" << gsl_multifit_nlinear_trs_name( ws ) << " with ";
+  if( fdf.df )
+    ss << "analytic";
+  else
+    ss << "numeric";
+  ss << " derivatives";
+  return ss.str();
 }
 
 Fitter::Fitter( FitterType fitType_, Correlators &&Corr_, const std::vector<std::string> &opNames_, bool bfactor_,
                 const std::string &sopNameConcat_, int numExponents_, int verbosity_, const std::string &outputBaseName_,
                 Common::SeedType seed_, bool bFreezeCovar_, bool bSaveCorr_, bool bSaveCMat_,
-                int Retry_, int MaxIt_, double Tolerance_, double RelEnergySep_, int nSamples_)
+                int Retry_, int MaxIt_, double Tolerance_, double RelEnergySep_, int nSamples_, bool bNumericDerivatives_ )
   : fitType{fitType_},
+    bNumericDerivatives{bNumericDerivatives_},
     NumOps{ static_cast<int>( opNames_.size() ) },
     OpNames{ opNames_ },
     bFactor{ bfactor_ },
@@ -677,15 +717,14 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, in
 {
   {
     std::stringstream ss;
-    ss << ( Bcorrelated_ ? "C" : "unc" ) << "correlated " << fitType << " fit on timeslices " << TMin_ << " to " << TMax_
+    ss << ( Bcorrelated_ ? "C" : "unc" ) << "orrelated " << fitType << " fit on timeslices " << TMin_ << " to " << TMax_
 #ifdef DEBUG_DISABLE_OMP
        << " with Open MP disabled";
 #else
        << " using " << omp_get_max_threads() << " Open MP threads";
 #endif
     const std::string &sMsg{ ss.str() };
-    std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine
-              << "Tolerance " << Tolerance << ". Using uncorrelated fit as guess for each replica\n";
+    std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine;
   }
   bCorrelated = Bcorrelated_;
   tMin = TMin_;
@@ -838,7 +877,6 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, in
         parGuess.Add( ParamNames[i], GuessValue[i], GuessError[i] );
       }
     }
-    std::cout << "Initial guess:" << parGuess;
     // Protected by CancelCritSec
     {
       volatile bool Abort{ false };
@@ -862,11 +900,16 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, in
               break;
           }
           FitterThread &fitThread( *ft.get() );
-          if( bCorrelated )
-          {
 #ifndef DEBUG_DISABLE_OMP
-            #pragma omp single
+          #pragma omp single
 #endif
+          {
+            const std::string sDescription{ fitThread.Description() };
+            if( !sDescription.empty() )
+              std::cout << sDescription << Common::NewLine;
+            std::cout << "Tolerance " << Tolerance << ". Using uncorrelated fit as guess for each replica. Initial guess:\n"
+                      << parGuess;
+            if( bCorrelated )
             {
               // Perform an uncorrelated fit on the central replica, and use that as the guess for every replica
               try
@@ -1010,7 +1053,8 @@ int main(int argc, const char *argv[])
       {"freeze", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"savecmat", CL::SwitchType::Flag, nullptr},
-      {"gsl", CL::SwitchType::Flag, nullptr},
+      {"minuit2", CL::SwitchType::Flag, nullptr},
+      {"numderiv", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -1037,7 +1081,8 @@ int main(int argc, const char *argv[])
       const bool bFreezeCovar{ cl.GotSwitch( "freeze" ) };
       const bool bSaveCorr{ cl.GotSwitch("savecorr") };
       const bool bSaveCMat{ cl.GotSwitch("savecmat") };
-      const FitterType fitType{ cl.GotSwitch("gsl") ? FitterType::GSL : FitterType::Minuit2 };
+      const FitterType fitType{ cl.GotSwitch("minuit2") ? FitterType::Minuit2 : FitterType::GSL };
+      const bool bNumericDerivatives{ cl.GotSwitch("numderiv") };
 
       if( Retry < 0 )
         throw std::invalid_argument( "Retry must be >= 0" );
@@ -1095,7 +1140,8 @@ int main(int argc, const char *argv[])
         sOpNameConcat.append( OpNameOrig[i] );
       }
       Fitter m( fitType, std::move( Corr ), OpNames, bFactor, sOpNameConcat, NumExponents, Verbosity, outBaseFileName,
-                Seed, bFreezeCovar, bSaveCorr, bSaveCMat, Retry, MaxIterations, Tolerance, RelEnergySep, NSamples );
+                Seed, bFreezeCovar, bSaveCorr, bSaveCMat, Retry, MaxIterations, Tolerance, RelEnergySep, NSamples,
+                bNumericDerivatives );
       std::string sSummaryBase{ outBaseFileName };
       sSummaryBase.append( 1, '.' );
       if( doCorr )
@@ -1198,11 +1244,12 @@ int main(int argc, const char *argv[])
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
     "Flags:\n"
     "-f         Factorising operators (default non-factorising)\n"
-    "--gsl      Use GSL fitter\n"
+    "--minuit2  Use Minuit2 fitter (default GSL Levenberg-Marquardt)\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
     "--freeze   Freeze the covariance matrix/variance on the central replica\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--savecmat Save correlation matrix\n"
+    "--numderiv Numeric derivatives (default: analytic for GSL)\n"
     "--help     This message\n";
   }
   return iReturn;

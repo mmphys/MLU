@@ -112,6 +112,8 @@ std::ostream & operator<<( std::ostream &os, const Parameters &Params );
 struct GSLState
 {
   int ConvergeReason;
+  std::size_t nevalf;
+  std::size_t nevaldf;
 };
 
 struct ParamState
@@ -172,6 +174,7 @@ protected:
   std::vector<std::vector<int>> src;
   std::vector<Common::Parity> parity;
   std::vector<double> SinhCoshAdjust;
+  Vector Params;
   Vector Energy;
   Vector Coeff;
 public:
@@ -206,17 +209,17 @@ public:
   void MakeCovar( int idx, bool bShowOutput = false ); // Switch to this index
   inline std::string ReplicaString( int iFitNum ) const
   {
-    std::string sError{ bCorrelated ? "C" : "Unc" };
-    sError.append( "orrelated fit " + std::to_string( iFitNum ) + " on " );
+    std::stringstream ss;
+    ss << ( bCorrelated ? "C" : "Unc" ) << "orrelated fit " << iFitNum << " on ";
     if( idx == Fold::idxCentral )
-      sError.append( "central replica" );
+      ss << "central replica";
     else
-      sError.append( "replica " + std::to_string( idx ) );
-    return sError;
+      ss << "replica " << idx;
+    return ss.str();
   }
   void ReplicaMessage( const ParamState &state, int iFitNum ) const;
   bool SaveError( Vector &ModelError ) const;
-  bool SaveJacobian( Matrix &Jacobian ) const;
+  bool AnalyticJacobian( Matrix &Jacobian ) const;
   scalar RepeatFit( ParamState &Guess, int MaxGuesses );
   void UpdateGuess( Parameters &parGuess );
   scalar FitOne( const Parameters &parGuess, const std::string &SaveCorMatFileName );
@@ -225,12 +228,14 @@ public:
   virtual void MakeCovarCorrelated() = 0;
   virtual int NumRetriesGuess() const = 0;
   virtual int NumRetriesFit() const = 0;
+  virtual std::string Description() const { return std::string(); }
 };
 
 class Fitter
 {
 public:
   const FitterType fitType;
+  const bool bNumericDerivatives;
   //static constexpr double pi{ M_PI };
   const int NumOps;
   const std::vector<std::string> &OpNames;
@@ -271,7 +276,7 @@ public:
   explicit Fitter( FitterType fitType, Correlators &&Corr, const std::vector<std::string> &OpNames, bool bFactor,
                    const std::string &sOpNameConcat, int NumExponents, int Verbosity, const std::string &OutputBaseName,
                    Common::SeedType Seed, bool bFreezeCovar, bool bSaveCorr, bool bSaveCMat,
-                   int Retry, int MaxIt, double Tolerance, double RelEnergySep, int NSamples );
+                   int Retry, int MaxIt, double Tolerance, double RelEnergySep, int NSamples, bool bNumericDerivatives );
   virtual ~Fitter() {}
   std::vector<Common::ValWithEr<scalar>>
   PerformFit(bool bCorrelated, int tMin, int tMax, double &ChiSq, int &dof );
@@ -320,6 +325,7 @@ public:
   virtual void MakeCovarCorrelated();
   virtual int NumRetriesGuess() const { return parent.Retry; };
   virtual int NumRetriesFit() const { return parent.Retry; };
+  virtual std::string Description() const;
 };
 
 #endif // MultiFit_hpp

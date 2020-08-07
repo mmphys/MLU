@@ -94,7 +94,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--gsl"
+            argument = "--minuit2"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--numderiv"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -159,7 +163,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--retry=1"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--freeze"
