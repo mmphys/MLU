@@ -1007,6 +1007,43 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, in
   return Results;
 }
 
+std::vector<std::string> AdulterateOpNames( Correlators &Corr, const std::vector<std::string> &OpNameFile, bool bFactor )
+{
+  std::cout << "  File Operators:";
+  for( const std::string &s : OpNameFile )
+    std::cout << Common::Space << s;
+  std::cout << Common::NewLine;
+  std::vector<std::string> OpNames{ OpNameFile };
+  // TODO: If I don't know individual operators, combine them
+
+  // For non-factorising operators, append "_src" or "_snk" to any operators actually used
+  if( !bFactor )
+  {
+    std::vector<std::string> OpNamesPrev{ std::move( OpNames ) };
+    for( Fold & f : Corr )
+    {
+      using It = const typename std::vector<std::string>::iterator;
+      for( int i = 0; i < 2; i++ )
+      {
+        const std::string Op{ OpNamesPrev[f.Name_.op[i]] + "_" + pSrcSnk[i] };
+        It it{ std::find( OpNames.begin(), OpNames.end(), Op ) };
+        if( it == OpNames.end() )
+        {
+          f.Name_.op[i] = static_cast<int>( OpNames.size() );
+          OpNames.emplace_back( std::move( Op ) );
+        }
+        else
+          f.Name_.op[i] = static_cast<int>( it - OpNames.begin() );
+      }
+    }
+  }
+  std::cout << "   Fit Operators:";
+  for( const std::string &s : OpNames )
+    std::cout << Common::Space << s;
+  std::cout << Common::NewLine;
+  return OpNames;
+}
+
 int main(int argc, const char *argv[])
 {
   // Can't do this because of Minuit2     std::ios_base::sync_with_stdio( false );
@@ -1093,30 +1130,7 @@ int main(int argc, const char *argv[])
         }
         i++;
       }
-      std::vector<std::string> OpNames; // List of all the operator names referred to in the file
-      if( bFactor )
-        OpNames = OpNameFile;
-      else
-      {
-        // OpNames become a list of all the Op_src or Op_snk combinations actually used
-        OpNames.clear();
-        for( Fold & f : Corr )
-        {
-          using It = const typename std::vector<std::string>::iterator;
-          for( int i = 0; i < 2; i++ )
-          {
-            const std::string Op{ OpNameFile[f.Name_.op[i]] + "_" + pSrcSnk[i] };
-            It it{ std::find( OpNames.begin(), OpNames.end(), Op ) };
-            if( it == OpNames.end() )
-            {
-              f.Name_.op[i] = static_cast<int>( OpNames.size() );
-              OpNames.emplace_back( std::move( Op ) );
-            }
-            else
-              f.Name_.op[i] = static_cast<int>( it - OpNames.begin() );
-          }
-        }
-      }
+      std::vector<std::string> OpNames = AdulterateOpNames( Corr, OpNameFile, bFactor );
       std::sort( OpNameFile.begin(), OpNameFile.end() );
       std::string sOpNameConcat{ OpNameFile[0] };
       for( std::size_t i = 1; i < OpNameFile.size(); i++ )
