@@ -206,12 +206,15 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
                          Scalar alpha, const MyMatrix &A );
 #ifdef COMMON_GSL_DOUBLE
   inline MyMatrix Cholesky( MyVector &S ) const;
-  inline MyVector CholeskySolve( const MyVector &S, const MyVector &b ) const;
+  inline MyVector CholeskySolve( const MyVector &b ) const;
+  inline MyVector CholeskySolve( const MyVector &b, const MyVector &S ) const;
   inline Scalar CholeskyRCond() const;
 #endif
 #ifdef COMMON_GSL_OPTIONAL
-  inline MyMatrix Cholesky() const;
   inline MyMatrix Inverse() const;
+  inline void Cholesky();
+  inline void CholeskyInvert();
+  inline void TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag );
 #endif
 };
 
@@ -347,7 +350,14 @@ inline Matrix<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::Cholesky( MyVector &S ) 
   return a;
 }
 
-inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::CholeskySolve( const MyVector &S, const MyVector &b ) const
+inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::CholeskySolve( const MyVector &b ) const
+{
+  MyVector x( size1 );
+  COMMON_GSL_FUNC( linalg, cholesky_solve )( this, &b, &x );
+  return x;
+}
+
+inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::CholeskySolve( const MyVector &b, const MyVector &S ) const
 {
   MyVector x( size1 );
   COMMON_GSL_FUNC( linalg, cholesky_solve2 )( this, &S, &b, &x );
@@ -365,26 +375,36 @@ inline COMMON_GSL_TYPE Matrix<COMMON_GSL_TYPE>::CholeskyRCond() const
 #endif // COMMON_GSL_DOUBLE
 
 #ifdef COMMON_GSL_OPTIONAL
-inline Matrix<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::Cholesky() const
-{
-  assert( size1 && size1 == size2 && "Cholesky decomposition of a non-square matrix" );
-  MyMatrix a( *this );
-  //Vector<COMMON_GSL_TYPE> x( size1 * size2 );
-  COMMON_GSL_FUNC( linalg, cholesky_decomp )( &a );
-  return a;
-}
-
 Matrix<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::Inverse() const
 {
-  MyMatrix a( this->Cholesky() );
+  MyMatrix a( *this );
+  a.Cholesky();
   COMMON_GSL_FUNC( linalg, cholesky_invert )( &a );
   return a;
 }
+
+inline void Matrix<COMMON_GSL_TYPE>::Cholesky()
+{
+  //assert( size1 && size1 == size2 && "Cholesky decomposition of a non-square matrix" );
+  //Vector<COMMON_GSL_TYPE> x( size1 * size2 );
+  COMMON_GSL_FUNC( linalg, cholesky_decomp )( this );
+}
+
+void Matrix<COMMON_GSL_TYPE>::CholeskyInvert()
+{
+  COMMON_GSL_FUNC( linalg, cholesky_invert )( this );
+}
+
+void Matrix<COMMON_GSL_TYPE>::TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag )
+{
+  COMMON_GSL_FUNC( linalg, tri_invert )( Uplo, Diag, this );
+}
+
 #endif // COMMON_GSL_OPTIONAL
 
 inline std::ostream & operator<<( std::ostream &os, const Matrix<COMMON_GSL_TYPE> &m )
 {
-  static constexpr int MaxRows = 14;
+  static constexpr int MaxRows = 30;
   static constexpr int MaxCols = 8;
   os << "Matrix { " << m.size1 << " x " << m.size2;
   if( m.size2 != m.tda )

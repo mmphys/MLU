@@ -66,6 +66,14 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--ti 7 --tf 13 -o GFWPZ2/fit35test/ -i GFWPZ2/fold35/h1_l_p_0_0_0_ PP_PP*h5 PP_PW*h5 --dti 6 --dtf 7"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--ti=8 --tf=13 -o GFWPZ2/dbg35_mixed_fit/ GFWPZ2/dbg35_mixed/h1_l_p_0_0_0.corr_8_13.theta_-45_PP_PPPW.bootstrap.4147798751.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-o fit_test/ -i fold/h1_l_p_0_0_0_"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -98,8 +106,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--numderiv"
-            isEnabled = "YES">
+            argument = "--analytic"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f"

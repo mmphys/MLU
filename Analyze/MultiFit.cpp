@@ -164,6 +164,7 @@ double Model::Derivative( int f, int t, int p ) const
     {
       int NtMinusT = parity[f] == Common::Parity::Even ? Nt - t : t - Nt;
       d += NtMinusT * std::exp( - Energy[e] * ( Nt - t ) );
+      d *= 0.5;
     }
     d *= - Coeff[src[f][e]] * Coeff[snk[f][e]];
   }
@@ -190,10 +191,10 @@ double Model::Derivative( int f, int t, int p ) const
       switch( parity[f] )
       {
         case Common::Parity::Even:
-          d = 0.5 * SinhCoshAdjust[e] * std::cosh( - Energy[e] * ( t - HalfNt ) );
+          d = SinhCoshAdjust[e] * std::cosh( - Energy[e] * ( t - HalfNt ) );
           break;
         case Common::Parity::Odd:
-          d = 0.5 * SinhCoshAdjust[e] * std::sinh( - Energy[e] * ( t - HalfNt ) );
+          d = SinhCoshAdjust[e] * std::sinh( - Energy[e] * ( t - HalfNt ) );
           break;
         default:
           d = std::exp( - Energy[e] * t );
@@ -241,47 +242,39 @@ void FitterThread::ReplicaMessage( const ParamState &state, int iFitNum ) const
 
 bool FitterThread::SaveError( Vector &ModelError ) const
 {
-  int iWrite{ 0 };
-  for( int f = 0; f < parent.NumFiles; ++f )
+  const scalar * CorrData{ nullptr };
+  for( int i = 0; i < parent.Extent; ++i )
   {
-    const scalar * CorrData = parent.Corr[f][idx] + parent.tMin;
-    for( int t = 0; t < parent.NtCorr; ++t, ++iWrite )
-    {
-      double z = model( f, t + parent.tMin ) - *CorrData++;
-      if( !std::isfinite( z ) )
-        return false;
-      ModelError[iWrite] = z;
-    }
+    const int f{ i / parent.NtCorr };
+    const int t{ i % parent.NtCorr + parent.tMin };
+    if( i % parent.NtCorr == 0 )
+      CorrData = parent.Corr[f][idx];
+    double z = ( model( f, t ) - CorrData[t] ) * CholeskyDiag[i];
+    if( !std::isfinite( z ) )
+      return false;
+    ModelError[i] = z;
   }
   return true;
 }
 
 bool FitterThread::AnalyticJacobian( Matrix &Jacobian ) const
 {
-  int iWrite{ 0 };
-  for( int f = 0; f < parent.NumFiles; ++f )
+  for( int i = 0; i < parent.Extent; ++i )
   {
-    for( int t = 0; t < parent.NtCorr; ++t, ++iWrite )
+    const int f{ i / parent.NtCorr };
+    const int t{ i % parent.NtCorr + parent.tMin };
+    for( int p = 0; p < parent.NumParams; ++p )
     {
-      for( int p = 0; p < parent.NumParams; ++p )
-      {
-        double z = model.Derivative( f, t + parent.tMin, p );
-        if( !std::isfinite( z ) )
-          return false;
-        Jacobian( iWrite, p ) = z;
-      }
+      double z = model.Derivative( f, t, p ) * CholeskyDiag[i];
+      if( !std::isfinite( z ) )
+        return false;
+      Jacobian( i, p ) = z;
     }
   }
   if( bCorrelated )
   {
     Jacobian.blas_trmm( CblasLeft, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
     //std::cout << Covar << Common::NewLine << Common::NewLine << Common::NewLine << CovarInv << Common::NewLine;
-  }
-  else
-  {
-    for( int i = 0; i < parent.Extent; ++i )
-      for( int j = 0; j < parent.NumParams; ++j )
-        Jacobian( i, j ) *= CholeskyDiag[i];
   }
   return true;
 }
@@ -344,15 +337,19 @@ void FitterThread::MakeCovar( int idx_, bool bShowOutput )
         if( x != y )
           Covar( y, x ) = z;
       }
-      if( x == y )
-        CholeskyDiag[x] = 1. / sqrt( z );
+      else//if( x == y )
+      {
+        z = 1. / sqrt( z );
+        CholeskyDiag[x] = z;
+      }
+      if( !std::isfinite( z ) )
+        throw std::runtime_error( "Variance / covariance isn't finite" );
     }
   }
   if( bCorrelated )
   {
-    if( !Covar.IsFinite() )
-      throw std::runtime_error( "Covariance matrix isn't finite" );
-    MakeCovarCorrelated();
+    // Cholesky decompose the covariance matrix, extracting diagonals for condition number
+    Cholesky = Covar.Cholesky( CholeskyDiag );
     if( !Cholesky.IsFinite() ) // I don't think this is needed because GSL checks
       throw std::runtime_error( "Cholesky decomposition of covariance matrix isn't finite" );
     if( idx_ == Fold::idxCentral && bShowOutput )
@@ -365,9 +362,8 @@ void FitterThread::MakeCovar( int idx_, bool bShowOutput )
       std::cout << "Covariance reciprocal condition number " << CondNumber
                 << ", ~" << CondDigits << " digits\n";
     }
+    MakeCovarCorrelated();
   }
-  else if( !CholeskyDiag.IsFinite() )
-    throw std::runtime_error( "Variance vector isn't finite" );
 }
 
 scalar FitterThread::RepeatFit( ParamState &Guess, int MaxGuesses )
@@ -499,13 +495,13 @@ double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
     return std::numeric_limits<double>::max();
   double chi2;
   if( bCorrelated )
-    chi2 = Error.Dot( Cholesky.CholeskySolve( CholeskyDiag, Error ) );
+    chi2 = Error.Dot( Cholesky.CholeskySolve( Error ) );
   else
   {
     chi2 = 0;
     for( int i = 0; i < parent.Extent; ++i )
     {
-      double z = Error[i] * CholeskyDiag[i];
+      double z = Error[i];
       chi2 += z * z;
     }
   }
@@ -528,12 +524,6 @@ void FitterThreadMinuit2::Minimise( ParamState &Guess, int iNumGuesses )
   Guess = state;
 }
 
-void FitterThreadMinuit2::MakeCovarCorrelated()
-{
-  // Cholesky decompose the covariance matrix, extracting diagonals for condition number
-  Cholesky = Covar.Cholesky( CholeskyDiag );
-}
-
 FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, ModelFile &modelParams_,
                                   Correlators &CorrSynthetic_ )
 : FitterThread( fitter_, bCorrelated_, modelParams_, CorrSynthetic_ ), vGuess( parent.NumParams )
@@ -542,7 +532,7 @@ FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, Mode
   std::memset( &fdf, 0, sizeof( fdf ) );
   /* define the function to be minimized */
   fdf.f = &sf;
-  if( !parent.bNumericDerivatives )
+  if( parent.bAnalyticDerivatives )
     fdf.df = &sdf; // Analytic derivatives
   fdf.n = parent.Extent;
   fdf.p = parent.NumParams;
@@ -561,8 +551,9 @@ FitterThreadGSL::~FitterThreadGSL()
 
 void FitterThreadGSL::MakeCovarCorrelated()
 {
-  // Cholesky decompose the covariance matrix, extracting diagonals for condition number
-  Cholesky = Covar.Inverse().Cholesky();
+  // Cholesky gives LL^T, so inverting lower triangle (L) gives L^{-1} in lower triangle
+  Cholesky.CholeskyInvert();
+  Cholesky.Cholesky();
 }
 
 int FitterThreadGSL::f( const Vector &x, Vector &f )
@@ -576,11 +567,6 @@ int FitterThreadGSL::f( const Vector &x, Vector &f )
   {
     f.blas_trmv( CblasLower, CblasTrans, CblasNonUnit, Cholesky );
     //std::cout << Covar << Common::NewLine << Common::NewLine << Common::NewLine << CovarInv << Common::NewLine;
-  }
-  else
-  {
-    for( int i = 0; i < parent.Extent; ++i )
-      f[i] *= CholeskyDiag[i];
   }
   return 0;
 }
@@ -638,16 +624,15 @@ void FitterThreadGSL::Minimise( ParamState &Guess, int iNumGuesses )
     p.Error = std::sqrt( mErrors( i, i ) );
     p.Value = vResult[i++];
   }
-#ifdef DEBUG_NUM_VS_ANALYTIC_JACOBIAN
-  if((1) && !fdf.df )
+  if( parent.Verbosity > 1 && !fdf.df && idx == Fold::idxCentral )
   {
+    // Compare numeric derivatives to the analytic ones I would have computed
     Matrix MyJacobian( parent.Extent, parent.NumParams );
     AnalyticJacobian( MyJacobian );
     std::cout << Common::NewLine << "GSL Jacobian:\n" << mJacobian << Common::NewLine
               << "My Jacobian:\n" << MyJacobian << Common::NewLine;
     MyJacobian.cols(); // Debug breakpoint here
   }
-#endif
 }
 
 std::string FitterThreadGSL::Description() const
@@ -665,9 +650,9 @@ std::string FitterThreadGSL::Description() const
 Fitter::Fitter( FitterType fitType_, Correlators &&Corr_, const std::vector<std::string> &opNames_, bool bfactor_,
                 const std::string &sopNameConcat_, int numExponents_, int verbosity_, const std::string &outputBaseName_,
                 Common::SeedType seed_, bool bFreezeCovar_, bool bSaveCorr_, bool bSaveCMat_,
-                int Retry_, int MaxIt_, double Tolerance_, double RelEnergySep_, int nSamples_, bool bNumericDerivatives_ )
+                int Retry_, int MaxIt_, double Tolerance_, double RelEnergySep_, int nSamples_, bool bAnalyticDerivatives_ )
   : fitType{fitType_},
-    bNumericDerivatives{bNumericDerivatives_},
+    bAnalyticDerivatives{bAnalyticDerivatives_},
     NumOps{ static_cast<int>( opNames_.size() ) },
     OpNames{ opNames_ },
     bFactor{ bfactor_ },
@@ -731,12 +716,10 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, in
   tMax = TMax_;
   NtCorr = TMax_ - TMin_ + 1;
   Extent = NumFiles * NtCorr;
-  dof = Extent;
-  // If there's only one correlator, the fit can't distinguish source and sink overlap coefficients,
-  // because it can only see the product. So there's always (1 energy + 1 overlap =) 2 params * num_exponents
-  dof -= NumFiles == 1 ? NumExponents * 2 : NumParams;
+  dof = Extent - NumParams;
   if( dof <= 0 )
-    throw std::runtime_error( "Fit from " + std::to_string( tMin ) + " to " + std::to_string( tMax ) + " has no degrees of freedom" );
+    throw std::runtime_error( "Fit from " + std::to_string( tMin ) + " to " + std::to_string( tMax ) + " has "
+                              + std::to_string( dof ) + " degrees of freedom" );
   dof_ = dof;
 
   // Make somewhere to store the results of the fit for each bootstrap sample
@@ -1054,7 +1037,7 @@ int main(int argc, const char *argv[])
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"savecmat", CL::SwitchType::Flag, nullptr},
       {"minuit2", CL::SwitchType::Flag, nullptr},
-      {"numderiv", CL::SwitchType::Flag, nullptr},
+      {"analytic", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -1082,7 +1065,7 @@ int main(int argc, const char *argv[])
       const bool bSaveCorr{ cl.GotSwitch("savecorr") };
       const bool bSaveCMat{ cl.GotSwitch("savecmat") };
       const FitterType fitType{ cl.GotSwitch("minuit2") ? FitterType::Minuit2 : FitterType::GSL };
-      const bool bNumericDerivatives{ cl.GotSwitch("numderiv") };
+      const bool bAnalyticDerivatives{ cl.GotSwitch("analytic") };
 
       if( Retry < 0 )
         throw std::invalid_argument( "Retry must be >= 0" );
@@ -1092,13 +1075,13 @@ int main(int argc, const char *argv[])
       bShowUsage = false;
       std::size_t i = 0;
       Common::SeedType Seed = 0;
-      std::vector<std::string> OpNames;
+      std::vector<std::string> OpNameFile;
       Correlators Corr;
       std::cout << std::setprecision( 13 /*std::numeric_limits<double>::max_digits10*/ ) << "Loading folded correlators\n";
       for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
       {
         Corr.emplace_back();
-        Corr[i].Read( sFileName, "  ", &OpNames );
+        Corr[i].Read( sFileName, "  ", &OpNameFile );
         if( i == 0 )
         {
           outBaseFileName.append( Corr[0].Name_.Base );
@@ -1110,8 +1093,10 @@ int main(int argc, const char *argv[])
         }
         i++;
       }
-      std::vector<std::string> OpNameOrig{ OpNames }; // List of all the operator names referred to in the file
-      if( !bFactor )
+      std::vector<std::string> OpNames; // List of all the operator names referred to in the file
+      if( bFactor )
+        OpNames = OpNameFile;
+      else
       {
         // OpNames become a list of all the Op_src or Op_snk combinations actually used
         OpNames.clear();
@@ -1120,7 +1105,7 @@ int main(int argc, const char *argv[])
           using It = const typename std::vector<std::string>::iterator;
           for( int i = 0; i < 2; i++ )
           {
-            const std::string Op{ OpNameOrig[f.Name_.op[i]] + "_" + pSrcSnk[i] };
+            const std::string Op{ OpNameFile[f.Name_.op[i]] + "_" + pSrcSnk[i] };
             It it{ std::find( OpNames.begin(), OpNames.end(), Op ) };
             if( it == OpNames.end() )
             {
@@ -1132,16 +1117,16 @@ int main(int argc, const char *argv[])
           }
         }
       }
-      std::sort( OpNameOrig.begin(), OpNameOrig.end() );
-      std::string sOpNameConcat{ OpNameOrig[0] };
-      for( std::size_t i = 1; i < OpNameOrig.size(); i++ )
+      std::sort( OpNameFile.begin(), OpNameFile.end() );
+      std::string sOpNameConcat{ OpNameFile[0] };
+      for( std::size_t i = 1; i < OpNameFile.size(); i++ )
       {
         sOpNameConcat.append( 1, '_' );
-        sOpNameConcat.append( OpNameOrig[i] );
+        sOpNameConcat.append( OpNameFile[i] );
       }
       Fitter m( fitType, std::move( Corr ), OpNames, bFactor, sOpNameConcat, NumExponents, Verbosity, outBaseFileName,
                 Seed, bFreezeCovar, bSaveCorr, bSaveCMat, Retry, MaxIterations, Tolerance, RelEnergySep, NSamples,
-                bNumericDerivatives );
+                bAnalyticDerivatives );
       std::string sSummaryBase{ outBaseFileName };
       sSummaryBase.append( 1, '.' );
       if( doCorr )
@@ -1249,7 +1234,7 @@ int main(int argc, const char *argv[])
     "--freeze   Freeze the covariance matrix/variance on the central replica\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--savecmat Save correlation matrix\n"
-    "--numderiv Numeric derivatives (default: analytic for GSL)\n"
+    "--analytic Analytic derivatives for GSL (default: numeric)\n"
     "--help     This message\n";
   }
   return iReturn;

@@ -225,7 +225,7 @@ public:
   scalar FitOne( const Parameters &parGuess, const std::string &SaveCorMatFileName );
   // Implement this to support a new type of fitter
   virtual void Minimise( ParamState &Guess, int iNumGuesses ) = 0;
-  virtual void MakeCovarCorrelated() = 0;
+  virtual void MakeCovarCorrelated() {} // Override to adjust covariance matrix
   virtual int NumRetriesGuess() const = 0;
   virtual int NumRetriesFit() const = 0;
   virtual std::string Description() const { return std::string(); }
@@ -235,7 +235,7 @@ class Fitter
 {
 public:
   const FitterType fitType;
-  const bool bNumericDerivatives;
+  const bool bAnalyticDerivatives;
   //static constexpr double pi{ M_PI };
   const int NumOps;
   const std::vector<std::string> &OpNames;
@@ -299,7 +299,6 @@ public:
   virtual double operator()( const std::vector<double> &ModelParameters ) const;
   //virtual void SetErrorDef(double def) {theErrorDef = def;}
   virtual void Minimise( ParamState &Guess, int iNumGuesses );
-  virtual void MakeCovarCorrelated();
   virtual int NumRetriesGuess() const { return parent.Retry ? parent.Retry + 10 : 15; };
   virtual int NumRetriesFit() const { return parent.Retry ? parent.Retry : 5; };
 };
