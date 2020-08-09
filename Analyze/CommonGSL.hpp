@@ -214,7 +214,7 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline MyMatrix Inverse() const;
   inline void Cholesky();
   inline void CholeskyInvert();
-  inline void TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag );
+  //inline void TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag );
 #endif
 };
 
@@ -395,10 +395,10 @@ void Matrix<COMMON_GSL_TYPE>::CholeskyInvert()
   COMMON_GSL_FUNC( linalg, cholesky_invert )( this );
 }
 
-void Matrix<COMMON_GSL_TYPE>::TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag )
+/*void Matrix<COMMON_GSL_TYPE>::TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag )
 {
   COMMON_GSL_FUNC( linalg, tri_invert )( Uplo, Diag, this );
-}
+  }*/
 
 #endif // COMMON_GSL_OPTIONAL
 
