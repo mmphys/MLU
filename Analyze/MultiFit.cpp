@@ -384,6 +384,8 @@ scalar FitterThread::RepeatFit( ParamState &Guess, int MaxGuesses )
     if( idx == Fold::idxCentral && ( bFinished || parent.Verbosity ) )
       ReplicaMessage( Guess, iNumGuesses );
   }
+  if( !bFinished )
+    throw std::runtime_error( "Fit did not converge within " + std::to_string( MaxGuesses ) + " retries" );
   return dTestStat;
 }
 
@@ -1014,11 +1016,92 @@ std::vector<std::string> AdulterateOpNames( Correlators &Corr, const std::vector
     std::cout << Common::Space << s;
   std::cout << Common::NewLine;
   std::vector<std::string> OpNames{ OpNameFile };
-  // TODO: If I don't know individual operators, combine them
-
-  // For non-factorising operators, append "_src" or "_snk" to any operators actually used
-  if( !bFactor )
+  if( bFactor )
   {
+    // If the operators I'm fitting factorise, then I might only be able to determine their products
+    static const int NumFiles{ static_cast<int>( Corr.size() ) };
+    static const int NumOps{ static_cast<int>( OpNameFile.size() ) };
+    std::vector<bool> bKnown( NumOps, false );
+    std::vector<std::string> NewOps;
+    std::vector<int> NewSrc;
+    std::vector<int> NewSnk;
+    NewSrc.reserve( NumFiles );
+    NewSnk.reserve( NumFiles );
+    int NumKnown{ 0 };
+    // Same operator at source and sink can be distinguished
+    for( int i = 0; i < NumFiles; ++i )
+    {
+      const int oSrc{ Corr[i].Name_.op[idxSrc] };
+      if( oSrc == Corr[i].Name_.op[idxSnk] )
+      {
+        if( !bKnown[oSrc] )
+        {
+          bKnown[oSrc] = true;
+          ++NumKnown;
+          const int NewOpIdx{ static_cast<int>( NewOps.size() ) };
+          NewSrc[i] = NewOpIdx;
+          NewSnk[i] = NewOpIdx;
+          NewOps.push_back( OpNameFile[oSrc] );
+        }
+      }
+    }
+    // Keep looking through mixed operators, seeing whether I can learn about all operators
+    int LastKnown{ -1 };
+    while( NumKnown < NumOps && LastKnown != NumKnown )
+    {
+      LastKnown = NumKnown;
+      for( int i = 0; i < NumFiles; ++i )
+      {
+        const int oSnk{ Corr[i].Name_.op[idxSnk] };
+        const int oSrc{ Corr[i].Name_.op[idxSrc] };
+        if( bKnown[oSnk] && !bKnown[oSrc] )
+        {
+          bKnown[oSrc] = true;
+          ++NumKnown;
+          NewSrc[i] = static_cast<int>( NewOps.size() );
+          NewOps.push_back( OpNameFile[oSrc] );
+        }
+        else if( !bKnown[oSnk] && bKnown[oSrc] )
+        {
+          bKnown[oSnk] = true;
+          ++NumKnown;
+          NewSnk[i] = static_cast<int>( NewOps.size() );
+          NewOps.push_back( OpNameFile[oSrc] );
+        }
+      }
+    }
+    // Are there enough correlators to determine the remaining unknowns?
+    if( NumKnown != NumOps )
+    {
+      int NumSolutions{ 0 };
+      for( int i = 0; i < NumFiles; ++i )
+        if( !bKnown[Corr[i].Name_.op[idxSrc]] ) // actually, both sink and source unknown
+          ++NumSolutions;
+      if( NumSolutions < ( NumOps - NumKnown ) )
+      {
+        // Replace any remaining operators with their common factors
+        for( int i = 0; i < NumFiles; ++i )
+        {
+          const int oSrc{ Corr[i].Name_.op[idxSrc] };
+          if( !bKnown[oSrc] )
+          {
+            const int oSnk{ Corr[i].Name_.op[idxSnk] };
+            const int NewOpIdx{ static_cast<int>( NewOps.size() ) };
+            NewSrc[i] = NewOpIdx;
+            NewSnk[i] = NewOpIdx;
+            NewOps.push_back( OpNameFile[oSnk] + Common::Underscore + OpNameFile[oSrc] );
+          }
+          Corr[i].Name_.op[idxSrc] = NewSrc[i];
+          Corr[i].Name_.op[idxSnk] = NewSnk[i];
+        }
+        OpNames = std::move( NewOps );
+      }
+    }
+  }
+  else
+  {
+    // For non-factorising operators, append "_src" or "_snk" to any operators actually used
+    // TODO: I still might only be able to distinguish their products
     std::vector<std::string> OpNamesPrev{ std::move( OpNames ) };
     for( Fold & f : Corr )
     {
