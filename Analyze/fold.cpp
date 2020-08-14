@@ -241,7 +241,6 @@ int main(int argc, const char *argv[])
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
     " <options> BootstrapFile1,<FoldOptions1> [ContractionFile2,<FoldOptions2> ...]\n"
     "Save correlator in format ready for GNUPlot, where <options> are:\n"
-    "-a     Perform Average rather than treat forward/backward/conjugate separately\n"
     "-i     Input prefix\n"
     "-o     Output prefix\n"
     "--help This message\n"

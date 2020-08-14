@@ -24,7 +24,7 @@
       <!--<end>4</end>-->
       <step>4</step>
     </Timeslices>
-    <Type>GF</Type>
+    <Type>Z2</Type>
     <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
     <deltaT>12 14 16 20</deltaT>
     <OutputBase>C1/meson/</OutputBase>
@@ -53,8 +53,8 @@
   <NumHeavyQuark>4</NumHeavyQuark>
   <!--<NumHeavyQuark>1</NumHeavyQuark>-->
   <HeavyQuark0>
-    <flavour>h1</flavour>
-    <mass>0.58</mass>
+    <flavour>h0</flavour>
+    <mass>0.50</mass>
     <Ls>12</Ls>
     <M5>1.0</M5>
     <maxIteration>5000</maxIteration>
@@ -63,8 +63,8 @@
     <EigenPackFilename></EigenPackFilename>
   </HeavyQuark0>
   <HeavyQuark1>
-    <flavour>h0</flavour>
-    <mass>0.50</mass>
+    <flavour>h1</flavour>
+    <mass>0.58</mass>
     <Ls>12</Ls>
     <M5>1.0</M5>
     <maxIteration>5000</maxIteration>

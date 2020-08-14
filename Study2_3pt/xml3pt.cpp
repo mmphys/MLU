@@ -101,7 +101,7 @@ inline const std::string &FilePrefix( const SourceT Type, const SinkT Sink )
   {
     if( Sink == SinkT::Point )
     {
-      static const std::string s{ "Z2" };
+      static const std::string s{ "Z2PP" };
       return s;
     }
     else if( Sink == SinkT::Wall )

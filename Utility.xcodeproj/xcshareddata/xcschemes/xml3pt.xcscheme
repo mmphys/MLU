@@ -57,6 +57,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "xml3pt_tiny.xml"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--grid 4.4.4.8"
             isEnabled = "YES">
          </CommandLineArgument>
