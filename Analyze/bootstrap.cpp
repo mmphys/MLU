@@ -257,10 +257,7 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
       // Sort all the separate, underscore delimited component parts
       if( !b3pt && bSwapQuarks )
       {
-        for( char &c : Contraction )
-          if( c == '_' )
-            c = ' ';
-        std::vector<std::string> vs{ ArrayFromString<std::string>( Contraction ) };
+        std::vector<std::string> vs{ ArrayFromString( Contraction, Common::Underscore ) };
         Contraction.clear();
         std::sort(vs.begin(), vs.end());
         for( int i = 0; i < vs.size(); i++ )

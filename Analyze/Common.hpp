@@ -83,11 +83,40 @@
 
 BEGIN_COMMON_NAMESPACE
 
+// Compare characters, by default ignoring case
+template <class _CharT>
+inline int Compare( _CharT a, _CharT b, bool bIgnoreCase = true )
+{
+  if( bIgnoreCase )
+  {
+    a = std::toupper( a );
+    b = std::toupper( b );
+  }
+  if( a == b )
+    return 0;
+  if( a < b )
+    return -1;
+  return 1;
+}
+
 // Check that a stream is empty ... or only contains white space to end of stream
 template <class _CharT, class _Traits>
 inline bool StreamEmpty( std::basic_istream<_CharT, _Traits> & s )
 {
   return s.eof() || ( s >> std::ws && s.eof() );
+}
+
+// Return true if the next, non-whitespace character in the stream is the character specified (and if so, consume it)
+template <class _CharT, class _Traits>
+inline bool NextCharIs( std::basic_istream<_CharT, _Traits> & s, _CharT c, bool bOptional = false, bool bIgnoreCase = true )
+{
+  if( StreamEmpty( s ) )
+    return bOptional;
+  _CharT d = s.peek();
+  const bool bIsEqual{ !Compare( c, d, bIgnoreCase ) };
+  if( bIsEqual )
+    s.get();
+  return bIsEqual;
 }
 
 // Text required for summaries of correlators
@@ -99,20 +128,53 @@ namespace CorrSumm {
 };
 
 extern const std::string Space;
+extern const std::string WhiteSpace;
 extern const std::string Underscore;
 extern const std::string Period;
 extern const std::string NewLine;
 extern const std::string Comma;
 
 // Compare two strings, case insensitive
-inline bool EqualIgnoreCase(const std::string & s1, const std::string & s2)
+inline int CompareIgnoreCase(const std::string &s1, const std::string &s2)
 {
-  const std::size_t Len{ s1.size() };
-  bool bEqual = ( s2.size() == Len );
-  for( std::size_t i = 0; bEqual && i < Len; i++ )
-    bEqual = ( s1[ i ] == s2[ i ] ) || ( std::toupper( s1[ i ] ) == std::toupper( s2[ i ] ) );
-  return bEqual;
+  const std::size_t Len1{ s1.size() };
+  const std::size_t Len2{ s2.size() };
+  const std::size_t Len{ std::min( Len1, Len2 ) };
+  for( std::size_t i = 0; i < Len; ++i )
+  {
+    int compare = Compare( s1[i], s2[i] );
+    if( compare )
+      return compare;
+  }
+  if( Len1 == Len2 )
+    return 0;
+  if( Len1 < Len2 )
+    return -1;
+  return 1;
 }
+
+// Compare two strings, case insensitive
+inline bool EqualIgnoreCase(const std::string &s1, const std::string &s2)
+{
+  if( s1.size() != s2.size() )
+    return false;
+  return !CompareIgnoreCase( s1, s2 );
+}
+
+// Find the index of the specified string in the array, or array size if not found
+inline int IndexIgnoreCase( const std::vector<std::string> &v, const std::string &s )
+{
+  assert( v.size() < std::numeric_limits<int>::max() && "Terribly inefficient search!" );
+  int idx = 0;
+  for( ; idx < v.size() && !Common::EqualIgnoreCase( v[idx], s ); ++idx )
+    ;
+  return idx;
+}
+
+struct LessCaseInsensitive
+{
+  bool operator()( const std::string &lhs, const std::string &rhs ) const { return CompareIgnoreCase( lhs, rhs ) < 0;}
+};
 
 namespace Gamma
 {
@@ -193,6 +255,25 @@ extern const std::vector<std::string> sCorrSummaryNames;
 
 using SeedType = unsigned int;
 
+// Remove leading and trailing whitespace from string
+inline void Trim( std::string s )
+{
+  if( !s.empty() )
+  {
+    std::size_t first{ s.find_first_not_of( WhiteSpace ) };
+    if( first == std::string::npos )
+      s.clear();
+    else
+    {
+      std::size_t OnePastLast{ s.find_last_not_of( WhiteSpace ) + 1 };
+      if( first )
+        s = s.substr( first, OnePastLast - first );
+      else if( OnePastLast != s.length() )
+        s.resize( OnePastLast );
+    }
+  }
+}
+
 // Generic conversion from a string to any type
 template<typename T> inline T FromString( const std::string &String ) {
   T t;
@@ -207,8 +288,8 @@ template<> inline std::string FromString<std::string>( const std::string &String
   { return String; }
 
 // Generic conversion from a string to an array of any type (comma or space separated)
-template<typename T>
-inline std::vector<T> ArrayFromString( const std::string &String, std::vector<bool> *pNeg = nullptr )
+template<typename T> inline typename std::enable_if<!std::is_same<T, std::string>::value, std::vector<T>>::type
+  ArrayFromString( const std::string &String, std::vector<bool> *pNeg = nullptr )
 {
   std::string s{ String };
   for( std::size_t pos = 0; ( pos = s.find( ',', pos ) ) != std::string::npos; )
@@ -229,6 +310,92 @@ inline std::vector<T> ArrayFromString( const std::string &String, std::vector<bo
       pNeg->push_back( bSign );
   }
   return v;
+}
+
+// Split string into an array of strings using separator(s). Trim leading and trailing white space
+inline std::vector<std::string> ArrayFromString( const std::string &String, const std::string &Separators = Comma )
+{
+  std::vector<std::string> v;
+  std::string s{ String };
+  std::size_t pos = 0;
+  do
+  {
+    // Skip past leading white space
+    while( pos < s.size() && std::isspace( s[pos] ) )
+      pos++;
+    if( pos < s.size() )
+    {
+      // There is definitely a string here
+      std::size_t end = s.find_first_of( Separators, pos );
+      if( end == std::string::npos )
+        end = s.size();
+      const std::size_t LastSep{ end };
+      // Now remove trailing white space
+      while( end > pos && std::isspace( s[end - 1] ) )
+        --end;
+      v.emplace_back( &s[pos], end - pos );
+      // Start looking for next sub-string beyond the separator
+      pos = LastSep;
+      if( pos < s.size() )
+        ++pos;
+    }
+  }
+  while( pos < s.size() );
+  return v;
+}
+
+// Extract up to first separator. Trim leading and trailing white space
+inline std::string ExtractToSeparator( std::string &String, const std::string &Separators = Comma )
+{
+  std::string s;
+  if( !String.empty() )
+  {
+    const std::size_t first{ String.find_first_not_of( WhiteSpace ) };
+    if( first == std::string::npos )
+      s.clear();
+    else
+    {
+      std::size_t pos = String.find_first_of( Separators, first );
+      if( pos == std::string::npos )
+        s = std::move( String );
+      else
+      {
+        // Return the string from first non-whitespace up to the separator
+        s = String.substr( first, pos - first );
+        // Now trim the trailing string
+        const std::size_t part2_start{ String.find_first_not_of( WhiteSpace, pos + 1 ) };
+        if( part2_start == std::string::npos )
+          String.clear();
+        else
+        {
+          const std::size_t part2_stop{ String.find_last_not_of( WhiteSpace ) };
+          String = String.substr( part2_start, part2_stop - part2_start + 1 );
+        }
+      }
+      Trim( s );
+    }
+  }
+  return s;
+}
+
+// Remove the number from the end of a string
+inline bool ExtractTrailing( std::string &s, int &i )
+{
+  std::size_t pos{ s.find_last_not_of( WhiteSpace ) };
+  if( pos != std::string::npos && std::isdigit( s[pos] ) )
+  {
+    while( pos && std::isdigit( s[pos - 1] ) )
+      --pos;
+    if( pos && s[pos - 1] == '-' )
+      --pos;
+    std::stringstream ss( s.substr( pos ) );
+    if( ss >> i )
+    {
+      s.resize( pos );
+      return true;
+    }
+  }
+  return false;
 }
 
 inline std::string AppendSlash( const std::string & String )
@@ -485,7 +652,8 @@ struct FileNameAtt
   std::string Filename; // Full (and unadulterated) original filename
   std::string NameNoExt;// Original filename, without path and without extension
   std::string Dir;      // Directory part of the filename (with trailing '/')
-  std::string Base;     // Base of the filename
+  std::string Base;     // Base of the filename (still containing momentum, current, delta T and timeslice)
+  std::string BaseShort;// Base with momentum, current, delta T and timeslice removed
   std::string Type;
   std::string SeedString;
   bool        bSeedNum = false;
@@ -493,6 +661,36 @@ struct FileNameAtt
   std::string Ext;
   std::vector<int> op;
   std::vector<std::string> Extra;
+  bool bGotTimeslice = false;
+  int         Timeslice;
+  bool bGotMomentum = false;
+  Momentum    p;
+  bool bGotDeltaT = false;
+  int         DeltaT;
+  std::vector<Gamma::Algebra> Gamma; // Gamma algebras extracted from name (after source and sink operators removed)
+  /*FileNameAtt( FileNameAtt &&o ) { *this = o; }
+  FileNameAtt & operator=( FileNameAtt &&o )
+  {
+    Filename = std::move( Filename );
+    NameNoExt = std::move( NameNoExt );
+    Dir = std::move( Dir );
+    Base = std::move( Base );
+    BaseShort = std::move( BaseShort );
+    Type = std::move( Type );
+    SeedString = std::move( SeedString );
+    bool        bSeedNum = false;
+    SeedType    Seed = 0; // Numeric value of SeedString, but only if bSeedNum == true
+    std::string Ext;
+    std::vector<int> op;
+    std::vector<std::string> Extra;
+    bool bGotTimeslice = false;
+    int         Timeslice;
+    bool bGotMomentum = false;
+    Momentum    p;
+    bool bGotDeltaT = false;
+    int         DeltaT;
+    std::vector<Gamma::Algebra> Gamma; // Gamma algebras extracted from name (after source and sink operators removed)
+  }*/
   // reset contents
   void clear()
   {
@@ -500,6 +698,7 @@ struct FileNameAtt
     NameNoExt.clear();
     Dir.clear();
     Base.clear();
+    BaseShort.clear();
     Type.clear();
     SeedString.clear();
     bSeedNum = false;
@@ -507,6 +706,10 @@ struct FileNameAtt
     Ext.clear();
     op.clear();
     Extra.clear();
+    bGotTimeslice = false;
+    bGotMomentum = false;
+    bGotDeltaT = false;
+    Gamma.clear();
   }
   void swap( FileNameAtt &o )
   {
@@ -514,6 +717,7 @@ struct FileNameAtt
     std::swap( NameNoExt, o.NameNoExt );
     std::swap( Dir, o.Dir );
     std::swap( Base, o.Base );
+    std::swap( BaseShort, o.BaseShort );
     std::swap( Type, o.Type );
     std::swap( SeedString, o.SeedString );
     std::swap( bSeedNum, o.bSeedNum );
@@ -521,8 +725,17 @@ struct FileNameAtt
     std::swap( Ext, o.Ext );
     std::swap( op, o.op );
     std::swap( Extra, o.Extra );
+    std::swap( bGotTimeslice, o.bGotTimeslice );
+    std::swap( Timeslice, o.Timeslice );
+    std::swap( bGotMomentum, o.bGotMomentum );
+    std::swap( p, o.p );
+    std::swap( bGotDeltaT, o.bGotDeltaT );
+    std::swap( DeltaT, o.DeltaT );
+    std::swap( Gamma, o.Gamma );
   }
-  void Parse( const std::string &Filename_, std::vector<std::string> * pOpNames = nullptr );
+  void Parse( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr );
+  std::vector<std::string> ParseOpNames( int NumOps = 2 );
+  void ParseOpNames( std::vector<std::string> &OpNames, int NumOps = 2 );
   FileNameAtt() = default;
   explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr )
     { Parse( Filename, pOpNames ); }
@@ -728,6 +941,28 @@ inline std::ostream& operator<<(std::ostream& os, const RPS &rps)
   return os;
 }
 
+// Parse a string containing a selection from sOption, returning count of how many times specified
+inline std::vector<int> ParseOptions( const char * pStringStart, std::size_t const Len, const std::string &sOption,
+                                      bool bCaseInsensitive = true, bool bNoRepeats = true, bool bIgnoreSpace = true )
+{
+  std::vector<int> Count( sOption.length(), 0 );
+  for( std::size_t i = 0; i < Len; i++ )
+  {
+    char c = pStringStart[i];
+    if( bIgnoreSpace && std::isspace( c ) )
+      continue;
+    int idx = 0;
+    while( idx < sOption.length() && Compare( c, sOption[idx] ) )
+      ;
+    if( idx >= sOption.length() || ( Count[idx]++ && bNoRepeats ) )
+    {
+      const std::string s{ pStringStart, Len };
+      throw std::runtime_error( "Option string '" + s + "' doesn't match \"" + sOption + "\"" );
+    }
+  }
+  return Count;
+}
+
 struct FoldProp
 {
   RPS rps;
@@ -735,61 +970,53 @@ struct FoldProp
   bool Conjugate = false;
   bool Parse( const char * const pc, std::size_t const Len )
   {
+    static const std::string sOption{ "RIEOPN0C" };
+    std::vector<int> iCount{ ParseOptions( pc, Len, sOption ) };
+    // Apply rules, i.e. first three pairs of options conflict
     bool bOK = true;
-    bool bRealImagOnly = true;
-    static constexpr int NumOptions{ 8 };
-    static const char Options[] = "RIEOPN0C";
-    int iCount[NumOptions];
-    for( int i = 0; i < NumOptions; i++ )
-      iCount[i] = 0;
-    for( int i = 0; bOK && i < Len; i++ )
+    switch( iCount[0] + iCount[1] )
     {
-      char c = pc[i];
-      if( c >= 'a' && c <= 'z' )
-        c -= 'a' - 'A';
-      int idx = 0;
-      while( idx < NumOptions && c != Options[idx] )
-        idx++;
-      if( idx < NumOptions )
-        iCount[idx]++;
-      else
+      case 0:
+        rps.reality = Common::Reality::Unknown;
+        break;
+      case 1:
+        rps.reality = iCount[0] ? Common::Reality::Real : Common::Reality::Imag;
+        break;
+      default:
         bOK = false;
     }
-    if( bOK )
+    switch( iCount[2] + iCount[3] )
     {
-      if( iCount[0] == 1 && iCount[1] == 0 )
-        rps.reality = Common::Reality::Real;
-      else if( iCount[0] == 0 && iCount[1] == 1 )
-        rps.reality = Common::Reality::Imag;
-      else if( iCount[0] != 0 || iCount[1] != 0 )
-        bOK = false;
-      if( iCount[2] == 1 && iCount[3] == 0 )
-        rps.parity = Common::Parity::Even;
-      else if( iCount[2] == 0 && iCount[3] == 1 )
-        rps.parity = Common::Parity::Odd;
-      else if( iCount[2] != 0 || iCount[3] != 0 )
-        bOK = false;
-      if( iCount[4] == 1 && iCount[5] == 0 )
-        rps.sign = Common::Sign::Positive;
-      else if( iCount[4] == 0 && iCount[5] == 1 )
-        rps.sign = Common::Sign::Negative;
-      else if( iCount[4] != 0 || iCount[5] != 0 )
-        bOK = false;
-      if( iCount[6] == 1 )
-        t0Abs = false;
-      else if( iCount[6] != 0 )
-        bOK = false;
-      if( iCount[7] == 1 )
-        Conjugate = true;
-      else if( iCount[7] != 0 )
+      case 0:
+        rps.parity = Common::Parity::Unknown;
+        break;
+      case 1:
+        rps.parity = iCount[2] ? Common::Parity::Even : Common::Parity::Odd;
+        break;
+      default:
         bOK = false;
     }
+    switch( iCount[4] + iCount[5] )
+    {
+      case 0:
+        rps.sign = Common::Sign::Unknown;
+        break;
+      case 1:
+        rps.sign = iCount[4] ? Common::Sign::Positive : Common::Sign::Negative;
+        break;
+      default:
+        bOK = false;
+    }
+    t0Abs = !iCount[6];
+    Conjugate = iCount[7];
+    // Chuck a wobbly (sorry, lapsed into Australian there for a minute!)
     if( !bOK )
     {
       const std::string s{ pc, Len };
-      throw std::runtime_error( "Option string '" + s + "' invalid" );
+      throw std::runtime_error( "Conflicting options '" + s + "'" );
     }
-    for( int i = 2; bRealImagOnly && i < NumOptions; ++i )
+    bool bRealImagOnly = true;
+    for( std::size_t i = 2; bRealImagOnly && i < sOption.length(); ++i )
       if( iCount[i] )
         bRealImagOnly = false;
     return bRealImagOnly;
@@ -1460,12 +1687,28 @@ public:
     }
   }
   const std::vector<std::string> & GetColumnNames() const { return ColumnNames; }
-  int GetColumnIndex( const std::string & ColumnName ) const
+  inline int GetColumnIndexNoThrow( const std::string & ColumnName ) const
   {
+    assert( ColumnNames.size() <= std::numeric_limits<int>::max() && "Wow that's a lot of columns!" );
     for( int i = 0; i < ColumnNames.size(); i++ )
       if( EqualIgnoreCase( ColumnNames[i], ColumnName ) )
         return i;
-    throw std::runtime_error( "Column " + ColumnName + " not found" );
+    return -1;
+  }
+  inline int GetColumnIndexNoThrow( const std::string & ColumnName, int idx ) const
+  {
+    return GetColumnIndexNoThrow( ColumnName + std::to_string( idx ) );
+  }
+  inline int GetColumnIndex( const std::string & ColumnName ) const
+  {
+    int i = GetColumnIndexNoThrow( ColumnName );
+    if( i < 0 )
+      throw std::runtime_error( "Column " + ColumnName + " not found" );
+    return i;
+  }
+  inline int GetColumnIndex( const std::string & ColumnName, int idx ) const
+  {
+    return GetColumnIndex( ColumnName + std::to_string( idx ) );
   }
   void resize( int NumSamples, int Nt, std::vector<std::string> * pAuxNames = nullptr )
   {
@@ -1494,12 +1737,22 @@ public:
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
   template <typename U>
-  void IsCompatible( const Sample<U> &o, int * pNumSamples = nullptr/*, bool bCompareBase = true*/ ) const;
+  void IsCompatible( const Sample<U> &o, int * pNumSamples = nullptr, bool bCompareBase = true ) const;
   template <typename U> void CopyAttributes( const Sample<U> &o );
   void Bootstrap( Sample<T> &boot, SeedType Seed, const std::string * pMachineName = nullptr );
   template <typename U> void Bootstrap( Sample<T> &boot, const Sample<U> &Random );
-  void Read (const std::string &FileName, const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr,
-             std::string * pGroupName = nullptr );
+  virtual void SetName( const std::string &FileName, std::vector<std::string> * pOpNames = nullptr )
+  {
+    Name_.Parse( FileName, pOpNames );
+  }
+  void SetName( FileNameAtt &&FileName ) { Name_ = std::move( FileName ); }
+  void Read( const char *PrintPrefix = nullptr, std::string * pGroupName = nullptr );
+  void Read( const std::string &FileName, const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr,
+             std::string * pGroupName = nullptr )
+  {
+    SetName( FileName, pOpNames );
+    Read( PrintPrefix, pGroupName );
+  }
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void MakeCorrSummary( const char * pAvgName );
   void WriteSummary( const std::string &sOutFileName, bool bVerboseSummary = false );
@@ -1608,11 +1861,11 @@ using SampleD = Sample<double>;
 
 // Initialise *pNumSamples either to 0, or to the size of the first Sample before first call
 template <typename T> template <typename U>
-void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples/*, bool bCompareBase*/ ) const
+void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, bool bCompareBase ) const
 {
   static const std::string sPrefix{ "Incompatible " + sBootstrap + " samples - " };
-  std::string sSuffix{ ":\n  " + Name_.Filename + "\n+ " + o.Name_.Filename };
-  if( /*bCompareBase &&*/ !Common::EqualIgnoreCase( o.Name_.Base, Name_.Base ) )
+  std::string sSuffix{ ":\n  " + Name_.Filename + "\nvs " + o.Name_.Filename };
+  if( bCompareBase && !Common::EqualIgnoreCase( o.Name_.Base, Name_.Base ) )
     throw std::runtime_error( sPrefix + "base " + o.Name_.Base + sNE + Name_.Base + sSuffix );
   if( !Common::EqualIgnoreCase( o.Name_.Type, Name_.Type ) )
     throw std::runtime_error( sPrefix + "type " + o.Name_.Type + sNE + Name_.Type + sSuffix );
@@ -1888,16 +2141,15 @@ void Sample<T>::MakeCorrSummary( const char * pAvgName )
 
 // Read from file. If GroupName empty, read from first group and return name in GroupName
 template <typename T>
-void Sample<T>::Read(const std::string &FileName, const char *PrintPrefix, std::vector<std::string> * pOpNames, std::string *pGroupName)
+void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
 {
-  Name_.Parse( FileName, pOpNames );
   if( !Name_.bSeedNum )
-    throw std::runtime_error( "Seed missing from " + FileName );
+    throw std::runtime_error( "Seed missing from " + Name_.Filename );
   if( Name_.Type.empty() )
-    throw std::runtime_error( "Type missing from " + FileName );
+    throw std::runtime_error( "Type missing from " + Name_.Filename );
   ::H5::H5File f;
   ::H5::Group  g;
-  H5::OpenFileGroup( f, g, FileName, PrintPrefix, pGroupName );
+  H5::OpenFileGroup( f, g, Name_.Filename, PrintPrefix, pGroupName );
   bool bOK{ false };
   bool bFiniteError{ false };
   H5E_auto2_t h5at;
@@ -2198,9 +2450,9 @@ void Sample<T>::Read(const std::string &FileName, const char *PrintPrefix, std::
   }
   ::H5::Exception::setAutoPrint(h5at, f5at_p);
   if( bFiniteError )
-    throw std::runtime_error( "NANs in " + FileName );
+    throw std::runtime_error( "NANs in " + Name_.Filename );
   if( !bOK )
-    throw std::runtime_error( "Unable to read sample from " + FileName );
+    throw std::runtime_error( "Unable to read sample from " + Name_.Filename );
 }
 
 template <typename T>
@@ -2570,11 +2822,21 @@ public:
       return CovarFrozen;
     return NumSamples > Base::NumSamples_;
   }
-  void Read ( const std::string &FileName, const char *PrintPrefix = nullptr, std::string *pGroupName =nullptr )
+  using Base::SetName;
+  virtual void SetName( const std::string &FileName, std::vector<std::string> * pOpNames = nullptr )
   {
-    Base::Read( FileName, PrintPrefix, nullptr, pGroupName );
+    Base::SetName( FileName, pOpNames );
     Base::Name_.ParseExtra();
   }
+  /*void Read( const char *PrintPrefix = nullptr, std::string *pGroupName =nullptr )
+  {
+    Base::Read( PrintPrefix, pGroupName );
+  }
+  void Read( const std::string &FileName, const char *PrintPrefix = nullptr, std::string *pGroupName =nullptr )
+  {
+    SetName( FileName );
+    Base::Read( PrintPrefix, pGroupName );
+  }*/
   virtual void ReadAttributes( ::H5::Group &g )
   {
     Base::ReadAttributes( g );

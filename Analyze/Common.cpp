@@ -75,6 +75,7 @@ namespace CorrSumm {
 };
 
 extern const std::string Space{ " " };
+extern const std::string WhiteSpace{ " \t\n\r\f\v" };
 extern const std::string Underscore{ "_" };
 extern const std::string Period{ "." };
 extern const std::string NewLine{ "\n" };
@@ -507,34 +508,61 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   }
   // Now see whether we can extract operator names
   if( pOpNames )
+    ParseOpNames( *pOpNames );
+  // Extract other attributes from filename
+  BaseShort = Base;
+  ExtractTimeslice( BaseShort, bGotTimeslice, Timeslice );
+  bGotMomentum = p.Extract( BaseShort );
+  ExtractDeltaT( BaseShort, bGotDeltaT, DeltaT );
+  Gamma = ExtractGamma( BaseShort );
+}
+
+// Parse operator names from the end of Base, building up a list of all the operator names
+// NB: Because I parse from the end, op[0] is the last operator, op[1] second last, etc
+std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps )
+{
+  static const char Sep[] = "_.";
+  constexpr std::size_t NumSeps{ sizeof( Sep ) / sizeof( Sep[0] ) - 1 };
+  std::vector<std::string> o;
+  o.reserve( NumOps );
+  std::size_t LastPos = Base.length();
+  int i = 0;
+  for( ; LastPos && i < NumOps; ++i )
   {
-    char Sep[] = "_.";
-    std::size_t pos = Base.find_last_of( Sep, std::string::npos, 1 );
-    if( pos != std::string::npos ) {
-      std::string sOp{ Base.substr( pos + 1 ) }; // Operator name
-      int iOp1 = 0;
-      while( iOp1 < pOpNames->size() && !EqualIgnoreCase( sOp, (*pOpNames)[iOp1] ) )
-        iOp1++;
-      if( iOp1 == pOpNames->size() )
-        pOpNames->emplace_back( sOp );
-      std::string sTmp{ Base.substr( 0, pos ) };  // Truncated string
-      pos = sTmp.find_last_of( Sep, std::string::npos, 2 );
-      if( pos != std::string::npos ) {
-        sOp = sTmp.substr( pos + 1 ); // Operator name
-        int iOp2 = 0;
-        while( iOp2 < pOpNames->size() && !EqualIgnoreCase( sOp, (*pOpNames)[iOp2] ) )
-          iOp2++;
-        if( iOp2 == pOpNames->size() )
-          pOpNames->emplace_back( sOp );
-        // Got valid sink and source operators
-        op.resize( 2 );
-        op[0] = iOp1;
-        op[1] = iOp2;
-        Base.resize( pos );
-        return;
-      }
+    // Search for the separators - on the last one, check for a period as well as underscore
+    LastPos--; // Skip past the last separator
+    std::size_t pos = Base.find_last_of( Sep, LastPos, ( i == NumOps - 1 ) ? NumSeps - 1 : NumSeps );
+    if( pos == std::string::npos )
+    {
+      o.push_back( Base.substr( 0, LastPos + 1 ) );
+      LastPos = 0;
     }
-    throw std::runtime_error( "Invalid operator names at end of " + Base );
+    else
+    {
+      o.push_back( Base.substr( pos + 1, LastPos - pos ) );
+      LastPos = pos;
+    }
+  }
+  if( i != NumOps )
+    throw std::runtime_error( "Can't extract " + std::to_string( NumOps ) + " operators from " + Base );
+  if( i )
+    Base.resize( LastPos );
+  return o;
+}
+
+void FileNameAtt::ParseOpNames( std::vector<std::string> &OpNames, int NumOps )
+{
+  std::vector<std::string> Ops{ ParseOpNames( NumOps ) };
+  op.clear();
+  op.reserve( NumOps );
+  for( std::string &s : Ops )
+  {
+    int iOp = 0;
+    while( iOp < OpNames.size() && !EqualIgnoreCase( s, OpNames[iOp] ) )
+      iOp++;
+    if( iOp == OpNames.size() )
+      OpNames.emplace_back( std::move( s ) );
+    op.push_back( iOp );
   }
 }
 

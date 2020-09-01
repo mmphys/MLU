@@ -406,7 +406,7 @@ int main(int argc, const char *argv[])
             OpIndices.reserve( m.NumExponents * NumOperators );
             for( int o = 0; o < NumOperators; o++ )
               for( int e = 0; e < m.NumExponents; e++ )
-                OpIndices.push_back( m.GetColumnIndex( m.OpNames[o] + std::to_string(e) ) );
+                OpIndices.push_back( m.GetColumnIndex( m.OpNames[o], e ) );
             std::string sFileName=Common::MakeFilename(BaseName+".small",Common::sCormat,Seed,TEXT_EXT);
             std::cout << "Making " << sFileName << NL;
             SaveCMat( CorrModels, NumSamples, sFileName, OpIndices, i, bSingleModel );
@@ -417,7 +417,7 @@ int main(int argc, const char *argv[])
               {
                 OpIndices.push_back( e );
                 for( int o = 0; o < NumOperators; o++ )
-                  OpIndices.push_back( m.GetColumnIndex( m.OpNames[o] + std::to_string(e) ) );
+                  OpIndices.push_back( m.GetColumnIndex( m.OpNames[o], e ) );
               }
               sFileName=Common::MakeFilename(BaseName, Common::sCormat, Seed, TEXT_EXT );
               std::cout << "Making " << sFileName << NL;

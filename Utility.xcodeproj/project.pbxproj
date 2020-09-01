@@ -25,6 +25,7 @@
 		6809612024982C11007F8DB3 /* sqlite3.c in Sources */ = {isa = PBXBuildFile; fileRef = 6809611D24982C11007F8DB3 /* sqlite3.c */; };
 		6809612324982CD4007F8DB3 /* sqlite3ext.h in Headers */ = {isa = PBXBuildFile; fileRef = 6809611F24982C11007F8DB3 /* sqlite3ext.h */; };
 		6809612424982CE5007F8DB3 /* sqlite3.h in Headers */ = {isa = PBXBuildFile; fileRef = 6809611E24982C11007F8DB3 /* sqlite3.h */; };
+		680DBC6124F81FB600A66BFF /* FitModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 680DBC6024F81FB600A66BFF /* FitModel.cpp */; };
 		6815510A22CBCB74009AB4AD /* MultiFit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681550FE22CBC9B9009AB4AD /* MultiFit.cpp */; };
 		6815510D22CBE8B6009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		6815510E22CBF569009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
@@ -1190,6 +1191,7 @@
 		6860B984248E77CD0049C0DE /* SeqGammaWall.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6860B982248E77CC0049C0DE /* SeqGammaWall.hpp */; };
 		686EC70A24003ED30084D04D /* FitSummary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686EC70924003ED30084D04D /* FitSummary.cpp */; };
 		686EC70B240041E90084D04D /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
+		68743E4024FAB0860019E9FD /* FitDataSet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68743E3F24FAB0860019E9FD /* FitDataSet.cpp */; };
 		687588BB2499501900E38728 /* Test_hadrons_spectrum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C182244C7863008E272B /* Test_hadrons_spectrum.cpp */; };
 		687726942466C49E00D46AEF /* Debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687726872466C32D00D46AEF /* Debug.cpp */; };
 		688FEBE4238C1BE100977B09 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
@@ -1442,6 +1444,7 @@
 		6809611E24982C11007F8DB3 /* sqlite3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sqlite3.h; sourceTree = "<group>"; };
 		6809611F24982C11007F8DB3 /* sqlite3ext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sqlite3ext.h; sourceTree = "<group>"; };
 		680C64DF24D56162000DD948 /* CommonGSL.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommonGSL.hpp; sourceTree = "<group>"; };
+		680DBC6024F81FB600A66BFF /* FitModel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitModel.cpp; sourceTree = "<group>"; };
 		681550FD22CBC9B9009AB4AD /* MultiFit.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MultiFit.hpp; sourceTree = "<group>"; };
 		681550FE22CBC9B9009AB4AD /* MultiFit.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MultiFit.cpp; sourceTree = "<group>"; };
 		6815510322CBCB61009AB4AD /* MultiFit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MultiFit; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2721,6 +2724,7 @@
 		6860B982248E77CC0049C0DE /* SeqGammaWall.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SeqGammaWall.hpp; sourceTree = "<group>"; };
 		686EC70224003EA40084D04D /* FitSummary */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FitSummary; sourceTree = BUILT_PRODUCTS_DIR; };
 		686EC70924003ED30084D04D /* FitSummary.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitSummary.cpp; sourceTree = "<group>"; };
+		68743E3F24FAB0860019E9FD /* FitDataSet.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitDataSet.cpp; sourceTree = "<group>"; };
 		687588B42499500100E38728 /* Test_hadrons_spectrum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_hadrons_spectrum; sourceTree = BUILT_PRODUCTS_DIR; };
 		687726872466C32D00D46AEF /* Debug.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Debug.cpp; sourceTree = "<group>"; };
 		687726882466C32D00D46AEF /* Debug.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Debug.hpp; sourceTree = "<group>"; };
@@ -3015,6 +3019,8 @@
 				6856DC4E23C391AE0040814E /* corrstat.cpp */,
 				687726872466C32D00D46AEF /* Debug.cpp */,
 				687726882466C32D00D46AEF /* Debug.hpp */,
+				68743E3F24FAB0860019E9FD /* FitDataSet.cpp */,
+				680DBC6024F81FB600A66BFF /* FitModel.cpp */,
 				686EC70924003ED30084D04D /* FitSummary.cpp */,
 				68B21CBF23E720AF00D93480 /* fold.cpp */,
 				681DC8B722F19CB000EE04A9 /* hlxml.cpp */,
@@ -6946,8 +6952,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68743E4024FAB0860019E9FD /* FitDataSet.cpp in Sources */,
 				6815510D22CBE8B6009AB4AD /* Common.cpp in Sources */,
 				6815510A22CBCB74009AB4AD /* MultiFit.cpp in Sources */,
+				680DBC6124F81FB600A66BFF /* FitModel.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -43,9 +43,10 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      enableASanStackUseAfterReturn = "YES"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(HOME)/data/Study1/C1"
+      customWorkingDirectory = "$(HOME)/data/Study2/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -62,52 +63,24 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--ti 11 --tf 17 -o GFWPZ2/fit35test/ -i GFWPZ2/fold35/h1_l_p_0_0_0_ PP_PP*h5 PP_PW*h5"
+            argument = "--ti=10 --tf=16 --dti=7 --dtf=10"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti 7 --tf 13 -o GFWPZ2/fit35test/ -i GFWPZ2/fold35/h1_l_p_0_0_0_ PP_PP*h5 PP_PW*h5 --dti 6 --dtf 7"
-            isEnabled = "NO">
+            argument = "-o fit/2pt/"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti=8 --tf=13 -o GFWPZ2/dbg35_mixed_fit/ GFWPZ2/dbg35_mixed/h1_l_p_0_0_0.corr_8_13.theta_-45_PP_PPPW.bootstrap.4147798751.h5"
-            isEnabled = "NO">
+            argument = "PW/2pt/h0_s_p_0_0_0_g5P_g5W.fold.1835672416.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o fit_test/ -i fold/h1_l_p_0_0_0_"
-            isEnabled = "NO">
+            argument = "fit/2pt/h0_s_p_0_0_0.corr_10_16.g5P_g5W.model.1835672416.h5,g5W=g5W_src,Ei=E0"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti 7 --tf 13 -o next25/fit_test/ -i next25/fold/GFWPZ2/h1_l_p_0_0_0_ g5P_g5P&apos;*&apos;h5 g5P_g5W&apos;*&apos;h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o fit/ -i fold/h1_l_p_0_0_0_ g5P_g5P.fold.*.h5 g5P_g5W.fold.*.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o fit_mixed/ mixed/h1_l_p_0_0_0.corr_11_19.theta_-45_m_m.bootstrap.1835672416.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "g5P_g5P*h5 g5P_g5W*h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "g5_g5*5 g5_gT5*5 gT5_gT5*5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "gT5_g5*5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--minuit2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--analytic"
-            isEnabled = "NO">
+            argument = "fit_old_1/3pt_s/quark_h3_h0_gT_dt_16_p_0_0_0.corr_2_8.g5P.model.1835672416.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f"
@@ -118,72 +91,8 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ti 4"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--ti 6"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--ti 10"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--tf 13"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--tf 15"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--tf 21"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--dti 7"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--dti 2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--dtf 6"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--dtf 10"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--delta 2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-n 100"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--uncorr"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--retry=1"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--freeze"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--tol 1e-12"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--savecorrel"
-            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v 1"
