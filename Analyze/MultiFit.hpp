@@ -77,24 +77,6 @@ enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant };
 std::ostream & operator<<( std::ostream &os, const ModelType m );
 std::istream & operator>>( std::istream &is, ModelType &m );
 
-// This is the per-thread instance of each model
-/*struct ThreadModel
-{
-public:
-  const int Nt;
-  const int HalfNt;
-  const int NumExponents;
-  //protected:
-  Vector Params;
-public:
-  ThreadModel( int Nt_, int HalfNt_, int NumExponents_ ) : Nt{Nt_}, HalfNt{HalfNt_}, NumExponents{NumExponents_} {}
-  virtual void Init( const scalar * ModelParameters, std::size_t NumParams, std::size_t Stride = 1 );
-  inline void Init( const Vector &x ) { Init( x.data, x.size, x.stride ); }
-  virtual double operator()( int t ) const = 0;
-  virtual double Derivative( int t, int p ) const { return 0; };
-  virtual void ParamsChanged() = 0;
-};*/
-
 // Default parameters for model creation
 struct ModelDefaultParams
 {
@@ -107,14 +89,6 @@ struct ModelDefaultParams
 class Model;
 using ModelPtr = std::unique_ptr<Model>;
 
-class ThreadModel
-{
-  const Model &model;
-  friend class Model;
-protected:
-  explicit ThreadModel( const Model &Model_ ) : model{ Model_ } {}
-};
-
 class Model
 {
   friend class ModelSet;
@@ -123,9 +97,9 @@ public:
   int HalfNt;
   int NumExponents;
   vString ParamNames;
+  vString ParamNamesPerExp;                     // Be careful: these names EXCLUDE the energy
   vInt    ParamIdx;
-  vString ParamNamesPerExp;
-  vInt    ParamIdxPerExp;
+  std::vector<std::vector<int>> ParamIdxPerExp; // Be careful: Zero'th element of this IS energy
   //protected:
   Vector Params;
 protected:
@@ -134,14 +108,23 @@ protected:
   { ParamNamesPerExp.push_back( E ); } // Make sure to call base if you override (because everything uses Energy)
 public:
   virtual ~Model() {}
-  // Save a per-thread buffer for the model to use during a fit
-  virtual ThreadModel * MakeThreadModel() const { throw std::runtime_error( "Implement MakeThreadModel()" ); };
   // This is how to make a model
   static ModelPtr MakeModel( vString &Params, const ModelDefaultParams &Default, const Fold &Corr, const vString &OpName );
-  // Called while validating models. This should really be cleaned up
+  // NOT COUNTING ENERGY, put names of parameters that can be determined in list, return number remaining to determine
+  // For now, synonymous with overlap coefficients
   virtual std::size_t UnknownParameterCount( UniqueNames &Names ) const { return 0; }
   // There are more unknowns than correlators - combine overlap coefficients into single operator
   virtual void ReduceUnknown( const UniqueNames &Names ) {}
+  // Take a guess as to E0 (guesses will be averaged, and guesses for higher energies based on E0)
+  virtual bool GuessE0( scalar &E0, const Vector &Corr ) const { return false; }
+  // Take a guess for all parameters other than energies (guaranteed to be valid on entry). Return true for another pass
+  virtual bool Guess( Vector &Parameters, std::vector<bool> &bKnown, int pass, const Vector &Corr ) const { return false; }
+  // How big a scratchpad is required for each model?
+  virtual int GetScratchPadSize() const { return 0; }
+  // Cache values based solely on the model parameters (to speed up computation)
+  virtual void UpdateScratchPad( Vector &ScratchPad, const Vector &ModelParams ) const {};
+  // This is where the actual computation is performed
+  virtual scalar operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const = 0;
 };
 
 struct DataSet
@@ -151,6 +134,12 @@ struct DataSet
     std::size_t File;
     std::size_t idx;
     ConstantSource( std::size_t File_, std::size_t idx_ ) : File{File_}, idx{idx_} {}
+  };
+  struct FixedParam
+  {
+    int             idx;
+    ConstantSource  src;
+    FixedParam( int idx_, const ConstantSource &src_ ) : idx{idx_}, src{src_} {}
   };
   int NSamples; // Number of samples we are using. These are guaranteed to exist
   int Extent = 0;   // Number of data points in our fit (i.e. total number of elements in FitTimes)
@@ -175,6 +164,7 @@ public:
   void SetFitTimes( const std::vector<std::vector<int>> &FitTimes );
   void SetFitTimes( int tMin, int tMax );
   void GetData( int idx, Vector &vResult ) const;
+  void GetFixed( int idx, Vector &vResult, const std::vector<FixedParam> &Params ) const;
   void MakeInvErr( int idx, Vector &Var ) const;
   void MakeCovariance( int idx, Matrix &Covar ) const;
   //void MakePredictions( Vector &Prediction ) const;
@@ -283,21 +273,26 @@ class FitterThread
 {
 public:
   const Fitter &parent;
+  const int Extent;
+  static constexpr int FirstIndex{ std::numeric_limits<int>::lowest() };
   // These variables change on each iteration
   int idx;
   Matrix Covar;
   Matrix Cholesky;
   Vector CholeskyDiag;
-  mutable Vector Error;
-  std::vector<std::vector<double>> SortingHat;
+  Vector Data;            // Data points we are fitting
+  Vector Error;           // Difference between model predictions (theory) and Data
+  // These next are for model parameters
+  Vector ModelParams;
+  Vector SortingHat;
 protected:
   bool bCorrelated;
-  ModelFile &ModelParams; // Fill this with parameters for each replica
+  ModelFile &OutputModel; // Fill this with parameters for each replica
   vCorrelator &CorrSynthetic; // Fill this with data for model correlator
-  mutable std::vector<std::unique_ptr<ThreadModel>> model; // mutable only because Minuit2 operator() is const
+  std::vector<Vector> ModelBuffer;
   // Helper functions
 public:
-  FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &ModelParams, vCorrelator &CorrSynthetic );
+  FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
   virtual ~FitterThread() {}
   void SetReplica( int idx, bool bShowOutput ); // Switch to this index
   inline std::string ReplicaString( int iFitNum ) const
@@ -311,7 +306,7 @@ public:
     return ss.str();
   }
   void ReplicaMessage( const ParamState &state, int iFitNum ) const;
-  bool SaveError( Vector &ModelError ) const;
+  bool SaveError( Vector &Error, const scalar * FitterParams, std::size_t Size, std::size_t Stride = 1 );
   bool AnalyticJacobian( Matrix &Jacobian ) const;
   scalar RepeatFit( ParamState &Guess, int MaxGuesses );
   void UpdateGuess( Parameters &parGuess );
@@ -326,25 +321,17 @@ public:
 
 class Fitter
 {
-protected:
-  struct FixedParam
-  {
-    int                     idx;
-    DataSet::ConstantSource src;
-    FixedParam( int idx_, const DataSet::ConstantSource &src_ ) : idx{idx_}, src{src_} {}
-  };
 public:
   // These variables set in the constructor
   const FitterType fitType;
-  DataSet &ds;  // Non-const because I need to set fit ranges
+  const DataSet &ds;  // Non-const because I need to set fit ranges
   const bool bAnalyticDerivatives;
   const int NumOps;
   const std::vector<std::string> &OpNames;
   const bool bFactor;
-  const std::string &sOpNameConcat;
+  //const std::string &sOpNameConcat;
   const int Verbosity;
-  const std::string OutputBaseName;
-  const Common::SeedType Seed;
+  //const std::string OutputBaseName;
   const bool bFreezeCovar;
   const bool bSaveCorr;
   const bool bSaveCMat;
@@ -353,41 +340,45 @@ public:
   const double Tolerance;
   const double RelEnergySep;
   const int NumFiles;
+  std::vector<ModelPtr> model;      // Model for each correlator
   const int NumExponents;
-  const std::vector<std::string> ParamNames;
-  const int NumModelParams; // Total number of parameters across all models (fixed and variable)
+  const std::vector<std::string> PerExpNames; // Names of all the per-energy-level parameters ("E" is first, rest sorted)
+  const std::vector<std::string> ParamNames; // Names of all parameters, with a numeric suffix for per-energy-level params
+  const std::vector<DataSet::FixedParam> ParamFixed; // Map from constants to parameters
+  const std::vector<int> ParamVariable;     // Map from fitting engine parameters to parameters
+  const int NumModelParams; // Total number of parameters = NumFixed + NumVariable = NumExponents * NumPerExp +
+  const int NumPerExp;      // Number of parameters per exponent (Needed when sorting)
+  const int NumOneOff;      // Number of one-off (i.e. not per-exponent) parameters
   const int NumFixed;       // Number of fixed parameters
-  const int NumVariable;    // Number of variable parameters
+  const int NumVariable;    // Number of variable parameters (used by the fitting engines)
 
   // These variables set once at the start of each fit
   int dof;
   bool bCorrelated;
 
 protected:
-  std::vector<ModelPtr> model;      // Model for each correlator
-  std::vector<FixedParam> ParamFixed; // Map from constants to parameters
-  std::vector<int> ParamVariable;     // Map from fitting engine parameters to parameters
-
-protected:
   // Used during construction (so that we can make the results const)
-  int CreateModels( const std::vector<std::string> &ModelArgs, const ModelDefaultParams &modelDefault );
+  std::vector<ModelPtr> CreateModels( const std::vector<std::string> &ModelArgs, const ModelDefaultParams &modelDefault );
+  int GetNumExponents();
   std::size_t EnsureModelsSolubleHelper( UniqueNames &Names, std::size_t &NumWithUnknowns );
+  std::vector<std::string> MakePerExpNames();
   std::vector<std::string> MakeParamNames();
-  int FixedVsVariableParams();
+  std::vector<DataSet::FixedParam> MakeParamFixed();
+  std::vector<int> MakeParamVariable();
   // Helper functions
   //inline int AlphaIndex( int snk, int src) const { return snk * NumOps + src; };
 public:
-  inline int MELIndex( int op, int EnergyLevel) const { return EnergyLevel * NumOps + op; }; // TODO: Delete
+  //inline int MELIndex( int op, int EnergyLevel) const { return EnergyLevel * NumOps + op; }; // TODO: Delete
 
 public:
   explicit Fitter( FitterType fitType, const DataSet &ds_, const std::vector<std::string> &ModelArgs,
                    const ModelDefaultParams &modelDefault, const std::vector<std::string> &opNames_,
-                   const std::string &sOpNameConcat, int Verbosity, const std::string &OutputBaseName,
-                   Common::SeedType Seed, bool bFreezeCovar, bool bSaveCorr, bool bSaveCMat,
+                   int Verbosity, bool bFreezeCovar, bool bSaveCorr, bool bSaveCMat,
                    int Retry, int MaxIt, double Tolerance, double RelEnergySep, bool bNumericDerivatives );
   virtual ~Fitter() {}
   std::vector<Common::ValWithEr<scalar>>
-  PerformFit(bool bCorrelated, int tMin, int tMax, double &ChiSq, int &dof );
+  PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName, const std::string &ModelSuffix,
+              Common::SeedType Seed );
 };
 
 // Several of these will be running at the same time on different threads during a fit
@@ -399,8 +390,8 @@ protected:
   ROOT::Minuit2::VariableMetricMinimizer Minimiser;
   // Helper functions
 public:
-  FitterThreadMinuit2( const Fitter &fitter_, bool bCorrelated_, ModelFile &modelParams_, vCorrelator &CorrSynthetic_ )
-  : FitterThread( fitter_, bCorrelated_, modelParams_, CorrSynthetic_ ) {}
+  FitterThreadMinuit2( const Fitter &fitter_, bool bCorrelated_, ModelFile &OutputModel, vCorrelator &CorrSynthetic_ )
+  : FitterThread( fitter_, bCorrelated_, OutputModel, CorrSynthetic_ ) {}
   virtual ~FitterThreadMinuit2() {}
   // These are part of the FCNBase interface
   virtual double Up() const { return 1.; }
@@ -418,7 +409,7 @@ protected:
   Vector vGuess;
   gsl_multifit_nlinear_fdf fdf;
   gsl_multifit_nlinear_workspace * ws;
-  int  f( const Vector &x, Vector &f_ );
+  int  f( const Vector &FitParams, Vector &Errors );
   int df( const Vector &x, Matrix &J );
   using Me = FitterThreadGSL;
   static int  sf( const gsl_vector * x, void *data, gsl_vector * f_ )
@@ -426,7 +417,7 @@ protected:
   static int sdf( const gsl_vector * x, void *data, gsl_matrix * J  )
   { return reinterpret_cast<Me*>(data)->df( *reinterpret_cast<const Vector*>(x), *reinterpret_cast<Matrix*>(J) ); }
 public:
-  FitterThreadGSL( const Fitter &Fitter, bool bCorrelated, ModelFile &ModelParams, vCorrelator &CorrSynthetic );
+  FitterThreadGSL( const Fitter &Fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
   virtual ~FitterThreadGSL();
   virtual void Minimise( ParamState &Guess, int iNumGuesses );
   virtual void MakeCovarCorrelated();

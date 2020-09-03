@@ -71,7 +71,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "PW/2pt/h0_s_p_0_0_0_g5P_g5W.fold.1835672416.h5"
+            argument = "PW/2pt/h0_s_p_0_0_0_g5P_g5[PW].fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

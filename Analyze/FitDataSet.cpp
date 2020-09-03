@@ -102,6 +102,16 @@ void DataSet::GetData( int idx, Vector &vResult ) const
   }
 }
 
+// Get the constants from the appropriate timeslice
+void DataSet::GetFixed( int idx, Vector &vResult, const std::vector<FixedParam> &Params ) const
+{
+  std::vector<const scalar *> Src( constFile.size() );
+  for( int f = 0; f < constFile.size(); ++f )
+    Src[f] = constFile[f][idx];
+  for( const FixedParam &p : Params )
+    vResult[p.idx] = Src[p.src.File][p.src.idx];
+}
+
 // Make the inverse of the error (i.e. inverse of square root of variance)
 void DataSet::MakeInvErr( int idx, Vector &Var ) const
 {

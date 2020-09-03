@@ -1,7 +1,12 @@
 # This will make each .c* file into separate executable
 # PRE-REQUISITE ENVIRONMENT VARIABLES:
+#   GridPre         Path to Grid       pre-requisites (custom built)
+#   GridPkg         Path to Grid       pre-requisites (from package installs)
 #   Grid            Path to Grid       source
 #   GridBuild       Path to Grid       build directory
+#   Hadrons         Path to Hadrons    source
+#   HadronsBuild    Path to Hadrons    build directory
+# Not used at present (but could be reinstated)
 #   LatAnalyze      Path to LatAnalyze source
 #   LatAnalyzeBuild Path to LatAnalyze build directory
 
@@ -19,8 +24,9 @@ CXXFLAGS  := $(addprefix -I,$(Hadrons) $(GridBuild)/Grid $(Grid) $(GridPre)/incl
 CXXFLAGS  := $(filter-out -O%,$(CXXFLAGS))
 
 # De-duplicate library (-L) paths and libraries (-l), followed by other options
-#LDLIBS   := -lHadrons -lGrid $(sort $(shell $(GridConf) --libs) $(shell $(LatAnConf) --libs))
-LDLIBS    := -lHadrons -lGrid $(sort $(shell $(GridConf) --libs) -lMinuit2 -lgsl -lgslcblas)
+LDLIBS    := -lHadrons -lGrid $(shell $(GridConf) --libs) -lMinuit2 -lgsl -lgslcblas
+#LDLIBS   := $(LDLIBS) $(shell $(LatAnConf) --libs)
+LDLIBS    := $(sort $(LDLIBS))
 LDFLAGS   := $(shell $(GridConf) --ldflags) #$(shell $(LatAnConf) --ldflags)
 LDPATHS   := $(sort $(patsubst -L%,%,$(filter -L%,$(LDFLAGS))))
 #LDFLAGS  := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(LatAnalyzeBuild)/lib/.libs $(GridPre)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
@@ -32,7 +38,7 @@ VPATH     := $(shell find .. -maxdepth 1 -type d \! \( -iname 'build*' -or -inam
 srcfiles  := $(filter-out %~,$(shell find $(VPATH) -iname '*.c*'))
 basefiles := $(basename $(notdir $(srcfiles)))
 objects   := $(addsuffix .o,$(basefiles))
-target    := $(filter-out Common%,$(basefiles))
+target    := $(filter-out Common%,$(filter-out FitDataSet%,$(filter-out FitModel,$(basefiles))))
 
 all: $(target)
 

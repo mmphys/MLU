@@ -546,7 +546,10 @@ std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps )
   if( i != NumOps )
     throw std::runtime_error( "Can't extract " + std::to_string( NumOps ) + " operators from " + Base );
   if( i )
-    Base.resize( LastPos );
+  {
+    BaseShort.resize( BaseShort.length() - ( Base.length() - LastPos ) ); // Shorten the base as well
+    Base.resize( LastPos ); // Shorten the base
+  }
   return o;
 }
 

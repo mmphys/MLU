@@ -28,6 +28,8 @@
 
 #include "MultiFit.hpp"
 
+#define DEBUG_DISABLE_OMP
+
 // Indices for operators in correlator names
 const char * pSrcSnk[] = { "src", "snk" };
 const std::string E{ "E" };
@@ -76,22 +78,73 @@ std::ostream & operator<<( std::ostream &os, const ParamState &State )
   return os;
 }
 
-FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile &modelParams_, vCorrelator &CorrSynthetic_ )
+FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_, vCorrelator &CorrSynthetic_ )
 : parent{ fitter_ },
-  idx{ Fold::idxCentral },
-  Error( fitter_.Extent ),
-  SortingHat( fitter_.NumExponents ),
-  bCorrelated{bCorrelated_},
-  ModelParams{modelParams_},
-  CorrSynthetic( CorrSynthetic_ )
+  Extent{ fitter_.ds.Extent },
+  idx{ FirstIndex }, // So we'll notice a change on the first call to SetReplica
+  CholeskyDiag( Extent ),
+  Data( Extent ),
+  ModelParams( fitter_.NumModelParams ),
+  SortingHat( parent.NumModelParams ),//fitter_.NumExponents * fitter_.NumPerExp ),
+  bCorrelated{ bCorrelated_ },
+  OutputModel{ outputModel_ },
+  CorrSynthetic( CorrSynthetic_ ),
+  ModelBuffer( fitter_.NumFiles )
 {
-  // Make each model
-  // TODO: model.reserve( fitter_.ds.model.size() );
-  // TODO: for( const auto &m : fitter_.ds.model )
-    // TODO: model.emplace_back( m->MakeThreadModel() );
-  // Make somewhere to sort the results of each fit by energy level
-  for( int e = 0; e < parent.NumExponents; ++e )
-    SortingHat[e].resize( parent.NumOps + 1 );
+  if( bCorrelated )
+  {
+    Covar.resize( Extent, Extent );
+    Cholesky.resize( Extent, Extent );
+  }
+  // Make a buffer for each model to use as a scratchpad
+  for( int f = 0; f < parent.NumFiles; f++ )
+    ModelBuffer[f].resize( parent.model[f]->GetScratchPadSize() );
+}
+
+// Make the covariance matrix, for only the timeslices we are interested in
+void FitterThread::SetReplica( int idx_, bool bShowOutput )
+{
+  // Don't make the same covariance matrix twice in a row
+  if( idx_ != idx )
+  {
+    // Switch to the requested replica
+    const bool bFirstTime{ idx == FirstIndex };
+    idx = idx_;
+    // Don't build covariance matrix if frozen (unless it's the first time)
+    if( !parent.bFreezeCovar || bFirstTime )
+    {
+      // Covariance matrix always comes from the central replica if frozen
+      if( parent.bFreezeCovar )
+        idx_ = Fold::idxCentral;
+      // Make covariance or inverse error
+      if( !bCorrelated )
+        parent.ds.MakeInvErr( idx_, CholeskyDiag );
+      else
+      {
+        parent.ds.MakeCovariance( idx_, Covar );
+        // Cholesky decompose the covariance matrix, extracting diagonals for condition number
+        Cholesky = Covar.Cholesky( CholeskyDiag );
+        if( !Cholesky.IsFinite() ) // I don't think this is needed because GSL checks
+          throw std::runtime_error( "Cholesky decomposition of covariance matrix isn't finite" );
+        if( idx_ == Fold::idxCentral && bShowOutput )
+        {
+          const double CondNumber{ Cholesky.CholeskyRCond() };
+          const int CondDigits{ static_cast<int>( 0.5 - std::log10( CondNumber ) ) };
+          //std::cout << Common::NewLine;
+          if( CondDigits >= 12 )
+            std::cout << "WARNING see https://www.gnu.org/software/gsl/doc/html/linalg.html#cholesky-decomposition\n";
+          std::cout << "Covariance reciprocal condition number " << CondNumber
+                    << ", ~" << CondDigits << " digits\n";
+        }
+        // Allow GSL or Minuit2 to tailor the covariance matrix to their requirements
+        MakeCovarCorrelated();
+      }
+    }
+    // Now get the data for this replica
+    parent.ds.GetData( idx, Data );
+    // And get associated constants
+    parent.ds.GetFixed( idx, ModelParams, parent.ParamFixed );
+  }
 }
 
 void FitterThread::ReplicaMessage( const ParamState &state, int iFitNum ) const
@@ -113,26 +166,35 @@ void FitterThread::ReplicaMessage( const ParamState &state, int iFitNum ) const
     std::cout << state.Parameters();
 }
 
-bool FitterThread::SaveError( Vector &ModelError ) const
+// Compute Cholesky scaled (theory - data) based on parameters from the fitting engine
+bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::size_t Size, std::size_t Stride )
 {
-  const scalar * CorrData{ nullptr };
-  for( int i = 0; i < parent.Extent; ++i )
+  // Put the fitter parameters into our model parameters
+  assert( Size == parent.NumVariable && "Fitter parameters don't match our variable parameters" );
+  for( int i = 0; i < parent.NumVariable; ++i )
+    ModelParams[parent.ParamVariable[i]] = FitterParams[i * Stride];
+  // Compute theory - error for each timeslice
+  int i{0};
+  for( int f = 0; f < parent.NumFiles; ++f )
   {
-    const int f{ i / parent.NtCorr };
-    const int t{ i % parent.NtCorr + parent.tMin };
-    if( i % parent.NtCorr == 0 )
-      ;// TODO: CorrData = parent.Corr[f].Corr[idx];
-    double z = 1;// TODO: ( (*model[f])( t ) - CorrData[t] ) * CholeskyDiag[i];
-    if( !std::isfinite( z ) )
-      return false;
-    ModelError[i] = z;
+    // Allow each model to cache any common computations based solely on the model parameters
+    const Model &m{ *parent.model[f] };
+    m.UpdateScratchPad( ModelBuffer[f], ModelParams );
+    const vInt &FitTimes{ parent.ds.FitTimes[f] };
+    for( int t : FitTimes )
+    {
+      Error[i] = ( m( t, ModelParams, ModelBuffer[f] ) - Data[i] ) * CholeskyDiag[i];
+      if( !std::isfinite( Error[i] ) )
+        return false;
+    }
   }
   return true;
 }
 
 bool FitterThread::AnalyticJacobian( Matrix &Jacobian ) const
 {
-  for( int i = 0; i < parent.Extent; ++i )
+  return false;
+  /*for( int i = 0; i < parent.Extent; ++i )
   {
     const int f{ i / parent.NtCorr };
     const int t{ i % parent.NtCorr + parent.tMin };
@@ -149,51 +211,7 @@ bool FitterThread::AnalyticJacobian( Matrix &Jacobian ) const
     Jacobian.blas_trmm( CblasLeft, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
     //std::cout << Covar << Common::NewLine << Common::NewLine << Common::NewLine << CovarInv << Common::NewLine;
   }
-  return true;
-}
-
-// Make the covariance matrix, for only the timeslices we are interested in
-void FitterThread::SetReplica( int idx_, bool bShowOutput )
-{
-  const bool bFirstTime{ CholeskyDiag.size == 0 };
-  if( bFirstTime )
-  {
-    CholeskyDiag.resize( parent.Extent );
-    if( bCorrelated )
-    {
-      Covar.resize( parent.Extent, parent.Extent );
-      Cholesky.resize( parent.Extent, parent.Extent );
-    }
-  }
-  else if( idx_ == idx )
-    return; // Don't make the same covariance matrix twice in a row
-  // Switch to the requested covariance matrix ... but Freeze on the central replica
-  idx = idx_;
-  if( bFirstTime && parent.bFreezeCovar )
-    idx_ = Fold::idxCentral;
-  // Make covariance or inverse error
-  if( !bCorrelated )
-    parent.ds.MakeInvErr( idx_, CholeskyDiag );
-  else
-  {
-    parent.ds.MakeCovariance( idx_, Covar );
-    // Cholesky decompose the covariance matrix, extracting diagonals for condition number
-    Cholesky = Covar.Cholesky( CholeskyDiag );
-    if( !Cholesky.IsFinite() ) // I don't think this is needed because GSL checks
-      throw std::runtime_error( "Cholesky decomposition of covariance matrix isn't finite" );
-    if( idx_ == Fold::idxCentral && bShowOutput )
-    {
-      const double CondNumber{ Cholesky.CholeskyRCond() };
-      const int CondDigits{ static_cast<int>( 0.5 - std::log10( CondNumber ) ) };
-      //std::cout << Common::NewLine;
-      if( CondDigits >= 12 )
-        std::cout << "WARNING see https://www.gnu.org/software/gsl/doc/html/linalg.html#cholesky-decomposition\n";
-      std::cout << "Covariance reciprocal condition number " << CondNumber
-                << ", ~" << CondDigits << " digits\n";
-    }
-    // Allow GSL or Minuit2 to tailor the covariance matrix to their requirements
-    MakeCovarCorrelated();
-  }
+  return true;*/
 }
 
 scalar FitterThread::RepeatFit( ParamState &Guess, int MaxGuesses )
@@ -245,67 +263,72 @@ scalar FitterThread::FitOne( const Parameters &parGuess, const std::string &Save
   ParamState Result{ parGuess };
   scalar dTestStat = RepeatFit( Result, NumRetriesFit() );
   // Save the fit parameters for this replica, sorted by E_0
+  std::vector<std::pair<double,int>> SortMe;
+  SortMe.reserve( parent.NumExponents );
+  for( int e = 0; e < parent.NumExponents; ++e )
+    SortMe.emplace_back( Result.parameters[e].Value, e );
+  std::sort( SortMe.begin(), SortMe.end() );
+
+  // Copy results into OutputModel
+  scalar * const OutputData{ OutputModel[idx] };
   for( int e = 0; e < parent.NumExponents; ++e )
   {
-    SortingHat[e][0] = Result.parameters[e].Value;
-    for( int o = 0; o < parent.NumOps; ++o )
-      SortingHat[e][o + 1] = Result.parameters[parent.MELIndex(o, e) + parent.NumExponents].Value;
+    const int dst{ SortMe[e].second * parent.NumPerExp };
+    const int src{        e         * parent.NumPerExp };
+    for( int i = 0; i < parent.NumPerExp; ++i )
+      OutputData[dst + i] = Result.parameters[src + i].Value;
   }
-  std::sort( SortingHat.begin(), SortingHat.end(),
-            []( const std::vector<double> &l, const std::vector<double> &r )
-            { return l[0] < r[0]; } );
-  double * const FitParams{ ModelParams[idx] };
-  for( int e = 0; e < parent.NumExponents; ++e )
-  {
-    FitParams[e] = SortingHat[e][0];
-    for( int o = 0; o < parent.NumOps; ++o )
-      FitParams[parent.MELIndex(o, e) + parent.NumExponents] = SortingHat[e][o + 1];
-  }
-  FitParams[parent.MELIndex(0, parent.NumExponents) + parent.NumExponents] = dTestStat / parent.dof;
+  // Now copy the one-off parameters and append Chi^2 per dof
+  int OutputDataSize{ parent.NumExponents * parent.NumPerExp };
+  for( int i = 0; i < parent.NumOneOff; ++i, ++OutputDataSize )
+    OutputData[OutputDataSize] = Result.parameters[OutputDataSize].Value;
+  OutputData[OutputDataSize++] = dTestStat / parent.dof;
+
   // Check whether energy levels are separated by minimum separation
   if( idx == Fold::idxCentral )
   {
     for( int e = 1; e < parent.NumExponents; e++ )
     {
-      double RelSep = FitParams[e] / FitParams[e - 1];
+      double RelSep = OutputData[e * parent.NumPerExp] / OutputData [ ( e - 1 ) * parent.NumPerExp];
       if( ( RelSep - 1 ) < parent.RelEnergySep || RelSep * parent.RelEnergySep > 1 )
         throw std::runtime_error( "Fit failed energy separation criteria: "
                                  + std::to_string( 1 + parent.RelEnergySep ) + " < E_n / E_{n-1} < "
                                  + std::to_string( 1 / parent.RelEnergySep ) );
     }
   }
-  
+
   // Save correlation matrix for central replica
   // NB: file name will only be empty on the central replica, so only one thread will do this
   if( bCorrelated && !SaveCorMatFileName.empty() )
     parent.ds.SaveCovariance( SaveCorMatFileName, Covar );
 
   // Save the reconstructed correlator values for this replica
-  for( int f = 0; f < parent.NumFiles; f++ )
+  // Put the fitter parameters into our model parameters
+  for( int i = 0; i < parent.NumModelParams; ++i )
+    ModelParams[i] = OutputData[i];
+  // Compute theory values for each timeslice of synthetic correlators
+  for( int f = 0; f < parent.NumFiles; ++f )
   {
-    // TODO:
-    /*(*model[f]).Init( FitParams, parent.NumParams );
-    scalar * mc{ CorrSynthetic[f][idx] };
-    for( int t = 0; t < parent.Nt; t++ )
-    {
-      *mc++ = (*model[f])( t );
-    }*/
+    // Allow each model to cache any common computations based solely on the model parameters
+    const Model &m{ *parent.model[f] };
+    m.UpdateScratchPad( ModelBuffer[f], ModelParams );
+    scalar * SyntheticData{ CorrSynthetic[f][idx] };
+    for( int t = 0; t < m.Nt; ++t )
+      *SyntheticData++ = m( t, ModelParams, ModelBuffer[f] );
   }
   return dTestStat;
 }
 
 const ROOT::Minuit2::MnStrategy FitterThreadMinuit2::Strategy( FitterThreadMinuit2::StrategyLevel );
 
-// Compute chi-squared given parameters for multi-exponential fit
-  // Energy Levels        Parameters 0 ... NumExponents - 1
-  //  NB: second and subsequent energy levels are deltas
-  // Overlap Coefficients Parameters NumExponents ... NumExponents ( NumOps + 1 ) - 1
-
+// Painful, but Minuit2 calls operator() const
 double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
 {
-  for( int f = 0; f < parent.NumFiles; f++ )
-    ;// TODO: (*model[f]).Init( par.data(), par.size() );
-  if( !SaveError( Error ) )
+  scalar localBuffer[Extent];
+  Vector Error;
+  Error.MapView( localBuffer, Extent );
+  FitterThreadMinuit2 * pMe{ const_cast<FitterThreadMinuit2 *>( this ) };
+  if( !pMe->SaveError( Error, &par[0], par.size() ) )
     return std::numeric_limits<double>::max();
   double chi2;
   if( bCorrelated )
@@ -313,11 +336,8 @@ double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
   else
   {
     chi2 = 0;
-    for( int i = 0; i < parent.Extent; ++i )
-    {
-      double z = Error[i];
-      chi2 += z * z;
-    }
+    for( int i = 0; i < Extent; ++i )
+      chi2 += Error[i] * Error[i];
   }
   if( chi2 < 0 )
     throw std::runtime_error( "Chi^2 < 0 on replica " + std::to_string( idx ) );
@@ -338,9 +358,9 @@ void FitterThreadMinuit2::Minimise( ParamState &Guess, int iNumGuesses )
   Guess = state;
 }
 
-FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, ModelFile &modelParams_,
+FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_,
                                   vCorrelator &CorrSynthetic_ )
-: FitterThread( fitter_, bCorrelated_, modelParams_, CorrSynthetic_ ), vGuess( parent.NumParams )
+: FitterThread( fitter_, bCorrelated_, outputModel_, CorrSynthetic_ ), vGuess( parent.NumVariable )
 {
   // Define my finite difference function
   std::memset( &fdf, 0, sizeof( fdf ) );
@@ -348,8 +368,8 @@ FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, Mode
   fdf.f = &sf;
   if( parent.bAnalyticDerivatives )
     fdf.df = &sdf; // Analytic derivatives
-  fdf.n = parent.Extent;
-  fdf.p = parent.NumParams;
+  fdf.n = Extent;
+  fdf.p = parent.NumVariable;
   fdf.params = this;
 
   /* allocate workspace with default parameters */
@@ -370,17 +390,15 @@ void FitterThreadGSL::MakeCovarCorrelated()
   Cholesky.Cholesky();
 }
 
-int FitterThreadGSL::f( const Vector &x, Vector &f )
+int FitterThreadGSL::f( const Vector &FitParams, Vector &Error )
 {
-  assert( x.size == parent.NumParams && "Parameter vector is not the right size" );
-  assert( f.size == parent.Extent && "Result vector is not the right size" );
-  for( int file = 0; file < parent.NumFiles; file++ )
-    ;// TODO: (*model[file]).Init( x );
-  if( !SaveError( f ) )
+  assert( FitParams.size == parent.NumVariable && "Parameter vector is not the right size" );
+  assert( Error.size == Extent && "Result vector is not the right size" );
+  if( !SaveError( Error, FitParams.data, FitParams.size, FitParams.stride ) )
     throw std::runtime_error( "Error computing residuals" );
   if( bCorrelated )
   {
-    f.blas_trmv( CblasLower, CblasTrans, CblasNonUnit, Cholesky );
+    Error.blas_trmv( CblasLower, CblasTrans, CblasNonUnit, Cholesky );
     //std::cout << Covar << Common::NewLine << Common::NewLine << Common::NewLine << CovarInv << Common::NewLine;
   }
   return 0;
@@ -388,9 +406,9 @@ int FitterThreadGSL::f( const Vector &x, Vector &f )
 
 int FitterThreadGSL::df( const Vector &x, Matrix &J )
 {
-  assert( x.size == parent.NumParams && "Parameter vector is not the right size" );
-  assert( J.size1 == parent.Extent && "Jacobian rows != data points" );
-  assert( J.size2 == parent.NumParams && "Parameter columns != parameters" );
+  assert( x.size == parent.NumVariable && "Parameter vector is not the right size" );
+  assert( J.size1 == Extent && "Jacobian rows != data points" );
+  assert( J.size2 == parent.NumVariable && "Parameter columns != parameters" );
   for( int f = 0; f < parent.NumFiles; f++ )
     ;// TODO: (*model[f]).Init( x );
   if( !AnalyticJacobian( J ) )
@@ -433,7 +451,7 @@ void FitterThreadGSL::Minimise( ParamState &Guess, int iNumGuesses )
   i = 0;
   const Vector &vResult{ * reinterpret_cast<Vector *>( gsl_multifit_nlinear_position( ws ) ) };
   Matrix &mJacobian{ * reinterpret_cast<Matrix *>( gsl_multifit_nlinear_jac( ws ) ) };
-  Matrix mErrors( parent.NumParams, parent.NumParams );
+  Matrix mErrors( parent.NumVariable, parent.NumVariable );
   gsl_multifit_nlinear_covar( &mJacobian, 0, &mErrors );
   for( Parameters::Parameter & p : Guess.parameters.Params )
   {
@@ -443,7 +461,7 @@ void FitterThreadGSL::Minimise( ParamState &Guess, int iNumGuesses )
   if( parent.Verbosity > 1 && !fdf.df && idx == Fold::idxCentral )
   {
     // Compare numeric derivatives to the analytic ones I would have computed
-    Matrix MyJacobian( parent.Extent, parent.NumParams );
+    Matrix MyJacobian( parent.ds.Extent, parent.NumVariable );
     AnalyticJacobian( MyJacobian );
     std::cout << Common::NewLine << "GSL Jacobian:\n" << mJacobian << Common::NewLine
               << "My Jacobian:\n" << MyJacobian << Common::NewLine;
@@ -465,8 +483,7 @@ std::string FitterThreadGSL::Description() const
 
 Fitter::Fitter( FitterType fitType_, const DataSet &ds_, const std::vector<std::string> &ModelArgs,
                 const ModelDefaultParams &modelDefault, const std::vector<std::string> &opNames_,
-                const std::string &sopNameConcat_, int verbosity_, const std::string &outputBaseName_,
-                Common::SeedType seed_, bool bFreezeCovar_, bool bSaveCorr_, bool bSaveCMat_,
+                int verbosity_, bool bFreezeCovar_, bool bSaveCorr_, bool bSaveCMat_,
                 int Retry_, int MaxIt_, double Tolerance_, double RelEnergySep_, bool bAnalyticDerivatives_ )
   : fitType{fitType_},
     ds{ std::move( ds_ ) },
@@ -474,10 +491,7 @@ Fitter::Fitter( FitterType fitType_, const DataSet &ds_, const std::vector<std::
     NumOps{ static_cast<int>( opNames_.size() ) },
     OpNames{ opNames_ },
     bFactor{ modelDefault.bFactor },
-    sOpNameConcat{ sopNameConcat_ },
     Verbosity{ verbosity_ },
-    OutputBaseName{ outputBaseName_ },
-    Seed{ seed_ },
     bFreezeCovar{bFreezeCovar_},
     bSaveCorr{bSaveCorr_},
     bSaveCMat{bSaveCMat_},
@@ -486,13 +500,21 @@ Fitter::Fitter( FitterType fitType_, const DataSet &ds_, const std::vector<std::
     Tolerance{Tolerance_},
     RelEnergySep{RelEnergySep_},
     NumFiles{ static_cast<int>( ds.corr.size() ) },
-    NumExponents{ CreateModels( ModelArgs, modelDefault ) },
+    model{ CreateModels( ModelArgs, modelDefault ) },
+    NumExponents{ GetNumExponents() },
+    PerExpNames{ MakePerExpNames() },
     ParamNames( MakeParamNames() ),
-    NumModelParams{ FixedVsVariableParams() },
+    ParamFixed{ MakeParamFixed() },
+    ParamVariable{ MakeParamVariable() },
+    NumModelParams{ static_cast<int>( ParamNames.size() ) },
+    NumPerExp{ static_cast<int>( PerExpNames.size() ) },
+    NumOneOff{ NumModelParams - NumExponents * NumPerExp },
     NumFixed{ static_cast<int>( ParamFixed.size() ) },
     NumVariable{ static_cast<int>( ParamVariable.size() ) }
 {
   assert( ds.corr.size() == NumFiles && "Number of files extremely large" );
+  assert( NumModelParams == NumFixed + NumVariable && "NumModelParams doesn't match fixed and variable" );
+  assert( NumModelParams == NumExponents * NumPerExp + NumOneOff && "NumModelParams doesn't match NumPerExp and NumOneOff" );
   switch( fitType )
   {
     case FitterType::Minuit2:
@@ -504,7 +526,7 @@ Fitter::Fitter( FitterType fitType_, const DataSet &ds_, const std::vector<std::
 }
 
 // Create all the models and return the number of exponents in the fit
-int Fitter::CreateModels( const std::vector<std::string> &ModelArgs, const ModelDefaultParams &modelDefault )
+std::vector<ModelPtr> Fitter::CreateModels(const std::vector<std::string> &ModelArgs, const ModelDefaultParams &modelDefault)
 {
   const int NumModels{ static_cast<int>( ds.corr.size() ) };
   if( NumModels == 0 )
@@ -513,10 +535,8 @@ int Fitter::CreateModels( const std::vector<std::string> &ModelArgs, const Model
     throw std::runtime_error( "ModelSet for " + std::to_string( NumModels ) + " correrlators, but "
                      + std::to_string( ModelArgs.size() ) + " arguments" );
   // Create this model
-  model.clear();
+  std::vector<ModelPtr> model;
   model.reserve( ModelArgs.size() );
-  int MinExponents{0};
-  int MaxExponents{0};
   for( int i = 0; i < ModelArgs.size(); ++i )
   {
     std::vector<std::string> vThisArg{ Common::ArrayFromString( ModelArgs[i] ) };
@@ -524,18 +544,20 @@ int Fitter::CreateModels( const std::vector<std::string> &ModelArgs, const Model
     if( !vThisArg.empty() )
       throw std::runtime_error( "Model " + std::to_string( i ) + " has " + std::to_string( vThisArg.size() )
                                + " leftover parameters \"" + ModelArgs[i] + "\"" );
+  }
+  return model;
+}
+
+// Create all the models and return the number of exponents in the fit
+int Fitter::GetNumExponents()
+{
+  int MaxExponents{0};
+  for( int i = 0; i < model.size(); ++i )
+  {
     if( i == 0 )
-    {
-      MinExponents = model[i]->NumExponents;
       MaxExponents = model[i]->NumExponents;
-    }
-    else
-    {
-      if( MinExponents > model[i]->NumExponents )
-        MinExponents = model[i]->NumExponents;
-      if( MaxExponents < model[i]->NumExponents )
-        MaxExponents = model[i]->NumExponents;
-    }
+    else if( MaxExponents < model[i]->NumExponents )
+      MaxExponents = model[i]->NumExponents;
   }
   return MaxExponents;
 }
@@ -564,9 +586,10 @@ std::size_t Fitter::EnsureModelsSolubleHelper( UniqueNames &Names, std::size_t &
   return NumUnknown;
 }
 
-std::vector<std::string> Fitter::MakeParamNames()
+// Finalise the parameter lists the models will fit, then build a list of per-exponential parameter names
+// Tell each model which per-exponential parameters they are interested in
+std::vector<std::string> Fitter::MakePerExpNames()
 {
-  std::vector<std::string> ParamNames;
   // Loop through all the models making sure we can solve for the parameters we've been given
   // Throws an error if problematic
   UniqueNames Names{ ds.ConstantNamesPerExp };
@@ -584,39 +607,69 @@ std::vector<std::string> Fitter::MakeParamNames()
                                + std::to_string( NumUnknown ) + " correlators" );
   }
   // Make a sorted list of all the per exponential parameters but WITHOUT energy, as this must be first
-  UniqueNames NamesPerExp;
+  Names.clear();
   for( ModelPtr &m : model )
     for( const std::string &s : m->ParamNamesPerExp )
       if( !Common::EqualIgnoreCase( E, s ) )
-        NamesPerExp[s];
-  int NumParamsPerExp = static_cast<int>( NamesPerExp.size() + 1 );
-  // Build our actual parameters per-exponential
-  int idxParam{ 0 };
-  Names.clear();
-  ParamNames.reserve( NumParamsPerExp * NumExponents );
-  for( int e = 0; e < NumExponents; ++e )
+        Names[s];
+  // Sort per-exponential parameters by name, adding energy as parameter 0
   {
-    std::string eString( std::to_string( e ) );
-    std::string s{ E };
-    s.append( eString );
-    Names.insert( { s, idxParam++ } );
-    ParamNames.push_back( s );
-    for( UniqueNames::iterator it = NamesPerExp.begin(); it != NamesPerExp.end(); ++it )
-    {
-      s = it->first;
-      s.append( eString );
-      Names.insert( { s, idxParam++ } );
-      ParamNames.push_back( s );
-    }
+    int PerExpSort{ 1 };
+    for( UniqueNames::iterator it = Names.begin(); it != Names.end(); ++it )
+      it->second = PerExpSort++;
+    Names.insert( { E, 0 } );
   }
-  // For all the one-off parameters, add it to the parameter list if not there already
-  // While we're at it, tell each model the indices of the parameters they are interested in
-  int NumParamsSingle = 0;
+  // Now tell every model which parameter to use for per-exponential parameters
+  const int NumParamsPerExp{ static_cast<int>( Names.size() ) };
   for( ModelPtr &m : model )
   {
-    const std::size_t pnSize{ m->ParamNames.size() };
-    m->ParamIdx.resize( pnSize );
-    for( int i = 0; i < pnSize; ++i )
+    m->ParamIdxPerExp.resize( m->NumExponents );
+    const int ModelPerExp{ static_cast<int>( m->ParamNamesPerExp.size() ) };
+    for( int i = 0; i < ModelPerExp; ++i )
+    {
+      UniqueNames::iterator it = Names.find( m->ParamNamesPerExp[i] );
+      assert( it != Names.end() && "ModelSet constructor buggy" );
+      int idx{ it->second };
+      for( int e = 0; e < m->NumExponents; ++e )
+      {
+        if( i == 0 )
+          m->ParamIdxPerExp[e].resize( ModelPerExp );
+        m->ParamIdxPerExp[e][i] = idx;
+        idx += NumParamsPerExp;
+      }
+    }
+  }
+  // Now Make our list of parameter names per exponent
+  std::vector<std::string> PerExpNames( NumParamsPerExp );
+  for( UniqueNames::iterator it = Names.begin(); it != Names.end(); ++it )
+    PerExpNames[it->second] = it->first;
+  return PerExpNames;
+}
+
+// Make the full list of all parameters. Tell models about one-off parameters they are interested in
+std::vector<std::string> Fitter::MakeParamNames()
+{
+  // Make a sorted list of all the per exponential parameters but WITHOUT energy, as this must be first
+  int idxParam{ 0 };
+  UniqueNames Names;
+  std::vector<std::string> ParamNames( PerExpNames.size() * NumExponents );
+  for( int e = 0; e < NumExponents; ++e )
+  {
+    const std::string eString{ std::to_string( e ) };
+    for( std::string s : PerExpNames )
+    {
+      s.append( eString );
+      ParamNames[idxParam] = s;
+      Names.insert( { s, idxParam++ } );
+    }
+  }
+  // Add one-off parameters from every model to the parameter list - if not there already
+  // While we're at it, tell each model the indices of the parameters they are interested in
+  for( ModelPtr &m : model )
+  {
+    const std::size_t peSize{ m->ParamNames.size() };
+    m->ParamIdx.resize( peSize );
+    for( int i = 0; i < peSize; ++i )
     {
       const std::string &s{ m->ParamNames[i] };
       UniqueNames::iterator it = Names.find( s );
@@ -625,94 +678,76 @@ std::vector<std::string> Fitter::MakeParamNames()
         m->ParamIdx[i] = idxParam;
         Names.insert( { s, idxParam++ } );
         ParamNames.push_back( s );
-        NumParamsSingle++;
       }
       else
         m->ParamIdx[i] = it->second;
-    }
-  }
-  // Now tell every model which parameter to use for per-exponential parameters
-  int PerExpSort{ 1 };
-  for( UniqueNames::iterator it = NamesPerExp.begin(); it != NamesPerExp.end(); ++it )
-    it->second = PerExpSort++;
-  NamesPerExp.insert( { E, 0 } );
-  for( ModelPtr &m : model )
-  {
-    const std::size_t pnSize{ m->ParamNamesPerExp.size() };
-    m->ParamIdxPerExp.resize( pnSize );
-    for( int i = 0; i < pnSize; ++i )
-    {
-      const std::string &s{ m->ParamNamesPerExp[i] };
-      UniqueNames::iterator it = NamesPerExp.find( s );
-      assert( it != Names.end() && "ModelSet constructor buggy" );
-      m->ParamIdxPerExp[i] = it->second;
     }
   }
   return ParamNames;
 }
 
 // Now work out which parameters are fixed and which variable. Save info for back-references
-int Fitter::FixedVsVariableParams()
+std::vector<DataSet::FixedParam> Fitter::MakeParamFixed()
 {
+  std::vector<DataSet::FixedParam> vFixed;
   const int NumParams_{ static_cast<int>( ParamNames.size() ) };
   assert( NumParams_ <= std::numeric_limits<int>::max() );
   for( int i = 0; i < NumParams_; ++i )
   {
     DataSet::ConstMap::const_iterator it{ ds.constMap.find( ParamNames[i] ) };
-    if( it == ds.constMap.end() )
-      ParamVariable.push_back( i ); // free parameter
-    else
-      ParamFixed.emplace_back( i, it->second ); // fixed parameter
+    if( it != ds.constMap.end() )
+      vFixed.emplace_back( i, it->second ); // fixed parameter
   }
-  if( ParamVariable.empty() )
-    throw std::runtime_error( "Model has no parameters to fit" );
-  return NumParams_;
+  return vFixed;
 }
 
-// Perform a fit
-std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, int tMin, int tMax, double &ChiSq, int &dof_ )
+// Now work out which parameters are fixed and which variable. Save info for back-references
+std::vector<int> Fitter::MakeParamVariable()
 {
+  const int NumParams_{ static_cast<int>( ParamNames.size() ) };
+  assert( NumParams_ <= std::numeric_limits<int>::max() );
+  const int NumFixed_{ static_cast<int>( ParamFixed.size() ) };
+  std::vector<int> vFree;
+  vFree.reserve( NumParams_ - NumFixed_ );
+  for( int i = 0; i < NumParams_; ++i )
   {
-    std::stringstream ss;
-    ss << ( Bcorrelated_ ? "C" : "unc" ) << "orrelated " << fitType << " fit on timeslices " << TMin_ << " to " << TMax_
-#ifdef DEBUG_DISABLE_OMP
-       << " with Open MP disabled";
-#else
-       << " using " << omp_get_max_threads() << " Open MP threads";
-#endif
-    const std::string &sMsg{ ss.str() };
-    std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine;
+    DataSet::ConstMap::const_iterator it{ ds.constMap.find( ParamNames[i] ) };
+    if( it == ds.constMap.end() )
+      vFree.push_back( i );
   }
-  bCorrelated = Bcorrelated_;
+  if( vFree.empty() )
+    throw std::runtime_error( "Model has no parameters to fit" );
+  return vFree;
+}
+
+// Perform a fit - assume fit ranges have been set on the DataSet prior to the call
+std::vector<Common::ValWithEr<scalar>>
+Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::string &OutBaseName,
+                    const std::string &ModelSuffix, Common::SeedType Seed )
+{
+  bCorrelated = Bcorrelated;
   dof = ds.Extent - NumVariable;
   if( dof <= 0 )
     throw std::runtime_error( "Fit has " + std::to_string( dof ) + " degrees of freedom" );
   dof_ = dof;
 
   // Make somewhere to store the results of the fit for each bootstrap sample
-  ds.SetFitTimes( tMin, tMax );
-  ModelFile ModelParams(OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, NSamples, NumModelParams+1);
+  const int tMin{ ds.FitTimes[0][0] };
+  const int tMax{ ds.FitTimes[0].back() };
+  ModelFile OutputModel( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, ds.NSamples,
+                         NumModelParams + 1 );
   for( const Fold &f : ds.corr )
-    ModelParams.FileList.emplace_back( f.Name_.Filename );
-  ModelParams.CopyAttributes( ds.corr[0] );
+    OutputModel.FileList.emplace_back( f.Name_.Filename );
+  OutputModel.CopyAttributes( ds.corr[0] );
   {
     std::vector<std::string> ColNames{ ParamNames };
     ColNames.push_back( "ChiSqPerDof" );
-    ModelParams.SetColumnNames( ColNames );
+    OutputModel.SetColumnNames( ColNames );
   }
 
   // See whether this fit already exists
   bool bPerformFit{ true };
-  std::string OutputRunBase{ OutputBaseName };
-  OutputRunBase.append( 1, '.' );
-  OutputRunBase.append( bCorrelated ? "corr" : "uncorr" );
-  OutputRunBase.append( 1, '_' );
-  OutputRunBase.append( std::to_string( tMin ) );
-  OutputRunBase.append( 1, '_' );
-  OutputRunBase.append( std::to_string( tMax ) );
-  std::string sModelBase{ OutputRunBase };
-  sModelBase.append( 1, '.' );
-  sModelBase.append( sOpNameConcat );
+  const std::string sModelBase{ OutBaseName + ModelSuffix };
   const std::string ModelFileName{ Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ) };
   if( Common::FileExists( ModelFileName ) )
   {
@@ -720,11 +755,11 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, in
     PreBuilt.Read( ModelFileName, "\nPre-built: " );
     if( !PreBuilt.Compatible( NumExponents, dof, tMin, tMax, OpNames ) )
       throw std::runtime_error( "Pre-existing fits not compatible with parameters from this run" );
-    bPerformFit = PreBuilt.NewParamsMorePrecise( bFreezeCovar, NSamples );
+    bPerformFit = PreBuilt.NewParamsMorePrecise( bFreezeCovar, ds.NSamples );
     if( !bPerformFit )
     {
-      ChiSq = dof * PreBuilt.getSummaryData()[NumParams].Central; // Last summary has chi squared per dof
-      ModelParams = std::move( PreBuilt );
+      ChiSq = dof * PreBuilt.getSummaryData()[NumModelParams].Central; // Last summary has chi squared per dof
+      OutputModel = std::move( PreBuilt );
     }
     else
       std::cout << "Overwriting\n";
@@ -739,93 +774,79 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, in
     vCorrelator CorrSynthetic( NumFiles ); // correlators resulting from the fit params
     for( int f = 0; f < NumFiles; f++ )
     {
-      CorrSynthetic[f].resize( NSamples, Nt );
+      CorrSynthetic[f].resize( ds.NSamples, ds.corr[f].Nt() );
       CorrSynthetic[f].FileList.push_back( ModelFileName );
-      CorrSynthetic[f].CopyAttributes( Corr[f].Corr );
+      CorrSynthetic[f].CopyAttributes( ds.corr[f] );
     }
-    // Make initial guesses for the parameters
-    // For each Exponent, I need the delta_E + a constant for each operator
-    Parameters parGuess;
+
+    // Build Parameter lists and take initial guesses
+    Parameters parGuess; // Only the variable parameters - used by fitting engines
     {
-      static constexpr double ErrorFactor = 0.1; // I actually have no idea what the parameter errors are
-      std::vector<double> GuessValue( NumParams );
-      std::vector<double> GuessError( NumParams );
-      // Take a starting guess for the parameters - same as LatAnalyze
-      double * const Energy{ GuessValue.data() };
-      double * const Coeff{ Energy + NumExponents };
-      double * const EnergyErr{ GuessError.data() };
-      double * const CoeffErr{ EnergyErr + NumExponents };
-      const int tGuess = 11;// TODO: { Nt / 4 };
-      Energy[0] = 0;
-      bool bOpDone[NumOps];
-      for( int i = 0; i < NumOps; ++i )
-        bOpDone[i] = false;
-      for( int f = 0; f < NumFiles; f++ )
+      Vector modelParams( NumModelParams ); // All parameters - used by models
+      for( int i = 0; i < NumModelParams; ++i )
+        modelParams[i] = 0;
+      // Get all the constants and start keeping track of which parameters we have managed to take a guess for
+      std::vector<bool> bKnown( NumModelParams, false );
+      ds.GetFixed( Fold::idxCentral , modelParams, ParamFixed );
+      for( const DataSet::FixedParam &p : ParamFixed )
+        bKnown[p.idx] = true;
+      const std::vector<bool> bFixed( bKnown );
+      // Take a guess for E0 if we didn't manage to load it
+      if( !bKnown[0] )
       {
-        // Guess for energy is the log of the ratios of the exponentials at tGuess ... averaged over all correlators
-        const double * const c{ nullptr }; // TODO: Corr[f].Corr[Fold::idxCentral] };
-        double E0 = std::log( c[tGuess] / c[tGuess + 1] );
-        Energy[0] += E0;
-        // Guess for matrix elements in two passes, first where source and sink same, then different
-        for( int Pass = 0; Pass < 2; ++Pass )
+        int E0Count{ 0 };
+        Vector vCorr;
+        for( int f = 0; f < NumFiles; ++f )
         {
-          const int iOpSrc{ 0};// TODO: MELIndex( Corr[f].Corr.Name_.op[idxSrc], 0 ) };
-          const int iOpSnk{ 0};// TODO: MELIndex( Corr[f].Corr.Name_.op[idxSnk], 0 ) };
-          if( Pass == 0 && iOpSrc == iOpSnk && !bOpDone[iOpSrc] )
+          scalar z;
+          vCorr.MapView( const_cast<scalar *>( ds.corr[f][Fold::idxCentral] ), ds.corr[f].Nt() );
+          if( model[f]->GuessE0( z, vCorr ) )
           {
-            double MELGuess = std::sqrt( std::abs( c[tGuess] ) ) * std::exp( E0 * tGuess / 2 );
-            Coeff[iOpSrc] = MELGuess;
-            CoeffErr[iOpSrc] = MELGuess * ErrorFactor;
-            bOpDone[iOpSrc] = true;
+            modelParams[0] += z;
+            E0Count++;
           }
-          else if( Pass == 1 && iOpSrc != iOpSnk )
+        }
+        assert( E0Count && "Nothing guessed E0" );
+        modelParams[0] /= E0Count;
+        bKnown[0] = true;
+      }
+      // Now guess excited state energies (increment of half the previous difference each time)
+      {
+        scalar EPrior{ 0 };
+        for( int e = 1; e < NumExponents; ++e )
+        {
+          const int idxE{ e * NumVariable };
+          const int idxELast{ idxE - NumVariable };
+          if( !bKnown[idxE] )
           {
-            double MELGuess;
-            if( !bOpDone[iOpSrc] && !bOpDone[iOpSnk] )
-            {
-              // Different ops, but this is only correlator we see them in
-              // TODO: std::cout << "Warning: can't distinguish " << OpNames[Corr[f].Corr.Name_.op[idxSnk]]
-                        // TODO: << " from " << OpNames[Corr[f].Corr.Name_.op[idxSrc]] << Common::NewLine;
-              MELGuess = std::sqrt( std::abs( c[tGuess] ) ) * std::exp( E0 * tGuess / 2 );
-            }
-            else
-            {
-              MELGuess = c[tGuess] * std::exp( E0 * tGuess ) / Coeff[bOpDone[iOpSrc] ? iOpSrc : iOpSnk];
-            }
-            if( !bOpDone[iOpSrc] )
-            {
-              Coeff[iOpSrc] = MELGuess;
-              CoeffErr[iOpSrc] = MELGuess * ErrorFactor;
-              bOpDone[iOpSrc] = true;
-            }
-            if( !bOpDone[iOpSnk] )
-            {
-              Coeff[iOpSnk] = MELGuess;
-              CoeffErr[iOpSnk] = MELGuess * ErrorFactor;
-              bOpDone[iOpSnk] = true;
-            }
+            scalar PriorDiff{ modelParams[idxELast] - EPrior };
+            modelParams[idxE] = modelParams[idxELast] + PriorDiff / 2;
+            EPrior = modelParams[idxELast];
+            bKnown[idxE] = true;
           }
         }
       }
-      Energy[0] /= NumFiles;
-      EnergyErr[0] = Energy[0] * ErrorFactor;
-      // Now guess Higher exponents - same as LatAnalyze
-      //static const double MELFactor{ std::sqrt( 0.5 ) };
-      static const double MELFactor{ std::sqrt( 2 ) };
-      for( int e = 1; e < NumExponents; ++e )
+      // Now guess everything else
       {
-        Energy[e] = Energy[e - 1] + ( Energy[e - 1] - ( e > 1 ? Energy[e - 2] : 0 ) ) * 0.5;
-        EnergyErr[e] = Energy[e] * ErrorFactor;
-        for( int o = 0; o < NumOps; ++o )
+        Vector vCorr;
+        int pass{ 0 };
+        for( bool bNeedAnotherPass = true; bNeedAnotherPass; ++pass )
         {
-          int i = MELIndex( o, e );
-          Coeff[i] = Coeff[ MELIndex( o, e - 1 ) ] * MELFactor;
-          CoeffErr[i] = Coeff[i] * ErrorFactor;
+          bNeedAnotherPass = false;
+          for( int f = 0; f < NumFiles; ++f )
+          {
+            vCorr.MapView( const_cast<scalar *>( ds.corr[f][Fold::idxCentral] ), ds.corr[f].Nt() );
+            if( model[f]->Guess( modelParams, bKnown, pass, vCorr ) )
+              bNeedAnotherPass = true;
+          }
         }
       }
-      for( int i = 0; i < NumParams; ++i )
+      // Make sure we've taken a guess for everything
+      for( int i = 0; i < NumModelParams; ++i )
       {
-        parGuess.Add( ParamNames[i], GuessValue[i], GuessError[i] );
+        assert( bKnown[i] && "Bad model: unable to guess all parameters" );
+        if( !bFixed[i] )
+          parGuess.Add( ParamNames[i], modelParams[i], modelParams[i] * 0.1 );
       }
     }
     // Protected by CancelCritSec
@@ -844,10 +865,10 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, in
           switch( fitType )
           {
             case FitterType::Minuit2:
-              // TODO: ft.reset( new FitterThreadMinuit2( *this, bCorrelated, ModelParams, CorrSynthetic ) );
+              ft.reset( new FitterThreadMinuit2( *this, bCorrelated, OutputModel, CorrSynthetic ) );
               break;
             case FitterType::GSL:
-              // TODO: ft.reset( new FitterThreadGSL( *this, bCorrelated, ModelParams, CorrSynthetic ) );
+              ft.reset( new FitterThreadGSL( *this, bCorrelated, OutputModel, CorrSynthetic ) );
               break;
           }
           FitterThread &fitThread( *ft.get() );
@@ -936,13 +957,13 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, in
       if( Abort )
         throw std::runtime_error( sError );
     }
-    // TODO: ModelParams.MakeCorrSummary( "Params" );
-    // TODO: ModelParams.Write( ModelFileName );
-    //ModelParams.WriteSummary( Common::MakeFilename( sModelBase, Common::sModel, Seed, TEXT_EXT ) );
+    OutputModel.MakeCorrSummary( "Params" );
+    OutputModel.Write( ModelFileName );
+    //OutputModel.WriteSummary( Common::MakeFilename( sModelBase, Common::sModel, Seed, TEXT_EXT ) );
     for( int f = 0; f < NumFiles; f++ )
     {
-      const int snk{ 0};// TODO: Corr[f].Corr.Name_.op[idxSnk] };
-      const int src{ 0};// TODO: Corr[f].Corr.Name_.op[idxSrc] };
+      const int snk{ ds.corr[f].Name_.op[idxSnk] };
+      const int src{ ds.corr[f].Name_.op[idxSrc] };
       std::string sSink{ OpNames[snk] };
       std::size_t pos = sSink.find_last_of( '_' );
       if( pos != std::string::npos )
@@ -951,7 +972,7 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, in
       pos = sSrc.find_last_of( '_' );
       if( pos != std::string::npos )
         sSrc.resize( pos );
-      const std::string SummaryBase{ OutputRunBase + '.' + sSink + '_' + sSrc };
+      const std::string SummaryBase{ OutBaseName + sSink + '_' + sSrc };
       if( bSaveCorr )
         CorrSynthetic[f].Write( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
       CorrSynthetic[f].MakeCorrSummary( nullptr );
@@ -959,22 +980,20 @@ std::vector<Common::ValWithEr<scalar>> Fitter::PerformFit( bool Bcorrelated_, in
     }
   }
   // Return the statistics on the fit results
-  // TODO:
-  /*
-  const int NumSummaries{ ModelParams.NumSamples() }; // because we might have read back an old fit
-  std::vector<Common::ValWithEr<scalar>> Results( NumParams );
+  const int NumSummaries{ OutputModel.NumSamples() }; // because we might have read back an old fit
+  std::vector<Common::ValWithEr<scalar>> Results( NumModelParams );
   std::vector<double> data( NumSummaries );
-  for( int p = 0; p < NumParams; p++ ) {
-    double Central = ModelParams[Fold::idxCentral][p];
+  for( int p = 0; p < NumModelParams; p++ ) {
+    double Central = OutputModel[Fold::idxCentral][p];
     std::size_t Count{ 0 };
     for( int j = 0; j < NumSummaries; ++j ) {
-      double d = ModelParams[j][p];
+      double d = OutputModel[j][p];
       if( std::isfinite( d ) )
         data[Count++] = d;
     }
     Results[p].Get( Central, data, Count );
-  }*/
-  return {};// TODO: Results;
+  }
+  return Results;
 }
 
 int main(int argc, const char *argv[])
@@ -1045,8 +1064,7 @@ int main(int argc, const char *argv[])
 
       // Walk the list of parameters on the command-line, loading correlators and making models
       bShowUsage = false;
-      Common::SeedType Seed = 0;
-      std::vector<std::string> OpNameFile;
+      std::vector<std::string> OpName;
       std::cout << std::setprecision( 13 /*std::numeric_limits<double>::max_digits10*/ ) << "Loading folded correlators\n";
       // Split each argument at the first comma (so the first part can be treated as a filename to glob
       const std::size_t NumArgs{ cl.Args.size() };
@@ -1056,34 +1074,36 @@ int main(int argc, const char *argv[])
       {
         std::string FileToGlob{ Common::ExtractToSeparator( cl.Args[ArgNum] ) };
         for( const std::string &sFileName : Common::glob( &FileToGlob, &FileToGlob + 1, inBase.c_str() ) )
-          ds.LoadFile( sFileName, OpNameFile, ModelArgs, cl.Args[ArgNum] );
+          ds.LoadFile( sFileName, OpName, ModelArgs, cl.Args[ArgNum] );
       }
-
-      // At least one correlator must be loaded
       if( ds.corr.empty() )
         throw std::runtime_error( "At least one correlator must be loaded to perform a fit" );
+
+      // I'll need a sorted, concatenated list of the operators in the fit for filenames
+      std::string sOpNameConcat;
+      {
+        vString OpNameFile{ OpName };
+        std::sort( OpNameFile.begin(), OpNameFile.end() );
+        sOpNameConcat = OpNameFile[0];
+        for( std::size_t i = 1; i < OpNameFile.size(); i++ )
+        {
+          sOpNameConcat.append( 1, '_' );
+          sOpNameConcat.append( OpNameFile[i] );
+        }
+      }
+
+      // Now make base filenames for output
       outBaseFileName.append( ds.corr[0].Name_.Base );
-      Seed = ds.corr[0].Name_.Seed;
+      outBaseFileName.append( 1, '.' );
+      outBaseFileName.append( doCorr ? "corr" : "uncorr" );
+      const std::string sSummaryBase{ outBaseFileName + Common::Period + sOpNameConcat };
+      outBaseFileName.append( 1, '_' );
+      const std::size_t outBaseFileNameLen{ outBaseFileName.size() };
+      const Common::SeedType Seed{ ds.corr[0].Name_.Seed };
 
       // All the models are loaded
-      std::sort( OpNameFile.begin(), OpNameFile.end() );
-      std::string sOpNameConcat{ OpNameFile[0] };
-      for( std::size_t i = 1; i < OpNameFile.size(); i++ )
-      {
-        sOpNameConcat.append( 1, '_' );
-        sOpNameConcat.append( OpNameFile[i] );
-      }
-      Fitter m( fitType, ds, ModelArgs, modelDefault, OpNameFile, sOpNameConcat, Verbosity,
-                outBaseFileName, Seed, bFreezeCovar, bSaveCorr, bSaveCMat, Retry, MaxIterations, Tolerance, RelEnergySep,
-                bAnalyticDerivatives );
-      std::string sSummaryBase{ outBaseFileName };
-      sSummaryBase.append( 1, '.' );
-      if( doCorr )
-        sSummaryBase.append( "corr" );
-      else
-        sSummaryBase.append( "uncorr" );
-      sSummaryBase.append( 1, '.' );
-      sSummaryBase.append( sOpNameConcat );
+      Fitter m( fitType, ds, ModelArgs, modelDefault, OpName, Verbosity, bFreezeCovar, bSaveCorr, bSaveCMat, Retry,
+                MaxIterations, Tolerance, RelEnergySep, bAnalyticDerivatives );
       static const char Sep[] = " ";
       const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
       std::ofstream s;
@@ -1099,9 +1119,26 @@ int main(int argc, const char *argv[])
 	    std::time( &then );
             try
             {
+              {
+                std::stringstream ss;
+                ss << ( doCorr ? "C" : "unc" ) << "orrelated " << fitType << " fit on timeslices " << ti << " to " << tf
+            #ifdef DEBUG_DISABLE_OMP
+                   << " with Open MP disabled";
+            #else
+                   << " using " << omp_get_max_threads() << " Open MP threads";
+            #endif
+                const std::string &sMsg{ ss.str() };
+                std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine;
+              }
               double ChiSq;
               int dof;
-              auto params = m.PerformFit( doCorr, ti, tf, ChiSq, dof );
+              outBaseFileName.resize( outBaseFileNameLen );
+              outBaseFileName.append( std::to_string( ti ) );
+              outBaseFileName.append( 1, '_' );
+              outBaseFileName.append( std::to_string( tf ) );
+              outBaseFileName.append( 1, '.' );
+              ds.SetFitTimes( ti, tf );
+              auto params = m.PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat, Seed );
               if( bNeedHeader )
               {
                 bNeedHeader = false;
@@ -1120,12 +1157,12 @@ int main(int argc, const char *argv[])
                 s << "# [tf=" << tf << "]" << std::endl;
                 // Column names, with the series value embedded in the column header (best I can do atm)
                 s << "tf=" << tf << Sep << "ti" << Sep << "dof";
-                for( int p = 0; p < m.NumParams; p++ )
+                for( int p = 0; p < m.NumModelParams; p++ )
                   s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "_low" << Sep << m.ParamNames[p] << "_high" << Sep << m.ParamNames[p] << "_check";
                 s << " ChiSqPerDof" << std::endl;
               }
               s << tf << Sep << ti << Sep << dof;
-              for( int p = 0; p < m.NumParams; p++ )
+              for( int p = 0; p < m.NumModelParams; p++ )
                 s << Sep << params[p];
               s << Sep << ( ChiSq / dof ) << std::endl;
             }
