@@ -184,7 +184,7 @@ bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::s
     for( int t : FitTimes )
     {
       Error[i] = ( m( t, ModelParams, ModelBuffer[f] ) - Data[i] ) * CholeskyDiag[i];
-      if( !std::isfinite( Error[i] ) )
+      if( !std::isfinite( Error[i++] ) )
         return false;
     }
   }
@@ -433,7 +433,7 @@ void FitterThreadGSL::Minimise( ParamState &Guess, int iNumGuesses )
     std::cout << "Guess chi^2=" << Guess.TestStat << Common::NewLine;
   }
 
-  /* solve the system with a maximum of 100 iterations */
+  /* solve the system with a maximum of parent.MaxIt iterations */
   const auto tol = parent.Tolerance;
   Guess.bValid = false;
   gsl_multifit_nlinear_driver( parent.MaxIt ? parent.MaxIt : std::numeric_limits<std::size_t>::max(), // Infinite
@@ -781,8 +781,8 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
 
     // Build Parameter lists and take initial guesses
     Parameters parGuess; // Only the variable parameters - used by fitting engines
+    Vector modelParams( NumModelParams ); // All parameters - used by models
     {
-      Vector modelParams( NumModelParams ); // All parameters - used by models
       for( int i = 0; i < NumModelParams; ++i )
         modelParams[i] = 0;
       // Get all the constants and start keeping track of which parameters we have managed to take a guess for
@@ -815,8 +815,8 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
         scalar EPrior{ 0 };
         for( int e = 1; e < NumExponents; ++e )
         {
-          const int idxE{ e * NumVariable };
-          const int idxELast{ idxE - NumVariable };
+          const int idxE{ e * NumPerExp };
+          const int idxELast{ idxE - NumPerExp };
           if( !bKnown[idxE] )
           {
             scalar PriorDiff{ modelParams[idxELast] - EPrior };
@@ -879,8 +879,22 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
             const std::string sDescription{ fitThread.Description() };
             if( !sDescription.empty() )
               std::cout << sDescription << Common::NewLine;
-            std::cout << "Tolerance " << Tolerance << ". Using uncorrelated fit as guess for each replica. Initial guess:\n"
-                      << parGuess;
+            std::cout << "Tolerance " << Tolerance << ". Using uncorrelated fit as guess for each replica.\n";
+            if( NumFixed )
+            {
+              std::size_t MaxLen{ 0 };
+              for( const auto & p : ParamFixed )
+              {
+                std::size_t ThisLen{ ParamNames[p.idx].size() };
+                if( MaxLen < ThisLen )
+                  MaxLen = ThisLen;
+              }
+              std::cout << " Fixed parameters:\n";
+              for( const auto & p : ParamFixed )
+                std::cout << std::string( 2 + MaxLen - ParamNames[p.idx].size(), ' ' ) << ParamNames[p.idx]
+                          << Common::Space << modelParams[p.idx] << Common::NewLine;
+            }
+            std::cout << " Initial guess:\n" << parGuess;
             if( bCorrelated )
             {
               // Perform an uncorrelated fit on the central replica, and use that as the guess for every replica
@@ -1078,17 +1092,16 @@ int main(int argc, const char *argv[])
       }
       if( ds.corr.empty() )
         throw std::runtime_error( "At least one correlator must be loaded to perform a fit" );
+      ds.SortOpNames( OpName );
 
       // I'll need a sorted, concatenated list of the operators in the fit for filenames
       std::string sOpNameConcat;
       {
-        vString OpNameFile{ OpName };
-        std::sort( OpNameFile.begin(), OpNameFile.end() );
-        sOpNameConcat = OpNameFile[0];
-        for( std::size_t i = 1; i < OpNameFile.size(); i++ )
+        sOpNameConcat = OpName[0];
+        for( std::size_t i = 1; i < OpName.size(); i++ )
         {
           sOpNameConcat.append( 1, '_' );
-          sOpNameConcat.append( OpNameFile[i] );
+          sOpNameConcat.append( OpName[i] );
         }
       }
 

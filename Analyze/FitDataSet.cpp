@@ -144,7 +144,7 @@ void DataSet::MakeCovariance( int idx, Matrix &Covar ) const
   Vector Data( Extent );
   Vector Mean( Extent );
   GetData( idx, Mean );
-  for( int replica = 0; replica < NSamples; ++replica )
+  for( int replica = 0; replica < MaxSamples; ++replica )
   {
     GetData( replica, Data );
     for( int i = 0; i < Extent; ++i )
@@ -261,7 +261,13 @@ void DataSet::LoadFile( const std::string &sFileName, std::vector<std::string> &
     corr[i].Read( "  " );
     // See whether this correlator is compatible with prior correlators
     if( i )
+    {
       corr[0].IsCompatible( corr[i], &NSamples );
+      if( MaxSamples > corr[i].NumSamples() )
+        MaxSamples = corr[i].NumSamples();
+    }
+    else
+      MaxSamples = corr[i].NumSamples();
     ModelArgs.push_back( Args );
   }
   else
@@ -337,5 +343,33 @@ void DataSet::LoadFile( const std::string &sFileName, std::vector<std::string> &
         }
       }
     }
+  }
+}
+
+// Sort the operator names and renumber all the loaded correlators referring to them
+void DataSet::SortOpNames( std::vector<std::string> &OpNames )
+{
+  int NumOps{ static_cast<int>( OpNames.size() ) };
+  if( OpNames.size() > 1 )
+  {
+    // Sort the names
+    UniqueNames OpSorted;
+    for( int i = 0; i < NumOps; ++i )
+      OpSorted.emplace( std::move( OpNames[i] ), i );
+    // Extract the sorted names and indices (to renumber operators in correlator names)
+    std::vector<std::string> SortedNames;
+    std::vector<int> SortIndex( NumOps );
+    SortedNames.reserve( NumOps );
+    int idx{ 0 };
+    for( UniqueNames::iterator it = OpSorted.begin(); it != OpSorted.end(); ++it )
+    {
+      SortedNames.emplace_back( it->first );
+      SortIndex[it->second] = idx++;
+    }
+    // Renumber the operators and save the sorted operator names
+    for( auto &f : corr )
+      for( int i = 0; i < f.Name_.op.size(); ++i )
+        f.Name_.op[i] = SortIndex[f.Name_.op[i]];
+    OpNames = SortedNames;
   }
 }

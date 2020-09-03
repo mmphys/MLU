@@ -516,7 +516,7 @@ ModelPtr Model::MakeModel(vString &Params, const ModelDefaultParams &Default, co
       throw std::runtime_error( "Unrecognised ModelType for " + Corr.Name_.Filename );
   }
   // 2 part construction - now that virtual functions in place
-  model->SetParams( Corr.Nt(), Corr.NtUnfolded, Default.NumExponents );
+  model->SetParams( Corr.Nt(), Corr.NtUnfolded / 2, Default.NumExponents );
   model->Construct( Params, Default, Corr, FileOps );
   return model;
 }

@@ -46,7 +46,7 @@
       enableASanStackUseAfterReturn = "YES"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(HOME)/data/Study2/C1"
+      customWorkingDirectory = "$(HOME)/data/Study1/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -64,22 +64,34 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "--ti=10 --tf=16 --dti=7 --dtf=10"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o fit/2pt/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "PW/2pt/h0_s_p_0_0_0_g5P_g5[PW].fold.1835672416.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "fit/2pt/h0_s_p_0_0_0.corr_10_16.g5P_g5W.model.1835672416.h5,g5W=g5W_src,Ei=E0"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "fit_old_1/3pt_s/quark_h3_h0_gT_dt_16_p_0_0_0.corr_2_8.g5P.model.1835672416.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "GFWPZ2/fold35/h1_l_p_0_0_0_PP_P[PW].fold.4147798751.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o GFWPZ2/fit35test/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--ti=11 --tf=17"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

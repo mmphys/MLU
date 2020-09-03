@@ -131,18 +131,19 @@ struct DataSet
 {
   struct ConstantSource
   {
-    std::size_t File;
-    std::size_t idx;
+    std::size_t File; // Index of the constant file in the DataSet this comes from
+    std::size_t idx;  // Index of the parameter in this file
     ConstantSource( std::size_t File_, std::size_t idx_ ) : File{File_}, idx{idx_} {}
   };
   struct FixedParam
   {
-    int             idx;
-    ConstantSource  src;
+    int             idx;  // Index of the parameter (relative to Fitter::ParamNames)
+    ConstantSource  src;  // Where to get the value from
     FixedParam( int idx_, const ConstantSource &src_ ) : idx{idx_}, src{src_} {}
   };
-  int NSamples; // Number of samples we are using. These are guaranteed to exist
-  int Extent = 0;   // Number of data points in our fit (i.e. total number of elements in FitTimes)
+  int NSamples;   // Number of samples we are using. These are guaranteed to exist
+  int MaxSamples; // Maximum number of samples available - used for covariance. Guaranteed to exist. >= NSamples.
+  int Extent = 0; // Number of data points in our fit (i.e. total number of elements in FitTimes)
   int MinExponents = 0;
   int MaxExponents = 0;
   std::vector<Fold>             corr;     // Correlator files
@@ -161,6 +162,7 @@ public:
   void clear();
   void LoadFile( const std::string &sFileName, std::vector<std::string> &OpNames, std::vector<std::string> &ModelArgs,
                  const std::string &Args );
+  void SortOpNames( std::vector<std::string> &OpNames );
   void SetFitTimes( const std::vector<std::vector<int>> &FitTimes );
   void SetFitTimes( int tMin, int tMax );
   void GetData( int idx, Vector &vResult ) const;
