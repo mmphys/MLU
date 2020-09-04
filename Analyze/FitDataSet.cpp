@@ -148,15 +148,19 @@ void DataSet::MakeCovariance( int idx, Matrix &Covar ) const
   {
     GetData( replica, Data );
     for( int i = 0; i < Extent; ++i )
+      Data[i] -= Mean[i];
+    for( int i = 0; i < Extent; ++i )
       for( int j = 0; j <= i; ++j )
-        Covar( i, j ) += ( Data[i] - Mean[i] ) * ( Data[j] - Mean[j] );
+        Covar( i, j ) += Data[i] * Data[j];
   }
   for( int i = 0; i < Extent; ++i )
     for( int j = 0; j <= i; ++j )
-      Covar( i, j ) /= NSamples;
-  for( int i = 1; i < Extent; ++i )
-    for( int j = 0; j < i; ++j )
-      Covar( j, i ) = Covar( i, j );
+    {
+      const scalar z{ Covar( i, j ) / MaxSamples };
+      Covar( i, j ) = z;
+      if( i != j )
+        Covar( j, i ) = z;
+    }
 }
 
 // Write covariance matrix to file
@@ -251,7 +255,7 @@ void DataSet::LoadFile( const std::string &sFileName, std::vector<std::string> &
 {
   // First string is Filename
   Common::FileNameAtt Att( sFileName );
-  if( !Common::EqualIgnoreCase( Att.Type, Common::sModel ) )
+  if( Common::EqualIgnoreCase( Att.Type, Common::sFold ) )
   {
     // This is a correlator - load it
     Att.ParseOpNames( OpNames );

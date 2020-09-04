@@ -78,6 +78,43 @@ std::ostream & operator<<( std::ostream &os, const ParamState &State )
   return os;
 }
 
+std::ostream & operator<<( std::ostream &os, const FitRange &fr )
+{
+  char colon{ ':' };
+  os << fr.ti << colon << fr.tf;
+  if( fr.dti != fr.dtf )
+    os << colon << fr.dti << colon << fr.dtf;
+  else if( fr.dti != 1 )
+    os << colon << fr.dti;
+  return os;
+}
+
+std::istream & operator>>( std::istream &is, FitRange &fr )
+{
+  int Numbers[4];
+  int i{ 0 };
+  for( bool bMore = true; bMore && i < 4 && is >> Numbers[i]; )
+  {
+    if( ++i < 4 && is.peek() == ':' )
+      is.get();
+    else
+      bMore = false;
+  }
+  if( i < 2 )
+    is.setstate( std::ios_base::failbit );
+  else
+  {
+    fr.ti = Numbers[0];
+    fr.tf = Numbers[1];
+    if( i >= 3 )
+    {
+      fr.dti = Numbers[2];
+      fr.dtf = ( i == 3 ? Numbers[2] : Numbers[3] );
+    }
+  }
+  return is;
+}
+
 FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_, vCorrelator &CorrSynthetic_ )
 : parent{ fitter_ },
   Extent{ fitter_.ds.Extent },
@@ -85,7 +122,7 @@ FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile 
   CholeskyDiag( Extent ),
   Data( Extent ),
   ModelParams( fitter_.NumModelParams ),
-  SortingHat( parent.NumModelParams ),//fitter_.NumExponents * fitter_.NumPerExp ),
+  SortingHat( parent.NumExponents ),
   bCorrelated{ bCorrelated_ },
   OutputModel{ outputModel_ },
   CorrSynthetic( CorrSynthetic_ ),
@@ -179,11 +216,12 @@ bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::s
   {
     // Allow each model to cache any common computations based solely on the model parameters
     const Model &m{ *parent.model[f] };
-    m.UpdateScratchPad( ModelBuffer[f], ModelParams );
+    if( ModelBuffer[f].size )
+      m.ModelParamsChanged( ModelBuffer[f], ModelParams );
     const vInt &FitTimes{ parent.ds.FitTimes[f] };
     for( int t : FitTimes )
     {
-      Error[i] = ( m( t, ModelParams, ModelBuffer[f] ) - Data[i] ) * CholeskyDiag[i];
+      Error[i] = ( m( t, ModelBuffer[f], ModelParams ) - Data[i] ) * CholeskyDiag[i];
       if( !std::isfinite( Error[i++] ) )
         return false;
     }
@@ -262,26 +300,30 @@ scalar FitterThread::FitOne( const Parameters &parGuess, const std::string &Save
   // Perform fit
   ParamState Result{ parGuess };
   scalar dTestStat = RepeatFit( Result, NumRetriesFit() );
+  // Put the variable fit parameters into the full model parameter set (constants are already there)
+  for( int i = 0; i < parent.NumVariable; ++i )
+    ModelParams[parent.ParamVariable[i]] = Result.parameters[i].Value;
   // Save the fit parameters for this replica, sorted by E_0
-  std::vector<std::pair<double,int>> SortMe;
-  SortMe.reserve( parent.NumExponents );
   for( int e = 0; e < parent.NumExponents; ++e )
-    SortMe.emplace_back( Result.parameters[e].Value, e );
-  std::sort( SortMe.begin(), SortMe.end() );
+  {
+    SortingHat[e].first = ModelParams[e * parent.NumPerExp];
+    SortingHat[e].second = e;
+  }
+  std::sort( SortingHat.begin(), SortingHat.end() );
 
   // Copy results into OutputModel
   scalar * const OutputData{ OutputModel[idx] };
   for( int e = 0; e < parent.NumExponents; ++e )
   {
-    const int dst{ SortMe[e].second * parent.NumPerExp };
-    const int src{        e         * parent.NumPerExp };
+    const int src{ SortingHat[e].second * parent.NumPerExp };
+    const int dst{            e         * parent.NumPerExp };
     for( int i = 0; i < parent.NumPerExp; ++i )
-      OutputData[dst + i] = Result.parameters[src + i].Value;
+      OutputData[dst + i] = ModelParams[src + i];
   }
   // Now copy the one-off parameters and append Chi^2 per dof
   int OutputDataSize{ parent.NumExponents * parent.NumPerExp };
   for( int i = 0; i < parent.NumOneOff; ++i, ++OutputDataSize )
-    OutputData[OutputDataSize] = Result.parameters[OutputDataSize].Value;
+    OutputData[OutputDataSize] = ModelParams[OutputDataSize];
   OutputData[OutputDataSize++] = dTestStat / parent.dof;
 
   // Check whether energy levels are separated by minimum separation
@@ -311,10 +353,11 @@ scalar FitterThread::FitOne( const Parameters &parGuess, const std::string &Save
   {
     // Allow each model to cache any common computations based solely on the model parameters
     const Model &m{ *parent.model[f] };
-    m.UpdateScratchPad( ModelBuffer[f], ModelParams );
+    if( ModelBuffer[f].size )
+      m.ModelParamsChanged( ModelBuffer[f], ModelParams );
     scalar * SyntheticData{ CorrSynthetic[f][idx] };
     for( int t = 0; t < m.Nt; ++t )
-      *SyntheticData++ = m( t, ModelParams, ModelBuffer[f] );
+      *SyntheticData++ = m( t, ModelBuffer[f], ModelParams );
   }
   return dTestStat;
 }
@@ -752,9 +795,14 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   if( Common::FileExists( ModelFileName ) )
   {
     ModelFile PreBuilt;
-    PreBuilt.Read( ModelFileName, "\nPre-built: " );
-    if( !PreBuilt.Compatible( NumExponents, dof, tMin, tMax, OpNames ) )
-      throw std::runtime_error( "Pre-existing fits not compatible with parameters from this run" );
+    PreBuilt.Read( ModelFileName, "Pre-built: " );
+    if( std::tie( NumExponents, /*dof,*/ tMin, tMax, OutputModel.GetColumnNames() )
+        != std::tie( PreBuilt.NumExponents, /*PreBuilt.dof,*/ PreBuilt.ti, PreBuilt.tf, PreBuilt.GetColumnNames() ) )
+    {
+      throw std::runtime_error( "Pre-built fit not compatible with parameters from this run" );
+    }
+    if( dof != PreBuilt.dof )
+      throw std::runtime_error( "Pre-built fit had different constraints" );
     bPerformFit = PreBuilt.NewParamsMorePrecise( bFreezeCovar, ds.NSamples );
     if( !bPerformFit )
     {
@@ -1034,6 +1082,7 @@ int main(int argc, const char *argv[])
       {"o", CL::SwitchType::Single, "" },
       {"e", CL::SwitchType::Single, "1"},
       {"n", CL::SwitchType::Single, "0"},
+      {"t", CL::SwitchType::Single, nullptr},
       {"f", CL::SwitchType::Flag, nullptr},
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"freeze", CL::SwitchType::Flag, nullptr},
@@ -1076,6 +1125,16 @@ int main(int argc, const char *argv[])
       if( MaxIterations < 0 )
         throw std::invalid_argument( "MaxIterations must be >= 0" );
 
+      if( cl.GotSwitch( "t" ) )
+      {
+        const std::string &s{ cl.SwitchValue<std::string>("t") };
+        std::cout << "Fit range: \"" << s << "\"" << Common::NewLine;
+        std::vector<FitRange> FitRanges{ Common::ArrayFromString<FitRange>( s ) };
+        for( std::size_t i = 0; i < FitRanges.size(); ++i )
+          std::cout << "  " << i << ": " << FitRanges[i] << Common::NewLine;
+        throw std::runtime_error( "Implement fit ranges" );
+      }
+
       // Walk the list of parameters on the command-line, loading correlators and making models
       bShowUsage = false;
       std::vector<std::string> OpName;
@@ -1093,6 +1152,16 @@ int main(int argc, const char *argv[])
       if( ds.corr.empty() )
         throw std::runtime_error( "At least one correlator must be loaded to perform a fit" );
       ds.SortOpNames( OpName );
+      // Describe the number of replicas
+      std::cout << "Using ";
+      if( ds.NSamples == ds.MaxSamples )
+        std::cout << "all ";
+      else
+        std::cout << "first " << ds.NSamples << " of ";
+      std::cout << ds.MaxSamples << " bootstrap replicas";
+      if( ds.NSamples != ds.MaxSamples )
+        std::cout << " (all " << ds.MaxSamples << " for var/covar)";
+      std::cout << Common::NewLine;
 
       // I'll need a sorted, concatenated list of the operators in the fit for filenames
       std::string sOpNameConcat;
@@ -1228,6 +1297,7 @@ int main(int argc, const char *argv[])
     "-o     Output filename prefix\n"
     "-e     number of Exponents (default 1)\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
+    "-t     Fit range (start:stop[:numstart=1[:numstop=numstart]])\n"
     "Flags:\n"
     "-f         Factorising operators (default non-factorising)\n"
     "--minuit2  Use Minuit2 fitter (default GSL Levenberg-Marquardt)\n"

@@ -56,7 +56,7 @@ fold: fold.o Common.o
 
 hlxml: hlxml.o Common.o
 
-MultiFit: MultiFit.o Common.o
+MultiFit: MultiFit.o Common.o FitDataSet.o FitModel.o
 
 peramb-compare: peramb-compare.o Common.o
 

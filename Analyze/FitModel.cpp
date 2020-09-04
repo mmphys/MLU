@@ -94,39 +94,41 @@ public:
   int NumOverlap;
 protected:
   virtual void Construct( vString &Params, const ModelDefaultParams &Default, const Fold &Corr, const vString &OpName );
-public:
-  virtual std::size_t UnknownParameterCount( UniqueNames &Names ) const;
-  virtual void ReduceUnknown( const UniqueNames &Names );
-  virtual bool Guess( Vector &Parameters, std::vector<bool> &bKnown, int pass, const Vector &Corr ) const;
 };
 
 class Model2pt : public ModelOverlap
 {
 public:
-  //Model2pt( const Fold &f, int NumExponents, int NumOps );
-  //Model2pt( const Fold &f, const Model2pt &Other );
   virtual inline double Derivative( int t, int p ) const;
+  virtual std::size_t UnknownParameterCount( UniqueNames &Names ) const;
+  virtual void ReduceUnknown( const UniqueNames &Names );
   virtual bool GuessE0( scalar &E0, const Vector &Corr ) const;
-  virtual int GetScratchPadSize() const { return NumExponents; }
-  virtual void UpdateScratchPad( Vector &ScratchPad, const Vector &ModelParams ) const;
+  virtual bool Guess( Vector &Parameters, std::vector<bool> &bKnown, int pass, const Vector &Corr ) const;
 };
 
 class ModelExp : public Model2pt
 {
 public:
-  virtual scalar operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const;
+  virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const;
 };
 
-class ModelSinh : public Model2pt
+class Model2ptSinhCosh : public Model2pt
 {
 public:
-  virtual scalar operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const;
+  virtual int GetScratchPadSize() const { return NumExponents; }
+  virtual void ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const;
 };
 
-class ModelCosh : public Model2pt
+class ModelSinh : public Model2ptSinhCosh
 {
 public:
-  virtual scalar operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const;
+  virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const;
+};
+
+class ModelCosh : public Model2ptSinhCosh
+{
+public:
+  virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const;
 };
 
 class ModelThreePoint : public ModelOverlap
@@ -135,14 +137,14 @@ protected:
   inline void SetParams( int Nt_, int HalfNt_, int NumExponents_ ) { ModelOverlap::SetParams( Nt_, HalfNt_, 1 ); }
 public:
   virtual void Construct( vString &Params, const ModelDefaultParams &Default, const Fold &Corr, const vString &OpName );
-  virtual scalar operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const;
+  virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const;
 };
 
 class ModelConstant : public Model
 {
 public:
   virtual void Construct( vString &Params, const ModelDefaultParams &Default, const Fold &Corr, const vString &OpName );
-  virtual scalar operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const;
+  virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const;
 };
 
 // 2nd phase of construction (now that virtual functions in place)
@@ -186,9 +188,9 @@ void ModelOverlap::Construct(vString &Params,const ModelDefaultParams &Default,c
   else
   {
     // Use the sink and source names we've been given
-    vString OpNames{ Common::ArrayFromString( Params[0], Common::Underscore ) };
+    vString OpNames{ Common::ArrayFromString( Snk_Src, Common::Underscore ) };
     if(OpNames.size() < 1 || OpNames.size() > 2 || OpNames[0].empty() || ( OpNames.size() >= 2 && OpNames[1].empty() ))
-      throw std::runtime_error( "Invalid Snk_Src operator \"" + Params[0] + "\"" );
+      throw std::runtime_error( "Invalid Snk_Src operator \"" + Snk_Src + "\"" );
     ParamNamesPerExp.push_back( OpNames[0] );
     NumOverlap++;
     if( OpNames.size() >= 2 && !Common::EqualIgnoreCase( OpNames[0], OpNames[1] ) )
@@ -201,7 +203,7 @@ void ModelOverlap::Construct(vString &Params,const ModelDefaultParams &Default,c
 
 // NOT COUNTING ENERGY, put names of parameters that can be determined in list, return number remaining to determine
 // For now, synonymous with overlap coefficients
-std::size_t ModelOverlap::UnknownParameterCount( UniqueNames &Names ) const
+std::size_t Model2pt::UnknownParameterCount( UniqueNames &Names ) const
 {
   assert( NumOverlap >= 1 && "Should be at least one overlap coefficient" );
   assert( NumOverlap <= 2 && "Update code to support more than two overlap coefficients" );
@@ -224,7 +226,7 @@ std::size_t ModelOverlap::UnknownParameterCount( UniqueNames &Names ) const
   return NumUnknown;
 }
 
-void ModelOverlap::ReduceUnknown( const UniqueNames &Names )
+void Model2pt::ReduceUnknown( const UniqueNames &Names )
 {
   if( NumOverlap == 2 && !Names.count( ParamNamesPerExp[0] ) && !Names.count( ParamNamesPerExp[1] ) )
   {
@@ -235,7 +237,7 @@ void ModelOverlap::ReduceUnknown( const UniqueNames &Names )
 }
 
 // Take a guess as to my parameters
-bool ModelOverlap::Guess( Vector &Parameters, std::vector<bool> &bKnown, int pass, const Vector &Corr ) const
+bool Model2pt::Guess( Vector &Parameters, std::vector<bool> &bKnown, int pass, const Vector &Corr ) const
 {
   static const scalar MELFactor{ std::sqrt( 2 ) };
   const int tGuess{ HalfNt / 2 };
@@ -251,15 +253,27 @@ bool ModelOverlap::Guess( Vector &Parameters, std::vector<bool> &bKnown, int pas
     int idx2{ ParamIdxPerExp[0][2] };
     bool bKnow1{ bKnown[idx1] };
     bool bKnow2{ bKnown[idx2] };
-    if( bKnow1 != bKnow2 )
+    if( !bKnow1 && !bKnow2 )
     {
-      // We know one, but not the other
-      scalar Product{ std::abs( Corr[tGuess] ) * std::exp( E0 * tGuess ) };
-      int idxKnown  { bKnow1 ? idx1 : idx2 };
-      int idxUnknown{ bKnow1 ? idx2 : idx1 };
-      scalar MELGuess = Product / Parameters[idxKnown];
-      bKnown[idxUnknown] = true;
-      Parameters[idxUnknown] = MELGuess;
+      if( pass == 0 )
+        bNeedAnotherPass = true;
+      else
+        bGuessSame = true; // We should solve simultaneous equations to get the overlap coefficients
+    }
+    else
+    {
+      // I know at least one overlap co-efficient - I'll be able to work out the rest
+      if( bKnow1 != bKnow2 )
+      {
+        // We know one, but not the other
+        scalar Product{ std::abs( Corr[tGuess] ) * std::exp( E0 * tGuess ) };
+        int idxKnown  { bKnow1 ? idx1 : idx2 };
+        int idxUnknown{ bKnow1 ? idx2 : idx1 };
+        scalar MELGuess = Product / Parameters[idxKnown];
+        bKnown[idxUnknown] = true;
+        Parameters[idxUnknown] = MELGuess;
+      }
+      // This is a poor guess for excited-state overlap coefficients - should look at early vs late correlators
       for( int e = 1; e < NumExponents; ++e )
       {
         for( int op = 1; op <= NumOverlap; ++op )
@@ -272,13 +286,6 @@ bool ModelOverlap::Guess( Vector &Parameters, std::vector<bool> &bKnown, int pas
           }
         }
       }
-    }
-    else if( !bKnow1 && !bKnow2 )
-    {
-      if( pass == 0 )
-        bNeedAnotherPass = true;
-      else
-        bGuessSame = true; // We should solve simultaneous equations to get the overlap coefficients
     }
   }
   if( bGuessSame )
@@ -302,45 +309,13 @@ bool ModelOverlap::Guess( Vector &Parameters, std::vector<bool> &bKnown, int pas
   return bNeedAnotherPass;
 }
 
-/*Model::Model( const Fold &f, int NumExponents_, int NumOps_ )
-: Nt{ f.Nt() },
-  HalfNt{ f.NtUnfolded / 2 }, // NB: This is half of the ORIGINAL correlator time dimension
-  NumExponents{ NumExponents_ },
-  NumOps{ NumOps_ }
-{
-}
-
-Model2pt::Model2pt( const Fold &f, int NumExponents_, int NumOps_ )
-: Model( f, NumExponents_, NumOps_ ),
-  snk( NumExponents ),
-  src( NumExponents ),
-  SinhCoshAdjust( NumExponents )
-{
-  parity = f.parity;
-}
-
-Model2pt::Model2pt( const Fold &f, const Model2pt &Other ) : Model2pt( f, Other.NumExponents, Other.NumOps )
-{
-}
-
-void ThreadModel::Init( const scalar * ModelParameters, std::size_t NumParams, std::size_t Stride )
-{
-  Vector NewParams;
-  NewParams.MapView( const_cast<scalar *>( ModelParameters ), NumParams, Stride );
-  if( NewParams != Params )
-  {
-    Params = NewParams;
-    ParamsChanged();
-  }
-}*/
-
 void ModelThreePoint::Construct( vString &Params, const ModelDefaultParams &Default, const Fold &Corr,
                                  const vString &OpName )
 {
   throw std::runtime_error( "Implement ModelThreePoint" );
 }
 
-scalar ModelThreePoint::operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const
+scalar ModelThreePoint::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
 {
   return 0;
 }
@@ -350,7 +325,7 @@ void ModelConstant::Construct(vString &Params,const ModelDefaultParams &Default,
   throw std::runtime_error( "Implement ModelConstant" );
 }
 
-scalar ModelConstant::operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const
+scalar ModelConstant::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
 {
   return 0;
 }
@@ -362,13 +337,13 @@ bool Model2pt::GuessE0( scalar &E0, const Vector &Corr ) const
   return true;
 }
 
-void Model2pt::UpdateScratchPad( Vector &ScratchPad, const Vector &ModelParams ) const
+void Model2ptSinhCosh::ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const
 {
   for( int e = 0; e < NumExponents; ++e )
     ScratchPad[e] = std::exp( - ModelParams[ParamIdxPerExp[e][0]] * HalfNt );
 }
 
-scalar ModelExp::operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const
+scalar ModelExp::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
 {
   double z = 0;
   for( int e = 0; e < NumExponents; ++e )
@@ -379,7 +354,7 @@ scalar ModelExp::operator()( int t, const Vector &ModelParams, Vector &ScratchPa
   return z;
 }
 
-scalar ModelCosh::operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const
+scalar ModelCosh::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
 {
   double z = 0;
   for( int e = 0; e < NumExponents; ++e )
@@ -390,7 +365,7 @@ scalar ModelCosh::operator()( int t, const Vector &ModelParams, Vector &ScratchP
   return z;
 }
 
-scalar ModelSinh::operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const
+scalar ModelSinh::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
 {
   double z = 0;
   for( int e = 0; e < NumExponents; ++e )

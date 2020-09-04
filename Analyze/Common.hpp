@@ -2808,13 +2808,6 @@ public:
   : Base::Sample{ NumSamples, Nt }, OpNames{ OpNames_ }, NumExponents{ NumExponents_ },
     NumFiles{ NumFiles_}, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Factorised{ Factorised_ }, CovarFrozen{ CovarFrozen_ } {}
   virtual const std::string & DefaultGroupName() { return sModel; }
-  // Are the new parameters compatible with the pre-performed fit?
-  inline bool Compatible(int numExponents_, int Dof_, int Ti_, int Tf_,
-                         const std::vector<std::string> &opNames_) const
-  {
-    return std::tie( NumExponents , dof , ti , tf , OpNames  )
-        == std::tie( numExponents_, Dof_, Ti_, Tf_, opNames_ );
-  }
   inline bool NewParamsMorePrecise( bool covarFrozen_, int NumSamples ) const
   {
     // Unfreezing the covariance matrix makes a big difference!

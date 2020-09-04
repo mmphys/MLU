@@ -77,6 +77,23 @@ enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant };
 std::ostream & operator<<( std::ostream &os, const ModelType m );
 std::istream & operator>>( std::istream &is, ModelType &m );
 
+struct FitRange
+{
+  int ti;
+  int tf;
+  int dti;
+  int dtf;
+  FitRange( int ti_, int tf_, int dti_, int dtf_ ) : ti{ti_}, tf{tf_}, dti{dti_}, dtf{dtf_} {}
+  FitRange( int ti_, int tf_, int dt ) : FitRange( ti_, tf_, dt, dt ) {}
+  FitRange( int ti_, int tf_ ) : FitRange( ti_, tf_, 1, 1 ) {}
+  FitRange() : FitRange( 0, 0, 1, 1 ) {}
+  inline bool Validate( int Nt = std::numeric_limits<int>::max() ) const
+  {   return !(   ti < 0 || ti >= Nt || tf < ti || tf >= Nt || dti < 1 || dtf < 1 || dti >= Nt || dtf >= Nt
+               || ti + dti - 1 >= Nt || tf + dtf - 1 >= Nt ); }
+};
+std::ostream & operator<<( std::ostream &os, const FitRange &fr );
+std::istream & operator>>( std::istream &is, FitRange &fr );
+
 // Default parameters for model creation
 struct ModelDefaultParams
 {
@@ -122,9 +139,9 @@ public:
   // How big a scratchpad is required for each model?
   virtual int GetScratchPadSize() const { return 0; }
   // Cache values based solely on the model parameters (to speed up computation)
-  virtual void UpdateScratchPad( Vector &ScratchPad, const Vector &ModelParams ) const {};
+  virtual void ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const {};
   // This is where the actual computation is performed
-  virtual scalar operator()( int t, const Vector &ModelParams, Vector &ScratchPad ) const = 0;
+  virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const = 0;
 };
 
 struct DataSet
@@ -286,7 +303,7 @@ public:
   Vector Error;           // Difference between model predictions (theory) and Data
   // These next are for model parameters
   Vector ModelParams;
-  Vector SortingHat;
+  std::vector<std::pair<double,int>> SortingHat;
 protected:
   bool bCorrelated;
   ModelFile &OutputModel; // Fill this with parameters for each replica
@@ -400,8 +417,8 @@ public:
   virtual double operator()( const std::vector<double> &ModelParameters ) const;
   //virtual void SetErrorDef(double def) {theErrorDef = def;}
   virtual void Minimise( ParamState &Guess, int iNumGuesses );
-  virtual int NumRetriesGuess() const { return parent.Retry ? parent.Retry + 10 : 15; };
-  virtual int NumRetriesFit() const { return parent.Retry ? parent.Retry : 5; };
+  virtual int NumRetriesGuess() const { return parent.Retry ? parent.Retry + 10 : 20; };
+  virtual int NumRetriesFit() const { return parent.Retry ? parent.Retry : 10; };
 };
 
 // Several of these will be running at the same time on different threads during a fit

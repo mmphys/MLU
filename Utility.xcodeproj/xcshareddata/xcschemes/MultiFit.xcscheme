@@ -67,6 +67,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-t 1:2,1:2:3,1:2:3:4,3:3:3:3,2:2:1:1,4:4:1:1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-o fit/2pt/"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -83,12 +87,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "GFWPZ2/fold35/h1_l_p_0_0_0_PP_P[PW].fold.4147798751.h5"
+            argument = "GFWPZ2/fold35/h1_l_p_0_0_0_PP_P[PW].&apos;*&apos;.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o GFWPZ2/fit35test/"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "GFWPZ2/fit35test/h1_l_p_0_0_0.corr_11_17.PP_PW.constant.4147798751.h5,E,PP,PW0"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ti=11 --tf=17"
@@ -109,6 +117,10 @@
          <CommandLineArgument
             argument = "-v 1"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--minuit2"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
