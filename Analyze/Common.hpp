@@ -740,6 +740,8 @@ struct FileNameAtt
   explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr )
     { Parse( Filename, pOpNames ); }
   void ParseExtra( unsigned int MaxElements = UINT_MAX );
+protected:
+  void ParseShort(); // Should work out how to do this better
 };
 
 inline void swap( FileNameAtt &l, FileNameAtt &r )

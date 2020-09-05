@@ -126,7 +126,7 @@ protected:
   virtual void MixingAngle(double costheta, double sintheta) = 0;
   virtual const Fold & Corr0() const = 0;
   virtual void AppendModelOps( std::string &s ) const = 0;
-  void DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, bool bPrint = true );
+  void DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, bool bSaveCorr, bool bPrint = true );
 public:
   virtual ~MixedOp() = default;
   static void Make( const Model &model_, const Parameters & Par );
@@ -448,7 +448,7 @@ void MixedOp_S::MixingAngle(double costheta, double sintheta)
   }
 }
 
-void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, bool bPrint )
+void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, bool bSaveCorr, bool bPrint )
 {
   if( bPrint )
   {
@@ -489,7 +489,7 @@ void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, boo
   AppendModelOps( Out );
   CorrMixed.MakeCorrSummary( nullptr );
   const Common::SeedType Seed{ model.Name_.Seed };
-  if( Par.bSaveCorr )
+  if( bSaveCorr )
     CorrMixed.Write( Common::MakeFilename( Out, Common::sBootstrap, Seed, DEF_FMT ) );
   CorrMixed.WriteSummary( Common::MakeFilename( Out, Common::sBootstrap, Seed, TEXT_EXT ) );
 }
@@ -557,11 +557,11 @@ void MixedOp::Make( const Model &model_, const Parameters & Par )
               << " mixed operator to:\n    " << Out << NewLine << "   ";
     Out.append( ".theta_" );
     const std::size_t OutLen{ Out.length() };
-    bool bDo0  = !Par.bSaveCorr; // If we're not saving the correlators, always do 0 and 90 degrees
+    bool bDo0  = true; //!Par.bSaveCorr; // If we're not saving the correlators, always do 0 and 90 degrees
     bool bDo90 = bDo0;
     for( int degrees = Par.tmin; ; degrees+=Par.step )
     {
-      mixed->DoOneAngle( degrees, Out, OutLen, degrees == Par.tmin || !( degrees % 10 ) );
+      mixed->DoOneAngle( degrees, Out, OutLen, Par.bSaveCorr, degrees == Par.tmin || !( degrees % 10 ) );
       switch( degrees )
       {
         case 0:
@@ -575,9 +575,9 @@ void MixedOp::Make( const Model &model_, const Parameters & Par )
         break;
     }
     if( bDo0 )
-      mixed->DoOneAngle( 0, Out, OutLen );
+      mixed->DoOneAngle( 0, Out, OutLen, false ); // We're outside the range requested, no need to save correlators
     if( bDo90 )
-      mixed->DoOneAngle( 90, Out, OutLen );
+      mixed->DoOneAngle( 90, Out, OutLen, false );
     std::cout << NewLine;
   }
 }
@@ -592,7 +592,7 @@ int main( int argc, const char *argv[] )
   try
   {
     const std::initializer_list<CL::SwitchDef> list = {
-      {"a", CL::SwitchType::Single, "0"},
+      {"a", CL::SwitchType::Single, "1"},
       {"p", CL::SwitchType::Single, nullptr},
       {"i", CL::SwitchType::Single, "" },
       {"m", CL::SwitchType::Single, "" },
@@ -670,8 +670,9 @@ int main( int argc, const char *argv[] )
   {
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
     " <options> Model1 [Model2 ...]\n"
-    "Create a mixed operator from fit parameters and bootstrap replicas, where <options> are:\n"
-    "-a     Model type 0=source/sink, 1=sink only (default: 0)\n"
+    "Create a mixed operator from fit parameters and bootstrap replicas\n"
+    "<options>\n"
+    "-a     Model type 0=source/sink, 1=sink only (default)\n"
     "-p     Comma separated list of momenta (default: same as model file)\n"
     "-i     Input path for folded bootstrap replicas\n"
     "-m     Input path for model files\n"

@@ -509,11 +509,18 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   // Now see whether we can extract operator names
   if( pOpNames )
     ParseOpNames( *pOpNames );
+  else
+    ParseShort();
+}
+
+void FileNameAtt::ParseShort()
+{
   // Extract other attributes from filename
   BaseShort = Base;
   ExtractTimeslice( BaseShort, bGotTimeslice, Timeslice );
   bGotMomentum = p.Extract( BaseShort );
   ExtractDeltaT( BaseShort, bGotDeltaT, DeltaT );
+  Gamma.clear();
   Gamma = ExtractGamma( BaseShort );
 }
 
@@ -547,9 +554,9 @@ std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps )
     throw std::runtime_error( "Can't extract " + std::to_string( NumOps ) + " operators from " + Base );
   if( i )
   {
-    BaseShort.resize( BaseShort.length() - ( Base.length() - LastPos ) ); // Shorten the base as well
     Base.resize( LastPos ); // Shorten the base
   }
+  ParseShort();
   return o;
 }
 
@@ -577,6 +584,7 @@ void FileNameAtt::ParseExtra( unsigned int MaxElements )
     Extra.push_back( Base.substr( pos + 1 ) );
     Base.resize( pos );
   }
+  ParseShort();
 }
 
 // Make a filename "Base.Type.seed.Ext"

@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study1/C1"
+      customWorkingDirectory = "$HOME/data/Study2/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -53,11 +53,19 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-a1 -i PW35b0/fold/ -o PW35b0/mixed/ PW35b0/fit/h1_l_p_0_0_0.corr_11_19.g5P_g5W.model.1835672416.h5"
+            argument = "-i PW35b0/fold/ -o PW35b0/mixed/ PW35b0/fit/h1_l_p_0_0_0.corr_11_19.g5P_g5W.model.1835672416.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i PW/2pt/ -o mixed/ fit/2pt/h0_s_p_0_0_0.corr_8_17.g5P_g5W.model.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--savecorr --tmin=-45 --tmax=-45 --step=0"
+            argument = "--tmin=-45 --tmax=-45 --step=0 -a1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--savecorr"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
