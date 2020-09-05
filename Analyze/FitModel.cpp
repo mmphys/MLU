@@ -168,18 +168,15 @@ void ModelOverlap::Construct(vString &Params,const ModelDefaultParams &Default,c
     for( int i = 0; i <= 1; ++i )
     {
       std::string ParamName{ OpName[Corr.Name_.op[i]] };
-      if( Default.bFactor )
-      {
-        if( i == 0 || !Common::EqualIgnoreCase( ParamName, ParamNamesPerExp[1] ) )
-        {
-          ParamNamesPerExp.push_back( ParamName );
-          NumOverlap++;
-        }
-      }
-      else
+      if( Default.bForceSrcSnkDifferent )
       {
         ParamName.append( 1, '_' );
         ParamName.append( pSrcSnk[i] );
+        ParamNamesPerExp.push_back( ParamName );
+        NumOverlap++;
+      }
+      else if( i == 0 || !Common::EqualIgnoreCase( ParamName, ParamNamesPerExp[1] ) )
+      {
         ParamNamesPerExp.push_back( ParamName );
         NumOverlap++;
       }

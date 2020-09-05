@@ -28,7 +28,7 @@
 
 #include "MultiFit.hpp"
 
-#define DEBUG_DISABLE_OMP
+//#define DEBUG_DISABLE_OMP
 
 // Indices for operators in correlator names
 const char * pSrcSnk[] = { "src", "snk" };
@@ -89,13 +89,13 @@ std::ostream & operator<<( std::ostream &os, const FitRange &fr )
   return os;
 }
 
-std::istream & operator>>( std::istream &is, FitRange &fr )
+std::istream & operator>>( std::istream &is, FitRange &fr_ )
 {
   int Numbers[4];
   int i{ 0 };
   for( bool bMore = true; bMore && i < 4 && is >> Numbers[i]; )
   {
-    if( ++i < 4 && is.peek() == ':' )
+    if( ++i < 4 && !is.ios_base::eof() && is.peek() == ':' )
       is.get();
     else
       bMore = false;
@@ -104,15 +104,76 @@ std::istream & operator>>( std::istream &is, FitRange &fr )
     is.setstate( std::ios_base::failbit );
   else
   {
-    fr.ti = Numbers[0];
-    fr.tf = Numbers[1];
+    FitRange fr( Numbers[0], Numbers[1] );
     if( i >= 3 )
     {
       fr.dti = Numbers[2];
       fr.dtf = ( i == 3 ? Numbers[2] : Numbers[3] );
     }
+    fr_ = fr;
   }
   return is;
+}
+
+FitRangesIterator FitRanges::begin()
+{
+  FitRangesIterator it( *this );
+  std::vector<FitRange> &fitRange( *this );
+  for( std::size_t i = 0; i < fitRange.size(); ++i )
+  {
+    it[i].ti = fitRange[i].ti;
+    it[i].tf = fitRange[i].tf;
+  }
+  return it;
+}
+
+FitRangesIterator FitRanges::end()
+{
+  FitRangesIterator it{ begin() };
+  std::vector<FitRange> &fitRange( *this );
+  it.back().tf = fitRange.back().tf + fitRange.back().dtf;
+  return it;
+}
+
+FitRangesIterator &FitRangesIterator::operator++()
+{
+  // Don't increment if we are already at the end
+  if( !AtEnd() )
+  {
+    std::vector<FitTime> &fitTime( *this );
+    bool bOverflow{ true };
+    for( std::size_t i = 0; bOverflow && i < fitTime.size(); ++i )
+    {
+      bOverflow = false;
+      if( ++fitTime[i].ti >= Ranges[i].ti + Ranges[i].dti )
+      {
+        fitTime[i].ti = Ranges[i].ti;
+        if( ++fitTime[i].tf >= Ranges[i].tf + Ranges[i].dtf )
+        {
+          fitTime[i].tf = Ranges[i].tf;
+          bOverflow = true;
+        }
+      }
+    }
+    if( bOverflow )
+      back().tf = Ranges.back().tf + Ranges.back().dtf;
+  }
+  return *this;
+}
+
+std::string FitRangesIterator::to_string( const std::string &Sep1, const std::string &Sep2 )
+{
+  std::string s;
+  std::vector<FitTime> &fitTime( *this );
+  for( std::size_t i = 0; i < fitTime.size(); ++i )
+  {
+    if( i )
+      s.append( Sep2 );
+    s.append( std::to_string( fitTime[i].ti ) );
+    s.append( Sep1 );
+    s.append( std::to_string( fitTime[i].tf ) );
+  }
+  return s;
 }
 
 FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_, vCorrelator &CorrSynthetic_ )
@@ -190,13 +251,12 @@ void FitterThread::ReplicaMessage( const ParamState &state, int iFitNum ) const
   std::cout << ReplicaString( iFitNum ) << ", calls " << state.NFcn() << ", chi^2 " << ChiSq << Common::NewLine;
   if( state.bGotMinuit2State )
     std::cout << "edm " << state.Edm() << ", ";
-  std::cout << "dof " << parent.dof << ", chi^2/dof " << ( ChiSq / parent.dof );
   if( state.bGotGSLState )
   {
-    std::cout << ", Stop: " << ( state.gslState.ConvergeReason == 1 ? "step size" : "gradient" )
-              << ", f()=" << state.gslState.nevalf << ", df()=" << state.gslState.nevaldf;
+    std::cout << "Stop: " << ( state.gslState.ConvergeReason == 1 ? "step size" : "gradient" )
+              << ", f()=" << state.gslState.nevalf << ", df()=" << state.gslState.nevaldf << ", ";
   }
-  std::cout << Common::NewLine;
+  std::cout << "dof " << parent.dof << ", chi^2/dof " << ( ChiSq / parent.dof ) << Common::NewLine;
   if( parent.Verbosity > 1 )
     std::cout << state;
   else
@@ -533,7 +593,7 @@ Fitter::Fitter( FitterType fitType_, const DataSet &ds_, const std::vector<std::
     bAnalyticDerivatives{bAnalyticDerivatives_},
     NumOps{ static_cast<int>( opNames_.size() ) },
     OpNames{ opNames_ },
-    bFactor{ modelDefault.bFactor },
+    bForceSrcSnkDifferent{ modelDefault.bForceSrcSnkDifferent },
     Verbosity{ verbosity_ },
     bFreezeCovar{bFreezeCovar_},
     bSaveCorr{bSaveCorr_},
@@ -777,7 +837,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   // Make somewhere to store the results of the fit for each bootstrap sample
   const int tMin{ ds.FitTimes[0][0] };
   const int tMax{ ds.FitTimes[0].back() };
-  ModelFile OutputModel( OpNames, NumExponents, NumFiles, tMin, tMax, dof, bFactor, bFreezeCovar, ds.NSamples,
+  ModelFile OutputModel( OpNames, NumExponents, NumFiles, tMin, tMax, dof, !bForceSrcSnkDifferent, bFreezeCovar, ds.NSamples,
                          NumModelParams + 1 );
   for( const Fold &f : ds.corr )
     OutputModel.FileList.emplace_back( f.Name_.Filename );
@@ -1068,38 +1128,29 @@ int main(int argc, const char *argv[])
   try
   {
     const std::initializer_list<CL::SwitchDef> list = {
-      {"ti", CL::SwitchType::Single, nullptr},
-      {"tf", CL::SwitchType::Single, nullptr},
-      {"dti", CL::SwitchType::Single, "1"},
-      {"dtf", CL::SwitchType::Single, "1"},
       {"sep", CL::SwitchType::Single, "0.2"},
       {"delta", CL::SwitchType::Single, "3"},
       {"retry", CL::SwitchType::Single, "0"},
       {"iter", CL::SwitchType::Single, "0"},
       {"tol", CL::SwitchType::Single, "1e-7"},
-      {"v", CL::SwitchType::Single, "0"},
+      {"t", CL::SwitchType::Single, nullptr},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"e", CL::SwitchType::Single, "1"},
       {"n", CL::SwitchType::Single, "0"},
-      {"t", CL::SwitchType::Single, nullptr},
-      {"f", CL::SwitchType::Flag, nullptr},
+      {"v", CL::SwitchType::Single, "0"},
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"freeze", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"savecmat", CL::SwitchType::Flag, nullptr},
       {"minuit2", CL::SwitchType::Flag, nullptr},
       {"analytic", CL::SwitchType::Flag, nullptr},
+      {"srcsnk", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
-    const int NumFiles{ static_cast<int>( cl.Args.size() ) };
-    if( !cl.GotSwitch( "help" ) && NumFiles )
+    if( !cl.GotSwitch( "help" ) && cl.Args.size() )
     {
-      const int ti_start{ cl.SwitchValue<int>("ti") };
-      const int tf_start{ cl.SwitchValue<int>("tf") };
-      const int dti_max{ cl.SwitchValue<int>("dti") };
-      const int dtf_max{ cl.SwitchValue<int>("dtf") };
       const double RelEnergySep{ cl.SwitchValue<double>("sep") };
       const int delta{ cl.SwitchValue<int>("delta") };
       const int Retry{ cl.SwitchValue<int>("retry") };
@@ -1109,7 +1160,6 @@ int main(int argc, const char *argv[])
       const std::string inBase{ cl.SwitchValue<std::string>("i") };
       std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
       const int NSamples{ cl.SwitchValue<int>("n") };
-      //const std::string model{ opt.optionValue("m") };
       const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
       const bool bFreezeCovar{ cl.GotSwitch( "freeze" ) };
       const bool bSaveCorr{ cl.GotSwitch("savecorr") };
@@ -1118,22 +1168,18 @@ int main(int argc, const char *argv[])
       const bool bAnalyticDerivatives{ cl.GotSwitch("analytic") };
       ModelDefaultParams modelDefault;
       modelDefault.NumExponents = cl.SwitchValue<int>( "e" );
-      modelDefault.bFactor = cl.GotSwitch( "f" );
+      modelDefault.bForceSrcSnkDifferent = cl.GotSwitch( "srcsnk" );
 
       if( Retry < 0 )
         throw std::invalid_argument( "Retry must be >= 0" );
       if( MaxIterations < 0 )
         throw std::invalid_argument( "MaxIterations must be >= 0" );
 
-      if( cl.GotSwitch( "t" ) )
-      {
-        const std::string &s{ cl.SwitchValue<std::string>("t") };
-        std::cout << "Fit range: \"" << s << "\"" << Common::NewLine;
-        std::vector<FitRange> FitRanges{ Common::ArrayFromString<FitRange>( s ) };
-        for( std::size_t i = 0; i < FitRanges.size(); ++i )
-          std::cout << "  " << i << ": " << FitRanges[i] << Common::NewLine;
-        throw std::runtime_error( "Implement fit ranges" );
-      }
+      FitRanges fitRanges;
+      if( cl.GotSwitch( "t") )
+        fitRanges = Common::ArrayFromString<FitRange>( cl.SwitchValue<std::string>( "t" ) );
+      if( !fitRanges.size() )
+        throw std::runtime_error( "No fit ranges specified" );
 
       // Walk the list of parameters on the command-line, loading correlators and making models
       bShowUsage = false;
@@ -1143,14 +1189,58 @@ int main(int argc, const char *argv[])
       const std::size_t NumArgs{ cl.Args.size() };
       DataSet ds( NSamples );
       std::vector<std::string> ModelArgs;
+      std::vector<int> ModelFitRange;
+      std::vector<int> ModelFitRangeCount( fitRanges.size() );
       for( std::size_t ArgNum = 0; ArgNum < NumArgs; ++ArgNum )
       {
+        // First parameter is the filename we're looking for
         std::string FileToGlob{ Common::ExtractToSeparator( cl.Args[ArgNum] ) };
         for( const std::string &sFileName : Common::glob( &FileToGlob, &FileToGlob + 1, inBase.c_str() ) )
-          ds.LoadFile( sFileName, OpName, ModelArgs, cl.Args[ArgNum] );
+        {
+          Common::FileNameAtt Att( sFileName );
+          const bool bIsCorr{ Common::EqualIgnoreCase( Att.Type, Common::sFold ) };
+          if( bIsCorr )
+          {
+            // This is a correlator - load it
+            Att.ParseOpNames( OpName );
+            ds.LoadCorrelator( std::move( Att ) );
+            // Now see whether the first parameter is a fit range (i.e. integer index of a defined fit range)
+            std::string sModelArgs{ cl.Args[ArgNum] };
+            int ThisFitRange{ 0 };
+            {
+              int tmp;
+              std::string sPossibleFitRange{ Common::ExtractToSeparator( sModelArgs ) };
+              std::istringstream ss{ sPossibleFitRange };
+              if( ss >> tmp && Common::StreamEmpty( ss ) )
+              {
+                if( tmp < 0 || tmp >= fitRanges.size() )
+                  throw std::runtime_error( "Fit range " + sPossibleFitRange + " not defined" );
+                if( !fitRanges[tmp].Validate( ds.corr.back().Nt() ) )
+                {
+                  std::stringstream oss;
+                  oss << "Fit range " << fitRanges[tmp] << " not valid";
+                  throw std::runtime_error( oss.str() );
+                }
+                ThisFitRange = tmp;
+              }
+              else
+                sModelArgs = cl.Args[ArgNum]; // Unadulterated parameters
+            }
+            ModelArgs.push_back( sModelArgs );
+            ModelFitRange.push_back( ThisFitRange );
+            ++ModelFitRangeCount[ThisFitRange];
+          }
+          else
+          {
+            ds.LoadModel( std::move( Att ), cl.Args[ArgNum] );
+          }
+        }
       }
       if( ds.corr.empty() )
         throw std::runtime_error( "At least one correlator must be loaded to perform a fit" );
+      for( int i = 0; i < ModelFitRangeCount.size(); ++i )
+        if( ModelFitRangeCount[i] == 0 )
+          throw std::runtime_error( "Models don't refer to all fit ranges" );
       ds.SortOpNames( OpName );
       // Describe the number of replicas
       std::cout << "Using ";
@@ -1186,84 +1276,63 @@ int main(int argc, const char *argv[])
       // All the models are loaded
       Fitter m( fitType, ds, ModelArgs, modelDefault, OpName, Verbosity, bFreezeCovar, bSaveCorr, bSaveCMat, Retry,
                 MaxIterations, Tolerance, RelEnergySep, bAnalyticDerivatives );
-      static const char Sep[] = " ";
       const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
       std::ofstream s;
-      for( int tf = tf_start; tf - tf_start < dtf_max; tf++ )
+      for( FitRangesIterator it = fitRanges.begin(); !it.AtEnd(); ++it )
       {
-        bool bNeedHeader = true;
-        for( int ti = ti_start; ti - ti_start < dti_max; ti++ )
+        // Set fit ranges
         {
-          if( tf - ti + 1 >= delta )
+          std::vector<std::vector<int>> fitTimes( ds.corr.size() );
+          for( int i = 0; i < ds.corr.size(); ++i )
           {
-            // Log what file we're processing and when we started
-	    std::time_t then;
-	    std::time( &then );
-            try
-            {
-              {
-                std::stringstream ss;
-                ss << ( doCorr ? "C" : "unc" ) << "orrelated " << fitType << " fit on timeslices " << ti << " to " << tf
-            #ifdef DEBUG_DISABLE_OMP
-                   << " with Open MP disabled";
-            #else
-                   << " using " << omp_get_max_threads() << " Open MP threads";
-            #endif
-                const std::string &sMsg{ ss.str() };
-                std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine;
-              }
-              double ChiSq;
-              int dof;
-              outBaseFileName.resize( outBaseFileNameLen );
-              outBaseFileName.append( std::to_string( ti ) );
-              outBaseFileName.append( 1, '_' );
-              outBaseFileName.append( std::to_string( tf ) );
-              outBaseFileName.append( 1, '.' );
-              ds.SetFitTimes( ti, tf );
-              auto params = m.PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat, Seed );
-              if( bNeedHeader )
-              {
-                bNeedHeader = false;
-                if( !s.is_open() )
-                {
-                  s.open( sFitFilename );
-                  Common::SummaryHeader<scalar>( s, sSummaryBase );
-                  s << "# Seed " << Seed << std::endl;
-                }
-                else
-                {
-                  // two blank lines at start of new data block
-                  s << "\n" << std::endl;
-                }
-                // Name the data series
-                s << "# [tf=" << tf << "]" << std::endl;
-                // Column names, with the series value embedded in the column header (best I can do atm)
-                s << "tf=" << tf << Sep << "ti" << Sep << "dof";
-                for( int p = 0; p < m.NumModelParams; p++ )
-                  s << Sep << m.ParamNames[p] << Sep << m.ParamNames[p] << "_low" << Sep << m.ParamNames[p] << "_high" << Sep << m.ParamNames[p] << "_check";
-                s << " ChiSqPerDof" << std::endl;
-              }
-              s << tf << Sep << ti << Sep << dof;
-              for( int p = 0; p < m.NumModelParams; p++ )
-                s << Sep << params[p];
-              s << Sep << ( ChiSq / dof ) << std::endl;
-            }
-            catch(const std::exception &e)
-            {
-              std::cout << "Error: " << e.what() << "\n";
-            }
-            // Mention that we're finished, what the time is and how long it took
-	    std::time_t now;
-	    std::time( &now );
-	    double dNumSecs = std::difftime( now, then );
-            std::string sNow{ std::ctime( &now ) };
-            while( sNow.length() && sNow[sNow.length() - 1] == '\n' )
-              sNow.resize( sNow.length() - 1 );
-            std::stringstream ss;
-            ss << sNow << ". Total duration " << std::fixed << std::setprecision(1)
-                       << dNumSecs << " seconds.\n";
-            std::cout << ss.str();
+            const FitTime &ft{ it[ModelFitRange[i]] };
+            const int Extent{ ft.tf - ft.ti + 1 };
+            fitTimes[i].resize( Extent );
+            for( int j = 0; j < Extent; ++j )
+              fitTimes[i][j] = ft.ti + j;
           }
+          ds.SetFitTimes( fitTimes );
+        }
+        if( ds.Extent >= delta )
+        {
+          // Log what file we're processing and when we started
+          std::time_t then;
+          std::time( &then );
+          try
+          {
+            {
+              std::stringstream ss;
+              ss << ( doCorr ? "C" : "unc" ) << "orrelated " << fitType << " fit on timeslices " << it.to_string( "-", ", " )
+          #ifdef DEBUG_DISABLE_OMP
+                 << " with Open MP disabled";
+          #else
+                 << " using " << omp_get_max_threads() << " Open MP threads";
+          #endif
+              const std::string &sMsg{ ss.str() };
+              std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine;
+            }
+            double ChiSq;
+            int dof;
+            outBaseFileName.resize( outBaseFileNameLen );
+            outBaseFileName.append( it.to_string( Common::Underscore ) );
+            outBaseFileName.append( 1, '.' );
+            auto params = m.PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat, Seed );
+          }
+          catch(const std::exception &e)
+          {
+            std::cout << "Error: " << e.what() << "\n";
+          }
+          // Mention that we're finished, what the time is and how long it took
+          std::time_t now;
+          std::time( &now );
+          double dNumSecs = std::difftime( now, then );
+          std::string sNow{ std::ctime( &now ) };
+          while( sNow.length() && sNow[sNow.length() - 1] == '\n' )
+            sNow.resize( sNow.length() - 1 );
+          std::stringstream ss;
+          ss << sNow << ". Total duration " << std::fixed << std::setprecision(1)
+                     << dNumSecs << " seconds.\n";
+          std::cout << ss.str();
         }
       }
     }
@@ -1281,31 +1350,29 @@ int main(int argc, const char *argv[])
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
     " <options> Bootstrap1[,model1[,params1]] [Bootstrap2[,model2[,params2]] ...]\n"
     "Perform a multi-exponential fit of the specified bootstrap replicas, where:\n"
-    "model<n> is one of {2pt, 3pt, const}, followed by optional params\n"
+    " modeln  is one of {Exp, Cosh, Sinh, ThreePoint, Constant}\n"
+    " params1 t<n> chooses the n'th fit range (default=0, see -t)\n"
+    " paramsn Depends on the model\n"
     "and <options> are:\n"
-    "--ti   Initial fit time\n"
-    "--tf   Final   fit time\n"
-    "--dti  Number of initial fit times (default 1)\n"
-    "--dtf  Number of final   fit times (default 1)\n"
     "--sep  Minimum relative separation between energy levels (default 0.2)\n"
     "--delta Minimum number of timeslices in fit range (default 3)\n"
     "--retry Maximum number of times to retry fits (default Minuit2=10, GSL=0)\n"
     "--iter Max iteration count, 0 (default) = unlimited\n"
     "--tol  Tolerance of required fits (default 1e-7)\n"
-    "-v     Verbosity, 0 (default)=central fit results, 1=all fits, 2=detailed\n"
+    "-t     Fit range1[,range2[,...]] (start:stop[:numstart=1[:numstop=numstart]])\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
     "-e     number of Exponents (default 1)\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
-    "-t     Fit range (start:stop[:numstart=1[:numstop=numstart]])\n"
+    "-v     Verbosity, 0 (default)=central fit results, 1=all fits, 2=detailed\n"
     "Flags:\n"
-    "-f         Factorising operators (default non-factorising)\n"
     "--minuit2  Use Minuit2 fitter (default GSL Levenberg-Marquardt)\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
     "--freeze   Freeze the covariance matrix/variance on the central replica\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--savecmat Save correlation matrix\n"
     "--analytic Analytic derivatives for GSL (default: numeric)\n"
+    "--srcsnk   Append _src and _snk to overlap coefficients (ie force different)\n"
     "--help     This message\n";
   }
   return iReturn;

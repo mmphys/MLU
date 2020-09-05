@@ -352,7 +352,7 @@ inline std::string ExtractToSeparator( std::string &String, const std::string &S
   {
     const std::size_t first{ String.find_first_not_of( WhiteSpace ) };
     if( first == std::string::npos )
-      s.clear();
+      String.clear();
     else
     {
       std::size_t pos = String.find_first_of( Separators, first );

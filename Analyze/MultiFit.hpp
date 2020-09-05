@@ -77,6 +77,13 @@ enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant };
 std::ostream & operator<<( std::ostream &os, const ModelType m );
 std::istream & operator>>( std::istream &is, ModelType &m );
 
+// A single pair of start-stop times
+struct FitTime
+{
+  int ti;
+  int tf;
+};
+
 struct FitRange
 {
   int ti;
@@ -94,12 +101,37 @@ struct FitRange
 std::ostream & operator<<( std::ostream &os, const FitRange &fr );
 std::istream & operator>>( std::istream &is, FitRange &fr );
 
+struct FitRangesIterator;
+
+struct FitRanges : public std::vector<FitRange>
+{
+  using Base = std::vector<FitRange>;
+  using Base::Base;
+  FitRanges( std::vector<FitRange> &&fr ) : std::vector<FitRange>( fr ) {}
+  FitRangesIterator begin();
+  FitRangesIterator end();
+};
+
+struct FitRangesIterator : public std::vector<FitTime>
+{
+  const FitRanges &Ranges; // This is the FitRange I'm iterating over
+  using Base = std::vector<FitTime>;
+  using Base::Base;
+  FitRangesIterator( FitRanges &ranges_ ) : std::vector<FitTime>( ranges_.size() ), Ranges{ ranges_ } {}
+  FitRangesIterator( const FitRangesIterator &it ) : std::vector<FitTime>( it ), Ranges{ it.Ranges } {}
+  FitRangesIterator &operator++();
+  inline bool AtEnd() { return back().tf >= Ranges.back().tf + Ranges.back().dtf; }
+  inline FitRangesIterator operator++(int) { FitRangesIterator it(*this); return ++it; }
+  std::string to_string( const std::string &Sep1, const std::string &Sep2 );
+  std::string to_string( const std::string &Sep ) { return to_string( Sep, Sep ); }
+};
+
 // Default parameters for model creation
 struct ModelDefaultParams
 {
   int NumExponents;
   int NumOps;
-  bool bFactor;
+  bool bForceSrcSnkDifferent;
 };
 
 // This represents the model I'm fitting to
@@ -177,16 +209,15 @@ public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
   inline bool empty() const { return corr.empty() && constFile.empty(); }
   void clear();
-  void LoadFile( const std::string &sFileName, std::vector<std::string> &OpNames, std::vector<std::string> &ModelArgs,
-                 const std::string &Args );
+  void LoadCorrelator( Common::FileNameAtt &&FileAtt );
+  void LoadModel     ( Common::FileNameAtt &&FileAtt, const std::string &Args );
   void SortOpNames( std::vector<std::string> &OpNames );
-  void SetFitTimes( const std::vector<std::vector<int>> &FitTimes );
-  void SetFitTimes( int tMin, int tMax );
+  void SetFitTimes( const std::vector<std::vector<int>> &FitTimes ); // A list of all the timeslices to include
+  void SetFitTimes( int tMin, int tMax ); // All fit ranges are the same
   void GetData( int idx, Vector &vResult ) const;
   void GetFixed( int idx, Vector &vResult, const std::vector<FixedParam> &Params ) const;
   void MakeInvErr( int idx, Vector &Var ) const;
   void MakeCovariance( int idx, Matrix &Covar ) const;
-  //void MakePredictions( Vector &Prediction ) const;
   void SaveCovariance( const std::string FileName, const Matrix &Covar, const std::vector<ModelPtr> *pModels=nullptr ) const;
 };
 
@@ -347,10 +378,8 @@ public:
   const bool bAnalyticDerivatives;
   const int NumOps;
   const std::vector<std::string> &OpNames;
-  const bool bFactor;
-  //const std::string &sOpNameConcat;
+  const bool bForceSrcSnkDifferent;
   const int Verbosity;
-  //const std::string OutputBaseName;
   const bool bFreezeCovar;
   const bool bSaveCorr;
   const bool bSaveCMat;
@@ -384,10 +413,6 @@ protected:
   std::vector<std::string> MakeParamNames();
   std::vector<DataSet::FixedParam> MakeParamFixed();
   std::vector<int> MakeParamVariable();
-  // Helper functions
-  //inline int AlphaIndex( int snk, int src) const { return snk * NumOps + src; };
-public:
-  //inline int MELIndex( int op, int EnergyLevel) const { return EnergyLevel * NumOps + op; }; // TODO: Delete
 
 public:
   explicit Fitter( FitterType fitType, const DataSet &ds_, const std::vector<std::string> &ModelArgs,

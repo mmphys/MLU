@@ -249,102 +249,94 @@ void DataSet::AddConstant( const std::string &Name, std::size_t File, std::size_
   AddConstant( s, File, idx );
 }
 
-// Load a correlator or a model a file. If it's a correlator, there may be leftover arguments
-void DataSet::LoadFile( const std::string &sFileName, std::vector<std::string> &OpNames,
-                        std::vector<std::string> &ModelArgs, const std::string &Args )
+void DataSet::LoadCorrelator( Common::FileNameAtt &&FileAtt )
 {
-  // First string is Filename
-  Common::FileNameAtt Att( sFileName );
-  if( Common::EqualIgnoreCase( Att.Type, Common::sFold ) )
+  const std::size_t i{ corr.size() };
+  corr.emplace_back();
+  corr[i].SetName( std::move( FileAtt ) );
+  corr[i].Read( "  " );
+  // See whether this correlator is compatible with prior correlators
+  if( i )
   {
-    // This is a correlator - load it
-    Att.ParseOpNames( OpNames );
-    const std::size_t i{ corr.size() };
-    corr.emplace_back();
-    corr[i].SetName( std::move( Att ) );
-    corr[i].Read( "  " );
-    // See whether this correlator is compatible with prior correlators
-    if( i )
-    {
-      corr[0].IsCompatible( corr[i], &NSamples );
-      if( MaxSamples > corr[i].NumSamples() )
-        MaxSamples = corr[i].NumSamples();
-    }
-    else
+    corr[0].IsCompatible( corr[i], &NSamples );
+    if( MaxSamples > corr[i].NumSamples() )
       MaxSamples = corr[i].NumSamples();
-    ModelArgs.push_back( Args );
+  }
+  else
+    MaxSamples = corr[i].NumSamples();
+}
+
+// Load a correlator or a model a file. If it's a correlator, there may be leftover arguments
+void DataSet::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Args )
+{
+  // Break trailing arguments for this file into an array of strings
+  std::vector<std::string> vThisArg{ Common::ArrayFromString( Args ) };
+  // This is a pre-built model (i.e. the result of a previous fit)
+  const std::size_t i{ constFile.size() };
+  constFile.emplace_back();
+  constFile[i].SetName( std::move( FileAtt ) );
+  constFile[i].Read( "  " );
+  // Keep track of minimum number of replicas across all files
+  if( NSamples == 0 )
+    NSamples = constFile[i].NumSamples();
+  else if( NSamples > constFile[i].NumSamples() )
+    NSamples = constFile[i].NumSamples();
+  // Keep track of minimum and maximum number of exponents across all files
+  if( i )
+  {
+    if( MinExponents > constFile[i].NumExponents )
+      MinExponents = constFile[i].NumExponents;
+    if( MaxExponents < constFile[i].NumExponents )
+      MinExponents = constFile[i].NumExponents;
   }
   else
   {
-    // Break trailing arguments for this file into an array of strings
-    std::vector<std::string> vThisArg{ Common::ArrayFromString( Args ) };
-    // This is a pre-built model (i.e. the result of a previous fit)
-    const std::size_t i{ constFile.size() };
-    constFile.emplace_back();
-    constFile[i].SetName( std::move( Att ) );
-    constFile[i].Read( "  " );
-    // Keep track of minimum number of replicas across all files
-    if( NSamples == 0 )
-      NSamples = constFile[i].NumSamples();
-    else if( NSamples > constFile[i].NumSamples() )
-      NSamples = constFile[i].NumSamples();
-    // Keep track of minimum and maximum number of exponents across all files
-    if( i )
+    MinExponents = constFile[i].NumExponents;
+    MaxExponents = constFile[i].NumExponents;
+  }
+  // Now see which parameters we want to read from the model
+  const vString &ColumnNames{ constFile[i].GetColumnNames() };
+  const vString &OpNames{ constFile[i].OpNames };
+  if( vThisArg.empty() )
+  {
+    // Load every constant in this file
+    for( int j = 0; j < ColumnNames.size(); ++j )
     {
-      if( MinExponents > constFile[i].NumExponents )
-        MinExponents = constFile[i].NumExponents;
-      if( MaxExponents < constFile[i].NumExponents )
-        MinExponents = constFile[i].NumExponents;
-    }
-    else
-    {
-      MinExponents = constFile[i].NumExponents;
-      MaxExponents = constFile[i].NumExponents;
-    }
-    // Now see which parameters we want to read from the model
-    const vString &ColumnNames{ constFile[i].GetColumnNames() };
-    const vString &OpNames{ constFile[i].OpNames };
-    if( vThisArg.empty() )
-    {
-      // Load every constant in this file
-      for( int j = 0; j < ColumnNames.size(); ++j )
+      // Add a map back to this specific parameter (making sure not already present)
+      AddConstant( ColumnNames[j], i, j );
+      // Now take best stab at whether this should be per exponent or individual
+      std::string s{ ColumnNames[j] };
+      int Exp;
+      if( Common::ExtractTrailing( s, Exp )
+         && ( Common::EqualIgnoreCase( E, s ) || Common::IndexIgnoreCase( OpNames, s ) != OpNames.size() ) )
       {
-        // Add a map back to this specific parameter (making sure not already present)
-        AddConstant( ColumnNames[j], i, j );
-        // Now take best stab at whether this should be per exponent or individual
-        std::string s{ ColumnNames[j] };
-        int Exp;
-        if( Common::ExtractTrailing( s, Exp )
-           && ( Common::EqualIgnoreCase( E, s ) || Common::IndexIgnoreCase( OpNames, s ) != OpNames.size() ) )
-        {
-          ConstantNamesPerExp[s];
-        }
-        else
-          ConstantNames[ColumnNames[j]];
+        ConstantNamesPerExp[s];
       }
+      else
+        ConstantNames[ColumnNames[j]];
     }
-    else
+  }
+  else
+  {
+    // Load only those constants specifically asked for
+    for( const std::string &ThisArg : vThisArg )
     {
-      // Load only those constants specifically asked for
-      for( const std::string &ThisArg : vThisArg )
+      std::vector<std::string> vPar{ Common::ArrayFromString( ThisArg, "=" ) };
+      if( vPar.empty() || vPar[0].empty() || vPar.size() > 2 || ( vPar.size() > 1 && vPar[1].empty() ) )
+        throw std::runtime_error( "Cannot interpret model parameter string \"" + Args + "\"" );
+      const std::string &vLookFor{ vPar.back() };
+      const std::string &vLoadAs{ vPar[0] };
+      // Have we asked for a per-exponent constant (which includes energies)
+      if( Common::EqualIgnoreCase( E, vLookFor ) || Common::IndexIgnoreCase( OpNames, vLookFor ) != OpNames.size() )
       {
-        std::vector<std::string> vPar{ Common::ArrayFromString( ThisArg, "=" ) };
-        if( vPar.empty() || vPar[0].empty() || vPar.size() > 2 || ( vPar.size() > 1 && vPar[1].empty() ) )
-          throw std::runtime_error( "Cannot interpret model parameter string \"" + Args + "\"" );
-        const std::string &vLookFor{ vPar.back() };
-        const std::string &vLoadAs{ vPar[0] };
-        // Have we asked for a per-exponent constant (which includes energies)
-        if( Common::EqualIgnoreCase( E, vLookFor ) || Common::IndexIgnoreCase( OpNames, vLookFor ) != OpNames.size() )
-        {
-          for( int e = 0; e < constFile[i].NumExponents; ++e )
-            AddConstant( vLoadAs, i, constFile[i].GetColumnIndex( vLookFor, e ), e );
-          ConstantNamesPerExp[vLoadAs];
-        }
-        else
-        {
-          AddConstant( vLoadAs, i, constFile[i].GetColumnIndex( vLookFor ) );
-          ConstantNames[vLoadAs];
-        }
+        for( int e = 0; e < constFile[i].NumExponents; ++e )
+          AddConstant( vLoadAs, i, constFile[i].GetColumnIndex( vLookFor, e ), e );
+        ConstantNamesPerExp[vLoadAs];
+      }
+      else
+      {
+        AddConstant( vLoadAs, i, constFile[i].GetColumnIndex( vLookFor ) );
+        ConstantNames[vLoadAs];
       }
     }
   }
