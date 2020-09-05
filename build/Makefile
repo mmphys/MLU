@@ -11,26 +11,26 @@
 #   LatAnalyzeBuild Path to LatAnalyze build directory
 
 GridConf  := $(GridBuild)/grid-config
+HadConf   := $(HadronsBuild)/hadrons-config
 #LatAnConf:= $(LatAnalyzeBuild)/latan-config
 CXX       := $(shell $(GridConf) --cxx)
-CC        := $(CXX)
 
 # De-duplicate header include (-I) paths, followed by other options
 CXXFLAGS  := $(shell $(GridConf) --cxxflags) #$(shell $(LatAnConf) --cxxflags)
 INCLUDE   := $(sort $(patsubst -I%,%,$(filter -I%,$(CXXFLAGS))))
-#CXXFLAGS := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(LatAnalyzeBuild) $(LatAnalyze)/lib $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
-CXXFLAGS  := $(addprefix -I,$(Hadrons) $(GridBuild)/Grid $(Grid) $(GridPre)/include $(GridPkg)/include $(LatAnalyze) $(Grid)/Eigen $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
+CXXFLAGS  := $(addprefix -I,$(GridBuild)/Grid $(Grid) $(Hadrons) $(GridPre)/include $(GridPkg)/include $(LatAnalyze) $(Grid)/Eigen $(INCLUDE)) $(filter-out -I%,$(CXXFLAGS))
 # Turn off compiler optimisation
 CXXFLAGS  := $(filter-out -O%,$(CXXFLAGS))
+# Disable warnings for macro redefinition (since I use this in Common.hpp)
+ifeq ($(CXX),clang++)
+CXXFLAGS  := $(CXXFLAGS) -Wno-macro-redefined
+endif
 
 # De-duplicate library (-L) paths and libraries (-l), followed by other options
-LDLIBS    := -lHadrons -lGrid $(shell $(GridConf) --libs) -lMinuit2 -lgsl -lgslcblas
-#LDLIBS   := $(LDLIBS) $(shell $(LatAnConf) --libs)
-LDLIBS    := $(sort $(LDLIBS))
-LDFLAGS   := $(shell $(GridConf) --ldflags) #$(shell $(LatAnConf) --ldflags)
+LDLIBS    := -lHadrons $(shell $(HadConf) --libs) -lMinuit2 -lgsl -lgslcblas
+LDFLAGS   := $(shell $(HadConf) --ldflags)
 LDPATHS   := $(sort $(patsubst -L%,%,$(filter -L%,$(LDFLAGS))))
-#LDFLAGS  := $(addprefix -L,$(GridBuild)/Grid $(GridBuild)/Hadrons $(LatAnalyzeBuild)/lib/.libs $(GridPre)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
-LDFLAGS   := $(addprefix -L,$(GridBuild)/Grid $(HadronsBuild)/Hadrons $(GridPre)/lib $(GridPkg)/lib $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
+LDFLAGS   := $(addprefix -L,$(HadronsBuild)/Hadrons $(GridPre)/lib $(if $(GridPkg),$(GridPkg)/lib,) $(LDPATHS)) $(filter-out -L%,$(LDFLAGS))
 
 # Make a separate executable for every source in subdirectories except build*, run* or script*
 # Except filenames starting with "Common", for which explicit target rules must be provided
