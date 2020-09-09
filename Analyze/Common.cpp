@@ -80,6 +80,7 @@ extern const std::string Underscore{ "_" };
 extern const std::string Period{ "." };
 extern const std::string NewLine{ "\n" };
 extern const std::string Comma{ "," };
+extern const std::string CommaSpace{ ", " };
 const std::string sBootstrap{ "bootstrap" };
 const std::string sFold{ "fold" };
 const std::string sModel{ "model" };

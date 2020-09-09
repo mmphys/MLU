@@ -209,6 +209,7 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline MyVector CholeskySolve( const MyVector &b ) const;
   inline MyVector CholeskySolve( const MyVector &b, const MyVector &S ) const;
   inline Scalar CholeskyRCond() const;
+  inline void CholeskyScaleApply( const MyVector &S );
 #endif
 #ifdef COMMON_GSL_OPTIONAL
   inline MyMatrix Inverse() const;
@@ -370,6 +371,11 @@ inline COMMON_GSL_TYPE Matrix<COMMON_GSL_TYPE>::CholeskyRCond() const
   double rcond;
   COMMON_GSL_FUNC( linalg, cholesky_rcond )( this, &rcond, &v );
   return rcond;
+}
+
+inline void Matrix<COMMON_GSL_TYPE>::CholeskyScaleApply( const MyVector &S )
+{
+  COMMON_GSL_FUNC( linalg, cholesky_scale_apply )( this, &S );
 }
 
 #endif // COMMON_GSL_DOUBLE

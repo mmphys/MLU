@@ -133,6 +133,7 @@ extern const std::string Underscore;
 extern const std::string Period;
 extern const std::string NewLine;
 extern const std::string Comma;
+extern const std::string CommaSpace;
 
 // Compare two strings, case insensitive
 inline int CompareIgnoreCase(const std::string &s1, const std::string &s2)
@@ -175,6 +176,9 @@ struct LessCaseInsensitive
 {
   bool operator()( const std::string &lhs, const std::string &rhs ) const { return CompareIgnoreCase( lhs, rhs ) < 0;}
 };
+
+// A list of case insensitive, but unique names, each mapped to an int
+using UniqueNames = std::map<std::string, int, Common::LessCaseInsensitive>;
 
 namespace Gamma
 {
@@ -2919,6 +2923,398 @@ public:
   }
 };
 
+template <typename T>
+struct DataSet
+{
+  struct ConstantSource
+  {
+    std::size_t File; // Index of the constant file in the DataSet this comes from
+    std::size_t idx;  // Index of the parameter in this file
+    ConstantSource( std::size_t File_, std::size_t idx_ ) : File{File_}, idx{idx_} {}
+  };
+  using ConstMap = std::map<std::string, ConstantSource, Common::LessCaseInsensitive>;
+  struct FixedParam
+  {
+    int             idx;  // Index of the parameter (relative to Fitter::ParamNames)
+    ConstantSource  src;  // Where to get the value from
+    FixedParam( int idx_, const ConstantSource &src_ ) : idx{idx_}, src{src_} {}
+  };
+  int NSamples;   // Number of samples we are using. These are guaranteed to exist
+  int MaxSamples; // Maximum number of samples available - used for covariance. Guaranteed to exist. >= NSamples.
+  int Extent = 0; // Number of data points in our fit (i.e. total number of elements in FitTimes)
+  int MinExponents = 0;
+  int MaxExponents = 0;
+  std::vector<Fold<T>>          corr;     // Correlator files
+  std::vector<std::vector<int>> FitTimes; // The actual timeslices we are fitting to in each correlator
+  UniqueNames ConstantNames;
+  UniqueNames ConstantNamesPerExp;
+  ConstMap constMap;
+protected:
+  std::vector<Model<T>>        constFile;// Each of the constant files (i.e. results from previous fits) I've loaded
+  void AddConstant( const std::string &Name, std::size_t File, std::size_t idx );
+  void AddConstant( const std::string &Name, std::size_t File, std::size_t idx, int e );
+public:
+  explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
+  inline bool empty() const { return corr.empty() && constFile.empty(); }
+  void clear();
+  void LoadCorrelator( Common::FileNameAtt &&FileAtt );
+  void LoadModel     ( Common::FileNameAtt &&FileAtt, const std::string &Args );
+  void SortOpNames( std::vector<std::string> &OpNames );
+  void SetFitTimes( const std::vector<std::vector<int>> &FitTimes ); // A list of all the timeslices to include
+  void SetFitTimes( int tMin, int tMax ); // All fit ranges are the same
+  void GetData( int idx, Vector<T> &vResult ) const;
+  void GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedParam> &Params ) const;
+  void MakeInvErr( int idx, Vector<T> &Var ) const;
+  void MakeCovariance( int idx, Matrix<T> &Covar ) const;
+  void SaveCovariance( const std::string FileName, const Matrix<T> &Covar,
+                       const std::vector<std::vector<std::string>> *ModelOpDescriptions = nullptr ) const;
+};
+
+template <typename T>
+void DataSet<T>::clear()
+{
+  NSamples = 0;
+  Extent = 0;
+  MinExponents = 0;
+  MaxExponents = 0;
+  corr.clear();
+  FitTimes.clear();
+  constFile.clear();
+  ConstantNames.clear();
+  ConstantNamesPerExp.clear();
+  constMap.clear();
+}
+
+// Specify which times I'm fitting to, as a list of timeslices for each correlator
+template <typename T>
+void DataSet<T>::SetFitTimes( const std::vector<std::vector<int>> &fitTimes_ )
+{
+  if( fitTimes_.size() != corr.size() )
+    throw std::runtime_error( std::to_string( fitTimes_.size() ) + " FitTimes but "
+                             + std::to_string( corr.size() ) + " correlators" );
+  std::vector<std::vector<int>> ft{ fitTimes_ };
+  std::size_t extent_ = 0;
+  for( int i = 0; i < ft.size(); ++i )
+  {
+    if( !ft[i].empty() )
+    {
+      std::sort( ft[i].begin(), ft[i].end() );
+      if( ft[i][0]<0 || ft[i].back()>corr[i].Nt() || std::adjacent_find( ft[i].begin(), ft[i].end() )!=ft[i].end() )
+        throw std::runtime_error( "FitTimes[" + std::to_string( i ) + "]=[" + std::to_string( ft[i][0] ) + "..."
+                                 + std::to_string( ft[i].back() ) + "] invalid" );
+      extent_ += ft[i].size();
+    }
+  }
+  if( extent_ == 0 )
+    throw std::runtime_error( "Fit range empty" );
+  if( extent_ > std::numeric_limits<int>::max() )
+    throw std::runtime_error( "Fit range stupidly big" );
+  Extent = static_cast<int>( extent_ );
+  FitTimes = std::move( ft );
+}
+
+template <typename T>
+void DataSet<T>::SetFitTimes( int tMin, int tMax )
+{
+  const int extent_{ tMax - tMin + 1 };
+  if( tMin < 0 || extent_ < 1 )
+    throw std::runtime_error( "Fit range [" + std::to_string( tMin ) + ", " + std::to_string( tMax ) + "] invalid" );
+  std::vector<std::vector<int>> ft{ corr.size() };
+  for( int i = 0; i < corr.size(); ++i )
+  {
+    if( tMax >= corr[i].Nt() )
+      throw std::runtime_error( "Fit range [" + std::to_string( tMin ) + ", " + std::to_string( tMax ) + "] invalid" );
+    ft[i].reserve( extent_ );
+    for( int j = tMin; j <= tMax; ++j )
+      ft[i].push_back( j );
+  }
+  Extent = static_cast<int>( corr.size() * extent_ );
+  FitTimes = std::move( ft );
+}
+
+// Get the data for the timeslices I'm fitting to
+template <typename T>
+void DataSet<T>::GetData( int idx, Vector<T> &vResult ) const
+{
+  int dst{ 0 };
+  vResult.resize( Extent );
+  for( int f = 0; f < corr.size(); ++f )
+  {
+    const T * pSrc{ corr[f][idx] };
+    for( int t : FitTimes[f] )
+      vResult[dst++] = pSrc[t];
+  }
+}
+
+// Get the constants from the appropriate timeslice
+template <typename T>
+void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedParam> &Params ) const
+{
+  std::vector<const T *> Src( constFile.size() );
+  for( int f = 0; f < constFile.size(); ++f )
+    Src[f] = constFile[f][idx];
+  for( const FixedParam &p : Params )
+    vResult[p.idx] = Src[p.src.File][p.src.idx];
+}
+
+// Make the inverse of the error (i.e. inverse of square root of variance)
+template <typename T>
+void DataSet<T>::MakeInvErr( int idx, Vector<T> &Var ) const
+{
+  Var.resize( Extent );
+  for( int i = 0; i < Extent; ++i )
+    Var[i] = 0;
+  Vector<T> Data( Extent );
+  Vector<T> Mean( Extent );
+  GetData( idx, Mean );
+  for( int replica = 0; replica < NSamples; ++replica )
+  {
+    GetData( replica, Data );
+    for( int i = 0; i < Extent; ++i )
+    {
+      double z{ ( Data[i] - Mean[i] ) };
+      Var[i] += z * z;
+    }
+  }
+  for( int i = 0; i < Extent; ++i )
+    Var[i] = std::sqrt( static_cast<T>( NSamples ) / Var[i] );
+}
+
+// Make covariance using mean from sample idx
+template <typename T>
+void DataSet<T>::MakeCovariance( int idx, Matrix<T> &Covar ) const
+{
+  Covar.resize( Extent, Extent );
+  for( int i = 0; i < Extent; ++i )
+    for( int j = 0; j <= i; ++j )
+      Covar( i, j ) = 0;
+  Vector<T> Data( Extent );
+  Vector<T> Mean( Extent );
+  GetData( idx, Mean );
+  for( int replica = 0; replica < MaxSamples; ++replica )
+  {
+    GetData( replica, Data );
+    for( int i = 0; i < Extent; ++i )
+      Data[i] -= Mean[i];
+    for( int i = 0; i < Extent; ++i )
+      for( int j = 0; j <= i; ++j )
+        Covar( i, j ) += Data[i] * Data[j];
+  }
+  for( int i = 0; i < Extent; ++i )
+    for( int j = 0; j <= i; ++j )
+    {
+      const T z{ Covar( i, j ) / MaxSamples };
+      Covar( i, j ) = z;
+      if( i != j )
+        Covar( j, i ) = z;
+    }
+}
+
+// Write covariance matrix to file
+template <typename T>
+void DataSet<T>::SaveCovariance( const std::string FileName, const Matrix<T> &Covar,
+                                 const std::vector<std::vector<std::string>> *ModelOpDescriptions ) const
+{
+  // Header describing what the covariance matrix is for and how to plot it with gnuplot
+  assert( Covar.size1 == Extent && Covar.size1 == Covar.size2 && "Build covar before saving it" );
+  std::ofstream s{ FileName };
+  s << "# Correlation matrix: " << FileName << "\n# Files: " << corr.size() << Common::NewLine;
+  for( std::size_t f = 0; f < corr.size(); ++f )
+  {
+    s << "# File" << f << ": " << corr[f].Name_.NameNoExt << Common::NewLine;
+    // Say which operators are in each file
+    if( ModelOpDescriptions )
+    {
+      if( !(*ModelOpDescriptions)[f][1].empty() )
+        s << "# OpsOneOff" << f << ": " << (*ModelOpDescriptions)[f][1] << NewLine;
+      if( !(*ModelOpDescriptions)[f][2].empty() )
+        s << "# OpsPerExp" << f << ": " << (*ModelOpDescriptions)[f][2] << NewLine;
+    }
+    s << "# Times" << f << ":";
+    for( int t : FitTimes[f] )
+      s << Common::Space << t;
+    s << Common::NewLine;
+  }
+  // Save a command which can be used to plot this file
+  s << "# gnuplot: set xtics rotate noenhanced; set ytics noenhanced; set cbrange[-1:1]; set title noenhanced '" << FileName
+    << "'; set key font 'Arial,8' top right noenhanced; plot '" << FileName << "' matrix columnheaders rowheaders with image pixels\n";
+  // Now save the column names. First column is matrix extent
+  s << "# The next row contains column headers, starting with matrix extent\n" << Extent;
+  for( std::size_t f = 0; f < corr.size(); ++f )
+  {
+    const std::string FileLetter( 1, 'A' + f );
+    for( int t : FitTimes[f] )
+    {
+      s << Common::Space;
+      if( ModelOpDescriptions )
+        s << (*ModelOpDescriptions)[f][0];
+      else
+        s << FileLetter;
+      s << t;
+    }
+  }
+  s << Common::NewLine;
+  // Now print the actual covariance matrix
+  int i{ 0 };
+  for( std::size_t f = 0; f < corr.size(); ++f )
+  {
+    const std::string FileLetter( 1, 'A' + f );
+    for( int t : FitTimes[f] )
+    {
+      if( ModelOpDescriptions )
+        s << (*ModelOpDescriptions)[f][0];
+      else
+        s << FileLetter;
+      s << t;
+      for( int j = 0; j < Extent; ++j )
+        s << Common::Space << Covar( i, j );
+      s << Common::NewLine;
+      ++i;
+    }
+  }
+}
+
+// Add a constant to my list of known constants - make sure it isn't already there
+template <typename T>
+void DataSet<T>::AddConstant( const std::string &Name, std::size_t File, std::size_t idx )
+{
+  if( constMap.find( Name ) != constMap.end() )
+    throw std::runtime_error( "Constant \"" + Name + "\" loaded from multiple model files" );
+  constMap.insert( { Name, ConstantSource( File, idx ) } );
+}
+
+template <typename T>
+void DataSet<T>::AddConstant( const std::string &Name, std::size_t File, std::size_t idx, int e )
+{
+  std::string s{ Name };
+  s.append( std::to_string( e ) );
+  AddConstant( s, File, idx );
+}
+
+template <typename T>
+void DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt )
+{
+  const std::size_t i{ corr.size() };
+  corr.emplace_back();
+  corr[i].SetName( std::move( FileAtt ) );
+  corr[i].Read( "  " );
+  // See whether this correlator is compatible with prior correlators
+  if( i )
+  {
+    corr[0].IsCompatible( corr[i], &NSamples );
+    if( MaxSamples > corr[i].NumSamples() )
+      MaxSamples = corr[i].NumSamples();
+  }
+  else
+    MaxSamples = corr[i].NumSamples();
+}
+
+// Load a model file
+template <typename T>
+void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Args )
+{
+  static const std::string EnergyPrefix{ "E" };
+  // Break trailing arguments for this file into an array of strings
+  std::vector<std::string> vThisArg{ Common::ArrayFromString( Args ) };
+  // This is a pre-built model (i.e. the result of a previous fit)
+  const std::size_t i{ constFile.size() };
+  constFile.emplace_back();
+  constFile[i].SetName( std::move( FileAtt ) );
+  constFile[i].Read( "  " );
+  // Keep track of minimum number of replicas across all files
+  if( NSamples == 0 )
+    NSamples = constFile[i].NumSamples();
+  else if( NSamples > constFile[i].NumSamples() )
+    NSamples = constFile[i].NumSamples();
+  // Keep track of minimum and maximum number of exponents across all files
+  if( i )
+  {
+    if( MinExponents > constFile[i].NumExponents )
+      MinExponents = constFile[i].NumExponents;
+    if( MaxExponents < constFile[i].NumExponents )
+      MinExponents = constFile[i].NumExponents;
+  }
+  else
+  {
+    MinExponents = constFile[i].NumExponents;
+    MaxExponents = constFile[i].NumExponents;
+  }
+  // Now see which parameters we want to read from the model
+  const std::vector<std::string> &ColumnNames{ constFile[i].GetColumnNames() };
+  const std::vector<std::string> &OpNames{ constFile[i].OpNames };
+  if( vThisArg.empty() )
+  {
+    // Load every constant in this file
+    for( int j = 0; j < ColumnNames.size(); ++j )
+    {
+      // Add a map back to this specific parameter (making sure not already present)
+      AddConstant( ColumnNames[j], i, j );
+      // Now take best stab at whether this should be per exponent or individual
+      std::string s{ ColumnNames[j] };
+      int Exp;
+      if( Common::ExtractTrailing( s, Exp )
+         && ( Common::EqualIgnoreCase( EnergyPrefix, s ) || Common::IndexIgnoreCase( OpNames, s ) != OpNames.size() ) )
+      {
+        ConstantNamesPerExp[s];
+      }
+      else
+        ConstantNames[ColumnNames[j]];
+    }
+  }
+  else
+  {
+    // Load only those constants specifically asked for
+    for( const std::string &ThisArg : vThisArg )
+    {
+      std::vector<std::string> vPar{ Common::ArrayFromString( ThisArg, "=" ) };
+      if( vPar.empty() || vPar[0].empty() || vPar.size() > 2 || ( vPar.size() > 1 && vPar[1].empty() ) )
+        throw std::runtime_error( "Cannot interpret model parameter string \"" + Args + "\"" );
+      const std::string &vLookFor{ vPar.back() };
+      const std::string &vLoadAs{ vPar[0] };
+      // Have we asked for a per-exponent constant (which includes energies)
+      if( Common::EqualIgnoreCase( EnergyPrefix, vLookFor ) || Common::IndexIgnoreCase( OpNames, vLookFor )!=OpNames.size() )
+      {
+        for( int e = 0; e < constFile[i].NumExponents; ++e )
+          AddConstant( vLoadAs, i, constFile[i].GetColumnIndex( vLookFor, e ), e );
+        ConstantNamesPerExp[vLoadAs];
+      }
+      else
+      {
+        AddConstant( vLoadAs, i, constFile[i].GetColumnIndex( vLookFor ) );
+        ConstantNames[vLoadAs];
+      }
+    }
+  }
+}
+
+// Sort the operator names and renumber all the loaded correlators referring to them
+template <typename T>
+void DataSet<T>::SortOpNames( std::vector<std::string> &OpNames )
+{
+  int NumOps{ static_cast<int>( OpNames.size() ) };
+  if( OpNames.size() > 1 )
+  {
+    // Sort the names
+    UniqueNames OpSorted;
+    for( int i = 0; i < NumOps; ++i )
+      OpSorted.emplace( std::move( OpNames[i] ), i );
+    // Extract the sorted names and indices (to renumber operators in correlator names)
+    std::vector<std::string> SortedNames;
+    std::vector<int> SortIndex( NumOps );
+    SortedNames.reserve( NumOps );
+    int idx{ 0 };
+    for( UniqueNames::iterator it = OpSorted.begin(); it != OpSorted.end(); ++it )
+    {
+      SortedNames.emplace_back( it->first );
+      SortIndex[it->second] = idx++;
+    }
+    // Renumber the operators and save the sorted operator names
+    for( auto &f : corr )
+      for( int i = 0; i < f.Name_.op.size(); ++i )
+        f.Name_.op[i] = SortIndex[f.Name_.op[i]];
+    OpNames = SortedNames;
+  }
+}
 // Read a complex array from an HDF5 file
 template<typename T>
 void ReadArray(std::vector<T> &buffer, const std::string &FileName, const std::string &ObjectName = std::string( "correlator" ),

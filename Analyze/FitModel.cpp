@@ -92,6 +92,7 @@ class ModelOverlap : public Model
 {
 public:
   int NumOverlap;
+  bool bNormalisationRoot2E = false;
 protected:
   virtual void Construct( vString &Params, const ModelDefaultParams &Default, const Fold &Corr, const vString &OpName );
 };
@@ -155,9 +156,26 @@ void ModelOverlap::Construct(vString &Params,const ModelDefaultParams &Default,c
   NumOverlap = 0;
   // Have we been given source and sink names?
   std::string Snk_Src;
+  bNormalisationRoot2E = false;
+  switch( Params.size() )
+  {
+    case 2:
+      if( !Params[1].empty() )
+      {
+        if( !Common::EqualIgnoreCase( Params[1], "N" ) )
+          throw std::runtime_error( "Normalisation parameter \"" + Params[1] + "\" invalid" );
+        bNormalisationRoot2E = true;
+      }
+    case 1:
+      Snk_Src = std::move( Params[0] );
+    case 0:
+      break;
+    default:
+      return; // too many parameters - will throw on return
+  }
+  Params.clear();
   if( !Params.empty() )
   {
-    Snk_Src = std::move( Params[0] );
     Params.erase( Params.begin() );
   }
   if( Snk_Src.empty() )
@@ -346,7 +364,10 @@ scalar ModelExp::operator()( int t, Vector &ScratchPad, const Vector &ModelParam
   for( int e = 0; e < NumExponents; ++e )
   {
     double d = std::exp( - ModelParams[ParamIdxPerExp[e][0]] * t );
-    z += d * ModelParams[ParamIdxPerExp[e][1]] * ModelParams[ParamIdxPerExp[e][NumOverlap > 1 ? 2 : 1]];
+    d *= ModelParams[ParamIdxPerExp[e][1]] * ModelParams[ParamIdxPerExp[e][NumOverlap > 1 ? 2 : 1]];
+    if( bNormalisationRoot2E )
+      d /= 2 * ModelParams[ParamIdxPerExp[e][0]];
+    z += d;
   }
   return z;
 }
@@ -357,7 +378,10 @@ scalar ModelCosh::operator()( int t, Vector &ScratchPad, const Vector &ModelPara
   for( int e = 0; e < NumExponents; ++e )
   {
     double d = ScratchPad[e] * std::cosh( - ModelParams[ParamIdxPerExp[e][0]] * ( t - HalfNt ) );
-    z += d * ModelParams[ParamIdxPerExp[e][1]] * ModelParams[ParamIdxPerExp[e][NumOverlap > 1 ? 2 : 1]];
+    d *= ModelParams[ParamIdxPerExp[e][1]] * ModelParams[ParamIdxPerExp[e][NumOverlap > 1 ? 2 : 1]];
+    if( bNormalisationRoot2E )
+      d /= 2 * ModelParams[ParamIdxPerExp[e][0]];
+    z += d;
   }
   return z;
 }
@@ -368,7 +392,10 @@ scalar ModelSinh::operator()( int t, Vector &ScratchPad, const Vector &ModelPara
   for( int e = 0; e < NumExponents; ++e )
   {
     double d = ScratchPad[e] * std::sinh( - ModelParams[ParamIdxPerExp[e][0]] * ( t - HalfNt ) );
-    z += d * ModelParams[ParamIdxPerExp[e][1]] * ModelParams[ParamIdxPerExp[e][NumOverlap > 1 ? 2 : 1]];
+    d *= ModelParams[ParamIdxPerExp[e][1]] * ModelParams[ParamIdxPerExp[e][NumOverlap > 1 ? 2 : 1]];
+    if( bNormalisationRoot2E )
+      d /= 2 * ModelParams[ParamIdxPerExp[e][0]];
+    z += d;
   }
   return z;
 }

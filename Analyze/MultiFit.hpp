@@ -55,13 +55,12 @@ using scalar = double;
 using Fold = Common::Fold<scalar>;
 using vCorrelator = std::vector<Fold>;
 using ModelFile = Common::Model<scalar>;
-//using Matrix = Eigen::MatrixXd; // dynamic sized matrix of complex double
+using DataSet = Common::DataSet<scalar>;
 using Matrix = Common::Matrix<scalar>;
 using Vector = Common::Vector<scalar>;
 using vString = std::vector<std::string>;
 using vInt = std::vector<int>;
-// A list of case insensitive, but unique names, each mapped to an int
-using UniqueNames = std::map<std::string, int, Common::LessCaseInsensitive>;
+using UniqueNames = Common::UniqueNames;
 
 constexpr int idxSrc{ 0 };
 constexpr int idxSnk{ 1 };
@@ -174,51 +173,6 @@ public:
   virtual void ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const {};
   // This is where the actual computation is performed
   virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const = 0;
-};
-
-struct DataSet
-{
-  struct ConstantSource
-  {
-    std::size_t File; // Index of the constant file in the DataSet this comes from
-    std::size_t idx;  // Index of the parameter in this file
-    ConstantSource( std::size_t File_, std::size_t idx_ ) : File{File_}, idx{idx_} {}
-  };
-  struct FixedParam
-  {
-    int             idx;  // Index of the parameter (relative to Fitter::ParamNames)
-    ConstantSource  src;  // Where to get the value from
-    FixedParam( int idx_, const ConstantSource &src_ ) : idx{idx_}, src{src_} {}
-  };
-  int NSamples;   // Number of samples we are using. These are guaranteed to exist
-  int MaxSamples; // Maximum number of samples available - used for covariance. Guaranteed to exist. >= NSamples.
-  int Extent = 0; // Number of data points in our fit (i.e. total number of elements in FitTimes)
-  int MinExponents = 0;
-  int MaxExponents = 0;
-  std::vector<Fold>             corr;     // Correlator files
-  std::vector<std::vector<int>> FitTimes; // The actual timeslices we are fitting to in each correlator
-  UniqueNames ConstantNames;
-  UniqueNames ConstantNamesPerExp;
-  using ConstMap = std::map<std::string, ConstantSource, Common::LessCaseInsensitive>;
-  ConstMap constMap;
-protected:
-  std::vector<ModelFile>        constFile;// Each of the constant files (i.e. results from previous fits) I've loaded
-  void AddConstant( const std::string &Name, std::size_t File, std::size_t idx );
-  void AddConstant( const std::string &Name, std::size_t File, std::size_t idx, int e );
-public:
-  explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
-  inline bool empty() const { return corr.empty() && constFile.empty(); }
-  void clear();
-  void LoadCorrelator( Common::FileNameAtt &&FileAtt );
-  void LoadModel     ( Common::FileNameAtt &&FileAtt, const std::string &Args );
-  void SortOpNames( std::vector<std::string> &OpNames );
-  void SetFitTimes( const std::vector<std::vector<int>> &FitTimes ); // A list of all the timeslices to include
-  void SetFitTimes( int tMin, int tMax ); // All fit ranges are the same
-  void GetData( int idx, Vector &vResult ) const;
-  void GetFixed( int idx, Vector &vResult, const std::vector<FixedParam> &Params ) const;
-  void MakeInvErr( int idx, Vector &Var ) const;
-  void MakeCovariance( int idx, Matrix &Covar ) const;
-  void SaveCovariance( const std::string FileName, const Matrix &Covar, const std::vector<ModelPtr> *pModels=nullptr ) const;
 };
 
 class Parameters

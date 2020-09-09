@@ -38,7 +38,7 @@ VPATH     := $(shell find .. -maxdepth 1 -type d \! \( -iname 'build*' -or -inam
 srcfiles  := $(filter-out %~,$(shell find $(VPATH) -iname '*.c*'))
 basefiles := $(basename $(notdir $(srcfiles)))
 objects   := $(addsuffix .o,$(basefiles))
-target    := $(filter-out Common%,$(filter-out FitDataSet%,$(filter-out FitModel,$(basefiles))))
+target    := $(filter-out Common%,$(filter-out FitModel,$(basefiles)))
 
 all: $(target)
 
@@ -56,7 +56,7 @@ fold: fold.o Common.o
 
 hlxml: hlxml.o Common.o
 
-MultiFit: MultiFit.o Common.o FitDataSet.o FitModel.o
+MultiFit: MultiFit.o Common.o FitModel.o
 
 peramb-compare: peramb-compare.o Common.o
 

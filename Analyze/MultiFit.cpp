@@ -402,7 +402,41 @@ scalar FitterThread::FitOne( const Parameters &parGuess, const std::string &Save
   // Save correlation matrix for central replica
   // NB: file name will only be empty on the central replica, so only one thread will do this
   if( bCorrelated && !SaveCorMatFileName.empty() )
-    parent.ds.SaveCovariance( SaveCorMatFileName, Covar );
+  {
+    if( parent.model.size() != parent.ds.corr.size() )
+      throw std::runtime_error( "ModelSet doesn't match DataSet" );
+    std::vector<std::vector<std::string>> ExtraStrings( parent.ds.corr.size() );
+    for( std::size_t f = 0; f < parent.model.size(); ++f )
+    {
+      ExtraStrings[f].resize( 3 );
+      // Name of each operator THIS ONLY WORKS FOR MODELS WITH OVERLAP CONSTANTS - NEEDS TO BE FIXED
+      for( std::size_t op = 1; op < parent.model[f]->ParamNamesPerExp.size(); ++op )
+        ExtraStrings[f][0].append( parent.model[f]->ParamNamesPerExp[op] );
+      if( parent.model[f]->ParamNamesPerExp.size() == 2 )
+        ExtraStrings[f][0].append( parent.model[f]->ParamNamesPerExp[1] );
+      // Operators - one-off
+      for( const std::string &op : parent.model[f]->ParamNames )
+      {
+        if( !ExtraStrings[f][1].empty() )
+          ExtraStrings[f][1].append( Common::CommaSpace );
+        ExtraStrings[f][1].append( op );
+      }
+      // Operators per energy
+      for( const std::string &op : parent.model[f]->ParamNamesPerExp )
+      {
+        if( !ExtraStrings[f][2].empty() )
+          ExtraStrings[f][2].append( Common::CommaSpace );
+        ExtraStrings[f][2].append( op );
+      }
+    }
+    // Before we plot the matrix, we need to: a) remove the scaling b) make sure the upper triangle is valid
+    Matrix CovarScaled{ Covar };
+    CovarScaled.CholeskyScaleApply( CholeskyDiag );
+    for( int i = 1; i < CovarScaled.size1; ++i )
+      for( int j = 0; j < i; ++j )
+        CovarScaled( j, i ) = CovarScaled( i, j );
+    parent.ds.SaveCovariance( SaveCorMatFileName, CovarScaled, &ExtraStrings );
+  }
 
   // Save the reconstructed correlator values for this replica
   // Put the fitter parameters into our model parameters
