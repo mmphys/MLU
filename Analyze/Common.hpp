@@ -134,6 +134,7 @@ extern const std::string Period;
 extern const std::string NewLine;
 extern const std::string Comma;
 extern const std::string CommaSpace;
+extern const std::string Hash;
 
 // Compare two strings, case insensitive
 inline int CompareIgnoreCase(const std::string &s1, const std::string &s2)
@@ -410,6 +411,55 @@ inline std::string AppendSlash( const std::string & String )
     s.append( 1, '/' );
   return s;
 }
+
+// This is a key/value file, and we ignore anything after a comment character
+template<class Key, class T, class Compare = std::less<Key>> class KeyValReader;
+
+// Specialisation of key value file for std::map<std::string, std::string, Compare>
+template<class Compare>
+class KeyValReader<std::string, std::string, Compare>
+{
+public:
+  using map = std::map<std::string, std::string, Compare>;
+  static map Read( std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash )
+  {
+    if( is.bad() )
+      throw std::runtime_error( "KeyValReader<std::string, std::string, Compare>::Read istream bad()" );
+    map m;
+    while( !StreamEmpty( is ) )
+    {
+      std::string s;
+      if( std::getline( is, s ) )
+      {
+        // Get rid of anything past the comment
+        std::size_t pos = s.find_first_of( sComment );
+        if( pos != std::string::npos )
+          s.resize( pos );
+        std::string sKey = ExtractToSeparator( s, Separators );
+        if( !sKey.empty() )
+          m.emplace( std::make_pair( std::move( sKey ), std::move( s ) ) );
+      }
+    }
+    return m;
+  }
+};
+
+// Key/value file reader for non-string types (read as string, then convert to requested types)
+template<class Key, class T, class Compare>
+class KeyValReader
+{
+public:
+  using map = std::map<Key, T, Compare>;
+  static map Read( std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash )
+  {
+    using StringMap = std::map<std::string, std::string>;
+    StringMap sm{ KeyValReader<std::string, std::string, std::less<std::string>>::Read( is, Separators, sComment ) };
+    map m;
+    for( const auto &p : sm )
+      m.emplace( std::make_pair( FromString<Key>( p.first ), FromString<T>( p.second ) ) );
+    return m;
+  }
+};
 
 // Default delimeters for the next couple of functions
 extern const char szDefaultDelimeters[];
@@ -2957,7 +3007,7 @@ public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
   inline bool empty() const { return corr.empty() && constFile.empty(); }
   void clear();
-  void LoadCorrelator( Common::FileNameAtt &&FileAtt );
+  void LoadCorrelator( Common::FileNameAtt &&FileAtt, bool bCompareBase = true );
   void LoadModel     ( Common::FileNameAtt &&FileAtt, const std::string &Args );
   void SortOpNames( std::vector<std::string> &OpNames );
   void SetFitTimes( const std::vector<std::vector<int>> &FitTimes ); // A list of all the timeslices to include
@@ -3192,7 +3242,7 @@ void DataSet<T>::AddConstant( const std::string &Name, std::size_t File, std::si
 }
 
 template <typename T>
-void DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt )
+void DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, bool bCompareBase )
 {
   const std::size_t i{ corr.size() };
   corr.emplace_back();
@@ -3201,7 +3251,7 @@ void DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt )
   // See whether this correlator is compatible with prior correlators
   if( i )
   {
-    corr[0].IsCompatible( corr[i], &NSamples );
+    corr[0].IsCompatible( corr[i], &NSamples, bCompareBase );
     if( MaxSamples > corr[i].NumSamples() )
       MaxSamples = corr[i].NumSamples();
   }

@@ -60,6 +60,8 @@ MultiFit: MultiFit.o Common.o FitModel.o
 
 peramb-compare: peramb-compare.o Common.o
 
+Ratio: Ratio.o Common.o
+
 repair: repair.o Common.o
 
 mixedop: mixedop.o Common.o
