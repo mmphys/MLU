@@ -38,6 +38,7 @@
 #include <complex>
 #include <fstream>
 #include <iomanip>
+#include <ios>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -794,6 +795,13 @@ struct FileNameAtt
   explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr )
     { Parse( Filename, pOpNames ); }
   void ParseExtra( unsigned int MaxElements = UINT_MAX );
+  // Append the extra info to the string
+  void AppendExtra( std::string &s, int Last = 0, int First = -1 ) const;
+  std::string GetBaseExtra( int Last = 0, int First = -1 ) const;
+  std::string GetBaseShortExtra( int Last = 0, int First = -1 ) const;
+  // Make a new name based on this one, overriding specified elements
+  std::string DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
+                           const std::string &Ext ) const;
 protected:
   void ParseShort(); // Should work out how to do this better
 };

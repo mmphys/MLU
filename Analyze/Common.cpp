@@ -589,6 +589,52 @@ void FileNameAtt::ParseExtra( unsigned int MaxElements )
   ParseShort();
 }
 
+// Append the extra info to the string
+void FileNameAtt::AppendExtra( std::string &s, int Last, int First ) const
+{
+  int Num{ static_cast<int>( Extra.size() ) };
+  if( First >= 0 && First < Num )
+    Num = First;
+  while( Num-- > Last )
+  {
+    s.append( 1, '.' );
+    s.append( Extra[Num] );
+  }
+}
+
+std::string FileNameAtt::GetBaseExtra( int Last, int First ) const
+{
+  std::string s{ Base };
+  AppendExtra( s, Last, First );
+  return s;
+}
+
+std::string FileNameAtt::GetBaseShortExtra( int Last, int First ) const
+{
+  std::string s{ BaseShort };
+  AppendExtra( s, Last, First );
+  return s;
+}
+
+// Make a new name based on this one, overriding specified elements
+std::string FileNameAtt::DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
+                                      const std::string &Ext ) const
+{
+  std::string s{ Base };
+  s.append( 1, '_' );
+  s.append( Snk );
+  s.append( 1, '_' );
+  s.append( Src );
+  AppendExtra( s );
+  s.append( 1, '.' );
+  s.append( Type );
+  s.append( 1, '.' );
+  s.append( SeedString );
+  s.append( 1, '.' );
+  s.append( Ext );
+  return s;
+}
+
 // Make a filename "Base.Type.seed.Ext"
 std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext)
 {

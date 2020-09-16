@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for opsnk in g5P; do
+for opsnk in g5P g5W; do
 for opsrc in g5P g5W; do
 
 # Individual files by Q^2

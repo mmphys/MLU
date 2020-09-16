@@ -41,6 +41,7 @@ my_xtics="${xtics}"
 #my_key="${key:-bottom right}"
 my_key="${key:-top right}"
 times="${times}"
+do_log=${log:-0}
 
 # Begin Felix
 #set term pdf size 5, 1.2
@@ -51,7 +52,12 @@ set key @my_key maxrows 3
 # End Felix
 
 set term pdf #size 5, 1.2
-set output PlotPrefix."theta.${start}_${stop}_${step}.".FieldName.PlotSuffix."pdf"
+FieldNameFile=FieldName
+if( do_log ) {
+set logscale y
+FieldNameFile=FieldNameFile."_log"
+}
+set output PlotPrefix."theta.${start}_${stop}_${step}.".FieldNameFile.PlotSuffix."pdf"
 set ylabel '{/Helvetica:Italic aE}_{eff}'
 set xlabel 't/a' offset 0,1
 set yrange [@my_yrange]

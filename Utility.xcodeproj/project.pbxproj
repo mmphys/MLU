@@ -1187,6 +1187,16 @@
 		68578F342450A36200CC2A1D /* ZMobius.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68578F2F2450A36200CC2A1D /* ZMobius.cc */; };
 		68578F372450A3B200CC2A1D /* BiCGSTABMixedPrec.h in Headers */ = {isa = PBXBuildFile; fileRef = 68578F352450A3B200CC2A1D /* BiCGSTABMixedPrec.h */; };
 		68578F382450A3B200CC2A1D /* BiCGSTAB.h in Headers */ = {isa = PBXBuildFile; fileRef = 68578F362450A3B200CC2A1D /* BiCGSTAB.h */; };
+		685E30D7250FDC93004E912D /* Lattice_real_imag.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30D6250FDC93004E912D /* Lattice_real_imag.h */; };
+		685E30DF250FDCCD004E912D /* Fujitsu_A64FX_intrin_single.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30D8250FDCCC004E912D /* Fujitsu_A64FX_intrin_single.h */; };
+		685E30E0250FDCCD004E912D /* Fujitsu_A64FX_asm_single.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30D9250FDCCC004E912D /* Fujitsu_A64FX_asm_single.h */; };
+		685E30E1250FDCCD004E912D /* Fujitsu_A64FX_intrin_double.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30DA250FDCCC004E912D /* Fujitsu_A64FX_intrin_double.h */; };
+		685E30E2250FDCCD004E912D /* Fujitsu_A64FX_undef.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30DB250FDCCC004E912D /* Fujitsu_A64FX_undef.h */; };
+		685E30E3250FDCCD004E912D /* Grid_a64fx-fixedsize.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30DC250FDCCD004E912D /* Grid_a64fx-fixedsize.h */; };
+		685E30E4250FDCCD004E912D /* Grid_a64fx-2.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30DD250FDCCD004E912D /* Grid_a64fx-2.h */; };
+		685E30E5250FDCCD004E912D /* Fujitsu_A64FX_asm_double.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30DE250FDCCD004E912D /* Fujitsu_A64FX_asm_double.h */; };
+		685E30E9250FDD22004E912D /* WilsonKernelsAsmA64FX.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30E7250FDD22004E912D /* WilsonKernelsAsmA64FX.h */; };
+		685E30EA250FDD22004E912D /* WilsonKernelsAsmBodyA64FX.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30E8250FDD22004E912D /* WilsonKernelsAsmBodyA64FX.h */; };
 		6860B97F248E74C70049C0DE /* Random.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6860B97D248E74C60049C0DE /* Random.cpp */; };
 		6860B980248E74C70049C0DE /* Random.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6860B97E248E74C70049C0DE /* Random.hpp */; };
 		6860B983248E77CD0049C0DE /* SeqGammaWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6860B981248E77CC0049C0DE /* SeqGammaWall.cpp */; };
@@ -2652,7 +2662,7 @@
 		6850D494244A234400A53DC8 /* DistilVectors.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DistilVectors.hpp; sourceTree = "<group>"; };
 		6850D495244A234400A53DC8 /* Noises.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Noises.hpp; sourceTree = "<group>"; };
 		6850D496244A234400A53DC8 /* DistilPar.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DistilPar.cpp; sourceTree = "<group>"; };
-		6850D497244A234400A53DC8 /* Perambulator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Perambulator.hpp; sourceTree = "<group>"; };
+		6850D497244A234400A53DC8 /* Perambulator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.cpp.h; path = Perambulator.hpp; sourceTree = "<group>"; };
 		6850D498244A234400A53DC8 /* PerambFromSolve.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PerambFromSolve.hpp; sourceTree = "<group>"; };
 		6850D499244A234400A53DC8 /* Perambulator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Perambulator.cpp; sourceTree = "<group>"; };
 		6850D49A244A234400A53DC8 /* PerambFromSolve.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PerambFromSolve.cpp; sourceTree = "<group>"; };
@@ -2729,6 +2739,18 @@
 		68578F2F2450A36200CC2A1D /* ZMobius.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ZMobius.cc; sourceTree = "<group>"; };
 		68578F352450A3B200CC2A1D /* BiCGSTABMixedPrec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BiCGSTABMixedPrec.h; sourceTree = "<group>"; };
 		68578F362450A3B200CC2A1D /* BiCGSTAB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BiCGSTAB.h; sourceTree = "<group>"; };
+		685E30D6250FDC93004E912D /* Lattice_real_imag.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lattice_real_imag.h; sourceTree = "<group>"; };
+		685E30D8250FDCCC004E912D /* Fujitsu_A64FX_intrin_single.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Fujitsu_A64FX_intrin_single.h; sourceTree = "<group>"; };
+		685E30D9250FDCCC004E912D /* Fujitsu_A64FX_asm_single.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Fujitsu_A64FX_asm_single.h; sourceTree = "<group>"; };
+		685E30DA250FDCCC004E912D /* Fujitsu_A64FX_intrin_double.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Fujitsu_A64FX_intrin_double.h; sourceTree = "<group>"; };
+		685E30DB250FDCCC004E912D /* Fujitsu_A64FX_undef.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Fujitsu_A64FX_undef.h; sourceTree = "<group>"; };
+		685E30DC250FDCCD004E912D /* Grid_a64fx-fixedsize.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Grid_a64fx-fixedsize.h"; sourceTree = "<group>"; };
+		685E30DD250FDCCD004E912D /* Grid_a64fx-2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Grid_a64fx-2.h"; sourceTree = "<group>"; };
+		685E30DE250FDCCD004E912D /* Fujitsu_A64FX_asm_double.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Fujitsu_A64FX_asm_double.h; sourceTree = "<group>"; };
+		685E30E6250FDCDA004E912D /* gridverter.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = gridverter.py; sourceTree = "<group>"; };
+		685E30E7250FDD22004E912D /* WilsonKernelsAsmA64FX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WilsonKernelsAsmA64FX.h; sourceTree = "<group>"; };
+		685E30E8250FDD22004E912D /* WilsonKernelsAsmBodyA64FX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WilsonKernelsAsmBodyA64FX.h; sourceTree = "<group>"; };
+		685E30EB250FDD2F004E912D /* WilsonKernelsHandImplementation.h.debug */ = {isa = PBXFileReference; lastKnownFileType = text; path = WilsonKernelsHandImplementation.h.debug; sourceTree = "<group>"; };
 		685F9D122343B19E006EE036 /* run */ = {isa = PBXFileReference; lastKnownFileType = folder; path = run; sourceTree = "<group>"; };
 		6860B97D248E74C60049C0DE /* Random.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Random.cpp; sourceTree = "<group>"; };
 		6860B97E248E74C70049C0DE /* Random.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Random.hpp; sourceTree = "<group>"; };
@@ -3352,42 +3374,18 @@
 		6850CA92244A1C2F00A53DC8 /* instantiation */ = {
 			isa = PBXGroup;
 			children = (
-				6850CAD9244A1C2F00A53DC8 /* CayleyFermion5DInstantiation.cc.master */,
-				6850CAF9244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiation.cc.master */,
-				6850CB45244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiation.cc.master */,
-				6850CA9F244A1C2F00A53DC8 /* generate_instantiations.sh */,
 				6850CB07244A1C2F00A53DC8 /* GparityWilsonImplD */,
 				6850CB1B244A1C2F00A53DC8 /* GparityWilsonImplDF */,
 				6850CACC244A1C2F00A53DC8 /* GparityWilsonImplF */,
 				6850CABF244A1C2F00A53DC8 /* GparityWilsonImplFH */,
-				6850CACB244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc */,
-				6850CAAF244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc.master */,
-				6850CAF1244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiation.cc */,
-				6850CAA0244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiation.cc.master */,
-				6850CB39244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiation.cc.master */,
-				68D0E9E424A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc */,
-				68D0E9E524A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc.master */,
-				6850CAA1244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiation.cc.master */,
 				6850CB3A244A1C2F00A53DC8 /* StaggeredImplD */,
 				6850CAF2244A1C2F00A53DC8 /* StaggeredImplF */,
-				6850CAE3244A1C2F00A53DC8 /* StaggeredKernelsInstantiation.cc */,
-				6850CB14244A1C2F00A53DC8 /* StaggeredKernelsInstantiation.cc.master */,
 				6850CAB9244A1C2F00A53DC8 /* WilsonAdjImplD */,
 				6850CB15244A1C2F00A53DC8 /* WilsonAdjImplF */,
-				6850CAF7244A1C2F00A53DC8 /* WilsonCloverFermionInstantiation.cc.master */,
-				6850CAF8244A1C2F00A53DC8 /* WilsonFermion5DInstantiation.cc */,
-				6850CB13244A1C2F00A53DC8 /* WilsonFermion5DInstantiation.cc.master */,
-				6850CAAE244A1C2F00A53DC8 /* WilsonFermionInstantiation.cc */,
-				6850CB53244A1C2F00A53DC8 /* WilsonFermionInstantiation.cc.master */,
 				6850CA93244A1C2F00A53DC8 /* WilsonImplD */,
 				6850CB46244A1C2F00A53DC8 /* WilsonImplDF */,
 				6850CAFB244A1C2F00A53DC8 /* WilsonImplF */,
 				6850CAA2244A1C2F00A53DC8 /* WilsonImplFH */,
-				6850CB5A244A1C2F00A53DC8 /* WilsonKernelsInstantiation.cc */,
-				6850CAFA244A1C2F00A53DC8 /* WilsonKernelsInstantiation.cc.master */,
-				6850CAD8244A1C2F00A53DC8 /* WilsonKernelsInstantiationAsm.cc */,
-				6850CAEA244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparity.cc.master */,
-				6850CB52244A1C2F00A53DC8 /* WilsonTMFermionInstantiation.cc.master */,
 				6850CAE4244A1C2F00A53DC8 /* WilsonTwoIndexAntiSymmetricImplD */,
 				6850CB54244A1C2F00A53DC8 /* WilsonTwoIndexAntiSymmetricImplF */,
 				6850CB3F244A1C2F00A53DC8 /* WilsonTwoIndexSymmetricImplD */,
@@ -3396,6 +3394,30 @@
 				6850CAB0244A1C2F00A53DC8 /* ZWilsonImplDF */,
 				6850CB27244A1C2F00A53DC8 /* ZWilsonImplF */,
 				6850CB30244A1C2F00A53DC8 /* ZWilsonImplFH */,
+				6850CAD9244A1C2F00A53DC8 /* CayleyFermion5DInstantiation.cc.master */,
+				6850CAF9244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiation.cc.master */,
+				6850CB45244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiation.cc.master */,
+				6850CA9F244A1C2F00A53DC8 /* generate_instantiations.sh */,
+				6850CACB244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc */,
+				6850CAAF244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc.master */,
+				6850CAF1244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiation.cc */,
+				6850CAA0244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiation.cc.master */,
+				6850CB39244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiation.cc.master */,
+				68D0E9E424A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc */,
+				68D0E9E524A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc.master */,
+				6850CAA1244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiation.cc.master */,
+				6850CAE3244A1C2F00A53DC8 /* StaggeredKernelsInstantiation.cc */,
+				6850CB14244A1C2F00A53DC8 /* StaggeredKernelsInstantiation.cc.master */,
+				6850CAF7244A1C2F00A53DC8 /* WilsonCloverFermionInstantiation.cc.master */,
+				6850CAF8244A1C2F00A53DC8 /* WilsonFermion5DInstantiation.cc */,
+				6850CB13244A1C2F00A53DC8 /* WilsonFermion5DInstantiation.cc.master */,
+				6850CAAE244A1C2F00A53DC8 /* WilsonFermionInstantiation.cc */,
+				6850CB53244A1C2F00A53DC8 /* WilsonFermionInstantiation.cc.master */,
+				6850CB5A244A1C2F00A53DC8 /* WilsonKernelsInstantiation.cc */,
+				6850CAFA244A1C2F00A53DC8 /* WilsonKernelsInstantiation.cc.master */,
+				6850CAD8244A1C2F00A53DC8 /* WilsonKernelsInstantiationAsm.cc */,
+				6850CAEA244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparity.cc.master */,
+				6850CB52244A1C2F00A53DC8 /* WilsonTMFermionInstantiation.cc.master */,
 			);
 			path = instantiation;
 			sourceTree = "<group>";
@@ -3421,17 +3443,17 @@
 		6850CAA2244A1C2F00A53DC8 /* WilsonImplFH */ = {
 			isa = PBXGroup;
 			children = (
+				6850CAA9244A1C2F00A53DC8 /* CayleyFermion5DInstantiationWilsonImplFH.cc */,
+				6850CAA8244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplFH.cc */,
+				6850CAA6244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplFH.cc */,
+				6850CAAB244A1C2F00A53DC8 /* impl.h */,
+				6850CAAD244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplFH.cc */,
+				6850CAA7244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplFH.cc */,
 				6850CAA3244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplFH.cc */,
+				6850CAAA244A1C2F00A53DC8 /* WilsonFermion5DInstantiationWilsonImplFH.cc */,
 				6850CAA4244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonImplFH.cc */,
 				6850CAA5244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonImplFH.cc */,
-				6850CAA6244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplFH.cc */,
-				6850CAA7244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplFH.cc */,
-				6850CAA8244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplFH.cc */,
-				6850CAA9244A1C2F00A53DC8 /* CayleyFermion5DInstantiationWilsonImplFH.cc */,
-				6850CAAA244A1C2F00A53DC8 /* WilsonFermion5DInstantiationWilsonImplFH.cc */,
-				6850CAAB244A1C2F00A53DC8 /* impl.h */,
 				6850CAAC244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonImplFH.cc */,
-				6850CAAD244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplFH.cc */,
 			);
 			path = WilsonImplFH;
 			sourceTree = "<group>";
@@ -3552,17 +3574,17 @@
 		6850CAFB244A1C2F00A53DC8 /* WilsonImplF */ = {
 			isa = PBXGroup;
 			children = (
-				6850CAFC244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplF.cc */,
-				6850CAFD244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplF.cc */,
-				6850CAFE244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplF.cc */,
 				6850CAFF244A1C2F00A53DC8 /* CayleyFermion5DInstantiationWilsonImplF.cc */,
-				6850CB00244A1C2F00A53DC8 /* WilsonFermion5DInstantiationWilsonImplF.cc */,
-				6850CB01244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonImplF.cc */,
-				6850CB02244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplF.cc */,
 				6850CB03244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplF.cc */,
+				6850CAFD244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplF.cc */,
 				6850CB04244A1C2F00A53DC8 /* impl.h */,
+				6850CB02244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplF.cc */,
+				6850CAFC244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplF.cc */,
+				6850CAFE244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplF.cc */,
+				6850CB00244A1C2F00A53DC8 /* WilsonFermion5DInstantiationWilsonImplF.cc */,
 				6850CB05244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonImplF.cc */,
 				6850CB06244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonImplF.cc */,
+				6850CB01244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonImplF.cc */,
 			);
 			path = WilsonImplF;
 			sourceTree = "<group>";
@@ -3672,17 +3694,17 @@
 		6850CB46244A1C2F00A53DC8 /* WilsonImplDF */ = {
 			isa = PBXGroup;
 			children = (
-				6850CB47244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplDF.cc */,
-				6850CB48244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplDF.cc */,
-				6850CB49244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonImplDF.cc */,
-				6850CB4A244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonImplDF.cc */,
-				6850CB4B244A1C2F00A53DC8 /* impl.h */,
-				6850CB4C244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonImplDF.cc */,
-				6850CB4D244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplDF.cc */,
-				6850CB4E244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplDF.cc */,
-				6850CB4F244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplDF.cc */,
 				6850CB50244A1C2F00A53DC8 /* CayleyFermion5DInstantiationWilsonImplDF.cc */,
+				6850CB4F244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplDF.cc */,
+				6850CB4D244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplDF.cc */,
+				6850CB4B244A1C2F00A53DC8 /* impl.h */,
+				6850CB48244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplDF.cc */,
+				6850CB4E244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplDF.cc */,
+				6850CB47244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplDF.cc */,
 				6850CB51244A1C2F00A53DC8 /* WilsonFermion5DInstantiationWilsonImplDF.cc */,
+				6850CB4A244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonImplDF.cc */,
+				6850CB4C244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonImplDF.cc */,
+				6850CB49244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonImplDF.cc */,
 			);
 			path = WilsonImplDF;
 			sourceTree = "<group>";
@@ -3720,14 +3742,17 @@
 				6850CB6F244A1C2F00A53DC8 /* WilsonCloverFermionImplementation.h */,
 				6850CB6E244A1C2F00A53DC8 /* WilsonFermion5DImplementation.h */,
 				6850CB7C244A1C2F00A53DC8 /* WilsonFermionImplementation.h */,
+				685E30E7250FDD22004E912D /* WilsonKernelsAsmA64FX.h */,
 				6850CB81244A1C2F00A53DC8 /* WilsonKernelsAsmAvx512.h */,
 				6850CB82244A1C2F00A53DC8 /* WilsonKernelsAsmBody.h */,
 				6850CB70244A1C2F00A53DC8 /* WilsonKernelsAsmBody.h.ab */,
 				6850CB7F244A1C2F00A53DC8 /* WilsonKernelsAsmBody.h.abc */,
+				685E30E8250FDD22004E912D /* WilsonKernelsAsmBodyA64FX.h */,
 				6850CB85244A1C2F00A53DC8 /* WilsonKernelsAsmImplementation.h */,
 				6850CB7A244A1C2F00A53DC8 /* WilsonKernelsAsmQPX.h */,
 				6850CB6C244A1C2F00A53DC8 /* WilsonKernelsHandGparityImplementation.h */,
 				6850CB76244A1C2F00A53DC8 /* WilsonKernelsHandImplementation.h */,
+				685E30EB250FDD2F004E912D /* WilsonKernelsHandImplementation.h.debug */,
 				6850CB72244A1C2F00A53DC8 /* WilsonKernelsImplementation.h */,
 				6850CB79244A1C2F00A53DC8 /* WilsonTMFermionImplementation.h */,
 			);
@@ -3947,6 +3972,13 @@
 			isa = PBXGroup;
 			children = (
 				6850CC25244A1C3000A53DC8 /* BGQQPX.h */,
+				685E30DE250FDCCD004E912D /* Fujitsu_A64FX_asm_double.h */,
+				685E30D9250FDCCC004E912D /* Fujitsu_A64FX_asm_single.h */,
+				685E30DA250FDCCC004E912D /* Fujitsu_A64FX_intrin_double.h */,
+				685E30D8250FDCCC004E912D /* Fujitsu_A64FX_intrin_single.h */,
+				685E30DB250FDCCC004E912D /* Fujitsu_A64FX_undef.h */,
+				685E30DD250FDCCD004E912D /* Grid_a64fx-2.h */,
+				685E30DC250FDCCD004E912D /* Grid_a64fx-fixedsize.h */,
 				6850CC29244A1C3000A53DC8 /* Grid_avx.h */,
 				6850CC1E244A1C3000A53DC8 /* Grid_avx512.h */,
 				6850CC2F244A1C3000A53DC8 /* Grid_generic_types.h */,
@@ -3958,6 +3990,7 @@
 				6850CC30244A1C3000A53DC8 /* Grid_sse4.h */,
 				6850CC22244A1C3000A53DC8 /* Grid_vector_types.h */,
 				6850CC2C244A1C3000A53DC8 /* Grid_vector_unops.h */,
+				685E30E6250FDCDA004E912D /* gridverter.py */,
 				6850CC1B244A1C3000A53DC8 /* IBM_qpx_double.h */,
 				6850CC24244A1C3000A53DC8 /* IBM_qpx_single.h */,
 				6850CC21244A1C3000A53DC8 /* IBM_qpx.h */,
@@ -5034,6 +5067,7 @@
 				6850CE6F244A1C3000A53DC8 /* Lattice_local.h */,
 				6850CE70244A1C3000A53DC8 /* Lattice_matrix_reduction.h */,
 				6850CE68244A1C3000A53DC8 /* Lattice_peekpoke.h */,
+				685E30D6250FDC93004E912D /* Lattice_real_imag.h */,
 				6850CE6D244A1C3000A53DC8 /* Lattice_reality.h */,
 				6850CE72244A1C3000A53DC8 /* Lattice_reduction_gpu.h */,
 				6850CE75244A1C3000A53DC8 /* Lattice_reduction.h */,
@@ -5564,6 +5598,7 @@
 				6850CEDD244A1C3100A53DC8 /* Dirac.h in Headers */,
 				6850D0D4244A1C3100A53DC8 /* dogleg.h in Headers */,
 				6850D0F8244A1C3200A53DC8 /* EulerSystem.h in Headers */,
+				685E30D7250FDC93004E912D /* Lattice_real_imag.h in Headers */,
 				6850D0CC244A1C3100A53DC8 /* LMonestep.h in Headers */,
 				6850D13B244A1C3200A53DC8 /* ForceAlignedAccess.h in Headers */,
 				6850D042244A1C3100A53DC8 /* Tensor_trace.h in Headers */,
@@ -5791,6 +5826,7 @@
 				6850D232244A1C3200A53DC8 /* GridStd.h in Headers */,
 				6850D221244A1C3200A53DC8 /* Lattice_coordinate.h in Headers */,
 				6850D03F244A1C3100A53DC8 /* Tensor_arith_mul.h in Headers */,
+				685E30E2250FDCCD004E912D /* Fujitsu_A64FX_undef.h in Headers */,
 				6850CFFB244A1C3100A53DC8 /* HMCModules.h in Headers */,
 				6850D158244A1C3200A53DC8 /* PacketMath.h in Headers */,
 				6850D20C244A1C3200A53DC8 /* ComplexEigenSolver.h in Headers */,
@@ -5844,6 +5880,7 @@
 				6850D21C244A1C3200A53DC8 /* Lattice_unary.h in Headers */,
 				6850D204244A1C3200A53DC8 /* SimplicialCholesky.h in Headers */,
 				6850CECB244A1C3100A53DC8 /* Utils.h in Headers */,
+				685E30E3250FDCCD004E912D /* Grid_a64fx-fixedsize.h in Headers */,
 				6850D12E244A1C3200A53DC8 /* StaticAssert.h in Headers */,
 				6850D237244A1C3200A53DC8 /* pugiconfig.hpp in Headers */,
 				6850CFA7244A1C3100A53DC8 /* SchurDiagTwoKappa.h in Headers */,
@@ -5937,6 +5974,7 @@
 				6850D1E4244A1C3200A53DC8 /* LeastSquareConjugateGradient.h in Headers */,
 				6850D128244A1C3200A53DC8 /* TriangularSolverVector.h in Headers */,
 				6850CFF1244A1C3100A53DC8 /* CheckPointers.h in Headers */,
+				685E30E1250FDCCD004E912D /* Fujitsu_A64FX_intrin_double.h in Headers */,
 				6850D078244A1C3100A53DC8 /* EventCount.h in Headers */,
 				6850D15D244A1C3200A53DC8 /* PacketMath.h in Headers */,
 				6850D1DD244A1C3200A53DC8 /* LDLT.h in Headers */,
@@ -5972,6 +6010,7 @@
 				6850D1EB244A1C3200A53DC8 /* Inverse_SSE.h in Headers */,
 				6850D1D5244A1C3200A53DC8 /* HouseholderQR_LAPACKE.h in Headers */,
 				6850D0B5244A1C3100A53DC8 /* TensorTraits.h in Headers */,
+				685E30E9250FDD22004E912D /* WilsonKernelsAsmA64FX.h in Headers */,
 				6850CEC5244A1C3100A53DC8 /* fundamental.h in Headers */,
 				6850D20D244A1C3200A53DC8 /* GeneralizedSelfAdjointEigenSolver.h in Headers */,
 				6850D23D244A1C3200A53DC8 /* TextIO.h in Headers */,
@@ -5996,6 +6035,7 @@
 				6850D140244A1C3200A53DC8 /* BinaryFunctors.h in Headers */,
 				6850D0A7244A1C3100A53DC8 /* TensorSyclConvertToDeviceExpression.h in Headers */,
 				6850CECC244A1C3100A53DC8 /* Metric.h in Headers */,
+				685E30EA250FDD22004E912D /* WilsonKernelsAsmBodyA64FX.h in Headers */,
 				6850D035244A1C3100A53DC8 /* Communicator.h in Headers */,
 				6850D1F5244A1C3200A53DC8 /* Umeyama.h in Headers */,
 				6850D0C9244A1C3100A53DC8 /* LevenbergMarquardt.h in Headers */,
@@ -6082,6 +6122,7 @@
 				6850D20B244A1C3200A53DC8 /* HessenbergDecomposition.h in Headers */,
 				6850D1A8244A1C3200A53DC8 /* ArrayCwiseBinaryOps.h in Headers */,
 				6850CF2B244A1C3100A53DC8 /* impl.h in Headers */,
+				685E30E0250FDCCD004E912D /* Fujitsu_A64FX_asm_single.h in Headers */,
 				6850CFDA244A1C3100A53DC8 /* WilsonImpl.h in Headers */,
 				6850D024244A1C3100A53DC8 /* CommunicationAvoidingGeneralisedMinimalResidual.h in Headers */,
 				6850D120244A1C3200A53DC8 /* TriangularSolverMatrix.h in Headers */,
@@ -6131,6 +6172,7 @@
 				6850D246244A1C3200A53DC8 /* Serialisation.h in Headers */,
 				6850D034244A1C3100A53DC8 /* SharedMemory.h in Headers */,
 				6850D225244A1C3200A53DC8 /* Lattice_reduction.h in Headers */,
+				685E30E5250FDCCD004E912D /* Fujitsu_A64FX_asm_double.h in Headers */,
 				6850D092244A1C3100A53DC8 /* TensorArgMax.h in Headers */,
 				6850D1EE244A1C3200A53DC8 /* AngleAxis.h in Headers */,
 				6850D170244A1C3200A53DC8 /* PacketMath.h in Headers */,
@@ -6140,6 +6182,7 @@
 				6850D0AC244A1C3100A53DC8 /* TensorPatch.h in Headers */,
 				6850D15A244A1C3200A53DC8 /* TypeCasting.h in Headers */,
 				6850D063244A1C3100A53DC8 /* Intel512common.h in Headers */,
+				685E30DF250FDCCD004E912D /* Fujitsu_A64FX_intrin_single.h in Headers */,
 				6850D180244A1C3200A53DC8 /* CwiseNullaryOp.h in Headers */,
 				6850D01F244A1C3100A53DC8 /* PrecGeneralisedConjugateResidual.h in Headers */,
 				6850D06B244A1C3100A53DC8 /* Cshift_common.h in Headers */,
@@ -6254,6 +6297,7 @@
 				6850CFDF244A1C3100A53DC8 /* Reconstruct5Dprop.h in Headers */,
 				6850D1F9244A1C3200A53DC8 /* Rotation2D.h in Headers */,
 				6850CFC6244A1C3100A53DC8 /* WilsonKernelsAsmAvx512.h in Headers */,
+				685E30E4250FDCCD004E912D /* Grid_a64fx-2.h in Headers */,
 				6850D15F244A1C3200A53DC8 /* TypeCasting.h in Headers */,
 				6850CEB9244A1C3100A53DC8 /* Init.h in Headers */,
 				6850CEA7244A1C3100A53DC8 /* Cartesian_red_black.h in Headers */,

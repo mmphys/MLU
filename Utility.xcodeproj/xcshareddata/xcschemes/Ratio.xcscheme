@@ -61,6 +61,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--snk g5W"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--src g5W"
             isEnabled = "NO">
          </CommandLineArgument>

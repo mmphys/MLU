@@ -28,8 +28,6 @@
 
 #include <cmath>
 //#include <iomanip>
-#include <ios>
-#include <iostream>
 #include <stdio.h>
 
 #include "../Analyze/Common.hpp"
@@ -41,32 +39,14 @@ using Fold   = Common::Fold  <scalar>;
 static const std::string Sep{ "_" };
 static const std::string NewLine{ "\n" };
 
-/*struct OperatorTrait
-{
-  //int Imag;
-  //int Parity;
-  Common::Gamma::Algebra Alg;
-  //OperatorTrait( int Imag_, int Parity_, Common::Gamma::Algebra Alg_ ) : Imag{Imag_}, Parity{Parity_}, Alg{Alg_} {}
-  OperatorTrait( int, int, Common::Gamma::Algebra Alg_ ) : Alg{Alg_} {}
-};
-
-static constexpr int NumMixed{ 5 };
-static const std::array<OperatorTrait, NumMixed> opTraits
-{
-  OperatorTrait( 0, 1, Common::Gamma::Algebra::Gamma5 ),
-  OperatorTrait( 0, -1, Common::Gamma::Algebra::GammaTGamma5 ),
-  OperatorTrait( 1, 1, Common::Gamma::Algebra::GammaXGamma5 ),
-  OperatorTrait( 1, 1, Common::Gamma::Algebra::GammaYGamma5 ),
-  OperatorTrait( 1, 1, Common::Gamma::Algebra::GammaZGamma5 ),
-};*/
 // The order here must match the algebra array for the model code to work
 static constexpr int idxg5{ 0 };
 static constexpr int idxgT5{ 1 };
-//static constexpr int idxgX5{ 2 };
-//static constexpr int idxgY5{ 3 };
-//static constexpr int idxgZ5{ 4 };
-
 static constexpr int ModelNumIndices{ 2 }; // Model should include operators with these indices
+
+static constexpr int idxSrc{ 0 };
+static constexpr int idxSnk{ 1 };
+static constexpr int NumIndices{ 2 }; // Number of sink and source indices
 
 struct SinkSource
 {
@@ -74,378 +54,217 @@ struct SinkSource
   int Source;
 };
 
-enum ModelType : int { DiagSinkSource, DiagSourceOnly };
-
 struct Parameters
 {
-  ModelType modelType;
-  std::string modelArgs;
-  int NumSamples;
+  std::string MixedOpName;
   int Exponent;
   bool bSaveCorr;
   bool bAllReplicas;
   bool bTryConjugate;
   std::string InBase;
   std::string OutBase;
-  std::vector<Common::Momentum> Momenta;
+  std::regex  RegExExt;
+  bool        RegExSwap;
   int tmin;
   int tmax;
   int step;
 };
 
-/*int ModelOps::Index( const std::string &Op ) const
-{
-  int j = 0;
-  while( j < Names.size() && !Common::EqualIgnoreCase( Names[j], Op ) )
-    j++;
-  if( j >= Names.size() )
-    throw std::runtime_error( "Model doesn't contain operator " + Op );
-  return j;
-}*/
-
 class MixedOp
 {
+public:
+  const std::string &Description;
+  const Parameters &Par;
 protected:
-  const Parameters & Par;
-  const Model &model;
-  const int NumParams;
-  const int Exponent;
-  Fold CorrMixed;
-  std::vector<std::string> OpNames;
+  struct ModelInfo
+  {
+    Model       model;
+    std::string MixedOpName;
+    std::array<int        , ModelNumIndices> OpIdx;
+    std::array<std::string, ModelNumIndices> OpName;
+  };
+  std::vector<ModelInfo> MI;
+  Common::SeedType Seed; // Set when first model loaded. Everything else needs to be compatible
+  int ModelSnk, ModelSrc; // Based on filename, which model should be used at sink and source?
+  int Exponent;
   std::vector<std::string> FileOpNames; // Operator names that came from the filenames ... somewhat redundant
+  Common::FileNameAtt fnaName;
+  Fold CorrMixed;
+  std::vector<std::vector<Fold>> CorrIn;
+
   // Set by LoadCorrelators()
   int NumSamples; // maximum of a) user parameters b) raw correlators c) model (if doing all replicas)
   int Nt;
 
-  MixedOp( const Model &model_, const Parameters &par );
-  virtual const std::string & Description() = 0;
-  void LoadCorrelator( Fold &Corr, const std::string &InFileName );
-  void LoadCorrelatorComplete();
-  virtual void ValidateOpNames() = 0;
+  void LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vector<std::string>> &Words );
+  void LoadCorrelator( int idxSnk, int idxSrc, const std::string &InFileName );
+  void DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, bool bSaveCorr, bool bPrint = true );
+  virtual bool IsSource() { return true; }
+  virtual bool IsSink() { return false; }
   virtual void LoadCorrelators( const std::string &InBase ) = 0;
   virtual void MixingAngle(double costheta, double sintheta) = 0;
-  virtual const Fold & Corr0() const = 0;
-  virtual void AppendModelOps( std::string &s ) const = 0;
-  void DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, bool bSaveCorr, bool bPrint = true );
 public:
-  virtual ~MixedOp() = default;
-  static void Make( const Model &model_, const Parameters & Par );
+  MixedOp( const std::string &description_, const Parameters &par ) : Description{ description_ }, Par{ par } {}
+  virtual ~MixedOp() {}
+  bool LoadModels( const std::string &FileName, const std::string &Args );
+  void Make( const std::string &FileName );
 };
 
-MixedOp::MixedOp( const Model &model_, const Parameters &par ) : Par{ par }, model{ model_ },
-  NumParams{ model.Nt() },
-  Exponent{ Par.Exponent >= 0 ? Par.Exponent : Par.Exponent + model.NumExponents }
+// Mixed operator at source only
+class MixedOp_S : public MixedOp
 {
-  if( model.NumExponents < 2 )
-    throw std::runtime_error( "NumExponents=" + std::to_string( model.NumExponents ) + ", at least 2 required" );
-  if( Exponent < 0 || Exponent >= model.NumExponents )
-    throw std::runtime_error( "NumExponents=" + std::to_string( model.NumExponents ) + ", excited state " + std::to_string( Par.Exponent ) + " not available for model" );
-  const int FileOps{ static_cast<int>( model.OpNames.size() ) };
-  const int NtExpected{ model.NumExponents * ( FileOps + 1 ) + 1 };
-  if( NumParams < NtExpected - 1 || NumParams > NtExpected )
-  throw std::runtime_error("Number of parameters=" + std::to_string( NumParams ) + ", "
-                           + std::to_string( NtExpected ) + " expected");
-}
-
-// Keep track of info on correlators as they are loaded
-void MixedOp::LoadCorrelator( Fold &Corr, const std::string &InFileName )
-{
-  Corr.Read( InFileName, "    ", &FileOpNames );
-  CorrMixed.FileList.push_back( InFileName );
-  if( &Corr == &Corr0() )
+protected:
+  static const std::string MyDescription;
+  virtual void LoadCorrelators( const std::string &InBase );
+  virtual void MixingAngle(double costheta, double sintheta);
+public:
+  MixedOp_S( const Parameters &par ) : MixedOp( MyDescription, par )
   {
-    Nt = Corr.Nt();
-    NumSamples = ( Par.NumSamples > 0 && Par.NumSamples < Corr.NumSamples() )
-                 ? Par.NumSamples : Corr.NumSamples();
-    if( Par.bAllReplicas && NumSamples > model.NumSamples() )
-      NumSamples = model.NumSamples();
-    CorrMixed.NtUnfolded = Corr.NtUnfolded;
-    CorrMixed.parity = Common::Parity::Unknown;
-    CorrMixed.reality = Common::Reality::Real;
-    CorrMixed.sign = Common::Sign::Positive;
-    CorrMixed.Conjugated = false;
-    CorrMixed.t0Negated = false;
+    CorrIn.resize( 1 );
+    CorrIn[0].resize( ModelNumIndices );
   }
-  else
-  {
-    Corr0().IsCompatible( Corr, &NumSamples );
-  }
-}
-
-void MixedOp::LoadCorrelatorComplete()
-{
-  CorrMixed.resize( NumSamples, Nt );
-  CorrMixed.CopyAttributes( Corr0() );
-}
+};
 
 // Mixed operator at sink and source
 class MixedOp_SS : public MixedOp
 {
-  friend void MixedOp::Make( const Model &model_, const Parameters & Par );
 protected:
-  std::array<SinkSource, ModelNumIndices> ss;
-  std::array<std::array<Fold, ModelNumIndices>, ModelNumIndices> Corr;
-  virtual const Fold & Corr0() const { return Corr[0][0]; }
-  virtual void AppendModelOps( std::string &s ) const;
-  MixedOp_SS( const Model &model_, const Parameters &par ) : MixedOp( model_, par )
-  {
-    if( !par.modelArgs.empty() )
-      throw std::runtime_error( "Unexpected model argument \"" + par.modelArgs + "\"" );
-  }
-  virtual ~MixedOp_SS() = default;
-  virtual const std::string & Description();
-  virtual void ValidateOpNames();
+  static const std::string MyDescription;
   virtual void LoadCorrelators( const std::string &InBase );
   virtual void MixingAngle(double costheta, double sintheta);
+  virtual bool IsSink() { return true; }
+public:
+  MixedOp_SS( const Parameters &par ) : MixedOp( MyDescription, par )
+  {
+    CorrIn.resize( ModelNumIndices );
+    for( int i = 0; i < ModelNumIndices; ++i )
+      CorrIn[i].resize( ModelNumIndices );
+  }
 };
 
-void MixedOp_SS::AppendModelOps( std::string &s ) const
-{
-  assert( 0 && "Check naming for source and sink-mixed op" );
-}
+const std::string MixedOp_S ::MyDescription{ "source" };
+const std::string MixedOp_SS::MyDescription{ "source & sink" };
 
-const std::string & MixedOp_SS::Description()
+// Load one model given overlap coefficient names that have already been validated
+void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vector<std::string>> &Words )
 {
-  static const std::string s{ "source & sink" };
-  return s;
-}
-
-// Find the indices in the file for the operators I need
-void MixedOp_SS::ValidateOpNames()
-{
-  // Do we have the right number of operators
-  const int NumOps{ ModelNumIndices * ( model.Factorised ? 1 : 2 ) };
-  if( model.OpNames.size() != NumOps )
-    throw std::runtime_error( "Expecting " + std::to_string( NumOps ) + " operators, but model has " + std::to_string( model.OpNames.size() ) );
-  // Are they the right operators
-  if( model.Factorised )
+  // Now try to load the specified Model(s)
+  const bool bFirst{ MI.empty() };
+  const int idx{ static_cast<int>( MI.size() ) };
+  const std::string idxString{ std::to_string( idx ) };
+  MI.emplace_back();
+  ModelInfo &mi{ MI.back() };
+  Model &m{ mi.model };
+  fna.ParseExtra();
+  m.SetName( std::move( fna ) );
+  m.Read( ( "Read model " + idxString + Common::Space ).c_str() );
+  if( bFirst )
+    Seed = m.Seed_;
+  else
+    MI[0].model.IsCompatible( m, nullptr, false );
+  // Display info about the model
+  std::cout << "  Base: " << m.Name_.Base << NewLine;
+  for( std::size_t i = m.Name_.Extra.size(); i > 0; i-- )
+    std::cout << "  Extra[" << std::to_string(i-1) << "]: " << m.Name_.Extra[i-1] << NewLine;
+  std::cout << "  Fit: " << ( m.Factorised ? "F" : "Unf" ) << "actorised, ti="
+            << m.ti << ", tf=" << m.tf << NewLine;
+  for( std::size_t i = 0; i < m.OpNames.size(); i++ )
+    std::cout << "  Model op[" << i << "]: " << m.OpNames[i] << Exponent << NewLine;
+  // Check that the exponent we want is available
+  if( bFirst )
+    Exponent = ( Par.Exponent >= 0 ) ? Par.Exponent : Par.Exponent + m.NumExponents;
+  if( Exponent < 0 || Exponent >= m.NumExponents )
+    throw std::runtime_error( "Exponent " + std::to_string( Par.Exponent ) + " not available in model" );
+  // Now see which operators to use
+  if( Words.empty() )
   {
-    OpNames = model.OpNames;
-    for( int i = 0; i < NumOps; i++ )
+    // Get operators from file
+    if( m.OpNames.size() != NumIndices )
+      throw std::runtime_error( "Ambiguous - model file has " + std::to_string( m.OpNames.size() )
+                               + " operators. " + std::to_string( NumIndices ) + " expected." );
+    for( int i = 0; i < ModelNumIndices; ++i )
     {
-      ss[i].Source = i;
-      ss[i].Sink = i;
+      mi.OpName[i] = m.OpNames[i];
+      mi.OpIdx[i]  = m.GetColumnIndex( mi.OpName[i], Exponent );
     }
   }
   else
   {
-    SinkSource Count[ModelNumIndices];
-    for( int i = 0; i < ModelNumIndices; i++ )
+    int i = 0;
+    for( const std::vector<std::string> &Word : Words )
     {
-      Count[i].Sink = 0;
-      Count[i].Source = 0;
+      mi.OpName[i] = Word[0];
+      mi.OpIdx[i]  = m.GetColumnIndex( Word[Word.size() == 2 ? 1 : 0], Exponent );
+      ++i;
     }
-    for( int i = 0; i < NumOps; i++ )
-    {
-      std::string sOp{ model.OpNames[i] };
-      bool bOK{ false };
-      bool bSource{ false };
-      std::size_t p = sOp.length();
-      if( p > 4 )
-      {
-        std::string Suffix{ sOp.substr( p - 4, 4 ) };
-        if( Common::EqualIgnoreCase( Suffix, "_src" ) )
-        {
-          bOK = true;
-          bSource = true;
-        }
-        else if( Common::EqualIgnoreCase( Suffix, "_snk" ) )
-          bOK = true;
-      }
-      if( !bOK )
-        throw new std::runtime_error( "Operator " + sOp + " does not end in _src or _snk" );
-      sOp.resize( p - 4 );
-      int idx{ 0 };
-      while( idx < OpNames.size() && !Common::EqualIgnoreCase( sOp, OpNames[i] ) )
-        ++idx;
-      if( idx == OpNames.size() )
-      {
-        if( idx == ModelNumIndices )
-          throw new std::runtime_error( "Too many operators in model" );
-        OpNames.push_back( sOp );
-      }
-      if( bSource )
-      {
-        ss[idx].Source = i;
-        Count[idx].Source++;
-      }
-      else
-      {
-        ss[idx].Sink = i;
-        Count[idx].Sink++;
-      }
-    }
-    for( int i = 0; i < ModelNumIndices; i++ )
-      if( Count[i].Sink != 1 || Count[i].Source != 1 )
-        throw new std::runtime_error( "Expected 1 _src and 1 _snk for each operator" );
   }
-}
-
-void MixedOp_SS::LoadCorrelators( const std::string &InBase )
-{
-  // Load all of the correlators
-  for( int iSnk = 0; iSnk < ModelNumIndices ; iSnk++ ) // upper limit NumMixed?
+  // Now save the name of the mixed operator
+  if( Par.MixedOpName.empty() )
   {
-    std::string InFile{ InBase };
-    InFile.append( 1, '_' );
-    InFile.append( OpNames[iSnk] );
-    const std::size_t InFileLen{ InFile.length() };
-    for( int iSrc = 0; iSrc <= ( model.Factorised ? iSnk : ModelNumIndices - 1 ); iSrc++ )
-    {
-      InFile.resize( InFileLen );
-      InFile.append( 1, '_' );
-      InFile.append( OpNames[iSrc] );
-      std::string InFileName{ Common::MakeFilename(InFile,Common::sFold,model.Name_.Seed,DEF_FMT)};
-      if( model.Factorised && iSrc != iSnk && !Common::FileExists( InFileName ) )
-      {
-        InFileName = InBase;
-        InFileName.append( 1, '_' );
-        InFileName.append( OpNames[iSrc] );
-        InFileName.append( 1, '_' );
-        InFileName.append( OpNames[iSnk] );
-        InFileName = Common::MakeFilename( InFileName, Common::sFold, model.Name_.Seed, DEF_FMT );
-      }
-      LoadCorrelator( Corr[iSnk][iSrc], InFileName );
-    }
+    for( const std::string &op : mi.OpName )
+      mi.MixedOpName.append( op );
   }
+  else
+    mi.MixedOpName = Par.MixedOpName;
 }
 
-void MixedOp_SS::MixingAngle(double costheta, double sintheta)
+bool MixedOp::LoadModels( const std::string &FileName, const std::string &Args )
 {
-  const double cos_sq_theta{ costheta * costheta };
-  const double sin_sq_theta{ sintheta * sintheta };
-  const double cos_sin_theta{ costheta * sintheta };
-  const double * pCoeff{ model[Model::idxCentral] + model.NumExponents + Exponent * model.OpNames.size() };
-  const double * pPP{ Corr[idxg5 ][idxg5 ][Fold::idxCentral] };
-  const double * pAP{ Corr[idxgT5][idxg5 ][Fold::idxCentral] };
-  const double * pPA{ nullptr };
-  const double * pAA{ Corr[idxgT5][idxgT5][Fold::idxCentral] };
-  scalar * pDst = CorrMixed[Fold::idxCentral];
-  double A_P1_snk{ 0 };
-  double A_P1_src{ 0 };
-  double A_A1_snk{ 0 };
-  double A_A1_src{ 0 };
-  double Op_PP{ 0 };
-  double Op_AP{ 0 };
-  double Op_PA{ 0 };
-  double Op_AA{ 0 };
-  if( !model.Factorised )
-                 pPA= Corr[idxg5 ][idxgT5][Fold::idxCentral];
-  for( int i = Fold::idxCentral; i < NumSamples; i++ )//, pCoeff += model.Nt() )
+  // First validate the arguments
+  std::vector<std::vector<std::string>> Words;
+  if( Args.find_first_not_of( Common::WhiteSpace ) != std::string::npos )
   {
-    if( Par.bAllReplicas || i == Fold::idxCentral )
+    std::vector<std::string> OpNames = Common::ArrayFromString( Args );
+    bool bOK{ ( OpNames.size() == ModelNumIndices ) };
+    for( int i = 0; bOK && i < ModelNumIndices; ++i )
     {
-      A_P1_snk = pCoeff[ss[idxg5 ].Sink];
-      A_P1_src = pCoeff[ss[idxg5 ].Source];
-      A_A1_snk = pCoeff[ss[idxgT5].Sink];
-      A_A1_src = pCoeff[ss[idxgT5].Source];
-      Op_PP = cos_sq_theta  / ( A_P1_snk * A_P1_src );
-      Op_AP = cos_sin_theta / ( A_A1_snk * A_P1_src );
-      Op_PA = cos_sin_theta / ( A_P1_snk * A_A1_src );
-      Op_AA = sin_sq_theta  / ( A_A1_snk * A_A1_src );
-      pCoeff += NumParams;
+       if( OpNames[i].empty() )
+         bOK = false;
     }
-    for( int t = 0; t < Nt; t++ )
-      if( model.Factorised )
-        *pDst++ = Op_PP * *pPP++ + Op_AA * *pAA++ + 2 * Op_AP * *pAP++;
-      else
-        *pDst++ = Op_PP * *pPP++ + Op_AA * *pAA++ +     Op_AP * *pAP++ + Op_PA * *pPA++;
+    if( !bOK )
+      throw std::runtime_error( "Either provide all " + std::to_string( ModelNumIndices ) + " operators or none" );
+    Words.reserve( ModelNumIndices );
+    for( int i = 0; i < ModelNumIndices; ++i )
+    {
+      Words.push_back( Common::ArrayFromString( OpNames[i], "=" ) );
+      if( Words[i].empty() || Words[i][0].empty() || Words[i].size() > 2 || ( Words[i].size() > 1 && Words[i][1].empty() ) )
+        throw std::runtime_error( "Cannot interpret model parameter " + std::to_string( i ) + " \"" + OpNames[i] + "\"" );
+    }
   }
-}
-
-class MixedOp_S : public MixedOp
-{
-  friend void MixedOp::Make( const Model &model_, const Parameters & Par );
-protected:
-  std::string sSink;
-  std::array<Fold, ModelNumIndices> Corr;
-  virtual const Fold & Corr0() const { return Corr[0]; }
-  virtual void AppendModelOps( std::string &s ) const;
-  MixedOp_S( const Model &model_, const Parameters &par )
-  : MixedOp( model_, par ), sSink{ Par.modelArgs.empty() ? model_.OpNames[0] : Par.modelArgs } {}
-  virtual ~MixedOp_S() = default;
-  virtual const std::string &Description();
-  virtual void ValidateOpNames();
-  virtual void LoadCorrelators( const std::string &InBase );
-  virtual void MixingAngle(double costheta, double sintheta);
-};
-
-void MixedOp_S::AppendModelOps( std::string &s ) const
-{
-  s.append( sSink );
-  s.append( 1, '_' );
-  s.append( OpNames[0] );
-  s.append( OpNames[1] );
-}
-
-const std::string &MixedOp_S::Description()
-{
-  static const std::string s{ "source" };
-  return s;
-}
-
-// Find the indices in the file for the operators I need
-void MixedOp_S::ValidateOpNames()
-{
-  // Do we have the right number of operators
-  if( !model.Factorised )
-    throw std::runtime_error( "Model must be factorised" );
-  if( model.OpNames.size() != ModelNumIndices )
-    throw std::runtime_error( "Expecting " + std::to_string( ModelNumIndices )
-                             + " operators, but model has " + std::to_string( model.OpNames.size() ) );
-  OpNames = model.OpNames;
-}
-
-void MixedOp_S::LoadCorrelators( const std::string &InBase )
-{
-  // Load all of the correlators
-  std::string InFile{ InBase };
-  InFile.append( 1, '_' );
-  InFile.append( sSink );
-  InFile.append( 1, '_' );
-  const std::size_t InFileLen{ InFile.length() };
-  for( int iSrc = 0; iSrc < ModelNumIndices; iSrc++ )
+  MI.clear(); // Replace models already loaded
+  bool bIsModel{ false };
+  Common::FileNameAtt fna{ FileName };
+  if( Common::EqualIgnoreCase( fna.Ext, TEXT_EXT ) )
   {
-    InFile.resize( InFileLen );
-    InFile.append( OpNames[iSrc] );
-    std::string InFileName{ Common::MakeFilename( InFile, Common::sFold, model.Name_.Seed, DEF_FMT ) };
-    if(!Common::FileExists( InFileName ) && Par.bTryConjugate && !Common::EqualIgnoreCase( sSink, OpNames[iSrc]))
+    // Entries in the key file are relative to the file
+    std::string Base{ std::move( fna.Dir ) };
+    Common::AppendSlash( Base );
+    const std::size_t BaseLen{ Base.length() };
+    // Treat this as a list of fit files to read
+    std::map<int, std::string> FitList;
     {
-      std::cout << "Warning: loading conjugate of " << InFileName << Common::NewLine;
-      std::string InFileName{ InBase };
-      InFileName.append( 1, '_' );
-      InFileName.append( OpNames[iSrc] );
-      InFileName.append( 1, '_' );
-      InFileName.append( sSink );
-      InFileName = Common::MakeFilename( InFileName, Common::sFold, model.Name_.Seed, DEF_FMT );
+      std::ifstream s( FileName );
+      if( !Common::FileExists( FileName ) || s.bad() )
+        throw std::runtime_error( "Error reading \"" + FileName + "\"" );
+      FitList = Common::KeyValReader<int, std::string>::Read( s );
     }
-    LoadCorrelator( Corr[iSrc], InFileName );
+    std::map<int, std::string>::iterator it;
+    MI.reserve( FitList.size() );
+    for( int iNum = 0; ( it = FitList.find( iNum ) ) != FitList.end() ; ++iNum )
+    {
+      Base.resize( BaseLen );
+      Base.append( it->second );
+      fna.Parse( Base );
+      LoadModel( std::move( fna ), Words );
+      bIsModel = true;
+    }
   }
-}
-
-void MixedOp_S::MixingAngle(double costheta, double sintheta)
-{
-  const double * pCoeff{ model[Model::idxCentral] + model.NumExponents + Exponent * model.OpNames.size() };
-  const double * pPP{ Corr[0][Fold::idxCentral] };
-  const double * pPW{ Corr[1][Fold::idxCentral] };
-  scalar * pDst = CorrMixed[Fold::idxCentral];
-  double A_PP{ 0 };
-  double A_PW{ 0 };
-  double Op_PP{ 0 };
-  double Op_PW{ 0 };
-  for( int i = Fold::idxCentral; i < NumSamples; i++ )
+  else if( Common::EqualIgnoreCase( fna.Type, Common::sModel ) )
   {
-    if( Par.bAllReplicas || i == Fold::idxCentral )
-    {
-      A_PP = pCoeff[0];
-      A_PW = pCoeff[1];
-      Op_PP = costheta / ( A_PP * A_PP );
-      Op_PW = sintheta / ( A_PP * A_PW );
-      pCoeff += NumParams;
-    }
-    for( int t = 0; t < Nt; t++ )
-      *pDst++ = Op_PP * *pPP++ + Op_PW * *pPW++;
+    LoadModel( std::move( fna ), Words );
+    bIsModel = true;
   }
+  return bIsModel;
 }
 
 void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, bool bSaveCorr, bool bPrint )
@@ -486,104 +305,249 @@ void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, boo
   Out.resize( OutLen );
   Out.append( std::to_string( degrees ) );
   Out.append( 1, '_' );
-  AppendModelOps( Out );
+  Out.append( CorrIn   .size() == 1 ? FileOpNames[CorrIn[0][0].Name_.op[idxSnk]] : MI[ModelSrc].MixedOpName );
+  Out.append( 1, '_' );
+  Out.append( CorrIn[0].size() == 1 ? FileOpNames[CorrIn[0][0].Name_.op[idxSrc]] : MI[ModelSrc].MixedOpName );
   CorrMixed.MakeCorrSummary( nullptr );
-  const Common::SeedType Seed{ model.Name_.Seed };
   if( bSaveCorr )
     CorrMixed.Write( Common::MakeFilename( Out, Common::sBootstrap, Seed, DEF_FMT ) );
   CorrMixed.WriteSummary( Common::MakeFilename( Out, Common::sBootstrap, Seed, TEXT_EXT ) );
 }
 
-void MixedOp::Make( const Model &model_, const Parameters & Par )
+// Given a filename, work out which models apply, then rotate source and/or sink
+void MixedOp::Make( const std::string &FileName )
 {
-  // Extract momentum from model name to get our base name.
-  // Make sure momentum specified either as command-line option, or in filename
-  std::string Base{ model_.Name_.Base };
-  std::vector<Common::Momentum> fileMom{ 1 };
-  const bool bGotFileMom{ fileMom[0].Extract( Base ) };
-  if( Par.Momenta.empty() && !bGotFileMom )
-    throw std::runtime_error( "Momentum needs to be specified" );
-  const std::vector<Common::Momentum> &MyMomenta{ Par.Momenta.size() ? Par.Momenta : fileMom };
-
-  // Display info about the model
-  std::cout << "  Base: " << Base << NewLine;
-  for( std::size_t i = model_.Name_.Extra.size(); i > 0; i-- )
-    std::cout << "  Extra[" << std::to_string(i-1) << "]: " << model_.Name_.Extra[i-1] << NewLine;
-  std::cout << "  Fit: " << ( model_.Factorised ? "F" : "Unf" ) << "actorised, ti="
-            << model_.ti << ", tf=" << model_.tf << NewLine;
-  if( bGotFileMom )
-    std::cout << "  Model Momentum: " << fileMom[0] << NewLine;
-  for( std::size_t i = 0; i < model_.OpNames.size(); i++ )
-    std::cout << "  Model op[" << i << "]: " << model_.OpNames[i] << NewLine;
-
-  // Now make our mixed operator
-  std::unique_ptr<MixedOp> mixed;
+  FileOpNames.clear();
+  fnaName.Parse( FileName, &FileOpNames );
+  if( fnaName.op.size() != 2 )
+    throw std::runtime_error( "Could not extract sink and source operator names from " + FileName );
+  if( MI.size() <= 1 )
   {
-    switch( Par.modelType )
+    ModelSnk = 0;
+    ModelSrc = 0;
+  }
+  else
+  {
+    std::smatch base_match;
+    if( !std::regex_search( FileName, base_match, Par.RegExExt ) || base_match.size() != 3 )
+      throw std::runtime_error( "Can't extract sink/source from " + FileName );
+    ModelSnk = Common::FromString<int>( base_match[Par.RegExSwap ? 2 : 1] );
+    ModelSrc = Common::FromString<int>( base_match[Par.RegExSwap ? 1 : 2] );
+  }
+
+  //Input base is everything except the operator names
+  std::string InBase{ fnaName.Dir };
+  Common::AppendSlash( InBase );
+  InBase.append( fnaName.GetBaseExtra() );
+  // Output base name for the output files is the input + fit times + theta
+  std::string OutBase{ fnaName.GetBaseExtra() };
+  if( IsSink() )
+    MI[ModelSnk].model.Name_.AppendExtra( OutBase, 1 );
+  if( IsSource() )
+    MI[ModelSrc].model.Name_.AppendExtra( OutBase, 1 );
+  std::cout << "Rotate " << OutBase << "\n";
+  LoadCorrelators( InBase );
+  CorrMixed.resize( NumSamples, Nt );
+  CorrMixed.CopyAttributes( CorrIn[0][0] );
+
+  std::string Out{ Par.OutBase + OutBase };
+  std::cout << "    Writing " << Description << " mixed operator to:\n    " << Out << Common::NewLine << "   ";
+  Out.append( ".theta_" );
+  const std::size_t OutLen{ Out.length() };
+  bool bDo0  = true; //!Par.bSaveCorr; // If we're not saving the correlators, always do 0 and 90 degrees
+  bool bDo90 = bDo0;
+  for( int degrees = Par.tmin; ; degrees+=Par.step )
+  {
+    DoOneAngle( degrees, Out, OutLen, Par.bSaveCorr, degrees == Par.tmin || !( degrees % 10 ) );
+    switch( degrees )
     {
-      case DiagSinkSource:
-        mixed.reset( new MixedOp_SS( model_, Par ) );
+      case 0:
+        bDo0 = false;
         break;
-      case DiagSourceOnly:
-        mixed.reset( new MixedOp_S( model_, Par ) );
+      case 90:
+        bDo90 = false;
         break;
-      default:
-        throw std::runtime_error( "Model type " + std::to_string( Par.modelType ) + " not supported" );
+    }
+    if( Par.step == 0 || degrees >= Par.tmax )
+      break;
+  }
+  if( bDo0 )
+    DoOneAngle( 0, Out, OutLen, false ); // We're outside the range requested, no need to save correlators
+  if( bDo90 )
+    DoOneAngle( 90, Out, OutLen, false );
+  std::cout << NewLine;
+}
+
+// Keep track of info on correlators as they are loaded
+void MixedOp::LoadCorrelator( int idxSnk, int idxSrc, const std::string &InFileName )
+{
+  Fold &Corr{ CorrIn[idxSnk][idxSrc] };
+  Corr.Read( InFileName, "  ", &FileOpNames );
+  CorrMixed.FileList.push_back( InFileName );
+  if( idxSnk == 0 && idxSrc == 0 )
+  {
+    Nt = Corr.Nt();
+    if( NumSamples == 0 || NumSamples > Corr.NumSamples() )
+      NumSamples = Corr.NumSamples();
+    CorrMixed.NtUnfolded = Corr.NtUnfolded;
+    CorrMixed.parity = Corr.parity;
+    CorrMixed.reality = Corr.reality;
+    CorrMixed.sign = Corr.sign;
+    CorrMixed.Conjugated = false;
+    CorrMixed.t0Negated = false;
+  }
+  else
+  {
+    CorrIn[0][0].IsCompatible( Corr, &NumSamples );
+    if( CorrMixed.parity != Corr.parity )
+      CorrMixed.parity = Common::Parity::Unknown;
+    if( CorrMixed.reality != Corr.reality )
+      CorrMixed.reality = Common::Reality::Unknown;
+    if( CorrMixed.sign != Corr.sign )
+      CorrMixed.sign = Common::Sign::Unknown;
+  }
+}
+
+void MixedOp_S::LoadCorrelators( const std::string &InBase )
+{
+  // If we're using all model replicas then this limits the maximum number of samples
+  NumSamples = Par.bAllReplicas ? MI[ModelSrc].model.Nt() : 0;
+  // Load all of the correlators
+  std::string InFile{ InBase };
+  InFile.append( 1, '_' );
+  const std::size_t InFileLen1{ InFile.length() };
+  const std::string &SinkName{ FileOpNames[fnaName.op[idxSnk]] };
+  InFile.append( SinkName ); // Use the sink from the original file
+  InFile.append( 1, '_' );
+  const std::size_t InFileLen2{ InFile.length() };
+  for( int iSrc = 0; iSrc < ModelNumIndices; iSrc++ )
+  {
+    InFile.resize( InFileLen2 );
+    const std::string &SourceName{ MI[ModelSrc].OpName[iSrc] };
+    InFile.append( SourceName );
+    std::string InFileName{ Common::MakeFilename( InFile, Common::sFold, Seed, DEF_FMT ) };
+    if(!Common::FileExists( InFileName ) && Par.bTryConjugate && !Common::EqualIgnoreCase( SinkName, SourceName ) )
+    {
+      std::cout << "Warning: loading conjugate of " << InFileName << Common::NewLine;
+      InFile.resize( InFileLen1 );
+      InFile.append( SourceName );
+      InFile.append( 1, '_' );
+      InFile.append( SinkName );
+      InFileName = Common::MakeFilename( InFile, Common::sFold, Seed, DEF_FMT );
+    }
+    LoadCorrelator( 0, iSrc, InFileName );
+  }
+}
+
+void MixedOp_SS::LoadCorrelators( const std::string &InBase )
+{
+  // If we're using all model replicas then this limits the maximum number of samples
+  NumSamples = Par.bAllReplicas ? std::min( MI[ModelSnk].model.Nt(), MI[ModelSrc].model.Nt() ) : 0;
+  // Load all of the correlators
+  std::string InFile{ InBase };
+  InFile.append( 1, '_' );
+  const std::size_t InFileLen1{ InFile.length() };
+  for( int iSnk = 0; iSnk < ModelNumIndices; iSnk++ )
+  {
+    InFile.resize( InFileLen1 );
+    const std::string &SinkName{ MI[ModelSrc].OpName[iSnk] };
+    InFile.append( SinkName ); // Use the sink from the original file
+    InFile.append( 1, '_' );
+    const std::size_t InFileLen2{ InFile.length() };
+    for( int iSrc = 0; iSrc < ModelNumIndices; iSrc++ )
+    {
+      InFile.resize( InFileLen2 );
+      const std::string &SourceName{ MI[ModelSrc].OpName[iSrc] };
+      InFile.append( SourceName );
+      std::string InFileName{ Common::MakeFilename( InFile, Common::sFold, Seed, DEF_FMT ) };
+      if(!Common::FileExists( InFileName ) && Par.bTryConjugate && !Common::EqualIgnoreCase( SinkName, SourceName ) )
+      {
+        std::cout << "Warning: loading conjugate of " << InFileName << Common::NewLine;
+        InFile.resize( InFileLen1 );
+        InFile.append( SourceName );
+        InFile.append( 1, '_' );
+        InFile.append( SinkName );
+        InFileName = Common::MakeFilename( InFile, Common::sFold, Seed, DEF_FMT );
+      }
+      LoadCorrelator( iSnk, iSrc, InFileName );
     }
   }
-  // Validate the model
-  mixed->ValidateOpNames();
+}
 
-  // Construct optimised model for each momentum
-  Base.append( "_p_" );
-  const std::size_t BaseLen{ Base.length() };
-  for( const Common::Momentum &p : MyMomenta )
+void MixedOp_S::MixingAngle(double costheta, double sintheta)
+{
+  const ModelInfo &mi{ MI[ModelSrc] };
+  const double * pCoeff{ mi.model[Model::idxCentral] };
+  const double * pPP{ CorrIn[0][idxSrc][Fold::idxCentral] };
+  const double * pPW{ CorrIn[0][idxSnk][Fold::idxCentral] };
+  scalar * pDst = CorrMixed[Fold::idxCentral];
+  double A_PP{ 0 };
+  double A_PW{ 0 };
+  double Op_PP{ 0 };
+  double Op_PW{ 0 };
+  for( int i = Fold::idxCentral; i < NumSamples; i++ )
   {
-    Base.resize( BaseLen );
-    Base.append( p.to_string( Sep ) );
-    std::string BaseFit{ Base };
-    for( std::size_t i = model_.Name_.Extra.size(); i > 1; i-- )
+    if( Par.bAllReplicas || i == Fold::idxCentral )
     {
-      BaseFit.append( 1, '.' );
-      BaseFit.append( model_.Name_.Extra[i-1] );
+      A_PP = pCoeff[mi.OpIdx[idxSrc]];
+      A_PW = pCoeff[mi.OpIdx[idxSnk]];
+      Op_PP = costheta / ( A_PP * A_PP );
+      Op_PW = sintheta / ( A_PP * A_PW );
+      pCoeff += mi.model.Nt();
     }
-    const std::string InBase{ Par.InBase + Base };
-    std::cout << "  " << BaseFit << "\n";
-    mixed->LoadCorrelators( InBase );
-    mixed->LoadCorrelatorComplete();
+    for( int t = 0; t < Nt; t++ )
+      *pDst++ = Op_PP * *pPP++ + Op_PW * *pPW++;
+  }
+}
 
-    std::string Out{ Par.OutBase + BaseFit };
-    std::cout << "    Writing " << mixed->NumSamples << " samples of " << mixed->Description()
-              << " mixed operator to:\n    " << Out << NewLine << "   ";
-    Out.append( ".theta_" );
-    const std::size_t OutLen{ Out.length() };
-    bool bDo0  = true; //!Par.bSaveCorr; // If we're not saving the correlators, always do 0 and 90 degrees
-    bool bDo90 = bDo0;
-    for( int degrees = Par.tmin; ; degrees+=Par.step )
+void MixedOp_SS::MixingAngle(double costheta, double sintheta)
+{
+  const double cos_sq_theta{ costheta * costheta };
+  const double sin_sq_theta{ sintheta * sintheta };
+  const double cos_sin_theta{ costheta * sintheta };
+  const double * pCoeffSrc{ MI[ModelSrc].model[Model::idxCentral] };
+  const double * pCoeffSnk{ MI[ModelSnk].model[Model::idxCentral] };
+  const double * pPP{ CorrIn[0][0][Fold::idxCentral] };
+  const double * pPA{ CorrIn[0][1][Fold::idxCentral] };
+  const double * pAP{ CorrIn[1][0][Fold::idxCentral] };
+  const double * pAA{ CorrIn[1][1][Fold::idxCentral] };
+  scalar * pDst = CorrMixed[Fold::idxCentral];
+  double A_P1_snk{ 0 };
+  double A_P1_src{ 0 };
+  double A_A1_snk{ 0 };
+  double A_A1_src{ 0 };
+  double Op_PP{ 0 };
+  double Op_AP{ 0 };
+  double Op_PA{ 0 };
+  double Op_AA{ 0 };
+  for( int i = Fold::idxCentral; i < NumSamples; i++ )
+  {
+    if( Par.bAllReplicas || i == Fold::idxCentral )
     {
-      mixed->DoOneAngle( degrees, Out, OutLen, Par.bSaveCorr, degrees == Par.tmin || !( degrees % 10 ) );
-      switch( degrees )
-      {
-        case 0:
-          bDo0 = false;
-          break;
-        case 90:
-          bDo90 = false;
-          break;
-      }
-      if( Par.step == 0 || degrees >= Par.tmax )
-        break;
+      A_P1_snk = pCoeffSnk[MI[ModelSnk].OpIdx[idxSrc]];
+      A_P1_src = pCoeffSrc[MI[ModelSrc].OpIdx[idxSrc]];
+      A_A1_snk = pCoeffSnk[MI[ModelSnk].OpIdx[idxSnk]];
+      A_A1_src = pCoeffSrc[MI[ModelSrc].OpIdx[idxSnk]];
+      Op_PP = cos_sq_theta  / ( A_P1_snk * A_P1_src );
+      Op_AP = cos_sin_theta / ( A_A1_snk * A_P1_src );
+      Op_PA = cos_sin_theta / ( A_P1_snk * A_A1_src );
+      Op_AA = sin_sq_theta  / ( A_A1_snk * A_A1_src );
+      pCoeffSrc += MI[ModelSrc].model.Nt();
+      pCoeffSnk += MI[ModelSnk].model.Nt();
     }
-    if( bDo0 )
-      mixed->DoOneAngle( 0, Out, OutLen, false ); // We're outside the range requested, no need to save correlators
-    if( bDo90 )
-      mixed->DoOneAngle( 90, Out, OutLen, false );
-    std::cout << NewLine;
+    for( int t = 0; t < Nt; t++ )
+      *pDst++ = Op_PP * *pPP++ + Op_AA * *pAA++ +     Op_AP * *pAP++ + Op_PA * *pPA++;
   }
 }
 
 int main( int argc, const char *argv[] )
 {
+  static const char defaultModel[] = "1";
+  static const char defaultExcited[] = "-1";
+  static const char defaultTMin[] = "-90";
+  static const char defaultTMax[] = "90";
+  static const char defaultStep[] = "1";
+  static const char DefaultERE[]{ R"([_[:alpha:]]*([[:digit:]]+)_[[:alpha:]]*([[:digit:]]+))" };
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
@@ -592,17 +556,18 @@ int main( int argc, const char *argv[] )
   try
   {
     const std::initializer_list<CL::SwitchDef> list = {
-      {"a", CL::SwitchType::Single, "1"},
-      {"p", CL::SwitchType::Single, nullptr},
+      {"a", CL::SwitchType::Single, defaultModel},
+      {"e", CL::SwitchType::Single, defaultExcited},
       {"i", CL::SwitchType::Single, "" },
-      {"m", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
-      {"n", CL::SwitchType::Single, "0"},
-      {"e", CL::SwitchType::Single, "-1"},
-      {"tmin", CL::SwitchType::Single, "-90"},
-      {"tmax", CL::SwitchType::Single, "90"},
-      {"step", CL::SwitchType::Single, "1"},
+      {"m", CL::SwitchType::Single, "" },
+      {"n", CL::SwitchType::Single, "" },
+      {"r", CL::SwitchType::Single, DefaultERE },
+      {"tmin", CL::SwitchType::Single, defaultTMin},
+      {"tmax", CL::SwitchType::Single, defaultTMax},
+      {"step", CL::SwitchType::Single, defaultStep},
       {"c", CL::SwitchType::Flag, nullptr},
+      {"s", CL::SwitchType::Flag, nullptr},
       {"rep", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -612,49 +577,72 @@ int main( int argc, const char *argv[] )
     if( !cl.GotSwitch( "help" ) && NumFiles )
     {
       Parameters Par;
-      {
-        const std::string sMT{ cl.SwitchValue<std::string>("a") };
-        std::istringstream s{ sMT };
-        int i;
-        if( ! ( s >> i ) )
-          throw std::runtime_error( "Model type \"" + sMT + "\" must start with an integer" );
-        Par.modelType = static_cast<ModelType>( i );
-        // optional comma, followed by model options
-        if( !Common::StreamEmpty( s ) )
-        {
-          // Read an optional comma, tiptoeing around whitespace
-          if( s.peek() == ',' )
-          {
-            s.get();
-            if( Common::StreamEmpty( s ) )
-              throw std::runtime_error( "Model parameter empty (trailing comma)" );
-          }
-          getline( s, Par.modelArgs );
-        }
-      }
-      const std::string modelBase{ cl.SwitchValue<std::string>("m") };
+      Par.Exponent = cl.SwitchValue<int>("e");
       Par.InBase = Common::AppendSlash( cl.SwitchValue<std::string>("i") );
       Par.OutBase = Common::AppendSlash( cl.SwitchValue<std::string>("o") );
-      Par.NumSamples = cl.SwitchValue<int>("n");
-      Par.Exponent = cl.SwitchValue<int>("e");
-      Par.bAllReplicas = cl.GotSwitch("rep");
-      Par.bTryConjugate = cl.GotSwitch("c");
-      Par.bSaveCorr = cl.GotSwitch("savecorr");
-      if( cl.GotSwitch( "p" ) )
-        Par.Momenta = Common::ArrayFromString<Common::Momentum>( cl.SwitchValue<std::string>("p") );
+      const std::string modelBase{ cl.SwitchValue<std::string>("m") };
+      Par.MixedOpName = cl.SwitchValue<std::string>("n");
       Par.tmin = cl.SwitchValue<int>("tmin");
       Par.tmax = cl.SwitchValue<int>("tmax");
       Par.step = std::abs( cl.SwitchValue<int>("step") );
-      if( Par.NumSamples < 0 )
-        throw std::runtime_error( "NumSamples must be >= 0" );
+      Par.bTryConjugate = cl.GotSwitch("c");
+      Par.RegExExt = std::regex( cl.SwitchValue<std::string>("r"),std::regex::extended|std::regex::icase);
+      Par.RegExSwap = cl.GotSwitch("s");
+      Par.bAllReplicas = cl.GotSwitch("rep");
+      Par.bSaveCorr = cl.GotSwitch("savecorr");
       if( Par.tmin > Par.tmax )
         Par.step *= -1;
-      bShowUsage = false;
-      for(const std::string &ModelFile : Common::glob(cl.Args.begin(),cl.Args.end(),modelBase.c_str()))
+      std::unique_ptr<MixedOp> Op;
+      switch( cl.SwitchValue<int>("a") )
       {
-        Model model;
-        model.Read( ModelFile, "Read model " );
-        MixedOp::Make( model, Par );
+        case 1:
+          Op.reset( new MixedOp_S( Par ) );
+          break;
+        case 3:
+          Op.reset( new MixedOp_SS( Par ) );
+          break;
+        default:
+          throw std::runtime_error( "Invalid source/sink type " + cl.SwitchValue<std::string>("a") );
+      }
+      enum State : int { Empty, ModelLoaded, Rotation };
+      State state{ State::Empty };
+      for( const std::string &FileName : cl.Args )
+      {
+        // See whether this is a model
+        bool bIsModel{ false };
+        {
+          std::string Args{ FileName };
+          std::string ModelFileName{ Common::ExtractToSeparator( Args ) };
+          std::vector<std::string> ModelList{ Common::glob( &ModelFileName, &ModelFileName + 1, modelBase.c_str() ) };
+          if( ModelList.size() == 1 && Common::FileExists( ModelList[0] ) )
+          {
+            if( state == State::ModelLoaded )
+              throw std::runtime_error( "Reading consecutive models, i.e. no processing done with prior model" );
+            if( Op->LoadModels( ModelList[0], Args ) )
+            {
+              bIsModel = true;
+              state = State::ModelLoaded;
+            }
+          }
+          if( !bIsModel )
+          {
+            if( state == State::Empty )
+              throw std::runtime_error( ModelFileName + " is not a model file" );
+            if( !Args.empty() )
+              throw std::runtime_error( "Argument \"" + Args + "\" specified for " + ModelFileName );
+          }
+        }
+        if( !bIsModel )
+        {
+          // This is not a model - see whether it's a number of rotations to perform
+          if( state == State::Empty )
+            throw std::runtime_error( "A model must be loaded before rotations performed" );
+          for( const std::string &BootFile : Common::glob( &FileName, &FileName + 1, Par.InBase.c_str() ) )
+          {
+            Op->Make( BootFile );
+            bShowUsage = false;
+          }
+        }
       }
     }
   }
@@ -668,22 +656,24 @@ int main( int argc, const char *argv[] )
   }
   if( bShowUsage )
   {
-    ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
-    " <options> Model1 [Model2 ...]\n"
+    ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << cl.Name <<
+    " <options> Model Bootstrap_wildcard [Model Bootstrap_wildcard [...]]\n"
     "Create a mixed operator from fit parameters and bootstrap replicas\n"
     "<options>\n"
-    "-a     Model type 0=source/sink, 1=sink only (default)\n"
-    "-p     Comma separated list of momenta (default: same as model file)\n"
+    "-a     Model type: 1=sink only; 2=source only; 3=source/sink; default " << defaultModel << "\n"
+    "-e     Which excited state to use in model (default " << defaultExcited << "), -ve counts from highest state\n"
     "-i     Input path for folded bootstrap replicas\n"
-    "-m     Input path for model files\n"
     "-o     Output path\n"
-    "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
-    "-e     Which excited state to use in model (default -1), -ve counts from highest state\n"
-    "--tmin Minimum theta (default -90)\n"
-    "--tmax Maximum theta (default  90)\n"
-    "--step Steps between theta (default 1)\n"
+    "-m     Input path for model files\n"
+    "-n     Mixed operator name\n"
+    "-r     Extended regex for sink/source type, default\n       " << DefaultERE << "\n"
+    "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
+    "--tmin Minimum theta, default " << defaultTMin << "\n"
+    "--tmax Maximum theta, default " << defaultTMax << "\n"
+    "--step Steps between theta, default " << defaultStep << "\n"
     "Flags:\n"
-    "-c         Try loading Conjugate operator if bootstrap sample missing"
+    "-c         Try loading Conjugate operator if bootstrap sample missing\n"
+    "-s         Swap source / sink order in regex\n"
     "--rep      Use per replica values of overlap constants in construction of model\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--help     This message\n";

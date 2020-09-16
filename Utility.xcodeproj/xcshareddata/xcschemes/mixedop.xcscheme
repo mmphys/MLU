@@ -57,16 +57,28 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i PW/2pt/ -o mixed/ fit/2pt/h0_s_p_0_0_0.corr_8_17.g5P_g5W.model.1835672416.h5"
+            argument = "-m fit/2pt/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--tmin=-45 --tmax=-45 --step=0 -a1"
+            argument = "-i PW/2pt/ -o mixed/2pt g5_g5/h0_s_p_0_0_0.corr_8_17.g5P_g5W.model.&apos;*&apos;.h5 h0_s_p_0_0_0_g5P_g5P.fold.&apos;*&apos;.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i PW/3pt_s/ -o mixed/3pt_s Best2pt.txt quark_h1_h3_gT_dt_12_p_0_0_0_g5P_g5P.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--savecorr"
+            argument = "--savecorr --tmin=-45 --tmax=-45 --step=0"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-a=3"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--help"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>
