@@ -33,6 +33,8 @@ gnuplot <<-EOFMark
 
 FieldName="$field"
 FieldTitle="$field_title"
+PlotOpNames="${mmplotfile_ops[@]: -2:1}_${mmplotfile_ops[@]: -1:1}"
+OutPrefix="${mmplotfile_base}_".PlotOpNames.".${mmplotfile_corr_all}."
 PlotPrefix="$PlotPrefix"
 PlotSuffix="$PlotSuffix"
 my_xrange="${ti:-*}:${tf:-*}"
@@ -57,7 +59,7 @@ if( do_log ) {
 set logscale y
 FieldNameFile=FieldNameFile."_log"
 }
-set output PlotPrefix."theta.${start}_${stop}_${step}.".FieldNameFile.PlotSuffix."pdf"
+set output OutPrefix."theta.${start}_${stop}_${step}.".FieldNameFile.PlotSuffix."pdf"
 set ylabel '{/Helvetica:Italic aE}_{eff}'
 set xlabel 't/a' offset 0,1
 set yrange [@my_yrange]
@@ -69,20 +71,20 @@ first_offset = ( numseries - 1 ) * 0.05 / 2
 set xrange [@my_xrange]
 set object 1 rect from graph 0, first 0.99561 to graph 1, first 0.99751 fs solid 0.05 noborder fc rgb "gray10" behind
 set arrow from graph 0, first 0.99656 to graph 1, first 0.99656 nohead front lc rgb "gray40" lw 0.25  dashtype "-"
-set label 2 "E_0=0.99656(95), ArXiv:1812.08791" at screen 0, 0 font "Arial,8" front textcolor "grey40" offset character 1, character 0.75
+#set label 2 "E_0=0.99656(95), ArXiv:1812.08791" at screen 0, 0 font "Arial,8" front textcolor "grey40" offset character 1, character 0.75
 
 set pointsize 0.45
 #set xlabel 'initial fit time'
 #set palette defined ( 15 "blue", 16 "red", 17 "green")
 
-set title FieldTitle." from mixed operator ".PlotPrefix noenhanced
+set title FieldTitle." from mixed operator ".OutPrefix noenhanced
 #set ylabel 'Chi squared per degree of freedom'
 #set logscale y
 FieldLow=FieldName."_low"
 FieldHigh=FieldName."_high"
 #print "${mmplotfile_path}".PlotPrefix."theta_".word(times,1).".bootstrap".PlotSuffix."$mmplotvar_dat"
 plot for [i=1:words(times)] \
- "${mmplotfile_path}".PlotPrefix."theta_".word(times,i)."_${mmplotfile_ops[@]: -2:1}_${mmplotfile_ops[@]: -1:1}.bootstrap".PlotSuffix."$mmplotvar_dat" \
+ "${mmplotfile_path}".PlotPrefix."theta_".word(times,i)."_".PlotOpNames.".bootstrap".PlotSuffix."$mmplotvar_dat" \
   using (column("t")-first_offset+0.05*(i-1)):(column(FieldName)):(column(FieldLow)):(column(FieldHigh)) with yerrorbars title "θ=".word(times,i)
 EOFMark
 fi;fi;done

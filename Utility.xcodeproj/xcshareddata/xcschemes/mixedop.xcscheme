@@ -61,11 +61,11 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i PW/2pt/ -o mixed/2pt g5_g5/h0_s_p_0_0_0.corr_8_17.g5P_g5W.model.&apos;*&apos;.h5 h0_s_p_0_0_0_g5P_g5P.fold.&apos;*&apos;.h5"
+            argument = "-i PW/2pt/ -o mixed/2pt g5_g5/h0_s_p_0_0_0.corr_8_17.g5P_g5W.model.&apos;*&apos;.h5 h0_s_p_0_0_0_g5P_g5[PW].fold.&apos;*&apos;.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i PW/3pt_s/ -o mixed/3pt_s Best2pt.txt quark_h1_h3_gT_dt_12_p_0_0_0_g5P_g5P.fold.1835672416.h5"
+            argument = "-i PW/3pt_s/ -o mixed/3pt_s/E0_rootE Best2pt.txt quark_h3_h0_gT_dt_20_p_0_0_0_g5P_g5P.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -73,11 +73,27 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--savecorr --tmin=-10 --tmax=-10 --step=0"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--tmin=-90 --tmax=90 --step=1"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-a=3"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--help"
+            argument = "--normalise"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-e 0"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--rep"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

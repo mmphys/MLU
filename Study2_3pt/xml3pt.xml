@@ -33,7 +33,7 @@
     <OutputBase>C1/unit/</OutputBase>-->
     <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>
     <GaugeFix>
-      <gauge>Unused</gauge>
+      <gauge>Not needed - will use gauge field above</gauge>
       <alpha>0.05</alpha>
       <maxiter>1000000</maxiter>
       <Omega_tol>1e-08</Omega_tol>

@@ -53,20 +53,24 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i PW/3pt_s/ -m fit/2pt/g5_g5/ -o Ratio/3pt_s/"
+            argument = "-i mixed/3pt_s/E0_rootE/ -m fit/2pt/ -o Ratio/3pt_s/E1_rootE/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "fit/Best2pt.txt"
+            argument = "fit/2pt/Best2pt.txt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--snk g5W"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--src g5W"
+            argument = "--snk g5Pg5W"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--src g5Pg5W"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;*&apos;_h0_h3&apos;*&apos;.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

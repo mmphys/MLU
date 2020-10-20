@@ -165,7 +165,8 @@ inline bool EqualIgnoreCase(const std::string &s1, const std::string &s2)
 }
 
 // Find the index of the specified string in the array, or array size if not found
-inline int IndexIgnoreCase( const std::vector<std::string> &v, const std::string &s )
+template <typename C = std::vector<std::string>>
+inline int IndexIgnoreCase( const C &v, const std::string &s )
 {
   assert( v.size() < std::numeric_limits<int>::max() && "Terribly inefficient search!" );
   int idx = 0;
@@ -468,6 +469,9 @@ extern const char szDefaultDelimeters[];
 // Remove anything past the last delimeter from string, returning the removed part in suffix
 // Return success / fail
 bool ExtractSuffix( std::string &String, std::string &Suffix, const char * pszDelimeters = nullptr );
+
+// Remove the directory from the start of FileName (leave the trailing '/' in place)
+std::string ExtractDirPrefix( std::string &FileName );
 
 // Split String into an array using specified delimeters
 std::vector<std::string> Split( const std::string &String, const char * pszDelimeters = nullptr );

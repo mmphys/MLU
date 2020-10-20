@@ -26,10 +26,10 @@
 
 #include "../Analyze/Common.hpp"
 
-static const std::vector<std::string> vHeavy{ "h0", "h1", "h2", "h3" };
-static const int NumHeavy{ static_cast<int>( vHeavy.size() ) };
-static const std::vector<int> vDeltaT{ 12, 14, 16, 20 };
-static const int NumDeltaT{ static_cast<int>( vDeltaT.size() ) };
+//static const std::vector<std::string> vHeavy{ "h0", "h1", "h2", "h3" };
+//static const int NumHeavy{ static_cast<int>( vHeavy.size() ) };
+//static const std::vector<int> vDeltaT{ 12, 14, 16, 20 };
+//static const int NumDeltaT{ static_cast<int>( vDeltaT.size() ) };
 using Scalar = double;
 using Fold = Common::Fold<Scalar>;
 using Model = Common::Model<Scalar>;
@@ -46,26 +46,30 @@ public:
   const std::string &inBase;
   const std::string &outBase;
   const std::string &modelBase;
-  const std::string gSnk;
-  const std::string gSrc;
+  //const std::string gSnk;
+  //const std::string gSrc;
   const std::string Spectator;
   const Common::Momentum p;
 protected:
-  std::vector<ModelInfo> model;
+  std::regex RegExExt;
+  const bool RegExSwap;
+  std::map<int, ModelInfo> model;
   int MaxModelSamples;
   Common::SeedType Seed;
 protected:
-  std::string Filename3pt(const std::string &HeavySnk,const std::string &HeavySrc,const std::string &Current,int DeltaT)const;
-  std::string FilenameRatio(int Ratio, const std::string &HeavySnk, const std::string &HeavySrc, int DeltaT ) const;
+  //std::string Filename3pt(const std::string &HeavySnk,const std::string &HeavySrc,const std::string &Current,int DeltaT)const;
+  //std::string FilenameRatio(int Ratio, const std::string &HeavySnk, const std::string &HeavySrc, int DeltaT ) const;
   std::string HeavyKey( const std::string &Heavy ) const;
 public:
   RatioMaker( const std::string &inBase, const std::string &outBase, const std::string &modelBase,
-              const std::string &gSnk, const std::string &gSrc, const std::string &Spectator,
-              const Common::Momentum &p, const std::string &FitListName );
-  void MakeRatios( int iSnk, int iSrc, int DeltaT );
+              //const std::string &gSnk, const std::string &gSrc,
+              const std::string &Spectator, const Common::Momentum &p,
+              std::regex RegExExt, const bool RegExSwap, const std::string &FitListName );
+  //void MakeRatios( int iSnk, int iSrc, int DeltaT );
+  void MakeRatios( std::string &sFileName );
 };
 
-std::string RatioMaker::Filename3pt( const std::string &HeavySnk, const std::string &HeavySrc, const std::string &Current, int DeltaT ) const
+/*std::string RatioMaker::Filename3pt( const std::string &HeavySnk, const std::string &HeavySrc, const std::string &Current, int DeltaT ) const
 {
   std::string s{ inBase };
   s.append( "quark_" );
@@ -123,18 +127,17 @@ std::string RatioMaker::HeavyKey( const std::string &Heavy ) const
   s.append( "_p_" );
   s.append( p.to_string( Common::Underscore ) );
   return s;
-}
+}*/
 
 RatioMaker::RatioMaker( const std::string &inBase_, const std::string &outBase_, const std::string &modelBase_,
-                        const std::string &gSnk_, const std::string &gSrc_, const std::string &Spectator_,
-                        const Common::Momentum &p_, const std::string &FitListName )
-: inBase{inBase_}, outBase{outBase_}, modelBase{modelBase_}, gSnk{gSnk_}, gSrc{gSrc_}, Spectator{Spectator_}, p{ p_ },
-  model( NumHeavy )
+                        //const std::string &gSnk_, const std::string &gSrc_,
+                        const std::string &Spectator_, const Common::Momentum &p_,
+                        std::regex regExExt_, const bool regExSwap_, const std::string &FitListName )
+: inBase{inBase_}, outBase{outBase_}, modelBase{modelBase_}, //gSnk{gSnk_}, gSrc{gSrc_},
+  Spectator{Spectator_}, p{ p_ }, RegExExt{ regExExt_ }, RegExSwap{ regExSwap_ }
 {
-  // Map from case insensitive string to string
-  using StringMapI= std::map<std::string, std::string, Common::LessCaseInsensitive>;
   // Here, SSRI = StringStringReaderInsensitive (not selective seratonin reuptake inhibitor)
-  using SSRI= Common::KeyValReader<std::string, std::string, Common::LessCaseInsensitive>;
+  // using SSRI= Common::KeyValReader<std::string, std::string, Common::LessCaseInsensitive>;
 
   if( p.p2() )
     throw std::runtime_error( "Only zero-momentum currently supported" );
@@ -142,45 +145,77 @@ RatioMaker::RatioMaker( const std::string &inBase_, const std::string &outBase_,
   std::ifstream s( FitListName );
   if( !Common::FileExists( FitListName ) || s.bad() )
     throw std::runtime_error( "Fit list \"" + FitListName + "\" not found" );
-  StringMapI FitList;
-  FitList = SSRI::Read( s );
-  for( int i = 0; i < NumHeavy; ++i )
+  std::map<int, std::string> FitList{ Common::KeyValReader<int, std::string>::Read( s ) };
+  bool bFirst{ true };
+  int idxFirst{ 0 };
+  for( std::map<int, std::string>::iterator it = FitList.begin(); it != FitList.end(); ++it )
   {
-    std::string sH = HeavyKey( vHeavy[i] );
-    auto it = FitList.find( sH );
-    if( it == FitList.end() )
-      throw std::runtime_error( "Fit " + sH + " not specified in FitListName" );
+    const int i{ it->first };
+    const std::string sH{ std::to_string( i ) };//HeavyKey( vHeavy[i] ) };
     std::string ModelFileName{ modelBase };
     ModelFileName.append( it->second );
     std::string MsgPrefix( 2, ' ' );
     MsgPrefix.append( sH );
     MsgPrefix.append( Common::Space );
-    model[i].m.Read( ModelFileName, MsgPrefix.c_str() );
-    model[i].idxE0 = model[i].m.GetColumnIndex( "E0" );
-    if( i == 0 || MaxModelSamples > model[i].m.NumSamples() )
-      MaxModelSamples = model[i].m.NumSamples();
-    if( i )
-      model[0].m.IsCompatible( model[i].m, nullptr, false );
-    else
+    ModelInfo &mi{ model[i] };
+    mi.m.Read( ModelFileName, MsgPrefix.c_str() );
+    mi.idxE0 = mi.m.GetColumnIndex( "E0" );
+    if( bFirst || MaxModelSamples > mi.m.NumSamples() )
+      MaxModelSamples = mi.m.NumSamples();
+    if( bFirst )
     {
-      if( !model[0].m.Name_.bSeedNum )
-        throw std::runtime_error( "Seed \"" + model[0].m.Name_.SeedString + "\" invalid" );
-      Seed = model[0].m.Name_.Seed;
+      if( !mi.m.Name_.bSeedNum )
+        throw std::runtime_error( "Seed \"" + mi.m.Name_.SeedString + "\" invalid" );
+      Seed = mi.m.Name_.Seed;
+      idxFirst = i;
+      bFirst = false;
     }
+    else
+      model[idxFirst].m.IsCompatible( mi.m, nullptr, false );
   }
 }
 
-void RatioMaker::MakeRatios( int iSnk, int iSrc, int DeltaT )
+void RatioMaker::MakeRatios( std::string &FileName )
 {
-  static const std::string Current{ "gT" };
-  std::cout << vHeavy[iSnk] << Common::CommaSpace << gSnk << " <- " << vHeavy[iSrc] << Common::CommaSpace << gSrc
-            << " dT=" << DeltaT << " p=" << p.to_string( Common::Space ) << Common::NewLine;
+  std::string Dir{ Common::ExtractDirPrefix( FileName ) };
+  std::cout << "Processing " << Dir << FileName << Common::NewLine;
+  std::smatch base_match;
+  if( !std::regex_search( FileName, base_match, RegExExt ) || base_match.size() != 5 )
+    throw std::runtime_error( "Can't extract sink/source from " + FileName );
+  const int ModelSnk{ Common::FromString<int>( base_match[RegExSwap ? 4 : 2] ) };
+  const int ModelSrc{ Common::FromString<int>( base_match[RegExSwap ? 2 : 4] ) };
+  std::string sSnk{ base_match[RegExSwap ? 3 : 1] };
+  sSnk.append( base_match[RegExSwap ? 4 : 2] );
+  std::string sSrc{ base_match[RegExSwap ? 1 : 3] };
+  sSrc.append( base_match[RegExSwap ? 2 : 4] );
+  const ModelInfo &miSnk{ model.at( ModelSnk ) };
+  const ModelInfo &miSrc{ model.at( ModelSrc ) };
+
+  //int iSnk, int iSrc, int DeltaT;
+  //static const std::string Current{ "gT" };
+  //std::cout << vHeavy[iSnk] << Common::CommaSpace << gSnk << " <- " << vHeavy[iSrc] << Common::CommaSpace << gSrc
+          // << " dT=" << DeltaT << " p=" << p.to_string( Common::Space ) << Common::NewLine;
   // Load the correlators we need
+  Dir.append( base_match.prefix() );
+  const std::size_t Len{ Dir.length() };
+  int DeltaT{ 0 };
   Common::DataSet<Scalar> ds;
   for( int i = 0; i < 2; i++ )
     for( int j = 0; j < 2; j++ )
     {
-      Common::FileNameAtt fna{ Filename3pt( vHeavy[i ? iSnk : iSrc], vHeavy[j ? iSnk : iSrc], Current, DeltaT ) };
+      Dir.resize( Len );
+      Dir.append( i ? sSnk : sSrc );
+      Dir.append( 1, '_' );
+      Dir.append( j ? sSnk : sSrc );
+      Dir.append( base_match.suffix() );
+      //Common::FileNameAtt fna{ Filename3pt( vHeavy[i ? iSnk : iSrc], vHeavy[j ? iSnk : iSrc], Current, DeltaT ) };
+      Common::FileNameAtt fna{ Dir };
+      if( i == 0 && j == 0 )
+      {
+        if( !fna.bGotDeltaT )
+          throw std::runtime_error( "DeltaT missing" );
+        DeltaT = fna.DeltaT;
+      }
       ds.LoadCorrelator( std::move( fna ), false );
     }
   // Ensure the correlator includes timeslice DeltaT
@@ -199,8 +234,8 @@ void RatioMaker::MakeRatios( int iSnk, int iSrc, int DeltaT )
   for( int i = 0; i < NumSrc; ++i )
     pSrc[i] = ds.corr[i][Common::Fold<Scalar>::idxCentral];
   const Scalar * pE[2];
-  pE[0] = model[iSrc].m[Common::Fold<Scalar>::idxCentral] + model[iSrc].idxE0;
-  pE[1] = model[iSnk].m[Common::Fold<Scalar>::idxCentral] + model[iSnk].idxE0;
+  pE[0] = miSrc.m[Common::Fold<Scalar>::idxCentral] + miSrc.idxE0;
+  pE[1] = miSnk.m[Common::Fold<Scalar>::idxCentral] + miSnk.idxE0;
   for( int idx = Common::Fold<Scalar>::idxCentral; idx < ds.NSamples; ++idx )
   {
     const double EProd = (*pE[0]) * (*pE[1]);
@@ -217,26 +252,34 @@ void RatioMaker::MakeRatios( int iSnk, int iSrc, int DeltaT )
     }
     for( int i = 0; i < NumSrc; ++i )
       pSrc[i] += ds.corr[i].Nt() - ( DeltaT + 1 );
-    pE[0] += model[iSrc].m.Nt();
-    pE[1] += model[iSnk].m.Nt();
+    pE[0] += miSrc.m.Nt();
+    pE[1] += miSnk.m.Nt();
   }
   out.MakeCorrSummary( nullptr );
-  std::string OutFileName{ FilenameRatio( 2, vHeavy[iSnk], vHeavy[iSrc], DeltaT ) };
-  const std::size_t FileNameLen{ OutFileName.length() };
-  OutFileName.append( DEF_FMT );
+  std::string OutFileName{ outBase };
+  OutFileName.append( "R2_" );
+  OutFileName.append( sSnk );
+  OutFileName.append( 1, '_' );
+  OutFileName.append( sSrc );
+  OutFileName.append( base_match.suffix() );
   std::cout << "->" << OutFileName << Common::NewLine;
   out.Write( OutFileName, Common::sFold.c_str() );
-  OutFileName.resize( FileNameLen );
+  const std::size_t FileNameLen{ OutFileName.find_last_of( '.' ) };
+  if( FileNameLen == std::string::npos )
+    OutFileName.append( 1, '_' );
+  else
+    OutFileName.resize( FileNameLen + 1 );
   OutFileName.append( TEXT_EXT );
   out.WriteSummary( OutFileName );
 }
 
-static const char DefaultSnk[]{ "g5P" };
-static const char *DefaultSrc{ DefaultSnk };
+//static const char DefaultSnk[]{ "g5P" };
+//static const char *DefaultSrc{ DefaultSnk };
 static const char DefaultSpectator[]{ "s" };
 
 int main(int argc, const char *argv[])
 {
+  static const char DefaultERE[]{ R"(([[:alpha:]]*)([[:digit:]]+)_([[:alpha:]]*)([[:digit:]]+))" };
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
@@ -249,28 +292,39 @@ int main(int argc, const char *argv[])
       {"o", CL::SwitchType::Single, "" },
       {"m", CL::SwitchType::Single, "" },
       {"s", CL::SwitchType::Single, DefaultSpectator },
+      {"r", CL::SwitchType::Single, DefaultERE },
       //{"n", CL::SwitchType::Single, "0"},
-      {"snk", CL::SwitchType::Single, DefaultSnk },
-      {"src", CL::SwitchType::Single, DefaultSrc },
+      //{"snk", CL::SwitchType::Single, DefaultSnk },
+      //{"src", CL::SwitchType::Single, DefaultSrc },
+      {"w", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
-    if( !cl.GotSwitch( "help" ) && cl.Args.size() == 1 )
+    if( !cl.GotSwitch( "help" ) && cl.Args.size() > 1 )
     {
       // Read the list of fits I've chosen to use
-      RatioMaker rm( cl.SwitchValue<std::string>("i"), cl.SwitchValue<std::string>("o"), cl.SwitchValue<std::string>("m"),
-                     cl.SwitchValue<std::string>("snk"), cl.SwitchValue<std::string>("src"),
-                     cl.SwitchValue<std::string>("s"), Common::Momentum( 0, 0, 0 ), cl.Args[0] );
+      const std::string InBase{ cl.SwitchValue<std::string>("i") };
+      RatioMaker rm( InBase, cl.SwitchValue<std::string>("o"), cl.SwitchValue<std::string>("m"),
+                     //cl.SwitchValue<std::string>("snk"), cl.SwitchValue<std::string>("src"),
+                     cl.SwitchValue<std::string>("s"), Common::Momentum( 0, 0, 0 ),
+                    std::regex( cl.SwitchValue<std::string>("r"), std::regex::extended | std::regex::icase ),
+                    cl.GotSwitch("w"),
+                    cl.Args[0] );
       bShowUsage = false;
-      //const int NSamples{ cl.SwitchValue<int>("n") };
-      for( int iSnk = 0; iSnk < NumHeavy - 1; ++iSnk )
+      std::vector<std::string> FileList{ Common::glob( ++cl.Args.begin(), cl.Args.end(), InBase.c_str() ) };
+      for( std::string &sFile : FileList )
       {
-        for( int iSrc = iSnk + 1; iSrc < NumHeavy; ++iSrc )
+        try
         {
-          for( int DeltaT : vDeltaT )
-          {
-            rm.MakeRatios( iSnk, iSrc, DeltaT );
-          }
+          rm.MakeRatios( sFile );
+        }
+        catch(const std::exception &e)
+        {
+          std::cerr << "Error: " << e.what() << std::endl;
+        }
+        catch( ... )
+        {
+          std::cerr << "Error: Unknown exception" << std::endl;
         }
       }
     }
@@ -285,16 +339,19 @@ int main(int argc, const char *argv[])
   }
   if( bShowUsage )
   {
-    ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name << " <options> FitListFile\n"
+    ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name << " <options> FitList RatioFile1 [RatioFile2 [...]]\n"
     "Create 3pt ratios using E0 from fits in FitListFile. <options> are:\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
     "-m     Model filename prefix\n"
     "-s     Spectator (Default: " << DefaultSpectator << ")\n"
+    "-r     Extended regex for sink/source type, default\n       " << DefaultERE << "\n"
+    "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
+    "-w     Swap source / sink order in regex\n"
     //"-n     Number of samples to fit, 0 (default) = all available from bootstrap\n"
     "Flags:\n"
-    "--snk  Sink   operator (Default: " << DefaultSnk << ")\n"
-    "--src  Source operator (Default: " << DefaultSrc << ")\n"
+    //"--snk  Sink   operator (Default: " << DefaultSnk << ")\n"
+    //"--src  Source operator (Default: " << DefaultSrc << ")\n"
     "--help This message\n";
   }
   return iReturn;
