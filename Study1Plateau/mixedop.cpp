@@ -48,7 +48,7 @@ static constexpr int idxSrc{ 0 };
 static constexpr int idxSnk{ 1 };
 static constexpr int NumIndices{ 2 }; // Number of sink and source indices
 
-template <class scalar_ = double>
+/*template <class scalar_ = scalar>
 class Normaliser
 {
 public:
@@ -62,7 +62,7 @@ public:
   inline Scalar operator()( Scalar z ) const { return bGotNormalisation ? normalisation * z : z; }
   inline operator bool() const { return bGotNormalisation; }
   void clear() { bGotNormalisation = false; }
-};
+};*/
 
 struct Parameters
 {
@@ -90,6 +90,7 @@ protected:
   struct ModelInfo
   {
     Model       model;
+    int         idxNorm;
     std::string MixedOpName;
     std::array<int        , ModelNumIndices> OpIdx;
     std::array<std::string, ModelNumIndices> OpName;
@@ -106,7 +107,7 @@ protected:
   // Set by LoadCorrelators()
   int NumSamples; // maximum of a) user parameters b) raw correlators c) model (if doing all replicas)
   int Nt;
-  Normaliser<scalar> Normalisation;
+  //Normaliser<scalar> Normalisation;
 
   void LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vector<std::string>> &Words );
   void LoadCorrelator( int idxSnk, int idxSrc, const std::string &InFileName );
@@ -115,7 +116,7 @@ protected:
   inline bool IsSink()   const { return CorrIn   .size() > 1; }
   virtual void LoadCorrelators( const std::string &InBase ) = 0;
   virtual void MixingAngle(double costheta, double sintheta) = 0;
-  virtual void SetNormalisation() { Normalisation.clear(); }
+  //virtual void SetNormalisation() { Normalisation.clear(); }
 public:
   MixedOp( const std::string &description_, const Parameters &par ) : Description{ description_ }, Par{ par } {}
   virtual ~MixedOp() {}
@@ -125,11 +126,11 @@ public:
 
 class MixedOp_Norm : public MixedOp
 {
-protected:
-  std::array<int, NumIndices> idxNorm;
+//protected:
+  //std::array<int, NumIndices> idxNorm;
 public:
   using MixedOp::MixedOp;
-  void SetNormalisation( int idx );
+  //void SetNormalisation( int idx );
 };
 
 // Mixed operator at source only
@@ -140,7 +141,7 @@ protected:
   static const std::string MyDescription;
   virtual void LoadCorrelators( const std::string &InBase );
   virtual void MixingAngle(double costheta, double sintheta);
-  virtual void SetNormalisation() { MixedOp_Norm::SetNormalisation( ModelSrc ); }
+  //virtual void SetNormalisation() { MixedOp_Norm::SetNormalisation( ModelSrc ); }
 public:
   MixedOp_Src( const Parameters &par ) : MixedOp_Norm( MyDescription, par )
   {
@@ -157,7 +158,7 @@ protected:
   static const std::string MyDescription;
   virtual void LoadCorrelators( const std::string &InBase );
   virtual void MixingAngle(double costheta, double sintheta);
-  virtual void SetNormalisation() { MixedOp_Norm::SetNormalisation( ModelSnk ); }
+  //virtual void SetNormalisation() { MixedOp_Norm::SetNormalisation( ModelSnk ); }
 public:
   MixedOp_Snk( const Parameters &par ) : MixedOp_Norm( MyDescription, par )
   {
@@ -174,7 +175,7 @@ protected:
   static const std::string MyDescription;
   virtual void LoadCorrelators( const std::string &InBase );
   virtual void MixingAngle(double costheta, double sintheta);
-  virtual void SetNormalisation() { MixedOp_Norm::SetNormalisation( ModelSrc ); }
+  //virtual void SetNormalisation() { MixedOp_Norm::SetNormalisation( ModelSrc ); }
 public:
   MixedOp_SnkSrc( const Parameters &par ) : MixedOp_Norm( MyDescription, par )
   {
@@ -249,6 +250,9 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   }
   else
     mi.MixedOpName = Par.MixedOpName;
+  // Now extract the index of the normalisation factor I'll need
+  if( Par.bNormalise )
+    mi.idxNorm = m.GetColumnIndex( Energy, Exponent );
 }
 
 bool MixedOp::LoadModels( const std::string &FileName, const std::string &Args )
@@ -347,8 +351,8 @@ void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, boo
   MixingAngle( costheta, sintheta );
   Out.resize( OutLen );
   Out.append( std::to_string( degrees ) );
-  if( Normalisation )
-    Out.append( "_N" );
+  //if( Normalisation )
+    //Out.append( "_N" );
   Out.append( 1, '_' );
   Out.append( IsSink()   ? MI[ModelSnk].MixedOpName : FileOpNames[CorrIn[0][0].Name_.op[idxSnk]] );
   Out.append( 1, '_' );
@@ -381,7 +385,7 @@ void MixedOp::Make( const std::string &FileName )
     ModelSrc = Common::FromString<int>( base_match[Par.RegExSwap ? 1 : 2] );
   }
   //if( Par.bNormalise )
-    SetNormalisation();
+    //SetNormalisation();
   //else
     //Normalisation.clear();
 
@@ -430,10 +434,10 @@ void MixedOp::Make( const std::string &FileName )
 }
 
 // Set sink / source normalisation
-void MixedOp_Norm::SetNormalisation( int idx )
+/*void MixedOp_Norm::SetNormalisation( int idx )
 {
   // This was the old crappy attempt to normalise to unit. Not really needed
-  /*const ModelInfo & mi{ MI[idx] };
+  const ModelInfo & mi{ MI[idx] };
   if( mi.model.NumExponents < 2 )
     Normalisation.clear();
   else
@@ -447,15 +451,8 @@ void MixedOp_Norm::SetNormalisation( int idx )
     scalar z =   MEL[idxPoint][1] * MEL[idxWall][1]
              / ( MEL[idxPoint][0] * MEL[idxWall][1] - MEL[idxPoint][1] * MEL[idxWall][0] );
     Normalisation = z * z;
-  }*/
-  if( Par.bNormalise )
-  {
-    for( int idx = 0; idx < NumIndices; ++idx )
-    {
-      idxNorm[idx] = MI[idx].model.GetColumnIndex( Energy, Exponent );
-    }
   }
-}
+}*/
 
 // Keep track of info on correlators as they are loaded
 void MixedOp::LoadCorrelator( int idxSnk, int idxSrc, const std::string &InFileName )
@@ -614,8 +611,8 @@ void MixedOp_Src::MixingAngle(double costheta, double sintheta)
       A_W   = pModelSrc[MI[ModelSrc].OpIdx[idxWall]];
       if( Par.bNormalise )
       {
-        const double E_Snk{ pModelSnk[idxNorm[idxSnk]] };
-        const double E_Src{ pModelSrc[idxNorm[idxSrc]] };
+        const double E_Snk{ pModelSnk[MI[ModelSnk].idxNorm] };
+        const double E_Src{ pModelSrc[MI[ModelSrc].idxNorm] };
         //E_Norm = 1 / ( 4 * E_Snk * E_Src );
         const scalar n{ NORMALISE( E_Src ) };
         A_Snk *= NORMALISE( E_Snk );
@@ -659,8 +656,8 @@ void MixedOp_Snk::MixingAngle(double costheta, double sintheta)
       A_W   = pModelSnk[MI[ModelSnk].OpIdx[idxWall]];
       if( Par.bNormalise )
       {
-        const double E_Snk{ pModelSnk[idxNorm[idxSnk]] };
-        const double E_Src{ pModelSrc[idxNorm[idxSrc]] };
+        const double E_Snk{ pModelSnk[MI[ModelSnk].idxNorm] };
+        const double E_Src{ pModelSrc[MI[ModelSrc].idxNorm] };
         //E_Norm = 1 / ( 4 * E_Snk * E_Src );
         const scalar n{ NORMALISE( E_Snk ) };
         A_Src *= NORMALISE( E_Src );
@@ -712,8 +709,8 @@ void MixedOp_SnkSrc::MixingAngle(double costheta, double sintheta)
       A_W_src = pModelSrc[MI[ModelSrc].OpIdx[idxWall ]];
       if( Par.bNormalise )
       {
-        const double E_Snk{ pModelSnk[idxNorm[idxSnk]] };
-        const double E_Src{ pModelSrc[idxNorm[idxSrc]] };
+        const double E_Snk{ pModelSnk[MI[ModelSnk].idxNorm] };
+        const double E_Src{ pModelSrc[MI[ModelSrc].idxNorm] };
         const scalar nSnk{ NORMALISE( E_Snk ) };
         const scalar nSrc{ NORMALISE( E_Src ) };
         // const scalar nSnk{ 2 * E_Snk };
@@ -731,7 +728,7 @@ void MixedOp_SnkSrc::MixingAngle(double costheta, double sintheta)
       pModelSnk += MI[ModelSnk].model.Nt();
     }
     for( int t = 0; t < Nt; t++ )
-      *pDst++ = Normalisation( Op_PP * *pPP++ + Op_WW * *pWW++ +     Op_WP * *pWP++ + Op_PW * *pPW++ );
+      *pDst++ = Op_PP * *pPP++ + Op_WW * *pWW++ +     Op_WP * *pWP++ + Op_PW * *pPW++;
   }
 }
 
@@ -821,7 +818,7 @@ int main( int argc, const char *argv[] )
       {"s", CL::SwitchType::Flag, nullptr},
       {"rep", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
-      {"normalise", CL::SwitchType::Flag, nullptr},
+      {"enorm", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -830,8 +827,8 @@ int main( int argc, const char *argv[] )
     {
       Parameters Par;
       Par.Exponent = cl.SwitchValue<int>("e");
-      Par.InBase = Common::AppendSlash( cl.SwitchValue<std::string>("i") );
-      Par.OutBase = Common::AppendSlash( cl.SwitchValue<std::string>("o") );
+      Par.InBase = cl.SwitchValue<std::string>("i");
+      Par.OutBase = cl.SwitchValue<std::string>("o");
       const std::string modelBase{ cl.SwitchValue<std::string>("m") };
       Par.MixedOpName = cl.SwitchValue<std::string>("n");
       Par.tmin = cl.SwitchValue<int>("tmin");
@@ -842,7 +839,7 @@ int main( int argc, const char *argv[] )
       Par.RegExSwap = cl.GotSwitch("s");
       Par.bAllReplicas = cl.GotSwitch("rep");
       Par.bSaveCorr = cl.GotSwitch("savecorr");
-      Par.bNormalise = cl.GotSwitch("normalise");
+      Par.bNormalise = cl.GotSwitch("enorm");
       if( Par.tmin > Par.tmax )
         Par.step *= -1;
       std::unique_ptr<MixedOp> Op;
@@ -932,7 +929,7 @@ int main( int argc, const char *argv[] )
     "-s         Swap source / sink order in regex\n"
     "--rep      Use per replica values of overlap constants in construction of model\n"
     "--savecorr Save bootstrap replicas of correlators\n"
-    "--normalise Normalise mixed correlator to unity (experimental)\n"
+    "--enorm    Energy normalisation, i.e. overlap coefficients *= sqrt(energy)\n"
     "--help     This message\n";
   }
   return iReturn;

@@ -132,7 +132,7 @@ std::string RatioMaker::HeavyKey( const std::string &Heavy ) const
 RatioMaker::RatioMaker( const std::string &inBase_, const std::string &outBase_, const std::string &modelBase_,
                         //const std::string &gSnk_, const std::string &gSrc_,
                         const std::string &Spectator_, const Common::Momentum &p_,
-                        std::regex regExExt_, const bool regExSwap_, const std::string &FitListName )
+                        std::regex regExExt_, const bool regExSwap_, const std::string &fitListName_ )
 : inBase{inBase_}, outBase{outBase_}, modelBase{modelBase_}, //gSnk{gSnk_}, gSrc{gSrc_},
   Spectator{Spectator_}, p{ p_ }, RegExExt{ regExExt_ }, RegExSwap{ regExSwap_ }
 {
@@ -141,6 +141,7 @@ RatioMaker::RatioMaker( const std::string &inBase_, const std::string &outBase_,
 
   if( p.p2() )
     throw std::runtime_error( "Only zero-momentum currently supported" );
+  const std::string FitListName{ modelBase + fitListName_ };
   std::cout << "Reading fit list from " << FitListName << Common::NewLine;
   std::ifstream s( FitListName );
   if( !Common::FileExists( FitListName ) || s.bad() )

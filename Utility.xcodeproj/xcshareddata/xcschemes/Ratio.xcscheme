@@ -53,11 +53,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i mixed/3pt_s/E0_rootE/ -m fit/2pt/ -o Ratio/3pt_s/E1_rootE/"
+            argument = "-i mixed/3pt_s/E0_rootE/ -o Ratio/3pt_s/E0_rootE/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "fit/2pt/Best2pt.txt"
+            argument = "-m fit/2pt/ Best2pt.txt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
