@@ -149,7 +149,7 @@ int main(int argc, const char *argv[])
               out.BootstrapList.emplace_back( ConjFileName );
             }
             // Now fold the correlator, obeying the fold properties
-            const int NtHalf{ bRealImagOnly ? Nt : Nt / 2 + 1 };
+            const int NtHalf{ bRealImagOnly ? Nt : Nt / 2 + ( f.rps.parity == Common::Parity::Odd ? 0 : 1 ) };
             out.resize( NumSamples, NtHalf );
             out.FileList = std::move( myFileList );
             out.CopyAttributes( in );

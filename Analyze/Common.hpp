@@ -84,6 +84,11 @@
 
 BEGIN_COMMON_NAMESPACE
 
+template <typename T> int sgn( T x )
+{
+  return (T(0) < x) - (x < T(0));
+}
+
 // Compare characters, by default ignoring case
 template <class _CharT>
 inline int Compare( _CharT a, _CharT b, bool bIgnoreCase = true )
@@ -132,6 +137,7 @@ extern const std::string Space;
 extern const std::string WhiteSpace;
 extern const std::string Underscore;
 extern const std::string Period;
+extern const std::string Colon;
 extern const std::string NewLine;
 extern const std::string Comma;
 extern const std::string CommaSpace;
@@ -413,6 +419,160 @@ inline std::string AppendSlash( const std::string & String )
     s.append( 1, '/' );
   return s;
 }
+
+template<typename T = int> struct StartStopStepIterator;
+
+template<typename T = int> struct StartStopStep
+{
+  using Scalar = T;
+  static constexpr Scalar Default = 1; // This is the default step if none specified
+  using Iterator = StartStopStepIterator<T>;
+  Scalar Start;
+  Scalar Stop;
+  Scalar Step;
+  std::vector<Scalar> AlwaysIterate; // A list of special numbers that will always be iterated
+public:
+  Scalar StepValue( Scalar step_ ) const { return Start == Stop ? 0 : ( Stop < Start ? -1 : 1 ) * ( step_ == 0 ? Default : std::abs( step_ ) ); }
+  void   SetStep  ( Scalar step_ ) { Step = StepValue( step_ ); }
+  void   SetSingle( Scalar Single ) { Start = Single; Stop = Single; SetStep( 0 ); }
+  StartStopStep( Scalar start_, Scalar stop_, Scalar step_ = Default ) : Start{start_}, Stop{stop_}, Step{ StepValue( step_ ) } {}
+  StartStopStep() : StartStopStep( 0, 0 ) {}
+  inline bool InRange( Scalar x ) const
+  {
+    Scalar Min;
+    Scalar Max;
+    if( Stop < Start )
+    {
+      Min = Stop;
+      Max = Start;
+    }
+    else
+    {
+      Min = Start;
+      Max = Stop;
+    }
+    return x >= Min && x <= Max;
+  }
+  inline std::string to_string( const std::string &Sep = Colon ) const
+    { return std::to_string(Start) + Sep + std::to_string(Stop) + Sep + std::to_string(Step); }
+  Iterator begin() const;
+  Iterator end() const;
+};
+template<typename T = int> std::ostream & operator<<( std::ostream &os, const StartStopStep<T> &sss )
+{
+  return os << sss.to_string();
+}
+
+// Parse a Start:Stop[:Step] combination
+template<typename T = int> std::istream & operator>>( std::istream &is,       StartStopStep<T> &sss )
+{
+  const char Sep = ':';
+  T Start, Stop, Step = 0;
+  bool bOK = false;
+  if( is >> Start && NextCharIs( is, Sep ) && is >> Stop )
+  {
+    bool bGotStep{ NextCharIs( is, Sep ) };
+    if( !bGotStep || is >> Step )
+    {
+      bOK = true;
+      sss.Start = Start;
+      sss.Stop  = Stop;
+      sss.SetStep( Step );
+    }
+  }
+  if( !bOK )
+    is.setstate( std::ios_base::failbit );
+  return is;
+}
+
+template<typename T> struct StartStopStepIterator : public StartStopStep<T>
+{
+  friend class StartStopStep<T>;
+public:
+  using Scalar = T;
+  using Iterator = StartStopStepIterator<T>;
+  using Base = StartStopStep<T>;
+  static constexpr Scalar Default = Base::Default;
+  //using Base::Base;
+protected:
+  std::vector<bool> IterateAtEnd; // true if we still need to iterate through corresponding value at end of iteration
+  bool   bAtEnd = true;
+  Scalar Position;
+  std::size_t IdxIterated = std::numeric_limits<std::size_t>::max();
+public:
+  StartStopStepIterator() : Base() {}
+  StartStopStepIterator( const Base &sss ) : Base( sss ), IterateAtEnd( Base::AlwaysIterate.size(), true )
+  {
+    bAtEnd = false;
+    Position = Base::Start;
+  }
+  inline bool AtEnd() const { return bAtEnd && IdxIterated >= IterateAtEnd.size(); }
+  inline Scalar operator*() const
+  {
+    if( AtEnd() )
+      throw std::runtime_error( "Cannot dereference StartStopStepIterator at end" );
+    return bAtEnd ? Base::AlwaysIterate[IdxIterated] : Position;
+  }
+  Iterator &operator++()
+  {
+    if( bAtEnd )
+    {
+      if( IdxIterated < IterateAtEnd.size() )
+        ++IdxIterated;
+    }
+    else
+    {
+      // Tick items I've already iterated off my list
+      for( IdxIterated = 0; IdxIterated < Base::AlwaysIterate.size(); ++IdxIterated )
+        if( Position == Base::AlwaysIterate[IdxIterated] )
+        {
+          IterateAtEnd[IdxIterated] = false;
+          break;
+        }
+      // Move on to the next item
+      if( Base::Step )
+      {
+        Position += Base::Step;
+        if( ( Base::Step > 0 && Position <= Base::Stop ) || ( Base::Step < 0 && Position >= Base::Stop ) )
+          return *this;
+      }
+      // Falling through - I'm now going to see whether there are any special numbers I need to also iterate
+      bAtEnd = true;
+      IdxIterated = 0;
+    }
+    // Skip forward to the next special number that I haven't ticked off my list
+    while( IdxIterated < IterateAtEnd.size() && !IterateAtEnd[IdxIterated] )
+      ++IdxIterated;
+    return *this;
+  }
+  inline Iterator operator++(int) { Iterator it(*this); return ++it; }
+  inline bool operator==( const Iterator & o ) const
+  {
+    bool bMe{ AtEnd() };
+    bool bOther{ o.AtEnd() };
+    bool bEq{ bMe == bOther };
+    if( bEq && !bMe )
+      bEq = **this == *o;
+    return bEq;
+  }
+  inline bool operator!=( const Iterator & o ) const { return !( *this == o ) ; }
+  inline std::string to_string() const { return bAtEnd ? "end" : std::to_string( Position ); }
+};
+
+template<typename T> StartStopStepIterator<T> StartStopStep<T>::begin() const
+{
+  Iterator it( *this );
+  it.bAtEnd = false;
+  it.Position = it.Start;
+  return it;
+};
+
+template<typename T> StartStopStepIterator<T> StartStopStep<T>::end() const
+{
+  Iterator it( *this );
+  it.bAtEnd = true;
+  return it;
+};
 
 // This is a key/value file, and we ignore anything after a comment character
 template<class Key, class T, class Compare = std::less<Key>> class KeyValReader;

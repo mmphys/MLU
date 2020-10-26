@@ -92,7 +92,7 @@ class ModelOverlap : public Model
 {
 public:
   int NumOverlap;
-  bool bNormalisationRoot2E = false;
+  bool bNormalisationByEnergy = false;
 protected:
   virtual void Construct( vString &Params, const ModelDefaultParams &Default, const Fold &Corr, const vString &OpName );
 };
@@ -156,7 +156,7 @@ void ModelOverlap::Construct(vString &Params,const ModelDefaultParams &Default,c
   NumOverlap = 0;
   // Have we been given source and sink names?
   std::string Snk_Src;
-  bNormalisationRoot2E = false;
+  bNormalisationByEnergy = false;
   switch( Params.size() )
   {
     case 2:
@@ -164,7 +164,7 @@ void ModelOverlap::Construct(vString &Params,const ModelDefaultParams &Default,c
       {
         if( !Common::EqualIgnoreCase( Params[1], "N" ) )
           throw std::runtime_error( "Normalisation parameter \"" + Params[1] + "\" invalid" );
-        bNormalisationRoot2E = true;
+        bNormalisationByEnergy = true;
       }
     case 1:
       Snk_Src = std::move( Params[0] );
@@ -365,7 +365,7 @@ scalar ModelExp::operator()( int t, Vector &ScratchPad, const Vector &ModelParam
   {
     double d = std::exp( - ModelParams[ParamIdxPerExp[e][0]] * t );
     d *= ModelParams[ParamIdxPerExp[e][1]] * ModelParams[ParamIdxPerExp[e][NumOverlap > 1 ? 2 : 1]];
-    if( bNormalisationRoot2E )
+    if( bNormalisationByEnergy )
       d /= 2 * ModelParams[ParamIdxPerExp[e][0]];
     z += d;
   }
@@ -379,8 +379,8 @@ scalar ModelCosh::operator()( int t, Vector &ScratchPad, const Vector &ModelPara
   {
     double d = ScratchPad[e] * std::cosh( - ModelParams[ParamIdxPerExp[e][0]] * ( t - HalfNt ) );
     d *= ModelParams[ParamIdxPerExp[e][1]] * ModelParams[ParamIdxPerExp[e][NumOverlap > 1 ? 2 : 1]];
-    if( bNormalisationRoot2E )
-      d /= 2 * ModelParams[ParamIdxPerExp[e][0]];
+    if( bNormalisationByEnergy )
+      d /= ModelParams[ParamIdxPerExp[e][0]];
     z += d;
   }
   return z;
@@ -393,8 +393,8 @@ scalar ModelSinh::operator()( int t, Vector &ScratchPad, const Vector &ModelPara
   {
     double d = ScratchPad[e] * std::sinh( - ModelParams[ParamIdxPerExp[e][0]] * ( t - HalfNt ) );
     d *= ModelParams[ParamIdxPerExp[e][1]] * ModelParams[ParamIdxPerExp[e][NumOverlap > 1 ? 2 : 1]];
-    if( bNormalisationRoot2E )
-      d /= 2 * ModelParams[ParamIdxPerExp[e][0]];
+    if( bNormalisationByEnergy )
+      d /= ModelParams[ParamIdxPerExp[e][0]];
     z += d;
   }
   return z;

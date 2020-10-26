@@ -32,9 +32,11 @@
 
 #include "../Analyze/Common.hpp"
 
-using scalar = double;
+using scalar = double; // Minuit2 uses double, so haven't tested any other type
+using degrees= int;    // Have tested float, but still need to fix file naming when number contains period
 using Model  = Common::Model <scalar>;
 using Fold   = Common::Fold  <scalar>;
+using SSS    = Common::StartStopStep<degrees>;
 
 static const std::string Sep{ "_" };
 static const std::string Energy{ "E" };
@@ -75,10 +77,15 @@ struct Parameters
   std::string OutBase;
   std::regex  RegExExt;
   bool        RegExSwap;
-  int tmin;
-  int tmax;
-  int step;
+  //int tmin;
+  //int tmax;
+  //int step;
   bool bNormalise; // Experimenting with normalisations
+  bool bTheta;
+  SSS Theta;
+  bool bPhi;
+  bool bPhiEqualsTheta;
+  SSS Phi;
 };
 
 class MixedOp
@@ -111,11 +118,11 @@ protected:
 
   void LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vector<std::string>> &Words );
   void LoadCorrelator( int idxSnk, int idxSrc, const std::string &InFileName );
-  void DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, bool bSaveCorr, bool bPrint = true );
+  void DoOneAngle( degrees Phi, degrees Theta, std::string &Out, std::size_t OutLen, bool bSaveCorr );
   inline bool IsSource() const { return CorrIn[0].size() > 1; }
   inline bool IsSink()   const { return CorrIn   .size() > 1; }
   virtual void LoadCorrelators( const std::string &InBase ) = 0;
-  virtual void MixingAngle(double costheta, double sintheta) = 0;
+  virtual void MixingAngle( degrees Phi, degrees Theta ) = 0;
   //virtual void SetNormalisation() { Normalisation.clear(); }
 public:
   MixedOp( const std::string &description_, const Parameters &par ) : Description{ description_ }, Par{ par } {}
@@ -140,7 +147,7 @@ protected:
   int iSnk; // Index of the sink operator (which is fixed and comes from the input file name)
   static const std::string MyDescription;
   virtual void LoadCorrelators( const std::string &InBase );
-  virtual void MixingAngle(double costheta, double sintheta);
+  virtual void MixingAngle( degrees Phi, degrees Theta );
   //virtual void SetNormalisation() { MixedOp_Norm::SetNormalisation( ModelSrc ); }
 public:
   MixedOp_Src( const Parameters &par ) : MixedOp_Norm( MyDescription, par )
@@ -157,7 +164,7 @@ protected:
   int iSrc; // Index of the source operator (which is fixed and comes from the input file name)
   static const std::string MyDescription;
   virtual void LoadCorrelators( const std::string &InBase );
-  virtual void MixingAngle(double costheta, double sintheta);
+  virtual void MixingAngle( degrees Phi, degrees Theta );
   //virtual void SetNormalisation() { MixedOp_Norm::SetNormalisation( ModelSnk ); }
 public:
   MixedOp_Snk( const Parameters &par ) : MixedOp_Norm( MyDescription, par )
@@ -174,7 +181,7 @@ class MixedOp_SnkSrc : public MixedOp_Norm
 protected:
   static const std::string MyDescription;
   virtual void LoadCorrelators( const std::string &InBase );
-  virtual void MixingAngle(double costheta, double sintheta);
+  virtual void MixingAngle( degrees Phi, degrees Theta );
   //virtual void SetNormalisation() { MixedOp_Norm::SetNormalisation( ModelSrc ); }
 public:
   MixedOp_SnkSrc( const Parameters &par ) : MixedOp_Norm( MyDescription, par )
@@ -314,43 +321,61 @@ bool MixedOp::LoadModels( const std::string &FileName, const std::string &Args )
   return bIsModel;
 }
 
-void MixedOp::DoOneAngle( int degrees, std::string &Out, std::size_t OutLen, bool bSaveCorr, bool bPrint )
+struct SinCos
 {
-  if( bPrint )
+  scalar cos, sin;
+  SinCos( degrees Theta )
   {
-    std::cout << " " << std::to_string( degrees );
-    std::cout.flush();
-  }
-  double costheta, sintheta;
-  const int degrees2 = degrees < 0 ? ( 360 - (-degrees) % 360 ) : degrees % 360;
-  switch( degrees2 )
-  {
-    case 0:
-      costheta = 1;
-      sintheta = 0;
-      break;
-    case 90:
-      costheta = 0;
-      sintheta = 1;
-      break;
-    case 180:
-      costheta = -1;
-      sintheta = 0;
-      break;
-    case 270:
-      costheta = 0;
-      sintheta = -1;
-      break;
-    default:
+    // ensure 0 <= Theta < 360
+    bool bNeg{ Theta < 0 };
+    if( bNeg )
+      Theta = -Theta;
+    if( Theta > 360 )
+      Theta -= static_cast<int>( Theta / 360 ) * 360;
+    if( bNeg )
+      Theta = 360 - Theta;
+    if( Theta == 0 )
     {
-      const double theta{ M_PI * degrees2 / 180 };
-      costheta = cos( theta );
-      sintheta = sin( theta );
+      cos = 1;
+      sin = 0;
+    }
+    else if( Theta == 90 )
+    {
+      cos = 0;
+      sin = 1;
+    }
+    else if( Theta == 180 )
+    {
+      cos = -1;
+      sin = 0;
+    }
+    else if( Theta == 270 )
+    {
+      cos = 0;
+      sin = -1;
+    }
+    else
+    {
+      const scalar ThetaRad{ M_PI * Theta / 180 };
+      cos = std::cos( ThetaRad );
+      sin = std::sin( ThetaRad );
     }
   }
-  MixingAngle( costheta, sintheta );
+};
+
+void MixedOp::DoOneAngle( degrees Phi, degrees Theta, std::string &Out, std::size_t OutLen, bool bSaveCorr )
+{
+  //SinCos Phi( phi_ );
+  //SinCos Theta( theta_ );
+  //const SinCos &angle{ IsSource() ? Theta : Phi };
+  MixingAngle( Phi, Theta );
   Out.resize( OutLen );
-  Out.append( std::to_string( degrees ) );
+  Out.append( std::to_string( IsSink() ? Phi : Theta ) );
+  if( IsSink() && IsSource() )
+  {
+    Out.append( "_theta_" );
+    Out.append( std::to_string( Theta ) );
+  }
   //if( Normalisation )
     //Out.append( "_N" );
   Out.append( 1, '_' );
@@ -407,29 +432,29 @@ void MixedOp::Make( const std::string &FileName )
 
   std::string Out{ Par.OutBase + OutBase };
   std::cout << "    Writing " << Description << " mixed operator to:\n    " << Out << Common::NewLine << "   ";
-  Out.append( ".theta_" );
+  Out.append( IsSink() ? ".phi_" : ".theta_" );
   const std::size_t OutLen{ Out.length() };
-  bool bDo0  = true; //!Par.bSaveCorr; // If we're not saving the correlators, always do 0 and 90 degrees
-  bool bDo90 = bDo0;
-  for( int degrees = Par.tmin; ; degrees+=Par.step )
+  bool bFirstSnk{ true };
+  for( degrees Phi : Par.Phi )
   {
-    DoOneAngle( degrees, Out, OutLen, Par.bSaveCorr, degrees == Par.tmin || !( degrees % 10 ) );
-    switch( degrees )
+    if( Par.bPhi && !Par.bPhiEqualsTheta && ( bFirstSnk || !( static_cast<int>( Phi ) % 10 ) ) )
     {
-      case 0:
-        bDo0 = false;
-        break;
-      case 90:
-        bDo90 = false;
-        break;
+      std::cout << " " << std::to_string( Phi );
+      std::cout.flush();
     }
-    if( Par.step == 0 || degrees >= Par.tmax )
-      break;
+    bFirstSnk = false;
+    bool bFirstSrc{ true };
+    for( degrees Theta : Par.Theta )
+    {
+      if( ( !Par.bPhi || Par.bPhiEqualsTheta ) && ( bFirstSrc || !( static_cast<int>( Theta ) % 10 ) ) )
+      {
+        std::cout << " " << std::to_string( Theta );
+        std::cout.flush();
+      }
+      bFirstSrc = false;
+      DoOneAngle( Par.bPhiEqualsTheta ? Theta : Phi, Theta, Out, OutLen, Par.bSaveCorr );
+    }
   }
-  if( bDo0 )
-    DoOneAngle( 0, Out, OutLen, false ); // We're outside the range requested, no need to save correlators
-  if( bDo90 )
-    DoOneAngle( 90, Out, OutLen, false );
   std::cout << Common::NewLine;
 }
 
@@ -589,14 +614,15 @@ void MixedOp_SnkSrc::LoadCorrelators( const std::string &InBase )
 //#define NORMALISE( x ) std::sqrt( 2 * x )
 #define NORMALISE( x ) std::sqrt( x )
 
-void MixedOp_Src::MixingAngle(double costheta, double sintheta)
+void MixedOp_Src::MixingAngle( degrees phi_, degrees theta_ )
 {
+  const SinCos Theta( theta_ );
   const double * pModelSrc{ MI[ModelSrc].model[Model::idxCentral] };
-  const double * pModelSnk{ MI[ModelSnk].model[Model::idxCentral] };
+  //const double * pModelSnk{ MI[ModelSnk].model[Model::idxCentral] };
   const double * pDataP{ CorrIn[0][idxPoint][Fold::idxCentral] };
   const double * pDataW{ CorrIn[0][idxWall ][Fold::idxCentral] };
   scalar * pDst = CorrMixed[Fold::idxCentral];
-  double A_Snk{ 0 };
+  //double A_Snk{ 0 };
   double A_P{ 0 };
   double A_W{ 0 };
   double Op_P{ 0 };
@@ -606,23 +632,22 @@ void MixedOp_Src::MixingAngle(double costheta, double sintheta)
   {
     if( Par.bAllReplicas || i == Fold::idxCentral )
     {
-      A_Snk = pModelSnk[MI[ModelSnk].OpIdx[iSnk]];
+      //A_Snk = pModelSnk[MI[ModelSnk].OpIdx[iSnk]];
       A_P   = pModelSrc[MI[ModelSrc].OpIdx[idxPoint]];
       A_W   = pModelSrc[MI[ModelSrc].OpIdx[idxWall]];
       if( Par.bNormalise )
       {
-        const double E_Snk{ pModelSnk[MI[ModelSnk].idxNorm] };
-        const double E_Src{ pModelSrc[MI[ModelSrc].idxNorm] };
+        //const double E_Snk{ pModelSnk[MI[ModelSnk].idxNorm] };
+        const double Norm_E_Src{ NORMALISE( pModelSrc[MI[ModelSrc].idxNorm] ) };
         //E_Norm = 1 / ( 4 * E_Snk * E_Src );
-        const scalar n{ NORMALISE( E_Src ) };
-        A_Snk *= NORMALISE( E_Snk );
-        A_P   *= n;
-        A_W   *= n;
+        //A_Snk *= NORMALISE( E_Snk );
+        A_P   *= Norm_E_Src;
+        A_W   *= Norm_E_Src;
       }
-      Op_P = costheta / ( A_Snk * A_P );
-      Op_W = sintheta / ( A_Snk * A_W );
+      Op_P = Theta.cos / A_P;
+      Op_W = Theta.sin / A_W;
       pModelSrc += MI[ModelSrc].model.Nt();
-      pModelSnk += MI[ModelSnk].model.Nt();
+      //pModelSnk += MI[ModelSnk].model.Nt();
     }
     for( int t = 0; t < Nt; t++ )
     {
@@ -634,8 +659,9 @@ void MixedOp_Src::MixingAngle(double costheta, double sintheta)
   }
 }
 
-void MixedOp_Snk::MixingAngle(double costheta, double sintheta)
+void MixedOp_Snk::MixingAngle( degrees phi_, degrees theta_ )
 {
+  const SinCos Phi( phi_ );
   const double * pModelSrc{ MI[ModelSrc].model[Model::idxCentral] };
   const double * pModelSnk{ MI[ModelSnk].model[Model::idxCentral] };
   const double * pDataP{ CorrIn[idxPoint][0][Fold::idxCentral] };
@@ -664,8 +690,8 @@ void MixedOp_Snk::MixingAngle(double costheta, double sintheta)
         A_P   *= n;
         A_W   *= n;
       }
-      Op_P = costheta / ( A_Src * A_P );
-      Op_W = sintheta / ( A_Src * A_W );
+      Op_P = Phi.cos / ( A_Src * A_P );
+      Op_W = Phi.sin / ( A_Src * A_W );
       pModelSrc += MI[ModelSrc].model.Nt();
       pModelSnk += MI[ModelSnk].model.Nt();
     }
@@ -679,11 +705,14 @@ void MixedOp_Snk::MixingAngle(double costheta, double sintheta)
   }
 }
 
-void MixedOp_SnkSrc::MixingAngle(double costheta, double sintheta)
+void MixedOp_SnkSrc::MixingAngle( degrees phi_, degrees theta_ )
 {
-  const double cos_sq_theta{ costheta * costheta };
-  const double sin_sq_theta{ sintheta * sintheta };
-  const double cos_sin_theta{ costheta * sintheta };
+  const SinCos Phi( phi_ );
+  const SinCos Theta( theta_ );
+  const double AnglePP{ Phi.cos * Theta.cos };
+  const double AnglePW{ Phi.cos * Theta.sin };
+  const double AngleWP{ Phi.sin * Theta.cos };
+  const double AngleWW{ Phi.sin * Theta.sin };
   const double * pModelSrc{ MI[ModelSrc].model[Model::idxCentral] };
   const double * pModelSnk{ MI[ModelSnk].model[Model::idxCentral] };
   const double * pPP{ CorrIn[idxPoint][idxPoint][Fold::idxCentral] };
@@ -709,21 +738,17 @@ void MixedOp_SnkSrc::MixingAngle(double costheta, double sintheta)
       A_W_src = pModelSrc[MI[ModelSrc].OpIdx[idxWall ]];
       if( Par.bNormalise )
       {
-        const double E_Snk{ pModelSnk[MI[ModelSnk].idxNorm] };
-        const double E_Src{ pModelSrc[MI[ModelSrc].idxNorm] };
-        const scalar nSnk{ NORMALISE( E_Snk ) };
-        const scalar nSrc{ NORMALISE( E_Src ) };
-        // const scalar nSnk{ 2 * E_Snk };
-        // const scalar nSrc{ 2 * E_Src };
-        A_P_snk *= nSnk;
-        A_P_src *= nSrc;
-        A_W_snk *= nSnk;
-        A_W_src *= nSrc;
+        const scalar Norm_E_Snk{ NORMALISE( pModelSnk[MI[ModelSnk].idxNorm] ) };
+        const scalar Norm_E_Src{ NORMALISE( pModelSrc[MI[ModelSrc].idxNorm] ) };
+        A_P_snk *= Norm_E_Snk;
+        A_P_src *= Norm_E_Src;
+        A_W_snk *= Norm_E_Snk;
+        A_W_src *= Norm_E_Src;
       }
-      Op_PP = cos_sq_theta  / ( A_P_snk * A_P_src );
-      Op_WP = cos_sin_theta / ( A_W_snk * A_P_src );
-      Op_PW = cos_sin_theta / ( A_P_snk * A_W_src );
-      Op_WW = sin_sq_theta  / ( A_W_snk * A_W_src );
+      Op_PP = AnglePP / ( A_P_snk * A_P_src );
+      Op_PW = AnglePW / ( A_P_snk * A_W_src );
+      Op_WP = AngleWP / ( A_W_snk * A_P_src );
+      Op_WW = AngleWW / ( A_W_snk * A_W_src );
       pModelSrc += MI[ModelSrc].model.Nt();
       pModelSnk += MI[ModelSnk].model.Nt();
     }
@@ -789,11 +814,7 @@ bool Debug()
 
 int main( int argc, const char *argv[] )
 {
-  static const char defaultModel[] = "1";
   static const char defaultExcited[] = "-1";
-  static const char defaultTMin[] = "-90";
-  static const char defaultTMax[] = "90";
-  static const char defaultStep[] = "1";
   static const char DefaultERE[]{ R"([_[:alpha:]]*([[:digit:]]+)_[[:alpha:]]*([[:digit:]]+))" };
   std::ios_base::sync_with_stdio( false );
   //if( Debug() ) return 0;
@@ -804,16 +825,14 @@ int main( int argc, const char *argv[] )
   try
   {
     const std::initializer_list<CL::SwitchDef> list = {
-      {"a", CL::SwitchType::Single, defaultModel},
       {"e", CL::SwitchType::Single, defaultExcited},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"m", CL::SwitchType::Single, "" },
       {"n", CL::SwitchType::Single, "" },
       {"r", CL::SwitchType::Single, DefaultERE },
-      {"tmin", CL::SwitchType::Single, defaultTMin},
-      {"tmax", CL::SwitchType::Single, defaultTMax},
-      {"step", CL::SwitchType::Single, defaultStep},
+      {"theta", CL::SwitchType::Single, nullptr},
+      {"phi", CL::SwitchType::Single, nullptr},
       {"c", CL::SwitchType::Flag, nullptr},
       {"s", CL::SwitchType::Flag, nullptr},
       {"rep", CL::SwitchType::Flag, nullptr},
@@ -831,19 +850,35 @@ int main( int argc, const char *argv[] )
       Par.OutBase = cl.SwitchValue<std::string>("o");
       const std::string modelBase{ cl.SwitchValue<std::string>("m") };
       Par.MixedOpName = cl.SwitchValue<std::string>("n");
-      Par.tmin = cl.SwitchValue<int>("tmin");
-      Par.tmax = cl.SwitchValue<int>("tmax");
-      Par.step = std::abs( cl.SwitchValue<int>("step") );
       Par.bTryConjugate = cl.GotSwitch("c");
       Par.RegExExt = std::regex( cl.SwitchValue<std::string>("r"),std::regex::extended|std::regex::icase);
       Par.RegExSwap = cl.GotSwitch("s");
       Par.bAllReplicas = cl.GotSwitch("rep");
       Par.bSaveCorr = cl.GotSwitch("savecorr");
       Par.bNormalise = cl.GotSwitch("enorm");
-      if( Par.tmin > Par.tmax )
-        Par.step *= -1;
+      Par.bTheta = cl.GotSwitch("theta");
+      if( Par.bTheta )
+      {
+        Par.Theta = cl.SwitchValue<SSS>("theta");
+        Par.Theta.AlwaysIterate = { 0, 90 };
+      }
+      //else
+        //Par.Theta.SetSingle( 0 );
+      Par.bPhi = cl.GotSwitch("phi");
+      Par.bPhiEqualsTheta = false;
+      //Par.Phi.SetSingle( 0 );
+      if( Par.bPhi )
+      {
+        if( Common::EqualIgnoreCase( cl.SwitchValue<std::string>("phi"), "theta" ) )
+          Par.bPhiEqualsTheta = true;
+        else
+        {
+          Par.Phi = cl.SwitchValue<SSS>("phi");
+          Par.Phi.AlwaysIterate = { 0, 90 };
+        }
+      }
       std::unique_ptr<MixedOp> Op;
-      switch( cl.SwitchValue<int>("a") )
+      switch( ( Par.bTheta ? 1 : 0 ) + ( Par.bPhi ? 2 : 0 ) )
       {
         case 1:
           Op.reset( new MixedOp_Src( Par ) );
@@ -855,7 +890,7 @@ int main( int argc, const char *argv[] )
           Op.reset( new MixedOp_SnkSrc( Par ) );
           break;
         default:
-          throw std::runtime_error( "Invalid source/sink type " + cl.SwitchValue<std::string>("a") );
+          throw std::runtime_error( "One or more of --theta and --phi must be specified" );
       }
       enum State : int { Empty, ModelLoaded, Rotation };
       State state{ State::Empty };
@@ -913,7 +948,6 @@ int main( int argc, const char *argv[] )
     " <options> Model Bootstrap_wildcard [Model Bootstrap_wildcard [...]]\n"
     "Create a mixed operator from fit parameters and bootstrap replicas\n"
     "<options>\n"
-    "-a     Model type: 1=source only; 2=sink only; 3=source/sink; default " << defaultModel << "\n"
     "-e     Which excited state to use in model (default " << defaultExcited << "), -ve counts from highest\n"
     "-i     Input path for folded bootstrap replicas\n"
     "-o     Output path\n"
@@ -921,9 +955,8 @@ int main( int argc, const char *argv[] )
     "-n     Mixed operator name\n"
     "-r     Extended regex for sink/source type, default\n       " << DefaultERE << "\n"
     "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
-    "--tmin Minimum theta, default " << defaultTMin << "\n"
-    "--tmax Maximum theta, default " << defaultTMax << "\n"
-    "--step Steps between theta, default " << defaultStep << "\n"
+    "--theta Source rotation angles Min:Max[:Step]\n"
+    "--phi   Sink   rotation angles Min:Max[:Step] | theta\n"
     "Flags:\n"
     "-c         Try loading Conjugate operator if bootstrap sample missing\n"
     "-s         Swap source / sink order in regex\n"

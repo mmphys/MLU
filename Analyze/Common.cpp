@@ -78,6 +78,7 @@ extern const std::string Space{ " " };
 extern const std::string WhiteSpace{ " \t\n\r\f\v" };
 extern const std::string Underscore{ "_" };
 extern const std::string Period{ "." };
+extern const std::string Colon{ ":" };
 extern const std::string NewLine{ "\n" };
 extern const std::string Comma{ "," };
 extern const std::string CommaSpace{ ", " };
