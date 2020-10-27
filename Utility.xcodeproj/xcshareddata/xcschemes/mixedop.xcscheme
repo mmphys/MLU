@@ -57,6 +57,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-r h([[:digit:]]+)"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-m fit/2pt/"
             isEnabled = "YES">
          </CommandLineArgument>
@@ -65,7 +69,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i PW/3pt_s/ -o mixed/3pt_s/E1_rootE/ Best2pt.txt quark_h0_h3_gT_dt_20_p_0_0_0_g5P_g5P.fold.1835672416.h5"
+            argument = "-i PW/3pt_s/ -o mixed/3pt_s/E1/ Best2pt.txt quark_h0_h3_gT_dt_20_p_0_0_0_g5P_g5P.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -106,7 +110,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--enorm"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 0"

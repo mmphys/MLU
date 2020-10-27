@@ -99,6 +99,7 @@ set logscale y
 FieldNameFile=FieldNameFile."_log"
 }
 OutFile=PlotPrefix
+#print "OutFile=\"".OutFile."\""
 if( OtherAngle ne "" ) { OutFile=OutFile.OtherAngle."_" }
 OutFile=OutFile."${start}_${stop}_${step}".PlotSuffix.FieldNameFile.PlotSeed."pdf"
 set output OutFile

@@ -68,6 +68,7 @@ public:
 
 struct Parameters
 {
+  bool bSingleModel;
   std::string MixedOpName;
   int Exponent;
   bool bSaveCorr;
@@ -75,7 +76,8 @@ struct Parameters
   bool bTryConjugate;
   std::string InBase;
   std::string OutBase;
-  std::regex  RegExExt;
+  std::regex  RegExExt1;
+  std::regex  RegExExt2;
   bool        RegExSwap;
   //int tmin;
   //int tmax;
@@ -127,7 +129,7 @@ protected:
 public:
   MixedOp( const std::string &description_, const Parameters &par ) : Description{ description_ }, Par{ par } {}
   virtual ~MixedOp() {}
-  bool LoadModels( const std::string &FileName, const std::string &Args );
+  bool LoadModels( Common::FileNameAtt &&fna, const std::string &Args, bool * pSingle = nullptr );
   void Make( const std::string &FileName );
 };
 
@@ -262,7 +264,7 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
     mi.idxNorm = m.GetColumnIndex( Energy, Exponent );
 }
 
-bool MixedOp::LoadModels( const std::string &FileName, const std::string &Args )
+bool MixedOp::LoadModels( Common::FileNameAtt &&fna, const std::string &Args, bool * pSingle )
 {
   // First validate the arguments
   std::vector<std::vector<std::string>> Words;
@@ -287,7 +289,6 @@ bool MixedOp::LoadModels( const std::string &FileName, const std::string &Args )
   }
   MI.clear(); // Replace models already loaded
   bool bIsModel{ false };
-  Common::FileNameAtt fna{ FileName };
   if( Common::EqualIgnoreCase( fna.Ext, TEXT_EXT ) )
   {
     // Entries in the key file are relative to the file
@@ -297,9 +298,9 @@ bool MixedOp::LoadModels( const std::string &FileName, const std::string &Args )
     // Treat this as a list of fit files to read
     std::map<int, std::string> FitList;
     {
-      std::ifstream s( FileName );
-      if( !Common::FileExists( FileName ) || s.bad() )
-        throw std::runtime_error( "Error reading \"" + FileName + "\"" );
+      std::ifstream s( fna.Filename );
+      if( !Common::FileExists( fna.Filename ) || s.bad() )
+        throw std::runtime_error( "Error reading \"" + fna.Filename + "\"" );
       FitList = Common::KeyValReader<int, std::string>::Read( s );
     }
     std::map<int, std::string>::iterator it;
@@ -311,12 +312,16 @@ bool MixedOp::LoadModels( const std::string &FileName, const std::string &Args )
       fna.Parse( Base );
       LoadModel( std::move( fna ), Words );
       bIsModel = true;
+      if( pSingle )
+        *pSingle = false;
     }
   }
   else if( Common::EqualIgnoreCase( fna.Type, Common::sModel ) )
   {
     LoadModel( std::move( fna ), Words );
     bIsModel = true;
+    if( pSingle )
+      *pSingle = true;
   }
   return bIsModel;
 }
@@ -392,11 +397,12 @@ void MixedOp::DoOneAngle( degrees Phi, degrees Theta, std::string &Out, std::siz
 void MixedOp::Make( const std::string &FileName )
 {
   assert( ( IsSource() || IsSink() ) && "Bug: model must have at least one of sink and source" );
+  assert( MI.size() && "No models loaded" );
   FileOpNames.clear();
   fnaName.Parse( FileName, &FileOpNames );
   if( fnaName.op.size() != 2 )
     throw std::runtime_error( "Could not extract sink and source operator names from " + FileName );
-  if( MI.size() <= 1 )
+  if( Par.bSingleModel )
   {
     ModelSnk = 0;
     ModelSrc = 0;
@@ -404,10 +410,18 @@ void MixedOp::Make( const std::string &FileName )
   else
   {
     std::smatch base_match;
-    if( !std::regex_search( FileName, base_match, Par.RegExExt ) || base_match.size() != 3 )
+    if( std::regex_search( FileName, base_match, Par.RegExExt2 ) && base_match.size() == 3 )
+    {
+      ModelSnk = Common::FromString<int>( base_match[Par.RegExSwap ? 2 : 1] );
+      ModelSrc = Common::FromString<int>( base_match[Par.RegExSwap ? 1 : 2] );
+    }
+    else if( std::regex_search( FileName, base_match, Par.RegExExt1 ) && base_match.size() == 2 )
+    {
+      ModelSnk = Common::FromString<int>( base_match[1] );
+      ModelSrc = ModelSnk;
+    }
+    else
       throw std::runtime_error( "Can't extract sink/source from " + FileName );
-    ModelSnk = Common::FromString<int>( base_match[Par.RegExSwap ? 2 : 1] );
-    ModelSrc = Common::FromString<int>( base_match[Par.RegExSwap ? 1 : 2] );
   }
   //if( Par.bNormalise )
     //SetNormalisation();
@@ -812,12 +826,16 @@ bool Debug()
   return true;
 }
 
+std::string DoubleERE( const std::string &SingleERE )
+{
+  return SingleERE + "_" + SingleERE;
+}
+
 int main( int argc, const char *argv[] )
 {
   static const char defaultExcited[] = "-1";
-  static const char DefaultERE[]{ R"([_[:alpha:]]*([[:digit:]]+)_[[:alpha:]]*([[:digit:]]+))" };
+  static const std::string SingleERE{ R"([[:alpha:]]*([[:digit:]]+))" };
   std::ios_base::sync_with_stdio( false );
-  //if( Debug() ) return 0;
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;
@@ -830,7 +848,8 @@ int main( int argc, const char *argv[] )
       {"o", CL::SwitchType::Single, "" },
       {"m", CL::SwitchType::Single, "" },
       {"n", CL::SwitchType::Single, "" },
-      {"r", CL::SwitchType::Single, DefaultERE },
+      {"r", CL::SwitchType::Single, SingleERE.c_str() },
+      {"r2", CL::SwitchType::Single, nullptr },
       {"theta", CL::SwitchType::Single, nullptr},
       {"phi", CL::SwitchType::Single, nullptr},
       {"c", CL::SwitchType::Flag, nullptr},
@@ -851,7 +870,16 @@ int main( int argc, const char *argv[] )
       const std::string modelBase{ cl.SwitchValue<std::string>("m") };
       Par.MixedOpName = cl.SwitchValue<std::string>("n");
       Par.bTryConjugate = cl.GotSwitch("c");
-      Par.RegExExt = std::regex( cl.SwitchValue<std::string>("r"),std::regex::extended|std::regex::icase);
+      {
+        const std::string Single{ cl.SwitchValue<std::string>("r") };
+        const std::string Double{ cl.GotSwitch( "r2" ) ? cl.SwitchValue<std::string>("r2") : DoubleERE( Single ) };
+        Par.RegExExt1 = std::regex( Single, std::regex::extended | std::regex::icase );
+        Par.RegExExt2 = std::regex( Double, std::regex::extended | std::regex::icase );
+        if( Par.RegExExt1.mark_count() != 1 )
+          throw std::runtime_error( "There should only be 1 marked sub-expression in \"" + Single + "\"" );
+        if( Par.RegExExt2.mark_count() != 2 )
+          throw std::runtime_error( "There should be 2 marked sub-expressions in \"" + Double + "\"" );
+      }
       Par.RegExSwap = cl.GotSwitch("s");
       Par.bAllReplicas = cl.GotSwitch("rep");
       Par.bSaveCorr = cl.GotSwitch("savecorr");
@@ -904,12 +932,16 @@ int main( int argc, const char *argv[] )
           std::vector<std::string> ModelList{ Common::glob( &ModelFileName, &ModelFileName + 1, modelBase.c_str() ) };
           if( ModelList.size() == 1 && Common::FileExists( ModelList[0] ) )
           {
-            if( state == State::ModelLoaded )
-              throw std::runtime_error( "Reading consecutive models, i.e. no processing done with prior model" );
-            if( Op->LoadModels( ModelList[0], Args ) )
+            Common::FileNameAtt fna( ModelList[0] );
+            if( Common::EqualIgnoreCase( fna.Ext, TEXT_EXT ) || Common::EqualIgnoreCase( fna.Type, Common::sModel ) )
             {
-              bIsModel = true;
-              state = State::ModelLoaded;
+              if( state == State::ModelLoaded )
+                throw std::runtime_error( "Reading consecutive models, i.e. no processing done with prior model" );
+              if( Op->LoadModels( std::move( fna ), Args, &Par.bSingleModel ) )
+              {
+                bIsModel = true;
+                state = State::ModelLoaded;
+              }
             }
           }
           if( !bIsModel )
@@ -953,8 +985,9 @@ int main( int argc, const char *argv[] )
     "-o     Output path\n"
     "-m     Input path for model files\n"
     "-n     Mixed operator name\n"
-    "-r     Extended regex for sink/source type, default\n       " << DefaultERE << "\n"
+    "-r     Extended regex to extract either sink or source type, default\n       " << SingleERE << "\n"
     "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
+    "--r2   Extended regex for both sink and source, default \"-r_-r\", i.e.\n       " << DoubleERE( SingleERE ) << "\n"
     "--theta Source rotation angles Min:Max[:Step]\n"
     "--phi   Sink   rotation angles Min:Max[:Step] | theta\n"
     "Flags:\n"
