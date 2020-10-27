@@ -78,11 +78,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--phi=-90:90"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--phi=theta"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--theta=-10:-10"

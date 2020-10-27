@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+. common_utility.sh
 
 if [[ "$pfold" == "" ]]; then pfold='../fold'; echo "default pfold=$pfold"; fi
 
@@ -37,13 +38,13 @@ set ylabel 'Synthesised correlator mass from fit'
 set style fill transparent solid 0.2 noborder
 plot \
   for [snk=0:1] for [src=0:1] \
-    InBasename.OpName(snk)."_".OpName(src).".bootstrap.${mmplotfile_seed}.${mmplotvar_dat}" \
+    InBasename.OpName(snk)."_".OpName(src).".bootstrap.${mmplotfile_seed}.${mmplotvar_txt}" \
     using "t":(column(FieldName."_low")):(column(FieldName."_high")) with filledcurves title "Error ".OpText(snk)." - ".OpText(src), \
   for [snk=0:1] for [src=0:1] \
-    InBasename.OpName(snk)."_".OpName(src).".bootstrap.${mmplotfile_seed}.${mmplotvar_dat}" \
+    InBasename.OpName(snk)."_".OpName(src).".bootstrap.${mmplotfile_seed}.${mmplotvar_txt}" \
     using "t":(column(FieldName)) with lines lw 0.5 title "Midpoint ".OpText(snk)." - ".OpText(src), \
   for [snk=0:1] for [src=0:1] \
-    FoldPath."/${mmplotfile_base}_".OpName(snk)."_".OpName(src).".fold.${mmplotfile_seed}.${mmplotvar_dat}" \
+    FoldPath."/${mmplotfile_base}_".OpName(snk)."_".OpName(src).".fold.${mmplotfile_seed}.${mmplotvar_txt}" \
   using "t":(column(FieldName)):(column(FieldName."_low")):(column(FieldName."_high")) with yerrorbars title "Data ".OpText(snk)." - ".OpText(src)
 EOFMark
 

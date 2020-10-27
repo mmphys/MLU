@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+. common_utility.sh
 
 ###################################################
 # Make a plot of the forward and backward-propagating waves

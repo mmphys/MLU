@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+. common_utility.sh
 
 # Loop through all the params files on the command-line performing plots
 for PlotFile; do

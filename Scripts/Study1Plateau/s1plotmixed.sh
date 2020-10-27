@@ -1,4 +1,5 @@
-#!/opt/local/bin/bash
+#!/usr/bin/env bash
+. common_utility.sh
 
 #Pick which "optimal" correlator we're plotting
 if [ "${fix+x}" == "x" ]; then FixOtherAngle=1; else FixOtherAngle=0; fi
@@ -100,9 +101,7 @@ FieldNameFile=FieldNameFile."_log"
 OutFile=PlotPrefix
 if( OtherAngle ne "" ) { OutFile=OutFile.OtherAngle."_" }
 OutFile=OutFile."${start}_${stop}_${step}".PlotSuffix.FieldNameFile.PlotSeed."pdf"
-print "OutFile=".OutFile
-
-set output PlotPrefix."${start}_${stop}_${step}".PlotSuffix.FieldNameFile.PlotSeed."pdf"
+set output OutFile
 set ylabel '{/Helvetica:Italic aE}_{eff}'
 set xlabel 't/a' offset 0,1
 set yrange [@my_yrange]
@@ -133,7 +132,7 @@ set title FieldTitle." ".PlotTitle noenhanced
 FieldLow=FieldName."_low"
 FieldHigh=FieldName."_high"
 plot for [i=1:words(times)] \
- "${mmplotfile_path}".PlotPrefix.word(TimeString,i).PlotSuffix.PlotType.PlotSeed."$mmplotvar_dat" \
+ "${mmplotfile_path}".PlotPrefix.word(TimeString,i).PlotSuffix.PlotType.PlotSeed."$mmplotvar_txt" \
   using (column("t")-first_offset+0.05*(i-1)):(column(FieldName)):(column(FieldLow)):(column(FieldHigh)) with yerrorbars title angle_short."=".word(times,i)
 EOFMark
 fi;fi;done

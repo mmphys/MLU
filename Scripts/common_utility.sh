@@ -1,4 +1,4 @@
-#/opt/local/bin/bash
+#!/usr/bin/env bash
 
 PlotPathSplit()
 {
@@ -65,41 +65,4 @@ PlotPathSplit()
 }
 
 export -f PlotPathSplit
-export mmplotvar_dat=txt # default extension for data files in text
-
-if [[ "0" == "" ]]; then
-export mmplotdefault_base=h1_l_p_0_0_0
-export mmplotdefault_seed=4147798751
-export mmplotdefault_ti=9
-export mmplotdefault_tf=19
-export mmplotdefault_corr=corr
-
-DataSet="test"
-if [[ "$DataSet" == "Distil" ]]
-then
-  export mmplotpath_corr=$HOME/data/201911HLFelix/bootstrap/Z2/
-  export mmplotpath_model=$HOME/src/Utility/test_distil_fit/
-  export mmplotpath_mixed=$mmplotpath_model
-  export mmplotdefault_base=D
-  export mmplotdefault_seed=2763836222
-  export mmplotdefault_ti=3
-  export mmplotdefault_tf=18
-elif [[ "$DataSet" == "test" ]]
-then
-  DataDir=$HOME/data/Study1/C1/Z2
-  export mmplotpath_corr=$DataDir/bootstrap/
-  export mmplotpath_model=$DataDir/fit/$DataSet/
-  export mmplotpath_mixed=$DataDir/mixed/$DataSet/
-  export mmplotdefault_corr=uncorr
-else
-  DataDir=$HOME/data/Study1/C1/$DataSet
-  export mmplotpath_corr=$DataDir/bootstrap/
-  export mmplotpath_model=$DataDir/fit/
-  export mmplotpath_mixed=$DataDir/mixed/
-fi
-#
-export mmplotdefault_corr_all=${mmplotdefault_corr}_${mmplotdefault_ti}_${mmplotdefault_tf}
-export mmplotdefault_ops=(g5 gT5)
-       mmplotdefault_ops_all=${mmplotdefault_ops[@]}
-export mmplotdefault_ops_all=${mmplotdefault_ops_all// /_}
-fi
+export mmplotvar_txt=txt # default extension for data files in text
