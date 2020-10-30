@@ -299,6 +299,7 @@ struct AppParams
   SourceT Type;
   std::vector<Quark> HeavyQuarks;
   std::vector<Quark> SpectatorQuarks;
+  std::vector<Quark> SpectatorQuarks2pt;
   std::vector<Common::Momentum> Momenta;
   std::vector<int> deltaT;
   inline int TimeBound( int t ) const
@@ -307,7 +308,7 @@ struct AppParams
   std::string ShortID() const;
   std::string RunID() const;
 protected:
-  static std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType );
+  static std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType, int Min = 1 );
 };
 
 AppParams::AppParams( const std::string sXmlFilename )
@@ -318,6 +319,7 @@ AppParams::AppParams( const std::string sXmlFilename )
   read( r, sXmlTagName, Run );
   HeavyQuarks     = ReadQuarks( r, "Heavy" );
   SpectatorQuarks = ReadQuarks( r, "Spectator" );
+  SpectatorQuarks2pt = ReadQuarks( r, "Spectator2pt", 0 );
   Momenta = Common::ArrayFromString<Common::Momentum>( Run.Momenta );
   // Check the type
   std::istringstream ss( Run.Type );
@@ -338,7 +340,7 @@ AppParams::AppParams( const std::string sXmlFilename )
   }
 }
 
-std::vector<Quark> AppParams::ReadQuarks( XmlReader &r, const std::string &qType )
+std::vector<Quark> AppParams::ReadQuarks( XmlReader &r, const std::string &qType, int Min )
 {
   static const std::string sQuark{ "Quark" };
   std::string TagName{ "Num" };
@@ -346,13 +348,14 @@ std::vector<Quark> AppParams::ReadQuarks( XmlReader &r, const std::string &qType
   TagName.append( sQuark );
   int NumQuarks;
   read( r, TagName, NumQuarks );
-  if( NumQuarks < 1 )
-    throw std::runtime_error( "At least one " + qType + " quark must be specified" );
+  if( NumQuarks < Min )
+    throw std::runtime_error( std::to_string( NumQuarks ) + Common::Space + qType + " quarks" );
   TagName = qType;
   TagName.append( sQuark );
   const std::size_t PrefixLen{ TagName.length() };
   Quark q;
   std::vector<Quark> vq;
+  vq.reserve( NumQuarks );
   for( int i = 0; i < NumQuarks; ++i )
   {
     TagName.resize( PrefixLen );
@@ -938,17 +941,19 @@ public:
   const bool bHeavyAnti;
   const int Current;
   const int deltaT;
+  const bool bSinkMom;
   ModContract3pt( const std::string &OutputBase, const SourceT Type, const SinkT Sink,
                   const Quark &qSnk, const Quark &qSrc, const Quark &qSpectator,
-                  const Common::Momentum &p, int t, bool bHeavyAnti, int Current, int deltaT );
+                  const Common::Momentum &p, int t, bool bHeavyAnti, int Current, int deltaT, bool bSinkMom );
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 ModContract3pt::ModContract3pt(const std::string &OutputBase, const SourceT type_, const SinkT sink_,
                                const Quark &qSnk_, const Quark &qSrc_, const Quark &qSpectator_,
-                               const Common::Momentum &p_, int t_, bool bHeavyAnti_, int Current_, int deltaT_)
+                               const Common::Momentum &p_, int t_, bool bHeavyAnti_, int Current_, int deltaT_,
+                               bool bSinkMom_ )
 : Type{type_}, Sink{sink_}, qSnk{qSnk_}, qSrc{qSrc_}, qSpectator{qSpectator_},
-  p{p_}, t{t_}, bHeavyAnti{bHeavyAnti_}, Current{Current_}, deltaT(deltaT_)
+  p{p_}, t{t_}, bHeavyAnti{bHeavyAnti_}, Current{Current_}, deltaT(deltaT_), bSinkMom{ bSinkMom_ }
 {
   std::string s{ FilePrefix( Type, Sink ) };
   Append( s, bHeavyAnti ? "anti" : "quark" );
@@ -957,6 +962,8 @@ ModContract3pt::ModContract3pt(const std::string &OutputBase, const SourceT type
   Append( s, *algInsertName[Current_] );
   AppendDeltaT( s, deltaT );
   AppendPT( s, t, p );
+  if( bSinkMom )
+    Append( s, "snkmom" );
   const std::string PrefixType{ "3pt" + Sep + qSpectator.flavour };
   FileName = OutputBase + PrefixType + "/" + s;
   name = ContractionPrefix;
@@ -976,14 +983,14 @@ bool ModContract3pt::AddDependencies( HModList &ModList ) const
   if( bInvertSeq )
   {
     par.q1 = ModList.TakeOwnership( new ModProp( qtSrc, p, t, true ) );
-    par.q2 = ModList.TakeOwnership(new ModPropSeq( qSnk, Current, deltaT, p0, qtSpec, p0, t ) );
+    par.q2 = ModList.TakeOwnership(new ModPropSeq( qSnk, Current, deltaT, bSinkMom ?  p : p0, qtSpec, p0, t ) );
   }
   else
   {
-    par.q1 = ModList.TakeOwnership(new ModPropSeq( qSnk, Current, deltaT, p0, qtSpec, p , t ) );
+    par.q1 = ModList.TakeOwnership(new ModPropSeq( qSnk, Current, deltaT, bSinkMom ? -p : p0, qtSpec, p , t ) );
     par.q2 = ModList.TakeOwnership( new ModProp( qtSrc, p0, t, true ) );
   }
-  par.sink = ModList.TakeOwnership( new ModSink( -p ) );
+  par.sink = ModList.TakeOwnership( new ModSink( bSinkMom ? p0 : -p ) );
   ModList.application.createModule<MContraction::Meson>(name, par);
   return true;
 }
@@ -1038,6 +1045,8 @@ Application AppMaker::Setup( const AppParams &params )
 
 void AppMaker::Make()
 {
+  // Unitary (sea mass) spectators
+  bool bFirstSpec{ true };
   for( const Quark &qSpectator : l.params.SpectatorQuarks )
   {
     for( unsigned int t = l.params.Run.Timeslices.start; t < l.params.Run.Timeslices.end; t += l.params.Run.Timeslices.step )
@@ -1051,6 +1060,15 @@ void AppMaker::Make()
           {
             for( const Quark &qH1 : l.params.HeavyQuarks )
             {
+              if( bFirstSpec )
+              {
+                // Physical point spectators for 2pt functions only
+                for( const Quark &qSpec2 : l.params.SpectatorQuarks2pt )
+                {
+                  l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink, qSpec2, qH1, p, t ) );
+                  l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink, qH1, qSpec2, p, t ) );
+                }
+              }
               if( l.params.Run.TwoPoint )
               {
                 l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
@@ -1072,7 +1090,19 @@ void AppMaker::Make()
                       {
                         l.TakeOwnership( new ModContract3pt( l.params.Run.OutputBase, l.params.Type, Sink,
                                                              qH1, qH2, qSpectator, p,
-                                                             t, bHeavyAnti, j, deltaT ) );
+                                                             t, bHeavyAnti, j, deltaT, false ) );
+                      }
+                    }
+                  }
+                  if( p && qH1.mass == qH2.mass )
+                  {
+                    for( int deltaT : l.params.deltaT )
+                    {
+                      for( int j = 0; j < NumInsert; j++ )
+                      {
+                        l.TakeOwnership( new ModContract3pt( l.params.Run.OutputBase, l.params.Type, Sink,
+                                                             qH1, qH2, qSpectator, p,
+                                                             t, bHeavyAnti, j, deltaT, true ) );
                       }
                     }
                   }
@@ -1084,6 +1114,7 @@ void AppMaker::Make()
         }
       }
     }
+    bFirstSpec = false;
   }
 }
 
