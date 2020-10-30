@@ -313,11 +313,13 @@ int main(int argc, const char *argv[])
                     cl.Args[0] );
       bShowUsage = false;
       std::vector<std::string> FileList{ Common::glob( ++cl.Args.begin(), cl.Args.end(), InBase.c_str() ) };
+      std::size_t Count{ 0 };
       for( std::string &sFile : FileList )
       {
         try
         {
           rm.MakeRatios( sFile );
+          ++Count;
         }
         catch(const std::exception &e)
         {
@@ -328,6 +330,7 @@ int main(int argc, const char *argv[])
           std::cerr << "Error: Unknown exception" << std::endl;
         }
       }
+      std::cout << Count << " ratios created" << Common::NewLine;
     }
   }
   catch(const std::exception &e)

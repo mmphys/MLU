@@ -48,7 +48,7 @@ static constexpr int ModelNumIndices{ 2 }; // Model should include operators wit
 
 static constexpr int idxSrc{ 0 };
 static constexpr int idxSnk{ 1 };
-static constexpr int NumIndices{ 2 }; // Number of sink and source indices
+static constexpr int NumSnkSrcIndices{ 2 }; // Number of sink and source indices
 
 /*template <class scalar_ = scalar>
 class Normaliser
@@ -88,6 +88,7 @@ struct Parameters
   bool bPhi;
   bool bPhiEqualsTheta;
   SSS Phi;
+  std::array<std::array<scalar,ModelNumIndices>, NumSnkSrcIndices> OpNorm;
 };
 
 class MixedOp
@@ -118,6 +119,7 @@ protected:
   int Nt;
   //Normaliser<scalar> Normalisation;
 
+  std::string NormString();
   void LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vector<std::string>> &Words );
   void LoadCorrelator( int idxSnk, int idxSrc, const std::string &InFileName );
   void DoOneAngle( degrees Phi, degrees Theta, std::string &Out, std::size_t OutLen, bool bSaveCorr );
@@ -132,6 +134,19 @@ public:
   bool LoadModels( Common::FileNameAtt &&fna, const std::string &Args, bool * pSingle = nullptr );
   void Make( const std::string &FileName );
 };
+
+//#define NORMALISE( x ) std::sqrt( 2 * x )
+#define NORMALISE( x ) std::sqrt( x )
+
+std::string MixedOp::NormString()
+{
+  std::string s;
+  s.append( 1, 'A' );
+  s.append( std::to_string( Exponent ) );
+  if( Par.bNormalise )
+    s.append( 1, 'E' );
+  return s;
+}
 
 class MixedOp_Norm : public MixedOp
 {
@@ -227,14 +242,14 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   std::cout << "  Fit: " << ( m.Factorised ? "F" : "Unf" ) << "actorised, ti="
             << m.ti << ", tf=" << m.tf << Common::NewLine;
   for( std::size_t i = 0; i < m.OpNames.size(); i++ )
-    std::cout << "  Model op[" << i << "]: " << m.OpNames[i] << Exponent << Common::NewLine;
+    std::cout << "  Model op[" << i << "]: " << m.OpNames[i] << Common::NewLine;
   // Now see which operators to use
   if( Words.empty() )
   {
     // Get operators from file
-    if( m.OpNames.size() != NumIndices )
+    if( m.OpNames.size() != ModelNumIndices )
       throw std::runtime_error( "Ambiguous - model file has " + std::to_string( m.OpNames.size() )
-                               + " operators. " + std::to_string( NumIndices ) + " expected." );
+                               + " operators. " + std::to_string( ModelNumIndices ) + " expected." );
     for( int i = 0; i < ModelNumIndices; ++i )
     {
       mi.OpName[i] = m.OpNames[i];
@@ -243,6 +258,7 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   }
   else
   {
+    assert( Words.size() == ModelNumIndices && "Bug: Words.size() != ModelNumIndices" );
     int i = 0;
     for( const std::vector<std::string> &Word : Words )
     {
@@ -251,6 +267,9 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
       ++i;
     }
   }
+  // Now say which operators we are using for normalisation
+  for( int i = 0; i < ModelNumIndices; ++i )
+    std::cout << "  normalisation[" << i << "]: " << mi.OpName[i] << Exponent << " = Model[" << mi.OpIdx[i] << "]" << Common::NewLine;
   // Now save the name of the mixed operator
   if( Par.MixedOpName.empty() )
   {
@@ -261,7 +280,10 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
     mi.MixedOpName = Par.MixedOpName;
   // Now extract the index of the normalisation factor I'll need
   if( Par.bNormalise )
+  {
     mi.idxNorm = m.GetColumnIndex( Energy, Exponent );
+    std::cout << "  energy normalisation: " << Energy << Exponent << " = Model[" << mi.idxNorm << "]" << Common::NewLine;
+  }
 }
 
 bool MixedOp::LoadModels( Common::FileNameAtt &&fna, const std::string &Args, bool * pSingle )
@@ -410,12 +432,12 @@ void MixedOp::Make( const std::string &FileName )
   else
   {
     std::smatch base_match;
-    if( std::regex_search( FileName, base_match, Par.RegExExt2 ) && base_match.size() == 3 )
+    if( std::regex_search( fnaName.Base, base_match, Par.RegExExt2 ) && base_match.size() == 3 )
     {
       ModelSnk = Common::FromString<int>( base_match[Par.RegExSwap ? 2 : 1] );
       ModelSrc = Common::FromString<int>( base_match[Par.RegExSwap ? 1 : 2] );
     }
-    else if( std::regex_search( FileName, base_match, Par.RegExExt1 ) && base_match.size() == 2 )
+    else if( std::regex_search( fnaName.Base, base_match, Par.RegExExt1 ) && base_match.size() == 2 )
     {
       ModelSnk = Common::FromString<int>( base_match[1] );
       ModelSrc = ModelSnk;
@@ -438,6 +460,15 @@ void MixedOp::Make( const std::string &FileName )
     MI[ModelSnk].model.Name_.AppendExtra( OutBase, 1 );
   if( IsSource() )
     MI[ModelSrc].model.Name_.AppendExtra( OutBase, 1 );
+  // Add normalisation info to name
+  {
+    std::string Norm{ NormString() };
+    if( !Norm.empty() )
+    {
+      OutBase.append( ".N_" );
+      OutBase.append( Norm );
+    }
+  }
   std::cout << "Rotate " << OutBase << "\n";
   CorrMixed.FileList.clear();
   LoadCorrelators( InBase );
@@ -625,97 +656,63 @@ void MixedOp_SnkSrc::LoadCorrelators( const std::string &InBase )
   }
 }
 
-//#define NORMALISE( x ) std::sqrt( 2 * x )
-#define NORMALISE( x ) std::sqrt( x )
-
 void MixedOp_Src::MixingAngle( degrees phi_, degrees theta_ )
 {
   const SinCos Theta( theta_ );
   const double * pModelSrc{ MI[ModelSrc].model[Model::idxCentral] };
-  //const double * pModelSnk{ MI[ModelSnk].model[Model::idxCentral] };
   const double * pDataP{ CorrIn[0][idxPoint][Fold::idxCentral] };
   const double * pDataW{ CorrIn[0][idxWall ][Fold::idxCentral] };
   scalar * pDst = CorrMixed[Fold::idxCentral];
-  //double A_Snk{ 0 };
-  double A_P{ 0 };
-  double A_W{ 0 };
   double Op_P{ 0 };
   double Op_W{ 0 };
-  //double E_Norm{ 0 };
   for( int i = Fold::idxCentral; i < NumSamples; i++ )
   {
     if( Par.bAllReplicas || i == Fold::idxCentral )
     {
-      //A_Snk = pModelSnk[MI[ModelSnk].OpIdx[iSnk]];
-      A_P   = pModelSrc[MI[ModelSrc].OpIdx[idxPoint]];
-      A_W   = pModelSrc[MI[ModelSrc].OpIdx[idxWall]];
+      double A_P { pModelSrc[MI[ModelSrc].OpIdx[idxPoint]] * Par.OpNorm[idxSrc][idxPoint] };
+      double A_W { pModelSrc[MI[ModelSrc].OpIdx[idxWall ]] * Par.OpNorm[idxSrc][idxWall ] };
       if( Par.bNormalise )
       {
-        //const double E_Snk{ pModelSnk[MI[ModelSnk].idxNorm] };
         const double Norm_E_Src{ NORMALISE( pModelSrc[MI[ModelSrc].idxNorm] ) };
-        //E_Norm = 1 / ( 4 * E_Snk * E_Src );
-        //A_Snk *= NORMALISE( E_Snk );
         A_P   *= Norm_E_Src;
         A_W   *= Norm_E_Src;
       }
       Op_P = Theta.cos / A_P;
       Op_W = Theta.sin / A_W;
       pModelSrc += MI[ModelSrc].model.Nt();
-      //pModelSnk += MI[ModelSnk].model.Nt();
     }
     for( int t = 0; t < Nt; t++ )
-    {
-      scalar z{ Op_P * *pDataP++ + Op_W * *pDataW++ };
-      // if( Par.bNormalise )
-        // z *= E_Norm;
-      *pDst++ = z;
-    }
+      *pDst++ = Op_P * *pDataP++ + Op_W * *pDataW++;
   }
 }
 
 void MixedOp_Snk::MixingAngle( degrees phi_, degrees theta_ )
 {
   const SinCos Phi( phi_ );
-  const double * pModelSrc{ MI[ModelSrc].model[Model::idxCentral] };
   const double * pModelSnk{ MI[ModelSnk].model[Model::idxCentral] };
   const double * pDataP{ CorrIn[idxPoint][0][Fold::idxCentral] };
   const double * pDataW{ CorrIn[idxWall ][0][Fold::idxCentral] };
   scalar * pDst = CorrMixed[Fold::idxCentral];
-  double A_Src{ 0 };
-  double A_P{ 0 };
-  double A_W{ 0 };
   double Op_P{ 0 };
   double Op_W{ 0 };
-  //double E_Norm{ 0 };
   for( int i = Fold::idxCentral; i < NumSamples; i++ )
   {
     if( Par.bAllReplicas || i == Fold::idxCentral )
     {
-      A_Src = pModelSrc[MI[ModelSrc].OpIdx[iSrc]];
-      A_P   = pModelSnk[MI[ModelSnk].OpIdx[idxPoint]];
-      A_W   = pModelSnk[MI[ModelSnk].OpIdx[idxWall]];
+      double A_P { pModelSnk[MI[ModelSnk].OpIdx[idxPoint]] * Par.OpNorm[idxSnk][idxPoint] };
+      double A_W { pModelSnk[MI[ModelSnk].OpIdx[idxWall ]] * Par.OpNorm[idxSnk][idxWall ] };
       if( Par.bNormalise )
       {
-        const double E_Snk{ pModelSnk[MI[ModelSnk].idxNorm] };
-        const double E_Src{ pModelSrc[MI[ModelSrc].idxNorm] };
-        //E_Norm = 1 / ( 4 * E_Snk * E_Src );
-        const scalar n{ NORMALISE( E_Snk ) };
-        A_Src *= NORMALISE( E_Src );
-        A_P   *= n;
-        A_W   *= n;
+        const double Norm_E_Snk{ NORMALISE( pModelSnk[MI[ModelSnk].idxNorm] ) };
+        A_P   *= Norm_E_Snk;
+        A_W   *= Norm_E_Snk;
       }
-      Op_P = Phi.cos / ( A_Src * A_P );
-      Op_W = Phi.sin / ( A_Src * A_W );
-      pModelSrc += MI[ModelSrc].model.Nt();
+      Op_P = Phi.cos / A_P;
+      Op_W = Phi.sin / A_W;
       pModelSnk += MI[ModelSnk].model.Nt();
     }
     for( int t = 0; t < Nt; t++ )
-    {
-      scalar z{ Op_P * *pDataP++ + Op_W * *pDataW++ };
-      // if( Par.bNormalise )
-        // z *= E_Norm;
-      *pDst++ = z;
-    }
+      *pDst++ = Op_P * *pDataP++ + Op_W * *pDataW++;
   }
 }
 
@@ -734,10 +731,6 @@ void MixedOp_SnkSrc::MixingAngle( degrees phi_, degrees theta_ )
   const double * pWP{ CorrIn[idxWall ][idxPoint][Fold::idxCentral] };
   const double * pWW{ CorrIn[idxWall ][idxWall ][Fold::idxCentral] };
   scalar * pDst = CorrMixed[Fold::idxCentral];
-  double A_P_snk{ 0 };
-  double A_P_src{ 0 };
-  double A_W_snk{ 0 };
-  double A_W_src{ 0 };
   double Op_PP{ 0 };
   double Op_WP{ 0 };
   double Op_PW{ 0 };
@@ -746,17 +739,17 @@ void MixedOp_SnkSrc::MixingAngle( degrees phi_, degrees theta_ )
   {
     if( Par.bAllReplicas || i == Fold::idxCentral )
     {
-      A_P_snk = pModelSnk[MI[ModelSnk].OpIdx[idxPoint]];
-      A_P_src = pModelSrc[MI[ModelSrc].OpIdx[idxPoint]];
-      A_W_snk = pModelSnk[MI[ModelSnk].OpIdx[idxWall ]];
-      A_W_src = pModelSrc[MI[ModelSrc].OpIdx[idxWall ]];
+      double A_P_snk { pModelSnk[MI[ModelSnk].OpIdx[idxPoint]] * Par.OpNorm[idxSnk][idxPoint] };
+      double A_W_snk { pModelSnk[MI[ModelSnk].OpIdx[idxWall ]] * Par.OpNorm[idxSnk][idxWall ] };
+      double A_P_src { pModelSrc[MI[ModelSrc].OpIdx[idxPoint]] * Par.OpNorm[idxSrc][idxPoint] };
+      double A_W_src { pModelSrc[MI[ModelSrc].OpIdx[idxWall ]] * Par.OpNorm[idxSrc][idxWall ] };
       if( Par.bNormalise )
       {
         const scalar Norm_E_Snk{ NORMALISE( pModelSnk[MI[ModelSnk].idxNorm] ) };
         const scalar Norm_E_Src{ NORMALISE( pModelSrc[MI[ModelSrc].idxNorm] ) };
         A_P_snk *= Norm_E_Snk;
-        A_P_src *= Norm_E_Src;
         A_W_snk *= Norm_E_Snk;
+        A_P_src *= Norm_E_Src;
         A_W_src *= Norm_E_Src;
       }
       Op_PP = AnglePP / ( A_P_snk * A_P_src );
@@ -765,6 +758,22 @@ void MixedOp_SnkSrc::MixingAngle( degrees phi_, degrees theta_ )
       Op_WW = AngleWW / ( A_W_snk * A_W_src );
       pModelSrc += MI[ModelSrc].model.Nt();
       pModelSnk += MI[ModelSnk].model.Nt();
+      /*double zWW{ 0 };
+      double zWP{ 0 };
+      double zPW{ 0 };
+      static constexpr int MyNt{ 15 };
+      for( int t = 1; t <= MyNt; ++t )
+      {
+        zWW += pWW[t] / pPP[t];
+        zWP += pWP[t] / pPP[t];
+        zPW += pPW[t] / pPP[t];
+      }
+      zWW *= Op_WW / ( Op_PP * MyNt );
+      zWP *= Op_WP / ( Op_PP * MyNt );
+      zPW *= Op_PW / ( Op_PP * MyNt );
+      std::cout << "WW/PP = " << zWW << Common::NewLine;
+      std::cout << "WP/PP = " << zWP << Common::NewLine;
+      std::cout << "PW/PP = " << zPW << Common::NewLine;*/
     }
     for( int t = 0; t < Nt; t++ )
       *pDst++ = Op_PP * *pPP++ + Op_WW * *pWW++ +     Op_WP * *pWP++ + Op_PW * *pPW++;
@@ -835,6 +844,10 @@ int main( int argc, const char *argv[] )
 {
   static const char defaultExcited[] = "-1";
   static const std::string SingleERE{ R"([[:alpha:]]*([[:digit:]]+))" };
+  static const char default_srcn0[] = "1.0";
+  static const char default_srcn1[] = "1.0";
+  static const char default_snkn0[] = "1.0";
+  static const char default_snkn1[] = "1.0";
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
@@ -857,6 +870,10 @@ int main( int argc, const char *argv[] )
       {"rep", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
       {"enorm", CL::SwitchType::Flag, nullptr},
+      {"srcn0", CL::SwitchType::Single, default_srcn0},
+      {"srcn1", CL::SwitchType::Single, default_srcn1},
+      {"snkn0", CL::SwitchType::Single, default_snkn0},
+      {"snkn1", CL::SwitchType::Single, default_snkn1},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -884,6 +901,10 @@ int main( int argc, const char *argv[] )
       Par.bAllReplicas = cl.GotSwitch("rep");
       Par.bSaveCorr = cl.GotSwitch("savecorr");
       Par.bNormalise = cl.GotSwitch("enorm");
+      Par.OpNorm[idxSrc][idxPoint] = cl.SwitchValue<scalar>("srcn0");
+      Par.OpNorm[idxSrc][idxWall] = cl.SwitchValue<scalar>("srcn1");
+      Par.OpNorm[idxSnk][idxPoint] = cl.SwitchValue<scalar>("snkn0");
+      Par.OpNorm[idxSnk][idxWall] = cl.SwitchValue<scalar>("snkn1");
       Par.bTheta = cl.GotSwitch("theta");
       if( Par.bTheta )
       {
@@ -922,6 +943,7 @@ int main( int argc, const char *argv[] )
       }
       enum State : int { Empty, ModelLoaded, Rotation };
       State state{ State::Empty };
+      std::size_t Count{ 0 };
       for( const std::string &FileName : cl.Args )
       {
         // See whether this is a model
@@ -960,10 +982,12 @@ int main( int argc, const char *argv[] )
           for( const std::string &BootFile : Common::glob( &FileName, &FileName + 1, Par.InBase.c_str() ) )
           {
             Op->Make( BootFile );
+            ++Count;
             bShowUsage = false;
           }
         }
       }
+      std::cout << Count << " rotations performed" << Common::NewLine;
     }
   }
   catch(const std::exception &e)
@@ -996,6 +1020,10 @@ int main( int argc, const char *argv[] )
     "--rep      Use per replica values of overlap constants in construction of model\n"
     "--savecorr Save bootstrap replicas of correlators\n"
     "--enorm    Energy normalisation, i.e. overlap coefficients *= sqrt(energy)\n"
+    "--srcn0    Normalisation at source, operator 0, default " << default_srcn0 << "\n"
+    "--srcn1    Normalisation at source, operator 1, default " << default_srcn1 << "\n"
+    "--snkn0    Normalisation at sink,   operator 0, default " << default_snkn0 << "\n"
+    "--snkn1    Normalisation at sink,   operator 1, default " << default_snkn1 << "\n"
     "--help     This message\n";
   }
   return iReturn;

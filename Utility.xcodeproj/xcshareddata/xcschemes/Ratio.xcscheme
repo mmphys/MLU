@@ -53,7 +53,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i mixed/3pt_s/E0_rootE/ -o Ratio/3pt_s/E0_rootE/"
+            argument = "-i mixed/3pt_s/scaled/ -o Ratio/3pt_s/scaled/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -70,6 +70,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;*&apos;_h0_h3&apos;*&apos;.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "quark_h0_h3_gT_dt_&apos;*&apos;_p_0_0_0.corr_8_17.corr_8_17.N_A0.phi_*_theta_*_g5Pg5W_g5Pg5W.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
