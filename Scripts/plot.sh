@@ -110,7 +110,7 @@ if( RefVal != -777 ) {
   }
   set arrow from graph 0, first RefVal to graph 1, first RefVal nohead front lc rgb "gray40" lw 0.25  dashtype "-"
   if( RefText eq "" ) { RefText="Ref: ".sprintf("%g", RefVal).RefErrString }
-  set label 2 RefText at screen 0, screen 0 font "Arial,8" front textcolor "grey40" offset character 0.5, 0.5
+  set label 2 RefText at screen 0, screen 0 font "Arial,8" front textcolor "grey40" offset character 0.5, 0.25
 }
 
 #AbsMin(y,low,high)=sgn(y) < 0 ? -(high) : low

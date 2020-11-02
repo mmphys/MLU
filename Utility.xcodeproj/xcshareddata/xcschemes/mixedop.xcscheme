@@ -65,20 +65,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i PW/3pt_s/ -o mixed/3pt_s/scaled/ Best2pt.txt quark_h0_h3_gT_dt_16_p_0_0_0_g5P_g5P.fold.1835672416.h5"
+            argument = "-i PW/3pt_s/ -o mixed/3pt_s/test/ Best2pt.txt quark_h[03]_h[03]_gT_dt_&apos;*&apos;_p_0_0_0_g5P_g5P.fold.1835672416.h5"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i PW/3pt_s/ -o mixed/3pt_s/test/ Unity.txt quark_h3_h0_gT_dt_20_p_0_0_0_g5P_g5P.fold.1835672416.h5"
-            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--srcn1=4 --snkn1=2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--theta=-90:90"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--phi=-90:90"
@@ -89,28 +85,28 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--theta=-10:-10"
+            argument = "--theta=-50:-40"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--phi=-10:-10"
+            argument = "--phi=-50:-40"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--theta=-45:-40:5"
-            isEnabled = "NO">
+            argument = "--theta=45:45"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--phi=-45:-45"
+            argument = "--phi=45:45"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--savecorr"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 0"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--rep"

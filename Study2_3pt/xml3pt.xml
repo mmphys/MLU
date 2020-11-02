@@ -25,7 +25,8 @@
       <step>4</step>
     </Timeslices>
     <Type>GF</Type>
-    <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
+    <Momenta>0_0_0</Momenta>
+    <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
     <deltaT>24 28 32</deltaT>
     <!--<deltaT>12 14 16 20</deltaT>-->
     <OutputBase>C1/meson/</OutputBase>

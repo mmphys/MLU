@@ -452,7 +452,7 @@ void MixedOp::Make( const std::string &FileName )
 
   //Input base is everything except the operator names
   std::string InBase{ fnaName.Dir };
-  Common::AppendSlash( InBase );
+  //Common::AppendSlash( InBase );
   InBase.append( fnaName.GetBaseExtra() );
   // Output base name for the output files is the input + fit times + theta
   std::string OutBase{ fnaName.GetBaseExtra() };
