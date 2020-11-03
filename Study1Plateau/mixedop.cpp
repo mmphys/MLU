@@ -758,22 +758,10 @@ void MixedOp_SnkSrc::MixingAngle( degrees phi_, degrees theta_ )
       Op_WW = AngleWW / ( A_W_snk * A_W_src );
       pModelSrc += MI[ModelSrc].model.Nt();
       pModelSnk += MI[ModelSnk].model.Nt();
-      /*double zWW{ 0 };
-      double zWP{ 0 };
-      double zPW{ 0 };
-      static constexpr int MyNt{ 15 };
-      for( int t = 1; t <= MyNt; ++t )
-      {
-        zWW += pWW[t] / pPP[t];
-        zWP += pWP[t] / pPP[t];
-        zPW += pPW[t] / pPP[t];
-      }
-      zWW *= Op_WW / ( Op_PP * MyNt );
-      zWP *= Op_WP / ( Op_PP * MyNt );
-      zPW *= Op_PW / ( Op_PP * MyNt );
-      std::cout << "WW/PP = " << zWW << Common::NewLine;
-      std::cout << "WP/PP = " << zWP << Common::NewLine;
-      std::cout << "PW/PP = " << zPW << Common::NewLine;*/
+      //std::cout << "\nCos theta=" << Theta.cos << ", Sin theta=" << Theta.sin << ", Cos phi=" << Phi.cos << ", Sin phi=" << Phi.sin << Common::NewLine;
+      //std::cout << "A_P_src=" << A_P_src << ", A_W_src=" << A_W_src << "A_P_snk=" << A_P_snk << ", A_W_snk=" << A_W_src << Common::NewLine;
+      //std::cout << "PP=" << *pPP << ", PW=" << *pPW << ", WP=" << *pWP << ", WW=" << *pWW << Common::NewLine;
+      //std::cout << "M-M=" << ( Op_PP * *pPP + Op_WW * *pWW + Op_WP * *pWP + Op_PW * *pPW ) << Common::NewLine;
     }
     for( int t = 0; t < Nt; t++ )
       *pDst++ = Op_PP * *pPP++ + Op_WW * *pWW++ +     Op_WP * *pWP++ + Op_PW * *pPW++;

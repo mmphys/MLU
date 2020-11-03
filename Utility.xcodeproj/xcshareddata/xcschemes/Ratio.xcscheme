@@ -73,7 +73,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "quark_h0_h3_gT_dt_&apos;*&apos;_p_0_0_0.corr_8_17.corr_8_17.N_A1.phi_45_theta_45_g5Pg5W_g5Pg5W.fold.1835672416.h5"
+            argument = "quark_h0_h3_gT_dt_&apos;*&apos;_p_0_0_0.corr_8_17.corr_8_17.N_&apos;*&apos;.phi_&apos;*&apos;_theta_&apos;*&apos;_g5Pg5W_g5Pg5W.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

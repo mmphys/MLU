@@ -245,7 +245,14 @@ void RatioMaker::MakeRatios( std::string &FileName )
       double z[4];
       for( int i = 0; i < 4; ++i )
         z[i] = *pSrc[i]++;
-      const double d = 2 * std::sqrt( EProd * z[1] * z[2] / ( z[0] * z[3] ) );
+      // const double d = 2 * std::sqrt( EProd * z[1] * z[2] / ( z[0] * z[3] ) );
+      const double d = 2 * std::sqrt( EProd * ( z[1] / z[0] ) * ( z[2] / z[3] ) );
+      /*std::cout << "E" << sSrc << "=" << *pE[0] << ", E" << sSnk << "=" << *pE[1]
+                << ", " << sSrc << "_" << sSrc << "=" << z[0]
+                << ", " << sSrc << "_" << sSnk << "=" << z[1]
+                << ", " << sSnk << "_" << sSrc << "=" << z[2]
+                << ", " << sSnk << "_" << sSnk << "=" << z[3]
+                << ", d=" << d << Common::NewLine;*/
       if( !std::isfinite( d ) )
         throw std::runtime_error( "R2 Overflow" );
       *pDst++ = d;
