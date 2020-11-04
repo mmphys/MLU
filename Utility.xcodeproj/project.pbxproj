@@ -1115,9 +1115,7 @@
 		6850D548244A234500A53DC8 /* Noises.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6850D495244A234400A53DC8 /* Noises.hpp */; };
 		6850D549244A234500A53DC8 /* DistilPar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6850D496244A234400A53DC8 /* DistilPar.cpp */; };
 		6850D54A244A234500A53DC8 /* Perambulator.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6850D497244A234400A53DC8 /* Perambulator.hpp */; };
-		6850D54B244A234500A53DC8 /* PerambFromSolve.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6850D498244A234400A53DC8 /* PerambFromSolve.hpp */; };
 		6850D54C244A234500A53DC8 /* Perambulator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6850D499244A234400A53DC8 /* Perambulator.cpp */; };
-		6850D54D244A234500A53DC8 /* PerambFromSolve.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6850D49A244A234400A53DC8 /* PerambFromSolve.cpp */; };
 		6850D54E244A234500A53DC8 /* LapEvec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6850D49B244A234400A53DC8 /* LapEvec.cpp */; };
 		6850D54F244A234500A53DC8 /* DistilVectors.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6850D49C244A234400A53DC8 /* DistilVectors.cpp */; };
 		6850D550244A234500A53DC8 /* Noises.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6850D49D244A234400A53DC8 /* Noises.cpp */; };
@@ -1205,6 +1203,10 @@
 		686EC70B240041E90084D04D /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		687588BB2499501900E38728 /* Test_hadrons_spectrum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C182244C7863008E272B /* Test_hadrons_spectrum.cpp */; };
 		687726942466C49E00D46AEF /* Debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687726872466C32D00D46AEF /* Debug.cpp */; };
+		687D64DD2552A2DC00E4F83A /* LoadLapEvec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D64DB2552A2DC00E4F83A /* LoadLapEvec.cpp */; };
+		687D64DE2552A2DC00E4F83A /* LoadLapEvec.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687D64DC2552A2DC00E4F83A /* LoadLapEvec.hpp */; };
+		687D64F82552A30000E4F83A /* SourceSink.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687D64F62552A2FF00E4F83A /* SourceSink.hpp */; };
+		687D64F92552A30000E4F83A /* SourceSink.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D64F72552A2FF00E4F83A /* SourceSink.cpp */; };
 		688FEBE4238C1BE100977B09 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		68939D8923A032A900C30150 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8C722A708A200A85993 /* peramb-compare.cpp */; };
@@ -2663,9 +2665,7 @@
 		6850D495244A234400A53DC8 /* Noises.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Noises.hpp; sourceTree = "<group>"; };
 		6850D496244A234400A53DC8 /* DistilPar.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DistilPar.cpp; sourceTree = "<group>"; };
 		6850D497244A234400A53DC8 /* Perambulator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.cpp.h; path = Perambulator.hpp; sourceTree = "<group>"; };
-		6850D498244A234400A53DC8 /* PerambFromSolve.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PerambFromSolve.hpp; sourceTree = "<group>"; };
 		6850D499244A234400A53DC8 /* Perambulator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Perambulator.cpp; sourceTree = "<group>"; };
-		6850D49A244A234400A53DC8 /* PerambFromSolve.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PerambFromSolve.cpp; sourceTree = "<group>"; };
 		6850D49B244A234400A53DC8 /* LapEvec.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LapEvec.cpp; sourceTree = "<group>"; };
 		6850D49C244A234400A53DC8 /* DistilVectors.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DistilVectors.cpp; sourceTree = "<group>"; };
 		6850D49D244A234400A53DC8 /* Noises.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Noises.cpp; sourceTree = "<group>"; };
@@ -2762,6 +2762,12 @@
 		687726872466C32D00D46AEF /* Debug.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Debug.cpp; sourceTree = "<group>"; };
 		687726882466C32D00D46AEF /* Debug.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Debug.hpp; sourceTree = "<group>"; };
 		6877268D2466C48000D46AEF /* Debug */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Debug; sourceTree = BUILT_PRODUCTS_DIR; };
+		687D64DB2552A2DC00E4F83A /* LoadLapEvec.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadLapEvec.cpp; sourceTree = "<group>"; };
+		687D64DC2552A2DC00E4F83A /* LoadLapEvec.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LoadLapEvec.hpp; sourceTree = "<group>"; };
+		687D64F62552A2FF00E4F83A /* SourceSink.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SourceSink.hpp; sourceTree = "<group>"; };
+		687D64F72552A2FF00E4F83A /* SourceSink.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SourceSink.cpp; sourceTree = "<group>"; };
+		687D65112552A36A00E4F83A /* Test_field_io.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_field_io.cpp; path = ../Hadrons/tests/Test_field_io.cpp; sourceTree = "<group>"; };
+		687D65122552A36A00E4F83A /* Test_database_concurrency.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_database_concurrency.cpp; path = ../Hadrons/tests/Test_database_concurrency.cpp; sourceTree = "<group>"; };
 		688FEBEC238C1BE100977B09 /* mixedop */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mixedop; sourceTree = BUILT_PRODUCTS_DIR; };
 		68939D8123A016D200C30150 /* corrstat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = corrstat; sourceTree = BUILT_PRODUCTS_DIR; };
 		68AC6DE622A7114900D42F70 /* peramb-compare */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "peramb-compare"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2976,9 +2982,11 @@
 		6804C180244C782C008E272B /* Hadrons_tests */ = {
 			isa = PBXGroup;
 			children = (
+				687D65122552A36A00E4F83A /* Test_database_concurrency.cpp */,
 				680566CE24991A2000478344 /* Test_database.cpp */,
 				6804C181244C7863008E272B /* Test_diskvector.cpp */,
 				6804C186244C7864008E272B /* Test_distil.cpp */,
+				687D65112552A36A00E4F83A /* Test_field_io.cpp */,
 				6804C184244C7864008E272B /* Test_free_prop.cpp */,
 				6804C185244C7864008E272B /* Test_hadrons_meson_3pt.cpp */,
 				6804C182244C7863008E272B /* Test_hadrons_spectrum.cpp */,
@@ -5343,6 +5351,8 @@
 				6850D45F244A234300A53DC8 /* Point.hpp */,
 				6850D461244A234300A53DC8 /* Smear.cpp */,
 				6850D45E244A234300A53DC8 /* Smear.hpp */,
+				687D64F72552A2FF00E4F83A /* SourceSink.cpp */,
+				687D64F62552A2FF00E4F83A /* SourceSink.hpp */,
 			);
 			path = MSink;
 			sourceTree = "<group>";
@@ -5442,8 +5452,6 @@
 				6850D493244A234400A53DC8 /* LapEvec.hpp */,
 				6850D49D244A234400A53DC8 /* Noises.cpp */,
 				6850D495244A234400A53DC8 /* Noises.hpp */,
-				6850D49A244A234400A53DC8 /* PerambFromSolve.cpp */,
-				6850D498244A234400A53DC8 /* PerambFromSolve.hpp */,
 				6850D499244A234400A53DC8 /* Perambulator.cpp */,
 				6850D497244A234400A53DC8 /* Perambulator.hpp */,
 			);
@@ -5540,6 +5548,8 @@
 				6850D4D1244A234400A53DC8 /* LoadEigenPack.hpp */,
 				68093A2F24B8B1A50019148E /* LoadField.cpp */,
 				68093A2D24B8B1A50019148E /* LoadField.hpp */,
+				687D64DB2552A2DC00E4F83A /* LoadLapEvec.cpp */,
+				687D64DC2552A2DC00E4F83A /* LoadLapEvec.hpp */,
 				6850D4DD244A234400A53DC8 /* LoadNersc.cpp */,
 				6850D4D2244A234400A53DC8 /* LoadNersc.hpp */,
 				6850D4DE244A234400A53DC8 /* LoadPerambulator.cpp */,
@@ -6407,7 +6417,6 @@
 				6850D576244A234500A53DC8 /* TransProj.hpp in Headers */,
 				6850D58A244A234500A53DC8 /* LoadBinary.hpp in Headers */,
 				6850D574244A234500A53DC8 /* Utils.hpp in Headers */,
-				6850D54B244A234500A53DC8 /* PerambFromSolve.hpp in Headers */,
 				6850D420244A230A00A53DC8 /* A2AVectors.hpp in Headers */,
 				682D0628246A95E50052D780 /* VectorUnpack.hpp in Headers */,
 				6850D562244A234500A53DC8 /* ScaledDWF.hpp in Headers */,
@@ -6499,12 +6508,14 @@
 				6850D521244A234500A53DC8 /* RBPrecCG.hpp in Headers */,
 				6850D34E244A230A00A53DC8 /* Application.hpp in Headers */,
 				6850D55F244A234500A53DC8 /* Wilson.hpp in Headers */,
+				687D64DE2552A2DC00E4F83A /* LoadLapEvec.hpp in Headers */,
 				6850D554244A234500A53DC8 /* Bilinear.hpp in Headers */,
 				6850D505244A234500A53DC8 /* Convolution.hpp in Headers */,
 				6850D512244A234500A53DC8 /* Momentum.hpp in Headers */,
 				6850D518244A234500A53DC8 /* Point.hpp in Headers */,
 				6850D51B244A234500A53DC8 /* MixedPrecisionRBPrecCG.hpp in Headers */,
 				6850D4F5244A234500A53DC8 /* WeakMesonDecayKl2.hpp in Headers */,
+				687D64F82552A30000E4F83A /* SourceSink.hpp in Headers */,
 				6800C11C24A5F74B00DF2BA1 /* A2ASmearedMesonField.hpp in Headers */,
 				6850D586244A234500A53DC8 /* LoadCoarseEigenPack.hpp in Headers */,
 				6850D529244A234500A53DC8 /* UnitEm.hpp in Headers */,
@@ -7297,9 +7308,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				6850D4FD244A234500A53DC8 /* GaugeProp.cpp in Sources */,
+				687D64F92552A30000E4F83A /* SourceSink.cpp in Sources */,
 				6850D56D244A234500A53DC8 /* TwoPoint.cpp in Sources */,
 				68B90197249D481800739CD2 /* RareKaonNeutralDisc.cpp in Sources */,
 				6850D55B244A234500A53DC8 /* Wilson.cpp in Sources */,
+				687D64DD2552A2DC00E4F83A /* LoadLapEvec.cpp in Sources */,
 				6850D500244A234500A53DC8 /* FreeProp.cpp in Sources */,
 				6850D528244A234500A53DC8 /* Random.cpp in Sources */,
 				6850D4EE244A234500A53DC8 /* A2AMesonField.cpp in Sources */,
@@ -7328,7 +7341,6 @@
 				6850D36C244A230A00A53DC8 /* TimerArray.cpp in Sources */,
 				6809611724982ACE007F8DB3 /* StatLogger.cpp in Sources */,
 				6850D4F1244A234500A53DC8 /* A2AFourQuarkContraction.cpp in Sources */,
-				6850D54D244A234500A53DC8 /* PerambFromSolve.cpp in Sources */,
 				6860B983248E77CD0049C0DE /* SeqGammaWall.cpp in Sources */,
 				682D0629246A95E50052D780 /* VectorUnpack.cpp in Sources */,
 				68CEF13E24AA72B400A841F9 /* BaryonGamma3pt.cpp in Sources */,
