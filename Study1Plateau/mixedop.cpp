@@ -862,6 +862,7 @@ int main( int argc, const char *argv[] )
       {"srcn1", CL::SwitchType::Single, default_srcn1},
       {"snkn0", CL::SwitchType::Single, default_snkn0},
       {"snkn1", CL::SwitchType::Single, default_snkn1},
+      {"not090", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -893,11 +894,13 @@ int main( int argc, const char *argv[] )
       Par.OpNorm[idxSrc][idxWall] = cl.SwitchValue<scalar>("srcn1");
       Par.OpNorm[idxSnk][idxPoint] = cl.SwitchValue<scalar>("snkn0");
       Par.OpNorm[idxSnk][idxWall] = cl.SwitchValue<scalar>("snkn1");
+      const bool Do_0_90{ !cl.GotSwitch("not090") };
       Par.bTheta = cl.GotSwitch("theta");
       if( Par.bTheta )
       {
         Par.Theta = cl.SwitchValue<SSS>("theta");
-        Par.Theta.AlwaysIterate = { 0, 90 };
+        if( Do_0_90 )
+          Par.Theta.AlwaysIterate = { 0, 90 };
       }
       //else
         //Par.Theta.SetSingle( 0 );
@@ -911,7 +914,8 @@ int main( int argc, const char *argv[] )
         else
         {
           Par.Phi = cl.SwitchValue<SSS>("phi");
-          Par.Phi.AlwaysIterate = { 0, 90 };
+          if( Do_0_90 )
+            Par.Phi.AlwaysIterate = { 0, 90 };
         }
       }
       std::unique_ptr<MixedOp> Op;
@@ -1012,6 +1016,7 @@ int main( int argc, const char *argv[] )
     "--srcn1    Normalisation at source, operator 1, default " << default_srcn1 << "\n"
     "--snkn0    Normalisation at sink,   operator 0, default " << default_snkn0 << "\n"
     "--snkn1    Normalisation at sink,   operator 1, default " << default_snkn1 << "\n"
+    "--not090   Don't force 0 and 90 degrees\n"
     "--help     This message\n";
   }
   return iReturn;
