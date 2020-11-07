@@ -377,6 +377,8 @@ void ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count )
     if( Data.size() == 0 )
     {
       // I wasn't trying to take an estimate over many samples
+      Min = Central;
+      Max = Central;
       Low = Central;
       High  = Central;
       Check = 1;
@@ -384,6 +386,8 @@ void ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count )
     else
     {
       // Tried to take an estimate over many samples, but all values NaN
+      Min = NaN;
+      Max = NaN;
       Low = NaN;
       High  = NaN;
       Check = 0;
@@ -396,6 +400,8 @@ void ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count )
   std::size_t Index = 0.16 * Count + 0.5;
   if( Index >= Count )
     Index = Count - 1;
+  Min  = Data[0];
+  Max  = Data[Count - 1];
   Low  = Data[Index];
   High = Data[Count - 1 - Index];
   Check = static_cast<T>( Count ) / Data.size();
@@ -734,12 +740,25 @@ template<typename T> static ::H5::CompType MakeComplex()
 }
 
 // Make an HDF5 type representing a value with an error
+template<typename T> static ::H5::CompType MakeValWithErOldV1()
+{
+  ::H5::CompType myType( sizeof( ValWithErOldV1<T> ) );
+  myType.insertMember("Central", offsetof(ValWithErOldV1<T>, Central), H5::Equiv<T>::Type);
+  myType.insertMember("Low",     offsetof(ValWithErOldV1<T>, Low    ), H5::Equiv<T>::Type);
+  myType.insertMember("High",    offsetof(ValWithErOldV1<T>, High   ), H5::Equiv<T>::Type);
+  myType.insertMember("Check",   offsetof(ValWithErOldV1<T>, Check  ), H5::Equiv<T>::Type);
+  return myType;
+}
+
+// Make an HDF5 type representing a value with an error
 template<typename T> static ::H5::CompType MakeValWithEr()
 {
   ::H5::CompType myType( sizeof( ValWithEr<T> ) );
-  myType.insertMember("Central", offsetof(ValWithEr<T>, Central), H5::Equiv<T>::Type);
+  myType.insertMember("Min",     offsetof(ValWithEr<T>, Min    ), H5::Equiv<T>::Type);
   myType.insertMember("Low",     offsetof(ValWithEr<T>, Low    ), H5::Equiv<T>::Type);
+  myType.insertMember("Central", offsetof(ValWithEr<T>, Central), H5::Equiv<T>::Type);
   myType.insertMember("High",    offsetof(ValWithEr<T>, High   ), H5::Equiv<T>::Type);
+  myType.insertMember("Max",     offsetof(ValWithEr<T>, Max    ), H5::Equiv<T>::Type);
   myType.insertMember("Check",   offsetof(ValWithEr<T>, Check  ), H5::Equiv<T>::Type);
   return myType;
 }
@@ -766,6 +785,9 @@ const ::H5::CompType  H5::Equiv<std::complex<long double>>::Type{ MakeComplex<lo
 const ::H5::CompType  H5::Equiv<ValWithEr<float>>      ::Type{ MakeValWithEr<float>() };
 const ::H5::CompType  H5::Equiv<ValWithEr<double>>     ::Type{ MakeValWithEr<double>() };
 const ::H5::CompType  H5::Equiv<ValWithEr<long double>>::Type{ MakeValWithEr<long double>() };
+const ::H5::CompType  H5::Equiv<ValWithErOldV1<float>>      ::Type{ MakeValWithErOldV1<float>() };
+const ::H5::CompType  H5::Equiv<ValWithErOldV1<double>>     ::Type{ MakeValWithErOldV1<double>() };
+const ::H5::CompType  H5::Equiv<ValWithErOldV1<long double>>::Type{ MakeValWithErOldV1<long double>() };
 const ::H5::CompType  H5::Equiv<ConfigCount> ::Type{ MakeConfigCount() };
 
 // Open the specified HDF5File and group

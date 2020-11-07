@@ -54,6 +54,7 @@
 // GSL
 #define HAVE_INLINE
 #define GSL_RANGE_CHECK_OFF
+#include <gsl/gsl_cdf.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_block.h>
 #include <gsl/gsl_cblas.h>
@@ -816,28 +817,86 @@ template<> struct GSLTraits<std::complex<float>>
 #undef COMMON_GSL_BLAS_CPLX
 #undef COMMON_GSL_FUNC
 
-template <typename T = double>
-class ValWithEr
+// This is prior version. Not used except for reading in old files
+template <typename T> class ValWithErOldV1
 {
 public:
   T Central;
   T Low;
   T High;
   T Check;
+};
+
+template <typename T = double>
+class ValWithEr
+{
+public:
+  T Min;
+  T Low;
+  T Central;
+  T High;
+  T Max;
+  T Check;
   void Get( T dCentral, std::vector<T> &Data, std::size_t Count );
   ValWithEr() = default;
   ValWithEr( T dCentral, std::vector<T> &Data, std::size_t Count )
   { Get( dCentral, Data, Count ); }
-  ValWithEr( T Central, T Low, T High, T Check = 1 );
+  ValWithEr( T Min, T Low, T Central, T High, T Max, T Check = 1 );
+  static void Header( const std::string &FieldName, std::ostream &os, const std::string &Sep = Space );
+  ValWithEr<T>& operator *=( const T Scalar );
+  ValWithEr<T>  operator * ( const T Scalar ) const;
+  void cdf_chisq_Q( const T nu );
+  void cdf_fdist_Q( const T nu1, const T nu2 );
 };
 
-template <typename T> ValWithEr<T>::ValWithEr( T central_, T low_, T high_, T check_ )
-: Central{central_}, Low{low_}, High{high_}, Check{check_} {}
+template <typename T> ValWithEr<T>::ValWithEr( T min_, T low_, T central_, T high_, T max_, T check_ )
+: Min{min_}, Low{low_}, Central{central_}, High{high_}, Max{max_}, Check{check_} {}
+
+template <typename T> void ValWithEr<T>::Header( const std::string &FieldName, std::ostream &os, const std::string &Sep )
+{
+  os << FieldName << "_min" << Sep << FieldName << "_low" << Sep << FieldName << Sep
+     << FieldName << "_high" << Sep << FieldName << "_max" << Sep << FieldName << "_check";
+}
+
+template <typename T> ValWithEr<T>& ValWithEr<T>::operator *=( const T Scalar )
+{
+  Min     *= Scalar;
+  Low     *= Scalar;
+  Central *= Scalar;
+  High    *= Scalar;
+  Max     *= Scalar;
+  return *this;
+}
+
+template <typename T> ValWithEr<T> ValWithEr<T>::operator * ( const T Scalar ) const
+{
+  ValWithEr<T> Product( *this );
+  Product *= Scalar;
+  return Product;
+}
+
+template <typename T> void ValWithEr<T>::cdf_chisq_Q( const T nu )
+{
+  Min     = gsl_cdf_chisq_Q( Min,     nu );
+  Low     = gsl_cdf_chisq_Q( Low,     nu );
+  Central = gsl_cdf_chisq_Q( Central, nu );
+  High    = gsl_cdf_chisq_Q( High,    nu );
+  Max     = gsl_cdf_chisq_Q( Max,     nu );
+}
+
+template <typename T> void ValWithEr<T>::cdf_fdist_Q( const T nu1, const T nu2 )
+{
+  Min     = gsl_cdf_fdist_Q( Min,     nu1, nu2 );
+  Low     = gsl_cdf_fdist_Q( Low,     nu1, nu2 );
+  Central = gsl_cdf_fdist_Q( Central, nu1, nu2 );
+  High    = gsl_cdf_fdist_Q( High,    nu1, nu2 );
+  Max     = gsl_cdf_fdist_Q( Max,     nu1, nu2 );
+}
 
 template <typename T>
 inline std::ostream & operator<<( std::ostream &os, const ValWithEr<T> &v )
 {
-  return os << v.Central << " " << v.Low << " " << v.High << " " << v.Check;
+  return os << v.Min << Space << v.Low << Space << v.Central << Space << v.High << Space << v.Max << Space << v.Check;
 }
 
 // Generic representation of momentum
@@ -1021,6 +1080,9 @@ namespace H5 {
   template<> struct Equiv<ValWithEr<float>>         { static const ::H5::CompType Type; };
   template<> struct Equiv<ValWithEr<double>>        { static const ::H5::CompType Type; };
   template<> struct Equiv<ValWithEr<long double>>   { static const ::H5::CompType Type; };
+  template<> struct Equiv<ValWithErOldV1<float>>         { static const ::H5::CompType Type; };
+  template<> struct Equiv<ValWithErOldV1<double>>        { static const ::H5::CompType Type; };
+  template<> struct Equiv<ValWithErOldV1<long double>>   { static const ::H5::CompType Type; };
   template<> struct Equiv<ConfigCount> { static const ::H5::CompType Type; };
 
   /**
@@ -1370,7 +1432,8 @@ void SummaryHelper( const std::string & sOutFileName, const T * pData, const int
       std::string n{ FieldNames[f] };
       if( i )
         n.append( "_im" );
-      s << sep << n << sep << n << "_low " << n << "_high " << n << "_check";
+      s << sep;
+      Common::ValWithEr<T>::Header( n, s, sep );
     }
   }
   s << NewLine;
@@ -1911,7 +1974,9 @@ public:
       }
       else
         ps = &ColumnNames[t];
-      s << ( t == 0 ? "" : Sep ) << *ps << Sep << *ps << "_low" << Sep << *ps << "_high" << Sep << *ps << "_check";
+      if( t )
+        s << Sep;
+      Common::ValWithEr<T>::Header( *ps, s, Sep );
     }
   }
   const std::vector<std::string> & GetColumnNames() const { return ColumnNames; }
@@ -2277,7 +2342,10 @@ void Sample<T>::WriteSummary( const std::string &sOutFileName, bool bVerboseSumm
   const std::string Sep{ " " };
   s << "t";
   for( const std::string &n : SummaryNames )
-    s << Sep << n << Sep << n << "_low " << n << "_high " << n << "_check";
+  {
+    s << Sep;
+    ValWithEr<T>::Header( n, s, Sep );
+  }
   s << NewLine;
   const ValWithEr<scalar_type> * p{ m_pSummaryData.get() };
   for( int t = 0; t < Nt_; t++, p++ )
@@ -2656,8 +2724,29 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
                       dsp.getSimpleExtentDims( Dim );
                       if( Dim[0] == SummaryNames.size() && Dim[1] == static_cast<unsigned int>(Nt_) )
                       {
-                        ds.read( m_pSummaryData.get(), H5::Equiv<ValWithEr<scalar_type>>::Type );
-                        bOK = true;
+                        const ::H5::DataType ErrType{ ds.getDataType() };
+                        if( ErrType == H5::Equiv<ValWithErOldV1<scalar_type>>::Type )
+                        {
+                          const std::size_t Count{ SummaryNames.size() * Nt_ };
+                          std::vector<ValWithErOldV1<scalar_type>> tmp( Count );
+                          ds.read( &tmp[0], ErrType );
+                          ValWithEr<scalar_type> * dst{ m_pSummaryData.get() };
+                          for( std::size_t i = 0; i < Count; ++i )
+                          {
+                            dst[i].Central = tmp[i].Central;
+                            dst[i].Low     = tmp[i].Low;
+                            dst[i].High    = tmp[i].High;
+                            dst[i].Check   = tmp[i].Check;
+                            dst[i].Min     = 0;
+                            dst[i].Max     = 0;
+                          }
+                          bOK = true;
+                        }
+                        else
+                        {
+                          ds.read( m_pSummaryData.get(), H5::Equiv<ValWithEr<scalar_type>>::Type );
+                          bOK = true;
+                        }
                       }
                     }
                   }

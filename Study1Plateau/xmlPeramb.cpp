@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
         pPar.solver = solverName[i];
         pPar.noise = NoiseName;
         pPar.DistilParams = DistilParName;
-        pPar.UnsmearedSinkFileName = PerambName + UnsmearedSinkSuffix;
+        pPar.unsmearedSolveFileName = PerambName + UnsmearedSinkSuffix;     // 7 Nov 2020: Changed from UnsmearedSinkFileName ???
         application.createModule<MDistil::Perambulator>(PerambName, pPar);
       } else {
         static const std::string PerambDir{ "Peramb/C1/" };
