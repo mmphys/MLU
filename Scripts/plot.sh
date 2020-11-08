@@ -27,6 +27,7 @@ do_log=${log:-0}
 SaveFile=${SaveFile:-0}
 SaveFileName="$SaveFileName"
 do_offset=${offset:-0.05}
+do_whisker=${whisker:-0}
 
 # Which field names do we plot?
 f = 1
@@ -69,6 +70,10 @@ if( do_log ) {
 PlotFile="$PlotFile"
 NumFiles=words(PlotFile)
 FileType="${mmplotfile_type}"
+
+# Work out whether we have absolute minimum ... and can therefore do box and whiskers
+if( do_whisker ) {
+do_whisker=(system("awk '! /#/ {print (\$0 ~ /".word(FieldNames,1)."_min/) ? 1 : 0; exit}' ".word(PlotFile,1)) eq "0") ? 0 : 1 }
 
 # Decide on a title and output filename
 if( SaveFile == 2 ) {
@@ -131,6 +136,8 @@ NumFB=fb_max - fb_min + 1
 XF1=do_offset
 XF2=(1 - NumFields*NumFB*NumFiles)/2*XF1
 
+PlotWith="yerrorbars"
+PlotUsing=""
 if( NumFiles==1 && FileType eq "cormat" ) {
   set xtics rotate noenhanced
   set ytics noenhanced
@@ -138,26 +145,22 @@ if( NumFiles==1 && FileType eq "cormat" ) {
   plot PlotFile matrix columnheaders rowheaders with image pixels
 } else {
   if( do_log ) {
-  plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] \
-    word(PlotFile,File) using (((@my_x_axis) == 0 ? 0 : f==0 ? (@my_x_axis) : \
-    nt - (@my_x_axis))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : \
-    (abs(column(word(FieldNames,fld)))) : \
-    (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( \
-        sgn(column(word(FieldNames,fld))) ? "_low" : "_high" ))) : \
-    (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( \
-        sgn(column(word(FieldNames,fld))) ? "_high" : "_low" ))) \
-    with yerrorbars \
-    title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)
+    PlotUsing='(abs(column(word(FieldNames,fld)))) : (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( sgn(column(word(FieldNames,fld))) ? "_low" : "_high" ))) : (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( sgn(column(word(FieldNames,fld))) ? "_high" : "_low" )))'
   } else {
-  plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] \
-    word(PlotFile,File) using (((@my_x_axis) == 0 ? 0 : f==0 ? (@my_x_axis) : \
-    nt - (@my_x_axis))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : \
-    (column(word(FieldNames,fld))) : \
-    (column(word(FieldNames,fld)."_low")) : \
-    (column(word(FieldNames,fld)."_high")) \
-    with yerrorbars \
-    title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)
+    if( !do_whisker ) {
+      PlotUsing='(column(word(FieldNames,fld))) : (column(word(FieldNames,fld)."_low")) : (column(word(FieldNames,fld)."_high"))'
+    } else {
+      PlotWith="candlesticks whiskerbars"
+      PlotUsing='(column(word(FieldNames,fld)."_low")) : (column(word(FieldNames,fld)."_min")) : (column(word(FieldNames,fld)."_max")) : (column(word(FieldNames,fld)."_high"))'
+    }
   }
+  PlotCmd="plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] word(PlotFile,File) using ((("
+  PlotCmd=PlotCmd.my_x_axis.") == 0 ? 0 : f==0 ? ("
+  PlotCmd=PlotCmd.my_x_axis.") : nt - ("
+  PlotCmd=PlotCmd.my_x_axis."))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : "
+  PlotCmd=PlotCmd.PlotUsing." with "
+  PlotCmd=PlotCmd.PlotWith.' title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)'
+  eval PlotCmd
 }
 EOFMark
 }
@@ -172,12 +175,15 @@ then
   echo "key    location for key (default: top right)"
   echo "fields Names of fields to display (default: cosh)"
   echo "ref    y-value for reference line"
+  echo "err    error for reference line"
+  echo "reftext text for reference line"
   echo "log    1 to plot y on log scale, -1 to negate before plotting"
   echo "title  Title for the plot"
   echo "offset X-axis offset between series, 0 to disable (default: 0.05)"
   echo "save   \"1\" to save plots to auto-generated filenames, otherwise name of pdf"
   echo "nt     Plot backward propagating wave as well (or backward only if nt<0)"
   echo "x      definition of field for x-axis. Normally 'column(1)', but try, say 'column(1) / 12'"
+  echo "whisker non-zero to plot as box (1 sigma) + error bars (min/max)"
   exit 2
 fi
 

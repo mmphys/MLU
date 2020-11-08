@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study1/C1/test"
+      customWorkingDirectory = "$HOME/data/Study2/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -62,23 +62,19 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-ag5,gT5,gx5,gy5,gz5"
-            isEnabled = "NO">
+            argument = "-ag5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ag5,gT5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-ag5"
+            argument = "-cgT"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-cgT,gx,gy,gz"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "cgT,-gx,-gy,-gz"
+            argument = "-cgT,-gx,-gy,-gz"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -91,11 +87,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-r bootstrap_old/h1_l_p_0_0_0_g5P_g5W.bootstrap.4147798751.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-r1835672416"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o Z2/boot35/ -i Z2/meson/ &apos;h1_l_p_0_0_0*&apos; &apos;l_h1_p_0_0_0*&apos;"
@@ -107,23 +103,23 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o bootstrap/"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "&apos;GFWall/meson/*_p_0_0_0_*.h5&apos;"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "&apos;GFWP/meson/*_p_0_0_0_*.h5&apos;"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i meson/3pt_s/ -o boot_test/3pt_s/ &apos;*.h5&apos;"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-b1"
+            argument = "&apos;GFWall/meson/*_p_0_0_0_*.h5&apos;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;GFWP/meson/*_p_0_0_0_*.h5&apos;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i meson/3pt_s/ -o bootstrap/3pt_s/ &apos;*_h0_h3_*_dt_20_*.h5&apos;"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-b1"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--border Old"
@@ -131,7 +127,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--show"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

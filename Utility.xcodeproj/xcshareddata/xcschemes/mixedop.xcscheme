@@ -65,7 +65,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i PW/3pt_s/ -o mixed/3pt_s/test/ Best2pt.txt quark_h[03]_h[03]_gT_dt_&apos;*&apos;_p_0_0_0_g5P_g5P.fold.1835672416.h5"
+            argument = "-i PW/3pt_s_24/ -o mixed/3pt_s_24/ Best2pt.txt quark_h[03]_h[03]_gT_dt_&apos;*&apos;_p_0_0_0_g5P_g5P.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study1/C1"
+      customWorkingDirectory = "$HOME/data/Study2/C1"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -52,10 +52,6 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
-         <CommandLineArgument
-            argument = "-i test/bootstrap/ -o test/fold/"
-            isEnabled = "YES">
-         </CommandLineArgument>
          <CommandLineArgument
             argument = "-i GFWP/bootstrap/ -o GFWP/fold/"
             isEnabled = "NO">
@@ -73,16 +69,24 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "*g5_g5*h5,per *gT5_gT5*h5,per"
+            argument = "-i bootstrap/3pt_s/ -o fold/3pt_s/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "*g5_g5*h5,per *gT5_gT5*h5,per"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "*g5_gT5*h5,norc"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*g5_gT5*h5,nor *gT5_g5*h5,nor"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "*_gT_dt_*g5_g5*.h5,r"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>
