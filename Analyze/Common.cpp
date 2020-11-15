@@ -834,10 +834,20 @@ Gamma::Algebra H5::ReadGammaAttribute( ::H5::Group &g, const char * pAttName )
   throw ::H5::Exception( "Common::ReadGammaAttribute", "Invalid gamma algebra string" );
 }
 
+template<> void H5::ReadStringsHelper<::H5::Attribute>( const ::H5::Attribute &a, const ::H5::StrType &aType, char * * MDString )
+{
+  a.read( aType, ( void * ) MDString );
+}
+template<> void H5::ReadStringsHelper<::H5::DataSet>( const ::H5::DataSet &ds, const ::H5::StrType &aType, char * * MDString )
+{
+  ds.read( ( void * ) MDString, aType );
+}
+
 // Make a multi-dimensional string attribute
 void H5::WriteAttribute( ::H5::Group &g, const std::string &AttName, const std::vector<std::string> &vs)
 {
-  const char * MDString[ vs.size() ];
+  std::unique_ptr<char *[]> RawArray( new char * [vs.size()] );
+  const char * * const MDString{ const_cast<const char * *>( RawArray.get() ) };
   for( std::size_t i = 0; i < vs.size(); i++ )
     MDString[i] = vs[i].c_str();
   const hsize_t NDimension{ vs.size() };
@@ -845,6 +855,20 @@ void H5::WriteAttribute( ::H5::Group &g, const std::string &AttName, const std::
   ::H5::Attribute a{ g.createAttribute( AttName, Equiv<std::string>::Type, dsN ) };
   a.write( Equiv<std::string>::Type, MDString );
   a.close();
+}
+
+// Make a multi-dimensional string attribute
+void H5::WriteStringData( ::H5::Group &g, const std::string &DSName, const std::vector<std::string> &vs)
+{
+  std::unique_ptr<char *[]> RawArray( new char * [vs.size()] );
+  const char * * const MDString{ const_cast<const char * *>( RawArray.get() ) };
+  for( std::size_t i = 0; i < vs.size(); i++ )
+    MDString[i] = vs[i].c_str();
+  const hsize_t NDimension{ vs.size() };
+  ::H5::DataSpace dsN( 1, &NDimension );
+  ::H5::DataSet ds{ g.createDataSet( DSName, Equiv<std::string>::Type, dsN ) };
+  ds.write( MDString, Equiv<std::string>::Type );
+  ds.close();
 }
 
 const std::string sUnknown{ "unknown" };

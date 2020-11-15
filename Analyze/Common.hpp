@@ -1099,6 +1099,8 @@ namespace H5 {
   // Read the gamma algebra attribute string and make sure it's valid
   Gamma::Algebra ReadGammaAttribute( ::H5::Group &g, const char * pAttName );
 
+  template<typename AttributeOrDataSet> void ReadStringsHelper( const AttributeOrDataSet &a, const ::H5::StrType &aType, char * * MDString );
+
   template<typename AttributeOrDataSet>
   std::vector<std::string> ReadStrings( const AttributeOrDataSet &a )
   {
@@ -1115,7 +1117,7 @@ namespace H5 {
       MDString[i] = nullptr;
     try
     {
-      a.read( aType, (void *)MDString );
+      ReadStringsHelper( a, aType, MDString );
     }
     catch(...)
     {
@@ -1136,6 +1138,8 @@ namespace H5 {
 
   // Make a multi-dimensional string attribute
   void WriteAttribute( ::H5::Group &g, const std::string &AttName, const std::vector<std::string> &vs );
+  // Make a multi-dimensional string dataset
+  void WriteStringData( ::H5::Group &g, const std::string &DSName, const std::vector<std::string> &vs );
 };
 
 // Enumeration describing whether signal is in complex or real part
@@ -2613,15 +2617,32 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
         ::H5::Exception::clearErrorStack();
       }
       std::vector<std::string> myFileList;
+      // Try to load the FileList from dataSet first, falling back to attribute
+      bool bGotFileList{ false };
       try
       {
-        a = g.openAttribute(sFileList);
-        myFileList = H5::ReadStrings( a );
-        a.close();
+        ::H5::DataSet ds = g.openDataSet( sFileList );
+        myFileList = H5::ReadStrings( ds );
+        ds.close();
+        bGotFileList = true;
       }
       catch(const ::H5::Exception &)
       {
         ::H5::Exception::clearErrorStack();
+      }
+      if( !bGotFileList )
+      {
+        try
+        {
+          a = g.openAttribute(sFileList);
+          myFileList = H5::ReadStrings( a );
+          a.close();
+          bGotFileList = true;
+        }
+        catch(const ::H5::Exception &)
+        {
+          ::H5::Exception::clearErrorStack();
+        }
       }
       std::vector<Common::ConfigCount> myConfigCount;
       try
@@ -2848,12 +2869,9 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
       dsp.close();
       NumAttributes++;
     }
-    if( FileList.size() )
-    {
-      H5::WriteAttribute( g, sFileList, FileList );
-      NumAttributes++;
-    }
     NumAttributes += WriteAttributes( g );
+    if( FileList.size() )
+      H5::WriteStringData( g, sFileList, FileList );
     if( NumExtraSamples == 1 )
     {
       Dims[0] = Nt_;

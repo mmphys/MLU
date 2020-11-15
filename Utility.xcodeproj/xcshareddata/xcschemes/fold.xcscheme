@@ -61,16 +61,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;*&apos;_&apos;g5_g5.*.h5,per&apos;"
+            argument = "*g5_g5*h5,per"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "*gT5_gT5*h5,per"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "*_p_2_0_0_g5_gT5*h5,norc"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "*g5_g5*h5,per *gT5_gT5*h5,per"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "*g5_gT5*h5,norc"
-            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*g5_gT5*h5,nor *gT5_g5*h5,nor"
