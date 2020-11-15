@@ -53,23 +53,15 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i GFWP/bootstrap/ -o GFWP/fold/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i GFWP/boot35/ -o GFWP/fold35/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i GFWW/bootstrap/ -o GFWW/fold/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i Z2/2pt/bootstrap/ -o Z2/2pt/fold/"
-            isEnabled = "NO">
+            argument = "-i bootstrap/2pt/ -o fold/2pt/"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i bootstrap/3pt_s/ -o fold/3pt_s/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;*&apos;_&apos;g5_g5.*.h5,per&apos;"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -86,7 +78,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*_gT_dt_*g5_g5*.h5,r"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

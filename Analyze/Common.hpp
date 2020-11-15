@@ -1236,18 +1236,19 @@ inline std::vector<int> ParseOptions( const char * pStringStart, std::size_t con
                                       bool bCaseInsensitive = true, bool bNoRepeats = true, bool bIgnoreSpace = true )
 {
   std::vector<int> Count( sOption.length(), 0 );
-  for( std::size_t i = 0; i < Len; i++ )
+  for( std::size_t i = 0; i < Len; ++i )
   {
     char c = pStringStart[i];
-    if( bIgnoreSpace && std::isspace( c ) )
-      continue;
-    int idx = 0;
-    while( idx < sOption.length() && Compare( c, sOption[idx] ) )
-      ;
-    if( idx >= sOption.length() || ( Count[idx]++ && bNoRepeats ) )
+    if( !bIgnoreSpace || !std::isspace( c ) )
     {
-      const std::string s{ pStringStart, Len };
-      throw std::runtime_error( "Option string '" + s + "' doesn't match \"" + sOption + "\"" );
+      int idx = 0;
+      while( idx < sOption.length() && Compare( c, sOption[idx] ) )
+        ++idx;
+      if( idx >= sOption.length() || ( Count[idx]++ && bNoRepeats ) )
+      {
+        const std::string s{ pStringStart, Len };
+        throw std::runtime_error( "Option string '" + s + "' doesn't match \"" + sOption + "\"" );
+      }
     }
   }
   return Count;
