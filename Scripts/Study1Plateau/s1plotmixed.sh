@@ -54,8 +54,11 @@ then
 fi
 
 case ${field:=cosh} in
-  cosh | exp) field_title="$field mass";;
-           *) field_title="$field";;
+   exp) field_title="$field mass"
+        yAxisLabel=" = log(C(t-1)/C(t))";;
+  cosh) field_title="$field mass"
+        yAxisLabel=" = arccosh((C(t-1)+C(t+1))/(2C(t)))";;
+     *) field_title="$field";;
 esac
 
 ###################################################
@@ -66,6 +69,7 @@ gnuplot <<-EOFMark
 
 FieldName="$field"
 FieldTitle="$field_title"
+yAxisLabel="$yAxisLabel"
 OtherAngle="$OtherAngle"
 angle="${angle}"
 PlotTitle="$PlotTitle"
@@ -77,7 +81,7 @@ my_xrange="${ti:-*}:${tf:-*}"
 my_yrange="${yrange:-*:*}"
 my_xtics="${xtics}"
 #my_key="${key:-bottom right}"
-my_key="${key:-top right}"
+my_key="${key:-top right maxrows 3}"
 times="${times}"
 do_log=${log:-0}
 RefVal=${ref:--777}
@@ -89,7 +93,7 @@ if( angle eq "phi" ) { angle_short="φ" }
 
 # Begin Felix
 #set term pdf size 5, 1.2
-set key @my_key maxrows 3
+set key @my_key
 #set yrange [0.99:1.035]
 #set ytics 0.01
 #set xrange [${ti}-3.2:${tf}+.2-2]
@@ -106,8 +110,8 @@ OutFile=PlotPrefix
 if( OtherAngle ne "" ) { OutFile=OutFile.OtherAngle."_" }
 OutFile=OutFile."${start}_${stop}_${step}".PlotSuffix.FieldNameFile.PlotSeed."pdf"
 set output OutFile
-set ylabel '{/Helvetica:Italic aE}_{eff}'
-set xlabel 't/a' offset 0,1
+set ylabel '{/Helvetica:Italic aE}_{eff}'.yAxisLabel
+set xlabel 't/a' offset 0,0.75
 set yrange [@my_yrange]
 if( my_xtics ne "" ) { set xtics @my_xtics }
 
@@ -139,8 +143,6 @@ set pointsize 0.45
 #set palette defined ( 15 "blue", 16 "red", 17 "green")
 
 set title FieldTitle." ".PlotTitle noenhanced
-#set ylabel 'Chi squared per degree of freedom'
-#set logscale y
 FieldLow=FieldName."_low"
 FieldHigh=FieldName."_high"
 plot for [i=1:words(times)] \

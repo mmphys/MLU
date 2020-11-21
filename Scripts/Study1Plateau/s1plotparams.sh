@@ -34,13 +34,22 @@ do_timin=${do_timin}
 TIMin=${timin:-0}
 do_timax=${do_timax}
 TIMax=${timax:-0}
-my_key="${key:-bottom left}"
+my_key="${key:-bottom left maxrows 2}"
 my_yrange="${yrange:-*:*}"
 MyColumnHeadings="${MyColumnHeadings}"
 MyColumnHeadingsNoUS="${MyColumnHeadingsNoUS}"
 my_xtics="${xtics}"
 do_log=${do_log}
 xAxisName="${xaxis:-pvalueH pvalue ChiSqPerDof}"
+RefVal="${ref}"
+RefErr="${err}"
+RefText="${reftext}"
+RefSuffix="${refsuffix}"
+
+# Work out how many fields there are per column by checking for absolute minimum
+GotAbsMin=(system("awk '! /#/ {print (\$0 ~ /E0_min/) ? 1 : 0; exit}' ".word(PlotFile,1)) eq "0") ? 0 : 1
+FieldsPerColumn=GotAbsMin ? 6 : 4
+#print "FieldsPerColumn=".sprintf("%d",FieldsPerColumn)
 
 # Find a column marked E0
 MyColumnHeadings=system("awk '/^#/ {next}; {print \$0;exit}' ".PlotFile)
@@ -54,7 +63,16 @@ while( word(MyColumnHeadings,FieldOffset) ne "E0" ) {
 #print "E0 field in column ".FieldOffset
 #Work out how many exponentials there were in the fit
 NumExp=1
-while( word(MyColumnHeadings,FieldOffset+NumExp*4) eq "E".NumExp ) { NumExp=NumExp+1 }
+#while( word(MyColumnHeadings,FieldOffset+NumExp*FieldsPerColumn) eq "E".NumExp ) { NumExp=NumExp+1 }
+SearchField=1
+while( word(MyColumnHeadings,FieldOffset+SearchField*FieldsPerColumn) ne "" ) {
+  ThisField=word(MyColumnHeadings,FieldOffset+SearchField*FieldsPerColumn)
+  if( ThisField[1:1] eq "E" ) {
+    ThisNumExp=ThisField[2:*]+1
+    if( NumExp < ThisNumExp ) { NumExp = ThisNumExp }
+  }
+  SearchField=SearchField+1
+}
 #print "NumExp=".NumExp
 
 # Now look for x-axis fields. Prefer fields at the start
@@ -85,7 +103,8 @@ if( xAxisName eq "ChiSqPerDof" ) {
 }
 
 if( do_stat ) { sStatDescr=sStatDescr.' ('.sStatCondHuman.' '.sprintf("%g",stat_limit).")" }
-FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit using ${mmplotfile_ops_all//_/ }"
+#FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit using ${mmplotfile_ops_all//_/ }"
+FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit of ${mmplotfile_base}"
 OutBase="${mmplotfile_base}.${mmplotfile_corr_all}.${mmplotfile_ops_all}."
 OutSuffix="_".xAxisName.".${mmplotfile_seed}.pdf"
 
@@ -112,6 +131,8 @@ if( strlen( Condition ) ) { Condition=Condition.' ? NaN : ' }
 
 WithLabels='with labels font "Arial,6" offset char 0,'
 
+# Loop through all fields, plotting them
+
 while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   MyField=word(MyColumnHeadings,FieldOffset)
   MyFieldNoUS=word(MyColumnHeadingsNoUS,FieldOffset)
@@ -120,13 +141,25 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   set output OutFile
   #set label 1 OutFile noenhanced at screen 1, 0 right font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
   set label 1 OutFile noenhanced at screen 1, 0.5 center rotate by -90 font "Arial,8" front textcolor "grey40" offset character -1.5, character 0
-  if (MyField eq "E0") {
-    set object 1 rect from graph 0, first 0.99561 to graph 1, first 0.99751 fs solid 0.05 noborder fc rgb "gray10" behind
-    set arrow from graph 0, first 0.99656 to graph 1, first 0.99656 nohead front lc rgb "gray40" lw 0.25  dashtype "-"
-    set label 2 "E_0=0.99656(95), ArXiv:1812.08791" at screen 0, 0 font "Arial,8" front textcolor "grey40" offset character 1, character 0.75
+  IsEnergy=0
+  if (MyField[1:1] eq "E") {
+    EnergyLevel=MyField[2:*] + 0
+    if( EnergyLevel < words(RefVal) ) {
+      IsEnergy=1
+      ThisRef=word(RefVal,EnergyLevel+1)+0
+      ThisErr=word(RefErr,EnergyLevel+1)+0
+      if( EnergyLevel < words(RefText) ) { ThisRefText=word(RefText,EnergyLevel+1)
+      } else { ThisRefText=" ± ".word(RefErr,EnergyLevel+1) }
+      ThisRefText=word(RefVal,EnergyLevel+1).ThisRefText.RefSuffix
+      set object 1 rect from graph 0, first ThisRef-ThisErr to graph 1, first ThisRef+ThisErr \
+        fs solid 0.05 noborder fc rgb "gray10" behind
+      set arrow from graph 0, first ThisRef to graph 1, first ThisRef nohead front lc rgb "gray40" lw 0.25  dashtype "-"
+      set label 2 "a ".MyField." = ".ThisRefText \
+        at screen 0, 0 font "Arial,8" front textcolor "grey40" offset character 1, character 0.75
+    }
   }
   MyTitle = MyFieldNoUS.FitName
-  set title MyTitle
+  set title MyTitle noenhanced
   set ylabel MyFieldNoUS
   
   plot \
@@ -136,8 +169,8 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
     for [idx=0:NBlock-1] '' index idx using (@Condition column(xAxisCol)):(@Condition column(MyField."_high")):(column("tf")) \
       @WithLabels 0.5 notitle
 
-  if (MyField eq "E0") { unset object 1; unset arrow; unset label 2 }
-  FieldOffset=FieldOffset + 4
+  if (IsEnergy) { unset object 1; unset arrow; unset label 2 }
+  FieldOffset=FieldOffset + FieldsPerColumn
 }
 
 unset xrange
@@ -147,7 +180,7 @@ unset yrange
 OutFile=OutBase.xAxisName.'-seq'.OutSuffix
 set output OutFile
 set label 1 OutFile noenhanced at screen 1, 0 right font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
-set title sStatDescr." ".FitName
+set title sStatDescr." ".FitName noenhanced
 set ylabel sStatDescr
 set xlabel 'Sequence'
 set key top left

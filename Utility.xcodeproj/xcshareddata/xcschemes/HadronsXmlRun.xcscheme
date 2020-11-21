@@ -53,15 +53,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "Study1/Z2.template.xml"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "Felix/distil.xml"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "vsimple.xml"
+            argument = "test.xml"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

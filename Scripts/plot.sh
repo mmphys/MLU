@@ -18,6 +18,8 @@ xargs="${xargs}"
 my_xrange="${ti:-*}:${tf:-*}"
 my_yrange="${yrange:-*:*}"
 my_cbrange="${cbrange:--1:1}"
+my_ylabel="${ylabel}"
+my_xlabel="${xlabel}"
 my_key="${key:-top right}"
 FieldNames="${fields:-cosh}"
 RefVal=${ref:--777}
@@ -102,10 +104,13 @@ set key font "Arial,8" @my_key noenhanced
 set xrange[@my_xrange]
 set yrange[@my_yrange]
 if( do_title ) {
-  set title my_title
+  # This title might be set to empty string, meaning - no title
+  if( my_title ne "" ) { set title my_title }
 } else {
   set title MyTitle noenhanced
 }
+if( my_xlabel ne "" ) { set xlabel my_xlabel }
+if( my_ylabel ne "" ) { set ylabel my_ylabel }
 
 if( RefVal != -777 ) {
   RefErrString=""
@@ -160,6 +165,7 @@ if( NumFiles==1 && FileType eq "cormat" ) {
   PlotCmd=PlotCmd.my_x_axis."))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : "
   PlotCmd=PlotCmd.PlotUsing." with "
   PlotCmd=PlotCmd.PlotWith.' title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)'
+  #PlotCmd=PlotCmd.PlotWith.' title "ΔT = ".word("12 14 16 20 24 28 32",File)'
   eval PlotCmd
 }
 EOFMark
@@ -188,7 +194,7 @@ then
 fi
 
 if [[ "$nt" != "" && "$tf" == "" ]]; then tf=$(( (nt < 0 ? -nt : nt)/2 )); fi
-if [[ "$title" == "" ]]; then do_title=0; else do_title=1; fi
+if [[ "${title+z}" == "z" ]]; then do_title=1; else do_title=0; fi
 
 # If we specify a filename, then we want a single plot
 unset SaveFileName

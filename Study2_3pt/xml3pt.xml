@@ -24,18 +24,16 @@
       <!--<end>4</end>-->
       <step>4</step>
     </Timeslices>
-    <Type>GF</Type>
+    <Type>Z2</Type>
     <Momenta>0_0_0</Momenta>
     <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
-    <deltaT>24 28 32</deltaT>
-    <!--<deltaT>12 14 16 20</deltaT>-->
-    <OutputBase>C1/meson/</OutputBase>
-    <!--<Momenta>1_0_0</Momenta>
-    <deltaT>16</deltaT>
-    <OutputBase>C1/unit/</OutputBase>-->
+    <!--<deltaT>12</deltaT>-->
+    <deltaT>12 14 16 20 24 28 32</deltaT>
+    <OutputBase></OutputBase>
+    <!--<Gauge></Gauge>-->
     <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>
     <GaugeFix>
-      <gauge>Not needed - will use gauge field above</gauge>
+      <gauge>Not used</gauge>
       <alpha>0.05</alpha>
       <maxiter>1000000</maxiter>
       <Omega_tol>1e-08</Omega_tol>
@@ -43,6 +41,11 @@
       <gaugeFix>coulomb</gaugeFix>
       <Fourier>true</Fourier>
     </GaugeFix>
+    <StoutSmear>
+      <gauge>Not used</gauge>
+      <steps>3</steps>
+      <rho>0.1</rho>
+    </StoutSmear>
     <TwoPoint>true</TwoPoint>
     <HeavyQuark>true</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
@@ -59,6 +62,9 @@
     <mass>0.50</mass>
     <Ls>12</Ls>
     <M5>1.0</M5>
+    <boundary>1 1 1 -1</boundary>
+    <twist>0. 0. 0. 0.</twist>
+    <scale>2</scale>
     <maxIteration>5000</maxIteration>
     <residual>1e-12</residual>
     <GaugeSmear>true</GaugeSmear>
@@ -69,6 +75,9 @@
     <mass>0.58</mass>
     <Ls>12</Ls>
     <M5>1.0</M5>
+    <boundary>1 1 1 -1</boundary>
+    <twist>0. 0. 0. 0.</twist>
+    <scale>2</scale>
     <maxIteration>5000</maxIteration>
     <residual>1e-12</residual>
     <GaugeSmear>true</GaugeSmear>
@@ -79,6 +88,9 @@
     <mass>0.64</mass>
     <Ls>12</Ls>
     <M5>1.0</M5>
+    <boundary>1 1 1 -1</boundary>
+    <twist>0. 0. 0. 0.</twist>
+    <scale>2</scale>
     <maxIteration>5000</maxIteration>
     <residual>1e-12</residual>
     <GaugeSmear>true</GaugeSmear>
@@ -89,6 +101,9 @@
     <mass>0.69</mass>
     <Ls>12</Ls>
     <M5>1.0</M5>
+    <boundary>1 1 1 -1</boundary>
+    <twist>0. 0. 0. 0.</twist>
+    <scale>2</scale>
     <maxIteration>5000</maxIteration>
     <residual>1e-12</residual>
     <GaugeSmear>true</GaugeSmear>
@@ -97,19 +112,25 @@
   <NumSpectatorQuark>1</NumSpectatorQuark>
   <SpectatorQuark0>
     <flavour>s</flavour>
-    <mass>0.04</mass>
+    <mass>0.03224</mass>
     <Ls>16</Ls>
     <M5>1.8</M5>
+    <boundary>1 1 1 -1</boundary>
+    <twist>0. 0. 0. 0.</twist>
+    <scale>0</scale>
     <maxIteration>5000</maxIteration>
     <residual>1e-12</residual>
     <GaugeSmear>false</GaugeSmear>
     <EigenPackFilename></EigenPackFilename>
   </SpectatorQuark0>
   <SpectatorQuark1>
-    <flavour>l</flavour>
+    <flavour>lu</flavour>
     <mass>0.005</mass>
     <Ls>16</Ls>
     <M5>1.8</M5>
+    <boundary>1 1 1 -1</boundary>
+    <twist>0. 0. 0. 0.</twist>
+    <scale>0</scale>
     <maxIteration>5000</maxIteration>
     <residual>1e-8</residual>
     <GaugeSmear>false</GaugeSmear>
@@ -117,10 +138,13 @@
   </SpectatorQuark1>
   <NumSpectator2ptQuark>1</NumSpectator2ptQuark>
   <Spectator2ptQuark0>
-    <flavour>sp</flavour>
-    <mass>0.03224</mass>
+    <flavour>su</flavour>
+    <mass>0.04</mass>
     <Ls>16</Ls>
     <M5>1.8</M5>
+    <boundary>1 1 1 -1</boundary>
+    <twist>0. 0. 0. 0.</twist>
+    <scale>0</scale>
     <maxIteration>5000</maxIteration>
     <residual>1e-12</residual>
     <GaugeSmear>false</GaugeSmear>

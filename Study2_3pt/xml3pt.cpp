@@ -132,29 +132,46 @@ GRID_SERIALIZABLE_CLASS_MEMBERS(Quark,
                                 double,       mass,
                                 unsigned int, Ls,
                                 double,       M5,
+                                std::string,  boundary,
+                                std::string,  twist,
+                                double,       scale,
                                 // Solver parameters
                                 int,          maxIteration,
                                 double,       residual,
                                 bool,         GaugeSmear,
                                 std::string,  EigenPackFilename )
+protected:
+  template<typename Action> void ActionCommon( Application &app, const std::string &name, typename Action::Par &Par ) const;
 public:
-  Quark() = default;
-  Quark(std::string flavour_, double mass_, unsigned int Ls_, double M5_, int maxIteration_,
-        double residual_, bool GaugeSmear_ = false, const char * EigenPackFilename_ = nullptr)
-  : flavour{flavour_}, mass{mass_}, Ls{Ls_}, M5{M5_}, maxIteration{maxIteration_},
-    residual{residual_}, GaugeSmear{GaugeSmear_},
-    EigenPackFilename{EigenPackFilename_ ? EigenPackFilename_ : "" } {}
+  void CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const;
 };
-/*
-static const std::string GaugePathName{ "/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat" };
-static const char EigenPackC1_l[] = "/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine";
-static const Quark Quark_l {"l" , 0.005, 16, 1.8, 5000, 1e-8, false, EigenPackC1_l};
-static const Quark Quark_s {"s" , 0.04, 16, 1.8, 5000, 1e-12};
-static const Quark Quark_h0{"h0", 0.50, 12, 1.0, 5000, 1e-12, true};
-static const Quark Quark_h1{"h1", 0.58, 12, 1.0, 5000, 1e-12, true};
-static const Quark Quark_h2{"h2", 0.64, 12, 1.0, 5000, 1e-12, true};
-static const Quark Quark_h3{"h3", 0.69, 12, 1.0, 5000, 1e-12, true};
-*/
+
+template<typename Action> void Quark::ActionCommon( Application &app, const std::string &name, typename Action::Par &Par ) const
+{
+  Par.Ls       = Ls;
+  Par.M5       = M5;
+  Par.mass     = mass;
+  Par.boundary = boundary;
+  Par.twist    = twist;
+  app.createModule<Action>( name, Par );
+}
+
+void Quark::CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const
+{
+  if( scale <= 0 )
+  {
+    MAction::DWF::Par Par;
+    Par.gauge = std::move( Gauge );
+    ActionCommon<MAction::DWF>( app, name, Par );
+  }
+  else
+  {
+    MAction::ScaledDWF::Par Par;
+    Par.gauge = std::move( Gauge );
+    Par.scale = scale;
+    ActionCommon<MAction::ScaledDWF>( app, name, Par );
+  }
+}
 
 class QuarkType
 {
@@ -286,6 +303,7 @@ struct AppParams
                                       std::string,  OutputBase,
                                       std::string,  Gauge,
              Grid::Hadrons::MGauge::GaugeFix::Par,  GaugeFix,
+                       MGauge::StoutSmearing::Par,  StoutSmear,
                                       bool,         TwoPoint,
                                       bool,         HeavyQuark,
                                       bool,         HeavyAnti,
@@ -601,10 +619,8 @@ bool ModGauge::AddDependencies( HModList &ModList ) const
   if( bSmeared )
   {
     // Stout smeared field
-    MGauge::StoutSmearing::Par stoutPar;
+    MGauge::StoutSmearing::Par stoutPar( ModList.params.Run.StoutSmear );
     stoutPar.gauge = bFixed ? ModList.TakeOwnership(new ModGauge( bFixed, false )) : GaugeFieldName;
-    stoutPar.steps = 3;
-    stoutPar.rho = 0.1;
     ModList.application.createModule<MGauge::StoutSmearing>(name, stoutPar);
   }
   else if( bFixed )
@@ -640,18 +656,9 @@ ModAction::ModAction(const QuarkType &qt_) : qt{qt_}
 
 bool ModAction::AddDependencies( HModList &ModList ) const
 {
-  MAction::DWF::Par actionPar;
-  actionPar.gauge = ModList.TakeOwnership( new ModGauge( qt.GaugeFixed(), qt.q.GaugeSmear &&
-                                                         !ModList.params.Run.Gauge.empty() ) );
-  actionPar.Ls    = qt.q.Ls;
-  actionPar.M5    = qt.q.M5;
-  actionPar.mass  = qt.q.mass;
-  // set fermion boundary conditions to be periodic space, antiperiodic time.
-  static const std::string boundary{"1 1 1 -1"};
-  static const std::string twist{"0. 0. 0. 0."};
-  actionPar.boundary = boundary;
-  actionPar.twist = twist;
-  ModList.application.createModule<MAction::DWF>(name, actionPar);
+  std::string Gauge = ModList.TakeOwnership( new ModGauge( qt.GaugeFixed(), qt.q.GaugeSmear &&
+                                                           !ModList.params.Run.Gauge.empty() ) );
+  qt.q.CreateAction( ModList.application, name, std::move( Gauge ) );
   return true;
 }
 
@@ -706,20 +713,26 @@ bool ModSolver::AddDependencies( HModList &ModList ) const
 
 class ModProp : public HMod
 {
+protected:
+  std::string FileName;
 public:
   static const std::string Prefix;
+  static const std::string PrefixConserved;
+  static const std::string PrefixConservedSep;
   const QuarkType &qt;
   const Common::Momentum p;
   const int t;
   const SinkT SinkSmearing;
   // bForcePointSink=true to make the underlying propagator for wall-sinks
-  ModProp( const QuarkType &qt, const Common::Momentum &p, int t, bool bForcePointSink = false );
+  ModProp(const std::string &OutputBase, const QuarkType &qt, const Common::Momentum &p, int t, bool bForcePointSink=false);
   virtual bool AddDependencies( HModList &ModList ) const;
 };
 
 const std::string ModProp::Prefix{ "Prop" };
+const std::string ModProp::PrefixConserved{ "Ward" };
+const std::string ModProp::PrefixConservedSep{ PrefixConserved + Sep };
 
-ModProp::ModProp(const QuarkType &qt_, const Common::Momentum &p_, int t_,bool bForcePoint)
+ModProp::ModProp(const std::string &OutputBase, const QuarkType &qt_, const Common::Momentum &p_, int t_,bool bForcePoint)
 : qt{qt_}, p{p_}, t{t_}, SinkSmearing{ bForcePoint ? SinkT::Point : qt_.Sink }
 {
   name = Prefix;
@@ -728,6 +741,11 @@ ModProp::ModProp(const QuarkType &qt_, const Common::Momentum &p_, int t_,bool b
     Append( name, SinkSmearing );
   Append( name, qt.Flavour() );
   AppendPT( name, t, p );
+  if( !bForcePoint && SinkSmearing == SinkT::Point && !p )
+  {
+    FileName = OutputBase + PrefixConserved + "/";
+    FileName.append( name );
+  }
 }
 
 bool ModProp::AddDependencies( HModList &ModList ) const
@@ -740,12 +758,23 @@ bool ModProp::AddDependencies( HModList &ModList ) const
       par.source = ModList.TakeOwnership( new ModSource( qt.Type, p, t ) );
       par.solver = ModList.TakeOwnership( new ModSolver( qt ) );
       ModList.application.createModule<MFermion::GaugeProp>(name, par);
+      if( !FileName.empty() )
+      {
+        // Check residual mass for zero-momentum propagators
+        MContraction::WardIdentity::Par WIP;
+        WIP.q = name;
+        WIP.action = ModList.TakeOwnership( new ModAction( qt ) );
+        WIP.mass = qt.q.mass;
+        WIP.test_axial = true;
+        WIP.output = FileName;
+        ModList.application.createModule<MContraction::WardIdentity>(PrefixConservedSep + name, WIP);
+      }
     }
       break;
     case SinkT::Wall:
     {
       MSink::Smear::Par smearPar;
-      smearPar.q = ModList.TakeOwnership( new ModProp( qt, p, t, true ) );
+      smearPar.q = ModList.TakeOwnership( new ModProp( ModList.params.Run.OutputBase, qt, p, t, true ) );
       smearPar.sink = ModList.TakeOwnership( new ModSinkSmear( p0 ) );
       ModList.application.createModule<MSink::Smear>(name, smearPar);
     }
@@ -796,7 +825,7 @@ ModSourceSeq::ModSourceSeq( int current_, int deltaT_, const Common::Momentum &p
 template<typename T> void ModSourceSeq::AddDependenciesT( HModList &ModList ) const
 {
   typename T::Par seqPar;
-  seqPar.q = ModList.TakeOwnership( new ModProp( qt, p, t, true ) );
+  seqPar.q = ModList.TakeOwnership( new ModProp( ModList.params.Run.OutputBase, qt, p, t, true ) );
   seqPar.tA  = ModList.params.TimeBound( t + deltaT );
   seqPar.tB  = seqPar.tA;
   seqPar.mom = pSeq.to_string4d( Space );
@@ -912,8 +941,8 @@ bool ModContract2pt::AddDependencies( HModList &ModList ) const
   mesPar.gammas = "all";
   const Common::Momentum p_q2  { Sink == SinkT::Wall ? p  : p0 };
   const Common::Momentum p_sink{ Sink == SinkT::Wall ? p0 : -p };
-  mesPar.q1 = ModList.TakeOwnership(new ModProp( QuarkType( Type, Sink, q1 ), p, t ));
-  mesPar.q2 = ModList.TakeOwnership(new ModProp( QuarkType( Type, Sink, q2 ), p_q2, t ));
+  mesPar.q1 = ModList.TakeOwnership(new ModProp( ModList.params.Run.OutputBase, QuarkType( Type, Sink, q1 ), p, t ));
+  mesPar.q2 = ModList.TakeOwnership(new ModProp( ModList.params.Run.OutputBase, QuarkType( Type, Sink, q2 ), p_q2, t ));
   mesPar.sink = ModList.TakeOwnership(new ModSink( p_sink ));
   ModList.application.createModule<MContraction::Meson>(name, mesPar);
   return true;
@@ -982,13 +1011,13 @@ bool ModContract3pt::AddDependencies( HModList &ModList ) const
   const QuarkType qtSpec( Type, Sink, qSpectator );
   if( bInvertSeq )
   {
-    par.q1 = ModList.TakeOwnership( new ModProp( qtSrc, p, t, true ) );
+    par.q1 = ModList.TakeOwnership( new ModProp( ModList.params.Run.OutputBase, qtSrc, p, t, true ) );
     par.q2 = ModList.TakeOwnership(new ModPropSeq( qSnk, Current, deltaT, bSinkMom ?  p : p0, qtSpec, p0, t ) );
   }
   else
   {
     par.q1 = ModList.TakeOwnership(new ModPropSeq( qSnk, Current, deltaT, bSinkMom ? -p : p0, qtSpec, p , t ) );
-    par.q2 = ModList.TakeOwnership( new ModProp( qtSrc, p0, t, true ) );
+    par.q2 = ModList.TakeOwnership( new ModProp( ModList.params.Run.OutputBase, qtSrc, p0, t, true ) );
   }
   par.sink = ModList.TakeOwnership( new ModSink( bSinkMom ? p0 : -p ) );
   ModList.application.createModule<MContraction::Meson>(name, par);

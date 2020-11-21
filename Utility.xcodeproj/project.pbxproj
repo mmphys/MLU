@@ -1221,6 +1221,8 @@
 		68B96265244AE52800E5CF09 /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96261244AE50100E5CF09 /* xmlZ2.cpp */; };
 		68B96266244AE52C00E5CF09 /* xmlGFWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96262244AE50100E5CF09 /* xmlGFWall.cpp */; };
 		68B96267244AE53100E5CF09 /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96263244AE50100E5CF09 /* mixedop.cpp */; };
+		68C858B6256836D400C708DE /* WardIdentity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68C858B4256836D400C708DE /* WardIdentity.cpp */; };
+		68C858B7256836D400C708DE /* WardIdentity.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68C858B5256836D400C708DE /* WardIdentity.hpp */; };
 		68CEF13D24AA72B400A841F9 /* BaryonGamma3pt.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */; };
 		68CEF13E24AA72B400A841F9 /* BaryonGamma3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */; };
 		68D0E9CD24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */; };
@@ -2789,6 +2791,8 @@
 		68B96262244AE50100E5CF09 /* xmlGFWall.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlGFWall.cpp; sourceTree = "<group>"; };
 		68B96263244AE50100E5CF09 /* mixedop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mixedop.cpp; sourceTree = "<group>"; };
 		68BEFF6A2343A75A0031E3E3 /* xmlZ2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlZ2; sourceTree = BUILT_PRODUCTS_DIR; };
+		68C858B4256836D400C708DE /* WardIdentity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WardIdentity.cpp; sourceTree = "<group>"; };
+		68C858B5256836D400C708DE /* WardIdentity.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = WardIdentity.hpp; sourceTree = "<group>"; };
 		68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BaryonGamma3pt.hpp; sourceTree = "<group>"; };
 		68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BaryonGamma3pt.cpp; sourceTree = "<group>"; };
 		68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrecGeneralisedConjugateResidualNonHermitian.h; sourceTree = "<group>"; };
@@ -5286,6 +5290,8 @@
 				6850D431244A234300A53DC8 /* SigmaToNucleonEye.hpp */,
 				6850D43C244A234300A53DC8 /* SigmaToNucleonNonEye.cpp */,
 				6850D42C244A234300A53DC8 /* SigmaToNucleonNonEye.hpp */,
+				68C858B4256836D400C708DE /* WardIdentity.cpp */,
+				68C858B5256836D400C708DE /* WardIdentity.hpp */,
 				6850D437244A234300A53DC8 /* WeakEye3pt.cpp */,
 				6850D427244A234300A53DC8 /* WeakEye3pt.hpp */,
 				6850D428244A234300A53DC8 /* WeakMesonDecayKl2.cpp */,
@@ -6435,6 +6441,7 @@
 				682D0621246A95AA0052D780 /* CheckerboardSpinColorDiagonal.hpp in Headers */,
 				6850D561244A234500A53DC8 /* ZMobiusDWF.hpp in Headers */,
 				6850D548244A234500A53DC8 /* Noises.hpp in Headers */,
+				68C858B7256836D400C708DE /* WardIdentity.hpp in Headers */,
 				6850D543244A234500A53DC8 /* ChargedProp.hpp in Headers */,
 				6850D50D244A234500A53DC8 /* Wall.hpp in Headers */,
 				6850D57D244A234500A53DC8 /* LoadPerambulator.hpp in Headers */,
@@ -7328,6 +7335,7 @@
 				6850D568244A234500A53DC8 /* Grad.cpp in Sources */,
 				6850D588244A234500A53DC8 /* LoadPerambulator.cpp in Sources */,
 				6850D523244A234500A53DC8 /* LocalCoherenceLanczos.cpp in Sources */,
+				68C858B6256836D400C708DE /* WardIdentity.cpp in Sources */,
 				6850D54F244A234500A53DC8 /* DistilVectors.cpp in Sources */,
 				6850D519244A234500A53DC8 /* Point.cpp in Sources */,
 				6850D57F244A234500A53DC8 /* LoadBinary.cpp in Sources */,

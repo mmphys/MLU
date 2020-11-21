@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$PROJECT_DIR/run/Study2"
+      customWorkingDirectory = "$PROJECT_DIR/run"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -55,10 +55,6 @@
          <CommandLineArgument
             argument = "$PROJECT_DIR/Study2_3pt/xml3pt.xml"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "xml3pt_tiny.xml"
-            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--grid 4.4.4.8"
