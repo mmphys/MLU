@@ -179,9 +179,10 @@ public:
   const SourceT Type;
   const SinkT Sink;
   const Quark &q;
+  static bool FixEverything;
   QuarkType( const SourceT type_, const SinkT sink_, const Quark &Q ) : Type{type_}, Sink{sink_}, q{Q}{}
   QuarkType( const QuarkType &qt ) : QuarkType( qt.Type, qt.Sink, qt.q ) {}
-  inline bool GaugeFixed() const { return Type == SourceT::GF || Sink == SinkT::Wall; }
+  inline bool GaugeFixed() const { return FixEverything || Type == SourceT::GF || Sink == SinkT::Wall; }
   inline std::string GaugeFixedName( const std::string &s ) const
   {
     std::string sAdjusted{ s };
@@ -191,6 +192,8 @@ public:
   }
   inline std::string Flavour() const { return GaugeFixedName( q.flavour ); };
 };
+
+bool QuarkType::FixEverything{ false };
 
 static const Gamma::Algebra algInsert[] = {
   Gamma::Algebra::Gamma5,
@@ -741,7 +744,7 @@ ModProp::ModProp(const std::string &OutputBase, const QuarkType &qt_, const Comm
     Append( name, SinkSmearing );
   Append( name, qt.Flavour() );
   AppendPT( name, t, p );
-  if( !bForcePoint && SinkSmearing == SinkT::Point && !p )
+  if( SinkSmearing == SinkT::Point && !p )
   {
     FileName = OutputBase + PrefixConserved + "/";
     FileName.append( name );
@@ -1056,9 +1059,11 @@ Application AppMaker::Setup( const AppParams &params )
   globalPar.database.restoreModules = false;
   globalPar.database.restoreMemoryProfile = false;
   globalPar.database.restoreSchedule = false;
+  globalPar.scheduleFile = globalPar.runId + ".sched";
   globalPar.saveSchedule = true;
   Application application( globalPar );
   // gauge field
+  QuarkType::FixEverything = params.Run.SinkWall; // If I'm doing wall sink, gauge-fixing point sink saves inversions
   if( params.Run.Gauge.empty() )
   {
     application.createModule<MGauge::Unit>( GaugeFieldName );
