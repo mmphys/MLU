@@ -130,7 +130,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-g /wardIdentity --sort -o bootstrap/Ward -i meson/Ward/ &apos;*.h5&apos;"
+            argument = "-g /wardIdentity -d mres --sort -o bootstrap/Ward/mres_ -i meson/Ward/ &apos;*.h5&apos;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

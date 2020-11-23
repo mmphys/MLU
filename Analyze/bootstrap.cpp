@@ -726,6 +726,7 @@ int main(const int argc, const char *argv[])
       {"a", CL::SwitchType::Single, ""},
       {"c", CL::SwitchType::Single, nullptr},
       {"g", CL::SwitchType::Single, "" },
+      {"d", CL::SwitchType::Single, "" },
       {"s", CL::SwitchType::Single, nullptr},
       {"t", CL::SwitchType::Single, "0"},
       {"m", CL::SwitchType::Single, nullptr},
@@ -769,6 +770,7 @@ int main(const int argc, const char *argv[])
       par.bFactorised = cl.GotSwitch( "f" );
       par.bVerboseSummaries = !cl.GotSwitch( "terse" );
       const std::string &DefaultGroup{ cl.SwitchValue<std::string>( "g" ) };
+      const std::string &DefaultDataSet{ cl.SwitchValue<std::string>( "d" ) };
       bool bSwapQuarks{ cl.GotSwitch( "sort" ) };
       bool bShowOnly{ cl.GotSwitch( "show" ) };
       if( !b3pt )
@@ -874,7 +876,7 @@ int main(const int argc, const char *argv[])
               std::string GroupName{ DefaultGroup };
               InFiles[j].Read( Filename, b3pt ? Alg3pt : Alg, Alg,
                                tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName,
-                               b3pt && tf.bGotMomentum && tf.p.IsNeg() ? &Alg3ptNeg : nullptr );
+                               b3pt && tf.bGotMomentum && tf.p.IsNeg() ? &Alg3ptNeg : nullptr, DefaultDataSet.c_str() );
             }
             try
             {
@@ -955,6 +957,7 @@ int main(const int argc, const char *argv[])
     "-a     list of gamma Algebras we're interested in at source (and sink for 2pt)\n"
     "-c     list of gamma algebras for current insertion         (Enable 3-pt mode)\n"
     "-g     Group name to read correlators from\n"
+    "-d     DataSet name to read correlators from\n"
     "-s     Perform bootstrap for specified study number\n"
     "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"
     "-m     Machine name (default: " << MachineName << ")\n"

@@ -1594,7 +1594,8 @@ public:
   }
   void Read (const std::string &FileName, std::vector<Gamma::Algebra> &AlgSnk, std::vector<Gamma::Algebra> &AlgSrc,
              const int * pTimeslice = nullptr, const char * PrintPrefix = nullptr,
-             std::string *pGroupName = nullptr, const std::vector<bool> *pAlgSnkNeg = nullptr);
+             std::string *pGroupName = nullptr, const std::vector<bool> *pAlgSnkNeg = nullptr,
+             const char * pDSName = nullptr );
   //void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void WriteSummary(const std::string &Prefix, const std::vector<Gamma::Algebra> &AlgSnk,
                     const std::vector<Gamma::Algebra> &AlgSrc);
@@ -1638,7 +1639,7 @@ template <typename T>
 void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Algebra> &AlgSnk,
                              std::vector<Gamma::Algebra> &AlgSrc, const int * pTimeslice,
                              const char * PrintPrefix, std::string *pGroupName,
-                             const std::vector<bool> *pAlgSnkNeg)
+                             const std::vector<bool> *pAlgSnkNeg, const char * pDSName )
 {
   const bool bSameAlgebras{&AlgSnk == &AlgSrc};
   if( pAlgSnkNeg )
@@ -1684,7 +1685,7 @@ void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Alg
     if( ( AlgSnk.empty() || ( AlgSnk.size() == 1 && AlgSnk[0] == Gamma::Algebra::Unknown ) )
       && ( AlgSrc.empty() || ( AlgSrc.size() == 1 && AlgSrc[0] == Gamma::Algebra::Unknown ) ) )
     {
-      ::H5::DataSet ds = g.openDataSet( "correlator" );
+      ::H5::DataSet ds = g.openDataSet( ( pDSName && *pDSName ) ? pDSName : "correlator" );
       ::H5::DataSpace dsp = ds.getSpace();
       int nDims{ dsp.getSimpleExtentNdims() };
       if( nDims == 1 )
