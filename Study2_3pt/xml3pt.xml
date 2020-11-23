@@ -20,18 +20,18 @@
     <Nt>64</Nt>
     <Timeslices>
       <start>0</start>
-      <end>64</end>
-      <!--<end>4</end>-->
+      <end>4</end>
+      <!--<end>64</end>-->
       <step>4</step>
     </Timeslices>
-    <Type>Z2</Type>
+    <Type>GF</Type>
     <Momenta>0_0_0</Momenta>
     <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
     <!--<deltaT>12</deltaT>-->
     <deltaT>12 14 16 20 24 28 32</deltaT>
     <OutputBase></OutputBase>
-    <!--<Gauge></Gauge>-->
-    <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>
+    <!--<Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>-->
+    <Gauge></Gauge>
     <GaugeFix>
       <gauge>Not used</gauge>
       <alpha>0.05</alpha>
@@ -46,108 +46,167 @@
       <steps>3</steps>
       <rho>0.1</rho>
     </StoutSmear>
-    <TwoPoint>true</TwoPoint>
-    <HeavyQuark>true</HeavyQuark>
+    <TwoPoint>false</TwoPoint>
+    <HeavyQuark>false</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
     <SinkPoint>true</SinkPoint>
     <SinkWall>true</SinkWall>
     <DoNegativeMomenta>true</DoNegativeMomenta>
-    <!--<Run>true</Run>-->
-    <Run>false</Run>
+    <!--<Run>false</Run>-->
+    <Run>true</Run>
+    <JobXmlPrefix></JobXmlPrefix>
   </RunPar>
-  <NumHeavyQuark>4</NumHeavyQuark>
-  <!--<NumHeavyQuark>1</NumHeavyQuark>-->
-  <HeavyQuark0>
-    <flavour>h0</flavour>
-    <mass>0.50</mass>
-    <Ls>12</Ls>
-    <M5>1.0</M5>
-    <boundary>1 1 1 -1</boundary>
-    <twist>0. 0. 0. 0.</twist>
-    <scale>2</scale>
-    <maxIteration>5000</maxIteration>
-    <residual>1e-12</residual>
-    <GaugeSmear>true</GaugeSmear>
-    <EigenPackFilename></EigenPackFilename>
-  </HeavyQuark0>
-  <HeavyQuark1>
-    <flavour>h1</flavour>
-    <mass>0.58</mass>
-    <Ls>12</Ls>
-    <M5>1.0</M5>
-    <boundary>1 1 1 -1</boundary>
-    <twist>0. 0. 0. 0.</twist>
-    <scale>2</scale>
-    <maxIteration>5000</maxIteration>
-    <residual>1e-12</residual>
-    <GaugeSmear>true</GaugeSmear>
-    <EigenPackFilename></EigenPackFilename>
-  </HeavyQuark1>
-  <HeavyQuark2>
-    <flavour>h2</flavour>
-    <mass>0.64</mass>
-    <Ls>12</Ls>
-    <M5>1.0</M5>
-    <boundary>1 1 1 -1</boundary>
-    <twist>0. 0. 0. 0.</twist>
-    <scale>2</scale>
-    <maxIteration>5000</maxIteration>
-    <residual>1e-12</residual>
-    <GaugeSmear>true</GaugeSmear>
-    <EigenPackFilename></EigenPackFilename>
-  </HeavyQuark2>
-  <HeavyQuark3>
-    <flavour>h3</flavour>
-    <mass>0.69</mass>
-    <Ls>12</Ls>
-    <M5>1.0</M5>
-    <boundary>1 1 1 -1</boundary>
-    <twist>0. 0. 0. 0.</twist>
-    <scale>2</scale>
-    <maxIteration>5000</maxIteration>
-    <residual>1e-12</residual>
-    <GaugeSmear>true</GaugeSmear>
-    <EigenPackFilename></EigenPackFilename>
-  </HeavyQuark3>
-  <NumSpectatorQuark>1</NumSpectatorQuark>
-  <SpectatorQuark0>
-    <flavour>s</flavour>
-    <mass>0.03224</mass>
-    <Ls>16</Ls>
-    <M5>1.8</M5>
-    <boundary>1 1 1 -1</boundary>
-    <twist>0. 0. 0. 0.</twist>
-    <scale>0</scale>
-    <maxIteration>5000</maxIteration>
-    <residual>1e-12</residual>
-    <GaugeSmear>false</GaugeSmear>
-    <EigenPackFilename></EigenPackFilename>
-  </SpectatorQuark0>
-  <SpectatorQuark1>
-    <flavour>lu</flavour>
-    <mass>0.005</mass>
-    <Ls>16</Ls>
-    <M5>1.8</M5>
-    <boundary>1 1 1 -1</boundary>
-    <twist>0. 0. 0. 0.</twist>
-    <scale>0</scale>
-    <maxIteration>5000</maxIteration>
-    <residual>1e-8</residual>
-    <GaugeSmear>false</GaugeSmear>
-    <EigenPackFilename>/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine</EigenPackFilename>
-  </SpectatorQuark1>
-  <NumSpectator2ptQuark>1</NumSpectator2ptQuark>
-  <Spectator2ptQuark0>
-    <flavour>su</flavour>
-    <mass>0.04</mass>
-    <Ls>16</Ls>
-    <M5>1.8</M5>
-    <boundary>1 1 1 -1</boundary>
-    <twist>0. 0. 0. 0.</twist>
-    <scale>0</scale>
-    <maxIteration>5000</maxIteration>
-    <residual>1e-12</residual>
-    <GaugeSmear>false</GaugeSmear>
-    <EigenPackFilename></EigenPackFilename>
-  </Spectator2ptQuark0>
+  <HeavyNotUsed>
+    <elem>
+      <flavour>h0</flavour>
+      <mass>0.50</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>2</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+    <elem>
+      <flavour>h1</flavour>
+      <mass>0.58</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>2</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+    <elem>
+      <flavour>h2</flavour>
+      <mass>0.64</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>2</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+    <elem>
+      <flavour>h3</flavour>
+      <mass>0.69</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>2</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+  </HeavyNotUsed>
+  <Heavy>
+    <elem>
+      <flavour>h0sh</flavour>
+      <mass>0.50</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>0</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+    <elem>
+      <flavour>h1sh</flavour>
+      <mass>0.58</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>0</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+    <elem>
+      <flavour>h2sh</flavour>
+      <mass>0.64</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>0</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+    <elem>
+      <flavour>h3sh</flavour>
+      <mass>0.69</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>0</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+  </Heavy>
+  <Spectator>
+    <elem>
+      <flavour>s</flavour>
+      <mass>0.03224</mass>
+      <Ls>16</Ls>
+      <M5>1.8</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>0</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>false</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+  </Spectator>
+  <SpectatorNotUsed>
+    <elem>
+      <flavour>lu</flavour>
+      <mass>0.005</mass>
+      <Ls>16</Ls>
+      <M5>1.8</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>0</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-8</residual>
+      <GaugeSmear>false</GaugeSmear>
+      <EigenPackFilename>/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine</EigenPackFilename>
+    </elem>
+  </SpectatorNotUsed>
+  <SpectatorExtra2pt>
+    <elem>
+      <flavour>su</flavour>
+      <mass>0.04</mass>
+      <Ls>16</Ls>
+      <M5>1.8</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>0</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>false</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+  </SpectatorExtra2pt>
 </Study2>

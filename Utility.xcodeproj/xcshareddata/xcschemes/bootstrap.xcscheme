@@ -63,7 +63,7 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-ag5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ag5,gT5"
@@ -71,7 +71,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT,-gx,-gy,-gz"
@@ -115,7 +115,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i meson/3pt_s/ -o bootstrap/3pt_s/ &apos;*_h0_h3_*_dt_20_*.h5&apos;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-b1"
@@ -127,6 +127,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--show"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-g /wardIdentity --sort -o bootstrap/Ward -i meson/Ward/ &apos;*.h5&apos;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

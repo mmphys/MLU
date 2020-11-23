@@ -313,7 +313,8 @@ struct AppParams
                                       bool,         SinkPoint,
                                       bool,         SinkWall,
                                       bool,         DoNegativeMomenta,
-                                      bool,         Run)
+                                      bool,         Run,
+                                      std::string,  JobXmlPrefix)
   };
 
   RunPar Run;
@@ -322,6 +323,7 @@ struct AppParams
   std::vector<Quark> SpectatorQuarks;
   std::vector<Quark> SpectatorQuarks2pt;
   std::vector<Common::Momentum> Momenta;
+  bool ThreePoint;
   std::vector<int> deltaT;
   inline int TimeBound( int t ) const
   { return t < 0 ? Run.Nt - ((-t) % Run.Nt) : t % Run.Nt; }
@@ -329,7 +331,7 @@ struct AppParams
   std::string ShortID() const;
   std::string RunID() const;
 protected:
-  static std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType, int Min = 1 );
+  static std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType, std::size_t Min = 1 );
 };
 
 AppParams::AppParams( const std::string sXmlFilename )
@@ -340,20 +342,21 @@ AppParams::AppParams( const std::string sXmlFilename )
   read( r, sXmlTagName, Run );
   HeavyQuarks     = ReadQuarks( r, "Heavy" );
   SpectatorQuarks = ReadQuarks( r, "Spectator" );
-  SpectatorQuarks2pt = ReadQuarks( r, "Spectator2pt", 0 );
+  SpectatorQuarks2pt = ReadQuarks( r, "SpectatorExtra2pt", 0 );
   Momenta = Common::ArrayFromString<Common::Momentum>( Run.Momenta );
   // Check the type
   std::istringstream ss( Run.Type );
   if( ! ( ss >> Type && Common::StreamEmpty( ss ) ) )
     throw std::runtime_error( "Unrecognised type \"" + Run.Type + "\"" );
   // Check parameters make sense
-  if( !( Run.TwoPoint || Run.HeavyQuark ||Run.HeavyAnti ) )
-    throw std::runtime_error( "At least one must be true of: TwoPoint; HeavyQuark; or HeavyAnti" );
+  //if( !( Run.TwoPoint || Run.HeavyQuark ||Run.HeavyAnti ) )
+    //throw std::runtime_error( "At least one must be true of: TwoPoint; HeavyQuark; or HeavyAnti" );
   if( !Run.SinkPoint && !Run.SinkWall )
     throw std::runtime_error( "At least one of SinkPoint and SinkWall must be true" );
   if( Momenta.empty() )
     throw std::runtime_error( "There should be at least one momentum" );
-  if( Run.HeavyQuark || Run.HeavyAnti )
+  ThreePoint = Run.HeavyQuark || Run.HeavyAnti;
+  if( ThreePoint )
   {
     deltaT = Common::ArrayFromString<int>( Run.deltaT );
     if( deltaT.empty() )
@@ -361,29 +364,12 @@ AppParams::AppParams( const std::string sXmlFilename )
   }
 }
 
-std::vector<Quark> AppParams::ReadQuarks( XmlReader &r, const std::string &qType, int Min )
+std::vector<Quark> AppParams::ReadQuarks( XmlReader &r, const std::string &qType, std::size_t Min )
 {
-  static const std::string sQuark{ "Quark" };
-  std::string TagName{ "Num" };
-  TagName.append( qType );
-  TagName.append( sQuark );
-  int NumQuarks;
-  read( r, TagName, NumQuarks );
-  if( NumQuarks < Min )
-    throw std::runtime_error( std::to_string( NumQuarks ) + Common::Space + qType + " quarks" );
-  TagName = qType;
-  TagName.append( sQuark );
-  const std::size_t PrefixLen{ TagName.length() };
-  Quark q;
   std::vector<Quark> vq;
-  vq.reserve( NumQuarks );
-  for( int i = 0; i < NumQuarks; ++i )
-  {
-    TagName.resize( PrefixLen );
-    TagName.append( std::to_string( i ) );
-    read( r, TagName, q );
-    vq.push_back( q );
-  }
+  r.readDefault( qType, vq );
+  if( vq.size() < Min )
+    throw std::runtime_error( "Only " + std::to_string( vq.size() ) + Common::Space + qType + " quarks" );
   return vq;
 }
 
@@ -427,7 +413,7 @@ std::string AppParams::RunID() const
   s << Sep << "p";
   for( const Common::Momentum &p : Momenta )
     s << Sep << p.to_string( Sep );
-  if( Run.HeavyQuark || Run.HeavyAnti )
+  if( ThreePoint )
   {
     s << Sep << "dT";
     for( int dT : deltaT )
@@ -1055,11 +1041,13 @@ Application AppMaker::Setup( const AppParams &params )
   // database options
   globalPar.database.resultDb   = params.Run.dbOptions.resultDb;
   globalPar.database.makeStatDb = params.Run.dbOptions.makeStatDb;
-  globalPar.database.applicationDb = params.Run.dbOptions.applicationDbPrefix + params.RunID() + ".db";
+  static const std::string RunID{ params.RunID() };
+  globalPar.database.applicationDb = params.Run.dbOptions.applicationDbPrefix + RunID + ".db";
+  Grid::Hadrons::makeFileDir( globalPar.database.applicationDb );
   globalPar.database.restoreModules = false;
   globalPar.database.restoreMemoryProfile = false;
   globalPar.database.restoreSchedule = false;
-  globalPar.scheduleFile = globalPar.runId + ".sched";
+  globalPar.scheduleFile = params.Run.JobXmlPrefix + RunID + ".sched";
   globalPar.saveSchedule = true;
   Application application( globalPar );
   // gauge field
@@ -1083,7 +1071,7 @@ void AppMaker::Make()
   bool bFirstSpec{ true };
   for( const Quark &qSpectator : l.params.SpectatorQuarks )
   {
-    for( unsigned int t = l.params.Run.Timeslices.start; t < l.params.Run.Timeslices.end; t += l.params.Run.Timeslices.step )
+    for(unsigned int t = l.params.Run.Timeslices.start; t < l.params.Run.Timeslices.end; t += l.params.Run.Timeslices.step)
     {
       for(int iSink = l.params.Run.SinkPoint ? 0 : 1; iSink <= l.params.Run.SinkWall ? 1  : 0; iSink++)
       {
@@ -1094,49 +1082,56 @@ void AppMaker::Make()
           {
             for( const Quark &qH1 : l.params.HeavyQuarks )
             {
-              if( bFirstSpec )
-              {
-                // Physical point spectators for 2pt functions only
-                for( const Quark &qSpec2 : l.params.SpectatorQuarks2pt )
-                {
-                  l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink, qSpec2, qH1, p, t ) );
-                  l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink, qH1, qSpec2, p, t ) );
-                }
-              }
               if( l.params.Run.TwoPoint )
               {
-                l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
-                                                       qSpectator, qH1, p, t ) );
-                l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink,
-                                                       qH1, qSpectator, p, t ) );
-              }
-              for( const Quark &qH2 : l.params.HeavyQuarks )
-              {
-                for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
-                         iHeavy <= l.params.Run.HeavyAnti  ? 1 : 0; ++iHeavy )
+                l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink, qSpectator, qH1, p, t ));
+                l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink, qH1, qSpectator, p, t ));
+                if( bFirstSpec )
                 {
-                  const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
-                  if( !p || qH1.mass >= qH2.mass )
+                  // Additional spectators for 2pt functions only
+                  for( const Quark &qSpec2 : l.params.SpectatorQuarks2pt )
                   {
-                    for( int deltaT : l.params.deltaT )
+                    l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink, qSpec2, qH1, p, t ));
+                    l.TakeOwnership( new ModContract2pt( l.params.Run.OutputBase, l.params.Type, Sink, qH1, qSpec2, p, t ));
+                  }
+                }
+              }
+              else if( !l.params.ThreePoint && Sink == SinkT::Point )
+              {
+                // We are only performing residual-mass checks on each propagator
+                l.TakeOwnership( new ModProp( l.params.Run.OutputBase, QuarkType( l.params.Type, Sink, qH1 ), p, t ));
+                //l.TakeOwnership( new ModProp( l.params.Run.OutputBase, QuarkType( l.params.Type, Sink, qSpectator ), p,t));
+              }
+              if( l.params.ThreePoint )
+              {
+                for( const Quark &qH2 : l.params.HeavyQuarks )
+                {
+                  for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
+                           iHeavy <= l.params.Run.HeavyAnti  ? 1 : 0; ++iHeavy )
+                  {
+                    const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
+                    if( !p || qH1.mass >= qH2.mass )
                     {
-                      for( int j = 0; j < NumInsert; j++ )
+                      for( int deltaT : l.params.deltaT )
                       {
-                        l.TakeOwnership( new ModContract3pt( l.params.Run.OutputBase, l.params.Type, Sink,
-                                                             qH1, qH2, qSpectator, p,
-                                                             t, bHeavyAnti, j, deltaT, false ) );
+                        for( int j = 0; j < NumInsert; j++ )
+                        {
+                          l.TakeOwnership( new ModContract3pt( l.params.Run.OutputBase, l.params.Type, Sink,
+                                                               qH1, qH2, qSpectator, p,
+                                                               t, bHeavyAnti, j, deltaT, false ) );
+                        }
                       }
                     }
-                  }
-                  if( p && qH1.mass == qH2.mass )
-                  {
-                    for( int deltaT : l.params.deltaT )
+                    if( p && qH1.mass == qH2.mass )
                     {
-                      for( int j = 0; j < NumInsert; j++ )
+                      for( int deltaT : l.params.deltaT )
                       {
-                        l.TakeOwnership( new ModContract3pt( l.params.Run.OutputBase, l.params.Type, Sink,
-                                                             qH1, qH2, qSpectator, p,
-                                                             t, bHeavyAnti, j, deltaT, true ) );
+                        for( int j = 0; j < NumInsert; j++ )
+                        {
+                          l.TakeOwnership( new ModContract3pt( l.params.Run.OutputBase, l.params.Type, Sink,
+                                                               qH1, qH2, qSpectator, p,
+                                                               t, bHeavyAnti, j, deltaT, true ) );
+                        }
                       }
                     }
                   }
@@ -1186,9 +1181,8 @@ int main(int argc, char *argv[])
       LOG(Warning) << "Creation of wall sinks necessitates creation of point sinks." << std::endl;
       LOG(Warning) << "Are you sure you don't want to save point sinks?" << std::endl;
     }
-    if( !params.Run.Run )
-      x.application.saveParameterFile( params.RunID() + ".xml" );
-    else
+    x.application.saveParameterFile( params.Run.JobXmlPrefix + params.RunID() + ".xml" );
+    if( params.Run.Run )
       x.application.run();
   }
   catch(const std::exception &e)
