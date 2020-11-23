@@ -327,19 +327,20 @@ struct AppParams
   std::vector<int> deltaT;
   inline int TimeBound( int t ) const
   { return t < 0 ? Run.Nt - ((-t) % Run.Nt) : t % Run.Nt; }
-  AppParams( const std::string sXmlFilename );
+  AppParams( const std::string sXmlFilename, const std::string sRunPrefix );
   std::string ShortID() const;
   std::string RunID() const;
 protected:
   static std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType, std::size_t Min = 1 );
 };
 
-AppParams::AppParams( const std::string sXmlFilename )
+AppParams::AppParams( const std::string sXmlFilename, const std::string sRunPrefix )
 {
   static const std::string sXmlTopLevel{ "Study2" };
   static const std::string sXmlTagName{ "RunPar" };
   XmlReader r( sXmlFilename, false, sXmlTopLevel );
   read( r, sXmlTagName, Run );
+  Run.JobXmlPrefix.append( sRunPrefix );
   HeavyQuarks     = ReadQuarks( r, "Heavy" );
   SpectatorQuarks = ReadQuarks( r, "Spectator" );
   SpectatorQuarks2pt = ReadQuarks( r, "SpectatorExtra2pt", 0 );
@@ -1156,12 +1157,14 @@ int main(int argc, char *argv[])
   #endif
 
   // See whether parameter file exists
-  if( argc < 2 )
+  if( argc < 2 || !Common::FileExists( argv[1] ) )
   {
     std::cout << "1st argument should be Parameter.xml filename" << std::endl;
     return EXIT_FAILURE;
   }
   const std::string sXmlFilename{ argv[1] };
+  // 2nd parameter is optional. If present (and not a switch) it's a prefix for current run
+  const std::string sRunPrefix( argc >= 3 && argv[2][0] != '-' ? argv[2] : "" );
 
   // initialization //////////////////////////////////////////////////////////
   Grid_init(&argc, &argv);
@@ -1172,7 +1175,7 @@ int main(int argc, char *argv[])
   HadronsLogDebug.Active(GridLogDebug.isActive());
   try
   {
-    const AppParams params( sXmlFilename );
+    const AppParams params( sXmlFilename, sRunPrefix );
     AppMaker x( params );
     x.Make();
     // Run or save the job
