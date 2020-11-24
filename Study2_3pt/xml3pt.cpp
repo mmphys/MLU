@@ -179,10 +179,10 @@ public:
   const SourceT Type;
   const SinkT Sink;
   const Quark &q;
-  static bool FixEverything;
+  static bool GaugeFixAlways;
   QuarkType( const SourceT type_, const SinkT sink_, const Quark &Q ) : Type{type_}, Sink{sink_}, q{Q}{}
   QuarkType( const QuarkType &qt ) : QuarkType( qt.Type, qt.Sink, qt.q ) {}
-  inline bool GaugeFixed() const { return FixEverything || Type == SourceT::GF || Sink == SinkT::Wall; }
+  inline bool GaugeFixed() const { return GaugeFixAlways || Type == SourceT::GF || Sink == SinkT::Wall; }
   inline std::string GaugeFixedName( const std::string &s ) const
   {
     std::string sAdjusted{ s };
@@ -193,7 +193,7 @@ public:
   inline std::string Flavour() const { return GaugeFixedName( q.flavour ); };
 };
 
-bool QuarkType::FixEverything{ false };
+bool QuarkType::GaugeFixAlways{ false };
 
 static const Gamma::Algebra algInsert[] = {
   Gamma::Algebra::Gamma5,
@@ -305,6 +305,7 @@ struct AppParams
                                       std::string,  deltaT,
                                       std::string,  OutputBase,
                                       std::string,  Gauge,
+                                      bool,         GaugeFixAlways,
              Grid::Hadrons::MGauge::GaugeFix::Par,  GaugeFix,
                        MGauge::StoutSmearing::Par,  StoutSmear,
                                       bool,         TwoPoint,
@@ -341,6 +342,7 @@ AppParams::AppParams( const std::string sXmlFilename, const std::string sRunPref
   XmlReader r( sXmlFilename, false, sXmlTopLevel );
   read( r, sXmlTagName, Run );
   Run.JobXmlPrefix.append( sRunPrefix );
+  QuarkType::GaugeFixAlways = Run.GaugeFixAlways;
   HeavyQuarks     = ReadQuarks( r, "Heavy" );
   SpectatorQuarks = ReadQuarks( r, "Spectator" );
   SpectatorQuarks2pt = ReadQuarks( r, "SpectatorExtra2pt", 0 );
@@ -1052,7 +1054,6 @@ Application AppMaker::Setup( const AppParams &params )
   globalPar.saveSchedule = true;
   Application application( globalPar );
   // gauge field
-  QuarkType::FixEverything = params.Run.SinkWall; // If I'm doing wall sink, gauge-fixing point sink saves inversions
   if( params.Run.Gauge.empty() )
   {
     application.createModule<MGauge::Unit>( GaugeFieldName );
