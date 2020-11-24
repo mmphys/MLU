@@ -297,7 +297,6 @@ struct AppParams
         Grid::Hadrons::Application::TrajRange,      trajCounter,
         Grid::Hadrons::VirtualMachine::GeneticPar,  genetic,
                                    databaseOptions, dbOptions,
-                                      std::string,  ScheduleFile,
                                       int,          Nt,
         Grid::Hadrons::Application::TrajRange,      Timeslices,
                                       std::string,  Type,
