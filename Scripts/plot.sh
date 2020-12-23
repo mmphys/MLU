@@ -29,7 +29,8 @@ do_log=${log:-0}
 SaveFile=${SaveFile:-0}
 SaveFileName="$SaveFileName"
 do_offset=${offset:-0.05}
-do_whisker=${whisker:-0}
+do_whisker=0${whisker+1} #non-zero if whisker set to anything (including nothing)
+do_rel=0${rel}
 
 # Which field names do we plot?
 f = 1
@@ -141,7 +142,7 @@ NumFB=fb_max - fb_min + 1
 XF1=do_offset
 XF2=(1 - NumFields*NumFB*NumFiles)/2*XF1
 
-PlotWith="yerrorbars"
+PlotWith="with yerrorbars"
 PlotUsing=""
 if( NumFiles==1 && FileType eq "cormat" ) {
   set xtics rotate noenhanced
@@ -152,18 +153,27 @@ if( NumFiles==1 && FileType eq "cormat" ) {
   if( do_log ) {
     PlotUsing='(abs(column(word(FieldNames,fld)))) : (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( sgn(column(word(FieldNames,fld))) ? "_low" : "_high" ))) : (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( sgn(column(word(FieldNames,fld))) ? "_high" : "_low" )))'
   } else {
-    if( !do_whisker ) {
-      PlotUsing='(column(word(FieldNames,fld))) : (column(word(FieldNames,fld)."_low")) : (column(word(FieldNames,fld)."_high"))'
-    } else {
-      PlotWith="candlesticks whiskerbars"
+    if( do_whisker ) {
+      PlotWith="with candlesticks whiskerbars"
       PlotUsing='(column(word(FieldNames,fld)."_low")) : (column(word(FieldNames,fld)."_min")) : (column(word(FieldNames,fld)."_max")) : (column(word(FieldNames,fld)."_high"))'
+    } else {
+      if( do_rel ) {
+        if( do_rel == 1 ) {
+          PlotUsing='(1) : (column(word(FieldNames,fld)."_low") / column(word(FieldNames,fld))) : (column(word(FieldNames,fld)."_high") / column(word(FieldNames,fld)))'
+        } else {
+          PlotWith=""
+          PlotUsing='((column(word(FieldNames,fld)."_high") - column(word(FieldNames,fld)."_low")) / (2 * column(word(FieldNames,fld))))'
+        }
+      } else {
+        PlotUsing='(column(word(FieldNames,fld))) : (column(word(FieldNames,fld)."_low")) : (column(word(FieldNames,fld)."_high"))'
+        }
     }
   }
   PlotCmd="plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] word(PlotFile,File) using ((("
   PlotCmd=PlotCmd.my_x_axis.") == 0 ? 0 : f==0 ? ("
   PlotCmd=PlotCmd.my_x_axis.") : nt - ("
   PlotCmd=PlotCmd.my_x_axis."))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : "
-  PlotCmd=PlotCmd.PlotUsing." with "
+  PlotCmd=PlotCmd.PlotUsing.' '
   PlotCmd=PlotCmd.PlotWith.' title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)'
   #PlotCmd=PlotCmd.PlotWith.' title "ΔT = ".word("12 14 16 20 24 28 32",File)'
   eval PlotCmd
@@ -184,12 +194,13 @@ then
   echo "err    error for reference line"
   echo "reftext text for reference line"
   echo "log    1 to plot y on log scale, -1 to negate before plotting"
+  echo "rel    plot relative error 1=error bars, 2=error (does nothing on log scale)"
   echo "title  Title for the plot"
   echo "offset X-axis offset between series, 0 to disable (default: 0.05)"
   echo "save   \"1\" to save plots to auto-generated filenames, otherwise name of pdf"
   echo "nt     Plot backward propagating wave as well (or backward only if nt<0)"
   echo "x      definition of field for x-axis. Normally 'column(1)', but try, say 'column(1) / 12'"
-  echo "whisker non-zero to plot as box (1 sigma) + error bars (min/max)"
+  echo "whisker plot as box (1 sigma) + error bars (min/max)"
   exit 2
 fi
 

@@ -29,6 +29,7 @@
 		6815510A22CBCB74009AB4AD /* MultiFit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681550FE22CBC9B9009AB4AD /* MultiFit.cpp */; };
 		6815510D22CBE8B6009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		6815510E22CBF569009AB4AD /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
+		6817BD4F256EB36B0030A9DE /* Test_cayley_mres.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6817BD13256EA5180030A9DE /* Test_cayley_mres.cc */; };
 		681DC8B822F19CB000EE04A9 /* hlxml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681DC8B722F19CB000EE04A9 /* hlxml.cpp */; };
 		681DC8BD22F211B600EE04A9 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		682260FF2376FAAA005341E5 /* repair.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682260F22376F586005341E5 /* repair.cpp */; };
@@ -958,7 +959,6 @@
 		6850D230244A1C3200A53DC8 /* Pragmas.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CE83244A1C3000A53DC8 /* Pragmas.h */; };
 		6850D231244A1C3200A53DC8 /* Threads.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CE84244A1C3000A53DC8 /* Threads.h */; };
 		6850D232244A1C3200A53DC8 /* GridStd.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CE85244A1C3000A53DC8 /* GridStd.h */; };
-		6850D233244A1C3200A53DC8 /* AlignedAllocator.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CE87244A1C3100A53DC8 /* AlignedAllocator.cc */; };
 		6850D234244A1C3200A53DC8 /* AlignedAllocator.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CE88244A1C3100A53DC8 /* AlignedAllocator.h */; };
 		6850D235244A1C3200A53DC8 /* Log.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CE8A244A1C3100A53DC8 /* Log.h */; };
 		6850D236244A1C3200A53DC8 /* Log.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CE8B244A1C3100A53DC8 /* Log.cc */; };
@@ -1203,6 +1203,8 @@
 		686EC70B240041E90084D04D /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		687588BB2499501900E38728 /* Test_hadrons_spectrum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C182244C7863008E272B /* Test_hadrons_spectrum.cpp */; };
 		687726942466C49E00D46AEF /* Debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687726872466C32D00D46AEF /* Debug.cpp */; };
+		687A730B256FA9C800A573A9 /* WilsonFlow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687A7309256FA9C800A573A9 /* WilsonFlow.cpp */; };
+		687A730C256FA9C800A573A9 /* WilsonFlow.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687A730A256FA9C800A573A9 /* WilsonFlow.hpp */; };
 		687D64DD2552A2DC00E4F83A /* LoadLapEvec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D64DB2552A2DC00E4F83A /* LoadLapEvec.cpp */; };
 		687D64DE2552A2DC00E4F83A /* LoadLapEvec.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687D64DC2552A2DC00E4F83A /* LoadLapEvec.hpp */; };
 		687D64F82552A30000E4F83A /* SourceSink.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687D64F62552A2FF00E4F83A /* SourceSink.hpp */; };
@@ -1258,6 +1260,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		6815510122CBCB61009AB4AD /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		6817BD16256EB34C0030A9DE /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -1474,6 +1485,8 @@
 		6815510322CBCB61009AB4AD /* MultiFit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MultiFit; sourceTree = BUILT_PRODUCTS_DIR; };
 		6815510B22CBE676009AB4AD /* Common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Common.hpp; sourceTree = "<group>"; };
 		6815510C22CBE676009AB4AD /* Common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Common.cpp; sourceTree = "<group>"; };
+		6817BD13256EA5180030A9DE /* Test_cayley_mres.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_cayley_mres.cc; path = ../Grid/tests/debug/Test_cayley_mres.cc; sourceTree = "<group>"; };
+		6817BD18256EB34C0030A9DE /* Test_cayley_mres */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_cayley_mres; sourceTree = BUILT_PRODUCTS_DIR; };
 		681AAC8C2355D5F10045F604 /* CommonGrid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CommonGrid.cpp; sourceTree = "<group>"; };
 		681AAC8D2355D5F10045F604 /* CommonGrid.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommonGrid.hpp; sourceTree = "<group>"; };
 		681DC24724A38D1900AF1EA5 /* xml3pt.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = xml3pt.xml; sourceTree = "<group>"; };
@@ -2501,7 +2514,6 @@
 		6850CE83244A1C3000A53DC8 /* Pragmas.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Pragmas.h; sourceTree = "<group>"; };
 		6850CE84244A1C3000A53DC8 /* Threads.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Threads.h; sourceTree = "<group>"; };
 		6850CE85244A1C3000A53DC8 /* GridStd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GridStd.h; sourceTree = "<group>"; };
-		6850CE87244A1C3100A53DC8 /* AlignedAllocator.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AlignedAllocator.cc; sourceTree = "<group>"; };
 		6850CE88244A1C3100A53DC8 /* AlignedAllocator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AlignedAllocator.h; sourceTree = "<group>"; };
 		6850CE8A244A1C3100A53DC8 /* Log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Log.h; sourceTree = "<group>"; };
 		6850CE8B244A1C3100A53DC8 /* Log.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Log.cc; sourceTree = "<group>"; };
@@ -2764,6 +2776,8 @@
 		687726872466C32D00D46AEF /* Debug.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Debug.cpp; sourceTree = "<group>"; };
 		687726882466C32D00D46AEF /* Debug.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Debug.hpp; sourceTree = "<group>"; };
 		6877268D2466C48000D46AEF /* Debug */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Debug; sourceTree = BUILT_PRODUCTS_DIR; };
+		687A7309256FA9C800A573A9 /* WilsonFlow.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFlow.cpp; sourceTree = "<group>"; };
+		687A730A256FA9C800A573A9 /* WilsonFlow.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = WilsonFlow.hpp; sourceTree = "<group>"; };
 		687D64DB2552A2DC00E4F83A /* LoadLapEvec.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadLapEvec.cpp; sourceTree = "<group>"; };
 		687D64DC2552A2DC00E4F83A /* LoadLapEvec.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LoadLapEvec.hpp; sourceTree = "<group>"; };
 		687D64F62552A2FF00E4F83A /* SourceSink.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SourceSink.hpp; sourceTree = "<group>"; };
@@ -2792,7 +2806,7 @@
 		68B96263244AE50100E5CF09 /* mixedop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mixedop.cpp; sourceTree = "<group>"; };
 		68BEFF6A2343A75A0031E3E3 /* xmlZ2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlZ2; sourceTree = BUILT_PRODUCTS_DIR; };
 		68C858B4256836D400C708DE /* WardIdentity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WardIdentity.cpp; sourceTree = "<group>"; };
-		68C858B5256836D400C708DE /* WardIdentity.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = WardIdentity.hpp; sourceTree = "<group>"; };
+		68C858B5256836D400C708DE /* WardIdentity.hpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.cpp.h; path = WardIdentity.hpp; sourceTree = "<group>"; };
 		68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BaryonGamma3pt.hpp; sourceTree = "<group>"; };
 		68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BaryonGamma3pt.cpp; sourceTree = "<group>"; };
 		68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrecGeneralisedConjugateResidualNonHermitian.h; sourceTree = "<group>"; };
@@ -2827,6 +2841,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		6815510022CBCB61009AB4AD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6817BD15256EB34C0030A9DE /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -3054,6 +3075,7 @@
 				6877268D2466C48000D46AEF /* Debug */,
 				687588B42499500100E38728 /* Test_hadrons_spectrum */,
 				684823352509160C00B31C1E /* Ratio */,
+				6817BD18256EB34C0030A9DE /* Test_cayley_mres */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -5133,7 +5155,6 @@
 		6850CE86244A1C3100A53DC8 /* allocator */ = {
 			isa = PBXGroup;
 			children = (
-				6850CE87244A1C3100A53DC8 /* AlignedAllocator.cc */,
 				6850CE88244A1C3100A53DC8 /* AlignedAllocator.h */,
 				68D0E9D124A34F4B00834C1C /* Allocator.h */,
 				68D0E9D424A34F4B00834C1C /* MemoryManager.cc */,
@@ -5531,6 +5552,8 @@
 				6850D4CA244A234400A53DC8 /* TwoPointNPR.cpp */,
 				6850D4BB244A234400A53DC8 /* TwoPointNPR.hpp */,
 				6850D4C9244A234400A53DC8 /* Utils.hpp */,
+				687A7309256FA9C800A573A9 /* WilsonFlow.cpp */,
+				687A730A256FA9C800A573A9 /* WilsonFlow.hpp */,
 			);
 			path = MScalarSUN;
 			sourceTree = "<group>";
@@ -5594,6 +5617,7 @@
 			isa = PBXGroup;
 			children = (
 				68E2C2F4245B204B009E7BE5 /* tests */,
+				6817BD13256EA5180030A9DE /* Test_cayley_mres.cc */,
 				68E2C2F5245B2068009E7BE5 /* Test_serialisation.cc */,
 			);
 			name = Grid_tests;
@@ -6422,6 +6446,7 @@
 				6850D571244A234500A53DC8 /* TwoPoint.hpp in Headers */,
 				6850D576244A234500A53DC8 /* TransProj.hpp in Headers */,
 				6850D58A244A234500A53DC8 /* LoadBinary.hpp in Headers */,
+				687A730C256FA9C800A573A9 /* WilsonFlow.hpp in Headers */,
 				6850D574244A234500A53DC8 /* Utils.hpp in Headers */,
 				6850D420244A230A00A53DC8 /* A2AVectors.hpp in Headers */,
 				682D0628246A95E50052D780 /* VectorUnpack.hpp in Headers */,
@@ -6565,6 +6590,23 @@
 			name = MultiFit;
 			productName = MultiFit;
 			productReference = 6815510322CBCB61009AB4AD /* MultiFit */;
+			productType = "com.apple.product-type.tool";
+		};
+		6817BD17256EB34C0030A9DE /* Test_cayley_mres */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6817BD1C256EB34C0030A9DE /* Build configuration list for PBXNativeTarget "Test_cayley_mres" */;
+			buildPhases = (
+				6817BD14256EB34C0030A9DE /* Sources */,
+				6817BD15256EB34C0030A9DE /* Frameworks */,
+				6817BD16256EB34C0030A9DE /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Test_cayley_mres;
+			productName = Test_cayley_mres;
+			productReference = 6817BD18256EB34C0030A9DE /* Test_cayley_mres */;
 			productType = "com.apple.product-type.tool";
 		};
 		681DC8AF22F19BAB00EE04A9 /* hlxml */ = {
@@ -6940,6 +6982,9 @@
 					6815510222CBCB61009AB4AD = {
 						CreatedOnToolsVersion = 10.2.1;
 					};
+					6817BD17256EB34C0030A9DE = {
+						CreatedOnToolsVersion = 12.2;
+					};
 					681DC8AF22F19BAB00EE04A9 = {
 						CreatedOnToolsVersion = 10.3;
 					};
@@ -7034,6 +7079,7 @@
 				68B9624A244AE36300E5CF09 /* HadronsXmlRun */,
 				68B96256244AE3BC00E5CF09 /* HadronsXmlValidate */,
 				6804C18B244C78AF008E272B /* Test_hadrons_meson_3pt */,
+				6817BD17256EB34C0030A9DE /* Test_cayley_mres */,
 				68E2C2F9245B2097009E7BE5 /* Test_serialisation */,
 				6877268C2466C48000D46AEF /* Debug */,
 				687588B32499500100E38728 /* Test_hadrons_spectrum */,
@@ -7057,6 +7103,14 @@
 				6815510D22CBE8B6009AB4AD /* Common.cpp in Sources */,
 				6815510A22CBCB74009AB4AD /* MultiFit.cpp in Sources */,
 				680DBC6124F81FB600A66BFF /* FitModel.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6817BD14256EB34C0030A9DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6817BD4F256EB36B0030A9DE /* Test_cayley_mres.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7125,7 +7179,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6850D233244A1C3200A53DC8 /* AlignedAllocator.cc in Sources */,
 				6850CF73244A1C3100A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850CF56244A1C3100A53DC8 /* CayleyFermion5DInstantiationWilsonImplF.cc in Sources */,
 				6850CF24244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplFH.cc in Sources */,
@@ -7380,6 +7433,7 @@
 				6850D510244A234500A53DC8 /* SeqGamma.cpp in Sources */,
 				6850D51D244A234500A53DC8 /* A2AVectors.cpp in Sources */,
 				6809612024982C11007F8DB3 /* sqlite3.c in Sources */,
+				687A730B256FA9C800A573A9 /* WilsonFlow.cpp in Sources */,
 				6850D52D244A234500A53DC8 /* FundtoHirep.cpp in Sources */,
 				6850D54E244A234500A53DC8 /* LapEvec.cpp in Sources */,
 				6850D4F6244A234500A53DC8 /* Baryon.cpp in Sources */,
@@ -7560,6 +7614,68 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				INSTALL_PATH = /;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		6817BD1D256EB34C0030A9DE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				OTHER_LDFLAGS = (
+					"-lLexers",
+					"-lgsl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lMinuit2",
+					"-lGrid",
+					"-llime",
+					"-lfftw3f",
+					"-lfftw3",
+					"-lcrypto",
+					"-lz",
+					"-lgslcblas",
+					"-lm",
+					"-lnlopt_cxx",
+					"-lmpi",
+					"-lmpfr",
+					"-lgmp",
+					"-lomp",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		6817BD1E256EB34C0030A9DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				OTHER_LDFLAGS = (
+					"-lLexers",
+					"-lgsl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lMinuit2",
+					"-lGrid",
+					"-llime",
+					"-lfftw3f",
+					"-lfftw3",
+					"-lcrypto",
+					"-lz",
+					"-lgslcblas",
+					"-lm",
+					"-lnlopt_cxx",
+					"-lmpi",
+					"-lmpfr",
+					"-lgmp",
+					"-lomp",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -8282,6 +8398,15 @@
 			buildConfigurations = (
 				6815510822CBCB61009AB4AD /* Debug */,
 				6815510922CBCB61009AB4AD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6817BD1C256EB34C0030A9DE /* Build configuration list for PBXNativeTarget "Test_cayley_mres" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6817BD1D256EB34C0030A9DE /* Debug */,
+				6817BD1E256EB34C0030A9DE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
