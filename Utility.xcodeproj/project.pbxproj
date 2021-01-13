@@ -1187,12 +1187,10 @@
 		68578F382450A3B200CC2A1D /* BiCGSTAB.h in Headers */ = {isa = PBXBuildFile; fileRef = 68578F362450A3B200CC2A1D /* BiCGSTAB.h */; };
 		685E30D7250FDC93004E912D /* Lattice_real_imag.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30D6250FDC93004E912D /* Lattice_real_imag.h */; };
 		685E30DF250FDCCD004E912D /* Fujitsu_A64FX_intrin_single.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30D8250FDCCC004E912D /* Fujitsu_A64FX_intrin_single.h */; };
-		685E30E0250FDCCD004E912D /* Fujitsu_A64FX_asm_single.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30D9250FDCCC004E912D /* Fujitsu_A64FX_asm_single.h */; };
 		685E30E1250FDCCD004E912D /* Fujitsu_A64FX_intrin_double.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30DA250FDCCC004E912D /* Fujitsu_A64FX_intrin_double.h */; };
 		685E30E2250FDCCD004E912D /* Fujitsu_A64FX_undef.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30DB250FDCCC004E912D /* Fujitsu_A64FX_undef.h */; };
 		685E30E3250FDCCD004E912D /* Grid_a64fx-fixedsize.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30DC250FDCCD004E912D /* Grid_a64fx-fixedsize.h */; };
 		685E30E4250FDCCD004E912D /* Grid_a64fx-2.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30DD250FDCCD004E912D /* Grid_a64fx-2.h */; };
-		685E30E5250FDCCD004E912D /* Fujitsu_A64FX_asm_double.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30DE250FDCCD004E912D /* Fujitsu_A64FX_asm_double.h */; };
 		685E30E9250FDD22004E912D /* WilsonKernelsAsmA64FX.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30E7250FDD22004E912D /* WilsonKernelsAsmA64FX.h */; };
 		685E30EA250FDD22004E912D /* WilsonKernelsAsmBodyA64FX.h in Headers */ = {isa = PBXBuildFile; fileRef = 685E30E8250FDD22004E912D /* WilsonKernelsAsmBodyA64FX.h */; };
 		6860B97F248E74C70049C0DE /* Random.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6860B97D248E74C60049C0DE /* Random.cpp */; };
@@ -2755,13 +2753,10 @@
 		68578F362450A3B200CC2A1D /* BiCGSTAB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BiCGSTAB.h; sourceTree = "<group>"; };
 		685E30D6250FDC93004E912D /* Lattice_real_imag.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lattice_real_imag.h; sourceTree = "<group>"; };
 		685E30D8250FDCCC004E912D /* Fujitsu_A64FX_intrin_single.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Fujitsu_A64FX_intrin_single.h; sourceTree = "<group>"; };
-		685E30D9250FDCCC004E912D /* Fujitsu_A64FX_asm_single.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Fujitsu_A64FX_asm_single.h; sourceTree = "<group>"; };
 		685E30DA250FDCCC004E912D /* Fujitsu_A64FX_intrin_double.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Fujitsu_A64FX_intrin_double.h; sourceTree = "<group>"; };
 		685E30DB250FDCCC004E912D /* Fujitsu_A64FX_undef.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Fujitsu_A64FX_undef.h; sourceTree = "<group>"; };
 		685E30DC250FDCCD004E912D /* Grid_a64fx-fixedsize.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Grid_a64fx-fixedsize.h"; sourceTree = "<group>"; };
 		685E30DD250FDCCD004E912D /* Grid_a64fx-2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Grid_a64fx-2.h"; sourceTree = "<group>"; };
-		685E30DE250FDCCD004E912D /* Fujitsu_A64FX_asm_double.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Fujitsu_A64FX_asm_double.h; sourceTree = "<group>"; };
-		685E30E6250FDCDA004E912D /* gridverter.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = gridverter.py; sourceTree = "<group>"; };
 		685E30E7250FDD22004E912D /* WilsonKernelsAsmA64FX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WilsonKernelsAsmA64FX.h; sourceTree = "<group>"; };
 		685E30E8250FDD22004E912D /* WilsonKernelsAsmBodyA64FX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WilsonKernelsAsmBodyA64FX.h; sourceTree = "<group>"; };
 		685E30EB250FDD2F004E912D /* WilsonKernelsHandImplementation.h.debug */ = {isa = PBXFileReference; lastKnownFileType = text; path = WilsonKernelsHandImplementation.h.debug; sourceTree = "<group>"; };
@@ -4006,8 +4001,6 @@
 			isa = PBXGroup;
 			children = (
 				6850CC25244A1C3000A53DC8 /* BGQQPX.h */,
-				685E30DE250FDCCD004E912D /* Fujitsu_A64FX_asm_double.h */,
-				685E30D9250FDCCC004E912D /* Fujitsu_A64FX_asm_single.h */,
 				685E30DA250FDCCC004E912D /* Fujitsu_A64FX_intrin_double.h */,
 				685E30D8250FDCCC004E912D /* Fujitsu_A64FX_intrin_single.h */,
 				685E30DB250FDCCC004E912D /* Fujitsu_A64FX_undef.h */,
@@ -4024,7 +4017,6 @@
 				6850CC30244A1C3000A53DC8 /* Grid_sse4.h */,
 				6850CC22244A1C3000A53DC8 /* Grid_vector_types.h */,
 				6850CC2C244A1C3000A53DC8 /* Grid_vector_unops.h */,
-				685E30E6250FDCDA004E912D /* gridverter.py */,
 				6850CC1B244A1C3000A53DC8 /* IBM_qpx_double.h */,
 				6850CC24244A1C3000A53DC8 /* IBM_qpx_single.h */,
 				6850CC21244A1C3000A53DC8 /* IBM_qpx.h */,
@@ -6162,7 +6154,6 @@
 				6850D20B244A1C3200A53DC8 /* HessenbergDecomposition.h in Headers */,
 				6850D1A8244A1C3200A53DC8 /* ArrayCwiseBinaryOps.h in Headers */,
 				6850CF2B244A1C3100A53DC8 /* impl.h in Headers */,
-				685E30E0250FDCCD004E912D /* Fujitsu_A64FX_asm_single.h in Headers */,
 				6850CFDA244A1C3100A53DC8 /* WilsonImpl.h in Headers */,
 				6850D024244A1C3100A53DC8 /* CommunicationAvoidingGeneralisedMinimalResidual.h in Headers */,
 				6850D120244A1C3200A53DC8 /* TriangularSolverMatrix.h in Headers */,
@@ -6212,7 +6203,6 @@
 				6850D246244A1C3200A53DC8 /* Serialisation.h in Headers */,
 				6850D034244A1C3100A53DC8 /* SharedMemory.h in Headers */,
 				6850D225244A1C3200A53DC8 /* Lattice_reduction.h in Headers */,
-				685E30E5250FDCCD004E912D /* Fujitsu_A64FX_asm_double.h in Headers */,
 				6850D092244A1C3100A53DC8 /* TensorArgMax.h in Headers */,
 				6850D1EE244A1C3200A53DC8 /* AngleAxis.h in Headers */,
 				6850D170244A1C3200A53DC8 /* PacketMath.h in Headers */,

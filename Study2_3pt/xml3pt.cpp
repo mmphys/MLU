@@ -753,10 +753,11 @@ bool ModProp::AddDependencies( HModList &ModList ) const
       {
         // Check residual mass for zero-momentum propagators
         MContraction::WardIdentity::Par WIP;
-        WIP.q = name;
+        WIP.prop = name;
+        WIP.prop5d = name + "_5d";
         WIP.action = ModList.TakeOwnership( new ModAction( qt ) );
         WIP.mass = qt.q.mass;
-        WIP.test_axial = true;
+        //WIP.test_axial = true;
         WIP.output = FileName;
         ModList.application.createModule<MContraction::WardIdentity>(PrefixConservedSep + name, WIP);
       }
