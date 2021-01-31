@@ -10,6 +10,8 @@
 		6800C11B24A5F74B00DF2BA1 /* A2ASmearedMesonField.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6800C11924A5F74B00DF2BA1 /* A2ASmearedMesonField.cpp */; };
 		6800C11C24A5F74B00DF2BA1 /* A2ASmearedMesonField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6800C11A24A5F74B00DF2BA1 /* A2ASmearedMesonField.hpp */; };
 		6804C193244C78C8008E272B /* Test_hadrons_meson_3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C185244C7864008E272B /* Test_hadrons_meson_3pt.cpp */; };
+		68068AA525C3170800B8699F /* WardIdentity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68068AA325C3170800B8699F /* WardIdentity.cpp */; };
+		68068AA625C3170800B8699F /* WardIdentity.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68068AA425C3170800B8699F /* WardIdentity.hpp */; };
 		68093A2824B8B1670019148E /* FieldIo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68093A2724B8B1670019148E /* FieldIo.hpp */; };
 		68093A2B24B8B18D0019148E /* RandomField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68093A2924B8B18D0019148E /* RandomField.hpp */; };
 		68093A2C24B8B18D0019148E /* RandomField.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68093A2A24B8B18D0019148E /* RandomField.cpp */; };
@@ -1221,8 +1223,6 @@
 		68B96265244AE52800E5CF09 /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96261244AE50100E5CF09 /* xmlZ2.cpp */; };
 		68B96266244AE52C00E5CF09 /* xmlGFWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96262244AE50100E5CF09 /* xmlGFWall.cpp */; };
 		68B96267244AE53100E5CF09 /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96263244AE50100E5CF09 /* mixedop.cpp */; };
-		68C858B6256836D400C708DE /* WardIdentity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68C858B4256836D400C708DE /* WardIdentity.cpp */; };
-		68C858B7256836D400C708DE /* WardIdentity.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68C858B5256836D400C708DE /* WardIdentity.hpp */; };
 		68CEF13D24AA72B400A841F9 /* BaryonGamma3pt.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */; };
 		68CEF13E24AA72B400A841F9 /* BaryonGamma3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */; };
 		68D0E9CD24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */; };
@@ -1243,6 +1243,7 @@
 		68D0E9ED24A354F000834C1C /* Accelerator.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68D0E9EA24A354EF00834C1C /* Accelerator.cc */; };
 		68D0E9EE24A354F000834C1C /* Accelerator.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9EB24A354EF00834C1C /* Accelerator.h */; };
 		68E2C301245B20B8009E7BE5 /* Test_serialisation.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68E2C2F5245B2068009E7BE5 /* Test_serialisation.cc */; };
+		68F1C8F125B4397500A48690 /* Gauge.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68F1C8F025B4397500A48690 /* Gauge.cc */; };
 		68F687E123D4A96600590270 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 		68F687E223D4AD4700590270 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6815510C22CBE676009AB4AD /* Common.cpp */; };
 /* End PBXBuildFile section */
@@ -1460,6 +1461,8 @@
 		6804C187244C7864008E272B /* Test_sigma_to_nucleon.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_sigma_to_nucleon.cpp; path = ../Hadrons/tests/Test_sigma_to_nucleon.cpp; sourceTree = "<group>"; };
 		6804C18C244C78AF008E272B /* Test_hadrons_meson_3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_hadrons_meson_3pt; sourceTree = BUILT_PRODUCTS_DIR; };
 		680566CE24991A2000478344 /* Test_database.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_database.cpp; path = ../Hadrons/tests/Test_database.cpp; sourceTree = "<group>"; };
+		68068AA325C3170800B8699F /* WardIdentity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WardIdentity.cpp; sourceTree = "<group>"; };
+		68068AA425C3170800B8699F /* WardIdentity.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = WardIdentity.hpp; sourceTree = "<group>"; };
 		68093A2624B8752F0019148E /* gpuxml.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = gpuxml.sh; sourceTree = "<group>"; };
 		68093A2724B8B1670019148E /* FieldIo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FieldIo.hpp; sourceTree = "<group>"; };
 		68093A2924B8B18D0019148E /* RandomField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RandomField.hpp; sourceTree = "<group>"; };
@@ -2800,8 +2803,6 @@
 		68B96262244AE50100E5CF09 /* xmlGFWall.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlGFWall.cpp; sourceTree = "<group>"; };
 		68B96263244AE50100E5CF09 /* mixedop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mixedop.cpp; sourceTree = "<group>"; };
 		68BEFF6A2343A75A0031E3E3 /* xmlZ2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlZ2; sourceTree = BUILT_PRODUCTS_DIR; };
-		68C858B4256836D400C708DE /* WardIdentity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WardIdentity.cpp; sourceTree = "<group>"; };
-		68C858B5256836D400C708DE /* WardIdentity.hpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.cpp.h; path = WardIdentity.hpp; sourceTree = "<group>"; };
 		68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BaryonGamma3pt.hpp; sourceTree = "<group>"; };
 		68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BaryonGamma3pt.cpp; sourceTree = "<group>"; };
 		68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrecGeneralisedConjugateResidualNonHermitian.h; sourceTree = "<group>"; };
@@ -2825,6 +2826,7 @@
 		68E2C2F4245B204B009E7BE5 /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tests; path = ../Grid/tests; sourceTree = "<group>"; };
 		68E2C2F5245B2068009E7BE5 /* Test_serialisation.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_serialisation.cc; path = ../Grid/tests/IO/Test_serialisation.cc; sourceTree = "<group>"; };
 		68E2C2FA245B2097009E7BE5 /* Test_serialisation */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_serialisation; sourceTree = BUILT_PRODUCTS_DIR; };
+		68F1C8F025B4397500A48690 /* Gauge.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Gauge.cc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -3317,12 +3319,13 @@
 		6850CA76244A1C2F00A53DC8 /* gauge */ = {
 			isa = PBXGroup;
 			children = (
-				6850CA77244A1C2F00A53DC8 /* Photon.h */,
+				68F1C8F025B4397500A48690 /* Gauge.cc */,
 				6850CA78244A1C2F00A53DC8 /* Gauge.h */,
-				6850CA79244A1C2F00A53DC8 /* WilsonGaugeAction.h */,
 				6850CA7A244A1C2F00A53DC8 /* GaugeImplementations.h */,
-				6850CA7B244A1C2F00A53DC8 /* PlaqPlusRectangleAction.h */,
 				6850CA7C244A1C2F00A53DC8 /* GaugeImplTypes.h */,
+				6850CA77244A1C2F00A53DC8 /* Photon.h */,
+				6850CA7B244A1C2F00A53DC8 /* PlaqPlusRectangleAction.h */,
+				6850CA79244A1C2F00A53DC8 /* WilsonGaugeAction.h */,
 			);
 			path = gauge;
 			sourceTree = "<group>";
@@ -5303,8 +5306,8 @@
 				6850D431244A234300A53DC8 /* SigmaToNucleonEye.hpp */,
 				6850D43C244A234300A53DC8 /* SigmaToNucleonNonEye.cpp */,
 				6850D42C244A234300A53DC8 /* SigmaToNucleonNonEye.hpp */,
-				68C858B4256836D400C708DE /* WardIdentity.cpp */,
-				68C858B5256836D400C708DE /* WardIdentity.hpp */,
+				68068AA325C3170800B8699F /* WardIdentity.cpp */,
+				68068AA425C3170800B8699F /* WardIdentity.hpp */,
 				6850D437244A234300A53DC8 /* WeakEye3pt.cpp */,
 				6850D427244A234300A53DC8 /* WeakEye3pt.hpp */,
 				6850D428244A234300A53DC8 /* WeakMesonDecayKl2.cpp */,
@@ -6456,7 +6459,6 @@
 				682D0621246A95AA0052D780 /* CheckerboardSpinColorDiagonal.hpp in Headers */,
 				6850D561244A234500A53DC8 /* ZMobiusDWF.hpp in Headers */,
 				6850D548244A234500A53DC8 /* Noises.hpp in Headers */,
-				68C858B7256836D400C708DE /* WardIdentity.hpp in Headers */,
 				6850D543244A234500A53DC8 /* ChargedProp.hpp in Headers */,
 				6850D50D244A234500A53DC8 /* Wall.hpp in Headers */,
 				6850D57D244A234500A53DC8 /* LoadPerambulator.hpp in Headers */,
@@ -6482,6 +6484,7 @@
 				6850D41F244A230A00A53DC8 /* Environment.hpp in Headers */,
 				6850D534244A234500A53DC8 /* StochEm.hpp in Headers */,
 				6850D351244A230A00A53DC8 /* Global.hpp in Headers */,
+				68068AA625C3170800B8699F /* WardIdentity.hpp in Headers */,
 				6850D36B244A230A00A53DC8 /* A2AMatrix.hpp in Headers */,
 				6850D584244A234500A53DC8 /* LoadCosmHol.hpp in Headers */,
 				6850D52A244A234500A53DC8 /* StoutSmearing.hpp in Headers */,
@@ -7284,6 +7287,7 @@
 				6850CF86244A1C3100A53DC8 /* WilsonFermion5DInstantiationZWilsonImplFH.cc in Sources */,
 				6850D249244A1C3200A53DC8 /* JSON_IO.cc in Sources */,
 				6850CF9A244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplDF.cc in Sources */,
+				68F1C8F125B4397500A48690 /* Gauge.cc in Sources */,
 				6850CFFC244A1C3100A53DC8 /* Modules.cc in Sources */,
 				6850CF04244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplD.cc in Sources */,
 				6850CF2D244A1C3100A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc in Sources */,
@@ -7378,7 +7382,6 @@
 				6850D568244A234500A53DC8 /* Grad.cpp in Sources */,
 				6850D588244A234500A53DC8 /* LoadPerambulator.cpp in Sources */,
 				6850D523244A234500A53DC8 /* LocalCoherenceLanczos.cpp in Sources */,
-				68C858B6256836D400C708DE /* WardIdentity.cpp in Sources */,
 				6850D54F244A234500A53DC8 /* DistilVectors.cpp in Sources */,
 				6850D519244A234500A53DC8 /* Point.cpp in Sources */,
 				6850D57F244A234500A53DC8 /* LoadBinary.cpp in Sources */,
@@ -7458,6 +7461,7 @@
 				68093A2C24B8B18D0019148E /* RandomField.cpp in Sources */,
 				6850D527244A234500A53DC8 /* Electrify.cpp in Sources */,
 				6850D525244A234500A53DC8 /* A2AAslashVectors.cpp in Sources */,
+				68068AA525C3170800B8699F /* WardIdentity.cpp in Sources */,
 				6850D55D244A234500A53DC8 /* ZMobiusDWF.cpp in Sources */,
 				6850D4F3244A234500A53DC8 /* WeakEye3pt.cpp in Sources */,
 				6850D53B244A234500A53DC8 /* TimeDilutedSpinColorDiagonal.cpp in Sources */,

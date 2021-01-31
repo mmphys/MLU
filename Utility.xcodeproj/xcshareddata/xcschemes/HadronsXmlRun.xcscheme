@@ -61,8 +61,8 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--threads 4"
-            isEnabled = "YES">
+            argument = "--threads 2"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--log Error,Warning,Message,Debug"
