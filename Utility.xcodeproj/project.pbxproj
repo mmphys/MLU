@@ -1223,6 +1223,8 @@
 		68B96265244AE52800E5CF09 /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96261244AE50100E5CF09 /* xmlZ2.cpp */; };
 		68B96266244AE52C00E5CF09 /* xmlGFWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96262244AE50100E5CF09 /* xmlGFWall.cpp */; };
 		68B96267244AE53100E5CF09 /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96263244AE50100E5CF09 /* mixedop.cpp */; };
+		68BCBEC725CB13900064FE91 /* SeqGammaRegion.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68BCBEC525CB13900064FE91 /* SeqGammaRegion.cpp */; };
+		68BCBEC825CB13900064FE91 /* SeqGammaRegion.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68BCBEC625CB13900064FE91 /* SeqGammaRegion.hpp */; };
 		68CEF13D24AA72B400A841F9 /* BaryonGamma3pt.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */; };
 		68CEF13E24AA72B400A841F9 /* BaryonGamma3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */; };
 		68D0E9CD24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */; };
@@ -2802,6 +2804,8 @@
 		68B96261244AE50100E5CF09 /* xmlZ2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlZ2.cpp; sourceTree = "<group>"; };
 		68B96262244AE50100E5CF09 /* xmlGFWall.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlGFWall.cpp; sourceTree = "<group>"; };
 		68B96263244AE50100E5CF09 /* mixedop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mixedop.cpp; sourceTree = "<group>"; };
+		68BCBEC525CB13900064FE91 /* SeqGammaRegion.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SeqGammaRegion.cpp; sourceTree = "<group>"; };
+		68BCBEC625CB13900064FE91 /* SeqGammaRegion.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SeqGammaRegion.hpp; sourceTree = "<group>"; };
 		68BEFF6A2343A75A0031E3E3 /* xmlZ2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlZ2; sourceTree = BUILT_PRODUCTS_DIR; };
 		68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BaryonGamma3pt.hpp; sourceTree = "<group>"; };
 		68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BaryonGamma3pt.cpp; sourceTree = "<group>"; };
@@ -5354,6 +5358,8 @@
 				6850D457244A234300A53DC8 /* SeqConserved.hpp */,
 				6850D456244A234300A53DC8 /* SeqGamma.cpp */,
 				6850D448244A234300A53DC8 /* SeqGamma.hpp */,
+				68BCBEC525CB13900064FE91 /* SeqGammaRegion.cpp */,
+				68BCBEC625CB13900064FE91 /* SeqGammaRegion.hpp */,
 				6860B981248E77CC0049C0DE /* SeqGammaWall.cpp */,
 				6860B982248E77CC0049C0DE /* SeqGammaWall.hpp */,
 				6850D450244A234300A53DC8 /* Wall.cpp */,
@@ -6538,6 +6544,7 @@
 				6850D505244A234500A53DC8 /* Convolution.hpp in Headers */,
 				6850D512244A234500A53DC8 /* Momentum.hpp in Headers */,
 				6850D518244A234500A53DC8 /* Point.hpp in Headers */,
+				68BCBEC825CB13900064FE91 /* SeqGammaRegion.hpp in Headers */,
 				6850D51B244A234500A53DC8 /* MixedPrecisionRBPrecCG.hpp in Headers */,
 				6850D4F5244A234500A53DC8 /* WeakMesonDecayKl2.hpp in Headers */,
 				687D64F82552A30000E4F83A /* SourceSink.hpp in Headers */,
@@ -7440,6 +7447,7 @@
 				6850D372244A230A00A53DC8 /* Global.cpp in Sources */,
 				6850D52B244A234500A53DC8 /* GaugeFix.cpp in Sources */,
 				6850D581244A234500A53DC8 /* LoadA2AMatrixDiskVector.cpp in Sources */,
+				68BCBEC725CB13900064FE91 /* SeqGammaRegion.cpp in Sources */,
 				6850D4F8244A234500A53DC8 /* SigmaToNucleonNonEye.cpp in Sources */,
 				682D0620246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp in Sources */,
 				68093A3224B8B1A60019148E /* SaveField.cpp in Sources */,

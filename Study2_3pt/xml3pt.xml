@@ -19,17 +19,20 @@
     </dbOptions>
     <Nt>64</Nt>
     <Timeslices>
-      <start>0</start>
-      <end>4</end>
+      <start>4</start>
+      <end>8</end>
       <!--<end>64</end>-->
       <step>4</step>
     </Timeslices>
-    <Family>GF</Family>
+    <Family>GF GP</Family>
+    <Species>Point Wall Region</Species>
     <Momenta>0_0_0</Momenta>
     <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
     <!--<deltaT>12    16 20 24 28 32</deltaT>-->
     <!--<deltaT>12 14 16 20 24 28 32</deltaT>-->
     <deltaT>12</deltaT>
+    <SpatialPos>0 0 0</SpatialPos>
+    <RegionSize>1 1 1 1</RegionSize>
     <OutputBase></OutputBase>
     <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>
     <!--<Gauge></Gauge>-->
@@ -51,8 +54,6 @@
     <TwoPoint>true</TwoPoint>
     <HeavyQuark>true</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
-    <SpeciesPoint>true</SpeciesPoint>
-    <SpeciesWall>true</SpeciesWall>
     <DoNegativeMomenta>true</DoNegativeMomenta>
     <!--<Run>false</Run>-->
     <Run>false</Run>

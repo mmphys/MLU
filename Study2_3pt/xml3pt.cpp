@@ -73,14 +73,27 @@ std::istream& operator>>(std::istream& is, Family &family)
   return is;
 }
 
-enum class Species : int { Point, Wall, PointSeq };
-static const std::array<std::string, 3> SpeciesName{ "point", "wall", "pointseq" };
+enum class Species : int { Point, Wall, Region };
+static const std::array<std::string, 3> SpeciesNameArray{ "Point", "Wall", "Region" };
+
+const std::string &SpeciesName( Species species )
+{
+  const auto iSpecies = static_cast<typename std::underlying_type<Species>::type>( species );
+  if( iSpecies < 0 || iSpecies >= ::SpeciesNameArray.size() )
+    throw std::runtime_error( "Unknown species " + std::to_string( iSpecies ) );
+  return ::SpeciesNameArray[iSpecies];
+}
+
+char SpeciesNameShort( Species species )
+{
+  return SpeciesName( species )[0];
+}
 
 std::ostream& operator<<(std::ostream& os, const Species species)
 {
   const auto iSpecies = static_cast<typename std::underlying_type<Species>::type>( species );
-  if( iSpecies >= 0 && iSpecies < SpeciesName.size() )
-    os << SpeciesName[iSpecies];
+  if( iSpecies >= 0 && iSpecies < SpeciesNameArray.size() )
+    os << SpeciesNameArray[iSpecies];
   else
     os << "SpeciesUnknown(" << std::to_string( iSpecies ) << ")";
   return os;
@@ -92,9 +105,9 @@ std::istream& operator>>(std::istream& is, Species &species)
   if( is >> s )
   {
     int i;
-    for(i = 0; i < SpeciesName.size() && !Common::EqualIgnoreCase( s, SpeciesName[i] ); i++)
+    for(i = 0; i < SpeciesNameArray.size() && !Common::EqualIgnoreCase( s, SpeciesNameArray[i] ); i++)
       ;
-    if( i < SpeciesName.size() )
+    if( i < SpeciesNameArray.size() )
       species = static_cast<Species>( i );
     else
       is.setstate( std::ios_base::failbit );
@@ -114,7 +127,6 @@ public:
   Family family;
   Species species;
 
-protected:
   [[noreturn]] void HissyFit( const std::string &Message = HissyFitDefault ) const
   {
     std::stringstream ss;
@@ -122,32 +134,10 @@ protected:
     throw std::runtime_error( ss.str() );
   }
 
-public:
   // Allow extraction of the relevant parts without needing to specify
   inline operator Family() const { return family; }
   inline operator Species() const { return species; }
-  /*inline operator Sink() const
-  {
-    Sink s;
-    switch( species )
-    {
-      case Species::Point:
-        s = Sink::Point;
-        break;
-      case Species::Reverse:
-      case Species::Wall:
-        s = Sink::Wall;
-        break;
-      default:
-      {
-        std::stringstream ss;
-        ss << "Unrecognised species \"" << species << "\"";
-        throw std::runtime_error( ss.str() );
-      }
-        break;
-    }
-    return s;
-  }*/
+
   inline const std::string &FamilyName() const
   {
     const auto iFamily = static_cast<typename std::underlying_type<Family>::type>( family );
@@ -161,41 +151,20 @@ public:
     return ::FamilyName[iFamily];
   }
 
-  inline const std::string &FilePrefix() const
+  std::string FilePrefix() const
   {
-    if( family == Family::Z2 )
+    std::string s{ FamilyName() };
+    s.append( 1, SpeciesNameShort( species ) );
+    switch( family )
     {
-      if( species == Species::Point )
-      {
-        static const std::string Unfixed{ "ZUPP" };
-        static const std::string   Fixed{ "Z2PP" };
-        return GaugeFixAlways ? Fixed : Unfixed;
-      }
-      else if( species == Species::Wall )
-      {
-        static const std::string s{ "Z2WP" };
-        return s;
-      }
+      case Family::GF:
+        s.append( 1, 'W' );
+        break;
+      default:
+        s.append( 1, 'P' );
+        break;
     }
-    else if( family == Family::GF )
-    {
-      if( species == Species::Point )
-      {
-        static const std::string s{ "GFPW" };
-        return s;
-      }
-      else if( species == Species::Wall )
-      {
-        static const std::string s{ "GFWW" };
-        return s;
-      }
-      else if( species == Species::PointSeq )
-      {
-        static const std::string s{ "GF1W" };
-        return s;
-      }
-    }
-    HissyFit();
+    return s;
   }
   inline bool GaugeFixed() const { return GaugeFixAlways || family != Family::Z2 || species != Species::Point; }
   inline void AppendFixed( std::string &s, bool bSmeared = false ) const
@@ -243,7 +212,7 @@ template<typename Action> void Quark::ActionCommon( Application &app, const std:
 
 void Quark::CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const
 {
-  if( scale <= 0 )
+  if( scale <= 0 || scale == 1. )
   {
     // Shamir
     MAction::DWF::Par Par;
@@ -364,8 +333,11 @@ struct AppParams
                                       int,          Nt,
         Grid::Hadrons::Application::TrajRange,      Timeslices,
                                       std::string,  Family,
+                                      std::string,  Species,
                                       std::string,  Momenta,
                                       std::string,  deltaT,
+                                      std::string,  SpatialPos,
+                                      std::string,  RegionSize,
                                       std::string,  OutputBase,
                                       std::string,  Gauge,
                                       bool,         GaugeFixAlways,
@@ -374,15 +346,14 @@ struct AppParams
                                       bool,         TwoPoint,
                                       bool,         HeavyQuark,
                                       bool,         HeavyAnti,
-                                      bool,         SpeciesPoint,
-                                      bool,         SpeciesWall,
                                       bool,         DoNegativeMomenta,
                                       bool,         Run,
                                       std::string,  JobXmlPrefix)
   };
 
   RunPar Run;
-  Family family;
+  std::vector<Family> family;
+  std::vector<Species> species;
   std::vector<Quark> HeavyQuarks;
   std::vector<Quark> SpectatorQuarks;
   std::vector<Quark> SpectatorQuarks2pt;
@@ -398,6 +369,27 @@ protected:
   static std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType, std::size_t Min = 1 );
 };
 
+template <typename T> void NoDuplicates( const std::vector<T> &v, const std::string sErrorPrefix, bool bEmptyOK = false )
+{
+  if( v.empty() )
+  {
+    if( !bEmptyOK )
+      throw std::runtime_error( sErrorPrefix + " is empty" );
+  }
+  else if( v.size() > 1 )
+  {
+    std::vector<T> vc{ v };
+    std::sort( vc.begin(), vc.end() );
+    const auto dup = std::adjacent_find( vc.begin(), vc.end() );
+    if( dup != vc.end() )
+    {
+      std::stringstream ss;
+      ss << sErrorPrefix << " contains duplicates, e.g. " << *dup;
+      throw std::runtime_error( sErrorPrefix + " is empty" );
+    }
+  }
+}
+
 AppParams::AppParams( const std::string sXmlFilename, const std::string sRunPrefix )
 {
   static const std::string sXmlTopLevel{ "Study2" };
@@ -410,15 +402,14 @@ AppParams::AppParams( const std::string sXmlFilename, const std::string sRunPref
   SpectatorQuarks = ReadQuarks( r, "Spectator" );
   SpectatorQuarks2pt = ReadQuarks( r, "SpectatorExtra2pt", 0 );
   Momenta = Common::ArrayFromString<Common::Momentum>( Run.Momenta );
-  // Check the type
-  std::istringstream ss( Run.Family );
-  if( ! ( ss >> family && Common::StreamEmpty( ss ) ) )
-    throw std::runtime_error( "Unrecognised type \"" + Run.Family + "\"" );
+  // Check the taxonomy
+  family = Common::ArrayFromString<Family>( Run.Family );
+  NoDuplicates( family, "Family" );
+  species = Common::ArrayFromString<Species>( Run.Species );
+  NoDuplicates( species, "Species" );
   // Check parameters make sense
   //if( !( Run.TwoPoint || Run.HeavyQuark ||Run.HeavyAnti ) )
     //throw std::runtime_error( "At least one must be true of: TwoPoint; HeavyQuark; or HeavyAnti" );
-  if( !Run.SpeciesPoint && !Run.SpeciesWall )
-    throw std::runtime_error( "At least one of SpeciesPoint and SpeciesWall must be true" );
   if( Momenta.empty() )
     throw std::runtime_error( "There should be at least one momentum" );
   ThreePoint = Run.HeavyQuark || Run.HeavyAnti;
@@ -444,11 +435,15 @@ std::vector<Quark> AppParams::ReadQuarks( XmlReader &r, const std::string &qType
 std::string AppParams::ShortID() const
 {
   std::ostringstream s;
-  s << "S2" << family;
-  // I originally defined the GF type as GFPW
-  // Make sure the runID doesn't change, because it's the seed for random number generation
-  if( family == Family::GF )
-    s << "PW";
+  s << "S2";
+  for( const Family &f : family )
+  {
+    s << f;
+    // I originally defined the GF type as GFPW
+    // Make sure the runID doesn't change, because it's the seed for random number generation
+    if( family.size() == 1 && f == Family::GF )
+      s << "PW";
+  }
   for( const Quark &q : SpectatorQuarks )
     s << q.flavour;
   return s.str();
@@ -458,11 +453,11 @@ std::string AppParams::ShortID() const
 std::string AppParams::RunID() const
 {
   std::ostringstream s;
-  s << family;
-  if( Run.SpeciesPoint )
-    s << "P";
-  if( Run.SpeciesWall )
-    s << "W";
+  for( const Family &f : family )
+    s << f;
+  s << Sep;
+  for( const Species &sp : species )
+    s << SpeciesNameShort( sp );
   for( const Quark &q : SpectatorQuarks )
     s << Sep << q.flavour;
   if( Run.TwoPoint )
@@ -650,7 +645,7 @@ void ModSource::AddDependencies( HModList &ModList ) const
     case Family::GP:
       {
         MSource::Point::Par par;
-        par.position = "0 0 0 " + std::to_string( t );
+        par.position = ModList.params.Run.SpatialPos + Common::Space + std::to_string( t );
         ModList.application.createModule<MSource::Point>(name, par);
       }
       break;
@@ -891,7 +886,7 @@ public:
                 const Quark &q, const Common::Momentum &p, int t );
   virtual void AddDependencies( HModList &ModList ) const;
 protected:
-  template<typename T> void AddDependenciesT( HModList &ModList ) const;
+  template<typename T> void AddDependenciesT( HModList &ModList, typename T::Par &seqPar ) const;
 };
 
 const std::string ModSourceSeq::Prefix{ "Seq" + ModSource::Prefix };
@@ -910,12 +905,9 @@ ModSourceSeq::ModSourceSeq( HModList &ML, const Taxonomy &tax_, int current_, in
   AppendPT( name, t, p );
 }
 
-template<typename T> void ModSourceSeq::AddDependenciesT( HModList &ModList ) const
+template<typename T> void ModSourceSeq::AddDependenciesT( HModList &ModList, typename T::Par &seqPar ) const
 {
-  typename T::Par seqPar;
   seqPar.q = ModList.TakeOwnership( new ModProp( ModList, tax, q, p, t ) );
-  seqPar.tA  = ModList.params.TimeBound( t + deltaT );
-  seqPar.tB  = seqPar.tA;
   seqPar.mom = pSeq.to_string4d( Space );
   seqPar.gamma = algInsert[Current];
   ModList.application.createModule<T>(name, seqPar);
@@ -923,10 +915,37 @@ template<typename T> void ModSourceSeq::AddDependenciesT( HModList &ModList ) co
 
 void ModSourceSeq::AddDependencies( HModList &ModList ) const
 {
-  if( tax == Species::Point )
-    AddDependenciesT<MSource::SeqGamma>( ModList );
-  else
-    AddDependenciesT<MSource::SeqGammaWall>( ModList );
+  const int tSink{ModList.params.TimeBound( t + deltaT )};
+  switch( tax.species )
+  {
+    case Species::Point:
+    {
+      using M = MSource::SeqGamma;
+      typename M::Par seqPar;
+      seqPar.tA  = tSink;
+      seqPar.tB  = tSink;
+      AddDependenciesT<M>( ModList, seqPar );
+    }
+      break;
+    case Species::Wall:
+    {
+      using M = MSource::SeqGammaWall;
+      typename M::Par seqPar;
+      seqPar.tA  = tSink;
+      seqPar.tB  = tSink;
+      AddDependenciesT<M>( ModList, seqPar );
+    }
+      break;
+    case Species::Region:
+    {
+      using M = MSource::SeqGammaRegion;
+      typename M::Par seqPar;
+      seqPar.LowerLeft  = ModList.params.Run.SpatialPos + Common::Space + std::to_string( tSink );
+      seqPar.RegionSize = "1 1 1 1";
+      AddDependenciesT<M>( ModList, seqPar );
+    }
+      break;
+  }
 }
 
 /**************************
@@ -999,6 +1018,8 @@ ModContract2pt::ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
                                 const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_)
 : HMod(ModList, taxonomy), q1{q1_}, q2{q2_}, p{p_}, t{t_}
 {
+  if( tax == Species::Region )
+    return; // I can't do this for two-point. Just silently ignore
   std::string Prefix{ tax.FilePrefix() };
   std::string s{ q2.flavour };
   Append( s, q1.flavour );
@@ -1019,6 +1040,8 @@ ModContract2pt::ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
 
 void ModContract2pt::AddDependencies( HModList &ModList ) const
 {
+  if( name.empty() )
+    return; // I can't do this for two-point. Just silently ignore
   MContraction::Meson::Par mesPar;
   mesPar.output = FileName;
   //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
@@ -1172,9 +1195,10 @@ void AppMaker::Make()
   {
     for(unsigned int t = l.params.Run.Timeslices.start; t < l.params.Run.Timeslices.end; t += l.params.Run.Timeslices.step)
     {
-      for(int iSpecies = l.params.Run.SpeciesPoint ? 0 : 1; iSpecies <= l.params.Run.SpeciesWall ? 1  : 0; iSpecies++)
+      for( Family  taxFamily  : l.params.family )
+      for( Species taxSpecies : l.params.species  )
       {
-        const Taxonomy tax{ l.params.family, iSpecies ? Species::Wall : Species::Point };
+        const Taxonomy tax{ taxFamily, taxSpecies };
         for( Common::Momentum p : l.params.Momenta )
         {
           for( int pDoNeg = 0; pDoNeg < ( ( l.params.Run.DoNegativeMomenta && p ) ? 2 : 1 ); ++pDoNeg )
@@ -1220,7 +1244,7 @@ void AppMaker::Make()
                           // Debug If we do GF::Point, then also do GF::Reverse as a Debug
                           /*if( tax == Family::GF && tax == Species::Point )
                           {
-                            Taxonomy taxDebug{ tax.family, Species::PointSeq };
+                            Taxonomy taxDebug{ tax.family, Species::Region };
                             l.TakeOwnership( new ModContract3pt( l, taxDebug, qH1, qH2, qSpectator, p,
                                                                  t, bHeavyAnti, j, deltaT, false ) );
                           }*/
@@ -1276,11 +1300,6 @@ int main(int argc, char *argv[])
     AppMaker x( params );
     x.Make();
     // Run or save the job
-    if( params.Run.SpeciesWall && !params.Run.SpeciesPoint )
-    {
-      LOG(Warning) << "Creation of wall sinks necessitates creation of point sinks." << std::endl;
-      LOG(Warning) << "Are you sure you don't want to save point sinks?" << std::endl;
-    }
     x.application.saveParameterFile( params.Run.JobXmlPrefix + params.RunID() + ".xml" );
     if( params.Run.Run )
       x.application.run();
