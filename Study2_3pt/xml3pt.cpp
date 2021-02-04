@@ -44,17 +44,25 @@ inline void Append( std::string &sDest, const std::string &s )
   sDest.append( s );
 };
 
-enum class Family : int { Z2, GF, GP };
-static const std::array<std::string, 3> FamilyName{ "Z2", "GF", "GP" };
+enum class Family : int { Z2, ZF, GF, GP };
+static const std::array<std::string, 4> FamilyNames{ "Z2", "ZF", "GF", "GP" };
 
-std::ostream& operator<<(std::ostream& os, const Family family)
+typename std::underlying_type<Family>::type FamilyIndex( Family family )
 {
   const auto iFamily = static_cast<typename std::underlying_type<Family>::type>( family );
-  if( iFamily >= 0 && iFamily < FamilyName.size() )
-    os << FamilyName[iFamily];
-  else
-    os << "FamilyUnknown(" << std::to_string( iFamily ) << ")";
-  return os;
+  if( iFamily < 0 || iFamily >= FamilyNames.size() )
+    throw std::runtime_error( "Unknown family " + std::to_string( iFamily ) );
+  return iFamily;
+}
+
+inline const std::string &FamilyName( Family family )
+{
+  return FamilyNames[FamilyIndex( family )];
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Family family)
+{
+  return os << FamilyName( family );
 }
 
 std::istream& operator>>(std::istream& is, Family &family)
@@ -63,9 +71,9 @@ std::istream& operator>>(std::istream& is, Family &family)
   if( is >> s )
   {
     int i;
-    for(i = 0; i < FamilyName.size() && !Common::EqualIgnoreCase( s, FamilyName[i] ); i++)
+    for(i = 0; i < FamilyNames.size() && !Common::EqualIgnoreCase( s, FamilyNames[i] ); ++i)
       ;
-    if( i < FamilyName.size() )
+    if( i < FamilyNames.size() )
       family = static_cast<Family>( i );
     else
       is.setstate( std::ios_base::failbit );
@@ -74,29 +82,29 @@ std::istream& operator>>(std::istream& is, Family &family)
 }
 
 enum class Species : int { Point, Wall, Region };
-static const std::array<std::string, 3> SpeciesNameArray{ "Point", "Wall", "Region" };
+static const std::array<std::string, 3> SpeciesNames{ "Point", "Wall", "Region" };
 
-const std::string &SpeciesName( Species species )
+typename std::underlying_type<Species>::type SpeciesIndex( Species species )
 {
   const auto iSpecies = static_cast<typename std::underlying_type<Species>::type>( species );
-  if( iSpecies < 0 || iSpecies >= ::SpeciesNameArray.size() )
+  if( iSpecies < 0 || iSpecies >= ::SpeciesNames.size() )
     throw std::runtime_error( "Unknown species " + std::to_string( iSpecies ) );
-  return ::SpeciesNameArray[iSpecies];
+  return iSpecies;
 }
 
-char SpeciesNameShort( Species species )
+inline const std::string &SpeciesName( Species species )
+{
+  return SpeciesNames[SpeciesIndex( species )];
+}
+
+inline char SpeciesNameShort( Species species )
 {
   return SpeciesName( species )[0];
 }
 
-std::ostream& operator<<(std::ostream& os, const Species species)
+inline std::ostream& operator<<(std::ostream& os, const Species species)
 {
-  const auto iSpecies = static_cast<typename std::underlying_type<Species>::type>( species );
-  if( iSpecies >= 0 && iSpecies < SpeciesNameArray.size() )
-    os << SpeciesNameArray[iSpecies];
-  else
-    os << "SpeciesUnknown(" << std::to_string( iSpecies ) << ")";
-  return os;
+  return os << SpeciesName( species );
 }
 
 std::istream& operator>>(std::istream& is, Species &species)
@@ -105,9 +113,9 @@ std::istream& operator>>(std::istream& is, Species &species)
   if( is >> s )
   {
     int i;
-    for(i = 0; i < SpeciesNameArray.size() && !Common::EqualIgnoreCase( s, SpeciesNameArray[i] ); i++)
+    for(i = 0; i < SpeciesNames.size() && !Common::EqualIgnoreCase( s, SpeciesNames[i] ); ++i)
       ;
-    if( i < SpeciesNameArray.size() )
+    if( i < SpeciesNames.size() )
       species = static_cast<Species>( i );
     else
       is.setstate( std::ios_base::failbit );
@@ -121,11 +129,13 @@ class Taxonomy
 {
   friend class AppParams;
 protected:
-  static bool GaugeFixAlways;
   static const std::string HissyFitDefault;
 public:
   Family family;
   Species species;
+
+  Taxonomy( Family family_, Species species_ ) : family{family_}, species{species_} {}
+  Taxonomy() : Taxonomy( Family::GF, Species::Point ) {}
 
   [[noreturn]] void HissyFit( const std::string &Message = HissyFitDefault ) const
   {
@@ -137,19 +147,7 @@ public:
   // Allow extraction of the relevant parts without needing to specify
   inline operator Family() const { return family; }
   inline operator Species() const { return species; }
-
-  inline const std::string &FamilyName() const
-  {
-    const auto iFamily = static_cast<typename std::underlying_type<Family>::type>( family );
-    if( iFamily < 0 || iFamily >= ::FamilyName.size() )
-      throw std::runtime_error( "Unknown family " + std::to_string( iFamily ) );
-    if( family == Family::Z2 && species == Species::Point && !GaugeFixAlways )
-    {
-      static const std::string Z2NotGaugeFixed{ "ZU" };
-      return Z2NotGaugeFixed;
-    }
-    return ::FamilyName[iFamily];
-  }
+  inline const std::string &FamilyName() const { return ::FamilyName( family ); }
 
   std::string FilePrefix() const
   {
@@ -166,7 +164,7 @@ public:
     }
     return s;
   }
-  inline bool GaugeFixed() const { return GaugeFixAlways || family != Family::Z2 || species != Species::Point; }
+  inline bool GaugeFixed() const { return family != Family::Z2; }
   inline void AppendFixed( std::string &s, bool bSmeared = false ) const
   {
     if( GaugeFixed() )
@@ -174,11 +172,49 @@ public:
     if( bSmeared )
       Append( s, "stout" );
   }
+  void Validate() const
+  {
+    // Validate family and species separately
+    FamilyIndex( family );
+    SpeciesIndex( species );
+    // Weed out invalid combinations
+    if( family == Family::Z2 && species == Species::Wall ) // Shouldn't be asking for wall sinks without gauge-fixing
+      HissyFit();
+  }
 };
 
-const std::string Taxonomy::HissyFitDefault{ "Unknown Taxonomy" };
+const std::string Taxonomy::HissyFitDefault{ "Invalid Taxonomy" };
 
-bool Taxonomy::GaugeFixAlways{ false };
+inline std::ostream& operator<<(std::ostream& os, const Taxonomy &taxonomy)
+{
+  return os << taxonomy.family << Common::Space << taxonomy.species;
+}
+
+std::istream& operator>>(std::istream& is, Taxonomy &taxonomy)
+{
+  Taxonomy local;
+  std::string s;
+  if( is >> local.family && is >> local.species )
+  {
+    local.Validate();
+    taxonomy = local;
+  }
+  return is;
+}
+
+// These make taxa sortable
+bool operator<( const Taxonomy &lhs, const Taxonomy &rhs )
+{
+  return       FamilyIndex ( lhs.family ) <  FamilyIndex ( rhs.family )
+         || (  FamilyIndex ( lhs.family ) == FamilyIndex ( rhs.family )
+            && SpeciesIndex( lhs.species) <  SpeciesIndex( rhs.species) );
+}
+
+bool operator==( const Taxonomy &lhs, const Taxonomy &rhs )
+{
+  return FamilyIndex( lhs.family ) == FamilyIndex ( rhs.family )
+     && SpeciesIndex( lhs.species) == SpeciesIndex( rhs.species);
+}
 
 struct Quark: Serializable {
 GRID_SERIALIZABLE_CLASS_MEMBERS(Quark,
@@ -194,38 +230,21 @@ GRID_SERIALIZABLE_CLASS_MEMBERS(Quark,
                                 double,       residual,
                                 bool,         GaugeSmear,
                                 std::string,  EigenPackFilename )
-protected:
-  template<typename Action> void ActionCommon( Application &app, const std::string &name, typename Action::Par &Par ) const;
 public:
   void CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const;
 };
 
-template<typename Action> void Quark::ActionCommon( Application &app, const std::string &name, typename Action::Par &Par ) const
-{
-  Par.Ls       = Ls;
-  Par.M5       = M5;
-  Par.mass     = mass;
-  Par.boundary = boundary;
-  Par.twist    = twist;
-  app.createModule<Action>( name, Par );
-}
-
 void Quark::CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const
 {
-  if( scale <= 0 || scale == 1. )
-  {
-    // Shamir
-    MAction::DWF::Par Par;
-    Par.gauge = std::move( Gauge );
-    ActionCommon<MAction::DWF>( app, name, Par );
-  }
-  else
-  {
-    MAction::ScaledDWF::Par Par;
-    Par.gauge = std::move( Gauge );
-    Par.scale = scale;
-    ActionCommon<MAction::ScaledDWF>( app, name, Par );
-  }
+  MAction::ScaledDWF::Par Par;
+  Par.gauge    = std::move( Gauge );
+  Par.Ls       = Ls;
+  Par.mass     = mass;
+  Par.M5       = M5;
+  Par.scale    = scale; // 1 = Shamir, 2 = Möbius
+  Par.boundary = boundary;
+  Par.twist    = twist;
+  app.createModule<MAction::ScaledDWF>( name, Par );
 }
 
 static const Gamma::Algebra algInsert[] = {
@@ -328,19 +347,18 @@ struct AppParams
   struct RunPar: Serializable {
       GRID_SERIALIZABLE_CLASS_MEMBERS(RunPar,
         Grid::Hadrons::Application::TrajRange,      trajCounter,
+                                  databaseOptions,  dbOptions,
         Grid::Hadrons::VirtualMachine::GeneticPar,  genetic,
-                                   databaseOptions, dbOptions,
                                       int,          Nt,
         Grid::Hadrons::Application::TrajRange,      Timeslices,
-                                      std::string,  Family,
-                                      std::string,  Species,
+                                      std::string,  runId,
+                                      std::string,  Taxa,
                                       std::string,  Momenta,
                                       std::string,  deltaT,
                                       std::string,  SpatialPos,
                                       std::string,  RegionSize,
                                       std::string,  OutputBase,
                                       std::string,  Gauge,
-                                      bool,         GaugeFixAlways,
              Grid::Hadrons::MGauge::GaugeFix::Par,  GaugeFix,
                        MGauge::StoutSmearing::Par,  StoutSmear,
                                       bool,         TwoPoint,
@@ -352,8 +370,7 @@ struct AppParams
   };
 
   RunPar Run;
-  std::vector<Family> family;
-  std::vector<Species> species;
+  std::vector<Taxonomy> Taxa;
   std::vector<Quark> HeavyQuarks;
   std::vector<Quark> SpectatorQuarks;
   std::vector<Quark> SpectatorQuarks2pt;
@@ -363,7 +380,6 @@ struct AppParams
   inline int TimeBound( int t ) const
   { return t < 0 ? Run.Nt - ((-t) % Run.Nt) : t % Run.Nt; }
   AppParams( const std::string sXmlFilename, const std::string sRunPrefix );
-  std::string ShortID() const;
   std::string RunID() const;
 protected:
   static std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType, std::size_t Min = 1 );
@@ -385,7 +401,7 @@ template <typename T> void NoDuplicates( const std::vector<T> &v, const std::str
     {
       std::stringstream ss;
       ss << sErrorPrefix << " contains duplicates, e.g. " << *dup;
-      throw std::runtime_error( sErrorPrefix + " is empty" );
+      throw std::runtime_error( ss.str() );
     }
   }
 }
@@ -396,17 +412,15 @@ AppParams::AppParams( const std::string sXmlFilename, const std::string sRunPref
   static const std::string sXmlTagName{ "RunPar" };
   XmlReader r( sXmlFilename, false, sXmlTopLevel );
   read( r, sXmlTagName, Run );
-  Run.JobXmlPrefix.append( sRunPrefix );
-  Taxonomy::GaugeFixAlways = Run.GaugeFixAlways;
-  HeavyQuarks     = ReadQuarks( r, "Heavy" );
-  SpectatorQuarks = ReadQuarks( r, "Spectator" );
+  if( !sRunPrefix.empty() )
+    Run.JobXmlPrefix = sRunPrefix + Run.JobXmlPrefix;
+  HeavyQuarks        = ReadQuarks( r, "Heavy" );
+  SpectatorQuarks    = ReadQuarks( r, "Spectator" );
   SpectatorQuarks2pt = ReadQuarks( r, "SpectatorExtra2pt", 0 );
   Momenta = Common::ArrayFromString<Common::Momentum>( Run.Momenta );
   // Check the taxonomy
-  family = Common::ArrayFromString<Family>( Run.Family );
-  NoDuplicates( family, "Family" );
-  species = Common::ArrayFromString<Species>( Run.Species );
-  NoDuplicates( species, "Species" );
+  Taxa = Common::ArrayFromString<Taxonomy>( Run.Taxa );
+  NoDuplicates( Taxa, "Taxa" );
   // Check parameters make sense
   //if( !( Run.TwoPoint || Run.HeavyQuark ||Run.HeavyAnti ) )
     //throw std::runtime_error( "At least one must be true of: TwoPoint; HeavyQuark; or HeavyAnti" );
@@ -430,34 +444,25 @@ std::vector<Quark> AppParams::ReadQuarks( XmlReader &r, const std::string &qType
   return vq;
 }
 
-// Make a brief name for the job, not necessarily unique, but likely to identify the job
-// ... for use as a base filename
-std::string AppParams::ShortID() const
-{
-  std::ostringstream s;
-  s << "S2";
-  for( const Family &f : family )
-  {
-    s << f;
-    // I originally defined the GF type as GFPW
-    // Make sure the runID doesn't change, because it's the seed for random number generation
-    if( family.size() == 1 && f == Family::GF )
-      s << "PW";
-  }
-  for( const Quark &q : SpectatorQuarks )
-    s << q.flavour;
-  return s.str();
-}
-
 // Make a unique RunID string that completely describes the run
 std::string AppParams::RunID() const
 {
   std::ostringstream s;
-  for( const Family &f : family )
-    s << f;
-  s << Sep;
-  for( const Species &sp : species )
-    s << SpeciesNameShort( sp );
+  {
+    // Start with all the Families and sink types
+    std::vector<Taxonomy> taxSorted{ Taxa };
+    std::sort( taxSorted.begin(), taxSorted.end() );
+    for( std::size_t i = 0; i < taxSorted.size(); ++i )
+    {
+      if( i == 0 || taxSorted[i].family != taxSorted[i - 1].family )
+      {
+        if( i )
+          s << Sep;
+        s << taxSorted[i].family;
+      }
+      s << SpeciesNameShort( taxSorted[i].species );
+    }
+  }
   for( const Quark &q : SpectatorQuarks )
     s << Sep << q.flavour;
   if( Run.TwoPoint )
@@ -614,8 +619,9 @@ public:
 
 const std::string ModSource::Prefix{ "Source" };
 
-ModSource::ModSource(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p_, int t_)
-: HMod(ModList, taxonomy), p{p_}, t{t_}
+ModSource::ModSource(HModList &ModList, const Taxonomy &tx, const Common::Momentum &p_, int t_)
+// Silently translate ZF sources into Z2 sources
+: HMod(ModList, tx.family == Family::ZF ? Taxonomy(Family::Z2,tx.species) : tx), p{p_}, t{t_}
 {
   name = Prefix;
   Append( name, tax.FamilyName() );
@@ -1016,10 +1022,10 @@ public:
 
 ModContract2pt::ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
                                 const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_)
-: HMod(ModList, taxonomy), q1{q1_}, q2{q2_}, p{p_}, t{t_}
+// Two-point Region-sinks don't really exist - silently translate to point-sinks
+: HMod(ModList, taxonomy == Species::Region ? Taxonomy(taxonomy.family, Species::Point) : taxonomy),
+  q1{q1_}, q2{q2_}, p{p_}, t{t_}
 {
-  if( tax == Species::Region )
-    return; // I can't do this for two-point. Just silently ignore
   std::string Prefix{ tax.FilePrefix() };
   std::string s{ q2.flavour };
   Append( s, q1.flavour );
@@ -1160,7 +1166,7 @@ Application AppMaker::Setup( const AppParams &params )
   Application::GlobalPar globalPar;
   globalPar.trajCounter  = params.Run.trajCounter;
   globalPar.genetic      = params.Run.genetic;
-  globalPar.runId        = params.ShortID();
+  globalPar.runId        = params.Run.runId;
   // database options
   globalPar.database.resultDb   = params.Run.dbOptions.resultDb;
   globalPar.database.makeStatDb = params.Run.dbOptions.makeStatDb;
@@ -1195,10 +1201,8 @@ void AppMaker::Make()
   {
     for(unsigned int t = l.params.Run.Timeslices.start; t < l.params.Run.Timeslices.end; t += l.params.Run.Timeslices.step)
     {
-      for( Family  taxFamily  : l.params.family )
-      for( Species taxSpecies : l.params.species  )
+      for( const Taxonomy &tax : l.params.Taxa )
       {
-        const Taxonomy tax{ taxFamily, taxSpecies };
         for( Common::Momentum p : l.params.Momenta )
         {
           for( int pDoNeg = 0; pDoNeg < ( ( l.params.Run.DoNegativeMomenta && p ) ? 2 : 1 ); ++pDoNeg )
@@ -1219,7 +1223,7 @@ void AppMaker::Make()
                   }
                 }
               }
-              else if( !l.params.ThreePoint && tax == Species::Point )
+              else if( !l.params.ThreePoint )
               {
                 // We are only performing residual-mass checks on each propagator
                 l.TakeOwnership( new ModProp( l, tax, qH1, p, t ) );
@@ -1241,13 +1245,6 @@ void AppMaker::Make()
                         {
                           l.TakeOwnership( new ModContract3pt( l, tax, qH1, qH2, qSpectator, p,
                                                                t, bHeavyAnti, j, deltaT, false ) );
-                          // Debug If we do GF::Point, then also do GF::Reverse as a Debug
-                          /*if( tax == Family::GF && tax == Species::Point )
-                          {
-                            Taxonomy taxDebug{ tax.family, Species::Region };
-                            l.TakeOwnership( new ModContract3pt( l, taxDebug, qH1, qH2, qSpectator, p,
-                                                                 t, bHeavyAnti, j, deltaT, false ) );
-                          }*/
                           if( p && qH1.mass == qH2.mass )
                           {
                             l.TakeOwnership( new ModContract3pt( l, tax, qH1, qH2, qSpectator, p,
@@ -1280,7 +1277,11 @@ int main(int argc, char *argv[])
   // See whether parameter file exists
   if( argc < 2 || !Common::FileExists( argv[1] ) )
   {
-    std::cout << "1st argument should be Parameter.xml filename" << std::endl;
+    std::cout << "Usage: xml3pt in_file [out_prefix]\n"
+              << "where:\n"
+              << "  in_file is the name of the Parameter.xml driving this job\n"
+              << "  out_prefix+JobXmlPrefix (from .xml) is location for job and schedule files"
+              << std::endl;
     return EXIT_FAILURE;
   }
   const std::string sXmlFilename{ argv[1] };

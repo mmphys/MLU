@@ -2805,7 +2805,7 @@
 		68B96262244AE50100E5CF09 /* xmlGFWall.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlGFWall.cpp; sourceTree = "<group>"; };
 		68B96263244AE50100E5CF09 /* mixedop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mixedop.cpp; sourceTree = "<group>"; };
 		68BCBEC525CB13900064FE91 /* SeqGammaRegion.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SeqGammaRegion.cpp; sourceTree = "<group>"; };
-		68BCBEC625CB13900064FE91 /* SeqGammaRegion.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SeqGammaRegion.hpp; sourceTree = "<group>"; };
+		68BCBEC625CB13900064FE91 /* SeqGammaRegion.hpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.cpp.h; path = SeqGammaRegion.hpp; sourceTree = "<group>"; };
 		68BEFF6A2343A75A0031E3E3 /* xmlZ2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlZ2; sourceTree = BUILT_PRODUCTS_DIR; };
 		68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BaryonGamma3pt.hpp; sourceTree = "<group>"; };
 		68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BaryonGamma3pt.cpp; sourceTree = "<group>"; };

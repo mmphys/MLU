@@ -6,37 +6,36 @@
       <end>3001</end>
       <step>40</step>
     </trajCounter>
+    <dbOptions>
+      <resultDb></resultDb>
+      <makeStatDb>false</makeStatDb>
+      <applicationDbPrefix>db/</applicationDbPrefix>
+    </dbOptions>
     <genetic>
       <popSize>20</popSize>
       <maxGen>160</maxGen>
       <maxCstGen>200</maxCstGen>
       <mutationRate>0.1</mutationRate>
     </genetic>
-    <dbOptions>
-      <resultDb></resultDb>
-      <makeStatDb>false</makeStatDb>
-      <applicationDbPrefix>db/</applicationDbPrefix>
-    </dbOptions>
     <Nt>64</Nt>
     <Timeslices>
-      <start>4</start>
-      <end>8</end>
+      <start>0</start>
+      <end>4</end>
       <!--<end>64</end>-->
       <step>4</step>
     </Timeslices>
-    <Family>GF GP</Family>
-    <Species>Point Wall Region</Species>
+    <runId>Study2</runId>
+    <Taxa>GF Point GF Wall GF Region GP Wall Z2 Point ZF Point ZF Wall</Taxa>
     <Momenta>0_0_0</Momenta>
     <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
-    <!--<deltaT>12    16 20 24 28 32</deltaT>-->
+    <deltaT>12    16 20 24 28 32</deltaT>
     <!--<deltaT>12 14 16 20 24 28 32</deltaT>-->
-    <deltaT>12</deltaT>
+    <!--<deltaT>12</deltaT>-->
     <SpatialPos>0 0 0</SpatialPos>
     <RegionSize>1 1 1 1</RegionSize>
     <OutputBase></OutputBase>
     <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>
     <!--<Gauge></Gauge>-->
-    <GaugeFixAlways>true</GaugeFixAlways>
     <GaugeFix>
       <gauge>Not used</gauge>
       <alpha>0.05</alpha>
@@ -55,8 +54,9 @@
     <HeavyQuark>true</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
     <DoNegativeMomenta>true</DoNegativeMomenta>
-    <!--<Run>false</Run>-->
+    <!--<Run>true</Run>-->
     <Run>false</Run>
+    <!-- Prefix for job xml and schedule file names (append '/' if it's a directory) -->
     <JobXmlPrefix></JobXmlPrefix>
   </RunPar>
   <!-- ScaledDWF -->
@@ -110,6 +110,7 @@
       <scale>2</scale>
       <maxIteration>5000</maxIteration>
       <residual>1e-12</residual>
+      <!-- Check the residual for h3 -->
       <GaugeSmear>true</GaugeSmear>
       <EigenPackFilename></EigenPackFilename>
     </elem>
@@ -123,7 +124,7 @@
       <M5>1.0</M5>
       <boundary>1 1 1 -1</boundary>
       <twist>0. 0. 0. 0.</twist>
-      <scale>0</scale>
+      <scale>1</scale>
       <maxIteration>5000</maxIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
@@ -136,7 +137,7 @@
       <M5>1.0</M5>
       <boundary>1 1 1 -1</boundary>
       <twist>0. 0. 0. 0.</twist>
-      <scale>0</scale>
+      <scale>1</scale>
       <maxIteration>5000</maxIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
@@ -149,7 +150,7 @@
       <M5>1.0</M5>
       <boundary>1 1 1 -1</boundary>
       <twist>0. 0. 0. 0.</twist>
-      <scale>0</scale>
+      <scale>1</scale>
       <maxIteration>5000</maxIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
@@ -162,7 +163,7 @@
       <M5>1.0</M5>
       <boundary>1 1 1 -1</boundary>
       <twist>0. 0. 0. 0.</twist>
-      <scale>0</scale>
+      <scale>1</scale>
       <maxIteration>5000</maxIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
@@ -178,7 +179,7 @@
       <M5>1.8</M5>
       <boundary>1 1 1 -1</boundary>
       <twist>0. 0. 0. 0.</twist>
-      <scale>0</scale>
+      <scale>1</scale>
       <maxIteration>5000</maxIteration>
       <residual>1e-12</residual>
       <GaugeSmear>false</GaugeSmear>
@@ -194,7 +195,7 @@
       <M5>1.8</M5>
       <boundary>1 1 1 -1</boundary>
       <twist>0. 0. 0. 0.</twist>
-      <scale>0</scale>
+      <scale>1</scale>
       <maxIteration>5000</maxIteration>
       <residual>1e-12</residual>
       <GaugeSmear>false</GaugeSmear>
@@ -210,7 +211,7 @@
       <M5>1.8</M5>
       <boundary>1 1 1 -1</boundary>
       <twist>0. 0. 0. 0.</twist>
-      <scale>0</scale>
+      <scale>1</scale>
       <maxIteration>5000</maxIteration>
       <residual>1e-8</residual>
       <GaugeSmear>false</GaugeSmear>
