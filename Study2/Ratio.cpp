@@ -24,7 +24,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include "../Analyze/Common.hpp"
+#include <MLU/Common.hpp>
 
 //static const std::vector<std::string> vHeavy{ "h0", "h1", "h2", "h3" };
 //static const int NumHeavy{ static_cast<int>( vHeavy.size() ) };

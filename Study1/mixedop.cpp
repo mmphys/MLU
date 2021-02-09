@@ -30,7 +30,7 @@
 //#include <iomanip>
 #include <stdio.h>
 
-#include "../Analyze/Common.hpp"
+#include <MLU/Common.hpp>
 
 using scalar = double; // Minuit2 uses double, so haven't tested any other type
 using degrees= int;    // Have tested float, but still need to fix file naming when number contains period

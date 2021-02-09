@@ -23,7 +23,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include "../Analyze/Common.hpp"
+#include <MLU/Common.hpp>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 
