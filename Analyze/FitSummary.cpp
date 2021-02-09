@@ -26,7 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include "Common.hpp"
+#include <MLU/Common.hpp>
 
 #include <set>
 #include <gsl/gsl_randist.h>

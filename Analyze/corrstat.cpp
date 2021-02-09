@@ -28,7 +28,7 @@
 
 #include <stdio.h>
 #include <typeinfo>
-#include "Common.hpp"
+#include <MLU/Common.hpp>
 
 using C = std::complex<double>;
 

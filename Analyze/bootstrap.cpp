@@ -27,7 +27,7 @@
 
 // Perform a bootstrap
 
-#include "Common.hpp"
+#include <MLU/Common.hpp>
 using namespace Common;
 
 //#include "CommonGrid.hpp"

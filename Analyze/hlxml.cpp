@@ -26,7 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include "Common.hpp"
+#include <MLU/Common.hpp>
 #include <Hadrons/../utilities/Contractor.hpp>
 //#include <Hadrons/Application.hpp>
 //#include <Hadrons/Modules.hpp>

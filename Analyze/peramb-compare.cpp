@@ -30,7 +30,7 @@
 #include <typeinfo>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
-#include "Common.hpp"
+#include <MLU/Common.hpp>
 
 using namespace Grid;
 using namespace Hadrons;

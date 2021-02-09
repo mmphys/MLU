@@ -10,7 +10,7 @@
 #define Debug_hpp
 
 #include <stdio.h>
-#include "Common.hpp"
+#include <MLU/Common.hpp>
 #include "omp.h"
 
 #endif /* Debug_hpp */
