@@ -4,4 +4,5 @@ lib_LIBRARIES = libMLU.a
 
 libMLU_a_SOURCES = Common.cpp
 
-include_HEADERS = Common.hpp
+MLUincludedir = $(includedir)/MLU
+MLUinclude_HEADERS = Common.hpp

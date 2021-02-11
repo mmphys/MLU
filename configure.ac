@@ -11,7 +11,8 @@ AC_CONFIG_SRCDIR([MLU/CommonGrid.cpp])
 #AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([MLUconfig.h])
 #AC_CONFIG_HEADERS([MLUconfig.h],[sed -i 's|PACKAGE_|MLU_|' MLUconfig.h])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects 1.13])
+#AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects 1.13])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.13])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 # Optional arguments for Grid / Hadrons.
@@ -21,6 +22,7 @@ AC_ARG_WITH([grid],
     [AS_HELP_STRING([--with-grid=<prefix>],
     [Install prefix of Grid])],
     [PATH="$with_grid/bin$PATH_SEPARATOR$PATH"])
+
 AC_ARG_WITH([hadrons],
     [AS_HELP_STRING([--with-hadrons=<prefix>],
     [Install prefix of Hadrons])],
@@ -33,6 +35,12 @@ AC_ARG_WITH([gsl],
     [try this for a non-standard install prefix of the GNU Scientific Library])],
     [AM_CPPFLAGS="-I$with_gsl/include $AM_CPPFLAGS"]
     [AM_LDFLAGS="-L$with_gsl/lib $AM_LDFLAGS"])
+
+AC_ARG_WITH([minuit2],
+    [AS_HELP_STRING([--with-minuit2=prefix],
+    [try this for a non-standard install prefix of Minuit2])],
+    [AM_CPPFLAGS="-I$with_minuit2/include $AM_CPPFLAGS"]
+    [AM_LDFLAGS="-L$with_minuit2/lib $AM_LDFLAGS"])
 
 # Make sure Grid is installed
 
@@ -121,14 +129,18 @@ AC_LINK_IFELSE(
 
 # Other pre-requisite libraries
 
-#AC_SEARCH_LIBS([__gsl_set_error_handler], [gsl],
-#              [AM_LIBS="$AM_LIBS -lgsl"],
-#              [AC_MSG_ERROR("GNU Scientific Library not found")])
-AM_LIBS="$AM_LIBS -lgsl -lMinuit2"
+AC_SEARCH_LIBS([gsl_set_error_handler], [gsl], [],
+               [AC_MSG_ERROR([GNU Scientific Library not found])])
+if test x"$ac_cv_search_gsl_set_error_handler" != "none required" ; then
+    AM_LIBS="$AM_LIBS $ac_cv_search_gsl_set_error_handler"
+fi
+
+# Not sure how to test for Minuit2 as it's pure C++
+AM_LIBS="$AM_LIBS -lMinuit2"
 LIBS="$AM_LIBS"
 
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
-AM_CPPFLAGS="-I${abs_srcdir} $AM_CPPFLAGS"
+AM_CPPFLAGS="-I${abs_srcdir} $AM_CPPFLAGS -I$cwd"
 AM_LDFLAGS="-L${cwd}/MLU $AM_LDFLAGS"
 
 MLU_SHORT_SHA=`git rev-parse --short HEAD`
