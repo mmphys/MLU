@@ -141,7 +141,7 @@ LIBS="$AM_LIBS"
 
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
 AM_CPPFLAGS="-I${abs_srcdir} $AM_CPPFLAGS -I$cwd"
-AM_LDFLAGS="-L${cwd}/MLU $AM_LDFLAGS"
+#AM_LDFLAGS="-L${cwd}/MLU $AM_LDFLAGS"
 
 AC_DEFINE_UNQUOTED([MLU_SHA], ["`git rev-parse HEAD`"], [git commit SHA])
 AC_DEFINE_UNQUOTED([MLU_SHORT_SHA], ["`git rev-parse --short HEAD`"], [git commit short SHA])

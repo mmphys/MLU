@@ -1,6 +1,6 @@
 # Mike's Lattice Utilities - Study1
 
-LDADD = -L$(abs_top_builddir)/MLU -lMLU
+LDADD = ../MLU/libMLU.a
 
 bin_PROGRAMS = mixedop xmlGFWall xmlPeramb xmlZ2
 
