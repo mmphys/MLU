@@ -69,7 +69,7 @@
 #include <H5public.h>
 
 // Eigen dense matrices
-#include <Eigen/Dense>
+#include <Grid/Eigen/Dense>
 
 // Default output file extension for binary data
 #ifndef DEF_FMT
@@ -811,11 +811,6 @@ template<> struct GSLTraits<std::complex<float>>
 #define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_c ## x ## c
 #define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _complex_float ## _ ## func
 #include "CommonGSL.hpp"
-#undef COMMON_GSL_TYPE
-#undef COMMON_GSL_BLAS
-#undef COMMON_GSL_BLAS_REAL
-#undef COMMON_GSL_BLAS_CPLX
-#undef COMMON_GSL_FUNC
 
 // This is prior version. Not used except for reading in old files
 template <typename T> class ValWithErOldV1

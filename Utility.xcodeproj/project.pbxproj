@@ -2834,6 +2834,14 @@
 		68E2C2F4245B204B009E7BE5 /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tests; path = ../Grid/tests; sourceTree = "<group>"; };
 		68E2C2F5245B2068009E7BE5 /* Test_serialisation.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_serialisation.cc; path = ../Grid/tests/IO/Test_serialisation.cc; sourceTree = "<group>"; };
 		68E2C2FA245B2097009E7BE5 /* Test_serialisation */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_serialisation; sourceTree = BUILT_PRODUCTS_DIR; };
+		68E5744625D31EAF00BD1A21 /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
+		68E5744725D31EAF00BD1A21 /* configure.ac */ = {isa = PBXFileReference; lastKnownFileType = text; path = configure.ac; sourceTree = "<group>"; };
+		68E5744825D31EAF00BD1A21 /* bootstrap.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = bootstrap.sh; sourceTree = "<group>"; };
+		68E5744925D31F4000BD1A21 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		68E5744A25D321A800BD1A21 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
+		68E5744B25D321B700BD1A21 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
+		68E5744C25D321C200BD1A21 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
+		68E5744D25D321CB00BD1A21 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
 		68F1C8F025B4397500A48690 /* Gauge.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Gauge.cc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -3059,6 +3067,10 @@
 		6822E8B322A7057400A85993 = {
 			isa = PBXGroup;
 			children = (
+				68E5744925D31F4000BD1A21 /* .gitignore */,
+				68E5744825D31EAF00BD1A21 /* bootstrap.sh */,
+				68E5744725D31EAF00BD1A21 /* configure.ac */,
+				68E5744625D31EAF00BD1A21 /* Makefile.am */,
 				6850CA26244A1C2F00A53DC8 /* Grid */,
 				68E2C2F3245B2029009E7BE5 /* Grid_tests */,
 				6850D25A244A230800A53DC8 /* Hadrons */,
@@ -3111,6 +3123,7 @@
 		6822E8BE22A7057400A85993 /* Analyze */ = {
 			isa = PBXGroup;
 			children = (
+				68E5744B25D321B700BD1A21 /* Makefile.am */,
 				6822E8BF22A7057400A85993 /* bootstrap.cpp */,
 				6856DC4E23C391AE0040814E /* corrstat.cpp */,
 				687726872466C32D00D46AEF /* Debug.cpp */,
@@ -3130,6 +3143,7 @@
 		68338D3A24613EE600B6292E /* Study2 */ = {
 			isa = PBXGroup;
 			children = (
+				68E5744D25D321CB00BD1A21 /* Makefile.am */,
 				68093A2624B8752F0019148E /* gpuxml.sh */,
 				6848233025090E0100B31C1E /* Ratio.cpp */,
 				68338D3B2461402200B6292E /* xml3pt.cpp */,
@@ -5620,6 +5634,7 @@
 		6889D8FB25D2BBC5004F15CE /* MLU */ = {
 			isa = PBXGroup;
 			children = (
+				68E5744A25D321A800BD1A21 /* Makefile.am */,
 				6889D8FC25D2BBC5004F15CE /* Common.cpp */,
 				6889D90225D2BBC5004F15CE /* Common.hpp */,
 				6889D8FE25D2BBC5004F15CE /* CommonGrid.cpp */,
@@ -5647,6 +5662,7 @@
 		68B9625F244AE50100E5CF09 /* Study1 */ = {
 			isa = PBXGroup;
 			children = (
+				68E5744C25D321C200BD1A21 /* Makefile.am */,
 				68B96263244AE50100E5CF09 /* mixedop.cpp */,
 				68B96262244AE50100E5CF09 /* xmlGFWall.cpp */,
 				68B96260244AE50100E5CF09 /* xmlPeramb.cpp */,

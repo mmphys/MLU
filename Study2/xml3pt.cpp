@@ -24,7 +24,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include "MLU/Common.hpp"
+#include <MLU/Common.hpp>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 

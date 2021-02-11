@@ -426,5 +426,10 @@ inline std::ostream & operator<<( std::ostream &os, const Matrix<COMMON_GSL_TYPE
   return os << " }";
 }
 
+#undef COMMON_GSL_TYPE
+#undef COMMON_GSL_BLAS
+#undef COMMON_GSL_BLAS_REAL
+#undef COMMON_GSL_BLAS_CPLX
+#undef COMMON_GSL_FUNC
 
 #endif // COMMON_GSL_TYPE
