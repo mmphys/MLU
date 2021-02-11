@@ -1,6 +1,6 @@
-# Mike's Lattice Utilities - libMLU
+# Mike's Lattice Utilities - Study2
 
-LDADD = -lMLU
+LDADD = -L$(abs_top_builddir)/MLU -lMLU
 
 bin_PROGRAMS = Ratio xml3pt
 

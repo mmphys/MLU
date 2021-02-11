@@ -143,9 +143,9 @@ cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
 AM_CPPFLAGS="-I${abs_srcdir} $AM_CPPFLAGS -I$cwd"
 AM_LDFLAGS="-L${cwd}/MLU $AM_LDFLAGS"
 
-MLU_SHORT_SHA=`git rev-parse --short HEAD`
-MLU_SHA=`git rev-parse HEAD`
-MLU_BRANCH=`git rev-parse --abbrev-ref HEAD`
+AC_DEFINE_UNQUOTED([MLU_SHA], ["`git rev-parse HEAD`"], [git commit SHA])
+AC_DEFINE_UNQUOTED([MLU_SHORT_SHA], ["`git rev-parse --short HEAD`"], [git commit short SHA])
+AC_DEFINE_UNQUOTED([MLU_BRANCH], ["`git rev-parse --abbrev-ref HEAD`"], [git branch])
 
 AC_SUBST([MLU_SHORT])
 AC_SUBST([MLU_SHA])

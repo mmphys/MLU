@@ -1216,6 +1216,8 @@
 		687D64DE2552A2DC00E4F83A /* LoadLapEvec.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687D64DC2552A2DC00E4F83A /* LoadLapEvec.hpp */; };
 		687D64F82552A30000E4F83A /* SourceSink.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687D64F62552A2FF00E4F83A /* SourceSink.hpp */; };
 		687D64F92552A30000E4F83A /* SourceSink.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D64F72552A2FF00E4F83A /* SourceSink.cpp */; };
+		6887C99725D571E800FF0855 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
+		6887C99825D571F600FF0855 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8C722A708A200A85993 /* peramb-compare.cpp */; };
 		68B0E7AC25D2CF5500B66FD0 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6889D8FC25D2BBC5004F15CE /* Common.cpp */; };
 		68B21CCB23E7210E00D93480 /* fold.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B21CBF23E720AF00D93480 /* fold.cpp */; };
@@ -1512,7 +1514,6 @@
 		68338D3B2461402200B6292E /* xml3pt.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xml3pt.cpp; sourceTree = "<group>"; };
 		68338D402461408900B6292E /* xml3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xml3pt; sourceTree = BUILT_PRODUCTS_DIR; };
 		683451302397D3C200B743CE /* xmlGFWall */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlGFWall; sourceTree = BUILT_PRODUCTS_DIR; };
-		6842CB9722A9165C003014D2 /* build */ = {isa = PBXFileReference; lastKnownFileType = folder; path = build; sourceTree = "<group>"; };
 		6845352023477BBE00106304 /* xmlPeramb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlPeramb; sourceTree = BUILT_PRODUCTS_DIR; };
 		6848233025090E0100B31C1E /* Ratio.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Ratio.cpp; sourceTree = "<group>"; };
 		684823352509160C00B31C1E /* Ratio */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Ratio; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2912,6 +2913,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6887C99825D571F600FF0855 /* libMLU.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2956,6 +2958,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6887C99725D571E800FF0855 /* libMLU.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3081,7 +3084,6 @@
 				68B9625F244AE50100E5CF09 /* Study1 */,
 				68338D3A24613EE600B6292E /* Study2 */,
 				6822E8C822A710FA00A85993 /* Scripts */,
-				6842CB9722A9165C003014D2 /* build */,
 				685F9D122343B19E006EE036 /* run */,
 				6822E8BD22A7057400A85993 /* Products */,
 				6848923725D2D79B00307714 /* Frameworks */,
@@ -7774,7 +7776,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEPLOYMENT_LOCATION = YES;
-				DSTROOT = $PROJECT_DIR/build;
+				DSTROOT = "$PROJECT_DIR/build$(CONFIGURATION)";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -7801,6 +7803,7 @@
 					$Grid/Eigen,
 					$GridPkg/include/libomp,
 					$PROJECT_DIR,
+					"$PROJECT_DIR/build$(CONFIGURATION)",
 				);
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;
@@ -7881,7 +7884,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEPLOYMENT_LOCATION = YES;
-				DSTROOT = $PROJECT_DIR/build;
+				DSTROOT = "$PROJECT_DIR/build$(CONFIGURATION)";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -7902,6 +7905,7 @@
 					$Grid/Eigen,
 					$GridPkg/include/libomp,
 					$PROJECT_DIR,
+					"$PROJECT_DIR/build$(CONFIGURATION)",
 				);
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;

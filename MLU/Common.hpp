@@ -83,6 +83,8 @@
 #define BEGIN_COMMON_NAMESPACE namespace Common {
 #define END_COMMON_NAMESPACE   };
 
+extern "C" const char * MLUVersionInfoHuman();
+
 BEGIN_COMMON_NAMESPACE
 
 template <typename T> int sgn( T x )

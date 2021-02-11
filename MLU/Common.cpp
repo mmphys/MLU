@@ -34,6 +34,17 @@
 #include <sys/stat.h>
 #include <H5CompType.h>
 
+// This should be the only use of the AutoConf header
+// Any useful values should be exposed as functions
+
+#include <MLUconfig.h>
+
+extern "C" const char * MLUVersionInfoHuman()
+{
+  static const char PackageString[] = PACKAGE_STRING ". Branch: " MLU_BRANCH ". Git SHA: " MLU_SHA;
+  return PackageString;
+}
+
 BEGIN_COMMON_NAMESPACE
 
 // I will use the GNU Scientific Library, but I will have GSL errors throw exceptions
