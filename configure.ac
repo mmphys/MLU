@@ -10,8 +10,6 @@ AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR([MLU/CommonGrid.cpp])
 #AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([MLUconfig.h])
-#AC_CONFIG_HEADERS([MLUconfig.h],[sed -i 's|PACKAGE_|MLU_|' MLUconfig.h])
-#AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects 1.13])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.13])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
@@ -29,18 +27,6 @@ AC_ARG_WITH([hadrons],
     [if test x"$with_hadrons" != x"$with_grid" ; then]
         [PATH="$with_hadrons/bin$PATH_SEPARATOR$PATH"]
     [fi])
-
-AC_ARG_WITH([gsl],
-    [AS_HELP_STRING([--with-gsl=prefix],
-    [try this for a non-standard install prefix of the GNU Scientific Library])],
-    [AM_CPPFLAGS="-I$with_gsl/include $AM_CPPFLAGS"]
-    [AM_LDFLAGS="-L$with_gsl/lib $AM_LDFLAGS"])
-
-AC_ARG_WITH([minuit2],
-    [AS_HELP_STRING([--with-minuit2=prefix],
-    [try this for a non-standard install prefix of Minuit2])],
-    [AM_CPPFLAGS="-I$with_minuit2/include $AM_CPPFLAGS"]
-    [AM_LDFLAGS="-L$with_minuit2/lib $AM_LDFLAGS"])
 
 # Make sure Grid is installed
 
@@ -67,12 +53,11 @@ fi
 AC_MSG_RESULT([hadrons-config --prefix=$HADRONS_PREFIX])
 
 # If the user hasn't specified a CXX compiler, get it from Hadrons
+
 if test x"$CXX" == x ; then
-    HADRONS_CXX="`hadrons-config --cxx`"
-    if test x"$HADRONS_CXX" != x ; then
-        AM_CXX="$HADRONS_CXX"
-        CXX="$AM_CXX"
-        AC_MSG_RESULT([hadrons-config --cxx=$HADRONS_CXX])
+    CXX="`hadrons-config --cxx`"
+    if test x"$CXX" != x ; then
+        AC_MSG_RESULT([hadrons-config --cxx=$CXX])
     else
         AC_MSG_WARN([hadrons-config --cxx unknown])
     fi
@@ -87,24 +72,19 @@ AC_LANG([C++])
 
 # Now setup my environment
 
-AM_CPPFLAGS="-I$GRID_PREFIX/include $AM_CPPFLAGS"
-AM_LDFLAGS="-L$GRID_PREFIX/lib $AM_LDFLAGS"
+CPPFLAGS="-I$GRID_PREFIX/include $CPPFLAGS"
+LDFLAGS="-L$GRID_PREFIX/lib $LDFLAGS"
 if test x"$HADRONS_PREFIX" != x"$GRID_PREFIX" ; then
-  AM_CPPFLAGS="$AM_CPPFLAGS -I$HADRONS_PREFIX/include"
-  AM_LDFLAGS="$AM_LDFLAGS -L$HADRONS_PREFIX/lib"
+  CPPFLAGS="-I$HADRONS_PREFIX/include $CPPFLAGS"
+  LDFLAGS="-L$HADRONS_PREFIX/lib$LDFLAGS"
 fi
-AM_CXXFLAGS="`hadrons-config --cxxflags`"
-AM_LDFLAGS="$LDFLAGS `hadrons-config --ldflags`"
-AM_LIBS="-lHadrons `hadrons-config --libs`"
+CXXFLAGS="`hadrons-config --cxxflags` $CXXFLAGS"
+LDFLAGS="`hadrons-config --ldflags` $LDFLAGS"
+LIBS="-lHadrons `hadrons-config --libs` $LIBS"
 
 # TODO: Should I really set these variables here?
 
 AC_MSG_CHECKING([that a minimal Grid and Hadrons program compiles]);
-CXX="$AM_CXX"
-CPPFLAGS="$AM_CPPFLAGS"
-CXXFLAGS="$AM_CXXFLAGS"
-LDFLAGS="$AM_LDFLAGS"
-LIBS="$AM_LIBS"
 AC_LINK_IFELSE(
         [AC_LANG_SOURCE([[
     #include <Grid/Grid.h>
@@ -129,31 +109,57 @@ AC_LINK_IFELSE(
 
 # Other pre-requisite libraries
 
+AC_ARG_WITH([gsl],
+    [AS_HELP_STRING([--with-gsl=prefix],
+    [try this for a non-standard install prefix of the GNU Scientific Library])],
+    [CPPFLAGS="$CPPFLAGS -I$with_gsl/include"]
+    [LDFLAGS="$LDFLAGS -L$with_gsl/lib"])
+
+AC_ARG_WITH([minuit2],
+    [AS_HELP_STRING([--with-minuit2=prefix],
+    [try this for a non-standard install prefix of Minuit2])],
+    [CPPFLAGS="$CPPFLAGS -I$with_minuit2/include"]
+    [LDFLAGS="$LDFLAGS -L$with_minuit2/lib"])
+
 AC_SEARCH_LIBS([gsl_set_error_handler], [gsl], [],
                [AC_MSG_ERROR([GNU Scientific Library not found])])
 if test x"$ac_cv_search_gsl_set_error_handler" != "none required" ; then
-    AM_LIBS="$AM_LIBS $ac_cv_search_gsl_set_error_handler"
+    LIBS+=" $ac_cv_search_gsl_set_error_handler"
 fi
 
 # Not sure how to test for Minuit2 as it's pure C++
-AM_LIBS="$AM_LIBS -lMinuit2"
-LIBS="$AM_LIBS"
+LIBS+=" -lMinuit2"
 
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
-AM_CPPFLAGS="-I${abs_srcdir} $AM_CPPFLAGS -I$cwd"
-#AM_LDFLAGS="-L${cwd}/MLU $AM_LDFLAGS"
+CPPFLAGS="-I${abs_srcdir} $CPPFLAGS -I$cwd"
 
 AC_DEFINE_UNQUOTED([MLU_SHA], ["`git rev-parse HEAD`"], [git commit SHA])
 AC_DEFINE_UNQUOTED([MLU_SHORT_SHA], ["`git rev-parse --short HEAD`"], [git commit short SHA])
 AC_DEFINE_UNQUOTED([MLU_BRANCH], ["`git rev-parse --abbrev-ref HEAD`"], [git branch])
 
+AM_CXX="$CXX"
+AM_CC="$CC"
+AM_CFLAGS="$CFLAGS"
+AM_CPPFLAGS="$CPPFLAGS"
+AM_CXXFLAGS="$CXXFLAGS"
+AM_CCFLAGS="$CCFLAGS"
+AM_LDFLAGS="$LDFLAGS"
+AM_LIBS="$LIBS"
+AM_AR="$AR"
+AM_RANLIB="$RANLIB"
+
 AC_SUBST([MLU_SHORT])
 AC_SUBST([MLU_SHA])
 AC_SUBST([MLU_BRANCH])
 AC_SUBST([AM_CXX])
+AC_SUBST([AM_CC])
+AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CXXFLAGS])
-AC_SUBST([AM_LIBS])
+AC_SUBST([AM_CCFLAGS])
 AC_SUBST([AM_LDFLAGS])
+AC_SUBST([AM_LIBS])
+AC_SUBST([AM_AR])
+AC_SUBST([AM_RANLIB])
 AC_CONFIG_FILES([Makefile MLU/Makefile Analyze/Makefile Study1/Makefile Study2/Makefile])
 AC_OUTPUT
