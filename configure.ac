@@ -28,6 +28,20 @@ AC_ARG_WITH([hadrons],
         [PATH="$with_hadrons/bin$PATH_SEPARATOR$PATH"]
     [fi])
 
+# Optional arguments for other pre-requisite libraries
+
+AC_ARG_WITH([gsl],
+    [AS_HELP_STRING([--with-gsl=prefix],
+    [try this for a non-standard install prefix of the GNU Scientific Library])],
+    [CPPFLAGS="-I$with_gsl/include $CPPFLAGS"]
+    [LDFLAGS="-L$with_gsl/lib $LDFLAGS"])
+
+AC_ARG_WITH([minuit2],
+    [AS_HELP_STRING([--with-minuit2=prefix],
+    [try this for a non-standard install prefix of Minuit2])],
+    [CPPFLAGS="-I$with_minuit2/include $CPPFLAGS"]
+    [LDFLAGS="-L$with_minuit2/lib $LDFLAGS"])
+
 # Make sure Grid is installed
 
 AC_CHECK_PROG([GRIDCONF],[grid-config],[yes])
@@ -107,19 +121,7 @@ AC_LINK_IFELSE(
     [AC_MSG_RESULT([no])]
     [AC_MSG_ERROR([Could not compile a minimal Grid and Hadrons program])])
 
-# Other pre-requisite libraries
-
-AC_ARG_WITH([gsl],
-    [AS_HELP_STRING([--with-gsl=prefix],
-    [try this for a non-standard install prefix of the GNU Scientific Library])],
-    [CPPFLAGS="$CPPFLAGS -I$with_gsl/include"]
-    [LDFLAGS="$LDFLAGS -L$with_gsl/lib"])
-
-AC_ARG_WITH([minuit2],
-    [AS_HELP_STRING([--with-minuit2=prefix],
-    [try this for a non-standard install prefix of Minuit2])],
-    [CPPFLAGS="$CPPFLAGS -I$with_minuit2/include"]
-    [LDFLAGS="$LDFLAGS -L$with_minuit2/lib"])
+# Check for GSL
 
 AC_SEARCH_LIBS([gsl_set_error_handler], [gsl], [],
                [AC_MSG_ERROR([GNU Scientific Library not found])])
@@ -127,8 +129,22 @@ if test x"$ac_cv_search_gsl_set_error_handler" != "none required" ; then
     LIBS+=" $ac_cv_search_gsl_set_error_handler"
 fi
 
-# Not sure how to test for Minuit2 as it's pure C++
+# Check for Minuit2 by making a small test program (can't check libraries as pure C++)
+
 LIBS+=" -lMinuit2"
+AC_MSG_CHECKING([that a minimal Minuit2 program compiles]);
+AC_LINK_IFELSE(
+        [AC_LANG_SOURCE([[
+    #include <Minuit2/Minuit2Minimizer.h>
+    int main(int argc, char *argv[])
+    {
+        ROOT::Minuit2::MnUserParameterState Minuit2State;
+        return 0;
+    }
+    ]])],
+        [AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])]
+    [AC_MSG_ERROR([Could not compile a minimal Minuit2 program])])
 
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
 CPPFLAGS="-I${abs_srcdir} $CPPFLAGS -I$cwd"
@@ -137,29 +153,25 @@ AC_DEFINE_UNQUOTED([MLU_SHA], ["`git rev-parse HEAD`"], [git commit SHA])
 AC_DEFINE_UNQUOTED([MLU_SHORT_SHA], ["`git rev-parse --short HEAD`"], [git commit short SHA])
 AC_DEFINE_UNQUOTED([MLU_BRANCH], ["`git rev-parse --abbrev-ref HEAD`"], [git branch])
 
-AM_CXX="$CXX"
-AM_CC="$CC"
-AM_CFLAGS="$CFLAGS"
 AM_CPPFLAGS="$CPPFLAGS"
 AM_CXXFLAGS="$CXXFLAGS"
-AM_CCFLAGS="$CCFLAGS"
+AM_CFLAGS="$CFLAGS"
 AM_LDFLAGS="$LDFLAGS"
-AM_LIBS="$LIBS"
-AM_AR="$AR"
-AM_RANLIB="$RANLIB"
+MLU_LIBS="$LIBS"
+
+unset CPPFLAGS
+unset CXXFLAGS
+unset CFLAGS
+unset LDFLAGS
+unset LIBS
 
 AC_SUBST([MLU_SHORT])
 AC_SUBST([MLU_SHA])
 AC_SUBST([MLU_BRANCH])
-AC_SUBST([AM_CXX])
-AC_SUBST([AM_CC])
-AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CXXFLAGS])
-AC_SUBST([AM_CCFLAGS])
+AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_LDFLAGS])
-AC_SUBST([AM_LIBS])
-AC_SUBST([AM_AR])
-AC_SUBST([AM_RANLIB])
+AC_SUBST([MLU_LIBS])
 AC_CONFIG_FILES([Makefile MLU/Makefile Analyze/Makefile Study1/Makefile Study2/Makefile])
 AC_OUTPUT

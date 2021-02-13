@@ -1,6 +1,6 @@
 # Mike's Lattice Utilities - Analyze
 
-LDADD = ../MLU/libMLU.a
+LDADD = ../MLU/libMLU.a $(MLU_LIBS)
 
 bin_PROGRAMS = bootstrap corrstat Debug FitSummary fold hlxml MultiFit peramb-compare repair
 
