@@ -41,7 +41,7 @@
 
 extern "C" const char * MLUVersionInfoHuman()
 {
-  static const char PackageString[] = PACKAGE_STRING ". Branch: " MLU_BRANCH ". Git SHA: " MLU_SHA;
+  static const char PackageString[] = MLU_PACKAGE_STRING ", " MLU_GIT_SUMMARY;
   return PackageString;
 }
 

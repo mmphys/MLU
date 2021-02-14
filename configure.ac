@@ -9,7 +9,7 @@ AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR([MLU/CommonGrid.cpp])
 #AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_HEADERS([MLUconfig.h])
+AC_CONFIG_HEADERS([MLUconfig.h],[sed -i '' -e 's|#define PACKAGE|#define MLU_PACKAGE|g' -e 's|#define VERSION|#define MLU_VERSION|g' MLUconfig.h])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.13])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
@@ -149,9 +149,10 @@ AC_LINK_IFELSE(
 cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
 CPPFLAGS="-I${abs_srcdir} $CPPFLAGS -I$cwd"
 
-AC_DEFINE_UNQUOTED([MLU_SHA], ["`git rev-parse HEAD`"], [git commit SHA])
-AC_DEFINE_UNQUOTED([MLU_SHORT_SHA], ["`git rev-parse --short HEAD`"], [git commit short SHA])
-AC_DEFINE_UNQUOTED([MLU_BRANCH], ["`git rev-parse --abbrev-ref HEAD`"], [git branch])
+#AC_DEFINE_UNQUOTED([MLU_SHA], ["`git rev-parse HEAD`"], [git commit SHA])
+#AC_DEFINE_UNQUOTED([MLU_SHORT_SHA], ["`git rev-parse --short HEAD`"], [git commit short SHA])
+#AC_DEFINE_UNQUOTED([MLU_BRANCH], ["`git rev-parse --abbrev-ref HEAD`"], [git branch])
+AC_DEFINE_UNQUOTED([MLU_GIT_SUMMARY], ["MLU `git rev-parse --abbrev-ref HEAD` `git rev-parse HEAD`, Grid `grid-config --git`, Hadrons `hadrons-config --git`"], [git branch and commit for MLU, Grid and Hadrons])
 
 AM_CPPFLAGS="$CPPFLAGS"
 AM_CXXFLAGS="$CXXFLAGS"
@@ -165,9 +166,10 @@ unset CFLAGS
 unset LDFLAGS
 unset LIBS
 
-AC_SUBST([MLU_SHORT])
-AC_SUBST([MLU_SHA])
-AC_SUBST([MLU_BRANCH])
+#AC_SUBST([MLU_SHORT])
+#AC_SUBST([MLU_SHA])
+#AC_SUBST([MLU_BRANCH])
+AC_SUBST([MLU_GIT_SUMMARY])
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_CFLAGS])
