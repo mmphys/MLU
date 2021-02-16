@@ -32,9 +32,12 @@ AC_ARG_WITH([hadrons],
 
 AC_ARG_WITH([gsl],
     [AS_HELP_STRING([--with-gsl=prefix],
-    [try this for a non-standard install prefix of the GNU Scientific Library])],
-    [CPPFLAGS="-I$with_gsl/include $CPPFLAGS"]
-    [LDFLAGS="-L$with_gsl/lib $LDFLAGS"])
+    [Install path of the GNU Scientific Library])],
+    [if test x"$with_gsl" != x"$with_grid" ; then]
+        [if test x"$with_gsl" != x"$with_hadrons" ; then]
+            [PATH="$with_gsl/bin$PATH_SEPARATOR$PATH"]
+        [fi]
+    [fi])
 
 AC_ARG_WITH([minuit2],
     [AS_HELP_STRING([--with-minuit2=prefix],
@@ -65,6 +68,15 @@ if test x"$HADRONS_PREFIX" == x ; then
     AC_MSG_ERROR([hadrons-config --prefix returns empty string])
 fi
 AC_MSG_RESULT([hadrons-config --prefix=$HADRONS_PREFIX])
+
+# Make sure GSL is installed
+
+AC_CHECK_PROG([GSLCONF],[gsl-config],[yes])
+if test x"$GSLCONF" != xyes ; then
+    AC_MSG_ERROR([gsl-config not found])
+fi
+LDFLAGS+=" `gsl-config --libs`"
+CPPFLAGS+=" `gsl-config --cflags`"
 
 # If the user hasn't specified a CXX compiler, get it from Hadrons
 
@@ -125,7 +137,7 @@ AC_LINK_IFELSE(
 
 AC_SEARCH_LIBS([gsl_set_error_handler], [gsl], [],
                [AC_MSG_ERROR([GNU Scientific Library not found])])
-if test x"$ac_cv_search_gsl_set_error_handler" != "none required" ; then
+if test x"$ac_cv_search_gsl_set_error_handler" != x"none required" ; then
     LIBS+=" $ac_cv_search_gsl_set_error_handler"
 fi
 
