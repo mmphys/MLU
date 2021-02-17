@@ -49,12 +49,11 @@ namespace Eigen {
   end( ET & et ) { return begin(et) + et.size() * EigenIO::Traits<ET>::count; }
 }
 
-template<typename T>
-inline bool ApproxEq( std::complex<T> x, std::complex<T> y, T epsilon, T &diffMax) {
-  T ReX = x.real();
-  T MagX = std::abs(x);
-  T ReDiff = std::abs( ( ReX - y.real() ) / ReX );
-  T MagDiff = std::abs( ( MagX - std::abs(y) ) / MagX );
+inline bool ApproxEq( Complex x, Complex y, Real epsilon, Real &diffMax) {
+  Real ReX = x.real();
+  Real MagX = abs(x);
+  Real ReDiff = abs( ( ReX - y.real() ) / ReX );
+  Real MagDiff = abs( ( MagX - abs(y) ) / MagX );
   if( diffMax < ReDiff )
     diffMax = ReDiff;
   return ReDiff < epsilon && MagDiff < epsilon;
@@ -88,7 +87,7 @@ int TestPer(const std::string &pszF1, const std::string &pszF2, const double eps
   double diffMax = 0;
   Complex * p2 = begin(pt2);
   for(Complex v1 : pt1) {
-    dSum += std::abs( v1 );
+    dSum += abs( v1 );
     if( !ApproxEq( v1, *p2, epsilon, diffMax ) ) {
       std::cout << "C(" << i << ") is different: " << v1 << " vs " << *p2 << std::endl;
       return EXIT_FAILURE;

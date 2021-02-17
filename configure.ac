@@ -94,6 +94,14 @@ if test x"$CXX" == x ; then
         AC_MSG_WARN([hadrons-config --cxx unknown])
     fi
 fi
+if test x"$CXXLD" == x ; then
+    CXXLD="`hadrons-config --cxxld`"
+    if test x"$CXXLD" != x ; then
+        AC_MSG_RESULT([hadrons-config --cxxld=$CXXLD])
+    else
+        AC_MSG_WARN([hadrons-config --cxxld unknown])
+    fi
+fi
 
 # Checks for programs.
 AC_PROG_CXX
@@ -188,6 +196,7 @@ unset LIBS
 #AC_SUBST([MLU_SHA])
 #AC_SUBST([MLU_BRANCH])
 AC_SUBST([MLU_GIT_SUMMARY])
+AC_SUBST([CXXLD])
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_CFLAGS])

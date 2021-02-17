@@ -106,6 +106,7 @@ struct FitRanges : public std::vector<FitRange>
 {
   using Base = std::vector<FitRange>;
   using Base::Base;
+  FitRanges() : std::vector<FitRange>() {}
   FitRanges( std::vector<FitRange> &&fr ) : std::vector<FitRange>( fr ) {}
   FitRangesIterator begin();
   FitRangesIterator end();

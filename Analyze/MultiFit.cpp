@@ -95,7 +95,7 @@ std::istream & operator>>( std::istream &is, FitRange &fr_ )
   int i{ 0 };
   for( bool bMore = true; bMore && i < 4 && is >> Numbers[i]; )
   {
-    if( ++i < 4 && !is.ios_base::eof() && is.peek() == ':' )
+    if( ++i < 4 && !is.eof() && is.peek() == ':' )
       is.get();
     else
       bMore = false;
