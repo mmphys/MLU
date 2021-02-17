@@ -10,12 +10,11 @@ AC_CANONICAL_TARGET
 AC_CONFIG_SRCDIR([MLU/CommonGrid.cpp])
 #AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([MLUconfig.h],
-    [$SED_INPLACE -e 's|#define PACKAGE|#define MLU_PACKAGE|g' -e 's|#define VERSION|#define MLU_VERSION|g' MLUconfig.h]
-    [rm MLUconfig.hbak],
+    [$SED_INPLACE -e 's|#define PACKAGE|#define MLU_PACKAGE|g' -e 's|#define VERSION|#define MLU_VERSION|g' MLUconfig.h],
     [if test x"$host_os" == x"${host_os#darwin}" ; then]
-        [SED_INPLACE="sed -ibak"]
+        [SED_INPLACE="sed -i"]
     [else]
-        [SED_INPLACE="sed -i bak"]
+        [SED_INPLACE="sed -i .bak"]
     [fi])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.13])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
