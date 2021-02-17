@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "68B21CC323E720DF00D93480"
-               BuildableName = "fold"
-               BlueprintName = "fold"
+               BuildableName = "corr"
+               BlueprintName = "corr"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,8 +46,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "68B21CC323E720DF00D93480"
-            BuildableName = "fold"
-            BlueprintName = "fold"
+            BuildableName = "corr"
+            BlueprintName = "corr"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -93,8 +93,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "68B21CC323E720DF00D93480"
-            BuildableName = "fold"
-            BlueprintName = "fold"
+            BuildableName = "corr"
+            BlueprintName = "corr"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

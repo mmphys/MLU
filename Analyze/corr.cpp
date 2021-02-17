@@ -1,10 +1,11 @@
 /*************************************************************************************
  
- Utility for creating statistics for bootstrap sample - ready for GNUplot
+ Choose real or imaginary part of correlator from bootstrap sample
+ Create statistics, ready for GNUplot
  
- Source file: fold.cpp
+ Source file: corr.cpp
  
- Copyright (C) 2020
+ Copyright (C) 2020-21
  
  Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
  
