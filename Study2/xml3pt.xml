@@ -25,7 +25,8 @@
       <step>4</step>
     </Timeslices>
     <runId>Study2</runId>
-    <Taxa>GF Point GF Wall GF Region GP Wall Z2 Point ZF Point ZF Wall</Taxa>
+    <!--<Taxa>GF Point GF Wall GF Region GP Wall Z2 Point ZF Point ZF Wall</Taxa>-->
+    <Taxa>GR Wall</Taxa>
     <Momenta>0_0_0</Momenta>
     <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
     <deltaT>12    16 20 24 28 32</deltaT>
@@ -54,12 +55,12 @@
     <HeavyQuark>true</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
     <DoNegativeMomenta>true</DoNegativeMomenta>
-    <!--<Run>true</Run>-->
-    <Run>false</Run>
+    <!--<Run>false</Run>-->
+    <Run>true</Run>
     <!-- Prefix for job xml and schedule file names (append '/' if it's a directory) -->
     <JobXmlPrefix></JobXmlPrefix>
   </RunPar>
-  <!-- ScaledDWF -->
+  <!-- scale: 2 = Moebius -->
   <Heavy>
     <elem>
       <flavour>h0</flavour>
@@ -115,7 +116,7 @@
       <EigenPackFilename></EigenPackFilename>
     </elem>
   </Heavy>
-  <!-- Shamir -->
+  <!-- scale: 1 = Shamir -->
   <HeavyNotUsed>
     <elem>
       <flavour>h0sh</flavour>
@@ -186,6 +187,7 @@
       <EigenPackFilename></EigenPackFilename>
     </elem>
   </Spectator>
+  <SpectatorExtra2pt/>
   <SpectatorExtra2ptNotUsed>
     <elem>
       <!-- strange unitary/sea -->

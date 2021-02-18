@@ -44,8 +44,8 @@ inline void Append( std::string &sDest, const std::string &s )
   sDest.append( s );
 };
 
-enum class Family : int { Z2, ZF, GF, GP };
-static const std::array<std::string, 4> FamilyNames{ "Z2", "ZF", "GF", "GP" };
+enum class Family : int { Z2, ZF, GF, GP, GR };
+static const std::array<std::string, 5> FamilyNames{ "Z2", "ZF", "GF", "GP", "GR" };
 
 typename std::underlying_type<Family>::type FamilyIndex( Family family )
 {
@@ -178,7 +178,8 @@ public:
     FamilyIndex( family );
     SpeciesIndex( species );
     // Weed out invalid combinations
-    if( family == Family::Z2 && species == Species::Wall ) // Shouldn't be asking for wall sinks without gauge-fixing
+    if( family == Family::Z2 && species == Species::Wall    // Shouldn't be asking for wall sinks without gauge-fixing
+     || family == Family::GR && species != Species::Wall )  // These look like point source and wall sink
       HissyFit();
   }
 };
@@ -421,6 +422,9 @@ AppParams::AppParams( const std::string sXmlFilename, const std::string sRunPref
   // Check the taxonomy
   Taxa = Common::ArrayFromString<Taxonomy>( Run.Taxa );
   NoDuplicates( Taxa, "Taxa" );
+  for( const Taxonomy &t : Taxa )
+    if( t == Family::GR )
+      LOG(Warning) << t << " don't swap the gamma structures at sink and source (18-Feb-2021)" << std::endl;
   // Check parameters make sense
   //if( !( Run.TwoPoint || Run.HeavyQuark ||Run.HeavyAnti ) )
     //throw std::runtime_error( "At least one must be true of: TwoPoint; HeavyQuark; or HeavyAnti" );
@@ -1046,7 +1050,8 @@ ModContract2pt::ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
 
 void ModContract2pt::AddDependencies( HModList &ModList ) const
 {
-  if( name.empty() )
+  // Two-point Gauge-fixed reversed don't really exist ... just silently ignore
+  if( tax == Family::GR )
     return; // I can't do this for two-point. Just silently ignore
   MContraction::Meson::Par mesPar;
   mesPar.output = FileName;
@@ -1128,17 +1133,33 @@ void ModContract3pt::AddDependencies( HModList &ML ) const
   //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
   par.gammas = "all";
   const bool bInvertSeq{ !bHeavyAnti };
+  const bool bRev{ tax == Family::GR };
+  // The "s" prefix for the variable names is short for "sub", i.e. the values to use for dependencies
+  Taxonomy stax( bRev ? Family::GF : tax.family, bRev ? Species::Region : tax.species );
+  const Quark &sqSrc{ bRev ? qSnk : qSrc };
+  const Quark &sqSnk{ bRev ? qSrc : qSnk };
+  const int st     { bRev ? ML.params.TimeBound( t + deltaT ) : t      };
+  const int sdeltaT{ bRev ? ML.params.TimeBound(   - deltaT ) : deltaT };
+  Common::Momentum pSource( p );
+  Common::Momentum pSink( bSinkMom ? -p : p0 );
+  Common::Momentum pCurrent( bSinkMom ? p0 : -p );
+  if( bRev )
+  {
+    Common::Momentum pTmp{ pSource };
+    pSource = pSink;
+    pSink = pTmp;
+  }
   if( bInvertSeq )
   {
-    par.q1 = ML.TakeOwnership( new ModProp( ML, tax, qSrc, p, t ) );
-    par.q2 = ML.TakeOwnership(new ModPropSeq(ML,tax, qSnk, Current, deltaT, bSinkMom ? p : p0, qSpec, p0, t ) );
+    par.q1 = ML.TakeOwnership( new ModProp( ML, stax, sqSrc, pSource, st ) );
+    par.q2 = ML.TakeOwnership(new ModPropSeq(ML,stax, sqSnk, Current, sdeltaT, -pSink, qSpec, p0,       st ) );
   }
   else
   {
-    par.q1 = ML.TakeOwnership(new ModPropSeq(ML,tax, qSnk, Current, deltaT, bSinkMom ? -p : p0, qSpec, p , t ) );
-    par.q2 = ML.TakeOwnership( new ModProp( ML, tax, qSrc, p0, t ) );
+    par.q1 = ML.TakeOwnership(new ModPropSeq(ML,stax, sqSnk, Current, sdeltaT,  pSink, qSpec, pSource , st ) );
+    par.q2 = ML.TakeOwnership( new ModProp( ML, stax, sqSrc, p0, st ) );
   }
-  par.sink = ML.TakeOwnership( new ModSink( ML, tax, bSinkMom ? p0 : -p ) );
+  par.sink = ML.TakeOwnership( new ModSink( ML, stax, pCurrent ) );
   ML.application.createModule<MContraction::Meson>(name, par);
 }
 
@@ -1209,8 +1230,10 @@ void AppMaker::Make()
           {
             for( const Quark &qH1 : l.params.HeavyQuarks )
             {
+              bool bDidSomething{ false };
               if( l.params.Run.TwoPoint )
               {
+                bDidSomething = true;
                 l.TakeOwnership( new ModContract2pt( l, tax, qSpectator, qH1, p, t ) );
                 l.TakeOwnership( new ModContract2pt( l, tax, qH1, qSpectator, p, t ) );
                 if( bFirstSpec )
@@ -1223,14 +1246,9 @@ void AppMaker::Make()
                   }
                 }
               }
-              else if( !l.params.ThreePoint )
-              {
-                // We are only performing residual-mass checks on each propagator
-                l.TakeOwnership( new ModProp( l, tax, qH1, p, t ) );
-                //l.TakeOwnership( new ModProp( l, tax, qSpectator, p,t) );
-              }
               if( l.params.ThreePoint )
               {
+                bDidSomething = true;
                 for( const Quark &qH2 : l.params.HeavyQuarks )
                 {
                   for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
@@ -1243,11 +1261,11 @@ void AppMaker::Make()
                       {
                         for( int j = 0; j < NumInsert; j++ )
                         {
-                          l.TakeOwnership( new ModContract3pt( l, tax, qH1, qH2, qSpectator, p,
+                          l.TakeOwnership( new ModContract3pt( l, tax, qH2, qH1, qSpectator, p,
                                                                t, bHeavyAnti, j, deltaT, false ) );
                           if( p && qH1.mass == qH2.mass )
                           {
-                            l.TakeOwnership( new ModContract3pt( l, tax, qH1, qH2, qSpectator, p,
+                            l.TakeOwnership( new ModContract3pt( l, tax, qH2, qH1, qSpectator, p,
                                                                  t, bHeavyAnti, j, deltaT, true ) );
                           }
                         }
@@ -1255,6 +1273,12 @@ void AppMaker::Make()
                     }
                   }
                 }
+              }
+              if( !bDidSomething )
+              {
+                // We are only performing residual-mass checks on each propagator
+                l.TakeOwnership( new ModProp( l, tax, qH1, p, t ) );
+                //l.TakeOwnership( new ModProp( l, tax, qSpectator, p,t) );
               }
             }
             p = -p;
