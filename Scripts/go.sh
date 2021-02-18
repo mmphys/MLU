@@ -10,6 +10,7 @@ if (( $# < 2 || $# > 4 )); then
   echo "num  Number of configurations each file should process (default: 1)"
   echo "step Step between configurations in each file (default: 40)"
   echo "wall Wall time (in hours) for each file (default: 48/24 CPU/GPU)"
+  echo "executable Name of executable to run (default: HadronsXmlRun)"
   exit
 fi
 
@@ -18,6 +19,7 @@ jobext=${template##*.}
 base=${template%.*}
 templateXml=${base}.xml
 base=${base%.*}
+executable=${executable:-HadronsXmlRun}
 shopt -s nocasematch
 case $jobext in
   sh) jobDescr="GPU"; walldefault=24;;
@@ -54,6 +56,9 @@ for (( ; NumFiles-- ; start += Inc )); do
   jobscript=$base.$start.$jobext
   jobxml=$base.$start.xml
   #Echo making $jobscript and $jobxml
-  sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" -e "s|@xml@|$jobxml|g" -e "s|@wall@|${wall_hours}|g" $template > $jobscript
-  sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" $templateXml > $jobxml
+  sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" \
+      -e "s|@xml@|$jobxml|g" -e "s|@wall@|${wall_hours}|g" \
+      -e "s|@executable@|$executable|g" $template > $jobscript
+  sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" \
+      $templateXml > $jobxml
 done
