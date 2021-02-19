@@ -367,7 +367,8 @@ struct AppParams
                                       bool,         HeavyAnti,
                                       bool,         DoNegativeMomenta,
                                       bool,         Run,
-                                      std::string,  JobXmlPrefix)
+                                      std::string,  JobXmlPrefix,
+                                      std::string,  JobXmlSuffix)
   };
 
   RunPar Run;
@@ -378,9 +379,10 @@ struct AppParams
   std::vector<Common::Momentum> Momenta;
   bool ThreePoint;
   std::vector<int> deltaT;
+  const std::string sRunSuffix;
   inline int TimeBound( int t ) const
   { return t < 0 ? Run.Nt - ((-t) % Run.Nt) : t % Run.Nt; }
-  AppParams( const std::string sXmlFilename, const std::string sRunPrefix );
+  AppParams( const std::string sXmlFilename, const std::string sRunSuffix );
   std::string RunID() const;
 protected:
   static std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType, std::size_t Min = 1 );
@@ -407,14 +409,13 @@ template <typename T> void NoDuplicates( const std::vector<T> &v, const std::str
   }
 }
 
-AppParams::AppParams( const std::string sXmlFilename, const std::string sRunPrefix )
+AppParams::AppParams( const std::string sXmlFilename, const std::string sRunSuffix_ )
+: sRunSuffix{sRunSuffix_}
 {
   static const std::string sXmlTopLevel{ "Study2" };
   static const std::string sXmlTagName{ "RunPar" };
   XmlReader r( sXmlFilename, false, sXmlTopLevel );
   read( r, sXmlTagName, Run );
-  if( !sRunPrefix.empty() )
-    Run.JobXmlPrefix = sRunPrefix + Run.JobXmlPrefix;
   HeavyQuarks        = ReadQuarks( r, "Heavy" );
   SpectatorQuarks    = ReadQuarks( r, "Spectator" );
   SpectatorQuarks2pt = ReadQuarks( r, "SpectatorExtra2pt", 0 );
@@ -1192,12 +1193,12 @@ Application AppMaker::Setup( const AppParams &params )
   globalPar.database.resultDb   = params.Run.dbOptions.resultDb;
   globalPar.database.makeStatDb = params.Run.dbOptions.makeStatDb;
   static const std::string RunID{ params.RunID() };
-  globalPar.database.applicationDb = params.Run.dbOptions.applicationDbPrefix + RunID + ".db";
+  globalPar.database.applicationDb = params.Run.dbOptions.applicationDbPrefix + RunID + params.sRunSuffix + ".db";
   Grid::Hadrons::makeFileDir( globalPar.database.applicationDb );
   globalPar.database.restoreModules = false;
   globalPar.database.restoreMemoryProfile = false;
   globalPar.database.restoreSchedule = false;
-  globalPar.scheduleFile = params.Run.JobXmlPrefix + RunID + ".sched";
+  globalPar.scheduleFile = params.Run.JobXmlPrefix + RunID + params.sRunSuffix + ".sched";
   globalPar.saveSchedule = true;
   Application application( globalPar );
   // gauge field
@@ -1301,16 +1302,16 @@ int main(int argc, char *argv[])
   // See whether parameter file exists
   if( argc < 2 || !Common::FileExists( argv[1] ) )
   {
-    std::cout << "Usage: xml3pt in_file [out_prefix]\n"
+    std::cout << "Usage: xml3pt in_file [job_suffix]\n"
               << "where:\n"
               << "  in_file is the name of the Parameter.xml driving this job\n"
-              << "  out_prefix+JobXmlPrefix (from .xml) is location for job and schedule files"
+              << "  job_suffix (if present) will be appended to .db, .xml and .sched files"
               << std::endl;
     return EXIT_FAILURE;
   }
   const std::string sXmlFilename{ argv[1] };
   // 2nd parameter is optional. If present (and not a switch) it's a prefix for current run
-  const std::string sRunPrefix( argc >= 3 && argv[2][0] != '-' ? argv[2] : "" );
+  const std::string sRunSuffix( argc >= 3 && argv[2][0] != '-' ? ( Common::Period + argv[2] ) : "" );
 
   // initialization //////////////////////////////////////////////////////////
   Grid_init(&argc, &argv);
@@ -1321,11 +1322,11 @@ int main(int argc, char *argv[])
   HadronsLogDebug.Active(GridLogDebug.isActive());
   try
   {
-    const AppParams params( sXmlFilename, sRunPrefix );
+    const AppParams params( sXmlFilename, sRunSuffix );
     AppMaker x( params );
     x.Make();
     // Run or save the job
-    x.application.saveParameterFile( params.Run.JobXmlPrefix + params.RunID() + ".xml" );
+    x.application.saveParameterFile( params.Run.JobXmlPrefix + params.RunID() + sRunSuffix + ".xml" );
     if( params.Run.Run )
       x.application.run();
   }
