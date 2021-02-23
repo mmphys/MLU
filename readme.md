@@ -1,9 +1,5 @@
 # Mike's Lattice Utilities
 
-* 
-* Generic analysis code: `bootstrap`, `MultiFit`, ... 
-* Production jobs: `xml3pt`
-
     Item | Description
     | --- | ---
     `libMLU.a` | Generic set of utilities
@@ -12,9 +8,9 @@
 
 ## Dependencies
 
-1. Install [GNU Scientific Library (GSL) 2.6][gsl26]
-2. Install [CERN Minuit2][minuit2] (see paragraph 3, "... can be downloaded here[link].")
+1. Install [GNU Scientific Library][gsl] (GSL), version 2.5 or later (I'm using 2.6 in production)
+2. Install [CERN Minuit2][minuit2] standalone version (see paragraph 3, "... can be downloaded *here*.")
 
-[gsl26]: https://www.gnu.org/software/gsl/
+[gsl]: https://www.gnu.org/software/gsl/
 [minuit2]: https://root.cern.ch/doc/master/Minuit2Page.html
 
