@@ -367,8 +367,7 @@ struct AppParams
                                       bool,         HeavyAnti,
                                       bool,         DoNegativeMomenta,
                                       bool,         Run,
-                                      std::string,  JobXmlPrefix,
-                                      std::string,  JobXmlSuffix)
+                                      std::string,  JobXmlPrefix)
   };
 
   RunPar Run;
