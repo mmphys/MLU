@@ -1,8 +1,10 @@
 # Mike's Lattice Utilities
 
+Here's what's in the package:
+
     Item | Description
     | --- | ---
-    `libMLU.a` | Generic set of utilities
+    `libMLU.a` | Library containing helper functions (HDF5 wrappers, I/O, filename globbing, ...) 
     `bootstrap`, `MultiFit`, ... | Generic analysis code  
     `xml3pt` | Production jobs
 
