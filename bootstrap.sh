@@ -3,6 +3,6 @@
 # Fail on any error
 set -e
 
-echo "Generating configure for Mike's Lattice Utilities (MLU)"
+echo "Generating configure for Meson Lattice Utilities (MLU)"
 #mkdir -p .buildutils/m4
 autoreconf -fvi

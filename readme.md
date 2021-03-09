@@ -1,4 +1,4 @@
-# Mike's Lattice Utilities
+# Meson Lattice Utilities (MLU)
 
 Item | Description
 | --- | ---

@@ -1470,6 +1470,7 @@
 		680566CE24991A2000478344 /* Test_database.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_database.cpp; path = ../Hadrons/tests/Test_database.cpp; sourceTree = "<group>"; };
 		68068AA325C3170800B8699F /* WardIdentity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WardIdentity.cpp; sourceTree = "<group>"; };
 		68068AA425C3170800B8699F /* WardIdentity.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = WardIdentity.hpp; sourceTree = "<group>"; };
+		68091C5325F7954500BEC976 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
 		68093A2624B8752F0019148E /* gpuxml.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = gpuxml.sh; sourceTree = "<group>"; };
 		68093A2724B8B1670019148E /* FieldIo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FieldIo.hpp; sourceTree = "<group>"; };
 		68093A2924B8B18D0019148E /* RandomField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RandomField.hpp; sourceTree = "<group>"; };
@@ -3074,6 +3075,7 @@
 				68E5744825D31EAF00BD1A21 /* bootstrap.sh */,
 				68E5744725D31EAF00BD1A21 /* configure.ac */,
 				68E5744625D31EAF00BD1A21 /* Makefile.am */,
+				68091C5325F7954500BEC976 /* readme.md */,
 				6850CA26244A1C2F00A53DC8 /* Grid */,
 				68E2C2F3245B2029009E7BE5 /* Grid_tests */,
 				6850D25A244A230800A53DC8 /* Hadrons */,
