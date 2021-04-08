@@ -1196,6 +1196,10 @@
 		6860B983248E77CD0049C0DE /* SeqGammaWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6860B981248E77CC0049C0DE /* SeqGammaWall.cpp */; };
 		6860B984248E77CD0049C0DE /* SeqGammaWall.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6860B982248E77CC0049C0DE /* SeqGammaWall.hpp */; };
 		6868327425DDB950008489B2 /* corr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6868327325DDB950008489B2 /* corr.cpp */; };
+		686EA28926108B1F00E5D6D3 /* MADWFCG.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 686EA28726108B1E00E5D6D3 /* MADWFCG.hpp */; };
+		686EA28A26108B1F00E5D6D3 /* MADWFCG.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686EA28826108B1E00E5D6D3 /* MADWFCG.cpp */; };
+		686EA2A626108B3600E5D6D3 /* XiToSigmaEye.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686EA2A426108B3600E5D6D3 /* XiToSigmaEye.cpp */; };
+		686EA2A726108B3600E5D6D3 /* XiToSigmaEye.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 686EA2A526108B3600E5D6D3 /* XiToSigmaEye.hpp */; };
 		686EC70A24003ED30084D04D /* FitSummary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686EC70924003ED30084D04D /* FitSummary.cpp */; };
 		68703C7725D2F14100D1BA61 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		68703CAA25D2F1FB00D1BA61 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
@@ -2768,6 +2772,10 @@
 		6860B981248E77CC0049C0DE /* SeqGammaWall.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SeqGammaWall.cpp; sourceTree = "<group>"; };
 		6860B982248E77CC0049C0DE /* SeqGammaWall.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SeqGammaWall.hpp; sourceTree = "<group>"; };
 		6868327325DDB950008489B2 /* corr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = corr.cpp; sourceTree = "<group>"; };
+		686EA28726108B1E00E5D6D3 /* MADWFCG.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MADWFCG.hpp; sourceTree = "<group>"; };
+		686EA28826108B1E00E5D6D3 /* MADWFCG.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MADWFCG.cpp; sourceTree = "<group>"; };
+		686EA2A426108B3600E5D6D3 /* XiToSigmaEye.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XiToSigmaEye.cpp; sourceTree = "<group>"; };
+		686EA2A526108B3600E5D6D3 /* XiToSigmaEye.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = XiToSigmaEye.hpp; sourceTree = "<group>"; };
 		686EC70224003EA40084D04D /* FitSummary */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FitSummary; sourceTree = BUILT_PRODUCTS_DIR; };
 		686EC70924003ED30084D04D /* FitSummary.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitSummary.cpp; sourceTree = "<group>"; };
 		68703D4425D2FF8600D1BA61 /* MultiFit.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MultiFit.hpp; sourceTree = "<group>"; };
@@ -5363,6 +5371,8 @@
 				6850D439244A234300A53DC8 /* WeakMesonDecayKl2.hpp */,
 				6850D42D244A234300A53DC8 /* WeakNonEye3pt.cpp */,
 				6850D43D244A234300A53DC8 /* WeakNonEye3pt.hpp */,
+				686EA2A426108B3600E5D6D3 /* XiToSigmaEye.cpp */,
+				686EA2A526108B3600E5D6D3 /* XiToSigmaEye.hpp */,
 			);
 			path = MContraction;
 			sourceTree = "<group>";
@@ -5440,6 +5450,8 @@
 				6850D468244A234300A53DC8 /* Guesser.hpp */,
 				6850D46B244A234300A53DC8 /* LocalCoherenceLanczos.cpp */,
 				6850D464244A234300A53DC8 /* LocalCoherenceLanczos.hpp */,
+				686EA28826108B1E00E5D6D3 /* MADWFCG.cpp */,
+				686EA28726108B1E00E5D6D3 /* MADWFCG.hpp */,
 				6850D46A244A234300A53DC8 /* MixedPrecisionRBPrecCG.cpp */,
 				6850D463244A234300A53DC8 /* MixedPrecisionRBPrecCG.hpp */,
 				6850D467244A234300A53DC8 /* RBPrecCG.cpp */,
@@ -6489,6 +6501,7 @@
 				6850D4FF244A234500A53DC8 /* EMLepton.hpp in Headers */,
 				6850D53D244A234500A53DC8 /* RandomVectors.hpp in Headers */,
 				68093A3124B8B1A60019148E /* LoadField.hpp in Headers */,
+				686EA2A726108B3600E5D6D3 /* XiToSigmaEye.hpp in Headers */,
 				68093A2824B8B1670019148E /* FieldIo.hpp in Headers */,
 				6850D54A244A234500A53DC8 /* Perambulator.hpp in Headers */,
 				6850D536244A234500A53DC8 /* TimeDilutedSpinColorDiagonal.hpp in Headers */,
@@ -6589,6 +6602,7 @@
 				6850D368244A230A00A53DC8 /* Module.hpp in Headers */,
 				6850D542244A234500A53DC8 /* Scalar.hpp in Headers */,
 				68093A3424B8B1A60019148E /* SaveField.hpp in Headers */,
+				686EA28926108B1F00E5D6D3 /* MADWFCG.hpp in Headers */,
 				6850D4F4244A234500A53DC8 /* Gamma3pt.hpp in Headers */,
 				6850D4FC244A234500A53DC8 /* FreeProp.hpp in Headers */,
 				6850D350244A230A00A53DC8 /* GeneticScheduler.hpp in Headers */,
@@ -7463,6 +7477,7 @@
 				6850D4EE244A234500A53DC8 /* A2AMesonField.cpp in Sources */,
 				6850D56E244A234500A53DC8 /* Div.cpp in Sources */,
 				6850D544244A234500A53DC8 /* FreeProp.cpp in Sources */,
+				686EA28A26108B1F00E5D6D3 /* MADWFCG.cpp in Sources */,
 				6850D4F0244A234500A53DC8 /* SigmaToNucleonEye.cpp in Sources */,
 				6850D516244A234500A53DC8 /* JacobiSmear.cpp in Sources */,
 				6850D558244A234500A53DC8 /* ScaledDWF.cpp in Sources */,
@@ -7524,6 +7539,7 @@
 				6860B97F248E74C70049C0DE /* Random.cpp in Sources */,
 				6850D514244A234500A53DC8 /* Convolution.cpp in Sources */,
 				6850D501244A234500A53DC8 /* Z2.cpp in Sources */,
+				686EA2A626108B3600E5D6D3 /* XiToSigmaEye.cpp in Sources */,
 				6850D354244A230A00A53DC8 /* Environment.cpp in Sources */,
 				6850D552244A234500A53DC8 /* Amputate.cpp in Sources */,
 				6850D585244A234500A53DC8 /* LoadEigenPack.cpp in Sources */,

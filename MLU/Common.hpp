@@ -2950,9 +2950,9 @@ public:
   : Base::Sample( FileName, GroupName, PrintPrefix, pOpNames ) {}*/
   virtual const std::string & DefaultGroupName() { return sFold; }
   virtual bool bFolded() { return true; }
-  virtual void SummaryComments( std::ostream & s ) const
+  virtual void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const
   {
-    Base::SummaryComments( s );
+    Base::SummaryComments( s, bVerboseSummary );
     if( NtUnfolded ) s << "# NtUnfolded: " << NtUnfolded << NewLine;
     if( reality != Reality::Unknown ) s << "# Reality: " << reality << NewLine;
     if( parity != Parity::Unknown ) s << "# Parity: " << parity << NewLine;
@@ -3241,9 +3241,9 @@ public:
     H5::WriteAttribute( g, sOperators, OpNames );
     return iReturn;
   }
-  virtual void SummaryComments( std::ostream & s ) const
+  virtual void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const
   {
-    Base::SummaryComments( s );
+    Base::SummaryComments( s, bVerboseSummary );
     s << "# NumExponents: " << NumExponents << NewLine
       << "# NumFiles: " << NumFiles << NewLine
       << "# Factorised: " << Factorised << NewLine
