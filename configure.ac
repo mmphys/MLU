@@ -1,5 +1,5 @@
 ## Process this file with autoconf to produce a configure script.
-# Mike's Lattice Utilities
+# Meson Lattice Utilities
 
 AC_PREREQ([2.69])
 AC_INIT([MLU], [0.1])
@@ -33,6 +33,8 @@ AC_ARG_WITH([hadrons],
     [if test x"$with_hadrons" != x"$with_grid" ; then]
         [PATH="$with_hadrons/bin$PATH_SEPARATOR$PATH"]
     [fi])
+
+AC_ARG_ENABLE([check], AS_HELP_STRING([--disable-check], [Disable check of Grid and Hadrons build]))
 
 # Optional arguments for other pre-requisite libraries
 
@@ -75,21 +77,12 @@ if test x"$HADRONS_PREFIX" == x ; then
 fi
 AC_MSG_RESULT([hadrons-config --prefix=$HADRONS_PREFIX])
 
-# Make sure GSL is installed
-
-AC_CHECK_PROG([GSLCONF],[gsl-config],[yes])
-if test x"$GSLCONF" != xyes ; then
-    AC_MSG_ERROR([gsl-config not found])
-fi
-LDFLAGS+=" `gsl-config --libs`"
-CPPFLAGS+=" `gsl-config --cflags`"
-
 # If the user hasn't specified a CXX compiler, get it from Hadrons
 
 if test x"$CXX" == x ; then
     CXX="`hadrons-config --cxx`"
     if test x"$CXX" != x ; then
-        AC_MSG_RESULT([hadrons-config --cxx=$CXX])
+        AC_MSG_NOTICE([hadrons-config --cxx=$CXX])
     else
         AC_MSG_WARN([hadrons-config --cxx unknown])
     fi
@@ -97,7 +90,7 @@ fi
 if test x"$CXXLD" == x ; then
     CXXLD="`hadrons-config --cxxld`"
     if test x"$CXXLD" != x ; then
-        AC_MSG_RESULT([hadrons-config --cxxld=$CXXLD])
+        AC_MSG_NOTICE([hadrons-config --cxxld=$CXXLD])
     else
         AC_MSG_WARN([hadrons-config --cxxld unknown])
     fi
@@ -122,58 +115,129 @@ CXXFLAGS="`hadrons-config --cxxflags` $CXXFLAGS"
 LDFLAGS="`hadrons-config --ldflags` $LDFLAGS"
 LIBS="-lHadrons `hadrons-config --libs` $LIBS"
 
-# TODO: Should I really set these variables here?
+AS_IF([test x"$enable_check" != xno], [
+    AC_MSG_CHECKING([that a minimal Grid and Hadrons program compiles]);
+    AC_LINK_IFELSE(
+            [AC_LANG_SOURCE([[
+        #include <Grid/Grid.h>
+        #include <Hadrons/Application.hpp>
 
-AC_MSG_CHECKING([that a minimal Grid and Hadrons program compiles]);
-AC_LINK_IFELSE(
-        [AC_LANG_SOURCE([[
-    #include <Grid/Grid.h>
-    #include <Hadrons/Application.hpp>
+        using namespace Grid;
+        using namespace Hadrons;
 
-    using namespace Grid;
-    using namespace Hadrons;
+        int main(int argc, char *argv[])
+        {
+            Grid_init(&argc, &argv);
+            Application application;
+            application.run();
+            Grid_finalize();
+            return 0;
+        }
 
-    int main(int argc, char *argv[])
-    {
-        Grid_init(&argc, &argv);
-        Application application;
-        application.run();
-        Grid_finalize();
-        return 0;
-    }
-
-    ]])],
+        ]])],
         [AC_MSG_RESULT([yes])],
-    [AC_MSG_RESULT([no])]
-    [AC_MSG_ERROR([Could not compile a minimal Grid and Hadrons program])])
+        [AC_MSG_RESULT([no])]
+        [AC_MSG_ERROR([Could not compile a minimal Grid and Hadrons program])])
+    ])
 
-# Check for GSL
-
-AC_SEARCH_LIBS([gsl_set_error_handler], [gsl], [],
-               [AC_MSG_ERROR([GNU Scientific Library not found])])
-if test x"$ac_cv_search_gsl_set_error_handler" != x"none required" ; then
-    LIBS+=" $ac_cv_search_gsl_set_error_handler"
-fi
+AbsMLUBuildDir=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${AbsMLUBuildDir}
+MLUBuildDir=${AbsMLUBuildDir##*/}
+AC_MSG_NOTICE([AbsMLUBuildDir=$AbsMLUBuildDir])
+AC_MSG_NOTICE([MLUBuildDir=$MLUBuildDir])
 
 # Check for Minuit2 by making a small test program (can't check libraries as pure C++)
 
 LIBS+=" -lMinuit2"
+GotMinuit2=yes
 AC_MSG_CHECKING([that a minimal Minuit2 program compiles]);
 AC_LINK_IFELSE(
         [AC_LANG_SOURCE([[
     #include <Minuit2/Minuit2Minimizer.h>
-    int main(int argc, char *argv[])
-    {
+    int main(int argc, char *argv[]) {
         ROOT::Minuit2::MnUserParameterState Minuit2State;
-        return 0;
-    }
+        return 0; }
     ]])],
-        [AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([yes])],
     [AC_MSG_RESULT([no])]
-    [AC_MSG_ERROR([Could not compile a minimal Minuit2 program])])
+    [if test x"$with_minuit2" != x ; then]
+        [AC_MSG_ERROR([Could not compile a minimal Minuit2 program])]
+    [fi]
+    [GotMinuit2=no])
+if test x$GotMinuit2 != xyes ; then
+    # If it's not already in the path, assume it will be in prefix
+    CPPFLAGS="-I$prefix/include $CPPFLAGS"
+    LDFLAGS="-L$prefix/lib $LDFLAGS"
+    if test -d $prefix/include/Minuit2 ; then
+        AC_MSG_NOTICE([Using Minuit2 previously installed in --prefix])
+    else
+        Minuit2Dir="$abs_srcdir/.Package/Minuit2-5.34.14"
+        Minuit2ConfigureDir="."
+        if test x$AbsMLUBuildDir != x$abs_srcdir ; then
+            Minuit2Dir="$Minuit2Dir/$MLUBuildDir"
+            Minuit2ConfigureDir=".."
+        fi
+        AC_MSG_NOTICE([Making $Minuit2Dir])
+        mkdir -p "$Minuit2Dir"
+        cd "$Minuit2Dir"
+        $Minuit2ConfigureDir/configure --prefix="$prefix"
+        make -j 12
+        make install
+        cd $AbsMLUBuildDir
+        if ! test -d $prefix/include/Minuit2 ; then
+            AC_MSG_ERROR([Could not install ${Minuit2Config}])
+        fi
+    fi
+    AC_MSG_CHECKING([that Minuit2 installed ok]);
+    AC_LINK_IFELSE(
+            [AC_LANG_SOURCE([[
+        #include <Minuit2/Minuit2Minimizer.h>
+        int main(int argc, char *argv[]) {
+            ROOT::Minuit2::MnUserParameterState Minuit2State;
+            return 0; }
+        ]])],
+        [AC_MSG_RESULT([yes])]
+        [GotMinuit2=yes],
+        [AC_MSG_RESULT([no])]
+        [AC_MSG_ERROR([Could not install Minuit2])])
+fi
 
-cwd=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${cwd}
-CPPFLAGS="-I${abs_srcdir} $CPPFLAGS -I$cwd"
+# Check for GSL
+
+GSLConfig=gsl-config
+AC_CHECK_PROG([GSLCONF],[${GSLConfig}],[yes])
+if test x$GSLCONF != xyes ; then
+    GSLConfig="$prefix/bin/$GSLConfig"
+    if test -x "$GSLConfig" ; then
+        AC_MSG_NOTICE([Using GSL previously installed in --prefix])
+    else
+        GSLDir="$abs_srcdir/.Package/gsl-2.6"
+        GSLConfigureDir="."
+        if test x$AbsMLUBuildDir != x$abs_srcdir ; then
+            GSLDir="$GSLDir/$MLUBuildDir"
+            GSLConfigureDir=".."
+        fi
+        AC_MSG_NOTICE([Making $GSLDir])
+        mkdir -p "$GSLDir"
+        cd "$GSLDir"
+        $GSLConfigureDir/configure --prefix="$prefix"
+        make -j 12
+        make install
+        cd $AbsMLUBuildDir
+        if ! test -x "$GSLConfig" ; then
+            AC_MSG_ERROR([Could not install ${GSLConfig}])
+        fi
+    fi
+fi
+LDFLAGS+=" `$GSLConfig --libs`"
+CPPFLAGS+=" `$GSLConfig --cflags`"
+
+#AC_SEARCH_LIBS([gsl_set_error_handler], [gsl], [],
+#               [AC_MSG_ERROR([GNU Scientific Library not found])])
+#if test x"$ac_cv_search_gsl_set_error_handler" != x"none required" ; then
+#    LIBS+=" $ac_cv_search_gsl_set_error_handler"
+#fi
+
+CPPFLAGS="-I${abs_srcdir} $CPPFLAGS -I$AbsMLUBuildDir"
 
 #AC_DEFINE_UNQUOTED([MLU_SHA], ["`git rev-parse HEAD`"], [git commit SHA])
 #AC_DEFINE_UNQUOTED([MLU_SHORT_SHA], ["`git rev-parse --short HEAD`"], [git commit short SHA])
@@ -203,4 +267,5 @@ AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_LDFLAGS])
 AC_SUBST([MLU_LIBS])
 AC_CONFIG_FILES([Makefile MLU/Makefile Analyze/Makefile Study1/Makefile Study2/Makefile])
+#AC_CONFIG_SUBDIRS([.Package/gsl-2.6 .Package/Minuit2-5.34.14])
 AC_OUTPUT
