@@ -164,12 +164,11 @@ AC_LINK_IFELSE(
     [fi]
     [GotMinuit2=no])
 if test x$GotMinuit2 != xyes ; then
-    # If it's not already in the path, assume it will be in prefix
-    CPPFLAGS="-I$prefix/include $CPPFLAGS"
-    LDFLAGS="-L$prefix/lib $LDFLAGS"
+    # See whether I've already installed a version in prefix
     if test -d $prefix/include/Minuit2 ; then
         AC_MSG_NOTICE([Using Minuit2 previously installed in --prefix])
     else
+        # Install my version in prefix
         Minuit2Dir="$abs_srcdir/.Package/Minuit2-5.34.14"
         Minuit2ConfigureDir="."
         if test x$AbsMLUBuildDir != x$abs_srcdir ; then
@@ -179,14 +178,44 @@ if test x$GotMinuit2 != xyes ; then
         AC_MSG_NOTICE([Making $Minuit2Dir])
         mkdir -p "$Minuit2Dir"
         cd "$Minuit2Dir"
+        OldCXX="$CXX"
+        if test x${OldCXX:0:4} == xnvcc ; then
+            OldCC="$CC"
+            OldCPPFLAGS="$CPPFLAGS"
+            OldCXXDEPMODE="$CXXDEPMODE"
+            OldCXXFLAGS="$CXXFLAGS"
+            OldCXXLD="$CXXLD"
+            CXX="g++"
+            CC=gcc
+            CPPFLAGS=""
+            CXXDEPMODE="depmode=gcc3"
+            CXXFLAGS=""
+            unset CXXLD
+            for f in $OldCXXFlags ; do
+                if test x${f:0:2} == x-I ; then
+                    CXXFLAGS="$CXXFLAGS $f"
+                fi
+            done
+        fi
         $Minuit2ConfigureDir/configure --prefix="$prefix"
         make -j 12
         make install
+        if test x${OldCXX:0:4} == xnvcc ; then
+            CXX="$OldCXX"
+            CC="$OldCC"
+            CPPFLAGS="$OldCPPFLAGS"
+            CXXDEPMODE="$OldCXXDEPMODE"
+            CXXFLAGS="$OldCXXFLAGS"
+            CXXLD="$OldCXXLD"
+        fi
         cd $AbsMLUBuildDir
         if ! test -d $prefix/include/Minuit2 ; then
             AC_MSG_ERROR([Could not install ${Minuit2Config}])
         fi
     fi
+    # Use the version I installed in prefix
+    CPPFLAGS="-I$prefix/include $CPPFLAGS"
+    LDFLAGS="-L$prefix/lib $LDFLAGS"
     AC_MSG_CHECKING([that Minuit2 installed ok]);
     AC_LINK_IFELSE(
             [AC_LANG_SOURCE([[
