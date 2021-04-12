@@ -96,15 +96,7 @@ if test x"$CXXLD" == x ; then
     fi
 fi
 
-# Checks for programs.
-AC_PROG_CXX
-AC_PROG_CC
-AC_PROG_RANLIB
-AM_PROG_AR
-AC_LANG([C++])
-
 # Now setup my environment
-
 CPPFLAGS="-I$GRID_PREFIX/include $CPPFLAGS"
 LDFLAGS="-L$GRID_PREFIX/lib $LDFLAGS"
 if test x"$HADRONS_PREFIX" != x"$GRID_PREFIX" ; then
@@ -114,6 +106,13 @@ fi
 CXXFLAGS="`hadrons-config --cxxflags` $CXXFLAGS"
 LDFLAGS="`hadrons-config --ldflags` $LDFLAGS"
 LIBS="-lHadrons `hadrons-config --libs` $LIBS"
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_RANLIB
+AM_PROG_AR
+AC_LANG([C++])
 
 AS_IF([test x"$enable_check" != xno], [
     AC_MSG_CHECKING([that a minimal Grid and Hadrons program compiles]);
