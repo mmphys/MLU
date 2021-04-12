@@ -1221,6 +1221,8 @@
 		687D64DE2552A2DC00E4F83A /* LoadLapEvec.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687D64DC2552A2DC00E4F83A /* LoadLapEvec.hpp */; };
 		687D64F82552A30000E4F83A /* SourceSink.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687D64F62552A2FF00E4F83A /* SourceSink.hpp */; };
 		687D64F92552A30000E4F83A /* SourceSink.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D64F72552A2FF00E4F83A /* SourceSink.cpp */; };
+		68830C672624C6A500EA9CD4 /* GaugeFix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681445182624C43800F458CB /* GaugeFix.cpp */; };
+		68830C832624CB4700EA9CD4 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6887C99725D571E800FF0855 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6887C99825D571F600FF0855 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8C722A708A200A85993 /* peramb-compare.cpp */; };
@@ -1261,6 +1263,15 @@
 
 /* Begin PBXCopyFilesBuildPhase section */
 		6804C18A244C78AF008E272B /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		6814451B2624C49100F458CB /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -1492,6 +1503,8 @@
 		6809611E24982C11007F8DB3 /* sqlite3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sqlite3.h; sourceTree = "<group>"; };
 		6809611F24982C11007F8DB3 /* sqlite3ext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sqlite3ext.h; sourceTree = "<group>"; };
 		680DBC6024F81FB600A66BFF /* FitModel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitModel.cpp; sourceTree = "<group>"; };
+		681445182624C43800F458CB /* GaugeFix.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GaugeFix.cpp; sourceTree = "<group>"; };
+		6814451D2624C49100F458CB /* GaugeFix */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GaugeFix; sourceTree = BUILT_PRODUCTS_DIR; };
 		681550FE22CBC9B9009AB4AD /* MultiFit.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MultiFit.cpp; sourceTree = "<group>"; };
 		6815510322CBCB61009AB4AD /* MultiFit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MultiFit; sourceTree = BUILT_PRODUCTS_DIR; };
 		6817BD13256EA5180030A9DE /* Test_cayley_mres.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_cayley_mres.cc; path = ../Grid/tests/debug/Test_cayley_mres.cc; sourceTree = "<group>"; };
@@ -2863,6 +2876,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6814451A2624C49100F458CB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68830C832624CB4700EA9CD4 /* libMLU.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6815510022CBCB61009AB4AD /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -3128,6 +3149,7 @@
 				684823352509160C00B31C1E /* Ratio */,
 				6817BD18256EB34C0030A9DE /* Test_cayley_mres */,
 				6889D90725D2BC6C004F15CE /* libMLU.a */,
+				6814451D2624C49100F458CB /* GaugeFix */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -3155,8 +3177,9 @@
 		68338D3A24613EE600B6292E /* Study2 */ = {
 			isa = PBXGroup;
 			children = (
-				68E5744D25D321CB00BD1A21 /* Makefile.am */,
+				681445182624C43800F458CB /* GaugeFix.cpp */,
 				68093A2624B8752F0019148E /* gpuxml.sh */,
+				68E5744D25D321CB00BD1A21 /* Makefile.am */,
 				6848233025090E0100B31C1E /* Ratio.cpp */,
 				68338D3B2461402200B6292E /* xml3pt.cpp */,
 				681DC24724A38D1900AF1EA5 /* xml3pt.xml */,
@@ -6658,6 +6681,23 @@
 			productReference = 6804C18C244C78AF008E272B /* Test_hadrons_meson_3pt */;
 			productType = "com.apple.product-type.tool";
 		};
+		6814451C2624C49100F458CB /* GaugeFix */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 681445212624C49100F458CB /* Build configuration list for PBXNativeTarget "GaugeFix" */;
+			buildPhases = (
+				681445192624C49100F458CB /* Sources */,
+				6814451A2624C49100F458CB /* Frameworks */,
+				6814451B2624C49100F458CB /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GaugeFix;
+			productName = GaugeFix;
+			productReference = 6814451D2624C49100F458CB /* GaugeFix */;
+			productType = "com.apple.product-type.tool";
+		};
 		6815510222CBCB61009AB4AD /* MultiFit */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6815510722CBCB61009AB4AD /* Build configuration list for PBXNativeTarget "MultiFit" */;
@@ -7079,6 +7119,9 @@
 					6804C18B244C78AF008E272B = {
 						CreatedOnToolsVersion = 11.4.1;
 					};
+					6814451C2624C49100F458CB = {
+						CreatedOnToolsVersion = 12.4;
+					};
 					6815510222CBCB61009AB4AD = {
 						CreatedOnToolsVersion = 10.2.1;
 					};
@@ -7170,6 +7213,7 @@
 				682260F72376FA57005341E5 /* repair */,
 				68AC6DE522A7114900D42F70 /* peramb-compare */,
 				688FEBE2238C1BE100977B09 /* mixedop */,
+				6814451C2624C49100F458CB /* GaugeFix */,
 				684823342509160C00B31C1E /* Ratio */,
 				681DC8AF22F19BAB00EE04A9 /* hlxml */,
 				68BEFF692343A75A0031E3E3 /* xmlZ2 */,
@@ -7197,6 +7241,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				6804C193244C78C8008E272B /* Test_hadrons_meson_3pt.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		681445192624C49100F458CB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68830C672624C6A500EA9CD4 /* GaugeFix.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7696,6 +7748,20 @@
 			name = Debug;
 		};
 		6804C192244C78AF008E272B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		681445222624C49100F458CB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		681445232624C49100F458CB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -8375,6 +8441,15 @@
 			buildConfigurations = (
 				6804C191244C78AF008E272B /* Debug */,
 				6804C192244C78AF008E272B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		681445212624C49100F458CB /* Build configuration list for PBXNativeTarget "GaugeFix" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				681445222624C49100F458CB /* Debug */,
+				681445232624C49100F458CB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
