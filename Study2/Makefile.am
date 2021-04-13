@@ -2,7 +2,7 @@
 
 LDADD = ../MLU/libMLU.a $(MLU_LIBS)
 
-bin_PROGRAMS = Ratio xml3pt
+bin_PROGRAMS = GaugeFix Ratio xml3pt
 
 Ratio_SOURCES = Ratio.cpp
 xml3pt_SOURCES = xml3pt.cpp

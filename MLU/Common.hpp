@@ -272,7 +272,7 @@ extern const std::vector<std::string> sCorrSummaryNames;
 using SeedType = unsigned int;
 
 // Remove leading and trailing whitespace from string
-inline void Trim( std::string s )
+inline void Trim( std::string &s )
 {
   if( !s.empty() )
   {

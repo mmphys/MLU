@@ -33,8 +33,9 @@ using namespace Grid;
 
 using GImpl = Grid::WilsonImplD;
 //using GaugeField = typename GImpl::GaugeField;
-using GaugeMat = typename GImpl::GaugeLinkField;
+//using GaugeMat = typename GImpl::GaugeLinkField;
 
+Grid::Hadrons::MGauge::GaugeFix::Par GFPar;
 FieldMetaData fmdBuffer;
 
 template<typename Impl> class GaugeFixedStatistics
@@ -46,13 +47,14 @@ public:
     header.plaquette =WilsonLoops<Impl>::avgPlaquette(data);
     header.hdr_version = fmdBuffer.hdr_version;
     header.storage_format = fmdBuffer.storage_format;
-    header.ensemble_id = fmdBuffer.ensemble_id + " (gauge fixed)";
+    {
+      std::ostringstream ss;
+      ss << fmdBuffer.ensemble_id << " (" << GFPar.gaugeFix << " gauge fixed)";
+      header.ensemble_id = ss.str();
+    }
     header.ensemble_label = fmdBuffer.ensemble_label;
     header.sequence_number = fmdBuffer.sequence_number;
     header.creation_date = fmdBuffer.creation_date;
-    std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    header.archive_date = std::ctime(&t);
-    header.floating_point = fmdBuffer.floating_point;
   }
 };
 typedef GaugeFixedStatistics<PeriodicGimplD> PeriodicGaugeFixedStatistics;
@@ -63,11 +65,16 @@ void GaugeFix( const std::string &ParamsXml, const std::string &InFileName, cons
   std::cout<<GridLogMessage << "Reading gauge fixing parameters from " << ParamsXml << Common::NewLine;
   static const std::string sXmlTopLevel{ "GaugeFix" };
   static const std::string sXmlTagName{ "GaugeFix" };
-  XmlReader r( ParamsXml, false, sXmlTopLevel );
-  Grid::Hadrons::MGauge::GaugeFix::Par GFPar;
-  read( r, sXmlTagName, GFPar );
-  if( GFPar.Fourier )
-    throw std::runtime_error( "Debug: fail on Fourier acceleration" );
+  bool bEnableFix{ true };
+  {
+    XmlReader r( ParamsXml, false, sXmlTopLevel );
+    read( r, sXmlTagName, GFPar );
+    // Read optional boolean tag "Disable"
+    std::string s;
+    read( r, "EnableFix", s );
+    std::istringstream ss( s );
+    ss >> std::boolalpha >> bEnableFix; // Doesn't matter if this fails
+  }
 
   std::cout<<GridLogMessage << "Reading NERSC Gauge file " << InFileName << Common::NewLine;
   GridCartesian * UGrid = Grid::SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),
@@ -75,9 +82,17 @@ void GaugeFix( const std::string &ParamsXml, const std::string &InFileName, cons
                                                                GridDefaultMpi());
   LatticeGaugeField U( UGrid );
   NerscIO::readConfiguration( U, fmdBuffer, InFileName );
-  std::cout<<GridLogMessage << "Gauge fixing" << Common::NewLine;
-  GaugeMat M( UGrid );
-  FourierAcceleratedGaugeFixer<PeriodicGaugeImpl<GImpl>>::SteepestDescentGaugeFix( U, M, GFPar.alpha, GFPar.maxiter, GFPar.Omega_tol, GFPar.Phi_tol, GFPar.Fourier, GFPar.gaugeFix );
+  if( !bEnableFix )
+  {
+    std::cout<<GridLogMessage << "Skipping gauge fixing" << Common::NewLine;
+  }
+  else
+  {
+    std::cout<<GridLogMessage << "Gauge fixing using " << GFPar.gaugeFix << " gauge" << Common::NewLine;
+    throw std::runtime_error( "Debug: fail on attempt to gauge fix" );
+    //GaugeMat M( UGrid );
+    FourierAcceleratedGaugeFixer<PeriodicGaugeImpl<GImpl>>::SteepestDescentGaugeFix( U, GFPar.alpha, GFPar.maxiter, GFPar.Omega_tol, GFPar.Phi_tol, GFPar.Fourier, GFPar.gaugeFix );
+  }
   std::cout<<GridLogMessage << "Writing NERSC Gauge file " << OutFileName << Common::NewLine;
   NerscIO::writeConfiguration<PeriodicGaugeFixedStatistics>( U, OutFileName, 0, 0 );
 }
