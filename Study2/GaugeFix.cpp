@@ -88,8 +88,6 @@ void GaugeFix( const std::string &ParamsXml, const std::string &InFileName, cons
   else
   {
     std::cout<<GridLogMessage << "Gauge fixing using " << GFPar.gaugeFix << " gauge" << Common::NewLine;
-    throw std::runtime_error( "Debug: fail on attempt to gauge fix" );
-    //GaugeMat M( UGrid );
     FourierAcceleratedGaugeFixer<PeriodicGaugeImpl<GImpl>>::SteepestDescentGaugeFix( U, GFPar.alpha, GFPar.maxiter, GFPar.Omega_tol, GFPar.Phi_tol, GFPar.Fourier, GFPar.gaugeFix );
   }
   std::cout<<GridLogMessage << "Writing NERSC Gauge file " << OutFileName << Common::NewLine;
