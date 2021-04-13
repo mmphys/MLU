@@ -54,7 +54,6 @@ public:
     }
     header.ensemble_label = fmdBuffer.ensemble_label;
     header.sequence_number = fmdBuffer.sequence_number;
-    header.creation_date = fmdBuffer.creation_date;
   }
 };
 typedef GaugeFixedStatistics<PeriodicGimplD> PeriodicGaugeFixedStatistics;
