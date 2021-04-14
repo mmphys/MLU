@@ -22,29 +22,42 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 # Optional arguments for Grid / Hadrons.
 # If they are installed in same prefix, only one is required (either one)
 
+GridConfig="grid-config"
 AC_ARG_WITH([grid],
     [AS_HELP_STRING([--with-grid=<prefix>],
     [Install prefix of Grid])],
-    [PATH="$with_grid/bin$PATH_SEPARATOR$PATH"])
+    [AC_MSG_NOTICE([   --with-grid=$with_grid])]
+    [GridConfig="$with_grid/bin/$GridConfig"],
+    [AC_CHECK_PROG([GRIDCONF],[$GridConfig],[yes],[no])]
+    [if test x"$GRIDCONF" != xyes ; then]
+        [AC_MSG_ERROR([$GridConfig not found])]
+    [fi])
 
+HadronsConfig="hadrons-config"
 AC_ARG_WITH([hadrons],
     [AS_HELP_STRING([--with-hadrons=<prefix>],
     [Install prefix of Hadrons])],
-    [if test x"$with_hadrons" != x"$with_grid" ; then]
-        [PATH="$with_hadrons/bin$PATH_SEPARATOR$PATH"]
+    [AC_MSG_NOTICE([--with-hadrons=$with_hadrons])]
+    [HadronsConfig="$with_hadrons/bin/$HadronsConfig"],
+    [AC_CHECK_PROG([HADCONF],[$HadronsConfig],[yes],[no])]
+    [if test x"$HADCONF" != xyes ; then]
+        [AC_MSG_ERROR([$HadronsConfig not found])]
     [fi])
 
 AC_ARG_ENABLE([check], AS_HELP_STRING([--disable-check], [Disable check of Grid and Hadrons build]))
 
 # Optional arguments for other pre-requisite libraries
 
+GSLConfig=gsl-config
+GSLInstall=no
 AC_ARG_WITH([gsl],
     [AS_HELP_STRING([--with-gsl=prefix],
     [Install path of the GNU Scientific Library])],
-    [if test x"$with_gsl" != x"$with_grid" ; then]
-        [if test x"$with_gsl" != x"$with_hadrons" ; then]
-            [PATH="$with_gsl/bin$PATH_SEPARATOR$PATH"]
-        [fi]
+    [AC_MSG_NOTICE([--with-gsl=$with_gsl])]
+    [GSLConfig="$with_gsl/bin/$GSLConfig"],
+    [AC_CHECK_PROG([GSLCONF],[${GSLConfig}],[yes],[no])]
+    [if test x"$GSLCONF" != xyes ; then]
+        [GSLInstall=yes]
     [fi])
 
 AC_ARG_WITH([minuit2],
@@ -55,32 +68,26 @@ AC_ARG_WITH([minuit2],
 
 # Make sure Grid is installed
 
-AC_CHECK_PROG([GRIDCONF],[grid-config],[yes])
-if test x"$GRIDCONF" != xyes ; then
-    AC_MSG_ERROR([grid-config not found])
-fi
-GRID_PREFIX="`grid-config --prefix`"
+AC_MSG_CHECKING([   Grid --prefix])
+GRID_PREFIX="`$GridConfig --prefix`"
 if test x"$GRID_PREFIX" == x ; then
     AC_MSG_ERROR([grid-config --prefix returns empty string])
 fi
-AC_MSG_RESULT([grid-config --prefix=$GRID_PREFIX])
+AC_MSG_RESULT([$GRID_PREFIX])
 
 # Make sure Hadrons is installed
 
-AC_CHECK_PROG([HADCONF],[hadrons-config],[yes])
-if test x"$HADCONF" != xyes ; then
-    AC_MSG_ERROR([hadrons-config not found])
-fi
-HADRONS_PREFIX="`hadrons-config --prefix`"
+AC_MSG_CHECKING([Hadrons --prefix])
+HADRONS_PREFIX="`$HadronsConfig --prefix`"
 if test x"$HADRONS_PREFIX" == x ; then
     AC_MSG_ERROR([hadrons-config --prefix returns empty string])
 fi
-AC_MSG_RESULT([hadrons-config --prefix=$HADRONS_PREFIX])
+AC_MSG_RESULT([$HADRONS_PREFIX])
 
 # If the user hasn't specified a CXX compiler, get it from Hadrons
 
 if test x"$CXX" == x ; then
-    CXX="`hadrons-config --cxx`"
+    CXX="`$HadronsConfig --cxx`"
     if test x"$CXX" != x ; then
         AC_MSG_NOTICE([hadrons-config --cxx=$CXX])
     else
@@ -88,7 +95,7 @@ if test x"$CXX" == x ; then
     fi
 fi
 if test x"$CXXLD" == x ; then
-    CXXLD="`hadrons-config --cxxld`"
+    CXXLD="`$HadronsConfig --cxxld`"
     if test x"$CXXLD" != x ; then
         AC_MSG_NOTICE([hadrons-config --cxxld=$CXXLD])
     else
@@ -103,9 +110,9 @@ if test x"$HADRONS_PREFIX" != x"$GRID_PREFIX" ; then
   CPPFLAGS="-I$HADRONS_PREFIX/include $CPPFLAGS"
   LDFLAGS="-L$HADRONS_PREFIX/lib $LDFLAGS"
 fi
-CXXFLAGS="`hadrons-config --cxxflags` $CXXFLAGS"
-LDFLAGS="`hadrons-config --ldflags` $LDFLAGS"
-LIBS="-lHadrons `hadrons-config --libs` $LIBS"
+CXXFLAGS="`$HadronsConfig --cxxflags` $CXXFLAGS"
+LDFLAGS="`$HadronsConfig --ldflags` $LDFLAGS"
+LIBS="-lHadrons `$HadronsConfig --libs` $LIBS"
 
 # Checks for programs.
 AC_PROG_CXX
@@ -231,9 +238,7 @@ fi
 
 # Check for GSL
 
-GSLConfig=gsl-config
-AC_CHECK_PROG([GSLCONF],[${GSLConfig}],[yes])
-if test x$GSLCONF != xyes ; then
+if test x$GSLInstall == xyes ; then
     GSLConfig="$prefix/bin/$GSLConfig"
     if test -x "$GSLConfig" ; then
         AC_MSG_NOTICE([Using GSL previously installed in --prefix])
@@ -270,7 +275,7 @@ CPPFLAGS="-I${abs_srcdir} $CPPFLAGS -I$AbsMLUBuildDir"
 #AC_DEFINE_UNQUOTED([MLU_SHA], ["`git rev-parse HEAD`"], [git commit SHA])
 #AC_DEFINE_UNQUOTED([MLU_SHORT_SHA], ["`git rev-parse --short HEAD`"], [git commit short SHA])
 #AC_DEFINE_UNQUOTED([MLU_BRANCH], ["`git rev-parse --abbrev-ref HEAD`"], [git branch])
-AC_DEFINE_UNQUOTED([MLU_GIT_SUMMARY], ["MLU `git rev-parse --abbrev-ref HEAD` `git rev-parse HEAD`, Grid `grid-config --git`, Hadrons `hadrons-config --git`"], [git branch and commit for MLU, Grid and Hadrons])
+AC_DEFINE_UNQUOTED([MLU_GIT_SUMMARY], ["MLU `git rev-parse --abbrev-ref HEAD` `git rev-parse HEAD`, Grid `$GridConfig --git`, Hadrons `$HadronsConfig --git`"], [git branch and commit for MLU, Grid and Hadrons])
 
 AM_CPPFLAGS="$CPPFLAGS"
 AM_CXXFLAGS="$CXXFLAGS"
