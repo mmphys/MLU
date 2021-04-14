@@ -31,7 +31,13 @@ AC_ARG_WITH([grid],
     [AC_CHECK_PROG([GRIDCONF],[$GridConfig],[yes],[no])]
     [if test x"$GRIDCONF" != xyes ; then]
         [AC_MSG_ERROR([$GridConfig not found])]
-    [fi])
+    [fi]
+    [AC_MSG_CHECKING([   Grid --prefix])]
+    [with_grid="`$GridConfig --prefix`"]
+    [if test x"$with_grid" == x ; then]
+        [AC_MSG_ERROR([grid-config --prefix returns empty string])]
+    [fi]
+    [AC_MSG_RESULT([$with_grid])])
 
 HadronsConfig="hadrons-config"
 AC_ARG_WITH([hadrons],
@@ -42,7 +48,13 @@ AC_ARG_WITH([hadrons],
     [AC_CHECK_PROG([HADCONF],[$HadronsConfig],[yes],[no])]
     [if test x"$HADCONF" != xyes ; then]
         [AC_MSG_ERROR([$HadronsConfig not found])]
-    [fi])
+    [fi]
+    [AC_MSG_CHECKING([Hadrons --prefix])]
+    [with_hadrons="`$HadronsConfig --prefix`"]
+    [if test x"$with_hadrons" == x ; then]
+        [AC_MSG_ERROR([hadrons-config --prefix returns empty string])]
+    [fi]
+    [AC_MSG_RESULT([$with_hadrons])])
 
 AC_ARG_ENABLE([check], AS_HELP_STRING([--disable-check], [Disable check of Grid and Hadrons build]))
 
@@ -66,24 +78,6 @@ AC_ARG_WITH([minuit2],
     [CPPFLAGS="-I$with_minuit2/include $CPPFLAGS"]
     [LDFLAGS="-L$with_minuit2/lib $LDFLAGS"])
 
-# Make sure Grid is installed
-
-AC_MSG_CHECKING([   Grid --prefix])
-GRID_PREFIX="`$GridConfig --prefix`"
-if test x"$GRID_PREFIX" == x ; then
-    AC_MSG_ERROR([grid-config --prefix returns empty string])
-fi
-AC_MSG_RESULT([$GRID_PREFIX])
-
-# Make sure Hadrons is installed
-
-AC_MSG_CHECKING([Hadrons --prefix])
-HADRONS_PREFIX="`$HadronsConfig --prefix`"
-if test x"$HADRONS_PREFIX" == x ; then
-    AC_MSG_ERROR([hadrons-config --prefix returns empty string])
-fi
-AC_MSG_RESULT([$HADRONS_PREFIX])
-
 # If the user hasn't specified a CXX compiler, get it from Hadrons
 
 if test x"$CXX" == x ; then
@@ -104,11 +98,11 @@ if test x"$CXXLD" == x ; then
 fi
 
 # Now setup my environment
-CPPFLAGS="-I$GRID_PREFIX/include $CPPFLAGS"
-LDFLAGS="-L$GRID_PREFIX/lib $LDFLAGS"
-if test x"$HADRONS_PREFIX" != x"$GRID_PREFIX" ; then
-  CPPFLAGS="-I$HADRONS_PREFIX/include $CPPFLAGS"
-  LDFLAGS="-L$HADRONS_PREFIX/lib $LDFLAGS"
+CPPFLAGS="-I$with_grid/include $CPPFLAGS"
+LDFLAGS="-L$with_grid/lib $LDFLAGS"
+if test x"$with_hadrons" != x"$with_grid" ; then
+  CPPFLAGS="-I$with_hadrons/include $CPPFLAGS"
+  LDFLAGS="-L$with_hadrons/lib $LDFLAGS"
 fi
 CXXFLAGS="`$HadronsConfig --cxxflags` $CXXFLAGS"
 LDFLAGS="`$HadronsConfig --ldflags` $LDFLAGS"
