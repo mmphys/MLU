@@ -27,7 +27,8 @@
 /*  END LEGAL */
 
 #include <MLU/Common.hpp>
-#include <Hadrons/../utilities/Contractor.hpp>
+#include <Grid/Grid.h>
+//#include <Hadrons/../utilities/Contractor.hpp>
 //#include <Hadrons/Application.hpp>
 //#include <Hadrons/Modules.hpp>
 //#include <LatAnalyze/Core/OptParser.hpp>
