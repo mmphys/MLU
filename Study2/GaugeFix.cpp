@@ -31,33 +31,129 @@
 
 using namespace Grid;
 
-using GImpl = Grid::WilsonImplD;
-//using GaugeField = typename GImpl::GaugeField;
-//using GaugeMat = typename GImpl::GaugeLinkField;
+using GImpl = PeriodicGimplD;
+using GaugeMat = typename GImpl::GaugeLinkField;
+//using GaugeLorentz = typename GImpl::GaugeField;
 
 Grid::Hadrons::MGauge::GaugeFix::Par GFPar;
-FieldMetaData fmdBuffer;
 
-template<typename Impl> class GaugeFixedStatistics
+template <class fobj, class sobj>
+struct XformSimpleUnmunger
 {
-public:
-  void operator()(Lattice<vLorentzColourMatrixD> & data,FieldMetaData &header)
+  void operator()(sobj &in, fobj &out)
   {
-    header.link_trace=WilsonLoops<Impl>::linkTrace(data);
-    header.plaquette =WilsonLoops<Impl>::avgPlaquette(data);
-    header.hdr_version = fmdBuffer.hdr_version;
-    header.storage_format = fmdBuffer.storage_format;
-    {
-      std::ostringstream ss;
-      ss << fmdBuffer.ensemble_id << " (" << GFPar.gaugeFix << " gauge fixed)";
-      header.ensemble_id = ss.str();
+    for (int i = 0; i < Nc; i++) {
+      for (int j = 0; j < Nc; j++) {
+        out()()(i, j) = in()()(i, j);
+      }
     }
-    header.ensemble_label = fmdBuffer.ensemble_label;
-    header.sequence_number = fmdBuffer.sequence_number;
   }
 };
-typedef GaugeFixedStatistics<PeriodicGimplD> PeriodicGaugeFixedStatistics;
-typedef GaugeFixedStatistics<ConjugateGimplD> ConjugateGaugeFixedStatistics;
+
+// Copies header fields from the gauge field I read into the modified one I'm writing
+class NerscIOExtra : public NerscIO
+{
+public:
+  struct NerscCache
+  {
+    FieldMetaData fmd;
+    std::string   Message;
+  };
+  static NerscCache Cache;
+
+  template<typename Impl> class CachedGaugeFixedStatistics
+  {
+  public:
+    void operator()(Lattice<vLorentzColourMatrixD> & data,FieldMetaData &header)
+    {
+      header.link_trace=WilsonLoops<Impl>::linkTrace(data);
+      header.plaquette =WilsonLoops<Impl>::avgPlaquette(data);
+      header.hdr_version = Cache.fmd.hdr_version;
+      header.storage_format = Cache.fmd.storage_format;
+      {
+        std::ostringstream ss;
+        ss << Cache.fmd.ensemble_id << " (gauge fixed: " << Cache.Message << ")";
+        header.ensemble_id = ss.str();
+      }
+      header.ensemble_label = Cache.fmd.ensemble_label;
+      header.sequence_number = Cache.fmd.sequence_number;
+    }
+  };
+
+  typedef CachedGaugeFixedStatistics<PeriodicGimplD> PeriodicCachedGaugeFixedStatistics;
+
+  template<typename Impl> class CachedGaugeXformStatistics
+  {
+  public:
+    void operator()(Lattice<vColourMatrixD> & data,FieldMetaData &header)
+    {
+      header.link_trace = 0;
+      header.plaquette  = 0;
+      header.hdr_version = Cache.fmd.hdr_version;
+      header.storage_format = Cache.fmd.storage_format;
+      {
+        std::ostringstream ss;
+        ss << Cache.fmd.ensemble_id << " (gauge xform: " << Cache.Message << ")";
+        header.ensemble_id = ss.str();
+      }
+      header.ensemble_label = Cache.fmd.ensemble_label;
+      header.sequence_number = Cache.fmd.sequence_number;
+    }
+  };
+  typedef CachedGaugeXformStatistics<PeriodicGimplD> CachedPeriodicGaugeXformStatistics;
+  
+  template<class XformStats=CachedPeriodicGaugeXformStatistics>
+  static inline void writeGaugeXform(Lattice<vColourMatrixD > &xform,
+                                        std::string file,
+                                        int, // two_row,
+                                        int) // bits32)
+  {
+    typedef vColourMatrixD vobj;
+    typedef typename vobj::scalar_object sobj;
+    
+    FieldMetaData header;
+    ///////////////////////////////////////////
+    // Following should become arguments
+    ///////////////////////////////////////////
+    header.sequence_number = 1;
+    header.ensemble_id     = "UKQCD";
+    header.ensemble_label  = "DWF";
+    
+    using fobj3D = ColourMatrixD;
+    
+    GridBase *grid = xform.Grid();
+    
+    GridMetaData(grid,header);
+    assert(header.nd==4);
+    XformStats Stats; Stats(xform,header);
+    MachineCharacteristics(header);
+    
+    uint64_t offset;
+    
+    // Sod it -- always write 3x3 double
+    header.floating_point = std::string("IEEE64BIG");
+    header.data_type      = std::string("1D_SU3_GAUGE_3x3");
+    XformSimpleUnmunger<fobj3D,sobj> munge;
+    if ( grid->IsBoss() ) {
+      NerscIO::truncate(file);
+      offset = NerscIO::writeHeader(header,file);
+    }
+    grid->Broadcast(0,(void *)&offset,sizeof(offset));
+    
+    uint32_t nersc_csum,scidac_csuma,scidac_csumb;
+    BinaryIO::writeLatticeObject<vobj,fobj3D>(xform,file,munge,offset,header.floating_point,
+                                              nersc_csum,scidac_csuma,scidac_csumb);
+    header.checksum = nersc_csum;
+    if ( grid->IsBoss() ) {
+      NerscIO::writeHeader(header,file);
+    }
+    
+    std::cout<<GridLogMessage <<"Written NERSC xform on "<< file << " checksum "
+    <<std::hex<<header.checksum<<std::endl;
+  }
+};
+
+NerscIOExtra::NerscCache NerscIOExtra::Cache;
 
 void GaugeFix( const std::string &ParamsXml, const std::string &InFileName, const std::string &OutFileName )
 {
@@ -71,27 +167,44 @@ void GaugeFix( const std::string &ParamsXml, const std::string &InFileName, cons
     // Read optional boolean tag "Disable"
     std::string s;
     read( r, "EnableFix", s );
-    std::istringstream ss( s );
-    ss >> std::boolalpha >> bEnableFix; // Doesn't matter if this fails
+    std::istringstream is( s );
+    is >> std::boolalpha >> bEnableFix; // Doesn't matter if this fails
   }
+  // Cache the parameters I'm using
+  if( bEnableFix )
+  {
+    std::ostringstream os;
+    os << "alpha=" << GFPar.alpha
+       << ", maxiter=" << GFPar.maxiter
+       << ", Omega_tol=" << GFPar.Omega_tol
+       << ", Phi_tol=" << GFPar.Phi_tol
+       << ", gaugeFix=" << GFPar.gaugeFix
+       << std::boolalpha << ", Fourier=" << GFPar.Fourier;
+    NerscIOExtra::Cache.Message = os.str();
+  }
+  else
+    NerscIOExtra::Cache.Message.clear();
 
   std::cout<<GridLogMessage << "Reading NERSC Gauge file " << InFileName << Common::NewLine;
   GridCartesian * UGrid = Grid::SpaceTimeGrid::makeFourDimGrid(GridDefaultLatt(),
                                                                GridDefaultSimd(Nd,vComplex::Nsimd()),
                                                                GridDefaultMpi());
   LatticeGaugeField U( UGrid );
-  NerscIO::readConfiguration( U, fmdBuffer, InFileName );
+  NerscIO::readConfiguration( U, NerscIOExtra::Cache.fmd, InFileName );
   if( !bEnableFix )
   {
     std::cout<<GridLogMessage << "Skipping gauge fixing" << Common::NewLine;
   }
   else
   {
-    std::cout<<GridLogMessage << "Gauge fixing using " << GFPar.gaugeFix << " gauge" << Common::NewLine;
-    FourierAcceleratedGaugeFixer<PeriodicGaugeImpl<GImpl>>::SteepestDescentGaugeFix( U, GFPar.alpha, GFPar.maxiter, GFPar.Omega_tol, GFPar.Phi_tol, GFPar.Fourier, GFPar.gaugeFix );
+    std::cout<<GridLogMessage << "Gauge fixing: " << NerscIOExtra::Cache.Message << Common::NewLine;
+    GaugeMat xform( UGrid );
+    FourierAcceleratedGaugeFixer<GImpl>::SteepestDescentGaugeFix( U, xform, GFPar.alpha, GFPar.maxiter, GFPar.Omega_tol, GFPar.Phi_tol, GFPar.Fourier, GFPar.gaugeFix );
+    std::cout<<GridLogMessage << "Writing NERSC Gauge xform file " << OutFileName << Common::NewLine;
+    NerscIOExtra::writeGaugeXform<NerscIOExtra::CachedPeriodicGaugeXformStatistics>( xform, OutFileName + ".xform", 0, 0 );
   }
   std::cout<<GridLogMessage << "Writing NERSC Gauge file " << OutFileName << Common::NewLine;
-  NerscIO::writeConfiguration<PeriodicGaugeFixedStatistics>( U, OutFileName, 0, 0 );
+  NerscIO::writeConfiguration<NerscIOExtra::PeriodicCachedGaugeFixedStatistics>( U, OutFileName, 0, 0 );
 }
 
 int main(int argc, char *argv[])
