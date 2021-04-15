@@ -210,6 +210,7 @@ void GaugeFix( const std::string &ParamsXml, const std::string &InFileName, cons
 int main(int argc, char *argv[])
 {
   std::ios_base::sync_with_stdio( false );
+  std::cout << MLUVersionInfoHuman() << std::endl;
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   bool bInitDone{ false };
