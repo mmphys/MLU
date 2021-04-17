@@ -132,7 +132,7 @@ public:
     
     // Sod it -- always write 3x3 double
     header.floating_point = std::string("IEEE64BIG");
-    header.data_type      = std::string("1D_SU3_GAUGE_3x3");
+    header.data_type      = std::string("4D_SU3_COLOR_MATRIX_3x3");
     XformSimpleUnmunger<fobj3D,sobj> munge;
     if ( grid->IsBoss() ) {
       NerscIO::truncate(file);
