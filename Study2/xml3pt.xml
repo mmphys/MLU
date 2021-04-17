@@ -2,8 +2,8 @@
 <Study2>
   <RunPar>
     <trajCounter>
-      <start>3000</start>
-      <end>3001</end>
+      <start>3420</start>
+      <end>3421</end>
       <step>40</step>
     </trajCounter>
     <dbOptions>
@@ -13,7 +13,7 @@
     </dbOptions>
     <genetic>
       <popSize>20</popSize>
-      <maxGen>160</maxGen>
+      <maxGen>1000</maxGen>
       <maxCstGen>200</maxCstGen>
       <mutationRate>0.1</mutationRate>
     </genetic>
@@ -26,23 +26,25 @@
     </Timeslices>
     <runId>Study2</runId>
     <!--<Taxa>GF Point GF Wall GF Region GP Wall Z2 Point ZF Point ZF Wall</Taxa>-->
-    <Taxa>GR Wall</Taxa>
+    <Taxa>GF Point GF Wall ZF Point ZF Wall</Taxa>
     <Momenta>0_0_0</Momenta>
     <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
-    <deltaT>12    16 20 24 28 32</deltaT>
+    <deltaT>16 20 24</deltaT>
     <!--<deltaT>12 14 16 20 24 28 32</deltaT>-->
     <!--<deltaT>12</deltaT>-->
     <SpatialPos>0 0 0</SpatialPos>
     <RegionSize>1 1 1 1</RegionSize>
     <OutputBase></OutputBase>
-    <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>
+    <!--<Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>-->
+    <!--<Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/M1/ckpoint_lat</Gauge>-->
+    <Gauge>/home/dp008/dp008/dc-mars3/data/Study3/M1/GaugeFixed/ckpoint_lat</Gauge>
     <!--<Gauge></Gauge>-->
     <GaugeFix>
       <gauge>Not used</gauge>
       <alpha>0.05</alpha>
       <maxiter>1000000</maxiter>
-      <Omega_tol>1e-08</Omega_tol>
-      <Phi_tol>1e-08</Phi_tol>
+      <Omega_tol>1e-12</Omega_tol>
+      <Phi_tol>1e-12</Phi_tol>
       <gaugeFix>coulomb</gaugeFix>
       <Fourier>true</Fourier>
     </GaugeFix>
@@ -54,14 +56,84 @@
     <TwoPoint>true</TwoPoint>
     <HeavyQuark>true</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
-    <DoNegativeMomenta>true</DoNegativeMomenta>
+    <DoNegativeMomenta>false</DoNegativeMomenta>
     <!--<Run>false</Run>-->
-    <Run>true</Run>
+    <Run>false</Run>
     <!-- Prefix for job xml and schedule file names (append '/' if it's a directory) -->
     <JobXmlPrefix></JobXmlPrefix>
   </RunPar>
-  <!-- scale: 2 = Moebius -->
+  <!-- M1, scale: 2 = Moebius -->
   <Heavy>
+    <elem>
+      <flavour>h0</flavour>
+      <mass>0.41</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>2</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+  </Heavy>
+  <HeavyM1>
+    <elem>
+      <flavour>h0</flavour>
+      <mass>0.41</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>2</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+    <elem>
+      <flavour>h1</flavour>
+      <mass>0.50</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>2</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+    <elem>
+      <flavour>h2</flavour>
+      <mass>0.59</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>2</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+    <elem>
+      <flavour>h3</flavour>
+      <mass>0.68</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>2</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <!-- Check the residual for h3 -->
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+  </HeavyM1>
+  <HeavyC1Moebius>
     <elem>
       <flavour>h0</flavour>
       <mass>0.50</mass>
@@ -115,9 +187,8 @@
       <GaugeSmear>true</GaugeSmear>
       <EigenPackFilename></EigenPackFilename>
     </elem>
-  </Heavy>
-  <!-- scale: 1 = Shamir -->
-  <HeavyNotUsed>
+  </HeavyC1Moebius>
+  <HeavyC1Shamir>
     <elem>
       <flavour>h0sh</flavour>
       <mass>0.50</mass>
@@ -170,8 +241,67 @@
       <GaugeSmear>true</GaugeSmear>
       <EigenPackFilename></EigenPackFilename>
     </elem>
-  </HeavyNotUsed>
-  <Spectator>
+  </HeavyC1Shamir>
+  <Spectator> <!-- M1 -->
+    <!-- light (sea and valence) -->
+    <elem>
+      <flavour>l</flavour>
+      <mass>0.004</mass>
+      <Ls>16</Ls>
+      <M5>1.8</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>1</scale>
+      <maxIteration>15000</maxIteration>
+      <residual>1e-8</residual>
+      <GaugeSmear>false</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+    <!-- strange physical/valence -->
+    <elem>
+      <flavour>s</flavour>
+      <mass>0.02477</mass>
+      <Ls>16</Ls>
+      <M5>1.8</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>1</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>false</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
+    <!-- strange unitary/sea
+    <elem>
+      <flavour>su</flavour>
+      <mass>0.03</mass>
+      <Ls>16</Ls>
+      <M5>1.8</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>1</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>false</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>-->
+  </Spectator>
+  <SpectatorExtra2pt/>
+  <SpectatorC1>
+    <elem>
+      <!-- light (sea and valence) -->
+      <flavour>l</flavour>
+      <mass>0.005</mass>
+      <Ls>16</Ls>
+      <M5>1.8</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>1</scale>
+      <maxIteration>15000</maxIteration>
+      <residual>1e-8</residual>
+      <GaugeSmear>false</GaugeSmear>
+      <EigenPackFilename>/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine</EigenPackFilename>
+    </elem>
     <elem>
       <!-- strange physical/valence -->
       <flavour>s</flavour>
@@ -186,9 +316,6 @@
       <GaugeSmear>false</GaugeSmear>
       <EigenPackFilename></EigenPackFilename>
     </elem>
-  </Spectator>
-  <SpectatorExtra2pt/>
-  <SpectatorExtra2ptNotUsed>
     <elem>
       <!-- strange unitary/sea -->
       <flavour>su</flavour>
@@ -203,21 +330,5 @@
       <GaugeSmear>false</GaugeSmear>
       <EigenPackFilename></EigenPackFilename>
     </elem>
-  </SpectatorExtra2ptNotUsed>
-  <SpectatorNotUsed>
-    <elem>
-      <!-- light (sea and valence) -->
-      <flavour>l</flavour>
-      <mass>0.005</mass>
-      <Ls>16</Ls>
-      <M5>1.8</M5>
-      <boundary>1 1 1 -1</boundary>
-      <twist>0. 0. 0. 0.</twist>
-      <scale>1</scale>
-      <maxIteration>5000</maxIteration>
-      <residual>1e-8</residual>
-      <GaugeSmear>false</GaugeSmear>
-      <EigenPackFilename>/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine</EigenPackFilename>
-    </elem>
-  </SpectatorNotUsed>
+  </SpectatorC1>
 </Study2>

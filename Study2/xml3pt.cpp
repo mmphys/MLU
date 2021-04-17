@@ -33,6 +33,8 @@ using namespace Hadrons;
 
 static const std::string Sep{ "_" };    // used inside filenames
 static const std::string Space{ " " };  // whitespace as field separator / human readable info
+static const std::string defaultMomName{ "p" };
+static const std::string SeqMomentumName{ "ps" };
 static const Common::Momentum p0(0,0,0);
 
 static const std::string GaugeFieldName{"gauge"};
@@ -250,7 +252,7 @@ void Quark::CreateAction( Application &app, const std::string &name, std::string
 
 static const Gamma::Algebra algInsert[] = {
   Gamma::Algebra::Gamma5,
-  Gamma::Algebra::GammaTGamma5,
+  //Gamma::Algebra::GammaTGamma5,
   //Gamma::Algebra::GammaT,
   //Gamma::Algebra::GammaX,
   //Gamma::Algebra::GammaY,
@@ -259,7 +261,7 @@ static const Gamma::Algebra algInsert[] = {
 static constexpr int NumInsert{ sizeof( algInsert ) / sizeof( algInsert[0] ) };
 static const std::array<const std::string *, NumInsert> algInsertName {
   &Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::Gamma5 ) ],
-  &Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaTGamma5 ) ],
+  //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaTGamma5 ) ],
   //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaT ) ],
   //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaX ) ],
   //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaY ) ],
@@ -306,9 +308,9 @@ inline void Append( std::string &sDest, Species species )
   Append( sDest, ss.str() );
 }
 
-inline void AppendP( std::string &sDest, const Common::Momentum &p )
+inline void AppendP( std::string &sDest, const Common::Momentum &p, const std::string & sMomentumName = defaultMomName )
 {
-  Append( sDest, 'p', p.to_string( Sep ) );
+  Append( sDest, sMomentumName, p.to_string( Sep ) );
 }
 
 inline void AppendPSeq( std::string &sDest, const Common::Momentum &p )
@@ -1086,20 +1088,20 @@ public:
   const Quark &qSnk;
   const Quark &qSrc;
   const Quark &qSpec;
+  const Common::Momentum pSeq;
   const Common::Momentum p;
   const int t;
   const bool bHeavyAnti;
   const int Current;
   const int deltaT;
-  const bool bSinkMom;
   ModContract3pt( HModList &ModList, const Taxonomy &taxonomy, const Quark &qSnk, const Quark &qSrc, const Quark &qSpec,
-                  const Common::Momentum &p, int t, bool bHeavyAnti, int Current, int deltaT, bool bSinkMom );
+            const Common::Momentum &pSeq_, const Common::Momentum &p, int t, bool bHeavyAnti, int Current, int deltaT );
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
 ModContract3pt::ModContract3pt(HModList &ML,const Taxonomy &tax_,const Quark &Snk_,const Quark &Src_,const Quark &Spec_,
-                      const Common::Momentum &p_, int t_, bool bHA_, int Cur_, int dT_, bool bSM_ )
-: HMod(ML, tax_),qSnk{Snk_},qSrc{Src_},qSpec{Spec_},p{p_},t{t_},bHeavyAnti{bHA_},Current{Cur_},deltaT{dT_},bSinkMom{bSM_}
+                        const Common::Momentum &pSeq_, const Common::Momentum &p_, int t_, bool bHA_, int Cur_, int dT_ )
+: HMod(ML, tax_),qSnk{Snk_},qSrc{Src_},qSpec{Spec_},pSeq{pSeq_},p{p_},t{t_},bHeavyAnti{bHA_},Current{Cur_},deltaT{dT_}
 {
   std::string Prefix1{ "3pt" };
   Append( Prefix1, qSpec.flavour );
@@ -1109,11 +1111,10 @@ ModContract3pt::ModContract3pt(HModList &ML,const Taxonomy &tax_,const Quark &Sn
   Append( s, qSrc.flavour );
   Append( s, *algInsertName[Current] );
   AppendDeltaT( s, deltaT );
+  AppendP( s, pSeq, SeqMomentumName );
   AppendPT( s, t, p );
   // File name
   FileName = ML.params.Run.OutputBase + Prefix1;
-  if( bSinkMom )
-    Append( FileName, "ms" );
   FileName.append( 1, '/' );
   FileName.append( Prefix2 );
   FileName.append( 1, '/' );
@@ -1140,15 +1141,9 @@ void ModContract3pt::AddDependencies( HModList &ML ) const
   const Quark &sqSnk{ bRev ? qSrc : qSnk };
   const int st     { bRev ? ML.params.TimeBound( t + deltaT ) : t      };
   const int sdeltaT{ bRev ? ML.params.TimeBound(   - deltaT ) : deltaT };
-  Common::Momentum pSource( p );
-  Common::Momentum pSink( bSinkMom ? -p : p0 );
-  Common::Momentum pCurrent( bSinkMom ? p0 : -p );
-  if( bRev )
-  {
-    Common::Momentum pTmp{ pSource };
-    pSource = pSink;
-    pSink = pTmp;
-  }
+  const Common::Momentum &pSource( bRev ? pSeq : p );
+  const Common::Momentum &pSink( bRev ? p : pSeq );
+  Common::Momentum pCurrent( - ( pSource + pSink ) );
   if( bInvertSeq )
   {
     par.q1 = ML.TakeOwnership( new ModProp( ML, stax, sqSrc, pSource, st ) );
@@ -1178,6 +1173,7 @@ public:
   explicit AppMaker( const AppParams &params )
   : application{ Setup( params ) }, l( application, params ) {}
   void Make();
+  void MakeStudy3(const Quark &qf, const Quark &qs);
 };
 
 // One-time initialisation
@@ -1261,12 +1257,12 @@ void AppMaker::Make()
                       {
                         for( int j = 0; j < NumInsert; j++ )
                         {
-                          l.TakeOwnership( new ModContract3pt( l, tax, qH2, qH1, qSpectator, p,
-                                                               t, bHeavyAnti, j, deltaT, false ) );
+                          l.TakeOwnership( new ModContract3pt( l, tax, qH2, qH1, qSpectator, p0, p,
+                                                               t, bHeavyAnti, j, deltaT ) );
                           if( p && qH1.mass == qH2.mass )
                           {
-                            l.TakeOwnership( new ModContract3pt( l, tax, qH2, qH1, qSpectator, p,
-                                                                 t, bHeavyAnti, j, deltaT, true ) );
+                            l.TakeOwnership( new ModContract3pt( l, tax, qH2, qH1, qSpectator, -p, p,
+                                                                 t, bHeavyAnti, j, deltaT ) );
                           }
                         }
                       }
@@ -1287,6 +1283,57 @@ void AppMaker::Make()
       }
     }
     bFirstSpec = false;
+  }
+}
+
+void AppMaker::MakeStudy3(const Quark &qf, const Quark &qSpectator)
+{
+  for(unsigned int t = l.params.Run.Timeslices.start; t < l.params.Run.Timeslices.end; t += l.params.Run.Timeslices.step)
+  {
+    for( const Taxonomy &tax : l.params.Taxa )
+    {
+      for( const Quark &qi : l.params.HeavyQuarks )
+      {
+        for( int iPx = 0; iPx < ( qi.flavour[1] - '0' + 5 ) ; ++iPx )
+        {
+          const Common::Momentum p( iPx, 0, 0 );
+          bool bDidSomething{ false };
+          if( l.params.Run.TwoPoint )
+          {
+            bDidSomething = true;
+            l.TakeOwnership( new ModContract2pt( l, tax, qSpectator, qf, p, t ) );
+            l.TakeOwnership( new ModContract2pt( l, tax, qf, qSpectator, p, t ) );
+            l.TakeOwnership( new ModContract2pt( l, tax, qSpectator, qi, p, t ) );
+            l.TakeOwnership( new ModContract2pt( l, tax, qi, qSpectator, p, t ) );
+          }
+          if( l.params.ThreePoint )
+          {
+            bDidSomething = true;
+            for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
+                iHeavy <= l.params.Run.HeavyAnti  ? 1 : 0; ++iHeavy )
+            {
+              const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
+              for( int deltaT : l.params.deltaT )
+              {
+                for( int j = 0; j < NumInsert; j++ )
+                {
+                  l.TakeOwnership( new ModContract3pt( l, tax, qf, qi, qSpectator, -p, p0, t, bHeavyAnti, j, deltaT ) );
+                  l.TakeOwnership( new ModContract3pt( l, tax, qi, qf, qSpectator, p0, p , t, bHeavyAnti, j, deltaT ) );
+                  l.TakeOwnership( new ModContract3pt( l, tax, qf, qf, qSpectator, -p, p , t, bHeavyAnti, j, deltaT ) );
+                  l.TakeOwnership( new ModContract3pt( l, tax, qi, qi, qSpectator, p0, p0, t, bHeavyAnti, j, deltaT ) );
+                }
+              }
+            }
+          }
+          if( !bDidSomething )
+          {
+            // We are only performing residual-mass checks on each propagator
+            l.TakeOwnership( new ModProp( l, tax, qi, p, t ) );
+            //l.TakeOwnership( new ModProp( l, tax, qSpectator, p,t) );
+          }
+        }
+      }
+    }
   }
 }
 
@@ -1323,7 +1370,12 @@ int main(int argc, char *argv[])
   {
     const AppParams params( sXmlFilename, sRunSuffix );
     AppMaker x( params );
-    x.Make();
+    //x.Make();
+    static constexpr int iLight = 0;
+    static constexpr int iStrange = 1;
+    x.MakeStudy3( params.SpectatorQuarks[iStrange], params.SpectatorQuarks[iLight]   ); //  K <- D
+    x.MakeStudy3( params.SpectatorQuarks[iLight],   params.SpectatorQuarks[iLight]   ); // pi <- D
+    x.MakeStudy3( params.SpectatorQuarks[iLight],   params.SpectatorQuarks[iStrange] ); //  K <- D_s
     // Run or save the job
     x.application.saveParameterFile( params.Run.JobXmlPrefix + params.RunID() + sRunSuffix + ".xml" );
     if( params.Run.Run )
