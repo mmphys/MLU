@@ -184,6 +184,31 @@ inline int IndexIgnoreCase( const C &v, const std::string &s )
   return idx;
 }
 
+// Ensure that the vector has the required length and no duplicates
+
+template <typename T> void NoDuplicates( const std::vector<T> &v, const std::string sErrorPrefix, std::size_t MinSize )
+{
+  if( v.size() < MinSize )
+  {
+    std::stringstream ss;
+    ss << sErrorPrefix << " contains " << v.size() << " entries, but " << MinSize
+       << (MinSize == 1 ? "is" : "are") << " required" << *dup;
+    throw std::runtime_error( ss.str() );
+  }
+  if( v.size() > 1 )
+  {
+    std::vector<T> vc{ v };
+    std::sort( vc.begin(), vc.end() );
+    const auto dup = std::adjacent_find( vc.begin(), vc.end() );
+    if( dup != vc.end() )
+    {
+      std::stringstream ss;
+      ss << sErrorPrefix << " contains duplicates, e.g. " << *dup;
+      throw std::runtime_error( ss.str() );
+    }
+  }
+}
+
 struct LessCaseInsensitive
 {
   bool operator()( const std::string &lhs, const std::string &rhs ) const { return CompareIgnoreCase( lhs, rhs ) < 0;}

@@ -1,0 +1,543 @@
+/*************************************************************************************
+ 
+ Create a Hadrons Application, top-down building all required dependencies
+ Source file: HadronsApp.hpp
+ Copyright (C) 2021
+ Author: Michael Marshall<Michael.Marshall@ed.ac.uk>
+ 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ See the full license in the file "LICENSE" in the top level distribution directory
+ *************************************************************************************/
+/*  END LEGAL */
+
+#include <MLU/Common.hpp>
+#include <Hadrons/Application.hpp>
+#include <Hadrons/Modules.hpp>
+
+using namespace Grid;
+using namespace Hadrons;
+
+extern const std::string Sep;    // used inside filenames
+extern const std::string Space;  // whitespace as field separator / human readable info
+extern const std::string defaultMomName;
+extern const std::string SeqMomentumName;
+extern const Common::Momentum p0;
+extern const std::string GaugeFieldName;
+
+inline void Append( std::string &sDest, const std::string &s )
+{
+  if( !s.empty() )
+    sDest.append( Sep );
+  sDest.append( s );
+};
+
+// Family
+
+enum class Family : int { Z2, ZF, GF, GP, GR };
+extern const std::array<std::string, 5> FamilyNames;
+typename std::underlying_type<Family>::type FamilyIndex( Family family );
+
+inline const std::string &FamilyName( Family family )
+{
+  return FamilyNames[FamilyIndex( family )];
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Family family)
+{
+  return os << FamilyName( family );
+}
+
+std::istream& operator>>(std::istream& is, Family &family);
+
+// Species
+
+enum class Species : int { Point, Wall, Region };
+extern const std::array<std::string, 3> SpeciesNames;
+typename std::underlying_type<Species>::type SpeciesIndex( Species species );
+
+inline const std::string &SpeciesName( Species species )
+{
+  return SpeciesNames[SpeciesIndex( species )];
+}
+
+inline char SpeciesNameShort( Species species )
+{
+  return SpeciesName( species )[0];
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Species species)
+{
+  return os << SpeciesName( species );
+}
+
+std::istream& operator>>(std::istream& is, Species &species);
+
+// Taxonomy
+
+class Taxonomy
+{
+  friend class AppParams;
+protected:
+  static const std::string HissyFitDefault;
+public:
+  Family family;
+  Species species;
+
+  Taxonomy( Family family_, Species species_ ) : family{family_}, species{species_} {}
+  Taxonomy() : Taxonomy( Family::GF, Species::Point ) {}
+
+  [[noreturn]] void HissyFit( const std::string &Message = HissyFitDefault ) const
+  {
+    std::stringstream ss;
+    ss << Message << ": " << family << Common::CommaSpace << species;
+    throw std::runtime_error( ss.str() );
+  }
+
+  // Allow extraction of the relevant parts without needing to specify
+  inline operator Family() const { return family; }
+  inline operator Species() const { return species; }
+  inline const std::string &FamilyName() const { return ::FamilyName( family ); }
+
+  std::string FilePrefix() const
+  {
+    std::string s{ FamilyName() };
+    s.append( 1, SpeciesNameShort( species ) );
+    switch( family )
+    {
+      case Family::GF:
+        s.append( 1, 'W' );
+        break;
+      default:
+        s.append( 1, 'P' );
+        break;
+    }
+    return s;
+  }
+  inline bool GaugeFixed() const { return family != Family::Z2; }
+  inline void AppendFixed( std::string &s, bool bSmeared = false ) const
+  {
+    if( GaugeFixed() )
+      Append( s, "fixed" );
+    if( bSmeared )
+      Append( s, "stout" );
+  }
+  void Validate() const
+  {
+    // Validate family and species separately
+    FamilyIndex( family );
+    SpeciesIndex( species );
+    // Weed out invalid combinations
+    if( family == Family::Z2 && species == Species::Wall    // Shouldn't be asking for wall sinks without gauge-fixing
+     || family == Family::GR && species != Species::Wall )  // These look like point source and wall sink
+      HissyFit();
+  }
+};
+
+inline std::ostream& operator<<(std::ostream& os, const Taxonomy &taxonomy)
+{
+  return os << taxonomy.family << Common::Space << taxonomy.species;
+}
+
+std::istream& operator>>(std::istream& is, Taxonomy &taxonomy);
+bool operator<( const Taxonomy &lhs, const Taxonomy &rhs );
+bool operator==( const Taxonomy &lhs, const Taxonomy &rhs );
+
+// Quark
+
+struct Quark: Serializable {
+GRID_SERIALIZABLE_CLASS_MEMBERS(Quark,
+                                std::string,  flavour,
+                                double,       mass,
+                                unsigned int, Ls,
+                                double,       M5,
+                                std::string,  boundary,
+                                std::string,  twist,
+                                double,       scale,
+                                // Solver parameters
+                                int,          maxIteration,
+                                double,       residual,
+                                bool,         GaugeSmear,
+                                std::string,  EigenPackFilename )
+public:
+  void CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const;
+};
+
+extern const Gamma::Algebra algInsert[];
+extern const int NumInsert;
+
+// Append
+
+inline void Append( std::string &sDest, const std::string &s1, const std::string &s2 )
+{
+  Append( sDest, s1 );
+  Append( sDest, s2 );
+};
+
+inline void Append( std::string &sDest, const std::string &s, int i )
+{
+  Append( sDest, s, std::to_string( i ) );
+};
+
+inline void Append( std::string &sDest, char c, const std::string &s )
+{
+  Append( sDest, std::string( 1, c ), s );
+};
+
+inline void Append( std::string &sDest, char c, int i )
+{
+  Append( sDest, std::string( 1, c ), std::to_string( i ) );
+};
+
+inline void Append( std::string &sDest, const Taxonomy &taxonomy )
+{
+  Append( sDest, taxonomy.FilePrefix() );
+};
+
+/*inline void Append( std::string &sDest, Family family )
+{
+  std::stringstream ss;
+  ss << family;
+  Append( sDest, ss.str() );
+}*/
+
+inline void Append( std::string &sDest, Species species )
+{
+  std::stringstream ss;
+  ss << species;
+  Append( sDest, ss.str() );
+}
+
+inline void AppendP( std::string &sDest, const Common::Momentum &p, const std::string & sMomentumName = defaultMomName )
+{
+  Append( sDest, sMomentumName, p.to_string( Sep ) );
+}
+
+inline void AppendPSeq( std::string &sDest, const Common::Momentum &p )
+{
+  Append( sDest, "ps", p.to_string( Sep ) );
+}
+
+inline void AppendT( std::string &sDest, int t )
+{
+  Append( sDest, 't', t );
+}
+
+inline void AppendPT( std::string &sDest, int t, const Common::Momentum &p )
+{
+  AppendP( sDest, p );
+  AppendT( sDest, t );
+};
+
+inline void AppendDeltaT( std::string &sDest, int t )
+{
+  Append( sDest, "dt", t );
+}
+
+/**************************
+ Parameters that apply to the entire application being built
+**************************/
+
+struct AppParams
+{
+  struct databaseOptions: Serializable {
+  GRID_SERIALIZABLE_CLASS_MEMBERS(databaseOptions,
+                                  std::string,  resultDb,
+                                  bool,         makeStatDb,
+                                  std::string,  applicationDbPrefix )
+    };
+
+  struct RunPar: Serializable {
+      GRID_SERIALIZABLE_CLASS_MEMBERS(RunPar,
+        Grid::Hadrons::Application::TrajRange,      trajCounter,
+                                  databaseOptions,  dbOptions,
+        Grid::Hadrons::VirtualMachine::GeneticPar,  genetic,
+                                      int,          Nt,
+        Grid::Hadrons::Application::TrajRange,      Timeslices,
+                                      std::string,  runId,
+                                      std::string,  Taxa,
+                                      std::string,  Momenta,
+                                      std::string,  deltaT,
+                                      std::string,  SpatialPos,
+                                      std::string,  RegionSize,
+                                      std::string,  OutputBase,
+                                      std::string,  Gauge,
+             Grid::Hadrons::MGauge::GaugeFix::Par,  GaugeFix,
+                       MGauge::StoutSmearing::Par,  StoutSmear,
+                                      bool,         TwoPoint,
+                                      bool,         HeavyQuark,
+                                      bool,         HeavyAnti,
+                                      bool,         DoNegativeMomenta,
+                                      bool,         Run,
+                                      std::string,  JobXmlPrefix)
+  };
+
+  RunPar Run;
+  std::vector<Taxonomy> Taxa;
+  std::vector<Quark> HeavyQuarks;
+  std::vector<Quark> SpectatorQuarks;
+  std::vector<Quark> SpectatorQuarks2pt;
+  std::vector<Common::Momentum> Momenta;
+  bool ThreePoint;
+  std::vector<int> deltaT;
+  const std::string sRunSuffix;
+  inline int TimeBound( int t ) const
+  { return t < 0 ? Run.Nt - ((-t) % Run.Nt) : t % Run.Nt; }
+  AppParams( const std::string sXmlFilename, const std::string sRunSuffix );
+  std::string RunID() const;
+protected:
+  static std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType, std::size_t Min = 1 );
+};
+
+/**************************
+ Base class for my wrappers of Hadrons::Modules
+ These objects know how to create their coprresponding Hadrons Module and all dependencies
+ **************************/
+
+class HModList;
+
+class HMod
+{
+protected:
+  std::string name; // The name is what makes each module unique
+public:
+  const Taxonomy tax;
+public:
+  inline const std::string &Name() const { return name; };
+  HMod( HModList &ModList, const Taxonomy &taxonomy, int NameLen = 80 ) : tax{ taxonomy }
+  { name.reserve( NameLen ); }
+  virtual ~HMod() = default;
+  virtual void AddDependencies( HModList &ModList ) const = 0;
+};
+
+/**************************
+ List of Hadrons Modules, i.e. a wrapper for Hadrons::Application
+ **************************/
+
+class HModList
+{
+protected:
+  std::map<std::string,std::unique_ptr<HMod>> list;
+public:
+  // These are used by modules when adding dependencies
+  Application &application;
+  const AppParams &params;
+public:
+  HModList( Application &application_, const AppParams &params_ )
+  : application{application_}, params{params_} {}
+  const std::string TakeOwnership( HMod *pHMod );
+};
+
+/**************************
+ Point sink
+**************************/
+
+class ModSink : public HMod
+{
+public:
+  static const std::string Prefix;
+  const Common::Momentum p;
+  ModSink(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p);
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+
+/**************************
+ Wall sink
+**************************/
+
+class ModSinkSmear : public HMod
+{
+public:
+  static const std::string Prefix;
+  const Common::Momentum p;
+  ModSinkSmear(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p);
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+
+/**************************
+ Source
+**************************/
+
+class ModSource : public HMod
+{
+public:
+  static const std::string Prefix;
+  const Common::Momentum p;
+  const int t;
+  ModSource(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p, int t);
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+
+/**************************
+ Stout smeared gauge
+**************************/
+
+class ModGauge : public HMod
+{
+public:
+  const bool bSmeared;
+  ModGauge( HModList &ModList, const Taxonomy &taxonomy, bool bSmeared );
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+
+/**************************
+ Action
+**************************/
+
+class ModAction : public HMod
+{
+public:
+  static const std::string Prefix;
+  const Quark &q;
+  const bool bSmeared;
+  ModAction( HModList &ModList, const Taxonomy &taxonomy, const Quark &q );
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+
+/**************************
+ Solver
+**************************/
+
+class ModSolver : public HMod
+{
+public:
+  static const std::string Prefix;
+  const Quark &q;
+  const bool bSmeared;
+  ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &q );
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+
+/**************************
+ Propagator
+**************************/
+
+class ModProp : public HMod
+{
+protected:
+  std::string Suffix;
+public:
+  static const std::string Prefix;
+  static const std::string PrefixConserved;
+  const Quark &q;
+  const Common::Momentum p;
+  const int t;
+  ModProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, const Common::Momentum &p, int t );
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+
+/**************************
+ Sliced Propagator / wall sink. For 2pt contractions only
+**************************/
+
+class ModSlicedProp : public HMod
+{
+public:
+  static const std::string Prefix;
+  const Quark &q;
+  const Common::Momentum p;
+  const int t;
+  ModSlicedProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, const Common::Momentum &p, int t );
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+
+/**************************
+ Sequential Source
+**************************/
+
+class ModSourceSeq : public HMod
+{
+public:
+  static const std::string Prefix;
+  const int Current;
+  const int deltaT;
+  const Common::Momentum pSeq;
+  const Quark &q;
+  const Common::Momentum p;
+  const int t;
+  ModSourceSeq( HModList &ModList, const Taxonomy &taxonomy, int Current, int deltaT, const Common::Momentum &pSeq,
+                const Quark &q, const Common::Momentum &p, int t );
+  virtual void AddDependencies( HModList &ModList ) const;
+protected:
+  template<typename T> void AddDependenciesT( HModList &ModList, typename T::Par &seqPar ) const;
+};
+
+/**************************
+ Sequential propagator
+**************************/
+
+class ModPropSeq : public HMod
+{
+public:
+  static const std::string Prefix;
+  const Quark &qSeq;
+  const int Current;
+  const int deltaT;
+  const Common::Momentum pSeq;
+  const Quark &q;
+  const Common::Momentum p;
+  const int t;
+  ModPropSeq( HModList &ModList, const Taxonomy &taxonomy, const Quark &qSeq, int current, int deltaT,
+              const Common::Momentum &pSeq, const Quark &q, const Common::Momentum &p, int t );
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+
+/**************************
+ 2pt contraction
+**************************/
+
+extern const std::string ContractionPrefix;
+
+class ModContract2pt : public HMod
+{
+protected:
+  std::string FileName;
+public:
+  static const std::string Prefix;
+  const Quark &q1;
+  const Quark &q2;
+  const Common::Momentum p;
+  const int t;
+  ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
+                  const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_);
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+
+/**************************
+ Three-point contraction
+ Quark qSrc at time t, decaying to quark qDst via current insertion at time (t + deltaT), with spectator anti-quark
+ NB: if bHeavyAnti is true, then qSrc and qDst are anti-quarks and spectator is quark
+ Momentum p is for the source, -p at the current and 0 at the sink (this could change later)
+**************************/
+
+class ModContract3pt : public HMod
+{
+protected:
+  std::string FileName;
+public:
+  const Quark &qSnk;
+  const Quark &qSrc;
+  const Quark &qSpec;
+  const Common::Momentum pSeq;
+  const Common::Momentum p;
+  const int t;
+  const bool bHeavyAnti;
+  const int Current;
+  const int deltaT;
+  ModContract3pt( HModList &ModList, const Taxonomy &taxonomy, const Quark &qSnk, const Quark &qSrc, const Quark &qSpec,
+            const Common::Momentum &pSeq_, const Common::Momentum &p, int t, bool bHeavyAnti, int Current, int deltaT );
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+

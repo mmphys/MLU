@@ -36,6 +36,7 @@
 		6827A13C24630F0F0036F0AC /* OpenQcdIOChromaReference.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13A24630F0F0036F0AC /* OpenQcdIOChromaReference.h */; };
 		6827A13D24630F0F0036F0AC /* OpenQcdIO.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13B24630F0F0036F0AC /* OpenQcdIO.h */; };
 		6827A13F24630FA90036F0AC /* Lattice_basis.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13E24630FA90036F0AC /* Lattice_basis.h */; };
+		68291B87262B3DE20095E1BC /* HadronsApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68291B85262B3DE10095E1BC /* HadronsApp.cpp */; };
 		682D061C246A958D0052D780 /* Loop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D061A246A958D0052D780 /* Loop.cpp */; };
 		682D061D246A958D0052D780 /* Loop.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682D061B246A958D0052D780 /* Loop.hpp */; };
 		682D0620246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D061E246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp */; };
@@ -1521,6 +1522,8 @@
 		6827A13A24630F0F0036F0AC /* OpenQcdIOChromaReference.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenQcdIOChromaReference.h; sourceTree = "<group>"; };
 		6827A13B24630F0F0036F0AC /* OpenQcdIO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenQcdIO.h; sourceTree = "<group>"; };
 		6827A13E24630FA90036F0AC /* Lattice_basis.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lattice_basis.h; sourceTree = "<group>"; };
+		68291B85262B3DE10095E1BC /* HadronsApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HadronsApp.cpp; sourceTree = "<group>"; };
+		68291B86262B3DE20095E1BC /* HadronsApp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HadronsApp.hpp; sourceTree = "<group>"; };
 		682D061A246A958D0052D780 /* Loop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Loop.cpp; sourceTree = "<group>"; };
 		682D061B246A958D0052D780 /* Loop.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Loop.hpp; sourceTree = "<group>"; };
 		682D061E246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CheckerboardSpinColorDiagonal.cpp; sourceTree = "<group>"; };
@@ -3179,6 +3182,8 @@
 			children = (
 				681445182624C43800F458CB /* GaugeFix.cpp */,
 				68093A2624B8752F0019148E /* gpuxml.sh */,
+				68291B85262B3DE10095E1BC /* HadronsApp.cpp */,
+				68291B86262B3DE20095E1BC /* HadronsApp.hpp */,
 				68E5744D25D321CB00BD1A21 /* Makefile.am */,
 				6848233025090E0100B31C1E /* Ratio.cpp */,
 				68338D3B2461402200B6292E /* xml3pt.cpp */,
@@ -7298,6 +7303,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				68338D47246140D400B6292E /* xml3pt.cpp in Sources */,
+				68291B87262B3DE20095E1BC /* HadronsApp.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
