@@ -188,7 +188,8 @@ void AppMaker::MakeStudy3(const Quark &qf, const Quark &qSpectator)
                   l.TakeOwnership( new ModContract3pt( l, tax, qf, qi, qSpectator, -p, p0, t, bHeavyAnti, j, deltaT ) );
                   l.TakeOwnership( new ModContract3pt( l, tax, qi, qf, qSpectator, p0, p , t, bHeavyAnti, j, deltaT ) );
                   l.TakeOwnership( new ModContract3pt( l, tax, qf, qf, qSpectator, -p, p , t, bHeavyAnti, j, deltaT ) );
-                  l.TakeOwnership( new ModContract3pt( l, tax, qi, qi, qSpectator, p0, p0, t, bHeavyAnti, j, deltaT ) );
+                  if( iPx == 0 ) // Don't repeat this for non-zero momenta (if job being performed separately)
+                    l.TakeOwnership( new ModContract3pt( l, tax, qi, qi, qSpectator, p0, p0, t, bHeavyAnti, j, deltaT ) );
                 }
               }
             }
