@@ -908,6 +908,20 @@ struct Momentum
   inline Momentum operator-() const { return Momentum(-x, -y, -z); }
   inline Momentum abs() const { return Momentum( x<0?-x:x, y<0?-y:y, z<0?-z:z ); }
   inline bool operator==(const Momentum &m) const { return x==m.x || y==m.y || z==m.z; }
+  Momentum& operator+=(const Momentum& rhs)
+  {
+    x += rhs.x;
+    y += rhs.y;
+    z += rhs.z;
+    return *this;
+  }
+  // friends defined inside class body are inline and are hidden from non-ADL lookup
+  friend Momentum operator+( Momentum lhs, const Momentum &rhs ) // passing lhs by value helps optimize chained a+b+c
+  {
+    lhs += rhs; // reuse compound assignment
+    return lhs; // return the result by value (uses move constructor)
+  }
+
   inline bool IsNeg() const { return x<0 || ( x==0 && ( y<0 || ( y==0 && z < 0 ))); }
   inline bool EqualsNeg(const Momentum &m) const { return x==-m.x || y==-m.y || z==-m.z; }
   inline int p2() const { return x * x + y * y + z * z; }
