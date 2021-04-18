@@ -58,7 +58,7 @@ for (( ; NumFiles-- ; start += Inc )); do
   #Echo making $jobscript and $jobxml
   sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" \
       -e "s|@xml@|$jobxml|g" -e "s|@wall@|${wall_hours}|g" \
-      -e "s|@executable@|$executable|g" $template > $jobscript
+      -e "s|@executable@|$executable|g" -e "s|@jobscript@|$jobscript|g" $template > $jobscript
   sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" \
       $templateXml > $jobxml
 done
