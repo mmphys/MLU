@@ -30,6 +30,7 @@
     <Momenta>0_0_0</Momenta>
     <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
     <deltaT>16 20 24</deltaT>
+    <gamma>Gamma5</gamma>
     <!--<deltaT>12 14 16 20 24 28 32</deltaT>-->
     <!--<deltaT>12</deltaT>-->
     <SpatialPos>0 0 0</SpatialPos>

@@ -186,7 +186,7 @@ inline int IndexIgnoreCase( const C &v, const std::string &s )
 
 // Ensure that the vector has the required length and no duplicates
 
-template <typename T> void NoDuplicates( const std::vector<T> &v, const std::string sErrorPrefix, std::size_t MinSize )
+template <typename T> void NoDuplicates( const std::vector<T> &v, const std::string &sErrorPrefix, std::size_t MinSize )
 {
   if( v.size() < MinSize )
   {

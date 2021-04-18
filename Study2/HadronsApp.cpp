@@ -129,24 +129,6 @@ void Quark::CreateAction( Application &app, const std::string &name, std::string
   app.createModule<MAction::ScaledDWF>( name, Par );
 }
 
-const Gamma::Algebra algInsert[] = {
-  Gamma::Algebra::Gamma5,
-  //Gamma::Algebra::GammaTGamma5,
-  //Gamma::Algebra::GammaT,
-  //Gamma::Algebra::GammaX,
-  //Gamma::Algebra::GammaY,
-  //Gamma::Algebra::GammaZ,
-};
-const int NumInsert{ sizeof( algInsert ) / sizeof( algInsert[0] ) };
-static const std::array<const std::string *, NumInsert> algInsertName {
-  &Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::Gamma5 ) ],
-  //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaTGamma5 ) ],
-  //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaT ) ],
-  //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaX ) ],
-  //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaY ) ],
-  //&Common::Gamma::nameShort[ static_cast<int>( Common::Gamma::Algebra::GammaZ ) ],
-};
-
 /**************************
  Parameters that apply to the entire application being built
 **************************/
@@ -177,8 +159,9 @@ AppParams::AppParams( const std::string sXmlFilename, const std::string sRunSuff
   if( ThreePoint )
   {
     deltaT = Common::ArrayFromString<int>( Run.deltaT );
-    if( deltaT.empty() )
-      throw std::runtime_error( "There should be at least one deltaT" );
+    Common::NoDuplicates( deltaT, "deltaT", 1 );
+    gamma = Common::ArrayFromString<Gamma::Algebra>( Run.gamma );
+    Common::NoDuplicates( gamma, "gamma", 1 );
   }
 }
 
@@ -511,14 +494,14 @@ void ModSlicedProp::AddDependencies( HModList &ModList ) const
 
 const std::string ModSourceSeq::Prefix{ "Seq" + ModSource::Prefix };
 
-ModSourceSeq::ModSourceSeq( HModList &ML, const Taxonomy &tax_, int current_, int deltaT_, const Common::Momentum &pSeq_,
-                            const Quark &q_, const Common::Momentum &p_, int t_ )
+ModSourceSeq::ModSourceSeq( HModList &ML, const Taxonomy &tax_, Gamma::Algebra current_, int deltaT_,
+                            const Common::Momentum &pSeq_, const Quark &q_, const Common::Momentum &p_, int t_ )
 : HMod(ML,tax_), Current{current_}, deltaT{deltaT_}, pSeq{pSeq_}, q{q_}, p{p_}, t{t_}
 {
   name = Prefix;
   Append( name, tax.FamilyName() );
   Append( name, tax.species );
-  Append( name, *algInsertName[Current] );
+  Append( name, Current );
   AppendDeltaT( name, deltaT );
   AppendPSeq( name, pSeq );
   Append( name, q.flavour );
@@ -529,7 +512,7 @@ template<typename T> void ModSourceSeq::AddDependenciesT( HModList &ModList, typ
 {
   seqPar.q = ModList.TakeOwnership( new ModProp( ModList, tax, q, p, t ) );
   seqPar.mom = pSeq.to_string4d( Space );
-  seqPar.gamma = algInsert[Current];
+  seqPar.gamma = Current;
   ModList.application.createModule<T>(name, seqPar);
 }
 
@@ -574,7 +557,7 @@ void ModSourceSeq::AddDependencies( HModList &ModList ) const
 
 const std::string ModPropSeq::Prefix{ "Seq" + ModProp::Prefix };
 
-ModPropSeq::ModPropSeq( HModList &ML, const Taxonomy &tax_, const Quark &qSeq_, int current_, int deltaT_,
+ModPropSeq::ModPropSeq( HModList &ML, const Taxonomy &tax_, const Quark &qSeq_, Gamma::Algebra current_, int deltaT_,
                         const Common::Momentum &pSeq_, const Quark &q_, const Common::Momentum &p_, int t_ )
 : HMod(ML,tax_),qSeq{qSeq_},Current{current_},deltaT{deltaT_},pSeq{pSeq_},q{q_},p{p_},t{t_}
 {
@@ -582,7 +565,7 @@ ModPropSeq::ModPropSeq( HModList &ML, const Taxonomy &tax_, const Quark &qSeq_, 
   Append( name, tax.FamilyName() );
   Append( name, tax.species );
   Append( name, qSeq.flavour );
-  Append( name, *algInsertName[Current] );
+  Append( name, Current );
   AppendDeltaT( name, deltaT );
   AppendPSeq( name, pSeq );
   Append( name, q.flavour );
@@ -658,7 +641,7 @@ void ModContract2pt::AddDependencies( HModList &ModList ) const
 **************************/
 
 ModContract3pt::ModContract3pt(HModList &ML,const Taxonomy &tax_,const Quark &Snk_,const Quark &Src_,const Quark &Spec_,
-                        const Common::Momentum &pSeq_, const Common::Momentum &p_, int t_, bool bHA_, int Cur_, int dT_ )
+              const Common::Momentum &pSeq_, const Common::Momentum &p_, int t_, bool bHA_, Gamma::Algebra Cur_, int dT_ )
 : HMod(ML, tax_),qSnk{Snk_},qSrc{Src_},qSpec{Spec_},pSeq{pSeq_},p{p_},t{t_},bHeavyAnti{bHA_},Current{Cur_},deltaT{dT_}
 {
   std::string Prefix1{ "3pt" };
@@ -667,7 +650,7 @@ ModContract3pt::ModContract3pt(HModList &ML,const Taxonomy &tax_,const Quark &Sn
   Append( Prefix2, bHeavyAnti ? "anti" : "quark" );
   std::string s{ qSnk.flavour };
   Append( s, qSrc.flavour );
-  Append( s, *algInsertName[Current] );
+  Append( s, Current );
   AppendDeltaT( s, deltaT );
   AppendP( s, pSeq, SeqMomentumName );
   AppendPT( s, t, p );

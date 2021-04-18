@@ -123,7 +123,7 @@ void AppMaker::Make()
                     {
                       for( int deltaT : l.params.deltaT )
                       {
-                        for( int j = 0; j < NumInsert; j++ )
+                        for( Gamma::Algebra j : l.params.gamma )
                         {
                           l.TakeOwnership( new ModContract3pt( l, tax, qH2, qH1, qSpectator, p0, p,
                                                                t, bHeavyAnti, j, deltaT ) );
@@ -183,7 +183,7 @@ void AppMaker::MakeStudy3(const Quark &qf, const Quark &qSpectator)
               const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
               for( int deltaT : l.params.deltaT )
               {
-                for( int j = 0; j < NumInsert; j++ )
+                for( Gamma::Algebra j : l.params.gamma )
                 {
                   l.TakeOwnership( new ModContract3pt( l, tax, qf, qi, qSpectator, -p, p0, t, bHeavyAnti, j, deltaT ) );
                   l.TakeOwnership( new ModContract3pt( l, tax, qi, qf, qSpectator, p0, p , t, bHeavyAnti, j, deltaT ) );

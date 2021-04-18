@@ -40,8 +40,19 @@ extern const std::string GaugeFieldName;
 inline void Append( std::string &sDest, const std::string &s )
 {
   if( !s.empty() )
+  {
     sDest.append( Sep );
-  sDest.append( s );
+    sDest.append( s );
+  }
+};
+
+inline void Appendsz( std::string &sDest, const char * psz, std::size_t Len )
+{
+  if( psz && Len )
+  {
+    sDest.append( Sep );
+    sDest.append( psz, Len );
+  }
 };
 
 // Family
@@ -175,9 +186,6 @@ public:
   void CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const;
 };
 
-extern const Gamma::Algebra algInsert[];
-extern const int NumInsert;
-
 // Append
 
 inline void Append( std::string &sDest, const std::string &s1, const std::string &s2 )
@@ -199,6 +207,17 @@ inline void Append( std::string &sDest, char c, const std::string &s )
 inline void Append( std::string &sDest, char c, int i )
 {
   Append( sDest, std::string( 1, c ), std::to_string( i ) );
+};
+
+inline void Append( std::string &sDest, Gamma::Algebra gamma )
+{
+  if( gamma < 0 || gamma > Gamma::nGamma )
+    throw std::runtime_error( "Undefined Gamma::Algebra" );
+  const char * psz = Gamma::name[gamma];
+  std::size_t Len = std::strlen( psz );
+  while( Len && std::isspace( psz[Len - 1] ) )
+    Len--;
+  Appendsz( sDest, psz, Len );
 };
 
 inline void Append( std::string &sDest, const Taxonomy &taxonomy )
@@ -270,6 +289,7 @@ struct AppParams
                                       std::string,  Taxa,
                                       std::string,  Momenta,
                                       std::string,  deltaT,
+                                      std::string,  gamma,
                                       std::string,  SpatialPos,
                                       std::string,  RegionSize,
                                       std::string,  OutputBase,
@@ -292,6 +312,7 @@ struct AppParams
   std::vector<Common::Momentum> Momenta;
   bool ThreePoint;
   std::vector<int> deltaT;
+  std::vector<Gamma::Algebra> gamma;
   const std::string sRunSuffix;
   inline int TimeBound( int t ) const
   { return t < 0 ? Run.Nt - ((-t) % Run.Nt) : t % Run.Nt; }
@@ -461,14 +482,14 @@ class ModSourceSeq : public HMod
 {
 public:
   static const std::string Prefix;
-  const int Current;
+  const Gamma::Algebra Current;
   const int deltaT;
   const Common::Momentum pSeq;
   const Quark &q;
   const Common::Momentum p;
   const int t;
-  ModSourceSeq( HModList &ModList, const Taxonomy &taxonomy, int Current, int deltaT, const Common::Momentum &pSeq,
-                const Quark &q, const Common::Momentum &p, int t );
+  ModSourceSeq( HModList &ModList, const Taxonomy &taxonomy, Gamma::Algebra Current, int deltaT,
+                const Common::Momentum &pSeq, const Quark &q, const Common::Momentum &p, int t );
   virtual void AddDependencies( HModList &ModList ) const;
 protected:
   template<typename T> void AddDependenciesT( HModList &ModList, typename T::Par &seqPar ) const;
@@ -483,13 +504,13 @@ class ModPropSeq : public HMod
 public:
   static const std::string Prefix;
   const Quark &qSeq;
-  const int Current;
+  const Gamma::Algebra Current;
   const int deltaT;
   const Common::Momentum pSeq;
   const Quark &q;
   const Common::Momentum p;
   const int t;
-  ModPropSeq( HModList &ModList, const Taxonomy &taxonomy, const Quark &qSeq, int current, int deltaT,
+  ModPropSeq( HModList &ModList, const Taxonomy &taxonomy, const Quark &qSeq, Gamma::Algebra Current, int deltaT,
               const Common::Momentum &pSeq, const Quark &q, const Common::Momentum &p, int t );
   virtual void AddDependencies( HModList &ModList ) const;
 };
@@ -534,10 +555,10 @@ public:
   const Common::Momentum p;
   const int t;
   const bool bHeavyAnti;
-  const int Current;
+  const Gamma::Algebra Current;
   const int deltaT;
   ModContract3pt( HModList &ModList, const Taxonomy &taxonomy, const Quark &qSnk, const Quark &qSrc, const Quark &qSpec,
-            const Common::Momentum &pSeq_, const Common::Momentum &p, int t, bool bHeavyAnti, int Current, int deltaT );
+    const Common::Momentum &pSeq_, const Common::Momentum &p, int t, bool bHeavyAnti, Gamma::Algebra Current, int deltaT );
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
