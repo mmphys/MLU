@@ -209,6 +209,7 @@ inline void Append( std::string &sDest, char c, int i )
   Append( sDest, std::string( 1, c ), std::to_string( i ) );
 };
 
+// Use Grid's definitions of gamma names ... but abbreviate Gamma to 'g'
 inline void Append( std::string &sDest, Gamma::Algebra gamma )
 {
   if( gamma < 0 || gamma > Gamma::nGamma )
@@ -217,7 +218,25 @@ inline void Append( std::string &sDest, Gamma::Algebra gamma )
   std::size_t Len = std::strlen( psz );
   while( Len && std::isspace( psz[Len - 1] ) )
     Len--;
-  Appendsz( sDest, psz, Len );
+  if( Len )
+  {
+    sDest.append( Sep );
+    while( Len )
+    {
+      static constexpr int GammaLen = 5;
+      if( Len >= GammaLen && !std::strncmp( psz, Gamma::name[Gamma::Algebra::Gamma5], GammaLen ) )
+      {
+        sDest.append( 1, 'g' );
+        Len -= GammaLen;
+        psz += GammaLen;
+      }
+      else
+      {
+        sDest.append( 1, *psz++ );
+        Len--;
+      }
+    }
+  }
 };
 
 inline void Append( std::string &sDest, const Taxonomy &taxonomy )
