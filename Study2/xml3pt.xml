@@ -25,9 +25,11 @@
       <step>4</step>
     </Timeslices>
     <runId>Study2</runId>
+    <!--<Taxa>ZF Point</Taxa>-->
     <!--<Taxa>GF Point GF Wall GF Region GP Wall Z2 Point ZF Point ZF Wall</Taxa>-->
     <Taxa>GF Point GF Wall ZF Point ZF Wall</Taxa>
-    <Momenta>0_0_0</Momenta>
+    <Momenta>1_0_0</Momenta>
+    <!--<Momenta>0_0_0 1_0_0 2_0_0 3_0_0 4_0_0</Momenta>-->
     <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
     <deltaT>16 20 24</deltaT>
     <gamma>Gamma5</gamma>
@@ -37,8 +39,8 @@
     <RegionSize>1 1 1 1</RegionSize>
     <OutputBase></OutputBase>
     <!--<Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>-->
-    <!--<Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/M1/ckpoint_lat</Gauge>-->
-    <Gauge>/home/dp008/dp008/dc-mars3/data/Study3/M1/GaugeFixed/ckpoint_lat</Gauge>
+    <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/M1/ckpoint_lat</Gauge>
+    <!--<Gauge>/home/dp008/dp008/dc-mars3/data/Study3/M1/GaugeFixed/ckpoint_lat</Gauge>-->
     <!--<Gauge></Gauge>-->
     <GaugeFix>
       <gauge>Not used</gauge>
@@ -57,6 +59,7 @@
     <TwoPoint>true</TwoPoint>
     <HeavyQuark>true</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
+    <HeavyLightBackwards>false</HeavyLightBackwards>
     <DoNegativeMomenta>false</DoNegativeMomenta>
     <!--<Run>false</Run>-->
     <Run>false</Run>

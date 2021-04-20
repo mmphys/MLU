@@ -125,12 +125,12 @@ void AppMaker::Make()
                       {
                         for( Gamma::Algebra j : l.params.gamma )
                         {
-                          l.TakeOwnership( new ModContract3pt( l, tax, qH2, qH1, qSpectator, p0, p,
-                                                               t, bHeavyAnti, j, deltaT ) );
+                          l.TakeOwnership( new ModContract3pt( l, tax, false, qH2, qH1, qSpectator, p0, p,
+                                                               j, deltaT, t, bHeavyAnti ) );
                           if( p && qH1.mass == qH2.mass )
                           {
-                            l.TakeOwnership( new ModContract3pt( l, tax, qH2, qH1, qSpectator, -p, p,
-                                                                 t, bHeavyAnti, j, deltaT ) );
+                            l.TakeOwnership( new ModContract3pt( l, tax, false, qH2, qH1, qSpectator, -p, p,
+                                                                 j, deltaT, t, bHeavyAnti ) );
                           }
                         }
                       }
@@ -162,43 +162,49 @@ void AppMaker::MakeStudy3(const Quark &qf, const Quark &qSpectator)
     {
       for( const Quark &qi : l.params.HeavyQuarks )
       {
-        for( int iPx = 0; iPx < ( qi.flavour[1] - '0' + 5 ) ; ++iPx )
+        for( Common::Momentum p : l.params.Momenta )
         {
-          const Common::Momentum p( iPx, 0, 0 );
-          bool bDidSomething{ false };
-          if( l.params.Run.TwoPoint )
+          for( int pDoNeg = 0; pDoNeg < ( ( l.params.Run.DoNegativeMomenta && p ) ? 2 : 1 ); ++pDoNeg )
           {
-            bDidSomething = true;
-            l.TakeOwnership( new ModContract2pt( l, tax, qSpectator, qf, p, t ) );
-            l.TakeOwnership( new ModContract2pt( l, tax, qf, qSpectator, p, t ) );
-            l.TakeOwnership( new ModContract2pt( l, tax, qSpectator, qi, p, t ) );
-            l.TakeOwnership( new ModContract2pt( l, tax, qi, qSpectator, p, t ) );
-          }
-          if( l.params.ThreePoint )
-          {
-            bDidSomething = true;
-            for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
-                iHeavy <= l.params.Run.HeavyAnti  ? 1 : 0; ++iHeavy )
+            bool bDidSomething{ false };
+            if( l.params.Run.TwoPoint )
             {
-              const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
-              for( int deltaT : l.params.deltaT )
+              bDidSomething = true;
+              l.TakeOwnership( new ModContract2pt( l, tax, qSpectator, qf, p, t ) );
+              l.TakeOwnership( new ModContract2pt( l, tax, qf, qSpectator, p, t ) );
+              l.TakeOwnership( new ModContract2pt( l, tax, qSpectator, qi, p, t ) );
+              l.TakeOwnership( new ModContract2pt( l, tax, qi, qSpectator, p, t ) );
+            }
+            if( l.params.ThreePoint )
+            {
+              bDidSomething = true;
+              for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
+                  iHeavy <= l.params.Run.HeavyAnti  ? 1 : 0; ++iHeavy )
               {
-                for( Gamma::Algebra j : l.params.gamma )
+                const bool bHeavyAnti{ static_cast<bool>( iHeavy ) };
+                for( int deltaT : l.params.deltaT )
                 {
-                  l.TakeOwnership( new ModContract3pt( l, tax, qf, qi, qSpectator, -p, p0, t, bHeavyAnti, j, deltaT ) );
-                  l.TakeOwnership( new ModContract3pt( l, tax, qi, qf, qSpectator, p0, p , t, bHeavyAnti, j, deltaT ) );
-                  l.TakeOwnership( new ModContract3pt( l, tax, qf, qf, qSpectator, -p, p , t, bHeavyAnti, j, deltaT ) );
-                  if( iPx == 0 ) // Don't repeat this for non-zero momenta (if job being performed separately)
-                    l.TakeOwnership( new ModContract3pt( l, tax, qi, qi, qSpectator, p0, p0, t, bHeavyAnti, j, deltaT ) );
+                  for( Gamma::Algebra j : l.params.gamma )
+                  {
+                    const bool bHLB{ l.params.Run.HeavyLightBackwards };
+                    const unsigned int tHLB{ bHLB ? l.params.TimeBound( t - deltaT ) : t };
+                    const Common::Momentum pHLB{ bHLB ? p : -p };
+                    l.TakeOwnership(new ModContract3pt(l,tax, bHLB,qf,qi, qSpectator,pHLB,p0,j, deltaT, tHLB, bHeavyAnti));
+                    l.TakeOwnership(new ModContract3pt(l,tax,false,qi,qf, qSpectator, p0, p, j, deltaT, t, bHeavyAnti ) );
+                    l.TakeOwnership(new ModContract3pt(l,tax,false,qf,qf, qSpectator, -p, p, j, deltaT, t, bHeavyAnti ) );
+                    if( !p ) // Don't repeat this for non-zero momenta (if job being performed separately)
+                      l.TakeOwnership(new ModContract3pt(l,tax,false,qi,qi,qSpectator,p0, p0, j, deltaT, t, bHeavyAnti ) );
+                  }
                 }
               }
             }
-          }
-          if( !bDidSomething )
-          {
-            // We are only performing residual-mass checks on each propagator
-            l.TakeOwnership( new ModProp( l, tax, qi, p, t ) );
-            //l.TakeOwnership( new ModProp( l, tax, qSpectator, p,t) );
+            if( !bDidSomething )
+            {
+              // We are only performing residual-mass checks on each propagator
+              l.TakeOwnership( new ModProp( l, tax, qi, p, t ) );
+              //l.TakeOwnership( new ModProp( l, tax, qSpectator, p,t) );
+            }
+            p = -p;
           }
         }
       }

@@ -637,17 +637,24 @@ void ModContract2pt::AddDependencies( HModList &ModList ) const
  Three-point contraction
  Quark qSrc at time t, decaying to quark qDst via current insertion at time (t + deltaT), with spectator anti-quark
  NB: if bHeavyAnti is true, then qSrc and qDst are anti-quarks and spectator is quark
- Momentum p is for the source, -p at the current and 0 at the sink (this could change later)
+ Momentum p is for the source, pSeq at the sink, and p_current set so that total is zero
+ bRev true means computed starting at sink, not source, so gamma insertion is for source, not sink
+  ... otherwise everything else about the filename and parameters has the same meaning
+ Design requirement: bRev=true should compute exactly the same function as bRev=false
 **************************/
 
-ModContract3pt::ModContract3pt(HModList &ML,const Taxonomy &tax_,const Quark &Snk_,const Quark &Src_,const Quark &Spec_,
-              const Common::Momentum &pSeq_, const Common::Momentum &p_, int t_, bool bHA_, Gamma::Algebra Cur_, int dT_ )
-: HMod(ML, tax_),qSnk{Snk_},qSrc{Src_},qSpec{Spec_},pSeq{pSeq_},p{p_},t{t_},bHeavyAnti{bHA_},Current{Cur_},deltaT{dT_}
+ModContract3pt::ModContract3pt( HModList &ML,const Taxonomy &tax_, bool bRev_,const Quark &Snk_,const Quark &Src_,
+                                const Quark &Spec_, const Common::Momentum &pSeq_, const Common::Momentum &p_,
+                                Gamma::Algebra Cur_, int dT_, int t_, bool bHA_ )
+: HMod(ML, tax_), bReverse{tax == Family::GR ? !bRev_ : bRev_}, qSnk{Snk_}, qSrc{Src_}, qSpec{Spec_},
+  pSeq{pSeq_}, p{p_}, Current{Cur_}, deltaT{dT_}, t{t_}, bHeavyAnti{bHA_}
 {
   std::string Prefix1{ "3pt" };
   Append( Prefix1, qSpec.flavour );
   std::string Prefix2{ tax.FilePrefix() };
   Append( Prefix2, bHeavyAnti ? "anti" : "quark" );
+  if( bReverse )
+    Append( Prefix2, "rev" );
   std::string s{ qSnk.flavour };
   Append( s, qSrc.flavour );
   Append( s, Current );
@@ -674,16 +681,15 @@ void ModContract3pt::AddDependencies( HModList &ML ) const
   par.output = FileName;
   //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
   par.gammas = "all";
-  const bool bInvertSeq{ !bHeavyAnti };
-  const bool bRev{ tax == Family::GR };
+  const bool bInvertSeq{ bReverse ? bHeavyAnti : !bHeavyAnti };
   // The "s" prefix for the variable names is short for "sub", i.e. the values to use for dependencies
-  Taxonomy stax( bRev ? Family::GF : tax.family, bRev ? Species::Region : tax.species );
-  const Quark &sqSrc{ bRev ? qSnk : qSrc };
-  const Quark &sqSnk{ bRev ? qSrc : qSnk };
-  const int st     { bRev ? ML.params.TimeBound( t + deltaT ) : t      };
-  const int sdeltaT{ bRev ? ML.params.TimeBound(   - deltaT ) : deltaT };
-  const Common::Momentum &pSource( bRev ? pSeq : p );
-  const Common::Momentum &pSink( bRev ? p : pSeq );
+  Taxonomy stax( tax == Family::GR ? Family::GF : tax.family, tax == Family::GR ? Species::Region : tax.species );
+  const Quark &sqSrc{ bReverse ? qSnk : qSrc };
+  const Quark &sqSnk{ bReverse ? qSrc : qSnk };
+  const int st      { bReverse ? ML.params.TimeBound( t + deltaT ) : t      };
+  const int sdeltaT { bReverse ? ML.params.TimeBound(   - deltaT ) : deltaT };
+  const Common::Momentum &pSource( bReverse ? pSeq : p );
+  const Common::Momentum &pSink  ( bReverse ? p : pSeq );
   Common::Momentum pCurrent( - ( pSource + pSink ) );
   if( bInvertSeq )
   {

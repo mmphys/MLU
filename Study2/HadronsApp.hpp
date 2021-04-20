@@ -318,6 +318,7 @@ struct AppParams
                                       bool,         TwoPoint,
                                       bool,         HeavyQuark,
                                       bool,         HeavyAnti,
+                                      bool,         HeavyLightBackwards,
                                       bool,         DoNegativeMomenta,
                                       bool,         Run,
                                       std::string,  JobXmlPrefix)
@@ -567,17 +568,19 @@ class ModContract3pt : public HMod
 protected:
   std::string FileName;
 public:
+  const bool bReverse;
   const Quark &qSnk;
   const Quark &qSrc;
   const Quark &qSpec;
   const Common::Momentum pSeq;
   const Common::Momentum p;
-  const int t;
-  const bool bHeavyAnti;
   const Gamma::Algebra Current;
   const int deltaT;
-  ModContract3pt( HModList &ModList, const Taxonomy &taxonomy, const Quark &qSnk, const Quark &qSrc, const Quark &qSpec,
-    const Common::Momentum &pSeq_, const Common::Momentum &p, int t, bool bHeavyAnti, Gamma::Algebra Current, int deltaT );
+  const int t;
+  const bool bHeavyAnti;
+  ModContract3pt( HModList &ModList, const Taxonomy &taxonomy, bool bReverse, const Quark &qSnk, const Quark &qSrc,
+                  const Quark &qSpec, const Common::Momentum &pSeq_, const Common::Momentum &p,
+                  Gamma::Algebra Current, int deltaT, int t, bool bHeavyAnti );
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
