@@ -28,8 +28,8 @@
     <!--<Taxa>ZF Point</Taxa>-->
     <!--<Taxa>GF Point GF Wall GF Region GP Wall Z2 Point ZF Point ZF Wall</Taxa>-->
     <Taxa>GF Point GF Wall ZF Point ZF Wall</Taxa>
-    <Momenta>1_0_0</Momenta>
-    <!--<Momenta>0_0_0 1_0_0 2_0_0 3_0_0 4_0_0</Momenta>-->
+    <!--<Momenta>1_0_0</Momenta>-->
+    <Momenta>0_0_0 1_0_0 2_0_0 3_0_0 4_0_0</Momenta>
     <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
     <deltaT>16 20 24</deltaT>
     <gamma>Gamma5</gamma>
@@ -59,7 +59,8 @@
     <TwoPoint>true</TwoPoint>
     <HeavyQuark>true</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
-    <HeavyLightBackwards>false</HeavyLightBackwards>
+    <HeavyLightBackwards>true</HeavyLightBackwards>
+    <R2Ratio>false</R2Ratio>
     <DoNegativeMomenta>false</DoNegativeMomenta>
     <!--<Run>false</Run>-->
     <Run>false</Run>

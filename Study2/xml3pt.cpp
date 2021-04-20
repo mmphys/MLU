@@ -169,14 +169,17 @@ void AppMaker::MakeStudy3(const Quark &qf, const Quark &qSpectator)
             bool bDidSomething{ false };
             if( l.params.Run.TwoPoint )
             {
+              // Create the two-point functions I need for R1. Second pair not really needed, but doesn't take much time
               bDidSomething = true;
               l.TakeOwnership( new ModContract2pt( l, tax, qSpectator, qf, p, t ) );
               l.TakeOwnership( new ModContract2pt( l, tax, qf, qSpectator, p, t ) );
+              // These two only needed at zero momentum ... but doesn't take much time
               l.TakeOwnership( new ModContract2pt( l, tax, qSpectator, qi, p, t ) );
               l.TakeOwnership( new ModContract2pt( l, tax, qi, qSpectator, p, t ) );
             }
             if( l.params.ThreePoint )
             {
+              // Create the three-point functions I need for R2 (which includes what's required for R1)
               bDidSomething = true;
               for( int iHeavy  = l.params.Run.HeavyQuark ? 0 : 1;
                   iHeavy <= l.params.Run.HeavyAnti  ? 1 : 0; ++iHeavy )
@@ -191,9 +194,12 @@ void AppMaker::MakeStudy3(const Quark &qf, const Quark &qSpectator)
                     const Common::Momentum pHLB{ bHLB ? p : -p };
                     l.TakeOwnership(new ModContract3pt(l,tax, bHLB,qf,qi, qSpectator,pHLB,p0,j, deltaT, tHLB, bHeavyAnti));
                     l.TakeOwnership(new ModContract3pt(l,tax,false,qi,qf, qSpectator, p0, p, j, deltaT, t, bHeavyAnti ) );
-                    l.TakeOwnership(new ModContract3pt(l,tax,false,qf,qf, qSpectator, -p, p, j, deltaT, t, bHeavyAnti ) );
-                    if( !p ) // Don't repeat this for non-zero momenta (if job being performed separately)
-                      l.TakeOwnership(new ModContract3pt(l,tax,false,qi,qi,qSpectator,p0, p0, j, deltaT, t, bHeavyAnti ) );
+                    if( l.params.Run.R2Ratio ) // In practice, M2Ratios should equal !HeavyLightBackwards
+                    {
+                      l.TakeOwnership(new ModContract3pt(l,tax,false,qf,qf, qSpectator,-p, p, j, deltaT, t, bHeavyAnti ) );
+                      if( !p ) // Don't repeat this for non-zero momenta (if job being performed separately)
+                        l.TakeOwnership(new ModContract3pt(l,tax,false,qi,qi,qSpectator,p0,p0,j, deltaT, t, bHeavyAnti ) );
+                    }
                   }
                 }
               }

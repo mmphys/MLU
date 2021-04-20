@@ -318,6 +318,7 @@ struct AppParams
                                       bool,         TwoPoint,
                                       bool,         HeavyQuark,
                                       bool,         HeavyAnti,
+                                      bool,         R2Ratio,
                                       bool,         HeavyLightBackwards,
                                       bool,         DoNegativeMomenta,
                                       bool,         Run,
