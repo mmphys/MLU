@@ -192,7 +192,7 @@ template <typename T> void NoDuplicates( const std::vector<T> &v, const std::str
   {
     std::stringstream ss;
     ss << sErrorPrefix << " contains " << v.size() << " entries, but " << MinSize
-       << (MinSize == 1 ? "is" : "are") << " required" << *dup;
+       << (MinSize == 1 ? " is" : " are") << " required";
     throw std::runtime_error( ss.str() );
   }
   if( v.size() > 1 )
@@ -932,7 +932,7 @@ struct Momentum
   inline explicit operator bool() const { return x!=0 || y!=0 || z!=0; }
   inline Momentum operator-() const { return Momentum(-x, -y, -z); }
   inline Momentum abs() const { return Momentum( x<0?-x:x, y<0?-y:y, z<0?-z:z ); }
-  inline bool operator==(const Momentum &m) const { return x==m.x || y==m.y || z==m.z; }
+  inline bool operator==(const Momentum &m) const { return x==m.x && y==m.y && z==m.z; }
   Momentum& operator+=(const Momentum& rhs)
   {
     x += rhs.x;
@@ -959,6 +959,21 @@ struct Momentum
 
 std::ostream& operator<<( std::ostream& os, const Momentum &p );
 std::istream& operator>>( std::istream& is, Momentum &p );
+
+inline bool operator<( const Momentum &l, const Momentum &r )
+{
+  if( l == r )
+    return false;
+  const int lp2{ l.p2() };
+  const int rp2{ r.p2() };
+  if( lp2 != rp2 )
+    return lp2 < rp2;
+  if( l.x != r.x )
+    return l.x < r.x;
+  if( l.y != r.y )
+    return l.y < r.y;
+  return l.z < r.z;
+}
 
 // Attributes for filenames in form base.type.seed.ext
 struct FileNameAtt

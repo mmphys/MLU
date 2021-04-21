@@ -133,89 +133,10 @@ void Quark::CreateAction( Application &app, const std::string &name, std::string
  Parameters that apply to the entire application being built
 **************************/
 
-AppParams::AppParams( const std::string sXmlFilename, const std::string sRunSuffix_ )
-: sRunSuffix{sRunSuffix_}
+AppParams::AppParams( XmlReader &r )
 {
-  static const std::string sXmlTopLevel{ "Study2" };
   static const std::string sXmlTagName{ "RunPar" };
-  XmlReader r( sXmlFilename, false, sXmlTopLevel );
   read( r, sXmlTagName, Run );
-  HeavyQuarks        = ReadQuarks( r, "Heavy" );
-  SpectatorQuarks    = ReadQuarks( r, "Spectator" );
-  SpectatorQuarks2pt = ReadQuarks( r, "SpectatorExtra2pt", 0 );
-  Momenta = Common::ArrayFromString<Common::Momentum>( Run.Momenta );
-  // Check the taxonomy
-  Taxa = Common::ArrayFromString<Taxonomy>( Run.Taxa );
-  Common::NoDuplicates( Taxa, "Taxa", 1 );
-  for( const Taxonomy &t : Taxa )
-    if( t == Family::GR )
-      LOG(Warning) << t << " don't swap the gamma structures at sink and source (18-Feb-2021)" << std::endl;
-  // Check parameters make sense
-  //if( !( Run.TwoPoint || Run.HeavyQuark ||Run.HeavyAnti ) )
-    //throw std::runtime_error( "At least one must be true of: TwoPoint; HeavyQuark; or HeavyAnti" );
-  if( Momenta.empty() )
-    throw std::runtime_error( "There should be at least one momentum" );
-  ThreePoint = Run.HeavyQuark || Run.HeavyAnti;
-  if( ThreePoint )
-  {
-    deltaT = Common::ArrayFromString<int>( Run.deltaT );
-    Common::NoDuplicates( deltaT, "deltaT", 1 );
-    gamma = Common::ArrayFromString<Gamma::Algebra>( Run.gamma );
-    Common::NoDuplicates( gamma, "gamma", 1 );
-  }
-}
-
-std::vector<Quark> AppParams::ReadQuarks( XmlReader &r, const std::string &qType, std::size_t Min )
-{
-  std::vector<Quark> vq;
-  r.readDefault( qType, vq );
-  if( vq.size() < Min )
-    throw std::runtime_error( "Only " + std::to_string( vq.size() ) + Common::Space + qType + " quarks" );
-  return vq;
-}
-
-// Make a unique RunID string that completely describes the run
-std::string AppParams::RunID() const
-{
-  std::ostringstream s;
-  {
-    // Start with all the Families and sink types
-    std::vector<Taxonomy> taxSorted{ Taxa };
-    std::sort( taxSorted.begin(), taxSorted.end() );
-    for( std::size_t i = 0; i < taxSorted.size(); ++i )
-    {
-      if( i == 0 || taxSorted[i].family != taxSorted[i - 1].family )
-      {
-        if( i )
-          s << Sep;
-        s << taxSorted[i].family;
-      }
-      s << SpeciesNameShort( taxSorted[i].species );
-    }
-  }
-  for( const Quark &q : SpectatorQuarks )
-    s << Sep << q.flavour;
-  if( Run.TwoPoint )
-    s << Sep << "2pt";
-  if( Run.HeavyQuark )
-    s << Sep << "quark";
-  if( Run.HeavyAnti )
-    s << Sep << "anti";
-  for( const Quark &q : HeavyQuarks )
-    s << Sep << q.flavour;
-  s << Sep << "t" << Sep << Run.Timeslices.start << Sep << Run.Timeslices.end << Sep << Run.Timeslices.step;
-  if( !Run.DoNegativeMomenta )
-    s << Sep << "pos";
-  s << Sep << "p";
-  for( const Common::Momentum &p : Momenta )
-    s << Sep << p.to_string( Sep );
-  if( ThreePoint )
-  {
-    s << Sep << "dT";
-    for( int dT : deltaT )
-      s << Sep << std::to_string( dT );
-  }
-  return s.str();
 }
 
 /**************************

@@ -299,48 +299,23 @@ struct AppParams
 
   struct RunPar: Serializable {
       GRID_SERIALIZABLE_CLASS_MEMBERS(RunPar,
+                                      std::string,  runId,
         Grid::Hadrons::Application::TrajRange,      trajCounter,
                                   databaseOptions,  dbOptions,
         Grid::Hadrons::VirtualMachine::GeneticPar,  genetic,
                                       int,          Nt,
-        Grid::Hadrons::Application::TrajRange,      Timeslices,
-                                      std::string,  runId,
-                                      std::string,  Taxa,
-                                      std::string,  Momenta,
-                                      std::string,  deltaT,
-                                      std::string,  gamma,
-                                      std::string,  SpatialPos,
-                                      std::string,  RegionSize,
-                                      std::string,  OutputBase,
                                       std::string,  Gauge,
              Grid::Hadrons::MGauge::GaugeFix::Par,  GaugeFix,
                        MGauge::StoutSmearing::Par,  StoutSmear,
-                                      bool,         TwoPoint,
-                                      bool,         HeavyQuark,
-                                      bool,         HeavyAnti,
-                                      bool,         R2Ratio,
-                                      bool,         HeavyLightBackwards,
-                                      bool,         DoNegativeMomenta,
-                                      bool,         Run,
-                                      std::string,  JobXmlPrefix)
+                                      std::string,  SpatialPos,
+                                      std::string,  RegionSize,
+                                      std::string,  OutputBase)
   };
 
   RunPar Run;
-  std::vector<Taxonomy> Taxa;
-  std::vector<Quark> HeavyQuarks;
-  std::vector<Quark> SpectatorQuarks;
-  std::vector<Quark> SpectatorQuarks2pt;
-  std::vector<Common::Momentum> Momenta;
-  bool ThreePoint;
-  std::vector<int> deltaT;
-  std::vector<Gamma::Algebra> gamma;
-  const std::string sRunSuffix;
   inline int TimeBound( int t ) const
   { return t < 0 ? Run.Nt - ((-t) % Run.Nt) : t % Run.Nt; }
-  AppParams( const std::string sXmlFilename, const std::string sRunSuffix );
-  std::string RunID() const;
-protected:
-  static std::vector<Quark> ReadQuarks( XmlReader &r, const std::string &qType, std::size_t Min = 1 );
+  AppParams( XmlReader &r );
 };
 
 /**************************

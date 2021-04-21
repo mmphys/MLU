@@ -2817,6 +2817,7 @@
 		6889D90725D2BC6C004F15CE /* libMLU.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libMLU.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		688FEBEC238C1BE100977B09 /* mixedop */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mixedop; sourceTree = BUILT_PRODUCTS_DIR; };
 		68939D8123A016D200C30150 /* corrstat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = corrstat; sourceTree = BUILT_PRODUCTS_DIR; };
+		689940B426308EB500F82428 /* xml3pt.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = xml3pt.hpp; sourceTree = "<group>"; };
 		68AC6DE622A7114900D42F70 /* peramb-compare */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "peramb-compare"; sourceTree = BUILT_PRODUCTS_DIR; };
 		68B21CC423E720DF00D93480 /* corr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = corr; sourceTree = BUILT_PRODUCTS_DIR; };
 		68B90194249D481700739CD2 /* RareKaonNeutralDisc.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RareKaonNeutralDisc.hpp; sourceTree = "<group>"; };
@@ -3187,6 +3188,7 @@
 				68E5744D25D321CB00BD1A21 /* Makefile.am */,
 				6848233025090E0100B31C1E /* Ratio.cpp */,
 				68338D3B2461402200B6292E /* xml3pt.cpp */,
+				689940B426308EB500F82428 /* xml3pt.hpp */,
 				681DC24724A38D1900AF1EA5 /* xml3pt.xml */,
 			);
 			path = Study2;
