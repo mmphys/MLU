@@ -39,8 +39,8 @@
     <RegionSize>1 1 1 1</RegionSize>
     <OutputBase></OutputBase>
     <!--<Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>-->
-    <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/M1/ckpoint_lat</Gauge>
-    <!--<Gauge>/home/dp008/dp008/dc-mars3/data/Study3/M1/GaugeFixed/ckpoint_lat</Gauge>-->
+    <!--<Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/M1/ckpoint_lat</Gauge>-->
+    <Gauge>/home/dp008/dp008/dc-mars3/data/Study3/M1/GaugeFixed/ckpoint_lat</Gauge>
     <!--<Gauge></Gauge>-->
     <GaugeFix>
       <gauge>Not used</gauge>
