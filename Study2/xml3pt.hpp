@@ -30,12 +30,14 @@
 **************************/
 
 // Map from (case insensitive) quark names to Quarks
-using QuarkList = std::map<std::string, Quark, Common::LessCaseInsensitive>;
+using QuarkList    = std::map<std::string, Quark  , Common::LessCaseInsensitive>;
+using QuarkNameList = std::set<std::string, Common::LessCaseInsensitive>;
 
 class AppMaker
 {
 protected:
   const AppParams &appPar;
+  const std::string sXmlTagName;
   Application application;
   HModList l;
 
@@ -49,9 +51,10 @@ public:
   bool        Run;
 
   static int MakeThreePoint( int argc, char *argv[], const std::string &sXmlFilename, const std::string &sRunSuffix );
-  explicit AppMaker( const AppParams &appPar_ ) : appPar{appPar_}, l( application, appPar_ ) {}
+  explicit AppMaker( const AppParams &appPar_, const std::string &sXmlTagName_ )
+  : appPar{appPar_}, sXmlTagName{ sXmlTagName_ }, l( application, appPar_ ) {}
   virtual ~AppMaker() {}
-  void Setup( XmlReader &r, const std::string &sRunSuffix );
+  void SetupBase( XmlReader &r, const std::string &sRunSuffix );
   virtual std::string RunID() const = 0;
 protected:
   virtual void Setup( XmlReader &r ) = 0;
@@ -65,7 +68,6 @@ protected:
 class Study2 : public AppMaker
 {
 public:
-  static const std::string sXmlTagName;
   struct MakePar: Serializable {
       GRID_SERIALIZABLE_CLASS_MEMBERS(MakePar,
                                       bool,         TwoPoint,
@@ -93,7 +95,7 @@ protected:
   std::vector<Quark *> SpectatorQuarks2pt;
 
 public:
-  explicit Study2( const AppParams &appPar_ ) : AppMaker{appPar_} {}
+  explicit Study2( const AppParams &appPar, const std::string &sXmlTagName ) : AppMaker{appPar,sXmlTagName} {}
   virtual std::string RunID() const;
 protected:
   virtual void Setup( XmlReader &r );
@@ -107,7 +109,6 @@ protected:
 class Study3 : public AppMaker
 {
 public:
-  static const std::string sXmlTagName;
   struct HeavyMomenta: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(HeavyMomenta,
                                   std::string,  qHeavy,
@@ -127,14 +128,14 @@ public:
                                       bool,         TwoPoint,
                                       bool,         HeavyQuark,
                                       bool,         HeavyAnti,
-                                      bool,         R2Ratio,
-                                      bool,         HeavyLightBackwards,
+                                      bool,         R1Term1Backwards,
+                                      bool,         R1Term2,
+                                      bool,         R2Terms,
             Grid::Hadrons::Application::TrajRange,  Timeslices,
                                       std::string,  Taxa,
                                       bool,         DoNegativeMomenta,
                                       std::string,  deltaT,
                                       std::string,  gamma,
-                                      std::string,  Heavy,
                                std::vector<Decay>,  Decays)
   };
 protected:
@@ -143,11 +144,11 @@ protected:
   std::vector<Taxonomy> Taxa;
   std::vector<int> deltaT;
   std::vector<Gamma::Algebra> gamma;
-  std::vector<Quark *> HeavyQuarks;
+  QuarkNameList HeavyQuarks;
   int CountHeavyMomenta;
 
 public:
-  explicit Study3( const AppParams &appPar_ ) : AppMaker{appPar_} {}
+  explicit Study3( const AppParams &appPar, const std::string &sXmlTagName ) : AppMaker{appPar,sXmlTagName} {}
   virtual std::string RunID() const;
 protected:
   virtual void Setup( XmlReader &r );

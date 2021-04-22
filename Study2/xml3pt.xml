@@ -4,7 +4,9 @@
   <JobFilePrefix></JobFilePrefix>
   <Run>false</Run>
   <Quarks>   HeavyM1   SpectatorM1    </Quarks>
-  <NOStudy2>
+  <StudyType>3</StudyType>
+  <StudyName>Full_DK_DPi_DsK</StudyName>
+  <Study2>
     <TwoPoint>true</TwoPoint>
     <HeavyQuark>true</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
@@ -28,13 +30,16 @@
     <Heavy>h0 H1 H2 h3</Heavy>
     <Spectator>S</Spectator>
     <SpectatorExtra2pt></SpectatorExtra2pt>
-  </NOStudy2>
-  <Study3>
+  </Study2>
+  <Full_DK_DPi_DsK>
     <TwoPoint>true</TwoPoint>
     <HeavyQuark>true</HeavyQuark>
     <HeavyAnti>false</HeavyAnti>
-    <R2Ratio>false</R2Ratio>
-    <HeavyLightBackwards>true</HeavyLightBackwards>
+    <!-- R1Term1Backwards:  First term in numerator of R1 and R2
+         R1Term2:          Second term in numerator of R1 and R2
+         R2Terms:          Denominator terms used for R2 only -->
+    <!--<R2Terms>true</R2Terms><R1Term1Backwards>false</R1Term1Backwards><R1Term2>true</R1Term2>-->
+    <R2Terms>false</R2Terms><R1Term1Backwards>true</R1Term1Backwards><R1Term2>true</R1Term2>
     <Timeslices>
       <start>0</start>
       <end>4</end>
@@ -49,7 +54,6 @@
     <!--<deltaT>12 14 16 20 24 28 32</deltaT>-->
     <!--<deltaT>12</deltaT>-->
     <gamma>Gamma5</gamma>
-    <Heavy>  H0 h1 h2 H3   </Heavy>
     <Decays>
       <elem>
         <name>DK</name>
@@ -57,8 +61,8 @@
         <qSpectator>l</qSpectator>
         <HeavyMom>
           <elem>
-            <qHeavy>h0</qHeavy>
-            <Momenta>0_0_0 1_0_0 2_0_0 3_0_0 4_0_0</Momenta>
+            <qHeavy>H7</qHeavy>
+            <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
           </elem>
         </HeavyMom>
       </elem>
@@ -68,8 +72,8 @@
         <qSpectator>l</qSpectator>
         <HeavyMom>
           <elem>
-            <qHeavy>h0</qHeavy>
-            <Momenta>0_0_0 1_0_0 2_0_0 3_0_0 4_0_0</Momenta>
+            <qHeavy>h7</qHeavy>
+            <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
           </elem>
         </HeavyMom>
       </elem>
@@ -79,13 +83,13 @@
         <qSpectator>s</qSpectator>
         <HeavyMom>
           <elem>
-            <qHeavy>h0</qHeavy>
-            <Momenta>0_0_0 1_0_0 2_0_0 3_0_0 4_0_0</Momenta>
+            <qHeavy>h7</qHeavy>
+            <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
           </elem>
         </HeavyMom>
       </elem>
     </Decays>
-  </Study3>
+  </Full_DK_DPi_DsK>
   <RunPar>
     <runId>Study2</runId>
     <trajCounter>
@@ -94,6 +98,7 @@
       <step>40</step>
     </trajCounter>
     <dbOptions>
+      <enable>false</enable>
       <resultDb></resultDb>
       <makeStatDb>false</makeStatDb>
       <applicationDbPrefix>db/</applicationDbPrefix>
@@ -130,6 +135,19 @@
   </RunPar>
   <!-- M1, scale: 2 = Moebius -->
   <HeavyM1>
+    <elem>
+      <flavour>h7</flavour>
+      <mass>0.447</mass>
+      <Ls>12</Ls>
+      <M5>1.0</M5>
+      <boundary>1 1 1 -1</boundary>
+      <twist>0. 0. 0. 0.</twist>
+      <scale>2</scale>
+      <maxIteration>5000</maxIteration>
+      <residual>1e-12</residual>
+      <GaugeSmear>true</GaugeSmear>
+      <EigenPackFilename></EigenPackFilename>
+    </elem>
     <elem>
       <flavour>h0</flavour>
       <mass>0.41</mass>

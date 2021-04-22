@@ -78,7 +78,7 @@ std::vector<Quark *> AppMaker::ValidateQuarkList( const std::string &sList, cons
 }
 
 // One-time initialisation
-void AppMaker::Setup( XmlReader &r, const std::string &sRunSuffix )
+void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix )
 {
   // Read my parameters from Xml
   read( r, "JobFilePrefix", JobFilePrefix );
@@ -98,10 +98,13 @@ void AppMaker::Setup( XmlReader &r, const std::string &sRunSuffix )
   globalPar.genetic      = appPar.Run.genetic;
   globalPar.runId        = appPar.Run.runId;
   // database options
-  globalPar.database.resultDb   = appPar.Run.dbOptions.resultDb;
-  globalPar.database.makeStatDb = appPar.Run.dbOptions.makeStatDb;
-  globalPar.database.applicationDb = appPar.Run.dbOptions.applicationDbPrefix + RunIDSuffix + ".db";
-  Grid::Hadrons::makeFileDir( globalPar.database.applicationDb );
+  if( appPar.Run.dbOptions.enable )
+  {
+    globalPar.database.resultDb   = appPar.Run.dbOptions.resultDb;
+    globalPar.database.makeStatDb = appPar.Run.dbOptions.makeStatDb;
+    globalPar.database.applicationDb = appPar.Run.dbOptions.applicationDbPrefix + RunIDSuffix + ".db";
+    Grid::Hadrons::makeFileDir( globalPar.database.applicationDb );
+  }
   globalPar.database.restoreModules = false;
   globalPar.database.restoreMemoryProfile = false;
   globalPar.database.restoreSchedule = false;
@@ -121,13 +124,13 @@ void AppMaker::Setup( XmlReader &r, const std::string &sRunSuffix )
   }
 }
 
-#define APP_MAKER_GLUE( ClassName ) \
+#define APP_MAKER_GLUE( ClassName, StudyName ) \
 { \
-  if( reader->push( ClassName::sXmlTagName ) ) \
+  if( reader->push( StudyName ) ) \
   { \
     reader->pop(); \
-    LOG(Message) << "Making " << ClassName::sXmlTagName << std::endl; \
-    x.reset( new ClassName( appParams ) ); \
+    LOG(Message) << "Making " << StudyName << std::endl; \
+    x.reset( new ClassName( appParams, StudyName ) ); \
   } \
 }
 
@@ -140,34 +143,51 @@ int AppMaker::MakeThreePoint( int argc, char *argv[], const std::string &sXmlFil
   HadronsLogMessage.Active(GridLogMessage.isActive());
   HadronsLogIterative.Active(GridLogIterative.isActive());
   HadronsLogDebug.Active(GridLogDebug.isActive());
+  LOG(Message) << MLUVersionInfoHuman() << std::endl; \
   int iReturn{ EXIT_FAILURE };
   try
   {
     static const std::string sXmlTopLevel{ "xml3pt" };
     std::unique_ptr<XmlReader> reader( new XmlReader( sXmlFilename, false, sXmlTopLevel ) );
     const AppParams appParams( *reader );
-    std::unique_ptr<AppMaker> x;
-    for( int i = 0; i < 2 && !x.get(); ++i )
+    int StudyType{ -1 };
+    std::string StudyName;
+    read( *reader, "StudyType", StudyType );
+    read( *reader, "StudyName", StudyName );
+    std::string StudyDescription;
     {
-      switch( i )
-      {
-        case 0:
-          APP_MAKER_GLUE( Study2 )
-          break;
-        case 1:
-          APP_MAKER_GLUE( Study3 )
-          break;
-      }
+      std::ostringstream os;
+      os << "Study " << StudyName << " [Type " << StudyType << "]";
+      StudyDescription = os.str();
+    }
+    std::unique_ptr<AppMaker> x;
+    switch( StudyType )
+    {
+      case 2:
+        APP_MAKER_GLUE( Study2, StudyName )
+        break;
+      case 3:
+        APP_MAKER_GLUE( Study3, StudyName )
+        break;
     }
     if( !x.get() )
-      throw std::runtime_error( "xml format unrecognised" );
-    x->Setup( *reader, sRunSuffix );
+      throw std::runtime_error( StudyDescription + " not recognised" );
+    x->SetupBase( *reader, sRunSuffix );
     reader.reset( nullptr );
     x->Make();
     // Run or save the job
     x->application.saveParameterFile( x->JobFilePrefix + ".xml" );
     if( x->Run )
+    {
+      const int GridNt = GridDefaultLatt()[Tdir];
+      if( x->appPar.Run.Nt != GridNt )
+      {
+        std::ostringstream os;
+        os << "Cannot run: Job Nt " << x->appPar.Run.Nt << " != Grid Nt " << GridNt;
+        throw std::runtime_error( os.str() );
+      }
       x->application.run();
+    }
     iReturn = EXIT_SUCCESS;
   }
   catch(const std::exception &e)
@@ -187,8 +207,6 @@ int AppMaker::MakeThreePoint( int argc, char *argv[], const std::string &sXmlFil
 /**************************
  Study 2: generic study for heavy-light meson decays
 **************************/
-
-const std::string Study2::sXmlTagName{ "Study2" };
 
 // One-time initialisation
 void Study2::Setup( XmlReader &r )
@@ -329,8 +347,6 @@ void Study2::Make()
  Study 3: compute R2 and R1 ratios for meson decays
 **************************/
 
-const std::string Study3::sXmlTagName{ "Study3" };
-
 // One-time initialisation
 void Study3::Setup( XmlReader &r )
 {
@@ -353,20 +369,25 @@ void Study3::Setup( XmlReader &r )
     gamma = Common::ArrayFromString<Gamma::Algebra>( makePar.gamma );
     Common::NoDuplicates( gamma, "gamma", 1 );
   }
-  HeavyQuarks = ValidateQuarkList( makePar.Heavy, "Heavy", 1 );
   CountHeavyMomenta = 0;
-  for( const Decay &d : makePar.Decays )
+  for( Decay &d : makePar.Decays )
   {
+    Common::Trim( d.qLight );
+    Common::Trim( d.qSpectator );
     LOG(Message) << "Decay " << d.name << ": light=" << d.qLight << ", spectator=" << d.qSpectator
                  << ", " << d.HeavyMom.size() << " heavy quarks" << std::endl;
     Q.at( d.qLight );
     Q.at( d.qSpectator );
     if( d.HeavyMom.empty() )
       throw std::runtime_error( "There should be at least 1 heavy quark" );
-    for( const HeavyMomenta &hp : d.HeavyMom )
+    for( HeavyMomenta &hp : d.HeavyMom )
     {
+      Common::Trim( hp.qHeavy );
+      Common::Trim( hp.Momenta );
       LOG(Message) << " heavy " << hp.qHeavy << ": momenta " << hp.Momenta << std::endl;
-      Q.at( hp.qHeavy );
+      const std::string & qh{ Q.at( hp.qHeavy ).flavour };
+      if( HeavyQuarks.find( qh ) == HeavyQuarks.end() )
+        HeavyQuarks.emplace( qh );
       std::vector<Common::Momentum> Momenta = Common::ArrayFromString<Common::Momentum>( hp.Momenta );
       Common::NoDuplicates( Momenta, "HeavyMomenta", 1 );
       CountHeavyMomenta += Momenta.size();
@@ -387,8 +408,8 @@ std::string Study3::RunID() const
     s << Sep << "quark";
   if( makePar.HeavyAnti )
     s << Sep << "anti";
-  for( const Quark *q : HeavyQuarks )
-    s << Sep << q->flavour;
+  for( const auto &q : HeavyQuarks )
+    s << Sep << q;
   s << Sep << "t" << Sep << makePar.Timeslices.start << Sep << makePar.Timeslices.end << Sep << makePar.Timeslices.step;
   if( makePar.DoNegativeMomenta )
     s << Sep << "neg";
@@ -441,12 +462,13 @@ void Study3::MakeStudy3( const Decay &d )
                 {
                   for( Gamma::Algebra j : gamma )
                   {
-                    const bool bHLB{ makePar.HeavyLightBackwards };
+                    const bool bHLB{ makePar.R1Term1Backwards };
                     const unsigned int tHLB{ bHLB ? l.params.TimeBound( t - deltaT ) : t };
-                    const Common::Momentum pHLB{ bHLB ? p : -p };
+                    const Common::Momentum pHLB{ makePar.R2Terms ? (bHLB ? -p : -p) : ( bHLB ? -p : -p ) };
                     l.TakeOwnership(new ModContract3pt(l,tax, bHLB,ql,qh, qSpectator,pHLB,p0,j, deltaT, tHLB, bHeavyAnti));
-                    l.TakeOwnership(new ModContract3pt(l,tax,false,qh,ql, qSpectator, p0, p, j, deltaT, t, bHeavyAnti ) );
-                    if( makePar.R2Ratio ) // In practice, M2Ratios should equal !HeavyLightBackwards
+                    if( makePar.R1Term2 ) // In practice, R2Terms should equal !R1Term1Backwards
+                      l.TakeOwnership(new ModContract3pt(l,tax,false,qh,ql, qSpectator, p0, p, j, deltaT, t, bHeavyAnti ));
+                    if( makePar.R2Terms ) // In practice, R2Terms should equal !R1Term1Backwards
                     {
                       l.TakeOwnership(new ModContract3pt(l,tax,false,ql,ql, qSpectator,-p, p, j, deltaT, t, bHeavyAnti ) );
                       if( !p ) // Don't repeat this for non-zero momenta (if job being performed separately)

@@ -121,20 +121,27 @@ public:
   inline operator Family() const { return family; }
   inline operator Species() const { return species; }
   inline const std::string &FamilyName() const { return ::FamilyName( family ); }
-
-  std::string FilePrefix() const
+  inline void SinkSourceType( std::string &s, bool bReverse = false ) const
   {
-    std::string s{ FamilyName() };
-    s.append( 1, SpeciesNameShort( species ) );
+    char c1 = SpeciesNameShort( species );
+    char c2;
     switch( family )
     {
       case Family::GF:
-        s.append( 1, 'W' );
+        c2 = 'W';
         break;
       default:
-        s.append( 1, 'P' );
+        c2 = 'P';
         break;
     }
+    s.append( 1, bReverse ? c2 : c1 );
+    s.append( 1, bReverse ? c1 : c2 );
+  }
+
+  inline std::string FilePrefix( bool bReverse = false ) const
+  {
+    std::string s{ FamilyName() };
+    SinkSourceType( s, bReverse );
     return s;
   }
   inline bool GaugeFixed() const { return family != Family::Z2; }
@@ -292,6 +299,7 @@ struct AppParams
 {
   struct databaseOptions: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(databaseOptions,
+                                  bool,         enable,
                                   std::string,  resultDb,
                                   bool,         makeStatDb,
                                   std::string,  applicationDbPrefix )

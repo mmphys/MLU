@@ -572,10 +572,12 @@ ModContract3pt::ModContract3pt( HModList &ML,const Taxonomy &tax_, bool bRev_,co
 {
   std::string Prefix1{ "3pt" };
   Append( Prefix1, qSpec.flavour );
-  std::string Prefix2{ tax.FilePrefix() };
-  Append( Prefix2, bHeavyAnti ? "anti" : "quark" );
+  std::string Prefix2a( tax.FamilyName() );
+  std::string Prefix2b;
+  tax.SinkSourceType( Prefix2b, bReverse );
+  Append( Prefix2b, bHeavyAnti ? "anti" : "quark" );
   if( bReverse )
-    Append( Prefix2, "rev" );
+    Append( Prefix2b, "rev" );
   std::string s{ qSnk.flavour };
   Append( s, qSrc.flavour );
   Append( s, Current );
@@ -585,14 +587,16 @@ ModContract3pt::ModContract3pt( HModList &ML,const Taxonomy &tax_, bool bRev_,co
   // File name
   FileName = ML.params.Run.OutputBase + Prefix1;
   FileName.append( 1, '/' );
-  FileName.append( Prefix2 );
+  FileName.append( Prefix2a );
+  FileName.append( Prefix2b );
   FileName.append( 1, '/' );
-  FileName.append( Prefix2 ); // Repetition not a mistake. This is part of directory hierarchy and filename
+  FileName.append( Prefix2b ); // Repetition not a mistake. This is part of directory hierarchy and filename
   Append( FileName, s );
   // Object name
   name = ContractionPrefix;
   Append( name, Prefix1 );
-  Append( name, Prefix2 );
+  Append( name, Prefix2a );
+  name.append(  Prefix2b );
   Append( name, s );
 }
 
@@ -615,12 +619,12 @@ void ModContract3pt::AddDependencies( HModList &ML ) const
   if( bInvertSeq )
   {
     par.q1 = ML.TakeOwnership( new ModProp( ML, stax, sqSrc, pSource, st ) );
-    par.q2 = ML.TakeOwnership(new ModPropSeq(ML,stax, sqSnk, Current, sdeltaT, -pSink, qSpec, p0,       st ) );
+    par.q2 = ML.TakeOwnership(new ModPropSeq(ML,stax, sqSnk, Current, sdeltaT, -pSink, qSpec, p0,  st ) );
   }
   else
   {
-    par.q1 = ML.TakeOwnership(new ModPropSeq(ML,stax, sqSnk, Current, sdeltaT,  pSink, qSpec, pSource , st ) );
-    par.q2 = ML.TakeOwnership( new ModProp( ML, stax, sqSrc, p0, st ) );
+    par.q1 = ML.TakeOwnership(new ModPropSeq(ML,stax, sqSnk, Current, sdeltaT,  pSink, qSpec, p0 , st ) );
+    par.q2 = ML.TakeOwnership( new ModProp( ML, stax, sqSrc, -pSource, st ) );
   }
   par.sink = ML.TakeOwnership( new ModSink( ML, stax, pCurrent ) );
   ML.application.createModule<MContraction::Meson>(name, par);
