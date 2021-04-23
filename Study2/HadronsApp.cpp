@@ -31,6 +31,7 @@ const std::string defaultMomName{ "p" };
 const std::string SeqMomentumName{ "ps" };
 const Common::Momentum p0(0,0,0);
 const std::string GaugeFieldName{"gauge"};
+const std::string HMod::sSinglePrec{ "float" };
 
 const std::array<std::string, 5> FamilyNames{ "Z2", "ZF", "GF", "GP", "GR" };
 
@@ -116,9 +117,9 @@ bool operator==( const Taxonomy &lhs, const Taxonomy &rhs )
 
 // Quark
 
-void Quark::CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const
+template<typename T> void Quark::CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const
 {
-  MAction::ScaledDWF::Par Par;
+  typename T::Par Par;
   Par.gauge    = std::move( Gauge );
   Par.Ls       = Ls;
   Par.mass     = mass;
@@ -126,7 +127,7 @@ void Quark::CreateAction( Application &app, const std::string &name, std::string
   Par.scale    = scale; // 1 = Shamir, 2 = Möbius
   Par.boundary = boundary;
   Par.twist    = twist;
-  app.createModule<MAction::ScaledDWF>( name, Par );
+  app.createModule<T>( name, Par );
 }
 
 /**************************
@@ -264,28 +265,55 @@ void ModSource::AddDependencies( HModList &ModList ) const
  Stout smeared gauge
 **************************/
 
-ModGauge::ModGauge( HModList &ModList, const Taxonomy &taxonomy, bool bSmeared_ )
-: HMod(ModList, taxonomy), bSmeared{ bSmeared_ }
+ModGauge::ModGauge( HModList &ModList, const Taxonomy &taxonomy, bool bSmeared_, Precision precision_ )
+: HMod(ModList, taxonomy), bSmeared{ bSmeared_ }, precision{ precision_ }
 {
   name = GaugeFieldName;
   tax.AppendFixed( name, bSmeared );
+  if( precision == Precision::Single )
+    Append( name, HMod::sSinglePrec );
 }
 
 void ModGauge::AddDependencies( HModList &ModList ) const
 {
-  if( bSmeared )
+  if( precision == Precision::Single )
+  {
+    MUtilities::GaugeSinglePrecisionCast::Par castPar;
+    castPar.field = ModList.TakeOwnership( new ModGauge( ModList, tax, bSmeared, Precision::Double ) );
+    ModList.application.createModule<MUtilities::GaugeSinglePrecisionCast>(name, castPar);
+  }
+  else if( bSmeared )
   {
     // Stout smeared field
     MGauge::StoutSmearing::Par stoutPar( ModList.params.Run.StoutSmear );
-    stoutPar.gauge = tax.GaugeFixed() ? ModList.TakeOwnership( new ModGauge( ModList, tax, false ) ) : GaugeFieldName;
+    stoutPar.gauge = ModList.TakeOwnership( new ModGauge( ModList, tax, false, precision ) );
     ModList.application.createModule<MGauge::StoutSmearing>(name, stoutPar);
   }
   else if( tax.GaugeFixed() )
   {
     // Gauge-fixed
-    MGauge::GaugeFix::Par Par( ModList.params.Run.GaugeFix );
-    Par.gauge = GaugeFieldName;
-    ModList.application.createModule<MGauge::GaugeFix>(name, Par);
+    if( !ModList.params.Run.GaugeFixed.empty() )
+    {
+      MIO::LoadNersc::Par gaugePar;
+      gaugePar.file = ModList.params.Run.GaugeFixed;
+      ModList.application.createModule<MIO::LoadNersc>(name, gaugePar);
+    }
+    else
+    {
+      MGauge::GaugeFix::Par Par( ModList.params.Run.GaugeFix );
+      Par.gauge = GaugeFieldName;
+      ModList.application.createModule<MGauge::GaugeFix>(name, Par);
+    }
+  }
+  else if( !ModList.params.Run.Gauge.empty() )
+  {
+    MIO::LoadNersc::Par gaugePar;
+    gaugePar.file = ModList.params.Run.Gauge;
+    ModList.application.createModule<MIO::LoadNersc>( name, gaugePar );
+  }
+  else
+  {
+    ModList.application.createModule<MGauge::Unit>( name );
   }
 }
 
@@ -295,18 +323,23 @@ void ModGauge::AddDependencies( HModList &ModList ) const
 
 const std::string ModAction::Prefix{ "DWF" };
 
-ModAction::ModAction( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_ )
-: HMod( ModList, taxonomy ), q{q_}, bSmeared{q_.GaugeSmear && !ModList.params.Run.Gauge.empty()}
+ModAction::ModAction( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_, Precision precision_ )
+: HMod( ModList, taxonomy ), q{q_}, bSmeared{q_.GaugeSmear && !ModList.params.Run.Gauge.empty()}, precision{precision_}
 {
   name = Prefix;
   tax.AppendFixed( name, bSmeared );
   Append( name, q.flavour );
+  if( precision == Precision::Single )
+    Append( name, HMod::sSinglePrec );
 }
 
 void ModAction::AddDependencies( HModList &ModList ) const
 {
-  std::string Gauge{ModList.TakeOwnership(new ModGauge( ModList, tax, bSmeared))};
-  q.CreateAction( ModList.application, name, std::move( Gauge ) );
+  std::string Gauge{ ModList.TakeOwnership( new ModGauge( ModList, tax, bSmeared, precision ) ) };
+  if( precision == Precision::Single )
+    q.CreateAction<MAction::ScaledDWFF>( ModList.application, name, std::move( Gauge ) );
+  else
+    q.CreateAction<MAction::ScaledDWF >( ModList.application, name, std::move( Gauge ) );
 }
 
 /**************************
@@ -323,27 +356,53 @@ ModSolver::ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &
   Append( name, q.flavour );
 }
 
+template<typename T> std::string ModSolver::LoadEigenPack( HModList &ModList ) const
+{
+  std::string EigenPackName{ "epack_" + name };
+  const Precision epPres{ q.eigenSinglePrecision ? Precision::Single : Precision::Double };
+  typename T::Par epPar;
+  epPar.filestem = q.eigenPack;
+  epPar.multiFile = q.multiFile;
+  epPar.size = q.size;
+  epPar.Ls = q.Ls;
+  if( tax.GaugeFixed() )
+    epPar.gaugeXform = ModList.TakeOwnership( new ModGauge( ModList, tax, false, epPres ) ) + "_xform";
+  ModList.application.createModule<T>(EigenPackName, epPar);
+  return EigenPackName;
+}
+
 void ModSolver::AddDependencies( HModList &ModList ) const
 {
-  // solvers
-  MSolver::RBPrecCG::Par solverPar;
-  if( ModList.params.Run.Gauge.length() && q.EigenPackFilename.length() )
+  std::string EigenPackName;
+  if( ModList.params.Run.Gauge.length() && q.eigenPack.length() )
   {
-    // eigenpacks for deflation
-    MIO::LoadFermionEigenPack::Par epPar;
-    epPar.filestem = q.EigenPackFilename;
-    epPar.multiFile = false;
-    epPar.size = 600;
-    epPar.Ls = q.Ls;
-    if( tax.GaugeFixed() )
-      epPar.gaugeXform = ModList.TakeOwnership( new ModGauge( ModList, tax, false ) ) + "_xform";
-    solverPar.eigenPack = "epack_" + q.flavour;
-    ModList.application.createModule<MIO::LoadFermionEigenPack>(solverPar.eigenPack, epPar);
+    if( q.eigenSinglePrecision )
+      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackF>( ModList );
+    else
+      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList );
   }
-  solverPar.action       = ModList.TakeOwnership( new ModAction( ModList, tax, q ) );
-  solverPar.residual     = q.residual;
-  solverPar.maxIteration = q.maxIteration;
-  ModList.application.createModule<MSolver::RBPrecCG>(name, solverPar);
+  if( q.MixedPrecision() )
+  {
+    using T = MSolver::MixedPrecisionRBPrecCG;
+    typename T::Par solverPar;
+    solverPar.eigenPack         = EigenPackName;
+    solverPar.residual          = q.residual;
+    solverPar.maxInnerIteration = q.maxIteration;
+    solverPar.maxOuterIteration = q.maxOuterIteration;
+    solverPar.innerAction       = ModList.TakeOwnership( new ModAction( ModList, tax, q, Precision::Single ) );
+    solverPar.outerAction       = ModList.TakeOwnership( new ModAction( ModList, tax, q, Precision::Double ) );
+    ModList.application.createModule<T>(name, solverPar);
+  }
+  else
+  {
+    using T = MSolver::RBPrecCG;
+    typename T::Par solverPar;
+    solverPar.eigenPack    = EigenPackName;
+    solverPar.residual     = q.residual;
+    solverPar.maxIteration = q.maxIteration;
+    solverPar.action       = ModList.TakeOwnership( new ModAction( ModList, tax, q, Precision::Double ) );
+    ModList.application.createModule<T>(name, solverPar);
+  }
 }
 
 /**************************
@@ -378,7 +437,7 @@ void ModProp::AddDependencies( HModList &ModList ) const
     // Check residual mass
     MContraction::WardIdentity::Par WIP;
     WIP.prop = name + "_5d";
-    WIP.action = ModList.TakeOwnership( new ModAction( ModList, tax, q ) );
+    WIP.action = ModList.TakeOwnership( new ModAction( ModList, tax, q, Precision::Double ) );
     WIP.source = par.source;
     WIP.mass = q.mass;
     WIP.output = ModList.params.Run.OutputBase + PrefixConserved + "/" + Suffix;

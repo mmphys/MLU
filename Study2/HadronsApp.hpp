@@ -37,6 +37,8 @@ extern const std::string SeqMomentumName;
 extern const Common::Momentum p0;
 extern const std::string GaugeFieldName;
 
+enum class Precision { Double, Single };
+
 inline void Append( std::string &sDest, const std::string &s )
 {
   if( !s.empty() )
@@ -145,7 +147,7 @@ public:
     return s;
   }
   inline bool GaugeFixed() const { return family != Family::Z2; }
-  inline void AppendFixed( std::string &s, bool bSmeared = false ) const
+  inline void AppendFixed( std::string &s, bool bSmeared ) const
   {
     if( GaugeFixed() )
       Append( s, "fixed" );
@@ -185,12 +187,17 @@ GRID_SERIALIZABLE_CLASS_MEMBERS(Quark,
                                 std::string,  twist,
                                 double,       scale,
                                 // Solver parameters
-                                int,          maxIteration,
+                                unsigned int, maxIteration,
+                                unsigned int, maxOuterIteration,
                                 double,       residual,
                                 bool,         GaugeSmear,
-                                std::string,  EigenPackFilename )
+                                std::string,  eigenPack,
+                                unsigned int, size,
+                                bool,         multiFile,
+                                bool,         eigenSinglePrecision) // EigenPack single precision
 public:
-  void CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const;
+  template<typename T> void CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const;
+  inline bool MixedPrecision() const { return maxOuterIteration != 0; }
 };
 
 // Append
@@ -313,6 +320,7 @@ struct AppParams
         Grid::Hadrons::VirtualMachine::GeneticPar,  genetic,
                                       int,          Nt,
                                       std::string,  Gauge,
+                                      std::string,  GaugeFixed,
              Grid::Hadrons::MGauge::GaugeFix::Par,  GaugeFix,
                        MGauge::StoutSmearing::Par,  StoutSmear,
                                       std::string,  SpatialPos,
@@ -338,6 +346,7 @@ class HMod
 protected:
   std::string name; // The name is what makes each module unique
 public:
+  static const std::string sSinglePrec;
   const Taxonomy tax;
 public:
   inline const std::string &Name() const { return name; };
@@ -413,7 +422,8 @@ class ModGauge : public HMod
 {
 public:
   const bool bSmeared;
-  ModGauge( HModList &ModList, const Taxonomy &taxonomy, bool bSmeared );
+  const Precision precision;
+  ModGauge( HModList &ModList, const Taxonomy &taxonomy, bool bSmeared, Precision precision );
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
@@ -427,7 +437,8 @@ public:
   static const std::string Prefix;
   const Quark &q;
   const bool bSmeared;
-  ModAction( HModList &ModList, const Taxonomy &taxonomy, const Quark &q );
+  const Precision precision;
+  ModAction( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, Precision precision );
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
@@ -443,6 +454,8 @@ public:
   const bool bSmeared;
   ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &q );
   virtual void AddDependencies( HModList &ModList ) const;
+protected:
+  template<typename T> std::string LoadEigenPack( HModList &ModList ) const;
 };
 
 /**************************

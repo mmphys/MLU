@@ -146,6 +146,7 @@ protected:
   std::vector<Gamma::Algebra> gamma;
   QuarkNameList HeavyQuarks;
   int CountHeavyMomenta;
+  std::set<int> UniqueP2;
 
 public:
   explicit Study3( const AppParams &appPar, const std::string &sXmlTagName ) : AppMaker{appPar,sXmlTagName} {}

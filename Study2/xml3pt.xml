@@ -2,8 +2,8 @@
 <xml3pt>
   <!-- Prefix for job xml and schedule file names (append '/' if it's a directory) -->
   <JobFilePrefix></JobFilePrefix>
-  <Run>false</Run>
-  <Quarks>   HeavyM1   SpectatorM1    </Quarks>
+  <Run>true</Run>
+  <Quarks>HeavyM1 SpectatorM1</Quarks>
   <StudyType>3</StudyType>
   <StudyName>Full_DK_DPi_DsK</StudyName>
   <Study2>
@@ -38,8 +38,8 @@
     <!-- R1Term1Backwards:  First term in numerator of R1 and R2
          R1Term2:          Second term in numerator of R1 and R2
          R2Terms:          Denominator terms used for R2 only -->
-    <!--<R2Terms>true</R2Terms><R1Term1Backwards>false</R1Term1Backwards><R1Term2>true</R1Term2>-->
-    <R2Terms>false</R2Terms><R1Term1Backwards>true</R1Term1Backwards><R1Term2>true</R1Term2>
+    <R2Terms>true</R2Terms><R1Term1Backwards>false</R1Term1Backwards><R1Term2>true</R1Term2>
+    <!--<R2Terms>false</R2Terms><R1Term1Backwards>true</R1Term1Backwards><R1Term2>true</R1Term2>-->
     <Timeslices>
       <start>0</start>
       <end>4</end>
@@ -61,8 +61,9 @@
         <qSpectator>l</qSpectator>
         <HeavyMom>
           <elem>
-            <qHeavy>H7</qHeavy>
-            <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
+            <qHeavy>h7</qHeavy>
+            <Momenta>0_0_0</Momenta>
+            <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
           </elem>
         </HeavyMom>
       </elem>
@@ -73,7 +74,8 @@
         <HeavyMom>
           <elem>
             <qHeavy>h7</qHeavy>
-            <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
+            <Momenta>0_0_0</Momenta>
+            <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
           </elem>
         </HeavyMom>
       </elem>
@@ -84,7 +86,8 @@
         <HeavyMom>
           <elem>
             <qHeavy>h7</qHeavy>
-            <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
+            <Momenta>0_0_0</Momenta>
+            <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
           </elem>
         </HeavyMom>
       </elem>
@@ -111,8 +114,8 @@
     </genetic>
     <Nt>64</Nt>
     <!--<Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>-->
-    <!--<Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/M1/ckpoint_lat</Gauge>-->
-    <Gauge>/home/dp008/dp008/dc-mars3/data/Study3/M1/GaugeFixed/ckpoint_lat</Gauge>
+    <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/M1/ckpoint_lat</Gauge>
+    <GaugeFixed>/home/dp008/dp008/dc-mars3/data/Study3/M1/GaugeFixed/ckpoint_lat</GaugeFixed>
     <!--<Gauge></Gauge>-->
     <GaugeFix>
       <gauge>Not used</gauge>
@@ -144,9 +147,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>2</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <flavour>h0</flavour>
@@ -157,9 +164,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>2</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <flavour>h1</flavour>
@@ -170,9 +181,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>2</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <flavour>h2</flavour>
@@ -183,9 +198,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>2</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <flavour>h3</flavour>
@@ -196,10 +215,14 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>2</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <!-- Check the residual for h3 -->
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
   </HeavyM1>
   <HeavyC1Moebius>
@@ -212,9 +235,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>2</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <flavour>h1</flavour>
@@ -225,9 +252,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>2</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <flavour>h2</flavour>
@@ -238,9 +269,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>2</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <flavour>h3</flavour>
@@ -251,10 +286,14 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>2</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <!-- Check the residual for h3 -->
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
   </HeavyC1Moebius>
   <HeavyC1Shamir>
@@ -267,9 +306,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>1</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <flavour>h1sh</flavour>
@@ -280,9 +323,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>1</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <flavour>h2sh</flavour>
@@ -293,9 +340,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>1</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <flavour>h3sh</flavour>
@@ -306,9 +357,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>1</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>true</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
   </HeavyC1Shamir>
   <SpectatorM1> <!-- M1 -->
@@ -322,9 +377,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>1</scale>
       <maxIteration>15000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-8</residual>
       <GaugeSmear>false</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <!-- strange physical/valence -->
     <elem>
@@ -336,9 +395,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>1</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>false</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <!-- strange unitary/sea
     <elem>
@@ -350,9 +413,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>1</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>false</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>-->
   </SpectatorM1>
   <SpectatorC1>
@@ -366,9 +433,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>1</scale>
       <maxIteration>15000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-8</residual>
       <GaugeSmear>false</GaugeSmear>
-      <EigenPackFilename>/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine</EigenPackFilename>
+      <eigenPack>/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine</eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <!-- strange physical/valence -->
@@ -380,9 +451,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>1</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>false</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
       <!-- strange unitary/sea -->
@@ -394,9 +469,13 @@
       <twist>0. 0. 0. 0.</twist>
       <scale>1</scale>
       <maxIteration>5000</maxIteration>
+      <maxOuterIteration>100</maxOuterIteration>
       <residual>1e-12</residual>
       <GaugeSmear>false</GaugeSmear>
-      <EigenPackFilename></EigenPackFilename>
+      <eigenPack></eigenPack>
+      <size>600</size>
+      <multiFile>false</multiFile>
+      <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
   </SpectatorC1>
 </xml3pt>

@@ -110,18 +110,7 @@ void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix )
   globalPar.database.restoreSchedule = false;
   globalPar.scheduleFile = JobFilePrefix + ".sched";
   globalPar.saveSchedule = true;
-  Application application( globalPar );
-  // gauge field
-  if( appPar.Run.Gauge.empty() )
-  {
-    application.createModule<MGauge::Unit>( GaugeFieldName );
-  }
-  else
-  {
-    MIO::LoadNersc::Par gaugePar;
-    gaugePar.file = appPar.Run.Gauge;
-    application.createModule<MIO::LoadNersc>( GaugeFieldName, gaugePar );
-  }
+  application.setPar ( globalPar );
 }
 
 #define APP_MAKER_GLUE( ClassName, StudyName ) \
@@ -391,6 +380,11 @@ void Study3::Setup( XmlReader &r )
       std::vector<Common::Momentum> Momenta = Common::ArrayFromString<Common::Momentum>( hp.Momenta );
       Common::NoDuplicates( Momenta, "HeavyMomenta", 1 );
       CountHeavyMomenta += Momenta.size();
+      for( const Common::Momentum &p : Momenta )
+      {
+        if( UniqueP2.find( p.p2() ) == UniqueP2.end() )
+          UniqueP2.emplace( p.p2() );
+      }
     }
   }
 }
@@ -413,7 +407,9 @@ std::string Study3::RunID() const
   s << Sep << "t" << Sep << makePar.Timeslices.start << Sep << makePar.Timeslices.end << Sep << makePar.Timeslices.step;
   if( makePar.DoNegativeMomenta )
     s << Sep << "neg";
-  s << Sep << "hp" << Sep << CountHeavyMomenta;
+  s << Sep << "np" << Sep << CountHeavyMomenta << Sep << "p2";
+  for( int p2 : UniqueP2 )
+    s << Sep << p2;
   if( ThreePoint )
   {
     s << Sep << "dT";
