@@ -293,6 +293,6 @@ AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_LDFLAGS])
 AC_SUBST([MLU_LIBS])
-AC_CONFIG_FILES([Makefile MLU/Makefile Analyze/Makefile Study1/Makefile Study2/Makefile])
+AC_CONFIG_FILES([Makefile MLU/Makefile Analyze/Makefile Study/Makefile])
 #AC_CONFIG_SUBDIRS([.Package/gsl-2.6 .Package/Minuit2-5.34.14])
 AC_OUTPUT

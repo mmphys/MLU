@@ -2,4 +2,4 @@
 
 # ACLOCAL_AMFLAGS = -I .buildutils/m4
 
-SUBDIRS = MLU Analyze Study1 Study2
+SUBDIRS = MLU Analyze Study

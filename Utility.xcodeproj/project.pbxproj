@@ -36,7 +36,6 @@
 		6827A13C24630F0F0036F0AC /* OpenQcdIOChromaReference.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13A24630F0F0036F0AC /* OpenQcdIOChromaReference.h */; };
 		6827A13D24630F0F0036F0AC /* OpenQcdIO.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13B24630F0F0036F0AC /* OpenQcdIO.h */; };
 		6827A13F24630FA90036F0AC /* Lattice_basis.h in Headers */ = {isa = PBXBuildFile; fileRef = 6827A13E24630FA90036F0AC /* Lattice_basis.h */; };
-		68291B87262B3DE20095E1BC /* HadronsApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68291B85262B3DE10095E1BC /* HadronsApp.cpp */; };
 		682D061C246A958D0052D780 /* Loop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D061A246A958D0052D780 /* Loop.cpp */; };
 		682D061D246A958D0052D780 /* Loop.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682D061B246A958D0052D780 /* Loop.hpp */; };
 		682D0620246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D061E246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp */; };
@@ -45,9 +44,7 @@
 		682D0625246A95CA0052D780 /* Z2Diluted.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D0623246A95CA0052D780 /* Z2Diluted.cpp */; };
 		682D0628246A95E50052D780 /* VectorUnpack.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682D0626246A95E40052D780 /* VectorUnpack.hpp */; };
 		682D0629246A95E50052D780 /* VectorUnpack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D0627246A95E50052D780 /* VectorUnpack.cpp */; };
-		68338D47246140D400B6292E /* xml3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68338D3B2461402200B6292E /* xml3pt.cpp */; };
 		683B2B3325D2E8E800FF304F /* Common.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6889D90225D2BBC5004F15CE /* Common.hpp */; };
-		6848233C2509163F00B31C1E /* Ratio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6848233025090E0100B31C1E /* Ratio.cpp */; };
 		6848923825D2D79B00307714 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6850CEA4244A1C3100A53DC8 /* Cartesian_base.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CA28244A1C2F00A53DC8 /* Cartesian_base.h */; };
 		6850CEA5244A1C3100A53DC8 /* Cartesian_full.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CA29244A1C2F00A53DC8 /* Cartesian_full.h */; };
@@ -1222,23 +1219,26 @@
 		687D64DE2552A2DC00E4F83A /* LoadLapEvec.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687D64DC2552A2DC00E4F83A /* LoadLapEvec.hpp */; };
 		687D64F82552A30000E4F83A /* SourceSink.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687D64F62552A2FF00E4F83A /* SourceSink.hpp */; };
 		687D64F92552A30000E4F83A /* SourceSink.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D64F72552A2FF00E4F83A /* SourceSink.cpp */; };
-		68830C672624C6A500EA9CD4 /* GaugeFix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 681445182624C43800F458CB /* GaugeFix.cpp */; };
+		687D86B126340FB5002CAE0F /* GaugeFix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86A726340F5D002CAE0F /* GaugeFix.cpp */; };
+		687D86CC26340FD4002CAE0F /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86AF26340F5D002CAE0F /* mixedop.cpp */; };
+		687D86E726340FD9002CAE0F /* peramb-compare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86AC26340F5D002CAE0F /* peramb-compare.cpp */; };
+		687D870226340FDD002CAE0F /* Ratio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86A626340F5D002CAE0F /* Ratio.cpp */; };
+		687D871D26340FE3002CAE0F /* xml3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86AE26340F5D002CAE0F /* xml3pt.cpp */; };
+		687D873826340FE9002CAE0F /* xmlGFWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86AB26340F5D002CAE0F /* xmlGFWall.cpp */; };
+		687D875326340FED002CAE0F /* xmlPeramb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86A326340F5D002CAE0F /* xmlPeramb.cpp */; };
+		687D876E26340FF0002CAE0F /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86AA26340F5D002CAE0F /* xmlZ2.cpp */; };
 		68830C832624CB4700EA9CD4 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6887C99725D571E800FF0855 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6887C99825D571F600FF0855 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
-		68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6822E8C722A708A200A85993 /* peramb-compare.cpp */; };
 		68B0E7AC25D2CF5500B66FD0 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6889D8FC25D2BBC5004F15CE /* Common.cpp */; };
 		68B90196249D481800739CD2 /* RareKaonNeutralDisc.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68B90194249D481700739CD2 /* RareKaonNeutralDisc.hpp */; };
 		68B90197249D481800739CD2 /* RareKaonNeutralDisc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B90195249D481700739CD2 /* RareKaonNeutralDisc.cpp */; };
 		68B96246244AE20600E5CF09 /* Contractor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B9623A244AE18600E5CF09 /* Contractor.cpp */; };
 		68B96252244AE38000E5CF09 /* HadronsXmlRun.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96236244AE18500E5CF09 /* HadronsXmlRun.cpp */; };
 		68B9625E244AE3DB00E5CF09 /* HadronsXmlValidate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96238244AE18500E5CF09 /* HadronsXmlValidate.cpp */; };
-		68B96264244AE52300E5CF09 /* xmlPeramb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96260244AE50100E5CF09 /* xmlPeramb.cpp */; };
-		68B96265244AE52800E5CF09 /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96261244AE50100E5CF09 /* xmlZ2.cpp */; };
-		68B96266244AE52C00E5CF09 /* xmlGFWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96262244AE50100E5CF09 /* xmlGFWall.cpp */; };
-		68B96267244AE53100E5CF09 /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B96263244AE50100E5CF09 /* mixedop.cpp */; };
 		68BCBEC725CB13900064FE91 /* SeqGammaRegion.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68BCBEC525CB13900064FE91 /* SeqGammaRegion.cpp */; };
 		68BCBEC825CB13900064FE91 /* SeqGammaRegion.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68BCBEC625CB13900064FE91 /* SeqGammaRegion.hpp */; };
+		68BDB468263411900042E2A2 /* HadronsApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86B026340F5D002CAE0F /* HadronsApp.cpp */; };
 		68CEF13D24AA72B400A841F9 /* BaryonGamma3pt.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */; };
 		68CEF13E24AA72B400A841F9 /* BaryonGamma3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */; };
 		68D0E9CD24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */; };
@@ -1487,7 +1487,6 @@
 		68068AA325C3170800B8699F /* WardIdentity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WardIdentity.cpp; sourceTree = "<group>"; };
 		68068AA425C3170800B8699F /* WardIdentity.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = WardIdentity.hpp; sourceTree = "<group>"; };
 		68091C5325F7954500BEC976 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
-		68093A2624B8752F0019148E /* gpuxml.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = gpuxml.sh; sourceTree = "<group>"; };
 		68093A2724B8B1670019148E /* FieldIo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FieldIo.hpp; sourceTree = "<group>"; };
 		68093A2924B8B18D0019148E /* RandomField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RandomField.hpp; sourceTree = "<group>"; };
 		68093A2A24B8B18D0019148E /* RandomField.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RandomField.cpp; sourceTree = "<group>"; };
@@ -1504,26 +1503,21 @@
 		6809611E24982C11007F8DB3 /* sqlite3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sqlite3.h; sourceTree = "<group>"; };
 		6809611F24982C11007F8DB3 /* sqlite3ext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sqlite3ext.h; sourceTree = "<group>"; };
 		680DBC6024F81FB600A66BFF /* FitModel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitModel.cpp; sourceTree = "<group>"; };
-		681445182624C43800F458CB /* GaugeFix.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GaugeFix.cpp; sourceTree = "<group>"; };
 		6814451D2624C49100F458CB /* GaugeFix */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GaugeFix; sourceTree = BUILT_PRODUCTS_DIR; };
 		681550FE22CBC9B9009AB4AD /* MultiFit.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MultiFit.cpp; sourceTree = "<group>"; };
 		6815510322CBCB61009AB4AD /* MultiFit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MultiFit; sourceTree = BUILT_PRODUCTS_DIR; };
 		6817BD13256EA5180030A9DE /* Test_cayley_mres.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_cayley_mres.cc; path = ../Grid/tests/debug/Test_cayley_mres.cc; sourceTree = "<group>"; };
 		6817BD18256EB34C0030A9DE /* Test_cayley_mres */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_cayley_mres; sourceTree = BUILT_PRODUCTS_DIR; };
-		681DC24724A38D1900AF1EA5 /* xml3pt.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = xml3pt.xml; sourceTree = "<group>"; };
 		681DC8B022F19BAB00EE04A9 /* hlxml */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hlxml; sourceTree = BUILT_PRODUCTS_DIR; };
 		681DC8B722F19CB000EE04A9 /* hlxml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hlxml.cpp; sourceTree = "<group>"; };
 		682260F22376F586005341E5 /* repair.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = repair.cpp; sourceTree = "<group>"; };
 		682260F82376FA58005341E5 /* repair */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = repair; sourceTree = BUILT_PRODUCTS_DIR; };
 		6822E8BC22A7057400A85993 /* bootstrap */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = bootstrap; sourceTree = BUILT_PRODUCTS_DIR; };
 		6822E8BF22A7057400A85993 /* bootstrap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bootstrap.cpp; sourceTree = "<group>"; };
-		6822E8C722A708A200A85993 /* peramb-compare.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "peramb-compare.cpp"; sourceTree = "<group>"; };
 		6822E8C822A710FA00A85993 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		6827A13A24630F0F0036F0AC /* OpenQcdIOChromaReference.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenQcdIOChromaReference.h; sourceTree = "<group>"; };
 		6827A13B24630F0F0036F0AC /* OpenQcdIO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenQcdIO.h; sourceTree = "<group>"; };
 		6827A13E24630FA90036F0AC /* Lattice_basis.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lattice_basis.h; sourceTree = "<group>"; };
-		68291B85262B3DE10095E1BC /* HadronsApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HadronsApp.cpp; sourceTree = "<group>"; };
-		68291B86262B3DE20095E1BC /* HadronsApp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HadronsApp.hpp; sourceTree = "<group>"; };
 		682D061A246A958D0052D780 /* Loop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Loop.cpp; sourceTree = "<group>"; };
 		682D061B246A958D0052D780 /* Loop.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Loop.hpp; sourceTree = "<group>"; };
 		682D061E246A95AA0052D780 /* CheckerboardSpinColorDiagonal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CheckerboardSpinColorDiagonal.cpp; sourceTree = "<group>"; };
@@ -1532,11 +1526,9 @@
 		682D0623246A95CA0052D780 /* Z2Diluted.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Z2Diluted.cpp; sourceTree = "<group>"; };
 		682D0626246A95E40052D780 /* VectorUnpack.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VectorUnpack.hpp; sourceTree = "<group>"; };
 		682D0627246A95E50052D780 /* VectorUnpack.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VectorUnpack.cpp; sourceTree = "<group>"; };
-		68338D3B2461402200B6292E /* xml3pt.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xml3pt.cpp; sourceTree = "<group>"; };
 		68338D402461408900B6292E /* xml3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xml3pt; sourceTree = BUILT_PRODUCTS_DIR; };
 		683451302397D3C200B743CE /* xmlGFWall */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlGFWall; sourceTree = BUILT_PRODUCTS_DIR; };
 		6845352023477BBE00106304 /* xmlPeramb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlPeramb; sourceTree = BUILT_PRODUCTS_DIR; };
-		6848233025090E0100B31C1E /* Ratio.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Ratio.cpp; sourceTree = "<group>"; };
 		684823352509160C00B31C1E /* Ratio */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Ratio; sourceTree = BUILT_PRODUCTS_DIR; };
 		6850CA1B244A1BDA00A53DC8 /* libGrid.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libGrid.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		6850CA28244A1C2F00A53DC8 /* Cartesian_base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Cartesian_base.h; sourceTree = "<group>"; };
@@ -2807,6 +2799,20 @@
 		687D64F72552A2FF00E4F83A /* SourceSink.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SourceSink.cpp; sourceTree = "<group>"; };
 		687D65112552A36A00E4F83A /* Test_field_io.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_field_io.cpp; path = ../Hadrons/tests/Test_field_io.cpp; sourceTree = "<group>"; };
 		687D65122552A36A00E4F83A /* Test_database_concurrency.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_database_concurrency.cpp; path = ../Hadrons/tests/Test_database_concurrency.cpp; sourceTree = "<group>"; };
+		687D86A226340F5D002CAE0F /* xml3pt.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = xml3pt.hpp; sourceTree = "<group>"; };
+		687D86A326340F5D002CAE0F /* xmlPeramb.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlPeramb.cpp; sourceTree = "<group>"; };
+		687D86A426340F5D002CAE0F /* HadronsApp.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = HadronsApp.hpp; sourceTree = "<group>"; };
+		687D86A526340F5D002CAE0F /* xml3pt.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = xml3pt.xml; sourceTree = "<group>"; };
+		687D86A626340F5D002CAE0F /* Ratio.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Ratio.cpp; sourceTree = "<group>"; };
+		687D86A726340F5D002CAE0F /* GaugeFix.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GaugeFix.cpp; sourceTree = "<group>"; };
+		687D86A826340F5D002CAE0F /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
+		687D86A926340F5D002CAE0F /* gpuxml.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = gpuxml.sh; sourceTree = "<group>"; };
+		687D86AA26340F5D002CAE0F /* xmlZ2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlZ2.cpp; sourceTree = "<group>"; };
+		687D86AB26340F5D002CAE0F /* xmlGFWall.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlGFWall.cpp; sourceTree = "<group>"; };
+		687D86AC26340F5D002CAE0F /* peramb-compare.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "peramb-compare.cpp"; sourceTree = "<group>"; };
+		687D86AE26340F5D002CAE0F /* xml3pt.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xml3pt.cpp; sourceTree = "<group>"; };
+		687D86AF26340F5D002CAE0F /* mixedop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mixedop.cpp; sourceTree = "<group>"; };
+		687D86B026340F5D002CAE0F /* HadronsApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = HadronsApp.cpp; sourceTree = "<group>"; };
 		6889D8FC25D2BBC5004F15CE /* Common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Common.cpp; sourceTree = "<group>"; };
 		6889D8FD25D2BBC5004F15CE /* CommonLatAn.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommonLatAn.hpp; sourceTree = "<group>"; };
 		6889D8FE25D2BBC5004F15CE /* CommonGrid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CommonGrid.cpp; sourceTree = "<group>"; };
@@ -2817,7 +2823,6 @@
 		6889D90725D2BC6C004F15CE /* libMLU.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libMLU.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		688FEBEC238C1BE100977B09 /* mixedop */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mixedop; sourceTree = BUILT_PRODUCTS_DIR; };
 		68939D8123A016D200C30150 /* corrstat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = corrstat; sourceTree = BUILT_PRODUCTS_DIR; };
-		689940B426308EB500F82428 /* xml3pt.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = xml3pt.hpp; sourceTree = "<group>"; };
 		68AC6DE622A7114900D42F70 /* peramb-compare */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "peramb-compare"; sourceTree = BUILT_PRODUCTS_DIR; };
 		68B21CC423E720DF00D93480 /* corr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = corr; sourceTree = BUILT_PRODUCTS_DIR; };
 		68B90194249D481700739CD2 /* RareKaonNeutralDisc.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RareKaonNeutralDisc.hpp; sourceTree = "<group>"; };
@@ -2831,10 +2836,6 @@
 		68B9623F244AE1EA00E5CF09 /* HadronsContractor */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HadronsContractor; sourceTree = BUILT_PRODUCTS_DIR; };
 		68B9624B244AE36300E5CF09 /* HadronsXmlRun */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HadronsXmlRun; sourceTree = BUILT_PRODUCTS_DIR; };
 		68B96257244AE3BC00E5CF09 /* HadronsXmlValidate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HadronsXmlValidate; sourceTree = BUILT_PRODUCTS_DIR; };
-		68B96260244AE50100E5CF09 /* xmlPeramb.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlPeramb.cpp; sourceTree = "<group>"; };
-		68B96261244AE50100E5CF09 /* xmlZ2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlZ2.cpp; sourceTree = "<group>"; };
-		68B96262244AE50100E5CF09 /* xmlGFWall.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlGFWall.cpp; sourceTree = "<group>"; };
-		68B96263244AE50100E5CF09 /* mixedop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mixedop.cpp; sourceTree = "<group>"; };
 		68BCBEC525CB13900064FE91 /* SeqGammaRegion.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SeqGammaRegion.cpp; sourceTree = "<group>"; };
 		68BCBEC625CB13900064FE91 /* SeqGammaRegion.hpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.cpp.h; path = SeqGammaRegion.hpp; sourceTree = "<group>"; };
 		68BEFF6A2343A75A0031E3E3 /* xmlZ2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlZ2; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2867,8 +2868,6 @@
 		68E5744925D31F4000BD1A21 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		68E5744A25D321A800BD1A21 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
 		68E5744B25D321B700BD1A21 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
-		68E5744C25D321C200BD1A21 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
-		68E5744D25D321CB00BD1A21 /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
 		68F1C8F025B4397500A48690 /* Gauge.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Gauge.cc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -3116,8 +3115,7 @@
 				6804C180244C782C008E272B /* Hadrons_tests */,
 				6822E8BE22A7057400A85993 /* Analyze */,
 				6889D8FB25D2BBC5004F15CE /* MLU */,
-				68B9625F244AE50100E5CF09 /* Study1 */,
-				68338D3A24613EE600B6292E /* Study2 */,
+				687D86A126340F5D002CAE0F /* Study */,
 				6822E8C822A710FA00A85993 /* Scripts */,
 				685F9D122343B19E006EE036 /* run */,
 				6822E8BD22A7057400A85993 /* Products */,
@@ -3172,26 +3170,9 @@
 				68E5744B25D321B700BD1A21 /* Makefile.am */,
 				681550FE22CBC9B9009AB4AD /* MultiFit.cpp */,
 				68703D4425D2FF8600D1BA61 /* MultiFit.hpp */,
-				6822E8C722A708A200A85993 /* peramb-compare.cpp */,
 				682260F22376F586005341E5 /* repair.cpp */,
 			);
 			path = Analyze;
-			sourceTree = "<group>";
-		};
-		68338D3A24613EE600B6292E /* Study2 */ = {
-			isa = PBXGroup;
-			children = (
-				681445182624C43800F458CB /* GaugeFix.cpp */,
-				68093A2624B8752F0019148E /* gpuxml.sh */,
-				68291B85262B3DE10095E1BC /* HadronsApp.cpp */,
-				68291B86262B3DE20095E1BC /* HadronsApp.hpp */,
-				68E5744D25D321CB00BD1A21 /* Makefile.am */,
-				6848233025090E0100B31C1E /* Ratio.cpp */,
-				68338D3B2461402200B6292E /* xml3pt.cpp */,
-				689940B426308EB500F82428 /* xml3pt.hpp */,
-				681DC24724A38D1900AF1EA5 /* xml3pt.xml */,
-			);
-			path = Study2;
 			sourceTree = "<group>";
 		};
 		6848923725D2D79B00307714 /* Frameworks */ = {
@@ -5677,6 +5658,27 @@
 			path = MIO;
 			sourceTree = "<group>";
 		};
+		687D86A126340F5D002CAE0F /* Study */ = {
+			isa = PBXGroup;
+			children = (
+				687D86A726340F5D002CAE0F /* GaugeFix.cpp */,
+				687D86A926340F5D002CAE0F /* gpuxml.sh */,
+				687D86B026340F5D002CAE0F /* HadronsApp.cpp */,
+				687D86A426340F5D002CAE0F /* HadronsApp.hpp */,
+				687D86A826340F5D002CAE0F /* Makefile.am */,
+				687D86AF26340F5D002CAE0F /* mixedop.cpp */,
+				687D86AC26340F5D002CAE0F /* peramb-compare.cpp */,
+				687D86A626340F5D002CAE0F /* Ratio.cpp */,
+				687D86AE26340F5D002CAE0F /* xml3pt.cpp */,
+				687D86A226340F5D002CAE0F /* xml3pt.hpp */,
+				687D86A526340F5D002CAE0F /* xml3pt.xml */,
+				687D86AB26340F5D002CAE0F /* xmlGFWall.cpp */,
+				687D86A326340F5D002CAE0F /* xmlPeramb.cpp */,
+				687D86AA26340F5D002CAE0F /* xmlZ2.cpp */,
+			);
+			path = Study;
+			sourceTree = "<group>";
+		};
 		6889D8FB25D2BBC5004F15CE /* MLU */ = {
 			isa = PBXGroup;
 			children = (
@@ -5703,18 +5705,6 @@
 				68B96238244AE18500E5CF09 /* HadronsXmlValidate.cpp */,
 			);
 			name = Hadrons_utilities;
-			sourceTree = "<group>";
-		};
-		68B9625F244AE50100E5CF09 /* Study1 */ = {
-			isa = PBXGroup;
-			children = (
-				68E5744C25D321C200BD1A21 /* Makefile.am */,
-				68B96263244AE50100E5CF09 /* mixedop.cpp */,
-				68B96262244AE50100E5CF09 /* xmlGFWall.cpp */,
-				68B96260244AE50100E5CF09 /* xmlPeramb.cpp */,
-				68B96261244AE50100E5CF09 /* xmlZ2.cpp */,
-			);
-			path = Study1;
 			sourceTree = "<group>";
 		};
 		68E2C2F3245B2029009E7BE5 /* Grid_tests */ = {
@@ -7255,7 +7245,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68830C672624C6A500EA9CD4 /* GaugeFix.cpp in Sources */,
+				687D86B126340FB5002CAE0F /* GaugeFix.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7304,8 +7294,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68338D47246140D400B6292E /* xml3pt.cpp in Sources */,
-				68291B87262B3DE20095E1BC /* HadronsApp.cpp in Sources */,
+				68BDB468263411900042E2A2 /* HadronsApp.cpp in Sources */,
+				687D871D26340FE3002CAE0F /* xml3pt.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7313,7 +7303,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68B96266244AE52C00E5CF09 /* xmlGFWall.cpp in Sources */,
+				687D873826340FE9002CAE0F /* xmlGFWall.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7321,7 +7311,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68B96264244AE52300E5CF09 /* xmlPeramb.cpp in Sources */,
+				687D875326340FED002CAE0F /* xmlPeramb.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7329,7 +7319,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6848233C2509163F00B31C1E /* Ratio.cpp in Sources */,
+				687D870226340FDD002CAE0F /* Ratio.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7677,7 +7667,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68B96267244AE53100E5CF09 /* mixedop.cpp in Sources */,
+				687D86CC26340FD4002CAE0F /* mixedop.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7693,7 +7683,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68AC6DED22A7115600D42F70 /* peramb-compare.cpp in Sources */,
+				687D86E726340FD9002CAE0F /* peramb-compare.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7733,7 +7723,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68B96265244AE52800E5CF09 /* xmlZ2.cpp in Sources */,
+				687D876E26340FF0002CAE0F /* xmlZ2.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
