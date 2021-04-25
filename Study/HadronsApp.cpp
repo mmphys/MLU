@@ -297,6 +297,15 @@ void ModGauge::AddDependencies( HModList &ModList ) const
       MIO::LoadNersc::Par gaugePar;
       gaugePar.file = ModList.params.Run.GaugeFixed;
       ModList.application.createModule<MIO::LoadNersc>(name, gaugePar);
+      if( !ModList.params.Run.GaugeFixedXform.empty() )
+      {
+        const std::string xformName{ name + "_xform" };
+        MIO::LoadColourMatrixField::Par xformPar;
+        xformPar.name = xformName;
+        xformPar.Ls = 1;
+        xformPar.fileStem = ModList.params.Run.GaugeFixedXform;
+        ModList.application.createModule<MIO::LoadColourMatrixField>(xformName + "_load", xformPar);
+      }
     }
     else
     {

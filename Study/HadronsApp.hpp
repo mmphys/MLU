@@ -321,6 +321,7 @@ struct AppParams
                                       int,          Nt,
                                       std::string,  Gauge,
                                       std::string,  GaugeFixed,
+                                      std::string,  GaugeFixedXform,
              Grid::Hadrons::MGauge::GaugeFix::Par,  GaugeFix,
                        MGauge::StoutSmearing::Par,  StoutSmear,
                                       std::string,  SpatialPos,

@@ -113,10 +113,11 @@
       <mutationRate>0.1</mutationRate>
     </genetic>
     <Nt>64</Nt>
+    <!--<Gauge></Gauge>-->
     <!--<Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/C1/ckpoint_lat</Gauge>-->
     <Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/M1/ckpoint_lat</Gauge>
     <GaugeFixed>/home/dp008/dp008/dc-mars3/data/Study3/M1/GaugeFixed/ckpoint_lat</GaugeFixed>
-    <!--<Gauge></Gauge>-->
+    <!--<GaugeFixedXform>/home/dp008/dp008/dc-mars3/data/Study3/M1/GaugeFixed/ckpoint_lat_xform</GaugeFixedXform>-->
     <GaugeFix>
       <gauge>Not used</gauge>
       <alpha>0.05</alpha>
