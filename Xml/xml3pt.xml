@@ -101,7 +101,7 @@
       <step>40</step>
     </trajCounter>
     <dbOptions>
-      <enable>false</enable>
+      <enable>true</enable>
       <resultDb></resultDb>
       <makeStatDb>false</makeStatDb>
       <applicationDbPrefix>db/</applicationDbPrefix>
