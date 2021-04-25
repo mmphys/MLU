@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6814451C2624C49100F458CB"
-               BuildableName = "GaugeFix"
-               BlueprintName = "GaugeFix"
+               BlueprintIdentifier = "68B47B462635735800611065"
+               BuildableName = "Test_where"
+               BlueprintName = "Test_where"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(PROJECT_DIR)/run"
+      customWorkingDirectory = "$PROJECT_DIR/run"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -45,34 +45,12 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6814451C2624C49100F458CB"
-            BuildableName = "GaugeFix"
-            BlueprintName = "GaugeFix"
+            BlueprintIdentifier = "68B47B462635735800611065"
+            BuildableName = "Test_where"
+            BlueprintName = "Test_where"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-         <CommandLineArgument
-            argument = "$PROJECT_DIR/xml/GaugeFix.xml"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "ckpoint_lat.3420"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "ckpoint_lat.fix.3420"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "ckpoint_lat.deleteme.3420"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--grid 32.32.32.64"
-            isEnabled = "YES">
-         </CommandLineArgument>
-      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -84,9 +62,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6814451C2624C49100F458CB"
-            BuildableName = "GaugeFix"
-            BlueprintName = "GaugeFix"
+            BlueprintIdentifier = "68B47B462635735800611065"
+            BuildableName = "Test_where"
+            BlueprintName = "Test_where"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

@@ -53,7 +53,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "$PROJECT_DIR/Study2/xml3pt.xml"
+            argument = "$PROJECT_DIR/xml/xml3pt.xml"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

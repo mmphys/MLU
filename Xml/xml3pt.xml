@@ -61,7 +61,7 @@
         <qSpectator>l</qSpectator>
         <HeavyMom>
           <elem>
-            <qHeavy>h7</qHeavy>
+            <qHeavy>h447</qHeavy>
             <Momenta>0_0_0</Momenta>
             <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
           </elem>
@@ -73,7 +73,7 @@
         <qSpectator>l</qSpectator>
         <HeavyMom>
           <elem>
-            <qHeavy>h7</qHeavy>
+            <qHeavy>h447</qHeavy>
             <Momenta>0_0_0</Momenta>
             <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
           </elem>
@@ -85,7 +85,7 @@
         <qSpectator>s</qSpectator>
         <HeavyMom>
           <elem>
-            <qHeavy>h7</qHeavy>
+            <qHeavy>h447</qHeavy>
             <Momenta>0_0_0</Momenta>
             <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
           </elem>
@@ -139,7 +139,7 @@
   <!-- M1, scale: 2 = Moebius -->
   <HeavyM1>
     <elem>
-      <flavour>h7</flavour>
+      <flavour>h447</flavour>
       <mass>0.447</mass>
       <Ls>12</Ls>
       <M5>1.0</M5>
