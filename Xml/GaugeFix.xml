@@ -67,7 +67,7 @@
       </id>
       <options>
         <gauge>gauge_fixed</gauge>
-        <file>ckpoint_lat_coulomb</file>
+        <fileStem>fixed/ckpoint_lat_coulomb</fileStem>
         <ensembleLabel>RBC_UKQCD_32x64x16_Iwasaki_2.25_2+1_0.004_0.03_DWF_H_RG_QUOTIENT_Coulomb_Gauge_Fixed</ensembleLabel>
       </options>
     </module>
@@ -78,7 +78,7 @@
       </id>
       <options>
         <name>gauge_fixed_xform</name>
-        <fileStem>ckpoint_lat_coulomb_xform</fileStem>
+        <fileStem>xform/ckpoint_lat_coulomb_xform</fileStem>
       </options>
     </module>
     <!--<module>
