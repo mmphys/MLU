@@ -581,7 +581,9 @@ ModContract2pt::ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
 : HMod(ModList, taxonomy == Species::Region ? Taxonomy(taxonomy.family, Species::Point) : taxonomy),
   q1{q1_}, q2{q2_}, p{p_}, t{t_}
 {
-  std::string Prefix{ tax.FilePrefix() };
+  std::string Prefix2a( tax.FamilyName() );
+  std::string Prefix2b;
+  tax.SinkSourceType( Prefix2b );
   std::string s{ q2.flavour };
   Append( s, q1.flavour );
   AppendPT( s, t, p );
@@ -589,13 +591,15 @@ ModContract2pt::ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
   FileName = ModList.params.Run.OutputBase;
   FileName.append( Prefixfamily );
   FileName.append( 1, '/' );
-  FileName.append( Prefix );
+  FileName.append( Prefix2a );
+  FileName.append( Prefix2b );
   FileName.append( 1, '/' );
-  FileName.append( Prefix ); // Repetition not an error. Part of directory hierarchy and filename
+  FileName.append( Prefix2b ); // Repetition not an error. Part of directory hierarchy and filename
   Append( FileName, s );
   name = ContractionPrefix;
   Append( name, Prefixfamily );
-  Append( name, Prefix );
+  Append( name, Prefix2a );
+  name.append( Prefix2b );
   Append( name, s );
 }
 
