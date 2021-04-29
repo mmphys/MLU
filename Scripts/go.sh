@@ -55,10 +55,12 @@ for (( ; NumFiles-- ; start += Inc )); do
   end=$(( start + ( num - 1 ) * step + 1 ))
   jobscript=$base.$start.$jobext
   jobxml=$base.$start.xml
-  #Echo making $jobscript and $jobxml
+  #Make $jobscript
   sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" \
       -e "s|@xml@|$jobxml|g" -e "s|@wall@|${wall_hours}|g" \
-      -e "s|@executable@|$executable|g" -e "s|@jobscript@|$jobscript|g" $template > $jobscript
+      -e "s|@executable@|$executable|g" -e "s|@jobscript@|$jobscript|g" \
+      -e "s|@base@|$base|g" $template > $jobscript
+  #Make $jobxml
   sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" \
       $templateXml > $jobxml
 done
