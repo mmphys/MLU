@@ -380,6 +380,7 @@ public:
   int binSize;
   int TimesliceDetail;
   bool bFactorised;
+  bool bWarnIfExists;
   bool bVerboseSummaries;
   int PerformBootstrap(std::vector<Common::CorrelatorFileC> &f, const TrajList &Traj ) const;
   void Study1Bootstrap(StudySubject Study, const std::string &StudyPath, const Common::Momentum &mom,
@@ -468,9 +469,14 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
       const std::string sOutBase{outStem+Prefix+sSnk+Traj.OpSuffixSnk+sSrc+Traj.OpSuffixSrc};
       const std::string sOutFile{ Common::MakeFilename( sOutBase, sBootstrap, seed, DEF_FMT ) };
       const std::string sSummary{ Common::MakeFilename( sOutBase, sBootstrap, seed, TEXT_EXT)};
-      if( Common::FileExists( sOutFile ) || ( !bSaveBootstrap && Common::FileExists( sSummary ) ) )
+      const bool bOutFileExists{ Common::FileExists( sOutFile ) };
+      if( bOutFileExists || ( !bSaveBootstrap && Common::FileExists( sSummary ) ) )
       {
-        std::cout << sStar << sOutBase << " skipped - output already exists" << std::endl;
+        std::ostringstream ss;
+        ss << "output " << sOutBase << " already exists";
+        if( !bWarnIfExists && bOutFileExists )
+          throw std::runtime_error( ss.str() );
+        std::cout << sStar << " Warning: " << ss.str() << std::endl;
       }
       else
       {
@@ -773,6 +779,7 @@ int main(const int argc, const char *argv[])
       {"m", CL::SwitchType::Single, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
       {"f", CL::SwitchType::Flag, nullptr},
+      {"w", CL::SwitchType::Flag, nullptr},
       {"p2",CL::SwitchType::Flag, nullptr},
       {"pa",CL::SwitchType::Flag, nullptr},
       {"show", CL::SwitchType::Flag, nullptr},
@@ -810,6 +817,7 @@ int main(const int argc, const char *argv[])
       if( par.binAuto && par.binOrder != BinOrder::Auto )
         throw std::runtime_error( "Auto binning only works with Auto order" );
       par.bFactorised = cl.GotSwitch( "f" );
+      par.bWarnIfExists = cl.GotSwitch( "w" );
       par.bVerboseSummaries = !cl.GotSwitch( "terse" );
       const std::string &DefaultGroup{ cl.SwitchValue<std::string>( "g" ) };
       const std::string &DefaultDataSet{ cl.SwitchValue<std::string>( "d" ) };
@@ -882,7 +890,7 @@ int main(const int argc, const char *argv[])
         int BootstrapCount = 0;
         if( bShowOnly )
           std::cout << "Contraction, Files, Configs, Config..., Count..." << Common::NewLine;
-        for( auto itc = Manifest.begin(); itc != Manifest.end(); itc++ )
+        for( auto itc = Manifest.begin(); iReturn == EXIT_SUCCESS && itc != Manifest.end(); itc++ )
         {
           const std::string &Contraction{itc->first};
           const TrajList &l{itc->second};
@@ -936,6 +944,7 @@ int main(const int argc, const char *argv[])
             catch(const std::exception &e)
             {
               std::cerr << "Error: " << e.what() << std::endl;
+              iReturn = EXIT_FAILURE;
             }
           }
         }
@@ -1014,6 +1023,7 @@ int main(const int argc, const char *argv[])
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
     "-f     Factorising operators (e.g. g5-gT5 same as gT5-g5)\n"
+    "-w     Warn only if file exists. Default=error\n"
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"
     "--show Show how files would be bootstrapped, but don't execute\n"
