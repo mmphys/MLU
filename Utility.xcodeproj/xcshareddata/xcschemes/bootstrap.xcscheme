@@ -63,7 +63,7 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-ag5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ag5,gT5"
@@ -71,11 +71,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--ssre=^[GZ][F2]([[:alnum:]])([[:alnum:]])_"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT,-gx,-gy,-gz"
@@ -138,12 +134,24 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o testboot/ -i /Volumes/Mike/Uni/PhD/Data/Study2/C1_shamir/meson/3pt_s/ GFPW_quark_h0_h0_g5_dt_24_p_0_0_0_t_*.h5"
+            argument = "-o testboot/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i /Volumes/Mike/Uni/PhD/Data/Study2/C1_shamir/meson/3pt_s/ GFPW_quark_h0_h0_g5_dt_24_p_0_0_0_t_*.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o testboot/ GFPW_quark_&apos;*&apos;.h5"
+            argument = "GFPW_quark_&apos;*&apos;.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "[PW][PW]_&apos;*&apos;.h5"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--ssre=^[GZ][F2]([[:alnum:]])([[:alnum:]])_"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

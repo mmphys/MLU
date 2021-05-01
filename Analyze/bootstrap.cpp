@@ -296,7 +296,7 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
         }
       }
       // Add attributes back into contraction string
-      const std::string sShortPrefix{ Contraction };
+      std::string sShortPrefix{ Contraction };
       for( Common::Gamma::Algebra a : vAlg )
         Contraction.append( Gamma::NameShort( a, Sep.c_str() ) );
       if( bHasDeltaT )
@@ -323,6 +323,8 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
         }
         Contraction.append( sShortSuffix );
       }
+      if( !b3pt )
+        sShortPrefix = Contraction;
       if( bOpSuffix )
       {
         Contraction.append( 1, '_' );
@@ -430,17 +432,8 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
   if( !binAuto && NumFiles % binSize )
     std::cout << "Warning: last bin partially filled (" << ( NumFiles % binSize ) << " of " << binSize << ")\n";
   const bool b3pt{ !Traj.Alg.empty() };
-  std::string Prefix;
-  if( b3pt )
-  {
-    if( Traj.Alg.size() > 1 )
-      throw std::runtime_error( "I don't know how to handle more than one current insertion at a time" );
-    Prefix = Traj.sShortPrefix;
-  }
-  else
-  {
-    Prefix = Traj.Name + Suffix;
-  }
+  if( b3pt && Traj.Alg.size() > 1 )
+    throw std::runtime_error("I don't know how to handle more than one current insertion at a time");
   int iCount{ 0 };
   const int Nt{ first->Nt() };
   const std::vector<Common::Gamma::Algebra> &AlgSrc{ first->AlgSrc() };
@@ -466,7 +459,8 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
 
       std::string sSrc{ Common::Gamma::NameShort( Traj.bRev ? Traj.Alg[0] : AlgSrc[Src], pszSep ) };
       // Skip bootstrap if output exists
-      const std::string sOutBase{outStem+Prefix+sSnk+Traj.OpSuffixSnk+sSrc+Traj.OpSuffixSrc};
+      const std::string sOutBase{ outStem + Traj.sShortPrefix + sSnk + Traj.OpSuffixSnk
+                                  + sSrc + Traj.OpSuffixSrc};
       const std::string sOutFile{ Common::MakeFilename( sOutBase, sBootstrap, seed, DEF_FMT ) };
       const std::string sSummary{ Common::MakeFilename( sOutBase, sBootstrap, seed, TEXT_EXT)};
       const bool bOutFileExists{ Common::FileExists( sOutFile ) };
