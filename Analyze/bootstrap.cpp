@@ -154,11 +154,16 @@ struct TrajList
   std::vector<Common::Gamma::Algebra> Alg;
   bool bHasDeltaT;
   int DeltaT;
+  const std::string OpSuffixSnk;
+  const std::string OpSuffixSrc;
+  bool bRev;
   std::map<std::string, TrajFile> FileInfo; // Filenames with corresponding timeslice info
   TrajList(const std::string &Name_, const std::string &sShortPrefix_, const std::string &sShortSuffix_,
-           std::vector<Common::Gamma::Algebra> Alg_, bool bHasDeltaT_, int DeltaT_)
+           std::vector<Common::Gamma::Algebra> Alg_, bool bHasDeltaT_, int DeltaT_,
+           const std::string &opSuffixSnk_, const std::string &opSuffixSrc_, bool brev_ )
   : Name{Name_}, sShortPrefix{sShortPrefix_}, sShortSuffix{ sShortSuffix_}, Alg{Alg_},
-    bHasDeltaT{bHasDeltaT_}, DeltaT{DeltaT_} {}
+    bHasDeltaT{bHasDeltaT_}, DeltaT{DeltaT_}, OpSuffixSnk{opSuffixSnk_}, OpSuffixSrc{opSuffixSrc_},
+    bRev{brev_} {}
 };
 
 // This is a list of all the contractions we've been asked to process
@@ -166,7 +171,8 @@ struct Manifest : public std::map<std::string, TrajList>
 {
   // Process list of files on the command-line, breaking them up into individual trajectories
   Manifest(const std::vector<std::string> &Files, const std::vector<std::string> &Ignore,
-           bool bSwapQuarks, const GroupMomenta GroupP);
+           bool bSwapQuarks, const GroupMomenta GroupP,
+           std::regex *SSRegEx, bool bSwapSnkSrcRegEx = false);
 };
 
 /*enum ExtractFilenameReturn {Good, Bad, No_trajectory};
@@ -205,7 +211,8 @@ static ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, s
 }*/
 
 Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::string> &Ignore,
-                   bool bSwapQuarks, const GroupMomenta GroupP)
+                   bool bSwapQuarks, const GroupMomenta GroupP,
+                   std::regex *SSRegEx, bool bSwapSnkSrcRegEx )
 {
   static const std::string Sep{ "_" };
   // Now walk the list of arguments.
@@ -241,7 +248,23 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
         Name_.Type.clear();
       }
       // Extract attributes from contraction name
+      bool bOpSuffix{ false };
+      std::string OpSuffixSnk;
+      std::string OpSuffixSrc;
       std::string Contraction{ Name_.Base };
+      if( SSRegEx )
+      {
+        std::smatch base_match;
+        if( !std::regex_search( Contraction, base_match, *SSRegEx ) || base_match.size() != 3 )
+          throw std::runtime_error( "Can't extract sink/source type from " + Contraction );
+        OpSuffixSnk = base_match[bSwapSnkSrcRegEx ? 2 : 1];
+        OpSuffixSrc = base_match[bSwapSnkSrcRegEx ? 1 : 2];
+        bOpSuffix = true;
+        std::string NewContraction;
+        NewContraction.append( base_match.prefix() );
+        NewContraction.append( base_match.suffix() );
+        Contraction = NewContraction;
+      }
       Momentum mom;
       bool bGotMomentum{ mom.Extract( Contraction ) };
       bool bHasTimeslice{ false };
@@ -254,9 +277,14 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
       if( vAlg.size() > 1 )
         throw std::runtime_error( "Multiple gamma insertions unsupported" );
       bool b3pt{ bHasDeltaT || !vAlg.empty() };
-      // Sort all the separate, underscore delimited component parts
-      if( !b3pt && bSwapQuarks )
+      bool bRev{ false };
+      if( b3pt )
       {
+        bRev = Common::ExtractToken( Contraction, "[Rr][Ee][Vv]" );
+      }
+      else if( bSwapQuarks ) // 2pt only
+      {
+        // Sort all the separate, underscore delimited component parts
         std::vector<std::string> vs{ ArrayFromString( Contraction, Common::Underscore ) };
         Contraction.clear();
         std::sort(vs.begin(), vs.end());
@@ -295,10 +323,18 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
         }
         Contraction.append( sShortSuffix );
       }
+      if( bOpSuffix )
+      {
+        Contraction.append( 1, '_' );
+        Contraction.append( OpSuffixSnk );
+        Contraction.append( OpSuffixSrc );
+      }
+      if( bRev )
+        Contraction.append( "_rev" );
       // Look for the contraction list this file belongs to
       auto itc = Contractions.find( Contraction );
       if( itc == Contractions.end() )
-        itc = Contractions.emplace( Contraction, TrajList( Contraction, sShortPrefix, sShortSuffix, std::move(vAlg), bHasDeltaT, DeltaT ) ).first;
+        itc = Contractions.emplace( Contraction, TrajList( Contraction, sShortPrefix, sShortSuffix, std::move(vAlg), bHasDeltaT, DeltaT, OpSuffixSnk, OpSuffixSrc, bRev ) ).first;
       TrajList & cl{ itc->second };
       auto it = cl.FileInfo.find( Name_.Filename );
       if( it == cl.FileInfo.end() )
@@ -361,7 +397,9 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
                   const std::string &Suffix, bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries) const
 {
   using File = Common::CorrelatorFileC;
-  static const std::string sBlanks{ "  " };
+  static constexpr int NumBlanks{2};
+  static const std::string sBlanks( NumBlanks, ' ' );
+  static const std::string sStar{ std::string( NumBlanks - 1, ' ' ) + "*" };
   const int NumFiles{ static_cast<int>( std::distance( first, last ) ) };
   if( NumFiles == 0 || ( !bSaveSummaries && !bSaveBootstrap ) )
     return 0;
@@ -408,29 +446,31 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
   const std::vector<Common::Gamma::Algebra> &AlgSnk{ first->AlgSnk() };
   for( int Snk = 0; Snk < first->NumSnk(); Snk++ )
   {
-    static const char pszSep[] = "_";
-    std::string sSnk{ Common::Gamma::NameShort( AlgSnk[Snk], pszSep ) };
-    if( b3pt )
-    {
-      if( Traj.bHasDeltaT )
-      {
-        sSnk.append( "_dt_" );
-        sSnk.append( std::to_string( Traj.DeltaT ) );
-      }
-      sSnk.append( Traj.sShortSuffix );
-      sSnk.append( Suffix );
-      sSnk.append( Common::Gamma::NameShort( Traj.Alg[0], pszSep ) );
-    }
     for( int Src = 0; Src < ( ( !b3pt && bFactorised ) ? Snk + 1 : first->NumSrc() ); Src++ )
     {
-      std::string sSrc{ Common::Gamma::NameShort( AlgSrc[Src], pszSep ) };
+      static const char pszSep[] = "_";
+      std::string sSnk{ Common::Gamma::NameShort( Traj.bRev ? AlgSrc[Src] : AlgSnk[Snk], pszSep ) };
+      if( b3pt )
+      {
+        // The current insertion is what was at the sink ... unless we computed in reverse
+        if( Traj.bHasDeltaT )
+        {
+          sSnk.append( "_dt_" );
+          sSnk.append( std::to_string( Traj.DeltaT ) );
+        }
+        sSnk.append( Traj.sShortSuffix );
+        sSnk.append( Suffix );
+        sSnk.append( Common::Gamma::NameShort( Traj.bRev ? AlgSnk[Snk] : Traj.Alg[0], pszSep ) );
+      }
+
+      std::string sSrc{ Common::Gamma::NameShort( Traj.bRev ? Traj.Alg[0] : AlgSrc[Src], pszSep ) };
       // Skip bootstrap if output exists
-      const std::string sOutBase{ outStem + Prefix + sSnk + sSrc };
+      const std::string sOutBase{outStem+Prefix+sSnk+Traj.OpSuffixSnk+sSrc+Traj.OpSuffixSrc};
       const std::string sOutFile{ Common::MakeFilename( sOutBase, sBootstrap, seed, DEF_FMT ) };
       const std::string sSummary{ Common::MakeFilename( sOutBase, sBootstrap, seed, TEXT_EXT)};
       if( Common::FileExists( sOutFile ) || ( !bSaveBootstrap && Common::FileExists( sSummary ) ) )
       {
-        std::cout << sBlanks << sOutBase << " skipped - output already exists" << std::endl;
+        std::cout << sStar << sOutBase << " skipped - output already exists" << std::endl;
       }
       else
       {
@@ -690,7 +730,7 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
     par.PerformBootstrap( bsData[iCorr], CorrPrefix + CorrSuffixes[iCorr] );*/
   const std::string sShortPrefix{ Heavy + Sep + Light };
   const std::string sShortSuffix{ mom.p2_string( Sep ) };
-  PerformBootstrap( InFiles, TrajList( sShortPrefix + sShortSuffix, sShortPrefix, sShortSuffix, {}, false, 0 ) );
+  PerformBootstrap( InFiles, TrajList( sShortPrefix + sShortSuffix, sShortPrefix, sShortSuffix, {}, false, 0, "", "", false ) );
 }
 
 /*****************************************************************
@@ -704,6 +744,7 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
 
 int main(const int argc, const char *argv[])
 {
+  static const char DefaultERE[]{ R"(^([[:alnum:]])([[:alnum:]])_)" };
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
@@ -736,6 +777,7 @@ int main(const int argc, const char *argv[])
       {"pa",CL::SwitchType::Flag, nullptr},
       {"show", CL::SwitchType::Flag, nullptr},
       {"sort", CL::SwitchType::Flag, nullptr},
+      {"ssre", CL::SwitchType::Single, DefaultERE },
       {"terse", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
@@ -827,8 +869,15 @@ int main(const int argc, const char *argv[])
           throw std::invalid_argument( "Can't specify study " + cl.SwitchValue<std::string>( "s" )
                                       + " with command-line arguments" );
         bShowUsage = false;
+        std::unique_ptr<std::regex> SSRegEx;
+        if( cl.GotSwitch( "ssre" ) )
+        {
+          const std::string &ssre{ cl.SwitchValue<std::string>( "ssre" ) };
+          SSRegEx.reset( new std::regex( ssre.empty() ? DefaultERE : ssre,
+                                         std::regex::extended | std::regex::icase ) );
+        }
         Manifest Manifest{ glob( cl.Args.begin(), cl.Args.end(), InStem.c_str() ),
-                           cl.SwitchStrings( "x" ), bSwapQuarks, GroupP };
+                           cl.SwitchStrings( "x" ), bSwapQuarks, GroupP, SSRegEx.get() };
         // Walk the list of contractions, performing a separate bootstrap for each
         int BootstrapCount = 0;
         if( bShowOnly )
@@ -874,7 +923,8 @@ int main(const int argc, const char *argv[])
               std::cout << "  t=" << tf.Timeslice << ( ( tf.bHasTimeslice && tf.Timeslice ) ? "->0" : "   " )
                         << '\t' << Filename << std::endl;
               std::string GroupName{ DefaultGroup };
-              InFiles[j].Read( Filename, b3pt ? Alg3pt : Alg, Alg,
+              InFiles[j].Read( Filename,
+                               b3pt && !l.bRev ? Alg3pt : Alg, b3pt && l.bRev ? Alg3pt : Alg,
                                tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName,
                                b3pt && tf.bGotMomentum && tf.p.IsNeg() ? &Alg3ptNeg : nullptr, DefaultDataSet.c_str() );
             }
@@ -968,6 +1018,8 @@ int main(const int argc, const char *argv[])
     "--pa   group momenta by Abs( p )\n"
     "--show Show how files would be bootstrapped, but don't execute\n"
     "--sort Disable(enable) sort correlator before group in 2pt(3pt) mode\n"
+    "--ssre Sink / Source extended Regular Expression, default:\n       " << DefaultERE << "\n"
+    "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
     "--terse Terse summaries (no file list)\n"
     "--help This message\n";
   }

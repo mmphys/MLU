@@ -1088,6 +1088,9 @@ inline void swap( FileNameAtt &l, FileNameAtt &r )
 // Make a filename "Base.Type.seed.Ext"
 std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext);
 
+// If present, remove Token from a string. Return true if removed
+bool ExtractToken( std::string &Prefix, const std::string &Token );
+
 // If present, remove integer preceded by Token from a string
 void ExtractInteger( std::string &Prefix, bool &bHasValue, int &Value, const std::string Token );
 

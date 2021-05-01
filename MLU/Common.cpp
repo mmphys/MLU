@@ -680,6 +680,27 @@ std::string MakeFilename(const std::string &Base, const std::string &Type, SeedT
   return s;
 }
 
+// If present, remove Token from a string. Return true if removed
+bool ExtractToken( std::string &Prefix, const std::string &Token )
+{
+  bool bExtracted{ false };
+  std::smatch match;
+  const std::regex pattern{ "(^|_)" + Token + "(_|$)" };
+  while( std::regex_search( Prefix, match, pattern  ) )
+  {
+    if( bExtracted )
+      throw std::runtime_error( "Multiple " + Token + " tokens in " + Prefix );
+    bExtracted = true;
+    Prefix = match.prefix();
+    if( match[1].length() )
+      Prefix.append( match[1] );
+    else if( match[2].length() )
+      Prefix.append( match[2] );
+    Prefix.append( match.suffix() );
+  }
+  return bExtracted;
+}
+
 // If present, remove integer preceded by Token from a string
 void ExtractInteger( std::string &Prefix, bool &bHasValue, int &Value, const std::string Token )
 {

@@ -45,7 +45,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study2/C1"
+      customWorkingDirectory = "$PROJECT_DIR/run"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -71,7 +71,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT"
-            isEnabled = "NO">
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--ssre=^[GZ][F2]([[:alnum:]])([[:alnum:]])_"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT,-gx,-gy,-gz"
@@ -131,6 +135,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-g /wardIdentity -d mres --sort -o bootstrap/Ward/mres_ -i meson/Ward/ &apos;*.h5&apos;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o testboot/ -i /Volumes/Mike/Uni/PhD/Data/Study2/C1_shamir/meson/3pt_s/ GFPW_quark_h0_h0_g5_dt_24_p_0_0_0_t_*.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o testboot/ GFPW_quark_&apos;*&apos;.h5"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
