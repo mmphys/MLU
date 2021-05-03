@@ -1315,20 +1315,21 @@ int main(int argc, const char *argv[])
       for( FitRangesIterator it = fitRanges.begin(); !it.AtEnd(); ++it )
       {
         // Set fit ranges
+        int MinExtent = delta;
+        std::vector<std::vector<int>> fitTimes( ds.corr.size() );
+        for( int i = 0; MinExtent >= delta && i < ds.corr.size(); ++i )
         {
-          std::vector<std::vector<int>> fitTimes( ds.corr.size() );
-          for( int i = 0; i < ds.corr.size(); ++i )
-          {
-            const FitTime &ft{ it[ModelFitRange[i]] };
-            const int Extent{ ft.tf - ft.ti + 1 };
-            fitTimes[i].resize( Extent );
-            for( int j = 0; j < Extent; ++j )
-              fitTimes[i][j] = ft.ti + j;
-          }
-          ds.SetFitTimes( fitTimes );
+          const FitTime &ft{ it[ModelFitRange[i]] };
+          const int Extent{ ft.tf - ft.ti + 1 };
+          if( i == 0 || MinExtent > Extent )
+            MinExtent = Extent;
+          fitTimes[i].resize( Extent );
+          for( int j = 0; j < Extent; ++j )
+            fitTimes[i][j] = ft.ti + j;
         }
-        if( ds.Extent >= delta )
+        if( MinExtent >= delta )
         {
+          ds.SetFitTimes( fitTimes );
           // Log what file we're processing and when we started
           std::time_t then;
           std::time( &then );
