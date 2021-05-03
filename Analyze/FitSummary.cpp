@@ -211,9 +211,9 @@ int main(int argc, const char *argv[])
         std::size_t NumExtra{ n.Extra.size() };
         std::string sFitType;
         if( !Common::FileExists( sFileName ) )
-          std::cout << sFileName << Sep << sError << "doesn't exist" << NL;
-        else if( !NumExtra )
-          std::cout << sFileName << Sep << sError << "doesn't include fit type in name" << NL;
+          throw std::runtime_error( sFileName + " doesn't exist" );
+        if( !NumExtra )
+          throw std::runtime_error( "No fit type in " + sFileName );
         sFitType = n.Extra[NumExtra - 1];
         for( int i = 0; i < 2 ; i++ )
         {
