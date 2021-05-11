@@ -403,7 +403,7 @@ ModSolver::ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &
   Append( name, q.flavour );
 }
 
-template<typename T> std::string ModSolver::LoadEigenPack( HModList &ModList, Precision epPres ) const
+template<typename T> std::string ModSolver::LoadEigenPack( HModList &ModList, Precision XformPres ) const
 {
   std::string EigenPackName{ "epack_" + name };
   typename T::Par epPar;
@@ -412,7 +412,10 @@ template<typename T> std::string ModSolver::LoadEigenPack( HModList &ModList, Pr
   epPar.size = q.size;
   epPar.Ls = q.Ls;
   if( tax.GaugeFixed() )
-    epPar.gaugeXform = ModList.TakeOwnership( new ModGaugeXform( ModList, tax, false, epPres ) );
+  {
+    const bool bSmeared{ q.GaugeSmear && !ModList.params.Run.Gauge.empty() };
+    epPar.gaugeXform = ModList.TakeOwnership( new ModGaugeXform( ModList, tax, bSmeared, XformPres ) );
+  }
   ModList.application.createModule<T>(EigenPackName, epPar);
   return EigenPackName;
 }
@@ -422,10 +425,12 @@ void ModSolver::AddDependencies( HModList &ModList ) const
   std::string EigenPackName;
   if( ModList.params.Run.Gauge.length() && q.eigenPack.length() )
   {
-    if( q.eigenSinglePrecision )
+    if( !q.eigenSinglePrecision ) // Double-precision Eigen packs can be used anywhere
+      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList, Precision::Double );
+    else if( q.MixedPrecision() )
       EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackF>( ModList, Precision::Single );
     else
-      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList, Precision::Double );
+      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackIo32>( ModList, Precision::Double );
   }
   if( q.MixedPrecision() )
   {
