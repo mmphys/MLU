@@ -46,7 +46,7 @@
       enableASanStackUseAfterReturn = "YES"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(HOME)/data/Study1/C1"
+      customWorkingDirectory = "$PROJECT_DIR/run"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -62,10 +62,6 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
-         <CommandLineArgument
-            argument = "-o fit/2pt/"
-            isEnabled = "NO">
-         </CommandLineArgument>
          <CommandLineArgument
             argument = "-t 8:17"
             isEnabled = "NO">
@@ -83,19 +79,31 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "GFWPZ2/fold35/h1_l_p_0_0_0_PP_P[PW].&apos;*&apos;.h5"
+            argument = "h447_s_p_0_0_0_g5P_g5P.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o GFWPZ2/fit35test/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "GFWPZ2/fit35test/h1_l_p_0_0_0.corr_11_17.PP_PW.constant.4147798751.h5,E,PP,PW0"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-t 11:17"
+            argument = "-o fit/2pt/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "h447_s_p_0_0_0_g5P_g5[PW].fold.1835672416.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 4:13:6:6"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 5:9:6:7"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -107,7 +115,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-v 1"
+            argument = "-v 0"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -115,8 +123,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--savecmat"
+            argument = "--freeze"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--uncorr"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--savecmat"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

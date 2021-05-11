@@ -429,6 +429,20 @@ public:
 };
 
 /**************************
+ Gauge transform
+**************************/
+
+class ModGaugeXform : public HMod
+{
+public:
+  static const std::string Suffix;
+  const bool bSmeared;
+  const Precision precision;
+  ModGaugeXform( HModList &ModList, const Taxonomy &taxonomy, bool bSmeared, Precision precision );
+  virtual void AddDependencies( HModList &ModList ) const;
+};
+
+/**************************
  Action
 **************************/
 
@@ -456,7 +470,7 @@ public:
   ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &q );
   virtual void AddDependencies( HModList &ModList ) const;
 protected:
-  template<typename T> std::string LoadEigenPack( HModList &ModList ) const;
+  template<typename T> std::string LoadEigenPack( HModList &ModList, Precision epPres ) const;
 };
 
 /**************************

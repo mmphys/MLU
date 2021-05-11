@@ -57,7 +57,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test.xml"
+            argument = "ZFPW_GFPW_DK_DPi_DsK_2pt_quark_h447_t_0_4_4_np_3_p2_0_dT_16_20_24.xml"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "/Volumes/Mike/Uni/PhD/Data/Study2/C1_shamir/"
+      customWorkingDirectory = "$HOME/data/Study3/M1/analyse/h447"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -53,15 +53,19 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i PW/3pt_s/ -o Ratio/3pt_s/raw/"
+            argument = "-i corr/3pt_s/ -c corr/2pt/ -o ratio/3pt_s/raw/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-m fit/2pt/ Best2pt.txt"
+            argument = "-m fit/ Best_s.txt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "quark_h0_h3_gT_dt_&apos;*&apos;_p_0_0_0_g5[PW]_g5[PW].fold.1835672416.h5"
+            argument = "quark_h447_l_ps_0_0_0_gX_dt_&apos;*&apos;_p_1_0_0_g5[PW]_g5[PW].fold.1835672416.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "quark_h447_l_ps_0_0_0_gT_dt_&apos;*&apos;_p_[01]_0_0_g5[PW]_g5[PW].fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

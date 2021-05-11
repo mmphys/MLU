@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study1/C1"
+      customWorkingDirectory = "$PROJECT_DIR/run"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -58,15 +58,19 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i PW35b0/fit_mixed/ -o PW35b0/fit_mixed/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i fit/2pt/ -o fit/2pt/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "h1_l_p_0_0_0.*.model.*.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;*.h5&apos;"
-            isEnabled = "NO">
+            argument = "&apos;*&apos;.model.&apos;*&apos;.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

@@ -316,7 +316,8 @@ inline void Trim( std::string &s )
 }
 
 // Generic conversion from a string to any type
-template<typename T> inline T FromString( const std::string &String ) {
+template<typename T> inline T FromString( const std::string &String )
+{
   T t;
   std::istringstream iss( String );
   if( !( iss >> t && StreamEmpty( iss ) ) )
@@ -326,7 +327,11 @@ template<typename T> inline T FromString( const std::string &String ) {
 
 // Converting a string to a string makes a copy
 template<> inline std::string FromString<std::string>( const std::string &String )
-  { return String; }
+{
+  std::string s{ String };
+  Trim( s );
+  return s;
+}
 
 // Generic conversion from a string to an array of any type (comma or space separated)
 template<typename T> inline typename std::enable_if<!std::is_same<T, std::string>::value, std::vector<T>>::type
@@ -602,6 +607,29 @@ template<typename T> StartStopStepIterator<T> StartStopStep<T>::end() const
   return it;
 };
 
+template<class MapOrMultiMap>
+MapOrMultiMap ReadMapBase(std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash)
+{
+  if( is.bad() )
+    throw std::runtime_error( "MapOrMultiMap Read() input stream bad" );
+  MapOrMultiMap m;
+  while( !StreamEmpty( is ) )
+  {
+    std::string s;
+    if( std::getline( is, s ) )
+    {
+      // Get rid of anything past the comment
+      std::size_t pos = s.find_first_of( sComment );
+      if( pos != std::string::npos )
+        s.resize( pos );
+      std::string sKey = ExtractToSeparator( s, Separators );
+      if( !sKey.empty() )
+        m.emplace( std::make_pair( std::move( sKey ), std::move( s ) ) );
+    }
+  }
+  return m;
+}
+
 // This is a key/value file, and we ignore anything after a comment character
 template<class Key, class T, class Compare = std::less<Key>> class KeyValReader;
 
@@ -613,24 +641,7 @@ public:
   using map = std::map<std::string, std::string, Compare>;
   static map Read( std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash )
   {
-    if( is.bad() )
-      throw std::runtime_error( "KeyValReader<std::string, std::string, Compare>::Read istream bad()" );
-    map m;
-    while( !StreamEmpty( is ) )
-    {
-      std::string s;
-      if( std::getline( is, s ) )
-      {
-        // Get rid of anything past the comment
-        std::size_t pos = s.find_first_of( sComment );
-        if( pos != std::string::npos )
-          s.resize( pos );
-        std::string sKey = ExtractToSeparator( s, Separators );
-        if( !sKey.empty() )
-          m.emplace( std::make_pair( std::move( sKey ), std::move( s ) ) );
-      }
-    }
-    return m;
+    return ReadMapBase<map>( is, Separators, sComment );
   }
 };
 
@@ -643,7 +654,39 @@ public:
   static map Read( std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash )
   {
     using StringMap = std::map<std::string, std::string>;
-    StringMap sm{ KeyValReader<std::string, std::string, std::less<std::string>>::Read( is, Separators, sComment ) };
+    StringMap sm{ KeyValReader<std::string, std::string>::Read( is, Separators, sComment ) };
+    map m;
+    for( const auto &p : sm )
+      m.emplace( std::make_pair( FromString<Key>( p.first ), FromString<T>( p.second ) ) );
+    return m;
+  }
+};
+
+// This is a key/value file, and we ignore anything after a comment character
+template<class Key, class T, class Compare = std::less<Key>> class KeyValReaderMulti;
+
+// Specialisation of key value file for std::map<std::string, std::string, Compare>
+template<class Compare>
+class KeyValReaderMulti<std::string, std::string, Compare>
+{
+public:
+  using map = std::multimap<std::string, std::string, Compare>;
+  static map Read( std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash )
+  {
+    return ReadMapBase<map>( is, Separators, sComment );
+  }
+};
+
+// Key/value file reader for non-string types (read as string, then convert to requested types)
+template<class Key, class T, class Compare>
+class KeyValReaderMulti
+{
+public:
+  using map = std::multimap<Key, T, Compare>;
+  static map Read( std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash )
+  {
+    using StringMap = std::multimap<std::string, std::string>;
+    StringMap sm{ KeyValReaderMulti<std::string, std::string>::Read( is, Separators, sComment ) };
     map m;
     for( const auto &p : sm )
       m.emplace( std::make_pair( FromString<Key>( p.first ), FromString<T>( p.second ) ) );
@@ -924,6 +967,8 @@ inline std::ostream & operator<<( std::ostream &os, const ValWithEr<T> &v )
 // Generic representation of momentum
 struct Momentum
 {
+  static const std::string DefaultPrefix;
+  static const std::string SinkPrefix;
   int x;
   int y;
   int z;
@@ -954,7 +999,10 @@ struct Momentum
   std::string to_string  ( const std::string &separator, bool bNegative = false ) const;
   std::string to_string4d( const std::string &separator, bool bNegative = false ) const;
   // Strip out momentum info from string if present
-  bool Extract( std::string &s, bool IgnoreSubsequentZeroNeg = true );
+  std::regex MakeRegex( const std::string &MomName ) const;
+  bool Extract( std::string &s, const std::string &MomName, bool IgnoreSubsequentZeroNeg = false );
+  bool Extract( std::string &s ) { return Extract( s, DefaultPrefix, true ); }
+  void Replace( std::string &s, const std::string &MomName, bool bNegative = false );
 };
 
 std::ostream& operator<<( std::ostream& os, const Momentum &p );
@@ -1102,6 +1150,9 @@ void ExtractDeltaT( std::string &Prefix, bool &bHasDeltaT, int &DeltaT );
 
 // Remove any gammas from Prefix
 std::vector<Gamma::Algebra> ExtractGamma( std::string &Prefix );
+
+// Remove any gammas from Prefix
+void ReplaceGamma( std::string &Prefix, Gamma::Algebra gFrom, Gamma::Algebra gTo );
 
 struct ConfigCount {
   int         Config;

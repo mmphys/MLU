@@ -297,15 +297,6 @@ void ModGauge::AddDependencies( HModList &ModList ) const
       MIO::LoadNersc::Par gaugePar;
       gaugePar.file = ModList.params.Run.GaugeFixed;
       ModList.application.createModule<MIO::LoadNersc>(name, gaugePar);
-      if( !ModList.params.Run.GaugeFixedXform.empty() )
-      {
-        const std::string xformName{ name + "_xform" };
-        MIO::LoadColourMatrixField::Par xformPar;
-        xformPar.name = xformName;
-        xformPar.Ls = 1;
-        xformPar.fileStem = ModList.params.Run.GaugeFixedXform;
-        ModList.application.createModule<MIO::LoadColourMatrixField>(xformName + "_load", xformPar);
-      }
     }
     else
     {
@@ -323,6 +314,53 @@ void ModGauge::AddDependencies( HModList &ModList ) const
   else
   {
     ModList.application.createModule<MGauge::Unit>( name );
+  }
+}
+
+/**************************
+ Gauge transform
+**************************/
+
+const std::string ModGaugeXform::Suffix{ "xform" };
+
+ModGaugeXform::ModGaugeXform( HModList &ModList, const Taxonomy &taxonomy, bool bSmeared_, Precision precision_ )
+: HMod(ModList, taxonomy), bSmeared{ bSmeared_ }, precision{ precision_ }
+{
+  name = GaugeFieldName;
+  tax.AppendFixed( name, bSmeared );
+  if( precision == Precision::Single )
+    Append( name, HMod::sSinglePrec );
+  Append( name, Suffix );
+}
+
+void ModGaugeXform::AddDependencies( HModList &ModList ) const
+{
+  if( precision == Precision::Single )
+  {
+    MUtilities::ColourMatrixSinglePrecisionCast::Par xformPar;
+    xformPar.field = ModList.TakeOwnership( new ModGaugeXform( ModList, tax, bSmeared, Precision::Double ) );
+    ModList.application.createModule<MUtilities::ColourMatrixSinglePrecisionCast>(name, xformPar);
+  }
+  else if( bSmeared )
+  {
+    throw std::runtime_error( "Don't know how to make gauge transform for smeared field" );
+  }
+  else if( tax.GaugeFixed() )
+  {
+    const std::string GaugeName{ ModList.TakeOwnership( new ModGauge( ModList, tax, bSmeared, precision ) ) };
+    if( !ModList.params.Run.GaugeFixed.empty() )
+    {
+      // Since we loaded the gauge field, we'll need to load the transform as well
+      MIO::LoadColourMatrixField::Par xformPar;
+      xformPar.name = name;
+      xformPar.Ls = 1;
+      xformPar.fileStem = ModList.params.Run.GaugeFixedXform;
+      ModList.application.createModule<MIO::LoadColourMatrixField>(name + "_load", xformPar);
+    }
+  }
+  else
+  {
+    throw std::runtime_error( "No such thing as a gauge transform for un-fixed field" );
   }
 }
 
@@ -365,17 +403,16 @@ ModSolver::ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &
   Append( name, q.flavour );
 }
 
-template<typename T> std::string ModSolver::LoadEigenPack( HModList &ModList ) const
+template<typename T> std::string ModSolver::LoadEigenPack( HModList &ModList, Precision epPres ) const
 {
   std::string EigenPackName{ "epack_" + name };
-  const Precision epPres{ q.eigenSinglePrecision ? Precision::Single : Precision::Double };
   typename T::Par epPar;
   epPar.filestem = q.eigenPack;
   epPar.multiFile = q.multiFile;
   epPar.size = q.size;
   epPar.Ls = q.Ls;
   if( tax.GaugeFixed() )
-    epPar.gaugeXform = ModList.TakeOwnership( new ModGauge( ModList, tax, false, epPres ) ) + "_xform";
+    epPar.gaugeXform = ModList.TakeOwnership( new ModGaugeXform( ModList, tax, false, epPres ) );
   ModList.application.createModule<T>(EigenPackName, epPar);
   return EigenPackName;
 }
@@ -386,9 +423,9 @@ void ModSolver::AddDependencies( HModList &ModList ) const
   if( ModList.params.Run.Gauge.length() && q.eigenPack.length() )
   {
     if( q.eigenSinglePrecision )
-      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackF>( ModList );
+      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackF>( ModList, Precision::Single );
     else
-      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList );
+      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList, Precision::Double );
   }
   if( q.MixedPrecision() )
   {

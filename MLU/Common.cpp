@@ -241,29 +241,28 @@ bool ExtractSuffix( std::string &String, std::string &Suffix, const char * pszDe
   if( !pszDelimeters || !*pszDelimeters )
     pszDelimeters = szDefaultDelimeters;
   std::size_t NumDelims{ 0 };
-  while( pszDelimeters && pszDelimeters[NumDelims] )
+  while( pszDelimeters[NumDelims] )
     NumDelims++;
-  const std::size_t Len{ String.length() };
-  std::size_t Start{ Len };
+  std::size_t Len{ String.length() };
   bool bFoundDelim{ false };
-  char c = 0;
-  while( !bFoundDelim && Start )
+  while( !bFoundDelim && Len )
   {
-    c = String[--Start];
+    const char c{ String[--Len] };
     for( std::size_t i = 0; !bFoundDelim && i < NumDelims; i++ )
     {
       bFoundDelim = ( pszDelimeters[i] == c );
       if( bFoundDelim )
       {
-        Suffix = String.substr( Start + 1 );
+        Suffix = String.substr( Len + 1 );
+        Trim( Suffix );
         // Skip past multiple delimeters if they are all whitespace
         if( c == ' ' || c == '\t' || c == '\r' || c == '\n' )
         {
-          while( Start && ( String[Start - 1] == ' ' || String[Start - 1] == '\t'
-                         || String[Start - 1] == '\r' || String[Start - 1] == '\n' ) )
-            --Start;
+          while( Len && ( String[Len - 1] == ' ' || String[Len - 1] == '\t'
+                         || String[Len - 1] == '\r' || String[Len - 1] == '\n' ) )
+            --Len;
         }
-        String.resize( Start );
+        String.resize( Len );
       }
     }
   }
@@ -422,6 +421,9 @@ template class ValWithEr<float>;
 template class ValWithEr<double>;
 template class ValWithEr<long double>;
 
+const std::string Momentum::DefaultPrefix{ "p" };
+const std::string Momentum::SinkPrefix{ "ps" };
+
 std::string Momentum::p2_string( const std::string &separator ) const
 {
   std::string s{ separator };
@@ -443,13 +445,21 @@ std::string Momentum::to_string4d( const std::string &separator, bool bNegative 
   return to_string( separator, bNegative ) + separator + "0";
 }
 
+std::regex Momentum::MakeRegex( const std::string &MomName ) const
+{
+  std::string sPattern( Common::Underscore );
+  sPattern.append( MomName );
+  sPattern.append( "_(-?[0-9]+)_(-?[0-9]+)_(-?[0-9]+)" );
+  return std::regex( sPattern );
+}
+
 // Strip out momentum info from string if present
-bool Momentum::Extract( std::string &Prefix, bool IgnoreSubsequentZeroNeg )
+bool Momentum::Extract( std::string &Prefix, const std::string &MomName, bool IgnoreSubsequentZeroNeg )
 {
   bool bGotMomentum = false;
   std::smatch match;
-  static const std::regex pattern{ R"(_[pP]_(-?[0-9]+)_(-?[0-9]+)_(-?[0-9]+))" };
-  while( std::regex_search( Prefix, match, pattern  ) )
+  const std::regex Pattern{ MakeRegex( MomName ) };
+  while( std::regex_search( Prefix, match, Pattern ) )
   {
     int px{ std::stoi( match[1] ) };
     int py{ std::stoi( match[2] ) };
@@ -463,7 +473,7 @@ bool Momentum::Extract( std::string &Prefix, bool IgnoreSubsequentZeroNeg )
     }
     else if( x != px || y != py || z != pz )
     {
-      if( IgnoreSubsequentZeroNeg && !(*this) )
+      if( IgnoreSubsequentZeroNeg && !(*this) ) // i.e. previous momentum was zero
       {
         x = px;
         y = py;
@@ -486,6 +496,32 @@ bool Momentum::Extract( std::string &Prefix, bool IgnoreSubsequentZeroNeg )
     Prefix.append( sSuffix );
   }
   return bGotMomentum;
+}
+
+void Momentum::Replace( std::string &s, const std::string &MomName, bool bNegative )
+{
+  std::string Replace( Common::Underscore );
+  Replace.append( MomName );
+  Replace.append( Common::Underscore );
+  Replace.append( to_string( Common::Underscore, bNegative ) );
+  std::smatch match;
+  const std::regex Pattern{ MakeRegex( MomName ) };
+  bool bFound{ false };
+  std::string Search{ std::move( s ) };
+  while( std::regex_search( Search, match, Pattern ) )
+  {
+    s.append( match.prefix() );
+    s.append( Replace );
+    Search = match.suffix();
+    bFound = true;
+  }
+  if( !bFound )
+  {
+    std::ostringstream ss;
+    ss << "momentum " << MomName << " not found in " << s;
+    throw std::runtime_error( ss.str() );
+  }
+  s.append( Search );
 }
 
 std::ostream& operator<<( std::ostream& os, const Momentum &p )
@@ -737,29 +773,53 @@ void ExtractDeltaT( std::string &Prefix, bool &bHasDeltaT, int &DeltaT )
 // Remove any gammas from Prefix
 std::vector<Gamma::Algebra> ExtractGamma( std::string &Prefix )
 {
+  static const std::regex GammaPattern{ "_(g[^_]+)" };
+
   std::vector<Gamma::Algebra> v;
   std::smatch match;
-  static const std::regex pattern{ "_(g[a-zA-Z5]+)" };
-  bool bSearchResult{ std::regex_search( Prefix, match, pattern ) };
-  while( bSearchResult )
+  std::string Search{ std::move( Prefix ) };
+  while( std::regex_search( Search, match, GammaPattern ) )
   {
+    Prefix.append( match.prefix() );
     Gamma::Algebra a;
     std::stringstream ss( match[1] );
-    std::size_t Pos;
     if( ss >> a && ( ss.eof() || ( ss >> std::ws && ss.eof() ) ) )
-    {
-      // This is a gamma algebra, so take it out of the string
       v.push_back( a );
-      const std::string sSuffix{ match.suffix() };
-      Prefix = match.prefix();
-      Pos = Prefix.length();
-      Prefix.append( sSuffix );
-    }
     else
-      Pos = match[0].second - Prefix.cbegin();
-    bSearchResult = std::regex_search( Prefix.cbegin() + Pos, Prefix.cend(), match, pattern );
+    {
+      Prefix.append( 1, '_' );
+      Prefix.append( match[1] );
+    }
+    Search = match.suffix();
   }
   return v;
+}
+
+// Remove any gammas from Prefix
+void ReplaceGamma( std::string &Prefix, Gamma::Algebra gFrom, Gamma::Algebra gTo )
+{
+  std::regex GammaPattern;
+  {
+    std::ostringstream ss;
+    ss << Common::Underscore << gFrom << "(_|$)";
+    GammaPattern = ss.str();
+  }
+  std::string GammaReplace;
+  {
+    std::ostringstream ss;
+    ss << Common::Underscore << gTo;
+    GammaReplace = ss.str();
+  }
+  std::smatch match;
+  std::string Search{ std::move( Prefix ) };
+  while( std::regex_search( Search, match, GammaPattern ) )
+  {
+    Prefix.append( match.prefix() );
+    Prefix.append( GammaReplace );
+    Prefix.append( match[1] );
+    Search = match.suffix();
+  }
+  Prefix.append( Search );
 }
 
 // Make the same HDF5 complex type Grid uses
