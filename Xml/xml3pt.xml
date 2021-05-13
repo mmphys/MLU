@@ -38,8 +38,8 @@
     <!-- R1Term1Backwards:  First term in numerator of R1 and R2
          R1Term2:          Second term in numerator of R1 and R2
          R2Terms:          Denominator terms used for R2 only -->
-    <R2Terms>true</R2Terms><R1Term1Backwards>false</R1Term1Backwards><R1Term2>true</R1Term2>
-    <!--<R2Terms>false</R2Terms><R1Term1Backwards>true</R1Term1Backwards><R1Term2>true</R1Term2>-->
+    <!--<R2Terms>true</R2Terms><R1Term1Backwards>false</R1Term1Backwards><R1Term2>true</R1Term2>-->
+    <R2Terms>false</R2Terms><R1Term1Backwards>true</R1Term1Backwards><R1Term2>true</R1Term2>
     <Timeslices>
       <start>0</start>
       <end>4</end>
@@ -62,8 +62,8 @@
         <HeavyMom>
           <elem>
             <qHeavy>h447</qHeavy>
-            <Momenta>0_0_0</Momenta>
-            <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
+            <!--<Momenta>0_0_0</Momenta>-->
+            <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
           </elem>
         </HeavyMom>
       </elem>
@@ -74,8 +74,8 @@
         <HeavyMom>
           <elem>
             <qHeavy>h447</qHeavy>
-            <Momenta>0_0_0</Momenta>
-            <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
+            <!--<Momenta>0_0_0</Momenta>-->
+            <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
           </elem>
         </HeavyMom>
       </elem>
@@ -86,8 +86,8 @@
         <HeavyMom>
           <elem>
             <qHeavy>h447</qHeavy>
-            <Momenta>0_0_0</Momenta>
-            <!--<Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>-->
+            <!--<Momenta>0_0_0</Momenta>-->
+            <Momenta>0_0_0 1_0_0 1_1_0 1_1_1 2_0_0</Momenta>
           </elem>
         </HeavyMom>
       </elem>

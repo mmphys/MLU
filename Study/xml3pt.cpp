@@ -407,7 +407,7 @@ std::string Study3::RunID() const
   s << Sep << "t" << Sep << makePar.Timeslices.start << Sep << makePar.Timeslices.end << Sep << makePar.Timeslices.step;
   if( makePar.DoNegativeMomenta )
     s << Sep << "neg";
-  s << Sep << "np" << Sep << CountHeavyMomenta << Sep << "p2";
+  s << Sep << "hp" << Sep << CountHeavyMomenta << Sep << "p2";
   for( int p2 : UniqueP2 )
     s << Sep << p2;
   if( ThreePoint )
@@ -465,11 +465,9 @@ void Study3::MakeStudy3( const Decay &d )
                     if( makePar.R1Term2 ) // In practice, R2Terms should equal !R1Term1Backwards
                       l.TakeOwnership(new ModContract3pt(l,tax,false,qh,ql, qSpectator, p0, p, j, deltaT, t, bHeavyAnti ));
                     if( makePar.R2Terms ) // In practice, R2Terms should equal !R1Term1Backwards
-                    {
                       l.TakeOwnership(new ModContract3pt(l,tax,false,ql,ql, qSpectator,-p, p, j, deltaT, t, bHeavyAnti ) );
-                      if( !p ) // Don't repeat this for non-zero momenta (if job being performed separately)
-                        l.TakeOwnership(new ModContract3pt(l,tax,false,qh,qh,qSpectator,p0,p0,j,deltaT,t, bHeavyAnti ) );
-                    }
+                    if( !p ) // Don't repeat this for non-zero momenta (if job being performed separately)
+                      l.TakeOwnership(new ModContract3pt(l,tax,false,qh,qh, qSpectator,p0, p0,j, deltaT, t, bHeavyAnti ) );
                   }
                 }
               }
