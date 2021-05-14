@@ -792,6 +792,7 @@ std::vector<Gamma::Algebra> ExtractGamma( std::string &Prefix )
     }
     Search = match.suffix();
   }
+  Prefix.append( Search );
   return v;
 }
 

@@ -728,20 +728,19 @@ std::vector<std::string> glob( const Iter &first, const Iter &last, const char *
   const std::size_t PrefixLen{ NameBuffer.length() };
   glob_t globBuf;
   memset( &globBuf, 0, sizeof( globBuf ) );
-  int iFlags = GLOB_BRACE | GLOB_TILDE | GLOB_NOSORT | GLOB_NOCHECK;// | GLOB_NOMAGIC
+  int iFlags = GLOB_BRACE | GLOB_TILDE | GLOB_NOSORT; // | GLOB_NOCHECK | GLOB_NOMAGIC;
   for( Iter i = first; i != last; i++ )
   {
     NameBuffer.resize( PrefixLen );
     NameBuffer.append( *i );
     const int globResult{ glob( NameBuffer.c_str(), iFlags, NULL, &globBuf ) };
-    if( globResult )
+    if( !globResult )
+      iFlags |= GLOB_APPEND;
+    else if( globResult != GLOB_NOMATCH )
     {
-      if( globResult == GLOB_NOMATCH )
-        continue;
       globfree( &globBuf );
       throw std::runtime_error( "glob() returned error " + std::to_string( globResult ) );
     }
-    iFlags |= GLOB_APPEND;
   }
 
   // collect all the filenames into a std::list<std::string>
