@@ -727,12 +727,13 @@ bool ExtractToken( std::string &Prefix, const std::string &Token )
     if( bExtracted )
       throw std::runtime_error( "Multiple " + Token + " tokens in " + Prefix );
     bExtracted = true;
-    Prefix = match.prefix();
+    std::string s{ match.prefix() };
     if( match[1].length() )
-      Prefix.append( match[1] );
+      s.append( match[1] );
     else if( match[2].length() )
-      Prefix.append( match[2] );
-    Prefix.append( match.suffix() );
+      s.append( match[2] );
+    s.append( match.suffix() );
+    Prefix = s;
   }
   return bExtracted;
 }
