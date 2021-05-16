@@ -37,6 +37,7 @@ using namespace Common;
 #include <iomanip>
 #include <mutex> // Apparently empty under __INTEL_COMPILER
 #include <set>
+//#include <filesystem> // C++17
 //#include <LatAnalyze/Core/OptParser.hpp>
 //#include <LatAnalyze/Statistics/Dataset.hpp>
 //#include <LatAnalyze/Io/Io.hpp>
@@ -230,6 +231,7 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
     if( iIgnore < Ignore.size() )
       std::cout << "Ignoring " << Filename << std::endl;
     else if( !FileExists(Filename))
+    // else if( !std::filesystem::exists( Filename ) )
     {
       parsed = false;
       std::cout << "Error: " << Filename << " doesn't exist" << std::endl;

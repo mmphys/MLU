@@ -498,7 +498,7 @@ bool Momentum::Extract( std::string &Prefix, const std::string &MomName, bool Ig
   return bGotMomentum;
 }
 
-void Momentum::Replace( std::string &s, const std::string &MomName, bool bNegative )
+void Momentum::Replace( std::string &s, const std::string &MomName, bool bNegative ) const
 {
   std::string Replace( Common::Underscore );
   Replace.append( MomName );
@@ -771,6 +771,13 @@ void ExtractDeltaT( std::string &Prefix, bool &bHasDeltaT, int &DeltaT )
   ExtractInteger( Prefix, bHasDeltaT, DeltaT, "[dD][tT]" );
 }
 
+// Append DeltaT to string
+void AppendDeltaT( std::string &s, int DeltaT )
+{
+  s.append( "_dt_" );
+  s.append( std::to_string( DeltaT ) );
+}
+
 // Remove any gammas from Prefix
 std::vector<Gamma::Algebra> ExtractGamma( std::string &Prefix )
 {
@@ -795,6 +802,14 @@ std::vector<Gamma::Algebra> ExtractGamma( std::string &Prefix )
   }
   Prefix.append( Search );
   return v;
+}
+
+// Append Gamma to string
+void AppendGamma( std::string &s, Gamma::Algebra g )
+{
+  std::ostringstream os;
+  os << Common::Underscore << g;
+  s.append( os.str() );
 }
 
 // Remove any gammas from Prefix

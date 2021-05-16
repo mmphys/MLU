@@ -458,15 +458,18 @@ void Study3::MakeStudy3( const Decay &d )
                 {
                   for( Gamma::Algebra j : gamma )
                   {
-                    const bool bHLB{ makePar.R1Term1Backwards };
-                    const unsigned int tHLB{ bHLB ? l.params.TimeBound( t - deltaT ) : t };
-                    const Common::Momentum pHLB{ makePar.R2Terms ? (bHLB ? -p : -p) : ( bHLB ? -p : -p ) };
-                    l.TakeOwnership(new ModContract3pt(l,tax, bHLB,ql,qh, qSpectator,pHLB,p0,j, deltaT, tHLB, bHeavyAnti));
+                    if( makePar.R1Term1 )
+                    {
+                      const bool bHLB{ makePar.R1Term1Backwards };
+                      const unsigned int tHLB{ bHLB ? l.params.TimeBound( t - deltaT ) : t };
+                      const Common::Momentum pHLB{ makePar.R2Terms ? (bHLB ? -p : -p) : ( bHLB ? -p : -p ) };
+                      l.TakeOwnership(new ModContract3pt(l,tax,bHLB,ql,qh,qSpectator,pHLB,p0,j,deltaT,tHLB,bHeavyAnti));
+                    }
                     if( makePar.R1Term2 ) // In practice, R2Terms should equal !R1Term1Backwards
                       l.TakeOwnership(new ModContract3pt(l,tax,false,qh,ql, qSpectator, p0, p, j, deltaT, t, bHeavyAnti ));
-                    if( makePar.R2Terms ) // In practice, R2Terms should equal !R1Term1Backwards
+                    if( !p || makePar.R2Terms ) // In practice, R2Terms should equal !R1Term1Backwards
                       l.TakeOwnership(new ModContract3pt(l,tax,false,ql,ql, qSpectator,-p, p, j, deltaT, t, bHeavyAnti ) );
-                    if( !p ) // Don't repeat this for non-zero momenta (if job being performed separately)
+                    if( !p && makePar.R2Terms ) // Don't repeat this for non-zero momenta if job being performed separately
                       l.TakeOwnership(new ModContract3pt(l,tax,false,qh,qh, qSpectator,p0, p0,j, deltaT, t, bHeavyAnti ) );
                   }
                 }

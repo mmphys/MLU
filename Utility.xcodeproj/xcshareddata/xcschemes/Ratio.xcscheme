@@ -53,31 +53,27 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i corr/3pt_s/ -c corr/2pt/ -o ratio/3pt_s/raw/"
+            argument = "--i3 corr/3pt_s/ --i2 corr/2pt/ -o ratio/3pt_s/raw/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-m fit/ Best_s.txt"
+            argument = "--im fit/ Best_s.txt"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--type Zv quark_s_s_ps_0_0_0_gT_dt_&apos;*&apos;_p_[01]_0_0_g5[PW]_g5[PW].fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "quark_h447_l_ps_0_0_0_gX_dt_&apos;*&apos;_p_1_0_0_g5[PW]_g5[PW].fold.1835672416.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "quark_h447_l_ps_0_0_0_gT_dt_&apos;*&apos;_p_[01]_0_0_g5[PW]_g5[PW].fold.1835672416.h5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-m fit/2pt/ Best2pt.txt"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--snk g5Pg5W"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--src g5Pg5W"
+            argument = "--im fit/2pt/ Best2pt.txt"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -86,6 +82,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "quark_h0_h3_gT_dt_&apos;*&apos;_p_0_0_0.corr_8_17.corr_8_17.N_&apos;*&apos;.phi_&apos;*&apos;_theta_&apos;*&apos;_g5Pg5W_g5Pg5W.fold.1835672416.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--ec"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

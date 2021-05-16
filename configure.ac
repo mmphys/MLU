@@ -108,6 +108,9 @@ CXXFLAGS="`$HadronsConfig --cxxflags` $CXXFLAGS"
 LDFLAGS="`$HadronsConfig --ldflags` $LDFLAGS"
 LIBS="-lHadrons `$HadronsConfig --libs` $LIBS"
 
+# I'd like to use c++17
+#CXXFLAGS="${CXXFLAGS//-std=c++* /-std=c++17 }"
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC

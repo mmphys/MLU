@@ -128,6 +128,7 @@ public:
                                       bool,         TwoPoint,
                                       bool,         HeavyQuark,
                                       bool,         HeavyAnti,
+                                      bool,         R1Term1,
                                       bool,         R1Term1Backwards,
                                       bool,         R1Term2,
                                       bool,         R2Terms,

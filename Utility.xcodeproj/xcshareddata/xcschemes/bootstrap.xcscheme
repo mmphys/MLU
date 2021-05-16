@@ -71,7 +71,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT,-gx,-gy,-gz"
@@ -94,30 +94,6 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o Z2/boot35/ -i Z2/meson/ &apos;h1_l_p_0_0_0*&apos; &apos;l_h1_p_0_0_0*&apos;"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i Z2/ -o Z2/bootstrap/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o bootstrap/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "&apos;GFWall/meson/*_p_0_0_0_*.h5&apos;"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "&apos;GFWP/meson/*_p_0_0_0_*.h5&apos;"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i meson/3pt_s/ -o bootstrap/3pt_s/ &apos;*_h0_h3_*_dt_20_*.h5&apos;"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-b1"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -138,16 +114,20 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i /Volumes/Mike/Uni/PhD/Data/Study2/C1_shamir/meson/3pt_s/ GFPW_quark_h0_h0_g5_dt_24_p_0_0_0_t_*.h5"
+            argument = "-i &quot;~/data/study3/M1/M1.cpu/&quot;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;{150,166,182,342}0/2pt/[GZ]F[PW][PW]/*&apos;.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "GFPW_quark_&apos;*&apos;.h5"
-            isEnabled = "NO">
+            argument = "&apos;{150,166,182}0/3pt_s/[GZ]FPW_*/*&apos;.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "[PW][PW]_&apos;*&apos;.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ssre=^[GZ][F2]([[:alnum:]])([[:alnum:]])_"

@@ -229,7 +229,7 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   if( bFirst )
     Seed = m.Seed_;
   else
-    MI[0].model.IsCompatible( m, nullptr, false );
+    MI[0].model.IsCompatible( m, nullptr, Common::COMPAT_DISABLE_BASE );
   // Check that the exponent we want is available
   if( bFirst )
     Exponent = ( Par.Exponent >= 0 ) ? Par.Exponent : Par.Exponent + m.NumExponents;

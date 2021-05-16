@@ -87,6 +87,13 @@ extern "C" const char * MLUVersionInfoHuman();
 
 BEGIN_COMMON_NAMESPACE
 
+// Compatibility flags for filename comparisons
+
+static constexpr unsigned int COMPAT_DEFAULT{ 0 };
+static constexpr unsigned int COMPAT_DISABLE_BASE{ 1 };
+static constexpr unsigned int COMPAT_DISABLE_NT{ 2 };
+static constexpr unsigned int COMPAT_DISABLE_CONFIG_COUNT{ 4 };
+
 template <typename T> int sgn( T x )
 {
   return (T(0) < x) - (x < T(0));
@@ -1001,7 +1008,7 @@ struct Momentum
   std::regex MakeRegex( const std::string &MomName ) const;
   bool Extract( std::string &s, const std::string &MomName, bool IgnoreSubsequentZeroNeg = false );
   bool Extract( std::string &s ) { return Extract( s, DefaultPrefix, true ); }
-  void Replace( std::string &s, const std::string &MomName, bool bNegative = false );
+  void Replace( std::string &s, const std::string &MomName, bool bNegative = false ) const;
 };
 
 std::ostream& operator<<( std::ostream& os, const Momentum &p );
@@ -1147,8 +1154,21 @@ void ExtractTimeslice( std::string &s, bool &bHasTimeslice, int & Timeslice );
 // Strip out DeltaT from a string if present
 void ExtractDeltaT( std::string &Prefix, bool &bHasDeltaT, int &DeltaT );
 
+// Append DeltaT to string
+void AppendDeltaT( std::string &s, int DeltaT );
+
 // Remove any gammas from Prefix
 std::vector<Gamma::Algebra> ExtractGamma( std::string &Prefix );
+
+// Append Gamma to string
+void AppendGamma( std::string &s, Gamma::Algebra g );
+
+// Append Gamma to string
+inline void AppendGammaDeltaT( std::string &s, Gamma::Algebra g, int DeltaT )
+{
+  AppendGamma( s, g );
+  AppendDeltaT( s, DeltaT );
+}
 
 // Remove any gammas from Prefix
 void ReplaceGamma( std::string &Prefix, Gamma::Algebra gFrom, Gamma::Algebra gTo );
@@ -2140,7 +2160,7 @@ public:
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
   template <typename U>
-  void IsCompatible( const Sample<U> &o, int * pNumSamples = nullptr, bool bCompareBase = true ) const;
+  void IsCompatible( const Sample<U> &o, int * pNumSamples = nullptr, unsigned int CompareFlags = COMPAT_DEFAULT ) const;
   template <typename U> void CopyAttributes( const Sample<U> &o );
   void Bootstrap( Sample<T> &boot, SeedType Seed, const std::string * pMachineName = nullptr );
   template <typename U> void Bootstrap( Sample<T> &boot, const Sample<U> &Random );
@@ -2264,11 +2284,11 @@ using SampleD = Sample<double>;
 
 // Initialise *pNumSamples either to 0, or to the size of the first Sample before first call
 template <typename T> template <typename U>
-void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, bool bCompareBase ) const
+void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, unsigned int CompareFlags ) const
 {
   static const std::string sPrefix{ "Incompatible " + sBootstrap + " samples - " };
   std::string sSuffix{ ":\n  " + Name_.Filename + "\nvs " + o.Name_.Filename };
-  if( bCompareBase && !Common::EqualIgnoreCase( o.Name_.Base, Name_.Base ) )
+  if( !( CompareFlags & COMPAT_DISABLE_BASE ) && !Common::EqualIgnoreCase( o.Name_.Base, Name_.Base ) )
     throw std::runtime_error( sPrefix + "base " + o.Name_.Base + sNE + Name_.Base + sSuffix );
   if( !Common::EqualIgnoreCase( o.Name_.Type, Name_.Type ) )
     throw std::runtime_error( sPrefix + "type " + o.Name_.Type + sNE + Name_.Type + sSuffix );
@@ -2284,7 +2304,7 @@ void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, bool bCompa
   else if( o.NumSamples() != NumSamples_ )
     throw std::runtime_error( sPrefix + "NumSamples " + std::to_string(o.NumSamples()) +
                              sNE + std::to_string(NumSamples_) + sSuffix );
-  if( o.Nt() != Nt_ )
+  if( !( CompareFlags & COMPAT_DISABLE_NT ) && o.Nt() != Nt_ )
     throw std::runtime_error( sPrefix + "Nt " + std::to_string(o.Nt()) +
                              sNE + std::to_string(Nt_) + sSuffix );
   if( o.SampleSize && SampleSize && o.SampleSize != SampleSize )
@@ -2323,7 +2343,7 @@ void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, bool bCompa
       if( r.Config != l.Config )
         throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
                                  sNE + std::to_string(l.Config) + sSuffix );
-      if( r.Count != l.Count )
+      if( !( CompareFlags & COMPAT_DISABLE_CONFIG_COUNT ) && r.Count != l.Count )
         throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
                                  ", NumTimeslices " + std::to_string(r.Count) + sNE +
                                  std::to_string(l.Count) + sSuffix );
@@ -3392,7 +3412,7 @@ public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
   inline bool empty() const { return corr.empty() && constFile.empty(); }
   void clear();
-  void LoadCorrelator( Common::FileNameAtt &&FileAtt, bool bCompareBase = true );
+  int  LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags = COMPAT_DEFAULT );
   void LoadModel     ( Common::FileNameAtt &&FileAtt, const std::string &Args );
   void SortOpNames( std::vector<std::string> &OpNames );
   void SetFitTimes( const std::vector<std::vector<int>> &FitTimes ); // A list of all the timeslices to include
@@ -3627,21 +3647,24 @@ void DataSet<T>::AddConstant( const std::string &Name, std::size_t File, std::si
 }
 
 template <typename T>
-void DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, bool bCompareBase )
+int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags )
 {
-  const std::size_t i{ corr.size() };
+  if( corr.size() >= std::numeric_limits<int>::max() )
+    throw std::runtime_error( "More than an integers worth of correlators loaded!!??" );
+  const int i{ static_cast<int>( corr.size() ) };
   corr.emplace_back();
   corr[i].SetName( std::move( FileAtt ) );
   corr[i].Read( "  " );
   // See whether this correlator is compatible with prior correlators
   if( i )
   {
-    corr[0].IsCompatible( corr[i], &NSamples, bCompareBase );
+    corr[0].IsCompatible( corr[i], &NSamples, CompareFlags );
     if( MaxSamples > corr[i].NumSamples() )
       MaxSamples = corr[i].NumSamples();
   }
   else
     MaxSamples = corr[i].NumSamples();
+  return i;
 }
 
 // Load a model file
