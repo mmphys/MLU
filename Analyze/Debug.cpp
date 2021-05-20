@@ -6,87 +6,61 @@
 //  Copyright © 2020 sopa. All rights reserved.
 //
 
-#include "Debug.hpp"
+#include <stdio.h>
+//#include <MLU/Common.hpp>
+#include <omp.h>
+#include <Grid/Grid.h>
 
-#ifdef TEST_DEBUG_NEW
-static thread_local bool bUseDevice{ false };
-
-struct DebugNewHeader
+template<typename T>
+std::ostream & operator<<( std::ostream &o, const std::vector<T> &vT )
 {
-  std::size_t szBufSize;
-  bool bOnDevice;
-};
-static constexpr std::size_t DebugNewHeaderSize = ( sizeof( DebugNewHeader ) + 15 ) & (~15);
-
-std::ostream& operator<<(std::ostream& os, const DebugNewHeader &h)
-{
-  return os << &h << ": " << h.szBufSize << " bytes of " << ( h.bOnDevice ? "device" : "host" ) << " memory";
+  std::cout << "[";
+  for( const T& t : vT )
+    std::cout << " " << t;
+  std::cout << " ]";
+  return o;
 }
 
-void * DebugNew( std::size_t size )
+bool Debug()
 {
-  DebugNewHeader * pHeader = static_cast<DebugNewHeader *>( std::malloc( size + DebugNewHeaderSize ) );
-  pHeader->szBufSize = size + DebugNewHeaderSize;
-  pHeader->bOnDevice = bUseDevice;
-  std::cout << "DebugNew( " << size << " ) = " << *pHeader << std::endl;
-  return reinterpret_cast<char *>( pHeader ) + DebugNewHeaderSize;
-}
-
-void DebugDelete( void * mem )
-{
-  DebugNewHeader * pHeader = reinterpret_cast<DebugNewHeader *>( static_cast<char *>( mem ) - DebugNewHeaderSize );
-  std::cout << "DebugDelete( " << mem << " ) = " << *pHeader << std::endl;
-  std::free( pHeader );
-}
-
-void * operator new( std::size_t size ) { return DebugNew( size ); }
-void operator delete( void * mem ) { DebugDelete( mem ); }
-
-class CTest
-{
-public:
-  using Scalar = Grid::ComplexD;
-  using ET = Eigen::Tensor<Scalar, 6, Eigen::RowMajor>;
-  std::vector<Scalar> v;
-  //std::vector<Scalar,Grid::alignedAllocator<Scalar>> vGrid;
-  std::vector<Scalar> vGrid;
-  ET tensor;
-  Eigen::TensorMap<ET> tMap;
-  CTest();
-  static void * operator new( std::size_t size ) { return DebugNew( size ); }
-  static void operator delete( void * mem ) { DebugDelete( mem ); }
-};
-
-CTest::CTest() : v(2), vGrid(8*1*2*3*4*5), tensor(8,1,2,3,4,5), tMap(&vGrid[0],8,1,2,3,4,5)
-{
-  std::cout << "CTest::CTest" << std::endl;
-}
-
-bool TestDebugNew()
-{
-  CTest t1;
-  bUseDevice = true;
-  std::unique_ptr<CTest> pBingo{ new CTest };
-  t1.tensor.resize(1,2,1,2,1,2);
-  bUseDevice = false;
-  t1.tensor.resize(2,2,2,2,2,2);
+  static constexpr int NumRows{ 5 };
+  static constexpr int MinCols{ 2 };
+  std::vector<std::vector<int>> vUniform{ NumRows };
+  std::vector<std::vector<int>> vRagged{ NumRows };
+  int NumCols{ MinCols + NumRows - 1 };
+  int Increment{ 0 };
+  for( int r = 0; r < NumRows; ++r, --NumCols )
+  {
+    vUniform[r].resize( MinCols );
+    for( int c = 0; c < MinCols; ++c )
+      vUniform[r][c] = Increment++;
+    vRagged[r].resize( NumCols );
+    for( int c = 0; c < NumCols; ++c )
+      vRagged[r][c] = c;
+  }
+  std::cout << "Uniform vector:" << vUniform << std::endl;
+  std::cout << "Ragged  vector:" << vRagged << std::endl;
+#ifdef HAVE_HDF5
+  Grid::Hdf5Writer writer("VectorDebug.h5");
+  write(writer, "UniformVector" , vUniform);
+  write(writer, "RaggedVector" , vRagged);
+#endif
   return true;
 }
-#endif
 
 int main(int argc, char *argv[])
 {
-  std::ios_base::sync_with_stdio( false );
-  std::cout << MLUVersionInfoHuman() << std::endl;
+  //std::ios_base::sync_with_stdio( false );
+  Grid::Grid_init(&argc,&argv);
+  //std::cout << Grid::GridLogMessage << MLUVersionInfoHuman() << std::endl;
+  std::cout << Grid::GridLogMessage << "Hello" << std::endl
   int iReturn = EXIT_SUCCESS;
   try
   {
-    #ifdef TEST_DEBUG_NEW
-    std::cout << "main() :: before Debug()" << std::endl;
-    if( TestDebugNew() ) return iReturn;
-    #endif
-    #pragma omp parallel
+    //#pragma omp parallel
     std::cout << "Hello world!\n";
+    if( !Debug() )
+      iReturn = EXIT_FAILURE;
   }
   catch(const std::exception &e)
   {
@@ -96,5 +70,6 @@ int main(int argc, char *argv[])
     std::cerr << "Error: Unknown exception" << std::endl;
     iReturn = EXIT_FAILURE;
   }
+  Grid::Grid_finalize();
   return iReturn;
 }

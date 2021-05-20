@@ -467,19 +467,26 @@ void Study3::MakeStudy3( const Decay &d )
                     }
                     if( makePar.R1Term2 ) // In practice, R2Terms should equal !R1Term1Backwards
                       l.TakeOwnership(new ModContract3pt(l,tax,false,qh,ql, qSpectator, p0, p, j, deltaT, t, bHeavyAnti ));
+                    // I'll always need the zero-momentum versions of l-l and h-h for Z_V ... in addition to R2
                     if( !p || makePar.R2Terms ) // In practice, R2Terms should equal !R1Term1Backwards
                       l.TakeOwnership(new ModContract3pt(l,tax,false,ql,ql, qSpectator,-p, p, j, deltaT, t, bHeavyAnti ) );
-                    if( !p && makePar.R2Terms ) // Don't repeat this for non-zero momenta if job being performed separately
+                    if( !p ) // Don't repeat this for non-zero momenta if job being performed separately
+                    {
                       l.TakeOwnership(new ModContract3pt(l,tax,false,qh,qh, qSpectator,p0, p0,j, deltaT, t, bHeavyAnti ) );
+                      l.TakeOwnership(new ModContract3pt(l,tax,false,qh,qh, qh        ,p0, p0,j, deltaT, t, bHeavyAnti));
+                      l.TakeOwnership(new ModContract3pt(l,tax,false,ql,ql, qh        ,p0, p0,j, deltaT, t, bHeavyAnti));
+                      l.TakeOwnership(new ModContract3pt(l,tax,false,qSpectator,qSpectator,qh,p0,p0,j,deltaT,t,bHeavyAnti));
+                    }
                   }
                 }
               }
             }
-            if( !bDidSomething )
+            if( !bDidSomething && !p )
             {
               // We are only performing residual-mass checks on each propagator
               l.TakeOwnership( new ModProp( l, tax, qh, p, t ) );
-              //l.TakeOwnership( new ModProp( l, tax, qSpectator, p,t) );
+              l.TakeOwnership( new ModProp( l, tax, ql, p, t ) );
+              l.TakeOwnership( new ModProp( l, tax, qSpectator, p,t) );
             }
             p = -p;
           }
