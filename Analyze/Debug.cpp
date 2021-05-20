@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
   //std::ios_base::sync_with_stdio( false );
   Grid::Grid_init(&argc,&argv);
   //std::cout << Grid::GridLogMessage << MLUVersionInfoHuman() << std::endl;
-  std::cout << Grid::GridLogMessage << "Hello" << std::endl
+  std::cout << Grid::GridLogMessage << "Hello" << std::endl;
   int iReturn = EXIT_SUCCESS;
   try
   {
