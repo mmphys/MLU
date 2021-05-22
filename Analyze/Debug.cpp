@@ -14,36 +14,64 @@
 template<typename T>
 std::ostream & operator<<( std::ostream &o, const std::vector<T> &vT )
 {
+  static constexpr int ShowNum{ 5 };
   std::cout << "[";
-  for( const T& t : vT )
-    std::cout << " " << t;
+  for( std::size_t i = 0; i < vT.size(); ++i )
+  {
+    if( i < ShowNum || i > vT.size() - ShowNum - 1 )
+      std::cout << " " << vT[i];
+    else if( i == ShowNum )
+      std::cout << " ...";
+  }
   std::cout << " ]";
   return o;
 }
 
 bool Debug()
 {
-  static constexpr int NumRows{ 5 };
-  static constexpr int MinCols{ 2 };
-  std::vector<std::vector<int>> vUniform{ NumRows };
-  std::vector<std::vector<int>> vRagged{ NumRows };
-  int NumCols{ MinCols + NumRows - 1 };
-  int Increment{ 0 };
-  for( int r = 0; r < NumRows; ++r, --NumCols )
+  static constexpr int RaggedRows{ 8 };
+  static constexpr int MinCols{ 1 };
+  static constexpr int FixedCols{ MinCols + 1 };
+  static constexpr int FixedRows{ 1000 };
+  // Build the ragged vector
+  std::vector<std::vector<int>> vRagged{ RaggedRows };
+  int NumCols{ MinCols + RaggedRows - 1 };
+  int Counter = 0;
+  for( int r = 0; r < RaggedRows; ++r, --NumCols )
   {
-    vUniform[r].resize( MinCols );
-    for( int c = 0; c < MinCols; ++c )
-      vUniform[r][c] = Increment++;
+    //NumCols = r % 3 + 1;
     vRagged[r].resize( NumCols );
     for( int c = 0; c < NumCols; ++c )
-      vRagged[r][c] = c;
+      vRagged[r][c] = Counter++;
+  }
+  // Build the uniform vector
+  std::vector<std::vector<int>> vUniform{ FixedRows };
+  Counter = 0;
+  for( int r = 0; r < FixedRows; ++r )
+  {
+    vUniform[r].resize( FixedCols );
+    for( int c = 0; c < FixedCols; ++c )
+      vUniform[r][c] = Counter++;
   }
   std::cout << "Uniform vector:" << vUniform << std::endl;
   std::cout << "Ragged  vector:" << vRagged << std::endl;
 #ifdef HAVE_HDF5
-  Grid::Hdf5Writer writer("VectorDebug.h5");
-  write(writer, "UniformVector" , vUniform);
-  write(writer, "RaggedVector" , vRagged);
+  const std::string FileName{ "VectorDebug.h5" };
+  const std::string tagU{ "UniformVector" };
+  const std::string tagR{ "RaggedVector" };
+  {
+    Grid::Hdf5Writer writer(FileName);
+    write(writer, tagU , vUniform);
+    write(writer, tagR , vRagged);
+  }
+  std::cout << "Reading back ..." << std::endl;
+  Grid::Hdf5Reader reader(FileName);
+  std::vector<std::vector<int>> vReadU;
+  std::vector<std::vector<int>> vReadR;
+  read( reader, tagU, vReadU );
+  read( reader, tagR, vReadR );
+  std::cout << "Uniform vector:" << vReadU << std::endl;
+  std::cout << "Ragged  vector:" << vReadR << std::endl;
 #endif
   return true;
 }
