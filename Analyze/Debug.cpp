@@ -11,6 +11,9 @@
 #include <omp.h>
 #include <Grid/Grid.h>
 
+using  vvi = std::vector<std::vector<int>>;
+using vvvi = std::vector<vvi>;
+
 template<typename T>
 std::ostream & operator<<( std::ostream &o, const std::vector<T> &vT )
 {
@@ -27,52 +30,118 @@ std::ostream & operator<<( std::ostream &o, const std::vector<T> &vT )
   return o;
 }
 
+static constexpr int MinCols{ 1 };
+
+// Fill a 2-d vector with a ragged shape
+void FillRagged( vvi &v, int &Counter )
+{
+  const std::size_t Rows{ v.size() };
+  std::size_t Cols{ MinCols + Rows - 1 };
+  for( std::size_t r = 0; r < Rows; ++r, --Cols )
+  {
+    if( Rows > 10 )
+      Cols = r % 3 + MinCols;
+    v[r].resize( Cols );
+    for( int c = 0; c < Cols; ++c )
+      v[r][c] = Counter++;
+  }
+}
+
+// Fill a 2-d vector with a regular shape
+void FillRegular( vvi &v, int &Counter )
+{
+  const std::size_t Rows{ v.size() };
+  static constexpr int Cols{ MinCols + 1 };
+  for( std::size_t r = 0; r < Rows; ++r )
+  {
+    v[r].resize( Cols );
+    for( int c = 0; c < Cols; ++c )
+      v[r][c] = Counter++;
+  }
+}
+
 bool Debug()
 {
-  static constexpr int RaggedRows{ 8 };
-  static constexpr int MinCols{ 1 };
-  static constexpr int FixedCols{ MinCols + 1 };
-  static constexpr int FixedRows{ 1000 };
-  // Build the ragged vector
-  std::vector<std::vector<int>> vRagged{ RaggedRows };
-  int NumCols{ MinCols + RaggedRows - 1 };
-  int Counter = 0;
-  for( int r = 0; r < RaggedRows; ++r, --NumCols )
+  // Make 2-d data sets
+  static constexpr int Small{ 5 };
+  static constexpr int Large{ 100 };
+  vvi vRagSmall{ Small };
+  vvi vRegSmall{ Small };
+  vvi vRagLarge{ Large };
+  vvi vRegLarge{ Large };
+  int Counter;
+  Counter = 0; FillRagged(  vRagSmall, Counter );
+  Counter = 0; FillRegular( vRegSmall, Counter );
+  Counter = 0; FillRagged(  vRagLarge, Counter );
+  Counter = 0; FillRegular( vRegLarge, Counter );
+
+  // Make 3-d data sets
+  static constexpr int OuterDim{ 4 };
+  vvvi vRagRag{ OuterDim };
+  vvvi vRagReg{ OuterDim };
+  vvvi vRegReg{ OuterDim };
+  int ctrRagRag{ 0 };
+  int ctrRagReg{ 0 };
+  int ctrRegReg{ 0 };
+  for( int i = 0; i < OuterDim; ++i )
   {
-    //NumCols = r % 3 + 1;
-    vRagged[r].resize( NumCols );
-    for( int c = 0; c < NumCols; ++c )
-      vRagged[r][c] = Counter++;
+    vRagRag[i].resize( i + MinCols );
+    vRagReg[i].resize( i + MinCols );
+    vRegReg[i].resize( Small );
+    FillRagged ( vRagRag[i], ctrRagRag );
+    FillRegular( vRagReg[i], ctrRagReg );
+    FillRegular( vRegReg[i], ctrRegReg );
   }
-  // Build the uniform vector
-  std::vector<std::vector<int>> vUniform{ FixedRows };
-  Counter = 0;
-  for( int r = 0; r < FixedRows; ++r )
-  {
-    vUniform[r].resize( FixedCols );
-    for( int c = 0; c < FixedCols; ++c )
-      vUniform[r][c] = Counter++;
-  }
-  std::cout << "Uniform vector:" << vUniform << std::endl;
-  std::cout << "Ragged  vector:" << vRagged << std::endl;
-#ifdef HAVE_HDF5
+
+  const std::string sRagSmall{ "RaggedSmall" };
+  const std::string sRegSmall{ "RegularSmall" };
+  const std::string sRagLarge{ "RaggedLarge" };
+  const std::string sRegLarge{ "RegularLarge" };
+  const std::string sRagRag  { "RaggedRagged" };
+  const std::string sRagReg  { "RaggedRegular" };
+  const std::string sRegReg  { "RegularRegular" };
+  std::cout << sRagSmall << ": " << vRagSmall << std::endl;
+  std::cout << sRegSmall << ": " << vRegSmall << std::endl;
+  std::cout << sRagLarge << ": " << vRagLarge << std::endl;
+  std::cout << sRegLarge << ": " << vRegLarge << std::endl;
+  std::cout << sRagRag   << ": " << vRagRag   << std::endl;
+  std::cout << sRagReg   << ": " << vRagReg   << std::endl;
+  std::cout << sRegReg   << ": " << vRegReg   << std::endl;
   const std::string FileName{ "VectorDebug.h5" };
-  const std::string tagU{ "UniformVector" };
-  const std::string tagR{ "RaggedVector" };
   {
+    std::cout << "Writing " << FileName << std::endl;
     Grid::Hdf5Writer writer(FileName);
-    write(writer, tagU , vUniform);
-    write(writer, tagR , vRagged);
+    write(writer, sRagSmall, vRagSmall);
+    write(writer, sRegSmall, vRegSmall);
+    write(writer, sRagLarge, vRagLarge);
+    write(writer, sRegLarge, vRegLarge);
+    write(writer, sRagRag,   vRagRag);
+    write(writer, sRagReg,   vRagReg);
+    write(writer, sRegReg,   vRegReg);
   }
-  std::cout << "Reading back ..." << std::endl;
+  std::cout << "Reading back " << FileName << std::endl;
   Grid::Hdf5Reader reader(FileName);
-  std::vector<std::vector<int>> vReadU;
-  std::vector<std::vector<int>> vReadR;
-  read( reader, tagU, vReadU );
-  read( reader, tagR, vReadR );
-  std::cout << "Uniform vector:" << vReadU << std::endl;
-  std::cout << "Ragged  vector:" << vReadR << std::endl;
-#endif
+  vvi rRegSmall;
+  vvi rRagSmall;
+  vvi rRegLarge;
+  vvi rRagLarge;
+  vvvi rRagRag;
+  vvvi rRagReg;
+  vvvi rRegReg;
+  read( reader, sRegSmall, rRegSmall );
+  read( reader, sRagSmall, rRagSmall );
+  read( reader, sRegLarge, rRegLarge );
+  read( reader, sRagLarge, rRagLarge );
+  read( reader, sRagRag  , rRagRag   );
+  read( reader, sRagReg  , rRagReg   );
+  read( reader, sRegReg  , rRegReg   );
+  std::cout << sRagSmall << ": " << rRagSmall << std::endl;
+  std::cout << sRegSmall << ": " << rRegSmall << std::endl;
+  std::cout << sRagLarge << ": " << rRagLarge << std::endl;
+  std::cout << sRegLarge << ": " << rRegLarge << std::endl;
+  std::cout << sRagRag   << ": " << rRagRag   << std::endl;
+  std::cout << sRagReg   << ": " << rRagReg   << std::endl;
+  std::cout << sRegReg   << ": " << rRegReg   << std::endl;
   return true;
 }
 
