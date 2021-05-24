@@ -100,6 +100,8 @@ bool Debug()
   const std::string sRagRag  { "RaggedRagged" };
   const std::string sRagReg  { "RaggedRegular" };
   const std::string sRegReg  { "RegularRegular" };
+  const std::string sInt  { "Int1d" };
+  std::vector<int> vFibo{ 1, 1, 2, 3, 5, 8, 13, 21 };
   std::cout << sRagSmall << ": " << vRagSmall << std::endl;
   std::cout << sRegSmall << ": " << vRegSmall << std::endl;
   std::cout << sRagLarge << ": " << vRagLarge << std::endl;
@@ -107,6 +109,7 @@ bool Debug()
   std::cout << sRagRag   << ": " << vRagRag   << std::endl;
   std::cout << sRagReg   << ": " << vRagReg   << std::endl;
   std::cout << sRegReg   << ": " << vRegReg   << std::endl;
+  std::cout << sInt      << ": " << vFibo     << std::endl;
   const std::string FileName{ "VectorDebug.h5" };
   {
     std::cout << "Writing " << FileName << std::endl;
@@ -118,6 +121,7 @@ bool Debug()
     write(writer, sRagRag,   vRagRag);
     write(writer, sRagReg,   vRagReg);
     write(writer, sRegReg,   vRegReg);
+    write(writer, sInt,      vFibo);
   }
   std::cout << "Reading back " << FileName << std::endl;
   Grid::Hdf5Reader reader(FileName);
@@ -128,6 +132,7 @@ bool Debug()
   vvvi rRagRag;
   vvvi rRagReg;
   vvvi rRegReg;
+  std::vector<int> rFibo;
   read( reader, sRegSmall, rRegSmall );
   read( reader, sRagSmall, rRagSmall );
   read( reader, sRegLarge, rRegLarge );
@@ -135,6 +140,7 @@ bool Debug()
   read( reader, sRagRag  , rRagRag   );
   read( reader, sRagReg  , rRagReg   );
   read( reader, sRegReg  , rRegReg   );
+  read( reader, sInt     , rFibo     );
   std::cout << sRagSmall << ": " << rRagSmall << std::endl;
   std::cout << sRegSmall << ": " << rRegSmall << std::endl;
   std::cout << sRagLarge << ": " << rRagLarge << std::endl;
@@ -142,6 +148,7 @@ bool Debug()
   std::cout << sRagRag   << ": " << rRagRag   << std::endl;
   std::cout << sRagReg   << ": " << rRagReg   << std::endl;
   std::cout << sRegReg   << ": " << rRegReg   << std::endl;
+  std::cout << sInt      << ": " << rFibo     << std::endl;
   return true;
 }
 
