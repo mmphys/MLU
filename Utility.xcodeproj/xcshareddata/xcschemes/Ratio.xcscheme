@@ -61,16 +61,16 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type Zv quark_s_s_ps_0_0_0_gT_dt_&apos;*&apos;_p_[01]_0_0_g5[PW]_g5[PW].fold.1835672416.h5"
-            isEnabled = "YES">
+            argument = "--type Zv quark_l_l_ps_0_0_0_gT_dt_&apos;*&apos;_p_[01]_0_0_g5[PW]_g5[PW].fold.1835672416.h5"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "quark_h447_l_ps_0_0_0_gX_dt_&apos;*&apos;_p_1_0_0_g5[PW]_g5[PW].fold.1835672416.h5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "quark_h447_l_ps_0_0_0_gT_dt_&apos;*&apos;_p_[01]_0_0_g5[PW]_g5[PW].fold.1835672416.h5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--im fit/2pt/ Best2pt.txt"

@@ -192,11 +192,14 @@ Maker::Maker( const std::string &inBase_, const std::string &C2Base_,
       bFirst = false;
     }
     else
-      idxFirst->m.IsCompatible( mi.m, nullptr, Common::COMPAT_DISABLE_BASE );
+    {
+      if( mi.m.Name_.Base[0] != 'Z' )
+        idxFirst->m.IsCompatible( mi.m, nullptr, Common::COMPAT_DISABLE_BASE );
+    }
   }
 }
 
-// Incoming file shoulkd be a three-point function with a heavy sink and light(er) source
+// Incoming file should be a three-point function with a heavy sink and light(er) source
 
 void Maker::Make( std::string &FileName )
 {
@@ -248,6 +251,8 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
                       const std::string &sSnk, const std::string &sSrc, const std::string &FileNameSuffix,
                       const std::string &Suffix, const ModelInfo &miSnk, const ModelInfo &miSrc )
 {
+  // Make sure I have the model for Z_V already loaded
+  const ModelInfo &miZV{ model.at( QP( "ZV_" + std::to_string( DeltaT ), p0 ) ) };
   // Now read the two-point functions
   std::string C2NameSnk{ miSnk.FileName2pt };
   C2NameSnk.append( SinkSourceOp );
@@ -284,7 +289,7 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
         Common::ReplaceGamma( Dir, gFrom, Common::Gamma::Algebra::GammaT );
       if( Common::FileExists( Dir ) )
       {
-        Fold &f { ds.corr[ds.LoadCorrelator( Common::FileNameAtt( Dir ), false )] };
+        Fold &f { ds.corr[ds.LoadCorrelator( Common::FileNameAtt( Dir ), Common::COMPAT_DISABLE_BASE )] };
         pSrc[iSnk][iSrc] = f[Fold::idxCentral];
         nT[iSnk][iSrc] = f.Nt();
       }
@@ -324,6 +329,7 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
   const Scalar * pC2[NumC2];
   pC2[0] = C2Src[Fold::idxCentral];
   pC2[1] = C2Snk[Fold::idxCentral];
+  const Scalar * pZV{ miZV.m[Fold::idxCentral] + miZV.idxE0 };
   for( int idx = Fold::idxCentral; idx < ds.NSamples; ++idx )
   {
     const double EProd = (*pE[0]) * (*pE[1]);
@@ -340,7 +346,8 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
       const double n = std::abs( EProd * z[iLight][iHeavy] * z[iHeavy][iLight] );
       if( !std::isfinite( n ) )
         throw std::runtime_error( "R2 Overflow" );
-      *pDst[0]++ = 4 * std::sqrt( n / C2Prod ); // R1
+      const Scalar ZV{ *pZV };
+      *pDst[0]++ = 4 * std::sqrt( n / C2Prod ) * ZV; // R1
       if( bMakeR2 )
         *pDst[1]++ = 2 * std::sqrt( n / std::abs( z[iLight][iLight] * z[iHeavy][iHeavy] ) ); // R2
     }
@@ -351,6 +358,7 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
     {
       pE[0] += miSrc.m.Nt();
       pE[1] += miSnk.m.Nt();
+      pZV   += miZV .m.Nt();
     }
     pC2[0] += C2Src.Nt();
     pC2[1] += C2Snk.Nt();

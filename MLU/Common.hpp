@@ -3663,7 +3663,11 @@ int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int Comp
       MaxSamples = corr[i].NumSamples();
   }
   else
+  {
     MaxSamples = corr[i].NumSamples();
+    if( NSamples == 0 || NSamples > MaxSamples )
+      NSamples = MaxSamples;
+  }
   return i;
 }
 

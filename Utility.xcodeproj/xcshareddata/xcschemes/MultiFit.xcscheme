@@ -46,7 +46,7 @@
       enableASanStackUseAfterReturn = "YES"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$PROJECT_DIR/run"
+      customWorkingDirectory = "$HOME/data/Study3/M1/analyse/h447/ratio/3pt_s"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -80,7 +80,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "h447_s_p_0_0_0_g5P_g5P.fold.1835672416.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o GFWPZ2/fit35test/"
@@ -92,11 +92,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o fit/2pt/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "h447_s_p_0_0_0_g5P_g5[PW].fold.1835672416.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t 4:13:6:6"
@@ -104,11 +104,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t 5:9:6:7"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-n 100"
@@ -116,6 +116,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v 0"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 4:10 -i raw/ -o raw_fit/ ZV_l_gT_dt_16_&apos;*&apos;.h5,conSt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

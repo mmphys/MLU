@@ -1385,7 +1385,7 @@ int main(int argc, const char *argv[])
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
     " <options> Bootstrap1[,model1[,params1]] [Bootstrap2[,model2[,params2]] ...]\n"
     "Perform a multi-exponential fit of the specified bootstrap replicas, where:\n"
-    " modeln  is one of {Exp, Cosh, Sinh, ThreePoint, Constant}\n"
+    " modeln  is one of {Exp, Cosh, Sinh, ThreePoint, Const}\n"
     " params1 t<n> chooses the n'th fit range (default=0, see -t)\n"
     " paramsn Depends on the model\n"
     "and <options> are:\n"
