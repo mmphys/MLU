@@ -134,11 +134,27 @@ bool Debug()
   vvvi rRegReg;
   std::vector<int> rFibo;
   read( reader, sRegSmall, rRegSmall );
-  read( reader, sRagSmall, rRagSmall );
+  try{
+    read( reader, sRagSmall, rRagSmall );
+  } catch(...) {
+    std::cout << "Exception reading " << sRagSmall << std::endl;
+  }
   read( reader, sRegLarge, rRegLarge );
-  read( reader, sRagLarge, rRagLarge );
-  read( reader, sRagRag  , rRagRag   );
-  read( reader, sRagReg  , rRagReg   );
+  try{
+    read( reader, sRagLarge, rRagLarge );
+  } catch(...) {
+    std::cout << "Exception reading " << sRagLarge << std::endl;
+  }
+  try{
+    read( reader, sRagRag  , rRagRag   );
+  } catch(...) {
+    std::cout << "Exception reading " << sRagRag << std::endl;
+  }
+  try{
+    read( reader, sRagReg  , rRagReg   );
+  } catch(...) {
+    std::cout << "Exception reading " << sRagReg << std::endl;
+  }
   read( reader, sRegReg  , rRegReg   );
   read( reader, sInt     , rFibo     );
   std::cout << sRagSmall << ": " << rRagSmall << std::endl;
