@@ -106,7 +106,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-g /wardIdentity -d mres --sort -o bootstrap/Ward/mres_ -i meson/Ward/ &apos;*.h5&apos;"
+            argument = "-g /wardIdentity -d PA0 --sort -o bootstrap/Ward/PA0_ -i meson/Ward/ &apos;*.h5&apos;"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -118,11 +118,11 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;{150,166,182,342}0/2pt/[GZ]F[PW][PW]/*&apos;.h5"
-            isEnabled = "NO">
+            argument = "&apos;{150,166,182,342}0/2pt/[GZ]F[PW][PW]/*_p_0_*&apos;.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;{150,166,182}0/3pt_s/[GZ]FPW_*/*&apos;.h5"
+            argument = "&apos;{150,166,182}0/3pt_s/[GZ]FPW_*/*_ps_0_*_p_0_*&apos;.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

@@ -265,7 +265,7 @@ namespace Gamma
   static constexpr unsigned int                nGamma = 32;
   extern const std::array<const std::string, nGamma> name;      // Long name, per Grid
   extern const std::array<const std::string, nGamma> nameShort; // My abbreviations
-  std::string NameShort( Algebra alg, const char * pszPrefix = nullptr );
+  std::string NameShort( Algebra alg, const char * pszPrefix = nullptr, const char * pszOpSuffix = nullptr );
   std::ostream& operator<<(std::ostream& os, const Algebra &a);
   std::istream& operator>>(std::istream& is, Algebra &a);
 };

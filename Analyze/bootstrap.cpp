@@ -257,15 +257,16 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
       if( SSRegEx )
       {
         std::smatch base_match;
-        if( !std::regex_search( Contraction, base_match, *SSRegEx ) || base_match.size() != 3 )
-          throw std::runtime_error( "Can't extract sink/source type from " + Contraction );
-        OpSuffixSnk = base_match[bSwapSnkSrcRegEx ? 2 : 1];
-        OpSuffixSrc = base_match[bSwapSnkSrcRegEx ? 1 : 2];
-        bOpSuffix = true;
-        std::string NewContraction;
-        NewContraction.append( base_match.prefix() );
-        NewContraction.append( base_match.suffix() );
-        Contraction = NewContraction;
+        if( std::regex_search( Contraction, base_match, *SSRegEx ) && base_match.size() == 3 )
+        {
+          OpSuffixSnk = base_match[bSwapSnkSrcRegEx ? 2 : 1];
+          OpSuffixSrc = base_match[bSwapSnkSrcRegEx ? 1 : 2];
+          bOpSuffix = true;
+          std::string NewContraction;
+          NewContraction.append( base_match.prefix() );
+          NewContraction.append( base_match.suffix() );
+          Contraction = NewContraction;
+        }
       }
       Momentum mom;
       bool bGotMomentum{ mom.Extract( Contraction ) };
@@ -325,8 +326,6 @@ Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::
         }
         Contraction.append( sShortSuffix );
       }
-      if( !b3pt )
-        sShortPrefix = Contraction;
       if( bOpSuffix )
       {
         Contraction.append( 1, '_' );
@@ -444,25 +443,26 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
   {
     for( int Src = 0; Src < ( ( !b3pt && bFactorised ) ? Snk + 1 : first->NumSrc() ); Src++ )
     {
+      // Now construct the base output filename
       static const char pszSep[] = "_";
-      std::string sSnk{ Common::Gamma::NameShort( Traj.bRev ? AlgSrc[Src] : AlgSnk[Snk], pszSep ) };
+      std::string sOutBase{ outStem };
+      sOutBase.append( Traj.sShortPrefix );
+
       if( b3pt )
       {
         // The current insertion is what was at the sink ... unless we computed in reverse
+        sOutBase.append( Common::Gamma::NameShort( Traj.bRev ? AlgSrc[Src] : AlgSnk[Snk], pszSep, nullptr ) );
         if( Traj.bHasDeltaT )
         {
-          sSnk.append( "_dt_" );
-          sSnk.append( std::to_string( Traj.DeltaT ) );
+          sOutBase.append( "_dt_" );
+          sOutBase.append( std::to_string( Traj.DeltaT ) );
         }
-        sSnk.append( Traj.sShortSuffix );
-        sSnk.append( Suffix );
-        sSnk.append( Common::Gamma::NameShort( Traj.bRev ? AlgSnk[Snk] : Traj.Alg[0], pszSep ) );
       }
-
-      std::string sSrc{ Common::Gamma::NameShort( Traj.bRev ? Traj.Alg[0] : AlgSrc[Src], pszSep ) };
+      sOutBase.append( Traj.sShortSuffix );
+      sOutBase.append( Suffix );
+      sOutBase.append(Gamma::NameShort(b3pt && !Traj.bRev ? Traj.Alg[0] : AlgSnk[Snk], pszSep, Traj.OpSuffixSnk.c_str() ));
+      sOutBase.append(Gamma::NameShort(Traj.bRev ? Traj.Alg[0] : AlgSrc[Src], pszSep,Traj.OpSuffixSrc.c_str() ));
       // Skip bootstrap if output exists
-      const std::string sOutBase{ outStem + Traj.sShortPrefix + sSnk + Traj.OpSuffixSnk
-                                  + sSrc + Traj.OpSuffixSrc};
       const std::string sOutFile{ Common::MakeFilename( sOutBase, sBootstrap, seed, DEF_FMT ) };
       const std::string sSummary{ Common::MakeFilename( sOutBase, sBootstrap, seed, TEXT_EXT)};
       const bool bOutFileExists{ Common::FileExists( sOutFile ) };
@@ -746,7 +746,7 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
 
 int main(const int argc, const char *argv[])
 {
-  static const char DefaultERE[]{ R"(^([[:alnum:]])([[:alnum:]])_)" };
+  static const char DefaultERE[]{ R"(^([PWpw])([PWpw])_)" };
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };

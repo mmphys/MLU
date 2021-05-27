@@ -196,15 +196,21 @@ namespace Gamma
     "gsZT",
   };
 
-  std::string NameShort( Algebra alg, const char * pszPrefix )
+  std::string NameShort( Algebra alg, const char * pszPrefix, const char * pszOpSuffix )
   {
     std::string sName;
-    if( alg != Algebra::Unknown )
+    const bool bGotSuffix{ pszOpSuffix && *pszOpSuffix };
+    if( alg != Algebra::Unknown || bGotSuffix )
     {
-      if( pszPrefix )
+      if( pszPrefix && *pszPrefix )
         sName.append( pszPrefix );
-      int idx = static_cast<int>( alg );
-      sName.append( ( idx >= 0 && idx < nGamma ) ? nameShort[idx] : "?" );
+      if( alg != Algebra::Unknown )
+      {
+        int idx = static_cast<int>( alg );
+        sName.append( ( idx >= 0 && idx < nGamma ) ? nameShort[idx] : "?" );
+      }
+      if( bGotSuffix )
+        sName.append( pszOpSuffix );
     }
     return sName;
   }
