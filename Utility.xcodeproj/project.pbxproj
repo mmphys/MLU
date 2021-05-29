@@ -50,6 +50,8 @@
 		682D0625246A95CA0052D780 /* Z2Diluted.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D0623246A95CA0052D780 /* Z2Diluted.cpp */; };
 		682D0628246A95E50052D780 /* VectorUnpack.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682D0626246A95E40052D780 /* VectorUnpack.hpp */; };
 		682D0629246A95E50052D780 /* VectorUnpack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D0627246A95E50052D780 /* VectorUnpack.cpp */; };
+		683A002B26626B3A00A532A2 /* TensorDemo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 683A002A26626B3A00A532A2 /* TensorDemo.cpp */; };
+		683A002C26626B3A00A532A2 /* TensorDemo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 683A002A26626B3A00A532A2 /* TensorDemo.cpp */; };
 		683B2B3325D2E8E800FF304F /* Common.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6889D90225D2BBC5004F15CE /* Common.hpp */; };
 		6848923825D2D79B00307714 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6850CEA4244A1C3100A53DC8 /* Cartesian_base.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CA28244A1C2F00A53DC8 /* Cartesian_base.h */; };
@@ -1357,6 +1359,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		683A002126626B1000A532A2 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		6845351E23477BBE00106304 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1590,6 +1601,8 @@
 		682D0627246A95E50052D780 /* VectorUnpack.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VectorUnpack.cpp; sourceTree = "<group>"; };
 		68338D402461408900B6292E /* xml3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xml3pt; sourceTree = BUILT_PRODUCTS_DIR; };
 		683451302397D3C200B743CE /* xmlGFWall */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlGFWall; sourceTree = BUILT_PRODUCTS_DIR; };
+		683A002326626B1000A532A2 /* TensorDemo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TensorDemo; sourceTree = BUILT_PRODUCTS_DIR; };
+		683A002A26626B3A00A532A2 /* TensorDemo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TensorDemo.cpp; sourceTree = "<group>"; };
 		6845352023477BBE00106304 /* xmlPeramb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlPeramb; sourceTree = BUILT_PRODUCTS_DIR; };
 		684823352509160C00B31C1E /* Ratio */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Ratio; sourceTree = BUILT_PRODUCTS_DIR; };
 		6850CA1B244A1BDA00A53DC8 /* libGrid.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libGrid.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3013,6 +3026,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		683A002026626B1000A532A2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6845351D23477BBE00106304 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -3276,6 +3296,7 @@
 				68B47B6D2635737D00611065 /* Test_nersc_io */,
 				68216C36265416A2002014E6 /* Benchmark_staggeredF */,
 				680910A2265572AB0026D072 /* Minimal */,
+				683A002326626B1000A532A2 /* TensorDemo */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -3283,7 +3304,6 @@
 		6822E8BE22A7057400A85993 /* Analyze */ = {
 			isa = PBXGroup;
 			children = (
-				6809109D265572920026D072 /* Minimal_Grid_Bench_stagF.cc */,
 				6822E8BF22A7057400A85993 /* bootstrap.cpp */,
 				6868327325DDB950008489B2 /* corr.cpp */,
 				6856DC4E23C391AE0040814E /* corrstat.cpp */,
@@ -3292,9 +3312,11 @@
 				686EC70924003ED30084D04D /* FitSummary.cpp */,
 				681DC8B722F19CB000EE04A9 /* hlxml.cpp */,
 				68E5744B25D321B700BD1A21 /* Makefile.am */,
+				6809109D265572920026D072 /* Minimal_Grid_Bench_stagF.cc */,
 				681550FE22CBC9B9009AB4AD /* MultiFit.cpp */,
 				68703D4425D2FF8600D1BA61 /* MultiFit.hpp */,
 				682260F22376F586005341E5 /* repair.cpp */,
+				683A002A26626B3A00A532A2 /* TensorDemo.cpp */,
 			);
 			path = Analyze;
 			sourceTree = "<group>";
@@ -6967,6 +6989,23 @@
 			productReference = 683451302397D3C200B743CE /* xmlGFWall */;
 			productType = "com.apple.product-type.tool";
 		};
+		683A002226626B1000A532A2 /* TensorDemo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 683A002926626B1000A532A2 /* Build configuration list for PBXNativeTarget "TensorDemo" */;
+			buildPhases = (
+				683A001F26626B1000A532A2 /* Sources */,
+				683A002026626B1000A532A2 /* Frameworks */,
+				683A002126626B1000A532A2 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TensorDemo;
+			productName = TensorDemo;
+			productReference = 683A002326626B1000A532A2 /* TensorDemo */;
+			productType = "com.apple.product-type.tool";
+		};
 		6845351F23477BBE00106304 /* xmlPeramb */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6845352423477BBE00106304 /* Build configuration list for PBXNativeTarget "xmlPeramb" */;
@@ -7330,6 +7369,9 @@
 					6834512F2397D3C200B743CE = {
 						CreatedOnToolsVersion = 11.2.1;
 					};
+					683A002226626B1000A532A2 = {
+						CreatedOnToolsVersion = 12.5;
+					};
 					6845351F23477BBE00106304 = {
 						CreatedOnToolsVersion = 11.0;
 					};
@@ -7427,6 +7469,7 @@
 				68B47B6C2635737D00611065 /* Test_nersc_io */,
 				68216C35265416A2002014E6 /* Benchmark_staggeredF */,
 				680910A1265572AB0026D072 /* Minimal */,
+				683A002226626B1000A532A2 /* TensorDemo */,
 			);
 		};
 /* End PBXProject section */
@@ -7494,6 +7537,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6822E8C022A7057400A85993 /* bootstrap.cpp in Sources */,
+				683A002B26626B3A00A532A2 /* TensorDemo.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7511,6 +7555,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				687D873826340FE9002CAE0F /* xmlGFWall.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		683A001F26626B1000A532A2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				683A002C26626B3A00A532A2 /* TensorDemo.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8311,6 +8363,20 @@
 			};
 			name = Release;
 		};
+		683A002726626B1000A532A2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		683A002826626B1000A532A2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		6845352523477BBE00106304 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -8795,6 +8861,15 @@
 			buildConfigurations = (
 				683451352397D3C200B743CE /* Debug */,
 				683451362397D3C200B743CE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		683A002926626B1000A532A2 /* Build configuration list for PBXNativeTarget "TensorDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				683A002726626B1000A532A2 /* Debug */,
+				683A002826626B1000A532A2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
