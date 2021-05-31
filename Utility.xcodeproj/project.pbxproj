@@ -1234,7 +1234,6 @@
 		687D873826340FE9002CAE0F /* xmlGFWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86AB26340F5D002CAE0F /* xmlGFWall.cpp */; };
 		687D875326340FED002CAE0F /* xmlPeramb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86A326340F5D002CAE0F /* xmlPeramb.cpp */; };
 		687D876E26340FF0002CAE0F /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86AA26340F5D002CAE0F /* xmlZ2.cpp */; };
-		6887C99725D571E800FF0855 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6887C99825D571F600FF0855 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		68B0E7AC25D2CF5500B66FD0 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6889D8FC25D2BBC5004F15CE /* Common.cpp */; };
 		68B90196249D481800739CD2 /* RareKaonNeutralDisc.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68B90194249D481700739CD2 /* RareKaonNeutralDisc.hpp */; };
@@ -3082,7 +3081,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6887C99725D571E800FF0855 /* libMLU.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

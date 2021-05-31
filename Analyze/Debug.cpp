@@ -11,10 +11,17 @@
 #include <omp.h>
 #include <Grid/Grid.h>
 
+using Grid::operator<<;\
+using Grid::operator>>;
+
+using GridScalar = float;
+using GridTensor = Grid::iVector<Grid::iVector<GridScalar, 3>, 2>;
+using vGridTensor = std::vector<GridTensor>;
+
 using  vvi = std::vector<std::vector<int>>;
 using vvvi = std::vector<vvi>;
 
-template<typename T>
+/*template<typename T>
 std::ostream & operator<<( std::ostream &o, const std::vector<T> &vT )
 {
   static constexpr int ShowNum{ 5 };
@@ -28,7 +35,7 @@ std::ostream & operator<<( std::ostream &o, const std::vector<T> &vT )
   }
   std::cout << " ]";
   return o;
-}
+}*/
 
 static constexpr int MinCols{ 1 };
 
@@ -92,6 +99,10 @@ bool Debug()
     FillRegular( vRagReg[i], ctrRagReg );
     FillRegular( vRegReg[i], ctrRegReg );
   }
+  vGridTensor tGrid( 4 );
+  for( auto &v : tGrid )
+    for( auto &s : v )
+      s = Counter++;
 
   const std::string sRagSmall{ "RaggedSmall" };
   const std::string sRegSmall{ "RegularSmall" };
@@ -101,6 +112,7 @@ bool Debug()
   const std::string sRagReg  { "RaggedRegular" };
   const std::string sRegReg  { "RegularRegular" };
   const std::string sInt  { "Int1d" };
+  const std::string stGrid{ "Grid4d" };
   std::vector<int> vFibo{ 1, 1, 2, 3, 5, 8, 13, 21 };
   std::cout << sRagSmall << ": " << vRagSmall << std::endl;
   std::cout << sRegSmall << ": " << vRegSmall << std::endl;
@@ -110,6 +122,7 @@ bool Debug()
   std::cout << sRagReg   << ": " << vRagReg   << std::endl;
   std::cout << sRegReg   << ": " << vRegReg   << std::endl;
   std::cout << sInt      << ": " << vFibo     << std::endl;
+  std::cout << stGrid    << ": " << tGrid     << std::endl;
   const std::string FileName{ "VectorDebug.h5" };
   {
     std::cout << "Writing " << FileName << std::endl;
@@ -122,6 +135,7 @@ bool Debug()
     write(writer, sRagReg,   vRagReg);
     write(writer, sRegReg,   vRegReg);
     write(writer, sInt,      vFibo);
+    write(writer, stGrid,    tGrid );
   }
   std::cout << "Reading back " << FileName << std::endl;
   Grid::Hdf5Reader reader(FileName);
@@ -157,6 +171,8 @@ bool Debug()
   }
   read( reader, sRegReg  , rRegReg   );
   read( reader, sInt     , rFibo     );
+  vGridTensor rGrid;
+  read( reader, stGrid, rGrid );
   std::cout << sRagSmall << ": " << rRagSmall << std::endl;
   std::cout << sRegSmall << ": " << rRegSmall << std::endl;
   std::cout << sRagLarge << ": " << rRagLarge << std::endl;
@@ -165,6 +181,7 @@ bool Debug()
   std::cout << sRagReg   << ": " << rRagReg   << std::endl;
   std::cout << sRegReg   << ": " << rRegReg   << std::endl;
   std::cout << sInt      << ": " << rFibo     << std::endl;
+  std::cout << stGrid    << ": " << rGrid     << std::endl;
   return true;
 }
 
