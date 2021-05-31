@@ -162,18 +162,18 @@ bool Debug()
   Grid::Hdf5Reader r( FileName );
   NoiseTensor tGoodNoise( 2, 3, 5, 4 ); // nNoise, nT, nVec, nS
   NoiseTensor tBadNoise( 2, 3, 4, 4 ); // nNoise, nT, nVec, nS
-  std::cout << "Grid::EigenIO::EigenResizeCounter=" << Grid::EigenIO::EigenResizeCounter.load() << std::endl;
+  std::cout << "Grid::EigenIO::EigenResizeCounter=" << Grid::EigenIO::EigenResizeCounter << std::endl;
   read( r, st2Wide, t2Tall );
   ShowEigenTensor( st2Tall, t2Tall );
-  std::cout << "Grid::EigenIO::EigenResizeCounter=" << Grid::EigenIO::EigenResizeCounter.load() << std::endl;
+  std::cout << "Grid::EigenIO::EigenResizeCounter=" << Grid::EigenIO::EigenResizeCounter << std::endl;
   read( r, st2Tall, t2Wide );
   ShowEigenTensor( st2Wide, t2Wide );
-  std::cout << "Grid::EigenIO::EigenResizeCounter=" << Grid::EigenIO::EigenResizeCounter.load() << std::endl;
-  TensorGrid  r2Grid( iShort, iLong );
+  std::cout << "Grid::EigenIO::EigenResizeCounter=" << Grid::EigenIO::EigenResizeCounter << std::endl;
+  TensorGrid  r2Grid;
   ShowEigenTensorSize( st2Grid + " before read", r2Grid );
   read( r, st2Grid, r2Grid );
   ShowEigenTensorSize( st2Grid, r2Grid );
-  std::cout << "Grid::EigenIO::EigenResizeCounter=" << Grid::EigenIO::EigenResizeCounter.load() << std::endl;
+  std::cout << "Grid::EigenIO::EigenResizeCounter=" << Grid::EigenIO::EigenResizeCounter << std::endl;
   NoiseTensorReadable rNoise;
   std::cout << "rNoise (before read): IndexNames " << rNoise.IndexNames << ", MetaData.Version=" << rNoise.MetaData.Version << ", tensor:" << rNoise.tensor << std::endl;
   read( r, st2Noise, rNoise );

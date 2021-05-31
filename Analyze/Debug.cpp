@@ -99,6 +99,18 @@ bool Debug()
     FillRegular( vRagReg[i], ctrRagReg );
     FillRegular( vRegReg[i], ctrRegReg );
   }
+  vvvi vTrickyReg(2);
+  Counter = 0;
+  for( int i = 0; i < vTrickyReg.size(); ++i )
+  {
+    vTrickyReg[i].resize(2 - i);
+    for( int j = 0; j < vTrickyReg[i].size(); ++j )
+    {
+      vTrickyReg[i][j].resize(2);
+      for( int k = 0; k < vTrickyReg[i][j].size(); ++k )
+        vTrickyReg[i][j][k] = Counter++;
+    }
+  }
   vGridTensor tGrid( 4 );
   for( auto &v : tGrid )
     for( auto &s : v )
@@ -111,6 +123,7 @@ bool Debug()
   const std::string sRagRag  { "RaggedRagged" };
   const std::string sRagReg  { "RaggedRegular" };
   const std::string sRegReg  { "RegularRegular" };
+  const std::string sTrickyReg{ "TrickyRegular" };
   const std::string sInt  { "Int1d" };
   const std::string stGrid{ "Grid4d" };
   std::vector<int> vFibo{ 1, 1, 2, 3, 5, 8, 13, 21 };
@@ -121,6 +134,7 @@ bool Debug()
   std::cout << sRagRag   << ": " << vRagRag   << std::endl;
   std::cout << sRagReg   << ": " << vRagReg   << std::endl;
   std::cout << sRegReg   << ": " << vRegReg   << std::endl;
+  std::cout << sTrickyReg<< ": " << vTrickyReg<< std::endl;
   std::cout << sInt      << ": " << vFibo     << std::endl;
   std::cout << stGrid    << ": " << tGrid     << std::endl;
   const std::string FileName{ "VectorDebug.h5" };
@@ -134,6 +148,7 @@ bool Debug()
     write(writer, sRagRag,   vRagRag);
     write(writer, sRagReg,   vRagReg);
     write(writer, sRegReg,   vRegReg);
+    write(writer, sTrickyReg,vTrickyReg);
     write(writer, sInt,      vFibo);
     write(writer, stGrid,    tGrid );
   }
@@ -146,6 +161,7 @@ bool Debug()
   vvvi rRagRag;
   vvvi rRagReg;
   vvvi rRegReg;
+  vvvi rTrickyReg;
   std::vector<int> rFibo;
   read( reader, sRegSmall, rRegSmall );
   try{
@@ -170,6 +186,7 @@ bool Debug()
     std::cout << "Exception reading " << sRagReg << std::endl;
   }
   read( reader, sRegReg  , rRegReg   );
+  read( reader, sTrickyReg,rTrickyReg);
   read( reader, sInt     , rFibo     );
   vGridTensor rGrid;
   read( reader, stGrid, rGrid );
@@ -180,6 +197,7 @@ bool Debug()
   std::cout << sRagRag   << ": " << rRagRag   << std::endl;
   std::cout << sRagReg   << ": " << rRagReg   << std::endl;
   std::cout << sRegReg   << ": " << rRegReg   << std::endl;
+  std::cout << sTrickyReg<< ": " << rTrickyReg<< std::endl;
   std::cout << sInt      << ": " << rFibo     << std::endl;
   std::cout << stGrid    << ": " << rGrid     << std::endl;
   return true;
