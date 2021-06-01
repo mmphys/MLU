@@ -87,7 +87,8 @@ bool Debug()
 {
   static const std::string FileName{ "TensorDemo.h5" };
   // Create tensors
-  std::vector<std::string> vString{ {"Do"},{"androids"},{"dream"},{"of"},{"electric"},{"sheep"} };
+  std::vector<std::string> vString{ {"Do"},{"androids"},{"dream"},{"of"},{"electric"},{"sheep?"} };
+  using SingleGridTensor = Grid::iMatrix<Grid::iVector<Grid::iMatrix<Grid::iVector<Grid::Complex, 5>, 4>, 3>, 2>;
   static constexpr int iLong{ 7 };
   static constexpr int iShort{ 2 };
   using ESO = Eigen::StorageOptions;
@@ -95,6 +96,7 @@ bool Debug()
   using TensorGrid = Eigen::Tensor<iMatrix<Complex, 2>, 2, ESO::RowMajor>;
   using NoiseTensor = Grid::Hadrons::MDistil::NoiseTensor;
   int Counter {};
+  SingleGridTensor GT1;
   TensorRank2 t2Tall( iLong-1, iShort );
   TensorRank2 t2Wide( iShort, iLong+1 );
   TensorGrid  t2Grid( iShort, iLong );
@@ -104,6 +106,7 @@ bool Debug()
   vvGridTensor tGridReg( 2 );
   vvGridTensor tGridRag( 3 );
   const std::string svString{ "PhilipKindredDick" };
+  const std::string sGT1{ "SingleGridT" };
   const std::string st2Tall{ "Tall2d" };
   const std::string st2Wide{ "Wide2d" };
   const std::string st2Grid{ "EigenGrid" };
@@ -112,6 +115,7 @@ bool Debug()
   const std::string stGridReg{ "GridReg" };
   const std::string stGridRag{ "GridRag" };
   // Fill tensors with something interesting (sequential numbers) so we can check I/O
+  for( auto &s : GT1    ) s = Counter++;
   for( auto &s : t2Tall ) s = Counter++;
   for( auto &s : t2Wide ) s = Counter++;
   for( auto &s : t2Grid ) s = Counter++;
@@ -138,6 +142,7 @@ bool Debug()
     }
   }
   // Show tensors
+  std::cout << sGT1      << ": " << GT1      << std::endl;
   ShowEigenTensor( st2Tall, t2Tall );
   ShowEigenTensor( st2Wide, t2Wide );
   ShowEigenTensorSize( st2Grid, t2Grid );
@@ -149,6 +154,7 @@ bool Debug()
     std::cout << "Writing " << FileName << std::endl;
     Grid::Hdf5Writer w( FileName );
     write( w, svString, vString );
+    write( w, sGT1,     GT1 );
     write( w, st2Tall,  t2Tall );
     write( w, st2Wide,  t2Wide );
     write( w, st2Grid,  t2Grid );
@@ -160,6 +166,17 @@ bool Debug()
   // Read back tensors - deliberately exchange tall / wide
   std::cout << "Reading back " << FileName << " exchanging tall/wide" << std::endl;
   Grid::Hdf5Reader r( FileName );
+  std::vector<std::string> Novel;
+  read( r, svString, Novel );
+  for( std::size_t i = 0; i < Novel.size(); ++i )
+  {
+    if( i ) std::cout << " ";
+    std::cout << Novel[i];
+  }
+  std::cout << std::endl;
+  SingleGridTensor rGT1;
+  read( r, sGT1, rGT1 );
+  std::cout << sGT1      << ": " << rGT1      << std::endl;
   NoiseTensor tGoodNoise( 2, 3, 5, 4 ); // nNoise, nT, nVec, nS
   NoiseTensor tBadNoise( 2, 3, 4, 4 ); // nNoise, nT, nVec, nS
   std::cout << "Grid::EigenIO::EigenResizeCounter=" << Grid::EigenIO::EigenResizeCounter << std::endl;
