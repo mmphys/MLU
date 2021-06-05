@@ -119,15 +119,15 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;{150,166,182,342}0/2pt/[GZ]F[PW][PW]/*_p_0_*&apos;.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;{150,166,182}0/3pt_s/[GZ]FPW_*/*_ps_0_*_p_0_*&apos;.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "[PW][PW]_&apos;*&apos;.h5"
-            isEnabled = "NO">
+            argument = "meson/3pt_s/[PW][PW]_&apos;*&apos;.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ssre=^[GZ][F2]([[:alnum:]])([[:alnum:]])_"

@@ -450,8 +450,8 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
 
       if( b3pt )
       {
-        // The current insertion is what was at the sink ... unless we computed in reverse
-        sOutBase.append( Common::Gamma::NameShort( Traj.bRev ? AlgSrc[Src] : AlgSnk[Snk], pszSep, nullptr ) );
+        // The current insertion is what was at the contraction sink
+        sOutBase.append( Common::Gamma::NameShort( AlgSnk[Snk], pszSep, nullptr ) );
         if( Traj.bHasDeltaT )
         {
           sOutBase.append( "_dt_" );
@@ -460,8 +460,8 @@ int BootstrapParams::PerformBootstrap(const Iter &first, const Iter &last, const
       }
       sOutBase.append( Traj.sShortSuffix );
       sOutBase.append( Suffix );
-      sOutBase.append(Gamma::NameShort(b3pt && !Traj.bRev ? Traj.Alg[0] : AlgSnk[Snk], pszSep, Traj.OpSuffixSnk.c_str() ));
-      sOutBase.append(Gamma::NameShort(Traj.bRev ? Traj.Alg[0] : AlgSrc[Src], pszSep,Traj.OpSuffixSrc.c_str() ));
+      sOutBase.append(Gamma::NameShort(b3pt ? (Traj.bRev ? AlgSrc[Src] : Traj.Alg[0] ) : AlgSnk[Snk], pszSep, Traj.OpSuffixSnk.c_str() ));
+      sOutBase.append(Gamma::NameShort(b3pt && Traj.bRev ? Traj.Alg[0]                 : AlgSrc[Src], pszSep, Traj.OpSuffixSrc.c_str() ));
       // Skip bootstrap if output exists
       const std::string sOutFile{ Common::MakeFilename( sOutBase, sBootstrap, seed, DEF_FMT ) };
       const std::string sSummary{ Common::MakeFilename( sOutBase, sBootstrap, seed, TEXT_EXT)};
@@ -927,8 +927,7 @@ int main(const int argc, const char *argv[])
               std::cout << "  t=" << tf.Timeslice << ( ( tf.bHasTimeslice && tf.Timeslice ) ? "->0" : "   " )
                         << '\t' << Filename << std::endl;
               std::string GroupName{ DefaultGroup };
-              InFiles[j].Read( Filename,
-                               b3pt && !l.bRev ? Alg3pt : Alg, b3pt && l.bRev ? Alg3pt : Alg,
+              InFiles[j].Read( Filename, b3pt ? Alg3pt : Alg, Alg,
                                tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName,
                                b3pt && tf.bGotMomentum && tf.p.IsNeg() ? &Alg3ptNeg : nullptr, DefaultDataSet.c_str() );
             }

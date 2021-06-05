@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -x # Log all steps - debug
 set -e # Fail on all errors
@@ -15,9 +15,6 @@ cd ~/$BaseDir
 
 mkdir -p corr/2pt corr/3pt_s fit/2pt ratio/3pt_s/raw
 
-scp "tess:${BaseDir}/corr/2pt/*_p_[01]_0_0_g5P_*" corr/2pt/
-scp "tess:${BaseDir}/corr/3pt_s/*_ps_0_0_0_gT_dt_*_p_0_0_0_g5P_g5P.*" corr/3pt_s/
-scp "tess:${BaseDir}/corr/3pt_s/*_ps_*_0_0_g[TX]_dt_*_p_1_0_0_g5P_g5P.*" corr/3pt_s/
-scp "tess:${BaseDir}/corr/3pt_s/*_ps_-1_0_0_g[TX]_dt_*_p_0_0_0_g5P_g5P.*" corr/3pt_s/
-scp "tess:${BaseDir}/fit/2pt/*_p_[01]_0_0.corr_*" fit/2pt/
-scp "tess:${BaseDir}/fit/2pt/*_p_[01]_0_0.corr.*params*" fit/2pt/
+rsync -uvlmrt tess:"${BaseDir}/corr/2pt/*_p_[01]_0_0_g5P_*" corr/2pt/
+rsync -uvlmrt tess:"${BaseDir}/corr/3pt_s/*_ps_0_0_0_gT_dt_*_p_0_0_0_g5P_g5P.* ${BaseDir}/corr/3pt_s/*_ps_*_0_0_g[TX]_dt_*_p_1_0_0_g5P_g5P.* ${BaseDir}/corr/3pt_s/*_ps_-1_0_0_g[TX]_dt_*_p_0_0_0_g5P_g5P.*" corr/3pt_s/
+rsync -uvlmrt tess:"${BaseDir}/fit/2pt/*_p_[01]_0_0.corr_* ${BaseDir}/fit/2pt/*_p_[01]_0_0.corr.*params*" fit/2pt/

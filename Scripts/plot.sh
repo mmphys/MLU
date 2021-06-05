@@ -15,6 +15,7 @@ do_title="${do_title:-0}"
 my_title="${title}"
 my_x_axis="${x:-column(1)}"
 xargs="${xargs}"
+FileDT="${FileDT}"
 my_xrange="${ti:-*}:${tf:-*}"
 my_yrange="${yrange:-*:*}"
 my_cbrange="${cbrange:--1:1}"
@@ -200,6 +201,7 @@ then
   echo "save   \"1\" to save plots to auto-generated filenames, otherwise name of pdf"
   echo "nt     Plot backward propagating wave as well (or backward only if nt<0)"
   echo "x      definition of field for x-axis. Normally 'column(1)', but try, say 'column(1) / 12'"
+  echo "xargs  Arguments for field for x-axis, eg deltaT"
   echo "whisker plot as box (1 sigma) + error bars (min/max)"
   exit 2
 fi
@@ -220,6 +222,10 @@ else
   SaveFile=2
   SaveFileName="${save// /_}"
   PlotFile="$*"
+  for f in $PlotFile; do
+    PlotPathSplit "$f"
+    FileDT="$FileDT $mmplotfile_dt"
+  done
   PlotFunction
   exit
 fi
@@ -230,6 +236,7 @@ do
   PlotPathSplit "$PlotFile"
   if [[ "$mmplotfile_ext" == "txt" ]]
   then #Silently skip non-text files
+    FileDT="$mmplotfile_dt"
     #log_limit=1
     #if [[ "$mmplotfile_type" == "corr" ]]; then log_limit=2; fi
     #for(( do_log=0 ; do_log < log_limit ; do_log = do_log + 1 ))

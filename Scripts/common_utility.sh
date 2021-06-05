@@ -14,6 +14,7 @@ PlotPathSplit()
   unset mmplotfile_tf
   unset mmplotfile_ops
   unset mmplotfile_ops_all
+  unset mmplotfile_dt
   # Split into path and name
   mmplotfile_name="$1"
   mmplotfile_path="${mmplotfile_name%/*}"
@@ -62,6 +63,9 @@ PlotPathSplit()
       mmplotfile_base="${mmplotfile_base// /.}"
     fi
   fi
+  # See whether various kinds of info are present in base
+  local tmp=${mmplotfile_base#*_dt_}
+  if (( ${#tmp} )); then mmplotfile_dt=${tmp%%[_.]*}; fi
 }
 
 export -f PlotPathSplit
