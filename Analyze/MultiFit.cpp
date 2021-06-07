@@ -878,6 +878,9 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   OutputModel.CopyAttributes( ds.corr[0] );
   {
     std::vector<std::string> ColNames{ ParamNames };
+    //TODO: Work out how to copy parameter names into output file properly
+    if( ColNames.size() == 1 )
+      OutputModel.OpNames.clear();
     ColNames.push_back( "ChiSqPerDof" );
     OutputModel.SetColumnNames( ColNames );
   }

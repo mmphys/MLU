@@ -46,7 +46,7 @@
       enableASanStackUseAfterReturn = "YES"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study3/M1/analyse/h447/ratio/3pt_s"
+      customWorkingDirectory = "$HOME/data/Study3/M1/analyse/h447"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -63,64 +63,44 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-t 8:17"
+            argument = "-t 2:14 -i ratio/3pt_s/raw/ -o fit/ZV/ ZV_l_gT_dt_16_&apos;*&apos;.h5,conSt"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 2:18 -i ratio/3pt_s/raw/ -o fit/ZV/ ZV_l_gT_dt_20_&apos;*&apos;.h5,conSt"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "PW/2pt/h0_s_p_0_0_0_g5P_g5[PW].fold.1835672416.h5,,,N"
+            argument = "-t 2:22 -i ratio/3pt_s/raw/ -o fit/ZV/ ZV_l_gT_dt_24_&apos;*&apos;.h5,conSt"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "fit/2pt/g5_g5/h0_s_p_0_0_0.corr_8_17.g5P_g5W.model.1835672416.h5,E"
+            argument = "-t 7:9 -i ratio/3pt_s/raw/ -o fit/ZV/ ZV_h447_gT_dt_16_&apos;*&apos;.h5,conSt"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "fit_old_1/3pt_s/quark_h3_h0_gT_dt_16_p_0_0_0.corr_2_8.g5P.model.1835672416.h5"
+            argument = "-t 8:12 -i ratio/3pt_s/raw/ -o fit/ZV/ ZV_h447_gT_dt_20_&apos;*&apos;.h5,conSt"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "h447_s_p_0_0_0_g5P_g5P.fold.1835672416.h5"
+            argument = "-t 8:16 -i ratio/3pt_s/raw/ -o fit/ZV/ ZV_h447_gT_dt_24_&apos;*&apos;.h5,conSt"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o GFWPZ2/fit35test/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "GFWPZ2/fit35test/h1_l_p_0_0_0.corr_11_17.PP_PW.constant.4147798751.h5,E,PP,PW0"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o fit/2pt/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "h447_s_p_0_0_0_g5P_g5[PW].fold.1835672416.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-t 4:13:6:6"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-t 5:9:6:7"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-e 2"
+            argument = "-t 5:10 -i corr/2pt/ -o fit/2pt/ h447_l_p_0_0_0_g5P_g5[PW].&apos;*&apos;.h5,,,n"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-n 100"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v 0"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-t 4:10 -i raw/ -o raw_fit/ ZV_l_gT_dt_16_&apos;*&apos;.h5,conSt"
-            isEnabled = "YES">
+            argument = "-e 2"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--minuit2"
@@ -132,7 +112,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--uncorr"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--savecmat"

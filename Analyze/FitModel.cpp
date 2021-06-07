@@ -146,6 +146,7 @@ class ModelConstant : public Model
 public:
   virtual void Construct( vString &Params, const ModelDefaultParams &Default, const Fold &Corr, const vString &OpName );
   virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const;
+  bool GuessE0( scalar &E0, const Vector &Corr ) const;
 };
 
 // 2nd phase of construction (now that virtual functions in place)
@@ -255,7 +256,7 @@ void Model2pt::ReduceUnknown( const UniqueNames &Names )
 bool Model2pt::Guess( Vector &Parameters, std::vector<bool> &bKnown, int pass, const Vector &Corr ) const
 {
   static const scalar MELFactor{ std::sqrt( 2 ) };
-  const int tGuess{ HalfNt / 2 };
+  const int tGuess{ static_cast<int>( Corr.size ) / 4 };
   scalar E0{ Parameters[ParamIdxPerExp[0][0]] };
   bool bNeedAnotherPass{ false };
   bool bGuessSame{ false };
@@ -337,17 +338,39 @@ scalar ModelThreePoint::operator()( int t, Vector &ScratchPad, const Vector &Mod
 
 void ModelConstant::Construct(vString &Params,const ModelDefaultParams &Default,const Fold &Corr,const vString &OpName)
 {
-  throw std::runtime_error( "Implement ModelConstant" );
+  Model::Construct( Params, Default, Corr, OpName );
+  if( NumExponents != 1 )
+    throw std::runtime_error( "Fit to constant must be single-exponential" );
+  //throw std::runtime_error( "Implement ModelConstant" );
+  /*
+   const std::size_t n{ Params.size() };
+   if( n )
+   {
+     if( n != 1 )
+       throw std::runtime_error( "Constant model only accepts 1 parameter (the constant name) not " + std::to_string(n) );
+     ParamNames.push_back( Params[0] );
+     ParamNames.clear();
+   }
+   else
+     ParamNames.push_back( "const" );
+   */
+}
+
+bool ModelConstant::GuessE0( scalar &E0, const Vector &Corr ) const
+{
+  const int tGuess{ static_cast<int>( Corr.size / 2 ) };
+  E0 = Corr[tGuess];
+  return true;
 }
 
 scalar ModelConstant::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
 {
-  return 0;
+  return ModelParams[ParamIdxPerExp[0][0]];
 }
 
 bool Model2pt::GuessE0( scalar &E0, const Vector &Corr ) const
 {
-  const int tGuess{ HalfNt / 2 };
+  const int tGuess{ static_cast<int>( Corr.size / 4 ) };
   E0 = std::log( Corr[tGuess] / Corr[tGuess + 1] );
   return true;
 }

@@ -427,6 +427,7 @@ template class ValWithEr<float>;
 template class ValWithEr<double>;
 template class ValWithEr<long double>;
 
+const Momentum p0(0,0,0);
 const std::string Momentum::DefaultPrefix{ "p" };
 const std::string Momentum::SinkPrefix{ "ps" };
 

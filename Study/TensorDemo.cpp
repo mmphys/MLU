@@ -65,6 +65,18 @@ public:
                                   Grid::Hadrons::NamedTensorDefaultMetadata, MetaData );
 };
 
+void ShowNoiseTensor( const std::string &Name, const TensorRank4 &tensor,
+                      const std::vector<std::string> &IndexNames,
+                      const Grid::Hadrons::NamedTensorDefaultMetadata &md )
+{
+  std::cout << Name << ": IndexNames " << IndexNames << ", MetaData.Version=" << md.Version;
+#if ( (!defined(GRID_SYCL)) && (!defined(GRID_CUDA)) && (!defined(GRID_HIP)) )
+  // This causes problems (under CUDA at least) because Grid::Complex is not std::complex
+  std::cout << ", noise_tensor:" << tensor;
+#endif
+  std::cout << std::endl;
+}
+
 template <typename T> void ShowEigenTensor( const std::string &Name, const T& t )
 {
   auto Num = t.size();
@@ -192,13 +204,13 @@ bool Debug()
   ShowEigenTensorSize( st2Grid, r2Grid );
   std::cout << "Grid::EigenIO::EigenResizeCounter=" << Grid::EigenIO::EigenResizeCounter << std::endl;
   NoiseTensorReadable rNoise;
-  std::cout << "rNoise (before read): IndexNames " << rNoise.IndexNames << ", MetaData.Version=" << rNoise.MetaData.Version << ", tensor:" << rNoise.tensor << std::endl;
+  ShowNoiseTensor( "rNoise (before read)", rNoise.tensor, rNoise.IndexNames, rNoise.MetaData );
   read( r, st2Noise, rNoise );
-  std::cout << "rNoise: IndexNames " << rNoise.IndexNames << ", MetaData.Version=" << rNoise.MetaData.Version << ", tensor:" << rNoise.tensor << std::endl;
+  ShowNoiseTensor( "rNoise (after  read)", rNoise.tensor, rNoise.IndexNames, rNoise.MetaData );
   read( r, st2Noise, tGoodNoise );
-  std::cout << "tGoodNoise: IndexNames " << tGoodNoise.IndexNames << ", MetaData.Version=" << tGoodNoise.MetaData.Version << ", tensor:" << tGoodNoise.tensor << std::endl;
+  ShowNoiseTensor( "rNoise (before read)", tGoodNoise.tensor, tGoodNoise.IndexNames, tGoodNoise.MetaData );
   //read( r, st2Noise, tBadNoise );
-  std::cout << "tBadNoise: IndexNames " << tBadNoise.IndexNames << ", MetaData.Version=" << tBadNoise.MetaData.Version << ", tensor:" << tBadNoise.tensor << std::endl;
+  ShowNoiseTensor( "rNoise (before read)", tBadNoise.tensor, tBadNoise.IndexNames, tBadNoise.MetaData );
   vGridTensor rGrid;
   read( r, stGrid, rGrid );
   std::cout << stGrid << ": " << rGrid << std::endl;

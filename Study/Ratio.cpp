@@ -1,9 +1,8 @@
 /*************************************************************************************
  
- Create XML for a 3-pt current insertion study
- Initially use Z2 wall sources.
- Source file: xml3pt.cpp
- Copyright (C) 2020
+ Create Ratios, e.g. R1, R2 and associated values such as Z_V
+ Source file: Ratio.cpp
+ Copyright (C) 2020-2021
  Author: Michael Marshall<Michael.Marshall@ed.ac.uk>
  
  This program is free software; you can redistribute it and/or modify
@@ -24,135 +23,18 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include <MLU/Common.hpp>
+#include "Ratio.hpp"
 
-//static const std::vector<std::string> vHeavy{ "h0", "h1", "h2", "h3" };
-//static const int NumHeavy{ static_cast<int>( vHeavy.size() ) };
-//static const std::vector<int> vDeltaT{ 12, 14, 16, 20 };
-//static const int NumDeltaT{ static_cast<int>( vDeltaT.size() ) };
-using Scalar = double;
-using Fold = Common::Fold<Scalar>;
-using Model = Common::Model<Scalar>;
-
-using QP=std::pair<std::string, Common::Momentum>;
-struct LessQP
+QPMapModelInfo::QPMapModelInfo( const std::string &FitListName, const std::string &modelBase, const std::string &C2Base )
 {
-  bool operator()( const QP &lhs, const QP &rhs ) const
-  {
-    int i = Common::CompareIgnoreCase( lhs.first, rhs.first );
-    if( i )
-      return i < 0;
-    return lhs.second < rhs.second;
-  }
-};
-
-static const Common::Momentum p0(0, 0, 0);
-
-struct ModelInfo
-{
-  Model m;
-  std::string FileName2pt;
-  int idxE0;
-};
-
-class Maker
-{
-public:
-  const std::string &inBase;
-  const std::string &C2Base;
-  const std::string &modelBase;
-  const std::string &outBase;
-  const Common::Momentum p;
-  const bool eCentral;
-protected:
-  std::regex RegExExt;
-  const bool RegExSwap;
-  std::map<QP, ModelInfo, LessQP> model;
-  int MaxModelSamples;
-  Common::SeedType Seed;
-protected:
-  std::string HeavyKey( const std::string &Heavy ) const;
-  virtual void Make( const std::string &FileName, std::string &Dir,
-                     int DeltaT, Common::Gamma::Algebra &gFrom, const std::string &SinkSourceOp,
-                     const Common::Momentum &MomSnk, const Common::Momentum &MomSrc,
-                     const std::string &sSnk, const std::string &sSrc, const std::string &FileNameSuffix,
-                     const std::string &Suffix, const ModelInfo &miSnk, const ModelInfo &miSrc ) = 0;
-public:
-  Maker( const std::string &inBase, const std::string &C2Base,
-         const std::string &modelBase,const std::string &outBase,
-         std::regex RegExExt, const bool RegExSwap,
-         const bool eCentral, const std::string &FitListName );
-  virtual ~Maker() {}
-  static Maker * Make( const std::string &Type, const std::string &inBase, const std::string &C2Base,
-                       const std::string &modelBase,const std::string &outBase,
-                       std::regex RegExExt, const bool RegExSwap,
-                       const bool eCentral, const std::string &FitListName );
-  void Make( std::string &sFileName );
-};
-
-class R1R2Maker : public Maker
-{
-protected:
-  virtual void Make( const std::string &FileName, std::string &Dir,
-                     int DeltaT, Common::Gamma::Algebra &gFrom, const std::string &SinkSourceOp,
-                     const Common::Momentum &MomSnk, const Common::Momentum &MomSrc,
-                     const std::string &sSnk, const std::string &sSrc, const std::string &FileNameSuffix,
-                     const std::string &Suffix, const ModelInfo &miSnk, const ModelInfo &miSrc );
-public:
-  R1R2Maker( const std::string &inBase, const std::string &C2Base,
-             const std::string &modelBase, const std::string &outBase,
-             std::regex RegExExt, const bool RegExSwap,
-             const bool eCentral, const std::string &FitListName )
-  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, eCentral, FitListName ) {}
-};
-
-class ZVMaker : public Maker
-{
-protected:
-  virtual void Make( const std::string &FileName, std::string &Dir,
-                     int DeltaT, Common::Gamma::Algebra &gFrom, const std::string &SinkSourceOp,
-                     const Common::Momentum &MomSnk, const Common::Momentum &MomSrc,
-                     const std::string &sSnk, const std::string &sSrc, const std::string &FileNameSuffix,
-                     const std::string &Suffix, const ModelInfo &miSnk, const ModelInfo &miSrc );
-public:
-  ZVMaker( const std::string &inBase, const std::string &C2Base,
-           const std::string &modelBase, const std::string &outBase,
-           std::regex RegExExt, const bool RegExSwap,
-           const bool eCentral, const std::string &FitListName )
-  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, eCentral, FitListName ) {}
-};
-
-Maker * Maker::Make( const std::string &Type, const std::string &inBase, const std::string &C2Base,
-                     const std::string &modelBase,const std::string &outBase,
-                     std::regex RegExExt, const bool RegExSwap,
-                     const bool eCentral, const std::string &FitListName )
-{
-  Maker * r;
-  if( !Common::CompareIgnoreCase( Type, "R1R2" ) )
-    r = new R1R2Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, eCentral, FitListName );
-  else if( !Common::CompareIgnoreCase( Type, "ZV" ) )
-    r = new ZVMaker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, eCentral, FitListName );
-  else
-    throw std::runtime_error( "I don't know how to make type " + Type );
-  return r;
-}
-
-Maker::Maker( const std::string &inBase_, const std::string &C2Base_,
-              const std::string &modelBase_, const std::string &outBase_,
-              std::regex regExExt_, const bool regExSwap_,
-              const bool eCentral_, const std::string &fitListName_ )
-: inBase{inBase_}, C2Base{C2Base_}, modelBase{modelBase_}, outBase{outBase_},
-  RegExExt{ regExExt_ }, eCentral{ eCentral_ }, RegExSwap{ regExSwap_ }
-{
-  const std::string FitListName{ modelBase + fitListName_ };
-  std::cout << "Reading fit list from " << FitListName << Common::NewLine;
+  std::map<QP, ModelInfo, LessQP> &model( *this );
+  std::cout << "Reading 2pt fit list from " << FitListName << Common::NewLine;
   std::ifstream s( FitListName );
   if( !Common::FileExists( FitListName ) || s.bad() )
-    throw std::runtime_error( "Fit list \"" + FitListName + "\" not found" );
+    throw std::runtime_error( "2pt fit file \"" + FitListName + "\" not found" );
   using StringMapCI = std::multimap<std::string, std::string, Common::LessCaseInsensitive>;
   using StringMapCIReader = Common::KeyValReaderMulti<std::string, std::string, Common::LessCaseInsensitive>;
   StringMapCI FitList{ StringMapCIReader::Read( s ) };
-  bool bFirst{ true };
   const ModelInfo *idxFirst{ nullptr };
   for( StringMapCI::iterator it = FitList.begin(); it != FitList.end(); ++it )
   {
@@ -160,7 +42,7 @@ Maker::Maker( const std::string &inBase_, const std::string &C2Base_,
     ModelFileName.append( it->second );
     Common::FileNameAtt fna( ModelFileName );
     const std::string &sH{ it->first };
-    const QP qp( sH, fna.bGotMomentum ? fna.p : p0 );
+    const QP qp( sH, fna.bGotMomentum ? fna.p : Common::p0 );
     std::string MsgPrefix( 2, ' ' );
     MsgPrefix.append( sH );
     MsgPrefix.append( Common::Space );
@@ -181,22 +63,92 @@ Maker::Maker( const std::string &inBase_, const std::string &C2Base_,
     mi.m.SetName( std::move( fna ) );
     mi.m.Read( MsgPrefix.c_str() );
     mi.idxE0 = mi.m.GetColumnIndex( "E0" );
-    if( bFirst || MaxModelSamples > mi.m.NumSamples() )
-      MaxModelSamples = mi.m.NumSamples();
-    if( bFirst )
+    if( !idxFirst )
     {
+      idxFirst = &mi;
       if( !mi.m.Name_.bSeedNum )
         throw std::runtime_error( "Seed \"" + mi.m.Name_.SeedString + "\" invalid" );
       Seed = mi.m.Name_.Seed;
-      idxFirst = &mi;
-      bFirst = false;
+      MaxModelSamples = mi.m.NumSamples();
     }
     else
     {
-      if( mi.m.Name_.Base[0] != 'Z' )
-        idxFirst->m.IsCompatible( mi.m, nullptr, Common::COMPAT_DISABLE_BASE );
+      idxFirst->m.IsCompatible( mi.m, &MaxModelSamples, Common::COMPAT_DISABLE_BASE );
     }
   }
+}
+
+QDTMapModelInfo::QDTMapModelInfo( const std::string &FitListName, const std::string &modelBase, const std::string &C2Base )
+{
+  std::map<QDT, ModelInfo, LessQDT> &model( *this );
+  std::cout << "Reading Z_V fit list from " << FitListName << Common::NewLine;
+  std::ifstream s( FitListName );
+  if( !Common::FileExists( FitListName ) || s.bad() )
+    throw std::runtime_error( "Z_V fit file \"" + FitListName + "\" not found" );
+  using StringMapCI = std::multimap<std::string, std::string, Common::LessCaseInsensitive>;
+  using StringMapCIReader = Common::KeyValReaderMulti<std::string, std::string, Common::LessCaseInsensitive>;
+  StringMapCI FitList{ StringMapCIReader::Read( s ) };
+  const ModelInfo *idxFirst{ nullptr };
+  for( StringMapCI::iterator it = FitList.begin(); it != FitList.end(); ++it )
+  {
+    std::string ModelFileName{ modelBase };
+    ModelFileName.append( it->second );
+    Common::FileNameAtt fna( ModelFileName );
+    if( !fna.bGotDeltaT )
+      throw std::runtime_error( "DeltaT missing from " + FitListName );
+    const std::string &sH{ it->first };
+    const QDT qdt( sH, fna.DeltaT );
+    std::string MsgPrefix( 2, ' ' );
+    MsgPrefix.append( sH );
+    MsgPrefix.append( Common::Space );
+    ModelInfo &mi{ model[qdt] };
+    {
+      mi.FileName2pt = C2Base;
+      std::vector<std::string> v2pt{ Common::ArrayFromString( fna.Base, Common::Period ) };
+      const int Len{ static_cast<int>( v2pt.size() ) };
+      if( Len < 3 )
+        throw std::runtime_error( "Expected " + fna.Base + " to have at least 3 components" );
+      for( int i = 0; i < Len - 2; ++i )
+      {
+        if( i )
+          mi.FileName2pt.append( 1, '.' );
+        mi.FileName2pt.append( v2pt[i] );
+      }
+    }
+    mi.m.SetName( std::move( fna ) );
+    mi.m.Read( MsgPrefix.c_str() );
+    mi.idxE0 = mi.m.GetColumnIndex( "E0" );
+    if( !idxFirst )
+    {
+      idxFirst = &mi;
+      if( !mi.m.Name_.bSeedNum )
+        throw std::runtime_error( "Seed \"" + mi.m.Name_.SeedString + "\" invalid" );
+      Seed = mi.m.Name_.Seed;
+      MaxModelSamples = mi.m.NumSamples();
+    }
+    else
+    {
+      idxFirst->m.IsCompatible( mi.m, &MaxModelSamples, Common::COMPAT_DISABLE_BASE );
+    }
+  }
+}
+
+Maker * Maker::Make( const std::string &Type, std::string &TypeParams,
+                     const std::string &inBase, const std::string &C2Base,
+                     const std::string &modelBase,const std::string &outBase,
+                     std::regex RegExExt, const bool RegExSwap,
+                     const bool eCentral, const std::string &FitListName )
+{
+  Maker * r;
+  if( !Common::CompareIgnoreCase( Type, "R1R2" ) )
+    r = new R1R2Maker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, eCentral, FitListName );
+  else if( !Common::CompareIgnoreCase( Type, "ZV" ) )
+    r = new ZVMaker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, eCentral, FitListName );
+  else
+    throw std::runtime_error( "I don't know how to make type " + Type );
+  if( !TypeParams.empty() )
+    throw std::runtime_error( "Unused parameters: " + TypeParams );
+  return r;
 }
 
 // Incoming file should be a three-point function with a heavy sink and light(er) source
@@ -252,15 +204,16 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
                       const std::string &Suffix, const ModelInfo &miSnk, const ModelInfo &miSrc )
 {
   // Make sure I have the model for Z_V already loaded
-  const ModelInfo &miZV{ model.at( QP( "ZV_" + std::to_string( DeltaT ), p0 ) ) };
+  const ModelInfo &miZVSnk{ ZVmi.at( QDT( sSnk, DeltaT ) ) };
+  const ModelInfo &miZVSrc{ ZVmi.at( QDT( sSrc, DeltaT ) ) };
   // Now read the two-point functions
   std::string C2NameSnk{ miSnk.FileName2pt };
   C2NameSnk.append( SinkSourceOp );
   static const std::string Spaces( 2, ' ' );
-  Fold C2Snk( Common::MakeFilename( C2NameSnk, Common::sFold, Seed, DEF_FMT ), Spaces.c_str() );
+  Fold C2Snk( Common::MakeFilename( C2NameSnk, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
   std::string C2NameSrc{ miSrc.FileName2pt };
   C2NameSrc.append( SinkSourceOp );
-  Fold C2Src( Common::MakeFilename( C2NameSrc, Common::sFold, Seed, DEF_FMT ), Spaces.c_str() );
+  Fold C2Src( Common::MakeFilename( C2NameSrc, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
 
   // Load the correlators we need
   const std::size_t Len{ Dir.length() };
@@ -329,7 +282,8 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
   const Scalar * pC2[NumC2];
   pC2[0] = C2Src[Fold::idxCentral];
   pC2[1] = C2Snk[Fold::idxCentral];
-  const Scalar * pZV{ miZV.m[Fold::idxCentral] + miZV.idxE0 };
+  const Scalar * pZVSrc{ miZVSrc.m[Fold::idxCentral] + miZVSrc.idxE0 };
+  const Scalar * pZVSnk{ miZVSnk.m[Fold::idxCentral] + miZVSnk.idxE0 };
   for( int idx = Fold::idxCentral; idx < ds.NSamples; ++idx )
   {
     const double EProd = (*pE[0]) * (*pE[1]);
@@ -346,8 +300,9 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
       const double n = std::abs( EProd * z[iLight][iHeavy] * z[iHeavy][iLight] );
       if( !std::isfinite( n ) )
         throw std::runtime_error( "R2 Overflow" );
-      const Scalar ZV{ *pZV };
-      *pDst[0]++ = 4 * std::sqrt( n / C2Prod ) * ZV; // R1
+      const Scalar ZVSrc{ *pZVSrc };
+      const Scalar ZVSnk{ *pZVSnk };
+      *pDst[0]++ = 2 * std::sqrt( n / C2Prod * ZVSrc * ZVSnk ); // R1
       if( bMakeR2 )
         *pDst[1]++ = 2 * std::sqrt( n / std::abs( z[iLight][iLight] * z[iHeavy][iHeavy] ) ); // R2
     }
@@ -358,7 +313,8 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
     {
       pE[0] += miSrc.m.Nt();
       pE[1] += miSnk.m.Nt();
-      pZV   += miZV .m.Nt();
+      pZVSrc+= miZVSrc.m.Nt();
+      pZVSnk+= miZVSnk.m.Nt();
     }
     pC2[0] += C2Src.Nt();
     pC2[1] += C2Snk.Nt();
@@ -426,7 +382,7 @@ void ZVMaker::Make( const std::string &FileName, std::string &Dir,
   std::string C2Name{ miSnk.FileName2pt };
   C2Name.append( SinkSourceOp );
   Fold C2;
-  C2.Read( Common::MakeFilename( C2Name, Common::sFold, Seed, DEF_FMT ), Spaces.c_str() );
+  C2.Read( Common::MakeFilename( C2Name, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
   int NumSamples {};
   C3.IsCompatible( C2, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
                                     | Common::COMPAT_DISABLE_CONFIG_COUNT );
@@ -472,7 +428,7 @@ void ZVMaker::Make( const std::string &FileName, std::string &Dir,
   //OutFileName.append( Suffix );
   Common::AppendGammaDeltaT( OutFileName, gFrom, DeltaT );
   OutFileName.append( SinkSourceOp );
-  OutFileName = Common::MakeFilename( OutFileName, Common::sFold, Seed, DEF_FMT );
+  OutFileName = Common::MakeFilename( OutFileName, Common::sFold, model.Seed, DEF_FMT );
   std::cout << "->" << OutFileName << Common::NewLine;
   out.Write( OutFileName, Common::sFold.c_str() );
   const std::size_t FileNameLen{ OutFileName.find_last_of( '.' ) };
@@ -486,6 +442,7 @@ void ZVMaker::Make( const std::string &FileName, std::string &Dir,
 
 int main(int argc, const char *argv[])
 {
+  static const char DefaultType[]{ "ZV" };
   static const char DefaultERE[]{ R"((quark_|anti_)([[:alpha:]]+[[:digit:]]*)_([[:alpha:]]+[[:digit:]]*))" };
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
@@ -499,7 +456,7 @@ int main(int argc, const char *argv[])
       {"i3", CL::SwitchType::Single, "" },
       {"im", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
-      {"type", CL::SwitchType::Single, "R1R2" },
+      {"type", CL::SwitchType::Single, DefaultType },
       {"ssre", CL::SwitchType::Single, DefaultERE },
       {"swap", CL::SwitchType::Flag, nullptr},
       {"ec", CL::SwitchType::Flag, nullptr},
@@ -509,9 +466,10 @@ int main(int argc, const char *argv[])
     if( !cl.GotSwitch( "help" ) && cl.Args.size() > 1 )
     {
       // Read the list of fits I've chosen to use
-      const std::string Type{ cl.SwitchValue<std::string>("type") };
+      std::string TypeParams{ cl.SwitchValue<std::string>("type") };
+      const std::string Type{ Common::ExtractToSeparator( TypeParams ) };
       const std::string InBase{ cl.SwitchValue<std::string>("i3") };
-      std::unique_ptr<Maker> m( Maker::Make( Type, InBase, cl.SwitchValue<std::string>("i2"),
+      std::unique_ptr<Maker> m( Maker::Make( Type, TypeParams, InBase, cl.SwitchValue<std::string>("i2"),
                                              cl.SwitchValue<std::string>("im"), cl.SwitchValue<std::string>("o"),
                                              std::regex( cl.SwitchValue<std::string>("ssre"),
                                                          std::regex::extended | std::regex::icase ),
@@ -556,6 +514,7 @@ int main(int argc, const char *argv[])
     "--i3   Input3 filename prefix\n"
     "--im   Input model filename prefix\n"
     "-o     Output filename prefix\n"
+    "--type Ratio type[,parameters[,...]], default " << DefaultType << "\n"
     "--ssre Extended regex for sink/source type, default\n       " << DefaultERE << "\n"
     "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
     //"-n     Number of samples to fit, 0 (default) = all available from bootstrap\n"

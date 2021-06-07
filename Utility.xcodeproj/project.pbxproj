@@ -2901,6 +2901,7 @@
 		68B47B422635732300611065 /* Test_nersc_io.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Test_nersc_io.cc; sourceTree = "<group>"; };
 		68B47B472635735800611065 /* Test_where */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_where; sourceTree = BUILT_PRODUCTS_DIR; };
 		68B47B6D2635737D00611065 /* Test_nersc_io */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_nersc_io; sourceTree = BUILT_PRODUCTS_DIR; };
+		68B70EB3266CE2A700F83B30 /* Ratio.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Ratio.hpp; sourceTree = "<group>"; };
 		68B90194249D481700739CD2 /* RareKaonNeutralDisc.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RareKaonNeutralDisc.hpp; sourceTree = "<group>"; };
 		68B90195249D481700739CD2 /* RareKaonNeutralDisc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RareKaonNeutralDisc.cpp; sourceTree = "<group>"; };
 		68B96235244AE18500E5CF09 /* Contractor.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = Contractor.hpp; path = ../Hadrons/utilities/Contractor.hpp; sourceTree = "<group>"; };
@@ -5815,6 +5816,7 @@
 				687D86AF26340F5D002CAE0F /* mixedop.cpp */,
 				687D86AC26340F5D002CAE0F /* peramb-compare.cpp */,
 				687D86A626340F5D002CAE0F /* Ratio.cpp */,
+				68B70EB3266CE2A700F83B30 /* Ratio.hpp */,
 				6864ADC526667C9B00F5EE80 /* TensorDemo.cpp */,
 				687D86AE26340F5D002CAE0F /* xml3pt.cpp */,
 				687D86A226340F5D002CAE0F /* xml3pt.hpp */,

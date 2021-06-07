@@ -1011,6 +1011,8 @@ struct Momentum
   void Replace( std::string &s, const std::string &MomName, bool bNegative = false ) const;
 };
 
+extern const Momentum p0;
+
 std::ostream& operator<<( std::ostream& os, const Momentum &p );
 std::istream& operator>>( std::istream& is, Momentum &p );
 
