@@ -208,9 +208,9 @@ bool Debug()
   read( r, st2Noise, rNoise );
   ShowNoiseTensor( "rNoise (after  read)", rNoise.tensor, rNoise.IndexNames, rNoise.MetaData );
   read( r, st2Noise, tGoodNoise );
-  ShowNoiseTensor( "rNoise (before read)", tGoodNoise.tensor, tGoodNoise.IndexNames, tGoodNoise.MetaData );
+  ShowNoiseTensor( "tGoodNoise", tGoodNoise.tensor, tGoodNoise.IndexNames, tGoodNoise.MetaData );
   //read( r, st2Noise, tBadNoise );
-  ShowNoiseTensor( "rNoise (before read)", tBadNoise.tensor, tBadNoise.IndexNames, tBadNoise.MetaData );
+  ShowNoiseTensor( "tBadNoise", tBadNoise.tensor, tBadNoise.IndexNames, tBadNoise.MetaData );
   vGridTensor rGrid;
   read( r, stGrid, rGrid );
   std::cout << stGrid << ": " << rGrid << std::endl;
