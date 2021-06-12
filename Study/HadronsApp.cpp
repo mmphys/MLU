@@ -613,22 +613,28 @@ void ModPropSeq::AddDependencies( HModList &ModList ) const
 
 /**************************
  2pt contraction
+ By default, momentum +p1 at source and -p1 at sink
+ However, can also specify p2 for quark 2
+    i.e. source momentum = (p1 - p2), sink momentum = (p2 - p1)
 **************************/
 
 const std::string ContractionPrefix{ "meson" };
 
 ModContract2pt::ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
-                                const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_)
+                                const Quark &q1_, const Quark &q2_, const Common::Momentum &p1_, int t_,
+                                const Common::Momentum &p2_ )
 // Two-point Region-sinks don't really exist - silently translate to point-sinks
 : HMod(ModList, taxonomy == Species::Region ? Taxonomy(taxonomy.family, Species::Point) : taxonomy),
-  q1{q1_}, q2{q2_}, p{p_}, t{t_}
+q1{q1_}, q2{q2_}, p1{p1_}, t{t_}, p2{p2_}, pSource{p1_ - p2_}
 {
   std::string Prefix2a( tax.FamilyName() );
   std::string Prefix2b;
   tax.SinkSourceType( Prefix2b );
   std::string s{ q2.flavour };
   Append( s, q1.flavour );
-  AppendPT( s, t, p );
+  AppendPT( s, t, pSource );
+  if( p2 )
+    AppendP( s, p2, "pq2" );
   static const std::string Prefixfamily{ "2pt" };
   FileName = ModList.params.Run.OutputBase;
   FileName.append( Prefixfamily );
@@ -656,15 +662,15 @@ void ModContract2pt::AddDependencies( HModList &ModList ) const
   mesPar.gammas = "all";
   if( tax == Species::Wall )
   {
-    mesPar.q1 = ModList.TakeOwnership( new ModSlicedProp( ModList, tax, q1, p, t ) );
-    mesPar.q2 = ModList.TakeOwnership( new ModSlicedProp( ModList, tax, q2, p, t ) );
+    mesPar.q1 = ModList.TakeOwnership( new ModSlicedProp( ModList, tax, q1, p1, t ) );
+    mesPar.q2 = ModList.TakeOwnership( new ModSlicedProp( ModList, tax, q2, p2, t ) );
   }
   else
   {
-    mesPar.q1 = ModList.TakeOwnership( new ModProp( ModList, tax, q1, p, t ) );
-    mesPar.q2 = ModList.TakeOwnership( new ModProp( ModList, tax, q2, p, t ) );
+    mesPar.q1 = ModList.TakeOwnership( new ModProp( ModList, tax, q1, p1, t ) );
+    mesPar.q2 = ModList.TakeOwnership( new ModProp( ModList, tax, q2, p2, t ) );
   }
-  mesPar.sink = ModList.TakeOwnership( new ModSink( ModList, tax, p0 ) );
+  mesPar.sink = ModList.TakeOwnership( new ModSink( ModList, tax, -pSource ) );
   ModList.application.createModule<MContraction::Meson>(name, mesPar);
 }
 

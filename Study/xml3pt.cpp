@@ -378,6 +378,7 @@ void Study3::Setup( XmlReader &r )
       if( HeavyQuarks.find( qh ) == HeavyQuarks.end() )
         HeavyQuarks.emplace( qh );
       std::vector<Common::Momentum> Momenta = Common::ArrayFromString<Common::Momentum>( hp.Momenta );
+      Check0Negate( Momenta, makePar.DoNegativeMomenta );
       Common::NoDuplicates( Momenta, "HeavyMomenta", 1 );
       CountHeavyMomenta += Momenta.size();
       for( const Common::Momentum &p : Momenta )
@@ -419,6 +420,40 @@ std::string Study3::RunID() const
   return s.str();
 }
 
+// Get the list of momenta to use for Q2 when we perform two-point contractions
+// Copy the momenta, add zero-momentum and (optionally) add the negative momenta. De-duplicate the list
+bool Study3::Check0Negate( std::vector<Common::Momentum> &Momenta, bool bNegate )
+{
+  bool bGot0{ false };
+  const std::size_t Num{ Momenta.size() };
+  if( bNegate )
+    Momenta.reserve( 2 * Num );
+  for( std::size_t i = 0; i < Num; ++i )
+  {
+    if( !Momenta[i] )
+      bGot0 = true;
+    else if( bNegate )
+      Momenta.emplace_back( -Momenta[i] );
+  }
+  return bGot0;
+}
+
+void Study3::Contract2pt( const Taxonomy &tax, const Quark &q1, const Quark &q2, std::size_t idxMomentum, int t,
+                          const std::vector<Common::Momentum> &Momenta, bool bGotp0 )
+{
+  const Common::Momentum &p{ Momenta[idxMomentum] };
+  const bool bFlavourDiagonal{ !Common::CompareIgnoreCase( q1.flavour, q2.flavour ) };
+  const std::size_t idxMomentumStart{ static_cast<size_t>(bGotp0 ? 0 : -1) };
+  const std::size_t idxMomentumLimit{ bFlavourDiagonal ? idxMomentum + 1 : Momenta.size() };
+  for( std::size_t idxMomentum2 = idxMomentumStart; idxMomentum2 < idxMomentumLimit; ++idxMomentum2 )
+  {
+    const Common::Momentum &p2{ idxMomentum2 < 0 ? p0 : Momenta[idxMomentum2] };
+    l.TakeOwnership( new ModContract2pt( l, tax, q1, q2, p, t, p2 ) );
+    if( !bFlavourDiagonal )
+      l.TakeOwnership( new ModContract2pt( l, tax, q2, q1, p, t, p2 ) );
+  }
+}
+
 void Study3::MakeStudy3( const Decay &d )
 {
   const Quark &ql{ Q.at( d.qLight ) };
@@ -427,29 +462,29 @@ void Study3::MakeStudy3( const Decay &d )
   {
     for( const Taxonomy &tax : Taxa )
     {
-      for( const HeavyMomenta &hp : d.HeavyMom )
+      for( std::size_t idxHP = 0; idxHP < d.HeavyMom.size(); ++idxHP )
       {
-        const Quark &qh{ Q.at( hp.qHeavy ) };
-        std::vector<Common::Momentum> Momenta = Common::ArrayFromString<Common::Momentum>( hp.Momenta );
-        for( Common::Momentum p : Momenta )
+        const Quark &qh{ Q.at( d.HeavyMom[idxHP].qHeavy ) };
+        std::vector<Common::Momentum> Momenta = Common::ArrayFromString<Common::Momentum>( d.HeavyMom[idxHP].Momenta );
+        const bool bGotp0{ Check0Negate( Momenta, makePar.DoNegativeMomenta ) };
+        for( std::size_t idxMomentum = 0; idxMomentum < Momenta.size(); ++idxMomentum )
         {
-          for( int pDoNeg = 0; pDoNeg < ( ( makePar.DoNegativeMomenta && p ) ? 2 : 1 ); ++pDoNeg )
-          {
-            bool bDidSomething{ false };
+            const Common::Momentum &p{ Momenta[idxMomentum] };
             if( makePar.TwoPoint )
             {
               // Create the two-point functions I need for R1. Second pair not really needed, but doesn't take much time
-              bDidSomething = true;
-              l.TakeOwnership( new ModContract2pt( l, tax, qSpectator, ql, p, t ) );
-              l.TakeOwnership( new ModContract2pt( l, tax, ql, qSpectator, p, t ) );
-              // These two only needed at zero momentum ... but doesn't take much time
-              l.TakeOwnership( new ModContract2pt( l, tax, qSpectator, qh, p, t ) );
-              l.TakeOwnership( new ModContract2pt( l, tax, qh, qSpectator, p, t ) );
+              Contract2pt( tax, ql, qSpectator, idxMomentum, t, Momenta, bGotp0 );
+              // heavy-spec only needed at 0 momentum. Causes p!=0 propagators to be built, but doesn't take much time
+              Contract2pt( tax, qh, qSpectator, idxMomentum, t, Momenta, bGotp0 );
+              // Discussion Tobi 9 Jun 2021 - just contract every combination
+              Contract2pt( tax, qSpectator, qSpectator, idxMomentum, t, Momenta, bGotp0 );
+              Contract2pt( tax, ql, ql, idxMomentum, t, Momenta, bGotp0 );
+              for( std::size_t idxHP2 = 0; idxHP2 <= idxHP; ++idxHP2 )
+                Contract2pt( tax, qh, Q.at( d.HeavyMom[idxHP2].qHeavy ), idxMomentum, t, Momenta, bGotp0 );
             }
             if( ThreePoint )
             {
               // Create the three-point functions I need for R2 (which includes what's required for R1)
-              bDidSomething = true;
               for( int iHeavy  = makePar.HeavyQuark ? 0 : 1;
                        iHeavy <= makePar.HeavyAnti  ? 1 : 0; ++iHeavy )
               {
@@ -481,15 +516,13 @@ void Study3::MakeStudy3( const Decay &d )
                 }
               }
             }
-            if( !bDidSomething && !p )
+            if( !makePar.TwoPoint && !ThreePoint && !p )
             {
               // We are only performing residual-mass checks on each propagator
               l.TakeOwnership( new ModProp( l, tax, qh, p, t ) );
               l.TakeOwnership( new ModProp( l, tax, ql, p, t ) );
               l.TakeOwnership( new ModProp( l, tax, qSpectator, p,t) );
             }
-            p = -p;
-          }
         }
       }
     }

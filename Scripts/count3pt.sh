@@ -5,6 +5,8 @@ do
 echo "$f"
 echo "   Modules: $(grep -c '<module>' $f)"
 echo "       2pt: $(grep -c '<name>meson_2' $f)"
+echo " 2pt p2==0: $(egrep -c '<name>meson_2.*_t_[0-9]+<' $f)"
+echo " 2pt p2!=0: $(egrep -c '<name>meson_2.*_t_[0-9]_' $f)"
 echo "       3pt: $(grep -c '<name>meson_3' $f)"
 echo "    Prop  : $(grep -c '<name>Prop' $f)"
 echo "    Prop l: $(egrep -c '<name>Prop_.*_l_p_' $f)"

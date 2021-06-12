@@ -991,10 +991,22 @@ struct Momentum
     z += rhs.z;
     return *this;
   }
+  Momentum& operator-=(const Momentum& rhs)
+  {
+    x -= rhs.x;
+    y -= rhs.y;
+    z -= rhs.z;
+    return *this;
+  }
   // friends defined inside class body are inline and are hidden from non-ADL lookup
   friend Momentum operator+( Momentum lhs, const Momentum &rhs ) // passing lhs by value helps optimize chained a+b+c
   {
     lhs += rhs; // reuse compound assignment
+    return lhs; // return the result by value (uses move constructor)
+  }
+  friend Momentum operator-( Momentum lhs, const Momentum &rhs ) // passing lhs by value helps optimize chained a-b-c
+  {
+    lhs -= rhs; // reuse compound assignment
     return lhs; // return the result by value (uses move constructor)
   }
 

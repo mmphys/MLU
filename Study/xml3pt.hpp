@@ -149,6 +149,11 @@ protected:
   int CountHeavyMomenta;
   std::set<int> UniqueP2;
 
+  // Check whether 0-momentum in the list. Add the negative of each momentum if requested
+  bool Check0Negate( std::vector<Common::Momentum> &Momenta, bool bNegate );
+  void Contract2pt( const Taxonomy &tax, const Quark &q1, const Quark &q2, std::size_t idxMomentum, int t,
+                    const std::vector<Common::Momentum> &Momenta, bool bGotp0 );
+
 public:
   explicit Study3( const AppParams &appPar, const std::string &sXmlTagName ) : AppMaker{appPar,sXmlTagName} {}
   virtual std::string RunID() const;

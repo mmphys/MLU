@@ -52,7 +52,7 @@
     <!--<Taxa>GF Point GF Wall GF Region GP Wall Z2 Point ZF Point ZF Wall</Taxa>-->
     <Taxa>GF Point GF Wall ZF Point ZF Wall</Taxa>
     <DoNegativeMomenta>false</DoNegativeMomenta>
-    <deltaT>16 20 24</deltaT>
+    <deltaT>16 20 24 28 32</deltaT>
     <!--<deltaT>12 14 16 20 24 28 32</deltaT>-->
     <!--<deltaT>12</deltaT>-->
     <gamma>Gamma5</gamma>

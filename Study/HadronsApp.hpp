@@ -549,6 +549,9 @@ public:
 
 /**************************
  2pt contraction
+ By default, momentum +p1 at source and -p1 at sink
+ However, can also specify p2 for quark 2
+    i.e. source momentum = (p1 - p2), sink momentum = (p2 - p1)
 **************************/
 
 extern const std::string ContractionPrefix;
@@ -561,10 +564,13 @@ public:
   static const std::string Prefix;
   const Quark &q1;
   const Quark &q2;
-  const Common::Momentum p;
+  const Common::Momentum p1;
+  const Common::Momentum p2;
   const int t;
+  const Common::Momentum pSource;
   ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
-                  const Quark &q1_, const Quark &q2_, const Common::Momentum &p_, int t_);
+                  const Quark &q1, const Quark &q2, const Common::Momentum &p1, int t,
+                  const Common::Momentum &p2 = p0 );
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
