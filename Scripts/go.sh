@@ -60,6 +60,7 @@ for (( ; NumFiles-- ; start += Inc )); do
       -e "s|@xml@|$jobxml|g" -e "s|@wall@|${wall_hours}|g" \
       -e "s|@executable@|$executable|g" -e "s|@jobscript@|$jobscript|g" \
       -e "s|@base@|$base|g" $template > $jobscript
+  chmod u+x $jobscript
   #Make $jobxml
   sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" \
       $templateXml > $jobxml
