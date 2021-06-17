@@ -1062,6 +1062,8 @@ struct FileNameAtt
   int         Timeslice;
   bool bGotMomentum = false;
   Momentum    p;
+  bool bGotMomentumQ2 = false;
+  Momentum    pQ2;
   bool bGotDeltaT = false;
   int         DeltaT;
   std::vector<Gamma::Algebra> Gamma; // Gamma algebras extracted from name (after source and sink operators removed)

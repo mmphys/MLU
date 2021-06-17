@@ -592,6 +592,7 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
 void FileNameAtt::ParseShort()
 {
   // Extract other attributes from filename
+  bGotMomentumQ2 = pQ2.Extract( Base, "pq2" );
   BaseShort = Base;
   ExtractTimeslice( BaseShort, bGotTimeslice, Timeslice );
   bGotMomentum = p.Extract( BaseShort );
