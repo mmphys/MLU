@@ -50,7 +50,7 @@ step=${step:-40}
 #echo "num=$num, step=$step"
 
 echo "Making $NumFiles $jobDescr jobs"
-
+umask 02
 for (( ; NumFiles-- ; start += Inc )); do
   end=$(( start + ( num - 1 ) * step + 1 ))
   jobscript=$base.$start.$jobext
@@ -60,7 +60,7 @@ for (( ; NumFiles-- ; start += Inc )); do
       -e "s|@xml@|$jobxml|g" -e "s|@wall@|${wall_hours}|g" \
       -e "s|@executable@|$executable|g" -e "s|@jobscript@|$jobscript|g" \
       -e "s|@base@|$base|g" $template > $jobscript
-  chmod u+x $jobscript
+  chmod ug+x $jobscript
   #Make $jobxml
   sed -e "s|@start@|$start|g" -e "s|@end@|$end|g" -e "s|@step@|$step|g" \
       $templateXml > $jobxml
