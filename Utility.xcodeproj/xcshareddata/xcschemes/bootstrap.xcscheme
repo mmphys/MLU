@@ -66,20 +66,24 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--ci"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-ag5,gT5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT,-gx,-gy,-gz"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--pa"
-            isEnabled = "NO">
+            argument = "--p2"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-r4147798751"
@@ -90,7 +94,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-r1835672416"
+            argument = "-r1835672416 -w"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -128,6 +132,10 @@
          <CommandLineArgument
             argument = "meson/3pt_s/[PW][PW]_&apos;*&apos;.h5"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "meson/2pt/&apos;*&apos;"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ssre=^[GZ][F2]([[:alnum:]])([[:alnum:]])_"

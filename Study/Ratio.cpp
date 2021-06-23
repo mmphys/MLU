@@ -42,7 +42,7 @@ QPMapModelInfo::QPMapModelInfo( const std::string &FitListName, const std::strin
     ModelFileName.append( it->second );
     Common::FileNameAtt fna( ModelFileName );
     const std::string &sH{ it->first };
-    const QP qp( sH, fna.bGotMomentum ? fna.p : Common::p0 );
+    const QP qp( sH, fna.p.empty() ? Common::p0 : fna.p.begin()->second );
     std::string MsgPrefix( 2, ' ' );
     MsgPrefix.append( sH );
     MsgPrefix.append( Common::Space );

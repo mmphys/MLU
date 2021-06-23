@@ -195,6 +195,7 @@ namespace Gamma
     "g-sZT",
     "gsZT",
   };
+  const std::string sGammai{ "gi" };
 
   std::string NameShort( Algebra alg, const char * pszPrefix, const char * pszOpSuffix )
   {
@@ -204,6 +205,8 @@ namespace Gamma
     {
       if( pszPrefix && *pszPrefix )
         sName.append( pszPrefix );
+      if( alg == Algebra::Gammai )
+        sName.append( sGammai );
       if( alg != Algebra::Unknown )
       {
         int idx = static_cast<int>( alg );
@@ -230,6 +233,8 @@ namespace Gamma
         ;
       if( i < nGamma )
         a = static_cast<Algebra>( i );
+      else if( EqualIgnoreCase( s, sGammai ) )
+        a = Algebra::Gammai;
       else
         is.setstate( std::ios_base::failbit );
     }
@@ -429,12 +434,14 @@ template class ValWithEr<long double>;
 
 const Momentum p0(0,0,0);
 const std::string Momentum::DefaultPrefix{ "p" };
-const std::string Momentum::SinkPrefix{ "ps" };
+const std::string Momentum::SinkPrefix{ DefaultPrefix + "s" };
+const std::string Momentum::SquaredSuffix{ "2" };
 
-std::string Momentum::p2_string( const std::string &separator ) const
+std::string Momentum::p2_string( const std::string &separator, const std::string Prefix ) const
 {
   std::string s{ separator };
-  s.append( "p2" );
+  s.append( Prefix );
+  s.append( SquaredSuffix );
   s.append( separator );
   s.append( std::to_string( p2() ) );
   return s;
@@ -452,7 +459,7 @@ std::string Momentum::to_string4d( const std::string &separator, bool bNegative 
   return to_string( separator, bNegative ) + separator + "0";
 }
 
-std::regex Momentum::MakeRegex( const std::string &MomName ) const
+std::regex Momentum::MakeRegex( const std::string &MomName )
 {
   std::string sPattern( Common::Underscore );
   sPattern.append( MomName );
@@ -545,7 +552,8 @@ std::istream& operator>>( std::istream& is, Momentum &p )
 }
 
 // These are the attributes I like to use in my filenames
-void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> * pOpNames )
+void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> * pOpNames,
+                         const std::vector<std::string> * pIgnoreMomenta )
 {
   clear();
   Filename = Filename_;
@@ -584,18 +592,50 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   }
   // Now see whether we can extract operator names
   if( pOpNames )
-    ParseOpNames( *pOpNames );
+    ParseOpNames( *pOpNames, 2, pIgnoreMomenta );
   else
-    ParseShort();
+    ParseShort( pIgnoreMomenta );
 }
 
-void FileNameAtt::ParseShort()
+void FileNameAtt::ParseShort( const std::vector<std::string> * pIgnoreMomenta )
 {
-  // Extract other attributes from filename
-  bGotMomentumQ2 = pQ2.Extract( Base, "pq2" );
+  // Remove momenta we are going to ignore in the filename
+  Momentum pIgnore;
+  if( pIgnoreMomenta )
+  {
+    for( const std::string &s : *pIgnoreMomenta )
+    {
+      while( pIgnore.Extract( Base, s ) ) // There might be more than one copy
+        ; //momIgnore.emplace_back( s, pIgnore );
+    }
+  }
   BaseShort = Base;
+  // Now get the remaining momenta and save them
+  std::smatch match;
+  std::regex Pattern{ Momentum::MakeRegex( "([pP][[:alnum:]]*)" ) };
+  while( std::regex_search( BaseShort, match, Pattern ) )
+  {
+    // Extract the momentum
+    const std::string sMom{ match[1] };
+    pIgnore.x = std::stoi( match[2] );
+    pIgnore.y = std::stoi( match[3] );
+    pIgnore.z = std::stoi( match[4] );
+    const std::string sSuffix{ match.suffix() };
+    BaseShort = match.prefix();
+    BaseShort.append( sSuffix );
+    // Now see whether we already have it
+    auto it = p.find( sMom );
+    if( it == p.end() )
+      p.emplace( std::make_pair( sMom, pIgnore ) );
+    else if( ! ( it->second == pIgnore ) )
+    {
+      std::stringstream ss;
+      ss << "Repeated momentum " << sMom << CommaSpace << it->second << " != " << pIgnore;
+      throw std::runtime_error( ss.str() );
+    }
+  }
+  // Extract other attributes from filename
   ExtractTimeslice( BaseShort, bGotTimeslice, Timeslice );
-  bGotMomentum = p.Extract( BaseShort );
   ExtractDeltaT( BaseShort, bGotDeltaT, DeltaT );
   Gamma.clear();
   Gamma = ExtractGamma( BaseShort );
@@ -603,7 +643,7 @@ void FileNameAtt::ParseShort()
 
 // Parse operator names from the end of Base, building up a list of all the operator names
 // NB: Because I parse from the end, op[0] is the last operator, op[1] second last, etc
-std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps )
+std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps, const std::vector<std::string> * pIgnoreMomenta )
 {
   static const char Sep[] = "_.";
   constexpr std::size_t NumSeps{ sizeof( Sep ) / sizeof( Sep[0] ) - 1 };
@@ -633,13 +673,14 @@ std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps )
   {
     Base.resize( LastPos ); // Shorten the base
   }
-  ParseShort();
+  ParseShort( pIgnoreMomenta );
   return o;
 }
 
-void FileNameAtt::ParseOpNames( std::vector<std::string> &OpNames, int NumOps )
+void FileNameAtt::ParseOpNames( std::vector<std::string> &OpNames, int NumOps,
+                                const std::vector<std::string> * pIgnoreMomenta )
 {
-  std::vector<std::string> Ops{ ParseOpNames( NumOps ) };
+  std::vector<std::string> Ops{ ParseOpNames( NumOps, pIgnoreMomenta ) };
   op.clear();
   op.reserve( NumOps );
   for( std::string &s : Ops )
@@ -653,7 +694,7 @@ void FileNameAtt::ParseOpNames( std::vector<std::string> &OpNames, int NumOps )
   }
 }
 
-void FileNameAtt::ParseExtra( unsigned int MaxElements )
+void FileNameAtt::ParseExtra( unsigned int MaxElements, const std::vector<std::string> * pIgnoreMomenta )
 {
   std::size_t pos;
   while( MaxElements-- && ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
@@ -661,7 +702,7 @@ void FileNameAtt::ParseExtra( unsigned int MaxElements )
     Extra.push_back( Base.substr( pos + 1 ) );
     Base.resize( pos );
   }
-  ParseShort();
+  ParseShort( pIgnoreMomenta );
 }
 
 // Append the extra info to the string
@@ -684,12 +725,12 @@ std::string FileNameAtt::GetBaseExtra( int Last, int First ) const
   return s;
 }
 
-std::string FileNameAtt::GetBaseShortExtra( int Last, int First ) const
+/*std::string FileNameAtt::GetBaseShortExtra( int Last, int First ) const
 {
   std::string s{ BaseShort };
   AppendExtra( s, Last, First );
   return s;
-}
+}*/
 
 // Make a new name based on this one, overriding specified elements
 std::string FileNameAtt::DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,

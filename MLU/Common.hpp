@@ -228,6 +228,7 @@ namespace Gamma
 {
   enum class Algebra
   {
+    Gammai = -2,        // Gamma_spatial
     Unknown = -1,
     MinusGamma5,        // 0
     Gamma5,             // 1
@@ -975,9 +976,11 @@ struct Momentum
 {
   static const std::string DefaultPrefix;
   static const std::string SinkPrefix;
+  static const std::string SquaredSuffix;
   int x;
   int y;
   int z;
+  static std::regex MakeRegex( const std::string &MomName );
   Momentum( int _x, int _y, int _z ) : x(_x), y(_y), z(_z) {}
   Momentum() : Momentum(0,0,0) {}
   inline explicit operator bool() const { return x!=0 || y!=0 || z!=0; }
@@ -1013,11 +1016,10 @@ struct Momentum
   inline bool IsNeg() const { return x<0 || ( x==0 && ( y<0 || ( y==0 && z < 0 ))); }
   inline bool EqualsNeg(const Momentum &m) const { return x==-m.x || y==-m.y || z==-m.z; }
   inline int p2() const { return x * x + y * y + z * z; }
-  std::string p2_string  ( const std::string &separator ) const;
+  std::string p2_string  ( const std::string &separator, const std::string Prefix = DefaultPrefix ) const;
   std::string to_string  ( const std::string &separator, bool bNegative = false ) const;
   std::string to_string4d( const std::string &separator, bool bNegative = false ) const;
   // Strip out momentum info from string if present
-  std::regex MakeRegex( const std::string &MomName ) const;
   bool Extract( std::string &s, const std::string &MomName, bool IgnoreSubsequentZeroNeg = false );
   bool Extract( std::string &s ) { return Extract( s, DefaultPrefix, true ); }
   void Replace( std::string &s, const std::string &MomName, bool bNegative = false ) const;
@@ -1059,11 +1061,9 @@ struct FileNameAtt
   std::vector<int> op;
   std::vector<std::string> Extra;
   bool bGotTimeslice = false;
-  int         Timeslice;
-  bool bGotMomentum = false;
-  Momentum    p;
-  bool bGotMomentumQ2 = false;
-  Momentum    pQ2;
+  int         Timeslice = 0;
+  using MomentumMap = std::map<std::string, Momentum, LessCaseInsensitive>;
+  MomentumMap p;
   bool bGotDeltaT = false;
   int         DeltaT;
   std::vector<Gamma::Algebra> Gamma; // Gamma algebras extracted from name (after source and sink operators removed)
@@ -1106,7 +1106,7 @@ struct FileNameAtt
     op.clear();
     Extra.clear();
     bGotTimeslice = false;
-    bGotMomentum = false;
+    p.clear();
     bGotDeltaT = false;
     Gamma.clear();
   }
@@ -1126,28 +1126,30 @@ struct FileNameAtt
     std::swap( Extra, o.Extra );
     std::swap( bGotTimeslice, o.bGotTimeslice );
     std::swap( Timeslice, o.Timeslice );
-    std::swap( bGotMomentum, o.bGotMomentum );
     std::swap( p, o.p );
     std::swap( bGotDeltaT, o.bGotDeltaT );
     std::swap( DeltaT, o.DeltaT );
     std::swap( Gamma, o.Gamma );
   }
-  void Parse( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr );
-  std::vector<std::string> ParseOpNames( int NumOps = 2 );
-  void ParseOpNames( std::vector<std::string> &OpNames, int NumOps = 2 );
+  void Parse( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr,
+              const std::vector<std::string> * pIgnoreMomenta = nullptr );
+  std::vector<std::string> ParseOpNames( int NumOps = 2, const std::vector<std::string> * pIgnoreMomenta = nullptr );
+  void ParseOpNames( std::vector<std::string> &OpNames, int NumOps = 2,
+                     const std::vector<std::string> * pIgnoreMomenta = nullptr );
   FileNameAtt() = default;
-  explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr )
-    { Parse( Filename, pOpNames ); }
-  void ParseExtra( unsigned int MaxElements = UINT_MAX );
+  explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr,
+                        const std::vector<std::string> * pIgnoreMomenta = nullptr )
+    { Parse( Filename, pOpNames, pIgnoreMomenta ); }
+  void ParseExtra( unsigned int MaxElements = UINT_MAX, const std::vector<std::string> * pIgnoreMomenta = nullptr );
   // Append the extra info to the string
   void AppendExtra( std::string &s, int Last = 0, int First = -1 ) const;
   std::string GetBaseExtra( int Last = 0, int First = -1 ) const;
-  std::string GetBaseShortExtra( int Last = 0, int First = -1 ) const;
+  //std::string GetBaseShortExtra( int Last = 0, int First = -1 ) const;
   // Make a new name based on this one, overriding specified elements
   std::string DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
                            const std::string &Ext ) const;
 protected:
-  void ParseShort(); // Should work out how to do this better
+  void ParseShort( const std::vector<std::string> * pIgnoreMomenta ); // Should work out how to do this better
 };
 
 inline void swap( FileNameAtt &l, FileNameAtt &r )
