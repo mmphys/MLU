@@ -538,6 +538,40 @@ void Momentum::Replace( std::string &s, const std::string &MomName, bool bNegati
   s.append( Search );
 }
 
+// Take a squared momentum and make an approximate 3d momentum from it
+Momentum FileNameMomentum::FromSquared( const int p2Original )
+{
+  int p2{ p2Original };
+  Momentum p;
+  const bool bNegative{ p2 < 0 };
+  if( bNegative )
+    p2 = - p2;
+  for( int i = 0; i < 3 && p2; ++i )
+  {
+    int root = 1;
+    while( ( root + 1 ) * ( root + 1 ) <= p2 )
+      root++;
+    p2 -= root * root;
+    switch( i )
+    {
+      case 0:
+        p.x = root;
+        break;
+      case 1:
+        p.y = root;
+        break;
+      case 2:
+        p.z = root;
+        break;
+    }
+  }
+  if( p2 )
+    throw std::runtime_error( std::to_string( p2Original ) + " can't be expressed as a three-momentum" );
+  if( bNegative )
+    p.x = -p.x;
+  return p;
+}
+
 std::ostream& operator<<( std::ostream& os, const Momentum &p )
 {
   return os << p.to_string( Underscore );
@@ -613,25 +647,41 @@ void FileNameAtt::ParseShort( const std::vector<std::string> * pIgnoreMomenta )
   // Now get the remaining momenta and save them
   std::smatch match;
   std::regex Pattern{ Momentum::MakeRegex( "([pP][[:alnum:]]*)" ) };
-  while( std::regex_search( BaseShort, match, Pattern ) )
+  for( int pLoop = 0; pLoop < 2; ++pLoop )
   {
-    // Extract the momentum
-    const std::string sMom{ match[1] };
-    pIgnore.x = std::stoi( match[2] );
-    pIgnore.y = std::stoi( match[3] );
-    pIgnore.z = std::stoi( match[4] );
-    const std::string sSuffix{ match.suffix() };
-    BaseShort = match.prefix();
-    BaseShort.append( sSuffix );
-    // Now see whether we already have it
-    auto it = p.find( sMom );
-    if( it == p.end() )
-      p.emplace( std::make_pair( sMom, pIgnore ) );
-    else if( ! ( it->second == pIgnore ) )
+    while( std::regex_search( BaseShort, match, Pattern ) )
     {
-      std::stringstream ss;
-      ss << "Repeated momentum " << sMom << CommaSpace << it->second << " != " << pIgnore;
-      throw std::runtime_error( ss.str() );
+      // Extract the momentum
+      const std::string sMom{ match[1] };
+      std::vector<FileNameMomentum> fnp;
+      fnp.reserve( 1 );
+      if( pLoop == 0 )
+      {
+        fnp.emplace_back( sMom, std::stoi( match[2] ), std::stoi( match[3] ), std::stoi( match[4] ) );
+      }
+      else
+      {
+        fnp.emplace_back( sMom, std::stoi( match[2] ) );
+      }
+      const std::string sSuffix{ match.suffix() };
+      BaseShort = match.prefix();
+      BaseShort.append( sSuffix );
+      // Now see whether we already have it
+      auto it = p.find( sMom );
+      if( it == p.end() )
+        p.emplace( std::make_pair( sMom, fnp[0] ) );
+      else if( ! ( it->second == pIgnore ) )
+      {
+        std::stringstream ss;
+        ss << "Repeated momentum " << sMom << CommaSpace << it->second << " != " << pIgnore;
+        throw std::runtime_error( ss.str() );
+      }
+    }
+    // Second time through the loop, we're looking for p^2
+    if( pLoop == 0 )
+    {
+      const std::string sPattern{ "_([pP][[:alnum:]]*)" + Momentum::SquaredSuffix + "_(-?[0-9]+)" };
+      Pattern = sPattern;
     }
   }
   // Extract other attributes from filename
@@ -749,6 +799,28 @@ std::string FileNameAtt::DerivedName( const std::string &Suffix, const std::stri
   s.append( 1, '.' );
   s.append( Ext );
   return s;
+}
+
+const FileNameMomentum &FileNameAtt::GetMomentum( const std::string &Name ) const
+{
+  auto it = p.find( Name );
+  if( it == p.end() )
+    it = p.find( Name + Momentum::SquaredSuffix );
+  if( it == p.end() )
+    throw std::runtime_error( "Momentum " + Name + " not available" );
+  return it->second;
+}
+
+const void FileNameAtt::AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const
+{
+  if( fnp.bp2 )
+    s.append( fnp.p2_string( Underscore, Name ) );
+  else
+  {
+    s.append( Underscore );
+    s.append( Name );
+    s.append( fnp.to_string( Underscore ) );
+  }
 }
 
 // Make a filename "Base.Type.seed.Ext"

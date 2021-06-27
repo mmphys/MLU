@@ -50,6 +50,10 @@
 		682D0625246A95CA0052D780 /* Z2Diluted.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D0623246A95CA0052D780 /* Z2Diluted.cpp */; };
 		682D0628246A95E50052D780 /* VectorUnpack.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682D0626246A95E40052D780 /* VectorUnpack.hpp */; };
 		682D0629246A95E50052D780 /* VectorUnpack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682D0627246A95E50052D780 /* VectorUnpack.cpp */; };
+		683AD49E268463D200D65392 /* ImplicitlyRestartedLanczos.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 683AD49A268463D000D65392 /* ImplicitlyRestartedLanczos.cpp */; };
+		683AD49F268463D200D65392 /* CGNE.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 683AD49B268463D100D65392 /* CGNE.cpp */; };
+		683AD4A0268463D200D65392 /* CGNE.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 683AD49C268463D100D65392 /* CGNE.hpp */; };
+		683AD4A1268463D200D65392 /* ImplicitlyRestartedLanczos.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 683AD49D268463D100D65392 /* ImplicitlyRestartedLanczos.hpp */; };
 		683B2B3325D2E8E800FF304F /* Common.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6889D90225D2BBC5004F15CE /* Common.hpp */; };
 		6848923825D2D79B00307714 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6850CEA4244A1C3100A53DC8 /* Cartesian_base.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CA28244A1C2F00A53DC8 /* Cartesian_base.h */; };
@@ -1601,6 +1605,10 @@
 		68338D402461408900B6292E /* xml3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xml3pt; sourceTree = BUILT_PRODUCTS_DIR; };
 		683451302397D3C200B743CE /* xmlGFWall */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlGFWall; sourceTree = BUILT_PRODUCTS_DIR; };
 		683A002326626B1000A532A2 /* TensorDemo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TensorDemo; sourceTree = BUILT_PRODUCTS_DIR; };
+		683AD49A268463D000D65392 /* ImplicitlyRestartedLanczos.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ImplicitlyRestartedLanczos.cpp; sourceTree = "<group>"; };
+		683AD49B268463D100D65392 /* CGNE.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CGNE.cpp; sourceTree = "<group>"; };
+		683AD49C268463D100D65392 /* CGNE.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CGNE.hpp; sourceTree = "<group>"; };
+		683AD49D268463D100D65392 /* ImplicitlyRestartedLanczos.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ImplicitlyRestartedLanczos.hpp; sourceTree = "<group>"; };
 		6845352023477BBE00106304 /* xmlPeramb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlPeramb; sourceTree = BUILT_PRODUCTS_DIR; };
 		684823352509160C00B31C1E /* Ratio */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Ratio; sourceTree = BUILT_PRODUCTS_DIR; };
 		6850CA1B244A1BDA00A53DC8 /* libGrid.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libGrid.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -5604,7 +5612,11 @@
 				6850D466244A234300A53DC8 /* A2AAslashVectors.hpp */,
 				6850D465244A234300A53DC8 /* A2AVectors.cpp */,
 				6850D46C244A234300A53DC8 /* A2AVectors.hpp */,
+				683AD49B268463D100D65392 /* CGNE.cpp */,
+				683AD49C268463D100D65392 /* CGNE.hpp */,
 				6850D468244A234300A53DC8 /* Guesser.hpp */,
+				683AD49A268463D000D65392 /* ImplicitlyRestartedLanczos.cpp */,
+				683AD49D268463D100D65392 /* ImplicitlyRestartedLanczos.hpp */,
 				6850D46B244A234300A53DC8 /* LocalCoherenceLanczos.cpp */,
 				6850D464244A234300A53DC8 /* LocalCoherenceLanczos.hpp */,
 				686EA28826108B1E00E5D6D3 /* MADWFCG.cpp */,
@@ -6707,6 +6719,7 @@
 				6850D546244A234500A53DC8 /* LapEvec.hpp in Headers */,
 				680C09212634A4B2003D102F /* SaveNersc.hpp in Headers */,
 				6850D570244A234500A53DC8 /* EMT.hpp in Headers */,
+				683AD4A0268463D200D65392 /* CGNE.hpp in Headers */,
 				6850D57E244A234500A53DC8 /* LoadDistilNoise.hpp in Headers */,
 				6809611924982ACE007F8DB3 /* StatLogger.hpp in Headers */,
 				6850D4E6244A234500A53DC8 /* Baryon.hpp in Headers */,
@@ -6770,6 +6783,7 @@
 				6850D56A244A234500A53DC8 /* Div.hpp in Headers */,
 				68093A2B24B8B18D0019148E /* RandomField.hpp in Headers */,
 				6850D4E3244A234500A53DC8 /* WeakEye3pt.hpp in Headers */,
+				683AD4A1268463D200D65392 /* ImplicitlyRestartedLanczos.hpp in Headers */,
 				6850D547244A234500A53DC8 /* DistilVectors.hpp in Headers */,
 				6850D4EB244A234500A53DC8 /* A2AMesonField.hpp in Headers */,
 				6850D50E244A234500A53DC8 /* SeqAslash.hpp in Headers */,
@@ -7851,6 +7865,7 @@
 				6850D514244A234500A53DC8 /* Convolution.cpp in Sources */,
 				6850D501244A234500A53DC8 /* Z2.cpp in Sources */,
 				686EA2A626108B3600E5D6D3 /* XiToSigmaEye.cpp in Sources */,
+				683AD49F268463D200D65392 /* CGNE.cpp in Sources */,
 				6850D354244A230A00A53DC8 /* Environment.cpp in Sources */,
 				6850D552244A234500A53DC8 /* Amputate.cpp in Sources */,
 				6850D585244A234500A53DC8 /* LoadEigenPack.cpp in Sources */,
@@ -7876,6 +7891,7 @@
 				680C09222634A4B2003D102F /* SaveNersc.cpp in Sources */,
 				6850D50B244A234500A53DC8 /* SeqAslash.cpp in Sources */,
 				6850D4F7244A234500A53DC8 /* A2AAslashField.cpp in Sources */,
+				683AD49E268463D200D65392 /* ImplicitlyRestartedLanczos.cpp in Sources */,
 				6850D4E9244A234500A53DC8 /* WeakNonEye3pt.cpp in Sources */,
 				6850D579244A234500A53DC8 /* LoadCosmHol.cpp in Sources */,
 				68093A2C24B8B18D0019148E /* RandomField.cpp in Sources */,

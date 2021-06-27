@@ -105,11 +105,9 @@ protected:
   QPMapModelInfo model;
 protected:
   std::string HeavyKey( const std::string &Heavy ) const;
-  virtual void Make( const std::string &FileName, std::string &Dir,
-                     int DeltaT, Common::Gamma::Algebra &gFrom, const std::string &SinkSourceOp,
-                     const Common::Momentum &MomSnk, const Common::Momentum &MomSrc,
-                     const std::string &sSnk, const std::string &sSrc, const std::string &FileNameSuffix,
-                     const std::string &Suffix, const ModelInfo &miSnk, const ModelInfo &miSrc ) = 0;
+  virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+                     const std::string &qSnk, const std::string &qSrc,
+                     const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &SinkSourceOp ) = 0;
 public:
   Maker( const std::string &inBase_, const std::string &C2Base_,
          const std::string &modelBase_,const std::string &outBase_,
@@ -131,11 +129,9 @@ public:
 class ZVMaker : public Maker
 {
 protected:
-  virtual void Make( const std::string &FileName, std::string &Dir,
-                     int DeltaT, Common::Gamma::Algebra &gFrom, const std::string &SinkSourceOp,
-                     const Common::Momentum &MomSnk, const Common::Momentum &MomSrc,
-                     const std::string &sSnk, const std::string &sSrc, const std::string &FileNameSuffix,
-                     const std::string &Suffix, const ModelInfo &miSnk, const ModelInfo &miSrc );
+  virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+                     const std::string &qSnk, const std::string &qSrc,
+                     const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &SinkSourceOp );
 public:
   ZVMaker( std::string &TypeParams, const std::string &inBase, const std::string &C2Base,
            const std::string &modelBase, const std::string &outBase,
@@ -149,11 +145,9 @@ class R1R2Maker : public Maker
 {
 protected:
   QDTMapModelInfo ZVmi;
-  virtual void Make( const std::string &FileName, std::string &Dir,
-                     int DeltaT, Common::Gamma::Algebra &gFrom, const std::string &SinkSourceOp,
-                     const Common::Momentum &MomSnk, const Common::Momentum &MomSrc,
-                     const std::string &sSnk, const std::string &sSrc, const std::string &FileNameSuffix,
-                     const std::string &Suffix, const ModelInfo &miSnk, const ModelInfo &miSrc );
+  virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+                     const std::string &qSnk, const std::string &qSrc,
+                     const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &SinkSourceOp );
 public:
   R1R2Maker( std::string &TypeParams, const std::string &inBase, const std::string &C2Base,
              const std::string &modelBase, const std::string &outBase,

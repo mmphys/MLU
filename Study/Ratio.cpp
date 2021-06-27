@@ -73,7 +73,7 @@ QPMapModelInfo::QPMapModelInfo( const std::string &FitListName, const std::strin
     }
     else
     {
-      idxFirst->m.IsCompatible( mi.m, &MaxModelSamples, Common::COMPAT_DISABLE_BASE );
+      idxFirst->m.IsCompatible( mi.m, &MaxModelSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_CONFIG_COUNT );
     }
   }
 }
@@ -156,56 +156,43 @@ Maker * Maker::Make( const std::string &Type, std::string &TypeParams,
 void Maker::Make( std::string &FileName )
 {
   std::cout << "Processing " << FileName << Common::NewLine;
-  std::string Dir{ Common::ExtractDirPrefix( FileName ) };
-  int DeltaT;
-  Common::Gamma::Algebra gFrom;
-  std::string SinkSourceOp( 1, '_' );
-  {
-    std::vector<std::string> OpNames;
-    Common::FileNameAtt fna{ FileName, &OpNames };
-    if( OpNames.empty() )
-      throw std::runtime_error( "Sink / source operator names mising" );
-    SinkSourceOp.append( OpNames[fna.op[1]] );
-    SinkSourceOp.append( 1, '_' );
-    SinkSourceOp.append( OpNames[fna.op[0]] );
-    if( !fna.bGotDeltaT )
-      throw std::runtime_error( "DeltaT missing" );
-    DeltaT = fna.DeltaT;
-    if( fna.Gamma.size() != 1 )
-      throw std::runtime_error( FileName + " has " + std::to_string( fna.Gamma.size() ) + " currents" );
-    gFrom = fna.Gamma[0];
-  }
-  Common::Momentum MomSnk, MomSrc;
-  {
-    std::string sCopy{ FileName };
-    if( !MomSrc.Extract( sCopy ) )
-      throw std::runtime_error( "No source momentum in " + FileName );
-    if( !MomSnk.Extract( sCopy, Common::Momentum::SinkPrefix ) )
-      throw std::runtime_error( "No sink momentum in " + FileName );
-  }
+  std::vector<std::string> OpNames;
+  Common::FileNameAtt fna{ FileName, &OpNames };
+  if( OpNames.empty() )
+    throw std::runtime_error( "Sink / source operator names mising" );
+  if( !fna.bGotDeltaT )
+    throw std::runtime_error( "DeltaT missing" );
+  if( fna.Gamma.size() != 1 )
+    throw std::runtime_error( FileName + " has " + std::to_string( fna.Gamma.size() ) + " currents" );
+  const Common::FileNameMomentum &MomSrc{ fna.GetMomentum() };
+  const Common::FileNameMomentum &MomSnk{ fna.GetMomentum( Common::Momentum::SinkPrefix )  };
   std::smatch base_match;
-  if( !std::regex_search( FileName, base_match, RegExExt ) || base_match.size() != 4 )
-    throw std::runtime_error( "Can't extract sink/source from " + FileName );
-  const std::string sSnk = base_match[RegExSwap ? 3 : 2];
-  const std::string sSrc = base_match[RegExSwap ? 2 : 3];
+  if( !std::regex_search( fna.BaseShort, base_match, RegExExt ) || base_match.size() != 4 )
+    throw std::runtime_error( "Can't extract sink/source from " + fna.BaseShort );
+  const std::string qSnk = base_match[RegExSwap ? 3 : 2];
+  const std::string qSrc = base_match[RegExSwap ? 2 : 3];
   const std::string FileNameSuffix{ base_match.suffix() };
-  const ModelInfo &miSnk{ model.at( QP( sSnk, MomSnk ) ) };
-  const ModelInfo &miSrc{ model.at( QP( sSrc, MomSrc ) ) };
-  Dir.append( base_match.prefix() );
-  Dir.append( base_match[1] );
-  Make( FileName, Dir, DeltaT, gFrom, SinkSourceOp, MomSnk, MomSrc, sSnk, sSrc, FileNameSuffix,
-        base_match.suffix(), miSnk, miSrc );
+  std::string FileNamePrefix{ base_match.prefix() };
+  FileNamePrefix.append( base_match[1] );
+  fna.BaseShort = FileNamePrefix;
+  std::string SinkSourceOp( 1, '_' );
+  SinkSourceOp.append( OpNames[fna.op[1]] );
+  SinkSourceOp.append( 1, '_' );
+  SinkSourceOp.append( OpNames[fna.op[0]] );
+  const ModelInfo &miSnk{ model.at( QP( qSnk, MomSnk ) ) };
+  const ModelInfo &miSrc{ model.at( QP( qSrc, MomSrc ) ) };
+  Make( fna, FileNameSuffix, qSnk, qSrc, miSnk, miSrc, SinkSourceOp );
 }
 
-void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
-                      int DeltaT, Common::Gamma::Algebra &gFrom, const std::string &SinkSourceOp,
-                      const Common::Momentum &MomSnk, const Common::Momentum &MomSrc,
-                      const std::string &sSnk, const std::string &sSrc, const std::string &FileNameSuffix,
-                      const std::string &Suffix, const ModelInfo &miSnk, const ModelInfo &miSrc )
+void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+                    const std::string &qSnk, const std::string &qSrc,
+                    const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &SinkSourceOp )
 {
+  const Common::FileNameMomentum &MomSrc{ fna.GetMomentum() };
+  const Common::FileNameMomentum &MomSnk{ fna.GetMomentum( Common::Momentum::SinkPrefix )  };
   // Make sure I have the model for Z_V already loaded
-  const ModelInfo &miZVSnk{ ZVmi.at( QDT( sSnk, DeltaT ) ) };
-  const ModelInfo &miZVSrc{ ZVmi.at( QDT( sSrc, DeltaT ) ) };
+  const ModelInfo &miZVSnk{ ZVmi.at( QDT( qSnk, fna.DeltaT ) ) };
+  const ModelInfo &miZVSrc{ ZVmi.at( QDT( qSrc, fna.DeltaT ) ) };
   // Now read the two-point functions
   std::string C2NameSnk{ miSnk.FileName2pt };
   C2NameSnk.append( SinkSourceOp );
@@ -216,6 +203,8 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
   Fold C2Src( Common::MakeFilename( C2NameSrc, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
 
   // Load the correlators we need
+  std::string Dir{ fna.Dir };
+  Dir.append( fna.BaseShort );
   const std::size_t Len{ Dir.length() };
   Common::DataSet<Scalar> ds;
   bool bMakeR2{ true };
@@ -226,20 +215,21 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
   for( int iSnk = 0; iSnk < 2; iSnk++ )
   {
     Dir.resize( Len );
-    Dir.append( iSnk ? sSnk : sSrc );
+    Dir.append( iSnk ? qSnk : qSrc );
     Dir.append( 1, '_' );
     const std::size_t Len2{ Dir.length() };
     for( int iSrc = 0; iSrc < 2; iSrc++ )
     {
       Dir.resize( Len2 );
-      Dir.append( iSrc ? sSnk : sSrc );
-      Dir.append( FileNameSuffix );
-      if( iSnk == iLight )
-        MomSrc.Replace( Dir, Common::Momentum::SinkPrefix, true );
-      if( iSrc == iHeavy )
-        MomSnk.Replace( Dir, Common::Momentum::DefaultPrefix );
-      if( iSnk == iSrc )
-        Common::ReplaceGamma( Dir, gFrom, Common::Gamma::Algebra::GammaT );
+      Dir.append( iSrc ? qSnk : qSrc );
+      Dir.append( fnaSuffix );
+      Common::AppendGammaDeltaT( Dir, iSnk == iSrc ? Common::Gamma::Algebra::GammaT : fna.Gamma[0], fna.DeltaT );
+      fna.AppendMomentum( Dir, iSrc == iHeavy ? MomSnk : MomSrc, MomSrc.Name );
+      //if( iSrc == iHeavy ) MomSnk.Replace( Dir, Common::Momentum::DefaultPrefix );
+      fna.AppendMomentum( Dir, iSnk == iLight ? MomSrc : MomSnk, MomSnk.Name );
+      //if( iSnk == iLight ) MomSrc.Replace( Dir, Common::Momentum::SinkPrefix, true );
+      Dir.append( SinkSourceOp );
+      Dir = Common::MakeFilename( Dir, fna.Type, fna.Seed, fna.Ext );
       if( Common::FileExists( Dir ) )
       {
         Fold &f { ds.corr[ds.LoadCorrelator( Common::FileNameAtt( Dir ), Common::COMPAT_DISABLE_BASE )] };
@@ -254,15 +244,15 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
   }
   // Ensure the correlator includes timeslice DeltaT
   const int NTHalf{ ds.corr[0].Nt() / 2 };
-  if( DeltaT >= NTHalf )
-    throw std::runtime_error( "DeltaT " + std::to_string( DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
+  if( fna.DeltaT >= NTHalf )
+    throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
   // Make somewhere to put R2
   static constexpr int NumRatio{ 2 };
   std::vector<Fold> out;
   Scalar * pDst[NumRatio];
   for( int i = 0; i < 2; i++ )
   {
-    out.emplace_back( ds.NSamples, DeltaT + 1 );
+    out.emplace_back( ds.NSamples, fna.DeltaT + 1 );
     for( const Fold &f : ds.corr )
       out[i].FileList.push_back( f.Name_.Filename );
     out[i].CopyAttributes( ds.corr[0] );
@@ -289,9 +279,9 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
     const double EProd = (*pE[0]) * (*pE[1]);
     double C2[NumC2];
     for( int i = 0; i < NumC2; ++i )
-      C2[i] = pC2[i][DeltaT] - 0.5 * pC2[i][NTHalf] * std::exp( - pE[i][0] * ( NTHalf - DeltaT ) );
+      C2[i] = pC2[i][fna.DeltaT] - 0.5 * pC2[i][NTHalf] * std::exp( - pE[i][0] * ( NTHalf - fna.DeltaT ) );
     const double C2Prod = std::abs( C2[0] * C2[1] );
-    for( int t = 0; t <= DeltaT; ++t )
+    for( int t = 0; t <= fna.DeltaT; ++t )
     {
       double z[2][2];
       for( int iSnk = 0; iSnk < 2; iSnk++ )
@@ -308,7 +298,7 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
     }
     for( int iSnk = 0; iSnk < 2; iSnk++ )
       for( int iSrc = 0; iSrc < 2; iSrc++ )
-        pSrc[iSnk][iSrc] += nT[iSnk][iSrc] - ( DeltaT + 1 );
+        pSrc[iSnk][iSrc] += nT[iSnk][iSrc] - ( fna.DeltaT + 1 );
     if( !eCentral )
     {
       pE[0] += miSrc.m.Nt();
@@ -326,10 +316,15 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
     OutFileName.append( 1, 'R' );
     OutFileName.append( 1, '1' + i );
     OutFileName.append( 1, '_' );
-    OutFileName.append( sSnk );
+    OutFileName.append( qSnk );
     OutFileName.append( 1, '_' );
-    OutFileName.append( sSrc );
-    OutFileName.append( Suffix );
+    OutFileName.append( qSrc );
+    OutFileName.append( fnaSuffix );
+    Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT );
+    fna.AppendMomentum( OutFileName, MomSrc );
+    fna.AppendMomentum( OutFileName, MomSnk );
+    OutFileName.append( SinkSourceOp );
+    OutFileName = Common::MakeFilename( OutFileName, fna.Type, fna.Seed, fna.Ext );
     std::cout << "->" << OutFileName << Common::NewLine;
     out[i].Write( OutFileName, Common::sFold.c_str() );
     const std::size_t FileNameLen{ OutFileName.find_last_of( '.' ) };
@@ -342,41 +337,39 @@ void R1R2Maker::Make( const std::string &FileName, std::string &Dir,
   }
 }
 
-void ZVMaker::Make( const std::string &FileName, std::string &Dir,
-                    int DeltaT, Common::Gamma::Algebra &gFrom, const std::string &SinkSourceOp,
-                    const Common::Momentum &MomSnk, const Common::Momentum &MomSrc,
-                    const std::string &sSnk, const std::string &sSrc, const std::string &FileNameSuffix,
-                    const std::string &Suffix, const ModelInfo &miSnk, const ModelInfo &miSrc )
+void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+                    const std::string &qSnk, const std::string &qSrc,
+                    const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &SinkSourceOp )
 {
+  const Common::FileNameMomentum &MomSrc{ fna.GetMomentum() };
+  const Common::FileNameMomentum &MomSnk{ fna.GetMomentum( Common::Momentum::SinkPrefix )  };
   // Complain about errors
   {
     std::ostringstream os;
-    if( Common::CompareIgnoreCase( sSnk, sSrc ) )
-      os << sSnk << " != sSrc " << sSrc;
+    if( Common::CompareIgnoreCase( qSnk, qSrc ) )
+      os << "qSnk " << qSnk << " != qSrc " << qSrc;
+    else if( fna.Gamma[0] != Common::Gamma::Algebra::GammaT )
+      os << "Gamma " << fna.Gamma[0] << " != " << Common::Gamma::Algebra::GammaT;
     else if( MomSnk )
       os << "Sink momentum " << MomSnk;
     else if( MomSrc )
       os << "Source momentum " << MomSrc;
     if( os.tellp() != std::streampos( 0 ) )
     {
-      os << " file " << FileName;
+      os << " file " << fna.Filename;
       throw std::runtime_error( os.str() );
     }
   }
 
-  // Due to lack of plannng, I have to reassemble the input filename
-  Dir.append( sSnk );
-  Dir.append( 1, '_' );
-  Dir.append( sSrc );
-  Dir.append( FileNameSuffix );
+  // Read the three-point correlator
   static const std::string Spaces( 2, ' ' );
   Fold C3;
-  C3.Read( Dir, Spaces.c_str() );
+  C3.Read( fna.Filename, Spaces.c_str() );
 
   // Ensure the correlator includes timeslice DeltaT
   const int NTHalf{ C3.Nt() / 2 };
-  if( DeltaT >= NTHalf )
-    throw std::runtime_error( "DeltaT " + std::to_string( DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
+  if( fna.DeltaT > NTHalf )
+    throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
 
   // Now read the two-point function
   std::string C2Name{ miSnk.FileName2pt };
@@ -394,7 +387,7 @@ void ZVMaker::Make( const std::string &FileName, std::string &Dir,
   }
 
   // Make somewhere to put Z_V
-  Fold out( NumSamples, DeltaT + 1 );
+  Fold out( NumSamples, fna.DeltaT + 1 );
   out.FileList.push_back( C3.Name_.Filename );
   out.FileList.push_back( C2.Name_.Filename );
   out.FileList.push_back( miSrc.m.Name_.Filename );
@@ -407,15 +400,15 @@ void ZVMaker::Make( const std::string &FileName, std::string &Dir,
   const Scalar * pSrc{ C3[Fold::idxCentral] };
   for( int idx = Fold::idxCentral; idx < NumSamples; ++idx )
   {
-    const double CTilde{ pC2[DeltaT] - 0.5 * pC2[NTHalf] * std::exp( - pE[0] * ( NTHalf - DeltaT ) ) };
-    for( int t = 0; t <= DeltaT; ++t )
+    const double CTilde{ pC2[fna.DeltaT] - 0.5 * pC2[NTHalf] * std::exp( - pE[0] * ( NTHalf - fna.DeltaT ) ) };
+    for( int t = 0; t <= fna.DeltaT; ++t )
     {
       const double z{ CTilde / *pSrc++ };
       if( !std::isfinite( z ) )
         throw std::runtime_error( "ZV Overflow" );
       *pDst++ = z;
     }
-    pSrc += C3.Nt() - ( DeltaT + 1 );
+    pSrc += C3.Nt() - ( fna.DeltaT + 1 );
     if( !eCentral )
       pE += miSnk.m.Nt();
     pC2 += C2.Nt();
@@ -424,9 +417,9 @@ void ZVMaker::Make( const std::string &FileName, std::string &Dir,
   out.MakeCorrSummary( nullptr );
   std::string OutFileName{ outBase };
   OutFileName.append( "ZV_" );
-  OutFileName.append( sSnk );
+  OutFileName.append( qSnk );
   //OutFileName.append( Suffix );
-  Common::AppendGammaDeltaT( OutFileName, gFrom, DeltaT );
+  Common::AppendDeltaT( OutFileName, fna.DeltaT );
   OutFileName.append( SinkSourceOp );
   OutFileName = Common::MakeFilename( OutFileName, Common::sFold, model.Seed, DEF_FMT );
   std::cout << "->" << OutFileName << Common::NewLine;

@@ -983,6 +983,8 @@ struct Momentum
   static std::regex MakeRegex( const std::string &MomName );
   Momentum( int _x, int _y, int _z ) : x(_x), y(_y), z(_z) {}
   Momentum() : Momentum(0,0,0) {}
+  Momentum( const Momentum &o ) : Momentum( o.x, o.y, o.z ) {}
+  Momentum& operator=(const Momentum& rhs) { if( this != &rhs ) { x = rhs.x; y = rhs.y; z=rhs.z; } return *this; }
   inline explicit operator bool() const { return x!=0 || y!=0 || z!=0; }
   inline Momentum operator-() const { return Momentum(-x, -y, -z); }
   inline Momentum abs() const { return Momentum( x<0?-x:x, y<0?-y:y, z<0?-z:z ); }
@@ -1045,6 +1047,16 @@ inline bool operator<( const Momentum &l, const Momentum &r )
   return l.z < r.z;
 }
 
+// This is a momentum with a name, and is either squared or three-component
+struct FileNameMomentum : public Momentum
+{
+  std::string Name;
+  bool bp2;
+  static Momentum FromSquared( const int p2 );
+  FileNameMomentum( const std::string &Name_, int x_, int y_, int z_ ) : Momentum(x_,y_,z_), Name{Name_}, bp2{false} {}
+  FileNameMomentum( const std::string &Name_, int p2 ) : Momentum(FromSquared(p2)), Name{Name_}, bp2{true} {}
+};
+
 // Attributes for filenames in form base.type.seed.ext
 struct FileNameAtt
 {
@@ -1062,7 +1074,7 @@ struct FileNameAtt
   std::vector<std::string> Extra;
   bool bGotTimeslice = false;
   int         Timeslice = 0;
-  using MomentumMap = std::map<std::string, Momentum, LessCaseInsensitive>;
+  using MomentumMap = std::map<std::string, FileNameMomentum, LessCaseInsensitive>;
   MomentumMap p;
   bool bGotDeltaT = false;
   int         DeltaT;
@@ -1148,6 +1160,9 @@ struct FileNameAtt
   // Make a new name based on this one, overriding specified elements
   std::string DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
                            const std::string &Ext ) const;
+  const FileNameMomentum &GetMomentum( const std::string &Name = Momentum::DefaultPrefix ) const;
+  const void AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const;
+  const void AppendMomentum( std::string &s, const FileNameMomentum &fnp ) const { AppendMomentum( s, fnp, fnp.Name ); }
 protected:
   void ParseShort( const std::vector<std::string> * pIgnoreMomenta ); // Should work out how to do this better
 };

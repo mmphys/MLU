@@ -63,7 +63,15 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-t 2:14 -i ratio/3pt_s/raw/ -o fit/ZV/ ZV_l_gT_dt_16_&apos;*&apos;.h5,conSt"
+            argument = "-t 7:14 -i ratio/3pt_lp2/raw/ -o fit/ZV_lp2/ ZV_h447_dt_20_&apos;*&apos;.h5,conSt"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 2:18 -i ratio/3pt_lp2/raw/ -o fit/ZV_lp2/ ZV_s_dt_20_&apos;*&apos;.h5,conSt"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 2:18 -i ratio/3pt_lp2/raw/ -o fit/ZV_lp2/ ZV_l_dt_20_&apos;*&apos;.h5,conSt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -91,15 +99,31 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-t 9:20 -i corr/2ptp2/ -o fit/2ptp2/ h447_s_p2_0_g5P_g5[PW].&apos;*&apos;.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 8:18:6:6 -i corr/2ptp2/ -o fit/2ptp2/ h447_s_p2_0_g5P_g5[PW].&apos;*&apos;.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 11:15 -i corr/2pt/ -o fit/2pt/ h447_l_p_0_0_-1_g5P_g5P.&apos;*&apos;.h5,,,n h447_l_p_0_0_-1_g5P_g5W.&apos;*&apos;.h5,,,n"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-n 100"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-v 0"
+            argument = "-v 1"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 2"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--sep=0.05"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

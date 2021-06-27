@@ -53,32 +53,24 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--i3 corr/3pt_s/ --i2 corr/2pt/ -o ratio/3pt_s/raw/"
+            argument = "--i3 corr/3pt_s/ --i2 corr/2pt/ --im fit/ Best_s.txt -o ratio/3pt_s/raw/"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--i3 corr/3pt_l/ --i2 corr/2pt/ -o ratio/3pt_l/raw/"
+            argument = "--i3 corr/3pt_lp2/ --i2 corr/2ptp2/ --im fit/ Best_l.txt -o ratio/3pt_lp2/raw/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--im fit/ Best_s.txt"
+            argument = "--type zV quark_{l_l,s_s,h447_h447}_gT_dt_&apos;*&apos;_p2_0_ps2_0_g5[PW]_g5[PW].fold.1835672416.h5"
             isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--im fit/ Best_l.txt"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--type zV quark_{l_l,h447_h447}_ps_0_0_0_gT_dt_&apos;*&apos;_p_[01]_0_0_g5[PW]_g5[PW].fold.1835672416.h5"
-            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--type R1r2,Best_ZV.txt"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "quark_h447_l_ps_0_0_0_gT_dt_&apos;*&apos;_p_&apos;*&apos;_g5[PW]_g5[PW].fold.1835672416.h5"
-            isEnabled = "NO">
+            argument = "quark_h447_l_gT_dt_&apos;*&apos;_p2_&apos;*&apos;_ps2_0_g5[PW]_g5[PW].fold.1835672416.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "quark_h447_l_ps_0_0_0_gX_dt_&apos;*&apos;_p_&apos;*&apos;_g5[PW]_g5[PW].fold.1835672416.h5"
