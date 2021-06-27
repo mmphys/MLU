@@ -72,7 +72,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t 2:18 -i ratio/3pt_lp2/raw/ -o fit/ZV_lp2/ ZV_l_dt_20_&apos;*&apos;.h5,conSt"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t 2:18 -i ratio/3pt_s/raw/ -o fit/ZV/ ZV_l_gT_dt_20_&apos;*&apos;.h5,conSt"
@@ -107,12 +107,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-t 11:15 -i corr/2pt/ -o fit/2pt/ h447_l_p_0_0_-1_g5P_g5P.&apos;*&apos;.h5,,,n h447_l_p_0_0_-1_g5P_g5W.&apos;*&apos;.h5,,,n"
-            isEnabled = "NO">
+            argument = "-t 11:15 -i corr/2ptp2/ -o fit/2ptp2/ h447_l_p2_1_g5P_g5P.&apos;*&apos;.h5,,,n h447_l_p2_1_g5P_g5W.&apos;*&apos;.h5,,,n"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-n 100"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v 1"

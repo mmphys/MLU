@@ -670,7 +670,7 @@ void FileNameAtt::ParseShort( const std::vector<std::string> * pIgnoreMomenta )
       auto it = p.find( sMom );
       if( it == p.end() )
         p.emplace( std::make_pair( sMom, fnp[0] ) );
-      else if( ! ( it->second == pIgnore ) )
+      else if( ! ( it->second == fnp[0] ) )
       {
         std::stringstream ss;
         ss << "Repeated momentum " << sMom << CommaSpace << it->second << " != " << pIgnore;

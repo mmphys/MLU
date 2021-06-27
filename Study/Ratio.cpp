@@ -175,18 +175,17 @@ void Maker::Make( std::string &FileName )
   std::string FileNamePrefix{ base_match.prefix() };
   FileNamePrefix.append( base_match[1] );
   fna.BaseShort = FileNamePrefix;
-  std::string SinkSourceOp( 1, '_' );
-  SinkSourceOp.append( OpNames[fna.op[1]] );
-  SinkSourceOp.append( 1, '_' );
-  SinkSourceOp.append( OpNames[fna.op[0]] );
   const ModelInfo &miSnk{ model.at( QP( qSnk, MomSnk ) ) };
   const ModelInfo &miSrc{ model.at( QP( qSrc, MomSrc ) ) };
-  Make( fna, FileNameSuffix, qSnk, qSrc, miSnk, miSrc, SinkSourceOp );
+  // Add underscores to the operator names ... so they don't need to continually be added during build
+  for( std::string &s : OpNames )
+    s = Common::Underscore + s;
+  Make( fna, FileNameSuffix, qSnk, qSrc, miSnk, miSrc, OpNames[fna.op[1]], OpNames[fna.op[0]] );
 }
 
 void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                     const std::string &qSnk, const std::string &qSrc,
-                    const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &SinkSourceOp )
+                    const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &opSnk, const std::string &opSrc )
 {
   const Common::FileNameMomentum &MomSrc{ fna.GetMomentum() };
   const Common::FileNameMomentum &MomSnk{ fna.GetMomentum( Common::Momentum::SinkPrefix )  };
@@ -195,11 +194,13 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
   const ModelInfo &miZVSrc{ ZVmi.at( QDT( qSrc, fna.DeltaT ) ) };
   // Now read the two-point functions
   std::string C2NameSnk{ miSnk.FileName2pt };
-  C2NameSnk.append( SinkSourceOp );
+  C2NameSnk.append( opSnk );
+  C2NameSnk.append( opSnk );
   static const std::string Spaces( 2, ' ' );
   Fold C2Snk( Common::MakeFilename( C2NameSnk, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
   std::string C2NameSrc{ miSrc.FileName2pt };
-  C2NameSrc.append( SinkSourceOp );
+  C2NameSrc.append( opSrc );
+  C2NameSrc.append( opSrc );
   Fold C2Src( Common::MakeFilename( C2NameSrc, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
 
   // Load the correlators we need
@@ -228,7 +229,8 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
       //if( iSrc == iHeavy ) MomSnk.Replace( Dir, Common::Momentum::DefaultPrefix );
       fna.AppendMomentum( Dir, iSnk == iLight ? MomSrc : MomSnk, MomSnk.Name );
       //if( iSnk == iLight ) MomSrc.Replace( Dir, Common::Momentum::SinkPrefix, true );
-      Dir.append( SinkSourceOp );
+      Dir.append( iSnk ? opSnk : opSrc );
+      Dir.append( iSrc ? opSnk : opSrc );
       Dir = Common::MakeFilename( Dir, fna.Type, fna.Seed, fna.Ext );
       if( Common::FileExists( Dir ) )
       {
@@ -323,7 +325,8 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
     Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT );
     fna.AppendMomentum( OutFileName, MomSrc );
     fna.AppendMomentum( OutFileName, MomSnk );
-    OutFileName.append( SinkSourceOp );
+    OutFileName.append( opSnk );
+    OutFileName.append( opSrc );
     OutFileName = Common::MakeFilename( OutFileName, fna.Type, fna.Seed, fna.Ext );
     std::cout << "->" << OutFileName << Common::NewLine;
     out[i].Write( OutFileName, Common::sFold.c_str() );
@@ -339,7 +342,7 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
 
 void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                     const std::string &qSnk, const std::string &qSrc,
-                    const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &SinkSourceOp )
+                    const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &opSnk, const std::string &opSrc )
 {
   const Common::FileNameMomentum &MomSrc{ fna.GetMomentum() };
   const Common::FileNameMomentum &MomSnk{ fna.GetMomentum( Common::Momentum::SinkPrefix )  };
@@ -373,7 +376,8 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
 
   // Now read the two-point function
   std::string C2Name{ miSnk.FileName2pt };
-  C2Name.append( SinkSourceOp );
+  C2Name.append( opSnk );
+  C2Name.append( opSrc );
   Fold C2;
   C2.Read( Common::MakeFilename( C2Name, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
   int NumSamples {};
@@ -420,7 +424,8 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
   OutFileName.append( qSnk );
   //OutFileName.append( Suffix );
   Common::AppendDeltaT( OutFileName, fna.DeltaT );
-  OutFileName.append( SinkSourceOp );
+  C2Name.append( OutFileName );
+  C2Name.append( OutFileName );
   OutFileName = Common::MakeFilename( OutFileName, Common::sFold, model.Seed, DEF_FMT );
   std::cout << "->" << OutFileName << Common::NewLine;
   out.Write( OutFileName, Common::sFold.c_str() );

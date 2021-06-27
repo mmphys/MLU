@@ -107,7 +107,8 @@ protected:
   std::string HeavyKey( const std::string &Heavy ) const;
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                      const std::string &qSnk, const std::string &qSrc,
-                     const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &SinkSourceOp ) = 0;
+                     const ModelInfo &miSnk, const ModelInfo &miSrc,
+                     const std::string &opSnk, const std::string &opSrc ) = 0;
 public:
   Maker( const std::string &inBase_, const std::string &C2Base_,
          const std::string &modelBase_,const std::string &outBase_,
@@ -131,7 +132,7 @@ class ZVMaker : public Maker
 protected:
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                      const std::string &qSnk, const std::string &qSrc,
-                     const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &SinkSourceOp );
+                     const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &opSnk, const std::string &opSrc );
 public:
   ZVMaker( std::string &TypeParams, const std::string &inBase, const std::string &C2Base,
            const std::string &modelBase, const std::string &outBase,
@@ -147,7 +148,7 @@ protected:
   QDTMapModelInfo ZVmi;
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                      const std::string &qSnk, const std::string &qSrc,
-                     const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &SinkSourceOp );
+                     const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &opSnk, const std::string &opSrc );
 public:
   R1R2Maker( std::string &TypeParams, const std::string &inBase, const std::string &C2Base,
              const std::string &modelBase, const std::string &outBase,
