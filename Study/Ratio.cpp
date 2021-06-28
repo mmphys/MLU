@@ -183,6 +183,104 @@ void Maker::Make( std::string &FileName )
   Make( fna, FileNameSuffix, qSnk, qSrc, miSnk, miSrc, OpNames[fna.op[1]], OpNames[fna.op[0]] );
 }
 
+void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+                    const std::string &qSnk, const std::string &qSrc,
+                    const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &opSnk, const std::string &opSrc )
+{
+  const Common::FileNameMomentum &MomSrc{ fna.GetMomentum() };
+  const Common::FileNameMomentum &MomSnk{ fna.GetMomentum( Common::Momentum::SinkPrefix )  };
+  // Complain about errors
+  {
+    std::ostringstream os;
+    if( Common::CompareIgnoreCase( qSnk, qSrc ) )
+      os << "qSnk " << qSnk << " != qSrc " << qSrc;
+    else if( fna.Gamma[0] != Common::Gamma::Algebra::GammaT )
+      os << "Gamma " << fna.Gamma[0] << " != " << Common::Gamma::Algebra::GammaT;
+    else if( MomSnk )
+      os << "Sink momentum " << MomSnk;
+    else if( MomSrc )
+      os << "Source momentum " << MomSrc;
+    if( os.tellp() != std::streampos( 0 ) )
+    {
+      os << " file " << fna.Filename;
+      throw std::runtime_error( os.str() );
+    }
+  }
+
+  // Read the three-point correlator
+  static const std::string Spaces( 2, ' ' );
+  Fold C3;
+  C3.Read( fna.Filename, Spaces.c_str() );
+
+  // Ensure the correlator includes timeslice DeltaT
+  const int NTHalf{ C3.Nt() / 2 };
+  if( fna.DeltaT > NTHalf )
+    throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
+
+  // Now read the two-point function
+  std::string C2Name{ miSnk.FileName2pt };
+  C2Name.append( opSnk );
+  C2Name.append( opSrc );
+  Fold C2;
+  C2.Read( Common::MakeFilename( C2Name, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
+  int NumSamples {};
+  C3.IsCompatible( C2, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
+                                    | Common::COMPAT_DISABLE_CONFIG_COUNT );
+  if( C2.NtUnfolded != C3.Nt() )
+  {
+    std::ostringstream os;
+    os << "C2.NtUnfolded " << C2.NtUnfolded << " != C3.Nt() " << C3.Nt();
+    throw std::runtime_error( os.str() );
+  }
+
+  // Make somewhere to put Z_V
+  Fold out( NumSamples, fna.DeltaT + 1 );
+  out.FileList.push_back( C3.Name_.Filename );
+  out.FileList.push_back( C2.Name_.Filename );
+  out.FileList.push_back( miSrc.m.Name_.Filename );
+  out.CopyAttributes( C3 );
+  out.NtUnfolded = C3.Nt();
+  Scalar * pDst{ out[Fold::idxCentral] };
+
+  const Scalar * pE{ miSnk.m[Fold::idxCentral] + miSnk.idxE0 };
+  const Scalar * pC2 { C2[Fold::idxCentral] };
+  const Scalar * pSrc{ C3[Fold::idxCentral] };
+  for( int idx = Fold::idxCentral; idx < NumSamples; ++idx )
+  {
+    const double CTilde{ pC2[fna.DeltaT] - 0.5 * pC2[NTHalf] * std::exp( - pE[0] * ( NTHalf - fna.DeltaT ) ) };
+    for( int t = 0; t <= fna.DeltaT; ++t )
+    {
+      const double z{ CTilde / *pSrc++ };
+      if( !std::isfinite( z ) )
+        throw std::runtime_error( "ZV Overflow" );
+      *pDst++ = z;
+    }
+    pSrc += C3.Nt() - ( fna.DeltaT + 1 );
+    if( !eCentral )
+      pE += miSnk.m.Nt();
+    pC2 += C2.Nt();
+  }
+  // Make output file
+  out.MakeCorrSummary( nullptr );
+  std::string OutFileName{ outBase };
+  OutFileName.append( "ZV_" );
+  OutFileName.append( qSnk );
+  //OutFileName.append( Suffix );
+  Common::AppendDeltaT( OutFileName, fna.DeltaT );
+  OutFileName.append( opSnk );
+  OutFileName.append( opSrc );
+  OutFileName = Common::MakeFilename( OutFileName, Common::sFold, model.Seed, DEF_FMT );
+  std::cout << "->" << OutFileName << Common::NewLine;
+  out.Write( OutFileName, Common::sFold.c_str() );
+  const std::size_t FileNameLen{ OutFileName.find_last_of( '.' ) };
+  if( FileNameLen == std::string::npos )
+    OutFileName.append( 1, '.' );
+  else
+    OutFileName.resize( FileNameLen + 1 );
+  OutFileName.append( TEXT_EXT );
+  out.WriteSummary( OutFileName );
+}
+
 void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                     const std::string &qSnk, const std::string &qSrc,
                     const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &opSnk, const std::string &opSrc )
@@ -340,104 +438,6 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
   }
 }
 
-void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                    const std::string &qSnk, const std::string &qSrc,
-                    const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &opSnk, const std::string &opSrc )
-{
-  const Common::FileNameMomentum &MomSrc{ fna.GetMomentum() };
-  const Common::FileNameMomentum &MomSnk{ fna.GetMomentum( Common::Momentum::SinkPrefix )  };
-  // Complain about errors
-  {
-    std::ostringstream os;
-    if( Common::CompareIgnoreCase( qSnk, qSrc ) )
-      os << "qSnk " << qSnk << " != qSrc " << qSrc;
-    else if( fna.Gamma[0] != Common::Gamma::Algebra::GammaT )
-      os << "Gamma " << fna.Gamma[0] << " != " << Common::Gamma::Algebra::GammaT;
-    else if( MomSnk )
-      os << "Sink momentum " << MomSnk;
-    else if( MomSrc )
-      os << "Source momentum " << MomSrc;
-    if( os.tellp() != std::streampos( 0 ) )
-    {
-      os << " file " << fna.Filename;
-      throw std::runtime_error( os.str() );
-    }
-  }
-
-  // Read the three-point correlator
-  static const std::string Spaces( 2, ' ' );
-  Fold C3;
-  C3.Read( fna.Filename, Spaces.c_str() );
-
-  // Ensure the correlator includes timeslice DeltaT
-  const int NTHalf{ C3.Nt() / 2 };
-  if( fna.DeltaT > NTHalf )
-    throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
-
-  // Now read the two-point function
-  std::string C2Name{ miSnk.FileName2pt };
-  C2Name.append( opSnk );
-  C2Name.append( opSrc );
-  Fold C2;
-  C2.Read( Common::MakeFilename( C2Name, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
-  int NumSamples {};
-  C3.IsCompatible( C2, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
-                                    | Common::COMPAT_DISABLE_CONFIG_COUNT );
-  if( C2.NtUnfolded != C3.Nt() )
-  {
-    std::ostringstream os;
-    os << "C2.NtUnfolded " << C2.NtUnfolded << " != C3.Nt() " << C3.Nt();
-    throw std::runtime_error( os.str() );
-  }
-
-  // Make somewhere to put Z_V
-  Fold out( NumSamples, fna.DeltaT + 1 );
-  out.FileList.push_back( C3.Name_.Filename );
-  out.FileList.push_back( C2.Name_.Filename );
-  out.FileList.push_back( miSrc.m.Name_.Filename );
-  out.CopyAttributes( C3 );
-  out.NtUnfolded = C3.Nt();
-  Scalar * pDst{ out[Fold::idxCentral] };
-
-  const Scalar * pE{ miSnk.m[Fold::idxCentral] + miSnk.idxE0 };
-  const Scalar * pC2 { C2[Fold::idxCentral] };
-  const Scalar * pSrc{ C3[Fold::idxCentral] };
-  for( int idx = Fold::idxCentral; idx < NumSamples; ++idx )
-  {
-    const double CTilde{ pC2[fna.DeltaT] - 0.5 * pC2[NTHalf] * std::exp( - pE[0] * ( NTHalf - fna.DeltaT ) ) };
-    for( int t = 0; t <= fna.DeltaT; ++t )
-    {
-      const double z{ CTilde / *pSrc++ };
-      if( !std::isfinite( z ) )
-        throw std::runtime_error( "ZV Overflow" );
-      *pDst++ = z;
-    }
-    pSrc += C3.Nt() - ( fna.DeltaT + 1 );
-    if( !eCentral )
-      pE += miSnk.m.Nt();
-    pC2 += C2.Nt();
-  }
-  // Make output file
-  out.MakeCorrSummary( nullptr );
-  std::string OutFileName{ outBase };
-  OutFileName.append( "ZV_" );
-  OutFileName.append( qSnk );
-  //OutFileName.append( Suffix );
-  Common::AppendDeltaT( OutFileName, fna.DeltaT );
-  C2Name.append( OutFileName );
-  C2Name.append( OutFileName );
-  OutFileName = Common::MakeFilename( OutFileName, Common::sFold, model.Seed, DEF_FMT );
-  std::cout << "->" << OutFileName << Common::NewLine;
-  out.Write( OutFileName, Common::sFold.c_str() );
-  const std::size_t FileNameLen{ OutFileName.find_last_of( '.' ) };
-  if( FileNameLen == std::string::npos )
-    OutFileName.append( 1, '.' );
-  else
-    OutFileName.resize( FileNameLen + 1 );
-  OutFileName.append( TEXT_EXT );
-  out.WriteSummary( OutFileName );
-}
-
 int main(int argc, const char *argv[])
 {
   static const char DefaultType[]{ "ZV" };
@@ -512,7 +512,7 @@ int main(int argc, const char *argv[])
     "--i3   Input3 filename prefix\n"
     "--im   Input model filename prefix\n"
     "-o     Output filename prefix\n"
-    "--type Ratio type[,parameters[,...]], default " << DefaultType << "\n"
+    "--type Ratio type[,parameters[,...]] (default " << DefaultType << ")\n"
     "--ssre Extended regex for sink/source type, default\n       " << DefaultERE << "\n"
     "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
     //"-n     Number of samples to fit, 0 (default) = all available from bootstrap\n"
