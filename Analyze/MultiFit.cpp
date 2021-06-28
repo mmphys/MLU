@@ -1386,12 +1386,15 @@ int main(int argc, const char *argv[])
   if( bShowUsage )
   {
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
-    " <options> Bootstrap1[,model1[,params1]] [Bootstrap2[,model2[,params2]] ...]\n"
+    " <options> Bootstrap1[[,FitRange1],model1[,params1]] [Bootstrap2[[,FitRange1],model2[,params2]] ...]\n"
     "Perform a multi-exponential fit of the specified bootstrap replicas, where:\n"
-    " modeln  is one of {Exp, Cosh, Sinh, ThreePoint, Const}\n"
-    " params1 t<n> chooses the n'th fit range (default=0, see -t)\n"
-    " paramsn Depends on the model\n"
-    "and <options> are:\n"
+    " FitRange chooses the n'th fit range (default=0)\n"
+    " model    is one of {Exp, Cosh, Sinh, ThreePoint, Const}\n"
+    " params   Depend on the model:\n"
+    " Exp/Cosh/Sinh\n"
+    "   Param1 Snk_Src, sink and source names\n"
+    "   Param2 'n' to normalise by energy\n"
+    "<options> are:\n"
     "--sep  Minimum relative separation between energy levels (default 0.2)\n"
     "--delta Minimum number of timeslices in fit range (default 3)\n"
     "--retry Maximum number of times to retry fits (default Minuit2=10, GSL=0)\n"
