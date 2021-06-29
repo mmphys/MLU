@@ -91,30 +91,19 @@ QDTMapModelInfo::QDTMapModelInfo( const std::string &FitListName, const std::str
   const ModelInfo *idxFirst{ nullptr };
   for( StringMapCI::iterator it = FitList.begin(); it != FitList.end(); ++it )
   {
-    std::string ModelFileName{ modelBase };
-    ModelFileName.append( it->second );
-    Common::FileNameAtt fna( ModelFileName );
+    for( const std::string &ModelFileName : Common::glob( &it->second, &it->second + 1, modelBase.c_str() ) ) {
+    std::vector<std::string> OpNames;
+    Common::FileNameAtt fna( ModelFileName, &OpNames );
     if( !fna.bGotDeltaT )
       throw std::runtime_error( "DeltaT missing from " + FitListName );
+    if( fna.op.size() != 2 )
+      throw std::runtime_error( "Expected 2 operator names, but " + std::to_string(fna.op.size()) + " provided" );
     const std::string &sH{ it->first };
-    const QDT qdt( sH, fna.DeltaT );
+    const QDT qdt( sH, fna.DeltaT, OpNames[fna.op[1]], OpNames[fna.op[0]] );
     std::string MsgPrefix( 2, ' ' );
     MsgPrefix.append( sH );
     MsgPrefix.append( Common::Space );
     ModelInfo &mi{ model[qdt] };
-    {
-      mi.FileName2pt = C2Base;
-      std::vector<std::string> v2pt{ Common::ArrayFromString( fna.Base, Common::Period ) };
-      const int Len{ static_cast<int>( v2pt.size() ) };
-      if( Len < 3 )
-        throw std::runtime_error( "Expected " + fna.Base + " to have at least 3 components" );
-      for( int i = 0; i < Len - 2; ++i )
-      {
-        if( i )
-          mi.FileName2pt.append( 1, '.' );
-        mi.FileName2pt.append( v2pt[i] );
-      }
-    }
     mi.m.SetName( std::move( fna ) );
     mi.m.Read( MsgPrefix.c_str() );
     mi.idxE0 = mi.m.GetColumnIndex( "E0" );
@@ -130,7 +119,7 @@ QDTMapModelInfo::QDTMapModelInfo( const std::string &FitListName, const std::str
     {
       idxFirst->m.IsCompatible( mi.m, &MaxModelSamples, Common::COMPAT_DISABLE_BASE );
     }
-  }
+  } }
 }
 
 Maker * Maker::Make( const std::string &Type, std::string &TypeParams,
@@ -218,11 +207,8 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
     throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
 
   // Now read the two-point function
-  std::string C2Name{ miSnk.FileName2pt };
-  C2Name.append( opSnk );
-  C2Name.append( opSrc );
   Fold C2;
-  C2.Read( Common::MakeFilename( C2Name, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
+  C2.Read( miSnk.FileName2pt, Spaces.c_str() );
   int NumSamples {};
   C3.IsCompatible( C2, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
                                     | Common::COMPAT_DISABLE_CONFIG_COUNT );
@@ -245,9 +231,12 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
   const Scalar * pE{ miSnk.m[Fold::idxCentral] + miSnk.idxE0 };
   const Scalar * pC2 { C2[Fold::idxCentral] };
   const Scalar * pSrc{ C3[Fold::idxCentral] };
+  // TODO: Determine why this is true of my wall-source 2pt correlators
+  const Scalar WallSourceFactor{ ( std::toupper( opSrc.back() ) == 'W' ) ? 2. : 1. };
   for( int idx = Fold::idxCentral; idx < NumSamples; ++idx )
   {
-    const double CTilde{ pC2[fna.DeltaT] - 0.5 * pC2[NTHalf] * std::exp( - pE[0] * ( NTHalf - fna.DeltaT ) ) };
+    const double CTilde{ ( pC2[fna.DeltaT] - 0.5 * pC2[NTHalf] * std::exp( - pE[0] * ( NTHalf - fna.DeltaT ) ) )
+                         * WallSourceFactor };
     for( int t = 0; t <= fna.DeltaT; ++t )
     {
       const double z{ CTilde / *pSrc++ };
@@ -288,18 +277,14 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
   const Common::FileNameMomentum &MomSrc{ fna.GetMomentum() };
   const Common::FileNameMomentum &MomSnk{ fna.GetMomentum( Common::Momentum::SinkPrefix )  };
   // Make sure I have the model for Z_V already loaded
-  const ModelInfo &miZVSnk{ ZVmi.at( QDT( qSnk, fna.DeltaT ) ) };
-  const ModelInfo &miZVSrc{ ZVmi.at( QDT( qSrc, fna.DeltaT ) ) };
+  const ModelInfo &miZVSnk{ ZVmi.at( QDT( qSnk, fna.DeltaT, opSnk, opSrc ) ) };
+  const ModelInfo &miZVSrc{ ZVmi.at( QDT( qSrc, fna.DeltaT, opSnk, opSrc ) ) };
   // Now read the two-point functions
   std::string C2NameSnk{ miSnk.FileName2pt };
-  C2NameSnk.append( opSnk );
-  C2NameSnk.append( opSnk );
   static const std::string Spaces( 2, ' ' );
-  Fold C2Snk( Common::MakeFilename( C2NameSnk, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
+  Fold C2Snk( C2NameSnk, Spaces.c_str() );
   std::string C2NameSrc{ miSrc.FileName2pt };
-  C2NameSrc.append( opSrc );
-  C2NameSrc.append( opSrc );
-  Fold C2Src( Common::MakeFilename( C2NameSrc, Common::sFold, model.Seed, DEF_FMT ), Spaces.c_str() );
+  Fold C2Src( C2NameSrc, Spaces.c_str() );
 
   // Load the correlators we need
   std::string Dir{ fna.Dir };

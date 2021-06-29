@@ -705,11 +705,15 @@ std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps, const std::vecto
   {
     // Search for the separators - on the last one, check for a period as well as underscore
     LastPos--; // Skip past the last separator
-    std::size_t pos = Base.find_last_of( Sep, LastPos, ( i == NumOps - 1 ) ? NumSeps - 1 : NumSeps );
+    std::size_t pos = Base.find_last_of( Sep, LastPos, NumSeps );
     if( pos == std::string::npos )
     {
       o.push_back( Base.substr( 0, LastPos + 1 ) );
       LastPos = 0;
+    }
+    else if( i != NumOps - 1 && Base[pos] == '.' )
+    {
+      break;
     }
     else
     {

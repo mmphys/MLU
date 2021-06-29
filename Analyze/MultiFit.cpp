@@ -1183,6 +1183,7 @@ int main(int argc, const char *argv[])
       {"minuit2", CL::SwitchType::Flag, nullptr},
       {"analytic", CL::SwitchType::Flag, nullptr},
       {"srcsnk", CL::SwitchType::Flag, nullptr},
+      {"opnames", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -1201,6 +1202,7 @@ int main(int argc, const char *argv[])
       const bool bFreezeCovar{ cl.GotSwitch( "freeze" ) };
       const bool bSaveCorr{ cl.GotSwitch("savecorr") };
       const bool bSaveCMat{ cl.GotSwitch("savecmat") };
+      const bool bOpSort{ !cl.GotSwitch("opnames") };
       const FitterType fitType{ cl.GotSwitch("minuit2") ? FitterType::Minuit2 : FitterType::GSL };
       const bool bAnalyticDerivatives{ cl.GotSwitch("analytic") };
       ModelDefaultParams modelDefault;
@@ -1292,12 +1294,26 @@ int main(int argc, const char *argv[])
 
       // I'll need a sorted, concatenated list of the operators in the fit for filenames
       std::string sOpNameConcat;
+      if( bOpSort )
       {
         sOpNameConcat = OpName[0];
         for( std::size_t i = 1; i < OpName.size(); i++ )
         {
           sOpNameConcat.append( 1, '_' );
           sOpNameConcat.append( OpName[i] );
+        }
+      }
+      else
+      {
+        for( std::size_t i = 0; i < ds.corr.size(); ++i )
+        {
+          const std::size_t ThisSize{ ds.corr[i].Name_.op.size() };
+          for( std::size_t j = ThisSize; j; )
+          {
+            if( i || j != ThisSize )
+              sOpNameConcat.append( Common::Underscore );
+            sOpNameConcat.append( OpName[ds.corr[i].Name_.op[--j]] );
+          }
         }
       }
 
@@ -1414,6 +1430,7 @@ int main(int argc, const char *argv[])
     "--savecmat Save correlation matrix\n"
     "--analytic Analytic derivatives for GSL (default: numeric)\n"
     "--srcsnk   Append _src and _snk to overlap coefficients (ie force different)\n"
+    "--opnames  Disable sorting and deduplicating operator name list\n"
     "--help     This message\n";
   }
   return iReturn;

@@ -66,17 +66,31 @@ struct QPMapModelInfo : public std::map<QP, ModelInfo, LessQP>
 };
 
 // A quark with a sepecified DeltaT
-using QDT=std::pair<std::string, int>;
+struct QDT
+{
+  std::string q;
+  int deltaT;
+  std::string opSnk;
+  std::string opSrc;
+  QDT( std::string q_, int deltaT_, const std::string &opSnk_, const std::string &opSrc_ )
+  : q{q_}, deltaT{deltaT_}, opSnk{opSnk_}, opSrc{opSrc_} {}
+};
 
 // Case insensitive compare of QP
 struct LessQDT
 {
   bool operator()( const QDT &lhs, const QDT &rhs ) const
   {
-    int i = Common::CompareIgnoreCase( lhs.first, rhs.first );
+    int i = Common::CompareIgnoreCase( lhs.q, rhs.q );
     if( i )
       return i < 0;
-    return lhs.second < rhs.second;
+    if( lhs.deltaT != rhs.deltaT )
+      return lhs.deltaT < rhs.deltaT;
+    i = Common::CompareIgnoreCase( lhs.opSnk, rhs.opSnk );
+    if( i )
+      return i < 0;
+    i = Common::CompareIgnoreCase( lhs.opSrc, rhs.opSrc );
+    return i < 0;
   }
 };
 
