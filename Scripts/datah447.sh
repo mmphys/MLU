@@ -28,6 +28,7 @@ function GetDebug()
 {
 echo "Getting Debug info:"
 echo "    - Ward identity bootstraps"
+mkdir -p bootstrap
 rsync -uvlmrt --include='PJ5q_*.txt' --include='PA0_*.txt' \
   --include='Ward/' --exclude='*' tess:"${RemoteBase}/bootstrap/" bootstrap/
 }
@@ -36,23 +37,27 @@ echo "Getting correlators"
 mkdir -p corr
 rsync -uvlmrt --include='*.txt' \
   --include='h447_[ls]_p2_[01]_g5[PW]_g5[PW].*.h5' \
-  --include='l_[ls]_p2_0_g5[PW]_g5[PW].*.h5' \
+  --include='l_[ls]_p2_[01]_g5[PW]_g5[PW].*.h5' \
   --include='quark_h447_h447_gT_dt_20_p2_0_ps2_0_g5*_g5*.fold.1835672416.h5' \
-  --include='quark_h447_l_gT_dt_20_p2_0_ps2_0_g5*_g5*.fold.1835672416.h5' \
-  --include='quark_l_h447_gT_dt_20_p2_0_ps2_0_g5*_g5*.fold.1835672416.h5' \
-  --include='quark_l_l_gT_dt_20_p2_0_ps2_0_g5*_g5*.fold.1835672416.h5' \
+  --include='quark_h447_l_gT_dt_20_p2_[01]_ps2_0_g5*_g5*.fold.1835672416.h5' \
+  --include='quark_l_h447_gT_dt_20_p2_0_ps2_[01]_g5*_g5*.fold.1835672416.h5' \
+  --include='quark_l_l_gT_dt_20_p2_[01]_ps2_[01]_g5*_g5*.fold.1835672416.h5' \
   --include='quark_s_s_gT_dt_20_p2_0_ps2_0_g5*_g5*.fold.1835672416.h5' \
   --include='*/' --exclude='*' tess:"${RemoteBase}/corr/" corr/
 
 echo "Getting fits"
 mkdir -p fit
-rsync -uvlmrt --include='*.params*.txt' --include='*/' \
-      --include='h447_l_p2_0.corr_10_20.g5P_g5W.model.*.h5' \
-      --include='l_s_p2_0.corr_7_18.g5P_g5W.model.*.h5' \
-      --include='l_l_p2_0.corr_6_15.g5P_g5W.model.*.h5' \
-      --include='l_l_p2_1.corr_6_15.g5P_g5W.model.*.h5' \
-      --exclude='*' tess:"${RemoteBase}/fit/2ptp2/" fit/2ptp2/
+rsync -uvlmrt --include='*.params*.txt' --include='Fit*.txt' --include='*/' \
+      --include='ZV_*_dt_20.*.model.*.h5' \
+      --include='h447_l_p2_0.corr_9_20.g5P_g5W.model.*.h5' \
+      --include='l_s_p2_0.corr_7_16.g5P_g5W.model.*.h5' \
+      --include='l_l_p2_0.corr_5_14.g5P_g5W.model.*.h5' \
+      --include='l_l_p2_1.corr_5_15.g5P_g5W.model.*.h5' \
+      --exclude='*' tess:"${RemoteBase}/fit/" fit/
 
-mkdir -p ratio/3pt_s/raw bootstrap
+echo "Getting ratios"
+mkdir -p ratio
+rsync -uvlmrt --include='ZV_*.txt' --include='*/' --exclude='*' tess:"${RemoteBase}/ratio/" ratio/
+
 GetDebug
 

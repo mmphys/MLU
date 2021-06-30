@@ -118,6 +118,16 @@ protected:
   const bool RegExSwap;
   QPMapModelInfo model;
 protected:
+  void AppendOp( std::string &s, const std::string &Op )
+  {
+    s.append( Common::Underscore );
+    s.append( Op );
+  }
+  void AppendOps( std::string &s, const std::string &Snk, const std::string &Src)
+  {
+    AppendOp( s, Snk );
+    AppendOp( s, Src );
+  }
   std::string HeavyKey( const std::string &Heavy ) const;
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                      const std::string &qSnk, const std::string &qSrc,
