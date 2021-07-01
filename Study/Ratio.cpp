@@ -25,6 +25,31 @@
 
 #include "Ratio.hpp"
 
+/*namespace Common {
+template<std::size_t Num>
+std::istream & operator>>( std::istream &is, std::array<std::string,Num> &c )
+{
+  for( std::size_t i = 0; i < c.size(); ++i )
+    if( ! ( is >> c[i] ) )
+      throw std::runtime_error( "Error reading array of " + std::to_string(Num) + " strings" );
+  return is;
+}
+}*/
+
+struct SnkSrcString
+{
+  std::string Snk;
+  std::string Src;
+  std::string s;
+};
+
+std::istream & operator>>( std::istream &is, SnkSrcString &sss )
+{
+  if( is >> sss.Snk && is >> sss.Src && is >> sss.s )
+    return is;
+  throw std::runtime_error( "Error reading SnkSrcString" );
+}
+
 QPMapModelInfo::QPMapModelInfo( const std::string &FitListName, const std::string &modelBase, const std::string &C2Base )
 {
   std::map<QP, ModelInfo, LessQP> &model( *this );
@@ -85,13 +110,14 @@ QDTMapModelInfo::QDTMapModelInfo( const std::string &FitListName, const std::str
   std::ifstream s( FitListName );
   if( !Common::FileExists( FitListName ) || s.bad() )
     throw std::runtime_error( "Z_V fit file \"" + FitListName + "\" not found" );
-  using StringMapCI = std::multimap<std::string, std::string, Common::LessCaseInsensitive>;
-  using StringMapCIReader = Common::KeyValReaderMulti<std::string, std::string, Common::LessCaseInsensitive>;
+  using StringMapCI = std::multimap<std::string, SnkSrcString, Common::LessCaseInsensitive>;
+  using StringMapCIReader = Common::KeyValReaderMulti<std::string, SnkSrcString, Common::LessCaseInsensitive>;
   StringMapCI FitList{ StringMapCIReader::Read( s ) };
   const ModelInfo *idxFirst{ nullptr };
   for( StringMapCI::iterator it = FitList.begin(); it != FitList.end(); ++it )
   {
-    for( const std::string &ModelFileName : Common::glob( &it->second, &it->second + 1, modelBase.c_str() ) ) {
+    SnkSrcString & sss{ it->second };
+    for( const std::string &ModelFileName : Common::glob( &sss.s, &sss.s + 1, modelBase.c_str() ) ) {
     std::vector<std::string> OpNames;
     Common::FileNameAtt fna( ModelFileName, &OpNames );
     if( !fna.bGotDeltaT )
@@ -99,7 +125,7 @@ QDTMapModelInfo::QDTMapModelInfo( const std::string &FitListName, const std::str
     if( fna.op.size() != 2 )
       throw std::runtime_error( "Expected 2 operator names, but " + std::to_string(fna.op.size()) + " provided" );
     const std::string &sH{ it->first };
-    const QDT qdt( sH, fna.DeltaT, OpNames[fna.op[1]], OpNames[fna.op[0]] );
+    const QDT qdt( sH, fna.DeltaT, sss.Snk, sss.Src );
     std::string MsgPrefix( 2, ' ' );
     MsgPrefix.append( sH );
     MsgPrefix.append( Common::Space );
@@ -204,8 +230,11 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
     throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
 
   // Now read the two-point function
+  std::string C2Name{ miSnk.FileName2pt };
+  AppendOps( C2Name, opSnk, opSrc );
+  C2Name = Common::MakeFilename( C2Name, Common::sFold, model.Seed, DEF_FMT );
   Fold C2;
-  C2.Read( miSnk.FileName2pt, Spaces.c_str() );
+  C2.Read( C2Name, Spaces.c_str() );
   int NumSamples {};
   C3.IsCompatible( C2, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
                                     | Common::COMPAT_DISABLE_CONFIG_COUNT );
@@ -228,12 +257,9 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
   const Scalar * pE{ miSnk.m[Fold::idxCentral] + miSnk.idxE0 };
   const Scalar * pC2 { C2[Fold::idxCentral] };
   const Scalar * pSrc{ C3[Fold::idxCentral] };
-  // TODO: Determine why this is true of my wall-source 2pt correlators
-  const Scalar WallSourceFactor{ ( std::toupper( opSrc.back() ) == 'W' ) ? 2. : 1. };
   for( int idx = Fold::idxCentral; idx < NumSamples; ++idx )
   {
-    const double CTilde{ ( pC2[fna.DeltaT] - 0.5 * pC2[NTHalf] * std::exp( - pE[0] * ( NTHalf - fna.DeltaT ) ) )
-                         * WallSourceFactor };
+    const double CTilde{ pC2[fna.DeltaT] - 0.5 * pC2[NTHalf] * std::exp( - pE[0] * ( NTHalf - fna.DeltaT ) ) };
     for( int t = 0; t <= fna.DeltaT; ++t )
     {
       const double z{ CTilde / *pSrc++ };
@@ -423,8 +449,28 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
   }
 }
 
+/*void DebugInput( const std::string &Input, std::array<std::string,3> &a )
+{
+  std::cout << "Input \"" << Input << "\"" << std::endl;
+  {
+    std::istringstream ss( Input );
+    ss >> a;
+  }
+  for( std::size_t i = 0; i < a.size(); ++i )
+    std::cout << "\ta[" << i << "]=\"" << a[i] << "\"" << std::endl;
+}
+
+bool Debug()
+{
+  std::array<std::string,3> a;
+  DebugInput( "alpha bravo delta gamma", a );
+  DebugInput( "vega upsilon", a );
+  return false;
+}*/
+
 int main(int argc, const char *argv[])
 {
+  //if(!Debug()) return EXIT_FAILURE;
   static const char DefaultType[]{ "ZV" };
   static const char DefaultERE[]{ R"((quark_|anti_)([[:alpha:]]+[[:digit:]]*)_([[:alpha:]]+[[:digit:]]*))" };
   std::ios_base::sync_with_stdio( false );

@@ -57,7 +57,7 @@ rsync -uvlmrt --include='*.params*.txt' --include='Fit*.txt' --include='*/' \
 
 echo "Getting ratios"
 mkdir -p ratio
-rsync -uvlmrt --include='ZV_*.txt' --include='*/' --exclude='*' tess:"${RemoteBase}/ratio/" ratio/
+rsync -uvlmrt --include='*.txt' --include='*/' --exclude='*' tess:"${RemoteBase}/ratio/" ratio/
 
 GetDebug
 
