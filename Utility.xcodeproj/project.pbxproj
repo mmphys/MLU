@@ -2956,6 +2956,7 @@
 		68EAE66A2635CA0500090D97 /* xml3pt.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = xml3pt.xml; sourceTree = "<group>"; };
 		68EAE66B2635CA0500090D97 /* GaugeFix.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = GaugeFix.xml; sourceTree = "<group>"; };
 		68F1C8F025B4397500A48690 /* Gauge.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Gauge.cc; sourceTree = "<group>"; };
+		68F64334268F7E4900CA9CF4 /* bootstrap.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = bootstrap.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -3313,6 +3314,7 @@
 			isa = PBXGroup;
 			children = (
 				6822E8BF22A7057400A85993 /* bootstrap.cpp */,
+				68F64334268F7E4900CA9CF4 /* bootstrap.hpp */,
 				6868327325DDB950008489B2 /* corr.cpp */,
 				6856DC4E23C391AE0040814E /* corrstat.cpp */,
 				687726872466C32D00D46AEF /* Debug.cpp */,

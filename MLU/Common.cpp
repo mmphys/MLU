@@ -85,6 +85,7 @@ namespace CorrSumm {
   const char * FieldNames[NumFields] = { "corr", "exp", "cosh" };
 };
 
+extern const std::string Empty{ "" };
 extern const std::string Space{ " " };
 extern const std::string WhiteSpace{ " \t\n\r\f\v" };
 extern const std::string Underscore{ "_" };
@@ -195,7 +196,7 @@ namespace Gamma
     "g-sZT",
     "gsZT",
   };
-  const std::string sGammai{ "gi" };
+  const std::string sGammaSpatial{ "gXYZ" };
 
   std::string NameShort( Algebra alg, const char * pszPrefix, const char * pszOpSuffix )
   {
@@ -205,9 +206,9 @@ namespace Gamma
     {
       if( pszPrefix && *pszPrefix )
         sName.append( pszPrefix );
-      if( alg == Algebra::Gammai )
-        sName.append( sGammai );
-      if( alg != Algebra::Unknown )
+      if( alg == Algebra::Spatial )
+        sName.append( sGammaSpatial );
+      else if( alg != Algebra::Unknown )
       {
         int idx = static_cast<int>( alg );
         sName.append( ( idx >= 0 && idx < nGamma ) ? nameShort[idx] : "?" );
@@ -233,8 +234,8 @@ namespace Gamma
         ;
       if( i < nGamma )
         a = static_cast<Algebra>( i );
-      else if( EqualIgnoreCase( s, sGammai ) )
-        a = Algebra::Gammai;
+      else if( EqualIgnoreCase( s, sGammaSpatial ) )
+        a = Algebra::Spatial;
       else
         is.setstate( std::ios_base::failbit );
     }
@@ -815,6 +816,16 @@ const FileNameMomentum &FileNameAtt::GetMomentum( const std::string &Name ) cons
   return it->second;
 }
 
+const FileNameMomentum &FileNameAtt::GetFirstNonZeroMomentum() const
+{
+  if( p.empty() )
+    throw std::runtime_error( "No momenta available" );
+  for( auto it = p.begin(); it != p.end(); ++it )
+    if( it->second )
+      return it->second;
+  return p.begin()->second;
+}
+
 const void FileNameAtt::AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const
 {
   if( fnp.bp2 )
@@ -930,10 +941,10 @@ std::vector<Gamma::Algebra> ExtractGamma( std::string &Prefix )
 }
 
 // Append Gamma to string
-void AppendGamma( std::string &s, Gamma::Algebra g )
+void AppendGamma( std::string &s, Gamma::Algebra g, const std::string &Sep )
 {
   std::ostringstream os;
-  os << Common::Underscore << g;
+  os << Sep << g;
   s.append( os.str() );
 }
 

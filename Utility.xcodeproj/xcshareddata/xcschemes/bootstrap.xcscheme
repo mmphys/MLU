@@ -74,11 +74,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-cgT"
+            argument = "-cgT,gx,gy,gz,gxyz"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-cgT,-gx,-gy,-gz"
+            argument = "-cgT,gx,gxyz"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -135,7 +135,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "meson/2pt/&apos;*&apos;"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ssre=^[GZ][F2]([[:alnum:]])([[:alnum:]])_"

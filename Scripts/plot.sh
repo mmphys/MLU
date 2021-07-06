@@ -72,6 +72,7 @@ if( do_log ) {
 }
 
 PlotFile="$PlotFile"
+PlotFileTitle="$PlotFileTitle"
 NumFiles=words(PlotFile)
 FileType="${mmplotfile_type}"
 
@@ -171,11 +172,11 @@ if( NumFiles==1 && FileType eq "cormat" ) {
     }
   }
   PlotCmd="plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] word(PlotFile,File) using ((("
-  PlotCmd=PlotCmd.my_x_axis.") == 0 ? 0 : f==0 ? ("
+  PlotCmd=PlotCmd.my_x_axis.") == 0 ? (f==0 ? 0 : 1/0) : f==0 ? ("
   PlotCmd=PlotCmd.my_x_axis.") : nt - ("
   PlotCmd=PlotCmd.my_x_axis."))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : "
   PlotCmd=PlotCmd.PlotUsing.' '
-  PlotCmd=PlotCmd.PlotWith.' title ( SaveFile == 2 ? word(PlotFile,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)'
+  PlotCmd=PlotCmd.PlotWith.' title ( SaveFile == 2 ? word(PlotFileTitle,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)'
   #PlotCmd=PlotCmd.PlotWith.' title "ΔT = ".word("12 14 16 20 24 28 32",File)'
   eval PlotCmd
 }
@@ -224,6 +225,7 @@ else
   PlotFile="$*"
   for f in $PlotFile; do
     PlotPathSplit "$f"
+    PlotFileTitle="$PlotFileTitle ${f%.$mmplotfile_seed.$mmplotfile_ext}"
     FileDT="$FileDT $mmplotfile_dt"
   done
   PlotFunction
@@ -236,6 +238,7 @@ do
   PlotPathSplit "$PlotFile"
   if [[ "$mmplotfile_ext" == "txt" ]]
   then #Silently skip non-text files
+    PlotFileTitle="${PlotFile%.$mmplotfile_seed.$mmplotfile_ext}"
     FileDT="$mmplotfile_dt"
     #log_limit=1
     #if [[ "$mmplotfile_type" == "corr" ]]; then log_limit=2; fi
