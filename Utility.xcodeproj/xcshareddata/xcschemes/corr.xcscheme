@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study2/C1"
+      customWorkingDirectory = "$PROJECT_DIR/run/testboot"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -54,7 +54,7 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-i bootstrap/2pt/ -o fold/2pt/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i bootstrap/3pt_s/ -o fold/3pt_s/"
@@ -70,7 +70,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*_p_2_0_0_g5_gT5*h5,norc"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*g5_gT5*h5,nor *gT5_g5*h5,nor"
@@ -79,6 +79,10 @@
          <CommandLineArgument
             argument = "*_gT_dt_*g5_g5*.h5,r"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "h447_s_p2_*.h5,per *_gT_*_ps2_1_*.h5,r *_gX*_ps2_1_*.h5,i"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

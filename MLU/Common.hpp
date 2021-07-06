@@ -2089,6 +2089,8 @@ public:
   std::vector<Common::ConfigCount> ConfigCount; // Info on every config in the bootstrap in order
   std::vector<std::string> FileList; // Info on every config in the bootstrap in order
   inline int NumSamples() const { return NumSamples_; }
+  inline int NumSamplesRaw() const { return NumSamplesRaw_; }
+  inline int NumSamplesBinned() const { return NumSamplesBinned_; }
   inline int Nt() const { return Nt_; }
   inline const fint * RandNum() const { return m_pRandNum.get(); };
   inline ValWithEr<scalar_type> * getSummaryData( int idx = 0 )

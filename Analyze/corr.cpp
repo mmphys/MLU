@@ -31,11 +31,50 @@
 #include <typeinfo>
 #include <MLU/Common.hpp>
 
+using scalar = double;
+using Fold = Common::Fold<scalar>;
+using SC = Common::Sample<std::complex<scalar>>;
+
+void CopyFold( scalar * dst, const std::complex<scalar> * pSrc, int NumRows, int Nt, int NtHalf,
+               Common::FoldProp &f, bool bRealImagOnly, bool out_t0Negated )
+{
+  const scalar * src{ SC::Traits::ScalarPtr( pSrc )};
+  if( f.rps.reality == Common::Reality::Imag )
+    src++;
+  if( bRealImagOnly )
+  {
+    std::size_t Len{ static_cast<std::size_t>( NumRows ) * Nt };
+    for( std::size_t i = 0; i < Len; ++i )
+    {
+      *dst++ = *src;
+      src += SC::scalar_count;
+    }
+  }
+  else
+  {
+    for( int s = 0; s < NumRows; s++ )
+    {
+      // Timeslice 0 is a little special
+      scalar d = *src;
+      if( out_t0Negated )
+        d = std::abs( d );
+      *dst++ = d;
+      // Now do all the other timeslices
+      for( int t = 1; t < NtHalf; t++ )
+      {
+        if( f.rps.parity == Common::Parity::Odd )
+          d = src[t * SC::scalar_count] - src[(Nt - t) * SC::scalar_count];
+        else
+          d = src[t * SC::scalar_count] + src[(Nt - t) * SC::scalar_count];
+        *dst++ = d * ( f.rps.sign == Common::Sign::Negative ? -0.5 : 0.5 );
+      }
+      src += SC::scalar_count * Nt;
+    }
+  }
+}
+
 int main(int argc, const char *argv[])
 {
-  using scalar = double;
-  using Fold = Common::Fold<scalar>;
-  using SC = Common::Sample<std::complex<scalar>>;
   // We're not using C-style I/O
   std::ios_base::sync_with_stdio(false);
   int iReturn{ EXIT_SUCCESS };
@@ -148,6 +187,34 @@ int main(int argc, const char *argv[])
                 for( int t = 0; t < Nt; t++, dst++, src++ )
                   *dst = ( *dst + *src ) * 0.5;
               out.BootstrapList.emplace_back( ConjFileName );
+              // Merge the raw data (if present and same size)
+              if( in.NumSamplesRaw() )
+              {
+                if( in.NumSamplesRaw() != in2.NumSamplesRaw() )
+                  in.resizeRaw( 0 );
+                else
+                {
+                  src = in2.getRaw();
+                  dst = in.getRaw();
+                  for( int s = 0; s < in.NumSamplesRaw(); s++ )
+                    for( int t = 0; t < Nt; t++, dst++, src++ )
+                      *dst = ( *dst + *src ) * 0.5;
+                }
+              }
+              // Merge the binned data (if present and same size)
+              if( in.NumSamplesBinned() )
+              {
+                if( in.NumSamplesBinned() != in2.NumSamplesBinned() )
+                  in.resizeBinned( 0 );
+                else
+                {
+                  src = in2.getBinned();
+                  dst = in.getBinned();
+                  for( int s = 0; s < in.NumSamplesBinned(); s++ )
+                    for( int t = 0; t < Nt; t++, dst++, src++ )
+                      *dst = ( *dst + *src ) * 0.5;
+                }
+              }
             }
             // Now fold the correlator, obeying the fold properties
             const int NtHalf{ bRealImagOnly ? Nt : Nt / 2 + ( f.rps.parity == Common::Parity::Odd ? 0 : 1 ) };
@@ -159,6 +226,8 @@ int main(int argc, const char *argv[])
             out.Conjugated = f.Conjugate;
             scalar * dst{ out[Fold::idxCentral] };
             const scalar * src{ SC::Traits::ScalarPtr( in[SC::idxCentral] )};
+
+            // This is what CopyFold is based on
             if( f.rps.reality == Common::Reality::Imag )
               src++;
             else
@@ -200,6 +269,14 @@ int main(int argc, const char *argv[])
                 src += SC::scalar_count * Nt;
               }
             }
+
+            if( in.NumSamplesRaw() )
+              CopyFold( out.resizeRaw( in.NumSamplesRaw() ), in.getRaw(), in.NumSamplesRaw(),
+                        Nt, NtHalf, f, bRealImagOnly, out.t0Negated );
+            if( in.NumSamplesBinned() )
+              CopyFold( out.resizeBinned( in.NumSamplesBinned() ), in.getBinned(), in.NumSamplesBinned(),
+                        Nt, NtHalf, f, bRealImagOnly, out.t0Negated );
+
             out.reality = f.rps.reality;
             out.parity = f.rps.parity;
             out.sign = f.rps.sign;

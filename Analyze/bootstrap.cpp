@@ -1030,7 +1030,7 @@ int main(const int argc, const char *argv[])
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
-    "-f     Disable Factorising operators (e.g. g5-gT5 same as gT5-g5) 2pt functions only\n"
+    "-f     Disable Factorising operators, e.g. g5-gT5 same as gT5-g5 (2pt only)\n"
     "-w     Warn only if file exists. Default=error\n"
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"
