@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1170"
+   LastUpgradeVersion = "1250"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "684823342509160C00B31C1E"
-               BuildableName = "Ratio"
-               BlueprintName = "Ratio"
+               BlueprintIdentifier = "6870690526960B4E003F5888"
+               BuildableName = "Divide"
+               BlueprintName = "Divide"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study3/M1/analyse/h447"
+      customWorkingDirectory = "$HOME/data/Study3/M1/analyse/h447/corr"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -45,52 +45,24 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "684823342509160C00B31C1E"
-            BuildableName = "Ratio"
-            BlueprintName = "Ratio"
+            BlueprintIdentifier = "6870690526960B4E003F5888"
+            BuildableName = "Divide"
+            BlueprintName = "Divide"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--i3 corr/3pt_s/ --i2 corr/2pt/ --im fit/ Best_s.txt -o ratio/3pt_s/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--i3 corr/3pt_lp2/ --i2 corr/2ptp2/ --im fit/ Fit_lp2.txt -o ratio/lp2/R1R2/"
+            argument = "Ward/PJ5q_GF_h447_p_0_0_0.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type zV quark_{l_l,s_s,h447_h447}_gT_dt_&apos;*&apos;_p2_0_ps2_0_g5[PW]_g5[PW].fold.1835672416.h5"
+            argument = "2pt/h447_h447_p_0_0_0_g5P_g5W.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type R1r2,FitZV_lp2.txt"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "quark_h447_l_gT_dt_&apos;*&apos;_p2_&apos;*&apos;_ps2_0_g5[PW]_g5[PW].fold.1835672416.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "quark_h447_l_ps_0_0_0_gX_dt_&apos;*&apos;_p_&apos;*&apos;_g5[PW]_g5[PW].fold.1835672416.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--im fit/2pt/ Best2pt.txt"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "&apos;*&apos;_h0_h3&apos;*&apos;.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "quark_h0_h3_gT_dt_&apos;*&apos;_p_0_0_0.corr_8_17.corr_8_17.N_&apos;*&apos;.phi_&apos;*&apos;_theta_&apos;*&apos;_g5Pg5W_g5Pg5W.fold.1835672416.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--ec"
-            isEnabled = "NO">
+            argument = "mres/GF_h447_P"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>
@@ -104,9 +76,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "684823342509160C00B31C1E"
-            BuildableName = "Ratio"
-            BlueprintName = "Ratio"
+            BlueprintIdentifier = "6870690526960B4E003F5888"
+            BuildableName = "Divide"
+            BlueprintName = "Divide"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

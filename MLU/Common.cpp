@@ -350,6 +350,30 @@ bool ExtractSuffixSplit( std::string &String, std::vector<std::string> &Suffii,
   return bExtracted;
 }
 
+// Zipper merge v1 and v2 if same size (otherwise just append)
+std::vector<std::string> ZipperMerge( const std::vector<std::string> &v1, const std::vector<std::string> &v2 )
+{
+  std::vector<std::string> myFileList;
+  // Merge the file lists
+  if( v1.size() == v2.size() )
+  {
+    // Same length - merge the lists like a zipper
+    myFileList.reserve( v1.size() + v2.size() );
+    auto p2 = v2.begin();
+    for( auto p1 = v1.begin(); p1 != v1.end(); ++p1, ++p2 )
+    {
+      myFileList.emplace_back( *p1 );
+      myFileList.emplace_back( *p2 );
+    }
+  }
+  else
+  {
+    myFileList = v1;
+    myFileList.insert( myFileList.end(), v2.begin(), v2.end() );
+  }
+  return myFileList;
+}
+
 // Dump the environment to stdout, prefixed by optional message
 void DumpEnv(int argc, const char * const *argv, const char * pStr )
 {

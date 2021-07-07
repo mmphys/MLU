@@ -720,6 +720,9 @@ std::vector<std::string> Split( const std::string &String, const char * pszDelim
 bool ExtractSuffixSplit( std::string &String, std::vector<std::string> &Suffii,
                         const char * pszStringDelim = nullptr, const char * pszSuffixDelim = nullptr );
 
+// Zipper merge v1 and v2 if same size (otherwise just append)
+std::vector<std::string> ZipperMerge( const std::vector<std::string> &v1, const std::vector<std::string> &v2 );
+
 // Dump the environment to stdout, prefixed by optional message
 void DumpEnv(int argc, const char * const *argv, const char * pStr = nullptr );
 

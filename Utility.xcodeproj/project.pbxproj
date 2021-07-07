@@ -1222,6 +1222,7 @@
 		68703ED925D3023400D1BA61 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		68703EF325D3026A00D1BA61 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		68703F0D25D3033F00D1BA61 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
+		6870690D26960B87003F5888 /* Divide.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6870690026960B2C003F5888 /* Divide.cpp */; };
 		687588BB2499501900E38728 /* Test_hadrons_spectrum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C182244C7863008E272B /* Test_hadrons_spectrum.cpp */; };
 		687726942466C49E00D46AEF /* Debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687726872466C32D00D46AEF /* Debug.cpp */; };
 		687A730B256FA9C800A573A9 /* WilsonFlow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687A7309256FA9C800A573A9 /* WilsonFlow.cpp */; };
@@ -1269,6 +1270,7 @@
 		68D0E9EE24A354F000834C1C /* Accelerator.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9EB24A354EF00834C1C /* Accelerator.h */; };
 		68E2C301245B20B8009E7BE5 /* Test_serialisation.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68E2C2F5245B2068009E7BE5 /* Test_serialisation.cc */; };
 		68F1C8F125B4397500A48690 /* Gauge.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68F1C8F025B4397500A48690 /* Gauge.cc */; };
+		68F8E6682696115900B7E70B /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -1390,6 +1392,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		686EC70024003EA40084D04D /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		6870690426960B4E003F5888 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -2869,6 +2880,9 @@
 		686EC70224003EA40084D04D /* FitSummary */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FitSummary; sourceTree = BUILT_PRODUCTS_DIR; };
 		686EC70924003ED30084D04D /* FitSummary.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitSummary.cpp; sourceTree = "<group>"; };
 		68703D4425D2FF8600D1BA61 /* MultiFit.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MultiFit.hpp; sourceTree = "<group>"; };
+		6870690026960B2C003F5888 /* Divide.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Divide.cpp; sourceTree = "<group>"; };
+		6870690126960B2C003F5888 /* Divide.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Divide.hpp; sourceTree = "<group>"; };
+		6870690626960B4E003F5888 /* Divide */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Divide; sourceTree = BUILT_PRODUCTS_DIR; };
 		687588B42499500100E38728 /* Test_hadrons_spectrum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_hadrons_spectrum; sourceTree = BUILT_PRODUCTS_DIR; };
 		687726872466C32D00D46AEF /* Debug.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Debug.cpp; sourceTree = "<group>"; };
 		6877268D2466C48000D46AEF /* Debug */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Debug; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3078,6 +3092,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				68703D2A25D2FE8F00D1BA61 /* libMLU.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6870690326960B4E003F5888 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68F8E6682696115900B7E70B /* libMLU.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3306,6 +3328,7 @@
 				68216C36265416A2002014E6 /* Benchmark_staggeredF */,
 				680910A2265572AB0026D072 /* Minimal */,
 				683A002326626B1000A532A2 /* TensorDemo */,
+				6870690626960B4E003F5888 /* Divide */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -3318,6 +3341,8 @@
 				6868327325DDB950008489B2 /* corr.cpp */,
 				6856DC4E23C391AE0040814E /* corrstat.cpp */,
 				687726872466C32D00D46AEF /* Debug.cpp */,
+				6870690026960B2C003F5888 /* Divide.cpp */,
+				6870690126960B2C003F5888 /* Divide.hpp */,
 				680DBC6024F81FB600A66BFF /* FitModel.cpp */,
 				686EC70924003ED30084D04D /* FitSummary.cpp */,
 				681DC8B722F19CB000EE04A9 /* hlxml.cpp */,
@@ -7109,6 +7134,23 @@
 			productReference = 686EC70224003EA40084D04D /* FitSummary */;
 			productType = "com.apple.product-type.tool";
 		};
+		6870690526960B4E003F5888 /* Divide */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6870690A26960B4E003F5888 /* Build configuration list for PBXNativeTarget "Divide" */;
+			buildPhases = (
+				6870690226960B4E003F5888 /* Sources */,
+				6870690326960B4E003F5888 /* Frameworks */,
+				6870690426960B4E003F5888 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Divide;
+			productName = Divide;
+			productReference = 6870690626960B4E003F5888 /* Divide */;
+			productType = "com.apple.product-type.tool";
+		};
 		687588B32499500100E38728 /* Test_hadrons_spectrum */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 687588BA2499500100E38728 /* Build configuration list for PBXNativeTarget "Test_hadrons_spectrum" */;
@@ -7405,6 +7447,9 @@
 					686EC70124003EA40084D04D = {
 						CreatedOnToolsVersion = 11.3.1;
 					};
+					6870690526960B4E003F5888 = {
+						CreatedOnToolsVersion = 12.5.1;
+					};
 					687588B32499500100E38728 = {
 						CreatedOnToolsVersion = 11.5;
 					};
@@ -7488,6 +7533,7 @@
 				68216C35265416A2002014E6 /* Benchmark_staggeredF */,
 				680910A1265572AB0026D072 /* Minimal */,
 				683A002226626B1000A532A2 /* TensorDemo */,
+				6870690526960B4E003F5888 /* Divide */,
 			);
 		};
 /* End PBXProject section */
@@ -7916,6 +7962,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				686EC70A24003ED30084D04D /* FitSummary.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6870690226960B4E003F5888 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6870690D26960B87003F5888 /* Divide.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8553,6 +8607,20 @@
 			};
 			name = Release;
 		};
+		6870690B26960B4E003F5888 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		6870690C26960B4E003F5888 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		687588B82499500100E38728 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -8935,6 +9003,15 @@
 			buildConfigurations = (
 				686EC70624003EA40084D04D /* Debug */,
 				686EC70724003EA40084D04D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6870690A26960B4E003F5888 /* Build configuration list for PBXNativeTarget "Divide" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6870690B26960B4E003F5888 /* Debug */,
+				6870690C26960B4E003F5888 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
