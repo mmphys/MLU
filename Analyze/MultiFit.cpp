@@ -360,6 +360,19 @@ scalar FitterThread::FitOne( const Parameters &parGuess, const std::string &Save
   // Perform fit
   ParamState Result{ parGuess };
   scalar dTestStat = RepeatFit( Result, NumRetriesFit() );
+  // Make sure the test statistic is within acceptable bounds
+  if( idx == Fold::idxCentral && parent.HotellingCutoff )
+  {
+    const scalar qValue{ Common::qValueHotelling( dTestStat, parent.dof, Extent ) };
+    std::ostringstream ss;
+    ss << "Hotelling qValue " << qValue;
+    if( qValue < parent.HotellingCutoff )
+    {
+      ss << " < cutoff " << parent.HotellingCutoff;
+      throw std::runtime_error( ss.str() );
+    }
+    std::cout << ss.str() << Common::NewLine;
+  }
   // Put the variable fit parameters into the full model parameter set (constants are already there)
   for( int i = 0; i < parent.NumVariable; ++i )
     ModelParams[parent.ParamVariable[i]] = Result.parameters[i].Value;
@@ -387,7 +400,7 @@ scalar FitterThread::FitOne( const Parameters &parGuess, const std::string &Save
   OutputData[OutputDataSize++] = dTestStat / parent.dof;
 
   // Check whether energy levels are separated by minimum separation
-  if( idx == Fold::idxCentral )
+  if( idx == Fold::idxCentral && parent.RelEnergySep )
   {
     for( int e = 1; e < parent.NumExponents; e++ )
     {
@@ -621,7 +634,8 @@ std::string FitterThreadGSL::Description() const
 Fitter::Fitter( FitterType fitType_, const DataSet &ds_, const std::vector<std::string> &ModelArgs,
                 const ModelDefaultParams &modelDefault, const std::vector<std::string> &opNames_,
                 int verbosity_, bool bFreezeCovar_, bool bSaveCorr_, bool bSaveCMat_,
-                int Retry_, int MaxIt_, double Tolerance_, double RelEnergySep_, bool bAnalyticDerivatives_ )
+                int Retry_, int MaxIt_, double Tolerance_, double RelEnergySep_, double HotellingCutoff_,
+                bool bAnalyticDerivatives_ )
   : fitType{fitType_},
     ds{ std::move( ds_ ) },
     bAnalyticDerivatives{bAnalyticDerivatives_},
@@ -636,6 +650,7 @@ Fitter::Fitter( FitterType fitType_, const DataSet &ds_, const std::vector<std::
     MaxIt{MaxIt_},
     Tolerance{Tolerance_},
     RelEnergySep{RelEnergySep_},
+    HotellingCutoff{HotellingCutoff_},
     NumFiles{ static_cast<int>( ds.corr.size() ) },
     model{ CreateModels( ModelArgs, modelDefault ) },
     NumExponents{ GetNumExponents() },
@@ -1158,6 +1173,8 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
 int main(int argc, const char *argv[])
 {
   // Can't do this because of Minuit2     std::ios_base::sync_with_stdio( false );
+  static const char DefaultEnergySep[] = "0"; // Default used to be 0.2 until 10 Jul 2021
+  static const char DefaultHotelling[] = "0.05";
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;
@@ -1165,7 +1182,8 @@ int main(int argc, const char *argv[])
   try
   {
     const std::initializer_list<CL::SwitchDef> list = {
-      {"sep", CL::SwitchType::Single, "0.2"},
+      {"sep", CL::SwitchType::Single, DefaultEnergySep},
+      {"Hotelling", CL::SwitchType::Single, DefaultHotelling},
       {"delta", CL::SwitchType::Single, "3"},
       {"retry", CL::SwitchType::Single, "0"},
       {"iter", CL::SwitchType::Single, "0"},
@@ -1190,6 +1208,7 @@ int main(int argc, const char *argv[])
     if( !cl.GotSwitch( "help" ) && cl.Args.size() )
     {
       const double RelEnergySep{ cl.SwitchValue<double>("sep") };
+      const double HotellingCutoff{ cl.SwitchValue<double>("Hotelling") };
       const int delta{ cl.SwitchValue<int>("delta") };
       const int Retry{ cl.SwitchValue<int>("retry") };
       const int MaxIterations{ cl.SwitchValue<int>("iter") }; // Max iteration count, 0=unlimited
@@ -1328,7 +1347,7 @@ int main(int argc, const char *argv[])
 
       // All the models are loaded
       Fitter m( fitType, ds, ModelArgs, modelDefault, OpName, Verbosity, bFreezeCovar, bSaveCorr, bSaveCMat, Retry,
-                MaxIterations, Tolerance, RelEnergySep, bAnalyticDerivatives );
+                MaxIterations, Tolerance, RelEnergySep, HotellingCutoff, bAnalyticDerivatives );
       const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
       std::ofstream s;
       for( FitRangesIterator it = fitRanges.begin(); !it.AtEnd(); ++it )
@@ -1411,7 +1430,8 @@ int main(int argc, const char *argv[])
     "   Param1 Snk_Src, sink and source names\n"
     "   Param2 'n' to normalise by energy\n"
     "<options> are:\n"
-    "--sep  Minimum relative separation between energy levels (default 0.2)\n"
+    "--Hotelling Minimum Hotelling Q-value on central replica (default " << DefaultHotelling << ")\n"
+    "--sep  Minimum relative separation between energy levels (default " << DefaultEnergySep << ")\n"
     "--delta Minimum number of timeslices in fit range (default 3)\n"
     "--retry Maximum number of times to retry fits (default Minuit2=10, GSL=0)\n"
     "--iter Max iteration count, 0 (default) = unlimited\n"

@@ -342,6 +342,7 @@ public:
   const int MaxIt;
   const double Tolerance;
   const double RelEnergySep;
+  const double HotellingCutoff;
   const int NumFiles;
   std::vector<ModelPtr> model;      // Model for each correlator
   const int NumExponents;
@@ -373,7 +374,8 @@ public:
   explicit Fitter( FitterType fitType, const DataSet &ds_, const std::vector<std::string> &ModelArgs,
                    const ModelDefaultParams &modelDefault, const std::vector<std::string> &opNames_,
                    int Verbosity, bool bFreezeCovar, bool bSaveCorr, bool bSaveCMat,
-                   int Retry, int MaxIt, double Tolerance, double RelEnergySep, bool bNumericDerivatives );
+                   int Retry, int MaxIt, double Tolerance, double RelEnergySep, double HotellingCutoff,
+                   bool bNumericDerivatives );
   virtual ~Fitter() {}
   std::vector<Common::ValWithEr<scalar>>
   PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName, const std::string &ModelSuffix,

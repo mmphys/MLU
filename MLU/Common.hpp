@@ -893,6 +893,33 @@ template<> struct GSLTraits<std::complex<float>>
 #define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _complex_float ## _ ## func
 #include "CommonGSL.hpp"
 
+// A q-value is an integral of the distribution from x to infinity
+// i.e. the probability of obtaining a worse test statistic that is still explained by the model
+// (I think) this is what people normally discuss when they say "p-value"
+// Don't rely on this - the correct distribution (when covariance comes from the data) is Hotelling )below)
+template <typename T> T qValueChiSq( T ChiSquared, unsigned int dof )
+{
+  return gsl_cdf_chisq_Q( ChiSquared, dof );
+}
+
+// The test statistic is computed exactly as one would for Chi Squared
+// However, since the covariance matrix comes from the data (rather than being known a priori)
+// We find that the test statistic (t^2) times a factor has an F-distribution
+// https://en.wikipedia.org/wiki/Hotelling%27s_T-squared_distribution
+
+#define HOTELLING_PREAMBLE( T, dof, NumDataPoints ) \
+if( NumDataPoints < dof ) \
+  throw std::runtime_error( "Number of data points " + std::to_string( NumDataPoints ) \
+                           + " < degrees of freedom" + std::to_string( dof ) ); \
+const unsigned int NumParams{ NumDataPoints - dof }; \
+const T tFactor{ static_cast<T>( dof ) / ( NumParams * ( NumDataPoints - 1 ) ) }
+
+template <typename T> T qValueHotelling( T TestStatistic, unsigned int dof, unsigned int NumDataPoints )
+{
+  HOTELLING_PREAMBLE( T, dof, NumDataPoints );
+  return gsl_cdf_fdist_Q( TestStatistic * tFactor, NumParams, dof );
+}
+
 // This is prior version. Not used except for reading in old files
 template <typename T> class ValWithErOldV1
 {
@@ -921,8 +948,8 @@ public:
   static void Header( const std::string &FieldName, std::ostream &os, const std::string &Sep = Space );
   ValWithEr<T>& operator *=( const T Scalar );
   ValWithEr<T>  operator * ( const T Scalar ) const;
-  void cdf_chisq_Q( const T nu );
-  void cdf_fdist_Q( const T nu1, const T nu2 );
+  ValWithEr<T> qValueChiSq( unsigned int dof ) const;
+  ValWithEr<T> qValueHotelling( unsigned int dof, unsigned int NumDataPoints ) const;
 };
 
 template <typename T> ValWithEr<T>::ValWithEr( T min_, T low_, T central_, T high_, T max_, T check_ )
@@ -951,22 +978,25 @@ template <typename T> ValWithEr<T> ValWithEr<T>::operator * ( const T Scalar ) c
   return Product;
 }
 
-template <typename T> void ValWithEr<T>::cdf_chisq_Q( const T nu )
+template <typename T> ValWithEr<T> ValWithEr<T>::qValueChiSq( unsigned int dof ) const
 {
-  Min     = gsl_cdf_chisq_Q( Min,     nu );
-  Low     = gsl_cdf_chisq_Q( Low,     nu );
-  Central = gsl_cdf_chisq_Q( Central, nu );
-  High    = gsl_cdf_chisq_Q( High,    nu );
-  Max     = gsl_cdf_chisq_Q( Max,     nu );
+  return ValWithEr<T>( gsl_cdf_chisq_Q( Min,     dof ),
+                       gsl_cdf_chisq_Q( Low,     dof ),
+                       gsl_cdf_chisq_Q( Central, dof ),
+                       gsl_cdf_chisq_Q( High,    dof ),
+                       gsl_cdf_chisq_Q( Max,     dof ),
+                       Check );
 }
 
-template <typename T> void ValWithEr<T>::cdf_fdist_Q( const T nu1, const T nu2 )
+template <typename T> ValWithEr<T> ValWithEr<T>::qValueHotelling( unsigned int dof, unsigned int NumDataPoints ) const
 {
-  Min     = gsl_cdf_fdist_Q( Min,     nu1, nu2 );
-  Low     = gsl_cdf_fdist_Q( Low,     nu1, nu2 );
-  Central = gsl_cdf_fdist_Q( Central, nu1, nu2 );
-  High    = gsl_cdf_fdist_Q( High,    nu1, nu2 );
-  Max     = gsl_cdf_fdist_Q( Max,     nu1, nu2 );
+  HOTELLING_PREAMBLE( T, dof, NumDataPoints );
+  return ValWithEr<T>( gsl_cdf_fdist_Q( Min     * tFactor, NumDataPoints, dof ),
+                       gsl_cdf_fdist_Q( Low     * tFactor, NumDataPoints, dof ),
+                       gsl_cdf_fdist_Q( Central * tFactor, NumDataPoints, dof ),
+                       gsl_cdf_fdist_Q( High    * tFactor, NumDataPoints, dof ),
+                       gsl_cdf_fdist_Q( Max     * tFactor, NumDataPoints, dof ),
+                       Check );
 }
 
 template <typename T>

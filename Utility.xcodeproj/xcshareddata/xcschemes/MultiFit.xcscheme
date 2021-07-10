@@ -108,10 +108,18 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t 11:15 -i corr/2ptp2/ -o fit/2ptp2/ h447_l_p2_1_g5P_g5P.&apos;*&apos;.h5,,,n h447_l_p2_1_g5P_g5W.&apos;*&apos;.h5,,,n"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 9:18:2:3 -i corr/2ptp2/ -o fit/2ptp2/ h447_h447_p2_0_g5P_g5[PW].&apos;*&apos;.h5,,,n"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-n 100"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--Hotelling 0.005"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -120,7 +128,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 2"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--sep=0.05"

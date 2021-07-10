@@ -285,21 +285,18 @@ int main(int argc, const char *argv[])
           ss.str("");
           m.WriteSummaryData( ss );
           const vEr & ChisqDof{ m.getSummaryData()[m.Nt() - 1] };
+          const vEr ChiSq{ ChisqDof * m.dof }; // Really wish I'd saved the test statistic, not reduced test statistic
           // Chi squared statistic and Q-value (probability of a worse statistic)
           // There is a deliberate inversion here: high statistic => low q-value
-          vEr ChiSq{ ChisqDof * m.dof };
-          ChiSq.cdf_chisq_Q( m.dof );
-          ss << Sep << ChiSq;
+          const vEr qValueChiSq{ ChiSq.qValueChiSq( m.dof ) };
+          ss << Sep << qValueChiSq;
           // Hotelling t statistic and Q-value
-          const int Extent{(m.tf-m.ti+1)*m.NumFiles}; // Extent of covariance matrix, i.e. # data points in fit
-          const int p{ Extent - m.dof }; // Number of params in fit
-          const scalar tFactor{ static_cast<scalar>( m.dof * m.dof ) / ( p * ( Extent - 1 ) ) };
-          vEr Hotelling{ ChisqDof * tFactor };
-          Hotelling.cdf_fdist_Q( p, m.dof );
+          const int NumDataPoints{(m.tf-m.ti+1)*m.NumFiles}; // Extent of covariance matrix, i.e. # data points in fit
+          const vEr Hotelling{ ChiSq.qValueHotelling( m.dof, NumDataPoints ) };
           ss << Sep << Hotelling;
           // save the model in my list
           Fits.emplace( std::make_pair(std::make_pair( m.ti, m.tf ),
-                                  FitData(1-ChiSq.Central,ChiSq.Central,m.ti,m.tf,m.dof,ss.str(),Models.size())));
+                        FitData(1-qValueChiSq.Central,qValueChiSq.Central,m.ti,m.tf,m.dof,ss.str(),Models.size())));
           Models.emplace_back( std::move( m ) );
         }
         catch( const std::exception &e )
