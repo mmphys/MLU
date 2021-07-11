@@ -129,7 +129,7 @@ if( do_timax ) { Condition=AppendCondition(Condition, 'column("ti") > TIMax' ) }
 if( do_stat ) { Condition=AppendCondition(Condition, 'column(xAxisCol) '.sStatCond.' stat_limit' ) }
 if( strlen( Condition ) ) { Condition=Condition.' ? NaN : ' }
 
-WithLabels='with labels font "Arial,6" offset char 0,'
+WithLabels='with labels font "Arial,6" rotate noenhanced offset char 0,'
 
 # Loop through all fields, plotting them
 
@@ -166,8 +166,8 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
     for [idx=0:NBlock-1] PlotFile index idx using \
       (@Condition column(xAxisCol)):(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \
       with yerrorbars title columnheader(1), \
-    for [idx=0:NBlock-1] '' index idx using (@Condition column(xAxisCol)):(@Condition column(MyField."_high")):(column("tf")) \
-      @WithLabels 0.5 notitle
+    for [idx=0:NBlock-1] '' index idx using (@Condition column(xAxisCol)):(@Condition column(MyField."_high")):(column("tfLabel")) \
+      @WithLabels 1.3 notitle
 
   if (IsEnergy) { unset object 1; unset arrow; unset label 2 }
   FieldOffset=FieldOffset + FieldsPerColumn
@@ -193,7 +193,7 @@ plot \
     with yerrorbars title columnheader(1), \
   for [idx=0:NBlock-1] '' index idx using \
     (@Condition column(1)):(@Condition column(MyField."_high")):(column("tf")) \
-    @WithLabels 0.75 notitle
+    @WithLabels 1.3 notitle
 EOFMark
 
 fi
