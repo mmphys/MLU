@@ -371,7 +371,7 @@ scalar FitterThread::FitOne( const Parameters &parGuess, const std::string &Save
       ss << " < cutoff " << parent.HotellingCutoff;
       throw std::runtime_error( ss.str() );
     }
-    std::cout << ss.str() << Common::NewLine;
+    std::cout << "OK: " << ss.str() << Common::NewLine;
   }
   // Put the variable fit parameters into the full model parameter set (constants are already there)
   for( int i = 0; i < parent.NumVariable; ++i )
