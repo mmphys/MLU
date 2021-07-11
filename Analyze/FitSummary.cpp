@@ -333,7 +333,7 @@ void Summariser::Run()
           ColumnNames = ss.str();
           ss.str("");
           m.SummaryComments( ss );
-          ss << "# column(1) is the row order when sorted by ChiSqPerDof\n";
+          ss << "# column(1) is the row order when sorted by pValueH (Hotelling p-value)\n";
           Comments = ss.str();
           Seed = m.Name_.Seed;
           NumSamples = m.NumSamples();
@@ -353,7 +353,6 @@ void Summariser::Run()
         const vEr & ChisqDof{ m.getSummaryData()[m.Nt() - 1] };
         const vEr ChiSq{ ChisqDof * m.dof }; // Really wish I'd saved the test statistic, not reduced test statistic
         // Chi squared statistic and Q-value (probability of a worse statistic)
-        // There is a deliberate inversion here: high statistic => low q-value
         const vEr qValueChiSq{ ChiSq.qValueChiSq( m.dof ) };
         ss << Sep << qValueChiSq;
         // Hotelling t statistic and Q-value

@@ -980,22 +980,24 @@ template <typename T> ValWithEr<T> ValWithEr<T>::operator * ( const T Scalar ) c
 
 template <typename T> ValWithEr<T> ValWithEr<T>::qValueChiSq( unsigned int dof ) const
 {
-  return ValWithEr<T>( gsl_cdf_chisq_Q( Min,     dof ),
-                       gsl_cdf_chisq_Q( Low,     dof ),
-                       gsl_cdf_chisq_Q( Central, dof ),
+  // There is a deliberate inversion here: high statistic => low q-value
+  return ValWithEr<T>( gsl_cdf_chisq_Q( Max,     dof ),
                        gsl_cdf_chisq_Q( High,    dof ),
-                       gsl_cdf_chisq_Q( Max,     dof ),
+                       gsl_cdf_chisq_Q( Central, dof ),
+                       gsl_cdf_chisq_Q( Low,     dof ),
+                       gsl_cdf_chisq_Q( Min,     dof ),
                        Check );
 }
 
 template <typename T> ValWithEr<T> ValWithEr<T>::qValueHotelling( unsigned int dof, unsigned int NumDataPoints ) const
 {
   HOTELLING_PREAMBLE( T, dof, NumDataPoints );
-  return ValWithEr<T>( gsl_cdf_fdist_Q( Min     * tFactor, NumDataPoints, dof ),
-                       gsl_cdf_fdist_Q( Low     * tFactor, NumDataPoints, dof ),
-                       gsl_cdf_fdist_Q( Central * tFactor, NumDataPoints, dof ),
+  // There is a deliberate inversion here: high statistic => low q-value
+  return ValWithEr<T>( gsl_cdf_fdist_Q( Max     * tFactor, NumDataPoints, dof ),
                        gsl_cdf_fdist_Q( High    * tFactor, NumDataPoints, dof ),
-                       gsl_cdf_fdist_Q( Max     * tFactor, NumDataPoints, dof ),
+                       gsl_cdf_fdist_Q( Central * tFactor, NumDataPoints, dof ),
+                       gsl_cdf_fdist_Q( Low     * tFactor, NumDataPoints, dof ),
+                       gsl_cdf_fdist_Q( Min     * tFactor, NumDataPoints, dof ),
                        Check );
 }
 
