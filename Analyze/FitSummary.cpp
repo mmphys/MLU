@@ -501,7 +501,7 @@ int main(int argc, const char *argv[])
     const std::initializer_list<CL::SwitchDef> list = {
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
-      {"p", CL::SwitchType::Single, "0.05" },
+      {"p", CL::SwitchType::Single, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
