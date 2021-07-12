@@ -113,9 +113,10 @@ struct FileInfo
 
 struct Summariser
 {
+  const bool bSaveCMat;
+  const scalar Threshold;
   const std::string inBase;
   const std::string outBaseFileName;
-  const scalar Threshold;
   using BaseList = std::map<std::string, std::vector<FileInfo>>;
   BaseList lBase;
 protected:
@@ -235,9 +236,10 @@ void Summariser::SaveCMat( const std::vector<Model> &Corr, const int NumBoot, co
 
 // Parse the command line, splitting into separate lists for each base
 Summariser::Summariser( const Common::CommandLine &cl )
-: inBase{ Common::AppendSlash( cl.SwitchValue<std::string>("i") ) },
-  outBaseFileName{ Common::AppendSlash( cl.SwitchValue<std::string>("o") ) },
-  Threshold{ cl.SwitchValue<scalar>("p") }
+: bSaveCMat{ cl.GotSwitch( "p" ) },
+  Threshold{ bSaveCMat ? cl.SwitchValue<scalar>("p") : 0 },
+  inBase{ Common::AppendSlash( cl.SwitchValue<std::string>("i") ) },
+  outBaseFileName{ Common::AppendSlash( cl.SwitchValue<std::string>("o") ) }
 {
   for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
   {
@@ -393,9 +395,10 @@ void Summariser::Run()
       }
     }
     // Now make the output file with blocks for each ti, sorted by tf
-    const bool bSingleModel{ Models.size() == 1 };
     std::vector<Model> CorrModels;
-    CorrModels.reserve( Models.size() );
+    if( bSaveCMat )
+      CorrModels.reserve( Models.size() );
+    const bool bSingleModel{ Models.size() == 1 };
     {
       std::ofstream s;
       const std::string sFileName{Common::MakeFilename(sSummaryName,Common::sParams,Seed,TEXT_EXT)};
@@ -427,15 +430,15 @@ void Summariser::Run()
         // Now write this row
         d.Write( s, d.ft.NumDataPoints );
         // If the statistic is above threshold, include it in correlation matrix
-        if( d.Stat >= Threshold )
+        if( bSaveCMat && d.Stat >= Threshold )
           CorrModels.emplace_back( std::move( Models[d.idxModel] ) );
       }
     }
     // Now plot the correlation matrix for selected models
     Models.clear();
-    try
+    if( !CorrModels.empty() )
     {
-      if( !CorrModels.empty() )
+      try
       {
         const Model &m{ CorrModels[0] };
         std::string BaseName;
@@ -478,10 +481,10 @@ void Summariser::Run()
           BaseName.append( ".cpos" );
         }
       }
-    }
-    catch( const std::exception &e )
-    {
-      std::cout << sIndent << sError << e.what() << NL;
+      catch( const std::exception &e )
+      {
+        std::cout << sIndent << sError << e.what() << NL;
+      }
     }
   }
 }
@@ -525,7 +528,7 @@ int main(int argc, const char *argv[])
     "Summarise the fits contained in each model (ready for plotting), where <options> are:\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
-    "-p     p-value threshold for covariance matrix\n"
+    "-p     save covariance matrix if p-value above threshold\n"
     "Flags:\n"
     "--help This message\n";
   }

@@ -72,6 +72,10 @@
             argument = "&apos;*&apos;.model.&apos;*&apos;.h5"
             isEnabled = "NO">
          </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-p 0.05"
+            isEnabled = "NO">
+         </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
