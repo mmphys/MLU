@@ -302,89 +302,111 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
   const ModelInfo &miZVSnk{ ZVmi.at( QDT( qSnk, fna.DeltaT, opSrc, opSnk ) ) };
   const ModelInfo &miZVSrc{ ZVmi.at( QDT( qSrc, fna.DeltaT, opSnk, opSrc ) ) };
   // Now read the two-point functions
-  std::string C2NameSnk{ miSnk.FileName2pt };
-  AppendOps( C2NameSnk, opSnk, opSnk );
-  C2NameSnk = Common::MakeFilename( C2NameSnk, Common::sFold, model.Seed, DEF_FMT );
   static const std::string Spaces( 2, ' ' );
-  Fold C2Snk( C2NameSnk, Spaces.c_str() );
-  std::string C2NameSrc{ miSrc.FileName2pt };
-  AppendOps( C2NameSrc, opSrc, opSrc );
-  C2NameSrc = Common::MakeFilename( C2NameSrc, Common::sFold, model.Seed, DEF_FMT );
-  Fold C2Src( C2NameSrc, Spaces.c_str() );
+  std::vector<Fold> Corr2pt;
+  static constexpr int NumC2{ 2 };
+  Corr2pt.reserve( NumC2 );
+  {
+    std::string C2NameSnk{ miSnk.FileName2pt };
+    AppendOps( C2NameSnk, opSnk, opSnk );
+    C2NameSnk = Common::MakeFilename( C2NameSnk, Common::sFold, model.Seed, DEF_FMT );
+    Corr2pt.emplace_back( C2NameSnk, Spaces.c_str() );
+    std::string C2NameSrc{ miSrc.FileName2pt };
+    AppendOps( C2NameSrc, opSrc, opSrc );
+    C2NameSrc = Common::MakeFilename( C2NameSrc, Common::sFold, model.Seed, DEF_FMT );
+    Corr2pt.emplace_back( C2NameSrc, Spaces.c_str() );
+  }
 
   // Load the correlators we need
+  // The first two files are the numerator
+  // Followed by one or two files for the denominator. Both required for R2
   std::string Dir{ fna.Dir };
   Dir.append( fna.BaseShort );
   const std::size_t Len{ Dir.length() };
   Common::DataSet<Scalar> ds;
-  bool bMakeR2{ true };
-  static constexpr int iLight{ 0 };
-  static constexpr int iHeavy{ 1 };
-  const Scalar * pSrc[2][2];
-  int nT[2][2];
-  for( int iSnk = 0; iSnk < 2; iSnk++ )
+  static constexpr int iInitial{ 0 };
+  static constexpr int iFinal{ 1 };
+  const Scalar * pSrc[4];
+  int nT[4];
+  for( int Snk_Src = 0; Snk_Src < 4; ++Snk_Src )
   {
-    Dir.resize( Len );
-    Dir.append( iSnk ? qSnk : qSrc );
-    Dir.append( 1, '_' );
-    const std::size_t Len2{ Dir.length() };
-    for( int iSrc = 0; iSrc < 2; iSrc++ )
+    int iSnk, iSrc;
+    switch( Snk_Src )
     {
-      Dir.resize( Len2 );
-      Dir.append( iSrc ? qSnk : qSrc );
-      Dir.append( fnaSuffix );
-      Common::AppendGammaDeltaT( Dir, iSnk == iSrc ? Common::Gamma::Algebra::GammaT : fna.Gamma[0], fna.DeltaT );
-      fna.AppendMomentum( Dir, iSrc == iHeavy ? MomSnk : MomSrc, MomSrc.Name );
-      //if( iSrc == iHeavy ) MomSnk.Replace( Dir, Common::Momentum::DefaultPrefix );
-      fna.AppendMomentum( Dir, iSnk == iLight ? MomSrc : MomSnk, MomSnk.Name );
-      //if( iSnk == iLight ) MomSrc.Replace( Dir, Common::Momentum::SinkPrefix, true );
-      Dir.append( Common::Underscore );
-      Dir.append( iSnk ? opSnk : opSrc );
-      Dir.append( Common::Underscore );
-      Dir.append( iSrc ? opSnk : opSrc );
-      Dir = Common::MakeFilename( Dir, fna.Type, fna.Seed, fna.Ext );
-      if( Common::FileExists( Dir ) )
-      {
-        Fold &f { ds.corr[ds.LoadCorrelator( Common::FileNameAtt( Dir ), Common::COMPAT_DISABLE_BASE )] };
-        pSrc[iSnk][iSrc] = f[Fold::idxCentral];
-        nT[iSnk][iSrc] = f.Nt();
-      }
-      else if( iSnk == iLight && iSrc == iLight )
-        bMakeR2 = false;
-      else
-        throw std::runtime_error( Dir + " doesn't exist" );
+      case 0: // This is the way the file specified on command-line
+        iSnk = iFinal;
+        iSrc = iInitial;
+        break;
+      case 1: // Reversed compared with command-line
+        iSnk = iInitial;
+        iSrc = iFinal;
+        break;
+      case 2:
+        iSnk = iInitial;
+        iSrc = iInitial;
+        break;
+      case 3:
+        iSnk = iFinal;
+        iSrc = iFinal;
+        break;
     }
+    Dir.resize( Len );
+    Dir.append( iSnk == iInitial ? qSrc : qSnk );
+    Dir.append( 1, '_' );
+    Dir.append( iSrc == iInitial ? qSrc : qSnk );
+    Dir.append( fnaSuffix );
+    Common::AppendGammaDeltaT( Dir, iSnk == iSrc ? Common::Gamma::Algebra::GammaT : fna.Gamma[0], fna.DeltaT );
+    fna.AppendMomentum( Dir, iSrc == iFinal ? MomSnk : MomSrc, MomSrc.Name );
+    fna.AppendMomentum( Dir, iSnk == iInitial ? MomSrc : MomSnk, MomSnk.Name );
+    Dir.append( Common::Underscore );
+    Dir.append( iSnk == iInitial ? opSrc : opSnk );
+    Dir.append( Common::Underscore );
+    Dir.append( iSrc == iInitial ? opSrc : opSnk );
+    Dir = Common::MakeFilename( Dir, fna.Type, fna.Seed, fna.Ext );
+    if( Common::FileExists( Dir ) )
+    {
+      const int cNum{ ds.LoadCorrelator( Common::FileNameAtt( Dir ), Common::COMPAT_DISABLE_BASE ) };
+      Fold &f { ds.corr[cNum] };
+      pSrc[cNum] = f[Fold::idxCentral];
+      nT[cNum] = f.Nt();
+    }
+    else if( iSnk == iSrc )
+    {
+      ds.corr.resize( 2 );
+      break; // No point loading the other denominator file
+    }
+    else
+      throw std::runtime_error( Dir + " doesn't exist" );
   }
   // Ensure the correlator includes timeslice DeltaT
   const int NTHalf{ ds.corr[0].Nt() / 2 };
-  if( fna.DeltaT >= NTHalf )
+  if( fna.DeltaT > NTHalf )
     throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
   // Make somewhere to put R2
-  static constexpr int NumRatio{ 2 };
+  const bool bMakeR2{ ds.corr.size() == 4 };
+  const int NumRatio{ bMakeR2 ? 2 : 1 };
   std::vector<Fold> out;
-  Scalar * pDst[NumRatio];
-  for( int i = 0; i < 2; i++ )
+  std::vector<Scalar *> pDst( NumRatio );
+  for( int i = 0; i < NumRatio; i++ )
   {
     out.emplace_back( ds.NSamples, fna.DeltaT + 1 );
-    for( const Fold &f : ds.corr )
-      out[i].FileList.push_back( f.Name_.Filename );
+    for( int j = 0; j < ( i == 0 ? 2 : ds.corr.size() ); ++j )
+      out[i].FileList.push_back( ds.corr[j].Name_.Filename );
+    if( i == 0 )
+    {
+      out[i].FileList.push_back( Corr2pt[0].Name_.Filename );
+      out[i].FileList.push_back( Corr2pt[1].Name_.Filename );
+    }
     out[i].CopyAttributes( ds.corr[0] );
     out[i].NtUnfolded = ds.corr[0].Nt();
     pDst[i] = out[i][Fold::idxCentral];
   }
-  // Simplest to point the missing correlator at some other data ...
-  if( !bMakeR2 )
-  {
-    pSrc[iLight][iLight] = pSrc[iHeavy][iHeavy];
-    nT[iLight][iLight] = nT[iHeavy][iHeavy];
-  }
   const Scalar * pE[2];
   pE[0] = miSrc.m[Fold::idxCentral] + miSrc.idxE0;
   pE[1] = miSnk.m[Fold::idxCentral] + miSnk.idxE0;
-  static constexpr int NumC2{ 2 };
   const Scalar * pC2[NumC2];
-  pC2[0] = C2Src[Fold::idxCentral];
-  pC2[1] = C2Snk[Fold::idxCentral];
+  pC2[0] = Corr2pt[0][Fold::idxCentral];
+  pC2[1] = Corr2pt[1][Fold::idxCentral];
   const Scalar * pZVSrc{ miZVSrc.m[Fold::idxCentral] + miZVSrc.idxE0 };
   const Scalar * pZVSnk{ miZVSnk.m[Fold::idxCentral] + miZVSnk.idxE0 };
   for( int idx = Fold::idxCentral; idx < ds.NSamples; ++idx )
@@ -396,22 +418,17 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
     const double C2Prod = std::abs( C2[0] * C2[1] );
     for( int t = 0; t <= fna.DeltaT; ++t )
     {
-      double z[2][2];
-      for( int iSnk = 0; iSnk < 2; iSnk++ )
-        for( int iSrc = 0; iSrc < 2; iSrc++ )
-          z[iSnk][iSrc] = *pSrc[iSnk][iSrc]++;
-      const double n = std::abs( EProd * z[iLight][iHeavy] * z[iHeavy][iLight] );
+      const double n = std::abs( EProd * pSrc[0][t] * pSrc[1][t] ); // fna.DeltaT - t
       if( !std::isfinite( n ) )
-        throw std::runtime_error( "R2 Overflow" );
+        throw std::runtime_error( "Numerator Overflow" );
       const Scalar ZVSrc{ *pZVSrc };
       const Scalar ZVSnk{ *pZVSnk };
       *pDst[0]++ = 2 * std::sqrt( n / C2Prod * ZVSrc * ZVSnk ); // R1
       if( bMakeR2 )
-        *pDst[1]++ = 2 * std::sqrt( n / std::abs( z[iLight][iLight] * z[iHeavy][iHeavy] ) ); // R2
+        *pDst[1]++ = 2 * std::sqrt( n / std::abs( pSrc[2][t] * pSrc[3][t] ) ); // R2
     }
-    for( int iSnk = 0; iSnk < 2; iSnk++ )
-      for( int iSrc = 0; iSrc < 2; iSrc++ )
-        pSrc[iSnk][iSrc] += nT[iSnk][iSrc] - ( fna.DeltaT + 1 );
+    for( int i = 0; i < ds.corr.size(); ++i )
+      pSrc[i] += nT[i];
     if( !eCentral )
     {
       pE[0] += miSrc.m.Nt();
@@ -419,10 +436,10 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
       pZVSrc+= miZVSrc.m.Nt();
       pZVSnk+= miZVSnk.m.Nt();
     }
-    pC2[0] += C2Src.Nt();
-    pC2[1] += C2Snk.Nt();
+    pC2[0] += Corr2pt[0].Nt();
+    pC2[1] += Corr2pt[1].Nt();
   }
-  for( int i = 0; i < ( bMakeR2 ? 2 : 1 ) ; i++ )
+  for( int i = 0; i < NumRatio ; i++ )
   {
     out[i].MakeCorrSummary( nullptr );
     std::string OutFileName{ outBase };

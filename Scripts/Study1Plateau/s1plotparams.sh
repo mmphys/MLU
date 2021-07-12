@@ -45,6 +45,7 @@ RefVal="${ref}"
 RefErr="${err}"
 RefText="${reftext}"
 RefSuffix="${refsuffix}"
+do_label="${label:+x}"
 
 # Work out how many fields there are per column by checking for absolute minimum
 GotAbsMin=(system("awk '! /#/ {print (\$0 ~ /E0_min/) ? 1 : 0; exit}' ".word(PlotFile,1)) eq "0") ? 0 : 1
@@ -133,6 +134,12 @@ WithLabels='with labels font "Arial,6" rotate noenhanced left offset char 0, 0.2
 
 # Loop through all fields, plotting them
 
+if( do_label eq "x" ) {
+  LabelStart=NBlock
+} else {
+  LabelStart=0
+}
+
 while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   MyField=word(MyColumnHeadings,FieldOffset)
   MyFieldNoUS=word(MyColumnHeadingsNoUS,FieldOffset)
@@ -166,7 +173,7 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
     for [idx=0:NBlock-1] PlotFile index idx using \
       (@Condition column(xAxisCol)):(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \
       with yerrorbars title columnheader(1), \
-    for [idx=0:NBlock-1] '' index idx using (@Condition column(xAxisCol)):(@Condition column(MyField."_high")):(column("tfLabel")) \
+    for [idx=LabelStart:NBlock-1] '' index idx using (@Condition column(xAxisCol)):(@Condition column(MyField."_high")):(column("tfLabel")) \
       @WithLabels notitle
 
   if (IsEnergy) { unset object 1; unset arrow; unset label 2 }
@@ -191,7 +198,7 @@ plot \
   for [idx=0:NBlock-1] PlotFile index idx using \
     (@Condition column(1)):(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \
     with yerrorbars title columnheader(1), \
-  for [idx=0:NBlock-1] '' index idx using \
+  for [idx=LabelStart:NBlock-1] '' index idx using \
     (@Condition column(1)):(@Condition column(MyField."_high")):(column("tfLabel")) \
     @WithLabels notitle
 EOFMark
