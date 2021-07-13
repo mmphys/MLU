@@ -112,6 +112,7 @@ public:
   const std::string &modelBase;
   const std::string &outBase;
   const Common::Momentum p;
+  const bool e1;
   const bool eCentral;
 protected:
   std::regex RegExExt;
@@ -137,16 +138,16 @@ public:
   Maker( const std::string &inBase_, const std::string &C2Base_,
          const std::string &modelBase_,const std::string &outBase_,
          std::regex RegExExt_, const bool RegExSwap_,
-         const bool eCentral_, const std::string &FitListName )
+        const bool e1_, const bool eCentral_, const std::string &FitListName )
   : inBase{inBase_}, C2Base{C2Base_}, modelBase{modelBase_}, outBase{outBase_},
-    eCentral{eCentral_}, RegExExt{RegExExt_}, RegExSwap{RegExSwap_},
+    e1{e1_}, eCentral{eCentral_}, RegExExt{RegExExt_}, RegExSwap{RegExSwap_},
     model(modelBase_ + FitListName, modelBase_, C2Base_) {}
   virtual ~Maker() {}
   static Maker * Make( const std::string &Type, std::string &TypeParams,
                        const std::string &inBase, const std::string &C2Base,
                        const std::string &modelBase,const std::string &outBase,
                        std::regex RegExExt, const bool RegExSwap,
-                       const bool eCentral, const std::string &FitListName );
+                       const bool e1, const bool eCentral, const std::string &FitListName );
   void Make( std::string &sFileName );
 };
 
@@ -161,8 +162,8 @@ public:
   ZVMaker( std::string &TypeParams, const std::string &inBase, const std::string &C2Base,
            const std::string &modelBase, const std::string &outBase,
            std::regex RegExExt, const bool RegExSwap,
-           const bool eCentral, const std::string &FitListName )
-  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, eCentral, FitListName ) {}
+           const bool e1, const bool eCentral, const std::string &FitListName )
+  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, e1, eCentral, FitListName ) {}
 };
 
 // Make R1 and R2: eq 2.8 pg 4 https://arxiv.org/pdf/1305.7217.pdf
@@ -177,8 +178,8 @@ public:
   R1R2Maker( std::string &TypeParams, const std::string &inBase, const std::string &C2Base,
              const std::string &modelBase, const std::string &outBase,
              std::regex RegExExt, const bool RegExSwap,
-             const bool eCentral, const std::string &FitListName )
-  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, eCentral, FitListName ),
+             const bool e1, const bool eCentral, const std::string &FitListName )
+  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, e1, eCentral, FitListName ),
     ZVmi( modelBase + TypeParams, modelBase, C2Base )
   {
     TypeParams.clear(); // I used this to load my map from

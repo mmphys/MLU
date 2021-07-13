@@ -24,7 +24,7 @@ my_xlabel="${xlabel}"
 my_key="${key:-top right}"
 FieldNames="${fields:-cosh}"
 RefVal=${ref:--777}
-RefErr=${err:--777}
+RefErr="$err" #1 value for relative error, 2 values for low and high
 RefText="${reftext}"
 do_log=${log:-0}
 SaveFile=${SaveFile:-0}
@@ -117,11 +117,34 @@ if( my_ylabel ne "" ) { set ylabel my_ylabel }
 
 if( RefVal != -777 ) {
   RefErrString=""
-  if( RefErr != -777 ) {
-    set object 1 rect from graph 0, first RefVal - RefErr to graph 1, first RefVal + RefErr fs solid 0.05 noborder fc rgb "gray10" behind
-    RefErrString=sprintf(" (%g)", RefErr)
+  RefXUnits="graph"
+  RefXLeft=0
+  RefXRight=1
+  if( RefErr ne "" ) {
+    if( words(RefErr) == 1 ) {
+      # 1 word - this is (symmetric) relative error
+      RefErrLow=RefVal-RefErr
+      RefErrHigh=RefVal+RefErr
+      RefErrString=" (".RefErr.")"
+    } else {
+      if( words(RefErr) == 2 ) {
+        # 2 words - these are the absolute values of low and high error bars
+        RefErrLow=0.+word(RefErr,1)
+        RefErrHigh=0.+word(RefErr,2)
+      } else {
+        # 4 words - x y (start) x y (end)
+        RefErrLow=0.+word(RefErr,2)
+        RefErrHigh=0.+word(RefErr,4)
+        RefXUnits="first"
+        RefXLeft=0.+word(RefErr,1)
+        RefXRight=0.+word(RefErr,3)
+      }
+      RefErrString=sprintf(" (-%g, +%g)", RefVal - RefErrLow, RefErrHigh - RefVal )
+    }
+    eval "set object 1 rect from ".RefXUnits." RefXLeft, first RefErrLow to ".RefXUnits." RefXRight, first RefErrHigh" \
+      ." fs solid 0.05 noborder fc rgb \"blue20\" behind"
   }
-  set arrow from graph 0, first RefVal to graph 1, first RefVal nohead front lc rgb "gray40" lw 0.25  dashtype "-"
+  eval "set arrow from ".RefXUnits." RefXLeft, first RefVal to ".RefXUnits." RefXRight, first RefVal nohead front lc rgb \"gray40\" lw 0.25 dashtype \"-\""
   if( RefText eq "" ) { RefText="Ref: ".sprintf("%g", RefVal).RefErrString }
   set label 2 RefText at screen 0, screen 0 font "Arial,8" front textcolor "grey40" offset character 0.5, 0.25
 }
@@ -193,7 +216,7 @@ then
   echo "key    location for key (default: top right)"
   echo "fields Names of fields to display (default: cosh)"
   echo "ref    y-value for reference line"
-  echo "err    error for reference line"
+  echo "err    error for reference line e.g. \"0.5\" for +/- 0.5 or low and high values"
   echo "reftext text for reference line"
   echo "log    1 to plot y on log scale, -1 to negate before plotting"
   echo "rel    plot relative error 1=error bars, 2=error (does nothing on log scale)"

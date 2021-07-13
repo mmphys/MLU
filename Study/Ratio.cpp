@@ -38,6 +38,7 @@ std::istream & operator>>( std::istream &is, std::array<std::string,Num> &c )
 
 struct SnkSrcString
 {
+  int         DeltaT;
   std::string Snk;
   std::string Src;
   std::string s;
@@ -45,7 +46,7 @@ struct SnkSrcString
 
 std::istream & operator>>( std::istream &is, SnkSrcString &sss )
 {
-  if( is >> sss.Snk && is >> sss.Src && is >> sss.s )
+  if( is >> sss.DeltaT >> sss.Snk >> sss.Src >> sss.s )
     return is;
   throw std::runtime_error( "Error reading SnkSrcString" );
 }
@@ -120,12 +121,12 @@ QDTMapModelInfo::QDTMapModelInfo( const std::string &FitListName, const std::str
     for( const std::string &ModelFileName : Common::glob( &sss.s, &sss.s + 1, modelBase.c_str() ) ) {
     std::vector<std::string> OpNames;
     Common::FileNameAtt fna( ModelFileName, &OpNames );
-    if( !fna.bGotDeltaT )
-      throw std::runtime_error( "DeltaT missing from " + FitListName );
+    //if( !fna.bGotDeltaT )
+      //throw std::runtime_error( "DeltaT missing from " + FitListName );
     if( fna.op.size() != 2 )
       throw std::runtime_error( "Expected 2 operator names, but " + std::to_string(fna.op.size()) + " provided" );
     const std::string &sH{ it->first };
-    const QDT qdt( sH, fna.DeltaT, sss.Snk, sss.Src );
+    const QDT qdt( sH, sss.DeltaT, sss.Snk, sss.Src );
     std::string MsgPrefix( 2, ' ' );
     MsgPrefix.append( sH );
     MsgPrefix.append( Common::Space );
@@ -152,13 +153,13 @@ Maker * Maker::Make( const std::string &Type, std::string &TypeParams,
                      const std::string &inBase, const std::string &C2Base,
                      const std::string &modelBase,const std::string &outBase,
                      std::regex RegExExt, const bool RegExSwap,
-                     const bool eCentral, const std::string &FitListName )
+                     const bool e1, const bool eCentral, const std::string &FitListName )
 {
   Maker * r;
   if( !Common::CompareIgnoreCase( Type, "R1R2" ) )
-    r = new R1R2Maker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, eCentral, FitListName );
+    r = new R1R2Maker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, e1, eCentral, FitListName );
   else if( !Common::CompareIgnoreCase( Type, "ZV" ) )
-    r = new ZVMaker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, eCentral, FitListName );
+    r = new ZVMaker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, e1, eCentral, FitListName );
   else
     throw std::runtime_error( "I don't know how to make type " + Type );
   if( !TypeParams.empty() )
@@ -411,7 +412,7 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
   const Scalar * pZVSnk{ miZVSnk.m[Fold::idxCentral] + miZVSnk.idxE0 };
   for( int idx = Fold::idxCentral; idx < ds.NSamples; ++idx )
   {
-    const double EProd = (*pE[0]) * (*pE[1]);
+    const double EProd = e1 ? (*pE[0]) * (*pE[1]) : 1;
     double C2[NumC2];
     for( int i = 0; i < NumC2; ++i )
       C2[i] = pC2[i][fna.DeltaT] - 0.5 * pC2[i][NTHalf] * std::exp( - pE[i][0] * ( NTHalf - fna.DeltaT ) );
@@ -505,6 +506,7 @@ int main(int argc, const char *argv[])
       {"type", CL::SwitchType::Single, DefaultType },
       {"ssre", CL::SwitchType::Single, DefaultERE },
       {"swap", CL::SwitchType::Flag, nullptr},
+      {"e1", CL::SwitchType::Flag, nullptr},
       {"ec", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
@@ -519,7 +521,7 @@ int main(int argc, const char *argv[])
                                              cl.SwitchValue<std::string>("im"), cl.SwitchValue<std::string>("o"),
                                              std::regex( cl.SwitchValue<std::string>("ssre"),
                                                          std::regex::extended | std::regex::icase ),
-                                             cl.GotSwitch("swap"), cl.GotSwitch("ec"), cl.Args[0] ) );
+                                             cl.GotSwitch("swap"), cl.GotSwitch("e1"), cl.GotSwitch("ec"), cl.Args[0] ) );
       bShowUsage = false;
       std::vector<std::string> FileList{ Common::glob( ++cl.Args.begin(), cl.Args.end(), InBase.c_str() ) };
       std::size_t Count{ 0 };
@@ -566,6 +568,7 @@ int main(int argc, const char *argv[])
     //"-n     Number of samples to fit, 0 (default) = all available from bootstrap\n"
     "Flags:\n"
     "--swap Swap source / sink order in regex\n"
+    "--e1   Freeze the energy to 1\n"
     "--ec   Freeze the energy fit to it's central value\n"
     "--help This message\n";
   }

@@ -71,12 +71,13 @@ function GetFits()
 echo "Getting fits"
 ThisDir=fit
 mkdir -p $ThisDir
-rsync -uvlmrt --include='*.params*.txt' --include='Fit*.txt' --include='*/' \
+DebugData="--include='ZV_*.bootstrap.*.txt' \
       --include='ZV_*_dt_20.*.model.*.h5' \
       --include='h447_l_p2_0.corr_9_20.g5P_g5W.model.*.h5' \
       --include='l_s_p2_0.corr_7_16.g5P_g5W.model.*.h5' \
       --include='l_l_p2_0.corr_5_14.g5P_g5W.model.*.h5' \
-      --include='l_l_p2_1.corr_5_15.g5P_g5W.model.*.h5' \
+      --include='l_l_p2_1.corr_5_15.g5P_g5W.model.*.h5'"
+rsync -uvlmrt --include='*.params*.txt' --include='Fit*.txt' --include='*/' $DebugData \
       --exclude='*' tess:"${RemoteBase}/$ThisDir/" $ThisDir/
 }
 
@@ -88,8 +89,8 @@ mkdir -p $ThisDir
 rsync -uvlmrt --include='*.txt' --include='*/' --exclude='*' tess:"${RemoteBase}/$ThisDir/" $ThisDir/
 }
 
-GetDebugWard
+#GetDebugWard
 #GetDebugMeson
-GetCorrelators
-GetFits
-GetRatios
+#GetCorrelators
+GetFits # These can be a little slow when there's 50,000 of them
+#GetRatios
