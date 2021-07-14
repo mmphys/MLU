@@ -412,7 +412,7 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
   const Scalar * pZVSnk{ miZVSnk.m[Fold::idxCentral] + miZVSnk.idxE0 };
   for( int idx = Fold::idxCentral; idx < ds.NSamples; ++idx )
   {
-    const double EProd = e1 ? (*pE[0]) * (*pE[1]) : 1;
+    const double EProd = e1 ? 1 : (*pE[0]) * (*pE[1]);
     double C2[NumC2];
     for( int i = 0; i < NumC2; ++i )
       C2[i] = pC2[i][fna.DeltaT] - 0.5 * pC2[i][NTHalf] * std::exp( - pE[i][0] * ( NTHalf - fna.DeltaT ) );
@@ -506,7 +506,7 @@ int main(int argc, const char *argv[])
       {"type", CL::SwitchType::Single, DefaultType },
       {"ssre", CL::SwitchType::Single, DefaultERE },
       {"swap", CL::SwitchType::Flag, nullptr},
-      {"e1", CL::SwitchType::Flag, nullptr},
+      {"eone", CL::SwitchType::Flag, nullptr},
       {"ec", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
@@ -521,7 +521,7 @@ int main(int argc, const char *argv[])
                                              cl.SwitchValue<std::string>("im"), cl.SwitchValue<std::string>("o"),
                                              std::regex( cl.SwitchValue<std::string>("ssre"),
                                                          std::regex::extended | std::regex::icase ),
-                                             cl.GotSwitch("swap"), cl.GotSwitch("e1"), cl.GotSwitch("ec"), cl.Args[0] ) );
+                                             cl.GotSwitch("swap"), cl.GotSwitch("eone"), cl.GotSwitch("ec"), cl.Args[0] ) );
       bShowUsage = false;
       std::vector<std::string> FileList{ Common::glob( ++cl.Args.begin(), cl.Args.end(), InBase.c_str() ) };
       std::size_t Count{ 0 };
@@ -568,7 +568,7 @@ int main(int argc, const char *argv[])
     //"-n     Number of samples to fit, 0 (default) = all available from bootstrap\n"
     "Flags:\n"
     "--swap Swap source / sink order in regex\n"
-    "--e1   Freeze the energy to 1\n"
+    "--eone Freeze the energy to 1 (in R1R2 ratios)\n"
     "--ec   Freeze the energy fit to it's central value\n"
     "--help This message\n";
   }
