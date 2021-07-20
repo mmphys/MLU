@@ -153,13 +153,13 @@ Maker * Maker::Make( const std::string &Type, std::string &TypeParams,
                      const std::string &inBase, const std::string &C2Base,
                      const std::string &modelBase,const std::string &outBase,
                      std::regex RegExExt, const bool RegExSwap,
-                     const bool e1, const bool eCentral, const std::string &FitListName )
+                     const Freeze fEnergy, const Freeze fZV, const std::string &FitListName )
 {
   Maker * r;
   if( !Common::CompareIgnoreCase( Type, "R1R2" ) )
-    r = new R1R2Maker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, e1, eCentral, FitListName );
+    r = new R1R2Maker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV, FitListName );
   else if( !Common::CompareIgnoreCase( Type, "ZV" ) )
-    r = new ZVMaker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, e1, eCentral, FitListName );
+    r = new ZVMaker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV, FitListName );
   else
     throw std::runtime_error( "I don't know how to make type " + Type );
   if( !TypeParams.empty() )
@@ -269,7 +269,7 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
       *pDst++ = z;
     }
     pSrc += C3.Nt() - ( fna.DeltaT + 1 );
-    if( !eCentral )
+    if( fEnergy != Freeze::Central )
       pE += miSnk.m.Nt();
     pC2 += C2.Nt();
   }
@@ -308,14 +308,14 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
   static constexpr int NumC2{ 2 };
   Corr2pt.reserve( NumC2 );
   {
-    std::string C2NameSnk{ miSnk.FileName2pt };
-    AppendOps( C2NameSnk, opSnk, opSnk );
-    C2NameSnk = Common::MakeFilename( C2NameSnk, Common::sFold, model.Seed, DEF_FMT );
-    Corr2pt.emplace_back( C2NameSnk, Spaces.c_str() );
     std::string C2NameSrc{ miSrc.FileName2pt };
     AppendOps( C2NameSrc, opSrc, opSrc );
     C2NameSrc = Common::MakeFilename( C2NameSrc, Common::sFold, model.Seed, DEF_FMT );
     Corr2pt.emplace_back( C2NameSrc, Spaces.c_str() );
+    std::string C2NameSnk{ miSnk.FileName2pt };
+    AppendOps( C2NameSnk, opSnk, opSnk );
+    C2NameSnk = Common::MakeFilename( C2NameSnk, Common::sFold, model.Seed, DEF_FMT );
+    Corr2pt.emplace_back( C2NameSnk, Spaces.c_str() );
   }
 
   // Load the correlators we need
@@ -412,7 +412,7 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
   const Scalar * pZVSnk{ miZVSnk.m[Fold::idxCentral] + miZVSnk.idxE0 };
   for( int idx = Fold::idxCentral; idx < ds.NSamples; ++idx )
   {
-    const double EProd = e1 ? 1 : (*pE[0]) * (*pE[1]);
+    const double EProd = ( fEnergy == Freeze::One ) ? 1 : (*pE[0]) * (*pE[1]);
     double C2[NumC2];
     for( int i = 0; i < NumC2; ++i )
       C2[i] = pC2[i][fna.DeltaT] - 0.5 * pC2[i][NTHalf] * std::exp( - pE[i][0] * ( NTHalf - fna.DeltaT ) );
@@ -422,18 +422,21 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
       const double n = std::abs( EProd * pSrc[0][t] * pSrc[1][t] ); // fna.DeltaT - t
       if( !std::isfinite( n ) )
         throw std::runtime_error( "Numerator Overflow" );
-      const Scalar ZVSrc{ *pZVSrc };
-      const Scalar ZVSnk{ *pZVSnk };
+      const Scalar ZVSrc{ fZV == Freeze::One ? 1 : *pZVSrc };
+      const Scalar ZVSnk{ fZV == Freeze::One ? 1 : *pZVSnk };
       *pDst[0]++ = 2 * std::sqrt( n / C2Prod * ZVSrc * ZVSnk ); // R1
       if( bMakeR2 )
         *pDst[1]++ = 2 * std::sqrt( n / std::abs( pSrc[2][t] * pSrc[3][t] ) ); // R2
     }
     for( int i = 0; i < ds.corr.size(); ++i )
       pSrc[i] += nT[i];
-    if( !eCentral )
+    if( fEnergy != Freeze::Central )
     {
       pE[0] += miSrc.m.Nt();
       pE[1] += miSnk.m.Nt();
+    }
+    if( fZV != Freeze::Central )
+    {
       pZVSrc+= miZVSrc.m.Nt();
       pZVSnk+= miZVSnk.m.Nt();
     }
@@ -486,6 +489,24 @@ bool Debug()
   return false;
 }*/
 
+Freeze GetFreeze( const Common::CommandLine &cl, const std::string &sOne, const std::string &sCentral )
+{
+  Freeze f;
+  const bool bOne{ cl.GotSwitch( sOne ) };
+  const bool bCentral{ cl.GotSwitch( sCentral ) };
+  if( bOne )
+  {
+    if( bCentral )
+      throw std::invalid_argument( "Cannot specify both " + sOne + " and " + sCentral );
+    f = Freeze::One;
+  }
+  else if( bCentral )
+    f = Freeze::Central;
+  else
+    f = Freeze::None;
+  return f;
+}
+
 int main(int argc, const char *argv[])
 {
   //if(!Debug()) return EXIT_FAILURE;
@@ -508,6 +529,8 @@ int main(int argc, const char *argv[])
       {"swap", CL::SwitchType::Flag, nullptr},
       {"eone", CL::SwitchType::Flag, nullptr},
       {"ec", CL::SwitchType::Flag, nullptr},
+      {"zvone", CL::SwitchType::Flag, nullptr},
+      {"zvc", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -521,7 +544,10 @@ int main(int argc, const char *argv[])
                                              cl.SwitchValue<std::string>("im"), cl.SwitchValue<std::string>("o"),
                                              std::regex( cl.SwitchValue<std::string>("ssre"),
                                                          std::regex::extended | std::regex::icase ),
-                                             cl.GotSwitch("swap"), cl.GotSwitch("eone"), cl.GotSwitch("ec"), cl.Args[0] ) );
+                                             cl.GotSwitch("swap"),
+                                             GetFreeze( cl, "eone", "ec" ),
+                                             GetFreeze( cl, "zvone", "zvc" ),
+                                             cl.Args[0] ) );
       bShowUsage = false;
       std::vector<std::string> FileList{ Common::glob( ++cl.Args.begin(), cl.Args.end(), InBase.c_str() ) };
       std::size_t Count{ 0 };
@@ -570,6 +596,8 @@ int main(int argc, const char *argv[])
     "--swap Swap source / sink order in regex\n"
     "--eone Freeze the energy to 1 (in R1R2 ratios)\n"
     "--ec   Freeze the energy fit to it's central value\n"
+    "--zvone Freeze ZV to 1 (in R1R2 ratios)\n"
+    "--zvc  Freeze ZV fit to it's central value\n"
     "--help This message\n";
   }
   return iReturn;

@@ -57,7 +57,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--i3 corr/3pt_lp2/ --i2 corr/2ptp2/ --im fit/ Fit_lp2.txt -o ratio/lp2/R1R2/"
+            argument = "--i3 corr/3pt_lp2/ --i2 corr/2ptp2/ --im fit/ Fit_lp2_debug.txt -o ratio/lp2/R1R2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -65,7 +65,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type R1r2,FitZV_lp2.txt"
+            argument = "--type R1r2,FitZV_lp2_debug.txt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
