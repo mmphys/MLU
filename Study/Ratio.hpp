@@ -121,6 +121,7 @@ public:
   const Common::Momentum p;
   const Freeze fEnergy;
   const Freeze fZV;
+  const bool bSymmetrise;
 protected:
   std::regex RegExExt;
   const bool RegExSwap;
@@ -145,16 +146,16 @@ public:
   Maker( const std::string &inBase_, const std::string &C2Base_,
          const std::string &modelBase_,const std::string &outBase_,
          std::regex RegExExt_, const bool RegExSwap_,
-        const Freeze fEnergy_, const Freeze fZV_, const std::string &FitListName )
+        const Freeze fEnergy_, const Freeze fZV_, const bool bSymmetrise_, const std::string &FitListName )
   : inBase{inBase_}, C2Base{C2Base_}, modelBase{modelBase_}, outBase{outBase_},
-    fEnergy{fEnergy_}, fZV{fZV_}, RegExExt{RegExExt_}, RegExSwap{RegExSwap_},
+    fEnergy{fEnergy_}, fZV{fZV_}, bSymmetrise{bSymmetrise_}, RegExExt{RegExExt_}, RegExSwap{RegExSwap_},
     model(modelBase_ + FitListName, modelBase_, C2Base_) {}
   virtual ~Maker() {}
   static Maker * Make( const std::string &Type, std::string &TypeParams,
                        const std::string &inBase, const std::string &C2Base,
                        const std::string &modelBase,const std::string &outBase,
                        std::regex RegExExt, const bool RegExSwap,
-                       const Freeze fEnergy, const Freeze fZV, const std::string &FitListName );
+                       const Freeze fEnergy, const Freeze fZV, const bool bSymmetrise, const std::string &FitListName );
   void Make( std::string &sFileName );
 };
 
@@ -169,8 +170,8 @@ public:
   ZVMaker( std::string &TypeParams, const std::string &inBase, const std::string &C2Base,
            const std::string &modelBase, const std::string &outBase,
            std::regex RegExExt, const bool RegExSwap,
-          const Freeze fEnergy, const Freeze fZV, const std::string &FitListName )
-  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV, FitListName ) {}
+          const Freeze fEnergy, const Freeze fZV, const bool bSymmetrise, const std::string &FitListName )
+  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV, bSymmetrise, FitListName ) {}
 };
 
 // Make R1 and R2: eq 2.8 pg 4 https://arxiv.org/pdf/1305.7217.pdf
@@ -185,8 +186,8 @@ public:
   R1R2Maker( std::string &TypeParams, const std::string &inBase, const std::string &C2Base,
              const std::string &modelBase, const std::string &outBase,
              std::regex RegExExt, const bool RegExSwap,
-             const Freeze fEnergy, const Freeze fZV, const std::string &FitListName )
-  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV, FitListName ),
+             const Freeze fEnergy, const Freeze fZV, const bool bSymmetrise, const std::string &FitListName )
+  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV, bSymmetrise, FitListName ),
     ZVmi( modelBase + TypeParams, modelBase, C2Base )
   {
     TypeParams.clear(); // I used this to load my map from

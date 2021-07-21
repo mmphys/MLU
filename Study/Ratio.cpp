@@ -153,13 +153,15 @@ Maker * Maker::Make( const std::string &Type, std::string &TypeParams,
                      const std::string &inBase, const std::string &C2Base,
                      const std::string &modelBase,const std::string &outBase,
                      std::regex RegExExt, const bool RegExSwap,
-                     const Freeze fEnergy, const Freeze fZV, const std::string &FitListName )
+                     const Freeze fEnergy, const Freeze fZV, const bool bSymmetrise, const std::string &FitListName )
 {
   Maker * r;
   if( !Common::CompareIgnoreCase( Type, "R1R2" ) )
-    r = new R1R2Maker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV, FitListName );
+    r = new R1R2Maker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV,
+                       bSymmetrise, FitListName );
   else if( !Common::CompareIgnoreCase( Type, "ZV" ) )
-    r = new ZVMaker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV, FitListName );
+    r = new ZVMaker( TypeParams, inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV,
+                     bSymmetrise, FitListName );
   else
     throw std::runtime_error( "I don't know how to make type " + Type );
   if( !TypeParams.empty() )
@@ -402,7 +404,7 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
     out[i].NtUnfolded = ds.corr[0].Nt();
     pDst[i] = out[i][Fold::idxCentral];
   }
-  const Scalar * pE[2];
+  const Scalar * pE[NumC2];
   pE[0] = miSrc.m[Fold::idxCentral] + miSrc.idxE0;
   pE[1] = miSnk.m[Fold::idxCentral] + miSnk.idxE0;
   const Scalar * pC2[NumC2];
@@ -412,11 +414,29 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
   const Scalar * pZVSnk{ miZVSnk.m[Fold::idxCentral] + miZVSnk.idxE0 };
   for( int idx = Fold::idxCentral; idx < ds.NSamples; ++idx )
   {
-    const double EProd = ( fEnergy == Freeze::One ) ? 1 : (*pE[0]) * (*pE[1]);
+    // Get the energies and compute the Correlator at Delta T with backward propagating wave subtracted
+    // Allow energies to be frozen to 1 (which means don't subtract backward propagating wave)
+    double  E[NumC2];
     double C2[NumC2];
     for( int i = 0; i < NumC2; ++i )
-      C2[i] = pC2[i][fna.DeltaT] - 0.5 * pC2[i][NTHalf] * std::exp( - pE[i][0] * ( NTHalf - fna.DeltaT ) );
+    {
+      C2[i] = pC2[i][fna.DeltaT];
+      if( fEnergy == Freeze::One )
+      {
+        // If we're freezing energy to one, it makes no sense to try to subtract half the midpoint
+        E[i] = 1;
+        if( NTHalf == fna.DeltaT )
+          C2[i] *= 0.5; // In the middle of the lattice, this is needed for consistency
+      }
+      else
+      {
+         E[i] = *pE[i];
+        C2[i] -= 0.5 * pC2[i][NTHalf] * std::exp( - E[i] * ( NTHalf - fna.DeltaT ) );
+      }
+    }
+    const double EProd = E[0] * E[1];
     const double C2Prod = std::abs( C2[0] * C2[1] );
+    // Now compute the ratios
     for( int t = 0; t <= fna.DeltaT; ++t )
     {
       const double n = std::abs( EProd * pSrc[0][t] * pSrc[1][t] ); // fna.DeltaT - t
@@ -424,18 +444,37 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
         throw std::runtime_error( "Numerator Overflow" );
       const Scalar ZVSrc{ fZV == Freeze::One ? 1 : *pZVSrc };
       const Scalar ZVSnk{ fZV == Freeze::One ? 1 : *pZVSnk };
-      *pDst[0]++ = 2 * std::sqrt( n / C2Prod * ZVSrc * ZVSnk ); // R1
+      const Scalar R1{ 2 * std::sqrt( ( n / C2Prod ) * ZVSrc * ZVSnk ) };
+      pDst[0][t] = R1;
       if( bMakeR2 )
-        *pDst[1]++ = 2 * std::sqrt( n / std::abs( pSrc[2][t] * pSrc[3][t] ) ); // R2
+      {
+        const Scalar R2{ 2 * std::sqrt( n / std::abs( pSrc[2][t] * pSrc[3][t] ) ) };
+        pDst[1][t] = R2;
+      }
     }
+    // Symmetrise the output
+    if( bSymmetrise )
+    {
+      assert( ! ( fna.DeltaT & 1 ) && "DeltaT must be even" );
+      for( int i = 0; i < NumRatio; ++i )
+      {
+        for( int t = 1; t < fna.DeltaT / 2; ++t )
+        {
+          pDst[i][t] = ( pDst[i][t] + pDst[i][fna.DeltaT - t] ) / 2;
+          pDst[i][fna.DeltaT - t] = pDst[i][t];
+        }
+      }
+    }
+    for( int i = 0; i < NumRatio; ++i )
+      pDst[i] += out[i].Nt();
     for( int i = 0; i < ds.corr.size(); ++i )
       pSrc[i] += nT[i];
-    if( fEnergy != Freeze::Central )
+    if( fEnergy == Freeze::None )
     {
       pE[0] += miSrc.m.Nt();
       pE[1] += miSnk.m.Nt();
     }
-    if( fZV != Freeze::Central )
+    if( fZV == Freeze::None )
     {
       pZVSrc+= miZVSrc.m.Nt();
       pZVSnk+= miZVSnk.m.Nt();
@@ -531,6 +570,7 @@ int main(int argc, const char *argv[])
       {"ec", CL::SwitchType::Flag, nullptr},
       {"zvone", CL::SwitchType::Flag, nullptr},
       {"zvc", CL::SwitchType::Flag, nullptr},
+      {"nosym", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -547,6 +587,7 @@ int main(int argc, const char *argv[])
                                              cl.GotSwitch("swap"),
                                              GetFreeze( cl, "eone", "ec" ),
                                              GetFreeze( cl, "zvone", "zvc" ),
+                                             !cl.GotSwitch("nosym"),
                                              cl.Args[0] ) );
       bShowUsage = false;
       std::vector<std::string> FileList{ Common::glob( ++cl.Args.begin(), cl.Args.end(), InBase.c_str() ) };
@@ -598,6 +639,7 @@ int main(int argc, const char *argv[])
     "--ec   Freeze the energy fit to it's central value\n"
     "--zvone Freeze ZV to 1 (in R1R2 ratios)\n"
     "--zvc  Freeze ZV fit to it's central value\n"
+    "--nosym Don't symmetrise the waves\n"
     "--help This message\n";
   }
   return iReturn;
