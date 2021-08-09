@@ -409,6 +409,7 @@ template<typename T> std::string ModSolver::LoadEigenPack( HModList &ModList, Pr
   typename T::Par epPar;
   epPar.filestem = q.eigenPack;
   epPar.multiFile = q.multiFile;
+  epPar.redBlack = q.redBlack;
   epPar.size = q.size;
   epPar.Ls = q.Ls;
   if( tax.GaugeFixed() )
@@ -515,7 +516,7 @@ void ModSlicedProp::AddDependencies( HModList &ModList ) const
 {
   MSink::Smear::Par smearPar;
   smearPar.q = ModList.TakeOwnership( new ModProp( ModList, tax, q, p, t ) );
-  smearPar.sink = ModList.TakeOwnership( new ModSinkSmear( ModList, tax, p0 ) ); // TODO: Have I put momentum in properly?
+  smearPar.sink = ModList.TakeOwnership( new ModSinkSmear( ModList, tax, -p ) );
   ModList.application.createModule<MSink::Smear>(name, smearPar);
 }
 
@@ -660,7 +661,8 @@ void ModContract2pt::AddDependencies( HModList &ModList ) const
   mesPar.output = FileName;
   //mesPar.gammas = "(Gamma5 Gamma5)(Gamma5 GammaTGamma5)(GammaTGamma5 Gamma5)(GammaTGamma5 GammaTGamma5)";
   mesPar.gammas = "all";
-  if( tax == Species::Wall )
+  const bool bWallSink{ tax == Species::Wall };
+  if( bWallSink )
   {
     mesPar.q1 = ModList.TakeOwnership( new ModSlicedProp( ModList, tax, q1, p1, t ) );
     mesPar.q2 = ModList.TakeOwnership( new ModSlicedProp( ModList, tax, q2, p2, t ) );
@@ -670,7 +672,7 @@ void ModContract2pt::AddDependencies( HModList &ModList ) const
     mesPar.q1 = ModList.TakeOwnership( new ModProp( ModList, tax, q1, p1, t ) );
     mesPar.q2 = ModList.TakeOwnership( new ModProp( ModList, tax, q2, p2, t ) );
   }
-  mesPar.sink = ModList.TakeOwnership( new ModSink( ModList, tax, -pSource ) );
+  mesPar.sink = ModList.TakeOwnership( new ModSink( ModList, tax, bWallSink ? p0 : -pSource ) );
   ModList.application.createModule<MContraction::Meson>(name, mesPar);
 }
 

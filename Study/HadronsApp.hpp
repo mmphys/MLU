@@ -194,6 +194,7 @@ GRID_SERIALIZABLE_CLASS_MEMBERS(Quark,
                                 std::string,  eigenPack,
                                 unsigned int, size,
                                 bool,         multiFile,
+                                bool,         redBlack,
                                 bool,         eigenSinglePrecision) // EigenPack single precision
 public:
   template<typename T> void CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const;

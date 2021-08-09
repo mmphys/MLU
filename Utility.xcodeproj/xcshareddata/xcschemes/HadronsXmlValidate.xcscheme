@@ -57,7 +57,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "ZFPW_GFPW_DK_DPi_DsK_2pt_quark_h447_t_0_4_4_np_3_p2_0_dT_16_20_24.xml"
+            argument = "ZFPW_GFPW_DK_DPi_DsK_2pt_quark_h447_t_0_4_4_hp_15_p2_0_1_2_3_4_dT_32.xml"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "WallSinkExample.xml"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

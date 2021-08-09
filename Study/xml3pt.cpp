@@ -438,14 +438,17 @@ bool Study3::Check0Negate( std::vector<Common::Momentum> &Momenta, bool bNegate 
   return bGot0;
 }
 
-void Study3::Contract2pt( const Taxonomy &tax, const Quark &q1, const Quark &q2, std::size_t idxMomentum, int t,
+void Study3::Contract2pt( const Taxonomy &tax, const Quark &q1, const Quark &q2, int idxMomentum, int t,
                           const std::vector<Common::Momentum> &Momenta, bool bGotp0 )
 {
+  // Only the Z2 sources are protected by the gauge-average delta
+  const bool bMultiP2{ tax == Family::Z2 || tax == Family::ZF };
   const Common::Momentum &p{ Momenta[idxMomentum] };
   const bool bFlavourDiagonal{ !Common::CompareIgnoreCase( q1.flavour, q2.flavour ) };
-  const std::size_t idxMomentumStart{ static_cast<size_t>(bGotp0 ? 0 : -1) };
-  const std::size_t idxMomentumLimit{ bFlavourDiagonal ? idxMomentum + 1 : Momenta.size() };
-  for( std::size_t idxMomentum2 = idxMomentumStart; idxMomentum2 < idxMomentumLimit; ++idxMomentum2 )
+  const int idxMomentumStart{ !bMultiP2 || !bGotp0 ? -1 : 0 };
+  const int idxMomentumLimit{ !bMultiP2 ?  0
+                              : bFlavourDiagonal ? idxMomentum + 1 : static_cast<int>( Momenta.size() ) };
+  for( int idxMomentum2 = idxMomentumStart; idxMomentum2 < idxMomentumLimit; ++idxMomentum2 )
   {
     const Common::Momentum &p2{ idxMomentum2 < 0 ? p0 : Momenta[idxMomentum2] };
     l.TakeOwnership( new ModContract2pt( l, tax, q1, q2, p, t, p2 ) );
@@ -467,7 +470,7 @@ void Study3::MakeStudy3( const Decay &d )
         const Quark &qh{ Q.at( d.HeavyMom[idxHP].qHeavy ) };
         std::vector<Common::Momentum> Momenta = Common::ArrayFromString<Common::Momentum>( d.HeavyMom[idxHP].Momenta );
         const bool bGotp0{ Check0Negate( Momenta, makePar.DoNegativeMomenta ) };
-        for( std::size_t idxMomentum = 0; idxMomentum < Momenta.size(); ++idxMomentum )
+        for( int idxMomentum = 0; idxMomentum < Momenta.size(); ++idxMomentum )
         {
             const Common::Momentum &p{ Momenta[idxMomentum] };
             if( makePar.TwoPoint )

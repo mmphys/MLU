@@ -173,6 +173,21 @@ inline void Vector<COMMON_GSL_TYPE>::blas_trmv( CBLAS_UPLO_t Uplo, CBLAS_TRANSPO
   COMMON_GSL_BLAS( trmv )( Uplo, TransA, Diag, &A, reinterpret_cast<GSLVector *>( this ) );
 }
 
+inline std::ostream & operator<<( std::ostream &os, const Vector<COMMON_GSL_TYPE> &v )
+{
+  static constexpr int MaxCols = 8;
+  os << "Vector { " << v.size;
+  if( v.stride != 1 )
+    os << " (stride=" << v.stride << ")";
+  if( !v.owner )
+    os << " not";
+  os << " owner";
+  const int imax{ v.size >= MaxCols ? MaxCols : static_cast<int>( v.size ) };
+  for( int i = 0; i < imax; ++i )
+      os << Space << v[i];
+  return os << " }";
+}
+
 template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::GSLMatrixType
 {
   using Traits    = GSLTraits<COMMON_GSL_TYPE>;
@@ -339,6 +354,17 @@ void Matrix<COMMON_GSL_TYPE>::blas_trmm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, C
   COMMON_GSL_BLAS( trmm )( Side, Uplo, TransA, Diag, * reinterpret_cast<GSLScalar*>( &alpha ),
                            reinterpret_cast<const GSLMatrix *>( &A ), reinterpret_cast<GSLMatrix *>( this ) );
 }
+
+/*
+ Calling this matrix "A" and returned matrix "R" ...
+ Input:   lower left and diagonals of A contain matrix to Cholesky decompose (assumed symmetric)
+ Output:  diag(S) = scaling matrix so that (S A S) has 1 on diagonals, i.e. S_i = 1/sqrt{A_ii}
+          R upper right not diagonal = S A S. This is symmetric, and diagonal is assumed to be 1
+          R lower left  and diagonal = Cholesky decomp of S A S (triangular, so upper right assumed to be 0)
+ Example: If A is a variance matrix on input, then R contains the correlation matrix (upper right)
+          and the Cholesky decomposition of the correlation matrix (lower left and diagonals),
+          while S contains the inverse of the errors
+ */
 
 #ifdef COMMON_GSL_DOUBLE
 inline Matrix<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::Cholesky( MyVector &S ) const
