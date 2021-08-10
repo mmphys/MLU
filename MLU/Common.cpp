@@ -850,7 +850,7 @@ const FileNameMomentum &FileNameAtt::GetFirstNonZeroMomentum() const
   return p.begin()->second;
 }
 
-const void FileNameAtt::AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const
+void FileNameAtt::AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const
 {
   if( fnp.bp2 )
     s.append( fnp.p2_string( Underscore, Name ) );

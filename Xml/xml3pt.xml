@@ -48,8 +48,8 @@
       <!--<end>64</end>-->
       <step>4</step>
     </Timeslices>
-    <!--<Taxa>ZF Point</Taxa>-->
     <!--<Taxa>GF Point GF Wall GF Region GP Wall Z2 Point ZF Point ZF Wall</Taxa>-->
+    <!--<Taxa>GF Wall ZF Wall</Taxa>-->
     <Taxa>GF Point GF Wall ZF Point ZF Wall</Taxa>
     <DoNegativeMomenta>false</DoNegativeMomenta>
     <deltaT>16 20 24 28 32</deltaT>
@@ -156,6 +156,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -173,6 +174,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -190,6 +192,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -207,6 +210,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -225,6 +229,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
   </HeavyM1>
@@ -244,6 +249,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -261,6 +267,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -278,6 +285,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -296,6 +304,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
   </HeavyC1Moebius>
@@ -315,6 +324,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -332,6 +342,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -349,6 +360,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -366,6 +378,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
   </HeavyC1Shamir>
@@ -386,6 +399,7 @@
       <eigenPack>/tessfs1/work/dp008/dp008/shared/data/eigenpack/M1/vec_fine</eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>true</eigenSinglePrecision>
     </elem>
     <!-- strange physical/valence -->
@@ -404,6 +418,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <!-- strange unitary/sea
@@ -422,6 +437,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>-->
   </SpectatorM1>
@@ -442,6 +458,7 @@
       <eigenPack>/tessfs1/work/dp008/dp008/shared/data/eigenpack/C1/vec_fine</eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -460,6 +477,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
     <elem>
@@ -478,6 +496,7 @@
       <eigenPack></eigenPack>
       <size>600</size>
       <multiFile>false</multiFile>
+      <redBlack>true</redBlack>
       <eigenSinglePrecision>false</eigenSinglePrecision>
     </elem>
   </SpectatorC1>

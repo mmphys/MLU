@@ -1,5 +1,24 @@
 #!/usr/bin/env bash
 
+# 1: Bash array containing the source array
+# 2: Name of Bash    string variable to contain gnuplot array creation statement
+# 3: Name of GnuPlot string variable (same as #2 if not specified)
+function PassGnuPlotArray()
+{
+  local Dest=$2
+  local DestGnu=${3:-${Dest}}
+  local SourceName=$1
+  local Source="$SourceName[@]"
+  local array=( "${!Source}" )
+
+  eval "${Dest}='array ${DestGnu}[${#array[@]}]'"
+  for ((i = 0; i < ${#array[@]}; i++))
+  do
+    eval ${Dest}="'${!Dest}; ${DestGnu}[$((i+1))]=\"${array[$i]}\"'"
+  done
+}
+
+# Split path into components
 PlotPathSplit()
 {
   unset mmplotfile_name_no_ext
@@ -14,7 +33,10 @@ PlotPathSplit()
   unset mmplotfile_tf
   unset mmplotfile_ops
   unset mmplotfile_ops_all
+  unset mmplotfile_base_short
   unset mmplotfile_dt
+  unset mmplotfile_p
+  unset mmplotfile_pName
   # Split into path and name
   mmplotfile_name="$1"
   mmplotfile_path="${mmplotfile_name%/*}"
@@ -64,8 +86,25 @@ PlotPathSplit()
     fi
   fi
   # See whether various kinds of info are present in base
-  local tmp=${mmplotfile_base#*_dt_}
-  if (( ${#tmp} )); then mmplotfile_dt=${tmp%%[_.]*}; fi
+  local tmp=(${mmplotfile_base//_/ })
+  local Len=${#tmp[@]}
+  local i
+  local Include
+  for(( i=0; i < Len; i++ )); do
+    if (( i == Len - 1 )); then
+      Include=1
+    else
+      Include=0
+      case ${tmp[i]} in
+        dt) mmplotfile_dt=${tmp[i+1]}; ((i++));;
+        p2) mmplotfile_pName='p^2'; mmplotfile_p="${tmp[i+1]}"; ((i++));;
+        *)  Include=1;;
+      esac
+    fi
+    if (( Include )); then
+      mmplotfile_base_short="${mmplotfile_base_short:+${mmplotfile_base_short}_}${tmp[i]}"
+    fi
+  done
 }
 
 export -f PlotPathSplit

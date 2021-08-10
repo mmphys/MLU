@@ -29,9 +29,12 @@ RefText="${reftext}"
 do_log=${log:-0}
 SaveFile=${SaveFile:-0}
 SaveFileName="$SaveFileName"
+SaveLabel="${savelabel-$SaveFileName}"
 do_offset=${offset:-0.05}
 do_whisker=0${whisker+1} #non-zero if whisker set to anything (including nothing)
 do_rel=0${rel}
+got_legend=${got_legend}
+$PlotFileLegend
 
 # Which field names do we plot?
 f = 1
@@ -72,7 +75,6 @@ if( do_log ) {
 }
 
 PlotFile="$PlotFile"
-PlotFileTitle="$PlotFileTitle"
 NumFiles=words(PlotFile)
 FileType="${mmplotfile_type}"
 
@@ -100,7 +102,10 @@ if( SaveFile ) {
   }
   set pointsize 0.5
   set output SaveFileName
-  set label 1 SaveFileName noenhanced at screen 1, 0.5 center rotate by -90 font "Arial,8" front textcolor "grey40" offset character -1.3, 0
+  if( SaveLabel ne "" ) {
+    set label 1 SaveLabel noenhanced at screen 1, 0.5 center rotate by -90 \
+        font "Arial,8" front textcolor "grey40" offset character -1.3, 0
+  }
 }
 
 set key font "Arial,8" @my_key noenhanced
@@ -108,12 +113,12 @@ set xrange[@my_xrange]
 set yrange[@my_yrange]
 if( do_title ) {
   # This title might be set to empty string, meaning - no title
-  if( my_title ne "" ) { set title my_title }
+  if( my_title ne "" ) { set title my_title font ', 18' }
 } else {
   set title MyTitle noenhanced
 }
-if( my_xlabel ne "" ) { set xlabel my_xlabel }
-if( my_ylabel ne "" ) { set ylabel my_ylabel }
+if( my_xlabel ne "" ) { set xlabel my_xlabel font ', 16' }
+if( my_ylabel ne "" ) { set ylabel my_ylabel font ', 16' }
 
 if( RefVal != -777 ) {
   RefErrString=""
@@ -146,7 +151,7 @@ if( RefVal != -777 ) {
   }
   eval "set arrow from ".RefXUnits." RefXLeft, first RefVal to ".RefXUnits." RefXRight, first RefVal nohead front lc rgb \"gray40\" lw 0.25 dashtype \"-\""
   if( RefText eq "" ) { RefText="Ref: ".sprintf("%g", RefVal).RefErrString }
-  set label 2 RefText at screen 0, screen 0 font "Arial,8" front textcolor "grey40" offset character 0.5, 0.25
+  #set label 2 RefText at screen 0, screen 0 font "Arial,8" front textcolor "grey40" offset character 0.5, 0.25
 }
 
 #AbsMin(y,low,high)=sgn(y) < 0 ? -(high) : low
@@ -175,9 +180,9 @@ if( NumFiles==1 && FileType eq "cormat" ) {
   set cbrange [@my_cbrange]
   plot PlotFile matrix columnheaders rowheaders with image pixels
 } else {
-  if( do_log ) {
-    PlotUsing='(abs(column(word(FieldNames,fld)))) : (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( sgn(column(word(FieldNames,fld))) ? "_low" : "_high" ))) : (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( sgn(column(word(FieldNames,fld))) ? "_high" : "_low" )))'
-  } else {
+#  if( do_log ) {
+#    PlotUsing='(abs(column(word(FieldNames,fld)))) : (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( sgn(column(word(FieldNames,fld))) ? "_low" : "_high" ))) : (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( sgn(column(word(FieldNames,fld))) ? "_high" : "_low" )))'
+#  } else {
     if( do_whisker ) {
       PlotWith="with candlesticks whiskerbars"
       PlotUsing='(column(word(FieldNames,fld)."_low")) : (column(word(FieldNames,fld)."_min")) : (column(word(FieldNames,fld)."_max")) : (column(word(FieldNames,fld)."_high"))'
@@ -193,14 +198,15 @@ if( NumFiles==1 && FileType eq "cormat" ) {
         PlotUsing='(column(word(FieldNames,fld))) : (column(word(FieldNames,fld)."_low")) : (column(word(FieldNames,fld)."_high"))'
         }
     }
-  }
+#  }
   PlotCmd="plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] word(PlotFile,File) using ((("
   PlotCmd=PlotCmd.my_x_axis.") == 0 ? (f==0 ? 0 : 1/0) : f==0 ? ("
   PlotCmd=PlotCmd.my_x_axis.") : nt - ("
   PlotCmd=PlotCmd.my_x_axis."))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : "
-  PlotCmd=PlotCmd.PlotUsing.' '
-  PlotCmd=PlotCmd.PlotWith.' title ( SaveFile == 2 ? word(PlotFileTitle,File)." " : "").fb_prefix[f+1].word(FieldNames,fld)'
+  PlotCmd=PlotCmd.PlotUsing.' '.PlotWith
+  PlotCmd=PlotCmd.' title ( (SaveFile == 2 || got_legend) ? PlotFileLegend[File]." " : "").fb_prefix[f+1].(got_legend ? "" : word(FieldNames,fld))'
   #PlotCmd=PlotCmd.PlotWith.' title "ΔT = ".word("12 14 16 20 24 28 32",File)'
+  if( RefVal != -777 ) { PlotCmd=PlotCmd.", 1/0 lt 0 dashtype 21 title '".RefText."'" }
   eval PlotCmd
 }
 EOFMark
@@ -223,15 +229,28 @@ then
   echo "title  Title for the plot"
   echo "offset X-axis offset between series, 0 to disable (default: 0.05)"
   echo "save   \"1\" to save plots to auto-generated filenames, otherwise name of pdf"
+  echo "savelabel Filename to place on RHS (default=save file name)"
   echo "nt     Plot backward propagating wave as well (or backward only if nt<0)"
   echo "x      definition of field for x-axis. Normally 'column(1)', but try, say 'column(1) / 12'"
   echo "xargs  Arguments for field for x-axis, eg deltaT"
   echo "whisker plot as box (1 sigma) + error bars (min/max)"
+  echo "legend string containing legend for each file"
+  echo "       e.g. \"'big banana' hulahoop\""
+  echo "xlabel X-axis label"
+  echo "ylabel X-axis label"
   exit 2
 fi
 
 if [[ "$nt" != "" && "$tf" == "" ]]; then tf=$(( (nt < 0 ? -nt : nt)/2 )); fi
 if [[ "${title+z}" == "z" ]]; then do_title=1; else do_title=0; fi
+
+if [[ "$legend" == "" ]]; then
+  got_legend=0
+  legend=()
+else
+  got_legend=1
+  eval legend=(${legend})
+fi
 
 # If we specify a filename, then we want a single plot
 unset SaveFileName
@@ -248,14 +267,18 @@ else
   PlotFile="$*"
   for f in $PlotFile; do
     PlotPathSplit "$f"
-    PlotFileTitle="$PlotFileTitle ${f%.$mmplotfile_seed.$mmplotfile_ext}"
     FileDT="$FileDT $mmplotfile_dt"
+    if !(( got_legend )); then
+      legend+=( "${f%.$mmplotfile_seed.$mmplotfile_ext}" )
+    fi
   done
+  PassGnuPlotArray legend PlotFileLegend
   PlotFunction
   exit
 fi
 
 # Loop through all the files on the command-line performing plots
+LegendIndex=0
 for PlotFile
 do
   PlotPathSplit "$PlotFile"
@@ -263,10 +286,16 @@ do
   then #Silently skip non-text files
     PlotFileTitle="${PlotFile%.$mmplotfile_seed.$mmplotfile_ext}"
     FileDT="$mmplotfile_dt"
+    if (( got_legend )); then
+      ThisLegend=( "${legend[$((LegendIndex++))]}" )
+    else
+      ThisLegend=( "${f%.$mmplotfile_seed.$mmplotfile_ext}" )
+    fi
     #log_limit=1
     #if [[ "$mmplotfile_type" == "corr" ]]; then log_limit=2; fi
     #for(( do_log=0 ; do_log < log_limit ; do_log = do_log + 1 ))
     #do
+    PassGnuPlotArray ThisLegend PlotFileLegend
     PlotFunction
   fi
 done

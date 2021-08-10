@@ -71,13 +71,14 @@ function GetFits()
 echo "Getting fits"
 ThisDir=fit
 mkdir -p $ThisDir
-DebugData="--include='ZV_*.bootstrap.*.txt' \
-      --include='ZV_*_dt_20.*.model.*.h5' \
-      --include='h447_l_p2_0.corr_9_20.g5P_g5W.model.*.h5' \
-      --include='l_s_p2_0.corr_7_16.g5P_g5W.model.*.h5' \
-      --include='l_l_p2_0.corr_5_14.g5P_g5W.model.*.h5' \
-      --include='l_l_p2_1.corr_5_15.g5P_g5W.model.*.h5'"
-rsync -uvlmrt --include='*.params*.txt' --include='Fit*.txt' --include='*/' $DebugData \
+rsync -uvlmrt --exclude='bad*/' --include='*/' --include='*.params*.txt' --include='Fit*.txt' \
+      --include='ZV_*.bootstrap.*.txt' \
+      --include='h447_l_p2_0.corr_10_16_11_20.g5P_g5W.model.1835672416.h5' \
+      --include='h447_s_p2_0.corr_10_19_12_19.g5P_g5W.model.1835672416.h5' \
+      --include='l_s_p2_*.corr_6_11_4_9.g5P_g5W.model.1835672416.h5' \
+      --include='l_l_p2_*.corr_6_11_3_8.g5P_g5W.model.1835672416.h5' \
+      --include='ZV_l_dt_28.corr_10_18.g5P_g5P.model.1835672416.h5' \
+      --include='ZV_h447_dt_24.corr_10_14.g5P_g5P.model.1835672416.h5' \
       --exclude='*' tess:"${RemoteBase}/$ThisDir/" $ThisDir/
 }
 
@@ -92,5 +93,5 @@ rsync -uvlmrt --include='*.txt' --include='*/' --exclude='*' tess:"${RemoteBase}
 #GetDebugWard
 #GetDebugMeson
 #GetCorrelators
-GetFits # These can be a little slow when there's 50,000 of them
-#GetRatios
+#GetFits # These can be a little slow when there's 50,000 of them
+GetRatios

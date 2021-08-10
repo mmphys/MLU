@@ -34,7 +34,7 @@ else
   echo "Installing Pre-requisites"
   mkdir .Package
   cd .Package
-  if Download https://mirror.ibcp.fr/pub/gnu/gsl "GSL v2.6" gsl-2.6.tar.gz \
+  if Download https://mirror.ibcp.fr/pub/gnu/gsl "GSL v2.7" gsl-2.7.tar.gz \
     && Download http://www.cern.ch/mathlibs/sw/5_34_14/Minuit2 "Minuit2 v5.34.14" Minuit2-5.34.14.tar.gz
   then
     echo "Prerequisites installed"

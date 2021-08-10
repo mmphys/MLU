@@ -240,7 +240,7 @@ if test x$GSLInstall == xyes ; then
     if test -x "$GSLConfig" ; then
         AC_MSG_NOTICE([Using GSL previously installed in --prefix])
     else
-        GSLDir="$abs_srcdir/.Package/gsl-2.6"
+        GSLDir="$abs_srcdir/.Package/gsl-2.7"
         GSLConfigureDir="."
         if test x$AbsMLUBuildDir != x$abs_srcdir ; then
             GSLDir="$GSLDir/$MLUBuildDir"
@@ -297,5 +297,5 @@ AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_LDFLAGS])
 AC_SUBST([MLU_LIBS])
 AC_CONFIG_FILES([Makefile MLU/Makefile Analyze/Makefile Study/Makefile])
-#AC_CONFIG_SUBDIRS([.Package/gsl-2.6 .Package/Minuit2-5.34.14])
+#AC_CONFIG_SUBDIRS([.Package/gsl-2.7 .Package/Minuit2-5.34.14])
 AC_OUTPUT

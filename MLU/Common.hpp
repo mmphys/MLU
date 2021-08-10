@@ -1198,8 +1198,8 @@ struct FileNameAtt
                            const std::string &Ext ) const;
   const FileNameMomentum &GetMomentum( const std::string &Name = Momentum::DefaultPrefix ) const;
   const FileNameMomentum &GetFirstNonZeroMomentum() const;
-  const void AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const;
-  const void AppendMomentum( std::string &s, const FileNameMomentum &fnp ) const { AppendMomentum( s, fnp, fnp.Name ); }
+  void AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const;
+  void AppendMomentum( std::string &s, const FileNameMomentum &fnp )const{AppendMomentum( s, fnp, fnp.Name );}
 protected:
   void ParseShort( const std::vector<std::string> * pIgnoreMomenta ); // Should work out how to do this better
 };

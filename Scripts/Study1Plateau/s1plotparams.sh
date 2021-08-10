@@ -46,6 +46,8 @@ RefErr="${err}"
 RefText="${reftext}"
 RefSuffix="${refsuffix}"
 do_label="${label:+x}"
+do_SaveLabel=0${savelabel+1}
+SaveLabel="${savelabel}"
 
 # Work out how many fields there are per column by checking for absolute minimum
 GotAbsMin=(system("awk '! /#/ {print (\$0 ~ /E0_min/) ? 1 : 0; exit}' ".word(PlotFile,1)) eq "0") ? 0 : 1
@@ -97,15 +99,31 @@ if( xAxisName eq "ChiSqPerDof" ) {
   sStatCond='>'
   sStatCondHuman='≤'
 } else {
-  sStatDescr=xAxisName
   sStatCond='<'
   sStatCondHuman='≥'
   if( do_stat == 0 ) { stat_limit=0.05; do_stat=1 }
+  if( xAxisName eq "pvalue" ) {
+    sStatDescr='p-value ({/Times:Italic χ}^2)'
+  } else {
+    if( xAxisName eq "pvalueH" ) {
+      sStatDescr='p-value (Hotelling)'
+    } else {
+      sStatDescr=xAxisName
+    }
+  }
 }
+#print "do_stat=".do_stat
+#print "stat_limit=".sprintf("%f",stat_limit)
+#print "sStatDescr=".sStatDescr
+#print "sStatCond=".sStatCond
+#print "sStatCondHuman=".sStatCondHuman
 
-if( do_stat ) { sStatDescr=sStatDescr.' ('.sStatCondHuman.' '.sprintf("%g",stat_limit).")" }
+if( do_stat ) { sStatDescr=sStatDescr.' '.sStatCondHuman.' '.sprintf("%g",stat_limit) }
 #FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit using ${mmplotfile_ops_all//_/ }"
-FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit of ${mmplotfile_base}"
+FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit of ${mmplotfile_base_short}"
+if( "${mmplotfile_pName}" ne '' ) {
+  FitName=FitName." (${mmplotfile_pName}=${mmplotfile_p}".')'
+}
 OutBase="${mmplotfile_base}.${mmplotfile_corr_all}.${mmplotfile_ops_all}."
 OutSuffix="_".xAxisName.".${mmplotfile_seed}.pdf"
 
@@ -120,9 +138,11 @@ if( my_xtics ne "" ) { set xtics @my_xtics }
 
 stats PlotFile using "ti" nooutput
 NBlock=STATS_blocks
+#print "NBlock=".NBlock
 
 set yrange[@my_yrange]
 
+# If Condition is met, the data will be EXCLUDED
 Condition=''
 AppendCondition( s1, s2 )=s1.( strlen(s1) ? ' || ' : '' ).s2
 if( do_timin ) { Condition=AppendCondition(Condition, 'column("ti") < TIMin' ) }
@@ -147,9 +167,11 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   #print "MyField=".MyField.", OutFile=".OutFile
   set output OutFile
   #set label 1 OutFile noenhanced at screen 1, 0 right font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
-  set label 1 OutFile noenhanced at screen 1, 0.5 center rotate by -90 font "Arial,8" front textcolor "grey40" offset character -1.5, character 0
+  if( do_SaveLabel ) { OutFileLabel=SaveLabel } else { OutFileLabel=OutFile }
+  set label 1 OutFileLabel noenhanced at screen 1, 0.5 center rotate by -90 font "Arial,8" front textcolor "grey40" offset character -1.5, character 0
   IsEnergy=0
   if (MyField[1:1] eq "E") {
+    MyFieldNoUS='a '.MyFieldNoUS
     EnergyLevel=MyField[2:*] + 0
     if( EnergyLevel < words(RefVal) ) {
       IsEnergy=1
