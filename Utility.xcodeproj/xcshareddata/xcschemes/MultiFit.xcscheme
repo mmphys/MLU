@@ -63,10 +63,6 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-t 7:14 -i ratio/3pt_lp2/raw/ -o fit/ZV_lp2/ ZV_h447_dt_20_&apos;*&apos;.h5,conSt"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-t 2:18 -i ratio/3pt_lp2/raw/ -o fit/ZV_lp2/ ZV_s_dt_20_&apos;*&apos;.h5,conSt"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -112,23 +108,31 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t 9:18:2:3,9:18:2:3 -i corr/2ptp2/ -o fit/2ptp2/ h447_h447_p2_0_g5P_g5P.&apos;*&apos;.h5,,,n h447_h447_p2_0_g5P_g5W.&apos;*&apos;.h5,1,,,n"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 10:18 -i ratio/sp2/ZV/ -o fit/ZV_sp2/ ZV_l_dt_28_g5P_g5P.fold.1835672416.h5,COnSt"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 7:8 -i ratio/sp2/ZV/ -o fit/ZV_sp2/ ZV_h447_dt_16_g5P_g5P.fold.1835672416.h5,COnSt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-n 100"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--Hotelling 0.005"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-v 1"
+            argument = "-v 2"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--sep=0.05"
@@ -152,7 +156,23 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--opnames"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--delta=1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--tol=1e-10"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--mindof=0"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--analytic"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

@@ -30,6 +30,21 @@
 
 //#define DEBUG_DISABLE_OMP
 
+//#define DUMP_MATRICES
+#ifdef DUMP_MATRICES
+void Dump( const std::string &Name, const Matrix &m )
+{
+  std::cout << Name << Common::Space << m << Common::NewLine;
+}
+
+void Dump( const std::string &Name, const Vector &v )
+{
+  std::cout << Name << Common::Space << v << Common::NewLine;
+}
+#else
+#define Dump( x, y )
+#endif
+
 // Indices for operators in correlator names
 const char * pSrcSnk[] = { "src", "snk" };
 const std::string E{ "E" };
@@ -220,8 +235,24 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput )
       else
       {
         parent.ds.MakeCovariance( idx_, Covar );
+        Dump( "Covariance", Covar );
         // Cholesky decompose the covariance matrix, extracting diagonals for condition number
         Cholesky = Covar.Cholesky( CholeskyDiag );
+        {
+          Dump( "CholeskyDiag", CholeskyDiag );
+          Dump( "Cholesky", Cholesky );
+          Matrix Copy{ Cholesky.size1, Cholesky.size2 };
+          for( int i = 0; i < Cholesky.size1; ++i )
+            for( int j = 0; j <= i; ++j )
+            {
+              Copy( i, j ) = Cholesky( i, j );
+              if( i != j )
+                Copy( j, i ) = 0;
+            }
+          Dump( "L", Copy );
+          Copy.blas_trmm( CblasRight, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
+          Dump( "L L^T", Copy );
+        }
         if( !Cholesky.IsFinite() ) // I don't think this is needed because GSL checks
           throw std::runtime_error( "Cholesky decomposition of covariance matrix isn't finite" );
         if( idx_ == Fold::idxCentral && bShowOutput )
@@ -236,6 +267,8 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput )
         }
         // Allow GSL or Minuit2 to tailor the covariance matrix to their requirements
         MakeCovarCorrelated();
+        Dump( "CholeskyDiag", CholeskyDiag );
+        Dump( "Cholesky", Cholesky );
       }
     }
     // Now get the data for this replica
@@ -256,7 +289,7 @@ void FitterThread::ReplicaMessage( const ParamState &state, int iFitNum ) const
     std::cout << "Stop: " << ( state.gslState.ConvergeReason == 1 ? "step size" : "gradient" )
               << ", f()=" << state.gslState.nevalf << ", df()=" << state.gslState.nevaldf << ", ";
   }
-  std::cout << "dof " << parent.dof << ", chi^2/dof " << ( ChiSq / parent.dof ) << Common::NewLine;
+  std::cout << "dof " << parent.dof << ", chi^2/dof " << ( ChiSq / ( parent.dof ? parent.dof : 1 ) ) << Common::NewLine;
   if( parent.Verbosity > 1 )
     std::cout << state;
   else
@@ -291,25 +324,30 @@ bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::s
 
 bool FitterThread::AnalyticJacobian( Matrix &Jacobian ) const
 {
-  return false;
-  /*for( int i = 0; i < parent.Extent; ++i )
+  int i{0};
+  for( int f = 0; f < parent.NumFiles; ++f )
   {
-    const int f{ i / parent.NtCorr };
-    const int t{ i % parent.NtCorr + parent.tMin };
-    for( int p = 0; p < parent.NumParams; ++p )
+    const Model &m{ *parent.model[f] };
+    const vInt &FitTimes{ parent.ds.FitTimes[f] };
+    for( int t : FitTimes )
     {
-      double z = 1;// TODO: (*model[f]).Derivative( t, p ) * CholeskyDiag[i];
-      if( !std::isfinite( z ) )
-        return false;
-      Jacobian( i, p ) = z;
+      for( int p = 0; p < parent.NumVariable; ++p )
+      {
+        double z = m.Derivative( t, p ) * CholeskyDiag[i];
+        if( !std::isfinite( z ) )
+          return false;
+        Jacobian( i, p ) = z;
+      }
+      ++i;
     }
   }
   if( bCorrelated )
   {
+    Dump( "Jacobian", Jacobian );
     Jacobian.blas_trmm( CblasLeft, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
-    //std::cout << Covar << Common::NewLine << Common::NewLine << Common::NewLine << CovarInv << Common::NewLine;
+    Dump( "Jacobian Scaled", Jacobian );
   }
-  return true;*/
+  return true;
 }
 
 scalar FitterThread::RepeatFit( ParamState &Guess, int MaxGuesses )
@@ -363,13 +401,16 @@ scalar FitterThread::FitOne( const Parameters &parGuess, const std::string &Save
   // Make sure the test statistic is within acceptable bounds
   if( idx == Fold::idxCentral && parent.HotellingCutoff )
   {
-    const scalar qValue{ Common::qValueHotelling( dTestStat, parent.dof, Extent ) };
     std::ostringstream ss;
-    ss << "Hotelling qValue " << qValue;
-    if( qValue < parent.HotellingCutoff )
+    if( !parent.dof )
+      ss << "extrapolation (dof=0)";
+    else
     {
-      ss << " < cutoff " << parent.HotellingCutoff;
-      throw std::runtime_error( ss.str() );
+      const scalar qValue{ Common::qValueHotelling( dTestStat, parent.dof, Extent ) };
+      const bool bOK{ qValue >= parent.HotellingCutoff };
+      ss << "Hotelling qValue "  << qValue << ( bOK ? " >=" : " <" ) << " cutoff " << parent.HotellingCutoff;
+      if( !bOK )
+        throw std::runtime_error( ss.str() );
     }
     std::cout << "OK: " << ss.str() << Common::NewLine;
   }
@@ -397,7 +438,7 @@ scalar FitterThread::FitOne( const Parameters &parGuess, const std::string &Save
   int OutputDataSize{ parent.NumExponents * parent.NumPerExp };
   for( int i = 0; i < parent.NumOneOff; ++i, ++OutputDataSize )
     OutputData[OutputDataSize] = ModelParams[OutputDataSize];
-  OutputData[OutputDataSize++] = dTestStat / parent.dof;
+  OutputData[OutputDataSize++] = dTestStat / ( parent.dof ? parent.dof : 1 );
 
   // Check whether energy levels are separated by minimum separation
   if( idx == Fold::idxCentral && parent.RelEnergySep )
@@ -537,7 +578,9 @@ void FitterThreadGSL::MakeCovarCorrelated()
 {
   // Cholesky gives LL^T, so inverting lower triangle (L) gives L^{-1} in lower triangle
   Cholesky.CholeskyInvert();
+  Dump( "Inverse Covar", Cholesky );
   Cholesky.Cholesky();
+  Dump( "Inverse Covar Cholesky", Cholesky );
 }
 
 int FitterThreadGSL::f( const Vector &FitParams, Vector &Error )
@@ -559,8 +602,6 @@ int FitterThreadGSL::df( const Vector &x, Matrix &J )
   assert( x.size == parent.NumVariable && "Parameter vector is not the right size" );
   assert( J.size1 == Extent && "Jacobian rows != data points" );
   assert( J.size2 == parent.NumVariable && "Parameter columns != parameters" );
-  for( int f = 0; f < parent.NumFiles; f++ )
-    ;// TODO: (*model[f]).Init( x );
   if( !AnalyticJacobian( J ) )
     throw std::runtime_error( "Error computing Jacobian" );
   return 0;
@@ -608,7 +649,8 @@ void FitterThreadGSL::Minimise( ParamState &Guess, int iNumGuesses )
     p.Error = std::sqrt( mErrors( i, i ) );
     p.Value = vResult[i++];
   }
-  if( parent.Verbosity > 1 && !fdf.df && idx == Fold::idxCentral )
+  // TODO: Should I reinstate this? Or is it debugging?
+  /* if( parent.Verbosity > 1 && !fdf.df && idx == Fold::idxCentral )
   {
     // Compare numeric derivatives to the analytic ones I would have computed
     Matrix MyJacobian( parent.ds.Extent, parent.NumVariable );
@@ -616,7 +658,7 @@ void FitterThreadGSL::Minimise( ParamState &Guess, int iNumGuesses )
     std::cout << Common::NewLine << "GSL Jacobian:\n" << mJacobian << Common::NewLine
               << "My Jacobian:\n" << MyJacobian << Common::NewLine;
     MyJacobian.cols(); // Debug breakpoint here
-  }
+  }*/
 }
 
 std::string FitterThreadGSL::Description() const
@@ -634,7 +676,7 @@ std::string FitterThreadGSL::Description() const
 Fitter::Fitter( FitterType fitType_, const DataSet &ds_, const std::vector<std::string> &ModelArgs,
                 const ModelDefaultParams &modelDefault, const std::vector<std::string> &opNames_,
                 int verbosity_, bool bFreezeCovar_, bool bSaveCorr_, bool bSaveCMat_,
-                int Retry_, int MaxIt_, double Tolerance_, double RelEnergySep_, double HotellingCutoff_,
+                int Retry_, int MaxIt_, double Tolerance_, int MinDof_, double RelEnergySep_, double HotellingCutoff_,
                 bool bAnalyticDerivatives_ )
   : fitType{fitType_},
     ds{ std::move( ds_ ) },
@@ -649,6 +691,7 @@ Fitter::Fitter( FitterType fitType_, const DataSet &ds_, const std::vector<std::
     Retry{Retry_},
     MaxIt{MaxIt_},
     Tolerance{Tolerance_},
+    MinDof{MinDof_},
     RelEnergySep{RelEnergySep_},
     HotellingCutoff{HotellingCutoff_},
     NumFiles{ static_cast<int>( ds.corr.size() ) },
@@ -879,8 +922,15 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
 {
   bCorrelated = Bcorrelated;
   dof = ds.Extent - NumVariable;
-  if( dof <= 0 )
-    throw std::runtime_error( "Fit has " + std::to_string( dof ) + " degrees of freedom" );
+  if( dof < MinDof )
+  {
+    std::string Message{};
+    if( dof )
+      Message = "Fit has " + std::to_string( dof ) + " degrees of freedom";
+    else
+      Message = "Fit is an extrapolation (0 degrees of freedom)";
+    throw std::runtime_error( Message );
+  }
   dof_ = dof;
 
   // Make somewhere to store the results of the fit for each bootstrap sample
@@ -1194,6 +1244,7 @@ int main(int argc, const char *argv[])
       {"e", CL::SwitchType::Single, "1"},
       {"n", CL::SwitchType::Single, "0"},
       {"v", CL::SwitchType::Single, "0"},
+      {"mindof", CL::SwitchType::Single, "1"},
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"freeze", CL::SwitchType::Flag, nullptr},
       {"savecorr", CL::SwitchType::Flag, nullptr},
@@ -1213,6 +1264,9 @@ int main(int argc, const char *argv[])
       const int Retry{ cl.SwitchValue<int>("retry") };
       const int MaxIterations{ cl.SwitchValue<int>("iter") }; // Max iteration count, 0=unlimited
       const double Tolerance{ cl.SwitchValue<double>("tol") };
+      const int MinDof{ cl.SwitchValue<int>("mindof") };
+      if( MinDof < 0 )
+        throw std::invalid_argument( "mindof must be >= 0" );
       const int Verbosity{ cl.SwitchValue<int>("v") };
       const std::string inBase{ cl.SwitchValue<std::string>("i") };
       std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
@@ -1347,7 +1401,7 @@ int main(int argc, const char *argv[])
 
       // All the models are loaded
       Fitter m( fitType, ds, ModelArgs, modelDefault, OpName, Verbosity, bFreezeCovar, bSaveCorr, bSaveCMat, Retry,
-                MaxIterations, Tolerance, RelEnergySep, HotellingCutoff, bAnalyticDerivatives );
+                MaxIterations, Tolerance, MinDof, RelEnergySep, HotellingCutoff, bAnalyticDerivatives );
       const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
       std::ofstream s;
       for( FitRangesIterator it = fitRanges.begin(); !it.AtEnd(); ++it )
@@ -1431,11 +1485,12 @@ int main(int argc, const char *argv[])
     "   Param2 'n' to normalise by energy\n"
     "<options> are:\n"
     "--Hotelling Minimum Hotelling Q-value on central replica (default " << DefaultHotelling << ")\n"
-    "--sep  Minimum relative separation between energy levels (default " << DefaultEnergySep << ")\n"
-    "--delta Minimum number of timeslices in fit range (default 3)\n"
-    "--retry Maximum number of times to retry fits (default Minuit2=10, GSL=0)\n"
-    "--iter Max iteration count, 0 (default) = unlimited\n"
-    "--tol  Tolerance of required fits (default 1e-7)\n"
+    "--sep    Minimum relative separation between energy levels (default " << DefaultEnergySep << ")\n"
+    "--delta  Minimum number of timeslices in fit range (default 3)\n"
+    "--retry  Maximum number of times to retry fits (default Minuit2=10, GSL=0)\n"
+    "--iter   Max iteration count, 0 (default) = unlimited\n"
+    "--tol    Tolerance of required fits (default 1e-7)\n"
+    "--mindof Minimum degrees of freedom (default 1)\n"
     "-t     Fit range1[,range2[,...]] (start:stop[:numstart=1[:numstop=numstart]])\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"

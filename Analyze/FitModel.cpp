@@ -144,9 +144,10 @@ public:
 class ModelConstant : public Model
 {
 public:
-  virtual void Construct( vString &Params, const ModelDefaultParams &Default, const Fold &Corr, const vString &OpName );
-  virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const;
-  bool GuessE0( scalar &E0, const Vector &Corr ) const;
+  void Construct( vString &Params, const ModelDefaultParams &Default, const Fold &Corr, const vString &OpName ) override;
+  scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
+  bool GuessE0( scalar &E0, const Vector &Corr ) const override;
+  double Derivative( int t, int p ) const override;
 };
 
 // 2nd phase of construction (now that virtual functions in place)
@@ -358,9 +359,17 @@ void ModelConstant::Construct(vString &Params,const ModelDefaultParams &Default,
 
 bool ModelConstant::GuessE0( scalar &E0, const Vector &Corr ) const
 {
-  const int tGuess{ static_cast<int>( Corr.size / 2 ) };
-  E0 = Corr[tGuess];
+  int tGuess{ 0 };
+  for( E0 = 0; tGuess < Corr.size; ++tGuess )
+    E0 += Corr[tGuess];
+  if( tGuess > 1 )
+    E0 /= tGuess;
   return true;
+}
+
+double ModelConstant::Derivative( int t, int p ) const
+{
+  return p == ParamIdxPerExp[0][0] ? 1 : 0;
 }
 
 scalar ModelConstant::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const

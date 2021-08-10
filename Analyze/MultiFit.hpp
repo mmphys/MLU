@@ -174,6 +174,8 @@ public:
   virtual void ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const {};
   // This is where the actual computation is performed
   virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const = 0;
+  // Partial derivative of the model function on a timeslice with respect to each parameter
+  virtual double Derivative( int t, int p ) const { return 0; }
 };
 
 class Parameters
@@ -341,6 +343,7 @@ public:
   const int Retry;
   const int MaxIt;
   const double Tolerance;
+  const int MinDof;
   const double RelEnergySep;
   const double HotellingCutoff;
   const int NumFiles;
@@ -374,8 +377,8 @@ public:
   explicit Fitter( FitterType fitType, const DataSet &ds_, const std::vector<std::string> &ModelArgs,
                    const ModelDefaultParams &modelDefault, const std::vector<std::string> &opNames_,
                    int Verbosity, bool bFreezeCovar, bool bSaveCorr, bool bSaveCMat,
-                   int Retry, int MaxIt, double Tolerance, double RelEnergySep, double HotellingCutoff,
-                   bool bNumericDerivatives );
+                   int Retry, int MaxIt, double Tolerance, int MinDof, double RelEnergySep, double HotellingCutoff,
+                   bool bAnalyticDerivatives );
   virtual ~Fitter() {}
   std::vector<Common::ValWithEr<scalar>>
   PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName, const std::string &ModelSuffix,
