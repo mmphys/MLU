@@ -1,24 +1,34 @@
 #!/usr/bin/env bash
 
 function Download() {
-  local Location="$1"
-  local Name="$2"
+  local Name="$1"
+  local Location="$2"
   local Zip="$3"
-  if [ "$Zip" == "" ]; then Zip="${Name}.tar.gz"; fi
+  #if [ "$Zip" == "" ]; then Zip="${Name}.tar.gz"; fi
 
-  echo "... Installing $Name"
-  if ! wget $Location/$Zip
-  then
-    # CERN math libraries appear to be offline. Fallback to my copy
-    wget https://www2.ph.ed.ac.uk/~s1786208/$Zip
+  # Download the file from requested location, falling back to my copy if unavailable
+  echo "Installing pre-requisite $Name"
+  if [ -r "$Zip" ]; then
+    echo "  $Zip already installed"
+  else
+    echo "  Downloading $Zip from $Location"
+    if ! wget $Location/$Zip
+    then
+      # If unavailable from primary location, fallback to my copy
+      Location="https://www2.ph.ed.ac.uk/~s1786208"
+      echo "  Downloading $Zip from $Location"
+      if ! wget $Location/$Zip; then return 1; fi
+    fi
   fi
+
+  # Now unzip it
+  tar -xf $Zip
   local val=$?
   if [ $? -ne 0 ]
   then
-    echo "Couldn't download $Name from $Location/$Zip"
+    echo "  Couldn't unzip $Zip"
   else
-    tar -xf $Zip
-    echo "$Name installed"
+    echo "  $Name unzipped"
   fi
   return $val
 }
@@ -29,13 +39,13 @@ set -e
 echo "Meson Lattice Utilities (MLU)"
 if [[ -d .Package ]]
 then
-  echo "Skipping pre-requisites (delete PreReq to reinstall)"
-else
-  echo "Installing Pre-requisites"
-  mkdir .Package
+  echo "Warning: .Package (pre-requisite) directory already exists"
+fi
+  echo "Downloading Pre-requisites"
+  mkdir -p .Package
   cd .Package
-  if Download https://mirror.ibcp.fr/pub/gnu/gsl "GSL v2.7" gsl-2.7.tar.gz \
-    && Download http://www.cern.ch/mathlibs/sw/5_34_14/Minuit2 "Minuit2 v5.34.14" Minuit2-5.34.14.tar.gz
+  if Download "GSL v2.7" https://mirror.ibcp.fr/pub/gnu/gsl gsl-2.7.tar.gz \
+    && Download "Minuit2 v5.34.14" http://www.cern.ch/mathlibs/sw/5_34_14/Minuit2 Minuit2-5.34.14.tar.gz
   then
     echo "Prerequisites installed"
   else
@@ -43,7 +53,6 @@ else
   fi
 
   cd ..
-fi
 
 echo "Generating configure for Meson Lattice Utilities (MLU)"
 autoreconf -fvi
