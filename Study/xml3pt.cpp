@@ -276,15 +276,15 @@ void Study2::Make()
               if( makePar.TwoPoint )
               {
                 bDidSomething = true;
-                l.TakeOwnership( new ModContract2pt( l, tax, *qSpectator, *qH1, p, t ) );
-                l.TakeOwnership( new ModContract2pt( l, tax, *qH1, *qSpectator, p, t ) );
+                l.TakeOwnership( new ModContract2pt( l, tax, *qSpectator, *qH1, p, t, p0, 1 ) );
+                l.TakeOwnership( new ModContract2pt( l, tax, *qH1, *qSpectator, p, t, p0, 1 ) );
                 if( bFirstSpec )
                 {
                   // Additional spectators for 2pt functions only
                   for( const Quark *qSpec2 : SpectatorQuarks2pt )
                   {
-                    l.TakeOwnership( new ModContract2pt( l, tax, *qSpec2, *qH1, p, t ) );
-                    l.TakeOwnership( new ModContract2pt( l, tax, *qH1, *qSpec2, p, t ) );
+                    l.TakeOwnership( new ModContract2pt( l, tax, *qSpec2, *qH1, p, t, p0, 1 ) );
+                    l.TakeOwnership( new ModContract2pt( l, tax, *qH1, *qSpec2, p, t, p0, 1 ) );
                   }
                 }
               }
@@ -347,6 +347,13 @@ void Study3::Setup( XmlReader &r )
   for( const Taxonomy &t : Taxa )
     if( t == Family::GR )
       LOG(Warning) << t << " don't swap the gamma structures at sink and source (18-Feb-2021)" << std::endl;
+  {
+    // Number of hits is optional - because I added this after performing production runs
+    std::vector<int> vHits{ Common::ArrayFromString<int>( makePar.NumHits ) };
+    if( vHits.size() > 1 )
+      throw std::runtime_error( "Number of hits should be a single int" );
+    Taxonomy::NumHits( vHits.empty() ? 1 : vHits[0] );
+  }
   // Check parameters make sense
   //if( !( Run.TwoPoint || Run.HeavyQuark ||Run.HeavyAnti ) )
     //throw std::runtime_error( "At least one must be true of: TwoPoint; HeavyQuark; or HeavyAnti" );
@@ -450,10 +457,13 @@ void Study3::Contract2pt( const Taxonomy &tax, const Quark &q1, const Quark &q2,
                               : bFlavourDiagonal ? idxMomentum + 1 : static_cast<int>( Momenta.size() ) };
   for( int idxMomentum2 = idxMomentumStart; idxMomentum2 < idxMomentumLimit; ++idxMomentum2 )
   {
-    const Common::Momentum &p2{ idxMomentum2 < 0 ? p0 : Momenta[idxMomentum2] };
-    l.TakeOwnership( new ModContract2pt( l, tax, q1, q2, p, t, p2 ) );
-    if( !bFlavourDiagonal )
-      l.TakeOwnership( new ModContract2pt( l, tax, q2, q1, p, t, p2 ) );
+    for( int hit = 1; hit <= tax.NumHits(); ++hit )
+    {
+      const Common::Momentum &p2{ idxMomentum2 < 0 ? p0 : Momenta[idxMomentum2] };
+      l.TakeOwnership( new ModContract2pt( l, tax, q1, q2, p, t, p2, hit ) );
+      if( !bFlavourDiagonal )
+        l.TakeOwnership( new ModContract2pt( l, tax, q2, q1, p, t, p2, hit ) );
+    }
   }
 }
 

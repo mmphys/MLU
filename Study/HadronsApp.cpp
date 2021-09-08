@@ -88,6 +88,7 @@ std::istream& operator>>(std::istream& is, Species &species)
 // Taxonomy
 
 const std::string Taxonomy::HissyFitDefault{ "Invalid Taxonomy" };
+int Taxonomy::numHits{ 1 };
 
 std::istream& operator>>(std::istream& is, Taxonomy &taxonomy)
 {
@@ -208,13 +209,14 @@ void ModSinkSmear::AddDependencies( HModList &ModList ) const
 
 const std::string ModSource::Prefix{ "Source" };
 
-ModSource::ModSource(HModList &ModList, const Taxonomy &tx, const Common::Momentum &p_, int t_)
+ModSource::ModSource(HModList &ModList, const Taxonomy &tx, const Common::Momentum &p_, int t_, int hit_)
 // Silently translate ZF sources into Z2 sources
-: HMod(ModList, tx.family == Family::ZF ? Taxonomy(Family::Z2,tx.species) : tx), p{p_}, t{t_}
+: HMod(ModList, tx.family == Family::ZF ? Taxonomy(Family::Z2,tx.species) : tx), p{p_}, t{t_}, hit{hit_}
 {
   name = Prefix;
   Append( name, tax.FamilyName() );
   AppendPT( name, t, p );
+  tax.AppendHit( name, hit );
 }
 
 void ModSource::AddDependencies( HModList &ModList ) const
@@ -225,7 +227,7 @@ void ModSource::AddDependencies( HModList &ModList ) const
       if( p )
       {
         MSource::MomentumPhase::Par par;
-        par.src = ModList.TakeOwnership( new ModSource( ModList, tax, Common::Momentum(0,0,0), t ) );
+        par.src = ModList.TakeOwnership( new ModSource( ModList, tax, p0, t, hit ) );
         par.mom = p.to_string4d( Common::Space );
         ModList.application.createModule<MSource::MomentumPhase>(name, par);
       }
@@ -464,12 +466,14 @@ void ModSolver::AddDependencies( HModList &ModList ) const
 const std::string ModProp::Prefix{ "Prop" };
 const std::string ModProp::PrefixConserved{ "Ward" };
 
-ModProp::ModProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_, const Common::Momentum &p_, int t_ )
-: HMod( ModList, taxonomy ), q{q_}, p{p_}, t{t_}
+ModProp::ModProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_, const Common::Momentum &p_,
+                  int t_, int hit_ )
+: HMod( ModList, taxonomy ), q{q_}, p{p_}, t{t_}, hit{hit_}
 {
   Suffix = tax.FamilyName();
   Append( Suffix, q.flavour );
   AppendPT( Suffix, t, p );
+  tax.AppendHit( Suffix, hit );
   // Name of the propagator
   name = Prefix;
   Append( name, Suffix );
@@ -478,7 +482,7 @@ ModProp::ModProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_, 
 void ModProp::AddDependencies( HModList &ModList ) const
 {
   MFermion::GaugeProp::Par par;
-  par.source = ModList.TakeOwnership( new ModSource( ModList, tax, p, t ) );
+  par.source = ModList.TakeOwnership( new ModSource( ModList, tax, p, t, hit ) );
   par.solver = ModList.TakeOwnership( new ModSolver( ModList, tax, q ) );
   ModList.application.createModule<MFermion::GaugeProp>(name, par);
   // Check residual mass for zero-momentum propagators
@@ -503,19 +507,21 @@ void ModProp::AddDependencies( HModList &ModList ) const
 
 const std::string ModSlicedProp::Prefix{ "SlicedProp" };
 
-ModSlicedProp::ModSlicedProp( HModList &ML, const Taxonomy &tax_, const Quark &q_, const Common::Momentum &p_, int t_ )
-: HMod( ML, tax_ ), q{q_}, p{p_}, t{t_}
+ModSlicedProp::ModSlicedProp( HModList &ML, const Taxonomy &tax_, const Quark &q_, const Common::Momentum &p_,
+                              int t_, int hit_ )
+: HMod( ML, tax_ ), q{q_}, p{p_}, t{t_}, hit{hit_}
 {
   name = Prefix;
   Append( name, tax.FamilyName() );
   Append( name, q.flavour );
   AppendPT( name, t, p );
+  tax.AppendHit( name, hit );
 }
 
 void ModSlicedProp::AddDependencies( HModList &ModList ) const
 {
   MSink::Smear::Par smearPar;
-  smearPar.q = ModList.TakeOwnership( new ModProp( ModList, tax, q, p, t ) );
+  smearPar.q = ModList.TakeOwnership( new ModProp( ModList, tax, q, p, t, hit ) );
   smearPar.sink = ModList.TakeOwnership( new ModSinkSmear( ModList, tax, -p ) );
   ModList.application.createModule<MSink::Smear>(name, smearPar);
 }
@@ -623,10 +629,10 @@ const std::string ContractionPrefix{ "meson" };
 
 ModContract2pt::ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
                                 const Quark &q1_, const Quark &q2_, const Common::Momentum &p1_, int t_,
-                                const Common::Momentum &p2_ )
+                                const Common::Momentum &p2_, int hit_ )
 // Two-point Region-sinks don't really exist - silently translate to point-sinks
 : HMod(ModList, taxonomy == Species::Region ? Taxonomy(taxonomy.family, Species::Point) : taxonomy),
-q1{q1_}, q2{q2_}, p1{p1_}, t{t_}, p2{p2_}, pSource{p1_ - p2_}
+q1{q1_}, q2{q2_}, p1{p1_}, t{t_}, p2{p2_}, pSource{p1_ - p2_}, hit{hit_}
 {
   std::string Prefix2a( tax.FamilyName() );
   std::string Prefix2b;
@@ -636,6 +642,7 @@ q1{q1_}, q2{q2_}, p1{p1_}, t{t_}, p2{p2_}, pSource{p1_ - p2_}
   AppendPT( s, t, pSource );
   if( p2 )
     AppendP( s, p2, "pq2" );
+  tax.AppendHit( s, hit );
   static const std::string Prefixfamily{ "2pt" };
   FileName = ModList.params.Run.OutputBase;
   FileName.append( Prefixfamily );
@@ -664,13 +671,13 @@ void ModContract2pt::AddDependencies( HModList &ModList ) const
   const bool bWallSink{ tax == Species::Wall };
   if( bWallSink )
   {
-    mesPar.q1 = ModList.TakeOwnership( new ModSlicedProp( ModList, tax, q1, p1, t ) );
-    mesPar.q2 = ModList.TakeOwnership( new ModSlicedProp( ModList, tax, q2, p2, t ) );
+    mesPar.q1 = ModList.TakeOwnership( new ModSlicedProp( ModList, tax, q1, p1, t, hit ) );
+    mesPar.q2 = ModList.TakeOwnership( new ModSlicedProp( ModList, tax, q2, p2, t, hit ) );
   }
   else
   {
-    mesPar.q1 = ModList.TakeOwnership( new ModProp( ModList, tax, q1, p1, t ) );
-    mesPar.q2 = ModList.TakeOwnership( new ModProp( ModList, tax, q2, p2, t ) );
+    mesPar.q1 = ModList.TakeOwnership( new ModProp( ModList, tax, q1, p1, t, hit ) );
+    mesPar.q2 = ModList.TakeOwnership( new ModProp( ModList, tax, q2, p2, t, hit ) );
   }
   mesPar.sink = ModList.TakeOwnership( new ModSink( ModList, tax, bWallSink ? p0 : -pSource ) );
   ModList.application.createModule<MContraction::Meson>(name, mesPar);
