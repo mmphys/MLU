@@ -186,12 +186,11 @@ void CopyTimeSlice( std::complex<double> *&pDst, const std::complex<double> *pSr
     *pDst++  = pSrc[ ( t + TOffset ) % Nt ];
 }
 
-bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, const Iter &last, const TrajList &Traj,
-                                   Algebra Snk, Algebra Src, bool bAlignTimeslices ) const
+bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, const Iter &last,
+                        const TrajList &Traj, Algebra Snk, Algebra Src, bool bAlignTimeslices ) const
 {
   // Factorised 2pt functions with Snk!=Src will have both entries loaded
-  const int OpFactor{ ( !Traj.b3pt && b2ptFactorised && Snk != Src
-                       && !Common::CompareIgnoreCase( Traj.OpSuffixSnk, Traj.OpSuffixSrc ) ) ? 2 : 1 };
+  const int OpFactor{ ( !Traj.b3pt && b2ptFactorised && Snk != Src && Traj.OpSuffiiSame() ) ? 2 : 1 };
   // Count how many input records there are: in total; and per configuration
   int NumSamplesRaw{ 0 };
   std::map<int, int> ConfigCount;
@@ -327,7 +326,7 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
   Common::SampleC out( nSample, first->Nt() );
   for( int Snk = 0; Snk < SinkAlgebra.size(); Snk++ )
   {
-    const int UpperLimit{ !Traj.b3pt && b2ptFactorised && !Common::CompareIgnoreCase( Traj.OpSuffixSnk, Traj.OpSuffixSrc )
+    const int UpperLimit{ !Traj.b3pt && b2ptFactorised && Traj.OpSuffiiSame()
                           ? Snk + 1 : static_cast<int>( SourceAlgebra.size() ) };
     for( int Src = 0; Src < UpperLimit; Src++ )
     {

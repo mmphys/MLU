@@ -114,6 +114,7 @@ struct TrajList
            const std::string &opSuffixSnk_, const std::string &opSuffixSrc_,
            bool brev_, Common::Gamma::Algebra Alg3pt_, int DeltaT_ )
   : TrajList( Name_, sShortPrefix_, sShortSuffix_, opSuffixSnk_, opSuffixSrc_, true, brev_, Alg3pt_, DeltaT_ ) {}*/
+  bool OpSuffiiSame() const { return Common::EqualIgnoreCase( OpSuffixSnk, OpSuffixSrc ); }
 };
 
 class BootstrapParams

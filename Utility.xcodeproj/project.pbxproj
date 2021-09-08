@@ -14,6 +14,7 @@
 		6804C193244C78C8008E272B /* Test_hadrons_meson_3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C185244C7864008E272B /* Test_hadrons_meson_3pt.cpp */; };
 		68068AA525C3170800B8699F /* WardIdentity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68068AA325C3170800B8699F /* WardIdentity.cpp */; };
 		68068AA625C3170800B8699F /* WardIdentity.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68068AA425C3170800B8699F /* WardIdentity.hpp */; };
+		680807D626DE5E1000AB6A5D /* Example_Mobius_spectrum.cc in Sources */ = {isa = PBXBuildFile; fileRef = 680807CA26DE5DBD00AB6A5D /* Example_Mobius_spectrum.cc */; };
 		680910A9265572DE0026D072 /* Minimal_Grid_Bench_stagF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6809109D265572920026D072 /* Minimal_Grid_Bench_stagF.cc */; };
 		68093A2824B8B1670019148E /* FieldIo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68093A2724B8B1670019148E /* FieldIo.hpp */; };
 		68093A2B24B8B18D0019148E /* RandomField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68093A2924B8B18D0019148E /* RandomField.hpp */; };
@@ -55,6 +56,7 @@
 		683AD4A0268463D200D65392 /* CGNE.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 683AD49C268463D100D65392 /* CGNE.hpp */; };
 		683AD4A1268463D200D65392 /* ImplicitlyRestartedLanczos.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 683AD49D268463D100D65392 /* ImplicitlyRestartedLanczos.hpp */; };
 		683B2B3325D2E8E800FF304F /* Common.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6889D90225D2BBC5004F15CE /* Common.hpp */; };
+		6843319426D3EE25008B79C3 /* BaseIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68C14B90267B37590069C1EE /* BaseIO.cc */; };
 		6848923825D2D79B00307714 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6850CEA4244A1C3100A53DC8 /* Cartesian_base.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CA28244A1C2F00A53DC8 /* Cartesian_base.h */; };
 		6850CEA5244A1C3100A53DC8 /* Cartesian_full.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CA29244A1C2F00A53DC8 /* Cartesian_full.h */; };
@@ -1224,6 +1226,9 @@
 		68703F0D25D3033F00D1BA61 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6870690D26960B87003F5888 /* Divide.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6870690026960B2C003F5888 /* Divide.cpp */; };
 		687588BB2499501900E38728 /* Test_hadrons_spectrum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C182244C7863008E272B /* Test_hadrons_spectrum.cpp */; };
+		6875E1A226D51531004EF750 /* Example_Laplacian_smearing.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6875E17F26D51303004EF750 /* Example_Laplacian_smearing.cc */; };
+		6875E1A326D51541004EF750 /* Example_Laplacian_solver.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6875E18026D51303004EF750 /* Example_Laplacian_solver.cc */; };
+		6875E1A426D5154C004EF750 /* Example_Laplacian.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6875E17D26D51303004EF750 /* Example_Laplacian.cc */; };
 		687726942466C49E00D46AEF /* Debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687726872466C32D00D46AEF /* Debug.cpp */; };
 		687A730B256FA9C800A573A9 /* WilsonFlow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687A7309256FA9C800A573A9 /* WilsonFlow.cpp */; };
 		687A730C256FA9C800A573A9 /* WilsonFlow.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687A730A256FA9C800A573A9 /* WilsonFlow.hpp */; };
@@ -1248,7 +1253,6 @@
 		68BCBEC725CB13900064FE91 /* SeqGammaRegion.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68BCBEC525CB13900064FE91 /* SeqGammaRegion.cpp */; };
 		68BCBEC825CB13900064FE91 /* SeqGammaRegion.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68BCBEC625CB13900064FE91 /* SeqGammaRegion.hpp */; };
 		68BDB468263411900042E2A2 /* HadronsApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86B026340F5D002CAE0F /* HadronsApp.cpp */; };
-		68C14B91267B37590069C1EE /* BaseIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68C14B90267B37590069C1EE /* BaseIO.cc */; };
 		68CEF13D24AA72B400A841F9 /* BaryonGamma3pt.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */; };
 		68CEF13E24AA72B400A841F9 /* BaryonGamma3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */; };
 		68D0E9CD24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */; };
@@ -1275,6 +1279,15 @@
 
 /* Begin PBXCopyFilesBuildPhase section */
 		6804C18A244C78AF008E272B /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		680807CD26DE5DDE00AB6A5D /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -1418,6 +1431,33 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		6875E18326D514D9004EF750 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		6875E18E26D51502004EF750 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		6875E19926D51517004EF750 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		6877268B2466C48000D46AEF /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1542,6 +1582,8 @@
 		680566CE24991A2000478344 /* Test_database.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test_database.cpp; path = ../Hadrons/tests/Test_database.cpp; sourceTree = "<group>"; };
 		68068AA325C3170800B8699F /* WardIdentity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WardIdentity.cpp; sourceTree = "<group>"; };
 		68068AA425C3170800B8699F /* WardIdentity.hpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.cpp.h; path = WardIdentity.hpp; sourceTree = "<group>"; };
+		680807CA26DE5DBD00AB6A5D /* Example_Mobius_spectrum.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Example_Mobius_spectrum.cc; sourceTree = "<group>"; };
+		680807CF26DE5DDE00AB6A5D /* Example_Mobius_spectrum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Example_Mobius_spectrum; sourceTree = BUILT_PRODUCTS_DIR; };
 		6809109D265572920026D072 /* Minimal_Grid_Bench_stagF.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Minimal_Grid_Bench_stagF.cc; sourceTree = "<group>"; };
 		680910A2265572AB0026D072 /* Minimal */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Minimal; sourceTree = BUILT_PRODUCTS_DIR; };
 		68091C5325F7954500BEC976 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
@@ -2884,6 +2926,13 @@
 		6870690126960B2C003F5888 /* Divide.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Divide.hpp; sourceTree = "<group>"; };
 		6870690626960B4E003F5888 /* Divide */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Divide; sourceTree = BUILT_PRODUCTS_DIR; };
 		687588B42499500100E38728 /* Test_hadrons_spectrum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_hadrons_spectrum; sourceTree = BUILT_PRODUCTS_DIR; };
+		6875E17D26D51303004EF750 /* Example_Laplacian.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Example_Laplacian.cc; sourceTree = "<group>"; };
+		6875E17E26D51303004EF750 /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
+		6875E17F26D51303004EF750 /* Example_Laplacian_smearing.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Example_Laplacian_smearing.cc; sourceTree = "<group>"; };
+		6875E18026D51303004EF750 /* Example_Laplacian_solver.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Example_Laplacian_solver.cc; sourceTree = "<group>"; };
+		6875E18526D514D9004EF750 /* Example_Laplacian */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Example_Laplacian; sourceTree = BUILT_PRODUCTS_DIR; };
+		6875E19026D51502004EF750 /* Example_Laplacian_smearing */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Example_Laplacian_smearing; sourceTree = BUILT_PRODUCTS_DIR; };
+		6875E19B26D51517004EF750 /* Example_Laplacian_solver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Example_Laplacian_solver; sourceTree = BUILT_PRODUCTS_DIR; };
 		687726872466C32D00D46AEF /* Debug.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Debug.cpp; sourceTree = "<group>"; };
 		6877268D2466C48000D46AEF /* Debug */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Debug; sourceTree = BUILT_PRODUCTS_DIR; };
 		687A7309256FA9C800A573A9 /* WilsonFlow.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFlow.cpp; sourceTree = "<group>"; };
@@ -2975,6 +3024,13 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		6804C189244C78AF008E272B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		680807CC26DE5DDE00AB6A5D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -3104,6 +3160,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		687588B12499500100E38728 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6875E18226D514D9004EF750 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6875E18D26D51502004EF750 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6875E19826D51517004EF750 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -3329,6 +3406,10 @@
 				680910A2265572AB0026D072 /* Minimal */,
 				683A002326626B1000A532A2 /* TensorDemo */,
 				6870690626960B4E003F5888 /* Divide */,
+				6875E18526D514D9004EF750 /* Example_Laplacian */,
+				6875E19026D51502004EF750 /* Example_Laplacian_smearing */,
+				6875E19B26D51517004EF750 /* Example_Laplacian_solver */,
+				680807CF26DE5DDE00AB6A5D /* Example_Mobius_spectrum */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -3369,11 +3450,25 @@
 				6850CE86244A1C3100A53DC8 /* allocator */,
 				6850CA27244A1C2F00A53DC8 /* cartesian */,
 				6850CBF9244A1C3000A53DC8 /* communicator */,
+				6850CC32244A1C3000A53DC8 /* Config.h.in */,
 				6850CC34244A1C3000A53DC8 /* cshift */,
+				6850CA34244A1C2F00A53DC8 /* DisableWarnings.h */,
 				6850CC39244A1C3000A53DC8 /* Eigen */,
+				6850CA35244A1C2F00A53DC8 /* Eigen.inc */,
+				6875E17C26D51303004EF750 /* examples */,
+				6850CE91244A1C3100A53DC8 /* Grid_Eigen_Dense.h */,
+				6850CA2D244A1C2F00A53DC8 /* Grid_Eigen_Tensor.h */,
+				6850CE62244A1C3000A53DC8 /* Grid.h */,
+				6850CE92244A1C3100A53DC8 /* GridCore.h */,
+				6850CA2C244A1C2F00A53DC8 /* GridQCDcore.h */,
+				6850CE85244A1C3000A53DC8 /* GridStd.h */,
 				6850CE80244A1C3000A53DC8 /* json */,
 				6850CE64244A1C3000A53DC8 /* lattice */,
 				6850CE89244A1C3100A53DC8 /* log */,
+				6850CA4A244A1C2F00A53DC8 /* Make.inc */,
+				6850CE63244A1C3000A53DC8 /* Makefile.am */,
+				6850CE93244A1C3100A53DC8 /* Makefile.in */,
+				6850CC33244A1C3000A53DC8 /* Namespace.h */,
 				6850CE79244A1C3000A53DC8 /* parallelIO */,
 				6850CA2E244A1C2F00A53DC8 /* perfmon */,
 				6850CE8C244A1C3100A53DC8 /* pugixml */,
@@ -3385,19 +3480,6 @@
 				6850CC03244A1C3000A53DC8 /* tensors */,
 				6850CE82244A1C3000A53DC8 /* threads */,
 				6850CA39244A1C2F00A53DC8 /* util */,
-				6850CC32244A1C3000A53DC8 /* Config.h.in */,
-				6850CA34244A1C2F00A53DC8 /* DisableWarnings.h */,
-				6850CA35244A1C2F00A53DC8 /* Eigen.inc */,
-				6850CE91244A1C3100A53DC8 /* Grid_Eigen_Dense.h */,
-				6850CA2D244A1C2F00A53DC8 /* Grid_Eigen_Tensor.h */,
-				6850CE62244A1C3000A53DC8 /* Grid.h */,
-				6850CE92244A1C3100A53DC8 /* GridCore.h */,
-				6850CA2C244A1C2F00A53DC8 /* GridQCDcore.h */,
-				6850CE85244A1C3000A53DC8 /* GridStd.h */,
-				6850CA4A244A1C2F00A53DC8 /* Make.inc */,
-				6850CE63244A1C3000A53DC8 /* Makefile.am */,
-				6850CE93244A1C3100A53DC8 /* Makefile.in */,
-				6850CC33244A1C3000A53DC8 /* Namespace.h */,
 			);
 			name = Grid;
 			path = ../Grid/Grid;
@@ -5845,6 +5927,19 @@
 			path = MIO;
 			sourceTree = "<group>";
 		};
+		6875E17C26D51303004EF750 /* examples */ = {
+			isa = PBXGroup;
+			children = (
+				6875E17F26D51303004EF750 /* Example_Laplacian_smearing.cc */,
+				6875E18026D51303004EF750 /* Example_Laplacian_solver.cc */,
+				6875E17D26D51303004EF750 /* Example_Laplacian.cc */,
+				680807CA26DE5DBD00AB6A5D /* Example_Mobius_spectrum.cc */,
+				6875E17E26D51303004EF750 /* Makefile.am */,
+			);
+			name = examples;
+			path = ../examples;
+			sourceTree = "<group>";
+		};
 		687D86A126340F5D002CAE0F /* Study */ = {
 			isa = PBXGroup;
 			children = (
@@ -6879,6 +6974,23 @@
 			productReference = 6804C18C244C78AF008E272B /* Test_hadrons_meson_3pt */;
 			productType = "com.apple.product-type.tool";
 		};
+		680807CE26DE5DDE00AB6A5D /* Example_Mobius_spectrum */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 680807D326DE5DDE00AB6A5D /* Build configuration list for PBXNativeTarget "Example_Mobius_spectrum" */;
+			buildPhases = (
+				680807CB26DE5DDE00AB6A5D /* Sources */,
+				680807CC26DE5DDE00AB6A5D /* Frameworks */,
+				680807CD26DE5DDE00AB6A5D /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Example_Mobius_spectrum;
+			productName = Example_Mobius_spectrum;
+			productReference = 680807CF26DE5DDE00AB6A5D /* Example_Mobius_spectrum */;
+			productType = "com.apple.product-type.tool";
+		};
 		680910A1265572AB0026D072 /* Minimal */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 680910A6265572AB0026D072 /* Build configuration list for PBXNativeTarget "Minimal" */;
@@ -7168,6 +7280,57 @@
 			productReference = 687588B42499500100E38728 /* Test_hadrons_spectrum */;
 			productType = "com.apple.product-type.tool";
 		};
+		6875E18426D514D9004EF750 /* Example_Laplacian */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6875E18926D514D9004EF750 /* Build configuration list for PBXNativeTarget "Example_Laplacian" */;
+			buildPhases = (
+				6875E18126D514D9004EF750 /* Sources */,
+				6875E18226D514D9004EF750 /* Frameworks */,
+				6875E18326D514D9004EF750 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Example_Laplacian;
+			productName = Example_Laplacian;
+			productReference = 6875E18526D514D9004EF750 /* Example_Laplacian */;
+			productType = "com.apple.product-type.tool";
+		};
+		6875E18F26D51502004EF750 /* Example_Laplacian_smearing */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6875E19426D51502004EF750 /* Build configuration list for PBXNativeTarget "Example_Laplacian_smearing" */;
+			buildPhases = (
+				6875E18C26D51502004EF750 /* Sources */,
+				6875E18D26D51502004EF750 /* Frameworks */,
+				6875E18E26D51502004EF750 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Example_Laplacian_smearing;
+			productName = Example_Laplacian_smearing;
+			productReference = 6875E19026D51502004EF750 /* Example_Laplacian_smearing */;
+			productType = "com.apple.product-type.tool";
+		};
+		6875E19A26D51517004EF750 /* Example_Laplacian_solver */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6875E19F26D51517004EF750 /* Build configuration list for PBXNativeTarget "Example_Laplacian_solver" */;
+			buildPhases = (
+				6875E19726D51517004EF750 /* Sources */,
+				6875E19826D51517004EF750 /* Frameworks */,
+				6875E19926D51517004EF750 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Example_Laplacian_solver;
+			productName = Example_Laplacian_solver;
+			productReference = 6875E19B26D51517004EF750 /* Example_Laplacian_solver */;
+			productType = "com.apple.product-type.tool";
+		};
 		6877268C2466C48000D46AEF /* Debug */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 687726912466C48000D46AEF /* Build configuration list for PBXNativeTarget "Debug" */;
@@ -7402,6 +7565,9 @@
 					6804C18B244C78AF008E272B = {
 						CreatedOnToolsVersion = 11.4.1;
 					};
+					680807CE26DE5DDE00AB6A5D = {
+						CreatedOnToolsVersion = 12.5.1;
+					};
 					680910A1265572AB0026D072 = {
 						CreatedOnToolsVersion = 12.5;
 					};
@@ -7452,6 +7618,15 @@
 					};
 					687588B32499500100E38728 = {
 						CreatedOnToolsVersion = 11.5;
+					};
+					6875E18426D514D9004EF750 = {
+						CreatedOnToolsVersion = 12.5.1;
+					};
+					6875E18F26D51502004EF750 = {
+						CreatedOnToolsVersion = 12.5.1;
+					};
+					6875E19A26D51517004EF750 = {
+						CreatedOnToolsVersion = 12.5.1;
 					};
 					6877268C2466C48000D46AEF = {
 						CreatedOnToolsVersion = 11.4.1;
@@ -7534,6 +7709,10 @@
 				680910A1265572AB0026D072 /* Minimal */,
 				683A002226626B1000A532A2 /* TensorDemo */,
 				6870690526960B4E003F5888 /* Divide */,
+				6875E18426D514D9004EF750 /* Example_Laplacian */,
+				6875E18F26D51502004EF750 /* Example_Laplacian_smearing */,
+				6875E19A26D51517004EF750 /* Example_Laplacian_solver */,
+				680807CE26DE5DDE00AB6A5D /* Example_Mobius_spectrum */,
 			);
 		};
 /* End PBXProject section */
@@ -7544,6 +7723,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				6804C193244C78C8008E272B /* Test_hadrons_meson_3pt.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		680807CB26DE5DDE00AB6A5D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				680807D626DE5E1000AB6A5D /* Example_Mobius_spectrum.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7731,7 +7918,7 @@
 				6850CF3B244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplD.cc in Sources */,
 				6850CF93244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplDF.cc in Sources */,
 				6850CF64244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplD.cc in Sources */,
-				68C14B91267B37590069C1EE /* BaseIO.cc in Sources */,
+				6843319426D3EE25008B79C3 /* BaseIO.cc in Sources */,
 				6850CEDB244A1C3100A53DC8 /* Gamma.cc in Sources */,
 				6850CF7B244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplF.cc in Sources */,
 				6850CEDA244A1C3100A53DC8 /* SpaceTimeGrid.cc in Sources */,
@@ -7981,6 +8168,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6875E18126D514D9004EF750 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6875E1A426D5154C004EF750 /* Example_Laplacian.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6875E18C26D51502004EF750 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6875E1A226D51531004EF750 /* Example_Laplacian_smearing.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6875E19726D51517004EF750 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6875E1A326D51541004EF750 /* Example_Laplacian_solver.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		687726892466C48000D46AEF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -8102,6 +8313,20 @@
 			};
 			name = Release;
 		};
+		680807D426DE5DDE00AB6A5D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		680807D526DE5DDE00AB6A5D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		680910A7265572AB0026D072 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -8192,7 +8417,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -8300,7 +8525,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -8635,6 +8860,48 @@
 			};
 			name = Release;
 		};
+		6875E18A26D514D9004EF750 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		6875E18B26D514D9004EF750 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		6875E19526D51502004EF750 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		6875E19626D51502004EF750 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		6875E1A026D51517004EF750 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		6875E1A126D51517004EF750 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		687726922466C48000D46AEF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -8863,6 +9130,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		680807D326DE5DDE00AB6A5D /* Build configuration list for PBXNativeTarget "Example_Mobius_spectrum" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				680807D426DE5DDE00AB6A5D /* Debug */,
+				680807D526DE5DDE00AB6A5D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		680910A6265572AB0026D072 /* Build configuration list for PBXNativeTarget "Minimal" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -9021,6 +9297,33 @@
 			buildConfigurations = (
 				687588B82499500100E38728 /* Debug */,
 				687588B92499500100E38728 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6875E18926D514D9004EF750 /* Build configuration list for PBXNativeTarget "Example_Laplacian" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6875E18A26D514D9004EF750 /* Debug */,
+				6875E18B26D514D9004EF750 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6875E19426D51502004EF750 /* Build configuration list for PBXNativeTarget "Example_Laplacian_smearing" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6875E19526D51502004EF750 /* Debug */,
+				6875E19626D51502004EF750 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6875E19F26D51517004EF750 /* Build configuration list for PBXNativeTarget "Example_Laplacian_solver" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6875E1A026D51517004EF750 /* Debug */,
+				6875E1A126D51517004EF750 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
