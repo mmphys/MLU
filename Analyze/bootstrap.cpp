@@ -281,12 +281,12 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
   }
 
   // Now Bin the data
-  if( binAuto && out.ConfigCount.size() > 1 )
+  //if( binAuto && out.ConfigCount.size() > 1 ) out.Bin();
+  //else out.Bin( ( binAuto ? 1 : binSize ) * OpFactor );
+  if( binAuto )
     out.Bin();
   else
-  {
-    out.Bin( ( binAuto ? 1 : binSize ) * OpFactor );
-  }
+    out.Bin( binSize * OpFactor );
   return true;
 }
 

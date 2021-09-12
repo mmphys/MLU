@@ -1523,6 +1523,8 @@ inline std::ostream & operator<<( std::ostream &os, const FoldProp &f )
 // Traits for samples
 // SampleTraits<ST>::value is true for supported types (floating point and complex)
 template<typename ST, typename V = void> struct SampleTraits : public std::false_type{};
+
+// Traits for floating point types: float; double; long double
 template<typename ST> struct SampleTraits<ST, typename std::enable_if<std::is_floating_point<ST>::value>::type> : public std::true_type
 {
   using scalar_type = ST;
@@ -1531,6 +1533,8 @@ template<typename ST> struct SampleTraits<ST, typename std::enable_if<std::is_fl
   static inline scalar_type * ScalarPtr( ST * p ) { return p; };
   static inline const scalar_type * ScalarPtr( const ST * p ) { return p; };
 };
+
+// Traits for std::complex<ST> types
 template<typename ST> struct SampleTraits<std::complex<ST>, typename std::enable_if<SampleTraits<ST>::value>::type> : public std::true_type
 {
   using scalar_type = typename SampleTraits<ST>::scalar_type;
@@ -2493,7 +2497,7 @@ template <typename U> void Sample<T>::CopyAttributes( const Sample<U> &in )
     m_pRandNum.reset( nullptr );
 }
 
-// Auto bin based on config count
+// Auto bin: all measurements on each config binned into a single measurement
 template <typename T> void Sample<T>::Bin()
 {
   if( !NumSamplesRaw_ )
@@ -2504,8 +2508,8 @@ template <typename T> void Sample<T>::Bin()
   if( NumSamplesRaw != NumSamplesRaw_ )
     throw std::runtime_error( "ConfigCount doesn't match raw data" );
   SampleSize = static_cast<int>( ConfigCount.size() );
-  std::complex<double> * pDst = resizeBinned( SampleSize );
-  const std::complex<double> * pSrc = getRaw();
+  T * pDst = resizeBinned( SampleSize );
+  const T * pSrc = getRaw();
   binSize = ConfigCount[0].Count;
   for( const Common::ConfigCount &cc : ConfigCount )
   {
@@ -2531,14 +2535,14 @@ template <typename T> void Sample<T>::Bin( int binSize_ )
   binSize = binSize_;
   const bool PartialLastBin = NumSamplesRaw_ % binSize;
   SampleSize = NumSamplesRaw_ / binSize + ( PartialLastBin ? 1 : 0 );
-  std::complex<double> * pDst = resizeBinned( SampleSize );
-  const std::complex<double> * pSrc = getRaw();
+  T * pDst = resizeBinned( SampleSize );
+  const T * pSrc = getRaw();
   for( int Bin = 0; Bin < SampleSize; ++Bin )
   {
     for( int t = 0; t < Nt_; ++t )
       pDst[t] = *pSrc++;
-    int ThisBinSize = 1;
-    for( ; ThisBinSize < binSize; ++ThisBinSize )
+    const int ThisBinSize{ PartialLastBin && Bin == ( SampleSize - 1 ) ? NumSamplesRaw_ % binSize : binSize };
+    for( int i = 1; i < ThisBinSize; ++i )
       for( int t = 0; t < Nt_; ++t )
         pDst[t] += *pSrc++;
     for( int t = 0; t < Nt_; ++t )
