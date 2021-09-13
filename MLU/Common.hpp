@@ -2128,6 +2128,7 @@ public:
   std::vector<Common::ConfigCount> ConfigCount; // Info on every config in the bootstrap in order
   std::vector<std::string> FileList; // Info on every config in the bootstrap in order
   inline int NumSamples() const { return NumSamples_; }
+  inline int GetNumExtraSamples() const { return NumExtraSamples; }
   inline int NumSamplesRaw() const { return NumSamplesRaw_; }
   inline int NumSamplesBinned() const { return NumSamplesBinned_; }
   inline int Nt() const { return Nt_; }
@@ -2242,6 +2243,7 @@ public:
       AuxNames.clear();
   }
   inline T * getRaw() { return m_pDataRaw.get(); }
+  const inline T * getRaw() const { return m_pDataRaw.get(); }
   T * resizeRaw( int NumSamplesRaw )
   {
     if( !NumSamplesRaw )
@@ -2256,6 +2258,7 @@ public:
     return m_pDataRaw.get();
   }
   inline T * getBinned() { return m_pDataBinned.get(); }
+  const inline T * getBinned() const { return m_pDataBinned.get(); }
   T * resizeBinned( int NumSamplesBinned )
   {
     if( !NumSamplesBinned )

@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$HOME/data/Study3/M1/analyse/h447/corr"
+      customWorkingDirectory = "$PROJECT_DIR/run"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -53,15 +53,23 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "Ward/PJ5q_GF_h447_p_0_0_0.fold.1835672416.h5"
+            argument = "-i boot/t_0/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "2pt/h447_h447_p_0_0_0_g5P_g5W.fold.1835672416.h5"
+            argument = "-v g5W=32"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "mres/GF_h447_P"
+            argument = "-o divide/t_0/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;*&apos;.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-f"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

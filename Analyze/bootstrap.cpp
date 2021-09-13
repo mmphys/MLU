@@ -968,13 +968,12 @@ int main(const int argc, const char *argv[])
       {"x", CL::SwitchType::Multiple, nullptr},
       {"f", CL::SwitchType::Flag, nullptr},
       {"w", CL::SwitchType::Flag, nullptr},
-      {"ci",CL::SwitchType::Flag, nullptr},
+      {"s", CL::SwitchType::Flag, nullptr},
       {"p2",CL::SwitchType::Flag, nullptr},
       {"pa",CL::SwitchType::Flag, nullptr},
       {"pignore",CL::SwitchType::Single, DefaultIgnoreMomenta},
-      {"s", CL::SwitchType::Flag, nullptr},
       {"show", CL::SwitchType::Flag, nullptr},
-      {"sort", CL::SwitchType::Flag, nullptr},
+      //{"sort", CL::SwitchType::Flag, nullptr},
       {"ssre", CL::SwitchType::Single, DefaultERE },
       {"terse", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -1024,13 +1023,13 @@ int main(const int argc, const char *argv[])
     "-c     list of gamma algebras for current insertion         (Enable 3-pt mode)\n"
     "-g     Group name to read correlators from\n"
     "-d     DataSet name to read correlators from\n"
-    "-s     Perform bootstrap for specified study number\n"
     "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
     "-f     Disable Factorising operators, e.g. g5-gT5 same as gT5-g5 (2pt only)\n"
     "-w     Warn only if file exists. Default=error\n"
+    "-s     Perform bootstrap for specified study numbers\n"
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"
     "--pignore List of momenta to ignore (default: " << DefaultIgnoreMomenta << ")\n"

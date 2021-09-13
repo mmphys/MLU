@@ -712,6 +712,12 @@ void FileNameAtt::ParseShort( const std::vector<std::string> * pIgnoreMomenta )
   // Extract other attributes from filename
   ExtractTimeslice( BaseShort, bGotTimeslice, Timeslice );
   ExtractDeltaT( BaseShort, bGotDeltaT, DeltaT );
+  {
+    // Remove hit info from the filename, but no need to expose it
+    bool bHasHit = false;
+    int Hit = 0;
+    ExtractInteger( BaseShort, bHasHit, Hit, "[hH][iI][tT]" );
+  }
   Gamma.clear();
   Gamma = ExtractGamma( BaseShort );
 }
