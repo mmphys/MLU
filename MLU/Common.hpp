@@ -1180,15 +1180,22 @@ struct FileNameAtt
     std::swap( Gamma, o.Gamma );
   }
   void Parse( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr,
-              const std::vector<std::string> * pIgnoreMomenta = nullptr );
-  std::vector<std::string> ParseOpNames( int NumOps = 2, const std::vector<std::string> * pIgnoreMomenta = nullptr );
+              const std::vector<std::string> * pIgnoreMomenta = nullptr,
+              const std::vector<std::string> * pIgnoreRegEx = nullptr );
+  std::vector<std::string> ParseOpNames( int NumOps = 2,
+                                         const std::vector<std::string> * pIgnoreMomenta = nullptr,
+                                         const std::vector<std::string> * pIgnoreRegEx = nullptr );
   void ParseOpNames( std::vector<std::string> &OpNames, int NumOps = 2,
-                     const std::vector<std::string> * pIgnoreMomenta = nullptr );
+                     const std::vector<std::string> * pIgnoreMomenta = nullptr,
+                     const std::vector<std::string> * pIgnoreRegEx = nullptr );
   FileNameAtt() = default;
   explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr,
-                        const std::vector<std::string> * pIgnoreMomenta = nullptr )
-    { Parse( Filename, pOpNames, pIgnoreMomenta ); }
-  void ParseExtra( unsigned int MaxElements = UINT_MAX, const std::vector<std::string> * pIgnoreMomenta = nullptr );
+                        const std::vector<std::string> * pIgnoreMomenta = nullptr,
+                        const std::vector<std::string> * pIgnoreRegEx = nullptr )
+    { Parse( Filename, pOpNames, pIgnoreMomenta, pIgnoreRegEx ); }
+  void ParseExtra( unsigned int MaxElements = UINT_MAX,
+                   const std::vector<std::string> * pIgnoreMomenta = nullptr,
+                   const std::vector<std::string> * pIgnoreRegEx = nullptr );
   // Append the extra info to the string
   void AppendExtra( std::string &s, int Last = 0, int First = -1 ) const;
   std::string GetBaseExtra( int Last = 0, int First = -1 ) const;
@@ -1201,7 +1208,8 @@ struct FileNameAtt
   void AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const;
   void AppendMomentum( std::string &s, const FileNameMomentum &fnp )const{AppendMomentum( s, fnp, fnp.Name );}
 protected:
-  void ParseShort( const std::vector<std::string> * pIgnoreMomenta ); // Should work out how to do this better
+  void ParseShort( const std::vector<std::string> * pIgnoreMomenta, // Should work out how to do this better
+                   const std::vector<std::string> * pIgnoreRegEx = nullptr );
 };
 
 inline void swap( FileNameAtt &l, FileNameAtt &r )
@@ -4031,7 +4039,7 @@ struct CommandLine {
   SwitchMap                Switches;
   
 private:
-  static void SkipPastSep( const char * & p );
+  static bool IsValuePresent( const char * & p );
   
 public:
   void Parse( int argc, const char *argv[], const std::vector<SwitchDef> &defs );

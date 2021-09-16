@@ -164,6 +164,7 @@ struct Manifest : public std::map<std::string, TrajList>
   const std::string DefaultGroup;
   const std::string DefaultDataSet;
   const std::vector<std::string> vIgnoreMomenta;
+  const std::vector<std::string> vIgnoreRegEx;
   std::vector<Algebra> AlgSource;  // Also the sink algebra for two-point functions. Empty=wildcard, loaded from first file
 protected:
   std::vector<Algebra> AlgCurrentLoad; // These are the current algebra to load. Gammai removed and Gamma X, Y & Z added

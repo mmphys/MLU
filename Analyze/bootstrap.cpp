@@ -674,10 +674,12 @@ Manifest::Manifest( const Common::CommandLine &cl, const BootstrapParams &par_ )
   DefaultGroup{ cl.SwitchValue<std::string>( "g" ) },
   DefaultDataSet{ cl.SwitchValue<std::string>( "d" ) },
   vIgnoreMomenta{ Common::ArrayFromString( cl.SwitchValue<std::string>("pignore") ) },
+  vIgnoreRegEx{ Common::ArrayFromString( cl.SwitchValue<std::string>("ignore") ) },
   AlgSource{ Common::ArrayFromString<Algebra>( cl.SwitchValue<std::string>( "a" ) ) },
   AlgCurrent{ GetCurrentAlgebra( cl ) }
 {
   Common::NoDuplicates( vIgnoreMomenta, "Ignored momenta", 0 );
+  Common::NoDuplicates( vIgnoreRegEx, "Ignored regular expressions", 0 );
   Common::NoDuplicates( AlgSource, "Source algebra", 0 );
   for( Algebra a : AlgCurrent )
   {
@@ -758,7 +760,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
     else
     {
       // Parse the name. Not expecting a type, so if present, put it back on the end of Base
-      Common::FileNameAtt Name_{ Filename, nullptr, &vIgnoreMomenta };
+      Common::FileNameAtt Name_{ Filename, nullptr, &vIgnoreMomenta, &vIgnoreRegEx };
       if( !Name_.bSeedNum )
         throw std::runtime_error( "Contraction files must contain a configuration number" );
       if( !Name_.Type.empty() )
@@ -943,6 +945,7 @@ bool Manifest::RunManifest()
 int main(const int argc, const char *argv[])
 {
   static const char DefaultERE[]{ R"(^([PWpw])([PWpw])_)" };
+  static const char DefaultIgnore[]{ "[hH][iI][tT]_[^_]+" };
   static const char DefaultIgnoreMomenta[]{ "pq2" };
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
@@ -971,6 +974,7 @@ int main(const int argc, const char *argv[])
       {"s", CL::SwitchType::Flag, nullptr},
       {"p2",CL::SwitchType::Flag, nullptr},
       {"pa",CL::SwitchType::Flag, nullptr},
+      {"ignore",CL::SwitchType::Single, DefaultIgnore},
       {"pignore",CL::SwitchType::Single, DefaultIgnoreMomenta},
       {"show", CL::SwitchType::Flag, nullptr},
       //{"sort", CL::SwitchType::Flag, nullptr},
@@ -1033,6 +1037,7 @@ int main(const int argc, const char *argv[])
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"
     "--pignore List of momenta to ignore (default: " << DefaultIgnoreMomenta << ")\n"
+    "--ignore  List of regular expressions to ignore (default: " << DefaultIgnore << ")\n"
     "--show Show how files would be bootstrapped, but don't execute\n"
     //"--sort Disable sort of correlator before group (2pt mode only)\n"
     "--ssre Sink / Source extended Regular Expression ('' to disable), default:\n       " << DefaultERE << "\n"

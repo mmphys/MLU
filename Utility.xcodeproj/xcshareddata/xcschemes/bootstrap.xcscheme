@@ -114,11 +114,15 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i &quot;meson/&quot;"
+            argument = "-i /Volumes/QCD/tess/semilep/M1/test.hits/880/2pt/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;*_t_5*&apos;.h5"
+            argument = "ZF[PW]P/&apos;*&apos;_t_[05].&apos;*&apos;.h5 ZF[PW]P/&apos;*&apos;_t_[05]_h&apos;*&apos;.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "ZF[PW]P/&apos;*&apos;.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -127,11 +131,15 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ssre=^([PW])([PW])_"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-w"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-f"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

@@ -56,7 +56,6 @@
 		683AD4A0268463D200D65392 /* CGNE.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 683AD49C268463D100D65392 /* CGNE.hpp */; };
 		683AD4A1268463D200D65392 /* ImplicitlyRestartedLanczos.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 683AD49D268463D100D65392 /* ImplicitlyRestartedLanczos.hpp */; };
 		683B2B3325D2E8E800FF304F /* Common.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6889D90225D2BBC5004F15CE /* Common.hpp */; };
-		6843319426D3EE25008B79C3 /* BaseIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68C14B90267B37590069C1EE /* BaseIO.cc */; };
 		6848923825D2D79B00307714 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6850CEA4244A1C3100A53DC8 /* Cartesian_base.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CA28244A1C2F00A53DC8 /* Cartesian_base.h */; };
 		6850CEA5244A1C3100A53DC8 /* Cartesian_full.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CA29244A1C2F00A53DC8 /* Cartesian_full.h */; };
@@ -157,42 +156,12 @@
 		6850CF06244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CA9C244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplD.cc */; };
 		6850CF07244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CA9D244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplD.cc */; };
 		6850CF08244A1C3100A53DC8 /* CayleyFermion5DInstantiationWilsonImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CA9E244A1C2F00A53DC8 /* CayleyFermion5DInstantiationWilsonImplD.cc */; };
-		6850CF09244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAA3244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplFH.cc */; };
-		6850CF0A244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAA4244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonImplFH.cc */; };
-		6850CF0B244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAA5244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonImplFH.cc */; };
-		6850CF0C244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAA6244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplFH.cc */; };
-		6850CF0D244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAA7244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplFH.cc */; };
-		6850CF0E244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAA8244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplFH.cc */; };
-		6850CF0F244A1C3100A53DC8 /* CayleyFermion5DInstantiationWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAA9244A1C2F00A53DC8 /* CayleyFermion5DInstantiationWilsonImplFH.cc */; };
-		6850CF10244A1C3100A53DC8 /* WilsonFermion5DInstantiationWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAAA244A1C2F00A53DC8 /* WilsonFermion5DInstantiationWilsonImplFH.cc */; };
-		6850CF11244A1C3100A53DC8 /* impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CAAB244A1C2F00A53DC8 /* impl.h */; };
-		6850CF12244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAAC244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonImplFH.cc */; };
-		6850CF13244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAAD244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplFH.cc */; };
 		6850CF14244A1C3100A53DC8 /* WilsonFermionInstantiation.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAAE244A1C2F00A53DC8 /* WilsonFermionInstantiation.cc */; };
-		6850CF15244A1C3100A53DC8 /* CayleyFermion5DInstantiationZWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAB1244A1C2F00A53DC8 /* CayleyFermion5DInstantiationZWilsonImplDF.cc */; };
-		6850CF16244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAB2244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplDF.cc */; };
-		6850CF17244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAB3244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplDF.cc */; };
-		6850CF18244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAB4244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplDF.cc */; };
-		6850CF19244A1C3100A53DC8 /* WilsonKernelsInstantiationZWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAB5244A1C2F00A53DC8 /* WilsonKernelsInstantiationZWilsonImplDF.cc */; };
-		6850CF1A244A1C3100A53DC8 /* impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CAB6244A1C2F00A53DC8 /* impl.h */; };
-		6850CF1B244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAB7244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplDF.cc */; };
-		6850CF1C244A1C3100A53DC8 /* WilsonFermion5DInstantiationZWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAB8244A1C2F00A53DC8 /* WilsonFermion5DInstantiationZWilsonImplDF.cc */; };
 		6850CF1D244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonAdjImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CABA244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonAdjImplD.cc */; };
 		6850CF1E244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonAdjImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CABB244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonAdjImplD.cc */; };
 		6850CF1F244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonAdjImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CABC244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonAdjImplD.cc */; };
 		6850CF20244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonAdjImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CABD244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonAdjImplD.cc */; };
 		6850CF21244A1C3100A53DC8 /* impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CABE244A1C2F00A53DC8 /* impl.h */; };
-		6850CF22244A1C3100A53DC8 /* WilsonFermionInstantiationGparityWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAC0244A1C2F00A53DC8 /* WilsonFermionInstantiationGparityWilsonImplFH.cc */; };
-		6850CF23244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAC1244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplFH.cc */; };
-		6850CF24244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAC2244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplFH.cc */; };
-		6850CF25244A1C3100A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAC3244A1C2F00A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplFH.cc */; };
-		6850CF26244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAC4244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplFH.cc */; };
-		6850CF27244A1C3100A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAC5244A1C2F00A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplFH.cc */; };
-		6850CF28244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAC6244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplFH.cc */; };
-		6850CF29244A1C3100A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAC7244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplFH.cc */; };
-		6850CF2A244A1C3100A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CAC8244A1C2F00A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplFH.cc */; };
-		6850CF2B244A1C3100A53DC8 /* impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CAC9244A1C2F00A53DC8 /* impl.h */; };
-		6850CF2C244A1C3100A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CACA244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplFH.cc */; };
 		6850CF2D244A1C3100A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CACB244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc */; };
 		6850CF2E244A1C3100A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CACD244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplF.cc */; };
 		6850CF2F244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CACE244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplF.cc */; };
@@ -258,17 +227,6 @@
 		6850CF6B244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonAdjImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB18244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonAdjImplF.cc */; };
 		6850CF6C244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonAdjImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB19244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonAdjImplF.cc */; };
 		6850CF6D244A1C3100A53DC8 /* impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CB1A244A1C2F00A53DC8 /* impl.h */; };
-		6850CF6E244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB1C244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplDF.cc */; };
-		6850CF6F244A1C3100A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB1D244A1C2F00A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplDF.cc */; };
-		6850CF70244A1C3100A53DC8 /* WilsonFermionInstantiationGparityWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB1E244A1C2F00A53DC8 /* WilsonFermionInstantiationGparityWilsonImplDF.cc */; };
-		6850CF71244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB1F244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplDF.cc */; };
-		6850CF72244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB20244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplDF.cc */; };
-		6850CF73244A1C3100A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB21244A1C2F00A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplDF.cc */; };
-		6850CF74244A1C3100A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB22244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplDF.cc */; };
-		6850CF75244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB23244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplDF.cc */; };
-		6850CF76244A1C3100A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB24244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplDF.cc */; };
-		6850CF77244A1C3100A53DC8 /* impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CB25244A1C2F00A53DC8 /* impl.h */; };
-		6850CF78244A1C3100A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB26244A1C2F00A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplDF.cc */; };
 		6850CF79244A1C3100A53DC8 /* WilsonFermion5DInstantiationZWilsonImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB28244A1C2F00A53DC8 /* WilsonFermion5DInstantiationZWilsonImplF.cc */; };
 		6850CF7A244A1C3100A53DC8 /* CayleyFermion5DInstantiationZWilsonImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB29244A1C2F00A53DC8 /* CayleyFermion5DInstantiationZWilsonImplF.cc */; };
 		6850CF7B244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB2A244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplF.cc */; };
@@ -277,14 +235,6 @@
 		6850CF7E244A1C3100A53DC8 /* WilsonKernelsInstantiationZWilsonImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB2D244A1C2F00A53DC8 /* WilsonKernelsInstantiationZWilsonImplF.cc */; };
 		6850CF7F244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB2E244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplF.cc */; };
 		6850CF80244A1C3100A53DC8 /* impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CB2F244A1C2F00A53DC8 /* impl.h */; };
-		6850CF81244A1C3100A53DC8 /* CayleyFermion5DInstantiationZWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB31244A1C2F00A53DC8 /* CayleyFermion5DInstantiationZWilsonImplFH.cc */; };
-		6850CF82244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB32244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplFH.cc */; };
-		6850CF83244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB33244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplFH.cc */; };
-		6850CF84244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB34244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplFH.cc */; };
-		6850CF85244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB35244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplFH.cc */; };
-		6850CF86244A1C3100A53DC8 /* WilsonFermion5DInstantiationZWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB36244A1C2F00A53DC8 /* WilsonFermion5DInstantiationZWilsonImplFH.cc */; };
-		6850CF87244A1C3100A53DC8 /* WilsonKernelsInstantiationZWilsonImplFH.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB37244A1C2F00A53DC8 /* WilsonKernelsInstantiationZWilsonImplFH.cc */; };
-		6850CF88244A1C3100A53DC8 /* impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CB38244A1C2F00A53DC8 /* impl.h */; };
 		6850CF89244A1C3100A53DC8 /* StaggeredKernelsInstantiationStaggeredImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB3B244A1C2F00A53DC8 /* StaggeredKernelsInstantiationStaggeredImplD.cc */; };
 		6850CF8A244A1C3100A53DC8 /* ImprovedStaggeredFermion5DInstantiationStaggeredImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB3C244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiationStaggeredImplD.cc */; };
 		6850CF8B244A1C3100A53DC8 /* ImprovedStaggeredFermionInstantiationStaggeredImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB3D244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiationStaggeredImplD.cc */; };
@@ -294,17 +244,6 @@
 		6850CF8F244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonTwoIndexSymmetricImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB42244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonTwoIndexSymmetricImplD.cc */; };
 		6850CF90244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonTwoIndexSymmetricImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB43244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonTwoIndexSymmetricImplD.cc */; };
 		6850CF91244A1C3100A53DC8 /* impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CB44244A1C2F00A53DC8 /* impl.h */; };
-		6850CF92244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB47244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplDF.cc */; };
-		6850CF93244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB48244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplDF.cc */; };
-		6850CF94244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB49244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonImplDF.cc */; };
-		6850CF95244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB4A244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonImplDF.cc */; };
-		6850CF96244A1C3100A53DC8 /* impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6850CB4B244A1C2F00A53DC8 /* impl.h */; };
-		6850CF97244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB4C244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonImplDF.cc */; };
-		6850CF98244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB4D244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplDF.cc */; };
-		6850CF99244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB4E244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplDF.cc */; };
-		6850CF9A244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB4F244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplDF.cc */; };
-		6850CF9B244A1C3100A53DC8 /* CayleyFermion5DInstantiationWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB50244A1C2F00A53DC8 /* CayleyFermion5DInstantiationWilsonImplDF.cc */; };
-		6850CF9C244A1C3100A53DC8 /* WilsonFermion5DInstantiationWilsonImplDF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB51244A1C2F00A53DC8 /* WilsonFermion5DInstantiationWilsonImplDF.cc */; };
 		6850CF9D244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonTwoIndexAntiSymmetricImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB55244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonTwoIndexAntiSymmetricImplF.cc */; };
 		6850CF9E244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonTwoIndexAntiSymmetricImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB56244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonTwoIndexAntiSymmetricImplF.cc */; };
 		6850CF9F244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonTwoIndexAntiSymmetricImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6850CB57244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonTwoIndexAntiSymmetricImplF.cc */; };
@@ -1225,6 +1164,7 @@
 		68703EF325D3026A00D1BA61 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		68703F0D25D3033F00D1BA61 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6870690D26960B87003F5888 /* Divide.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6870690026960B2C003F5888 /* Divide.cpp */; };
+		6871270A26F35EC300F36A8A /* BaseIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68C14B90267B37590069C1EE /* BaseIO.cc */; };
 		687588BB2499501900E38728 /* Test_hadrons_spectrum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C182244C7863008E272B /* Test_hadrons_spectrum.cpp */; };
 		6875E1A226D51531004EF750 /* Example_Laplacian_smearing.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6875E17F26D51303004EF750 /* Example_Laplacian_smearing.cc */; };
 		6875E1A326D51541004EF750 /* Example_Laplacian_solver.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6875E18026D51303004EF750 /* Example_Laplacian_solver.cc */; };
@@ -1771,43 +1711,13 @@
 		6850CA9F244A1C2F00A53DC8 /* generate_instantiations.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = generate_instantiations.sh; sourceTree = "<group>"; };
 		6850CAA0244A1C2F00A53DC8 /* ImprovedStaggeredFermionInstantiation.cc.master */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ImprovedStaggeredFermionInstantiation.cc.master; sourceTree = "<group>"; };
 		6850CAA1244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiation.cc.master */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = PartialFractionFermion5DInstantiation.cc.master; sourceTree = "<group>"; };
-		6850CAA3244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonCloverFermionInstantiationWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAA4244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermionInstantiationWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAA5244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonKernelsInstantiationWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAA6244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DomainWallEOFAFermionInstantiationWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAA7244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PartialFractionFermion5DInstantiationWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAA8244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContinuedFractionFermion5DInstantiationWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAA9244A1C2F00A53DC8 /* CayleyFermion5DInstantiationWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CayleyFermion5DInstantiationWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAAA244A1C2F00A53DC8 /* WilsonFermion5DInstantiationWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermion5DInstantiationWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAAB244A1C2F00A53DC8 /* impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = impl.h; sourceTree = "<group>"; };
-		6850CAAC244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonTMFermionInstantiationWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAAD244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MobiusEOFAFermionInstantiationWilsonImplFH.cc; sourceTree = "<group>"; };
 		6850CAAE244A1C2F00A53DC8 /* WilsonFermionInstantiation.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermionInstantiation.cc; sourceTree = "<group>"; };
 		6850CAAF244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc.master */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ImprovedStaggeredFermion5DInstantiation.cc.master; sourceTree = "<group>"; };
-		6850CAB1244A1C2F00A53DC8 /* CayleyFermion5DInstantiationZWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CayleyFermion5DInstantiationZWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CAB2244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DomainWallEOFAFermionInstantiationZWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CAB3244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MobiusEOFAFermionInstantiationZWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CAB4244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContinuedFractionFermion5DInstantiationZWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CAB5244A1C2F00A53DC8 /* WilsonKernelsInstantiationZWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonKernelsInstantiationZWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CAB6244A1C2F00A53DC8 /* impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = impl.h; sourceTree = "<group>"; };
-		6850CAB7244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PartialFractionFermion5DInstantiationZWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CAB8244A1C2F00A53DC8 /* WilsonFermion5DInstantiationZWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermion5DInstantiationZWilsonImplDF.cc; sourceTree = "<group>"; };
 		6850CABA244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonAdjImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermionInstantiationWilsonAdjImplD.cc; sourceTree = "<group>"; };
 		6850CABB244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonAdjImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonTMFermionInstantiationWilsonAdjImplD.cc; sourceTree = "<group>"; };
 		6850CABC244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonAdjImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonCloverFermionInstantiationWilsonAdjImplD.cc; sourceTree = "<group>"; };
 		6850CABD244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonAdjImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonKernelsInstantiationWilsonAdjImplD.cc; sourceTree = "<group>"; };
 		6850CABE244A1C2F00A53DC8 /* impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = impl.h; sourceTree = "<group>"; };
-		6850CAC0244A1C2F00A53DC8 /* WilsonFermionInstantiationGparityWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermionInstantiationGparityWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAC1244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MobiusEOFAFermionInstantiationGparityWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAC2244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PartialFractionFermion5DInstantiationGparityWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAC3244A1C2F00A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CayleyFermion5DInstantiationGparityWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAC4244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContinuedFractionFermion5DInstantiationGparityWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAC5244A1C2F00A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonTMFermionInstantiationGparityWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAC6244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DomainWallEOFAFermionInstantiationGparityWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAC7244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonCloverFermionInstantiationGparityWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAC8244A1C2F00A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermion5DInstantiationGparityWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CAC9244A1C2F00A53DC8 /* impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = impl.h; sourceTree = "<group>"; };
-		6850CACA244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonKernelsInstantiationGparityWilsonImplFH.cc; sourceTree = "<group>"; };
 		6850CACB244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiation.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ImprovedStaggeredFermion5DInstantiation.cc; sourceTree = "<group>"; };
 		6850CACD244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonKernelsInstantiationGparityWilsonImplF.cc; sourceTree = "<group>"; };
 		6850CACE244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContinuedFractionFermion5DInstantiationGparityWilsonImplF.cc; sourceTree = "<group>"; };
@@ -1880,17 +1790,6 @@
 		6850CB18244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonAdjImplF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonCloverFermionInstantiationWilsonAdjImplF.cc; sourceTree = "<group>"; };
 		6850CB19244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonAdjImplF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermionInstantiationWilsonAdjImplF.cc; sourceTree = "<group>"; };
 		6850CB1A244A1C2F00A53DC8 /* impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = impl.h; sourceTree = "<group>"; };
-		6850CB1C244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContinuedFractionFermion5DInstantiationGparityWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB1D244A1C2F00A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonTMFermionInstantiationGparityWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB1E244A1C2F00A53DC8 /* WilsonFermionInstantiationGparityWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermionInstantiationGparityWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB1F244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PartialFractionFermion5DInstantiationGparityWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB20244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MobiusEOFAFermionInstantiationGparityWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB21244A1C2F00A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CayleyFermion5DInstantiationGparityWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB22244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonKernelsInstantiationGparityWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB23244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DomainWallEOFAFermionInstantiationGparityWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB24244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonCloverFermionInstantiationGparityWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB25244A1C2F00A53DC8 /* impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = impl.h; sourceTree = "<group>"; };
-		6850CB26244A1C2F00A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermion5DInstantiationGparityWilsonImplDF.cc; sourceTree = "<group>"; };
 		6850CB28244A1C2F00A53DC8 /* WilsonFermion5DInstantiationZWilsonImplF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermion5DInstantiationZWilsonImplF.cc; sourceTree = "<group>"; };
 		6850CB29244A1C2F00A53DC8 /* CayleyFermion5DInstantiationZWilsonImplF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CayleyFermion5DInstantiationZWilsonImplF.cc; sourceTree = "<group>"; };
 		6850CB2A244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContinuedFractionFermion5DInstantiationZWilsonImplF.cc; sourceTree = "<group>"; };
@@ -1899,14 +1798,6 @@
 		6850CB2D244A1C2F00A53DC8 /* WilsonKernelsInstantiationZWilsonImplF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonKernelsInstantiationZWilsonImplF.cc; sourceTree = "<group>"; };
 		6850CB2E244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MobiusEOFAFermionInstantiationZWilsonImplF.cc; sourceTree = "<group>"; };
 		6850CB2F244A1C2F00A53DC8 /* impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = impl.h; sourceTree = "<group>"; };
-		6850CB31244A1C2F00A53DC8 /* CayleyFermion5DInstantiationZWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CayleyFermion5DInstantiationZWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CB32244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DomainWallEOFAFermionInstantiationZWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CB33244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContinuedFractionFermion5DInstantiationZWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CB34244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MobiusEOFAFermionInstantiationZWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CB35244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PartialFractionFermion5DInstantiationZWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CB36244A1C2F00A53DC8 /* WilsonFermion5DInstantiationZWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermion5DInstantiationZWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CB37244A1C2F00A53DC8 /* WilsonKernelsInstantiationZWilsonImplFH.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonKernelsInstantiationZWilsonImplFH.cc; sourceTree = "<group>"; };
-		6850CB38244A1C2F00A53DC8 /* impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = impl.h; sourceTree = "<group>"; };
 		6850CB39244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiation.cc.master */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MobiusEOFAFermionInstantiation.cc.master; sourceTree = "<group>"; };
 		6850CB3B244A1C2F00A53DC8 /* StaggeredKernelsInstantiationStaggeredImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = StaggeredKernelsInstantiationStaggeredImplD.cc; sourceTree = "<group>"; };
 		6850CB3C244A1C2F00A53DC8 /* ImprovedStaggeredFermion5DInstantiationStaggeredImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ImprovedStaggeredFermion5DInstantiationStaggeredImplD.cc; sourceTree = "<group>"; };
@@ -1918,17 +1809,6 @@
 		6850CB43244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonTwoIndexSymmetricImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermionInstantiationWilsonTwoIndexSymmetricImplD.cc; sourceTree = "<group>"; };
 		6850CB44244A1C2F00A53DC8 /* impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = impl.h; sourceTree = "<group>"; };
 		6850CB45244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiation.cc.master */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = DomainWallEOFAFermionInstantiation.cc.master; sourceTree = "<group>"; };
-		6850CB47244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonCloverFermionInstantiationWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB48244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MobiusEOFAFermionInstantiationWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB49244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonTMFermionInstantiationWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB4A244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermionInstantiationWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB4B244A1C2F00A53DC8 /* impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = impl.h; sourceTree = "<group>"; };
-		6850CB4C244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonKernelsInstantiationWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB4D244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DomainWallEOFAFermionInstantiationWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB4E244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PartialFractionFermion5DInstantiationWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB4F244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContinuedFractionFermion5DInstantiationWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB50244A1C2F00A53DC8 /* CayleyFermion5DInstantiationWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CayleyFermion5DInstantiationWilsonImplDF.cc; sourceTree = "<group>"; };
-		6850CB51244A1C2F00A53DC8 /* WilsonFermion5DInstantiationWilsonImplDF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermion5DInstantiationWilsonImplDF.cc; sourceTree = "<group>"; };
 		6850CB52244A1C2F00A53DC8 /* WilsonTMFermionInstantiation.cc.master */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = WilsonTMFermionInstantiation.cc.master; sourceTree = "<group>"; };
 		6850CB53244A1C2F00A53DC8 /* WilsonFermionInstantiation.cc.master */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = WilsonFermionInstantiation.cc.master; sourceTree = "<group>"; };
 		6850CB55244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonTwoIndexAntiSymmetricImplF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermionInstantiationWilsonTwoIndexAntiSymmetricImplF.cc; sourceTree = "<group>"; };
@@ -3737,25 +3617,19 @@
 			isa = PBXGroup;
 			children = (
 				6850CB07244A1C2F00A53DC8 /* GparityWilsonImplD */,
-				6850CB1B244A1C2F00A53DC8 /* GparityWilsonImplDF */,
 				6850CACC244A1C2F00A53DC8 /* GparityWilsonImplF */,
-				6850CABF244A1C2F00A53DC8 /* GparityWilsonImplFH */,
 				6850CB3A244A1C2F00A53DC8 /* StaggeredImplD */,
 				6850CAF2244A1C2F00A53DC8 /* StaggeredImplF */,
 				6850CAB9244A1C2F00A53DC8 /* WilsonAdjImplD */,
 				6850CB15244A1C2F00A53DC8 /* WilsonAdjImplF */,
 				6850CA93244A1C2F00A53DC8 /* WilsonImplD */,
-				6850CB46244A1C2F00A53DC8 /* WilsonImplDF */,
 				6850CAFB244A1C2F00A53DC8 /* WilsonImplF */,
-				6850CAA2244A1C2F00A53DC8 /* WilsonImplFH */,
 				6850CAE4244A1C2F00A53DC8 /* WilsonTwoIndexAntiSymmetricImplD */,
 				6850CB54244A1C2F00A53DC8 /* WilsonTwoIndexAntiSymmetricImplF */,
 				6850CB3F244A1C2F00A53DC8 /* WilsonTwoIndexSymmetricImplD */,
 				6850CAEB244A1C2F00A53DC8 /* WilsonTwoIndexSymmetricImplF */,
 				6850CADA244A1C2F00A53DC8 /* ZWilsonImplD */,
-				6850CAB0244A1C2F00A53DC8 /* ZWilsonImplDF */,
 				6850CB27244A1C2F00A53DC8 /* ZWilsonImplF */,
-				6850CB30244A1C2F00A53DC8 /* ZWilsonImplFH */,
 				6850CAD9244A1C2F00A53DC8 /* CayleyFermion5DInstantiation.cc.master */,
 				6850CAF9244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiation.cc.master */,
 				6850CB45244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiation.cc.master */,
@@ -3802,39 +3676,6 @@
 			path = WilsonImplD;
 			sourceTree = "<group>";
 		};
-		6850CAA2244A1C2F00A53DC8 /* WilsonImplFH */ = {
-			isa = PBXGroup;
-			children = (
-				6850CAA9244A1C2F00A53DC8 /* CayleyFermion5DInstantiationWilsonImplFH.cc */,
-				6850CAA8244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplFH.cc */,
-				6850CAA6244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplFH.cc */,
-				6850CAAB244A1C2F00A53DC8 /* impl.h */,
-				6850CAAD244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplFH.cc */,
-				6850CAA7244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplFH.cc */,
-				6850CAA3244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplFH.cc */,
-				6850CAAA244A1C2F00A53DC8 /* WilsonFermion5DInstantiationWilsonImplFH.cc */,
-				6850CAA4244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonImplFH.cc */,
-				6850CAA5244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonImplFH.cc */,
-				6850CAAC244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonImplFH.cc */,
-			);
-			path = WilsonImplFH;
-			sourceTree = "<group>";
-		};
-		6850CAB0244A1C2F00A53DC8 /* ZWilsonImplDF */ = {
-			isa = PBXGroup;
-			children = (
-				6850CAB1244A1C2F00A53DC8 /* CayleyFermion5DInstantiationZWilsonImplDF.cc */,
-				6850CAB2244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplDF.cc */,
-				6850CAB3244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplDF.cc */,
-				6850CAB4244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplDF.cc */,
-				6850CAB5244A1C2F00A53DC8 /* WilsonKernelsInstantiationZWilsonImplDF.cc */,
-				6850CAB6244A1C2F00A53DC8 /* impl.h */,
-				6850CAB7244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplDF.cc */,
-				6850CAB8244A1C2F00A53DC8 /* WilsonFermion5DInstantiationZWilsonImplDF.cc */,
-			);
-			path = ZWilsonImplDF;
-			sourceTree = "<group>";
-		};
 		6850CAB9244A1C2F00A53DC8 /* WilsonAdjImplD */ = {
 			isa = PBXGroup;
 			children = (
@@ -3845,24 +3686,6 @@
 				6850CABE244A1C2F00A53DC8 /* impl.h */,
 			);
 			path = WilsonAdjImplD;
-			sourceTree = "<group>";
-		};
-		6850CABF244A1C2F00A53DC8 /* GparityWilsonImplFH */ = {
-			isa = PBXGroup;
-			children = (
-				6850CAC0244A1C2F00A53DC8 /* WilsonFermionInstantiationGparityWilsonImplFH.cc */,
-				6850CAC1244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplFH.cc */,
-				6850CAC2244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplFH.cc */,
-				6850CAC3244A1C2F00A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplFH.cc */,
-				6850CAC4244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplFH.cc */,
-				6850CAC5244A1C2F00A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplFH.cc */,
-				6850CAC6244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplFH.cc */,
-				6850CAC7244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplFH.cc */,
-				6850CAC8244A1C2F00A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplFH.cc */,
-				6850CAC9244A1C2F00A53DC8 /* impl.h */,
-				6850CACA244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplFH.cc */,
-			);
-			path = GparityWilsonImplFH;
 			sourceTree = "<group>";
 		};
 		6850CACC244A1C2F00A53DC8 /* GparityWilsonImplF */ = {
@@ -3981,24 +3804,6 @@
 			path = WilsonAdjImplF;
 			sourceTree = "<group>";
 		};
-		6850CB1B244A1C2F00A53DC8 /* GparityWilsonImplDF */ = {
-			isa = PBXGroup;
-			children = (
-				6850CB1C244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplDF.cc */,
-				6850CB1D244A1C2F00A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplDF.cc */,
-				6850CB1E244A1C2F00A53DC8 /* WilsonFermionInstantiationGparityWilsonImplDF.cc */,
-				6850CB1F244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplDF.cc */,
-				6850CB20244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplDF.cc */,
-				6850CB21244A1C2F00A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplDF.cc */,
-				6850CB22244A1C2F00A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplDF.cc */,
-				6850CB23244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplDF.cc */,
-				6850CB24244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplDF.cc */,
-				6850CB25244A1C2F00A53DC8 /* impl.h */,
-				6850CB26244A1C2F00A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplDF.cc */,
-			);
-			path = GparityWilsonImplDF;
-			sourceTree = "<group>";
-		};
 		6850CB27244A1C2F00A53DC8 /* ZWilsonImplF */ = {
 			isa = PBXGroup;
 			children = (
@@ -4012,21 +3817,6 @@
 				6850CB2F244A1C2F00A53DC8 /* impl.h */,
 			);
 			path = ZWilsonImplF;
-			sourceTree = "<group>";
-		};
-		6850CB30244A1C2F00A53DC8 /* ZWilsonImplFH */ = {
-			isa = PBXGroup;
-			children = (
-				6850CB31244A1C2F00A53DC8 /* CayleyFermion5DInstantiationZWilsonImplFH.cc */,
-				6850CB32244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplFH.cc */,
-				6850CB33244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplFH.cc */,
-				6850CB34244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplFH.cc */,
-				6850CB35244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplFH.cc */,
-				6850CB36244A1C2F00A53DC8 /* WilsonFermion5DInstantiationZWilsonImplFH.cc */,
-				6850CB37244A1C2F00A53DC8 /* WilsonKernelsInstantiationZWilsonImplFH.cc */,
-				6850CB38244A1C2F00A53DC8 /* impl.h */,
-			);
-			path = ZWilsonImplFH;
 			sourceTree = "<group>";
 		};
 		6850CB3A244A1C2F00A53DC8 /* StaggeredImplD */ = {
@@ -4051,24 +3841,6 @@
 				6850CB44244A1C2F00A53DC8 /* impl.h */,
 			);
 			path = WilsonTwoIndexSymmetricImplD;
-			sourceTree = "<group>";
-		};
-		6850CB46244A1C2F00A53DC8 /* WilsonImplDF */ = {
-			isa = PBXGroup;
-			children = (
-				6850CB50244A1C2F00A53DC8 /* CayleyFermion5DInstantiationWilsonImplDF.cc */,
-				6850CB4F244A1C2F00A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplDF.cc */,
-				6850CB4D244A1C2F00A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplDF.cc */,
-				6850CB4B244A1C2F00A53DC8 /* impl.h */,
-				6850CB48244A1C2F00A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplDF.cc */,
-				6850CB4E244A1C2F00A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplDF.cc */,
-				6850CB47244A1C2F00A53DC8 /* WilsonCloverFermionInstantiationWilsonImplDF.cc */,
-				6850CB51244A1C2F00A53DC8 /* WilsonFermion5DInstantiationWilsonImplDF.cc */,
-				6850CB4A244A1C2F00A53DC8 /* WilsonFermionInstantiationWilsonImplDF.cc */,
-				6850CB4C244A1C2F00A53DC8 /* WilsonKernelsInstantiationWilsonImplDF.cc */,
-				6850CB49244A1C2F00A53DC8 /* WilsonTMFermionInstantiationWilsonImplDF.cc */,
-			);
-			path = WilsonImplDF;
 			sourceTree = "<group>";
 		};
 		6850CB54244A1C2F00A53DC8 /* WilsonTwoIndexAntiSymmetricImplF */ = {
@@ -6153,7 +5925,6 @@
 				6850D21F244A1C3200A53DC8 /* Lattice_local.h in Headers */,
 				6850D00B244A1C3100A53DC8 /* SparseMatrix.h in Headers */,
 				6850CEC2244A1C3100A53DC8 /* two_index.h in Headers */,
-				6850CF88244A1C3100A53DC8 /* impl.h in Headers */,
 				6850D099244A1C3100A53DC8 /* TensorReverse.h in Headers */,
 				6850D0D3244A1C3100A53DC8 /* fdjac1.h in Headers */,
 				6850D168244A1C3200A53DC8 /* MathFunctions.h in Headers */,
@@ -6161,7 +5932,6 @@
 				6850CEF8244A1C3100A53DC8 /* OverlapWilsonPartialFractionTanhFermion.h in Headers */,
 				6850D163244A1C3200A53DC8 /* MathFunctions.h in Headers */,
 				6850CFA5244A1C3100A53DC8 /* StaggeredImpl.h in Headers */,
-				6850CF96244A1C3100A53DC8 /* impl.h in Headers */,
 				6850D17E244A1C3200A53DC8 /* SolveTriangular.h in Headers */,
 				6850D1CC244A1C3200A53DC8 /* SparseUtil.h in Headers */,
 				6850CED0244A1C3100A53DC8 /* CovariantSmearing.h in Headers */,
@@ -6390,7 +6160,6 @@
 				6850CFCC244A1C3100A53DC8 /* MobiusZolotarevFermion.h in Headers */,
 				6850CED1244A1C3100A53DC8 /* SpaceTimeGrid.h in Headers */,
 				6850D162244A1C3200A53DC8 /* PacketMath.h in Headers */,
-				6850CF1A244A1C3100A53DC8 /* impl.h in Headers */,
 				6850CFDE244A1C3100A53DC8 /* ImprovedStaggeredFermion5D.h in Headers */,
 				6850D1A7244A1C3200A53DC8 /* BlockMethods.h in Headers */,
 				6850D0DE244A1C3100A53DC8 /* SkylineUtil.h in Headers */,
@@ -6488,7 +6257,6 @@
 				6850D149244A1C3200A53DC8 /* MapBase.h in Headers */,
 				6850CECD244A1C3100A53DC8 /* SUnTwoIndex.h in Headers */,
 				6850D1F6244A1C3200A53DC8 /* Translation.h in Headers */,
-				6850CF77244A1C3100A53DC8 /* impl.h in Headers */,
 				6850CEDE244A1C3100A53DC8 /* Gamma.h in Headers */,
 				6850D1DF244A1C3200A53DC8 /* UmfPackSupport.h in Headers */,
 				6850D074244A1C3100A53DC8 /* ThreadLocal.h in Headers */,
@@ -6548,7 +6316,6 @@
 				6850CEED244A1C3100A53DC8 /* EvenOddSchurDifferentiable.h in Headers */,
 				6850D20B244A1C3200A53DC8 /* HessenbergDecomposition.h in Headers */,
 				6850D1A8244A1C3200A53DC8 /* ArrayCwiseBinaryOps.h in Headers */,
-				6850CF2B244A1C3100A53DC8 /* impl.h in Headers */,
 				6850CFDA244A1C3100A53DC8 /* WilsonImpl.h in Headers */,
 				6850D024244A1C3100A53DC8 /* CommunicationAvoidingGeneralisedMinimalResidual.h in Headers */,
 				6850D120244A1C3200A53DC8 /* TriangularSolverMatrix.h in Headers */,
@@ -6693,7 +6460,6 @@
 				6850CFF5244A1C3100A53DC8 /* HMC_aggregate.h in Headers */,
 				6850CEFD244A1C3100A53DC8 /* MobiusFermion.h in Headers */,
 				6850D077244A1C3100A53DC8 /* ThreadYield.h in Headers */,
-				6850CF11244A1C3100A53DC8 /* impl.h in Headers */,
 				6850CFA3244A1C3100A53DC8 /* FermionCore.h in Headers */,
 				6850CFAE244A1C3100A53DC8 /* OverlapWilsonPartialFractionZolotarevFermion.h in Headers */,
 				6850CEDF244A1C3100A53DC8 /* TwoSpinor.h in Headers */,
@@ -7836,101 +7602,70 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6850CF73244A1C3100A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850CF56244A1C3100A53DC8 /* CayleyFermion5DInstantiationWilsonImplF.cc in Sources */,
-				6850CF24244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplFH.cc in Sources */,
 				6850CF5D244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonImplF.cc in Sources */,
-				6850CF84244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplFH.cc in Sources */,
 				6850CF43244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonTwoIndexAntiSymmetricImplD.cc in Sources */,
 				6850CF51244A1C3100A53DC8 /* StaggeredKernelsInstantiationStaggeredImplF.cc in Sources */,
 				6850D031244A1C3100A53DC8 /* Communicator_none.cc in Sources */,
 				6850CF4A244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonTwoIndexSymmetricImplF.cc in Sources */,
-				6850CF98244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplDF.cc in Sources */,
 				6850CF62244A1C3100A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplD.cc in Sources */,
 				6850CF37244A1C3100A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplF.cc in Sources */,
-				6850CF81244A1C3100A53DC8 /* CayleyFermion5DInstantiationZWilsonImplFH.cc in Sources */,
 				6850CF6C244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonAdjImplF.cc in Sources */,
 				6850CF8A244A1C3100A53DC8 /* ImprovedStaggeredFermion5DInstantiationStaggeredImplD.cc in Sources */,
-				6850CF0C244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplFH.cc in Sources */,
 				6850CF40244A1C3100A53DC8 /* CayleyFermion5DInstantiationZWilsonImplD.cc in Sources */,
 				6850D239244A1C3200A53DC8 /* pugixml.cc in Sources */,
 				6850D033244A1C3100A53DC8 /* SharedMemoryMPI.cc in Sources */,
 				6850CEAE244A1C3100A53DC8 /* PerfCount.cc in Sources */,
 				6850CF2E244A1C3100A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplF.cc in Sources */,
 				6850D039244A1C3100A53DC8 /* SharedMemoryNone.cc in Sources */,
-				6850CF27244A1C3100A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplFH.cc in Sources */,
 				6850CF7C244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplF.cc in Sources */,
 				6850D038244A1C3100A53DC8 /* Communicator_base.cc in Sources */,
-				6850CF83244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplFH.cc in Sources */,
-				6850CF0A244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonImplFH.cc in Sources */,
-				6850CF95244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonImplDF.cc in Sources */,
 				6850CF7F244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplF.cc in Sources */,
 				6850CF8B244A1C3100A53DC8 /* ImprovedStaggeredFermionInstantiationStaggeredImplD.cc in Sources */,
 				6850CF07244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonImplD.cc in Sources */,
 				6850CF01244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonImplD.cc in Sources */,
 				68578F342450A36200CC2A1D /* ZMobius.cc in Sources */,
 				6850CF00244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonImplD.cc in Sources */,
-				6850CF6F244A1C3100A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850D22D244A1C3200A53DC8 /* BinaryIO.cc in Sources */,
-				6850CF15244A1C3100A53DC8 /* CayleyFermion5DInstantiationZWilsonImplDF.cc in Sources */,
+				6871270A26F35EC300F36A8A /* BaseIO.cc in Sources */,
 				6850CF06244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplD.cc in Sources */,
-				6850CF16244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplDF.cc in Sources */,
-				6850CF12244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonImplFH.cc in Sources */,
 				6850CF4B244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonTwoIndexSymmetricImplF.cc in Sources */,
 				6850CF5C244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonImplF.cc in Sources */,
 				6850CF4F244A1C3100A53DC8 /* ImprovedStaggeredFermionInstantiationStaggeredImplF.cc in Sources */,
 				6850CEFE244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplD.cc in Sources */,
-				6850CF85244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplFH.cc in Sources */,
-				6850CF13244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplFH.cc in Sources */,
-				6850CF75244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplDF.cc in Sources */,
-				6850CF70244A1C3100A53DC8 /* WilsonFermionInstantiationGparityWilsonImplDF.cc in Sources */,
-				6850CF94244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonImplDF.cc in Sources */,
-				6850CF76244A1C3100A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850CF32244A1C3100A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplF.cc in Sources */,
-				6850CF0F244A1C3100A53DC8 /* CayleyFermion5DInstantiationWilsonImplFH.cc in Sources */,
 				6850CF90244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonTwoIndexSymmetricImplD.cc in Sources */,
 				6850CF3C244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplD.cc in Sources */,
 				6850CF66244A1C3100A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplD.cc in Sources */,
 				6850CF3E244A1C3100A53DC8 /* WilsonFermion5DInstantiationZWilsonImplD.cc in Sources */,
-				6850CF1B244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplDF.cc in Sources */,
 				6850CF39244A1C3100A53DC8 /* WilsonKernelsInstantiationAsm.cc in Sources */,
 				6850CF3D244A1C3100A53DC8 /* WilsonKernelsInstantiationZWilsonImplD.cc in Sources */,
 				6850D243244A1C3200A53DC8 /* Hdf5IO.cc in Sources */,
 				6850CF89244A1C3100A53DC8 /* StaggeredKernelsInstantiationStaggeredImplD.cc in Sources */,
 				6850CF33244A1C3100A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplF.cc in Sources */,
 				6850CF02244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplD.cc in Sources */,
-				6850CF29244A1C3100A53DC8 /* WilsonCloverFermionInstantiationGparityWilsonImplFH.cc in Sources */,
 				6850CF5A244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplF.cc in Sources */,
 				6850CF8D244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonTwoIndexSymmetricImplD.cc in Sources */,
-				6850CF28244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplFH.cc in Sources */,
 				6850CEFF244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonImplD.cc in Sources */,
 				6850CF79244A1C3100A53DC8 /* WilsonFermion5DInstantiationZWilsonImplF.cc in Sources */,
 				6850CF9D244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonTwoIndexAntiSymmetricImplF.cc in Sources */,
 				6850CF35244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplF.cc in Sources */,
 				6850CF44244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonTwoIndexAntiSymmetricImplD.cc in Sources */,
-				6850CF2C244A1C3100A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplFH.cc in Sources */,
 				6850CF6B244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonAdjImplF.cc in Sources */,
 				68D0E9E824A3547800834C1C /* NaiveStaggeredFermionInstantiationStaggeredImplD.cc in Sources */,
-				6850CF74244A1C3100A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850D23E244A1C3200A53DC8 /* XmlIO.cc in Sources */,
 				6850CEAC244A1C3100A53DC8 /* Stat.cc in Sources */,
 				68D0E9ED24A354F000834C1C /* Accelerator.cc in Sources */,
 				6850CF3B244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationZWilsonImplD.cc in Sources */,
-				6850CF93244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplDF.cc in Sources */,
 				6850CF64244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplD.cc in Sources */,
-				6843319426D3EE25008B79C3 /* BaseIO.cc in Sources */,
 				6850CEDB244A1C3100A53DC8 /* Gamma.cc in Sources */,
 				6850CF7B244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplF.cc in Sources */,
 				6850CEDA244A1C3100A53DC8 /* SpaceTimeGrid.cc in Sources */,
-				6850CF78244A1C3100A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplDF.cc in Sources */,
 				68D0E9D724A34F4B00834C1C /* MemoryManagerShared.cc in Sources */,
 				6850CF1D244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonAdjImplD.cc in Sources */,
-				6850CF6E244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850CF1F244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonAdjImplD.cc in Sources */,
 				6850CF60244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplD.cc in Sources */,
 				6850CF61244A1C3100A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplD.cc in Sources */,
-				6850CF99244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplDF.cc in Sources */,
-				6850CF1C244A1C3100A53DC8 /* WilsonFermion5DInstantiationZWilsonImplDF.cc in Sources */,
 				6850CF67244A1C3100A53DC8 /* WilsonFermionInstantiationGparityWilsonImplD.cc in Sources */,
 				68D0E9DD24A34F6400834C1C /* Cshift_table.cc in Sources */,
 				6850D037244A1C3100A53DC8 /* SharedMemory.cc in Sources */,
@@ -7938,20 +7673,14 @@
 				6850CF34244A1C3100A53DC8 /* WilsonTMFermionInstantiationGparityWilsonImplF.cc in Sources */,
 				6850D018244A1C3100A53DC8 /* MultiShiftFunction.cc in Sources */,
 				6850CF4E244A1C3100A53DC8 /* ImprovedStaggeredFermion5DInstantiationStaggeredImplF.cc in Sources */,
-				6850CF72244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850CF03244A1C3100A53DC8 /* WilsonFermion5DInstantiationWilsonImplD.cc in Sources */,
-				6850CF22244A1C3100A53DC8 /* WilsonFermionInstantiationGparityWilsonImplFH.cc in Sources */,
-				6850CF71244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplDF.cc in Sources */,
 				6850CF59244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationWilsonImplF.cc in Sources */,
 				6850CF69244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonAdjImplF.cc in Sources */,
 				68578F302450A36200CC2A1D /* RemezGeneral.cc in Sources */,
 				6850CF9E244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonTwoIndexAntiSymmetricImplF.cc in Sources */,
-				6850CF0D244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplFH.cc in Sources */,
 				6850CFA2244A1C3100A53DC8 /* WilsonKernelsInstantiation.cc in Sources */,
 				6850CEBC244A1C3100A53DC8 /* Lebesgue.cc in Sources */,
-				6850CF86244A1C3100A53DC8 /* WilsonFermion5DInstantiationZWilsonImplFH.cc in Sources */,
 				6850D249244A1C3200A53DC8 /* JSON_IO.cc in Sources */,
-				6850CF9A244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplDF.cc in Sources */,
 				68F1C8F125B4397500A48690 /* Gauge.cc in Sources */,
 				6850CFFC244A1C3100A53DC8 /* Modules.cc in Sources */,
 				6850CF04244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplD.cc in Sources */,
@@ -7959,42 +7688,29 @@
 				6850D017244A1C3100A53DC8 /* Zolotarev.cc in Sources */,
 				6850D245244A1C3200A53DC8 /* TextIO.cc in Sources */,
 				6850CF42244A1C3100A53DC8 /* StaggeredKernelsInstantiation.cc in Sources */,
-				6850CF82244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplFH.cc in Sources */,
 				6850CEBA244A1C3100A53DC8 /* version.cc in Sources */,
-				6850CF87244A1C3100A53DC8 /* WilsonKernelsInstantiationZWilsonImplFH.cc in Sources */,
 				6850CF14244A1C3100A53DC8 /* WilsonFermionInstantiation.cc in Sources */,
 				68D0E9D624A34F4B00834C1C /* MemoryManagerCache.cc in Sources */,
 				6850CF46244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonTwoIndexAntiSymmetricImplD.cc in Sources */,
 				6850CF1E244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonAdjImplD.cc in Sources */,
 				68D0E9E624A3503B00834C1C /* NaiveStaggeredFermionInstantiation.cc in Sources */,
 				6850CF55244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonImplF.cc in Sources */,
-				6850CF92244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonImplDF.cc in Sources */,
-				6850CF9B244A1C3100A53DC8 /* CayleyFermion5DInstantiationWilsonImplDF.cc in Sources */,
 				6850CF5E244A1C3100A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplD.cc in Sources */,
 				6850CF6A244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonAdjImplF.cc in Sources */,
 				6850CF2F244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplF.cc in Sources */,
 				6850D236244A1C3200A53DC8 /* Log.cc in Sources */,
-				6850CF97244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonImplDF.cc in Sources */,
 				6850CF8E244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonTwoIndexSymmetricImplD.cc in Sources */,
-				6850CF23244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationGparityWilsonImplFH.cc in Sources */,
 				6850D247244A1C3200A53DC8 /* BinaryIO.cc in Sources */,
 				6850CF54244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationWilsonImplF.cc in Sources */,
 				6850D032244A1C3100A53DC8 /* Communicator_mpi3.cc in Sources */,
-				6850CF26244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationGparityWilsonImplFH.cc in Sources */,
 				6850CF63244A1C3100A53DC8 /* WilsonKernelsInstantiationGparityWilsonImplD.cc in Sources */,
-				6850CF19244A1C3100A53DC8 /* WilsonKernelsInstantiationZWilsonImplDF.cc in Sources */,
-				6850CF0E244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationWilsonImplFH.cc in Sources */,
-				6850CF10244A1C3100A53DC8 /* WilsonFermion5DInstantiationWilsonImplFH.cc in Sources */,
 				6850CF9F244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonTwoIndexAntiSymmetricImplF.cc in Sources */,
 				6850CF20244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonAdjImplD.cc in Sources */,
-				6850CF25244A1C3100A53DC8 /* CayleyFermion5DInstantiationGparityWilsonImplFH.cc in Sources */,
 				6850CF31244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplF.cc in Sources */,
 				6850CF45244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonTwoIndexAntiSymmetricImplD.cc in Sources */,
 				6850CF49244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonTwoIndexSymmetricImplF.cc in Sources */,
 				6850CF58244A1C3100A53DC8 /* WilsonTMFermionInstantiationWilsonImplF.cc in Sources */,
-				6850CF2A244A1C3100A53DC8 /* WilsonFermion5DInstantiationGparityWilsonImplFH.cc in Sources */,
 				68D0E9DB24A34F4B00834C1C /* MemoryManager.cc in Sources */,
-				6850CF18244A1C3100A53DC8 /* ContinuedFractionFermion5DInstantiationZWilsonImplDF.cc in Sources */,
 				6850CF68244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationGparityWilsonImplD.cc in Sources */,
 				6850CF48244A1C3100A53DC8 /* WilsonFermionInstantiationWilsonTwoIndexSymmetricImplF.cc in Sources */,
 				6850CF7D244A1C3100A53DC8 /* DomainWallEOFAFermionInstantiationZWilsonImplF.cc in Sources */,
@@ -8002,18 +7718,14 @@
 				6850CF53244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationWilsonImplF.cc in Sources */,
 				6850CF5F244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplD.cc in Sources */,
 				6850CF30244A1C3100A53DC8 /* WilsonFermionInstantiationGparityWilsonImplF.cc in Sources */,
-				6850CF09244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonImplFH.cc in Sources */,
-				6850CF9C244A1C3100A53DC8 /* WilsonFermion5DInstantiationWilsonImplDF.cc in Sources */,
 				6850CEC0244A1C3100A53DC8 /* Stencil.cc in Sources */,
 				6850CF08244A1C3100A53DC8 /* CayleyFermion5DInstantiationWilsonImplD.cc in Sources */,
 				6850CF8F244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonTwoIndexSymmetricImplD.cc in Sources */,
 				6850CF3A244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplD.cc in Sources */,
-				6850CF0B244A1C3100A53DC8 /* WilsonKernelsInstantiationWilsonImplFH.cc in Sources */,
 				6850CF7E244A1C3100A53DC8 /* WilsonKernelsInstantiationZWilsonImplF.cc in Sources */,
 				6850CEB2244A1C3100A53DC8 /* Init.cc in Sources */,
 				6850CF7A244A1C3100A53DC8 /* CayleyFermion5DInstantiationZWilsonImplF.cc in Sources */,
 				6850CFA0244A1C3100A53DC8 /* WilsonCloverFermionInstantiationWilsonTwoIndexAntiSymmetricImplF.cc in Sources */,
-				6850CF17244A1C3100A53DC8 /* MobiusEOFAFermionInstantiationZWilsonImplDF.cc in Sources */,
 				6850CF36244A1C3100A53DC8 /* PartialFractionFermion5DInstantiationGparityWilsonImplF.cc in Sources */,
 				6850D016244A1C3100A53DC8 /* Remez.cc in Sources */,
 				6850CF4D244A1C3100A53DC8 /* ImprovedStaggeredFermionInstantiation.cc in Sources */,
