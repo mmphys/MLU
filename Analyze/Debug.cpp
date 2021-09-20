@@ -7,11 +7,13 @@
 //
 
 #include <stdio.h>
-//#include <MLU/Common.hpp>
+#include <MLU/Common.hpp>
 #include <omp.h>
 #include <Grid/Grid.h>
 
-using Grid::operator<<;\
+#include <boost/spirit/home/x3/version.hpp>
+
+using Grid::operator<<;
 using Grid::operator>>;
 
 using GridScalar = float;
@@ -207,8 +209,10 @@ int main(int argc, char *argv[])
 {
   //std::ios_base::sync_with_stdio( false );
   Grid::Grid_init(&argc,&argv);
-  //std::cout << Grid::GridLogMessage << MLUVersionInfoHuman() << std::endl;
+  std::cout << Grid::GridLogMessage << MLUVersionInfoHuman() << std::endl;
   std::cout << Grid::GridLogMessage << "Hello" << std::endl;
+  std::cout << Grid::GridLogMessage << "Boost Spirit X3 version 0x"
+            << std::hex << SPIRIT_X3_VERSION << std::dec << std::endl;
   int iReturn = EXIT_SUCCESS;
   try
   {

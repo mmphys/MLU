@@ -1195,6 +1195,7 @@
 		68BDB468263411900042E2A2 /* HadronsApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86B026340F5D002CAE0F /* HadronsApp.cpp */; };
 		68CEF13D24AA72B400A841F9 /* BaryonGamma3pt.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CEF13B24AA72B300A841F9 /* BaryonGamma3pt.hpp */; };
 		68CEF13E24AA72B400A841F9 /* BaryonGamma3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CEF13C24AA72B300A841F9 /* BaryonGamma3pt.cpp */; };
+		68CF7B0526F7E1220084DB0E /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		68D0E9CD24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9CC24A34F2A00834C1C /* PrecGeneralisedConjugateResidualNonHermitian.h */; };
 		68D0E9D524A34F4B00834C1C /* MemoryManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 68D0E9CE24A34F4A00834C1C /* MemoryManager.h */; };
 		68D0E9D624A34F4B00834C1C /* MemoryManagerCache.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68D0E9CF24A34F4A00834C1C /* MemoryManagerCache.cc */; };
@@ -3071,6 +3072,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68CF7B0526F7E1220084DB0E /* libMLU.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8187,6 +8189,7 @@
 					$GridPkg/include/libomp,
 					$PROJECT_DIR,
 					"$PROJECT_DIR/build$(CONFIGURATION)",
+					$PROJECT_DIR/.Package/boost_1_77_0,
 				);
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;
@@ -8289,6 +8292,7 @@
 					$GridPkg/include/libomp,
 					$PROJECT_DIR,
 					"$PROJECT_DIR/build$(CONFIGURATION)",
+					$PROJECT_DIR/.Package/boost_1_77_0,
 				);
 				INCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES = "";
 				INSTALL_PATH = /;
