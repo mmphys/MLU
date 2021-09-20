@@ -30,6 +30,7 @@ function Download() {
   fi
 
   # Now unzip it
+  echo "  $Name unzipping ..."
   tar -xf $Zip
   local val=$?
   if [ $? -ne 0 ]
