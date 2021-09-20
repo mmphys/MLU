@@ -612,7 +612,8 @@ std::istream& operator>>( std::istream& is, Momentum &p )
 
 // These are the attributes I like to use in my filenames
 void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> * pOpNames,
-                         const std::vector<std::string> * pIgnoreMomenta )
+                         const std::vector<std::string> * pIgnoreMomenta,
+                         const std::vector<std::string> * pIgnoreRegEx )
 {
   clear();
   Filename = Filename_;
@@ -651,12 +652,13 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   }
   // Now see whether we can extract operator names
   if( pOpNames )
-    ParseOpNames( *pOpNames, 2, pIgnoreMomenta );
+    ParseOpNames( *pOpNames, 2, pIgnoreMomenta, pIgnoreRegEx );
   else
-    ParseShort( pIgnoreMomenta );
+    ParseShort( pIgnoreMomenta, pIgnoreRegEx );
 }
 
-void FileNameAtt::ParseShort( const std::vector<std::string> * pIgnoreMomenta )
+void FileNameAtt::ParseShort( const std::vector<std::string> * pIgnoreMomenta,
+                              const std::vector<std::string> * pIgnoreRegEx )
 {
   // Remove momenta we are going to ignore in the filename
   Momentum pIgnore;
@@ -666,6 +668,15 @@ void FileNameAtt::ParseShort( const std::vector<std::string> * pIgnoreMomenta )
     {
       while( pIgnore.Extract( Base, s ) ) // There might be more than one copy
         ; //momIgnore.emplace_back( s, pIgnore );
+    }
+  }
+  if( pIgnoreRegEx )
+  {
+    for( const std::string &s : *pIgnoreRegEx )
+    {
+      // Remove strings from the filename. No need to expose these strings (for now)
+      while( ExtractToken( Base, s ) )
+        ;
     }
   }
   BaseShort = Base;
@@ -718,7 +729,9 @@ void FileNameAtt::ParseShort( const std::vector<std::string> * pIgnoreMomenta )
 
 // Parse operator names from the end of Base, building up a list of all the operator names
 // NB: Because I parse from the end, op[0] is the last operator, op[1] second last, etc
-std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps, const std::vector<std::string> * pIgnoreMomenta )
+std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps,
+                                                    const std::vector<std::string> * pIgnoreMomenta,
+                                                    const std::vector<std::string> * pIgnoreRegEx )
 {
   static const char Sep[] = "_.";
   constexpr std::size_t NumSeps{ sizeof( Sep ) / sizeof( Sep[0] ) - 1 };
@@ -752,14 +765,15 @@ std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps, const std::vecto
   {
     Base.resize( LastPos ); // Shorten the base
   }
-  ParseShort( pIgnoreMomenta );
+  ParseShort( pIgnoreMomenta, pIgnoreRegEx );
   return o;
 }
 
 void FileNameAtt::ParseOpNames( std::vector<std::string> &OpNames, int NumOps,
-                                const std::vector<std::string> * pIgnoreMomenta )
+                                const std::vector<std::string> * pIgnoreMomenta,
+                                const std::vector<std::string> * pIgnoreRegEx )
 {
-  std::vector<std::string> Ops{ ParseOpNames( NumOps, pIgnoreMomenta ) };
+  std::vector<std::string> Ops{ ParseOpNames( NumOps, pIgnoreMomenta, pIgnoreRegEx ) };
   op.clear();
   op.reserve( NumOps );
   for( std::string &s : Ops )
@@ -773,7 +787,8 @@ void FileNameAtt::ParseOpNames( std::vector<std::string> &OpNames, int NumOps,
   }
 }
 
-void FileNameAtt::ParseExtra( unsigned int MaxElements, const std::vector<std::string> * pIgnoreMomenta )
+void FileNameAtt::ParseExtra( unsigned int MaxElements, const std::vector<std::string> * pIgnoreMomenta,
+                              const std::vector<std::string> * pIgnoreRegEx )
 {
   std::size_t pos;
   while( MaxElements-- && ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
@@ -781,7 +796,7 @@ void FileNameAtt::ParseExtra( unsigned int MaxElements, const std::vector<std::s
     Extra.push_back( Base.substr( pos + 1 ) );
     Base.resize( pos );
   }
-  ParseShort( pIgnoreMomenta );
+  ParseShort( pIgnoreMomenta, pIgnoreRegEx );
 }
 
 // Append the extra info to the string
@@ -888,9 +903,7 @@ bool ExtractToken( std::string &Prefix, const std::string &Token )
       throw std::runtime_error( "Multiple " + Token + " tokens in " + Prefix );
     bExtracted = true;
     std::string s{ match.prefix() };
-    if( match[1].length() )
-      s.append( match[1] );
-    else if( match[2].length() )
+    if( match[1].length() && match[2].length() )
       s.append( match[2] );
     s.append( match.suffix() );
     Prefix = s;
@@ -1318,8 +1331,9 @@ std::ostream& operator<<( std::ostream& os, const CommandLine &cl)
   return os;
 }
 
-void CommandLine::SkipPastSep( const char * & p )
+bool CommandLine::IsValuePresent( const char * & p )
 {
+  const char * const pOriginal{ p };
   while( *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n' )
     p++;
   if( *p == '=' ) {
@@ -1327,6 +1341,9 @@ void CommandLine::SkipPastSep( const char * & p )
     while( *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n' )
       p++;
   }
+  // There's a value present if there are characters in the string
+  // ... or if we skipped past whitespace and/or equal sign to get to end of string
+  return *p || pOriginal != p;
 }
 
 void CommandLine::Parse( int argc, const char *argv[], const std::vector<SwitchDef> &defs )
@@ -1381,11 +1398,11 @@ void CommandLine::Parse( int argc, const char *argv[], const std::vector<SwitchD
         SwitchNo = -1;
         continue;
       }
-      // Swallow any trailing whitespace
-      while( *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n' )
-        p++;
       if( defs[SwitchNo].Type == SwitchType::Flag ) {
         // This is just a switch - it should not have a value
+        // Swallow any trailing whitespace
+        while( *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n' )
+          p++;
         if( *p ) {
           std::cerr << "Switch \"" << SwitchName << "\" should not have a value \"" << p << "\"" << std::endl;
           bError = true;
@@ -1403,8 +1420,7 @@ void CommandLine::Parse( int argc, const char *argv[], const std::vector<SwitchD
         continue;
       }
       // Use the remainder of this switch as a value ... or wait for next param if empty
-      SkipPastSep( p );
-      if( *p == 0 )
+      if( !IsValuePresent( p ) )
         continue;
     }
     if( SwitchNo != -1 ) {

@@ -28,3 +28,36 @@
 
 using Scalar = double;
 using Fold = Common::Fold<Scalar>;
+using Boot = Common::Sample<std::complex<Scalar>>;
+
+class Params
+{
+public:
+  const bool bForceOverwrite;
+  const bool bSaveHdf5;
+  const std::string InBase;
+  const std::string OutBase;
+  using VFMap = std::map<std::string, double>;
+
+protected:
+  VFMap VolFactor;
+  bool bFold = false;
+  Fold fDenominator, fNumerator;
+  Boot bDenominator, bNumerator;
+
+  void DivideCommon( const Boot &Denominator, Boot &Numerator );
+  void ReadNumerator( const std::string &FileName );
+  template <typename T> typename std::enable_if<std::is_floating_point<T>::value>::type
+  Normalise( T * pData, int NumSamples, int Nt,
+             const std::vector<int> &opNum, const std::vector<std::string> &opNames );
+  template <typename T> typename std::enable_if<std::is_floating_point<T>::value>::type
+  Normalise( std::complex<T> * pData, int NumSamples, int Nt,
+             const std::vector<int> &opNum, const std::vector<std::string> &opNames );
+  template <typename FoldBoot>
+  void DivideBoot( FoldBoot &Numerator, const FoldBoot &Denominator );
+  void DivideFold( Fold &Numerator, const Fold &Denominator );
+
+public:
+  Params( const Common::CommandLine &cl );
+  void Run( const Common::CommandLine &cl, bool &bShowUsage );
+};

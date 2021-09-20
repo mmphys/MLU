@@ -2,11 +2,12 @@
 
 LDADD = ../MLU/libMLU.a $(MLU_LIBS)
 
-bin_PROGRAMS = bootstrap corr corrstat Divide FitSummary hlxml MultiFit repair
+bin_PROGRAMS = bootstrap corr corrstat Debug Divide FitSummary hlxml MultiFit repair
 
 bootstrap_SOURCES = bootstrap.cpp
 corr_SOURCES = corr.cpp
 corrstat_SOURCES = corrstat.cpp
+Debug_SOURCES = Debug.cpp
 Divide_SOURCES = Divide.cpp
 FitSummary_SOURCES =  FitSummary.cpp
 hlxml_SOURCES = hlxml.cpp

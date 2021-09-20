@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6870690526960B4E003F5888"
-               BuildableName = "Divide"
-               BlueprintName = "Divide"
+               BlueprintIdentifier = "680807CE26DE5DDE00AB6A5D"
+               BuildableName = "Example_Mobius_spectrum"
+               BlueprintName = "Example_Mobius_spectrum"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$PROJECT_DIR/run"
+      customWorkingDirectory = "$PROJECT_DIR/run/Example_Mobius_spectrum"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -45,34 +45,12 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6870690526960B4E003F5888"
-            BuildableName = "Divide"
-            BlueprintName = "Divide"
+            BlueprintIdentifier = "680807CE26DE5DDE00AB6A5D"
+            BuildableName = "Example_Mobius_spectrum"
+            BlueprintName = "Example_Mobius_spectrum"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-         <CommandLineArgument
-            argument = "-i boot/t_0/"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-v g5W=32"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o divide/t_0/"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "&apos;*&apos;.h5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-f"
-            isEnabled = "YES">
-         </CommandLineArgument>
-      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -84,9 +62,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6870690526960B4E003F5888"
-            BuildableName = "Divide"
-            BlueprintName = "Divide"
+            BlueprintIdentifier = "680807CE26DE5DDE00AB6A5D"
+            BuildableName = "Example_Mobius_spectrum"
+            BlueprintName = "Example_Mobius_spectrum"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

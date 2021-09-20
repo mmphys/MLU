@@ -105,6 +105,7 @@ class Taxonomy
   friend class AppParams;
 protected:
   static const std::string HissyFitDefault;
+  static int numHits;
 public:
   Family family;
   Species species;
@@ -160,9 +161,26 @@ public:
     FamilyIndex( family );
     SpeciesIndex( species );
     // Weed out invalid combinations
-    if( family == Family::Z2 && species == Species::Wall    // Shouldn't be asking for wall sinks without gauge-fixing
-     || family == Family::GR && species != Species::Wall )  // These look like point source and wall sink
-      HissyFit();
+    if( family == Family::Z2 && species == Species::Wall )
+      HissyFit( "Z2 source with wall sink invalid: wall-sink requires gauge-fixing" );
+    if( family == Family::GR && species != Species::Wall )
+      HissyFit( "GR (gauge-fixed wall reversed, i.e. point sources with wall sink) require wall-sink" );
+  }
+  inline int NumHits() const
+  {
+    return ( family == Family::ZF || family == Family::Z2 ) ? numHits : 1;
+  }
+  static inline void NumHits( int numHits_ )
+  {
+    numHits = numHits_;
+  }
+  static inline void AppendHit( std::string &s, int hit )
+  {
+    if( hit != 1 )
+    {
+      s.append( "_hit_" );
+      s.append( std::to_string( hit ) );
+    }
   }
 };
 
@@ -412,7 +430,8 @@ public:
   static const std::string Prefix;
   const Common::Momentum p;
   const int t;
-  ModSource(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p, int t);
+  const int hit;
+  ModSource(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p, int t, int hit = 1);
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
@@ -488,7 +507,9 @@ public:
   const Quark &q;
   const Common::Momentum p;
   const int t;
-  ModProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, const Common::Momentum &p, int t );
+  const int hit;
+  ModProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, const Common::Momentum &p,
+           int t, int hit = 1 );
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
@@ -503,7 +524,9 @@ public:
   const Quark &q;
   const Common::Momentum p;
   const int t;
-  ModSlicedProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, const Common::Momentum &p, int t );
+  const int hit;
+  ModSlicedProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, const Common::Momentum &p,
+                 int t, int hit );
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
@@ -569,9 +592,10 @@ public:
   const Common::Momentum p2;
   const int t;
   const Common::Momentum pSource;
+  const int hit;
   ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
                   const Quark &q1, const Quark &q2, const Common::Momentum &p1, int t,
-                  const Common::Momentum &p2 = p0 );
+                  const Common::Momentum &p2, int hit );
   virtual void AddDependencies( HModList &ModList ) const;
 };
 

@@ -126,6 +126,7 @@ public:
   struct MakePar: Serializable {
       GRID_SERIALIZABLE_CLASS_MEMBERS(MakePar,
                                       bool,         TwoPoint,
+                                      std::string,  NumHits,
                                       bool,         HeavyQuark,
                                       bool,         HeavyAnti,
                                       bool,         R1Term1,

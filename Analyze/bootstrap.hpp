@@ -114,6 +114,7 @@ struct TrajList
            const std::string &opSuffixSnk_, const std::string &opSuffixSrc_,
            bool brev_, Common::Gamma::Algebra Alg3pt_, int DeltaT_ )
   : TrajList( Name_, sShortPrefix_, sShortSuffix_, opSuffixSnk_, opSuffixSrc_, true, brev_, Alg3pt_, DeltaT_ ) {}*/
+  bool OpSuffiiSame() const { return Common::EqualIgnoreCase( OpSuffixSnk, OpSuffixSrc ); }
 };
 
 class BootstrapParams
@@ -163,6 +164,7 @@ struct Manifest : public std::map<std::string, TrajList>
   const std::string DefaultGroup;
   const std::string DefaultDataSet;
   const std::vector<std::string> vIgnoreMomenta;
+  const std::vector<std::string> vIgnoreRegEx;
   std::vector<Algebra> AlgSource;  // Also the sink algebra for two-point functions. Empty=wildcard, loaded from first file
 protected:
   std::vector<Algebra> AlgCurrentLoad; // These are the current algebra to load. Gammai removed and Gamma X, Y & Z added

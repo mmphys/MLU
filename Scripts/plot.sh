@@ -84,7 +84,7 @@ do_whisker=(system("awk '! /#/ {print (\$0 ~ /".word(FieldNames,1)."_min/) ? 1 :
 
 # Decide on a title and output filename
 if( SaveFile == 2 ) {
-  MyTitle = SaveFileName
+  MyTitle=my_title
   SaveFileName=SaveFileName.".pdf"
 } else {
   # We are only processing one file
@@ -264,6 +264,7 @@ else
   # A single Filename has been specified - put all the plots in the one file
   SaveFile=2
   SaveFileName="${save// /_}"
+  if (( do_title == 0 )); then title="${SaveFileName##*/}"; fi
   PlotFile="$*"
   for f in $PlotFile; do
     PlotPathSplit "$f"

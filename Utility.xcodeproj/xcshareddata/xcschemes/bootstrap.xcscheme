@@ -66,10 +66,6 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ci"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-ag5,gT5"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -79,11 +75,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT,gx,gxyz"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--p2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-r4147798751"
@@ -94,7 +90,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-r1835672416 -w"
+            argument = "-r1835672416"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -114,32 +110,36 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o testboot/"
+            argument = "-o boot/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i &quot;~/data/study3/M1/M1.cpu/&quot;"
+            argument = "-i /Volumes/QCD/tess/semilep/M1/test.hits/880/2pt/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;{150,166,182,342}0/2pt/[GZ]F[PW][PW]/*_p_0_*&apos;.h5"
+            argument = "ZF[PW]P/&apos;*&apos;_t_[05].&apos;*&apos;.h5 ZF[PW]P/&apos;*&apos;_t_[05]_h&apos;*&apos;.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;{150,166,182}0/3pt_s/[GZ]FPW_*/*_ps_0_*_p_0_*&apos;.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "meson/3pt_s/[PW][PW]_&apos;*&apos;.h5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "meson/2pt/&apos;*&apos;"
+            argument = "ZF[PW]P/&apos;*&apos;.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ssre=^[GZ][F2]([[:alnum:]])([[:alnum:]])_"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--ssre=^([PW])([PW])_"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-w"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-f"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

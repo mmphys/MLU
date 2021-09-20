@@ -92,6 +92,6 @@ rsync -uvlmrt --include='*.txt' --include='*/' --exclude='*' tess:"${RemoteBase}
 
 #GetDebugWard
 #GetDebugMeson
-#GetCorrelators
+GetCorrelators
 #GetFits # These can be a little slow when there's 50,000 of them
-GetRatios
+#GetRatios

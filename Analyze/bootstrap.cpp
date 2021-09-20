@@ -186,12 +186,11 @@ void CopyTimeSlice( std::complex<double> *&pDst, const std::complex<double> *pSr
     *pDst++  = pSrc[ ( t + TOffset ) % Nt ];
 }
 
-bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, const Iter &last, const TrajList &Traj,
-                                   Algebra Snk, Algebra Src, bool bAlignTimeslices ) const
+bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, const Iter &last,
+                        const TrajList &Traj, Algebra Snk, Algebra Src, bool bAlignTimeslices ) const
 {
   // Factorised 2pt functions with Snk!=Src will have both entries loaded
-  const int OpFactor{ ( !Traj.b3pt && b2ptFactorised && Snk != Src
-                       && !Common::CompareIgnoreCase( Traj.OpSuffixSnk, Traj.OpSuffixSrc ) ) ? 2 : 1 };
+  const int OpFactor{ ( !Traj.b3pt && b2ptFactorised && Snk != Src && Traj.OpSuffiiSame() ) ? 2 : 1 };
   // Count how many input records there are: in total; and per configuration
   int NumSamplesRaw{ 0 };
   std::map<int, int> ConfigCount;
@@ -282,12 +281,12 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
   }
 
   // Now Bin the data
-  if( binAuto && out.ConfigCount.size() > 1 )
+  //if( binAuto && out.ConfigCount.size() > 1 ) out.Bin();
+  //else out.Bin( ( binAuto ? 1 : binSize ) * OpFactor );
+  if( binAuto )
     out.Bin();
   else
-  {
-    out.Bin( ( binAuto ? 1 : binSize ) * OpFactor );
-  }
+    out.Bin( binSize * OpFactor );
   return true;
 }
 
@@ -327,7 +326,7 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
   Common::SampleC out( nSample, first->Nt() );
   for( int Snk = 0; Snk < SinkAlgebra.size(); Snk++ )
   {
-    const int UpperLimit{ !Traj.b3pt && b2ptFactorised && !Common::CompareIgnoreCase( Traj.OpSuffixSnk, Traj.OpSuffixSrc )
+    const int UpperLimit{ !Traj.b3pt && b2ptFactorised && Traj.OpSuffiiSame()
                           ? Snk + 1 : static_cast<int>( SourceAlgebra.size() ) };
     for( int Src = 0; Src < UpperLimit; Src++ )
     {
@@ -675,10 +674,12 @@ Manifest::Manifest( const Common::CommandLine &cl, const BootstrapParams &par_ )
   DefaultGroup{ cl.SwitchValue<std::string>( "g" ) },
   DefaultDataSet{ cl.SwitchValue<std::string>( "d" ) },
   vIgnoreMomenta{ Common::ArrayFromString( cl.SwitchValue<std::string>("pignore") ) },
+  vIgnoreRegEx{ Common::ArrayFromString( cl.SwitchValue<std::string>("ignore") ) },
   AlgSource{ Common::ArrayFromString<Algebra>( cl.SwitchValue<std::string>( "a" ) ) },
   AlgCurrent{ GetCurrentAlgebra( cl ) }
 {
   Common::NoDuplicates( vIgnoreMomenta, "Ignored momenta", 0 );
+  Common::NoDuplicates( vIgnoreRegEx, "Ignored regular expressions", 0 );
   Common::NoDuplicates( AlgSource, "Source algebra", 0 );
   for( Algebra a : AlgCurrent )
   {
@@ -759,7 +760,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
     else
     {
       // Parse the name. Not expecting a type, so if present, put it back on the end of Base
-      Common::FileNameAtt Name_{ Filename, nullptr, &vIgnoreMomenta };
+      Common::FileNameAtt Name_{ Filename, nullptr, &vIgnoreMomenta, &vIgnoreRegEx };
       if( !Name_.bSeedNum )
         throw std::runtime_error( "Contraction files must contain a configuration number" );
       if( !Name_.Type.empty() )
@@ -944,6 +945,7 @@ bool Manifest::RunManifest()
 int main(const int argc, const char *argv[])
 {
   static const char DefaultERE[]{ R"(^([PWpw])([PWpw])_)" };
+  static const char DefaultIgnore[]{ "[hH][iI][tT]_[^_]+" };
   static const char DefaultIgnoreMomenta[]{ "pq2" };
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
@@ -969,13 +971,13 @@ int main(const int argc, const char *argv[])
       {"x", CL::SwitchType::Multiple, nullptr},
       {"f", CL::SwitchType::Flag, nullptr},
       {"w", CL::SwitchType::Flag, nullptr},
-      {"ci",CL::SwitchType::Flag, nullptr},
+      {"s", CL::SwitchType::Flag, nullptr},
       {"p2",CL::SwitchType::Flag, nullptr},
       {"pa",CL::SwitchType::Flag, nullptr},
+      {"ignore",CL::SwitchType::Single, DefaultIgnore},
       {"pignore",CL::SwitchType::Single, DefaultIgnoreMomenta},
-      {"s", CL::SwitchType::Flag, nullptr},
       {"show", CL::SwitchType::Flag, nullptr},
-      {"sort", CL::SwitchType::Flag, nullptr},
+      //{"sort", CL::SwitchType::Flag, nullptr},
       {"ssre", CL::SwitchType::Single, DefaultERE },
       {"terse", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -1025,16 +1027,17 @@ int main(const int argc, const char *argv[])
     "-c     list of gamma algebras for current insertion         (Enable 3-pt mode)\n"
     "-g     Group name to read correlators from\n"
     "-d     DataSet name to read correlators from\n"
-    "-s     Perform bootstrap for specified study number\n"
     "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
     "-f     Disable Factorising operators, e.g. g5-gT5 same as gT5-g5 (2pt only)\n"
     "-w     Warn only if file exists. Default=error\n"
+    "-s     Perform bootstrap for specified study numbers\n"
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"
     "--pignore List of momenta to ignore (default: " << DefaultIgnoreMomenta << ")\n"
+    "--ignore  List of regular expressions to ignore (default: " << DefaultIgnore << ")\n"
     "--show Show how files would be bootstrapped, but don't execute\n"
     //"--sort Disable sort of correlator before group (2pt mode only)\n"
     "--ssre Sink / Source extended Regular Expression ('' to disable), default:\n       " << DefaultERE << "\n"
