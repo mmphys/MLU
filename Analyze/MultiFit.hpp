@@ -40,16 +40,13 @@
 #include <set>
 //#include <sys/stat.h>
 
-#include <Minuit2/FCNBase.h>
-#include <Minuit2/Minuit2Minimizer.h>
-#include <Minuit2/VariableMetricMinimizer.h>
-#include <Minuit2/MnMigrad.h>
-#include <Minuit2/FunctionMinimum.h>
-#include <Minuit2/MinimumParameters.h>
-#include <Minuit2/MinimumState.h>
-#include <Minuit2/MnPrint.h>
-
-#include <gsl/gsl_multifit_nlinear.h>
+//#define DUMP_MATRICES
+#ifdef DUMP_MATRICES
+void Dump( const std::string &Name, const Matrix &m );
+void Dump( const std::string &Name, const Vector &v );
+#else
+#define Dump( x, y )
+#endif
 
 using scalar = double;
 using Fold = Common::Fold<scalar>;
@@ -68,9 +65,6 @@ extern const char * pSrcSnk[];
 
 // This is the name of an energy level
 extern const std::string E;
-
-enum class FitterType{ Minuit2, GSL };
-std::ostream & operator<<( std::ostream &os, const FitterType f );
 
 enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant };
 std::ostream & operator<<( std::ostream &os, const ModelType m );
@@ -129,9 +123,11 @@ struct FitRangesIterator : public std::vector<FitTime>
 // Default parameters for model creation
 struct ModelDefaultParams
 {
-  int NumExponents;
-  int NumOps;
-  bool bForceSrcSnkDifferent;
+  const bool bForceSrcSnkDifferent;
+  const int NumExponents;
+  //int NumOps;
+  ModelDefaultParams( bool bForceSrcSnkDifferent_, const Common::CommandLine &cl )
+  : bForceSrcSnkDifferent{ bForceSrcSnkDifferent_ }, NumExponents{ cl.SwitchValue<int>( "e" ) } {}
 };
 
 // This represents the model I'm fitting to
@@ -178,9 +174,8 @@ public:
   virtual double Derivative( int t, int p ) const { return 0; }
 };
 
-class Parameters
+struct Parameters
 {
-public:
   struct Parameter
   {
     std::string Name;
@@ -189,85 +184,48 @@ public:
     Parameter() {} // Random Value and Error is ok - would like this to show up
     Parameter( const std::string &name_, scalar value_, scalar error_ ) : Name{name_}, Value{value_}, Error{error_} {}
   };
-  std::size_t MaxLen;
-  std::vector<Parameter>  Params;
+  using iterator = std::vector<Parameter>::iterator;
+  using const_iterator = std::vector<Parameter>::const_iterator;
 protected:
-  inline void CheckLength( const std::string &name_ )
-  {
-    std::size_t Len = name_.length();
-    if( MaxLen < Len )
-      MaxLen = Len;
-  }
+  std::size_t maxLen = 0;
+  std::vector<Parameter> Params;
 public:
-  // constructors
-  explicit Parameters( std::size_t Num = 0 ) : MaxLen{ 0 }, Params( Num ){};
-  Parameters( const Parameters &p ) : Params( p.Params ) { MaxLen = p.MaxLen; }
-  Parameters( const ROOT::Minuit2::MnUserParameters &Minuit2Params ) : MaxLen{ 0 } { *this = Minuit2Params; }
-  Parameters( const ROOT::Minuit2::MnUserParameterState &Minuit2State ) : Parameters( Minuit2State.Parameters() ) {}
-  inline Parameters& operator=( const ROOT::Minuit2::MnUserParameters &Minuit2Params )
+  // Helpers
+  inline void clear() { maxLen = 0; Params.clear(); }
+  inline std::size_t size() const { return Params.size(); }
+  inline std::size_t MaxLen() const { return maxLen; }
+  //inline       Parameter & operator[]( std::size_t i )       { return Params[i]; }
+  inline const Parameter & operator[]( std::size_t i ) const { return Params[i]; }
+  inline void Add( const std::string &Name, scalar Value, scalar Error )
   {
-    Params.clear();
-    MaxLen = 0;
-    const std::vector<ROOT::Minuit2::MinuitParameter> & params{ Minuit2Params.Parameters() };
-    Params.reserve( params.size() );
-    for( const ROOT::Minuit2::MinuitParameter &p : params )
-      Add( p.GetName(), p.Value(), p.Error() );
-    return *this;
+    Params.emplace_back( Name, Value, Error );
+    std::size_t Len = Name.length();
+    if( maxLen < Len )
+      maxLen = Len;
   }
-  inline Parameters& operator=( const ROOT::Minuit2::MnUserParameterState &State ) { return *this=State.Parameters(); };
-  inline Parameter & operator[]( std::size_t i ) { return Params[i]; }
-  inline void Add( const std::string &name_, scalar value_, scalar error_ )
-  {
-    Params.emplace_back( name_, value_, error_ );
-    CheckLength( name_ );
-  }
-  inline scalar Value( std::size_t i ) const { return Params[i].Value; }
+  inline iterator begin() { return Params.begin(); }
+  inline iterator end()   { return Params.end(); }
+  inline const_iterator begin() const { return Params.begin(); }
+  inline const_iterator end()   const { return Params.end(); }
 };
 
 std::ostream & operator<<( std::ostream &os, const Parameters &Params );
 
-struct GSLState
-{
-  int ConvergeReason;
-  std::size_t nevalf;
-  std::size_t nevaldf;
-};
-
 struct ParamState
 {
-  bool bValid;
   Parameters parameters;
+  bool bValid;
   scalar TestStat;
   unsigned int NumCalls;
-  scalar edm;
-  bool bGotMinuit2State;
-  ROOT::Minuit2::MnUserParameterState Minuit2State;
-  bool bGotGSLState;
-  GSLState gslState;
-  ParamState( Parameters parameters_ ) : bValid{false}, bGotMinuit2State{false}, bGotGSLState{false}, parameters( parameters_ ) {}
-  ParamState( const ROOT::Minuit2::MnUserParameterState &State )
-  : bValid{State.IsValid()}, parameters( State ), TestStat{State.Fval()}, NumCalls{State.NFcn()}, edm{State.Edm()},
-    bGotMinuit2State{true}, Minuit2State{State} {}
-  bool IsValid() const { return bValid; }
-  inline ParamState& operator=( const ROOT::Minuit2::MnUserParameterState &State )
-  {
-    bValid = State.IsValid();
-    if( bValid )
-    {
-      parameters = State.Parameters();
-      TestStat = State.Fval();
-      NumCalls = State.NFcn();
-      edm = State.Edm();
-    }
-    bGotMinuit2State = true;
-    Minuit2State = State;
-    return *this;
-  };
-  const Parameters &Parameters() const { return parameters; }
-  scalar Fval() const { return TestStat; }
-  unsigned int NFcn() const { return NumCalls; }
-  scalar Edm() const { return edm; }
-  void Add( const std::string &name_, scalar value_, scalar error_ ) { parameters.Add( name_, value_, error_ ); }
+        scalar getTestStat() const { return bValid ? TestStat : 0; }
+  unsigned int getNumCalls() const { return bValid ? NumCalls : 0; }
+  ParamState( const Parameters &parameters_, bool bValid_=false, scalar TestStat_=0, unsigned int NumCalls_=0 )
+  : parameters{parameters_}, bValid{bValid_}, TestStat{TestStat_}, NumCalls{NumCalls_} {}
+  ParamState( Parameters &&parameters_, bool bValid_=false, scalar TestStat_=0, unsigned int NumCalls_=0 )
+  : parameters{std::move( parameters_ )}, bValid{bValid_}, TestStat{TestStat_}, NumCalls{NumCalls_} {}
+  virtual ~ParamState(){}
+  virtual void StandardOut( std::ostream &os ) const = 0; //TODO: Deuglify
+  virtual void ReplicaMessage( std::ostream &os ) const = 0; //TODO: Deuglify
 };
 
 std::ostream & operator<<( std::ostream &os, const ParamState &State );
@@ -298,6 +256,7 @@ protected:
   vCorrelator &CorrSynthetic; // Fill this with data for model correlator
   std::vector<Vector> ModelBuffer;
   // Helper functions
+  virtual ParamState * MakeParamState( const Parameters &Params ) = 0;
 public:
   FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
   virtual ~FitterThread() {}
@@ -329,24 +288,24 @@ public:
 class Fitter
 {
 public:
-  // These variables set in the constructor
-  const FitterType fitType;
-  const DataSet &ds;  // Non-const because I need to set fit ranges
+  // Simple command-line options
   const bool bAnalyticDerivatives;
-  const int NumOps;
-  const std::vector<std::string> &OpNames;
-  const bool bForceSrcSnkDifferent;
-  const int Verbosity;
-  const bool bFreezeCovar;
-  const bool bSaveCorr;
-  const bool bSaveCMat;
+  const double HotellingCutoff;
+  const double RelEnergySep;
+  const int MinDof;
   const int Retry;
   const int MaxIt;
   const double Tolerance;
-  const int MinDof;
-  const double RelEnergySep;
-  const double HotellingCutoff;
-  const int NumFiles;
+  const bool bSaveCorr;
+  const bool bSaveCMat;
+  const bool bFreezeCovar;
+  const int Verbosity;
+  const bool bForceSrcSnkDifferent;
+  // More complex command-line options
+  const DataSet &ds;
+  const int NumFiles; // Number of correlator files in the dataset
+  const std::vector<std::string> &OpNames;
+  const int NumOps;
   std::vector<ModelPtr> model;      // Model for each correlator
   const int NumExponents;
   const std::vector<std::string> PerExpNames; // Names of all the per-energy-level parameters ("E" is first, rest sorted)
@@ -365,69 +324,24 @@ public:
 
 protected:
   // Used during construction (so that we can make the results const)
-  std::vector<ModelPtr> CreateModels( const std::vector<std::string> &ModelArgs, const ModelDefaultParams &modelDefault );
+  std::vector<ModelPtr> CreateModels( const std::vector<std::string> &ModelArgs,
+                                      const ModelDefaultParams &modelDefault );
   int GetNumExponents();
   std::size_t EnsureModelsSolubleHelper( UniqueNames &Names, std::size_t &NumWithUnknowns );
   std::vector<std::string> MakePerExpNames();
   std::vector<std::string> MakeParamNames();
   std::vector<DataSet::FixedParam> MakeParamFixed();
   std::vector<int> MakeParamVariable();
+  virtual FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic ) = 0;
 
 public:
-  explicit Fitter( FitterType fitType, const DataSet &ds_, const std::vector<std::string> &ModelArgs,
-                   const ModelDefaultParams &modelDefault, const std::vector<std::string> &opNames_,
-                   int Verbosity, bool bFreezeCovar, bool bSaveCorr, bool bSaveCMat,
-                   int Retry, int MaxIt, double Tolerance, int MinDof, double RelEnergySep, double HotellingCutoff,
-                   bool bAnalyticDerivatives );
+  virtual const std::string &Type() const = 0;
+  explicit Fitter( const Common::CommandLine &cl, const DataSet &ds_,
+                   const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames_ );
   virtual ~Fitter() {}
   std::vector<Common::ValWithEr<scalar>>
   PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName, const std::string &ModelSuffix,
               Common::SeedType Seed );
-};
-
-// Several of these will be running at the same time on different threads during a fit
-class FitterThreadMinuit2 : public FitterThread, ROOT::Minuit2::FCNBase
-{
-protected:
-  static constexpr unsigned int StrategyLevel{ 1 }; // for parameter ERRORS (see MnStrategy) 0=low, 1=medium, 2=high
-  static const ROOT::Minuit2::MnStrategy Strategy;
-  ROOT::Minuit2::VariableMetricMinimizer Minimiser;
-  // Helper functions
-public:
-  FitterThreadMinuit2( const Fitter &fitter_, bool bCorrelated_, ModelFile &OutputModel, vCorrelator &CorrSynthetic_ )
-  : FitterThread( fitter_, bCorrelated_, OutputModel, CorrSynthetic_ ) {}
-  virtual ~FitterThreadMinuit2() {}
-  // These are part of the FCNBase interface
-  virtual double Up() const { return 1.; }
-  virtual double operator()( const std::vector<double> &ModelParameters ) const;
-  //virtual void SetErrorDef(double def) {theErrorDef = def;}
-  virtual void Minimise( ParamState &Guess, int iNumGuesses );
-  virtual int NumRetriesGuess() const { return parent.Retry ? parent.Retry + 10 : 20; };
-  virtual int NumRetriesFit() const { return parent.Retry ? parent.Retry : 10; };
-};
-
-// Several of these will be running at the same time on different threads during a fit
-class FitterThreadGSL : public FitterThread
-{
-protected:
-  Vector vGuess;
-  gsl_multifit_nlinear_fdf fdf;
-  gsl_multifit_nlinear_workspace * ws;
-  int  f( const Vector &FitParams, Vector &Errors );
-  int df( const Vector &x, Matrix &J );
-  using Me = FitterThreadGSL;
-  static int  sf( const gsl_vector * x, void *data, gsl_vector * f_ )
-  { return reinterpret_cast<Me*>(data)->f( *reinterpret_cast<const Vector*>(x), *reinterpret_cast<Vector*>(f_) ); }
-  static int sdf( const gsl_vector * x, void *data, gsl_matrix * J  )
-  { return reinterpret_cast<Me*>(data)->df( *reinterpret_cast<const Vector*>(x), *reinterpret_cast<Matrix*>(J) ); }
-public:
-  FitterThreadGSL( const Fitter &Fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
-  virtual ~FitterThreadGSL();
-  virtual void Minimise( ParamState &Guess, int iNumGuesses );
-  virtual void MakeCovarCorrelated();
-  virtual int NumRetriesGuess() const { return parent.Retry; };
-  virtual int NumRetriesFit() const { return parent.Retry; };
-  virtual std::string Description() const;
 };
 
 #endif // MultiFit_hpp

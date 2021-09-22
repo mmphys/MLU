@@ -11,5 +11,8 @@ Debug_SOURCES = Debug.cpp
 Divide_SOURCES = Divide.cpp
 FitSummary_SOURCES =  FitSummary.cpp
 hlxml_SOURCES = hlxml.cpp
-MultiFit_SOURCES = MultiFit.cpp FitModel.cpp
+MultiFit_SOURCES = FitGSL.cpp FitModel.cpp MultiFit.cpp
+if MINUIT2
+MultiFit_SOURCES += FitMinuit2.cpp
+endif
 repair_SOURCES = repair.cpp

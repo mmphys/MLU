@@ -1185,6 +1185,8 @@
 		687D876E26340FF0002CAE0F /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687D86AA26340F5D002CAE0F /* xmlZ2.cpp */; };
 		6887C99825D571F600FF0855 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		68B0E7AC25D2CF5500B66FD0 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6889D8FC25D2BBC5004F15CE /* Common.cpp */; };
+		68B44A6A26F8F6D1008A7549 /* FitMinuit2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B44A6926F8F6D0008A7549 /* FitMinuit2.cpp */; };
+		68B44A6D26F8FF42008A7549 /* FitGSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B44A6B26F8FF41008A7549 /* FitGSL.cpp */; };
 		68B90196249D481800739CD2 /* RareKaonNeutralDisc.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68B90194249D481700739CD2 /* RareKaonNeutralDisc.hpp */; };
 		68B90197249D481800739CD2 /* RareKaonNeutralDisc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B90195249D481700739CD2 /* RareKaonNeutralDisc.cpp */; };
 		68B96246244AE20600E5CF09 /* Contractor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B9623A244AE18600E5CF09 /* Contractor.cpp */; };
@@ -2848,6 +2850,10 @@
 		68939D8123A016D200C30150 /* corrstat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = corrstat; sourceTree = BUILT_PRODUCTS_DIR; };
 		68AC6DE622A7114900D42F70 /* peramb-compare */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "peramb-compare"; sourceTree = BUILT_PRODUCTS_DIR; };
 		68B21CC423E720DF00D93480 /* corr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = corr; sourceTree = BUILT_PRODUCTS_DIR; };
+		68B44A6826F8F6D0008A7549 /* FitMinuit2.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitMinuit2.hpp; sourceTree = "<group>"; };
+		68B44A6926F8F6D0008A7549 /* FitMinuit2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitMinuit2.cpp; sourceTree = "<group>"; };
+		68B44A6B26F8FF41008A7549 /* FitGSL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitGSL.cpp; sourceTree = "<group>"; };
+		68B44A6C26F8FF42008A7549 /* FitGSL.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitGSL.hpp; sourceTree = "<group>"; };
 		68B47B41263572E300611065 /* Test_where.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Test_where.cc; sourceTree = "<group>"; };
 		68B47B422635732300611065 /* Test_nersc_io.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Test_nersc_io.cc; sourceTree = "<group>"; };
 		68B47B472635735800611065 /* Test_where */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_where; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3306,6 +3312,10 @@
 				687726872466C32D00D46AEF /* Debug.cpp */,
 				6870690026960B2C003F5888 /* Divide.cpp */,
 				6870690126960B2C003F5888 /* Divide.hpp */,
+				68B44A6B26F8FF41008A7549 /* FitGSL.cpp */,
+				68B44A6C26F8FF42008A7549 /* FitGSL.hpp */,
+				68B44A6926F8F6D0008A7549 /* FitMinuit2.cpp */,
+				68B44A6826F8F6D0008A7549 /* FitMinuit2.hpp */,
 				680DBC6024F81FB600A66BFF /* FitModel.cpp */,
 				686EC70924003ED30084D04D /* FitSummary.cpp */,
 				681DC8B722F19CB000EE04A9 /* hlxml.cpp */,
@@ -7514,8 +7524,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68B44A6D26F8FF42008A7549 /* FitGSL.cpp in Sources */,
 				6815510A22CBCB74009AB4AD /* MultiFit.cpp in Sources */,
 				680DBC6124F81FB600A66BFF /* FitModel.cpp in Sources */,
+				68B44A6A26F8F6D1008A7549 /* FitMinuit2.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -30,6 +30,8 @@
 #ifndef Common_hpp
 #define Common_hpp
 
+#include <MLUConfig.h>
+
 // std c++
 #include <array>
 #include <algorithm>
@@ -399,7 +401,7 @@ inline std::vector<std::string> ArrayFromString( const std::string &String, cons
   return v;
 }
 
-// Extract up to first separator. Trim leading and trailing white space
+// Extract and return up to first separator. Trim leading and trailing white space
 inline std::string ExtractToSeparator( std::string &String, const std::string &Separators = Comma )
 {
   std::string s;

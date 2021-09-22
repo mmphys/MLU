@@ -75,8 +75,8 @@ AC_ARG_WITH([gsl],
 AC_ARG_WITH([minuit2],
     [AS_HELP_STRING([--with-minuit2=prefix],
     [try this for a non-standard install prefix of Minuit2])],
-    [CPPFLAGS="-I$with_minuit2/include $CPPFLAGS"]
-    [LDFLAGS="-L$with_minuit2/lib $LDFLAGS"])
+    [],
+    [: m4_divert_text([DEFAULTS], [with_minuit2=no])])
 
 AC_ARG_WITH([boost],
     [AS_HELP_STRING([--with-boost=prefix],
@@ -155,23 +155,8 @@ AC_MSG_NOTICE([MLUBuildDir=$MLUBuildDir])
 
 # Check for Minuit2 by making a small test program (can't check libraries as pure C++)
 
-LIBS+=" -lMinuit2"
-GotMinuit2=yes
-AC_MSG_CHECKING([that a minimal Minuit2 program compiles]);
-AC_LINK_IFELSE(
-        [AC_LANG_SOURCE([[
-    #include <Minuit2/Minuit2Minimizer.h>
-    int main(int argc, char *argv[]) {
-        ROOT::Minuit2::MnUserParameterState Minuit2State;
-        return 0; }
-    ]])],
-    [AC_MSG_RESULT([yes])],
-    [AC_MSG_RESULT([no])]
-    [if test x"$with_minuit2" != x ; then]
-        [AC_MSG_ERROR([Could not compile a minimal Minuit2 program])]
-    [fi]
-    [GotMinuit2=no])
-if test x$GotMinuit2 != xyes ; then
+if test x$with_minuit2 != xno ; then
+  if test x$with_minuit2 == xyes ; then
     # See whether I've already installed a version in prefix
     if test -d $prefix/include/Minuit2 ; then
         AC_MSG_NOTICE([Using Minuit2 previously installed in --prefix])
@@ -224,19 +209,26 @@ if test x$GotMinuit2 != xyes ; then
     # Use the version I installed in prefix
     CPPFLAGS="-I$prefix/include $CPPFLAGS"
     LDFLAGS="-L$prefix/lib $LDFLAGS"
-    AC_MSG_CHECKING([that Minuit2 installed ok]);
-    AC_LINK_IFELSE(
-            [AC_LANG_SOURCE([[
-        #include <Minuit2/Minuit2Minimizer.h>
-        int main(int argc, char *argv[]) {
-            ROOT::Minuit2::MnUserParameterState Minuit2State;
-            return 0; }
-        ]])],
-        [AC_MSG_RESULT([yes])]
-        [GotMinuit2=yes],
-        [AC_MSG_RESULT([no])]
-        [AC_MSG_ERROR([Could not install Minuit2])])
+  else
+    # --with-minuit2 specified the path to Minuit2
+    CPPFLAGS="-I$with_minuit2/include $CPPFLAGS"
+    LDFLAGS="-L$with_minuit2/lib $LDFLAGS"
+  fi
+  LIBS+=" -lMinuit2"
+  AC_MSG_CHECKING([that a minimal Minuit2 program compiles]);
+  AC_LINK_IFELSE(
+          [AC_LANG_SOURCE([[
+      #include <Minuit2/Minuit2Minimizer.h>
+      int main(int argc, char *argv[]) {
+          ROOT::Minuit2::MnUserParameterState Minuit2State;
+          return 0; }
+      ]])],
+      [AC_MSG_RESULT([yes])]
+      [AC_DEFINE([HAVE_MINUIT2], [], [Optional Minuit2 fitter])],
+      [AC_MSG_RESULT([no])]
+      [AC_MSG_ERROR([Could not compile a minimal Minuit2 program])])
 fi
+AM_CONDITIONAL([MINUIT2], [test x$with_minuit2 != xno])
 
 # Check for GSL
 

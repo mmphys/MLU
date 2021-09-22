@@ -115,7 +115,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-t 7:8 -i ratio/sp2/ZV/ -o fit/ZV_sp2/ ZV_h447_dt_16_g5P_g5P.fold.1835672416.h5,COnSt"
+            argument = "-t 7:8 -i ratio/sp2/ZV/ ZV_h447_dt_16_g5P_g5P.fold.1835672416.h5,COnSt -o fit/ZV_sp2/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 10:14 -i ratio/sp2/ZV/ ZV_h447_dt_24_g5P_g5P.fold.1835672416.h5,COnSt -o $PROJECT_DIR/run/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -127,7 +131,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-v 2"
+            argument = "-v 1"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -139,8 +143,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--minuit2"
-            isEnabled = "NO">
+            argument = "--fitter=GSL,LMAccel"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--freeze"
