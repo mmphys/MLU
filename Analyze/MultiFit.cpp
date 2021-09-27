@@ -2,9 +2,9 @@
  
  Multi-exponential fits
  
- Source file: FitModel.cpp
+ Source file: MultiFit.cpp
  
- Copyright (C) 2020
+ Copyright (C) 2020-2021
  
  Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
  

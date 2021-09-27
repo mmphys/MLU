@@ -30,7 +30,7 @@
 #ifndef Common_hpp
 #define Common_hpp
 
-#include <MLUConfig.h>
+#include <MLUconfig.h>
 
 // std c++
 #include <array>

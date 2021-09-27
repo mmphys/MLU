@@ -205,6 +205,20 @@ bool Debug()
   return true;
 }
 
+std::string MakeSeed( int timeslice, int hit = 1 )
+{
+  std::string s{"Study2-Source_Z2_p_0_0_0_t_"};
+  s.append( std::to_string( timeslice ) );
+  if( hit != 1 )
+  {
+    s.append( "_hit_" );
+    s.append( std::to_string( hit ) );
+  }
+    static const std::string Suffix{"-880"};
+  s.append( "-880" );
+  return s;
+}
+
 int main(int argc, char *argv[])
 {
   //std::ios_base::sync_with_stdio( false );
@@ -213,6 +227,8 @@ int main(int argc, char *argv[])
   std::cout << Grid::GridLogMessage << "Hello" << std::endl;
   std::cout << Grid::GridLogMessage << "Boost Spirit X3 version 0x"
             << std::hex << SPIRIT_X3_VERSION << std::dec << std::endl;
+  std::cout << Grid::GridLogMessage << MakeSeed( 0, 1 ) << std::endl;
+  std::cout << Grid::GridLogMessage << MakeSeed( 5, 8 ) << std::endl;
   int iReturn = EXIT_SUCCESS;
   try
   {
