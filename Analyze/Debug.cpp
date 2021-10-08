@@ -219,6 +219,36 @@ std::string MakeSeed( int timeslice, int hit = 1 )
   return s;
 }
 
+class MesonFile: Grid::Serializable {
+public:
+  GRID_SERIALIZABLE_CLASS_MEMBERS(MesonFile, std::vector<std::vector<Grid::Complex> >, data);
+};
+
+void Convert( const std::string &FileName )
+{
+  static constexpr int nchannel{ 4 };
+  Common::Gamma::Algebra Gammas[nchannel][2] = {
+    {Common::Gamma::Algebra::Gamma5      ,Common::Gamma::Algebra::Gamma5},
+    {Common::Gamma::Algebra::GammaTGamma5,Common::Gamma::Algebra::GammaTGamma5},
+    {Common::Gamma::Algebra::GammaTGamma5,Common::Gamma::Algebra::Gamma5},
+    {Common::Gamma::Algebra::Gamma5      ,Common::Gamma::Algebra::GammaTGamma5}
+  };
+  std::vector<Common::Gamma::Algebra> Alg;
+  using Corr = Common::CorrelatorFileC;
+  Corr corr( FileName, Alg, Alg, nullptr, "Converting " );
+  MesonFile mf;
+  mf.data.resize( nchannel );
+  for( int channel = 0; channel < nchannel; ++channel )
+  {
+    const std::complex<double> * pData = corr( Gammas[channel][1], Gammas[channel][0] );
+    mf.data[channel].resize( corr.Nt() );
+    for( int i = 0; i < corr.Nt(); ++i )
+      mf.data[channel][i] = *pData++;
+  }
+  Grid::XmlWriter w( corr.Name_.NameNoExt + ".xml" );
+  Grid::write( w, "MesonFile", mf );
+}
+
 int main(int argc, char *argv[])
 {
   //std::ios_base::sync_with_stdio( false );
@@ -234,8 +264,16 @@ int main(int argc, char *argv[])
   {
     //#pragma omp parallel
     std::cout << "Hello world!\n";
-    if( !Debug() )
-      iReturn = EXIT_FAILURE;
+    if( argc <= 1 )
+    {
+      if( !Debug() )
+        iReturn = EXIT_FAILURE;
+    }
+    else
+    {
+      for( const std::string &f : Common::glob(&argv[1], &argv[argc]))
+        Convert( f );
+    }
   }
   catch(const std::exception &e)
   {
