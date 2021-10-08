@@ -249,25 +249,34 @@ void Convert( const std::string &FileName )
   Grid::write( w, "MesonFile", mf );
 }
 
-int main(int argc, char *argv[])
+void GridDebug(int argc, char *argv[])
 {
   //std::ios_base::sync_with_stdio( false );
-  Grid::Grid_init(&argc,&argv);
-  std::cout << Grid::GridLogMessage << MLUVersionInfoHuman() << std::endl;
-  std::cout << Grid::GridLogMessage << "Hello" << std::endl;
-  std::cout << Grid::GridLogMessage << "Boost Spirit X3 version 0x"
-            << std::hex << SPIRIT_X3_VERSION << std::dec << std::endl;
-  std::cout << Grid::GridLogMessage << MakeSeed( 0, 1 ) << std::endl;
-  std::cout << Grid::GridLogMessage << MakeSeed( 5, 8 ) << std::endl;
+  Grid::Grid_init( &argc, &argv );
+  try
+  {
+    std::cout << Grid::GridLogMessage << MLUVersionInfoHuman() << std::endl;
+    std::cout << Grid::GridLogMessage << "Hello" << std::endl;
+    std::cout << Grid::GridLogMessage << "Boost Spirit X3 version 0x"
+              << std::hex << SPIRIT_X3_VERSION << std::dec << std::endl;
+    std::cout << Grid::GridLogMessage << MakeSeed( 0, 1 ) << std::endl;
+    std::cout << Grid::GridLogMessage << MakeSeed( 5, 8 ) << std::endl;
+    Debug();
+  } catch( ... ) {
+    Grid::Grid_finalize();
+    throw;
+  }
+  Grid::Grid_finalize();
+}
+
+int main(int argc, char *argv[])
+{
   int iReturn = EXIT_SUCCESS;
   try
   {
-    //#pragma omp parallel
-    std::cout << "Hello world!\n";
     if( argc <= 1 )
     {
-      if( !Debug() )
-        iReturn = EXIT_FAILURE;
+      GridDebug( argc, argv );
     }
     else
     {
@@ -283,6 +292,4 @@ int main(int argc, char *argv[])
     std::cerr << "Error: Unknown exception" << std::endl;
     iReturn = EXIT_FAILURE;
   }
-  Grid::Grid_finalize();
-  return iReturn;
 }
