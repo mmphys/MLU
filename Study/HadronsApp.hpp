@@ -352,6 +352,7 @@ struct AppParams
   inline int TimeBound( int t ) const
   { return t < 0 ? Run.Nt - ((-t) % Run.Nt) : t % Run.Nt; }
   AppParams( XmlReader &r );
+  std::vector<std::string> GetWarnings() const;
 };
 
 /**************************

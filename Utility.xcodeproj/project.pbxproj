@@ -1165,6 +1165,8 @@
 		68703F0D25D3033F00D1BA61 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6889D90725D2BC6C004F15CE /* libMLU.a */; };
 		6870690D26960B87003F5888 /* Divide.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6870690026960B2C003F5888 /* Divide.cpp */; };
 		6871270A26F35EC300F36A8A /* BaseIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68C14B90267B37590069C1EE /* BaseIO.cc */; };
+		6874923F2705A20B000E628F /* LoadOpenQcd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6874923D2705A20A000E628F /* LoadOpenQcd.cpp */; };
+		687492402705A20B000E628F /* LoadOpenQcd.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6874923E2705A20A000E628F /* LoadOpenQcd.hpp */; };
 		687588BB2499501900E38728 /* Test_hadrons_spectrum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6804C182244C7863008E272B /* Test_hadrons_spectrum.cpp */; };
 		6875E1A226D51531004EF750 /* Example_Laplacian_smearing.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6875E17F26D51303004EF750 /* Example_Laplacian_smearing.cc */; };
 		6875E1A326D51541004EF750 /* Example_Laplacian_solver.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6875E18026D51303004EF750 /* Example_Laplacian_solver.cc */; };
@@ -2818,6 +2820,8 @@
 		6870690026960B2C003F5888 /* Divide.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Divide.cpp; sourceTree = "<group>"; };
 		6870690126960B2C003F5888 /* Divide.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Divide.hpp; sourceTree = "<group>"; };
 		6870690626960B4E003F5888 /* Divide */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Divide; sourceTree = BUILT_PRODUCTS_DIR; };
+		6874923D2705A20A000E628F /* LoadOpenQcd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadOpenQcd.cpp; sourceTree = "<group>"; };
+		6874923E2705A20A000E628F /* LoadOpenQcd.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LoadOpenQcd.hpp; sourceTree = "<group>"; };
 		687588B42499500100E38728 /* Test_hadrons_spectrum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test_hadrons_spectrum; sourceTree = BUILT_PRODUCTS_DIR; };
 		6875E17D26D51303004EF750 /* Example_Laplacian.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Example_Laplacian.cc; sourceTree = "<group>"; };
 		6875E17E26D51303004EF750 /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
@@ -5723,6 +5727,8 @@
 				687D64DC2552A2DC00E4F83A /* LoadLapEvec.hpp */,
 				6850D4DD244A234400A53DC8 /* LoadNersc.cpp */,
 				6850D4D2244A234400A53DC8 /* LoadNersc.hpp */,
+				6874923D2705A20A000E628F /* LoadOpenQcd.cpp */,
+				6874923E2705A20A000E628F /* LoadOpenQcd.hpp */,
 				6850D4DE244A234400A53DC8 /* LoadPerambulator.cpp */,
 				6850D4D3244A234400A53DC8 /* LoadPerambulator.hpp */,
 				68093A2E24B8B1A50019148E /* SaveField.cpp */,
@@ -6644,6 +6650,7 @@
 				6850D546244A234500A53DC8 /* LapEvec.hpp in Headers */,
 				680C09212634A4B2003D102F /* SaveNersc.hpp in Headers */,
 				6850D570244A234500A53DC8 /* EMT.hpp in Headers */,
+				687492402705A20B000E628F /* LoadOpenQcd.hpp in Headers */,
 				683AD4A0268463D200D65392 /* CGNE.hpp in Headers */,
 				6850D57E244A234500A53DC8 /* LoadDistilNoise.hpp in Headers */,
 				6809611924982ACE007F8DB3 /* StatLogger.hpp in Headers */,
@@ -7876,6 +7883,7 @@
 				6850D354244A230A00A53DC8 /* Environment.cpp in Sources */,
 				6850D552244A234500A53DC8 /* Amputate.cpp in Sources */,
 				6850D585244A234500A53DC8 /* LoadEigenPack.cpp in Sources */,
+				6874923F2705A20B000E628F /* LoadOpenQcd.cpp in Sources */,
 				6850D370244A230A00A53DC8 /* modules.inc in Sources */,
 				6850D372244A230A00A53DC8 /* Global.cpp in Sources */,
 				6850D52B244A234500A53DC8 /* GaugeFix.cpp in Sources */,

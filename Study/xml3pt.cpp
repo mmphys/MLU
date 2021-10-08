@@ -139,6 +139,8 @@ int AppMaker::MakeThreePoint( int argc, char *argv[], const std::string &sXmlFil
     static const std::string sXmlTopLevel{ "xml3pt" };
     std::unique_ptr<XmlReader> reader( new XmlReader( sXmlFilename, false, sXmlTopLevel ) );
     const AppParams appParams( *reader );
+    for( const std::string &warning : appParams.GetWarnings() )
+      LOG(Warning) << warning << std::endl;
     int StudyType{ -1 };
     std::string StudyName;
     read( *reader, "StudyType", StudyType );

@@ -139,6 +139,20 @@ AppParams::AppParams( XmlReader &r )
 {
   static const std::string sXmlTagName{ "RunPar" };
   read( r, sXmlTagName, Run );
+  if( Run.GaugeFixed.empty() && !Run.GaugeFixedXform.empty() )
+    throw std::runtime_error( "GaugeFixedXform specified without GaugeFixed" );
+  if( !Run.GaugeFixed.empty() && Run.GaugeFixedXform.empty() )
+    throw std::runtime_error( "GaugeFixed specified without GaugeFixedXform" );
+}
+
+std::vector<std::string> AppParams::GetWarnings() const
+{
+  std::vector<std::string> w;
+  if(  Run.Gauge.empty() &&  Run.GaugeFixed.empty() )
+    w.push_back( "Neither Gauge nor GaugeFixed specified. Using Unit gauge" );
+  if( !Run.Gauge.empty() && !Run.GaugeFixed.empty() )
+    w.push_back( "Both Gauge and GaugeFixed specified. Using GaugeFixed" );
+  return w;
 }
 
 /**************************
@@ -303,7 +317,8 @@ void ModGauge::AddDependencies( HModList &ModList ) const
     else
     {
       MGauge::GaugeFix::Par Par( ModList.params.Run.GaugeFix );
-      Par.gauge = GaugeFieldName;
+      Par.gauge = ModList.TakeOwnership( new ModGauge( ModList, Taxonomy( Family::Z2, Species::Point ),
+                                                       bSmeared, precision ) );
       ModList.application.createModule<MGauge::GaugeFix>(name, Par);
     }
   }
