@@ -222,31 +222,111 @@ std::string MakeSeed( int timeslice, int hit = 1 )
 class MesonFile: Grid::Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(MesonFile, std::vector<std::vector<Grid::Complex> >, data);
+  void Load( const std::string &FileName );
 };
+
+std::ostream & operator<<( std::ostream &os, const Common::FileNameAtt &fna )
+{
+  os << fna.NameNoExt;
+  if( !fna.Ext.empty() )
+    os << Common::Period << fna.Ext;
+  return os;
+}
+
+static constexpr int nchannel{ 4 };
+static constexpr int idxSrc{ 0 };
+static constexpr int idxSnk{ 1 };
+
+using Algebra = Common::Gamma::Algebra;
+static const Algebra Gammas[nchannel][2] = {
+  { Algebra::Gamma5      , Algebra::Gamma5 },
+  { Algebra::GammaTGamma5, Algebra::GammaTGamma5 },
+  { Algebra::GammaTGamma5, Algebra::Gamma5 },
+  { Algebra::Gamma5      , Algebra::GammaTGamma5 }
+};
+
+// Load correlator - .h5 or .xml
+void MesonFile::Load( const std::string &FileName )
+{
+  Common::FileNameAtt fna( FileName );
+  if( Common::EqualIgnoreCase( fna.Ext, "h5" ) )
+  {
+    std::vector<Common::Gamma::Algebra> Alg;
+    using Corr = Common::CorrelatorFileC;
+    Corr corr( FileName, Alg, Alg, nullptr, "Converting " );
+    data.resize( nchannel );
+    for( int channel = 0; channel < nchannel; ++channel )
+    {
+      const std::complex<double> * pData = corr( Gammas[channel][idxSnk], Gammas[channel][idxSrc] );
+      data[channel].resize( corr.Nt() );
+      for( int i = 0; i < corr.Nt(); ++i )
+        data[channel][i] = *pData++;
+    }
+  }
+  else
+  {
+    std::cout << "Reading xml " << fna.NameNoExt << fna << std::endl;
+    Grid::XmlReader r( FileName );
+    Grid::read( r, "MesonFile", *this );
+  }
+}
+
+// Convert Correlator file from .h5 to .xml
 
 void Convert( const std::string &FileName )
 {
-  static constexpr int nchannel{ 4 };
-  Common::Gamma::Algebra Gammas[nchannel][2] = {
-    {Common::Gamma::Algebra::Gamma5      ,Common::Gamma::Algebra::Gamma5},
-    {Common::Gamma::Algebra::GammaTGamma5,Common::Gamma::Algebra::GammaTGamma5},
-    {Common::Gamma::Algebra::GammaTGamma5,Common::Gamma::Algebra::Gamma5},
-    {Common::Gamma::Algebra::Gamma5      ,Common::Gamma::Algebra::GammaTGamma5}
-  };
-  std::vector<Common::Gamma::Algebra> Alg;
-  using Corr = Common::CorrelatorFileC;
-  Corr corr( FileName, Alg, Alg, nullptr, "Converting " );
-  MesonFile mf;
-  mf.data.resize( nchannel );
-  for( int channel = 0; channel < nchannel; ++channel )
+  Common::FileNameAtt fna( FileName );
+  if( Common::EqualIgnoreCase( fna.Ext, "xml" ) )
+    std::cout << "Doing nothing: " << fna.NameNoExt << fna << " is xml" << std::endl;
+  else
   {
-    const std::complex<double> * pData = corr( Gammas[channel][1], Gammas[channel][0] );
-    mf.data[channel].resize( corr.Nt() );
-    for( int i = 0; i < corr.Nt(); ++i )
-      mf.data[channel][i] = *pData++;
+    MesonFile mf;
+    mf.Load( FileName );
+    Grid::XmlWriter w( fna.NameNoExt + ".xml" );
+    Grid::write( w, "MesonFile", mf );
   }
-  Grid::XmlWriter w( corr.Name_.NameNoExt + ".xml" );
-  Grid::write( w, "MesonFile", mf );
+}
+
+// Compare two Correlator files (.h5 and .xml)
+
+void Compare( const std::vector<std::string> &FileName )
+{
+  std::vector<MesonFile> in ( FileName.size() );
+  for( std::size_t f = 0; f < FileName.size(); ++f )
+  {
+    in[f].Load( FileName[f] );
+    const std::size_t Nt{ in[f].data[0].size() };
+    if( f )
+    {
+      if( Nt != in[0].data[0].size() )
+        throw std::runtime_error( "Nt mismatch" );
+      std::ofstream out; // Will be closed automatically if there's an exception
+      {
+        Common::FileNameAtt fna{ FileName[f] };
+        const std::string OutName{ fna.NameNoExt + ".txt" };
+        std::cout << "Creating " << OutName << std::endl;
+        out.open( OutName );
+      }
+      static const std::string Comment{ "# " };
+      out << Comment << "File 1 " << FileName[0] << Common::NewLine
+          << Comment << "File 2 " << FileName[f] << Common::NewLine
+          << "Snk Src t Re(f1) Re(f2) Re(f2)/Re(f1)" << std::endl;
+      for( std::size_t channel = 0; channel < nchannel; ++channel )
+      {
+        for( std::size_t t = 0; t < Nt; ++t )
+        {
+          out << Common::Gamma::NameShort( Gammas[channel][idxSnk] ) << Common::Space
+              << Common::Gamma::NameShort( Gammas[channel][idxSrc] ) << Common::Space
+              << t << Common::Space
+              << std::scientific
+              << in[0].data[channel][t].real() << Common::Space
+              << in[f].data[channel][t].real() << Common::Space
+              << std::defaultfloat
+              << in[f].data[channel][t].real() / in[0].data[channel][t].real() << std::endl;
+        }
+      }
+    }
+  }
 }
 
 void GridDebug(int argc, char *argv[])
@@ -280,8 +360,12 @@ int main(int argc, char *argv[])
     }
     else
     {
-      for( const std::string &f : Common::glob(&argv[1], &argv[argc]))
-        Convert( f );
+      std::vector<std::string> args{ Common::glob( &argv[1], &argv[argc] ) };
+      if( args.size() == 2 )
+        Compare( args );
+      else
+        for( const std::string &f : args )
+          Convert( f );
     }
   }
   catch(const std::exception &e)

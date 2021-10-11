@@ -53,7 +53,15 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "PP_*.h5"
+            argument = "/Volumes/QCD/tursa/prod/eigen/M2/test.M1.coul1e-12/880/2pt/*/*.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Volumes/QCD/tursa/prod/eigen/M2/test.M1.coul1e-12/880/2pt/ZFPP/PP_s_s_p_0_0_0_t_0.880.h5 "
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Volumes/QCD/tursa/prod/eigen/M2/Peter/ckpoint_lat.880_m1_m1_p_z2_meson.xml"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
