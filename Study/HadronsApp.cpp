@@ -388,7 +388,7 @@ void ModGaugeXform::AddDependencies( HModList &ModList ) const
 const std::string ModAction::Prefix{ "DWF" };
 
 ModAction::ModAction( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_, Precision precision_ )
-: HMod( ModList, taxonomy ), q{q_}, bSmeared{q_.GaugeSmear && !ModList.params.Run.Gauge.empty()}, precision{precision_}
+: HMod( ModList, taxonomy ), q{q_}, bSmeared{q_.GaugeSmear}, precision{precision_}
 {
   name = Prefix;
   tax.AppendFixed( name, bSmeared );
@@ -413,7 +413,7 @@ void ModAction::AddDependencies( HModList &ModList ) const
 const std::string ModSolver::Prefix{ "CG" };
 
 ModSolver::ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_ )
-: HMod( ModList, taxonomy ), q( q_ ), bSmeared{q_.GaugeSmear && !ModList.params.Run.Gauge.empty()}
+: HMod( ModList, taxonomy ), q( q_ ), bSmeared{q_.GaugeSmear}
 {
   name = Prefix;
   tax.AppendFixed( name, bSmeared );
@@ -431,8 +431,7 @@ template<typename T> std::string ModSolver::LoadEigenPack( HModList &ModList, Pr
   epPar.Ls = q.Ls;
   if( tax.GaugeFixed() )
   {
-    const bool bSmeared{ q.GaugeSmear && !ModList.params.Run.Gauge.empty() };
-    epPar.gaugeXform = ModList.TakeOwnership( new ModGaugeXform( ModList, tax, bSmeared, XformPres ) );
+    epPar.gaugeXform = ModList.TakeOwnership( new ModGaugeXform( ModList, tax, q.GaugeSmear, XformPres ) );
   }
   ModList.application.createModule<T>(EigenPackName, epPar);
   return EigenPackName;
