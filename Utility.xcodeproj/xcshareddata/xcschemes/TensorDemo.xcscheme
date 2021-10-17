@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1250"
+   LastUpgradeVersion = "1300"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "NO">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "683A002226626B1000A532A2"
+               BlueprintIdentifier = "68C0A4F0271CA165006BBD5E"
                BuildableName = "TensorDemo"
                BlueprintName = "TensorDemo"
                ReferencedContainer = "container:Utility.xcodeproj">
@@ -45,7 +45,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "683A002226626B1000A532A2"
+            BlueprintIdentifier = "68C0A4F0271CA165006BBD5E"
             BuildableName = "TensorDemo"
             BlueprintName = "TensorDemo"
             ReferencedContainer = "container:Utility.xcodeproj">
@@ -62,7 +62,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "683A002226626B1000A532A2"
+            BlueprintIdentifier = "68C0A4F0271CA165006BBD5E"
             BuildableName = "TensorDemo"
             BlueprintName = "TensorDemo"
             ReferencedContainer = "container:Utility.xcodeproj">

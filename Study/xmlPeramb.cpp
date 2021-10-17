@@ -218,14 +218,17 @@ int main(int argc, char *argv[])
     for (unsigned int t = 0; t < nt; t += 4) {
       const std::string st{ Sep + std::to_string( t ) };
       const std::string DistilParName{ "DistilPar" + st };
-      MDistil::DistilPar::Par distPar;
-      distPar.tsrc = t;
-      distPar.LI = Nd;
-      distPar.nnoise = 1;
-      distPar.nvec = Nvec;
-      distPar.SI = Ns;
-      distPar.TI = 1;
-      application.createModule<MDistil::DistilPar>( DistilParName, distPar );
+      if( i == 0 )
+      {
+        MDistil::DistilPar::Par distPar;
+        distPar.tsrc = t;
+        distPar.LI = Nd;
+        distPar.nnoise = 1;
+        distPar.nvec = Nvec;
+        distPar.SI = Ns;
+        distPar.TI = 1;
+        application.createModule<MDistil::DistilPar>( DistilParName, distPar );
+      }
 
       const std::string PerambName{ Prefix + st };
       if( bMakePeramb ) {

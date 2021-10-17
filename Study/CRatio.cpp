@@ -23,7 +23,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include "Ratio.hpp"
+#include "CRatio.hpp"
 
 /*namespace Common {
 template<std::size_t Num>

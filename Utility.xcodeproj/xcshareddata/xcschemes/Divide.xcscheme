@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1250"
+   LastUpgradeVersion = "1300"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "NO">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6870690526960B4E003F5888"
+               BlueprintIdentifier = "68544740271C98E000EF030C"
                BuildableName = "Divide"
                BlueprintName = "Divide"
                ReferencedContainer = "container:Utility.xcodeproj">
@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$PROJECT_DIR/run"
+      customWorkingDirectory = "$(PROJECT_DIR)/run"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -45,7 +45,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6870690526960B4E003F5888"
+            BlueprintIdentifier = "68544740271C98E000EF030C"
             BuildableName = "Divide"
             BlueprintName = "Divide"
             ReferencedContainer = "container:Utility.xcodeproj">
@@ -84,7 +84,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6870690526960B4E003F5888"
+            BlueprintIdentifier = "68544740271C98E000EF030C"
             BuildableName = "Divide"
             BlueprintName = "Divide"
             ReferencedContainer = "container:Utility.xcodeproj">
