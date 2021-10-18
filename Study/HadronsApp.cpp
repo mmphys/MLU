@@ -453,6 +453,7 @@ std::string ModSolver::LoadEigenPack( HModList &ModList, Precision XformPres ) c
 void ModSolver::AddDependencies( HModList &ModList ) const
 {
   std::string EigenPackName;
+  Precision EPPrecision{ Precision::Double };
   if( q.eigenPack.length() )
   {
     using TDoubleEP             = MIO::LoadFermionEigenPack; // Double-precision Eigen packs can be used anywhere
@@ -466,18 +467,24 @@ void ModSolver::AddDependencies( HModList &ModList ) const
     using TGuesserF = void;
 #endif
     if( !q.eigenSinglePrecision )
-      EigenPackName = LoadEigenPack<TDoubleEP,             TGuesserD>( ModList, Precision::Double );
+      EigenPackName = LoadEigenPack<TDoubleEP,             TGuesserD>( ModList, EPPrecision );
     else if( q.MixedPrecision() )
-      EigenPackName = LoadEigenPack<TSingleEP,             TGuesserF>( ModList, Precision::Single );
+    {
+      EPPrecision = Precision::Single;
+      EigenPackName = LoadEigenPack<TSingleEP,             TGuesserF>( ModList, EPPrecision );
+    }
     else
-      EigenPackName = LoadEigenPack<TLoadSingleAsDoubleEP, TGuesserD>( ModList, Precision::Double );
+      EigenPackName = LoadEigenPack<TLoadSingleAsDoubleEP, TGuesserD>( ModList, EPPrecision );
   }
   if( q.MixedPrecision() )
   {
     using T = MSolver::MixedPrecisionRBPrecCG;
     typename T::Par solverPar;
 #ifdef MLU_HADRONS_HAS_GUESSERS
-    solverPar.outerGuesser      = EigenPackName;
+    if( EPPrecision == Precision::Double )
+      solverPar.outerGuesser    = EigenPackName;
+    else
+      solverPar.innerGuesser    = EigenPackName;
 #else
     solverPar.eigenPack         = EigenPackName;
 #endif
