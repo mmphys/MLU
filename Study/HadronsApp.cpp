@@ -453,7 +453,7 @@ std::string ModSolver::LoadEigenPack( HModList &ModList, Precision XformPres ) c
 void ModSolver::AddDependencies( HModList &ModList ) const
 {
   std::string EigenPackName;
-  if( ModList.params.Run.Gauge.length() && q.eigenPack.length() )
+  if( q.eigenPack.length() )
   {
     using TDoubleEP             = MIO::LoadFermionEigenPack; // Double-precision Eigen packs can be used anywhere
     using TSingleEP             = MIO::LoadFermionEigenPackF; // Single-precision Eigen packs for MP solver
