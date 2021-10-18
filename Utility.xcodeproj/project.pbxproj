@@ -33,6 +33,15 @@
 		686EC056271C9E7D00A69ED4 /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446E7271C8E5400EF030C /* mixedop.cpp */; };
 		686EC057271C9E9A00A69ED4 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		686EC063271C9EF400A69ED4 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
+		6870F913271CCE680083F930 /* RandomGaugeTransformation.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6870F90F271CCE670083F930 /* RandomGaugeTransformation.hpp */; };
+		6870F914271CCE680083F930 /* GaugeTransform.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6870F910271CCE670083F930 /* GaugeTransform.hpp */; };
+		6870F915271CCE680083F930 /* GaugeTransform.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6870F911271CCE680083F930 /* GaugeTransform.cpp */; };
+		6870F916271CCE680083F930 /* RandomGaugeTransformation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6870F912271CCE680083F930 /* RandomGaugeTransformation.cpp */; };
+		6870F91D271CCE9B0083F930 /* ExactDeflation.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6870F919271CCE9A0083F930 /* ExactDeflation.hpp */; };
+		6870F91E271CCE9B0083F930 /* BatchExactDeflation.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6870F91A271CCE9A0083F930 /* BatchExactDeflation.hpp */; };
+		6870F91F271CCE9B0083F930 /* ExactDeflation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6870F91B271CCE9A0083F930 /* ExactDeflation.cpp */; };
+		6870F920271CCE9B0083F930 /* BatchExactDeflation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6870F91C271CCE9A0083F930 /* BatchExactDeflation.cpp */; };
+		6870F922271CCECF0083F930 /* LatticeUtilities.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6870F921271CCECE0083F930 /* LatticeUtilities.hpp */; };
 		6874E9E6271C6C7E0055B1E5 /* Cartesian_base.h in Headers */ = {isa = PBXBuildFile; fileRef = 6874E583271C6C760055B1E5 /* Cartesian_base.h */; };
 		6874E9E7271C6C7E0055B1E5 /* Cartesian_full.h in Headers */ = {isa = PBXBuildFile; fileRef = 6874E584271C6C760055B1E5 /* Cartesian_full.h */; };
 		6874E9E8271C6C7E0055B1E5 /* Cartesian.h in Headers */ = {isa = PBXBuildFile; fileRef = 6874E585271C6C760055B1E5 /* Cartesian.h */; };
@@ -1077,7 +1086,6 @@
 		68F61AEF271C786800A8B197 /* CGNE.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F619D5271C786600A8B197 /* CGNE.cpp */; };
 		68F61AF0271C786800A8B197 /* RBPrecCG.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F619D6271C786600A8B197 /* RBPrecCG.cpp */; };
 		68F61AF1271C786800A8B197 /* ImplicitlyRestartedLanczos.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F619D7271C786600A8B197 /* ImplicitlyRestartedLanczos.cpp */; };
-		68F61AF2271C786800A8B197 /* Guesser.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F619D8271C786600A8B197 /* Guesser.hpp */; };
 		68F61AF3271C786800A8B197 /* CGNE.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F619D9271C786600A8B197 /* CGNE.hpp */; };
 		68F61AF4271C786800A8B197 /* RBPrecCG.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F619DA271C786600A8B197 /* RBPrecCG.hpp */; };
 		68F61AF5271C786800A8B197 /* ImplicitlyRestartedLanczos.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F619DB271C786600A8B197 /* ImplicitlyRestartedLanczos.hpp */; };
@@ -1450,6 +1458,15 @@
 		68544779271C9D0800EF030C /* repair */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = repair; sourceTree = BUILT_PRODUCTS_DIR; };
 		686EC04F271C9E6C00A69ED4 /* mixedop */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mixedop; sourceTree = BUILT_PRODUCTS_DIR; };
 		686EC05C271C9EE300A69ED4 /* peramb-compare */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "peramb-compare"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6870F90F271CCE670083F930 /* RandomGaugeTransformation.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RandomGaugeTransformation.hpp; sourceTree = "<group>"; };
+		6870F910271CCE670083F930 /* GaugeTransform.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = GaugeTransform.hpp; sourceTree = "<group>"; };
+		6870F911271CCE680083F930 /* GaugeTransform.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GaugeTransform.cpp; sourceTree = "<group>"; };
+		6870F912271CCE680083F930 /* RandomGaugeTransformation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RandomGaugeTransformation.cpp; sourceTree = "<group>"; };
+		6870F919271CCE9A0083F930 /* ExactDeflation.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ExactDeflation.hpp; sourceTree = "<group>"; };
+		6870F91A271CCE9A0083F930 /* BatchExactDeflation.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BatchExactDeflation.hpp; sourceTree = "<group>"; };
+		6870F91B271CCE9A0083F930 /* ExactDeflation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExactDeflation.cpp; sourceTree = "<group>"; };
+		6870F91C271CCE9A0083F930 /* BatchExactDeflation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BatchExactDeflation.cpp; sourceTree = "<group>"; };
+		6870F921271CCECE0083F930 /* LatticeUtilities.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LatticeUtilities.hpp; sourceTree = "<group>"; };
 		6874E57D271C6A600055B1E5 /* libGrid.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libGrid.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		6874E583271C6C760055B1E5 /* Cartesian_base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Cartesian_base.h; sourceTree = "<group>"; };
 		6874E584271C6C760055B1E5 /* Cartesian_full.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Cartesian_full.h; sourceTree = "<group>"; };
@@ -2891,7 +2908,6 @@
 		68F619D5271C786600A8B197 /* CGNE.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CGNE.cpp; sourceTree = "<group>"; };
 		68F619D6271C786600A8B197 /* RBPrecCG.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RBPrecCG.cpp; sourceTree = "<group>"; };
 		68F619D7271C786600A8B197 /* ImplicitlyRestartedLanczos.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ImplicitlyRestartedLanczos.cpp; sourceTree = "<group>"; };
-		68F619D8271C786600A8B197 /* Guesser.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Guesser.hpp; sourceTree = "<group>"; };
 		68F619D9271C786600A8B197 /* CGNE.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CGNE.hpp; sourceTree = "<group>"; };
 		68F619DA271C786600A8B197 /* RBPrecCG.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RBPrecCG.hpp; sourceTree = "<group>"; };
 		68F619DB271C786600A8B197 /* ImplicitlyRestartedLanczos.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ImplicitlyRestartedLanczos.hpp; sourceTree = "<group>"; };
@@ -3306,6 +3322,17 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		6870F918271CCE9A0083F930 /* MGuesser */ = {
+			isa = PBXGroup;
+			children = (
+				6870F91C271CCE9A0083F930 /* BatchExactDeflation.cpp */,
+				6870F91A271CCE9A0083F930 /* BatchExactDeflation.hpp */,
+				6870F91B271CCE9A0083F930 /* ExactDeflation.cpp */,
+				6870F919271CCE9A0083F930 /* ExactDeflation.hpp */,
+			);
+			path = MGuesser;
 			sourceTree = "<group>";
 		};
 		6874E566271C67660055B1E5 = {
@@ -5834,6 +5861,7 @@
 				68F61977271C786600A8B197 /* Global.cpp */,
 				68F6194C271C786600A8B197 /* Global.hpp */,
 				68F6196D271C786600A8B197 /* Graph.hpp */,
+				6870F921271CCECE0083F930 /* LatticeUtilities.hpp */,
 				68F61947271C786600A8B197 /* make_module_inst.sh */,
 				68F61948271C786600A8B197 /* make_module_list.sh */,
 				68F6196A271C786600A8B197 /* Makefile.am */,
@@ -5869,21 +5897,22 @@
 		68F61978271C786600A8B197 /* Modules */ = {
 			isa = PBXGroup;
 			children = (
+				68F61A22271C786700A8B197 /* MAction */,
 				68F61979271C786600A8B197 /* MContraction */,
+				68F61A0A271C786700A8B197 /* MDistil */,
 				68F619A0271C786600A8B197 /* MFermion */,
-				68F619A9271C786600A8B197 /* MSource */,
+				68F619E1271C786600A8B197 /* MGauge */,
+				6870F918271CCE9A0083F930 /* MGuesser */,
+				68F61A49271C786700A8B197 /* MIO */,
+				68F619F2271C786600A8B197 /* MNoise */,
+				68F61A1B271C786700A8B197 /* MNPR */,
+				68F61A04271C786700A8B197 /* MScalar */,
+				68F61A31271C786700A8B197 /* MScalarSUN */,
 				68F619C8271C786600A8B197 /* MSink */,
 				68F619CF271C786600A8B197 /* MSolver */,
-				68F619E1271C786600A8B197 /* MGauge */,
-				68F619F2271C786600A8B197 /* MNoise */,
+				68F619A9271C786600A8B197 /* MSource */,
 				68F619FB271C786700A8B197 /* MUtilities */,
-				68F61A04271C786700A8B197 /* MScalar */,
-				68F61A0A271C786700A8B197 /* MDistil */,
 				68F61A16271C786700A8B197 /* templates */,
-				68F61A1B271C786700A8B197 /* MNPR */,
-				68F61A22271C786700A8B197 /* MAction */,
-				68F61A31271C786700A8B197 /* MScalarSUN */,
-				68F61A49271C786700A8B197 /* MIO */,
 			);
 			path = Modules;
 			sourceTree = "<group>";
@@ -5891,44 +5920,44 @@
 		68F61979271C786600A8B197 /* MContraction */ = {
 			isa = PBXGroup;
 			children = (
-				68F6197A271C786600A8B197 /* Loop.cpp */,
+				68F6199B271C786600A8B197 /* A2AAslashField.cpp */,
+				68F61983271C786600A8B197 /* A2AAslashField.hpp */,
+				68F61994271C786600A8B197 /* A2AFourQuarkContraction.cpp */,
 				68F6197B271C786600A8B197 /* A2AFourQuarkContraction.hpp */,
+				68F6199F271C786600A8B197 /* A2ALoop.cpp */,
+				68F61986271C786600A8B197 /* A2ALoop.hpp */,
+				68F6198D271C786600A8B197 /* A2AMesonField.cpp */,
+				68F61988271C786600A8B197 /* A2AMesonField.hpp */,
+				68F61999271C786600A8B197 /* A2ASmearedMesonField.cpp */,
+				68F61980271C786600A8B197 /* A2ASmearedMesonField.hpp */,
+				68F6199A271C786600A8B197 /* Baryon.cpp */,
+				68F61981271C786600A8B197 /* Baryon.hpp */,
+				68F6198E271C786600A8B197 /* BaryonGamma3pt.cpp */,
+				68F61987271C786600A8B197 /* BaryonGamma3pt.hpp */,
 				68F6197C271C786600A8B197 /* DiscLoop.cpp */,
+				68F61995271C786600A8B197 /* DiscLoop.hpp */,
+				68F6197F271C786600A8B197 /* Gamma3pt.cpp */,
+				68F61997271C786600A8B197 /* Gamma3pt.hpp */,
+				68F6197A271C786600A8B197 /* Loop.cpp */,
+				68F61993271C786600A8B197 /* Loop.hpp */,
+				68F61989271C786600A8B197 /* Meson.cpp */,
+				68F6198F271C786600A8B197 /* Meson.hpp */,
+				68F6198C271C786600A8B197 /* RareKaonNeutralDisc.cpp */,
+				68F61992271C786600A8B197 /* RareKaonNeutralDisc.hpp */,
+				68F61991271C786600A8B197 /* SigmaToNucleonEye.cpp */,
+				68F6198B271C786600A8B197 /* SigmaToNucleonEye.hpp */,
+				68F6199D271C786600A8B197 /* SigmaToNucleonNonEye.cpp */,
+				68F61984271C786600A8B197 /* SigmaToNucleonNonEye.hpp */,
+				68F61982271C786600A8B197 /* WardIdentity.cpp */,
+				68F6199C271C786600A8B197 /* WardIdentity.hpp */,
+				68F61996271C786600A8B197 /* WeakEye3pt.cpp */,
 				68F6197D271C786600A8B197 /* WeakEye3pt.hpp */,
 				68F6197E271C786600A8B197 /* WeakMesonDecayKl2.cpp */,
-				68F6197F271C786600A8B197 /* Gamma3pt.cpp */,
-				68F61980271C786600A8B197 /* A2ASmearedMesonField.hpp */,
-				68F61981271C786600A8B197 /* Baryon.hpp */,
-				68F61982271C786600A8B197 /* WardIdentity.cpp */,
-				68F61983271C786600A8B197 /* A2AAslashField.hpp */,
-				68F61984271C786600A8B197 /* SigmaToNucleonNonEye.hpp */,
-				68F61985271C786600A8B197 /* WeakNonEye3pt.cpp */,
-				68F61986271C786600A8B197 /* A2ALoop.hpp */,
-				68F61987271C786600A8B197 /* BaryonGamma3pt.hpp */,
-				68F61988271C786600A8B197 /* A2AMesonField.hpp */,
-				68F61989271C786600A8B197 /* Meson.cpp */,
-				68F6198A271C786600A8B197 /* XiToSigmaEye.hpp */,
-				68F6198B271C786600A8B197 /* SigmaToNucleonEye.hpp */,
-				68F6198C271C786600A8B197 /* RareKaonNeutralDisc.cpp */,
-				68F6198D271C786600A8B197 /* A2AMesonField.cpp */,
-				68F6198E271C786600A8B197 /* BaryonGamma3pt.cpp */,
-				68F6198F271C786600A8B197 /* Meson.hpp */,
-				68F61990271C786600A8B197 /* XiToSigmaEye.cpp */,
-				68F61991271C786600A8B197 /* SigmaToNucleonEye.cpp */,
-				68F61992271C786600A8B197 /* RareKaonNeutralDisc.hpp */,
-				68F61993271C786600A8B197 /* Loop.hpp */,
-				68F61994271C786600A8B197 /* A2AFourQuarkContraction.cpp */,
-				68F61995271C786600A8B197 /* DiscLoop.hpp */,
-				68F61996271C786600A8B197 /* WeakEye3pt.cpp */,
-				68F61997271C786600A8B197 /* Gamma3pt.hpp */,
 				68F61998271C786600A8B197 /* WeakMesonDecayKl2.hpp */,
-				68F61999271C786600A8B197 /* A2ASmearedMesonField.cpp */,
-				68F6199A271C786600A8B197 /* Baryon.cpp */,
-				68F6199B271C786600A8B197 /* A2AAslashField.cpp */,
-				68F6199C271C786600A8B197 /* WardIdentity.hpp */,
-				68F6199D271C786600A8B197 /* SigmaToNucleonNonEye.cpp */,
+				68F61985271C786600A8B197 /* WeakNonEye3pt.cpp */,
 				68F6199E271C786600A8B197 /* WeakNonEye3pt.hpp */,
-				68F6199F271C786600A8B197 /* A2ALoop.cpp */,
+				68F61990271C786600A8B197 /* XiToSigmaEye.cpp */,
+				68F6198A271C786600A8B197 /* XiToSigmaEye.hpp */,
 			);
 			path = MContraction;
 			sourceTree = "<group>";
@@ -5937,13 +5966,13 @@
 			isa = PBXGroup;
 			children = (
 				68F619A1271C786600A8B197 /* EMLepton.cpp */,
-				68F619A2271C786600A8B197 /* FreeProp.hpp */,
-				68F619A3271C786600A8B197 /* GaugeProp.cpp */,
-				68F619A4271C786600A8B197 /* Operators.cpp */,
-				68F619A5271C786600A8B197 /* GaugeProp.hpp */,
-				68F619A6271C786600A8B197 /* Operators.hpp */,
 				68F619A7271C786600A8B197 /* EMLepton.hpp */,
 				68F619A8271C786600A8B197 /* FreeProp.cpp */,
+				68F619A2271C786600A8B197 /* FreeProp.hpp */,
+				68F619A3271C786600A8B197 /* GaugeProp.cpp */,
+				68F619A5271C786600A8B197 /* GaugeProp.hpp */,
+				68F619A4271C786600A8B197 /* Operators.cpp */,
+				68F619A6271C786600A8B197 /* Operators.hpp */,
 			);
 			path = MFermion;
 			sourceTree = "<group>";
@@ -5951,36 +5980,36 @@
 		68F619A9271C786600A8B197 /* MSource */ = {
 			isa = PBXGroup;
 			children = (
-				68F619AA271C786600A8B197 /* Z2.cpp */,
-				68F619AB271C786600A8B197 /* SeqGamma.hpp */,
-				68F619AC271C786600A8B197 /* SeqGammaWall.cpp */,
-				68F619AD271C786600A8B197 /* Momentum.cpp */,
-				68F619AE271C786600A8B197 /* SeqConserved.cpp */,
+				68F619C5271C786600A8B197 /* Convolution.cpp */,
 				68F619AF271C786600A8B197 /* Convolution.hpp */,
 				68F619B0271C786600A8B197 /* Gauss.cpp */,
-				68F619B1271C786600A8B197 /* MomentumPhase.hpp */,
-				68F619B2271C786600A8B197 /* JacobiSmear.hpp */,
-				68F619B3271C786600A8B197 /* Random.cpp */,
-				68F619B4271C786600A8B197 /* SeqGammaRegion.hpp */,
-				68F619B5271C786600A8B197 /* Point.hpp */,
-				68F619B6271C786600A8B197 /* Wall.cpp */,
-				68F619B7271C786600A8B197 /* Z2Diluted.cpp */,
-				68F619B8271C786600A8B197 /* SeqAslash.cpp */,
-				68F619B9271C786600A8B197 /* Random.hpp */,
-				68F619BA271C786600A8B197 /* SeqGammaRegion.cpp */,
-				68F619BB271C786600A8B197 /* Point.cpp */,
-				68F619BC271C786600A8B197 /* Wall.hpp */,
-				68F619BD271C786600A8B197 /* SeqAslash.hpp */,
-				68F619BE271C786600A8B197 /* Z2Diluted.hpp */,
-				68F619BF271C786600A8B197 /* Z2.hpp */,
-				68F619C0271C786600A8B197 /* SeqGamma.cpp */,
-				68F619C1271C786600A8B197 /* SeqGammaWall.hpp */,
-				68F619C2271C786600A8B197 /* SeqConserved.hpp */,
-				68F619C3271C786600A8B197 /* Momentum.hpp */,
 				68F619C4271C786600A8B197 /* Gauss.hpp */,
-				68F619C5271C786600A8B197 /* Convolution.cpp */,
-				68F619C6271C786600A8B197 /* MomentumPhase.cpp */,
 				68F619C7271C786600A8B197 /* JacobiSmear.cpp */,
+				68F619B2271C786600A8B197 /* JacobiSmear.hpp */,
+				68F619AD271C786600A8B197 /* Momentum.cpp */,
+				68F619C3271C786600A8B197 /* Momentum.hpp */,
+				68F619C6271C786600A8B197 /* MomentumPhase.cpp */,
+				68F619B1271C786600A8B197 /* MomentumPhase.hpp */,
+				68F619BB271C786600A8B197 /* Point.cpp */,
+				68F619B5271C786600A8B197 /* Point.hpp */,
+				68F619B3271C786600A8B197 /* Random.cpp */,
+				68F619B9271C786600A8B197 /* Random.hpp */,
+				68F619B8271C786600A8B197 /* SeqAslash.cpp */,
+				68F619BD271C786600A8B197 /* SeqAslash.hpp */,
+				68F619AE271C786600A8B197 /* SeqConserved.cpp */,
+				68F619C2271C786600A8B197 /* SeqConserved.hpp */,
+				68F619C0271C786600A8B197 /* SeqGamma.cpp */,
+				68F619AB271C786600A8B197 /* SeqGamma.hpp */,
+				68F619BA271C786600A8B197 /* SeqGammaRegion.cpp */,
+				68F619B4271C786600A8B197 /* SeqGammaRegion.hpp */,
+				68F619AC271C786600A8B197 /* SeqGammaWall.cpp */,
+				68F619C1271C786600A8B197 /* SeqGammaWall.hpp */,
+				68F619B6271C786600A8B197 /* Wall.cpp */,
+				68F619BC271C786600A8B197 /* Wall.hpp */,
+				68F619AA271C786600A8B197 /* Z2.cpp */,
+				68F619BF271C786600A8B197 /* Z2.hpp */,
+				68F619B7271C786600A8B197 /* Z2Diluted.cpp */,
+				68F619BE271C786600A8B197 /* Z2Diluted.hpp */,
 			);
 			path = MSource;
 			sourceTree = "<group>";
@@ -5988,12 +6017,12 @@
 		68F619C8271C786600A8B197 /* MSink */ = {
 			isa = PBXGroup;
 			children = (
-				68F619C9271C786600A8B197 /* SourceSink.hpp */,
-				68F619CA271C786600A8B197 /* Smear.hpp */,
-				68F619CB271C786600A8B197 /* Point.hpp */,
 				68F619CC271C786600A8B197 /* Point.cpp */,
-				68F619CD271C786600A8B197 /* SourceSink.cpp */,
+				68F619CB271C786600A8B197 /* Point.hpp */,
 				68F619CE271C786600A8B197 /* Smear.cpp */,
+				68F619CA271C786600A8B197 /* Smear.hpp */,
+				68F619CD271C786600A8B197 /* SourceSink.cpp */,
+				68F619C9271C786600A8B197 /* SourceSink.hpp */,
 			);
 			path = MSink;
 			sourceTree = "<group>";
@@ -6001,23 +6030,22 @@
 		68F619CF271C786600A8B197 /* MSolver */ = {
 			isa = PBXGroup;
 			children = (
-				68F619D0271C786600A8B197 /* MADWFCG.cpp */,
-				68F619D1271C786600A8B197 /* MixedPrecisionRBPrecCG.hpp */,
-				68F619D2271C786600A8B197 /* LocalCoherenceLanczos.hpp */,
-				68F619D3271C786600A8B197 /* A2AVectors.cpp */,
+				68F619E0271C786600A8B197 /* A2AAslashVectors.cpp */,
 				68F619D4271C786600A8B197 /* A2AAslashVectors.hpp */,
+				68F619D3271C786600A8B197 /* A2AVectors.cpp */,
+				68F619DF271C786600A8B197 /* A2AVectors.hpp */,
 				68F619D5271C786600A8B197 /* CGNE.cpp */,
-				68F619D6271C786600A8B197 /* RBPrecCG.cpp */,
-				68F619D7271C786600A8B197 /* ImplicitlyRestartedLanczos.cpp */,
-				68F619D8271C786600A8B197 /* Guesser.hpp */,
 				68F619D9271C786600A8B197 /* CGNE.hpp */,
-				68F619DA271C786600A8B197 /* RBPrecCG.hpp */,
+				68F619D7271C786600A8B197 /* ImplicitlyRestartedLanczos.cpp */,
 				68F619DB271C786600A8B197 /* ImplicitlyRestartedLanczos.hpp */,
+				68F619DE271C786600A8B197 /* LocalCoherenceLanczos.cpp */,
+				68F619D2271C786600A8B197 /* LocalCoherenceLanczos.hpp */,
+				68F619D0271C786600A8B197 /* MADWFCG.cpp */,
 				68F619DC271C786600A8B197 /* MADWFCG.hpp */,
 				68F619DD271C786600A8B197 /* MixedPrecisionRBPrecCG.cpp */,
-				68F619DE271C786600A8B197 /* LocalCoherenceLanczos.cpp */,
-				68F619DF271C786600A8B197 /* A2AVectors.hpp */,
-				68F619E0271C786600A8B197 /* A2AAslashVectors.cpp */,
+				68F619D1271C786600A8B197 /* MixedPrecisionRBPrecCG.hpp */,
+				68F619D6271C786600A8B197 /* RBPrecCG.cpp */,
+				68F619DA271C786600A8B197 /* RBPrecCG.hpp */,
 			);
 			path = MSolver;
 			sourceTree = "<group>";
@@ -6025,22 +6053,26 @@
 		68F619E1271C786600A8B197 /* MGauge */ = {
 			isa = PBXGroup;
 			children = (
-				68F619E2271C786600A8B197 /* StochEm.cpp */,
 				68F619E3271C786600A8B197 /* Electrify.cpp */,
-				68F619E4271C786600A8B197 /* Random.cpp */,
-				68F619E5271C786600A8B197 /* UnitEm.hpp */,
-				68F619E6271C786600A8B197 /* StoutSmearing.hpp */,
-				68F619E7271C786600A8B197 /* GaugeFix.cpp */,
-				68F619E8271C786600A8B197 /* Unit.hpp */,
-				68F619E9271C786600A8B197 /* FundtoHirep.cpp */,
-				68F619EA271C786600A8B197 /* Random.hpp */,
-				68F619EB271C786600A8B197 /* StoutSmearing.cpp */,
-				68F619EC271C786600A8B197 /* GaugeFix.hpp */,
-				68F619ED271C786600A8B197 /* UnitEm.cpp */,
-				68F619EE271C786600A8B197 /* Unit.cpp */,
-				68F619EF271C786600A8B197 /* FundtoHirep.hpp */,
-				68F619F0271C786600A8B197 /* StochEm.hpp */,
 				68F619F1271C786600A8B197 /* Electrify.hpp */,
+				68F619E9271C786600A8B197 /* FundtoHirep.cpp */,
+				68F619EF271C786600A8B197 /* FundtoHirep.hpp */,
+				68F619E7271C786600A8B197 /* GaugeFix.cpp */,
+				68F619EC271C786600A8B197 /* GaugeFix.hpp */,
+				6870F911271CCE680083F930 /* GaugeTransform.cpp */,
+				6870F910271CCE670083F930 /* GaugeTransform.hpp */,
+				68F619E4271C786600A8B197 /* Random.cpp */,
+				68F619EA271C786600A8B197 /* Random.hpp */,
+				6870F912271CCE680083F930 /* RandomGaugeTransformation.cpp */,
+				6870F90F271CCE670083F930 /* RandomGaugeTransformation.hpp */,
+				68F619E2271C786600A8B197 /* StochEm.cpp */,
+				68F619F0271C786600A8B197 /* StochEm.hpp */,
+				68F619EB271C786600A8B197 /* StoutSmearing.cpp */,
+				68F619E6271C786600A8B197 /* StoutSmearing.hpp */,
+				68F619EE271C786600A8B197 /* Unit.cpp */,
+				68F619E8271C786600A8B197 /* Unit.hpp */,
+				68F619ED271C786600A8B197 /* UnitEm.cpp */,
+				68F619E5271C786600A8B197 /* UnitEm.hpp */,
 			);
 			path = MGauge;
 			sourceTree = "<group>";
@@ -6049,13 +6081,13 @@
 			isa = PBXGroup;
 			children = (
 				68F619F3271C786600A8B197 /* CheckerboardSpinColorDiagonal.cpp */,
-				68F619F4271C786600A8B197 /* TimeDilutedSpinColorDiagonal.hpp */,
-				68F619F5271C786600A8B197 /* SparseSpinColorDiagonal.hpp */,
+				68F619F9271C786700A8B197 /* CheckerboardSpinColorDiagonal.hpp */,
+				68F619F8271C786700A8B197 /* FullVolumeSpinColorDiagonal.cpp */,
 				68F619F6271C786600A8B197 /* FullVolumeSpinColorDiagonal.hpp */,
 				68F619F7271C786700A8B197 /* SparseSpinColorDiagonal.cpp */,
-				68F619F8271C786700A8B197 /* FullVolumeSpinColorDiagonal.cpp */,
-				68F619F9271C786700A8B197 /* CheckerboardSpinColorDiagonal.hpp */,
+				68F619F5271C786600A8B197 /* SparseSpinColorDiagonal.hpp */,
 				68F619FA271C786700A8B197 /* TimeDilutedSpinColorDiagonal.cpp */,
+				68F619F4271C786600A8B197 /* TimeDilutedSpinColorDiagonal.hpp */,
 			);
 			path = MNoise;
 			sourceTree = "<group>";
@@ -6063,14 +6095,14 @@
 		68F619FB271C786700A8B197 /* MUtilities */ = {
 			isa = PBXGroup;
 			children = (
+				68F61A00271C786700A8B197 /* PrecisionCast.cpp */,
 				68F619FC271C786700A8B197 /* PrecisionCast.hpp */,
+				68F619FF271C786700A8B197 /* RandomField.cpp */,
+				68F61A03271C786700A8B197 /* RandomField.hpp */,
+				68F61A01271C786700A8B197 /* RandomVectors.cpp */,
 				68F619FD271C786700A8B197 /* RandomVectors.hpp */,
 				68F619FE271C786700A8B197 /* VectorUnpack.cpp */,
-				68F619FF271C786700A8B197 /* RandomField.cpp */,
-				68F61A00271C786700A8B197 /* PrecisionCast.cpp */,
-				68F61A01271C786700A8B197 /* RandomVectors.cpp */,
 				68F61A02271C786700A8B197 /* VectorUnpack.hpp */,
-				68F61A03271C786700A8B197 /* RandomField.hpp */,
 			);
 			path = MUtilities;
 			sourceTree = "<group>";
@@ -6079,10 +6111,10 @@
 			isa = PBXGroup;
 			children = (
 				68F61A05271C786700A8B197 /* ChargedProp.cpp */,
-				68F61A06271C786700A8B197 /* FreeProp.hpp */,
-				68F61A07271C786700A8B197 /* Scalar.hpp */,
 				68F61A08271C786700A8B197 /* ChargedProp.hpp */,
 				68F61A09271C786700A8B197 /* FreeProp.cpp */,
+				68F61A06271C786700A8B197 /* FreeProp.hpp */,
+				68F61A07271C786700A8B197 /* Scalar.hpp */,
 			);
 			path = MScalar;
 			sourceTree = "<group>";
@@ -6091,16 +6123,16 @@
 			isa = PBXGroup;
 			children = (
 				68F61A0B271C786700A8B197 /* Distil.hpp */,
-				68F61A0C271C786700A8B197 /* LapEvec.hpp */,
-				68F61A0D271C786700A8B197 /* DistilVectors.hpp */,
-				68F61A0E271C786700A8B197 /* Noises.hpp */,
 				68F61A0F271C786700A8B197 /* DistilPar.cpp */,
-				68F61A10271C786700A8B197 /* Perambulator.hpp */,
-				68F61A11271C786700A8B197 /* Perambulator.cpp */,
-				68F61A12271C786700A8B197 /* LapEvec.cpp */,
-				68F61A13271C786700A8B197 /* DistilVectors.cpp */,
-				68F61A14271C786700A8B197 /* Noises.cpp */,
 				68F61A15271C786700A8B197 /* DistilPar.hpp */,
+				68F61A13271C786700A8B197 /* DistilVectors.cpp */,
+				68F61A0D271C786700A8B197 /* DistilVectors.hpp */,
+				68F61A12271C786700A8B197 /* LapEvec.cpp */,
+				68F61A0C271C786700A8B197 /* LapEvec.hpp */,
+				68F61A14271C786700A8B197 /* Noises.cpp */,
+				68F61A0E271C786700A8B197 /* Noises.hpp */,
+				68F61A11271C786700A8B197 /* Perambulator.cpp */,
+				68F61A10271C786700A8B197 /* Perambulator.hpp */,
 			);
 			path = MDistil;
 			sourceTree = "<group>";
@@ -6109,9 +6141,9 @@
 			isa = PBXGroup;
 			children = (
 				68F61A17271C786700A8B197 /* Module_in_NS.cpp.template */,
-				68F61A18271C786700A8B197 /* Module_tmp_in_NS.hpp.template */,
-				68F61A19271C786700A8B197 /* Module_tmp_in_NS.cpp.template */,
 				68F61A1A271C786700A8B197 /* Module_in_NS.hpp.template */,
+				68F61A19271C786700A8B197 /* Module_tmp_in_NS.cpp.template */,
+				68F61A18271C786700A8B197 /* Module_tmp_in_NS.hpp.template */,
 			);
 			path = templates;
 			sourceTree = "<group>";
@@ -6120,11 +6152,11 @@
 			isa = PBXGroup;
 			children = (
 				68F61A1C271C786700A8B197 /* Amputate.cpp */,
-				68F61A1D271C786700A8B197 /* FourQuark.cpp */,
-				68F61A1E271C786700A8B197 /* Bilinear.hpp */,
 				68F61A1F271C786700A8B197 /* Amputate.hpp */,
-				68F61A20271C786700A8B197 /* FourQuark.hpp */,
 				68F61A21271C786700A8B197 /* Bilinear.cpp */,
+				68F61A1E271C786700A8B197 /* Bilinear.hpp */,
+				68F61A1D271C786700A8B197 /* FourQuark.cpp */,
+				68F61A20271C786700A8B197 /* FourQuark.hpp */,
 			);
 			path = MNPR;
 			sourceTree = "<group>";
@@ -6132,20 +6164,20 @@
 		68F61A22271C786700A8B197 /* MAction */ = {
 			isa = PBXGroup;
 			children = (
-				68F61A23271C786700A8B197 /* ScaledDWF.cpp */,
-				68F61A24271C786700A8B197 /* DWF.hpp */,
-				68F61A25271C786700A8B197 /* MobiusDWF.cpp */,
-				68F61A26271C786700A8B197 /* Wilson.cpp */,
-				68F61A27271C786700A8B197 /* Laplacian.cpp */,
-				68F61A28271C786700A8B197 /* WilsonClover.cpp */,
-				68F61A29271C786700A8B197 /* ZMobiusDWF.cpp */,
-				68F61A2A271C786700A8B197 /* MobiusDWF.hpp */,
-				68F61A2B271C786700A8B197 /* Wilson.hpp */,
-				68F61A2C271C786700A8B197 /* Laplacian.hpp */,
-				68F61A2D271C786700A8B197 /* WilsonClover.hpp */,
-				68F61A2E271C786700A8B197 /* ZMobiusDWF.hpp */,
-				68F61A2F271C786700A8B197 /* ScaledDWF.hpp */,
 				68F61A30271C786700A8B197 /* DWF.cpp */,
+				68F61A24271C786700A8B197 /* DWF.hpp */,
+				68F61A27271C786700A8B197 /* Laplacian.cpp */,
+				68F61A2C271C786700A8B197 /* Laplacian.hpp */,
+				68F61A25271C786700A8B197 /* MobiusDWF.cpp */,
+				68F61A2A271C786700A8B197 /* MobiusDWF.hpp */,
+				68F61A23271C786700A8B197 /* ScaledDWF.cpp */,
+				68F61A2F271C786700A8B197 /* ScaledDWF.hpp */,
+				68F61A26271C786700A8B197 /* Wilson.cpp */,
+				68F61A2B271C786700A8B197 /* Wilson.hpp */,
+				68F61A28271C786700A8B197 /* WilsonClover.cpp */,
+				68F61A2D271C786700A8B197 /* WilsonClover.hpp */,
+				68F61A29271C786700A8B197 /* ZMobiusDWF.cpp */,
+				68F61A2E271C786700A8B197 /* ZMobiusDWF.hpp */,
 			);
 			path = MAction;
 			sourceTree = "<group>";
@@ -6153,29 +6185,29 @@
 		68F61A31271C786700A8B197 /* MScalarSUN */ = {
 			isa = PBXGroup;
 			children = (
-				68F61A32271C786700A8B197 /* TrPhi.cpp */,
-				68F61A33271C786700A8B197 /* StochFreeField.hpp */,
-				68F61A34271C786700A8B197 /* TwoPointNPR.hpp */,
-				68F61A35271C786700A8B197 /* TransProj.cpp */,
-				68F61A36271C786700A8B197 /* Grad.cpp */,
-				68F61A37271C786700A8B197 /* TrKinetic.cpp */,
-				68F61A38271C786700A8B197 /* Div.hpp */,
-				68F61A39271C786700A8B197 /* TrMag.cpp */,
-				68F61A3A271C786700A8B197 /* WilsonFlow.cpp */,
-				68F61A3B271C786700A8B197 /* EMT.cpp */,
-				68F61A3C271C786700A8B197 /* TwoPoint.cpp */,
 				68F61A3D271C786700A8B197 /* Div.cpp */,
-				68F61A3E271C786700A8B197 /* TrMag.hpp */,
-				68F61A3F271C786700A8B197 /* WilsonFlow.hpp */,
+				68F61A38271C786700A8B197 /* Div.hpp */,
+				68F61A3B271C786700A8B197 /* EMT.cpp */,
 				68F61A40271C786700A8B197 /* EMT.hpp */,
-				68F61A41271C786700A8B197 /* TwoPoint.hpp */,
-				68F61A42271C786700A8B197 /* StochFreeField.cpp */,
-				68F61A43271C786700A8B197 /* TrPhi.hpp */,
-				68F61A44271C786700A8B197 /* Utils.hpp */,
-				68F61A45271C786700A8B197 /* TwoPointNPR.cpp */,
-				68F61A46271C786700A8B197 /* TransProj.hpp */,
+				68F61A36271C786700A8B197 /* Grad.cpp */,
 				68F61A47271C786700A8B197 /* Grad.hpp */,
+				68F61A42271C786700A8B197 /* StochFreeField.cpp */,
+				68F61A33271C786700A8B197 /* StochFreeField.hpp */,
+				68F61A35271C786700A8B197 /* TransProj.cpp */,
+				68F61A46271C786700A8B197 /* TransProj.hpp */,
+				68F61A37271C786700A8B197 /* TrKinetic.cpp */,
 				68F61A48271C786700A8B197 /* TrKinetic.hpp */,
+				68F61A39271C786700A8B197 /* TrMag.cpp */,
+				68F61A3E271C786700A8B197 /* TrMag.hpp */,
+				68F61A32271C786700A8B197 /* TrPhi.cpp */,
+				68F61A43271C786700A8B197 /* TrPhi.hpp */,
+				68F61A3C271C786700A8B197 /* TwoPoint.cpp */,
+				68F61A41271C786700A8B197 /* TwoPoint.hpp */,
+				68F61A45271C786700A8B197 /* TwoPointNPR.cpp */,
+				68F61A34271C786700A8B197 /* TwoPointNPR.hpp */,
+				68F61A44271C786700A8B197 /* Utils.hpp */,
+				68F61A3A271C786700A8B197 /* WilsonFlow.cpp */,
+				68F61A3F271C786700A8B197 /* WilsonFlow.hpp */,
 			);
 			path = MScalarSUN;
 			sourceTree = "<group>";
@@ -6183,34 +6215,34 @@
 		68F61A49271C786700A8B197 /* MIO */ = {
 			isa = PBXGroup;
 			children = (
-				68F61A4A271C786700A8B197 /* LoadCosmHol.cpp */,
-				68F61A4B271C786700A8B197 /* LoadCoarseEigenPack.cpp */,
-				68F61A4C271C786700A8B197 /* LoadEigenPack.hpp */,
-				68F61A4D271C786700A8B197 /* LoadNersc.hpp */,
-				68F61A4E271C786700A8B197 /* LoadPerambulator.hpp */,
-				68F61A4F271C786700A8B197 /* SaveField.cpp */,
-				68F61A50271C786700A8B197 /* LoadDistilNoise.hpp */,
-				68F61A51271C786700A8B197 /* LoadBinary.cpp */,
-				68F61A52271C786700A8B197 /* SaveNersc.hpp */,
-				68F61A53271C786700A8B197 /* LoadOpenQcd.cpp */,
-				68F61A54271C786700A8B197 /* LoadField.cpp */,
-				68F61A55271C786700A8B197 /* LoadLapEvec.hpp */,
-				68F61A56271C786700A8B197 /* LoadA2AVectors.hpp */,
 				68F61A57271C786700A8B197 /* LoadA2AMatrixDiskVector.cpp */,
-				68F61A58271C786700A8B197 /* SaveNersc.cpp */,
-				68F61A59271C786700A8B197 /* LoadOpenQcd.hpp */,
+				68F61A5D271C786700A8B197 /* LoadA2AMatrixDiskVector.hpp */,
+				68F61A5C271C786700A8B197 /* LoadA2AVectors.cpp */,
+				68F61A56271C786700A8B197 /* LoadA2AVectors.hpp */,
+				68F61A51271C786700A8B197 /* LoadBinary.cpp */,
+				68F61A65271C786700A8B197 /* LoadBinary.hpp */,
+				68F61A4B271C786700A8B197 /* LoadCoarseEigenPack.cpp */,
+				68F61A60271C786700A8B197 /* LoadCoarseEigenPack.hpp */,
+				68F61A4A271C786700A8B197 /* LoadCosmHol.cpp */,
+				68F61A5E271C786700A8B197 /* LoadCosmHol.hpp */,
+				68F61A64271C786700A8B197 /* LoadDistilNoise.cpp */,
+				68F61A50271C786700A8B197 /* LoadDistilNoise.hpp */,
+				68F61A5F271C786700A8B197 /* LoadEigenPack.cpp */,
+				68F61A4C271C786700A8B197 /* LoadEigenPack.hpp */,
+				68F61A54271C786700A8B197 /* LoadField.cpp */,
 				68F61A5A271C786700A8B197 /* LoadField.hpp */,
 				68F61A5B271C786700A8B197 /* LoadLapEvec.cpp */,
-				68F61A5C271C786700A8B197 /* LoadA2AVectors.cpp */,
-				68F61A5D271C786700A8B197 /* LoadA2AMatrixDiskVector.hpp */,
-				68F61A5E271C786700A8B197 /* LoadCosmHol.hpp */,
-				68F61A5F271C786700A8B197 /* LoadEigenPack.cpp */,
-				68F61A60271C786700A8B197 /* LoadCoarseEigenPack.hpp */,
+				68F61A55271C786700A8B197 /* LoadLapEvec.hpp */,
 				68F61A61271C786700A8B197 /* LoadNersc.cpp */,
+				68F61A4D271C786700A8B197 /* LoadNersc.hpp */,
+				68F61A53271C786700A8B197 /* LoadOpenQcd.cpp */,
+				68F61A59271C786700A8B197 /* LoadOpenQcd.hpp */,
 				68F61A62271C786700A8B197 /* LoadPerambulator.cpp */,
+				68F61A4E271C786700A8B197 /* LoadPerambulator.hpp */,
+				68F61A4F271C786700A8B197 /* SaveField.cpp */,
 				68F61A63271C786700A8B197 /* SaveField.hpp */,
-				68F61A64271C786700A8B197 /* LoadDistilNoise.cpp */,
-				68F61A65271C786700A8B197 /* LoadBinary.hpp */,
+				68F61A58271C786700A8B197 /* SaveNersc.cpp */,
+				68F61A52271C786700A8B197 /* SaveNersc.hpp */,
 			);
 			path = MIO;
 			sourceTree = "<group>";
@@ -6218,21 +6250,21 @@
 		68F61B7E271C79E600A8B197 /* tests */ = {
 			isa = PBXGroup;
 			children = (
-				68F61B7F271C79E600A8B197 /* Test_sigma_to_nucleon.cpp */,
-				68F61B80271C79E600A8B197 /* Test_database_concurrency.cpp */,
-				68F61B81271C79E600A8B197 /* Test_hadrons_spectrum.cpp */,
-				68F61B82271C79E600A8B197 /* Test_hadrons_meson_3pt.cpp */,
-				68F61B83271C79E600A8B197 /* Test_database.cpp */,
-				68F61B84271C79E600A8B197 /* Test_free_prop.cpp */,
 				68F61B85271C79E600A8B197 /* Make.inc */,
-				68F61B86271C79E600A8B197 /* Test_QED.cpp */,
-				68F61B87271C79E600A8B197 /* Test_diskvector.cpp */,
 				68F61B88271C79E600A8B197 /* Makefile.am */,
-				68F61B89271C79E600A8B197 /* Test_field_io.cpp */,
-				68F61B8A271C79E600A8B197 /* Test_QED_Local.cpp */,
 				68F61B8B271C79E700A8B197 /* Makefile.in */,
-				68F61B8C271C79E700A8B197 /* Test_xi_to_sigma.cpp */,
+				68F61B80271C79E600A8B197 /* Test_database_concurrency.cpp */,
+				68F61B83271C79E600A8B197 /* Test_database.cpp */,
+				68F61B87271C79E600A8B197 /* Test_diskvector.cpp */,
 				68F61B8D271C79E700A8B197 /* Test_distil.cpp */,
+				68F61B89271C79E600A8B197 /* Test_field_io.cpp */,
+				68F61B84271C79E600A8B197 /* Test_free_prop.cpp */,
+				68F61B82271C79E600A8B197 /* Test_hadrons_meson_3pt.cpp */,
+				68F61B81271C79E600A8B197 /* Test_hadrons_spectrum.cpp */,
+				68F61B8A271C79E600A8B197 /* Test_QED_Local.cpp */,
+				68F61B86271C79E600A8B197 /* Test_QED.cpp */,
+				68F61B7F271C79E600A8B197 /* Test_sigma_to_nucleon.cpp */,
+				68F61B8C271C79E700A8B197 /* Test_xi_to_sigma.cpp */,
 			);
 			path = tests;
 			sourceTree = "<group>";
@@ -6240,14 +6272,14 @@
 		68F61B8F271C79E700A8B197 /* utilities */ = {
 			isa = PBXGroup;
 			children = (
-				68F61B90271C79E700A8B197 /* Contractor.hpp */,
-				68F61B91271C79E700A8B197 /* Makefile.am */,
-				68F61B92271C79E700A8B197 /* HadronsXmlValidate.cpp */,
-				68F61B93271C79E700A8B197 /* ContractorBenchmark.cpp */,
-				68F61B94271C79E700A8B197 /* HadronsXmlRun.cpp */,
-				68F61B95271C79E700A8B197 /* Makefile.in */,
 				68F61B96271C79E700A8B197 /* Contractor.cpp */,
+				68F61B90271C79E700A8B197 /* Contractor.hpp */,
+				68F61B93271C79E700A8B197 /* ContractorBenchmark.cpp */,
 				68F61B97271C79E700A8B197 /* EigenPackCast.cpp */,
+				68F61B94271C79E700A8B197 /* HadronsXmlRun.cpp */,
+				68F61B92271C79E700A8B197 /* HadronsXmlValidate.cpp */,
+				68F61B91271C79E700A8B197 /* Makefile.am */,
+				68F61B95271C79E700A8B197 /* Makefile.in */,
 			);
 			path = utilities;
 			sourceTree = "<group>";
@@ -7065,6 +7097,7 @@
 				68F61B40271C786800A8B197 /* StochFreeField.hpp in Headers */,
 				68F61B58271C786900A8B197 /* LoadEigenPack.hpp in Headers */,
 				68F61B5E271C786900A8B197 /* SaveNersc.hpp in Headers */,
+				6870F914271CCE680083F930 /* GaugeTransform.hpp in Headers */,
 				68F61A85271C786700A8B197 /* FieldIo.hpp in Headers */,
 				68F61B09271C786800A8B197 /* StochEm.hpp in Headers */,
 				68F61AE5271C786800A8B197 /* Smear.hpp in Headers */,
@@ -7081,6 +7114,7 @@
 				68F61B01271C786800A8B197 /* Unit.hpp in Headers */,
 				68F61B20271C786800A8B197 /* Distil.hpp in Headers */,
 				68F61AC3271C786800A8B197 /* Operators.hpp in Headers */,
+				6870F922271CCECF0083F930 /* LatticeUtilities.hpp in Headers */,
 				68F61B78271C786900A8B197 /* ModuleFactory.hpp in Headers */,
 				68F61B1E271C786800A8B197 /* ChargedProp.hpp in Headers */,
 				68F61B22271C786800A8B197 /* DistilVectors.hpp in Headers */,
@@ -7114,6 +7148,7 @@
 				68F61AB0271C786700A8B197 /* RareKaonNeutralDisc.hpp in Headers */,
 				68F61ABF271C786800A8B197 /* FreeProp.hpp in Headers */,
 				68F61ABC271C786700A8B197 /* WeakNonEye3pt.hpp in Headers */,
+				6870F913271CCE680083F930 /* RandomGaugeTransformation.hpp in Headers */,
 				68F61ADA271C786800A8B197 /* Z2Diluted.hpp in Headers */,
 				68F61A6F271C786700A8B197 /* Application.hpp in Headers */,
 				68F61AF4271C786800A8B197 /* RBPrecCG.hpp in Headers */,
@@ -7134,6 +7169,7 @@
 				68F61B65271C786900A8B197 /* LoadOpenQcd.hpp in Headers */,
 				68F61B14271C786800A8B197 /* RandomVectors.hpp in Headers */,
 				68F61A72271C786700A8B197 /* Global.hpp in Headers */,
+				6870F91E271CCE9B0083F930 /* BatchExactDeflation.hpp in Headers */,
 				68F61A99271C786700A8B197 /* A2AFourQuarkContraction.hpp in Headers */,
 				68F61B3A271C786800A8B197 /* Laplacian.hpp in Headers */,
 				68F61A93271C786700A8B197 /* Exceptions.hpp in Headers */,
@@ -7173,6 +7209,7 @@
 				68F61AA6271C786700A8B197 /* A2AMesonField.hpp in Headers */,
 				68F61B61271C786900A8B197 /* LoadLapEvec.hpp in Headers */,
 				68F61B5C271C786900A8B197 /* LoadDistilNoise.hpp in Headers */,
+				6870F91D271CCE9B0083F930 /* ExactDeflation.hpp in Headers */,
 				68F61AF9271C786800A8B197 /* A2AVectors.hpp in Headers */,
 				68F61B2E271C786800A8B197 /* Amputate.hpp in Headers */,
 				68F61ACE271C786800A8B197 /* JacobiSmear.hpp in Headers */,
@@ -7189,7 +7226,6 @@
 				68F61B66271C786900A8B197 /* LoadField.hpp in Headers */,
 				68F61AF5271C786800A8B197 /* ImplicitlyRestartedLanczos.hpp in Headers */,
 				68F61B62271C786900A8B197 /* LoadA2AVectors.hpp in Headers */,
-				68F61AF2271C786800A8B197 /* Guesser.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7996,11 +8032,14 @@
 				68F61B4F271C786800A8B197 /* StochFreeField.cpp in Sources */,
 				68F61A6E271C786700A8B197 /* Exceptions.cpp in Sources */,
 				68F61B0F271C786800A8B197 /* SparseSpinColorDiagonal.cpp in Sources */,
+				6870F915271CCE680083F930 /* GaugeTransform.cpp in Sources */,
 				68F61B28271C786800A8B197 /* DistilVectors.cpp in Sources */,
+				6870F91F271CCE9B0083F930 /* ExactDeflation.cpp in Sources */,
 				68F61AEA271C786800A8B197 /* MADWFCG.cpp in Sources */,
 				68F61B2B271C786800A8B197 /* Amputate.cpp in Sources */,
 				68F61B34271C786800A8B197 /* Wilson.cpp in Sources */,
 				68F61B6D271C786900A8B197 /* LoadNersc.cpp in Sources */,
+				6870F920271CCE9B0083F930 /* BatchExactDeflation.cpp in Sources */,
 				68F61A76271C786700A8B197 /* Environment.cpp in Sources */,
 				68F61A9D271C786700A8B197 /* Gamma3pt.cpp in Sources */,
 				68F61AFD271C786800A8B197 /* Random.cpp in Sources */,
@@ -8105,6 +8144,7 @@
 				68F61A8C271C786700A8B197 /* Database.cpp in Sources */,
 				68F61AED271C786800A8B197 /* A2AVectors.cpp in Sources */,
 				68F61AFB271C786800A8B197 /* StochEm.cpp in Sources */,
+				6870F916271CCE680083F930 /* RandomGaugeTransformation.cpp in Sources */,
 				68F61A9C271C786700A8B197 /* WeakMesonDecayKl2.cpp in Sources */,
 				68F61AD4271C786800A8B197 /* SeqAslash.cpp in Sources */,
 				68F61B04271C786800A8B197 /* StoutSmearing.cpp in Sources */,

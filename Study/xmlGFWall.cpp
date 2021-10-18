@@ -174,21 +174,32 @@ void CreateApp( Application &application )
     application.createModule<QuarkAction>(ActionName, actionPar);
 
     // eigenpacks for deflation
-    std::string epackObjname;
+    MSolver::RBPrecCG::Par solverPar;
     if( q.EigenPackFilename )
     {
-      epackObjname = "epack_" + q.flavour;
+      std::string epackObjname = "epack_" + q.flavour;
       MIO::LoadFermionEigenPack::Par epPar;
       epPar.filestem = q.EigenPackFilename;
       epPar.multiFile = false;
       epPar.size = 600;
       epPar.Ls = q.Ls;
+#ifdef MLU_HADRONS_HAS_GUESSERS
+      epPar.redBlack = true;
+#endif
       application.createModule<MIO::LoadFermionEigenPack>(epackObjname, epPar);
+#ifdef MLU_HADRONS_HAS_GUESSERS
+      std::string GuesserName{ "guesser_" + q.flavour };
+      typename MGuesser::ExactDeflation::Par guessPar;
+      guessPar.eigenPack = epackObjname;
+      guessPar.size = epPar.size;
+      application.createModule<MGuesser::ExactDeflation>( GuesserName, guessPar );
+      solverPar.guesser    = GuesserName;
+#else
+      solverPar.eigenPack  = epackObjname;
+#endif
     }
     // solvers
     solverName[i] = "CG" + Sep + q.flavour;
-    MSolver::RBPrecCG::Par solverPar;
-    solverPar.eigenPack    = epackObjname;
     solverPar.action       = ActionName;
     solverPar.residual     = q.residual;
     solverPar.maxIteration = q.maxIteration;

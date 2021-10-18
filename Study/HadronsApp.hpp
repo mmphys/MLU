@@ -491,7 +491,8 @@ public:
   ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &q );
   virtual void AddDependencies( HModList &ModList ) const;
 protected:
-  template<typename T> std::string LoadEigenPack( HModList &ModList, Precision epPres ) const;
+  template<typename TEPLoad, typename TGuesser>
+  std::string LoadEigenPack( HModList &ModList, Precision epPres ) const;
 };
 
 /**************************

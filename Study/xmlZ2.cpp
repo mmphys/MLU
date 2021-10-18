@@ -150,9 +150,21 @@ void Make( Application &application, unsigned int nt, bool bRandom, bool bEigenp
       epPar.multiFile = false;
       epPar.size = 600;
       epPar.Ls = q.Ls;
+#ifdef MLU_HADRONS_HAS_GUESSERS
+      epPar.redBlack = true;
+#endif
       const std::string epackObjname{ "epack_" + q.flavour };
       application.createModule<MIO::LoadFermionEigenPack>(epackObjname, epPar);
+#ifdef MLU_HADRONS_HAS_GUESSERS
+      const std::string GuesserName{ "guesser_" + q.flavour };
+      MGuesser::ExactDeflationPar gPar;
+      gPar.eigenPack = epackObjname;
+      gPar.size = epPar.size;
+      application.createModule<MGuesser::ExactDeflation>(GuesserName, gPar);
+      solverPar.guesser = GuesserName;
+#else
       solverPar.eigenPack = epackObjname;
+#endif
     }
     solverPar.action       = ActionName;
     solverPar.residual     = q.residual;

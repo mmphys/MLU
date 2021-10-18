@@ -274,6 +274,9 @@ AC_CHECK_HEADER([boost/spirit/home/x3/version.hpp],
                 [AC_CHECK_HEADER([boost/spirit/home/x3/version.hpp],,
                                  [AC_MSG_ERROR([Boost not available in $BoostPackage. Try bootstrap.sh?])])])
 
+AC_CHECK_HEADER([Hadrons/Modules/MGuesser/ExactDeflation.hpp],
+                [AC_DEFINE([MLU_HADRONS_HAS_GUESSERS], [], [Hadrons supports guessers])])
+
 CPPFLAGS="-I${abs_srcdir} $CPPFLAGS -I$AbsMLUBuildDir"
 
 #AC_DEFINE_UNQUOTED([MLU_SHA], ["`git rev-parse HEAD`"], [git commit SHA])

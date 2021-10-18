@@ -420,10 +420,11 @@ ModSolver::ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &
   Append( name, q.flavour );
 }
 
-template<typename T> std::string ModSolver::LoadEigenPack( HModList &ModList, Precision XformPres ) const
+template<typename TEPLoad, typename TGuesser>
+std::string ModSolver::LoadEigenPack( HModList &ModList, Precision XformPres ) const
 {
   std::string EigenPackName{ "epack_" + name };
-  typename T::Par epPar;
+  typename TEPLoad::Par epPar;
   epPar.filestem = q.eigenPack;
   epPar.multiFile = q.multiFile;
   epPar.redBlack = q.redBlack;
@@ -433,8 +434,20 @@ template<typename T> std::string ModSolver::LoadEigenPack( HModList &ModList, Pr
   {
     epPar.gaugeXform = ModList.TakeOwnership( new ModGaugeXform( ModList, tax, q.GaugeSmear, XformPres ) );
   }
-  ModList.application.createModule<T>(EigenPackName, epPar);
+#ifdef MLU_HADRONS_HAS_GUESSERS
+  epPar.redBlack = true;
+#endif
+  ModList.application.createModule<TEPLoad>( EigenPackName, epPar );
+#ifdef MLU_HADRONS_HAS_GUESSERS
+  std::string GuesserName{ "guesser_" + name };
+  typename TGuesser::Par guessPar;
+  guessPar.eigenPack = EigenPackName;
+  guessPar.size = epPar.size;
+  ModList.application.createModule<TGuesser>( GuesserName, guessPar );
+  return GuesserName;
+#else
   return EigenPackName;
+#endif
 }
 
 void ModSolver::AddDependencies( HModList &ModList ) const
@@ -442,18 +455,32 @@ void ModSolver::AddDependencies( HModList &ModList ) const
   std::string EigenPackName;
   if( ModList.params.Run.Gauge.length() && q.eigenPack.length() )
   {
-    if( !q.eigenSinglePrecision ) // Double-precision Eigen packs can be used anywhere
-      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList, Precision::Double );
+    using TDoubleEP             = MIO::LoadFermionEigenPack; // Double-precision Eigen packs can be used anywhere
+    using TSingleEP             = MIO::LoadFermionEigenPackF; // Single-precision Eigen packs for MP solver
+    using TLoadSingleAsDoubleEP = MIO::LoadFermionEigenPackIo32; // Load single-precision as double-
+#ifdef MLU_HADRONS_HAS_GUESSERS
+    using TGuesserD = MGuesser::ExactDeflation;
+    using TGuesserF = MGuesser::ExactDeflationF;
+#else
+    using TGuesserD = void;
+    using TGuesserF = void;
+#endif
+    if( !q.eigenSinglePrecision )
+      EigenPackName = LoadEigenPack<TDoubleEP,             TGuesserD>( ModList, Precision::Double );
     else if( q.MixedPrecision() )
-      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackF>( ModList, Precision::Single );
+      EigenPackName = LoadEigenPack<TSingleEP,             TGuesserF>( ModList, Precision::Single );
     else
-      EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackIo32>( ModList, Precision::Double );
+      EigenPackName = LoadEigenPack<TLoadSingleAsDoubleEP, TGuesserD>( ModList, Precision::Double );
   }
   if( q.MixedPrecision() )
   {
     using T = MSolver::MixedPrecisionRBPrecCG;
     typename T::Par solverPar;
+#ifdef MLU_HADRONS_HAS_GUESSERS
+    solverPar.outerGuesser      = EigenPackName;
+#else
     solverPar.eigenPack         = EigenPackName;
+#endif
     solverPar.residual          = q.residual;
     solverPar.maxInnerIteration = q.maxIteration;
     solverPar.maxOuterIteration = q.maxOuterIteration;
@@ -465,7 +492,11 @@ void ModSolver::AddDependencies( HModList &ModList ) const
   {
     using T = MSolver::RBPrecCG;
     typename T::Par solverPar;
+#ifdef MLU_HADRONS_HAS_GUESSERS
+    solverPar.guesser      = EigenPackName;
+#else
     solverPar.eigenPack    = EigenPackName;
+#endif
     solverPar.residual     = q.residual;
     solverPar.maxIteration = q.maxIteration;
     solverPar.action       = ModList.TakeOwnership( new ModAction( ModList, tax, q, Precision::Double ) );

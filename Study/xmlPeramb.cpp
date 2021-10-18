@@ -28,6 +28,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLU/Common.hpp>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 
@@ -177,9 +178,21 @@ int main(int argc, char *argv[])
       epPar.multiFile = false;
       epPar.size = 600;
       epPar.Ls = q.Ls;
+#ifdef MLU_HADRONS_HAS_GUESSERS
+      epPar.redBlack = true;
+#endif
       const std::string epackObjname{ "epack_" + q.flavour };
       application.createModule<MIO::LoadFermionEigenPack>(epackObjname, epPar);
-      solverPar.eigenPack = epackObjname;
+#ifdef MLU_HADRONS_HAS_GUESSERS
+      const std::string GuesserName{ "guesser_" + q.flavour };
+      typename MGuesser::ExactDeflation::Par guessPar;
+      guessPar.eigenPack = epackObjname;
+      guessPar.size = epPar.size;
+      application.createModule<MGuesser::ExactDeflation>( GuesserName, guessPar );
+      solverPar.guesser    = GuesserName;
+#else
+      solverPar.eigenPack  = epackObjname;
+#endif
     }
     solverPar.action       = ActionName;
     solverPar.residual     = q.residual;
