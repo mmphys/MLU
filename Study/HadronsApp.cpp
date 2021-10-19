@@ -143,6 +143,8 @@ AppParams::AppParams( XmlReader &r )
     throw std::runtime_error( "GaugeFixedXform specified without GaugeFixed" );
   if( !Run.GaugeFixed.empty() && Run.GaugeFixedXform.empty() )
     throw std::runtime_error( "GaugeFixed specified without GaugeFixedXform" );
+  Common::Trim( Run.batchSize );
+  Run.GetBatchSize();
 }
 
 std::vector<std::string> AppParams::GetWarnings() const
@@ -420,11 +422,9 @@ ModSolver::ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &
   Append( name, q.flavour );
 }
 
-template<typename TEPLoad, typename TGuesser>
-std::string ModSolver::LoadEigenPack( HModList &ModList, Precision XformPres ) const
+template<typename TPar>
+void ModSolver::LoadEigenPar( TPar &epPar, HModList &ModList, Precision XformPres ) const
 {
-  std::string EigenPackName{ "epack_" + name };
-  typename TEPLoad::Par epPar;
   epPar.filestem = q.eigenPack;
   epPar.multiFile = q.multiFile;
   epPar.redBlack = q.redBlack;
@@ -434,59 +434,86 @@ std::string ModSolver::LoadEigenPack( HModList &ModList, Precision XformPres ) c
   {
     epPar.gaugeXform = ModList.TakeOwnership( new ModGaugeXform( ModList, tax, q.GaugeSmear, XformPres ) );
   }
-#ifdef MLU_HADRONS_HAS_GUESSERS
-  epPar.redBlack = true;
-#endif
-  ModList.application.createModule<TEPLoad>( EigenPackName, epPar );
-#ifdef MLU_HADRONS_HAS_GUESSERS
-  std::string GuesserName{ "guesser_" + name };
-  typename TGuesser::Par guessPar;
-  guessPar.eigenPack = EigenPackName;
-  guessPar.size = epPar.size;
-  ModList.application.createModule<TGuesser>( GuesserName, guessPar );
-  return GuesserName;
-#else
-  return EigenPackName;
-#endif
 }
+
+template<typename TEPLoad>
+std::string ModSolver::LoadEigenPack( HModList &ModList, Precision XformPres ) const
+{
+  std::string EigenPackName{ "epack_" + name };
+  typename TEPLoad::Par epPar;
+  LoadEigenPar( epPar, ModList, XformPres );
+  ModList.application.createModule<TEPLoad>( EigenPackName, epPar );
+  return EigenPackName;
+}
+
+std::string ModSolver::LoadEigenPack( HModList &ModList ) const
+{
+  std::string EigenPackName;
+  if( !q.eigenSinglePrecision ) // Double-precision Eigen packs can be used anywhere
+    EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList, Precision::Double );
+  else if( q.MixedPrecision() ) // Single-precision Eigen packs for MP solver
+    EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackF>( ModList, Precision::Single );
+  else // Load single-precision as double-
+    EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackIo32>( ModList, Precision::Double );
+  return EigenPackName;
+}
+
+#ifdef MLU_HADRONS_HAS_GUESSERS
+template<typename TGuesser>
+void ModSolver::LoadGuessExact( HModList &ModList, const std::string &GuesserName ) const
+{
+  typename TGuesser::Par guessPar;
+  guessPar.eigenPack = LoadEigenPack( ModList );
+  guessPar.size = q.size;
+  ModList.application.createModule<TGuesser>( GuesserName, guessPar );
+}
+
+template<typename TGuesser>
+void ModSolver::LoadGuessBatch( HModList &ModList, const std::string &GuesserName ) const
+{
+  typename TGuesser::Par guessPar;
+  LoadEigenPar( guessPar.eigenPack, ModList, q.LoadEigenSingle() ? Precision::Single : Precision::Double );
+  guessPar.batchSize = ModList.params.Run.GetBatchSize();
+  ModList.application.createModule<TGuesser>( GuesserName, guessPar );
+}
+#endif
 
 void ModSolver::AddDependencies( HModList &ModList ) const
 {
-  std::string EigenPackName;
-  Precision EPPrecision{ Precision::Double };
+  std::string EigenGuessName;
   if( q.eigenPack.length() )
   {
-    using TDoubleEP             = MIO::LoadFermionEigenPack; // Double-precision Eigen packs can be used anywhere
-    using TSingleEP             = MIO::LoadFermionEigenPackF; // Single-precision Eigen packs for MP solver
-    using TLoadSingleAsDoubleEP = MIO::LoadFermionEigenPackIo32; // Load single-precision as double-
 #ifdef MLU_HADRONS_HAS_GUESSERS
-    using TGuesserD = MGuesser::ExactDeflation;
-    using TGuesserF = MGuesser::ExactDeflationF;
-#else
-    using TGuesserD = void;
-    using TGuesserF = void;
-#endif
-    if( !q.eigenSinglePrecision )
-      EigenPackName = LoadEigenPack<TDoubleEP,             TGuesserD>( ModList, EPPrecision );
-    else if( q.MixedPrecision() )
+    EigenGuessName = "guesser_" + name;
+    if( ModList.params.Run.GetBatchSize() )
     {
-      EPPrecision = Precision::Single;
-      EigenPackName = LoadEigenPack<TSingleEP,             TGuesserF>( ModList, EPPrecision );
+      if( q.LoadEigenSingle() )
+        LoadGuessBatch<MGuesser::BatchExactDeflationF>( ModList, EigenGuessName );
+      else
+        LoadGuessBatch<MGuesser::BatchExactDeflation> ( ModList, EigenGuessName );
     }
     else
-      EigenPackName = LoadEigenPack<TLoadSingleAsDoubleEP, TGuesserD>( ModList, EPPrecision );
+    {
+      if( q.LoadEigenSingle() )
+        LoadGuessExact<MGuesser::ExactDeflationF>     ( ModList, EigenGuessName );
+      else
+        LoadGuessExact<MGuesser::ExactDeflation>      ( ModList, EigenGuessName );
+    }
+#else
+    EigenGuessName = LoadEigenPack( ModList );
+#endif
   }
   if( q.MixedPrecision() )
   {
     using T = MSolver::MixedPrecisionRBPrecCG;
     typename T::Par solverPar;
 #ifdef MLU_HADRONS_HAS_GUESSERS
-    if( EPPrecision == Precision::Double )
-      solverPar.outerGuesser    = EigenPackName;
+    if( q.LoadEigenSingle() )
+      solverPar.innerGuesser    = EigenGuessName;
     else
-      solverPar.innerGuesser    = EigenPackName;
+      solverPar.outerGuesser    = EigenGuessName;
 #else
-    solverPar.eigenPack         = EigenPackName;
+    solverPar.eigenPack         = EigenGuessName;
 #endif
     solverPar.residual          = q.residual;
     solverPar.maxInnerIteration = q.maxIteration;
@@ -500,9 +527,9 @@ void ModSolver::AddDependencies( HModList &ModList ) const
     using T = MSolver::RBPrecCG;
     typename T::Par solverPar;
 #ifdef MLU_HADRONS_HAS_GUESSERS
-    solverPar.guesser      = EigenPackName;
+    solverPar.guesser      = EigenGuessName;
 #else
-    solverPar.eigenPack    = EigenPackName;
+    solverPar.eigenPack    = EigenGuessName;
 #endif
     solverPar.residual     = q.residual;
     solverPar.maxIteration = q.maxIteration;

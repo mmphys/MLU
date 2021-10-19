@@ -217,6 +217,8 @@ GRID_SERIALIZABLE_CLASS_MEMBERS(Quark,
 public:
   template<typename T> void CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const;
   inline bool MixedPrecision() const { return maxOuterIteration != 0; }
+  // Eigen packs will be single-precision in memory only if they are on disk and solver is multi-precision
+  inline bool LoadEigenSingle() const { return eigenSinglePrecision && MixedPrecision(); }
 };
 
 // Append
@@ -345,7 +347,12 @@ struct AppParams
                        MGauge::StoutSmearing::Par,  StoutSmear,
                                       std::string,  SpatialPos,
                                       std::string,  RegionSize,
-                                      std::string,  OutputBase)
+                                      std::string,  OutputBase,
+                                      std::string,  batchSize) // optional non-zero int to use batch deflation
+    unsigned int GetBatchSize() const
+    {
+      return batchSize.empty() ? 0 : Common::FromString<unsigned int>( batchSize );
+    }
   };
 
   RunPar Run;
@@ -491,8 +498,16 @@ public:
   ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &q );
   virtual void AddDependencies( HModList &ModList ) const;
 protected:
-  template<typename TEPLoad, typename TGuesser>
+  template<typename TPar>
+  void LoadEigenPar( TPar &epPar, HModList &ModList, Precision XformPres ) const;
+  template<typename TEPLoad>
   std::string LoadEigenPack( HModList &ModList, Precision epPres ) const;
+  std::string LoadEigenPack( HModList &ModList ) const;
+#ifdef MLU_HADRONS_HAS_GUESSERS
+  template<typename TGuesser> void LoadGuessExact( HModList &ModList, const std::string &GuesserName ) const;
+  template<typename TGuesser> void LoadGuessBatch( HModList &ModList, const std::string &GuesserName ) const;
+  std::string LoadGuesser( HModList &ModList ) const;
+#endif
 };
 
 /**************************
