@@ -953,6 +953,8 @@
 		6874ED74271C6C820055B1E5 /* BaseIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E9E3271C6C7E0055B1E5 /* BaseIO.cc */; };
 		6874ED75271C6C820055B1E5 /* JSON_IO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E9E4271C6C7E0055B1E5 /* JSON_IO.cc */; };
 		6874ED76271C6C820055B1E5 /* JSON_IO.h in Headers */ = {isa = PBXBuildFile; fileRef = 6874E9E5271C6C7E0055B1E5 /* JSON_IO.h */; };
+		68820B2A2721CC1700825D73 /* GaugeCmp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */; };
+		68820B2B2721CC4300825D73 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68A2B64E271C816600D9CB95 /* HadronsXmlRun.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61B94271C79E700A8B197 /* HadronsXmlRun.cpp */; };
 		68C0A4F8271CA178006BBD5E /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68C0A4FB271CA270006BBD5E /* TensorDemo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446DD271C8E5400EF030C /* TensorDemo.cpp */; };
@@ -1323,6 +1325,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		686EC05A271C9EE300A69ED4 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		68820B212721CBE100825D73 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -2469,6 +2480,8 @@
 		6874E9E3271C6C7E0055B1E5 /* BaseIO.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BaseIO.cc; sourceTree = "<group>"; };
 		6874E9E4271C6C7E0055B1E5 /* JSON_IO.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JSON_IO.cc; sourceTree = "<group>"; };
 		6874E9E5271C6C7E0055B1E5 /* JSON_IO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSON_IO.h; sourceTree = "<group>"; };
+		68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GaugeCmp.cpp; sourceTree = "<group>"; };
+		68820B232721CBE100825D73 /* GaugeCmp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GaugeCmp; sourceTree = BUILT_PRODUCTS_DIR; };
 		68A2B647271C7EE100D9CB95 /* HadronsXmlRun */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HadronsXmlRun; sourceTree = BUILT_PRODUCTS_DIR; };
 		68C0A4F1271CA165006BBD5E /* TensorDemo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TensorDemo; sourceTree = BUILT_PRODUCTS_DIR; };
 		68C0A500271CA44D006BBD5E /* xml3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xml3pt; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3191,6 +3204,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		68820B202721CBE100825D73 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68820B2B2721CC4300825D73 /* libMLU.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		68A2B644271C7EE100D9CB95 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -3308,6 +3329,7 @@
 				685446FB271C8E5400EF030C /* FitMinuit2.hpp */,
 				685446EA271C8E5400EF030C /* FitModel.cpp */,
 				685446F9271C8E5400EF030C /* FitSummary.cpp */,
+				68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */,
 				685446EC271C8E5400EF030C /* hlxml.cpp */,
 				685446F5271C8E5400EF030C /* Makefile.am */,
 				685446F3271C8E5400EF030C /* MultiFit.cpp */,
@@ -3384,6 +3406,7 @@
 				68C0A51B271CA593006BBD5E /* xmlPeramb */,
 				68C0A529271CB16C006BBD5E /* xmlZ2 */,
 				68C0A539271CB597006BBD5E /* CRatio */,
+				68820B232721CBE100825D73 /* GaugeCmp */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -7470,6 +7493,23 @@
 			productReference = 6874E57D271C6A600055B1E5 /* libGrid.a */;
 			productType = "com.apple.product-type.library.static";
 		};
+		68820B222721CBE100825D73 /* GaugeCmp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 68820B272721CBE200825D73 /* Build configuration list for PBXNativeTarget "GaugeCmp" */;
+			buildPhases = (
+				68820B1F2721CBE100825D73 /* Sources */,
+				68820B202721CBE100825D73 /* Frameworks */,
+				68820B212721CBE100825D73 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GaugeCmp;
+			productName = GaugeCmp;
+			productReference = 68820B232721CBE100825D73 /* GaugeCmp */;
+			productType = "com.apple.product-type.tool";
+		};
 		68A2B646271C7EE100D9CB95 /* HadronsXmlRun */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 68A2B64B271C7EE100D9CB95 /* Build configuration list for PBXNativeTarget "HadronsXmlRun" */;
@@ -7657,6 +7697,9 @@
 					6874E57C271C6A600055B1E5 = {
 						CreatedOnToolsVersion = 13.0;
 					};
+					68820B222721CBE100825D73 = {
+						CreatedOnToolsVersion = 13.0;
+					};
 					68A2B646271C7EE100D9CB95 = {
 						CreatedOnToolsVersion = 13.0;
 					};
@@ -7708,6 +7751,7 @@
 				68544733271C979A00EF030C /* Debug */,
 				68544740271C98E000EF030C /* Divide */,
 				6854475E271C9BC400EF030C /* FitSummary */,
+				68820B222721CBE100825D73 /* GaugeCmp */,
 				6854476B271C9C9300EF030C /* hlxml */,
 				686EC04E271C9E6C00A69ED4 /* mixedop */,
 				6854474D271C996700EF030C /* MultiFit */,
@@ -7964,6 +8008,14 @@
 				6874EA7B271C6C7F0055B1E5 /* PartialFractionFermion5DInstantiationWilsonImplF.cc in Sources */,
 				6874E9F4271C6C7E0055B1E5 /* Init.cc in Sources */,
 				6874EB49271C6C800055B1E5 /* Communicator_mpi3.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68820B1F2721CBE100825D73 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68820B2A2721CC1700825D73 /* GaugeCmp.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8592,6 +8644,20 @@
 			};
 			name = Release;
 		};
+		68820B282721CBE200825D73 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		68820B292721CBE200825D73 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		68A2B64C271C7EE100D9CB95 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -8872,6 +8938,15 @@
 			buildConfigurations = (
 				6874E57F271C6A600055B1E5 /* Debug */,
 				6874E580271C6A600055B1E5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		68820B272721CBE200825D73 /* Build configuration list for PBXNativeTarget "GaugeCmp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				68820B282721CBE200825D73 /* Debug */,
+				68820B292721CBE200825D73 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
