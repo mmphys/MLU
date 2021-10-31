@@ -248,12 +248,12 @@ static const Algebra Gammas[nchannel][2] = {
 // Load correlator - .h5 or .xml
 void MesonFile::Load( const std::string &FileName )
 {
-  Common::FileNameAtt fna( FileName );
-  if( Common::EqualIgnoreCase( fna.Ext, "h5" ) )
+  std::size_t pos{ FileName.find_last_of( '.' ) };
+  if( pos != std::string::npos && Common::EqualIgnoreCase( FileName.substr( pos + 1 ), "h5" ) )
   {
     std::vector<Common::Gamma::Algebra> Alg;
     using Corr = Common::CorrelatorFileC;
-    Corr corr( FileName, Alg, Alg, nullptr, "Converting " );
+    Corr corr( FileName, Alg, Alg, nullptr, "  Reading hdf5 " );
     data.resize( nchannel );
     for( int channel = 0; channel < nchannel; ++channel )
     {
@@ -265,33 +265,45 @@ void MesonFile::Load( const std::string &FileName )
   }
   else
   {
-    std::cout << "Reading xml " << fna.NameNoExt << fna << std::endl;
+    std::cout << "  Reading xml " << FileName << std::endl;
     Grid::XmlReader r( FileName );
     Grid::read( r, "MesonFile", *this );
+    if( data.size() != nchannel )
+      throw std::runtime_error( "Expected " + std::to_string( nchannel )
+                              + " channels, but read " + std::to_string( data.size() ) );
+    if( data[0].size() == 0 )
+      throw std::runtime_error( "Nt=0" );
+    for( std::size_t i = 1; i < nchannel; ++i )
+      if( data[i].size() != data[0].size() )
+        throw std::runtime_error( "Nt[" + std::to_string( i ) + "] != " + std::to_string( data[0].size() ) );
   }
 }
 
 // Convert Correlator file from .h5 to .xml
 
-void Convert( const std::string &FileName )
+void Convert( const std::string &FileName, std::string OutBase )
 {
   Common::FileNameAtt fna( FileName );
   if( Common::EqualIgnoreCase( fna.Ext, "xml" ) )
-    std::cout << "Doing nothing: " << fna.NameNoExt << fna << " is xml" << std::endl;
+    std::cout << "Doing nothing: " << fna.NameNoExt << fna.Ext << " is xml" << std::endl;
   else
   {
     MesonFile mf;
     mf.Load( FileName );
-    Grid::XmlWriter w( fna.NameNoExt + ".xml" );
+    OutBase.append( fna.NameNoExt );
+    OutBase.append( ".xml" );
+    Grid::XmlWriter w( OutBase );
     Grid::write( w, "MesonFile", mf );
   }
 }
 
 // Compare two Correlator files (.h5 and .xml)
 
-void Compare( const std::vector<std::string> &FileName )
+int Compare( const std::vector<std::string> &FileName, std::string OutBase, double tol )
 {
+  const std::size_t OutLen{ OutBase.size() };
   std::vector<MesonFile> in ( FileName.size() );
+  int Count{ 0 };
   for( std::size_t f = 0; f < FileName.size(); ++f )
   {
     in[f].Load( FileName[f] );
@@ -302,10 +314,19 @@ void Compare( const std::vector<std::string> &FileName )
         throw std::runtime_error( "Nt mismatch" );
       std::ofstream out; // Will be closed automatically if there's an exception
       {
-        Common::FileNameAtt fna{ FileName[f] };
-        const std::string OutName{ fna.NameNoExt + ".txt" };
-        std::cout << "Creating " << OutName << std::endl;
-        out.open( OutName );
+        std::size_t pStart{ FileName[f].find_last_of( '/' ) };
+        if( pStart == std::string::npos )
+          pStart = 0;
+        else
+          pStart++;
+        std::size_t pEnd{ FileName[f].find_last_of( '.' ) };
+        if( pEnd == std::string::npos || pEnd < pStart )
+          pEnd = FileName[f].size();
+        OutBase.resize( OutLen );
+        OutBase.append( FileName[f].substr( pStart, pEnd - pStart ) );
+        OutBase.append( ".txt" );
+        std::cout << "  Creating " << OutBase << std::endl;
+        out.open( OutBase );
       }
       static const std::string Comment{ "# " };
       out << Comment << "File 1 " << FileName[0] << Common::NewLine
@@ -315,6 +336,7 @@ void Compare( const std::vector<std::string> &FileName )
       {
         for( std::size_t t = 0; t < Nt; ++t )
         {
+          const double Ratio{ in[f].data[channel][t].real() / in[0].data[channel][t].real() };
           out << Common::Gamma::NameShort( Gammas[channel][idxSnk] ) << Common::Space
               << Common::Gamma::NameShort( Gammas[channel][idxSrc] ) << Common::Space
               << t << Common::Space
@@ -322,11 +344,22 @@ void Compare( const std::vector<std::string> &FileName )
               << in[0].data[channel][t].real() << Common::Space
               << in[f].data[channel][t].real() << Common::Space
               << std::defaultfloat
-              << in[f].data[channel][t].real() / in[0].data[channel][t].real() << std::endl;
+              << Ratio << std::endl;
+          if( std::abs( 1. - Ratio ) > tol )
+            Count++;
         }
       }
     }
   }
+  std::stringstream s;
+  //s << "  ";
+  if( Count == 0 )
+    s << "Same";
+  else
+    s << Count << " differences";
+  s << " at tolerance " << std::scientific << std::setprecision(1) << tol;
+  std::cout << s.str() << std::endl;
+  return Count;
 }
 
 void GridDebug(int argc, char *argv[])
@@ -349,6 +382,16 @@ void GridDebug(int argc, char *argv[])
   Grid::Grid_finalize();
 }
 
+// Grab the string following this parameter from the command-line
+const char * NextString( int argc, char *argv[], int &i )
+{
+  if( argv[i][2] )
+    throw new std::runtime_error( std::string( argv[i] ) + " should be single-character" );
+  if( i >= argc - 1 )
+    throw new std::runtime_error( std::string( argv[i] ) + " should be followed by an argument" );
+  return argv[++i];
+}
+
 int main(int argc, char *argv[])
 {
   int iReturn = EXIT_SUCCESS;
@@ -360,12 +403,56 @@ int main(int argc, char *argv[])
     }
     else
     {
-      std::vector<std::string> args{ Common::glob( &argv[1], &argv[argc] ) };
-      if( args.size() == 2 )
-        Compare( args );
+      bool bConvertXml{ false };
+      std::vector<const char *> argsRaw;
+      const char * InBase = "", * OutBase = "";
+      double tol{ 1e-5 };
+      for( int i = 1; i < argc; ++i )
+      {
+        if( argv[i][0] == '-' )
+        {
+          switch( argv[i][1] )
+          {
+            case 'i':
+              InBase = NextString( argc, argv, i );
+              break;
+            case 'o':
+              OutBase = NextString( argc, argv, i );
+              break;
+            case 't':
+              tol = Common::FromString<double>( NextString( argc, argv, i ) );
+              break;
+            case 'x':
+              bConvertXml = true;
+              break;
+            case '?':
+            case 'h':
+              std::cout << "-i Input prefix, prepended to each input file\n"
+                           "-o Output prefix\n"
+                           "-x Convert input files to .xml. Otherwise compares files\n"
+                           "-h This help message" << std::endl;
+              break;
+            default:
+              std::cout << "Warning: assuming " << argv[i] << " is a Grid option" << std::endl;
+              i = argc - 1; // Stop - We've hit Grid options
+              break;
+          }
+        }
+        else
+          argsRaw.emplace_back( argv[i] );
+      }
+      // Parse arguments
+      std::vector<std::string> args{ Common::glob( argsRaw.begin(), argsRaw.end(), InBase ) };
+      if( !bConvertXml )
+      {
+        if( args.size() < 2 )
+          std::cout << args.size() << " files to compare" << std::endl;
+        else
+          Compare( args, OutBase, tol );
+      }
       else
         for( const std::string &f : args )
-          Convert( f );
+          Convert( f, OutBase );
     }
   }
   catch(const std::exception &e)
