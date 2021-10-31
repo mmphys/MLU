@@ -53,15 +53,23 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "/Volumes/QCD/tursa/prod/eigen/M2/test.M1.coul1e-12/880/2pt/*/*.h5"
+            argument = "test.M1.coul1e-12/880/2pt/*/*.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Volumes/QCD/tursa/prod/eigen/M2/test.M1.coul1e-12/880/2pt/ZFPP/PP_s_s_p_0_0_0_t_0.880.h5 "
-            isEnabled = "YES">
+            argument = "test.M1.coul1e-12/880/2pt/ZFPP/PP_s_s_p_0_0_0_t_0.880.h5 "
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Volumes/QCD/tursa/prod/eigen/M2/Peter/ckpoint_lat.880_m1_m1_p_z2_meson.xml"
+            argument = "Peter/ckpoint_lat.880_m1_m1_p_z2_meson.xml"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i /Volumes/QCD/tursa/prod/eigen/M2/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Volumes/QCD/tess/semilep/M1/M1.2pt/880/2pt/ZFWP/WP_l_l_p_0_0_0_t_0.880.h5 /Volumes/QCD/tursa/prod/eigen/M2/Peter3/ckpoint_lat_coulomb.880_p0_m0_m0_w_z2_meson.xml"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
