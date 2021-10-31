@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		680B62072729BF4A000CB627 /* VectorPackRef.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 680B62052729BF4A000CB627 /* VectorPackRef.hpp */; };
+		680B62082729BF4A000CB627 /* VectorPackRef.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 680B62062729BF4A000CB627 /* VectorPackRef.cpp */; };
 		685446C5271C87CC00EF030C /* HadronsXmlValidate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61B92271C79E700A8B197 /* HadronsXmlValidate.cpp */; };
 		685446D8271C8C4F00EF030C /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446C7271C8B7E00EF030C /* Common.cpp */; };
 		68544713271C942B00EF030C /* bootstrap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446F6271C8E5400EF030C /* bootstrap.cpp */; };
@@ -1408,6 +1410,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		680B62052729BF4A000CB627 /* VectorPackRef.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VectorPackRef.hpp; sourceTree = "<group>"; };
+		680B62062729BF4A000CB627 /* VectorPackRef.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VectorPackRef.cpp; sourceTree = "<group>"; };
+		683A3A1F272D2B09008EB025 /* Example_wall_wall_3pt.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Example_wall_wall_3pt.cc; sourceTree = "<group>"; };
 		685446BE271C879B00EF030C /* HadronsXmlValidate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HadronsXmlValidate; sourceTree = BUILT_PRODUCTS_DIR; };
 		685446C7271C8B7E00EF030C /* Common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Common.cpp; sourceTree = "<group>"; };
 		685446C8271C8B7E00EF030C /* CommonLatAn.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommonLatAn.hpp; sourceTree = "<group>"; };
@@ -3423,7 +3428,6 @@
 				6874E9B7271C6C7D0055B1E5 /* json */,
 				6874E996271C6C7D0055B1E5 /* lattice */,
 				6874E9CA271C6C7E0055B1E5 /* log */,
-				6874E9C9271C6C7E0055B1E5 /* New Group */,
 				6874E9AE271C6C7D0055B1E5 /* parallelIO */,
 				6874E589271C6C760055B1E5 /* perfmon */,
 				6874E9CD271C6C7E0055B1E5 /* pugixml */,
@@ -4117,31 +4121,31 @@
 		6874E70B271C6C790055B1E5 /* iterative */ = {
 			isa = PBXGroup;
 			children = (
-				6874E70C271C6C790055B1E5 /* PrecConjugateResidual.h */,
-				6874E70D271C6C790055B1E5 /* ConjugateResidual.h */,
-				6874E70E271C6C790055B1E5 /* ConjugateGradientMixedPrec.h */,
-				6874E70F271C6C790055B1E5 /* MinimalResidual.h */,
-				6874E710271C6C790055B1E5 /* PrecGeneralisedConjugateResidual.h */,
-				6874E711271C6C790055B1E5 /* LocalCoherenceLanczos.h */,
-				6874E712271C6C790055B1E5 /* PowerMethod.h */,
-				6874E713271C6C790055B1E5 /* BlockConjugateGradient.h */,
-				6874E714271C6C790055B1E5 /* SchurRedBlack.h */,
-				6874E715271C6C790055B1E5 /* CommunicationAvoidingGeneralisedMinimalResidual.h */,
-				6874E716271C6C790055B1E5 /* FlexibleCommunicationAvoidingGeneralisedMinimalResidual.h */,
-				6874E717271C6C790055B1E5 /* ConjugateGradientMultiShift.h */,
-				6874E718271C6C790055B1E5 /* NormalEquations.h */,
-				6874E719271C6C790055B1E5 /* QuasiMinimalResidual.h */,
-				6874E71A271C6C790055B1E5 /* PrecGeneralisedConjugateResidualNonHermitian.h */,
-				6874E71B271C6C790055B1E5 /* GeneralisedMinimalResidual.h */,
-				6874E71C271C6C790055B1E5 /* FlexibleGeneralisedMinimalResidual.h */,
 				6874E71D271C6C790055B1E5 /* AdefGeneric.h */,
-				6874E71E271C6C790055B1E5 /* Deflation.h */,
-				6874E71F271C6C790055B1E5 /* ImplicitlyRestartedLanczos.h */,
-				6874E720271C6C790055B1E5 /* MixedPrecisionFlexibleGeneralisedMinimalResidual.h */,
-				6874E721271C6C790055B1E5 /* BiCGSTABMixedPrec.h */,
-				6874E722271C6C790055B1E5 /* ConjugateGradient.h */,
 				6874E723271C6C790055B1E5 /* BiCGSTAB.h */,
+				6874E721271C6C790055B1E5 /* BiCGSTABMixedPrec.h */,
+				6874E713271C6C790055B1E5 /* BlockConjugateGradient.h */,
+				6874E715271C6C790055B1E5 /* CommunicationAvoidingGeneralisedMinimalResidual.h */,
+				6874E722271C6C790055B1E5 /* ConjugateGradient.h */,
+				6874E70E271C6C790055B1E5 /* ConjugateGradientMixedPrec.h */,
+				6874E717271C6C790055B1E5 /* ConjugateGradientMultiShift.h */,
 				6874E724271C6C790055B1E5 /* ConjugateGradientReliableUpdate.h */,
+				6874E70D271C6C790055B1E5 /* ConjugateResidual.h */,
+				6874E71E271C6C790055B1E5 /* Deflation.h */,
+				6874E716271C6C790055B1E5 /* FlexibleCommunicationAvoidingGeneralisedMinimalResidual.h */,
+				6874E71C271C6C790055B1E5 /* FlexibleGeneralisedMinimalResidual.h */,
+				6874E71B271C6C790055B1E5 /* GeneralisedMinimalResidual.h */,
+				6874E71F271C6C790055B1E5 /* ImplicitlyRestartedLanczos.h */,
+				6874E711271C6C790055B1E5 /* LocalCoherenceLanczos.h */,
+				6874E70F271C6C790055B1E5 /* MinimalResidual.h */,
+				6874E720271C6C790055B1E5 /* MixedPrecisionFlexibleGeneralisedMinimalResidual.h */,
+				6874E718271C6C790055B1E5 /* NormalEquations.h */,
+				6874E712271C6C790055B1E5 /* PowerMethod.h */,
+				6874E70C271C6C790055B1E5 /* PrecConjugateResidual.h */,
+				6874E710271C6C790055B1E5 /* PrecGeneralisedConjugateResidual.h */,
+				6874E71A271C6C790055B1E5 /* PrecGeneralisedConjugateResidualNonHermitian.h */,
+				6874E719271C6C790055B1E5 /* QuasiMinimalResidual.h */,
+				6874E714271C6C790055B1E5 /* SchurRedBlack.h */,
 			);
 			path = iterative;
 			sourceTree = "<group>";
@@ -5353,13 +5357,6 @@
 			path = allocator;
 			sourceTree = "<group>";
 		};
-		6874E9C9271C6C7E0055B1E5 /* New Group */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = "New Group";
-			sourceTree = "<group>";
-		};
 		6874E9CA271C6C7E0055B1E5 /* log */ = {
 			isa = PBXGroup;
 			children = (
@@ -5780,6 +5777,7 @@
 				68F6190C271C75AF00A8B197 /* Example_Laplacian_solver.cc */,
 				68F61909271C75AF00A8B197 /* Example_Laplacian.cc */,
 				68F61908271C75AF00A8B197 /* Example_Mobius_spectrum.cc */,
+				683A3A1F272D2B09008EB025 /* Example_wall_wall_3pt.cc */,
 				68F61906271C75AF00A8B197 /* Example_wall_wall_spectrum.cc */,
 				68F61907271C75AF00A8B197 /* Make.inc */,
 				68F6190A271C75AF00A8B197 /* Makefile.am */,
@@ -6124,6 +6122,8 @@
 				68F61A03271C786700A8B197 /* RandomField.hpp */,
 				68F61A01271C786700A8B197 /* RandomVectors.cpp */,
 				68F619FD271C786700A8B197 /* RandomVectors.hpp */,
+				680B62062729BF4A000CB627 /* VectorPackRef.cpp */,
+				680B62052729BF4A000CB627 /* VectorPackRef.hpp */,
 				68F619FE271C786700A8B197 /* VectorUnpack.cpp */,
 				68F61A02271C786700A8B197 /* VectorUnpack.hpp */,
 			);
@@ -7208,6 +7208,7 @@
 				68F61B54271C786900A8B197 /* Grad.hpp in Headers */,
 				68F61B1C271C786800A8B197 /* FreeProp.hpp in Headers */,
 				68F61B32271C786800A8B197 /* DWF.hpp in Headers */,
+				680B62072729BF4A000CB627 /* VectorPackRef.hpp in Headers */,
 				68F61AFE271C786800A8B197 /* UnitEm.hpp in Headers */,
 				68F61A73271C786700A8B197 /* VirtualMachine.hpp in Headers */,
 				68F61ADB271C786800A8B197 /* Z2.hpp in Headers */,
@@ -8097,6 +8098,7 @@
 				68F61AFD271C786800A8B197 /* Random.cpp in Sources */,
 				68F61ADC271C786800A8B197 /* SeqGamma.cpp in Sources */,
 				68F61B68271C786900A8B197 /* LoadA2AVectors.cpp in Sources */,
+				680B62082729BF4A000CB627 /* VectorPackRef.cpp in Sources */,
 				68F61AC1271C786800A8B197 /* Operators.cpp in Sources */,
 				68F61B07271C786800A8B197 /* Unit.cpp in Sources */,
 				68F61B00271C786800A8B197 /* GaugeFix.cpp in Sources */,

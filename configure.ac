@@ -276,6 +276,8 @@ AC_CHECK_HEADER([boost/spirit/home/x3/version.hpp],
 
 AC_CHECK_HEADER([Hadrons/Modules/MGuesser/ExactDeflation.hpp],
                 [AC_DEFINE([MLU_HADRONS_HAS_GUESSERS], [], [Hadrons supports guessers])])
+AC_CHECK_HEADER([Hadrons/Modules/MGuesser/BatchExactDeflation_Preload.hpp],
+                [AC_DEFINE([MLU_HADRONS_HAS_GUESSER_PRELOAD], [], [Hadrons supports batch exact deflation preload])])
 
 CPPFLAGS="-I${abs_srcdir} $CPPFLAGS -I$AbsMLUBuildDir"
 
