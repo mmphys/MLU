@@ -219,9 +219,19 @@ public:
   inline bool MixedPrecision() const { return maxOuterIteration != 0; }
   // Eigen packs will be single-precision in memory only if they are on disk and solver is multi-precision
   inline bool LoadEigenSingle() const { return eigenSinglePrecision && MixedPrecision(); }
+  inline void AppendName( std::string &s, const Taxonomy &tax ) const
+  {
+    tax.AppendFixed( s, GaugeSmear );
+    Append( s, flavour );
+  }
 };
 
 // Append
+
+inline void Append( std::string &sDest, std::size_t n )
+{
+  Append( sDest, std::to_string( n ) );
+}
 
 inline void Append( std::string &sDest, const std::string &s1, const std::string &s2 )
 {
@@ -347,12 +357,13 @@ struct AppParams
                        MGauge::StoutSmearing::Par,  StoutSmear,
                                       std::string,  SpatialPos,
                                       std::string,  RegionSize,
-                                      std::string,  OutputBase,
-                                      std::string,  batchSize) // optional non-zero int to use batch deflation
-    unsigned int GetBatchSize() const
-    {
-      return batchSize.empty() ? 0 : Common::FromString<unsigned int>( batchSize );
-    }
+                                      std::string,  OutputBase
+#ifdef MLU_HADRONS_HAS_GUESSERS
+                                    ,unsigned int,  BatchSize
+                                    ,unsigned int,  evBatchSize
+                                    ,unsigned int,  sourceBatchSize
+#endif
+                                )
   };
 
   RunPar Run;
@@ -378,11 +389,53 @@ public:
   const Taxonomy tax;
 public:
   inline const std::string &Name() const { return name; };
-  HMod( HModList &ModList, const Taxonomy &taxonomy, int NameLen = 80 ) : tax{ taxonomy }
-  { name.reserve( NameLen ); }
+  HMod( const Taxonomy &taxonomy, int NameLen = 80 ) : tax{ taxonomy } { name.reserve( NameLen ); }
   virtual ~HMod() = default;
   virtual void AddDependencies( HModList &ModList ) const = 0;
 };
+
+/**************************
+ Multi-propagator, i.e. a list of propagators to solve at the same time
+ **************************/
+
+#ifdef MLU_HADRONS_HAS_GUESSERS
+struct MultiProp : HMod
+{
+  static const std::string sPack;
+  static const std::string sProp;
+  static const std::string sUnpack;
+  const Quark &q;
+  const std::string Solver;
+  bool bDirty = false;
+  std::vector<std::vector<std::string>> SourceList; // This is a list of sources
+  struct ID
+  {
+    unsigned int Batch;
+    unsigned int Item;
+  };
+  using Map = std::map<std::string, ID>;
+  Map m; // Map from source name to index in the list
+  MultiProp( const std::string &Name, const Taxonomy &taxonomy, const Quark &quark, std::string solver );
+  std::string Add( HModList &ModList, std::string Source );
+  void Write( HModList &ModList );
+  virtual void AddDependencies( HModList &ModList ) const
+  { throw std::runtime_error( "Bug: MultiProp::AddDependencies should never be called" ); }
+};
+
+/**************************
+ Multi-propagator Map, One Multi-propagator per solver
+ **************************/
+
+struct MultiPropMap : std::map<std::string, MultiProp>
+{
+  const std::string Name;
+  using Map = std::map<std::string, MultiProp>;
+  std::string Add( HModList &ModList, const Taxonomy &tax, const Quark &quark, const std::string &Source );
+  void Write( HModList &ModList );
+  MultiPropMap(){}
+  MultiPropMap( std::string name ) : Name{ name } {}
+};
+#endif // MLU_HADRONS_HAS_GUESSERS
 
 /**************************
  List of Hadrons Modules, i.e. a wrapper for Hadrons::Application
@@ -392,14 +445,25 @@ class HModList
 {
 protected:
   std::map<std::string,std::unique_ptr<HMod>> list;
+#ifdef MLU_HADRONS_HAS_GUESSERS
+  MultiPropMap Prop;
+  MultiPropMap PropSeq;
+#endif
 public:
   // These are used by modules when adding dependencies
   Application &application;
   const AppParams &params;
 public:
+  void Write() { Prop.Write( *this ); PropSeq.Write( *this ); }
   HModList( Application &application_, const AppParams &params_ )
-  : application{application_}, params{params_} {}
+  : application{application_}, params{params_}, PropSeq( "Seq" ) {}
+  ~HModList() { Write(); }
   const std::string TakeOwnership( HMod *pHMod );
+  std::string MakeProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q,
+                        const Common::Momentum &p, int t, int hit = 1 );
+  std::string MakePropSeq( HModList &ML, const Taxonomy &tax, const Quark &qSeq,
+                           Gamma::Algebra current, int deltaT, const Common::Momentum &pSeq,
+                           const Quark &q, const Common::Momentum &p, int t );
 };
 
 /**************************
@@ -479,7 +543,6 @@ class ModAction : public HMod
 public:
   static const std::string Prefix;
   const Quark &q;
-  const bool bSmeared;
   const Precision precision;
   ModAction( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, Precision precision );
   virtual void AddDependencies( HModList &ModList ) const;
@@ -494,7 +557,6 @@ class ModSolver : public HMod
 public:
   static const std::string Prefix;
   const Quark &q;
-  const bool bSmeared;
   ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &q );
   virtual void AddDependencies( HModList &ModList ) const;
 protected:

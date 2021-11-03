@@ -60,6 +60,7 @@ void AppMaker::ReadQuarks( XmlReader &r )
     for( Quark &q : vq )
     {
       LOG(Message) << " Loaded quark " << sQuark << " : " << q.flavour << std::endl;
+      //q.Validate();
       Q.emplace( q.flavour, q );
     }
   }
@@ -469,11 +470,10 @@ void Study3::Contract2pt( const Taxonomy &tax, const Quark &q1, const Quark &q2,
   }
 }
 
-void Study3::MakeStudy3( const Decay &d )
+void Study3::MakeStudy3( unsigned int t, const Decay &d )
 {
   const Quark &ql{ Q.at( d.qLight ) };
   const Quark &qSpectator{ Q.at( d.qSpectator ) };
-  for(unsigned int t = makePar.Timeslices.start; t < makePar.Timeslices.end; t += makePar.Timeslices.step)
   {
     for( const Taxonomy &tax : Taxa )
     {
@@ -546,8 +546,12 @@ void Study3::MakeStudy3( const Decay &d )
 
 void Study3::Make()
 {
-  for( const Decay &d : makePar.Decays )
-    MakeStudy3( d );
+  for(unsigned int t = makePar.Timeslices.start; t < makePar.Timeslices.end; t += makePar.Timeslices.step)
+  {
+    for( const Decay &d : makePar.Decays )
+      MakeStudy3( t, d );
+    l.Write();
+  }
 }
 
 int main(int argc, char *argv[])

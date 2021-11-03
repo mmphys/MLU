@@ -143,8 +143,24 @@ AppParams::AppParams( XmlReader &r )
     throw std::runtime_error( "GaugeFixedXform specified without GaugeFixed" );
   if( !Run.GaugeFixed.empty() && Run.GaugeFixedXform.empty() )
     throw std::runtime_error( "GaugeFixed specified without GaugeFixedXform" );
-  Common::Trim( Run.batchSize );
-  Run.GetBatchSize();
+#ifdef MLU_HADRONS_HAS_GUESSERS
+  if( Run.BatchSize )
+  {
+    std::string sError{ "BatchSize = " + std::to_string( Run.BatchSize ) + " but " };
+    if( !Run.evBatchSize )
+      throw std::runtime_error( sError + "evBatchSize = 0" );
+    if( !Run.sourceBatchSize )
+      throw std::runtime_error( sError + "sourceBatchSize = 0" );
+  }
+  else
+  {
+    std::string sError{ "BatchSize = 0 but " };
+    if( Run.evBatchSize )
+      throw std::runtime_error( sError + "evBatchSize = " + std::to_string( Run.evBatchSize ) );
+    if( Run.sourceBatchSize )
+      throw std::runtime_error( sError + "sourceBatchSize = " + std::to_string( Run.sourceBatchSize ) );
+  }
+#endif
 }
 
 std::vector<std::string> AppParams::GetWarnings() const
@@ -156,6 +172,102 @@ std::vector<std::string> AppParams::GetWarnings() const
     w.push_back( "Both Gauge and GaugeFixed specified. Using GaugeFixed" );
   return w;
 }
+
+/**************************
+ Multi-propagator, i.e. a list of propagators to solve at the same time
+ **************************/
+
+#ifdef MLU_HADRONS_HAS_GUESSERS
+const std::string MultiProp::sPack{ "Pack" };
+const std::string MultiProp::sProp{ "MultiProp" };
+const std::string MultiProp::sUnpack{ "Unpack" };
+
+MultiProp::MultiProp(const std::string &Name, const Taxonomy &taxonomy, const Quark &quark, std::string solver)
+: HMod(taxonomy), q{quark}, Solver{solver}
+{
+  name = Name;
+  q.AppendName( name, taxonomy );
+}
+
+// Make a propagator as part of a multi-propagator
+
+std::string MultiProp::Add( HModList &ModList, std::string Source )
+{
+  Map::iterator it{ m.find( Source ) };
+  if( it == m.end() )
+  {
+    // Add this to the list
+    if( !bDirty )
+    {
+      SourceList.resize( SourceList.size() + 1 );
+      bDirty = true;
+    }
+    ID NewID;
+    NewID.Batch = static_cast<unsigned int>( SourceList.size() - 1 );
+    NewID.Item  = static_cast<unsigned int>( SourceList[NewID.Batch].size() );
+    SourceList[NewID.Batch].push_back( Source );
+    it = m.emplace( std::make_pair( Source, NewID ) ).first;
+    if( NewID.Item >= ModList.params.Run.BatchSize - 1 )
+      Write( ModList ); // Write out this latest batch
+  }
+  std::string PropName{ sUnpack + name };
+  Append( PropName, it->second.Batch );
+  Append( PropName, it->second.Item );
+  return PropName;
+}
+
+// Write out the last Num entries as a packed solver
+void MultiProp::Write( HModList &ModList )
+{
+  if( bDirty )
+  {
+    bDirty = false;
+    int Batch = static_cast<unsigned int>( SourceList.size() - 1 );
+    std::string Suffix{ name };
+    Append( Suffix, Batch );
+    // Write the vector packer
+    const std::string namePack{ sPack + Suffix };
+    MUtilities::PropagatorVectorPackRef::Par parPack;
+    parPack.fields = SourceList.back();
+    ModList.application.createModule<MUtilities::PropagatorVectorPackRef>( namePack, parPack );
+    // Write the multi RHS propagator
+    const std::string nameProp{ sProp + Suffix };
+    MFermion::GaugeProp::Par parProp;
+    parProp.source = namePack;
+    parProp.solver = Solver;
+    ModList.application.createModule<MFermion::GaugeProp>( nameProp, parProp );
+    // Write the unpacker
+    const std::string nameUnpack{ sUnpack + Suffix };
+    MUtilities::PropagatorVectorUnpack::Par parUnpack;
+    parUnpack.input = nameProp;
+    parUnpack.size = static_cast<unsigned int>( SourceList.back().size() );
+    ModList.application.createModule<MUtilities::PropagatorVectorUnpack>( nameUnpack, parUnpack );
+  }
+}
+
+/**************************
+ Multi-propagator Map, One Multi-propagator per solver
+ **************************/
+
+std::string MultiPropMap::Add( HModList &ML, const Taxonomy &tax, const Quark &q, const std::string &Source )
+{
+  std::string name;
+  q.AppendName( name, tax );
+  Map::iterator it{ find( name ) };
+  if( it == end() )
+  {
+    std::string sSolver{ ML.TakeOwnership( new ModSolver( ML, tax, q ) ) };
+    it = emplace( std::make_pair( name, MultiProp( Name, tax, q, sSolver ) ) ).first;
+  }
+  return it->second.Add( ML, Source );
+}
+
+void MultiPropMap::Write( HModList &ModList )
+{
+  for( Map::iterator it = begin(); it != end(); ++it )
+    it->second.Write( ModList );
+}
+#endif // MLU_HADRONS_HAS_GUESSERS
 
 /**************************
  List of Hadrons Modules, i.e. a wrapper for Hadrons::Application
@@ -179,6 +291,43 @@ const std::string HModList::TakeOwnership( HMod *pHMod )
   return ModName;
 }
 
+std::string HModList::MakeProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q,
+                                const Common::Momentum &p, int t, int hit )
+{
+  std::string PropName;
+#ifdef MLU_HADRONS_HAS_GUESSERS
+  if( !q.eigenPack.empty() && ModList.params.Run.BatchSize )
+  {
+    std::string Source{ ModList.TakeOwnership( new ModSource( ModList, taxonomy, p, t, hit ) ) };
+    PropName = Prop.Add( ModList, taxonomy, q, Source );
+  }
+  else
+#endif
+  {
+    PropName = ModList.TakeOwnership( new ModProp( ModList, taxonomy, q, p, t, hit ) );
+  }
+  return PropName;
+}
+
+std::string HModList::MakePropSeq( HModList &ML, const Taxonomy &tax, const Quark &qSeq,
+                                   Gamma::Algebra current, int deltaT, const Common::Momentum &pSeq,
+                                   const Quark &q, const Common::Momentum &p, int t )
+{
+  std::string PropName;
+#ifdef MLU_HADRONS_HAS_GUESSERS
+  if( !qSeq.eigenPack.empty() && ML.params.Run.BatchSize )
+  {
+    std::string Source{ ML.TakeOwnership( new ModSourceSeq( ML, tax, current, deltaT, pSeq, q, p, t ) ) };
+    PropName = PropSeq.Add( ML, tax, qSeq, Source );
+  }
+  else
+#endif
+  {
+    PropName = ML.TakeOwnership( new ModPropSeq( ML, tax, qSeq, current, deltaT, pSeq, q, p, t ) );
+  }
+  return PropName;
+}
+
 /**************************
  Point sink
 **************************/
@@ -186,7 +335,7 @@ const std::string HModList::TakeOwnership( HMod *pHMod )
 const std::string ModSink::Prefix{ "Sink" };
 
 ModSink::ModSink(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p_)
-: HMod(ModList, taxonomy), p{p_}
+: HMod(taxonomy), p{p_}
 {
   name = Prefix;
   AppendP( name, p );
@@ -206,7 +355,7 @@ void ModSink::AddDependencies( HModList &ModList ) const
 const std::string ModSinkSmear::Prefix{ "Sink_Smear" };
 
 ModSinkSmear::ModSinkSmear(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p_)
-: HMod(ModList, taxonomy), p{p_}
+: HMod(taxonomy), p{p_}
 {
   name = Prefix;
   AppendP( name, p );
@@ -227,7 +376,7 @@ const std::string ModSource::Prefix{ "Source" };
 
 ModSource::ModSource(HModList &ModList, const Taxonomy &tx, const Common::Momentum &p_, int t_, int hit_)
 // Silently translate ZF sources into Z2 sources
-: HMod(ModList, tx.family == Family::ZF ? Taxonomy(Family::Z2,tx.species) : tx), p{p_}, t{t_}, hit{hit_}
+: HMod(tx.family == Family::ZF ? Taxonomy(Family::Z2,tx.species) : tx), p{p_}, t{t_}, hit{hit_}
 {
   name = Prefix;
   Append( name, tax.FamilyName() );
@@ -284,7 +433,7 @@ void ModSource::AddDependencies( HModList &ModList ) const
 **************************/
 
 ModGauge::ModGauge( HModList &ModList, const Taxonomy &taxonomy, bool bSmeared_, Precision precision_ )
-: HMod(ModList, taxonomy), bSmeared{ bSmeared_ }, precision{ precision_ }
+: HMod(taxonomy), bSmeared{ bSmeared_ }, precision{ precision_ }
 {
   name = GaugeFieldName;
   tax.AppendFixed( name, bSmeared );
@@ -343,7 +492,7 @@ void ModGauge::AddDependencies( HModList &ModList ) const
 const std::string ModGaugeXform::Suffix{ "xform" };
 
 ModGaugeXform::ModGaugeXform( HModList &ModList, const Taxonomy &taxonomy, bool bSmeared_, Precision precision_ )
-: HMod(ModList, taxonomy), bSmeared{ bSmeared_ }, precision{ precision_ }
+: HMod(taxonomy), bSmeared{ bSmeared_ }, precision{ precision_ }
 {
   name = GaugeFieldName;
   tax.AppendFixed( name, bSmeared );
@@ -390,18 +539,17 @@ void ModGaugeXform::AddDependencies( HModList &ModList ) const
 const std::string ModAction::Prefix{ "DWF" };
 
 ModAction::ModAction( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_, Precision precision_ )
-: HMod( ModList, taxonomy ), q{q_}, bSmeared{q_.GaugeSmear}, precision{precision_}
+: HMod(taxonomy), q{q_}, precision{precision_}
 {
   name = Prefix;
-  tax.AppendFixed( name, bSmeared );
-  Append( name, q.flavour );
+  q.AppendName( name, taxonomy );
   if( precision == Precision::Single )
     Append( name, HMod::sSinglePrec );
 }
 
 void ModAction::AddDependencies( HModList &ModList ) const
 {
-  std::string Gauge{ ModList.TakeOwnership( new ModGauge( ModList, tax, bSmeared, precision ) ) };
+  std::string Gauge{ ModList.TakeOwnership( new ModGauge( ModList, tax, q.GaugeSmear, precision ) ) };
   if( precision == Precision::Single )
     q.CreateAction<MAction::ScaledDWFF>( ModList.application, name, std::move( Gauge ) );
   else
@@ -415,11 +563,10 @@ void ModAction::AddDependencies( HModList &ModList ) const
 const std::string ModSolver::Prefix{ "CG" };
 
 ModSolver::ModSolver( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_ )
-: HMod( ModList, taxonomy ), q( q_ ), bSmeared{q_.GaugeSmear}
+: HMod(taxonomy), q(q_)
 {
   name = Prefix;
-  tax.AppendFixed( name, bSmeared );
-  Append( name, q.flavour );
+  q.AppendName( name, taxonomy );
 }
 
 template<typename TPar>
@@ -473,7 +620,8 @@ void ModSolver::LoadGuessBatch( HModList &ModList, const std::string &GuesserNam
 {
   typename TGuesser::Par guessPar;
   LoadEigenPar( guessPar.eigenPack, ModList, q.LoadEigenSingle() ? Precision::Single : Precision::Double );
-  guessPar.evBatchSize = ModList.params.Run.GetBatchSize();
+  guessPar.evBatchSize = ModList.params.Run.evBatchSize;
+  guessPar.sourceBatchSize = ModList.params.Run.sourceBatchSize;
   ModList.application.createModule<TGuesser>( GuesserName, guessPar );
 }
 #endif
@@ -488,7 +636,7 @@ void ModSolver::AddDependencies( HModList &ModList ) const
     if( q.eigenSinglePrecision && !q.MixedPrecision() )
       throw std::runtime_error( "Single-precision " + q.flavour + " quark eigenpacks can't be used with double-precision guesser" );
     EigenGuessName = "guesser_" + name;
-    if( ModList.params.Run.GetBatchSize() )
+    if( ModList.params.Run.BatchSize )
     {
       if( q.LoadEigenSingle() )
         LoadGuessBatch<MGuesser::BatchExactDeflationF>( ModList, EigenGuessName );
@@ -550,7 +698,7 @@ const std::string ModProp::PrefixConserved{ "Ward" };
 
 ModProp::ModProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_, const Common::Momentum &p_,
                   int t_, int hit_ )
-: HMod( ModList, taxonomy ), q{q_}, p{p_}, t{t_}, hit{hit_}
+: HMod(taxonomy), q{q_}, p{p_}, t{t_}, hit{hit_}
 {
   Suffix = tax.FamilyName();
   Append( Suffix, q.flavour );
@@ -591,7 +739,7 @@ const std::string ModSlicedProp::Prefix{ "SlicedProp" };
 
 ModSlicedProp::ModSlicedProp( HModList &ML, const Taxonomy &tax_, const Quark &q_, const Common::Momentum &p_,
                               int t_, int hit_ )
-: HMod( ML, tax_ ), q{q_}, p{p_}, t{t_}, hit{hit_}
+: HMod(tax_), q{q_}, p{p_}, t{t_}, hit{hit_}
 {
   name = Prefix;
   Append( name, tax.FamilyName() );
@@ -603,7 +751,7 @@ ModSlicedProp::ModSlicedProp( HModList &ML, const Taxonomy &tax_, const Quark &q
 void ModSlicedProp::AddDependencies( HModList &ModList ) const
 {
   MSink::Smear::Par smearPar;
-  smearPar.q = ModList.TakeOwnership( new ModProp( ModList, tax, q, p, t, hit ) );
+  smearPar.q = ModList.MakeProp( ModList, tax, q, p, t, hit );
   smearPar.sink = ModList.TakeOwnership( new ModSinkSmear( ModList, tax, -p ) );
   ModList.application.createModule<MSink::Smear>(name, smearPar);
 }
@@ -616,7 +764,7 @@ const std::string ModSourceSeq::Prefix{ "Seq" + ModSource::Prefix };
 
 ModSourceSeq::ModSourceSeq( HModList &ML, const Taxonomy &tax_, Gamma::Algebra current_, int deltaT_,
                             const Common::Momentum &pSeq_, const Quark &q_, const Common::Momentum &p_, int t_ )
-: HMod(ML,tax_), Current{current_}, deltaT{deltaT_}, pSeq{pSeq_}, q{q_}, p{p_}, t{t_}
+: HMod(tax_), Current{current_}, deltaT{deltaT_}, pSeq{pSeq_}, q{q_}, p{p_}, t{t_}
 {
   name = Prefix;
   Append( name, tax.FamilyName() );
@@ -630,7 +778,7 @@ ModSourceSeq::ModSourceSeq( HModList &ML, const Taxonomy &tax_, Gamma::Algebra c
 
 template<typename T> void ModSourceSeq::AddDependenciesT( HModList &ModList, typename T::Par &seqPar ) const
 {
-  seqPar.q = ModList.TakeOwnership( new ModProp( ModList, tax, q, p, t ) );
+  seqPar.q = ModList.MakeProp( ModList, tax, q, p, t );
   seqPar.mom = pSeq.to_string4d( Space );
   seqPar.gamma = Current;
   ModList.application.createModule<T>(name, seqPar);
@@ -679,7 +827,7 @@ const std::string ModPropSeq::Prefix{ "Seq" + ModProp::Prefix };
 
 ModPropSeq::ModPropSeq( HModList &ML, const Taxonomy &tax_, const Quark &qSeq_, Gamma::Algebra current_, int deltaT_,
                         const Common::Momentum &pSeq_, const Quark &q_, const Common::Momentum &p_, int t_ )
-: HMod(ML,tax_),qSeq{qSeq_},Current{current_},deltaT{deltaT_},pSeq{pSeq_},q{q_},p{p_},t{t_}
+: HMod(tax_),qSeq{qSeq_},Current{current_},deltaT{deltaT_},pSeq{pSeq_},q{q_},p{p_},t{t_}
 {
   name = Prefix;
   Append( name, tax.FamilyName() );
@@ -713,7 +861,7 @@ ModContract2pt::ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
                                 const Quark &q1_, const Quark &q2_, const Common::Momentum &p1_, int t_,
                                 const Common::Momentum &p2_, int hit_ )
 // Two-point Region-sinks don't really exist - silently translate to point-sinks
-: HMod(ModList, taxonomy == Species::Region ? Taxonomy(taxonomy.family, Species::Point) : taxonomy),
+: HMod(taxonomy == Species::Region ? Taxonomy(taxonomy.family, Species::Point) : taxonomy),
 q1{q1_}, q2{q2_}, p1{p1_}, t{t_}, p2{p2_}, pSource{p1_ - p2_}, hit{hit_}
 {
   std::string Prefix2a( tax.FamilyName() );
@@ -758,8 +906,8 @@ void ModContract2pt::AddDependencies( HModList &ModList ) const
   }
   else
   {
-    mesPar.q1 = ModList.TakeOwnership( new ModProp( ModList, tax, q1, p1, t, hit ) );
-    mesPar.q2 = ModList.TakeOwnership( new ModProp( ModList, tax, q2, p2, t, hit ) );
+    mesPar.q1 = ModList.MakeProp( ModList, tax, q1, p1, t, hit );
+    mesPar.q2 = ModList.MakeProp( ModList, tax, q2, p2, t, hit );
   }
   mesPar.sink = ModList.TakeOwnership( new ModSink( ModList, tax, bWallSink ? p0 : -pSource ) );
   ModList.application.createModule<MContraction::Meson>(name, mesPar);
@@ -778,7 +926,7 @@ void ModContract2pt::AddDependencies( HModList &ModList ) const
 ModContract3pt::ModContract3pt( HModList &ML,const Taxonomy &tax_, bool bRev_,const Quark &Snk_,const Quark &Src_,
                                 const Quark &Spec_, const Common::Momentum &pSeq_, const Common::Momentum &p_,
                                 Gamma::Algebra Cur_, int dT_, int t_, bool bHA_ )
-: HMod(ML, tax_), bReverse{tax == Family::GR ? !bRev_ : bRev_}, qSnk{Snk_}, qSrc{Src_}, qSpec{Spec_},
+: HMod(tax_), bReverse{tax == Family::GR ? !bRev_ : bRev_}, qSnk{Snk_}, qSrc{Src_}, qSpec{Spec_},
   pSeq{pSeq_}, p{p_}, Current{Cur_}, deltaT{dT_}, t{t_}, bHeavyAnti{bHA_}
 {
   std::string Prefix1{ "3pt" };
@@ -829,13 +977,13 @@ void ModContract3pt::AddDependencies( HModList &ML ) const
   Common::Momentum pCurrent( - ( pSource + pSink ) );
   if( bInvertSeq )
   {
-    par.q1 = ML.TakeOwnership( new ModProp( ML, stax, sqSrc, pSource, st ) );
-    par.q2 = ML.TakeOwnership(new ModPropSeq(ML,stax, sqSnk, Current, sdeltaT, -pSink, qSpec, p0,  st ) );
+    par.q1 = ML.MakeProp   ( ML, stax, sqSrc, pSource, st );
+    par.q2 = ML.MakePropSeq( ML, stax, sqSnk, Current, sdeltaT, -pSink, qSpec, p0, st );
   }
   else
   {
-    par.q1 = ML.TakeOwnership(new ModPropSeq(ML,stax, sqSnk, Current, sdeltaT,  pSink, qSpec, p0 , st ) );
-    par.q2 = ML.TakeOwnership( new ModProp( ML, stax, sqSrc, -pSource, st ) );
+    par.q1 = ML.MakePropSeq( ML, stax, sqSnk, Current, sdeltaT,  pSink, qSpec, p0, st );
+    par.q2 = ML.MakeProp   ( ML, stax, sqSrc,-pSource, st );
   }
   par.sink = ML.TakeOwnership( new ModSink( ML, stax, pCurrent ) );
   ML.application.createModule<MContraction::Meson>(name, par);

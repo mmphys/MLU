@@ -140,7 +140,9 @@
     <RegionSize>1 1 1 1</RegionSize>
     <!-- Prefix for job output (append '/' if it's a directory) -->
     <OutputBase></OutputBase>
-    <batchSize>1</batchSize>
+    <BatchSize>5</BatchSize>
+    <evBatchSize>1</evBatchSize>
+    <sourceBatchSize>60</sourceBatchSize>
   </RunPar>
   <!-- M1, scale: 2 = Moebius -->
   <HeavyM1>

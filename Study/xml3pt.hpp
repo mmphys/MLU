@@ -161,6 +161,6 @@ public:
 protected:
   virtual void Setup( XmlReader &r );
   virtual void Make();
-  void MakeStudy3( const Decay &d );
+  void MakeStudy3( unsigned int t, const Decay &d );
 };
 
