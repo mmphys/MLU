@@ -596,12 +596,19 @@ std::string ModSolver::LoadEigenPack( HModList &ModList, Precision XformPres ) c
 std::string ModSolver::LoadEigenPack( HModList &ModList ) const
 {
   std::string EigenPackName;
+#ifdef MLU_HADRONS_HAS_GUESSERS
+  if( q.eigenSinglePrecision )
+    EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackIo32>( ModList, Precision::Double );
+  else
+    EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPack>    ( ModList, Precision::Double );
+#else
   if( !q.eigenSinglePrecision ) // Double-precision Eigen packs can be used anywhere
     EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList, Precision::Double );
   else if( q.MixedPrecision() ) // Single-precision Eigen packs for MP solver
     EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackF>( ModList, Precision::Single );
   else // Load single-precision as double-
     EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackIo32>( ModList, Precision::Double );
+#endif
   return EigenPackName;
 }
 
@@ -638,17 +645,14 @@ void ModSolver::AddDependencies( HModList &ModList ) const
     EigenGuessName = "guesser_" + name;
     if( ModList.params.Run.BatchSize )
     {
-      if( q.LoadEigenSingle() )
-        LoadGuessBatch<MGuesser::BatchExactDeflationF>( ModList, EigenGuessName );
+      if( q.eigenSinglePrecision )
+        LoadGuessBatch<MGuesser::BatchExactDeflationDIOF>( ModList, EigenGuessName );
       else
         LoadGuessBatch<MGuesser::BatchExactDeflation> ( ModList, EigenGuessName );
     }
     else
     {
-      if( q.LoadEigenSingle() )
-        LoadGuessExact<MGuesser::ExactDeflationF>     ( ModList, EigenGuessName );
-      else
-        LoadGuessExact<MGuesser::ExactDeflation>      ( ModList, EigenGuessName );
+      LoadGuessExact<MGuesser::ExactDeflation>( ModList, EigenGuessName );
     }
 #else
     EigenGuessName = LoadEigenPack( ModList );
@@ -659,10 +663,7 @@ void ModSolver::AddDependencies( HModList &ModList ) const
     using T = MSolver::MixedPrecisionRBPrecCG;
     typename T::Par solverPar;
 #ifdef MLU_HADRONS_HAS_GUESSERS
-    if( q.LoadEigenSingle() )
-      solverPar.innerGuesser    = EigenGuessName;
-    else
-      solverPar.outerGuesser    = EigenGuessName;
+    solverPar.outerGuesser      = EigenGuessName;
 #else
     solverPar.eigenPack         = EigenGuessName;
 #endif
