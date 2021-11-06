@@ -3461,8 +3461,8 @@
 			children = (
 				6874E583271C6C760055B1E5 /* Cartesian_base.h */,
 				6874E584271C6C760055B1E5 /* Cartesian_full.h */,
-				6874E585271C6C760055B1E5 /* Cartesian.h */,
 				6874E586271C6C760055B1E5 /* Cartesian_red_black.h */,
+				6874E585271C6C760055B1E5 /* Cartesian.h */,
 			);
 			path = cartesian;
 			sourceTree = "<group>";
@@ -3470,11 +3470,11 @@
 		6874E589271C6C760055B1E5 /* perfmon */ = {
 			isa = PBXGroup;
 			children = (
-				6874E58A271C6C760055B1E5 /* Stat.h */,
+				6874E58E271C6C760055B1E5 /* PerfCount.cc */,
 				6874E58B271C6C760055B1E5 /* PerfCount.h */,
 				6874E58C271C6C760055B1E5 /* Stat.cc */,
+				6874E58A271C6C760055B1E5 /* Stat.h */,
 				6874E58D271C6C760055B1E5 /* Timer.h */,
-				6874E58E271C6C760055B1E5 /* PerfCount.cc */,
 			);
 			path = perfmon;
 			sourceTree = "<group>";
@@ -3482,8 +3482,8 @@
 		6874E591271C6C760055B1E5 /* sitmo_rng */ = {
 			isa = PBXGroup;
 			children = (
-				6874E592271C6C760055B1E5 /* sitmo_prng_engine.hpp */,
 				6874E593271C6C760055B1E5 /* README */,
+				6874E592271C6C760055B1E5 /* sitmo_prng_engine.hpp */,
 			);
 			path = sitmo_rng;
 			sourceTree = "<group>";
@@ -3491,14 +3491,14 @@
 		6874E594271C6C760055B1E5 /* util */ = {
 			isa = PBXGroup;
 			children = (
-				6874E595271C6C760055B1E5 /* Init.cc */,
 				6874E596271C6C760055B1E5 /* CompilerCompatible.h */,
-				6874E597271C6C760055B1E5 /* Sha.h */,
 				6874E598271C6C760055B1E5 /* Coordinate.h */,
-				6874E599271C6C760055B1E5 /* Lexicographic.h */,
-				6874E59A271C6C760055B1E5 /* Util.h */,
-				6874E59B271C6C760055B1E5 /* Profiling.h */,
+				6874E595271C6C760055B1E5 /* Init.cc */,
 				6874E59C271C6C760055B1E5 /* Init.h */,
+				6874E599271C6C760055B1E5 /* Lexicographic.h */,
+				6874E59B271C6C760055B1E5 /* Profiling.h */,
+				6874E597271C6C760055B1E5 /* Sha.h */,
+				6874E59A271C6C760055B1E5 /* Util.h */,
 				6874E59D271C6C760055B1E5 /* version.cc */,
 			);
 			path = util;
@@ -3510,9 +3510,9 @@
 				6874E59F271C6C760055B1E5 /* GeneralLocalStencil.h */,
 				6874E5A0271C6C760055B1E5 /* Lebesgue.cc */,
 				6874E5A1271C6C760055B1E5 /* Lebesgue.h */,
-				6874E5A2271C6C760055B1E5 /* Stencil.h */,
 				6874E5A3271C6C760055B1E5 /* SimpleCompressor.h */,
 				6874E5A4271C6C760055B1E5 /* Stencil.cc */,
+				6874E5A2271C6C760055B1E5 /* Stencil.h */,
 			);
 			path = stencil;
 			sourceTree = "<group>";
@@ -3520,16 +3520,16 @@
 		6874E5A6271C6C760055B1E5 /* qcd */ = {
 			isa = PBXGroup;
 			children = (
-				6874E5A7271C6C760055B1E5 /* representations */,
-				6874E5AD271C6C760055B1E5 /* observables */,
-				6874E5B2271C6C760055B1E5 /* utils */,
-				6874E5C3271C6C760055B1E5 /* spin */,
-				6874E5CB271C6C760055B1E5 /* QCD.h */,
 				6874E5CC271C6C760055B1E5 /* action */,
-				6874E6CB271C6C780055B1E5 /* LatticeTheories.h */,
 				6874E6CC271C6C780055B1E5 /* hmc */,
 				6874E6E1271C6C780055B1E5 /* modules */,
+				6874E5AD271C6C760055B1E5 /* observables */,
+				6874E5A7271C6C760055B1E5 /* representations */,
 				6874E6EB271C6C780055B1E5 /* smearing */,
+				6874E5C3271C6C760055B1E5 /* spin */,
+				6874E5B2271C6C760055B1E5 /* utils */,
+				6874E6CB271C6C780055B1E5 /* LatticeTheories.h */,
+				6874E5CB271C6C760055B1E5 /* QCD.h */,
 			);
 			path = qcd;
 			sourceTree = "<group>";
@@ -3537,11 +3537,11 @@
 		6874E5A7271C6C760055B1E5 /* representations */ = {
 			isa = PBXGroup;
 			children = (
-				6874E5A8271C6C760055B1E5 /* two_index.h */,
-				6874E5A9271C6C760055B1E5 /* Representations.h */,
 				6874E5AA271C6C760055B1E5 /* adjoint.h */,
 				6874E5AB271C6C760055B1E5 /* fundamental.h */,
 				6874E5AC271C6C760055B1E5 /* hmc_types.h */,
+				6874E5A9271C6C760055B1E5 /* Representations.h */,
+				6874E5A8271C6C760055B1E5 /* two_index.h */,
 			);
 			path = representations;
 			sourceTree = "<group>";
@@ -3550,9 +3550,9 @@
 			isa = PBXGroup;
 			children = (
 				6874E5AE271C6C760055B1E5 /* hmc_observable.h */,
-				6874E5AF271C6C760055B1E5 /* topological_charge.h */,
-				6874E5B0271C6C760055B1E5 /* polyakov_loop.h */,
 				6874E5B1271C6C760055B1E5 /* plaquette.h */,
+				6874E5B0271C6C760055B1E5 /* polyakov_loop.h */,
+				6874E5AF271C6C760055B1E5 /* topological_charge.h */,
 			);
 			path = observables;
 			sourceTree = "<group>";
@@ -3560,22 +3560,22 @@
 		6874E5B2271C6C760055B1E5 /* utils */ = {
 			isa = PBXGroup;
 			children = (
-				6874E5B3271C6C760055B1E5 /* Utils.h */,
-				6874E5B4271C6C760055B1E5 /* Metric.h */,
-				6874E5B5271C6C760055B1E5 /* SUnTwoIndex.h */,
-				6874E5B6271C6C760055B1E5 /* BaryonUtils.h */,
-				6874E5B7271C6C760055B1E5 /* ScalarObjs.h */,
-				6874E5B8271C6C760055B1E5 /* CovariantSmearing.h */,
-				6874E5B9271C6C760055B1E5 /* SpaceTimeGrid.h */,
-				6874E5BA271C6C760055B1E5 /* SUnAdjoint.h */,
-				6874E5BB271C6C760055B1E5 /* CovariantLaplacian.h */,
-				6874E5BC271C6C760055B1E5 /* SUn.h */,
-				6874E5BD271C6C760055B1E5 /* GaugeFix.h */,
-				6874E5BE271C6C760055B1E5 /* WilsonLoops.h */,
-				6874E5BF271C6C760055B1E5 /* CovariantCshift.h */,
-				6874E5C0271C6C760055B1E5 /* LinalgUtils.h */,
 				6874E5C1271C6C760055B1E5 /* A2Autils.h */,
+				6874E5B6271C6C760055B1E5 /* BaryonUtils.h */,
+				6874E5BF271C6C760055B1E5 /* CovariantCshift.h */,
+				6874E5BB271C6C760055B1E5 /* CovariantLaplacian.h */,
+				6874E5B8271C6C760055B1E5 /* CovariantSmearing.h */,
+				6874E5BD271C6C760055B1E5 /* GaugeFix.h */,
+				6874E5C0271C6C760055B1E5 /* LinalgUtils.h */,
+				6874E5B4271C6C760055B1E5 /* Metric.h */,
+				6874E5B7271C6C760055B1E5 /* ScalarObjs.h */,
 				6874E5C2271C6C760055B1E5 /* SpaceTimeGrid.cc */,
+				6874E5B9271C6C760055B1E5 /* SpaceTimeGrid.h */,
+				6874E5BC271C6C760055B1E5 /* SUn.h */,
+				6874E5BA271C6C760055B1E5 /* SUnAdjoint.h */,
+				6874E5B5271C6C760055B1E5 /* SUnTwoIndex.h */,
+				6874E5B3271C6C760055B1E5 /* Utils.h */,
+				6874E5BE271C6C760055B1E5 /* WilsonLoops.h */,
 			);
 			path = utils;
 			sourceTree = "<group>";
@@ -3584,10 +3584,10 @@
 			isa = PBXGroup;
 			children = (
 				6874E5C4271C6C760055B1E5 /* gamma-gen */,
-				6874E5C6271C6C760055B1E5 /* Gamma.cc */,
-				6874E5C7271C6C760055B1E5 /* Spin.h */,
 				6874E5C8271C6C760055B1E5 /* Dirac.h */,
+				6874E5C6271C6C760055B1E5 /* Gamma.cc */,
 				6874E5C9271C6C760055B1E5 /* Gamma.h */,
+				6874E5C7271C6C760055B1E5 /* Spin.h */,
 				6874E5CA271C6C760055B1E5 /* TwoSpinor.h */,
 			);
 			path = spin;
@@ -3604,15 +3604,15 @@
 		6874E5CC271C6C760055B1E5 /* action */ = {
 			isa = PBXGroup;
 			children = (
-				6874E5CD271C6C760055B1E5 /* ActionSet.h */,
-				6874E5CE271C6C760055B1E5 /* ActionBase.h */,
-				6874E5CF271C6C760055B1E5 /* Action.h */,
-				6874E5D0271C6C760055B1E5 /* ActionCore.h */,
+				6874E5E6271C6C760055B1E5 /* fermion */,
 				6874E5D1271C6C760055B1E5 /* gauge */,
 				6874E5D9271C6C760055B1E5 /* pseudofermion */,
-				6874E5E6271C6C760055B1E5 /* fermion */,
 				6874E6C5271C6C780055B1E5 /* scalar */,
+				6874E5CF271C6C760055B1E5 /* Action.h */,
+				6874E5CE271C6C760055B1E5 /* ActionBase.h */,
+				6874E5D0271C6C760055B1E5 /* ActionCore.h */,
 				6874E6CA271C6C780055B1E5 /* ActionParams.h */,
+				6874E5CD271C6C760055B1E5 /* ActionSet.h */,
 			);
 			path = action;
 			sourceTree = "<group>";
@@ -4012,16 +4012,16 @@
 		6874E6CC271C6C780055B1E5 /* hmc */ = {
 			isa = PBXGroup;
 			children = (
-				6874E6CD271C6C780055B1E5 /* HMC_GridModules.h */,
-				6874E6CE271C6C780055B1E5 /* HMCResourceManager.h */,
 				6874E6CF271C6C780055B1E5 /* checkpointers */,
-				6874E6D7271C6C780055B1E5 /* HMC_aggregate.h */,
-				6874E6D8271C6C780055B1E5 /* UsingHMC.md */,
-				6874E6D9271C6C780055B1E5 /* GenericHMCrunner.h */,
-				6874E6DA271C6C780055B1E5 /* HMC.h */,
 				6874E6DB271C6C780055B1E5 /* integrators */,
-				6874E6DF271C6C780055B1E5 /* HMCRunnerModule.h */,
+				6874E6D9271C6C780055B1E5 /* GenericHMCrunner.h */,
+				6874E6D7271C6C780055B1E5 /* HMC_aggregate.h */,
+				6874E6CD271C6C780055B1E5 /* HMC_GridModules.h */,
+				6874E6DA271C6C780055B1E5 /* HMC.h */,
 				6874E6E0271C6C780055B1E5 /* HMCModules.h */,
+				6874E6CE271C6C780055B1E5 /* HMCResourceManager.h */,
+				6874E6DF271C6C780055B1E5 /* HMCRunnerModule.h */,
+				6874E6D8271C6C780055B1E5 /* UsingHMC.md */,
 			);
 			path = hmc;
 			sourceTree = "<group>";
@@ -4053,15 +4053,15 @@
 		6874E6E1271C6C780055B1E5 /* modules */ = {
 			isa = PBXGroup;
 			children = (
-				6874E6E2271C6C780055B1E5 /* Modules.cc */,
-				6874E6E3271C6C780055B1E5 /* ObservableModules.h */,
-				6874E6E4271C6C780055B1E5 /* SolverModules.h */,
-				6874E6E5271C6C780055B1E5 /* Registration.h */,
-				6874E6E6271C6C780055B1E5 /* FermionOperatorModules.h */,
-				6874E6E7271C6C780055B1E5 /* Modules.h */,
-				6874E6E8271C6C780055B1E5 /* mods.h */,
 				6874E6E9271C6C780055B1E5 /* ActionModules.h */,
 				6874E6EA271C6C780055B1E5 /* Factory.h */,
+				6874E6E6271C6C780055B1E5 /* FermionOperatorModules.h */,
+				6874E6E8271C6C780055B1E5 /* mods.h */,
+				6874E6E2271C6C780055B1E5 /* Modules.cc */,
+				6874E6E7271C6C780055B1E5 /* Modules.h */,
+				6874E6E3271C6C780055B1E5 /* ObservableModules.h */,
+				6874E6E5271C6C780055B1E5 /* Registration.h */,
+				6874E6E4271C6C780055B1E5 /* SolverModules.h */,
 			);
 			path = modules;
 			sourceTree = "<group>";
@@ -4069,12 +4069,12 @@
 		6874E6EB271C6C780055B1E5 /* smearing */ = {
 			isa = PBXGroup;
 			children = (
+				6874E6F0271C6C780055B1E5 /* APEsmearing.h */,
 				6874E6EC271C6C780055B1E5 /* BaseSmearing.h */,
 				6874E6ED271C6C780055B1E5 /* GaugeConfiguration.h */,
+				6874E6F1271C6C780055B1E5 /* Smearing.h */,
 				6874E6EE271C6C780055B1E5 /* StoutSmearing.h */,
 				6874E6EF271C6C780055B1E5 /* WilsonFlow.h */,
-				6874E6F0271C6C780055B1E5 /* APEsmearing.h */,
-				6874E6F1271C6C780055B1E5 /* Smearing.h */,
 			);
 			path = smearing;
 			sourceTree = "<group>";
@@ -4082,14 +4082,14 @@
 		6874E6F2271C6C780055B1E5 /* algorithms */ = {
 			isa = PBXGroup;
 			children = (
-				6874E6F3271C6C780055B1E5 /* SparseMatrix.h */,
-				6874E6F4271C6C780055B1E5 /* FFT.h */,
-				6874E6F5271C6C780055B1E5 /* Preconditioner.h */,
-				6874E6F6271C6C780055B1E5 /* CoarsenedMatrix.h */,
-				6874E6F7271C6C780055B1E5 /* Algorithms.h */,
 				6874E6F8271C6C780055B1E5 /* approx */,
-				6874E70A271C6C790055B1E5 /* LinearOperator.h */,
 				6874E70B271C6C790055B1E5 /* iterative */,
+				6874E6F7271C6C780055B1E5 /* Algorithms.h */,
+				6874E6F6271C6C780055B1E5 /* CoarsenedMatrix.h */,
+				6874E6F4271C6C780055B1E5 /* FFT.h */,
+				6874E70A271C6C790055B1E5 /* LinearOperator.h */,
+				6874E6F5271C6C780055B1E5 /* Preconditioner.h */,
+				6874E6F3271C6C780055B1E5 /* SparseMatrix.h */,
 			);
 			path = algorithms;
 			sourceTree = "<group>";
@@ -4153,14 +4153,14 @@
 		6874E725271C6C790055B1E5 /* communicator */ = {
 			isa = PBXGroup;
 			children = (
-				6874E726271C6C790055B1E5 /* Communicator_none.cc */,
-				6874E727271C6C790055B1E5 /* Communicator_mpi3.cc */,
-				6874E728271C6C790055B1E5 /* SharedMemoryMPI.cc */,
-				6874E729271C6C790055B1E5 /* SharedMemory.h */,
-				6874E72A271C6C790055B1E5 /* Communicator.h */,
-				6874E72B271C6C790055B1E5 /* Communicator_base.h */,
-				6874E72C271C6C790055B1E5 /* SharedMemory.cc */,
 				6874E72D271C6C790055B1E5 /* Communicator_base.cc */,
+				6874E72B271C6C790055B1E5 /* Communicator_base.h */,
+				6874E727271C6C790055B1E5 /* Communicator_mpi3.cc */,
+				6874E726271C6C790055B1E5 /* Communicator_none.cc */,
+				6874E72A271C6C790055B1E5 /* Communicator.h */,
+				6874E72C271C6C790055B1E5 /* SharedMemory.cc */,
+				6874E729271C6C790055B1E5 /* SharedMemory.h */,
+				6874E728271C6C790055B1E5 /* SharedMemoryMPI.cc */,
 				6874E72E271C6C790055B1E5 /* SharedMemoryNone.cc */,
 			);
 			path = communicator;
@@ -4169,28 +4169,28 @@
 		6874E72F271C6C790055B1E5 /* tensors */ = {
 			isa = PBXGroup;
 			children = (
-				6874E730271C6C790055B1E5 /* Tensor_logical.h */,
-				6874E731271C6C790055B1E5 /* Tensor_Ta.h */,
-				6874E732271C6C790055B1E5 /* Tensor_index.h */,
-				6874E733271C6C790055B1E5 /* Tensor_determinant.h */,
-				6874E734271C6C790055B1E5 /* Tensor_traits.h */,
-				6874E735271C6C790055B1E5 /* Tensor_arith_mul.h */,
-				6874E736271C6C790055B1E5 /* Tensor_extract_merge.h */,
+				6874E744271C6C790055B1E5 /* Tensor_arith_add.h */,
 				6874E737271C6C790055B1E5 /* Tensor_arith_mac.h */,
-				6874E738271C6C790055B1E5 /* Tensor_trace.h */,
+				6874E735271C6C790055B1E5 /* Tensor_arith_mul.h */,
 				6874E739271C6C790055B1E5 /* Tensor_arith_scalar.h */,
+				6874E742271C6C790055B1E5 /* Tensor_arith_sub.h */,
 				6874E73A271C6C790055B1E5 /* Tensor_arith.h */,
 				6874E73B271C6C790055B1E5 /* Tensor_class.h */,
-				6874E73C271C6C790055B1E5 /* Tensor_transpose.h */,
-				6874E73D271C6C790055B1E5 /* Tensor_reality.h */,
-				6874E73E271C6C790055B1E5 /* Tensor_outer.h */,
-				6874E73F271C6C790055B1E5 /* Tensor_inner.h */,
-				6874E740271C6C790055B1E5 /* Tensors.h */,
-				6874E741271C6C790055B1E5 /* Tensor_SIMT.h */,
-				6874E742271C6C790055B1E5 /* Tensor_arith_sub.h */,
+				6874E733271C6C790055B1E5 /* Tensor_determinant.h */,
 				6874E743271C6C790055B1E5 /* Tensor_exp.h */,
-				6874E744271C6C790055B1E5 /* Tensor_arith_add.h */,
+				6874E736271C6C790055B1E5 /* Tensor_extract_merge.h */,
+				6874E732271C6C790055B1E5 /* Tensor_index.h */,
+				6874E73F271C6C790055B1E5 /* Tensor_inner.h */,
+				6874E730271C6C790055B1E5 /* Tensor_logical.h */,
+				6874E73E271C6C790055B1E5 /* Tensor_outer.h */,
+				6874E73D271C6C790055B1E5 /* Tensor_reality.h */,
+				6874E741271C6C790055B1E5 /* Tensor_SIMT.h */,
+				6874E731271C6C790055B1E5 /* Tensor_Ta.h */,
+				6874E738271C6C790055B1E5 /* Tensor_trace.h */,
+				6874E734271C6C790055B1E5 /* Tensor_traits.h */,
+				6874E73C271C6C790055B1E5 /* Tensor_transpose.h */,
 				6874E745271C6C790055B1E5 /* Tensor_unary.h */,
+				6874E740271C6C790055B1E5 /* Tensors.h */,
 			);
 			path = tensors;
 			sourceTree = "<group>";
@@ -4198,34 +4198,34 @@
 		6874E746271C6C790055B1E5 /* simd */ = {
 			isa = PBXGroup;
 			children = (
-				6874E747271C6C790055B1E5 /* IBM_qpx_double.h */,
-				6874E748271C6C790055B1E5 /* Grid_generic.h */,
-				6874E749271C6C790055B1E5 /* Fujitsu_A64FX_intrin_single.h */,
-				6874E74A271C6C790055B1E5 /* Intel512wilson.h */,
-				6874E74B271C6C790055B1E5 /* Grid_avx512.h */,
-				6874E74C271C6C790055B1E5 /* Grid_neon.h */,
-				6874E74D271C6C790055B1E5 /* Grid_gpu_vec.h */,
-				6874E74E271C6C790055B1E5 /* IBM_qpx.h */,
-				6874E74F271C6C790055B1E5 /* Grid_vector_types.h */,
-				6874E750271C6C790055B1E5 /* Grid_imci.h */,
-				6874E751271C6C790055B1E5 /* IBM_qpx_single.h */,
 				6874E752271C6C790055B1E5 /* BGQQPX.h */,
 				6874E753271C6C790055B1E5 /* Fujitsu_A64FX_intrin_double.h */,
-				6874E754271C6C790055B1E5 /* Grid_qpx.h */,
-				6874E755271C6C790055B1E5 /* Intel512single.h */,
-				6874E756271C6C790055B1E5 /* Intel512imci.h */,
-				6874E757271C6C790055B1E5 /* Grid_avx.h */,
-				6874E758271C6C790055B1E5 /* Intel512avx.h */,
-				6874E759271C6C790055B1E5 /* Simd.h */,
-				6874E75A271C6C790055B1E5 /* Grid_vector_unops.h */,
-				6874E75B271C6C790055B1E5 /* Grid_a64fx-fixedsize.h */,
-				6874E75C271C6C790055B1E5 /* l1p.h */,
+				6874E749271C6C790055B1E5 /* Fujitsu_A64FX_intrin_single.h */,
 				6874E75D271C6C790055B1E5 /* Fujitsu_A64FX_undef.h */,
-				6874E75E271C6C790055B1E5 /* Intel512common.h */,
-				6874E75F271C6C790055B1E5 /* Grid_generic_types.h */,
-				6874E760271C6C790055B1E5 /* Grid_sse4.h */,
-				6874E761271C6C790055B1E5 /* Intel512double.h */,
 				6874E762271C6C790055B1E5 /* Grid_a64fx-2.h */,
+				6874E75B271C6C790055B1E5 /* Grid_a64fx-fixedsize.h */,
+				6874E757271C6C790055B1E5 /* Grid_avx.h */,
+				6874E74B271C6C790055B1E5 /* Grid_avx512.h */,
+				6874E75F271C6C790055B1E5 /* Grid_generic_types.h */,
+				6874E748271C6C790055B1E5 /* Grid_generic.h */,
+				6874E74D271C6C790055B1E5 /* Grid_gpu_vec.h */,
+				6874E750271C6C790055B1E5 /* Grid_imci.h */,
+				6874E74C271C6C790055B1E5 /* Grid_neon.h */,
+				6874E754271C6C790055B1E5 /* Grid_qpx.h */,
+				6874E760271C6C790055B1E5 /* Grid_sse4.h */,
+				6874E74F271C6C790055B1E5 /* Grid_vector_types.h */,
+				6874E75A271C6C790055B1E5 /* Grid_vector_unops.h */,
+				6874E747271C6C790055B1E5 /* IBM_qpx_double.h */,
+				6874E751271C6C790055B1E5 /* IBM_qpx_single.h */,
+				6874E74E271C6C790055B1E5 /* IBM_qpx.h */,
+				6874E758271C6C790055B1E5 /* Intel512avx.h */,
+				6874E75E271C6C790055B1E5 /* Intel512common.h */,
+				6874E761271C6C790055B1E5 /* Intel512double.h */,
+				6874E756271C6C790055B1E5 /* Intel512imci.h */,
+				6874E755271C6C790055B1E5 /* Intel512single.h */,
+				6874E74A271C6C790055B1E5 /* Intel512wilson.h */,
+				6874E75C271C6C790055B1E5 /* l1p.h */,
+				6874E759271C6C790055B1E5 /* Simd.h */,
 			);
 			path = simd;
 			sourceTree = "<group>";
@@ -4233,11 +4233,11 @@
 		6874E765271C6C790055B1E5 /* cshift */ = {
 			isa = PBXGroup;
 			children = (
+				6874E76A271C6C790055B1E5 /* Cshift_common.h */,
 				6874E766271C6C790055B1E5 /* Cshift_mpi.h */,
+				6874E769271C6C790055B1E5 /* Cshift_none.h */,
 				6874E767271C6C790055B1E5 /* Cshift_table.cc */,
 				6874E768271C6C790055B1E5 /* Cshift.h */,
-				6874E769271C6C790055B1E5 /* Cshift_none.h */,
-				6874E76A271C6C790055B1E5 /* Cshift_common.h */,
 			);
 			path = cshift;
 			sourceTree = "<group>";
@@ -4245,38 +4245,38 @@
 		6874E76B271C6C790055B1E5 /* Eigen */ = {
 			isa = PBXGroup;
 			children = (
+				6874E85C271C6C7B0055B1E5 /* src */,
+				6874E777271C6C790055B1E5 /* unsupported */,
+				6874E850271C6C7B0055B1E5 /* Cholesky */,
 				6874E76C271C6C790055B1E5 /* CholmodSupport */,
-				6874E76D271C6C790055B1E5 /* StdVector */,
-				6874E76E271C6C790055B1E5 /* StdDeque */,
 				6874E76F271C6C790055B1E5 /* CMakeLists.txt */,
 				6874E770271C6C790055B1E5 /* Core */,
-				6874E771271C6C790055B1E5 /* SparseLU */,
-				6874E772271C6C790055B1E5 /* OrderingMethods */,
-				6874E773271C6C790055B1E5 /* QtAlignedMalloc */,
-				6874E774271C6C790055B1E5 /* Householder */,
-				6874E775271C6C790055B1E5 /* PardisoSupport */,
-				6874E776271C6C790055B1E5 /* SparseCore */,
-				6874E777271C6C790055B1E5 /* unsupported */,
-				6874E849271C6C7B0055B1E5 /* Jacobi */,
 				6874E84A271C6C7B0055B1E5 /* Dense */,
-				6874E84B271C6C7B0055B1E5 /* SPQRSupport */,
-				6874E84C271C6C7B0055B1E5 /* QR */,
 				6874E84D271C6C7B0055B1E5 /* Eigen */,
-				6874E84E271C6C7B0055B1E5 /* SparseQR */,
-				6874E84F271C6C7B0055B1E5 /* SVD */,
-				6874E850271C6C7B0055B1E5 /* Cholesky */,
-				6874E851271C6C7B0055B1E5 /* UmfPackSupport */,
-				6874E852271C6C7B0055B1E5 /* IterativeLinearSolvers */,
-				6874E853271C6C7B0055B1E5 /* LU */,
-				6874E854271C6C7B0055B1E5 /* Sparse */,
-				6874E855271C6C7B0055B1E5 /* Geometry */,
-				6874E856271C6C7B0055B1E5 /* SuperLUSupport */,
-				6874E857271C6C7B0055B1E5 /* StdList */,
-				6874E858271C6C7B0055B1E5 /* MetisSupport */,
-				6874E859271C6C7B0055B1E5 /* SparseCholesky */,
 				6874E85A271C6C7B0055B1E5 /* Eigenvalues */,
+				6874E855271C6C7B0055B1E5 /* Geometry */,
+				6874E774271C6C790055B1E5 /* Householder */,
+				6874E852271C6C7B0055B1E5 /* IterativeLinearSolvers */,
+				6874E849271C6C7B0055B1E5 /* Jacobi */,
+				6874E853271C6C7B0055B1E5 /* LU */,
+				6874E858271C6C7B0055B1E5 /* MetisSupport */,
+				6874E772271C6C790055B1E5 /* OrderingMethods */,
+				6874E775271C6C790055B1E5 /* PardisoSupport */,
 				6874E85B271C6C7B0055B1E5 /* PaStiXSupport */,
-				6874E85C271C6C7B0055B1E5 /* src */,
+				6874E84C271C6C7B0055B1E5 /* QR */,
+				6874E773271C6C790055B1E5 /* QtAlignedMalloc */,
+				6874E854271C6C7B0055B1E5 /* Sparse */,
+				6874E859271C6C7B0055B1E5 /* SparseCholesky */,
+				6874E776271C6C790055B1E5 /* SparseCore */,
+				6874E771271C6C790055B1E5 /* SparseLU */,
+				6874E84E271C6C7B0055B1E5 /* SparseQR */,
+				6874E84B271C6C7B0055B1E5 /* SPQRSupport */,
+				6874E76E271C6C790055B1E5 /* StdDeque */,
+				6874E857271C6C7B0055B1E5 /* StdList */,
+				6874E76D271C6C790055B1E5 /* StdVector */,
+				6874E856271C6C7B0055B1E5 /* SuperLUSupport */,
+				6874E84F271C6C7B0055B1E5 /* SVD */,
+				6874E851271C6C7B0055B1E5 /* UmfPackSupport */,
 			);
 			path = Eigen;
 			sourceTree = "<group>";
@@ -5280,28 +5280,28 @@
 		6874E996271C6C7D0055B1E5 /* lattice */ = {
 			isa = PBXGroup;
 			children = (
-				6874E997271C6C7D0055B1E5 /* Lattice_where.h */,
-				6874E998271C6C7D0055B1E5 /* Lattice_transfer.h */,
-				6874E999271C6C7D0055B1E5 /* Lattice_comparison_utils.h */,
-				6874E99A271C6C7D0055B1E5 /* Lattice_view.h */,
-				6874E99B271C6C7D0055B1E5 /* Lattice_peekpoke.h */,
 				6874E99C271C6C7D0055B1E5 /* Lattice_arith.h */,
+				6874E9A8271C6C7D0055B1E5 /* Lattice_base.h */,
+				6874E9A6271C6C7D0055B1E5 /* Lattice_basis.h */,
+				6874E999271C6C7D0055B1E5 /* Lattice_comparison_utils.h */,
+				6874E9A9271C6C7D0055B1E5 /* Lattice_comparison.h */,
 				6874E99D271C6C7D0055B1E5 /* Lattice_conformable.h */,
-				6874E99E271C6C7D0055B1E5 /* Lattice_trace.h */,
-				6874E99F271C6C7D0055B1E5 /* Lattice_real_imag.h */,
-				6874E9A0271C6C7D0055B1E5 /* Lattice_unary.h */,
-				6874E9A1271C6C7D0055B1E5 /* Lattice_reality.h */,
-				6874E9A2271C6C7D0055B1E5 /* Lattice_rng.h */,
+				6874E9A5271C6C7D0055B1E5 /* Lattice_coordinate.h */,
+				6874E9AC271C6C7D0055B1E5 /* Lattice_ET.h */,
 				6874E9A3271C6C7D0055B1E5 /* Lattice_local.h */,
 				6874E9A4271C6C7D0055B1E5 /* Lattice_matrix_reduction.h */,
-				6874E9A5271C6C7D0055B1E5 /* Lattice_coordinate.h */,
-				6874E9A6271C6C7D0055B1E5 /* Lattice_basis.h */,
+				6874E99B271C6C7D0055B1E5 /* Lattice_peekpoke.h */,
+				6874E99F271C6C7D0055B1E5 /* Lattice_real_imag.h */,
+				6874E9A1271C6C7D0055B1E5 /* Lattice_reality.h */,
 				6874E9A7271C6C7D0055B1E5 /* Lattice_reduction_gpu.h */,
-				6874E9A8271C6C7D0055B1E5 /* Lattice_base.h */,
-				6874E9A9271C6C7D0055B1E5 /* Lattice_comparison.h */,
 				6874E9AA271C6C7D0055B1E5 /* Lattice_reduction.h */,
+				6874E9A2271C6C7D0055B1E5 /* Lattice_rng.h */,
+				6874E99E271C6C7D0055B1E5 /* Lattice_trace.h */,
+				6874E998271C6C7D0055B1E5 /* Lattice_transfer.h */,
 				6874E9AB271C6C7D0055B1E5 /* Lattice_transpose.h */,
-				6874E9AC271C6C7D0055B1E5 /* Lattice_ET.h */,
+				6874E9A0271C6C7D0055B1E5 /* Lattice_unary.h */,
+				6874E99A271C6C7D0055B1E5 /* Lattice_view.h */,
+				6874E997271C6C7D0055B1E5 /* Lattice_where.h */,
 				6874E9AD271C6C7D0055B1E5 /* Lattice.h */,
 			);
 			path = lattice;
@@ -5310,14 +5310,14 @@
 		6874E9AE271C6C7D0055B1E5 /* parallelIO */ = {
 			isa = PBXGroup;
 			children = (
-				6874E9AF271C6C7D0055B1E5 /* OpenQcdIO.h */,
-				6874E9B0271C6C7D0055B1E5 /* OpenQcdIOChromaReference.h */,
-				6874E9B1271C6C7D0055B1E5 /* NerscIO.h */,
+				6874E9B5271C6C7D0055B1E5 /* BinaryIO.cc */,
 				6874E9B2271C6C7D0055B1E5 /* BinaryIO.h */,
+				6874E9B6271C6C7D0055B1E5 /* IldgIO.h */,
 				6874E9B3271C6C7D0055B1E5 /* IldgIOtypes.h */,
 				6874E9B4271C6C7D0055B1E5 /* MetaData.h */,
-				6874E9B5271C6C7D0055B1E5 /* BinaryIO.cc */,
-				6874E9B6271C6C7D0055B1E5 /* IldgIO.h */,
+				6874E9B1271C6C7D0055B1E5 /* NerscIO.h */,
+				6874E9AF271C6C7D0055B1E5 /* OpenQcdIO.h */,
+				6874E9B0271C6C7D0055B1E5 /* OpenQcdIOChromaReference.h */,
 			);
 			path = parallelIO;
 			sourceTree = "<group>";
@@ -5334,9 +5334,9 @@
 			isa = PBXGroup;
 			children = (
 				6874E9BA271C6C7D0055B1E5 /* Accelerator.cc */,
-				6874E9BB271C6C7D0055B1E5 /* ThreadReduction.h */,
-				6874E9BC271C6C7D0055B1E5 /* Pragmas.h */,
 				6874E9BD271C6C7D0055B1E5 /* Accelerator.h */,
+				6874E9BC271C6C7D0055B1E5 /* Pragmas.h */,
+				6874E9BB271C6C7D0055B1E5 /* ThreadReduction.h */,
 				6874E9BE271C6C7D0055B1E5 /* Threads.h */,
 			);
 			path = threads;
@@ -5345,14 +5345,14 @@
 		6874E9C0271C6C7D0055B1E5 /* allocator */ = {
 			isa = PBXGroup;
 			children = (
+				6874E9C7271C6C7E0055B1E5 /* AlignedAllocator.h */,
+				6874E9C6271C6C7E0055B1E5 /* Allocator.h */,
+				6874E9C8271C6C7E0055B1E5 /* MemoryManager.cc */,
+				6874E9C4271C6C7E0055B1E5 /* MemoryManager.h */,
+				6874E9C3271C6C7E0055B1E5 /* MemoryManagerCache.cc */,
+				6874E9C5271C6C7E0055B1E5 /* MemoryManagerShared.cc */,
 				6874E9C1271C6C7E0055B1E5 /* MemoryStats.cc */,
 				6874E9C2271C6C7E0055B1E5 /* MemoryStats.h */,
-				6874E9C3271C6C7E0055B1E5 /* MemoryManagerCache.cc */,
-				6874E9C4271C6C7E0055B1E5 /* MemoryManager.h */,
-				6874E9C5271C6C7E0055B1E5 /* MemoryManagerShared.cc */,
-				6874E9C6271C6C7E0055B1E5 /* Allocator.h */,
-				6874E9C7271C6C7E0055B1E5 /* AlignedAllocator.h */,
-				6874E9C8271C6C7E0055B1E5 /* MemoryManager.cc */,
 			);
 			path = allocator;
 			sourceTree = "<group>";
@@ -5360,8 +5360,8 @@
 		6874E9CA271C6C7E0055B1E5 /* log */ = {
 			isa = PBXGroup;
 			children = (
-				6874E9CB271C6C7E0055B1E5 /* Log.h */,
 				6874E9CC271C6C7E0055B1E5 /* Log.cc */,
+				6874E9CB271C6C7E0055B1E5 /* Log.h */,
 			);
 			path = log;
 			sourceTree = "<group>";
@@ -5370,9 +5370,9 @@
 			isa = PBXGroup;
 			children = (
 				6874E9CE271C6C7E0055B1E5 /* pugiconfig.hpp */,
+				6874E9D1271C6C7E0055B1E5 /* pugixml.cc */,
 				6874E9CF271C6C7E0055B1E5 /* pugixml.h */,
 				6874E9D0271C6C7E0055B1E5 /* readme.txt */,
-				6874E9D1271C6C7E0055B1E5 /* pugixml.cc */,
 			);
 			path = pugixml;
 			sourceTree = "<group>";
