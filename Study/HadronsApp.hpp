@@ -217,8 +217,6 @@ GRID_SERIALIZABLE_CLASS_MEMBERS(Quark,
 public:
   template<typename T> void CreateAction( Application &app, const std::string &name, std::string &&Gauge ) const;
   inline bool MixedPrecision() const { return maxOuterIteration != 0; }
-  // Eigen packs will be single-precision in memory only if they are on disk and solver is multi-precision
-  inline bool LoadEigenSingle() const { return eigenSinglePrecision && MixedPrecision(); }
   inline void AppendName( std::string &s, const Taxonomy &tax ) const
   {
     tax.AppendFixed( s, GaugeSmear );

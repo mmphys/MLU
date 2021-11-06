@@ -626,7 +626,7 @@ template<typename TGuesser>
 void ModSolver::LoadGuessBatch( HModList &ModList, const std::string &GuesserName ) const
 {
   typename TGuesser::Par guessPar;
-  LoadEigenPar( guessPar.eigenPack, ModList, q.LoadEigenSingle() ? Precision::Single : Precision::Double );
+  LoadEigenPar( guessPar.eigenPack, ModList, Precision::Double );
   guessPar.evBatchSize = ModList.params.Run.evBatchSize;
   guessPar.sourceBatchSize = ModList.params.Run.sourceBatchSize;
   ModList.application.createModule<TGuesser>( GuesserName, guessPar );
