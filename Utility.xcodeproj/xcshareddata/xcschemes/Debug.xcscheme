@@ -70,6 +70,22 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "/Volumes/QCD/tess/semilep/M1/M1.2pt/880/2pt/ZFWP/WP_l_l_p_0_0_0_t_0.880.h5 /Volumes/QCD/tursa/prod/eigen/M2/Peter3/ckpoint_lat_coulomb.880_p0_m0_m0_w_z2_meson.xml"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Volumes/QCD/tess/semilep/M1/M1.cpu/880/3pt_l/GFPW_quark/PW_quark_h447_l_g5_dt_16_ps_0_0_0_p_0_0_0_t_0.880.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Volumes/QCD/tursa/prod/eigen/M2/Peter3/ckpoint_lat_coulomb.880_3pt_p0_m0_p_gf_meson.xml"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Volumes/QCD/tess/semilep/M1/M1.cpu/880/3pt_l/ZFPP_quark/PP_quark_h447_l_g5_dt_16_ps_0_0_0_p_0_0_0_t_0.880.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Volumes/QCD/tursa/prod/eigen/M2/Peter3/ckpoint_lat_coulomb.880_3pt_p0_m0_p_z2_meson.xml"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
