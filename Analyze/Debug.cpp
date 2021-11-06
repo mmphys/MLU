@@ -222,7 +222,7 @@ std::string MakeSeed( int timeslice, int hit = 1 )
 class MesonFile: Grid::Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(MesonFile, std::vector<std::vector<Grid::Complex> >, data);
-  void Load( const std::string &FileName );
+  bool Load( const std::string &FileName );
 };
 
 std::ostream & operator<<( std::ostream &os, const Common::FileNameAtt &fna )
@@ -238,19 +238,32 @@ static constexpr int idxSrc{ 0 };
 static constexpr int idxSnk{ 1 };
 
 using Algebra = Common::Gamma::Algebra;
-static const Algebra Gammas[nchannel][2] = {
+static const Algebra Gammas2pt[nchannel][2] = {
   { Algebra::Gamma5      , Algebra::Gamma5 },
   { Algebra::GammaTGamma5, Algebra::GammaTGamma5 },
   { Algebra::GammaTGamma5, Algebra::Gamma5 },
   { Algebra::Gamma5      , Algebra::GammaTGamma5 }
 };
+static const Algebra Gammas3pt[nchannel][2] = {
+  { Algebra::Gamma5      , Algebra::GammaX },
+  { Algebra::Gamma5      , Algebra::GammaY },
+  { Algebra::Gamma5      , Algebra::GammaZ },
+  { Algebra::Gamma5      , Algebra::GammaT }
+};
 
 // Load correlator - .h5 or .xml
-void MesonFile::Load( const std::string &FileName )
+bool MesonFile::Load( const std::string &FileName )
 {
+  bool b3pt{ false };
   std::size_t pos{ FileName.find_last_of( '.' ) };
   if( pos != std::string::npos && Common::EqualIgnoreCase( FileName.substr( pos + 1 ), "h5" ) )
   {
+    {
+      Common::FileNameAtt fna( FileName );
+      if( fna.bGotDeltaT && fna.Gamma.size() )
+        b3pt = true;
+    }
+    const Algebra (&Gammas)[nchannel][2]{ b3pt ? Gammas3pt : Gammas2pt };
     std::vector<Common::Gamma::Algebra> Alg;
     using Corr = Common::CorrelatorFileC;
     Corr corr( FileName, Alg, Alg, nullptr, "  Reading hdf5 " );
@@ -277,6 +290,7 @@ void MesonFile::Load( const std::string &FileName )
       if( data[i].size() != data[0].size() )
         throw std::runtime_error( "Nt[" + std::to_string( i ) + "] != " + std::to_string( data[0].size() ) );
   }
+  return b3pt;
 }
 
 // Convert Correlator file from .h5 to .xml
@@ -301,12 +315,15 @@ void Convert( const std::string &FileName, std::string OutBase )
 
 int Compare( const std::vector<std::string> &FileName, std::string OutBase, double tol )
 {
+  bool b3pt{ false };
   const std::size_t OutLen{ OutBase.size() };
   std::vector<MesonFile> in ( FileName.size() );
   int Count{ 0 };
   for( std::size_t f = 0; f < FileName.size(); ++f )
   {
-    in[f].Load( FileName[f] );
+    if( in[f].Load( FileName[f] ) )
+      b3pt = true;
+    const Algebra (&Gammas)[nchannel][2]{ b3pt ? Gammas3pt : Gammas2pt };
     const std::size_t Nt{ in[f].data[0].size() };
     if( f )
     {
@@ -329,20 +346,29 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, doub
         out.open( OutBase );
       }
       static const std::string Comment{ "# " };
+      static const std::string HeadReal{ "Snk Src t Re(f1) Re(f2) Re(f2)/Re(f1)" };
+      static const std::string HeadImag{ "Snk Src t Im(f1) Im(f2) Im(f2)/Im(f1)" };
+      using TReIm = double (Grid::Complex::*)() const;
+      TReIm ReIm = b3pt ? static_cast<TReIm>(&Grid::Complex::imag) : static_cast<TReIm>(&Grid::Complex::real);
       out << Comment << "File 1 " << FileName[0] << Common::NewLine
           << Comment << "File 2 " << FileName[f] << Common::NewLine
-          << "Snk Src t Re(f1) Re(f2) Re(f2)/Re(f1)" << std::endl;
+          << ( b3pt ? HeadImag : HeadReal ) << std::endl;
       for( std::size_t channel = 0; channel < nchannel; ++channel )
       {
+        if( channel == nchannel - 1 && b3pt )
+        {
+          ReIm = &Grid::Complex::real;
+          out << "\n\n" << HeadReal << std::endl;
+        }
         for( std::size_t t = 0; t < Nt; ++t )
         {
-          const double Ratio{ in[f].data[channel][t].real() / in[0].data[channel][t].real() };
+          const double Ratio{ (in[f].data[channel][t].*ReIm)() / (in[0].data[channel][t].*ReIm)() };
           out << Common::Gamma::NameShort( Gammas[channel][idxSnk] ) << Common::Space
               << Common::Gamma::NameShort( Gammas[channel][idxSrc] ) << Common::Space
               << t << Common::Space
               << std::scientific
-              << in[0].data[channel][t].real() << Common::Space
-              << in[f].data[channel][t].real() << Common::Space
+              << (in[0].data[channel][t].*ReIm)() << Common::Space
+              << (in[f].data[channel][t].*ReIm)() << Common::Space
               << std::defaultfloat
               << Ratio << std::endl;
           if( std::abs( 1. - Ratio ) > tol )
@@ -352,7 +378,7 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, doub
     }
   }
   std::stringstream s;
-  //s << "  ";
+  s << "  ";
   if( Count == 0 )
     s << "Same";
   else
