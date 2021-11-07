@@ -452,9 +452,19 @@ public:
   Application &application;
   const AppParams &params;
 public:
-  void Write() { Prop.Write( *this ); PropSeq.Write( *this ); }
+  void Write()
+  {
+#ifdef MLU_HADRONS_HAS_GUESSERS
+    Prop.Write( *this );
+    PropSeq.Write( *this );
+#endif
+  }
   HModList( Application &application_, const AppParams &params_ )
-  : application{application_}, params{params_}, PropSeq( "Seq" ) {}
+  : application{application_}, params{params_}
+#ifdef MLU_HADRONS_HAS_GUESSERS
+  , PropSeq( "Seq" )
+#endif
+  {}
   ~HModList() { Write(); }
   const std::string TakeOwnership( HMod *pHMod );
   std::string MakeProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q,
@@ -566,7 +576,6 @@ protected:
 #ifdef MLU_HADRONS_HAS_GUESSERS
   template<typename TGuesser> void LoadGuessExact( HModList &ModList, const std::string &GuesserName ) const;
   template<typename TGuesser> void LoadGuessBatch( HModList &ModList, const std::string &GuesserName ) const;
-  std::string LoadGuesser( HModList &ModList ) const;
 #endif
 };
 

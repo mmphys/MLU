@@ -639,9 +639,6 @@ void ModSolver::AddDependencies( HModList &ModList ) const
   if( q.eigenPack.length() )
   {
 #ifdef MLU_HADRONS_HAS_GUESSERS
-    // TODO: Hadrons should support this case soonish ... but it currently throws an error
-    if( q.eigenSinglePrecision && !q.MixedPrecision() )
-      throw std::runtime_error( "Single-precision " + q.flavour + " quark eigenpacks can't be used with double-precision guesser" );
     EigenGuessName = "guesser_" + name;
     if( ModList.params.Run.BatchSize )
     {
