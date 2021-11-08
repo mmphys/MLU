@@ -319,6 +319,7 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, doub
   const std::size_t OutLen{ OutBase.size() };
   std::vector<MesonFile> in ( FileName.size() );
   int Count{ 0 };
+  int SignFlip{ 0 };
   for( std::size_t f = 0; f < FileName.size(); ++f )
   {
     if( in[f].Load( FileName[f] ) )
@@ -372,7 +373,11 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, doub
               << std::defaultfloat
               << Ratio << std::endl;
           if( std::abs( 1. - Ratio ) > tol )
+          {
             Count++;
+            if( std::abs( 1. + Ratio ) <= tol )
+              SignFlip++;
+          }
         }
       }
     }
@@ -382,7 +387,11 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, doub
   if( Count == 0 )
     s << "Same";
   else
+  {
     s << Count << " differences";
+    if( SignFlip )
+      s << " (" << SignFlip << " sign flips)";
+  }
   s << " at tolerance " << std::scientific << std::setprecision(1) << tol;
   std::cout << s.str() << std::endl;
   return Count;
