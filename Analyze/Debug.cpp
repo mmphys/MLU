@@ -482,8 +482,8 @@ int main(int argc, char *argv[])
       {
         if( args.size() < 2 )
           std::cout << args.size() << " files to compare" << std::endl;
-        else
-          Compare( args, OutBase, tol );
+        else if( Compare( args, OutBase, tol ) )
+          iReturn = EXIT_FAILURE;
       }
       else
         for( const std::string &f : args )
@@ -498,4 +498,5 @@ int main(int argc, char *argv[])
     std::cerr << "Error: Unknown exception" << std::endl;
     iReturn = EXIT_FAILURE;
   }
+  return iReturn;
 }
