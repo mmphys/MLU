@@ -313,7 +313,62 @@ void Convert( const std::string &FileName, std::string OutBase )
 
 // Compare two Correlator files (.h5 and .xml)
 
-int Compare( const std::vector<std::string> &FileName, std::string OutBase, double tol )
+struct Comparator
+{
+public:
+  const double tol;
+  const double precision;
+  const unsigned int NumDigits;
+  // These values are the result of a comparison
+  bool bSame;
+  bool bSignFlip;
+  double Value;
+  std::string StringValue;
+protected:
+  std::stringstream ss;
+  unsigned int GetDigits( double Tol, double p )
+  {
+    if( p == 0 )
+      p = Tol;
+    unsigned int Digits = 0;
+    if( p < 1. )
+      Digits = static_cast<unsigned int>( 0.999 - std::log10( p ) );
+    return Digits;
+  }
+  void MakePos( double &Num )
+  {
+    if( Num < 0 )
+    {
+      bSignFlip = !bSignFlip;
+      Num = -Num;
+    }
+  }
+public:
+  Comparator( double Tol, double Precision )
+  : tol{Tol}, precision{Precision}, NumDigits{GetDigits(Tol,Precision)} {}
+  std::string CompareType() const { return std::string( 1, precision ? '-' : '/' ); }
+  bool Compare( double Num1, double Num2 )
+  {
+    bSignFlip = false;
+    MakePos( Num1 );
+    MakePos( Num2 );
+    if( precision )
+    {
+      Value = std::abs( Num1 - Num2 );
+      unsigned long long iNum = static_cast<unsigned long long >( Value / precision + 0.5 );
+      Value = static_cast<double>( iNum * precision );
+    }
+    else
+      Value = Num1 / Num2;
+    ss << std::setprecision( NumDigits + ( Value >= 1 ? 1 : 0 ) ) << Value;
+    StringValue = ss.str();
+    ss.str(std::string());
+    bSame = StringValue.size() == 1 && StringValue[0] == ( precision ? '0' : '1' );
+    return bSame;
+  }
+};
+
+int Compare( const std::vector<std::string> &FileName, std::string OutBase, Comparator &c )
 {
   bool b3pt{ false };
   const std::size_t OutLen{ OutBase.size() };
@@ -347,13 +402,14 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, doub
         out.open( OutBase );
       }
       static const std::string Comment{ "# " };
-      static const std::string HeadReal{ "Snk Src t Re(f1) Re(f2) Re(f2)/Re(f1)" };
-      static const std::string HeadImag{ "Snk Src t Im(f1) Im(f2) Im(f2)/Im(f1)" };
+      const std::string HeadReal{ "Snk Src t Re(f1) Re(f2) Re(f2)" + c.CompareType() + "Re(f1)" };
+      const std::string HeadImag{ "Snk Src t Im(f1) Im(f2) Im(f2)" + c.CompareType() + "Im(f1)" };
       using TReIm = double (Grid::Complex::*)() const;
       TReIm ReIm = b3pt ? static_cast<TReIm>(&Grid::Complex::imag) : static_cast<TReIm>(&Grid::Complex::real);
       out << Comment << "File 1 " << FileName[0] << Common::NewLine
           << Comment << "File 2 " << FileName[f] << Common::NewLine
-          << ( b3pt ? HeadImag : HeadReal ) << std::endl;
+          << ( b3pt ? HeadImag : HeadReal )
+          << std::endl;
       for( std::size_t channel = 0; channel < nchannel; ++channel )
       {
         if( channel == nchannel - 1 && b3pt )
@@ -363,21 +419,24 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, doub
         }
         for( std::size_t t = 0; t < Nt; ++t )
         {
-          const double Ratio{ (in[f].data[channel][t].*ReIm)() / (in[0].data[channel][t].*ReIm)() };
+          const double Num1{ (in[0].data[channel][t].*ReIm)() };
+          const double Num2{ (in[f].data[channel][t].*ReIm)() };
+          if( !c.Compare( Num1, Num2 ) )
+            Count++;
+          if( c.bSignFlip )
+            SignFlip++;
           out << Common::Gamma::NameShort( Gammas[channel][idxSnk] ) << Common::Space
               << Common::Gamma::NameShort( Gammas[channel][idxSrc] ) << Common::Space
               << t << Common::Space
-              << std::scientific
-              << (in[0].data[channel][t].*ReIm)() << Common::Space
-              << (in[f].data[channel][t].*ReIm)() << Common::Space
-              << std::defaultfloat
-              << Ratio << std::endl;
-          if( std::abs( 1. - Ratio ) > tol )
-          {
-            Count++;
-            if( std::abs( 1. + Ratio ) <= tol )
-              SignFlip++;
-          }
+              << std::scientific << std::setprecision( std::numeric_limits<double>::digits10 + 1 )
+              << Num1 << Common::Space
+              << Num2 << Common::Space
+              << c.StringValue;
+          if( !c.bSame )
+            out << " different";
+          if( c.bSignFlip )
+            out << " -";
+          out << std::endl;
         }
       }
     }
@@ -387,12 +446,11 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, doub
   if( Count == 0 )
     s << "Same";
   else
-  {
     s << Count << " differences";
-    if( SignFlip )
-      s << " (" << SignFlip << " sign flips)";
-  }
-  s << " at tolerance " << std::scientific << std::setprecision(1) << tol;
+  if( SignFlip )
+    s << " and " << SignFlip << " sign flips";
+  s << " at " << ( c.precision ? "absolute" : "relative" ) << " error " << std::scientific
+    << std::setprecision(0) << ( c.precision ? c.precision : c.tol );
   std::cout << s.str() << std::endl;
   return Count;
 }
@@ -442,6 +500,7 @@ int main(int argc, char *argv[])
       std::vector<const char *> argsRaw;
       const char * InBase = "", * OutBase = "";
       double tol{ 1e-5 };
+      double precision{ 0 };
       for( int i = 1; i < argc; ++i )
       {
         if( argv[i][0] == '-' )
@@ -454,7 +513,10 @@ int main(int argc, char *argv[])
             case 'o':
               OutBase = NextString( argc, argv, i );
               break;
-            case 't':
+            case 'd':
+              precision = Common::FromString<double>( NextString( argc, argv, i ) );
+              break;
+            case 'p':
               tol = Common::FromString<double>( NextString( argc, argv, i ) );
               break;
             case 'x':
@@ -464,6 +526,8 @@ int main(int argc, char *argv[])
             case 'h':
               std::cout << "-i Input prefix, prepended to each input file\n"
                            "-o Output prefix\n"
+                           "-d (absolute) Precision of solver (default disabled)\n"
+                           "-p (relative) tolerance of comparison (default 1e-6)\n"
                            "-x Convert input files to .xml. Otherwise compares files\n"
                            "-h This help message" << std::endl;
               break;
@@ -482,8 +546,12 @@ int main(int argc, char *argv[])
       {
         if( args.size() < 2 )
           std::cout << args.size() << " files to compare" << std::endl;
-        else if( Compare( args, OutBase, tol ) )
-          iReturn = EXIT_FAILURE;
+        else
+        {
+          Comparator c( tol, precision );
+          if( Compare( args, OutBase, c ) )
+            iReturn = EXIT_FAILURE;
+        }
       }
       else
         for( const std::string &f : args )
