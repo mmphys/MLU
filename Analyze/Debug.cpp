@@ -322,6 +322,7 @@ public:
   // These values are the result of a comparison
   bool bSame;
   bool bSignFlip;
+  bool bAltOK; // True if this passed a relative test after failing an absolute test
   double Value;
   std::string StringValue;
 protected:
@@ -349,7 +350,9 @@ public:
   std::string CompareType() const { return std::string( 1, precision ? '-' : '/' ); }
   bool Compare( double Num1, double Num2 )
   {
+    bSame = false;
     bSignFlip = false;
+    bAltOK = false;
     MakePos( Num1 );
     MakePos( Num2 );
     if( precision )
@@ -357,13 +360,26 @@ public:
       Value = std::abs( Num1 - Num2 );
       unsigned long long iNum = static_cast<unsigned long long >( Value / precision + 0.5 );
       Value = static_cast<double>( iNum * precision );
+      ss << std::setprecision( NumDigits ) << Value;
+      StringValue = ss.str();
+      bSame = StringValue.size() == 1 && StringValue[0] == '0';
     }
-    else
-      Value = Num1 / Num2;
-    ss << std::setprecision( NumDigits + ( Value >= 1 ? 1 : 0 ) ) << Value;
-    StringValue = ss.str();
+    if( !bSame && tol )
+    {
+      double tmpValue = Num1 / Num2;
+      ss.str(std::string());
+      ss << std::setprecision( NumDigits + ( tmpValue >= 1 ? 1 : 0 ) ) << tmpValue;
+      std::string tmpStringValue = ss.str();
+      bSame = tmpStringValue.size() == 1 && tmpStringValue[0] == '1';
+      if( bSame || !precision )
+      {
+        Value = tmpValue;
+        StringValue = tmpStringValue;
+        if( precision )
+          bAltOK = true;
+      }
+    }
     ss.str(std::string());
-    bSame = StringValue.size() == 1 && StringValue[0] == ( precision ? '0' : '1' );
     return bSame;
   }
 };
@@ -434,6 +450,8 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, Comp
               << c.StringValue;
           if( !c.bSame )
             out << " different";
+          if( c.bAltOK )
+            out << " rel";
           if( c.bSignFlip )
             out << " -";
           out << std::endl;
@@ -449,8 +467,11 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, Comp
     s << Count << " differences";
   if( SignFlip )
     s << " and " << SignFlip << " sign flips";
-  s << " at " << ( c.precision ? "absolute" : "relative" ) << " error " << std::scientific
-    << std::setprecision(0) << ( c.precision ? c.precision : c.tol );
+  s << " at" << std::scientific << std::setprecision(0);
+  if( c.precision )
+    s << " absolute dufference " << c.precision;
+  if( c.tol )
+    s << " relative error " << c.tol;
   std::cout << s.str() << std::endl;
   return Count;
 }
@@ -499,7 +520,8 @@ int main(int argc, char *argv[])
       bool bConvertXml{ false };
       std::vector<const char *> argsRaw;
       const char * InBase = "", * OutBase = "";
-      double tol{ 1e-5 };
+      static constexpr double tolDefault{ 1e-5 };
+      double tol{ 0 };
       double precision{ 0 };
       for( int i = 1; i < argc; ++i )
       {
@@ -526,10 +548,11 @@ int main(int argc, char *argv[])
             case 'h':
               std::cout << "-i Input prefix, prepended to each input file\n"
                            "-o Output prefix\n"
-                           "-d (absolute) Precision of solver (default disabled)\n"
-                           "-p (relative) tolerance of comparison (default 1e-6)\n"
+                           "-d compare using absolute Difference\n"
+                           "-p compare using relative Precision (error)\n"
                            "-x Convert input files to .xml. Otherwise compares files\n"
-                           "-h This help message" << std::endl;
+                           "-h This help message\n"
+                           "If neither -d nor -p specified, use -p " << tolDefault << std::endl;
               break;
             default:
               std::cout << "Warning: assuming " << argv[i] << " is a Grid option" << std::endl;
@@ -540,6 +563,9 @@ int main(int argc, char *argv[])
         else
           argsRaw.emplace_back( argv[i] );
       }
+      // Default arguments
+      if( !tol && !precision )
+        tol = tolDefault;
       // Parse arguments
       std::vector<std::string> args{ Common::glob( argsRaw.begin(), argsRaw.end(), InBase ) };
       if( !bConvertXml )

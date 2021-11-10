@@ -88,6 +88,14 @@
             argument = "/Volumes/QCD/tursa/prod/eigen/M2/Peter3/ckpoint_lat_coulomb.880_3pt_p0_m0_p_z2_meson.xml"
             isEnabled = "YES">
          </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-d 1e-6"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-p 1e-5"
+            isEnabled = "YES">
+         </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
