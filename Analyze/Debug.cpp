@@ -424,9 +424,9 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, Comp
       out << Comment << "File 1 " << FileName[0] << Common::NewLine
           << Comment << "File 2 " << FileName[f] << Common::NewLine << std::defaultfloat;
       if( c.absError )
-        out << Comment << "Absolute difference: Num2 - Num1 <= " << c.absError << Common::NewLine;
+        out << Comment << "Absolute error: Num2 - Num1 <= " << c.absError << Common::NewLine;
       if( c.relError )
-        out << Comment << "Relative error:      Num2 / Num1 <= " << c.relError << Common::NewLine;
+        out << Comment << "Relative error: Num2 / Num1 <= " << c.relError << Common::NewLine;
       out << ( b3pt ? HeadImag : HeadReal ) << std::endl;
       for( std::size_t channel = 0; channel < nchannel; ++channel )
       {
@@ -472,7 +472,7 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, Comp
     s << " and " << SignFlip << " sign flips";
   s << " at" << std::scientific << std::setprecision(0);
   if( c.absError )
-    s << " absolute difference " << c.absError;
+    s << " absolute error " << c.absError;
   if( c.relError )
     s << " relative error " << c.relError;
   std::cout << s.str() << std::endl;
