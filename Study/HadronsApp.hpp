@@ -360,6 +360,9 @@ struct AppParams
                                     ,unsigned int,  BatchSize
                                     ,unsigned int,  evBatchSize
                                     ,unsigned int,  sourceBatchSize
+#ifdef MLU_HADRONS_HAS_GUESSER_PRELOAD
+                                            ,bool,  PreLoadEigen
+#endif
 #endif
                                 )
   };
@@ -572,10 +575,13 @@ protected:
   void LoadEigenPar( TPar &epPar, HModList &ModList, Precision XformPres ) const;
   template<typename TEPLoad>
   std::string LoadEigenPack( HModList &ModList, Precision epPres ) const;
-  std::string LoadEigenPack( HModList &ModList ) const;
 #ifdef MLU_HADRONS_HAS_GUESSERS
-  template<typename TGuesser> void LoadGuessExact( HModList &ModList, const std::string &GuesserName ) const;
-  template<typename TGuesser> void LoadGuessBatch( HModList &ModList, const std::string &GuesserName ) const;
+  template<typename TGuesser>
+  void LoadGuessBatch( HModList &ModList, const std::string &GuesserName ) const;
+#ifdef MLU_HADRONS_HAS_GUESSER_PRELOAD
+  template<typename TGuesser>
+  void LoadGuessPreload( HModList &ModList, const std::string &GuesserName, const std::string &epName ) const;
+#endif
 #endif
 };
 

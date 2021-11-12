@@ -143,6 +143,7 @@
     <BatchSize>5</BatchSize>
     <evBatchSize>1</evBatchSize>
     <sourceBatchSize>60</sourceBatchSize>
+    <PreLoadEigen>true</PreLoadEigen>
   </RunPar>
   <!-- M1, scale: 2 = Moebius -->
   <HeavyM1>

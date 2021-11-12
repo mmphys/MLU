@@ -593,35 +593,7 @@ std::string ModSolver::LoadEigenPack( HModList &ModList, Precision XformPres ) c
   return EigenPackName;
 }
 
-std::string ModSolver::LoadEigenPack( HModList &ModList ) const
-{
-  std::string EigenPackName;
 #ifdef MLU_HADRONS_HAS_GUESSERS
-  if( q.eigenSinglePrecision )
-    EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackIo32>( ModList, Precision::Double );
-  else
-    EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPack>    ( ModList, Precision::Double );
-#else
-  if( !q.eigenSinglePrecision ) // Double-precision Eigen packs can be used anywhere
-    EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList, Precision::Double );
-  else if( q.MixedPrecision() ) // Single-precision Eigen packs for MP solver
-    EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackF>( ModList, Precision::Single );
-  else // Load single-precision as double-
-    EigenPackName = LoadEigenPack<MIO::LoadFermionEigenPackIo32>( ModList, Precision::Double );
-#endif
-  return EigenPackName;
-}
-
-#ifdef MLU_HADRONS_HAS_GUESSERS
-template<typename TGuesser>
-void ModSolver::LoadGuessExact( HModList &ModList, const std::string &GuesserName ) const
-{
-  typename TGuesser::Par guessPar;
-  guessPar.eigenPack = LoadEigenPack( ModList );
-  guessPar.size = q.size;
-  ModList.application.createModule<TGuesser>( GuesserName, guessPar );
-}
-
 template<typename TGuesser>
 void ModSolver::LoadGuessBatch( HModList &ModList, const std::string &GuesserName ) const
 {
@@ -631,6 +603,20 @@ void ModSolver::LoadGuessBatch( HModList &ModList, const std::string &GuesserNam
   guessPar.sourceBatchSize = ModList.params.Run.sourceBatchSize;
   ModList.application.createModule<TGuesser>( GuesserName, guessPar );
 }
+
+#ifdef MLU_HADRONS_HAS_GUESSER_PRELOAD
+template<typename TGuesser>
+void ModSolver::LoadGuessPreload( HModList &ModList, const std::string &GuesserName,
+                                  const std::string &epName ) const
+{
+  typename TGuesser::Par guessPar;
+  guessPar.eigenPack = epName;
+  guessPar.epSize = q.size;
+  guessPar.evBatchSize = ModList.params.Run.evBatchSize;
+  guessPar.sourceBatchSize = ModList.params.Run.sourceBatchSize;
+  ModList.application.createModule<TGuesser>( GuesserName, guessPar );
+}
+#endif
 #endif
 
 void ModSolver::AddDependencies( HModList &ModList ) const
@@ -642,17 +628,50 @@ void ModSolver::AddDependencies( HModList &ModList ) const
     EigenGuessName = "guesser_" + name;
     if( ModList.params.Run.BatchSize )
     {
-      if( q.eigenSinglePrecision )
-        LoadGuessBatch<MGuesser::BatchExactDeflationDIOF>( ModList, EigenGuessName );
+#ifdef MLU_HADRONS_HAS_GUESSER_PRELOAD
+      if( ModList.params.Run.PreLoadEigen )
+      {
+        // Double-precision preloaded batch guesser together with pre-loaded eigen pack
+        std::string epName;
+        if( q.eigenSinglePrecision )
+        {
+          epName = LoadEigenPack<MIO::LoadFermionEigenPackF>( ModList, Precision::Single );
+          LoadGuessPreload<MGuesser::BatchExactDeflationPreloadEPackF>( ModList, EigenGuessName, epName );
+        }
+        else
+        {
+          epName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList, Precision::Double );
+          LoadGuessPreload<MGuesser::BatchExactDeflationPreload>( ModList, EigenGuessName, epName );
+        }
+      }
       else
-        LoadGuessBatch<MGuesser::BatchExactDeflation> ( ModList, EigenGuessName );
+#endif
+      {
+        // Double-precision batch guesser, loading from single or double-precision
+        if( q.eigenSinglePrecision )
+          LoadGuessBatch<MGuesser::BatchExactDeflationDIOF>( ModList, EigenGuessName );
+        else
+          LoadGuessBatch<MGuesser::BatchExactDeflation>( ModList, EigenGuessName );
+      }
     }
     else
     {
-      LoadGuessExact<MGuesser::ExactDeflation>( ModList, EigenGuessName );
+      // Batch size == 0 -> Exact deflation. Always double-precision
+      typename MGuesser::ExactDeflation::Par guessPar;
+      if( q.eigenSinglePrecision )
+        guessPar.eigenPack = LoadEigenPack<MIO::LoadFermionEigenPackIo32>( ModList, Precision::Double );
+      else
+        guessPar.eigenPack = LoadEigenPack<MIO::LoadFermionEigenPack>    ( ModList, Precision::Double );
+      guessPar.size = q.size;
+      ModList.application.createModule<MGuesser::ExactDeflation>( EigenGuessName, guessPar );
     }
 #else
-    EigenGuessName = LoadEigenPack( ModList );
+    if( !q.eigenSinglePrecision ) // Double-precision Eigen packs can be used anywhere
+      EigenGuessName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList, Precision::Double );
+    else if( q.MixedPrecision() ) // Single-precision Eigen packs for MP solver
+      EigenGuessName = LoadEigenPack<MIO::LoadFermionEigenPackF>( ModList, Precision::Single );
+    else // Load single-precision as double-
+      EigenGuessName = LoadEigenPack<MIO::LoadFermionEigenPackIo32>( ModList, Precision::Double );
 #endif
   }
   if( q.MixedPrecision() )
