@@ -9,8 +9,8 @@
 /* Begin PBXBuildFile section */
 		680B62072729BF4A000CB627 /* VectorPackRef.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 680B62052729BF4A000CB627 /* VectorPackRef.hpp */; };
 		680B62082729BF4A000CB627 /* VectorPackRef.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 680B62062729BF4A000CB627 /* VectorPackRef.cpp */; };
-		68533D79273D654A00037700 /* BatchExactDeflation_Preload.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68533D77273D654900037700 /* BatchExactDeflation_Preload.cpp */; };
-		68533D7A273D654A00037700 /* BatchExactDeflation_Preload.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68533D78273D654A00037700 /* BatchExactDeflation_Preload.hpp */; };
+		6835520C275E672D00193B3C /* BatchExactDeflationPreload.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6835520A275E672D00193B3C /* BatchExactDeflationPreload.cpp */; };
+		6835520D275E672D00193B3C /* BatchExactDeflationPreload.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6835520B275E672D00193B3C /* BatchExactDeflationPreload.hpp */; };
 		685446C5271C87CC00EF030C /* HadronsXmlValidate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61B92271C79E700A8B197 /* HadronsXmlValidate.cpp */; };
 		685446D8271C8C4F00EF030C /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446C7271C8B7E00EF030C /* Common.cpp */; };
 		68544713271C942B00EF030C /* bootstrap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446F6271C8E5400EF030C /* bootstrap.cpp */; };
@@ -1424,9 +1424,9 @@
 /* Begin PBXFileReference section */
 		680B62052729BF4A000CB627 /* VectorPackRef.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VectorPackRef.hpp; sourceTree = "<group>"; };
 		680B62062729BF4A000CB627 /* VectorPackRef.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VectorPackRef.cpp; sourceTree = "<group>"; };
+		6835520A275E672D00193B3C /* BatchExactDeflationPreload.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BatchExactDeflationPreload.cpp; sourceTree = "<group>"; };
+		6835520B275E672D00193B3C /* BatchExactDeflationPreload.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BatchExactDeflationPreload.hpp; sourceTree = "<group>"; };
 		683A3A1F272D2B09008EB025 /* Example_wall_wall_3pt.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Example_wall_wall_3pt.cc; sourceTree = "<group>"; };
-		68533D77273D654900037700 /* BatchExactDeflation_Preload.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BatchExactDeflation_Preload.cpp; path = ../../../../Raoul/Hadrons/Hadrons/Modules/MGuesser/BatchExactDeflation_Preload.cpp; sourceTree = "<group>"; };
-		68533D78273D654A00037700 /* BatchExactDeflation_Preload.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = BatchExactDeflation_Preload.hpp; path = ../../../../Raoul/Hadrons/Hadrons/Modules/MGuesser/BatchExactDeflation_Preload.hpp; sourceTree = "<group>"; };
 		685446BE271C879B00EF030C /* HadronsXmlValidate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HadronsXmlValidate; sourceTree = BUILT_PRODUCTS_DIR; };
 		685446C7271C8B7E00EF030C /* Common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Common.cpp; sourceTree = "<group>"; };
 		685446C8271C8B7E00EF030C /* CommonLatAn.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommonLatAn.hpp; sourceTree = "<group>"; };
@@ -3376,10 +3376,10 @@
 		6870F918271CCE9A0083F930 /* MGuesser */ = {
 			isa = PBXGroup;
 			children = (
-				68533D77273D654900037700 /* BatchExactDeflation_Preload.cpp */,
-				68533D78273D654A00037700 /* BatchExactDeflation_Preload.hpp */,
 				6870F91C271CCE9A0083F930 /* BatchExactDeflation.cpp */,
 				6870F91A271CCE9A0083F930 /* BatchExactDeflation.hpp */,
+				6835520A275E672D00193B3C /* BatchExactDeflationPreload.cpp */,
+				6835520B275E672D00193B3C /* BatchExactDeflationPreload.hpp */,
 				6870F91B271CCE9A0083F930 /* ExactDeflation.cpp */,
 				6870F919271CCE9A0083F930 /* ExactDeflation.hpp */,
 			);
@@ -7192,7 +7192,6 @@
 				68F61A8A271C786700A8B197 /* sqlite3ext.h in Headers */,
 				68F61AE0271C786800A8B197 /* Gauss.hpp in Headers */,
 				68F61A86271C786700A8B197 /* Database.hpp in Headers */,
-				68533D7A273D654A00037700 /* BatchExactDeflation_Preload.hpp in Headers */,
 				68F61B51271C786800A8B197 /* Utils.hpp in Headers */,
 				68F61AB0271C786700A8B197 /* RareKaonNeutralDisc.hpp in Headers */,
 				68F61ABF271C786800A8B197 /* FreeProp.hpp in Headers */,
@@ -7211,6 +7210,7 @@
 				68F61B2A271C786800A8B197 /* DistilPar.hpp in Headers */,
 				68F61A89271C786700A8B197 /* sqlite3.h in Headers */,
 				68F61AA4271C786700A8B197 /* A2ALoop.hpp in Headers */,
+				6835520D275E672D00193B3C /* BatchExactDeflationPreload.hpp in Headers */,
 				68F61B71271C786900A8B197 /* LoadBinary.hpp in Headers */,
 				68F61A87271C786700A8B197 /* TimerArray.hpp in Headers */,
 				68F61B4E271C786800A8B197 /* TwoPoint.hpp in Headers */,
@@ -8175,7 +8175,6 @@
 				68F61B1B271C786800A8B197 /* ChargedProp.cpp in Sources */,
 				68F61B02271C786800A8B197 /* FundtoHirep.cpp in Sources */,
 				68F61AE7271C786800A8B197 /* Point.cpp in Sources */,
-				68533D79273D654A00037700 /* BatchExactDeflation_Preload.cpp in Sources */,
 				68F61B5F271C786900A8B197 /* LoadOpenQcd.cpp in Sources */,
 				68F61B4A271C786800A8B197 /* Div.cpp in Sources */,
 				68F61ACC271C786800A8B197 /* Gauss.cpp in Sources */,
@@ -8230,6 +8229,7 @@
 				68F61AF8271C786800A8B197 /* LocalCoherenceLanczos.cpp in Sources */,
 				68F61AC9271C786800A8B197 /* Momentum.cpp in Sources */,
 				68F61AD7271C786800A8B197 /* Point.cpp in Sources */,
+				6835520C275E672D00193B3C /* BatchExactDeflationPreload.cpp in Sources */,
 				68F61A88271C786700A8B197 /* sqlite3.c in Sources */,
 				68F61B27271C786800A8B197 /* LapEvec.cpp in Sources */,
 				68F61AE8271C786800A8B197 /* SourceSink.cpp in Sources */,
