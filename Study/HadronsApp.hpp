@@ -408,7 +408,13 @@ struct MultiProp : HMod
   const Quark &q;
   const std::string Solver;
   bool bDirty = false;
-  std::vector<std::vector<std::string>> SourceList; // This is a list of sources
+  struct SourceProp
+  {
+    std::string Source;
+    std::string Prop;
+    SourceProp( const std::string &source, const std::string &prop ) : Source{source}, Prop{prop} {}
+  };
+  std::vector<std::vector<SourceProp>> SourceList; // This is a list of sources
   struct ID
   {
     unsigned int Batch;
@@ -417,7 +423,7 @@ struct MultiProp : HMod
   using Map = std::map<std::string, ID>;
   Map m; // Map from source name to index in the list
   MultiProp( const std::string &Name, const Taxonomy &taxonomy, const Quark &quark, std::string solver );
-  std::string Add( HModList &ModList, std::string Source );
+  std::string Add( HModList &ModList, const std::string &Source, const std::string &PropName );
   void Write( HModList &ModList );
   virtual void AddDependencies( HModList &ModList ) const
   { throw std::runtime_error( "Bug: MultiProp::AddDependencies should never be called" ); }
@@ -431,7 +437,8 @@ struct MultiPropMap : std::map<std::string, MultiProp>
 {
   const std::string Name;
   using Map = std::map<std::string, MultiProp>;
-  std::string Add( HModList &ModList, const Taxonomy &tax, const Quark &quark, const std::string &Source );
+  std::string Add( HModList &ModList, const Taxonomy &tax, const Quark &quark, const std::string &Source,
+                   const std::string &PropName );
   void Write( HModList &ModList );
   MultiPropMap(){}
   MultiPropMap( std::string name ) : Name{ name } {}

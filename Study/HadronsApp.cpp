@@ -23,6 +23,8 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+//#define NEW_STYLE_UNPACKER
+
 #include "HadronsApp.hpp"
 
 const std::string Sep{ "_" };    // used inside filenames
@@ -191,7 +193,11 @@ MultiProp::MultiProp(const std::string &Name, const Taxonomy &taxonomy, const Qu
 
 // Make a propagator as part of a multi-propagator
 
-std::string MultiProp::Add( HModList &ModList, std::string Source )
+std::string MultiProp::Add( HModList &ModList, const std::string &Source, const std::string &
+#ifdef NEW_STYLE_UNPACKER
+                           PropName
+#endif
+                           )
 {
   Map::iterator it{ m.find( Source ) };
   if( it == m.end() )
@@ -205,15 +211,17 @@ std::string MultiProp::Add( HModList &ModList, std::string Source )
     ID NewID;
     NewID.Batch = static_cast<unsigned int>( SourceList.size() - 1 );
     NewID.Item  = static_cast<unsigned int>( SourceList[NewID.Batch].size() );
-    SourceList[NewID.Batch].push_back( Source );
+#ifndef NEW_STYLE_UNPACKER
+    std::string PropName{ sUnpack + name };
+    Append( PropName, NewID.Batch );
+    Append( PropName, NewID.Item );
+#endif
+    SourceList[NewID.Batch].push_back( SourceProp( Source, PropName ) );
     it = m.emplace( std::make_pair( Source, NewID ) ).first;
     if( NewID.Item >= ModList.params.Run.BatchSize - 1 )
       Write( ModList ); // Write out this latest batch
   }
-  std::string PropName{ sUnpack + name };
-  Append( PropName, it->second.Batch );
-  Append( PropName, it->second.Item );
-  return PropName;
+  return SourceList[it->second.Batch][it->second.Item].Prop;
 }
 
 // Write out the last Num entries as a packed solver
@@ -228,7 +236,8 @@ void MultiProp::Write( HModList &ModList )
     // Write the vector packer
     const std::string namePack{ sPack + Suffix };
     MUtilities::PropagatorVectorPackRef::Par parPack;
-    parPack.fields = SourceList.back();
+    for( const SourceProp &sp : SourceList.back() )
+      parPack.fields.push_back( sp.Source );
     ModList.application.createModule<MUtilities::PropagatorVectorPackRef>( namePack, parPack );
     // Write the multi RHS propagator
     const std::string nameProp{ sProp + Suffix };
@@ -240,7 +249,12 @@ void MultiProp::Write( HModList &ModList )
     const std::string nameUnpack{ sUnpack + Suffix };
     MUtilities::PropagatorVectorUnpack::Par parUnpack;
     parUnpack.input = nameProp;
+#ifdef NEW_STYLE_UNPACKER
+    for( const SourceProp &sp : SourceList.back() )
+      parUnpack.fields.push_back( sp.Prop );
+#else
     parUnpack.size = static_cast<unsigned int>( SourceList.back().size() );
+#endif
     ModList.application.createModule<MUtilities::PropagatorVectorUnpack>( nameUnpack, parUnpack );
   }
 }
@@ -249,7 +263,8 @@ void MultiProp::Write( HModList &ModList )
  Multi-propagator Map, One Multi-propagator per solver
  **************************/
 
-std::string MultiPropMap::Add( HModList &ML, const Taxonomy &tax, const Quark &q, const std::string &Source )
+std::string MultiPropMap::Add( HModList &ML, const Taxonomy &tax, const Quark &q, const std::string &Source,
+                               const std::string &PropName )
 {
   std::string name;
   q.AppendName( name, tax );
@@ -259,7 +274,7 @@ std::string MultiPropMap::Add( HModList &ML, const Taxonomy &tax, const Quark &q
     std::string sSolver{ ML.TakeOwnership( new ModSolver( ML, tax, q ) ) };
     it = emplace( std::make_pair( name, MultiProp( Name, tax, q, sSolver ) ) ).first;
   }
-  return it->second.Add( ML, Source );
+  return it->second.Add( ML, Source, PropName );
 }
 
 void MultiPropMap::Write( HModList &ModList )
@@ -299,7 +314,7 @@ std::string HModList::MakeProp( HModList &ModList, const Taxonomy &taxonomy, con
   if( !q.eigenPack.empty() && ModList.params.Run.BatchSize )
   {
     std::string Source{ ModList.TakeOwnership( new ModSource( ModList, taxonomy, p, t, hit ) ) };
-    PropName = Prop.Add( ModList, taxonomy, q, Source );
+    PropName = Prop.Add( ModList, taxonomy, q, Source, ModProp( ModList, taxonomy, q, p, t, hit ).Name() );
   }
   else
 #endif
@@ -318,7 +333,7 @@ std::string HModList::MakePropSeq( HModList &ML, const Taxonomy &tax, const Quar
   if( !qSeq.eigenPack.empty() && ML.params.Run.BatchSize )
   {
     std::string Source{ ML.TakeOwnership( new ModSourceSeq( ML, tax, current, deltaT, pSeq, q, p, t ) ) };
-    PropName = PropSeq.Add( ML, tax, qSeq, Source );
+    PropName = PropSeq.Add( ML, tax, qSeq, Source, ModPropSeq(ML,tax,qSeq,current,deltaT,pSeq,q,p,t).Name() );
   }
   else
 #endif
