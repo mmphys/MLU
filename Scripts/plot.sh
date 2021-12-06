@@ -25,7 +25,7 @@ my_key="${key:-top right}"
 FieldNames="${fields:-cosh}"
 RefVal=${ref:--777}
 RefErr="$err" #1 value for relative error, 2 values for low and high
-RefText="${reftext}"
+RefText="${reftext-MagicBanana}"
 do_log=${log:-0}
 SaveFile=${SaveFile:-0}
 SaveFileName="$SaveFileName"
@@ -35,6 +35,10 @@ do_whisker=0${whisker+1} #non-zero if whisker set to anything (including nothing
 do_rel=0${rel}
 got_legend=${got_legend}
 $PlotFileLegend
+PDFSize="${size}"
+my_xtics="${xtics}"
+my_ytics="${ytics}"
+LegEnh="${legenh+enhanced}"
 
 # Which field names do we plot?
 f = 1
@@ -95,20 +99,19 @@ if( SaveFile == 2 ) {
 }
 
 if( SaveFile ) {
-  if( NumFiles==1 && FileType eq "cormat" ) {
-    set term pdf size 7.25,7 fontscale 0.4
-  } else {
-    set term pdf
+  if( PDFSize ne "" ) { PDFSize="size ".PDFSize } else {
+    if( NumFiles==1 && FileType eq "cormat" ) { PDFSize="size 7.25,7 fontscale 0.4" }
   }
-  set pointsize 0.5
+  eval "set term pdfcairo ".PDFSize
+  set pointsize 0.4
   set output SaveFileName
   if( SaveLabel ne "" ) {
     set label 1 SaveLabel noenhanced at screen 1, 0.5 center rotate by -90 \
-        font "Arial,8" front textcolor "grey40" offset character -1.3, 0
+        font ",8" front textcolor "grey40" offset character -1.3, 0
   }
 }
 
-set key font "Arial,8" @my_key noenhanced
+set key @my_key noenhanced
 set xrange[@my_xrange]
 set yrange[@my_yrange]
 if( do_title ) {
@@ -147,11 +150,11 @@ if( RefVal != -777 ) {
       RefErrString=sprintf(" (-%g, +%g)", RefVal - RefErrLow, RefErrHigh - RefVal )
     }
     eval "set object 1 rect from ".RefXUnits." RefXLeft, first RefErrLow to ".RefXUnits." RefXRight, first RefErrHigh" \
-      ." fs solid 0.05 noborder fc rgb \"blue20\" behind"
+      ." fs solid 1 noborder fc rgb 0xD0D0D0 behind"
   }
   eval "set arrow from ".RefXUnits." RefXLeft, first RefVal to ".RefXUnits." RefXRight, first RefVal nohead front lc rgb \"gray40\" lw 0.25 dashtype \"-\""
-  if( RefText eq "" ) { RefText="Ref: ".sprintf("%g", RefVal).RefErrString }
-  #set label 2 RefText at screen 0, screen 0 font "Arial,8" front textcolor "grey40" offset character 0.5, 0.25
+  if( RefText eq "MagicBanana" ) { RefText="Ref: ".sprintf("%g", RefVal).RefErrString }
+  #set label 2 RefText at screen 0, screen 0 font ",8" front textcolor "grey40" offset character 0.5, 0.25
 }
 
 #AbsMin(y,low,high)=sgn(y) < 0 ? -(high) : low
@@ -161,6 +164,16 @@ if( SaveFile != 2 ) {
   # Don't do this for multi-plots, as probably best to stick to colour scheme
   set linetype 1 lc rgb 'blue'
   set linetype 2 lc rgb 'red'
+} else {
+  # This is a multi-series plot
+  set linetype 1 pt 7 lc rgb 0x0070C0 #blue
+  set linetype 2 pt 7 lc rgb 0xE36C09 #orange
+  set linetype 3 pt 7 lc rgb 0x00B050 #green
+  set linetype 4 pt 7 lc rgb 'dark-violet'
+  set linetype 5 pt 7
+  set linetype 6 pt 7
+  set linetype 7 pt 7
+  set linetype 8 pt 7
 }
 
 # The logging variable becomes a log
@@ -175,11 +188,13 @@ XF2=(1 - NumFields*NumFB*NumFiles)/2*XF1
 PlotWith="with yerrorbars"
 PlotUsing=""
 if( NumFiles==1 && FileType eq "cormat" ) {
-  set xtics rotate noenhanced
-  set ytics noenhanced
+  eval "set xtics rotate noenhanced ".my_xtics
+  eval "set ytics noenhanced ".my_ytics
   set cbrange [@my_cbrange]
   plot PlotFile matrix columnheaders rowheaders with image pixels
 } else {
+  if( my_xtics ne "" ) { eval "set xtics ".my_xtics }
+  if( my_ytics ne "" ) { eval "set ytics ".my_ytics }
 #  if( do_log ) {
 #    PlotUsing='(abs(column(word(FieldNames,fld)))) : (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( sgn(column(word(FieldNames,fld))) ? "_low" : "_high" ))) : (sgn(column(word(FieldNames,fld)))*column(word(FieldNames,fld).( sgn(column(word(FieldNames,fld))) ? "_high" : "_low" )))'
 #  } else {
@@ -204,9 +219,9 @@ if( NumFiles==1 && FileType eq "cormat" ) {
   PlotCmd=PlotCmd.my_x_axis.") : nt - ("
   PlotCmd=PlotCmd.my_x_axis."))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : "
   PlotCmd=PlotCmd.PlotUsing.' '.PlotWith
-  PlotCmd=PlotCmd.' title ( (SaveFile == 2 || got_legend) ? PlotFileLegend[File]." " : "").fb_prefix[f+1].(got_legend ? "" : word(FieldNames,fld))'
+  PlotCmd=PlotCmd.' title ( (SaveFile == 2 || got_legend) ? PlotFileLegend[File]." " : "").fb_prefix[f+1].(got_legend ? "" : word(FieldNames,fld)) '.LegEnh.' '
   #PlotCmd=PlotCmd.PlotWith.' title "ΔT = ".word("12 14 16 20 24 28 32",File)'
-  if( RefVal != -777 ) { PlotCmd=PlotCmd.", 1/0 lt 0 dashtype 21 title '".RefText."'" }
+  if( RefVal != -777 ) { if(  ) } { PlotCmd=PlotCmd.", 1/0 lt 0 dashtype 2 title '".RefText."'" }
   eval PlotCmd
 }
 EOFMark
@@ -236,8 +251,10 @@ then
   echo "whisker plot as box (1 sigma) + error bars (min/max)"
   echo "legend string containing legend for each file"
   echo "       e.g. \"'big banana' hulahoop\""
+  echo "legenh 1 for enhanced legend"
   echo "xlabel X-axis label"
   echo "ylabel X-axis label"
+  echo "size   PDF size command (e.g. \"5.75,1.75 font 'Times-New-Roman,12'\""
   exit 2
 fi
 
