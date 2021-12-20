@@ -221,7 +221,9 @@ if( NumFiles==1 && FileType eq "cormat" ) {
   PlotCmd=PlotCmd.PlotUsing.' '.PlotWith
   PlotCmd=PlotCmd.' title ( (SaveFile == 2 || got_legend) ? PlotFileLegend[File]." " : "").fb_prefix[f+1].(got_legend ? "" : word(FieldNames,fld)) '.LegEnh.' '
   #PlotCmd=PlotCmd.PlotWith.' title "ΔT = ".word("12 14 16 20 24 28 32",File)'
-  if( RefVal != -777 ) { if(  ) } { PlotCmd=PlotCmd.", 1/0 lt 0 dashtype 2 title '".RefText."'" }
+  if( RefVal != -777 && RefText ne "MagicBanana" ) {
+    PlotCmd=PlotCmd.", 1/0 lt 0 dashtype 2 title '".RefText."'"
+  }
   eval PlotCmd
 }
 EOFMark

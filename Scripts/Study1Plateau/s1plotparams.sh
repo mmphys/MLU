@@ -48,6 +48,11 @@ RefSuffix="${refsuffix}"
 do_label="${label:+x}"
 do_SaveLabel=0${savelabel+1}
 SaveLabel="${savelabel}"
+PDFSize="${size}"
+ManualTitle=0${title+1}
+ManualTitleText="${title}"
+ManualYLabel=0${ylabel+1}
+ManualYLabelText="${ylabel}"
 
 # Work out how many fields there are per column by checking for absolute minimum
 GotAbsMin=(system("awk '! /#/ {print (\$0 ~ /E0_min/) ? 1 : 0; exit}' ".word(PlotFile,1)) eq "0") ? 0 : 1
@@ -127,9 +132,10 @@ if( "${mmplotfile_pName}" ne '' ) {
 OutBase="${mmplotfile_base}.${mmplotfile_corr_all}.${mmplotfile_ops_all}."
 OutSuffix="_".xAxisName.".${mmplotfile_seed}.pdf"
 
-set term pdf
+if( PDFSize ne "" ) { PDFSize="size ".PDFSize }
+eval "set term pdfcairo ".PDFSize
 set pointsize 0.6
-set xlabel sStatDescr
+set xlabel sStatDescr font ',16'
 #set xrange [*:${stat:-*}]
 #set palette defined ( 15 "blue", 16 "red", 17 "green")
 set key @my_key
@@ -139,6 +145,12 @@ if( my_xtics ne "" ) { set xtics @my_xtics }
 stats PlotFile using "ti" nooutput
 NBlock=STATS_blocks
 #print "NBlock=".NBlock
+BlockMin=0
+BlockMax=NBlock - 1
+if( STATS_max - STATS_min == NBlock - 1 ) {
+  if( STATS_min < TIMin ) { BlockMin=TIMin - STATS_min }
+  if( STATS_max > TIMax ) { BlockMax=BlockMax - ( STATS_max - TIMax ) }
+} else { print "Blocks are not contiguous - min/max labels not set" }
 
 set yrange[@my_yrange]
 
@@ -150,14 +162,23 @@ if( do_timax ) { Condition=AppendCondition(Condition, 'column("ti") > TIMax' ) }
 if( do_stat ) { Condition=AppendCondition(Condition, 'column(xAxisCol) '.sStatCond.' stat_limit' ) }
 if( strlen( Condition ) ) { Condition=Condition.' ? NaN : ' }
 
-WithLabels='with labels font "Arial,6" rotate noenhanced left offset char 0, 0.25'
+WithLabels='with labels font ",6" rotate noenhanced left offset char 0, 0.25'
+
+  set linetype 1 pt 1 #lc rgb 0x0070C0 #blue
+  set linetype 2 pt 1 #lc rgb 0xE36C09 #orange
+  set linetype 3 pt 1 #lc rgb 0x00B050 #green
+  set linetype 4 pt 1 #lc rgb 'dark-violet'
+  set linetype 5 pt 1 #lc rgb 'red'
+  set linetype 6 pt 1 #lc rgb 'black'
+  set linetype 7 pt 1
+  set linetype 8 pt 1
 
 # Loop through all fields, plotting them
 
 if( do_label eq "x" ) {
   LabelStart=NBlock
 } else {
-  LabelStart=0
+  LabelStart=BlockMin
 }
 
 while( word(MyColumnHeadings,FieldOffset) ne "" ) {
@@ -166,9 +187,9 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   OutFile=OutBase.MyField.OutSuffix
   #print "MyField=".MyField.", OutFile=".OutFile
   set output OutFile
-  #set label 1 OutFile noenhanced at screen 1, 0 right font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
+  #set label 1 OutFile noenhanced at screen 1, 0 right font ",8" front textcolor "grey40" offset character -1, character 0.75
   if( do_SaveLabel ) { OutFileLabel=SaveLabel } else { OutFileLabel=OutFile }
-  set label 1 OutFileLabel noenhanced at screen 1, 0.5 center rotate by -90 font "Arial,8" front textcolor "grey40" offset character -1.5, character 0
+  set label 1 OutFileLabel noenhanced at screen 1, 0.5 center rotate by -90 font ",8" front textcolor "grey40" offset character -1.5, character 0
   IsEnergy=0
   if (MyField[1:1] eq "E") {
     MyFieldNoUS='a '.MyFieldNoUS
@@ -184,18 +205,24 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
         fs solid 0.05 noborder fc rgb "gray10" behind
       set arrow from graph 0, first ThisRef to graph 1, first ThisRef nohead front lc rgb "gray40" lw 0.25  dashtype "-"
       set label 2 "a ".MyField." = ".ThisRefText \
-        at screen 0, 0 font "Arial,8" front textcolor "grey40" offset character 1, character 0.75
+        at screen 0, 0 font ",8" front textcolor "grey40" offset character 1, character 0.75
     }
   }
-  MyTitle = MyFieldNoUS.FitName
-  set title MyTitle noenhanced
-  set ylabel MyFieldNoUS
+  if( ManualTitle ) {
+    if( ManualTitleText eq "" ) { unset title } else { set title ManualTitleText enhanced }
+  } else {
+    MyTitle = MyFieldNoUS.FitName
+    set title MyTitle noenhanced
+  }
+  if( ManualYLabel ) {
+    if( ManualYLabelText eq "" ) { unset ylabel } else { set ylabel ManualYLabelText font ',16' enhanced }
+  } else { set ylabel MyFieldNoUS font ',16' }
   
   plot \
-    for [idx=0:NBlock-1] PlotFile index idx using \
+    for [idx=BlockMin:BlockMax] PlotFile index idx using \
       (@Condition column(xAxisCol)):(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \
       with yerrorbars title columnheader(1), \
-    for [idx=LabelStart:NBlock-1] '' index idx using (@Condition column(xAxisCol)):(@Condition column(MyField."_high")):(column("tfLabel")) \
+    for [idx=LabelStart:BlockMax] '' index idx using (@Condition column(xAxisCol)):(@Condition column(MyField."_high")):(column("tfLabel")) \
       @WithLabels notitle
 
   if (IsEnergy) { unset object 1; unset arrow; unset label 2 }
@@ -208,19 +235,19 @@ unset logscale x
 unset yrange
 OutFile=OutBase.xAxisName.'-seq'.OutSuffix
 set output OutFile
-set label 1 OutFile noenhanced at screen 1, 0 right font "Arial,8" front textcolor "grey40" offset character -1, character 0.75
+set label 1 OutFile noenhanced at screen 1, 0 right font ",8" front textcolor "grey40" offset character -1, character 0.75
 set title sStatDescr." ".FitName noenhanced
-set ylabel sStatDescr
-set xlabel 'Sequence'
+set ylabel sStatDescr font ',16'
+set xlabel 'Sequence' font ',16'
 set key top left
 unset xtics
 
 MyField=xAxisName
 plot \
-  for [idx=0:NBlock-1] PlotFile index idx using \
+  for [idx=BlockMin:BlockMax] PlotFile index idx using \
     (@Condition column(1)):(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \
     with yerrorbars title columnheader(1), \
-  for [idx=LabelStart:NBlock-1] '' index idx using \
+  for [idx=LabelStart:BlockMax] '' index idx using \
     (@Condition column(1)):(@Condition column(MyField."_high")):(column("tfLabel")) \
     @WithLabels notitle
 EOFMark
