@@ -98,11 +98,15 @@ void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix )
   globalPar.trajCounter  = appPar.Run.trajCounter;
   globalPar.genetic      = appPar.Run.genetic;
   globalPar.runId        = appPar.Run.runId;
-  // database options
+  // result database
+  globalPar.database.resultDb = appPar.Run.dbOptions.resultDb;
+  Grid::Hadrons::makeFileDir( globalPar.database.resultDb );
+  // Specify non-zero sampling period to make statistics dB
+  globalPar.database.makeStatDb     = appPar.Run.dbOptions.statDbPeriodMs;
+  globalPar.database.statDbPeriodMs = appPar.Run.dbOptions.statDbPeriodMs;
+  // Make the application database if requested
   if( appPar.Run.dbOptions.enable )
   {
-    globalPar.database.resultDb   = appPar.Run.dbOptions.resultDb;
-    globalPar.database.makeStatDb = appPar.Run.dbOptions.makeStatDb;
     globalPar.database.applicationDb = appPar.Run.dbOptions.applicationDbPrefix + RunIDSuffix + ".db";
     Grid::Hadrons::makeFileDir( globalPar.database.applicationDb );
   }
@@ -110,6 +114,7 @@ void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix )
   globalPar.database.restoreMemoryProfile = false;
   globalPar.database.restoreSchedule = false;
   globalPar.scheduleFile = JobFilePrefix + ".sched";
+  globalPar.graphFile = JobFilePrefix + ".graph";
   globalPar.saveSchedule = true;
   application.setPar ( globalPar );
 }
@@ -350,13 +355,8 @@ void Study3::Setup( XmlReader &r )
   for( const Taxonomy &t : Taxa )
     if( t == Family::GR )
       LOG(Warning) << t << " don't swap the gamma structures at sink and source (18-Feb-2021)" << std::endl;
-  {
-    // Number of hits is optional - because I added this after performing production runs
-    std::vector<int> vHits{ Common::ArrayFromString<int>( makePar.NumHits ) };
-    if( vHits.size() > 1 )
-      throw std::runtime_error( "Number of hits should be a single int" );
-    Taxonomy::NumHits( vHits.empty() ? 1 : vHits[0] );
-  }
+  // Number of hits is optional - because I added this after performing production runs
+  Taxonomy::NumHits( Common::FromString<int>( makePar.NumHits, 1 ) );
   // Check parameters make sense
   //if( !( Run.TwoPoint || Run.HeavyQuark ||Run.HeavyAnti ) )
     //throw std::runtime_error( "At least one must be true of: TwoPoint; HeavyQuark; or HeavyAnti" );

@@ -308,13 +308,18 @@ extern const std::vector<std::string> sCorrSummaryNames;
 using SeedType = unsigned int;
 
 // Remove leading and trailing whitespace from string
-inline void Trim( std::string &s )
+// Returns true if the string contains something after the trim
+inline bool Trim( std::string &s )
 {
-  if( !s.empty() )
+  bool bHasString( !s.empty() );
+  if( bHasString )
   {
     std::size_t first{ s.find_first_not_of( WhiteSpace ) };
     if( first == std::string::npos )
+    {
       s.clear();
+      bHasString = false;
+    }
     else
     {
       std::size_t OnePastLast{ s.find_last_not_of( WhiteSpace ) + 1 };
@@ -324,6 +329,7 @@ inline void Trim( std::string &s )
         s.resize( OnePastLast );
     }
   }
+  return bHasString;
 }
 
 // Generic conversion from a string to any type
@@ -336,12 +342,33 @@ template<typename T> inline T FromString( const std::string &String )
   return t;
 }
 
+// Generic conversion from a string to any type - with a default if missing
+template<typename T> inline T FromString( const std::string &String, T Default )
+{
+  std::istringstream iss( String );
+  if( StreamEmpty( iss ) )
+    return Default;
+  T t;
+  if( !( iss >> t && StreamEmpty( iss ) ) )
+    throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
+  return t;
+}
+
 // Converting a string to a string makes a copy
 template<> inline std::string FromString<std::string>( const std::string &String )
 {
   std::string s{ String };
   Trim( s );
   return s;
+}
+
+// Converting a string to a string makes a copy - unless the string is empty, in which case we get the default
+template<> inline std::string FromString<std::string>( const std::string &String, std::string Default )
+{
+  std::string s{ String };
+  if( Trim( s ) )
+    return s;
+  return Default;
 }
 
 // Generic conversion from a string to an array of any type (comma or space separated)

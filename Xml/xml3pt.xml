@@ -107,6 +107,7 @@
       <enable>true</enable>
       <resultDb></resultDb>
       <makeStatDb>false</makeStatDb>
+      <statDbPeriodMs>1000</statDbPeriodMs>
       <applicationDbPrefix>db/</applicationDbPrefix>
     </dbOptions>
     <genetic>

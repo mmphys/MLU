@@ -337,7 +337,7 @@ struct AppParams
   GRID_SERIALIZABLE_CLASS_MEMBERS(databaseOptions,
                                   bool,         enable,
                                   std::string,  resultDb,
-                                  bool,         makeStatDb,
+                                  unsigned int, statDbPeriodMs,
                                   std::string,  applicationDbPrefix )
     };
 
@@ -360,9 +360,7 @@ struct AppParams
                                     ,unsigned int,  BatchSize
                                     ,unsigned int,  evBatchSize
                                     ,unsigned int,  sourceBatchSize
-#ifdef MLU_HADRONS_HAS_GUESSER_PRELOAD
                                             ,bool,  PreLoadEigen
-#endif
 #endif
                                 )
   };
@@ -585,10 +583,8 @@ protected:
 #ifdef MLU_HADRONS_HAS_GUESSERS
   template<typename TGuesser>
   void LoadGuessBatch( HModList &ModList, const std::string &GuesserName ) const;
-#ifdef MLU_HADRONS_HAS_GUESSER_PRELOAD
   template<typename TGuesser>
   void LoadGuessPreload( HModList &ModList, const std::string &GuesserName, const std::string &epName ) const;
-#endif
 #endif
 };
 

@@ -23,8 +23,6 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-//#define NEW_STYLE_UNPACKER
-
 #include "HadronsApp.hpp"
 
 const std::string Sep{ "_" };    // used inside filenames
@@ -193,11 +191,7 @@ MultiProp::MultiProp(const std::string &Name, const Taxonomy &taxonomy, const Qu
 
 // Make a propagator as part of a multi-propagator
 
-std::string MultiProp::Add( HModList &ModList, const std::string &Source, const std::string &
-#ifdef NEW_STYLE_UNPACKER
-                           PropName
-#endif
-                           )
+std::string MultiProp::Add( HModList &ModList, const std::string &Source, const std::string &PropName )
 {
   Map::iterator it{ m.find( Source ) };
   if( it == m.end() )
@@ -211,11 +205,6 @@ std::string MultiProp::Add( HModList &ModList, const std::string &Source, const 
     ID NewID;
     NewID.Batch = static_cast<unsigned int>( SourceList.size() - 1 );
     NewID.Item  = static_cast<unsigned int>( SourceList[NewID.Batch].size() );
-#ifndef NEW_STYLE_UNPACKER
-    std::string PropName{ sUnpack + name };
-    Append( PropName, NewID.Batch );
-    Append( PropName, NewID.Item );
-#endif
     SourceList[NewID.Batch].push_back( SourceProp( Source, PropName ) );
     it = m.emplace( std::make_pair( Source, NewID ) ).first;
     if( NewID.Item >= ModList.params.Run.BatchSize - 1 )
@@ -249,12 +238,9 @@ void MultiProp::Write( HModList &ModList )
     const std::string nameUnpack{ sUnpack + Suffix };
     MUtilities::PropagatorVectorUnpack::Par parUnpack;
     parUnpack.input = nameProp;
-#ifdef NEW_STYLE_UNPACKER
+    parUnpack.size = static_cast<unsigned int>( SourceList.back().size() );
     for( const SourceProp &sp : SourceList.back() )
       parUnpack.fields.push_back( sp.Prop );
-#else
-    parUnpack.size = static_cast<unsigned int>( SourceList.back().size() );
-#endif
     ModList.application.createModule<MUtilities::PropagatorVectorUnpack>( nameUnpack, parUnpack );
   }
 }
@@ -619,7 +605,6 @@ void ModSolver::LoadGuessBatch( HModList &ModList, const std::string &GuesserNam
   ModList.application.createModule<TGuesser>( GuesserName, guessPar );
 }
 
-#ifdef MLU_HADRONS_HAS_GUESSER_PRELOAD
 template<typename TGuesser>
 void ModSolver::LoadGuessPreload( HModList &ModList, const std::string &GuesserName,
                                   const std::string &epName ) const
@@ -632,7 +617,6 @@ void ModSolver::LoadGuessPreload( HModList &ModList, const std::string &GuesserN
   ModList.application.createModule<TGuesser>( GuesserName, guessPar );
 }
 #endif
-#endif
 
 void ModSolver::AddDependencies( HModList &ModList ) const
 {
@@ -643,7 +627,6 @@ void ModSolver::AddDependencies( HModList &ModList ) const
     EigenGuessName = "guesser_" + name;
     if( ModList.params.Run.BatchSize )
     {
-#ifdef MLU_HADRONS_HAS_GUESSER_PRELOAD
       if( ModList.params.Run.PreLoadEigen )
       {
         // Double-precision preloaded batch guesser together with pre-loaded eigen pack
@@ -660,7 +643,6 @@ void ModSolver::AddDependencies( HModList &ModList ) const
         }
       }
       else
-#endif
       {
         // Double-precision batch guesser, loading from single or double-precision
         if( q.eigenSinglePrecision )
