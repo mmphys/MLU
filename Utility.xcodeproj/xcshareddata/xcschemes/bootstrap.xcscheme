@@ -114,6 +114,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "ZF[PW]P/&apos;*&apos;.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "ZFPP/PP_h447_l_p_0_&apos;*&apos;.h5 -b 1"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

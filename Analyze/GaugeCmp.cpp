@@ -24,7 +24,7 @@
 /*  END LEGAL */
 
 #include <stdio.h>
-#include <MLU/Common.hpp>
+//#include <MLU/Common.hpp>
 #include <omp.h>
 #include <Grid/Grid.h>
 
@@ -45,7 +45,8 @@ void GaugeCompare( const std::vector<std::string> &File )
   std::vector<LatticeGaugeField> U( 3, UGrid );
   for( std::size_t f = 0; f < File.size(); ++f )
   {
-    if( !Common::FileExists( File[f] ) )
+    struct stat buf;
+    if( stat(File[f].c_str(), &buf) == -1 )
     {
       std::stringstream ss;
       ss << "Configuration " << (f+1) << " " << File[f] << " doesn't exist";
@@ -84,7 +85,7 @@ int main(int argc, char *argv[])
       Grid::Grid_init( &argc, &argv );
       try
       {
-        std::cout << Grid::GridLogMessage << MLUVersionInfoHuman() << std::endl;
+        // std::cout << Grid::GridLogMessage << MLUVersionInfoHuman() << std::endl;
         GaugeCompare( Args );
         std::cout << GridLogMessage << "Gauge comparison complete" << std::endl;
         bShowHelp = false;
@@ -105,7 +106,7 @@ int main(int argc, char *argv[])
   }
   if( bShowHelp )
   {
-    std::cout << "Compare two Grid gauge fields, report norm2(f2 - f1)\n"
-                 "Arguments are the filenames of the two gauge-fields" << std::endl;
+    std::cout << "Compare multiple Grid gauge fields, report norm2(fn - f1)\n"
+                 "Arguments are the gauge-field filenames, all of which are compared to first" << std::endl;
   }
 }
