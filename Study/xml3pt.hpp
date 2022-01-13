@@ -54,7 +54,7 @@ public:
   explicit AppMaker( const AppParams &appPar_, const std::string &sXmlTagName_ )
   : appPar{appPar_}, sXmlTagName{ sXmlTagName_ }, l( application, appPar_ ) {}
   virtual ~AppMaker() {}
-  void SetupBase( XmlReader &r, const std::string &sRunSuffix );
+  void SetupBase( XmlReader &r, const std::string &sRunSuffix, Grid::GridCartesian * grid );
   virtual std::string RunID() const = 0;
 protected:
   virtual void Setup( XmlReader &r ) = 0;

@@ -79,7 +79,7 @@ std::vector<Quark *> AppMaker::ValidateQuarkList( const std::string &sList, cons
 }
 
 // One-time initialisation
-void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix )
+void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix, Grid::GridCartesian * grid )
 {
   // Read my parameters from Xml
   read( r, "JobFilePrefix", JobFilePrefix );
@@ -108,7 +108,7 @@ void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix )
   if( appPar.Run.dbOptions.enable )
   {
     globalPar.database.applicationDb = appPar.Run.dbOptions.applicationDbPrefix + RunIDSuffix + ".db";
-    Grid::Hadrons::mkdir( Grid::Hadrons::dirname( globalPar.database.applicationDb ) );
+    Grid::Hadrons::makeFileDir( globalPar.database.applicationDb, grid );
   }
   globalPar.database.restoreModules = false;
   globalPar.database.restoreMemoryProfile = false;
@@ -138,7 +138,12 @@ int AppMaker::MakeThreePoint( int argc, char *argv[], const std::string &sXmlFil
   HadronsLogMessage.Active(GridLogMessage.isActive());
   HadronsLogIterative.Active(GridLogIterative.isActive());
   HadronsLogDebug.Active(GridLogDebug.isActive());
-  LOG(Message) << MLUVersionInfoHuman() << std::endl; \
+  LOG(Message) << MLUVersionInfoHuman() << std::endl;
+  // Make a default spacetime grid ... just in case we need to communicate
+  const Grid::Coordinate &gridDefaultLatt{ GridDefaultLatt() };
+  Grid::GridCartesian * grid = Grid::SpaceTimeGrid::makeFourDimGrid( gridDefaultLatt,
+                                                                     GridDefaultSimd(Nd,vComplex::Nsimd()),
+                                                                     GridDefaultMpi() );
   int iReturn{ EXIT_FAILURE };
   try
   {
@@ -169,14 +174,14 @@ int AppMaker::MakeThreePoint( int argc, char *argv[], const std::string &sXmlFil
     }
     if( !x.get() )
       throw std::runtime_error( StudyDescription + " not recognised" );
-    x->SetupBase( *reader, sRunSuffix );
+    x->SetupBase( *reader, sRunSuffix, grid );
     reader.reset( nullptr );
     x->Make();
     // Run or save the job
     x->application.saveParameterFile( x->JobFilePrefix + ".xml" );
     if( x->Run )
     {
-      const int GridNt = GridDefaultLatt()[Tdir];
+      const int GridNt = gridDefaultLatt[Tdir];
       if( x->appPar.Run.Nt != GridNt )
       {
         std::ostringstream os;
