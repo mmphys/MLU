@@ -108,7 +108,7 @@ void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix )
   if( appPar.Run.dbOptions.enable )
   {
     globalPar.database.applicationDb = appPar.Run.dbOptions.applicationDbPrefix + RunIDSuffix + ".db";
-    Grid::Hadrons::makeFileDir( globalPar.database.applicationDb );
+    Grid::Hadrons::mkdir( Grid::Hadrons::dirname( globalPar.database.applicationDb ) );
   }
   globalPar.database.restoreModules = false;
   globalPar.database.restoreMemoryProfile = false;
