@@ -11,7 +11,7 @@
 #include <omp.h>
 #include <Grid/Grid.h>
 
-#include <boost/spirit/home/x3/version.hpp>
+//#include <boost/spirit/home/x3/version.hpp>
 
 using Grid::operator<<;
 using Grid::operator>>;
@@ -487,8 +487,8 @@ void GridDebug(int argc, char *argv[])
   {
     std::cout << Grid::GridLogMessage << MLUVersionInfoHuman() << std::endl;
     std::cout << Grid::GridLogMessage << "Hello" << std::endl;
-    std::cout << Grid::GridLogMessage << "Boost Spirit X3 version 0x"
-              << std::hex << SPIRIT_X3_VERSION << std::dec << std::endl;
+    //std::cout << Grid::GridLogMessage << "Boost Spirit X3 version 0x"
+    //          << std::hex << SPIRIT_X3_VERSION << std::dec << std::endl;
     std::cout << Grid::GridLogMessage << MakeSeed( 0, 1 ) << std::endl;
     std::cout << Grid::GridLogMessage << MakeSeed( 5, 8 ) << std::endl;
     Debug();

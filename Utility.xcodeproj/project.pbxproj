@@ -1472,7 +1472,6 @@
 		68544700271C8F9B00EF030C /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		68544701271C8F9B00EF030C /* Xml */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Xml; sourceTree = "<group>"; };
 		68544702271C8F9B00EF030C /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
-		68544703271C8F9B00EF030C /* .Package */ = {isa = PBXFileReference; lastKnownFileType = folder; path = .Package; sourceTree = "<group>"; };
 		68544704271C8F9B00EF030C /* bootstrap.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = bootstrap.sh; sourceTree = "<group>"; };
 		68544705271C8F9B00EF030C /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
 		68544706271C8F9C00EF030C /* run */ = {isa = PBXFileReference; lastKnownFileType = folder; path = run; sourceTree = "<group>"; };
@@ -3394,7 +3393,6 @@
 				685446C6271C8B7E00EF030C /* MLU */,
 				685446E9271C8E5400EF030C /* Analyze */,
 				685446D9271C8E5400EF030C /* Study */,
-				68544703271C8F9B00EF030C /* .Package */,
 				68544706271C8F9C00EF030C /* run */,
 				68544700271C8F9B00EF030C /* Scripts */,
 				68544701271C8F9B00EF030C /* Xml */,
@@ -8527,7 +8525,6 @@
 					$Grid,
 					$Hadrons,
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/.Package/boost_1_77_0",
 					$GridPre/include,
 					$GridPkg/include,
 					$GridPkg/include/libomp,
@@ -8628,7 +8625,6 @@
 					$Grid,
 					$Hadrons,
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/.Package/boost_1_77_0",
 					$GridPre/include,
 					$GridPkg/include,
 					$GridPkg/include/libomp,

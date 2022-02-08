@@ -78,10 +78,10 @@ AC_ARG_WITH([minuit2],
     [],
     [: m4_divert_text([DEFAULTS], [with_minuit2=no])])
 
-AC_ARG_WITH([boost],
-    [AS_HELP_STRING([--with-boost=prefix],
-    [try this for a non-standard install prefix of Boost])],
-    [CPPFLAGS="-I$with_boost $CPPFLAGS"])
+#AC_ARG_WITH([boost],
+#    [AS_HELP_STRING([--with-boost=prefix],
+#    [try this for a non-standard install prefix of Boost])],
+#    [CPPFLAGS="-I$with_boost $CPPFLAGS"])
 
 # If the user hasn't specified a CXX compiler, get it from Hadrons
 
@@ -264,15 +264,15 @@ CPPFLAGS+=" `$GSLConfig --cflags`"
 #    LIBS+=" $ac_cv_search_gsl_set_error_handler"
 #fi
 
-BoostPackage="$abs_srcdir/.Package/boost_1_77_0"
-# Make sure header-only boost is available
-AC_CHECK_HEADER([boost/spirit/home/x3/version.hpp],
-                [AC_MSG_NOTICE([Pre-installed Boost headers])],
-                [AC_MSG_NOTICE([Boost headers in $BoostPackage])]
-                [CPPFLAGS+=" -I$BoostPackage"]
-                [unset ac_cv_header_boost_spirit_home_x3_version_hpp]
-                [AC_CHECK_HEADER([boost/spirit/home/x3/version.hpp],,
-                                 [AC_MSG_ERROR([Boost not available in $BoostPackage. Try bootstrap.sh?])])])
+#BoostPackage="$abs_srcdir/.Package/boost_1_77_0"
+## Make sure header-only boost is available
+#AC_CHECK_HEADER([boost/spirit/home/x3/version.hpp],
+#                [AC_MSG_NOTICE([Pre-installed Boost headers])],
+#                [AC_MSG_NOTICE([checking for Boost headers in $BoostPackage])]
+#                [CPPFLAGS+=" -I$BoostPackage"]
+#                [unset ac_cv_header_boost_spirit_home_x3_version_hpp]
+#                [AC_CHECK_HEADER([boost/spirit/home/x3/version.hpp],,
+#                                 [AC_MSG_ERROR([Boost not available in $BoostPackage. Try bootstrap.sh?])])])
 
 AC_CHECK_HEADER([Hadrons/Modules/MGuesser/BatchExactDeflationPreload.hpp],
                 [AC_DEFINE([MLU_HADRONS_HAS_GUESSERS], [], [Hadrons supports guessers])])

@@ -54,10 +54,10 @@ if  ! Download "GSL v2.7" \
       efbbf3785da0e53038be7907500628b466152dbc3c173a87de1b5eba2e23602b \
  || ! Download "Minuit2 v5.34.14" \
       http://www.cern.ch/mathlibs/sw/5_34_14/Minuit2/Minuit2-5.34.14.tar.gz \
-      2ca9a283bbc315064c0a322bc4cb74c7e8fd51f9494f7856e5159d0a0aa8c356 \
- || ! Download "Boost 1.77.0" \
-      https://boostorg.jfrog.io/artifactory/main/release/1.77.0/source/boost_1_77_0.tar.gz \
-      5347464af5b14ac54bb945dc68f1dd7c56f0dad7262816b956138fc53bcc0131
+      2ca9a283bbc315064c0a322bc4cb74c7e8fd51f9494f7856e5159d0a0aa8c356
+# || ! Download "Boost 1.77.0" \
+#      https://boostorg.jfrog.io/artifactory/main/release/1.77.0/source/boost_1_77_0.tar.gz \
+#      5347464af5b14ac54bb945dc68f1dd7c56f0dad7262816b956138fc53bcc0131
 then
   echo "Prerequisites not installed" >&2
   exit 1
