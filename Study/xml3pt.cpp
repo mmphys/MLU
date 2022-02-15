@@ -119,15 +119,15 @@ void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix, Grid::Gri
   application.setPar ( globalPar );
 }
 
-#define APP_MAKER_GLUE( ClassName, StudyName ) \
-{ \
+#define APP_MAKER_GLUE( StudyType, ClassName ) \
+case StudyType: \
   if( reader->push( StudyName ) ) \
   { \
     reader->pop(); \
     LOG(Message) << "Making " << StudyName << std::endl; \
     x.reset( new ClassName( appParams, StudyName ) ); \
   } \
-}
+  break
 
 int AppMaker::MakeThreePoint( int argc, char *argv[], const std::string &sXmlFilename, const std::string &sRunSuffix )
 {
@@ -165,12 +165,8 @@ int AppMaker::MakeThreePoint( int argc, char *argv[], const std::string &sXmlFil
     std::unique_ptr<AppMaker> x;
     switch( StudyType )
     {
-      case 2:
-        APP_MAKER_GLUE( Study2, StudyName )
-        break;
-      case 3:
-        APP_MAKER_GLUE( Study3, StudyName )
-        break;
+      APP_MAKER_GLUE( 2, Study2 );
+      APP_MAKER_GLUE( 3, Study3 );
     }
     if( !x.get() )
       throw std::runtime_error( StudyDescription + " not recognised" );
