@@ -758,6 +758,11 @@ void DumpEnv(int argc, const char * const *argv, const char * pStr = nullptr );
 // Does the specified file exist?
 bool FileExists( const std::string& Filename );
 
+// Make the ancestor directories leading up to last element
+// NB: Don't test whether this worked, so that it if this is done simultaneously
+// by many threads, it will still work
+void MakeAncestorDirs( const std::string& Filename );
+
 // Wrapper for posix glob
 template<typename Iter>
 std::vector<std::string> glob( const Iter &first, const Iter &last, const char * pszPrefix = nullptr )

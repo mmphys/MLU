@@ -148,6 +148,7 @@ BootstrapParams::BootstrapParams( const Common::CommandLine &cl, const std::stri
     throw std::runtime_error( "Auto binning only works with Auto order" );
   if( MachineName.empty() )
     throw std::invalid_argument( "Machine name can't be empty" );
+  Common::MakeAncestorDirs( outStem );
 }
 
 Common::SeedType BootstrapParams::GetSeedType( const Common::CommandLine &cl )

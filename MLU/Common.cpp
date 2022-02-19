@@ -401,6 +401,44 @@ bool FileExists( const std::string& Filename )
   return stat(Filename.c_str(), &buf) != -1;
 }
 
+// Make the ancestor directories leading up to last element
+// NB: Don't test whether this worked, so that it if this is done simultaneously
+// by many threads, it will still work
+void MakeAncestorDirs( const std::string& Filename )
+{
+  bool WasSlash{ true };
+  std::size_t SegmentStart = 0;
+  for( std::size_t i = 0; i < Filename.length(); ++i )
+  {
+    const bool IsSlash{ Filename[i] == '/' };
+    if( IsSlash )
+    {
+      if( !WasSlash )
+      {
+        // First slash after non-slash - try to make this bit
+        WasSlash = true;
+        const std::size_t SegmentLen{ i - SegmentStart };
+        // Don't bother with '.' or '..'
+        if( SegmentLen > 2 || Filename[i - SegmentLen] != '.'
+           || ( SegmentLen == 2 && Filename[i - SegmentLen + 1] != '.' ) )
+        {
+          // Make this part of the name
+          mkdir( Filename.substr( 0, i ).c_str(), 0777 );
+        }
+      }
+    }
+    else
+    {
+      if( WasSlash )
+      {
+        // First non-slash after slash - remember where this segment starts
+        WasSlash = false;
+        SegmentStart = i;
+      }
+    }
+  }
+}
+
 // Wrapper for posix gethostname()
 std::string GetHostName()
 {
