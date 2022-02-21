@@ -1084,6 +1084,7 @@ int main(int argc, const char *argv[])
       const int delta{ cl.SwitchValue<int>("delta") };
       const std::string inBase{ cl.SwitchValue<std::string>("i") };
       std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
+      Common::MakeAncestorDirs( outBaseFileName );
       const int NSamples{ cl.SwitchValue<int>("n") };
       const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
       const bool bOpSort{ !cl.GotSwitch("opnames") };

@@ -580,8 +580,10 @@ int main(int argc, const char *argv[])
       std::string TypeParams{ cl.SwitchValue<std::string>("type") };
       const std::string Type{ Common::ExtractToSeparator( TypeParams ) };
       const std::string InBase{ cl.SwitchValue<std::string>("i3") };
+      const std::string OutBase{ cl.SwitchValue<std::string>("o") };
+      Common::MakeAncestorDirs( OutBase );
       std::unique_ptr<Maker> m( Maker::Make( Type, TypeParams, InBase, cl.SwitchValue<std::string>("i2"),
-                                             cl.SwitchValue<std::string>("im"), cl.SwitchValue<std::string>("o"),
+                                             cl.SwitchValue<std::string>("im"), OutBase,
                                              std::regex( cl.SwitchValue<std::string>("ssre"),
                                                          std::regex::extended | std::regex::icase ),
                                              cl.GotSwitch("swap"),

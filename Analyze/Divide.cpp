@@ -82,6 +82,7 @@ Params::Params( const Common::CommandLine &cl )
     if( !bFirst )
       std::cout << Common::NewLine;
   }
+  Common::MakeAncestorDirs( OutBase );
 }
 
 template <typename T> typename std::enable_if<std::is_floating_point<T>::value>::type

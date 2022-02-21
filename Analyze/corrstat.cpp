@@ -63,6 +63,7 @@ int main(int argc, const char *argv[])
     };
     cl.Parse( argc, argv, list );
     std::string outStem{ cl.SwitchValue<std::string>( "o" ) };
+    Common::MakeAncestorDirs( outStem );
     std::vector<Common::Gamma::Algebra> Alg = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "a" ) );
     std::vector<std::string> Ignore{ cl.SwitchStrings( "x" ) };
     // If there are files specified on the command line, process each file

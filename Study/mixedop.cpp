@@ -873,6 +873,7 @@ int main( int argc, const char *argv[] )
       Par.Exponent = cl.SwitchValue<int>("e");
       Par.InBase = cl.SwitchValue<std::string>("i");
       Par.OutBase = cl.SwitchValue<std::string>("o");
+      Common::MakeAncestorDirs( Par.OutBase );
       const std::string modelBase{ cl.SwitchValue<std::string>("m") };
       Par.MixedOpName = cl.SwitchValue<std::string>("n");
       Par.bTryConjugate = cl.GotSwitch("c");

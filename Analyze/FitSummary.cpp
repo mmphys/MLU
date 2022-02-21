@@ -241,6 +241,7 @@ Summariser::Summariser( const Common::CommandLine &cl )
   inBase{ Common::AppendSlash( cl.SwitchValue<std::string>("i") ) },
   outBaseFileName{ Common::AppendSlash( cl.SwitchValue<std::string>("o") ) }
 {
+  Common::MakeAncestorDirs( outBaseFileName );
   for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
   {
     Common::FileNameAtt n{ sFileName, };

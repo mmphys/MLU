@@ -90,6 +90,7 @@ int main(int argc, const char *argv[])
     };
     cl.Parse( argc, argv, list );
     const std::string outPrefix{ cl.SwitchValue<std::string>( "o" ) };
+    Common::MakeAncestorDirs( outPrefix );
     std::string inFileName{ cl.SwitchValue<std::string>( "i" ) };
     // If there are files specified on the command line, process each file
     if( !cl.GotSwitch( "help" ) && cl.Args.size() )
