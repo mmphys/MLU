@@ -104,10 +104,10 @@
       <step>40</step>
     </trajCounter>
     <dbOptions>
-      <enable>true</enable>
       <resultDb></resultDb>
-      <makeStatDb>false</makeStatDb>
+      <statDbBase></statDbBase>
       <statDbPeriodMs>1000</statDbPeriodMs>
+      <enableAppDb>true</enableAppDb>
       <applicationDbPrefix>db/</applicationDbPrefix>
     </dbOptions>
     <genetic>

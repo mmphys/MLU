@@ -11,6 +11,34 @@
 		680B62082729BF4A000CB627 /* VectorPackRef.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 680B62062729BF4A000CB627 /* VectorPackRef.cpp */; };
 		6835520C275E672D00193B3C /* BatchExactDeflationPreload.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6835520A275E672D00193B3C /* BatchExactDeflationPreload.cpp */; };
 		6835520D275E672D00193B3C /* BatchExactDeflationPreload.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6835520B275E672D00193B3C /* BatchExactDeflationPreload.hpp */; };
+		684A3D8727DA218700C0ACF6 /* DistilMatrix.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D8527DA218600C0ACF6 /* DistilMatrix.hpp */; };
+		684A3D8827DA218700C0ACF6 /* DistillationVectors.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D8627DA218600C0ACF6 /* DistillationVectors.hpp */; };
+		684A3D8E27DA21ED00C0ACF6 /* DistilMesonFieldFixed.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D8927DA21EB00C0ACF6 /* DistilMesonFieldFixed.hpp */; };
+		684A3D8F27DA21ED00C0ACF6 /* DistilMesonFieldRelative.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D8A27DA21EB00C0ACF6 /* DistilMesonFieldRelative.hpp */; };
+		684A3D9027DA21ED00C0ACF6 /* DistilMesonFieldFixed.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3D8B27DA21EC00C0ACF6 /* DistilMesonFieldFixed.cpp */; };
+		684A3D9127DA21ED00C0ACF6 /* DistilUtils.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D8C27DA21EC00C0ACF6 /* DistilUtils.hpp */; };
+		684A3D9227DA21ED00C0ACF6 /* DistilMesonFieldRelative.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3D8D27DA21ED00C0ACF6 /* DistilMesonFieldRelative.cpp */; };
+		684A3D9727DA223200C0ACF6 /* LoadDistillationVectors.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D9327DA223100C0ACF6 /* LoadDistillationVectors.hpp */; };
+		684A3D9827DA223200C0ACF6 /* LoadDistillationVectors.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3D9427DA223100C0ACF6 /* LoadDistillationVectors.cpp */; };
+		684A3D9927DA223200C0ACF6 /* LoadInterlacedDistillationNoise.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D9527DA223100C0ACF6 /* LoadInterlacedDistillationNoise.hpp */; };
+		684A3D9A27DA223200C0ACF6 /* LoadInterlacedDistillationNoise.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3D9627DA223200C0ACF6 /* LoadInterlacedDistillationNoise.cpp */; };
+		684A3D9F27DA225600C0ACF6 /* ExactDistillation.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D9B27DA225400C0ACF6 /* ExactDistillation.hpp */; };
+		684A3DA027DA225600C0ACF6 /* InterlacedDistillation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3D9C27DA225400C0ACF6 /* InterlacedDistillation.cpp */; };
+		684A3DA127DA225600C0ACF6 /* ExactDistillation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3D9D27DA225500C0ACF6 /* ExactDistillation.cpp */; };
+		684A3DA227DA225600C0ACF6 /* InterlacedDistillation.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D9E27DA225500C0ACF6 /* InterlacedDistillation.hpp */; };
+		684A3DAE27DA227500C0ACF6 /* RHQInsertionVI.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3DA427DA227400C0ACF6 /* RHQInsertionVI.hpp */; };
+		684A3DAF27DA227500C0ACF6 /* RHQInsertionIII.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3DA527DA227400C0ACF6 /* RHQInsertionIII.cpp */; };
+		684A3DB027DA227500C0ACF6 /* RHQInsertionV.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3DA627DA227400C0ACF6 /* RHQInsertionV.hpp */; };
+		684A3DB127DA227500C0ACF6 /* RHQInsertionI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3DA727DA227400C0ACF6 /* RHQInsertionI.cpp */; };
+		684A3DB227DA227500C0ACF6 /* RHQInsertionIV.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3DA827DA227400C0ACF6 /* RHQInsertionIV.cpp */; };
+		684A3DB327DA227500C0ACF6 /* RHQInsertionIII.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3DA927DA227400C0ACF6 /* RHQInsertionIII.hpp */; };
+		684A3DB427DA227500C0ACF6 /* RHQInsertionV.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3DAA27DA227400C0ACF6 /* RHQInsertionV.cpp */; };
+		684A3DB527DA227500C0ACF6 /* RHQInsertionI.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3DAB27DA227400C0ACF6 /* RHQInsertionI.hpp */; };
+		684A3DB627DA227500C0ACF6 /* RHQInsertionIV.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3DAC27DA227400C0ACF6 /* RHQInsertionIV.hpp */; };
+		684A3DB727DA227500C0ACF6 /* RHQInsertionVI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3DAD27DA227400C0ACF6 /* RHQInsertionVI.cpp */; };
+		684A3DBB27DA22AF00C0ACF6 /* Test_stoch_distil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3DB827DA22AE00C0ACF6 /* Test_stoch_distil.cpp */; };
+		684A3DBC27DA22AF00C0ACF6 /* Test_highfreq_stat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3DB927DA22AF00C0ACF6 /* Test_highfreq_stat.cpp */; };
+		684A3DBD27DA22AF00C0ACF6 /* Test_exact_distil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 684A3DBA27DA22AF00C0ACF6 /* Test_exact_distil.cpp */; };
 		685446C5271C87CC00EF030C /* HadronsXmlValidate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61B92271C79E700A8B197 /* HadronsXmlValidate.cpp */; };
 		685446D8271C8C4F00EF030C /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446C7271C8B7E00EF030C /* Common.cpp */; };
 		68544713271C942B00EF030C /* bootstrap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446F6271C8E5400EF030C /* bootstrap.cpp */; };
@@ -1146,17 +1174,10 @@
 		68F61B1D271C786800A8B197 /* Scalar.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A07271C786700A8B197 /* Scalar.hpp */; };
 		68F61B1E271C786800A8B197 /* ChargedProp.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A08271C786700A8B197 /* ChargedProp.hpp */; };
 		68F61B1F271C786800A8B197 /* FreeProp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A09271C786700A8B197 /* FreeProp.cpp */; };
-		68F61B20271C786800A8B197 /* Distil.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A0B271C786700A8B197 /* Distil.hpp */; };
 		68F61B21271C786800A8B197 /* LapEvec.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A0C271C786700A8B197 /* LapEvec.hpp */; };
-		68F61B22271C786800A8B197 /* DistilVectors.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A0D271C786700A8B197 /* DistilVectors.hpp */; };
-		68F61B23271C786800A8B197 /* Noises.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A0E271C786700A8B197 /* Noises.hpp */; };
-		68F61B24271C786800A8B197 /* DistilPar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A0F271C786700A8B197 /* DistilPar.cpp */; };
 		68F61B25271C786800A8B197 /* Perambulator.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A10271C786700A8B197 /* Perambulator.hpp */; };
 		68F61B26271C786800A8B197 /* Perambulator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A11271C786700A8B197 /* Perambulator.cpp */; };
 		68F61B27271C786800A8B197 /* LapEvec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A12271C786700A8B197 /* LapEvec.cpp */; };
-		68F61B28271C786800A8B197 /* DistilVectors.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A13271C786700A8B197 /* DistilVectors.cpp */; };
-		68F61B29271C786800A8B197 /* Noises.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A14271C786700A8B197 /* Noises.cpp */; };
-		68F61B2A271C786800A8B197 /* DistilPar.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A15271C786700A8B197 /* DistilPar.hpp */; };
 		68F61B2B271C786800A8B197 /* Amputate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A1C271C786700A8B197 /* Amputate.cpp */; };
 		68F61B2C271C786800A8B197 /* FourQuark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A1D271C786700A8B197 /* FourQuark.cpp */; };
 		68F61B2D271C786800A8B197 /* Bilinear.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A1E271C786700A8B197 /* Bilinear.hpp */; };
@@ -1206,7 +1227,6 @@
 		68F61B59271C786900A8B197 /* LoadNersc.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A4D271C786700A8B197 /* LoadNersc.hpp */; };
 		68F61B5A271C786900A8B197 /* LoadPerambulator.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A4E271C786700A8B197 /* LoadPerambulator.hpp */; };
 		68F61B5B271C786900A8B197 /* SaveField.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A4F271C786700A8B197 /* SaveField.cpp */; };
-		68F61B5C271C786900A8B197 /* LoadDistilNoise.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A50271C786700A8B197 /* LoadDistilNoise.hpp */; };
 		68F61B5D271C786900A8B197 /* LoadBinary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A51271C786700A8B197 /* LoadBinary.cpp */; };
 		68F61B5E271C786900A8B197 /* SaveNersc.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A52271C786700A8B197 /* SaveNersc.hpp */; };
 		68F61B5F271C786900A8B197 /* LoadOpenQcd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A53271C786700A8B197 /* LoadOpenQcd.cpp */; };
@@ -1226,7 +1246,6 @@
 		68F61B6D271C786900A8B197 /* LoadNersc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A61271C786700A8B197 /* LoadNersc.cpp */; };
 		68F61B6E271C786900A8B197 /* LoadPerambulator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A62271C786700A8B197 /* LoadPerambulator.cpp */; };
 		68F61B6F271C786900A8B197 /* SaveField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A63271C786700A8B197 /* SaveField.hpp */; };
-		68F61B70271C786900A8B197 /* LoadDistilNoise.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A64271C786700A8B197 /* LoadDistilNoise.cpp */; };
 		68F61B71271C786900A8B197 /* LoadBinary.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A65271C786700A8B197 /* LoadBinary.hpp */; };
 		68F61B72271C786900A8B197 /* VirtualMachine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A66271C786700A8B197 /* VirtualMachine.cpp */; };
 		68F61B73271C786900A8B197 /* StatLogger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A67271C786700A8B197 /* StatLogger.cpp */; };
@@ -1435,6 +1454,38 @@
 		6835520A275E672D00193B3C /* BatchExactDeflationPreload.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BatchExactDeflationPreload.cpp; sourceTree = "<group>"; };
 		6835520B275E672D00193B3C /* BatchExactDeflationPreload.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BatchExactDeflationPreload.hpp; sourceTree = "<group>"; };
 		683A3A1F272D2B09008EB025 /* Example_wall_wall_3pt.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Example_wall_wall_3pt.cc; sourceTree = "<group>"; };
+		684A3D8127DA213500C0ACF6 /* Make.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Make.inc; sourceTree = "<group>"; };
+		684A3D8227DA213500C0ACF6 /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
+		684A3D8327DA213500C0ACF6 /* Benchmark_meson_field.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Benchmark_meson_field.cc; sourceTree = "<group>"; };
+		684A3D8427DA213500C0ACF6 /* Makefile.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.in; sourceTree = "<group>"; };
+		684A3D8527DA218600C0ACF6 /* DistilMatrix.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DistilMatrix.hpp; sourceTree = "<group>"; };
+		684A3D8627DA218600C0ACF6 /* DistillationVectors.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DistillationVectors.hpp; sourceTree = "<group>"; };
+		684A3D8927DA21EB00C0ACF6 /* DistilMesonFieldFixed.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DistilMesonFieldFixed.hpp; sourceTree = "<group>"; };
+		684A3D8A27DA21EB00C0ACF6 /* DistilMesonFieldRelative.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DistilMesonFieldRelative.hpp; sourceTree = "<group>"; };
+		684A3D8B27DA21EC00C0ACF6 /* DistilMesonFieldFixed.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DistilMesonFieldFixed.cpp; sourceTree = "<group>"; };
+		684A3D8C27DA21EC00C0ACF6 /* DistilUtils.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DistilUtils.hpp; sourceTree = "<group>"; };
+		684A3D8D27DA21ED00C0ACF6 /* DistilMesonFieldRelative.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DistilMesonFieldRelative.cpp; sourceTree = "<group>"; };
+		684A3D9327DA223100C0ACF6 /* LoadDistillationVectors.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LoadDistillationVectors.hpp; sourceTree = "<group>"; };
+		684A3D9427DA223100C0ACF6 /* LoadDistillationVectors.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadDistillationVectors.cpp; sourceTree = "<group>"; };
+		684A3D9527DA223100C0ACF6 /* LoadInterlacedDistillationNoise.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LoadInterlacedDistillationNoise.hpp; sourceTree = "<group>"; };
+		684A3D9627DA223200C0ACF6 /* LoadInterlacedDistillationNoise.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadInterlacedDistillationNoise.cpp; sourceTree = "<group>"; };
+		684A3D9B27DA225400C0ACF6 /* ExactDistillation.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ExactDistillation.hpp; sourceTree = "<group>"; };
+		684A3D9C27DA225400C0ACF6 /* InterlacedDistillation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InterlacedDistillation.cpp; sourceTree = "<group>"; };
+		684A3D9D27DA225500C0ACF6 /* ExactDistillation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExactDistillation.cpp; sourceTree = "<group>"; };
+		684A3D9E27DA225500C0ACF6 /* InterlacedDistillation.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InterlacedDistillation.hpp; sourceTree = "<group>"; };
+		684A3DA427DA227400C0ACF6 /* RHQInsertionVI.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RHQInsertionVI.hpp; sourceTree = "<group>"; };
+		684A3DA527DA227400C0ACF6 /* RHQInsertionIII.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RHQInsertionIII.cpp; sourceTree = "<group>"; };
+		684A3DA627DA227400C0ACF6 /* RHQInsertionV.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RHQInsertionV.hpp; sourceTree = "<group>"; };
+		684A3DA727DA227400C0ACF6 /* RHQInsertionI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RHQInsertionI.cpp; sourceTree = "<group>"; };
+		684A3DA827DA227400C0ACF6 /* RHQInsertionIV.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RHQInsertionIV.cpp; sourceTree = "<group>"; };
+		684A3DA927DA227400C0ACF6 /* RHQInsertionIII.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RHQInsertionIII.hpp; sourceTree = "<group>"; };
+		684A3DAA27DA227400C0ACF6 /* RHQInsertionV.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RHQInsertionV.cpp; sourceTree = "<group>"; };
+		684A3DAB27DA227400C0ACF6 /* RHQInsertionI.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RHQInsertionI.hpp; sourceTree = "<group>"; };
+		684A3DAC27DA227400C0ACF6 /* RHQInsertionIV.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RHQInsertionIV.hpp; sourceTree = "<group>"; };
+		684A3DAD27DA227400C0ACF6 /* RHQInsertionVI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RHQInsertionVI.cpp; sourceTree = "<group>"; };
+		684A3DB827DA22AE00C0ACF6 /* Test_stoch_distil.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Test_stoch_distil.cpp; sourceTree = "<group>"; };
+		684A3DB927DA22AF00C0ACF6 /* Test_highfreq_stat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Test_highfreq_stat.cpp; sourceTree = "<group>"; };
+		684A3DBA27DA22AF00C0ACF6 /* Test_exact_distil.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Test_exact_distil.cpp; sourceTree = "<group>"; };
 		685446BE271C879B00EF030C /* HadronsXmlValidate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HadronsXmlValidate; sourceTree = BUILT_PRODUCTS_DIR; };
 		685446C7271C8B7E00EF030C /* Common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Common.cpp; sourceTree = "<group>"; };
 		685446C8271C8B7E00EF030C /* CommonLatAn.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommonLatAn.hpp; sourceTree = "<group>"; };
@@ -3003,17 +3054,10 @@
 		68F61A07271C786700A8B197 /* Scalar.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Scalar.hpp; sourceTree = "<group>"; };
 		68F61A08271C786700A8B197 /* ChargedProp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ChargedProp.hpp; sourceTree = "<group>"; };
 		68F61A09271C786700A8B197 /* FreeProp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FreeProp.cpp; sourceTree = "<group>"; };
-		68F61A0B271C786700A8B197 /* Distil.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Distil.hpp; sourceTree = "<group>"; };
 		68F61A0C271C786700A8B197 /* LapEvec.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LapEvec.hpp; sourceTree = "<group>"; };
-		68F61A0D271C786700A8B197 /* DistilVectors.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DistilVectors.hpp; sourceTree = "<group>"; };
-		68F61A0E271C786700A8B197 /* Noises.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Noises.hpp; sourceTree = "<group>"; };
-		68F61A0F271C786700A8B197 /* DistilPar.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DistilPar.cpp; sourceTree = "<group>"; };
 		68F61A10271C786700A8B197 /* Perambulator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Perambulator.hpp; sourceTree = "<group>"; };
 		68F61A11271C786700A8B197 /* Perambulator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Perambulator.cpp; sourceTree = "<group>"; };
 		68F61A12271C786700A8B197 /* LapEvec.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LapEvec.cpp; sourceTree = "<group>"; };
-		68F61A13271C786700A8B197 /* DistilVectors.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DistilVectors.cpp; sourceTree = "<group>"; };
-		68F61A14271C786700A8B197 /* Noises.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Noises.cpp; sourceTree = "<group>"; };
-		68F61A15271C786700A8B197 /* DistilPar.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DistilPar.hpp; sourceTree = "<group>"; };
 		68F61A17271C786700A8B197 /* Module_in_NS.cpp.template */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Module_in_NS.cpp.template; sourceTree = "<group>"; };
 		68F61A18271C786700A8B197 /* Module_tmp_in_NS.hpp.template */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Module_tmp_in_NS.hpp.template; sourceTree = "<group>"; };
 		68F61A19271C786700A8B197 /* Module_tmp_in_NS.cpp.template */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Module_tmp_in_NS.cpp.template; sourceTree = "<group>"; };
@@ -3067,7 +3111,6 @@
 		68F61A4D271C786700A8B197 /* LoadNersc.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LoadNersc.hpp; sourceTree = "<group>"; };
 		68F61A4E271C786700A8B197 /* LoadPerambulator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LoadPerambulator.hpp; sourceTree = "<group>"; };
 		68F61A4F271C786700A8B197 /* SaveField.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SaveField.cpp; sourceTree = "<group>"; };
-		68F61A50271C786700A8B197 /* LoadDistilNoise.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LoadDistilNoise.hpp; sourceTree = "<group>"; };
 		68F61A51271C786700A8B197 /* LoadBinary.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadBinary.cpp; sourceTree = "<group>"; };
 		68F61A52271C786700A8B197 /* SaveNersc.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SaveNersc.hpp; sourceTree = "<group>"; };
 		68F61A53271C786700A8B197 /* LoadOpenQcd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadOpenQcd.cpp; sourceTree = "<group>"; };
@@ -3087,7 +3130,6 @@
 		68F61A61271C786700A8B197 /* LoadNersc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadNersc.cpp; sourceTree = "<group>"; };
 		68F61A62271C786700A8B197 /* LoadPerambulator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadPerambulator.cpp; sourceTree = "<group>"; };
 		68F61A63271C786700A8B197 /* SaveField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SaveField.hpp; sourceTree = "<group>"; };
-		68F61A64271C786700A8B197 /* LoadDistilNoise.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadDistilNoise.cpp; sourceTree = "<group>"; };
 		68F61A65271C786700A8B197 /* LoadBinary.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LoadBinary.hpp; sourceTree = "<group>"; };
 		68F61A66271C786700A8B197 /* VirtualMachine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VirtualMachine.cpp; sourceTree = "<group>"; };
 		68F61A67271C786700A8B197 /* StatLogger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = StatLogger.cpp; sourceTree = "<group>"; };
@@ -3116,7 +3158,6 @@
 		68F61B8A271C79E600A8B197 /* Test_QED_Local.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Test_QED_Local.cpp; sourceTree = "<group>"; };
 		68F61B8B271C79E700A8B197 /* Makefile.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.in; sourceTree = "<group>"; };
 		68F61B8C271C79E700A8B197 /* Test_xi_to_sigma.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Test_xi_to_sigma.cpp; sourceTree = "<group>"; };
-		68F61B8D271C79E700A8B197 /* Test_distil.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Test_distil.cpp; sourceTree = "<group>"; };
 		68F61B8E271C79E700A8B197 /* bootstrap.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = bootstrap.sh; sourceTree = "<group>"; };
 		68F61B90271C79E700A8B197 /* Contractor.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Contractor.hpp; sourceTree = "<group>"; };
 		68F61B91271C79E700A8B197 /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
@@ -3321,6 +3362,34 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		684A3D8027DA213500C0ACF6 /* benchmarks */ = {
+			isa = PBXGroup;
+			children = (
+				684A3D8327DA213500C0ACF6 /* Benchmark_meson_field.cc */,
+				684A3D8127DA213500C0ACF6 /* Make.inc */,
+				684A3D8227DA213500C0ACF6 /* Makefile.am */,
+				684A3D8427DA213500C0ACF6 /* Makefile.in */,
+			);
+			path = benchmarks;
+			sourceTree = "<group>";
+		};
+		684A3DA327DA227400C0ACF6 /* MRHQ */ = {
+			isa = PBXGroup;
+			children = (
+				684A3DA727DA227400C0ACF6 /* RHQInsertionI.cpp */,
+				684A3DAB27DA227400C0ACF6 /* RHQInsertionI.hpp */,
+				684A3DA527DA227400C0ACF6 /* RHQInsertionIII.cpp */,
+				684A3DA927DA227400C0ACF6 /* RHQInsertionIII.hpp */,
+				684A3DA827DA227400C0ACF6 /* RHQInsertionIV.cpp */,
+				684A3DAC27DA227400C0ACF6 /* RHQInsertionIV.hpp */,
+				684A3DAA27DA227400C0ACF6 /* RHQInsertionV.cpp */,
+				684A3DA627DA227400C0ACF6 /* RHQInsertionV.hpp */,
+				684A3DAD27DA227400C0ACF6 /* RHQInsertionVI.cpp */,
+				684A3DA427DA227400C0ACF6 /* RHQInsertionVI.hpp */,
+			);
+			path = MRHQ;
+			sourceTree = "<group>";
+		};
 		685446C6271C8B7E00EF030C /* MLU */ = {
 			isa = PBXGroup;
 			children = (
@@ -3482,19 +3551,19 @@
 				6874E72F271C6C790055B1E5 /* tensors */,
 				6874E9B9271C6C7D0055B1E5 /* threads */,
 				6874E594271C6C760055B1E5 /* util */,
-				6874E995271C6C7D0055B1E5 /* Makefile.am */,
+				6874E763271C6C790055B1E5 /* Config.h.in */,
 				6874E58F271C6C760055B1E5 /* DisableWarnings.h */,
+				6874E590271C6C760055B1E5 /* Eigen.inc */,
 				6874E9D2271C6C7E0055B1E5 /* Grid_Eigen_Dense.h */,
 				6874E588271C6C760055B1E5 /* Grid_Eigen_Tensor.h */,
 				6874E994271C6C7D0055B1E5 /* Grid.h */,
 				6874E9D3271C6C7E0055B1E5 /* GridCore.h */,
 				6874E587271C6C760055B1E5 /* GridQCDcore.h */,
 				6874E9BF271C6C7D0055B1E5 /* GridStd.h */,
-				6874E764271C6C790055B1E5 /* Namespace.h */,
-				6874E763271C6C790055B1E5 /* Config.h.in */,
-				6874E9D4271C6C7E0055B1E5 /* Makefile.in */,
-				6874E590271C6C760055B1E5 /* Eigen.inc */,
 				6874E5A5271C6C760055B1E5 /* Make.inc */,
+				6874E995271C6C7D0055B1E5 /* Makefile.am */,
+				6874E9D4271C6C7E0055B1E5 /* Makefile.in */,
+				6874E764271C6C790055B1E5 /* Namespace.h */,
 			);
 			path = Grid;
 			sourceTree = "<group>";
@@ -5890,6 +5959,7 @@
 			isa = PBXGroup;
 			children = (
 				68F61B7A271C797B00A8B197 /* application-template */,
+				684A3D8027DA213500C0ACF6 /* benchmarks */,
 				68F61945271C786600A8B197 /* Hadrons */,
 				68F61B7E271C79E600A8B197 /* tests */,
 				68F61B8F271C79E700A8B197 /* utilities */,
@@ -5922,6 +5992,8 @@
 				68F61963271C786600A8B197 /* Database.hpp */,
 				68F61974271C786600A8B197 /* DilutedNoise.hpp */,
 				68F61A69271C786700A8B197 /* DiskVector.hpp */,
+				684A3D8627DA218600C0ACF6 /* DistillationVectors.hpp */,
+				684A3D8527DA218600C0ACF6 /* DistilMatrix.hpp */,
 				68F61A6C271C786700A8B197 /* EigenPack.hpp */,
 				68F61951271C786600A8B197 /* Environment.cpp */,
 				68F61A6A271C786700A8B197 /* Environment.hpp */,
@@ -5978,6 +6050,7 @@
 				68F61A49271C786700A8B197 /* MIO */,
 				68F619F2271C786600A8B197 /* MNoise */,
 				68F61A1B271C786700A8B197 /* MNPR */,
+				684A3DA327DA227400C0ACF6 /* MRHQ */,
 				68F61A04271C786700A8B197 /* MScalar */,
 				68F61A31271C786700A8B197 /* MScalarSUN */,
 				68F619C8271C786600A8B197 /* MSink */,
@@ -6154,8 +6227,12 @@
 			children = (
 				68F619F3271C786600A8B197 /* CheckerboardSpinColorDiagonal.cpp */,
 				68F619F9271C786700A8B197 /* CheckerboardSpinColorDiagonal.hpp */,
+				684A3D9D27DA225500C0ACF6 /* ExactDistillation.cpp */,
+				684A3D9B27DA225400C0ACF6 /* ExactDistillation.hpp */,
 				68F619F8271C786700A8B197 /* FullVolumeSpinColorDiagonal.cpp */,
 				68F619F6271C786600A8B197 /* FullVolumeSpinColorDiagonal.hpp */,
+				684A3D9C27DA225400C0ACF6 /* InterlacedDistillation.cpp */,
+				684A3D9E27DA225500C0ACF6 /* InterlacedDistillation.hpp */,
 				68F619F7271C786700A8B197 /* SparseSpinColorDiagonal.cpp */,
 				68F619F5271C786600A8B197 /* SparseSpinColorDiagonal.hpp */,
 				68F619FA271C786700A8B197 /* TimeDilutedSpinColorDiagonal.cpp */,
@@ -6196,15 +6273,13 @@
 		68F61A0A271C786700A8B197 /* MDistil */ = {
 			isa = PBXGroup;
 			children = (
-				68F61A0B271C786700A8B197 /* Distil.hpp */,
-				68F61A0F271C786700A8B197 /* DistilPar.cpp */,
-				68F61A15271C786700A8B197 /* DistilPar.hpp */,
-				68F61A13271C786700A8B197 /* DistilVectors.cpp */,
-				68F61A0D271C786700A8B197 /* DistilVectors.hpp */,
+				684A3D8B27DA21EC00C0ACF6 /* DistilMesonFieldFixed.cpp */,
+				684A3D8927DA21EB00C0ACF6 /* DistilMesonFieldFixed.hpp */,
+				684A3D8D27DA21ED00C0ACF6 /* DistilMesonFieldRelative.cpp */,
+				684A3D8A27DA21EB00C0ACF6 /* DistilMesonFieldRelative.hpp */,
+				684A3D8C27DA21EC00C0ACF6 /* DistilUtils.hpp */,
 				68F61A12271C786700A8B197 /* LapEvec.cpp */,
 				68F61A0C271C786700A8B197 /* LapEvec.hpp */,
-				68F61A14271C786700A8B197 /* Noises.cpp */,
-				68F61A0E271C786700A8B197 /* Noises.hpp */,
 				68F61A11271C786700A8B197 /* Perambulator.cpp */,
 				68F61A10271C786700A8B197 /* Perambulator.hpp */,
 			);
@@ -6299,12 +6374,14 @@
 				68F61A60271C786700A8B197 /* LoadCoarseEigenPack.hpp */,
 				68F61A4A271C786700A8B197 /* LoadCosmHol.cpp */,
 				68F61A5E271C786700A8B197 /* LoadCosmHol.hpp */,
-				68F61A64271C786700A8B197 /* LoadDistilNoise.cpp */,
-				68F61A50271C786700A8B197 /* LoadDistilNoise.hpp */,
+				684A3D9427DA223100C0ACF6 /* LoadDistillationVectors.cpp */,
+				684A3D9327DA223100C0ACF6 /* LoadDistillationVectors.hpp */,
 				68F61A5F271C786700A8B197 /* LoadEigenPack.cpp */,
 				68F61A4C271C786700A8B197 /* LoadEigenPack.hpp */,
 				68F61A54271C786700A8B197 /* LoadField.cpp */,
 				68F61A5A271C786700A8B197 /* LoadField.hpp */,
+				684A3D9627DA223200C0ACF6 /* LoadInterlacedDistillationNoise.cpp */,
+				684A3D9527DA223100C0ACF6 /* LoadInterlacedDistillationNoise.hpp */,
 				68F61A5B271C786700A8B197 /* LoadLapEvec.cpp */,
 				68F61A55271C786700A8B197 /* LoadLapEvec.hpp */,
 				68F61A61271C786700A8B197 /* LoadNersc.cpp */,
@@ -6330,14 +6407,16 @@
 				68F61B80271C79E600A8B197 /* Test_database_concurrency.cpp */,
 				68F61B83271C79E600A8B197 /* Test_database.cpp */,
 				68F61B87271C79E600A8B197 /* Test_diskvector.cpp */,
-				68F61B8D271C79E700A8B197 /* Test_distil.cpp */,
+				684A3DBA27DA22AF00C0ACF6 /* Test_exact_distil.cpp */,
 				68F61B89271C79E600A8B197 /* Test_field_io.cpp */,
 				68F61B84271C79E600A8B197 /* Test_free_prop.cpp */,
 				68F61B82271C79E600A8B197 /* Test_hadrons_meson_3pt.cpp */,
 				68F61B81271C79E600A8B197 /* Test_hadrons_spectrum.cpp */,
+				684A3DB927DA22AF00C0ACF6 /* Test_highfreq_stat.cpp */,
 				68F61B8A271C79E600A8B197 /* Test_QED_Local.cpp */,
 				68F61B86271C79E600A8B197 /* Test_QED.cpp */,
 				68F61B7F271C79E600A8B197 /* Test_sigma_to_nucleon.cpp */,
+				684A3DB827DA22AE00C0ACF6 /* Test_stoch_distil.cpp */,
 				68F61B8C271C79E700A8B197 /* Test_xi_to_sigma.cpp */,
 			);
 			path = tests;
@@ -7165,10 +7244,14 @@
 				68F61B6C271C786900A8B197 /* LoadCoarseEigenPack.hpp in Headers */,
 				68F61AFF271C786800A8B197 /* StoutSmearing.hpp in Headers */,
 				68F61A9F271C786700A8B197 /* Baryon.hpp in Headers */,
+				684A3DAE27DA227500C0ACF6 /* RHQInsertionVI.hpp in Headers */,
 				68F61A92271C786700A8B197 /* Modules.hpp in Headers */,
 				68F61A75271C786700A8B197 /* Solver.hpp in Headers */,
+				684A3D9127DA21ED00C0ACF6 /* DistilUtils.hpp in Headers */,
+				684A3DB627DA227500C0ACF6 /* RHQInsertionIV.hpp in Headers */,
 				68F61B50271C786800A8B197 /* TrPhi.hpp in Headers */,
 				68F61B40271C786800A8B197 /* StochFreeField.hpp in Headers */,
+				684A3D9F27DA225600C0ACF6 /* ExactDistillation.hpp in Headers */,
 				68F61B58271C786900A8B197 /* LoadEigenPack.hpp in Headers */,
 				68F61B5E271C786900A8B197 /* SaveNersc.hpp in Headers */,
 				6870F914271CCE680083F930 /* GaugeTransform.hpp in Headers */,
@@ -7186,12 +7269,12 @@
 				68F61A9E271C786700A8B197 /* A2ASmearedMesonField.hpp in Headers */,
 				68F61B5A271C786900A8B197 /* LoadPerambulator.hpp in Headers */,
 				68F61B01271C786800A8B197 /* Unit.hpp in Headers */,
-				68F61B20271C786800A8B197 /* Distil.hpp in Headers */,
 				68F61AC3271C786800A8B197 /* Operators.hpp in Headers */,
 				6870F922271CCECF0083F930 /* LatticeUtilities.hpp in Headers */,
 				68F61B78271C786900A8B197 /* ModuleFactory.hpp in Headers */,
 				68F61B1E271C786800A8B197 /* ChargedProp.hpp in Headers */,
-				68F61B22271C786800A8B197 /* DistilVectors.hpp in Headers */,
+				684A3D9727DA223200C0ACF6 /* LoadDistillationVectors.hpp in Headers */,
+				684A3DB327DA227500C0ACF6 /* RHQInsertionIII.hpp in Headers */,
 				68F61B4C271C786800A8B197 /* WilsonFlow.hpp in Headers */,
 				68F61ACD271C786800A8B197 /* MomentumPhase.hpp in Headers */,
 				68F61B69271C786900A8B197 /* LoadA2AMatrixDiskVector.hpp in Headers */,
@@ -7209,6 +7292,7 @@
 				68F61B0C271C786800A8B197 /* TimeDilutedSpinColorDiagonal.hpp in Headers */,
 				68F61B25271C786800A8B197 /* Perambulator.hpp in Headers */,
 				68F61B4D271C786800A8B197 /* EMT.hpp in Headers */,
+				684A3DB027DA227500C0ACF6 /* RHQInsertionV.hpp in Headers */,
 				68F61B05271C786800A8B197 /* GaugeFix.hpp in Headers */,
 				68F61AF6271C786800A8B197 /* MADWFCG.hpp in Headers */,
 				68F61B3B271C786800A8B197 /* WilsonClover.hpp in Headers */,
@@ -7226,15 +7310,16 @@
 				68F61ADA271C786800A8B197 /* Z2Diluted.hpp in Headers */,
 				68F61A6F271C786700A8B197 /* Application.hpp in Headers */,
 				68F61AF4271C786800A8B197 /* RBPrecCG.hpp in Headers */,
+				684A3D8827DA218700C0ACF6 /* DistillationVectors.hpp in Headers */,
 				68F61AA8271C786700A8B197 /* XiToSigmaEye.hpp in Headers */,
 				68F61B41271C786800A8B197 /* TwoPointNPR.hpp in Headers */,
 				68F61B55271C786900A8B197 /* TrKinetic.hpp in Headers */,
+				684A3D8E27DA21ED00C0ACF6 /* DistilMesonFieldFixed.hpp in Headers */,
 				68DDBC7327BC36180097EF32 /* WilsonCloverHelpers.h in Headers */,
 				68F61B53271C786900A8B197 /* TransProj.hpp in Headers */,
 				68F61AEB271C786800A8B197 /* MixedPrecisionRBPrecCG.hpp in Headers */,
 				68F61B03271C786800A8B197 /* Random.hpp in Headers */,
 				68F61B1A271C786800A8B197 /* RandomField.hpp in Headers */,
-				68F61B2A271C786800A8B197 /* DistilPar.hpp in Headers */,
 				68F61A89271C786700A8B197 /* sqlite3.h in Headers */,
 				68F61AA4271C786700A8B197 /* A2ALoop.hpp in Headers */,
 				6835520D275E672D00193B3C /* BatchExactDeflationPreload.hpp in Headers */,
@@ -7266,6 +7351,7 @@
 				680B62072729BF4A000CB627 /* VectorPackRef.hpp in Headers */,
 				68F61AFE271C786800A8B197 /* UnitEm.hpp in Headers */,
 				68F61A73271C786700A8B197 /* VirtualMachine.hpp in Headers */,
+				684A3DA227DA225600C0ACF6 /* InterlacedDistillation.hpp in Headers */,
 				68F61ADB271C786800A8B197 /* Z2.hpp in Headers */,
 				68DDBC7427BC36180097EF32 /* WilsonCloverTypes.h in Headers */,
 				68F61B75271C786900A8B197 /* Environment.hpp in Headers */,
@@ -7274,6 +7360,7 @@
 				68F61B45271C786800A8B197 /* Div.hpp in Headers */,
 				68F61ADD271C786800A8B197 /* SeqGammaWall.hpp in Headers */,
 				68F61AB6271C786700A8B197 /* WeakMesonDecayKl2.hpp in Headers */,
+				684A3DB527DA227500C0ACF6 /* RHQInsertionI.hpp in Headers */,
 				68F61A90271C786700A8B197 /* A2AMatrix.hpp in Headers */,
 				68F61AAD271C786700A8B197 /* Meson.hpp in Headers */,
 				68F61A70271C786700A8B197 /* Factory.hpp in Headers */,
@@ -7286,16 +7373,17 @@
 				68DDBC7527BC36180097EF32 /* CompactWilsonCloverFermion.h in Headers */,
 				68F61B2D271C786800A8B197 /* Bilinear.hpp in Headers */,
 				68F61ABA271C786700A8B197 /* WardIdentity.hpp in Headers */,
-				68F61B23271C786800A8B197 /* Noises.hpp in Headers */,
 				68F61AA6271C786700A8B197 /* A2AMesonField.hpp in Headers */,
 				68F61B61271C786900A8B197 /* LoadLapEvec.hpp in Headers */,
-				68F61B5C271C786900A8B197 /* LoadDistilNoise.hpp in Headers */,
+				684A3D9927DA223200C0ACF6 /* LoadInterlacedDistillationNoise.hpp in Headers */,
+				684A3D8F27DA21ED00C0ACF6 /* DistilMesonFieldRelative.hpp in Headers */,
 				6870F91D271CCE9B0083F930 /* ExactDeflation.hpp in Headers */,
 				68F61AF9271C786800A8B197 /* A2AVectors.hpp in Headers */,
 				68F61B2E271C786800A8B197 /* Amputate.hpp in Headers */,
 				68F61ACE271C786800A8B197 /* JacobiSmear.hpp in Headers */,
 				68F61ADE271C786800A8B197 /* SeqConserved.hpp in Headers */,
 				68F61B0E271C786800A8B197 /* FullVolumeSpinColorDiagonal.hpp in Headers */,
+				684A3D8727DA218700C0ACF6 /* DistilMatrix.hpp in Headers */,
 				68F61AB3271C786700A8B197 /* DiscLoop.hpp in Headers */,
 				68F61B13271C786800A8B197 /* PrecisionCast.hpp in Headers */,
 				68F61AC2271C786800A8B197 /* GaugeProp.hpp in Headers */,
@@ -8174,7 +8262,6 @@
 				68F61A6E271C786700A8B197 /* Exceptions.cpp in Sources */,
 				68F61B0F271C786800A8B197 /* SparseSpinColorDiagonal.cpp in Sources */,
 				6870F915271CCE680083F930 /* GaugeTransform.cpp in Sources */,
-				68F61B28271C786800A8B197 /* DistilVectors.cpp in Sources */,
 				6870F91F271CCE9B0083F930 /* ExactDeflation.cpp in Sources */,
 				68F61AEA271C786800A8B197 /* MADWFCG.cpp in Sources */,
 				68F61B2B271C786800A8B197 /* Amputate.cpp in Sources */,
@@ -8183,6 +8270,7 @@
 				6870F920271CCE9B0083F930 /* BatchExactDeflation.cpp in Sources */,
 				68F61A76271C786700A8B197 /* Environment.cpp in Sources */,
 				68F61A9D271C786700A8B197 /* Gamma3pt.cpp in Sources */,
+				684A3D9A27DA223200C0ACF6 /* LoadInterlacedDistillationNoise.cpp in Sources */,
 				68F61AFD271C786800A8B197 /* Random.cpp in Sources */,
 				68F61ADC271C786800A8B197 /* SeqGamma.cpp in Sources */,
 				68F61B68271C786900A8B197 /* LoadA2AVectors.cpp in Sources */,
@@ -8197,8 +8285,11 @@
 				68F61B47271C786800A8B197 /* WilsonFlow.cpp in Sources */,
 				68F61AAC271C786700A8B197 /* BaryonGamma3pt.cpp in Sources */,
 				68F61B2C271C786800A8B197 /* FourQuark.cpp in Sources */,
+				684A3D9027DA21ED00C0ACF6 /* DistilMesonFieldFixed.cpp in Sources */,
 				68F61B10271C786800A8B197 /* FullVolumeSpinColorDiagonal.cpp in Sources */,
+				684A3DBC27DA22AF00C0ACF6 /* Test_highfreq_stat.cpp in Sources */,
 				68F61B63271C786900A8B197 /* LoadA2AMatrixDiskVector.cpp in Sources */,
+				684A3DBD27DA22AF00C0ACF6 /* Test_exact_distil.cpp in Sources */,
 				68F61AA0271C786700A8B197 /* WardIdentity.cpp in Sources */,
 				68F61AD2271C786800A8B197 /* Wall.cpp in Sources */,
 				68F61B06271C786800A8B197 /* UnitEm.cpp in Sources */,
@@ -8216,6 +8307,7 @@
 				68F61AF0271C786800A8B197 /* RBPrecCG.cpp in Sources */,
 				68F61AB7271C786700A8B197 /* A2ASmearedMesonField.cpp in Sources */,
 				68F61AE1271C786800A8B197 /* Convolution.cpp in Sources */,
+				684A3DB727DA227500C0ACF6 /* RHQInsertionVI.cpp in Sources */,
 				68F61AD3271C786800A8B197 /* Z2Diluted.cpp in Sources */,
 				68F61B72271C786900A8B197 /* VirtualMachine.cpp in Sources */,
 				68F61AC8271C786800A8B197 /* SeqGammaWall.cpp in Sources */,
@@ -8232,6 +8324,7 @@
 				68F61AA3271C786700A8B197 /* WeakNonEye3pt.cpp in Sources */,
 				68F61AD6271C786800A8B197 /* SeqGammaRegion.cpp in Sources */,
 				68F61AB2271C786700A8B197 /* A2AFourQuarkContraction.cpp in Sources */,
+				684A3DB427DA227500C0ACF6 /* RHQInsertionV.cpp in Sources */,
 				68F61AA7271C786700A8B197 /* Meson.cpp in Sources */,
 				68F61AF7271C786800A8B197 /* MixedPrecisionRBPrecCG.cpp in Sources */,
 				68F61B67271C786900A8B197 /* LoadLapEvec.cpp in Sources */,
@@ -8243,10 +8336,10 @@
 				68F61A97271C786700A8B197 /* Global.cpp in Sources */,
 				68F61A96271C786700A8B197 /* Application.cpp in Sources */,
 				68F61B30271C786800A8B197 /* Bilinear.cpp in Sources */,
+				684A3DB227DA227500C0ACF6 /* RHQInsertionIV.cpp in Sources */,
 				68F61B46271C786800A8B197 /* TrMag.cpp in Sources */,
 				68F61B33271C786800A8B197 /* MobiusDWF.cpp in Sources */,
 				68F61AB4271C786700A8B197 /* WeakEye3pt.cpp in Sources */,
-				68F61B29271C786800A8B197 /* Noises.cpp in Sources */,
 				68F61AB9271C786700A8B197 /* A2AAslashField.cpp in Sources */,
 				68F61B35271C786800A8B197 /* Laplacian.cpp in Sources */,
 				68F61AC6271C786800A8B197 /* Z2.cpp in Sources */,
@@ -8266,13 +8359,16 @@
 				6835520C275E672D00193B3C /* BatchExactDeflationPreload.cpp in Sources */,
 				68F61A88271C786700A8B197 /* sqlite3.c in Sources */,
 				68F61B27271C786800A8B197 /* LapEvec.cpp in Sources */,
+				684A3DA027DA225600C0ACF6 /* InterlacedDistillation.cpp in Sources */,
 				68F61AE8271C786800A8B197 /* SourceSink.cpp in Sources */,
+				684A3DBB27DA22AF00C0ACF6 /* Test_stoch_distil.cpp in Sources */,
 				68F61B6B271C786900A8B197 /* LoadEigenPack.cpp in Sources */,
 				68F61AB8271C786700A8B197 /* Baryon.cpp in Sources */,
 				68F61AE2271C786800A8B197 /* MomentumPhase.cpp in Sources */,
 				68F61AC5271C786800A8B197 /* FreeProp.cpp in Sources */,
-				68F61B70271C786900A8B197 /* LoadDistilNoise.cpp in Sources */,
 				68F61ACF271C786800A8B197 /* Random.cpp in Sources */,
+				684A3D9227DA21ED00C0ACF6 /* DistilMesonFieldRelative.cpp in Sources */,
+				684A3DA127DA225600C0ACF6 /* ExactDistillation.cpp in Sources */,
 				68F61B48271C786800A8B197 /* EMT.cpp in Sources */,
 				68F61AE9271C786800A8B197 /* Smear.cpp in Sources */,
 				68F61AFC271C786800A8B197 /* Electrify.cpp in Sources */,
@@ -8280,16 +8376,18 @@
 				68F61AE3271C786800A8B197 /* JacobiSmear.cpp in Sources */,
 				68F61B15271C786800A8B197 /* VectorUnpack.cpp in Sources */,
 				68F61B1F271C786800A8B197 /* FreeProp.cpp in Sources */,
+				684A3DB127DA227500C0ACF6 /* RHQInsertionI.cpp in Sources */,
 				68F61B5D271C786900A8B197 /* LoadBinary.cpp in Sources */,
-				68F61B24271C786800A8B197 /* DistilPar.cpp in Sources */,
 				68F61A9A271C786700A8B197 /* DiscLoop.cpp in Sources */,
 				68F61AFA271C786800A8B197 /* A2AAslashVectors.cpp in Sources */,
 				68F61B18271C786800A8B197 /* RandomVectors.cpp in Sources */,
 				68F61A8C271C786700A8B197 /* Database.cpp in Sources */,
+				684A3D9827DA223200C0ACF6 /* LoadDistillationVectors.cpp in Sources */,
 				68F61AED271C786800A8B197 /* A2AVectors.cpp in Sources */,
 				68F61AFB271C786800A8B197 /* StochEm.cpp in Sources */,
 				6870F916271CCE680083F930 /* RandomGaugeTransformation.cpp in Sources */,
 				68F61A9C271C786700A8B197 /* WeakMesonDecayKl2.cpp in Sources */,
+				684A3DAF27DA227500C0ACF6 /* RHQInsertionIII.cpp in Sources */,
 				68F61AD4271C786800A8B197 /* SeqAslash.cpp in Sources */,
 				68F61B04271C786800A8B197 /* StoutSmearing.cpp in Sources */,
 				68F61B26271C786800A8B197 /* Perambulator.cpp in Sources */,

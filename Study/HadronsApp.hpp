@@ -335,9 +335,10 @@ struct AppParams
 {
   struct databaseOptions: Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(databaseOptions,
-                                  bool,         enable,
                                   std::string,  resultDb,
+                                  std::string,  statDbBase,
                                   unsigned int, statDbPeriodMs,
+                                  bool,         enableAppDb,
                                   std::string,  applicationDbPrefix )
     };
 

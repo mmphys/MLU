@@ -106,14 +106,15 @@ bool Debug()
   using ESO = Eigen::StorageOptions;
   using TensorRank2 = Eigen::Tensor<int, 2, ESO::RowMajor>;
   using TensorGrid = Eigen::Tensor<iMatrix<Complex, 2>, 2, ESO::RowMajor>;
-  using NoiseTensor = Grid::Hadrons::MDistil::NoiseTensor;
+  using NoiseTensor = Eigen::Tensor<Complex, 4, ESO::RowMajor>;
   int Counter {};
   SingleGridTensor GT1;
   TensorRank2 t2Tall( iLong-1, iShort );
   TensorRank2 t2Wide( iShort, iLong+1 );
   TensorGrid  t2Grid( iShort, iLong );
   NoiseTensor tNoise( 2, 3, 5, 4 ); // nNoise, nT, nVec, nS
-  tNoise.MetaData.Version = 777;
+  /* TODO 2022-Mar-10 Felix's distillation changes merged - fix me
+  tNoise.MetaData.Version = 777;*/
   vGridTensor tGrid( 4 );
   vvGridTensor tGridReg( 2 );
   vvGridTensor tGridRag( 3 );
@@ -131,7 +132,7 @@ bool Debug()
   for( auto &s : t2Tall ) s = Counter++;
   for( auto &s : t2Wide ) s = Counter++;
   for( auto &s : t2Grid ) s = Counter++;
-  for( auto &s : tNoise.tensor ) s = Counter++;
+  for( auto &s : tNoise ) s = Counter++;
   for( auto &s : tGrid )
     for( auto &x : s )
       x = Counter++;
@@ -208,9 +209,10 @@ bool Debug()
   read( r, st2Noise, rNoise );
   ShowNoiseTensor( "rNoise (after  read)", rNoise.tensor, rNoise.IndexNames, rNoise.MetaData );
   read( r, st2Noise, tGoodNoise );
+  /* TODO 2022-Mar-10 Felix's distillation changes merged - fix me
   ShowNoiseTensor( "tGoodNoise", tGoodNoise.tensor, tGoodNoise.IndexNames, tGoodNoise.MetaData );
   //read( r, st2Noise, tBadNoise );
-  ShowNoiseTensor( "tBadNoise", tBadNoise.tensor, tBadNoise.IndexNames, tBadNoise.MetaData );
+  ShowNoiseTensor( "tBadNoise", tBadNoise.tensor, tBadNoise.IndexNames, tBadNoise.MetaData );*/
   vGridTensor rGrid;
   read( r, stGrid, rGrid );
   std::cout << stGrid << ": " << rGrid << std::endl;

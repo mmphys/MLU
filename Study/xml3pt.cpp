@@ -102,10 +102,10 @@ void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix, Grid::Gri
   globalPar.database.resultDb = appPar.Run.dbOptions.resultDb;
   Grid::Hadrons::makeFileDir( globalPar.database.resultDb );
   // Specify non-zero sampling period to make statistics dB
-  globalPar.database.makeStatDb     = appPar.Run.dbOptions.statDbPeriodMs;
+  globalPar.database.statDbBase     = appPar.Run.dbOptions.statDbBase;
   globalPar.database.statDbPeriodMs = appPar.Run.dbOptions.statDbPeriodMs;
   // Make the application database if requested
-  if( appPar.Run.dbOptions.enable )
+  if( appPar.Run.dbOptions.enableAppDb )
   {
     globalPar.database.applicationDb = appPar.Run.dbOptions.applicationDbPrefix + RunIDSuffix + ".db";
     Grid::Hadrons::makeFileDir( globalPar.database.applicationDb, grid );

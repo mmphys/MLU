@@ -205,24 +205,26 @@ int main(int argc, char *argv[])
   static const int Nvec{ 60 };
   static const std::string LapEvecName{ "LapEvec" };
   MDistil::LapEvec::Par lePar;
-  lePar.gauge = GaugeFieldName;
-  lePar.Stout.steps = 3;
-  lePar.Stout.rho = 0.2;
-  lePar.Cheby.PolyOrder = 11;
-  lePar.Cheby.alpha = 0.5;
-  lePar.Cheby.beta = 12.5;
-  lePar.Lanczos.Nvec = Nvec;
-  lePar.Lanczos.Nk = Nvec * 4 / 3;
-  lePar.Lanczos.Np = lePar.Lanczos.Nk - Nvec;
-  lePar.Lanczos.MaxIt = 500;
-  lePar.Lanczos.resid = 1e-8;
-  lePar.Lanczos.IRLLog = 0;
+  lePar.gauge = GaugeFieldNameSmeared;
+  //lePar.Stout.steps = 3;
+  //lePar.Stout.rho = 0.2;
+  lePar.cheby.polyOrder = 11;
+  lePar.cheby.alpha = 0.5;
+  lePar.cheby.beta = 12.5;
+  lePar.lanczos.nVec = Nvec;
+  lePar.lanczos.nK = Nvec * 4 / 3;
+  lePar.lanczos.nP = lePar.lanczos.nK - Nvec;
+  lePar.lanczos.maxIt = 500;
+  lePar.lanczos.resid = 1e-8;
+  lePar.lanczos.irlLog = 0;
   application.createModule<MDistil::LapEvec>( LapEvecName, lePar );
 
   static const std::string NoiseName{ "Noise" };
-  MDistil::Noises::Par noisePar;
+  MNoise::ExactDistillation::Par noisePar;
+  /* TODO 2022-Mar-10 Felix's distillation changes merged - fix me
   noisePar.DistilParams = "DistilPar_0"; // because it doesn't use tsrc
-  application.createModule<MDistil::Noises>( NoiseName, noisePar );
+  */
+  application.createModule<MNoise::ExactDistillation>( NoiseName, noisePar );
 
   // Loop through all quarks
   for (unsigned int i = 0; i < NumQuarks; ++i) {
@@ -233,17 +235,18 @@ int main(int argc, char *argv[])
       const std::string DistilParName{ "DistilPar" + st };
       if( i == 0 )
       {
-        MDistil::DistilPar::Par distPar;
+        /* TODO 2022-Mar-10 Felix's distillation changes merged - fix me
         distPar.tsrc = t;
         distPar.LI = Nd;
         distPar.nnoise = 1;
         distPar.nvec = Nvec;
         distPar.SI = Ns;
         distPar.TI = 1;
-        application.createModule<MDistil::DistilPar>( DistilParName, distPar );
+        application.createModule<MDistil::DistilPar>( DistilParName, distPar );*/
       }
 
       const std::string PerambName{ Prefix + st };
+      /* TODO 2022-Mar-10 Felix's distillation changes merged - fix me
       if( bMakePeramb ) {
         MDistil::Perambulator::Par pPar;
         pPar.lapevec = LapEvecName;
@@ -270,7 +273,7 @@ int main(int argc, char *argv[])
           dvPar.rho = RhoPhi[0] + st;
         dvPar.phi = RhoPhi[1] + Sep + Quarks[i].flavour + st;
         application.createModule<MDistil::DistilVectors>(DVName, dvPar);
-      }
+      }*/
     }
   }
   if( bRhoPhi ) {
