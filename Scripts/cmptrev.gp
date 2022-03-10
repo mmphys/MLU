@@ -4,7 +4,7 @@ Normalise=1
 C2TimeRev=1
 
 if( ARGC < 2 ) {
-  print ARG0." Corr1 Corr2 [Output]"
+  print ARG0." Corr1 Corr2 [Output_file [Title [Label1 [Label2 [Negate [field=corr]]]]]"
   print "Compare two correlators, second is time reversed"
   print "Normalise correlators separately on each timeslice so C1(t)=1"
   print "Output [optional] is .pdf to save"
@@ -61,33 +61,38 @@ if( ARGC >=4 && ARG4 ne "" ) {
 array Labels[NumFiles]
 Labels[1]=( ARG5 ne "" ) ? ARG5 : Files[1]
 Labels[2]=( ARG6 ne "" ) ? ARG6 : Files[2]
+IsEnhancedA=( ARG5 ne "" ) ? "enhanced" : "noenhanced"
+IsEnhancedB=( ARG6 ne "" ) ? "enhanced" : "noenhanced"
 
-# 25 fields per file joined. column 4 = corr
-#Field='corr'
-FieldNum=4 #corr
-if( strstrt(Files[1],".bootstrap") ) {
-  FieldsPerFile=48 #.bootstrap
-} else {
-  FieldsPerFile=24 #.corr
-}
+Negate=( ARG7 ne "" ) ? "-" : ""
 
+Field=( ARG8 ne "" ) ? ARG8 : 'corr'
+FieldNum=0+system("awk '!/^#/ {for(i=1;i<NF;++i){if($i==\"".Field."\"){print i;exit}}}' ".Files[1])
+#FieldsPerFile=0+system("awk '!/^#/ {print NF;exit}' ".Files[1])
+#print Field."=".sprintf("%d", FieldNum)." of ".sprintf("%d", FieldsPerFile)
+
+# Set up Awk command to read in the fields we're interested in only
+AwkPart1="awk '\\''!/(^#|^t)/ {if( $1 >= 0 && $1 <= ".DeltaT." ) print "
+AwkPart2="$1"
+do for [i = -1:1] {
+  AwkPart2=AwkPart2.",$".sprintf("%d",FieldNum+i) }
+AwkPart2=AwkPart2."}'\\'' "
+
+Command="< exec bash -c 'join <(".AwkPart1.AwkPart2.Files[1].") <("
 if( C2TimeRev ) {
-  Command="< exec bash -c 'join <(sort -b ".Files[1].") <(awk '\\''!/(^#|^t)/ {printf ".DeltaT." - $1 \" \"; for (i=2; i<NF; i++) printf $i \" \"; print $NF}'\\'' ".Files[2]." | sort -b)'"
+  Command=Command.AwkPart1.sprintf("%d",DeltaT)."-".AwkPart2.Files[2]."|sort -n"
 } else {
-  Command="< exec bash -c 'join <(sort -b ".Files[1].") <(sort -b ".Files[2].")'"
+  Command=Command.AwkPart1.AwkPart2.Files[2]
 }
+Command=Command.")'"
 #print Command
 
-if( Normalise ) {
-  UsingC1="(1):(column(FieldNum-1)/column(FieldNum)):(column(FieldNum+1)/column(FieldNum))"
-  UsingC2="(column(FieldNum+FieldsPerFile  )/column(FieldNum)):(column(FieldNum+FieldsPerFile-1)/column(FieldNum)):(column(FieldNum+FieldsPerFile+1)/column(FieldNum))"
-} else {
-  UsingC1="(column(FieldNum)):(column(FieldNum-1)):(column(FieldNum+1))"
-  UsingC2="(column(FieldNum+FieldsPerFile )):(column(FieldNum+FieldsPerFile-1)):(column(FieldNum+FieldsPerFile+1))"
-}
+sNorm=Normalise ? "/column(3)" : ""
+UsingC1="(column(3)".sNorm."):(column(2)".sNorm."):(column(4)".sNorm.")"
+UsingC2="(".Negate."column(6)".sNorm."):(".Negate."column(5)".sNorm."):(".Negate."column(7)".sNorm.")"
 
 #set yrange [-4:6]
 
 plot Command \
-     using 1:@UsingC1 with yerrorbars title Labels[1] noenhanced lines MyColour[1], \
-  '' using ($1+0.1):@UsingC2 with yerrorbars title Labels[2] noenhanced  lines MyColour[2]
+     using 1:@UsingC1 with yerrorbars title Labels[1] @IsEnhancedA lines MyColour[1], \
+  '' using ($1+0.1):@UsingC2 with yerrorbars title Labels[2] @IsEnhancedB  lines MyColour[2]

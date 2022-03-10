@@ -13,6 +13,8 @@ build*/
 
 /MLUconfig.h.in
 
+# Ignore the link to the currently active plot ensemble
+Scripts/Plot/Ensemble.sh
 
 
 

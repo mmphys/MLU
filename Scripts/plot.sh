@@ -39,6 +39,8 @@ PDFSize="${size}"
 my_xtics="${xtics}"
 my_ytics="${ytics}"
 LegEnh="${legenh+enhanced}"
+Negate="$negate"
+XRevT="$xrevt"
 
 # Which field names do we plot?
 f = 1
@@ -81,6 +83,19 @@ if( do_log ) {
 PlotFile="$PlotFile"
 NumFiles=words(PlotFile)
 FileType="${mmplotfile_type}"
+
+#while(words(my_x_axis) < NumFiles) { my_x_axis=my_x_axis." ".word(my_x_axis,words(my_x_axis)) }
+array XRevA[NumFiles]
+do for [i=1:NumFiles] {
+  if( i <= words(XRevT) ) {
+    eval 'XRevA[i]='.word(XRevT,i)
+  } else {
+    XRevA[i]=0
+  }
+  #print sprintf("XRevA[%d]=",i).XRevA[i]
+}
+GetXAxis(X,File)=XRevA[File] == 0 ? X : XRevA[File] - X
+my_x_axis='GetXAxis('.my_x_axis.',File)'
 
 # Work out whether we have absolute minimum ... and can therefore do box and whiskers
 if( do_whisker ) {
@@ -179,6 +194,11 @@ if( SaveFile != 2 ) {
 # The logging variable becomes a log
 if( do_log ) { set logscale y }
 
+# Function to get a field - potentially negated
+GetField(Suffix)='('.'(word(Negate,File) eq "-" ? -1 : 1)*column(word(FieldNames,fld)."'.Suffix.'"))'
+# Function to get the x-axis for a file
+#GetXAxis()=''
+
 # Work out how much to offset each series by
 NumFields=words(FieldNames)
 NumFB=fb_max - fb_min + 1
@@ -200,20 +220,21 @@ if( NumFiles==1 && FileType eq "cormat" ) {
 #  } else {
     if( do_whisker ) {
       PlotWith="with candlesticks whiskerbars"
-      PlotUsing='(column(word(FieldNames,fld)."_low")) : (column(word(FieldNames,fld)."_min")) : (column(word(FieldNames,fld)."_max")) : (column(word(FieldNames,fld)."_high"))'
+      PlotUsing=GetField("_low").' : '.GetField("_min").' : '.GetField("_max").' : '.GetField("_high")
     } else {
       if( do_rel ) {
         if( do_rel == 1 ) {
-          PlotUsing='(1) : (column(word(FieldNames,fld)."_low") / column(word(FieldNames,fld))) : (column(word(FieldNames,fld)."_high") / column(word(FieldNames,fld)))'
+          PlotUsing='(1):('.GetField("_low").'/'.GetField("").'):('.GetField("_high").'/'.GetField("").')'
         } else {
           PlotWith=""
-          PlotUsing='((column(word(FieldNames,fld)."_high") - column(word(FieldNames,fld)."_low")) / (2 * column(word(FieldNames,fld))))'
+          PlotUsing='(('.GetField("_high").' - '.GetField("_low").')/(2*'.GetField("").'))'
         }
       } else {
-        PlotUsing='(column(word(FieldNames,fld))) : (column(word(FieldNames,fld)."_low")) : (column(word(FieldNames,fld)."_high"))'
+        PlotUsing=GetField("").' : '.GetField("_low").' : '.GetField("_high")
         }
     }
 #  }
+  #print 'PlotUsing="'.PlotUsing.'"'
   PlotCmd="plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] word(PlotFile,File) using ((("
   PlotCmd=PlotCmd.my_x_axis.") == 0 ? (f==0 ? 0 : 1/0) : f==0 ? ("
   PlotCmd=PlotCmd.my_x_axis.") : nt - ("
@@ -224,6 +245,7 @@ if( NumFiles==1 && FileType eq "cormat" ) {
   if( RefVal != -777 && RefText ne "MagicBanana" ) {
     PlotCmd=PlotCmd.", 1/0 lt 0 dashtype 2 title '".RefText."'"
   }
+  #print PlotCmd
   eval PlotCmd
 }
 EOFMark
@@ -241,7 +263,7 @@ then
   echo "ref    y-value for reference line"
   echo "err    error for reference line e.g. \"0.5\" for +/- 0.5 or low and high values"
   echo "reftext text for reference line"
-  echo "log    1 to plot y on log scale, -1 to negate before plotting"
+  echo "log    1 to plot y on log scale, (-1 to negate before plotting - not true any more?)"
   echo "rel    plot relative error 1=error bars, 2=error (does nothing on log scale)"
   echo "title  Title for the plot"
   echo "offset X-axis offset between series, 0 to disable (default: 0.05)"
@@ -257,6 +279,8 @@ then
   echo "xlabel X-axis label"
   echo "ylabel X-axis label"
   echo "size   PDF size command (e.g. \"5.75,1.75 font 'Times-New-Roman,12'\""
+  echo "negate One string per file. If any set to '-' then the field value is negated"
+  echo "xrevt  One value per file. Any non-zero value means t -> xrevt - t"
   exit 2
 fi
 
