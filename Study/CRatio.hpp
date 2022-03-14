@@ -2,7 +2,7 @@
  
  Create Ratios, e.g. R1, R2 and associated values such as Z_V
  Source file: Ratio.hpp
- Copyright (C) 2020-2021
+ Copyright (C) 2020-2022
  Author: Michael Marshall<Michael.Marshall@ed.ac.uk>
  
  This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,9 @@
 using Scalar = double;
 using Fold = Common::Fold<Scalar>;
 using Model = Common::Model<Scalar>;
+using Vector = Common::Vector<Scalar>;
+
+extern const std::string DefaultColumnName;
 
 enum class Freeze
 {
@@ -41,44 +44,49 @@ enum class Freeze
   One
 };
 
-// Info about a model
-struct ModelInfo
+inline void Append( std::string &s, const std::string &Add )
 {
-  Model m;
-  int idxE0;  // Parameter Index of E0
-  std::string FileName2pt; // Filename of the two-point function containing the raw data
-};
+  s.append( Common::Underscore );
+  s.append( Add );
+}
 
 // A quark with a sepecified momentum
-using QP=std::pair<std::string, Common::Momentum>;
+struct QP
+{
+  std::string q;
+  Common::FileNameMomentum p;
+  QP( const std::string &Q, const Common::FileNameMomentum &P ) : q{Q}, p{P} {}
+};
 
 // Case insensitive compare of QP
 struct LessQP
 {
   bool operator()( const QP &lhs, const QP &rhs ) const
   {
-    int i = Common::CompareIgnoreCase( lhs.first, rhs.first );
+    int i = Common::CompareIgnoreCase( lhs.q, rhs.q );
     if( i )
       return i < 0;
-    return lhs.second < rhs.second;
+    return lhs.p < rhs.p;
   }
 };
 
 // Map from QP -> ModelInfo
-struct QPMapModelInfo : public std::map<QP, ModelInfo, LessQP>
+/*struct QPMapModelInfo : public std::map<QP, ModelInfo, LessQP>
 {
   int MaxModelSamples;
   Common::SeedType Seed;
-  QPMapModelInfo( const std::string &FitListName, const std::string &modelBase, const std::string &C2Base );
-};
+  QPMapModelInfo( const std::string &Filename,
+                  const std::string &modelBase, const std::string &C2Base );
+};*/
 
 // A quark with a sepecified DeltaT
 struct QDT
 {
   std::string q;
-  int deltaT;
+  int deltaT = 0;
   std::string opSnk;
   std::string opSrc;
+  QDT() {}
   QDT( std::string q_, int deltaT_, const std::string &opSnk_, const std::string &opSrc_ )
   : q{q_}, deltaT{deltaT_}, opSnk{opSnk_}, opSrc{opSrc_} {}
 };
@@ -102,60 +110,120 @@ struct LessQDT
 };
 
 // Map from a DeltaT -> ModelInfo
-struct QDTMapModelInfo : public std::map<QDT, ModelInfo, LessQDT>
+/*struct QDTMapModelInfo : public std::map<QDT, ModelInfo, LessQDT>
 {
   int MaxModelSamples;
   Common::SeedType Seed;
   QDTMapModelInfo( const std::string &FitListName, const std::string &modelBase, const std::string &C2Base );
+};*/
+
+// File cache
+// BEWARE: Loading files, i.e. GetIndex(), can invalidate FileT references (by moving Files)
+//         DO NOT keep FileT references around across GetIndex() calls
+template<typename FileT>
+struct FileCache
+{
+  const std::string Base;
+  const char * PrintPrefix; // non-null to print filenames as they are loaded
+protected:
+  using TNameMap = std::map<std::string, int>;
+  TNameMap NameMap;
+  std::vector<FileT> Files;
+public:
+  std::vector<std::string> opNames; // These are operator names referred to by Files
+  FileCache( const std::string &base, const char * Prefix = nullptr ) : Base{base}, PrintPrefix{Prefix} {}
+  void clear();
+  // Add file to cache if not present - delay loading until accessed
+  int GetIndex( const std::string &Filename );
+  FileT &operator[]( int iIndex );
+  const FileT &operator[]( int iIndex ) const;
+  inline FileT &operator[]( const std::string &Filename ) { return (*this)[GetIndex(Filename)]; }
+  inline const FileT &operator[]( const std::string &Filename ) const { return (*this)[GetIndex(Filename)]; }
 };
 
+// Allows a quark name to be read in as a string
+// Extracts the momentum from the file name
+struct QuarkReader : public std::string
+{
+  QP Convert( const std::string &Filename ) const;
+};
+
+template<typename Key, typename LessKey, typename KeyRead = Key, typename LessKeyRead = LessKey,
+         typename M = Model>
+struct KeyFileCache
+{
+//  const std::string C2Base;
+  Freeze freeze;
+protected:
+  using KeyMapT = std::map<Key, int, LessKey>;
+  using FileCacheT = FileCache<M>;
+  KeyMapT KeyMap;
+  FileCacheT model;
+protected:
+  using KeyReadMapT = std::map<Key, std::string, LessKey>;
+  template<typename K = Key, typename R = KeyRead>
+  typename std::enable_if<std::is_same<K, R>::value, KeyReadMapT>::type
+  ReadNameMap( std::ifstream &s );
+  template<typename K = Key, typename R = KeyRead>
+  typename std::enable_if<!std::is_same<K, R>::value, KeyReadMapT>::type
+  ReadNameMap( std::ifstream &s );
+  virtual void FrozenOptions( std::string &sOptions ) {}
+public:
+  KeyFileCache( const std::string &modelBase );
+  virtual ~KeyFileCache() {}
+  inline       M &operator[]( const Key &key )       { return model[KeyMap[key]]; }
+  inline const M &operator[]( const Key &key ) const { return model[KeyMap[key]]; }
+  virtual void clear();
+  void Read( const std::string &Filename, const char *pszPrintPrefix );
+  Vector GetVector( const Key &key, const std::string &ColumnName = DefaultColumnName );
+};
+
+using QDTModelMap = KeyFileCache<QDT, LessQDT>;
+
+struct QPModelMap : public KeyFileCache<QP, LessQP, QuarkReader, Common::LessCaseInsensitive>
+{
+  using Base = KeyFileCache<QP, LessQP, QuarkReader, Common::LessCaseInsensitive>;
+  std::string Spectator;
+  QPModelMap( const std::string &modelBase ) : Base( modelBase ) {}
+  std::string Get2ptName( const QP &key );
+  void clear() override;
+protected:
+  void FrozenOptions( std::string &sOptions ) override;
+};
 
 // Base class for ratio construction
 class Maker
 {
 public:
-  const std::string &inBase;
-  const std::string &C2Base;
-  const std::string &modelBase;
-  const std::string &outBase;
-  const Common::Momentum p;
-  const Freeze fEnergy;
-  const Freeze fZV;
+  //const std::string inBase;
+  //const std::string C2Base;
+  const std::string modelBase;
+  const std::string outBase;
+  //const Common::Momentum p;
   const bool bSymmetrise;
 protected:
-  std::regex RegExExt;
   const bool RegExSwap;
-  QPMapModelInfo model;
+  std::regex RegExExt;
+  QPModelMap model;
+public:
+  using CorrCache = FileCache<Fold>;
+  CorrCache Cache2;
+  CorrCache Cache3;
 protected:
-  void AppendOp( std::string &s, const std::string &Op )
-  {
-    s.append( Common::Underscore );
-    s.append( Op );
-  }
-  void AppendOps( std::string &s, const std::string &Snk, const std::string &Src)
+  inline void AppendOp( std::string &s, const std::string &Op ) { Append( s, Op ); }
+  inline void AppendOps( std::string &s, const std::string &Snk, const std::string &Src)
   {
     AppendOp( s, Snk );
     AppendOp( s, Src );
   }
   std::string HeavyKey( const std::string &Heavy ) const;
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                     const std::string &qSnk, const std::string &qSrc,
-                     const ModelInfo &miSnk, const ModelInfo &miSrc,
+                     const QP &QPSnk, const QP &QPSrc,
+                     const Vector &ESnk, const Vector &EmiSrc,
                      const std::string &opSnk, const std::string &opSrc ) = 0;
 public:
-  Maker( const std::string &inBase_, const std::string &C2Base_,
-         const std::string &modelBase_,const std::string &outBase_,
-         std::regex RegExExt_, const bool RegExSwap_,
-        const Freeze fEnergy_, const Freeze fZV_, const bool bSymmetrise_, const std::string &FitListName )
-  : inBase{inBase_}, C2Base{C2Base_}, modelBase{modelBase_}, outBase{outBase_},
-    fEnergy{fEnergy_}, fZV{fZV_}, bSymmetrise{bSymmetrise_}, RegExExt{RegExExt_}, RegExSwap{RegExSwap_},
-    model(modelBase_ + FitListName, modelBase_, C2Base_) {}
+  Maker( std::string &TypeParams, const Common::CommandLine &cl );
   virtual ~Maker() {}
-  static Maker * Make( const std::string &Type, std::string &TypeParams,
-                       const std::string &inBase, const std::string &C2Base,
-                       const std::string &modelBase,const std::string &outBase,
-                       std::regex RegExExt, const bool RegExSwap,
-                       const Freeze fEnergy, const Freeze fZV, const bool bSymmetrise, const std::string &FitListName );
   void Make( std::string &sFileName );
 };
 
@@ -164,32 +232,20 @@ class ZVMaker : public Maker
 {
 protected:
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                     const std::string &qSnk, const std::string &qSrc,
-                     const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &opSnk, const std::string &opSrc );
+                     const QP &QPSnk, const QP &QPSrc,
+                     const Vector &ESnk, const Vector &ESrc, const std::string &opSnk, const std::string &opSrc );
 public:
-  ZVMaker( std::string &TypeParams, const std::string &inBase, const std::string &C2Base,
-           const std::string &modelBase, const std::string &outBase,
-           std::regex RegExExt, const bool RegExSwap,
-          const Freeze fEnergy, const Freeze fZV, const bool bSymmetrise, const std::string &FitListName )
-  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV, bSymmetrise, FitListName ) {}
+  ZVMaker( std::string &TypeParams, const Common::CommandLine &cl ) : Maker( TypeParams, cl ) {}
 };
 
 // Make R1 and R2: eq 2.8 pg 4 https://arxiv.org/pdf/1305.7217.pdf
 class R1R2Maker : public Maker
 {
 protected:
-  QDTMapModelInfo ZVmi;
+  QDTModelMap ZVmi;
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                     const std::string &qSnk, const std::string &qSrc,
-                     const ModelInfo &miSnk, const ModelInfo &miSrc, const std::string &opSnk, const std::string &opSrc );
+                     const QP &QPSnk, const QP &QPSrc,
+                     const Vector &ESnk, const Vector &ESrc, const std::string &opSnk, const std::string &opSrc );
 public:
-  R1R2Maker( std::string &TypeParams, const std::string &inBase, const std::string &C2Base,
-             const std::string &modelBase, const std::string &outBase,
-             std::regex RegExExt, const bool RegExSwap,
-             const Freeze fEnergy, const Freeze fZV, const bool bSymmetrise, const std::string &FitListName )
-  : Maker( inBase, C2Base, modelBase, outBase, RegExExt, RegExSwap, fEnergy, fZV, bSymmetrise, FitListName ),
-    ZVmi( modelBase + TypeParams, modelBase, C2Base )
-  {
-    TypeParams.clear(); // I used this to load my map from
-  }
+  R1R2Maker( std::string &TypeParams, const Common::CommandLine &cl );
 };

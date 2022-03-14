@@ -645,89 +645,50 @@ template<typename T> StartStopStepIterator<T> StartStopStep<T>::end() const
   return it;
 };
 
-template<class MapOrMultiMap>
-MapOrMultiMap ReadMapBase(std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash)
-{
-  if( is.bad() )
-    throw std::runtime_error( "MapOrMultiMap Read() input stream bad" );
-  MapOrMultiMap m;
-  while( !StreamEmpty( is ) )
-  {
-    std::string s;
-    if( std::getline( is, s ) )
-    {
-      // Get rid of anything past the comment
-      std::size_t pos = s.find_first_of( sComment );
-      if( pos != std::string::npos )
-        s.resize( pos );
-      std::string sKey = ExtractToSeparator( s, Separators );
-      if( !sKey.empty() )
-        m.emplace( std::make_pair( std::move( sKey ), std::move( s ) ) );
-    }
-  }
-  return m;
-}
-
 // This is a key/value file, and we ignore anything after a comment character
-template<class Key, class T, class Compare = std::less<Key>> class KeyValReader;
-
-// Specialisation of key value file for std::map<std::string, std::string, Compare>
-template<class Compare>
-class KeyValReader<std::string, std::string, Compare>
-{
-public:
-  using map = std::map<std::string, std::string, Compare>;
-  static map Read( std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash )
-  {
-    return ReadMapBase<map>( is, Separators, sComment );
-  }
-};
-
-// Key/value file reader for non-string types (read as string, then convert to requested types)
-template<class Key, class T, class Compare>
+// Use a std::MultiMap if the keys aren't unique
+template<class Key, class T, class Compare = std::less<Key>, class Map = std::map<Key, T, Compare>>
 class KeyValReader
 {
-public:
-  using map = std::map<Key, T, Compare>;
-  static map Read( std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash )
+protected:
+  template<class V = T> static typename std::enable_if< std::is_same<V, std::string>::value, bool>::type
+  GetValue( std::istringstream &iss, V &v )
   {
-    using StringMap = std::map<std::string, std::string>;
-    StringMap sm{ KeyValReader<std::string, std::string>::Read( is, Separators, sComment ) };
-    map m;
-    for( const auto &p : sm )
-      m.emplace( std::make_pair( FromString<Key>( p.first ), FromString<T>( p.second ) ) );
-    return m;
+    bool bOK = static_cast<bool>( std::getline( iss, v ) );
+    if( bOK )
+      Common::Trim( v );
+    return bOK;
   }
-};
-
-// This is a key/value file, and we ignore anything after a comment character
-template<class Key, class T, class Compare = std::less<Key>> class KeyValReaderMulti;
-
-// Specialisation of key value file for std::map<std::string, std::string, Compare>
-template<class Compare>
-class KeyValReaderMulti<std::string, std::string, Compare>
-{
+  template<class V = T> static typename std::enable_if<!std::is_same<V, std::string>::value, bool>::type
+  GetValue( std::istringstream &iss, V &v ) { return iss >> v && Common::StreamEmpty( iss ); }
 public:
-  using map = std::multimap<std::string, std::string, Compare>;
-  static map Read( std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash )
+  static Map Read( std::istream &is, const std::string &sComment = Hash )
   {
-    return ReadMapBase<map>( is, Separators, sComment );
-  }
-};
-
-// Key/value file reader for non-string types (read as string, then convert to requested types)
-template<class Key, class T, class Compare>
-class KeyValReaderMulti
-{
-public:
-  using map = std::multimap<Key, T, Compare>;
-  static map Read( std::istream &is, const std::string &Separators = WhiteSpace, const std::string &sComment = Hash )
-  {
-    using StringMap = std::multimap<std::string, std::string>;
-    StringMap sm{ KeyValReaderMulti<std::string, std::string>::Read( is, Separators, sComment ) };
-    map m;
-    for( const auto &p : sm )
-      m.emplace( std::make_pair( FromString<Key>( p.first ), FromString<T>( p.second ) ) );
+    if( is.bad() )
+      throw std::runtime_error( "KeyValReader::Read() input stream bad" );
+    Map m;
+    while( !StreamEmpty( is ) )
+    {
+      std::string s;
+      if( std::getline( is, s ) )
+      {
+        // Get rid of anything past the comment
+        std::size_t pos = s.find_first_of( sComment );
+        if( pos != std::string::npos )
+          s.resize( pos );
+        std::istringstream iss( s );
+        if( !Common::StreamEmpty( iss ) )
+        {
+          Key k;
+          if( !( iss >> k ) )
+            throw std::runtime_error( "KeyValReader::Read() bad key " + s );
+          T t;
+          if( !GetValue( iss, t ) )
+            throw std::runtime_error( "KeyValReader::Read() bad value " + s );
+          m.emplace( std::make_pair( std::move( k ), std::move( t ) ) );
+        }
+      }
+    }
     return m;
   }
 };
@@ -1125,6 +1086,9 @@ struct FileNameMomentum : public Momentum
   static Momentum FromSquared( const int p2 );
   FileNameMomentum( const std::string &Name_, int x_, int y_, int z_ ) : Momentum(x_,y_,z_), Name{Name_}, bp2{false} {}
   FileNameMomentum( const std::string &Name_, int p2 ) : Momentum(FromSquared(p2)), Name{Name_}, bp2{true} {}
+  FileNameMomentum( const FileNameMomentum &o ) : Momentum(o), Name{o.Name}, bp2{o.bp2} {}
+  FileNameMomentum( const Momentum &o ) : Momentum(o), bp2{false} {}
+  std::string FileString( const std::string &separator = Common::Underscore ) const;
 };
 
 // Attributes for filenames in form base.type.seed.ext
@@ -3166,10 +3130,14 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
     }
   }
   ::H5::Exception::setAutoPrint(h5at, f5at_p);
-  if( bFiniteError )
-    throw std::runtime_error( "NANs in " + Name_.Filename );
-  if( !bOK )
-    throw std::runtime_error( "Unable to read sample from " + Name_.Filename );
+  if( bFiniteError || !bOK )
+  {
+    resize( 0, 0 ); // We can use NumSamples() == 0 or Nt() == 0 to tell whether the file is open
+    if( bFiniteError )
+      throw std::runtime_error( "NANs in " + Name_.Filename );
+    //if( !bOK )
+      throw std::runtime_error( "Unable to read sample from " + Name_.Filename );
+  }
 }
 
 template <typename T>
@@ -3553,7 +3521,7 @@ public:
   virtual void SetName( const std::string &FileName, std::vector<std::string> * pOpNames = nullptr )
   {
     Base::SetName( FileName, pOpNames );
-    Base::Name_.ParseExtra();
+    Base::Name_.ParseExtra( 1 ); // Extra info contains the model info only
   }
   /*void Read( const char *PrintPrefix = nullptr, std::string *pGroupName =nullptr )
   {

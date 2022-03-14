@@ -635,6 +635,17 @@ Momentum FileNameMomentum::FromSquared( const int p2Original )
   return p;
 }
 
+std::string FileNameMomentum::FileString( const std::string &separator ) const
+{
+  if( bp2 )
+    return p2_string( separator, Name );
+  std::string s{ separator };
+  s.append( Name );
+  s.append( separator );
+  s.append( to_string( separator ) );
+  return s;
+}
+
 std::ostream& operator<<( std::ostream& os, const Momentum &p )
 {
   return os << p.to_string( Underscore );
