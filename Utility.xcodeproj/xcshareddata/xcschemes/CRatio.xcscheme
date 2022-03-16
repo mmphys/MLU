@@ -61,12 +61,12 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--efit &apos;Fit_lp2.txt,   c   &apos;"
-            isEnabled = "NO">
+            argument = "--efit &apos;Fit_lp2.txt&apos;"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--efit 1,f,l"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--type zV quark_{l_l,s_s,h447_h447}_gT_dt_&apos;*&apos;_p2_0_ps2_0_g5[PW]_g5[PW].fold.1835672416.h5"
@@ -74,27 +74,19 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--type R,FitZV_lp2.txt"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--type R,1,f"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "quark_l_h447_gT_dt_&apos;*&apos;_p2_0_ps2_[01]_g5&apos;?&apos;_g5&apos;?&apos;.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "quark_l_h447_gT_dt_&apos;*&apos;_p2_0_ps2_1_g5{W_g5P,P_g5W}.fold.1835672416.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "quark_h447_l_gT_dt_&apos;*&apos;_p2_[01]_ps2_0_g5&apos;?&apos;_g5&apos;?&apos;.fold.1835672416.h5"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "quark_h447_l_gT_dt_&apos;*&apos;_p2_1_ps2_0_g5{W_g5P,P_g5W}.fold.1835672416.h5"
-            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "quark_l_h447_ps_0_0_0_gX_dt_&apos;*&apos;_p_&apos;*&apos;_g5[PW]_g5[PW].fold.1835672416.h5"
@@ -102,14 +94,6 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--im fit/2pt/ Best2pt.txt"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "&apos;*&apos;_h0_h3&apos;*&apos;.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "quark_h0_h3_gT_dt_&apos;*&apos;_p_0_0_0.corr_8_17.corr_8_17.N_&apos;*&apos;.phi_&apos;*&apos;_theta_&apos;*&apos;_g5Pg5W_g5Pg5W.fold.1835672416.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

@@ -95,6 +95,7 @@ static constexpr unsigned int COMPAT_DEFAULT{ 0 };
 static constexpr unsigned int COMPAT_DISABLE_BASE{ 1 };
 static constexpr unsigned int COMPAT_DISABLE_NT{ 2 };
 /*static constexpr unsigned int COMPAT_DISABLE_CONFIG_COUNT{ 4 };*/
+static constexpr unsigned int COMPAT_DISABLE_TYPE{ 8 };
 
 template <typename T> int sgn( T x )
 {
@@ -2417,7 +2418,7 @@ void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, unsigned in
   std::string sSuffix{ ":\n  " + Name_.Filename + "\nvs " + o.Name_.Filename };
   if( !( CompareFlags & COMPAT_DISABLE_BASE ) && !Common::EqualIgnoreCase( o.Name_.Base, Name_.Base ) )
     throw std::runtime_error( sPrefix + "base " + o.Name_.Base + sNE + Name_.Base + sSuffix );
-  if( !Common::EqualIgnoreCase( o.Name_.Type, Name_.Type ) )
+  if( !( CompareFlags & COMPAT_DISABLE_TYPE ) && !Common::EqualIgnoreCase( o.Name_.Type, Name_.Type ) )
     throw std::runtime_error( sPrefix + "type " + o.Name_.Type + sNE + Name_.Type + sSuffix );
   if( !Common::EqualIgnoreCase( o.Name_.Ext, Name_.Ext ) )
     throw std::runtime_error( sPrefix + "extension " + o.Name_.Ext + sNE + Name_.Ext + sSuffix );

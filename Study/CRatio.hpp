@@ -137,7 +137,6 @@ public:
   // Add file to cache if not present - delay loading until accessed
   int GetIndex( const std::string &Filename );
   FileT &operator[]( int iIndex );
-  const FileT &operator[]( int iIndex ) const;
   inline FileT &operator[]( const std::string &Filename ) { return (*this)[GetIndex(Filename)]; }
   inline const FileT &operator[]( const std::string &Filename ) const { return (*this)[GetIndex(Filename)]; }
 };
@@ -149,6 +148,7 @@ struct QuarkReader : public std::string
   QP Convert( const std::string &Filename ) const;
 };
 
+// Static list of mappings from key to file. Can't be added to once read.
 template<typename Key, typename LessKey, typename KeyRead = Key, typename LessKeyRead = LessKey,
          typename M = Model>
 struct KeyFileCache
@@ -169,15 +169,16 @@ protected:
   template<typename K = Key, typename R = KeyRead>
   typename std::enable_if<!std::is_same<K, R>::value, KeyReadMapT>::type
   ReadNameMap( std::ifstream &s );
+  int GetIndex( const Key &key ) const;
   virtual void FrozenOptions( std::string &sOptions ) {}
 public:
+  static constexpr int BadIndex{ FileCacheT::BadIndex };
   KeyFileCache( const std::string &modelBase );
   virtual ~KeyFileCache() {}
-  inline       M &operator[]( const Key &key )       { return model[KeyMap[key]]; }
-  inline const M &operator[]( const Key &key ) const { return model[KeyMap[key]]; }
+  inline M &operator[]( const Key &key ) { return model[GetIndex( key )]; }
   virtual void clear();
   void Read( const std::string &Filename, const char *pszPrintPrefix );
-  Vector GetVector( const Key &key, const std::string &ColumnName = DefaultColumnName );
+  Vector GetVector( M &m, const std::string &ColumnName = DefaultColumnName );
 };
 
 using QDTModelMap = KeyFileCache<QDT, LessQDT>;
@@ -187,7 +188,7 @@ struct QPModelMap : public KeyFileCache<QP, LessQP, QuarkReader, Common::LessCas
   using Base = KeyFileCache<QP, LessQP, QuarkReader, Common::LessCaseInsensitive>;
   std::string Spectator;
   QPModelMap( const std::string &modelBase ) : Base( modelBase ) {}
-  std::string Get2ptName( const QP &key );
+  std::string Get2ptName( const QP &key, const Model &m );
   void clear() override;
 protected:
   void FrozenOptions( std::string &sOptions ) override;
@@ -208,6 +209,15 @@ protected:
   const bool RegExSwap;
   std::regex RegExExt;
   QPModelMap EFit;
+  struct SSInfo
+  {
+    const std::string &op;
+    const QP qp;
+    Model &EModel;
+    const Vector E;
+    SSInfo( QPModelMap &efit, const std::string &op_, QP qp_ )
+    : op{op_}, qp{qp_}, EModel{efit[qp]}, E{efit.GetVector(EModel)} {}
+  };
   struct CorrT
   {
     std::string Name;
@@ -227,9 +237,7 @@ protected:
   }
   std::string HeavyKey( const std::string &Heavy ) const;
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                     const QP &QPSnk, const QP &QPSrc,
-                     const Vector &ESnk, const Vector &EmiSrc,
-                     const std::string &opSnk, const std::string &opSrc ) = 0;
+                     const SSInfo &Snk, const SSInfo &Src ) = 0;
 public:
   Maker( std::string &TypeParams, const Common::CommandLine &cl );
   virtual ~Maker() {}
@@ -241,8 +249,7 @@ class ZVMaker : public Maker
 {
 protected:
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                     const QP &QPSnk, const QP &QPSrc,
-                     const Vector &ESnk, const Vector &ESrc, const std::string &opSnk, const std::string &opSrc );
+                     const SSInfo &Snk, const SSInfo &Src );
 public:
   ZVMaker( std::string &TypeParams, const Common::CommandLine &cl ) : Maker( TypeParams, cl ) {}
 };
@@ -253,8 +260,7 @@ class RMaker : public Maker
 protected:
   QDTModelMap ZVmi;
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                     const QP &QPSnk, const QP &QPSrc,
-                     const Vector &ESnk, const Vector &ESrc, const std::string &opSnk, const std::string &opSrc );
+                     const SSInfo &Snk, const SSInfo &Src );
 public:
   RMaker( std::string &TypeParams, const Common::CommandLine &cl );
 };
