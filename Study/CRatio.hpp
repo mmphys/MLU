@@ -41,7 +41,7 @@ enum class Freeze
 {
   None,
   Central,
-  One
+  Frozen
 };
 
 inline void Append( std::string &s, const std::string &Add )
@@ -123,6 +123,7 @@ struct LessQDT
 template<typename FileT>
 struct FileCache
 {
+  static constexpr int BadIndex{ -1 };
   const std::string Base;
   const char * PrintPrefix; // non-null to print filenames as they are loaded
 protected:
@@ -155,6 +156,7 @@ struct KeyFileCache
 //  const std::string C2Base;
   Freeze freeze;
 protected:
+  Scalar FrozenValue;
   using KeyMapT = std::map<Key, int, LessKey>;
   using FileCacheT = FileCache<M>;
   KeyMapT KeyMap;
@@ -195,6 +197,7 @@ protected:
 class Maker
 {
 public:
+  const int MaxSamples;
   //const std::string inBase;
   //const std::string C2Base;
   const std::string modelBase;
@@ -204,7 +207,13 @@ public:
 protected:
   const bool RegExSwap;
   std::regex RegExExt;
-  QPModelMap model;
+  QPModelMap EFit;
+  struct CorrT
+  {
+    std::string Name;
+    int Handle = -1;
+    Fold * Corr = nullptr;
+  };
 public:
   using CorrCache = FileCache<Fold>;
   CorrCache Cache2;
@@ -239,7 +248,7 @@ public:
 };
 
 // Make R1 and R2: eq 2.8 pg 4 https://arxiv.org/pdf/1305.7217.pdf
-class R1R2Maker : public Maker
+class RMaker : public Maker
 {
 protected:
   QDTModelMap ZVmi;
@@ -247,5 +256,5 @@ protected:
                      const QP &QPSnk, const QP &QPSrc,
                      const Vector &ESnk, const Vector &ESrc, const std::string &opSnk, const std::string &opSrc );
 public:
-  R1R2Maker( std::string &TypeParams, const Common::CommandLine &cl );
+  RMaker( std::string &TypeParams, const Common::CommandLine &cl );
 };

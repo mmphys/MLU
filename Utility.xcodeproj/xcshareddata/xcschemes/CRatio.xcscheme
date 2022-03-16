@@ -53,11 +53,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--i3 corr/3pt_s/ --i2 corr/2pt/ --im fit/ Best_s.txt -o ratio/3pt_s/"
+            argument = "--i3 corr/3pt_s/ --i2 corr/2pt/ --im fit/ --efit Best_s.txt -o ratio/3pt_s/"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--i3 corr/3pt_lp2/ --i2 corr/2ptp2/ --im fit/ -o ratio/lp2/debug/"
+            argument = "--i3 corr/3pt_lp2/ --i2 corr/2ptp2/ --im fit/ -o ratio/lp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -65,7 +65,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--efit 1,l"
+            argument = "--efit 1,f,l"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -73,11 +73,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type R1r2,FitZV_lp2.txt"
+            argument = "--type R,FitZV_lp2.txt"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type R1r2,1"
+            argument = "--type R,1,f"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

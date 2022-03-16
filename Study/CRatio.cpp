@@ -36,7 +36,6 @@ std::istream & operator>>( std::istream &is, std::array<std::string,Num> &c )
 }
 }*/
 
-static const char EFitSwitch[] = "efit";
 const std::string DefaultColumnName{ "E0" };
 static const char LoadFilePrefix[] = "  ";
 
@@ -77,6 +76,14 @@ int FileCache<FileT>::GetIndex( const std::string &Filename )
   typename TNameMap::iterator it = NameMap.find( Filename );
   if( it != NameMap.end() )
     return it->second;
+  // Needs to be added
+  if( !Common::FileExists( Base + Filename ) )
+  {
+    // File doesn't exist
+    if( PrintPrefix )
+      std::cout << PrintPrefix << "- " << Filename << std::endl;
+    return BadIndex;
+  }
   // Needs to be added - check we're not going to overflow
   if( NameMap.size() >= std::numeric_limits<int>::max() )
     throw std::runtime_error( "Too many entries in FileCache - switch to std::size_t" );
@@ -107,7 +114,10 @@ FileT & FileCache<FileT>::operator[]( int iIndex )
   if( iIndex < 0 || iIndex >= Files.size() )
     throw std::runtime_error( "FileCache index " + std::to_string( iIndex ) + " out of bounds" );
   FileT &f{ Files[iIndex] };
-  if( !f.Nt() ) f.Read( PrintPrefix ); // Read file if not in cache
+  if( !f.Nt() )
+    f.Read( PrintPrefix ); // Read file if not in cache
+  else if( PrintPrefix )
+    std::cout << PrintPrefix << "C " << f.Name_.Filename << std::endl;
   return f;
 }
 
@@ -131,7 +141,8 @@ void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::clear()
 {
   model.clear();
   KeyMap.clear();
-  freeze = Freeze::One;
+  freeze = Freeze::Frozen;
+  FrozenValue = 1;
 }
 
 template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename M>
@@ -165,17 +176,19 @@ void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::Read( const std::strin
   model.PrintPrefix = Prefix;
   std::string sParams{ filename };
   std::string Filename{ Common::ExtractToSeparator( sParams ) };
-  if( Filename.length() == 1 && Filename[0] == '1' )
+  std::string Options{ Common::ExtractToSeparator( sParams ) };
+  if( Options.empty() )
+    freeze = Freeze::None;
+  else if( Options.length() == 1 && std::toupper( Options[0] ) == 'F' )
   {
-    freeze = Freeze::One;
+    freeze = Freeze::Frozen;
+    FrozenValue = Common::FromString<Scalar>( Filename );
     FrozenOptions( sParams );
     if( !sParams.empty() )
       throw std::runtime_error( "KeyFileCache bad options: " + sParams );
     return;
   }
-  else if( sParams.empty() )
-    freeze = Freeze::None;
-  else if( sParams.length() == 1 && std::toupper( sParams[0] ) == 'C' )
+  else if( Options.length() == 1 && std::toupper( sParams[0] ) == 'C' )
     freeze = Freeze::Central;
   else
     throw std::runtime_error( "Freeze type " + sParams + " unrecognised" );
@@ -194,7 +207,11 @@ void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::Read( const std::strin
     }
     // Put all the files in our cache and save their index
     for( const auto &i : m )
-      KeyMap.emplace( i.first, model.GetIndex( i.second ) );
+    {
+      const int Handle{ model.GetIndex( i.second ) };
+      if( Handle != FileCacheT::BadIndex )
+        KeyMap.emplace( i.first, Handle );
+    }
   }
   /*const ModelInfo *idxFirst{ nullptr };
   for( typename FileMap::iterator it = fileMap.begin(); it != fileMap.end(); ++it )
@@ -239,10 +256,9 @@ template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead,
 Vector KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::GetVector( const Key &key, const std::string &Name )
 {
   Vector v;
-  if( freeze == Freeze::One )
+  if( freeze == Freeze::Frozen )
   {
-    static Scalar One{ 1 };
-    v.MapView( &One, std::numeric_limits<int>::max(), 0 );
+    v.MapView( &FrozenValue, std::numeric_limits<int>::max(), 0 );
   }
   else
   {
@@ -265,14 +281,14 @@ void QPModelMap::clear()
 void QPModelMap::FrozenOptions( std::string &Options )
 {
   if( Options.empty() )
-    throw std::runtime_error( "QPModelMap spectator must be passed in options when frozen" );
+    throw std::runtime_error( "Spectator must be passed in options when energies frozen to 1" );
   Spectator = std::move( Options );
 }
 
 std::string QPModelMap::Get2ptName( const QP &key )
 {
   std::string s;//{ C2Base };
-  if( freeze == Freeze::One )
+  if( freeze == Freeze::Frozen )
   {
     s.append( key.q );
     Append( s, Spectator );
@@ -420,8 +436,8 @@ void Maker::Make( std::string &FileName )
   fna.BaseShort = FileNamePrefix;
   QP QPSnk{ QP( qSnk, MomSnk ) };
   QP QPSrc{ QP( qSrc, MomSrc ) };
-  Vector ESnk{ model.GetVector( QPSnk ) };
-  Vector ESrc{ model.GetVector( QPSrc ) };
+  Vector ESnk{ EFit.GetVector( QPSnk ) };
+  Vector ESrc{ EFit.GetVector( QPSrc ) };
   Make( fna, FileNameSuffix, QPSnk, QPSrc, ESnk, ESrc, OpNames[fna.op[1]], OpNames[fna.op[0]] );
 }
 
@@ -461,14 +477,18 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
     throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
 
   // Now read the two-point function
-  std::string C2Name{ model.Get2ptName( QPSnk ) };
-  AppendOps( C2Name, opSnk, opSrc );
+  std::string C2Name{ EFit.Get2ptName( QPSnk ) };
+  // DON'T DO THIS - IT JUST MAKES THE ERRORS LARGER
+  // Wall sink - Point source ==> swap source and sink on the 2-point for accuracy
+  //if( std::toupper( opSnk.back() ) == 'W' && std::toupper( opSrc.back() ) == 'P' )
+    //AppendOps( C2Name, opSrc, opSnk );
+  //else
+    AppendOps( C2Name, opSnk, opSrc );
   C2Name = Common::MakeFilename( C2Name, Common::sFold, fna.Seed, DEF_FMT );
   Fold &C2{ Cache2[C2Name] };
   //C2.Read( C2Name, LoadFilePrefix );
   int NumSamples {};
-  C3.IsCompatible( C2, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
-                                    | Common::COMPAT_DISABLE_CONFIG_COUNT );
+  C3.IsCompatible( C2, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
   if( C2.NtUnfolded != C3.Nt() )
   {
     std::ostringstream os;
@@ -480,7 +500,8 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
   Fold out( NumSamples, fna.DeltaT + 1 );
   out.FileList.push_back( C3.Name_.Filename );
   out.FileList.push_back( C2.Name_.Filename );
-  out.FileList.push_back( model[QPSrc].Name_.Filename );
+  if( EFit.freeze != Freeze::Frozen )
+    out.FileList.push_back( EFit[QPSrc].Name_.Filename );
   out.CopyAttributes( C3 );
   out.NtUnfolded = C3.Nt();
   Scalar * pDst{ out[Fold::idxCentral] };
@@ -520,16 +541,14 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
   out.WriteSummary( OutFileName );
 }
 
-R1R2Maker::R1R2Maker( std::string &TypeParams, const Common::CommandLine &cl )
+RMaker::RMaker( std::string &TypeParams, const Common::CommandLine &cl )
 : Maker( TypeParams, cl ), ZVmi( modelBase )
 {
-  // TODO fix ZV freeze
-  //GetFreeze( cl, "zvone", "zvc" );
   ZVmi.Read( TypeParams, LoadFilePrefix );
   TypeParams.clear(); // I used this to load my map from
 }
 
-void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                     const QP &QPSnk, const QP &QPSrc,
                     const Vector &ESnk, const Vector &ESrc, const std::string &opSnk, const std::string &opSrc )
 {
@@ -542,33 +561,33 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
   QDT QDTSrc( qSrc, fna.DeltaT, opSnk, opSrc );
   Vector ZVSnk{ ZVmi.GetVector( QDTSnk ) };
   Vector ZVSrc{ ZVmi.GetVector( QDTSrc ) };
-  // Now read the two-point functions
+
+  // Get the names of all 2pt correlators we will need
   static constexpr int NumC2{ 2 };
-  std::array<Fold *, 2> Corr2pt;
+  const std::array<const Vector *, NumC2> pE{ &ESrc, &ESnk };
+  std::array<CorrT, NumC2> Corr2;
+  Corr2[0].Name = EFit.Get2ptName( QPSrc );
+  AppendOps( Corr2[0].Name, opSrc, opSrc );
+  Corr2[1].Name = EFit.Get2ptName( QPSnk );
+  AppendOps( Corr2[1].Name, opSnk, opSnk );
+  // Must put both in the cache before trying to dereference either
+  for( int i = 0; i < NumC2; ++i )
   {
-    std::string C2NameSrc{ model.Get2ptName( QPSrc ) };
-    AppendOps( C2NameSrc, opSrc, opSrc );
-    C2NameSrc = Common::MakeFilename( C2NameSrc, Common::sFold, fna.Seed, DEF_FMT );
-    int hFile0{ Cache2.GetIndex( C2NameSrc ) };
-    std::string C2NameSnk{ model.Get2ptName( QPSnk ) };
-    AppendOps( C2NameSnk, opSnk, opSnk );
-    C2NameSnk = Common::MakeFilename( C2NameSnk, Common::sFold, fna.Seed, DEF_FMT );
-    Corr2pt[1] = &Cache2[C2NameSnk];
-    Corr2pt[0] = &Cache2[hFile0];
+    Corr2[i].Name = Common::MakeFilename( Corr2[i].Name, Common::sFold, fna.Seed, DEF_FMT );
+    Corr2[i].Handle = Cache2.GetIndex( Corr2[i].Name );
+    if( Corr2[i].Handle == CorrCache::BadIndex )
+      throw std::runtime_error( "2pt functions are required" );
   }
 
-  // Load the correlators we need
+  // Get the names of all 3pt correlators we will need
   // The first two files are the numerator
   // Followed by one or two files for the denominator. Both required for R2
-  std::string Dir{ fna.Dir };
-  Dir.append( fna.BaseShort );
-  const std::size_t Len{ Dir.length() };
-  Common::DataSet<Scalar> ds;
+  static constexpr int NumC3{ 4 };
+  std::array<CorrT, NumC2> Corr3;
   static constexpr int iInitial{ 0 };
   static constexpr int iFinal{ 1 };
-  const Scalar * pSrc[4];
-  int nT[4];
-  for( int Snk_Src = 0; Snk_Src < 4; ++Snk_Src )
+  bool bMakeR2{ true };
+  for( int Snk_Src = 0; Snk_Src < NumC3; ++Snk_Src )
   {
     int iSnk, iSrc;
     switch( Snk_Src )
@@ -590,80 +609,122 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
         iSrc = iFinal;
         break;
     }
-    Dir.resize( Len );
-    Dir.append( iSnk == iInitial ? qSrc : qSnk );
-    Dir.append( 1, '_' );
-    Dir.append( iSrc == iInitial ? qSrc : qSnk );
-    Dir.append( fnaSuffix );
-    Common::AppendGammaDeltaT( Dir, iSnk == iSrc ? Common::Gamma::Algebra::GammaT : fna.Gamma[0], fna.DeltaT );
-    fna.AppendMomentum( Dir, iSrc == iFinal ? MomSnk : MomSrc, MomSrc.Name );
-    fna.AppendMomentum( Dir, iSnk == iInitial ? MomSrc : MomSnk, MomSnk.Name );
-    Dir.append( Common::Underscore );
-    Dir.append( iSnk == iInitial ? opSrc : opSnk );
-    Dir.append( Common::Underscore );
-    Dir.append( iSrc == iInitial ? opSrc : opSnk );
-    Dir = Common::MakeFilename( Dir, fna.Type, fna.Seed, fna.Ext );
-    if( Common::FileExists( Dir ) )
+    Corr3[Snk_Src].Name = fna.Dir;
+    Corr3[Snk_Src].Name.append( fna.BaseShort );
+    Corr3[Snk_Src].Name.append( iSnk == iInitial ? qSrc : qSnk );
+    Corr3[Snk_Src].Name.append( 1, '_' );
+    Corr3[Snk_Src].Name.append( iSrc == iInitial ? qSrc : qSnk );
+    Corr3[Snk_Src].Name.append( fnaSuffix );
+    Common::AppendGammaDeltaT( Corr3[Snk_Src].Name, iSnk==iSrc ? Common::Gamma::Algebra::GammaT : fna.Gamma[0],
+                               fna.DeltaT );
+    fna.AppendMomentum( Corr3[Snk_Src].Name, iSrc == iFinal ? MomSnk : MomSrc, MomSrc.Name );
+    fna.AppendMomentum( Corr3[Snk_Src].Name, iSnk == iInitial ? MomSrc : MomSnk, MomSnk.Name );
+    Corr3[Snk_Src].Name.append( Common::Underscore );
+    Corr3[Snk_Src].Name.append( iSnk == iInitial ? opSrc : opSnk );
+    Corr3[Snk_Src].Name.append( Common::Underscore );
+    Corr3[Snk_Src].Name.append( iSrc == iInitial ? opSrc : opSnk );
+    Corr3[Snk_Src].Name = Common::MakeFilename( Corr3[Snk_Src].Name, fna.Type, fna.Seed, fna.Ext );
+    Corr3[Snk_Src].Handle = Cache3.GetIndex( Corr3[Snk_Src].Name );
+    if( Corr3[Snk_Src].Handle == CorrCache::BadIndex )
     {
-      const int cNum{ ds.LoadCorrelator( Common::FileNameAtt( Dir ), Common::COMPAT_DISABLE_BASE ) };
-      Fold &f { ds.corr[cNum] };
-      pSrc[cNum] = f[Fold::idxCentral];
-      nT[cNum] = f.Nt();
+      if( Snk_Src < 2 )
+        throw std::runtime_error( "Forward and reversed 3pt functions are required" );
+      bMakeR2 = false;
+      Corr3[Snk_Src == 2 ? 3 : 2].Handle = CorrCache::BadIndex; // Other not required
+      break;
     }
-    else if( iSnk == iSrc )
-    {
-      ds.corr.resize( 2 );
-      break; // No point loading the other denominator file
-    }
-    else
-      throw std::runtime_error( Dir + " doesn't exist" );
   }
-  // Ensure the correlator includes timeslice DeltaT
-  const int NTHalf{ ds.corr[0].Nt() / 2 };
+
+  // Load 2pt functions
+  int NSamples{ MaxSamples };
+  const unsigned int CompareFlags{ Common::COMPAT_DISABLE_BASE };
+  const Scalar * pC2[NumC2];
+  for( int i = 0; i < NumC2; ++i )
+  {
+    Corr2[i].Corr = &Cache2[Corr2[i].Handle];
+    if( i )
+      Corr2[0].Corr->IsCompatible( *Corr2[i].Corr, &NSamples, CompareFlags );
+    pC2[i] = (*Corr2[i].Corr)[Fold::idxCentral];
+  }
+  const int nT2{ Corr2[0].Corr->Nt() };
+
+  // Load 3pt functions
+  const Scalar * pSrc[NumC3];
+  for( int i = 0; i < NumC3; ++i )
+  {
+    if( Corr3[i].Handle != CorrCache::BadIndex )
+    {
+      Corr3[i].Corr = &Cache3[Corr3[i].Handle];
+      if( i == 0 )
+      {
+        Corr2[0].Corr->IsCompatible( *Corr3[i].Corr, &NSamples, CompareFlags | Common::COMPAT_DISABLE_NT );
+        if( Corr2[0].Corr->NtUnfolded != Corr3[i].Corr->NtUnfolded )
+          throw std::runtime_error( "2-pt NtUnfolded " + std::to_string( Corr2[0].Corr->NtUnfolded ) +
+                                    " != 3-pt NtUnfolded " + std::to_string( Corr3[i].Corr->NtUnfolded ) );
+      }
+      else
+        Corr3[0].Corr->IsCompatible( *Corr3[i].Corr, &NSamples, CompareFlags );
+      pSrc[i] = (*Corr3[i].Corr)[Fold::idxCentral];
+    }
+  }
+  const int nT3{ Corr3[0].Corr->Nt() };
+
+  // Check compatibility with the models
+  if( ZVmi.freeze != Freeze::Frozen )
+  {
+    int * pNumSamples = ZVmi.freeze == Freeze::None ? &NSamples : nullptr;
+    Corr2[0].Corr->IsCompatible( ZVmi[QDTSnk], pNumSamples, CompareFlags | Common::COMPAT_DISABLE_NT );
+    Corr2[0].Corr->IsCompatible( ZVmi[QDTSrc], pNumSamples, CompareFlags | Common::COMPAT_DISABLE_NT );
+  }
+  
+  // Ensure 3pt correlator includes timeslice DeltaT
+  const int NTHalf{ nT3 / 2 };
   if( fna.DeltaT > NTHalf )
-    throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
-  // Make somewhere to put R2
-  const bool bMakeR2{ ds.corr.size() == 4 };
-  const int NumRatio{ bMakeR2 ? 2 : 1 };
-  std::vector<Fold> out;
-  std::vector<Scalar *> pDst( NumRatio );
+    throw std::runtime_error("DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ));
+
+  // Make somewhere to put ratios
+  const int NumRatio{ 3 };
+  std::vector<Fold> out( NumRatio );
+  std::vector<Scalar *> pDst( NumRatio, nullptr );
   for( int i = 0; i < NumRatio; i++ )
   {
-    out.emplace_back( ds.NSamples, fna.DeltaT + 1 );
-    for( int j = 0; j < ( i == 0 ? 2 : ds.corr.size() ); ++j )
-      out[i].FileList.push_back( ds.corr[j].Name_.Filename );
-    if( i == 0 )
+    if( i != 1 || bMakeR2 )
     {
-      out[i].FileList.push_back( Corr2pt[0]->Name_.Filename );
-      out[i].FileList.push_back( Corr2pt[1]->Name_.Filename );
+      out[i].resize( NSamples, fna.DeltaT + 1 );
+      // Three-point names
+      const int Num3pt{ i == 0 ? 2 : i == 1 ? 4 : 1 };
+      for( int j = 0; j < Num3pt; ++j )
+        out[i].FileList.push_back( Corr3[j].Corr->Name_.Filename );
+      // Two-point names
+      for( int j = 0; i != 1 && j < NumC2; ++j )
+        out[i].FileList.push_back( Corr2[j].Corr->Name_.Filename );
+      // Now copy the rest of the attributes
+      out[i].CopyAttributes( *Corr3[0].Corr );
+      out[i].NtUnfolded = nT3;
+      pDst[i] = out[i][Fold::idxCentral];
     }
-    out[i].CopyAttributes( ds.corr[0] );
-    out[i].NtUnfolded = ds.corr[0].Nt();
-    pDst[i] = out[i][Fold::idxCentral];
   }
-  const std::array<const Vector *, NumC2> pE{ &ESrc, &ESnk };
-  const Scalar * pC2[NumC2];
-  pC2[0] = (*Corr2pt[0])[Fold::idxCentral];
-  pC2[1] = (*Corr2pt[1])[Fold::idxCentral];
-  for( int idx = Fold::idxCentral; idx < ds.NSamples; ++idx )
+
+  // Now make the ratios
+  for( int idx = Fold::idxCentral; idx < NSamples; ++idx )
   {
+    const int idxV{ idx - Fold::idxCentral };
     // Get the energies and compute the Correlator at Delta T with backward propagating wave subtracted
     // Allow energies to be frozen to 1 (which means don't subtract backward propagating wave)
     double  E[NumC2];
     double C2[NumC2];
     for( int i = 0; i < NumC2; ++i )
     {
+      E[i] = (*pE[i])[idxV];
       C2[i] = pC2[i][fna.DeltaT];
-      if( model.freeze == Freeze::One )
+      if( EFit.freeze == Freeze::Frozen )
       {
-        // If we're freezing energy to one, it makes no sense to try to subtract half the midpoint
-        E[i] = 1;
+        // If we're freezing energy to constant, it makes no sense to try to subtract half the midpoint
         if( NTHalf == fna.DeltaT )
           C2[i] *= 0.5; // In the middle of the lattice, this is needed for consistency
       }
       else
       {
-         E[i] = (*pE[i])[idx - Fold::idxCentral];
         C2[i] -= 0.5 * pC2[i][NTHalf] * std::exp( - E[i] * ( NTHalf - fna.DeltaT ) );
       }
     }
@@ -675,22 +736,23 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
       const double n = std::abs( EProd * pSrc[0][t] * pSrc[1][t] ); // fna.DeltaT - t
       if( !std::isfinite( n ) )
         throw std::runtime_error( "Numerator Overflow" );
-      const Scalar R1{ 2 * std::sqrt( ( n / C2Prod )
-                                     * ZVSrc[idx - Fold::idxCentral] * ZVSnk[idx - Fold::idxCentral] ) };
-      pDst[0][t] = R1;
+      pDst[0][t] = 2 * std::sqrt( ( n / C2Prod ) * ZVSrc[idxV] * ZVSnk[idxV] ); // R1
       if( bMakeR2 )
+        pDst[1][t] = 2 * std::sqrt( n / std::abs( pSrc[2][t] * pSrc[3][t] ) );
       {
-        const Scalar R2{ 2 * std::sqrt( n / std::abs( pSrc[2][t] * pSrc[3][t] ) ) };
-        pDst[1][t] = R2;
+        // R3
+        const Scalar R3Exp{ std::exp( E[1] * fna.DeltaT - t * ( E[0] - E[1] ) ) };
+        const Scalar R3Denom{ pC2[0][t] * pC2[0][fna.DeltaT - t] };
+        pDst[2][t] = 2 * pSrc[0][t] * std::sqrt( EProd * R3Exp * ZVSrc[idxV] * ZVSnk[idxV] / R3Denom );
       }
     }
-    // Symmetrise the output
+    // Symmetrise the symmetric ratios, i.e. R1 and R2, but not R3
     if( bSymmetrise )
     {
       assert( ! ( fna.DeltaT & 1 ) && "DeltaT must be even" );
-      for( int i = 0; i < NumRatio; ++i )
+      for( int i = 0; i < (bMakeR2 ? 2 : 1); ++i )
       {
-        for( int t = 1; t < fna.DeltaT / 2; ++t )
+        for( int t = 0; t < fna.DeltaT / 2; ++t )
         {
           pDst[i][t] = ( pDst[i][t] + pDst[i][fna.DeltaT - t] ) / 2;
           pDst[i][fna.DeltaT - t] = pDst[i][t];
@@ -699,35 +761,38 @@ void R1R2Maker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuff
     }
     for( int i = 0; i < NumRatio; ++i )
       pDst[i] += out[i].Nt();
-    for( int i = 0; i < ds.corr.size(); ++i )
-      pSrc[i] += nT[i];
-    pC2[0] += Corr2pt[0]->Nt();
-    pC2[1] += Corr2pt[1]->Nt();
+    for( int i = 0; i < NumC3; ++i )
+      pSrc[i] += nT3;
+    pC2[0] += nT2;
+    pC2[1] += nT2;
   }
   for( int i = 0; i < NumRatio ; i++ )
   {
-    out[i].MakeCorrSummary( nullptr );
-    std::string OutFileName{ outBase };
-    OutFileName.append( 1, 'R' );
-    OutFileName.append( 1, '1' + i );
-    OutFileName.append( 1, '_' );
-    OutFileName.append( qSnk );
-    OutFileName.append( 1, '_' );
-    OutFileName.append( qSrc );
-    OutFileName.append( fnaSuffix );
-    Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT );
-    fna.AppendMomentum( OutFileName, MomSrc ? MomSrc : MomSnk, MomSrc.Name );
-    AppendOps( OutFileName, opSnk, opSrc );
-    OutFileName = Common::MakeFilename( OutFileName, fna.Type, fna.Seed, fna.Ext );
-    std::cout << "->" << OutFileName << Common::NewLine;
-    out[i].Write( OutFileName, Common::sFold.c_str() );
-    const std::size_t FileNameLen{ OutFileName.find_last_of( '.' ) };
-    if( FileNameLen == std::string::npos )
-      OutFileName.append( 1, '.' );
-    else
-      OutFileName.resize( FileNameLen + 1 );
-    OutFileName.append( TEXT_EXT );
-    out[i].WriteSummary( OutFileName );
+    if( i != 1 || bMakeR2 )
+    {
+      out[i].MakeCorrSummary( nullptr );
+      std::string OutFileName{ outBase };
+      OutFileName.append( 1, 'R' );
+      OutFileName.append( 1, '1' + i );
+      OutFileName.append( 1, '_' );
+      OutFileName.append( qSnk );
+      OutFileName.append( 1, '_' );
+      OutFileName.append( qSrc );
+      OutFileName.append( fnaSuffix );
+      Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT );
+      fna.AppendMomentum( OutFileName, MomSrc ? MomSrc : MomSnk, MomSrc.Name );
+      AppendOps( OutFileName, opSnk, opSrc );
+      OutFileName = Common::MakeFilename( OutFileName, fna.Type, fna.Seed, fna.Ext );
+      std::cout << "->" << OutFileName << Common::NewLine;
+      out[i].Write( OutFileName, Common::sFold.c_str() );
+      const std::size_t FileNameLen{ OutFileName.find_last_of( '.' ) };
+      if( FileNameLen == std::string::npos )
+        OutFileName.append( 1, '.' );
+      else
+        OutFileName.resize( FileNameLen + 1 );
+      OutFileName.append( TEXT_EXT );
+      out[i].WriteSummary( OutFileName );
+    }
   }
 }
 
@@ -751,17 +816,18 @@ bool Debug()
 }*/
 
 Maker::Maker( std::string &TypeParams, const Common::CommandLine &cl )
-: modelBase{cl.SwitchValue<std::string>("im")},
+: MaxSamples{cl.SwitchValue<int>("n")},
+  modelBase{cl.SwitchValue<std::string>("im")},
   outBase{cl.SwitchValue<std::string>("o")},
   bSymmetrise{!cl.GotSwitch("nosym")},
   RegExSwap{cl.GotSwitch("swap")},
   RegExExt{std::regex( cl.SwitchValue<std::string>("ssre"), std::regex::extended | std::regex::icase )},
-  model{modelBase},
+  EFit{modelBase},
   Cache2{cl.SwitchValue<std::string>("i2"), LoadFilePrefix },
-  Cache3{cl.SwitchValue<std::string>("i3"), LoadFilePrefix }
+  Cache3{ "", LoadFilePrefix }
 {
   Common::MakeAncestorDirs( outBase );
-  model.Read( cl.SwitchValue<std::string>( EFitSwitch ), LoadFilePrefix );
+  EFit.Read( cl.SwitchValue<std::string>( "efit" ), LoadFilePrefix );
 }
 
 int main(int argc, const char *argv[])
@@ -780,24 +846,25 @@ int main(int argc, const char *argv[])
       {"i2", CL::SwitchType::Single, "" },
       {"i3", CL::SwitchType::Single, "" },
       {"im", CL::SwitchType::Single, "" },
+      {"n", CL::SwitchType::Single, "0"},
       {"o", CL::SwitchType::Single, "" },
       {"type", CL::SwitchType::Single, DefaultType },
       {"ssre", CL::SwitchType::Single, DefaultERE },
-      {EFitSwitch, CL::SwitchType::Single, ""},
+      {"efit", CL::SwitchType::Single, ""},
       {"swap", CL::SwitchType::Flag, nullptr},
       {"zv", CL::SwitchType::Flag, nullptr},
       {"nosym", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
-    if( !cl.GotSwitch( "help" ) && cl.Args.size() > 1 )
+    if( !cl.GotSwitch( "help" ) && cl.Args.size() )
     {
       // Read the list of fits I've chosen to use
       std::string TypeParams{ cl.SwitchValue<std::string>("type") };
       const std::string Type{ Common::ExtractToSeparator( TypeParams ) };
       std::unique_ptr<Maker> m;
-      if( Common::EqualIgnoreCase( Type, "R1R2" ) )
-        m.reset( new R1R2Maker( TypeParams, cl ) );
+      if( Common::EqualIgnoreCase( Type, "R" ) )
+        m.reset( new RMaker( TypeParams, cl ) );
       else if( Common::EqualIgnoreCase( Type, "ZV" ) )
         m.reset( new ZVMaker( TypeParams, cl ) );
       else
@@ -805,8 +872,8 @@ int main(int argc, const char *argv[])
       if( !TypeParams.empty() )
         throw std::runtime_error( "Unused parameters: " + TypeParams );
       bShowUsage = false;
-      std::size_t Prefix3ptLen{ m->Cache3.Base.size() };
-      std::vector<std::string> FileList{ Common::glob( cl.Args.begin(), cl.Args.end(), m->Cache3.Base.c_str() ) };
+      const std::string Prefix3pt{ cl.SwitchValue<std::string>("i3") };
+      std::vector<std::string> FileList{ Common::glob( cl.Args.begin(), cl.Args.end(), Prefix3pt.c_str() ) };
       std::size_t Count{ 0 };
       std::size_t Done{ 0 };
       for( std::string &sFile : FileList )
@@ -814,7 +881,6 @@ int main(int argc, const char *argv[])
         try
         {
           ++Count;
-          //sFile.erase( 0, Prefix3ptLen );
           m->Make( sFile );
           ++Done;
         }
@@ -840,24 +906,30 @@ int main(int argc, const char *argv[])
   }
   if( bShowUsage )
   {
-    ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name << " <options> FitList RatioFile1 [RatioFile2 [...]]\n"
+    ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) <<
+    "usage: " << cl.Name << " <options> RatioFile1 [RatioFile2 [...]]\n"
     "Create 3pt ratios using E0 from fits in FitListFile. <options> are:\n"
     "--i2   Input2 filename prefix\n"
     "--i3   Input3 filename prefix\n"
     "--im   Input model filename prefix\n"
+    "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
     "-o     Output filename prefix\n"
     "--type Ratio type[,parameters[,...]] (default " << DefaultType << ")\n"
+    "       ZV Make ZV\n"
+    "       R  Make R ratios: parameters=ZV_List[,c]; List of ZV_fits with each row:\n"
+    "          'Quark deltaT sink source file and 'c' freezes to central value.'\n"
+    "          ZV_List='1' to freeze Z_V to 1\n"
+    "--efit Fit_list[,options[,...]] List of fit files for energies,\n"
+    "       each row has 'Quark file' (one row per momenta)\n"
+    "       Fit_list=1,spectator to freeze energies to 1\n"
+    "       options can be 'c' to freeze energies to central value\n"
     "--ssre Extended regex for sink/source type, default\n       " << DefaultERE << "\n"
     "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
     //"-n     Number of samples to fit, 0 (default) = all available from bootstrap\n"
     "Flags:\n"
-    "--swap Swap source / sink order in regex\n"
-    "--eone Freeze the energy to 1 (in R1R2 ratios)\n"
-    "--ec   Freeze the energy fit to it's central value\n"
-    "--zvone Freeze ZV to 1 (in R1R2 ratios)\n"
-    "--zvc  Freeze ZV fit to it's central value\n"
-    "--nosym Don't symmetrise the waves\n"
-    "--help This message\n";
+    "--swap  Swap source / sink order in regex\n"
+    "--nosym Disable Out[t]=(Out[t]+Out[deltaT-t])/2 for symmetric ratios\n"
+    "--help  This message\n";
   }
   return iReturn;
 }

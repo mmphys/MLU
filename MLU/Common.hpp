@@ -94,7 +94,7 @@ BEGIN_COMMON_NAMESPACE
 static constexpr unsigned int COMPAT_DEFAULT{ 0 };
 static constexpr unsigned int COMPAT_DISABLE_BASE{ 1 };
 static constexpr unsigned int COMPAT_DISABLE_NT{ 2 };
-static constexpr unsigned int COMPAT_DISABLE_CONFIG_COUNT{ 4 };
+/*static constexpr unsigned int COMPAT_DISABLE_CONFIG_COUNT{ 4 };*/
 
 template <typename T> int sgn( T x )
 {
@@ -2470,10 +2470,10 @@ void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, unsigned in
       if( r.Config != l.Config )
         throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
                                  sNE + std::to_string(l.Config) + sSuffix );
-      if( !( CompareFlags & COMPAT_DISABLE_CONFIG_COUNT ) && r.Count != l.Count )
+      /*if( !( CompareFlags & COMPAT_DISABLE_CONFIG_COUNT ) && r.Count != l.Count )
         throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
                                  ", NumTimeslices " + std::to_string(r.Count) + sNE +
-                                 std::to_string(l.Count) + sSuffix );
+                                 std::to_string(l.Count) + sSuffix );*/
     }
   }
 }

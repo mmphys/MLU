@@ -117,8 +117,7 @@ template <typename FoldBoot>
 void Params::DivideBoot( FoldBoot &Numerator, const FoldBoot &Denominator )
 {
   int NumSamples = Numerator.NumSamples();
-  Numerator.IsCompatible( Denominator, &NumSamples, Common::COMPAT_DISABLE_BASE
-                         | Common::COMPAT_DISABLE_CONFIG_COUNT );
+  Numerator.IsCompatible( Denominator, &NumSamples, Common::COMPAT_DISABLE_BASE );
   // Make sure output doesn't exist
   const std::string OutBaseName{ OutBase + Numerator.Name_.NameNoExt + "." };
   const std::string OutFileName{ OutBaseName + DEF_FMT };
