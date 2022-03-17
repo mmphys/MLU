@@ -223,20 +223,20 @@ void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::Read( const std::strin
 }
 
 template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename M>
-Vector KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::GetVector( M &m, const std::string &Name )
+Vector KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::GetVector( M *m, const std::string &Name )
 {
   Vector v;
-  if( freeze == Freeze::Frozen )
+  if( freeze == Freeze::Frozen || !m )
   {
     v.MapView( &FrozenValue, std::numeric_limits<int>::max(), 0 );
   }
   else
   {
-    Scalar * p{ m[M::idxCentral] + m.GetColumnIndex( Name ) };
+    Scalar * p{ (*m)[M::idxCentral] + m->GetColumnIndex( Name ) };
     if( freeze == Freeze::Central )
       v.MapView( p, std::numeric_limits<int>::max(), 0 );
     else
-      v.MapView( p, m.NumSamples() - Model::idxCentral, m.Nt() );
+      v.MapView( p, m->NumSamples() - Model::idxCentral, m->Nt() );
   }
   return v;
 }
@@ -254,10 +254,10 @@ void QPModelMap::FrozenOptions( std::string &Options )
   Spectator = std::move( Options );
 }
 
-std::string QPModelMap::Get2ptName( const QP &key, const Model &m )
+std::string QPModelMap::Get2ptName( const QP &key, const Model *m )
 {
   std::string s;//{ C2Base };
-  if( freeze == Freeze::Frozen )
+  if( freeze == Freeze::Frozen || !m )
   {
     s.append( key.q );
     Append( s, Spectator );
@@ -267,8 +267,8 @@ std::string QPModelMap::Get2ptName( const QP &key, const Model &m )
   }
   else
   {
-    s = m.Name_.Base;
-    if( m.Name_.Extra.size() != 1 )
+    s = m->Name_.Base;
+    if( m->Name_.Extra.size() != 1 )
       throw std::runtime_error( "Expected " + s + " to have model info removed by parser" );
   }
   return s;
@@ -360,7 +360,7 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
   out.FileList.push_back( C3.Name_.Filename );
   out.FileList.push_back( C2.Name_.Filename );
   if( EFit.freeze != Freeze::Frozen )
-    out.FileList.push_back( Src.EModel.Name_.Filename );
+    out.FileList.push_back( Src.EModel->Name_.Filename );
   out.CopyAttributes( C3 );
   out.NtUnfolded = C3.Nt();
   Scalar * pDst{ out[Fold::idxCentral] };
@@ -415,8 +415,8 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   const std::string &qSrc{ Src.qp.q };
   QDT QDTSnk( qSnk, fna.DeltaT, Src.op, Snk.op );
   QDT QDTSrc( qSrc, fna.DeltaT, Snk.op, Src.op );
-  Model &ZVModelSnk{ZVmi[QDTSnk]};
-  Model &ZVModelSrc{ZVmi[QDTSrc]};
+  Model *ZVModelSnk{ZVmi[QDTSnk]};
+  Model *ZVModelSrc{ZVmi[QDTSrc]};
   Vector ZVSnk{ ZVmi.GetVector( ZVModelSnk ) };
   Vector ZVSrc{ ZVmi.GetVector( ZVModelSrc ) };
 
@@ -532,8 +532,8 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   {
     const unsigned int ModelCompareFlags{CompareFlags|Common::COMPAT_DISABLE_TYPE|Common::COMPAT_DISABLE_NT};
     int * pNumSamples = ZVmi.freeze == Freeze::None ? &NSamples : nullptr;
-    Corr2[0].Corr->IsCompatible( ZVModelSnk, pNumSamples, ModelCompareFlags );
-    Corr2[0].Corr->IsCompatible( ZVModelSrc, pNumSamples, ModelCompareFlags );
+    Corr2[0].Corr->IsCompatible( *ZVModelSnk, pNumSamples, ModelCompareFlags );
+    Corr2[0].Corr->IsCompatible( *ZVModelSrc, pNumSamples, ModelCompareFlags );
   }
   
   // Ensure 3pt correlator includes timeslice DeltaT

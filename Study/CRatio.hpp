@@ -175,10 +175,10 @@ public:
   static constexpr int BadIndex{ FileCacheT::BadIndex };
   KeyFileCache( const std::string &modelBase );
   virtual ~KeyFileCache() {}
-  inline M &operator[]( const Key &key ) { return model[GetIndex( key )]; }
+  inline M *operator[]( const Key &key ) { int i{GetIndex(key)}; return i == BadIndex ? nullptr : &model[i]; }
   virtual void clear();
   void Read( const std::string &Filename, const char *pszPrintPrefix );
-  Vector GetVector( M &m, const std::string &ColumnName = DefaultColumnName );
+  Vector GetVector( M *m, const std::string &ColumnName = DefaultColumnName );
 };
 
 using QDTModelMap = KeyFileCache<QDT, LessQDT>;
@@ -188,7 +188,7 @@ struct QPModelMap : public KeyFileCache<QP, LessQP, QuarkReader, Common::LessCas
   using Base = KeyFileCache<QP, LessQP, QuarkReader, Common::LessCaseInsensitive>;
   std::string Spectator;
   QPModelMap( const std::string &modelBase ) : Base( modelBase ) {}
-  std::string Get2ptName( const QP &key, const Model &m );
+  std::string Get2ptName( const QP &key, const Model *m );
   void clear() override;
 protected:
   void FrozenOptions( std::string &sOptions ) override;
@@ -213,7 +213,7 @@ protected:
   {
     const std::string &op;
     const QP qp;
-    Model &EModel;
+    Model *EModel;
     const Vector E;
     SSInfo( QPModelMap &efit, const std::string &op_, QP qp_ )
     : op{op_}, qp{qp_}, EModel{efit[qp]}, E{efit.GetVector(EModel)} {}

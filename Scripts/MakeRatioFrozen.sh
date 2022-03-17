@@ -29,12 +29,12 @@ else
     Cmd="CRatio --i2 $Corr/2pt${pType}/ --i3 $Corr/$d/ -o $d/"
     Cmd="${Cmd} --efit 1,f,${Spec}"
     for q in 'h*' l s; do
-      Files="'*_${q}_${q}_gT_dt_*_p${pZero}_ps${pZero}_*.h5' '*banana'"
+      Files="'*_${q}_${q}_gT_dt_*_p${pZero}_ps${pZero}_*.h5'"
       echo "$Cmd --type ZV $Files"
     done
     for q in 'h*_s' 'h*_l'; do
       for gamma in $gammas; do
-        Files="'*_${q}_${gamma}_dt_*_p${pStar}_ps${pStar}.h5' '*banana'"
+        Files="'*_${q}_${gamma}_dt_*_p${pStar}_ps${pStar}.h5'"
         echo "$Cmd --type R,1,f $Files"
       done
     done
