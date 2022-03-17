@@ -4,7 +4,7 @@
 set -e
 #set -x
 
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   echo "${BASH_SOURCE[0]} should be sourced"
   set +e; exit 1
 fi
@@ -126,10 +126,12 @@ function Split3ptFile()
 {
   local f="${1##*/}"
   local Spec="$2"
+  Ext=${f#*.}
   Prefix=${f%%.*}
   PrefixParts=(${Prefix//_/ })
-  if [ ${#PrefixParts[@]} != 12 ] || [ "${PrefixParts[4]}" != dt ] ||
-    [ "${PrefixParts[6]}" != p2 ] || [ "${PrefixParts[8]}" != ps2 ]
+  local NumParts=${#PrefixParts[@]}
+  if (( NumParts != 12 && NumParts != 10 )) || [[ "${PrefixParts[4]}" != dt ||
+    "${PrefixParts[6]}" != p2 || ( $NumParts = 12 && "${PrefixParts[8]}" != ps2 ) ]]
   then
     #echo "${#PrefixParts[@]}: ${PrefixParts[4]}, ${PrefixParts[6]}, ${PrefixParts[8]}."
     echo "Bad 3pt filename $f"
@@ -141,9 +143,9 @@ function Split3ptFile()
   Gamma=${PrefixParts[3]}
   DeltaT=${PrefixParts[5]}
   p2=${PrefixParts[7]}
-  ps2=${PrefixParts[9]}
-  opSnk=${PrefixParts[10]}
-  opSrc=${PrefixParts[11]}
+  (( NumParts == 12 )) && ps2=${PrefixParts[9]} || unset ps2
+  opSnk=${PrefixParts[-2]}
+  opSrc=${PrefixParts[-1]}
   HumanReadable
   GetMeson MSnkHuman $qSnk $Spec
   GetMeson MSrcHuman $qSrc $Spec

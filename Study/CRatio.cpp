@@ -444,7 +444,8 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   static constexpr int NumC3{ static_cast<int>( Corr3.size() ) };
   static constexpr int iInitial{ 0 };
   static constexpr int iFinal{ 1 };
-  bool bMakeR2{ true };
+  constexpr int NumRatio{ 4 };
+  std::vector<bool> MakeRatio( NumRatio, true );
   for( int Snk_Src = 0; Snk_Src < NumC3; ++Snk_Src )
   {
     int iSnk, iSrc;
@@ -487,7 +488,7 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
     {
       if( Snk_Src < 2 )
         throw std::runtime_error( "Forward and reversed 3pt functions are required" );
-      bMakeR2 = false;
+      MakeRatio[1] = false;
       Corr3[Snk_Src == 2 ? 3 : 2].Handle = CorrCache::BadIndex; // Other not required
       break;
     }
@@ -542,21 +543,39 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
     throw std::runtime_error("DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ));
 
   // Make somewhere to put ratios
-  const int NumRatio{ 3 };
-  std::vector<Fold> out( NumRatio );
+  std::array<Fold, NumRatio> out;
+  static const std::array<std::string, NumRatio> RatioNames{ "R1", "R2", "R3", "R3" }; // R3 isn't symmetric
+  static const std::array<bool, NumRatio> NameReverse{ false, false, false, true };
+  static const std::array<bool, NumRatio> RatioSymmetric{ true, true, false, false };
   std::vector<Scalar *> pDst( NumRatio, nullptr );
   for( int i = 0; i < NumRatio; i++ )
   {
-    if( i != 1 || bMakeR2 )
+    if( MakeRatio[i] )
     {
       out[i].resize( NSamples, fna.DeltaT + 1 );
+      // Energies
+      if( EFit.freeze != Freeze::Frozen )
+      {
+        out[i].FileList.push_back( Snk.EModel->Name_.Filename );
+        out[i].FileList.push_back( Src.EModel->Name_.Filename );
+      }
       // Three-point names
+      const int Num3ptStart{ i == 3 ? 1 : 0 };
       const int Num3pt{ i == 0 ? 2 : i == 1 ? 4 : 1 };
       for( int j = 0; j < Num3pt; ++j )
-        out[i].FileList.push_back( Corr3[j].Corr->Name_.Filename );
-      // Two-point names
-      for( int j = 0; i != 1 && j < NumC2; ++j )
-        out[i].FileList.push_back( Corr2[j].Corr->Name_.Filename );
+        out[i].FileList.push_back( Corr3[Num3ptStart+j].Corr->Name_.Filename );
+      if( i != 1 )
+      {
+        // Two-point names
+        for( int j = 0; j < NumC2; ++j )
+          out[i].FileList.push_back( Corr2[j].Corr->Name_.Filename );
+        // Z_V
+        if( ZVmi.freeze != Freeze::Frozen )
+        {
+          out[i].FileList.push_back( ZVModelSnk->Name_.Filename );
+          out[i].FileList.push_back( ZVModelSrc->Name_.Filename );
+        }
+      }
       // Now copy the rest of the attributes
       out[i].CopyAttributes( *Corr3[0].Corr );
       out[i].NtUnfolded = nT3;
@@ -592,29 +611,44 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
     // Now compute the ratios
     for( int t = 0; t <= fna.DeltaT; ++t )
     {
-      const double n = std::abs( EProd * pSrc[0][t] * pSrc[1][t] ); // fna.DeltaT - t
-      if( !std::isfinite( n ) )
-        throw std::runtime_error( "Numerator Overflow" );
-      pDst[0][t] = 2 * std::sqrt( ( n / C2Prod ) * ZVSrc[idxV] * ZVSnk[idxV] ); // R1
-      if( bMakeR2 )
-        pDst[1][t] = 2 * std::sqrt( n / std::abs( pSrc[2][t] * pSrc[3][t] ) );
+      if( MakeRatio[0] || MakeRatio[1] )
       {
-        // R3
-        const Scalar R3Exp{ std::exp( E[1] * fna.DeltaT - t * ( E[0] - E[1] ) ) };
-        const Scalar R3Denom{ pC2[0][t] * pC2[1][fna.DeltaT - t] };
-        pDst[2][t] = 2 * pSrc[0][t] * std::sqrt( EProd * R3Exp * ZVSrc[idxV] * ZVSnk[idxV] / R3Denom );
+        const double n = std::abs( EProd * pSrc[0][t] * pSrc[1][t] ); // fna.DeltaT - t
+        if( !std::isfinite( n ) )
+          throw std::runtime_error( "Numerator Overflow" );
+        if( MakeRatio[0] )
+          pDst[0][t] = 2 * std::sqrt( ( n / C2Prod ) * ZVSrc[idxV] * ZVSnk[idxV] ); // R1
+        if( MakeRatio[1] )
+          pDst[1][t] = 2 * std::sqrt( n / std::abs( pSrc[2][t] * pSrc[3][t] ) );
+      }
+      if( MakeRatio[2] )
+      {
+        // R3 - forward  (1st propagator)
+        const Scalar R3Exp{ std::exp( ( E[0] - E[1] ) * t + E[1] * fna.DeltaT ) };
+        const Scalar R3SqrtNum{ EProd * R3Exp * ZVSrc[idxV] * ZVSnk[idxV] };
+        pDst[2][t] = 2 * pSrc[0][t] * std::sqrt( R3SqrtNum / ( pC2[0][t] * pC2[1][fna.DeltaT - t] ) );
+      }
+      if( MakeRatio[3] )
+      {
+        // R3 backward (2nd propagator)
+        const Scalar R3Exp{ std::exp( ( E[1] - E[0] ) * t + E[0] * fna.DeltaT ) };
+        const Scalar R3SqrtNum{ EProd * R3Exp * ZVSrc[idxV] * ZVSnk[idxV] };
+        pDst[3][t] = 2 * pSrc[1][t] * std::sqrt( R3SqrtNum / ( pC2[1][t] * pC2[0][fna.DeltaT - t] ) );
       }
     }
     // Symmetrise the symmetric ratios, i.e. R1 and R2, but not R3
     if( bSymmetrise )
     {
       assert( ! ( fna.DeltaT & 1 ) && "DeltaT must be even" );
-      for( int i = 0; i < (bMakeR2 ? 2 : 1); ++i )
+      for( int i = 0; i < NumRatio; ++i )
       {
-        for( int t = 0; t < fna.DeltaT / 2; ++t )
+        if( MakeRatio[i] && RatioSymmetric[i] )
         {
-          pDst[i][t] = ( pDst[i][t] + pDst[i][fna.DeltaT - t] ) / 2;
-          pDst[i][fna.DeltaT - t] = pDst[i][t];
+          for( int t = 0; t < fna.DeltaT / 2; ++t )
+          {
+            pDst[i][t] = ( pDst[i][t] + pDst[i][fna.DeltaT - t] ) / 2;
+            pDst[i][fna.DeltaT - t] = pDst[i][t];
+          }
         }
       }
     }
@@ -627,20 +661,19 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   }
   for( int i = 0; i < NumRatio ; i++ )
   {
-    if( i != 1 || bMakeR2 )
+    if( MakeRatio[i] )
     {
       out[i].MakeCorrSummary( nullptr );
       std::string OutFileName{ outBase };
-      OutFileName.append( 1, 'R' );
-      OutFileName.append( 1, '1' + i );
+      OutFileName.append( RatioNames[i] );
       OutFileName.append( 1, '_' );
-      OutFileName.append( qSnk );
+      OutFileName.append( NameReverse[i] ? qSrc : qSnk );
       OutFileName.append( 1, '_' );
-      OutFileName.append( qSrc );
+      OutFileName.append( NameReverse[i] ? qSnk : qSrc );
       OutFileName.append( fnaSuffix );
       Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT );
       fna.AppendMomentum( OutFileName, Src.qp.p ? Src.qp.p : Snk.qp.p, Src.qp.p.Name );
-      AppendOps( OutFileName, Snk.op, Src.op );
+      AppendOps( OutFileName, NameReverse[i] ? Src.op : Snk.op, NameReverse[i] ? Snk.op : Src.op );
       OutFileName = Common::MakeFilename( OutFileName, fna.Type, fna.Seed, fna.Ext );
       std::cout << "->" << OutFileName << Common::NewLine;
       out[i].Write( OutFileName, Common::sFold.c_str() );
