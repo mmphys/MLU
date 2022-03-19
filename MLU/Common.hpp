@@ -156,6 +156,7 @@ extern const std::string NewLine;
 extern const std::string Comma;
 extern const std::string CommaSpace;
 extern const std::string Hash;
+extern const std::string EqualSign;
 
 // Compare two strings, case insensitive
 inline int CompareIgnoreCase(const std::string &s1, const std::string &s2)
@@ -646,6 +647,9 @@ template<typename T> StartStopStepIterator<T> StartStopStep<T>::end() const
   return it;
 };
 
+// Does the specified file exist?
+bool FileExists( const std::string& Filename );
+
 // This is a key/value file, and we ignore anything after a comment character
 // Use a std::MultiMap if the keys aren't unique
 template<class Key, class T, class Compare = std::less<Key>, class Map = std::map<Key, T, Compare>>
@@ -662,7 +666,37 @@ protected:
   }
   template<class V = T> static typename std::enable_if<!std::is_same<V, std::string>::value, bool>::type
   GetValue( std::istringstream &iss, V &v ) { return iss >> v && Common::StreamEmpty( iss ); }
+  static void ReadLine( Map &m, const std::string &s )
+  {
+    std::istringstream iss( s );
+    if( !Common::StreamEmpty( iss ) )
+    {
+      Key k;
+      if( !( iss >> k ) )
+        throw std::runtime_error( "KeyValReader::ReadLine() bad key " + s );
+      T t;
+      if( !GetValue( iss, t ) )
+        throw std::runtime_error( "KeyValReader::ReadLine() bad value " + s );
+      m.emplace( std::make_pair( std::move( k ), std::move( t ) ) );
+    }
+  }
 public:
+  static Map Read( const std::vector<std::string> &v, const std::string *Separator = &EqualSign )
+  {
+    Map m;
+    std::string Tmp;
+    for( const std::string &s : v )
+    {
+      const std::size_t pos = Separator ? s.find_first_of( *Separator ) : std::string::npos;
+      if( pos != std::string::npos )
+      {
+        Tmp = s;
+        Tmp[pos] = ' ';
+      }
+      ReadLine( m, ( pos == std::string::npos ) ? s : Tmp );
+    }
+    return m;
+  }
   static Map Read( std::istream &is, const std::string &sComment = Hash )
   {
     if( is.bad() )
@@ -677,20 +711,23 @@ public:
         std::size_t pos = s.find_first_of( sComment );
         if( pos != std::string::npos )
           s.resize( pos );
-        std::istringstream iss( s );
-        if( !Common::StreamEmpty( iss ) )
-        {
-          Key k;
-          if( !( iss >> k ) )
-            throw std::runtime_error( "KeyValReader::Read() bad key " + s );
-          T t;
-          if( !GetValue( iss, t ) )
-            throw std::runtime_error( "KeyValReader::Read() bad value " + s );
-          m.emplace( std::make_pair( std::move( k ), std::move( t ) ) );
-        }
+        ReadLine( m, s );
       }
     }
     return m;
+  }
+  static Map Read( const std::string &Filename, const char *ErrorMsgType = nullptr,
+                   const std::string &sComment = Hash )
+  {
+    if( FileExists( Filename ) )
+    {
+      std::ifstream s( Filename );
+      if( !s.bad() )
+        return Read( s, sComment );
+    }
+    std::ostringstream os;
+    os << ( ErrorMsgType ? ErrorMsgType : "Key/value file" ) << " \"" << Filename << "\" not found";
+    throw os.str().c_str();
   }
 };
 
@@ -716,9 +753,6 @@ std::vector<std::string> ZipperMerge( const std::vector<std::string> &v1, const 
 
 // Dump the environment to stdout, prefixed by optional message
 void DumpEnv(int argc, const char * const *argv, const char * pStr = nullptr );
-
-// Does the specified file exist?
-bool FileExists( const std::string& Filename );
 
 // Make the ancestor directories leading up to last element
 // NB: Don't test whether this worked, so that it if this is done simultaneously

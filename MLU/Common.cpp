@@ -95,6 +95,7 @@ extern const std::string NewLine{ "\n" };
 extern const std::string Comma{ "," };
 extern const std::string CommaSpace{ ", " };
 extern const std::string Hash{ "#" };
+extern const std::string EqualSign{ "=" };
 const std::string sBootstrap{ "bootstrap" };
 const std::string sFold{ "fold" };
 const std::string sModel{ "model" };

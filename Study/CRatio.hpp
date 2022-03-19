@@ -35,13 +35,15 @@ using Fold = Common::Fold<Scalar>;
 using Model = Common::Model<Scalar>;
 using Vector = Common::Vector<Scalar>;
 
+extern Model DummyModel;
 extern const std::string DefaultColumnName;
+extern const char LoadFilePrefix[];
 
 enum class Freeze
 {
   None,
   Central,
-  Frozen
+  Constant
 };
 
 inline void Append( std::string &s, const std::string &Add )
@@ -135,8 +137,9 @@ public:
   FileCache( const std::string &base, const char * Prefix = nullptr ) : Base{base}, PrintPrefix{Prefix} {}
   void clear();
   // Add file to cache if not present - delay loading until accessed
-  int GetIndex( const std::string &Filename );
-  FileT &operator[]( int iIndex );
+  int GetIndex( const std::string &Filename, const char * printPrefix = nullptr );
+  FileT &operator()( int iIndex, const char * printPrefix ); // This is what loads the file
+  inline FileT &operator[]( int iIndex ) { return (*this)( iIndex, PrintPrefix ); };
   inline FileT &operator[]( const std::string &Filename ) { return (*this)[GetIndex(Filename)]; }
   inline const FileT &operator[]( const std::string &Filename ) const { return (*this)[GetIndex(Filename)]; }
 };
@@ -145,7 +148,7 @@ public:
 // Extracts the momentum from the file name
 struct QuarkReader : public std::string
 {
-  QP Convert( const std::string &Filename ) const;
+  QP operator()( const std::string &Filename ) const;
 };
 
 // Static list of mappings from key to file. Can't be added to once read.
@@ -156,29 +159,34 @@ struct KeyFileCache
 //  const std::string C2Base;
   Freeze freeze;
 protected:
-  Scalar FrozenValue;
   using KeyMapT = std::map<Key, int, LessKey>;
   using FileCacheT = FileCache<M>;
   KeyMapT KeyMap;
   FileCacheT model;
+  using FieldMapT = std::map<std::string, std::string>;
+  using ConstantMapT = std::map<std::string, Scalar>;
+  FieldMapT FieldMap;
+  ConstantMapT ConstantMap;
 protected:
   using KeyReadMapT = std::map<Key, std::string, LessKey>;
   template<typename K = Key, typename R = KeyRead>
   typename std::enable_if<std::is_same<K, R>::value, KeyReadMapT>::type
-  ReadNameMap( std::ifstream &s );
+  ReadNameMap( const std::string &Filename, const char *pErrorMsg );
   template<typename K = Key, typename R = KeyRead>
   typename std::enable_if<!std::is_same<K, R>::value, KeyReadMapT>::type
-  ReadNameMap( std::ifstream &s );
-  int GetIndex( const Key &key ) const;
+  ReadNameMap( const std::string &Filename, const char *pErrorMsg );
+  int GetIndex( const Key &k ) const; // Only call this of we know we're not frozen to a constant
   virtual void FrozenOptions( std::string &sOptions ) {}
 public:
   static constexpr int BadIndex{ FileCacheT::BadIndex };
-  KeyFileCache( const std::string &modelBase );
-  virtual ~KeyFileCache() {}
-  inline M *operator[]( const Key &key ) { int i{GetIndex(key)}; return i == BadIndex ? nullptr : &model[i]; }
   virtual void clear();
-  void Read( const std::string &Filename, const char *pszPrintPrefix );
-  Vector GetVector( M *m, const std::string &ColumnName = DefaultColumnName );
+  KeyFileCache( const std::string &Base ) : model{Base} { clear(); }
+  virtual ~KeyFileCache() {}
+  // Use this to load a list of fit files
+  void Read( const std::string &Filename, const char * PrintPrefix );
+  M &operator()( const Key &key, const char * PrintPrefix ); // Make sure model loaded and print message
+  inline M &operator[]( const Key &key ) { return operator()( key, nullptr ); }
+  Vector GetVector( const Key &key, const std::string &ColumnName = DefaultColumnName );
 };
 
 using QDTModelMap = KeyFileCache<QDT, LessQDT>;
@@ -188,7 +196,7 @@ struct QPModelMap : public KeyFileCache<QP, LessQP, QuarkReader, Common::LessCas
   using Base = KeyFileCache<QP, LessQP, QuarkReader, Common::LessCaseInsensitive>;
   std::string Spectator;
   QPModelMap( const std::string &modelBase ) : Base( modelBase ) {}
-  std::string Get2ptName( const QP &key, const Model *m );
+  std::string Get2ptName( const QP &key );
   void clear() override;
 protected:
   void FrozenOptions( std::string &sOptions ) override;
@@ -213,10 +221,10 @@ protected:
   {
     const std::string &op;
     const QP qp;
-    Model *EModel;
+    Model &EModel;
     const Vector E;
     SSInfo( QPModelMap &efit, const std::string &op_, QP qp_ )
-    : op{op_}, qp{qp_}, EModel{efit[qp]}, E{efit.GetVector(EModel)} {}
+    : op{op_}, qp{qp_}, EModel{efit(qp,LoadFilePrefix)}, E{efit.GetVector(qp)} {}
   };
   struct CorrT
   {
@@ -239,7 +247,7 @@ protected:
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                      const SSInfo &Snk, const SSInfo &Src ) = 0;
 public:
-  Maker( std::string &TypeParams, const Common::CommandLine &cl );
+  Maker( const Common::CommandLine &cl );
   virtual ~Maker() {}
   void Make( std::string &sFileName );
 };
@@ -251,16 +259,17 @@ protected:
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                      const SSInfo &Snk, const SSInfo &Src );
 public:
-  ZVMaker( std::string &TypeParams, const Common::CommandLine &cl ) : Maker( TypeParams, cl ) {}
+  ZVMaker( const std::string &TypeParams, const Common::CommandLine &cl );
 };
 
 // Make R1 and R2: eq 2.8 pg 4 https://arxiv.org/pdf/1305.7217.pdf
 class RMaker : public Maker
 {
 protected:
+  const bool bAltR3;
   QDTModelMap ZVmi;
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                      const SSInfo &Snk, const SSInfo &Src );
 public:
-  RMaker( std::string &TypeParams, const Common::CommandLine &cl );
+  RMaker( const std::string &TypeParams, const Common::CommandLine &cl );
 };
