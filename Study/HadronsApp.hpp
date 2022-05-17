@@ -583,9 +583,9 @@ protected:
   std::string LoadEigenPack( HModList &ModList, Precision epPres ) const;
 #ifdef MLU_HADRONS_HAS_GUESSERS
   template<typename TGuesser>
-  void LoadGuessBatch( HModList &ModList, const std::string &GuesserName ) const;
+  void BatchGuessLoad( HModList &ModList, const std::string &GuesserName ) const;
   template<typename TGuesser>
-  void LoadGuessPreload( HModList &ModList, const std::string &GuesserName, const std::string &epName ) const;
+  void BatchGuessPreload( HModList &ModList, const std::string &GuesserName, const std::string &epName ) const;
 #endif
 };
 

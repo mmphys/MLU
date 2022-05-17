@@ -9,8 +9,6 @@
 /* Begin PBXBuildFile section */
 		680B62072729BF4A000CB627 /* VectorPackRef.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 680B62052729BF4A000CB627 /* VectorPackRef.hpp */; };
 		680B62082729BF4A000CB627 /* VectorPackRef.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 680B62062729BF4A000CB627 /* VectorPackRef.cpp */; };
-		6835520C275E672D00193B3C /* BatchExactDeflationPreload.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6835520A275E672D00193B3C /* BatchExactDeflationPreload.cpp */; };
-		6835520D275E672D00193B3C /* BatchExactDeflationPreload.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6835520B275E672D00193B3C /* BatchExactDeflationPreload.hpp */; };
 		684A3D8727DA218700C0ACF6 /* DistilMatrix.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D8527DA218600C0ACF6 /* DistilMatrix.hpp */; };
 		684A3D8827DA218700C0ACF6 /* DistillationVectors.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D8627DA218600C0ACF6 /* DistillationVectors.hpp */; };
 		684A3D8E27DA21ED00C0ACF6 /* DistilMesonFieldFixed.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D8927DA21EB00C0ACF6 /* DistilMesonFieldFixed.hpp */; };
@@ -180,7 +178,6 @@
 		6874EA4E271C6C7F0055B1E5 /* WilsonFermionInstantiationWilsonAdjImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E602271C6C770055B1E5 /* WilsonFermionInstantiationWilsonAdjImplD.cc */; };
 		6874EA4F271C6C7F0055B1E5 /* WilsonTMFermionInstantiationWilsonAdjImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E603271C6C770055B1E5 /* WilsonTMFermionInstantiationWilsonAdjImplD.cc */; };
 		6874EA50271C6C7F0055B1E5 /* WilsonCloverFermionInstantiationWilsonAdjImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E604271C6C770055B1E5 /* WilsonCloverFermionInstantiationWilsonAdjImplD.cc */; };
-		6874EA51271C6C7F0055B1E5 /* WilsonKernelsInstantiationWilsonAdjImplD.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E605271C6C770055B1E5 /* WilsonKernelsInstantiationWilsonAdjImplD.cc */; };
 		6874EA52271C6C7F0055B1E5 /* impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6874E606271C6C770055B1E5 /* impl.h */; };
 		6874EA53271C6C7F0055B1E5 /* ImprovedStaggeredFermion5DInstantiation.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E607271C6C770055B1E5 /* ImprovedStaggeredFermion5DInstantiation.cc */; };
 		6874EA54271C6C7F0055B1E5 /* WilsonKernelsInstantiationGparityWilsonImplF.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E609271C6C770055B1E5 /* WilsonKernelsInstantiationGparityWilsonImplF.cc */; };
@@ -1003,8 +1000,27 @@
 		68C0A531271CB193006BBD5E /* xmlZ2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446E2271C8E5400EF030C /* xmlZ2.cpp */; };
 		68C0A540271CB5C9006BBD5E /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68C0A541271CB5D3006BBD5E /* CRatio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68C0A533271CB3A4006BBD5E /* CRatio.cpp */; };
-		68DDBC6D27BC333D0097EF32 /* BatchExactDeflationPreloadSrcCast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68DDBC6B27BC333D0097EF32 /* BatchExactDeflationPreloadSrcCast.cpp */; };
-		68DDBC6E27BC333D0097EF32 /* BatchExactDeflationPreloadSrcCast.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68DDBC6C27BC333D0097EF32 /* BatchExactDeflationPreloadSrcCast.hpp */; };
+		68CE4C502833ED1900517211 /* CloverHelpers.h in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C4F2833ED1900517211 /* CloverHelpers.h */; };
+		68CE4C552833F3B800517211 /* WilsonExpClover.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C532833F3B700517211 /* WilsonExpClover.hpp */; };
+		68CE4C562833F3B800517211 /* WilsonExpClover.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CE4C542833F3B700517211 /* WilsonExpClover.cpp */; };
+		68CE4C5C2833F56600517211 /* BatchDeflationUtils.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C572833F56500517211 /* BatchDeflationUtils.hpp */; };
+		68CE4C5D2833F56600517211 /* BatchExactDeflationLoad.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C582833F56500517211 /* BatchExactDeflationLoad.hpp */; };
+		68CE4C5E2833F56600517211 /* BatchExactDeflationSrcCast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CE4C592833F56500517211 /* BatchExactDeflationSrcCast.cpp */; };
+		68CE4C5F2833F56600517211 /* BatchExactDeflationSrcCast.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C5A2833F56500517211 /* BatchExactDeflationSrcCast.hpp */; };
+		68CE4C602833F56600517211 /* BatchExactDeflationLoad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CE4C5B2833F56600517211 /* BatchExactDeflationLoad.cpp */; };
+		68CE4C6C2833F5BA00517211 /* ExternalLeg.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C612833F5B800517211 /* ExternalLeg.hpp */; };
+		68CE4C6D2833F5BA00517211 /* FourQuarkFullyConnected.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CE4C622833F5B800517211 /* FourQuarkFullyConnected.cpp */; };
+		68CE4C6E2833F5BA00517211 /* ExternalLeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CE4C632833F5B800517211 /* ExternalLeg.cpp */; };
+		68CE4C6F2833F5BA00517211 /* SubtractionOperators.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C642833F5B800517211 /* SubtractionOperators.hpp */; };
+		68CE4C702833F5BA00517211 /* FourQuarkLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CE4C652833F5B800517211 /* FourQuarkLoop.cpp */; };
+		68CE4C712833F5BA00517211 /* SubtractionOperators.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CE4C662833F5B800517211 /* SubtractionOperators.cpp */; };
+		68CE4C722833F5BA00517211 /* FourQuarkLoop.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C672833F5B900517211 /* FourQuarkLoop.hpp */; };
+		68CE4C732833F5BA00517211 /* G1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CE4C682833F5B900517211 /* G1.cpp */; };
+		68CE4C742833F5BA00517211 /* FourQuarkFullyConnected.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C692833F5B900517211 /* FourQuarkFullyConnected.hpp */; };
+		68CE4C752833F5BA00517211 /* G1.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C6A2833F5B900517211 /* G1.hpp */; };
+		68CE4C762833F5BA00517211 /* NPRUtils.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C6B2833F5B900517211 /* NPRUtils.hpp */; };
+		68CE4C792833F5DF00517211 /* MixedPrecisionRBPrecBiCGSTAB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68CE4C772833F5DE00517211 /* MixedPrecisionRBPrecBiCGSTAB.cpp */; };
+		68CE4C7A2833F5DF00517211 /* MixedPrecisionRBPrecBiCGSTAB.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68CE4C782833F5DE00517211 /* MixedPrecisionRBPrecBiCGSTAB.hpp */; };
 		68DDBC7327BC36180097EF32 /* WilsonCloverHelpers.h in Headers */ = {isa = PBXBuildFile; fileRef = 68DDBC7027BC36170097EF32 /* WilsonCloverHelpers.h */; };
 		68DDBC7427BC36180097EF32 /* WilsonCloverTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 68DDBC7127BC36180097EF32 /* WilsonCloverTypes.h */; };
 		68DDBC7527BC36180097EF32 /* CompactWilsonCloverFermion.h in Headers */ = {isa = PBXBuildFile; fileRef = 68DDBC7227BC36180097EF32 /* CompactWilsonCloverFermion.h */; };
@@ -1178,11 +1194,7 @@
 		68F61B25271C786800A8B197 /* Perambulator.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A10271C786700A8B197 /* Perambulator.hpp */; };
 		68F61B26271C786800A8B197 /* Perambulator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A11271C786700A8B197 /* Perambulator.cpp */; };
 		68F61B27271C786800A8B197 /* LapEvec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A12271C786700A8B197 /* LapEvec.cpp */; };
-		68F61B2B271C786800A8B197 /* Amputate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A1C271C786700A8B197 /* Amputate.cpp */; };
-		68F61B2C271C786800A8B197 /* FourQuark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A1D271C786700A8B197 /* FourQuark.cpp */; };
 		68F61B2D271C786800A8B197 /* Bilinear.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A1E271C786700A8B197 /* Bilinear.hpp */; };
-		68F61B2E271C786800A8B197 /* Amputate.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A1F271C786700A8B197 /* Amputate.hpp */; };
-		68F61B2F271C786800A8B197 /* FourQuark.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A20271C786700A8B197 /* FourQuark.hpp */; };
 		68F61B30271C786800A8B197 /* Bilinear.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A21271C786700A8B197 /* Bilinear.cpp */; };
 		68F61B31271C786800A8B197 /* ScaledDWF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61A23271C786700A8B197 /* ScaledDWF.cpp */; };
 		68F61B32271C786800A8B197 /* DWF.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A24271C786700A8B197 /* DWF.hpp */; };
@@ -1451,8 +1463,6 @@
 /* Begin PBXFileReference section */
 		680B62052729BF4A000CB627 /* VectorPackRef.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VectorPackRef.hpp; sourceTree = "<group>"; };
 		680B62062729BF4A000CB627 /* VectorPackRef.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VectorPackRef.cpp; sourceTree = "<group>"; };
-		6835520A275E672D00193B3C /* BatchExactDeflationPreload.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BatchExactDeflationPreload.cpp; sourceTree = "<group>"; };
-		6835520B275E672D00193B3C /* BatchExactDeflationPreload.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BatchExactDeflationPreload.hpp; sourceTree = "<group>"; };
 		683A3A1F272D2B09008EB025 /* Example_wall_wall_3pt.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Example_wall_wall_3pt.cc; sourceTree = "<group>"; };
 		684A3D8127DA213500C0ACF6 /* Make.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Make.inc; sourceTree = "<group>"; };
 		684A3D8227DA213500C0ACF6 /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
@@ -1670,7 +1680,6 @@
 		6874E602271C6C770055B1E5 /* WilsonFermionInstantiationWilsonAdjImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonFermionInstantiationWilsonAdjImplD.cc; sourceTree = "<group>"; };
 		6874E603271C6C770055B1E5 /* WilsonTMFermionInstantiationWilsonAdjImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonTMFermionInstantiationWilsonAdjImplD.cc; sourceTree = "<group>"; };
 		6874E604271C6C770055B1E5 /* WilsonCloverFermionInstantiationWilsonAdjImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonCloverFermionInstantiationWilsonAdjImplD.cc; sourceTree = "<group>"; };
-		6874E605271C6C770055B1E5 /* WilsonKernelsInstantiationWilsonAdjImplD.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonKernelsInstantiationWilsonAdjImplD.cc; sourceTree = "<group>"; };
 		6874E606271C6C770055B1E5 /* impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = impl.h; sourceTree = "<group>"; };
 		6874E607271C6C770055B1E5 /* ImprovedStaggeredFermion5DInstantiation.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ImprovedStaggeredFermion5DInstantiation.cc; sourceTree = "<group>"; };
 		6874E609271C6C770055B1E5 /* WilsonKernelsInstantiationGparityWilsonImplF.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonKernelsInstantiationGparityWilsonImplF.cc; sourceTree = "<group>"; };
@@ -2569,8 +2578,29 @@
 		68C0A532271CB3A3006BBD5E /* CRatio.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CRatio.hpp; sourceTree = "<group>"; };
 		68C0A533271CB3A4006BBD5E /* CRatio.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CRatio.cpp; sourceTree = "<group>"; };
 		68C0A539271CB597006BBD5E /* CRatio */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CRatio; sourceTree = BUILT_PRODUCTS_DIR; };
-		68DDBC6B27BC333D0097EF32 /* BatchExactDeflationPreloadSrcCast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BatchExactDeflationPreloadSrcCast.cpp; sourceTree = "<group>"; };
-		68DDBC6C27BC333D0097EF32 /* BatchExactDeflationPreloadSrcCast.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BatchExactDeflationPreloadSrcCast.hpp; sourceTree = "<group>"; };
+		68CE4C4F2833ED1900517211 /* CloverHelpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CloverHelpers.h; sourceTree = "<group>"; };
+		68CE4C512833EEEF00517211 /* Test_wilson_exp_clover.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Test_wilson_exp_clover.cc; sourceTree = "<group>"; };
+		68CE4C522833EEEF00517211 /* Test_wilson_conserved_current.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Test_wilson_conserved_current.cc; sourceTree = "<group>"; };
+		68CE4C532833F3B700517211 /* WilsonExpClover.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = WilsonExpClover.hpp; sourceTree = "<group>"; };
+		68CE4C542833F3B700517211 /* WilsonExpClover.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WilsonExpClover.cpp; sourceTree = "<group>"; };
+		68CE4C572833F56500517211 /* BatchDeflationUtils.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BatchDeflationUtils.hpp; sourceTree = "<group>"; };
+		68CE4C582833F56500517211 /* BatchExactDeflationLoad.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BatchExactDeflationLoad.hpp; sourceTree = "<group>"; };
+		68CE4C592833F56500517211 /* BatchExactDeflationSrcCast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BatchExactDeflationSrcCast.cpp; sourceTree = "<group>"; };
+		68CE4C5A2833F56500517211 /* BatchExactDeflationSrcCast.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BatchExactDeflationSrcCast.hpp; sourceTree = "<group>"; };
+		68CE4C5B2833F56600517211 /* BatchExactDeflationLoad.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BatchExactDeflationLoad.cpp; sourceTree = "<group>"; };
+		68CE4C612833F5B800517211 /* ExternalLeg.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ExternalLeg.hpp; sourceTree = "<group>"; };
+		68CE4C622833F5B800517211 /* FourQuarkFullyConnected.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FourQuarkFullyConnected.cpp; sourceTree = "<group>"; };
+		68CE4C632833F5B800517211 /* ExternalLeg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExternalLeg.cpp; sourceTree = "<group>"; };
+		68CE4C642833F5B800517211 /* SubtractionOperators.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SubtractionOperators.hpp; sourceTree = "<group>"; };
+		68CE4C652833F5B800517211 /* FourQuarkLoop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FourQuarkLoop.cpp; sourceTree = "<group>"; };
+		68CE4C662833F5B800517211 /* SubtractionOperators.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SubtractionOperators.cpp; sourceTree = "<group>"; };
+		68CE4C672833F5B900517211 /* FourQuarkLoop.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FourQuarkLoop.hpp; sourceTree = "<group>"; };
+		68CE4C682833F5B900517211 /* G1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = G1.cpp; sourceTree = "<group>"; };
+		68CE4C692833F5B900517211 /* FourQuarkFullyConnected.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FourQuarkFullyConnected.hpp; sourceTree = "<group>"; };
+		68CE4C6A2833F5B900517211 /* G1.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = G1.hpp; sourceTree = "<group>"; };
+		68CE4C6B2833F5B900517211 /* NPRUtils.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NPRUtils.hpp; sourceTree = "<group>"; };
+		68CE4C772833F5DE00517211 /* MixedPrecisionRBPrecBiCGSTAB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MixedPrecisionRBPrecBiCGSTAB.cpp; sourceTree = "<group>"; };
+		68CE4C782833F5DE00517211 /* MixedPrecisionRBPrecBiCGSTAB.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MixedPrecisionRBPrecBiCGSTAB.hpp; sourceTree = "<group>"; };
 		68DDBC6F27BC352B0097EF32 /* Test_compact_wilson_clover_speedup.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Test_compact_wilson_clover_speedup.cc; sourceTree = "<group>"; };
 		68DDBC7027BC36170097EF32 /* WilsonCloverHelpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WilsonCloverHelpers.h; sourceTree = "<group>"; };
 		68DDBC7127BC36180097EF32 /* WilsonCloverTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WilsonCloverTypes.h; sourceTree = "<group>"; };
@@ -3062,11 +3092,7 @@
 		68F61A18271C786700A8B197 /* Module_tmp_in_NS.hpp.template */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Module_tmp_in_NS.hpp.template; sourceTree = "<group>"; };
 		68F61A19271C786700A8B197 /* Module_tmp_in_NS.cpp.template */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Module_tmp_in_NS.cpp.template; sourceTree = "<group>"; };
 		68F61A1A271C786700A8B197 /* Module_in_NS.hpp.template */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Module_in_NS.hpp.template; sourceTree = "<group>"; };
-		68F61A1C271C786700A8B197 /* Amputate.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Amputate.cpp; sourceTree = "<group>"; };
-		68F61A1D271C786700A8B197 /* FourQuark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FourQuark.cpp; sourceTree = "<group>"; };
 		68F61A1E271C786700A8B197 /* Bilinear.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Bilinear.hpp; sourceTree = "<group>"; };
-		68F61A1F271C786700A8B197 /* Amputate.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Amputate.hpp; sourceTree = "<group>"; };
-		68F61A20271C786700A8B197 /* FourQuark.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FourQuark.hpp; sourceTree = "<group>"; };
 		68F61A21271C786700A8B197 /* Bilinear.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Bilinear.cpp; sourceTree = "<group>"; };
 		68F61A23271C786700A8B197 /* ScaledDWF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ScaledDWF.cpp; sourceTree = "<group>"; };
 		68F61A24271C786700A8B197 /* DWF.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DWF.hpp; sourceTree = "<group>"; };
@@ -3462,12 +3488,13 @@
 		6870F918271CCE9A0083F930 /* MGuesser */ = {
 			isa = PBXGroup;
 			children = (
+				68CE4C572833F56500517211 /* BatchDeflationUtils.hpp */,
 				6870F91C271CCE9A0083F930 /* BatchExactDeflation.cpp */,
 				6870F91A271CCE9A0083F930 /* BatchExactDeflation.hpp */,
-				6835520A275E672D00193B3C /* BatchExactDeflationPreload.cpp */,
-				6835520B275E672D00193B3C /* BatchExactDeflationPreload.hpp */,
-				68DDBC6B27BC333D0097EF32 /* BatchExactDeflationPreloadSrcCast.cpp */,
-				68DDBC6C27BC333D0097EF32 /* BatchExactDeflationPreloadSrcCast.hpp */,
+				68CE4C5B2833F56600517211 /* BatchExactDeflationLoad.cpp */,
+				68CE4C582833F56500517211 /* BatchExactDeflationLoad.hpp */,
+				68CE4C592833F56500517211 /* BatchExactDeflationSrcCast.cpp */,
+				68CE4C5A2833F56500517211 /* BatchExactDeflationSrcCast.hpp */,
 				6870F91B271CCE9A0083F930 /* ExactDeflation.cpp */,
 				6870F919271CCE9A0083F930 /* ExactDeflation.hpp */,
 			);
@@ -3770,6 +3797,7 @@
 				6874E5EF271C6C760055B1E5 /* instantiation */,
 				6874E6AD271C6C780055B1E5 /* AbstractEOFAFermion.h */,
 				6874E5E7271C6C760055B1E5 /* CayleyFermion5D.h */,
+				68CE4C4F2833ED1900517211 /* CloverHelpers.h */,
 				68DDBC7227BC36180097EF32 /* CompactWilsonCloverFermion.h */,
 				6874E6AB271C6C780055B1E5 /* ContinuedFractionFermion5D.h */,
 				6874E688271C6C780055B1E5 /* DomainWallEOFAFermion.h */,
@@ -3890,7 +3918,6 @@
 				6874E606271C6C770055B1E5 /* impl.h */,
 				6874E604271C6C770055B1E5 /* WilsonCloverFermionInstantiationWilsonAdjImplD.cc */,
 				6874E602271C6C770055B1E5 /* WilsonFermionInstantiationWilsonAdjImplD.cc */,
-				6874E605271C6C770055B1E5 /* WilsonKernelsInstantiationWilsonAdjImplD.cc */,
 				6874E603271C6C770055B1E5 /* WilsonTMFermionInstantiationWilsonAdjImplD.cc */,
 			);
 			path = WilsonAdjImplD;
@@ -5649,7 +5676,9 @@
 				68F6182F271C75AE00A8B197 /* Test_where_extended.cc */,
 				68F6181A271C75AE00A8B197 /* Test_where.cc */,
 				68F61831271C75AE00A8B197 /* Test_wilson_clover.cc */,
+				68CE4C522833EEEF00517211 /* Test_wilson_conserved_current.cc */,
 				68F61829271C75AE00A8B197 /* Test_wilson_even_odd.cc */,
+				68CE4C512833EEEF00517211 /* Test_wilson_exp_clover.cc */,
 				68F61833271C75AE00A8B197 /* Test_wilson_twisted_mass_even_odd.cc */,
 				68F61823271C75AE00A8B197 /* Test_zmobius_even_odd.cc */,
 			);
@@ -6187,6 +6216,8 @@
 				68F619D2271C786600A8B197 /* LocalCoherenceLanczos.hpp */,
 				68F619D0271C786600A8B197 /* MADWFCG.cpp */,
 				68F619DC271C786600A8B197 /* MADWFCG.hpp */,
+				68CE4C772833F5DE00517211 /* MixedPrecisionRBPrecBiCGSTAB.cpp */,
+				68CE4C782833F5DE00517211 /* MixedPrecisionRBPrecBiCGSTAB.hpp */,
 				68F619DD271C786600A8B197 /* MixedPrecisionRBPrecCG.cpp */,
 				68F619D1271C786600A8B197 /* MixedPrecisionRBPrecCG.hpp */,
 				68F619D6271C786600A8B197 /* RBPrecCG.cpp */,
@@ -6300,12 +6331,19 @@
 		68F61A1B271C786700A8B197 /* MNPR */ = {
 			isa = PBXGroup;
 			children = (
-				68F61A1C271C786700A8B197 /* Amputate.cpp */,
-				68F61A1F271C786700A8B197 /* Amputate.hpp */,
 				68F61A21271C786700A8B197 /* Bilinear.cpp */,
 				68F61A1E271C786700A8B197 /* Bilinear.hpp */,
-				68F61A1D271C786700A8B197 /* FourQuark.cpp */,
-				68F61A20271C786700A8B197 /* FourQuark.hpp */,
+				68CE4C632833F5B800517211 /* ExternalLeg.cpp */,
+				68CE4C612833F5B800517211 /* ExternalLeg.hpp */,
+				68CE4C622833F5B800517211 /* FourQuarkFullyConnected.cpp */,
+				68CE4C692833F5B900517211 /* FourQuarkFullyConnected.hpp */,
+				68CE4C652833F5B800517211 /* FourQuarkLoop.cpp */,
+				68CE4C672833F5B900517211 /* FourQuarkLoop.hpp */,
+				68CE4C682833F5B900517211 /* G1.cpp */,
+				68CE4C6A2833F5B900517211 /* G1.hpp */,
+				68CE4C6B2833F5B900517211 /* NPRUtils.hpp */,
+				68CE4C662833F5B800517211 /* SubtractionOperators.cpp */,
+				68CE4C642833F5B800517211 /* SubtractionOperators.hpp */,
 			);
 			path = MNPR;
 			sourceTree = "<group>";
@@ -6325,6 +6363,8 @@
 				68F61A2B271C786700A8B197 /* Wilson.hpp */,
 				68F61A28271C786700A8B197 /* WilsonClover.cpp */,
 				68F61A2D271C786700A8B197 /* WilsonClover.hpp */,
+				68CE4C542833F3B700517211 /* WilsonExpClover.cpp */,
+				68CE4C532833F3B700517211 /* WilsonExpClover.hpp */,
 				68F61A29271C786700A8B197 /* ZMobiusDWF.cpp */,
 				68F61A2E271C786700A8B197 /* ZMobiusDWF.hpp */,
 			);
@@ -6708,6 +6748,7 @@
 				6874ED60271C6C810055B1E5 /* Log.h in Headers */,
 				6874EB78271C6C800055B1E5 /* Intel512avx.h in Headers */,
 				6874EAB1271C6C7F0055B1E5 /* WilsonTMFermion.h in Headers */,
+				68CE4C502833ED1900517211 /* CloverHelpers.h in Headers */,
 				6874EC13271C6C800055B1E5 /* ei_fftw_impl.h in Headers */,
 				6874ECFC271C6C810055B1E5 /* UmfPackSupport.h in Headers */,
 				6874E9EB271C6C7E0055B1E5 /* Grid_Eigen_Tensor.h in Headers */,
@@ -7242,6 +7283,7 @@
 				68F61B77271C786900A8B197 /* EigenPack.hpp in Headers */,
 				68F61AC7271C786800A8B197 /* SeqGamma.hpp in Headers */,
 				68F61B6C271C786900A8B197 /* LoadCoarseEigenPack.hpp in Headers */,
+				68CE4C762833F5BA00517211 /* NPRUtils.hpp in Headers */,
 				68F61AFF271C786800A8B197 /* StoutSmearing.hpp in Headers */,
 				68F61A9F271C786700A8B197 /* Baryon.hpp in Headers */,
 				684A3DAE27DA227500C0ACF6 /* RHQInsertionVI.hpp in Headers */,
@@ -7265,6 +7307,7 @@
 				68F61AE4271C786800A8B197 /* SourceSink.hpp in Headers */,
 				68F61AB1271C786700A8B197 /* Loop.hpp in Headers */,
 				68F61AF3271C786800A8B197 /* CGNE.hpp in Headers */,
+				68CE4C5D2833F56600517211 /* BatchExactDeflationLoad.hpp in Headers */,
 				68F61B0A271C786800A8B197 /* Electrify.hpp in Headers */,
 				68F61A9E271C786700A8B197 /* A2ASmearedMesonField.hpp in Headers */,
 				68F61B5A271C786900A8B197 /* LoadPerambulator.hpp in Headers */,
@@ -7291,6 +7334,7 @@
 				68F61AD9271C786800A8B197 /* SeqAslash.hpp in Headers */,
 				68F61B0C271C786800A8B197 /* TimeDilutedSpinColorDiagonal.hpp in Headers */,
 				68F61B25271C786800A8B197 /* Perambulator.hpp in Headers */,
+				68CE4C7A2833F5DF00517211 /* MixedPrecisionRBPrecBiCGSTAB.hpp in Headers */,
 				68F61B4D271C786800A8B197 /* EMT.hpp in Headers */,
 				684A3DB027DA227500C0ACF6 /* RHQInsertionV.hpp in Headers */,
 				68F61B05271C786800A8B197 /* GaugeFix.hpp in Headers */,
@@ -7307,6 +7351,7 @@
 				68F61ABF271C786800A8B197 /* FreeProp.hpp in Headers */,
 				68F61ABC271C786700A8B197 /* WeakNonEye3pt.hpp in Headers */,
 				6870F913271CCE680083F930 /* RandomGaugeTransformation.hpp in Headers */,
+				68CE4C6C2833F5BA00517211 /* ExternalLeg.hpp in Headers */,
 				68F61ADA271C786800A8B197 /* Z2Diluted.hpp in Headers */,
 				68F61A6F271C786700A8B197 /* Application.hpp in Headers */,
 				68F61AF4271C786800A8B197 /* RBPrecCG.hpp in Headers */,
@@ -7320,17 +7365,17 @@
 				68F61AEB271C786800A8B197 /* MixedPrecisionRBPrecCG.hpp in Headers */,
 				68F61B03271C786800A8B197 /* Random.hpp in Headers */,
 				68F61B1A271C786800A8B197 /* RandomField.hpp in Headers */,
+				68CE4C5F2833F56600517211 /* BatchExactDeflationSrcCast.hpp in Headers */,
 				68F61A89271C786700A8B197 /* sqlite3.h in Headers */,
 				68F61AA4271C786700A8B197 /* A2ALoop.hpp in Headers */,
-				6835520D275E672D00193B3C /* BatchExactDeflationPreload.hpp in Headers */,
 				68F61B71271C786900A8B197 /* LoadBinary.hpp in Headers */,
 				68F61A87271C786700A8B197 /* TimerArray.hpp in Headers */,
 				68F61B4E271C786800A8B197 /* TwoPoint.hpp in Headers */,
 				68F61B76271C786900A8B197 /* A2AVectors.hpp in Headers */,
 				68F61B65271C786900A8B197 /* LoadOpenQcd.hpp in Headers */,
+				68CE4C552833F3B800517211 /* WilsonExpClover.hpp in Headers */,
 				68F61B14271C786800A8B197 /* RandomVectors.hpp in Headers */,
 				68F61A72271C786700A8B197 /* Global.hpp in Headers */,
-				68DDBC6E27BC333D0097EF32 /* BatchExactDeflationPreloadSrcCast.hpp in Headers */,
 				6870F91E271CCE9B0083F930 /* BatchExactDeflation.hpp in Headers */,
 				68F61A99271C786700A8B197 /* A2AFourQuarkContraction.hpp in Headers */,
 				68F61B3A271C786800A8B197 /* Laplacian.hpp in Headers */,
@@ -7340,7 +7385,6 @@
 				68F61AD5271C786800A8B197 /* Random.hpp in Headers */,
 				68F61B4B271C786800A8B197 /* TrMag.hpp in Headers */,
 				68F61A71271C786700A8B197 /* GeneticScheduler.hpp in Headers */,
-				68F61B2F271C786800A8B197 /* FourQuark.hpp in Headers */,
 				68F61B0D271C786800A8B197 /* SparseSpinColorDiagonal.hpp in Headers */,
 				68F61A8F271C786700A8B197 /* SqlEntry.hpp in Headers */,
 				68F61B74271C786900A8B197 /* DiskVector.hpp in Headers */,
@@ -7350,6 +7394,7 @@
 				68F61B32271C786800A8B197 /* DWF.hpp in Headers */,
 				680B62072729BF4A000CB627 /* VectorPackRef.hpp in Headers */,
 				68F61AFE271C786800A8B197 /* UnitEm.hpp in Headers */,
+				68CE4C742833F5BA00517211 /* FourQuarkFullyConnected.hpp in Headers */,
 				68F61A73271C786700A8B197 /* VirtualMachine.hpp in Headers */,
 				684A3DA227DA225600C0ACF6 /* InterlacedDistillation.hpp in Headers */,
 				68F61ADB271C786800A8B197 /* Z2.hpp in Headers */,
@@ -7361,6 +7406,7 @@
 				68F61ADD271C786800A8B197 /* SeqGammaWall.hpp in Headers */,
 				68F61AB6271C786700A8B197 /* WeakMesonDecayKl2.hpp in Headers */,
 				684A3DB527DA227500C0ACF6 /* RHQInsertionI.hpp in Headers */,
+				68CE4C722833F5BA00517211 /* FourQuarkLoop.hpp in Headers */,
 				68F61A90271C786700A8B197 /* A2AMatrix.hpp in Headers */,
 				68F61AAD271C786700A8B197 /* Meson.hpp in Headers */,
 				68F61A70271C786700A8B197 /* Factory.hpp in Headers */,
@@ -7368,8 +7414,10 @@
 				68F61B59271C786900A8B197 /* LoadNersc.hpp in Headers */,
 				68F61AA1271C786700A8B197 /* A2AAslashField.hpp in Headers */,
 				68F61B08271C786800A8B197 /* FundtoHirep.hpp in Headers */,
+				68CE4C752833F5BA00517211 /* G1.hpp in Headers */,
 				68F61A8D271C786700A8B197 /* NamedTensor.hpp in Headers */,
 				68F61A94271C786700A8B197 /* DilutedNoise.hpp in Headers */,
+				68CE4C5C2833F56600517211 /* BatchDeflationUtils.hpp in Headers */,
 				68DDBC7527BC36180097EF32 /* CompactWilsonCloverFermion.h in Headers */,
 				68F61B2D271C786800A8B197 /* Bilinear.hpp in Headers */,
 				68F61ABA271C786700A8B197 /* WardIdentity.hpp in Headers */,
@@ -7379,7 +7427,6 @@
 				684A3D8F27DA21ED00C0ACF6 /* DistilMesonFieldRelative.hpp in Headers */,
 				6870F91D271CCE9B0083F930 /* ExactDeflation.hpp in Headers */,
 				68F61AF9271C786800A8B197 /* A2AVectors.hpp in Headers */,
-				68F61B2E271C786800A8B197 /* Amputate.hpp in Headers */,
 				68F61ACE271C786800A8B197 /* JacobiSmear.hpp in Headers */,
 				68F61ADE271C786800A8B197 /* SeqConserved.hpp in Headers */,
 				68F61B0E271C786800A8B197 /* FullVolumeSpinColorDiagonal.hpp in Headers */,
@@ -7393,6 +7440,7 @@
 				68F61B39271C786800A8B197 /* Wilson.hpp in Headers */,
 				68F61A8E271C786700A8B197 /* Graph.hpp in Headers */,
 				68F61B66271C786900A8B197 /* LoadField.hpp in Headers */,
+				68CE4C6F2833F5BA00517211 /* SubtractionOperators.hpp in Headers */,
 				68F61AF5271C786800A8B197 /* ImplicitlyRestartedLanczos.hpp in Headers */,
 				68F61B62271C786900A8B197 /* LoadA2AVectors.hpp in Headers */,
 			);
@@ -8070,7 +8118,6 @@
 				6874EB2B271C6C7F0055B1E5 /* Zolotarev.cc in Sources */,
 				6874EA44271C6C7F0055B1E5 /* WilsonFermionInstantiationWilsonImplD.cc in Sources */,
 				6874EA53271C6C7F0055B1E5 /* ImprovedStaggeredFermion5DInstantiation.cc in Sources */,
-				6874EA51271C6C7F0055B1E5 /* WilsonKernelsInstantiationWilsonAdjImplD.cc in Sources */,
 				6874ED75271C6C820055B1E5 /* JSON_IO.cc in Sources */,
 				6874EA76271C6C7F0055B1E5 /* ImprovedStaggeredFermion5DInstantiationStaggeredImplF.cc in Sources */,
 				6874EA79271C6C7F0055B1E5 /* StaggeredKernelsInstantiationStaggeredImplF.cc in Sources */,
@@ -8264,13 +8311,13 @@
 				6870F915271CCE680083F930 /* GaugeTransform.cpp in Sources */,
 				6870F91F271CCE9B0083F930 /* ExactDeflation.cpp in Sources */,
 				68F61AEA271C786800A8B197 /* MADWFCG.cpp in Sources */,
-				68F61B2B271C786800A8B197 /* Amputate.cpp in Sources */,
 				68F61B34271C786800A8B197 /* Wilson.cpp in Sources */,
 				68F61B6D271C786900A8B197 /* LoadNersc.cpp in Sources */,
 				6870F920271CCE9B0083F930 /* BatchExactDeflation.cpp in Sources */,
 				68F61A76271C786700A8B197 /* Environment.cpp in Sources */,
 				68F61A9D271C786700A8B197 /* Gamma3pt.cpp in Sources */,
 				684A3D9A27DA223200C0ACF6 /* LoadInterlacedDistillationNoise.cpp in Sources */,
+				68CE4C732833F5BA00517211 /* G1.cpp in Sources */,
 				68F61AFD271C786800A8B197 /* Random.cpp in Sources */,
 				68F61ADC271C786800A8B197 /* SeqGamma.cpp in Sources */,
 				68F61B68271C786900A8B197 /* LoadA2AVectors.cpp in Sources */,
@@ -8281,13 +8328,14 @@
 				68F61B31271C786800A8B197 /* ScaledDWF.cpp in Sources */,
 				68F61B6E271C786900A8B197 /* LoadPerambulator.cpp in Sources */,
 				68F61A98271C786700A8B197 /* Loop.cpp in Sources */,
+				68CE4C6E2833F5BA00517211 /* ExternalLeg.cpp in Sources */,
 				68F61B36271C786800A8B197 /* WilsonClover.cpp in Sources */,
 				68F61B47271C786800A8B197 /* WilsonFlow.cpp in Sources */,
 				68F61AAC271C786700A8B197 /* BaryonGamma3pt.cpp in Sources */,
-				68F61B2C271C786800A8B197 /* FourQuark.cpp in Sources */,
 				684A3D9027DA21ED00C0ACF6 /* DistilMesonFieldFixed.cpp in Sources */,
 				68F61B10271C786800A8B197 /* FullVolumeSpinColorDiagonal.cpp in Sources */,
 				684A3DBC27DA22AF00C0ACF6 /* Test_highfreq_stat.cpp in Sources */,
+				68CE4C712833F5BA00517211 /* SubtractionOperators.cpp in Sources */,
 				68F61B63271C786900A8B197 /* LoadA2AMatrixDiskVector.cpp in Sources */,
 				684A3DBD27DA22AF00C0ACF6 /* Test_exact_distil.cpp in Sources */,
 				68F61AA0271C786700A8B197 /* WardIdentity.cpp in Sources */,
@@ -8316,6 +8364,7 @@
 				68F61B0B271C786800A8B197 /* CheckerboardSpinColorDiagonal.cpp in Sources */,
 				68F61AEF271C786800A8B197 /* CGNE.cpp in Sources */,
 				68F61B60271C786900A8B197 /* LoadField.cpp in Sources */,
+				68CE4C702833F5BA00517211 /* FourQuarkLoop.cpp in Sources */,
 				68F61B42271C786800A8B197 /* TransProj.cpp in Sources */,
 				68F61B73271C786900A8B197 /* StatLogger.cpp in Sources */,
 				68F61AAA271C786700A8B197 /* RareKaonNeutralDisc.cpp in Sources */,
@@ -8331,7 +8380,6 @@
 				68F61B3E271C786800A8B197 /* DWF.cpp in Sources */,
 				68F61AAB271C786700A8B197 /* A2AMesonField.cpp in Sources */,
 				68F61B44271C786800A8B197 /* TrKinetic.cpp in Sources */,
-				68DDBC6D27BC333D0097EF32 /* BatchExactDeflationPreloadSrcCast.cpp in Sources */,
 				68F61AAF271C786700A8B197 /* SigmaToNucleonEye.cpp in Sources */,
 				68F61A97271C786700A8B197 /* Global.cpp in Sources */,
 				68F61A96271C786700A8B197 /* Application.cpp in Sources */,
@@ -8343,6 +8391,8 @@
 				68F61AB9271C786700A8B197 /* A2AAslashField.cpp in Sources */,
 				68F61B35271C786800A8B197 /* Laplacian.cpp in Sources */,
 				68F61AC6271C786800A8B197 /* Z2.cpp in Sources */,
+				68CE4C5E2833F56600517211 /* BatchExactDeflationSrcCast.cpp in Sources */,
+				68CE4C792833F5DF00517211 /* MixedPrecisionRBPrecBiCGSTAB.cpp in Sources */,
 				68F61ABD271C786700A8B197 /* A2ALoop.cpp in Sources */,
 				68F61B57271C786900A8B197 /* LoadCoarseEigenPack.cpp in Sources */,
 				68F61ABB271C786700A8B197 /* SigmaToNucleonNonEye.cpp in Sources */,
@@ -8356,7 +8406,6 @@
 				68F61AF8271C786800A8B197 /* LocalCoherenceLanczos.cpp in Sources */,
 				68F61AC9271C786800A8B197 /* Momentum.cpp in Sources */,
 				68F61AD7271C786800A8B197 /* Point.cpp in Sources */,
-				6835520C275E672D00193B3C /* BatchExactDeflationPreload.cpp in Sources */,
 				68F61A88271C786700A8B197 /* sqlite3.c in Sources */,
 				68F61B27271C786800A8B197 /* LapEvec.cpp in Sources */,
 				684A3DA027DA225600C0ACF6 /* InterlacedDistillation.cpp in Sources */,
@@ -8379,6 +8428,7 @@
 				684A3DB127DA227500C0ACF6 /* RHQInsertionI.cpp in Sources */,
 				68F61B5D271C786900A8B197 /* LoadBinary.cpp in Sources */,
 				68F61A9A271C786700A8B197 /* DiscLoop.cpp in Sources */,
+				68CE4C562833F3B800517211 /* WilsonExpClover.cpp in Sources */,
 				68F61AFA271C786800A8B197 /* A2AAslashVectors.cpp in Sources */,
 				68F61B18271C786800A8B197 /* RandomVectors.cpp in Sources */,
 				68F61A8C271C786700A8B197 /* Database.cpp in Sources */,
@@ -8388,7 +8438,9 @@
 				6870F916271CCE680083F930 /* RandomGaugeTransformation.cpp in Sources */,
 				68F61A9C271C786700A8B197 /* WeakMesonDecayKl2.cpp in Sources */,
 				684A3DAF27DA227500C0ACF6 /* RHQInsertionIII.cpp in Sources */,
+				68CE4C6D2833F5BA00517211 /* FourQuarkFullyConnected.cpp in Sources */,
 				68F61AD4271C786800A8B197 /* SeqAslash.cpp in Sources */,
+				68CE4C602833F56600517211 /* BatchExactDeflationLoad.cpp in Sources */,
 				68F61B04271C786800A8B197 /* StoutSmearing.cpp in Sources */,
 				68F61B26271C786800A8B197 /* Perambulator.cpp in Sources */,
 			);
@@ -8672,7 +8724,7 @@
 					$GridPkg/lib,
 					$GridPkg/lib/libomp,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.3;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -8772,7 +8824,7 @@
 					$GridPkg/lib,
 					$GridPkg/lib/libomp,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.3;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CFLAGS = (

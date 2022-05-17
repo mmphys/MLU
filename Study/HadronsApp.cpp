@@ -596,7 +596,7 @@ std::string ModSolver::LoadEigenPack( HModList &ModList, Precision XformPres ) c
 
 #ifdef MLU_HADRONS_HAS_GUESSERS
 template<typename TGuesser>
-void ModSolver::LoadGuessBatch( HModList &ModList, const std::string &GuesserName ) const
+void ModSolver::BatchGuessLoad( HModList &ModList, const std::string &GuesserName ) const
 {
   typename TGuesser::Par guessPar;
   LoadEigenPar( guessPar.eigenPack, ModList, Precision::Double );
@@ -606,7 +606,7 @@ void ModSolver::LoadGuessBatch( HModList &ModList, const std::string &GuesserNam
 }
 
 template<typename TGuesser>
-void ModSolver::LoadGuessPreload( HModList &ModList, const std::string &GuesserName,
+void ModSolver::BatchGuessPreload( HModList &ModList, const std::string &GuesserName,
                                   const std::string &epName ) const
 {
   typename TGuesser::Par guessPar;
@@ -629,26 +629,26 @@ void ModSolver::AddDependencies( HModList &ModList ) const
     {
       if( ModList.params.Run.PreLoadEigen )
       {
-        // Double-precision preloaded batch guesser together with pre-loaded eigen pack
+        // Double-precision batch guesser together with pre-loaded eigen pack
         std::string epName;
         if( q.eigenSinglePrecision )
         {
           epName = LoadEigenPack<MIO::LoadFermionEigenPackF>( ModList, Precision::Single );
-          LoadGuessPreload<MGuesser::BatchExactDeflationPreloadEPackF>( ModList, EigenGuessName, epName );
+          BatchGuessPreload<MGuesser::BatchExactDeflationEPackF>( ModList, EigenGuessName, epName );
         }
         else
         {
           epName = LoadEigenPack<MIO::LoadFermionEigenPack>( ModList, Precision::Double );
-          LoadGuessPreload<MGuesser::BatchExactDeflationPreload>( ModList, EigenGuessName, epName );
+          BatchGuessPreload<MGuesser::BatchExactDeflation>( ModList, EigenGuessName, epName );
         }
       }
       else
       {
         // Double-precision batch guesser, loading from single or double-precision
         if( q.eigenSinglePrecision )
-          LoadGuessBatch<MGuesser::BatchExactDeflationDIOF>( ModList, EigenGuessName );
+          BatchGuessLoad<MGuesser::BatchExactDeflationLoadDIoF>( ModList, EigenGuessName );
         else
-          LoadGuessBatch<MGuesser::BatchExactDeflation>( ModList, EigenGuessName );
+          BatchGuessLoad<MGuesser::BatchExactDeflationLoad>( ModList, EigenGuessName );
       }
     }
     else
