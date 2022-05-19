@@ -148,8 +148,8 @@ NBlock=STATS_blocks
 BlockMin=0
 BlockMax=NBlock - 1
 if( STATS_max - STATS_min == NBlock - 1 ) {
-  if( STATS_min < TIMin ) { BlockMin=TIMin - STATS_min }
-  if( STATS_max > TIMax ) { BlockMax=BlockMax - ( STATS_max - TIMax ) }
+  if( do_timin && STATS_min < TIMin ) { BlockMin=TIMin - STATS_min }
+  if( do_timax && STATS_max > TIMax ) { BlockMax=BlockMax - ( STATS_max - TIMax ) }
 } else { print "Blocks are not contiguous - min/max labels not set" }
 
 set yrange[@my_yrange]

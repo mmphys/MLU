@@ -312,6 +312,7 @@ void Summariser::Run()
     int NumSamples{ 0 };
     std::string ColumnNames;
     std::string Comments;
+    std::vector<std::string> FileNameOps; // For now I get these, but don't check them
     Common::SeedType Seed{ 0 };
     using FitMap = std::map<FitTimes, FitData>;
     FitMap Fits;
@@ -321,7 +322,8 @@ void Summariser::Run()
       {
         // Check the model characteristics
         Model m;
-        m.Read( ThisFile.FileName, "" );
+        m.SetName( ThisFile.FileName, &FileNameOps );
+        m.Read( "" );
         if( m.dof < 1 )
           throw std::runtime_error("dof=" + std::to_string( m.dof ) + " i.e. extrapolation, not fit");
         std::ostringstream ss;
