@@ -98,9 +98,11 @@ FitterThreadGSL::~FitterThreadGSL()
 
 void FitterThreadGSL::MakeCovarCorrelated()
 {
-  // Cholesky gives LL^T, so inverting lower triangle (L) gives L^{-1} in lower triangle
+  // Cholesky is Cholesky decomposition of (i.e. LL^T=) CORRELATION matrix
+  // CholeskyInvert() finds the inverse correlation matrix
   Cholesky.CholeskyInvert();
   Dump( "Inverse Covar", Cholesky );
+  // Cholesky() finds the Cholesky decomposition of the inverse correlation matrix
   Cholesky.Cholesky();
   Dump( "Inverse Covar Cholesky", Cholesky );
 }

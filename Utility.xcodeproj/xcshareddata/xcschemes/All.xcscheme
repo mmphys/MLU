@@ -168,6 +168,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "687EF0ED2844BD58009D6B74"
+               BuildableName = "SynthData"
+               BlueprintName = "SynthData"
+               ReferencedContainer = "container:Utility.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "686EC05B271C9EE300A69ED4"
                BuildableName = "peramb-compare"
                BlueprintName = "peramb-compare"

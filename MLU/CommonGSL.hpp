@@ -49,6 +49,10 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline MyVector & operator=( Vector &&o );
   inline bool operator==( const Vector &o ) const;
   inline bool operator!=( const Vector &o ) const { return !operator==( o ); }
+  template <typename T> inline MyVector &operator+=( T c );
+  template <typename T> inline MyVector &operator-=( T c );
+  template <typename T> inline MyVector &operator*=( T c );
+  template <typename T> inline MyVector &operator/=( T c );
   inline void resize( std::size_t size );
   inline void clear();
   inline void MapView( Scalar * data_, std::size_t size_, std::size_t stride_ = 1 );
@@ -85,6 +89,7 @@ Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( const Vector &o )
 
 Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( Vector &&o )
 {
+  clear(); // Release any memory I'm currently holding
   size = o.size;
   stride = o.stride;
   data = o.data;
@@ -92,6 +97,34 @@ Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( Vector &&o )
   owner = o.owner;
   o.owner = false;
   o.clear();
+  return *this;
+}
+
+template <typename T> Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator+=( T c )
+{
+  for( std::size_t i = 0; i < size; ++i )
+    data[i] += c;
+  return *this;
+}
+
+template <typename T> Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator-=( T c )
+{
+  for( std::size_t i = 0; i < size; ++i )
+    data[i] -= c;
+  return *this;
+}
+
+template <typename T> Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator*=( T c )
+{
+  for( std::size_t i = 0; i < size; ++i )
+    data[i] *= c;
+  return *this;
+}
+
+template <typename T> Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator/=( T c )
+{
+  for( std::size_t i = 0; i < size; ++i )
+    data[i] /= c;
   return *this;
 }
 
@@ -104,7 +137,10 @@ void Vector<COMMON_GSL_TYPE>::resize( std::size_t size_ )
 {
   // Re-use existing buffer if it's big enough and I own it
   if( size_ && owner && block->size >= size_ )
+  {
     size = size_;
+    stride = 1;
+  }
   else
   {
     clear();
@@ -206,6 +242,10 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline ~Matrix();
   inline MyMatrix & operator=( const Matrix &o );
   inline MyMatrix & operator=( Matrix &&o );
+  template <typename T> inline MyMatrix &operator+=( T c );
+  template <typename T> inline MyMatrix &operator-=( T c );
+  template <typename T> inline MyMatrix &operator*=( T c );
+  template <typename T> inline MyMatrix &operator/=( T c );
   inline bool operator==( const Matrix &o ) const;
   inline bool operator!=( const Matrix &o ) const { return !operator==( o ); }
   inline std::size_t rows() const { return size1; }
@@ -260,6 +300,7 @@ Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator=( const Matrix &o )
 
 Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator=( Matrix &&o )
 {
+  clear(); // Release any memory I'm currently holding
   size1 = o.size1;
   size2 = o.size2;
   tda = o.tda;
@@ -269,6 +310,38 @@ Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator=( Matrix &&o )
   o.owner = false;
   o.block = nullptr;
   //o.clear(); // Might as well leave the original pointing to a copy of the data
+  return *this;
+}
+
+template <typename T> Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator+=( T c )
+{
+  for( std::size_t i = 0; i < size1; ++i )
+    for( std::size_t j = 0; j < size2; ++j )
+      (*this)(i,j) += c;
+  return *this;
+}
+
+template <typename T> Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator-=( T c )
+{
+  for( std::size_t i = 0; i < size1; ++i )
+    for( std::size_t j = 0; j < size2; ++j )
+      (*this)(i,j) -= c;
+  return *this;
+}
+
+template <typename T> Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator*=( T c )
+{
+  for( std::size_t i = 0; i < size1; ++i )
+    for( std::size_t j = 0; j < size2; ++j )
+      (*this)(i,j) *= c;
+  return *this;
+}
+
+template <typename T> Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator/=( T c )
+{
+  for( std::size_t i = 0; i < size1; ++i )
+    for( std::size_t j = 0; j < size2; ++j )
+      (*this)(i,j) /= c;
   return *this;
 }
 
@@ -301,6 +374,7 @@ void Matrix<COMMON_GSL_TYPE>::resize( std::size_t size1_, std::size_t size2_ )
   {
     size1 = size1_;
     size2 = size2_;
+    tda = size2_;
   }
   else
   {

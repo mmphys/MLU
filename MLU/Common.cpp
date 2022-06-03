@@ -111,6 +111,8 @@ const std::string sNumExponents{ "NumExponents" };
 const std::string sNumFiles{ "NumFiles" };
 const std::string sFactorised{ "Factorised" };
 const std::string sCovarFrozen{ "CovarFrozen" };
+const std::string sCorrelation_C{ "Correlation_C" };
+const std::string sStdErrorMean_C{ "StdErrorMean_C" };
 const std::string sOperators{ "Operators" };
 const std::string sAuxNames{ "AuxNames" };
 const std::string sSummaryNames{ "SummaryNames" };
@@ -482,7 +484,8 @@ void ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count )
   const typename std::vector<T>::iterator itStart{ Data.begin() };
   const typename std::vector<T>::iterator itEnd  { itStart + Count };
   std::sort( itStart, itEnd );
-  std::size_t Index = 0.16 * Count + 0.5;
+  const double OneSigma{ ( 1. - 0.682689492137086 ) * 0.5 }; // https://en.wikipedia.org/wiki/68–95–99.7_rule
+  std::size_t Index = OneSigma * Count + 0.5;
   if( Index >= Count )
     Index = Count - 1;
   Min  = Data[0];
@@ -1356,6 +1359,93 @@ template void ReadArray<long double>( template_ReadArrayArgs( long double ) );
 template void ReadArray<std::complex<float>>( template_ReadArrayArgs( std::complex<float> ) );
 template void ReadArray<std::complex<double>>( template_ReadArrayArgs( std::complex<double> ) );
 template void ReadArray<std::complex<long double>>( template_ReadArrayArgs(std::complex<long double>));
+
+const std::array<std::string, 3> CovarParams::aCovarSource{ "Binned", "Raw", "Bootstrap" };
+
+std::ostream& operator<<( std::ostream& os, CovarParams::CovarSource covarSource )
+{
+  const int enumIdx{ static_cast<int>( covarSource ) };
+  if( enumIdx < CovarParams::aCovarSource.size() )
+    return os << CovarParams::aCovarSource[enumIdx];
+  return os << "Unknown" << std::to_string( enumIdx );
+}
+
+const std::string CovarParamsRebin::sCovarSource{ "CovarSource" };
+const std::string CovarParamsRebin::sCovarParams{ "CovarParams" };
+const std::array<std::string, 4> CovarParamsRebin::aCovarSource{ "Binned", "Raw", "Bootstrap", "Rebin" };
+
+std::ostream& operator<<( std::ostream& os, CovarParamsRebin::CovarSource covarSource )
+{
+  const int enumIdx{ static_cast<int>( covarSource ) };
+  if( enumIdx < CovarParamsRebin::aCovarSource.size() )
+    return os << CovarParamsRebin::aCovarSource[enumIdx];
+  return os << "Unknown" << std::to_string( enumIdx );
+}
+
+void CovarParamsRebin::Validate( std::size_t NumC ) const
+{
+  const int enumIdx{ static_cast<int>( Source ) };
+  if( enumIdx < 0 || enumIdx >= aCovarSource.size() )
+    throw std::runtime_error( "Invalid covariance source" );
+  if( ( Source == CovarSource::Raw || Source == CovarSource::Binned ) && !Count.empty() )
+    throw std::runtime_error( "Don't specify a size when using raw or binned data" );
+  if( Source == CovarSource::Bootstrap && Count.size() > 1 )
+    throw std::runtime_error( "Specify at most one size when getting covariance from bootstrap replicas" );
+  if( NumC && Source == CovarSource::Rebin && Count.size() > 1 && Count.size() != NumC )
+    throw std::runtime_error( "Should either be one bin size, or same number as correlators" );
+}
+
+void CovarParamsRebin::Validate( std::size_t NumC )
+{
+  // If rebinning using bin size 1, just use the raw data
+  if( Source == CovarSource::Rebin && !Count.empty() )
+  {
+    std::size_t i = 0;
+    while( i < Count.size() && Count[i] == 1 )
+      ++i;
+    if( i == Count.size() )
+    {
+      Count.clear();
+      Source = CovarSource::Raw;
+    }
+  }
+  const CovarParamsRebin &thisConst{ *this };
+  thisConst.Validate( NumC );
+}
+
+std::istream& operator>>( std::istream& is, CovarParamsRebin &p )
+{
+  std::string s;
+  if( ! ( is >> s ) )
+    throw std::runtime_error( "CovarParamsRebin can't read stream" ); // very unlikely
+  // First part of string is the enum name
+  const std::string sEnum{ ExtractToSeparator( s ) };
+  const int enumIdx{ IndexIgnoreCase( CovarParamsRebin::aCovarSource, sEnum ) };
+  if( enumIdx >= CovarParamsRebin::aCovarSource.size() )
+    throw std::runtime_error( "CovarParamsRebin::CovarSource \"" + sEnum + "\" unrecognised" );
+  p.Source = static_cast<CovarParamsRebin::CovarSource>( enumIdx );
+  try
+  {
+    p.Count = ArrayFromString<int>( s );
+  }
+  catch(...)
+  {
+    throw std::runtime_error( "CovarParamsRebin " + sEnum + ", bad parameters: " + s );
+  }
+  p.Validate();
+  return is;
+}
+
+std::ostream& operator<<( std::ostream& os, const CovarParamsRebin &p )
+{
+  const int enumIdx{ static_cast<int>( p.Source ) };
+  if( enumIdx < 0 || enumIdx >= CovarParamsRebin::aCovarSource.size() )
+    return os << "Unknown" << std::to_string( enumIdx );
+  os << CovarParamsRebin::aCovarSource[enumIdx];
+  for( int i : p.Count )
+    os << Comma << i;
+  return os;
+}
 
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl)
 {

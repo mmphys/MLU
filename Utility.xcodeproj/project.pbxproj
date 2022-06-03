@@ -983,6 +983,8 @@
 		6874ED74271C6C820055B1E5 /* BaseIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E9E3271C6C7E0055B1E5 /* BaseIO.cc */; };
 		6874ED75271C6C820055B1E5 /* JSON_IO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E9E4271C6C7E0055B1E5 /* JSON_IO.cc */; };
 		6874ED76271C6C820055B1E5 /* JSON_IO.h in Headers */ = {isa = PBXBuildFile; fileRef = 6874E9E5271C6C7E0055B1E5 /* JSON_IO.h */; };
+		687EF0F52844C3A6009D6B74 /* SynthData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687EF0E82844BCD6009D6B74 /* SynthData.cpp */; };
+		687EF0F62844CA49009D6B74 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68820B2A2721CC1700825D73 /* GaugeCmp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */; };
 		68820B2B2721CC4300825D73 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68A2B64E271C816600D9CB95 /* HadronsXmlRun.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61B94271C79E700A8B197 /* HadronsXmlRun.cpp */; };
@@ -1378,6 +1380,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		686EC05A271C9EE300A69ED4 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		687EF0EC2844BD58009D6B74 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -2567,6 +2578,9 @@
 		6874E9E3271C6C7E0055B1E5 /* BaseIO.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BaseIO.cc; sourceTree = "<group>"; };
 		6874E9E4271C6C7E0055B1E5 /* JSON_IO.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JSON_IO.cc; sourceTree = "<group>"; };
 		6874E9E5271C6C7E0055B1E5 /* JSON_IO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSON_IO.h; sourceTree = "<group>"; };
+		687EF0E82844BCD6009D6B74 /* SynthData.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SynthData.cpp; sourceTree = "<group>"; };
+		687EF0E92844BCD7009D6B74 /* SynthData.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SynthData.hpp; sourceTree = "<group>"; };
+		687EF0EE2844BD58009D6B74 /* SynthData */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SynthData; sourceTree = BUILT_PRODUCTS_DIR; };
 		68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GaugeCmp.cpp; sourceTree = "<group>"; };
 		68820B232721CBE100825D73 /* GaugeCmp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GaugeCmp; sourceTree = BUILT_PRODUCTS_DIR; };
 		68A2B647271C7EE100D9CB95 /* HadronsXmlRun */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HadronsXmlRun; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3315,6 +3329,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		687EF0EB2844BD58009D6B74 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				687EF0F62844CA49009D6B74 /* libMLU.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		68820B202721CBE100825D73 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -3474,6 +3496,8 @@
 				685446F3271C8E5400EF030C /* MultiFit.cpp */,
 				685446FA271C8E5400EF030C /* MultiFit.hpp */,
 				685446EE271C8E5400EF030C /* repair.cpp */,
+				687EF0E82844BCD6009D6B74 /* SynthData.cpp */,
+				687EF0E92844BCD7009D6B74 /* SynthData.hpp */,
 			);
 			path = Analyze;
 			sourceTree = "<group>";
@@ -3551,6 +3575,7 @@
 				68C0A539271CB597006BBD5E /* CRatio */,
 				68820B232721CBE100825D73 /* GaugeCmp */,
 				6868F2F9274536F000D73B89 /* Example_wall_wall_spectrum */,
+				687EF0EE2844BD58009D6B74 /* SynthData */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -7704,6 +7729,23 @@
 			productReference = 6874E57D271C6A600055B1E5 /* libGrid.a */;
 			productType = "com.apple.product-type.library.static";
 		};
+		687EF0ED2844BD58009D6B74 /* SynthData */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 687EF0F22844BD58009D6B74 /* Build configuration list for PBXNativeTarget "SynthData" */;
+			buildPhases = (
+				687EF0EA2844BD58009D6B74 /* Sources */,
+				687EF0EB2844BD58009D6B74 /* Frameworks */,
+				687EF0EC2844BD58009D6B74 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SynthData;
+			productName = SynthData;
+			productReference = 687EF0EE2844BD58009D6B74 /* SynthData */;
+			productType = "com.apple.product-type.tool";
+		};
 		68820B222721CBE100825D73 /* GaugeCmp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 68820B272721CBE200825D73 /* Build configuration list for PBXNativeTarget "GaugeCmp" */;
@@ -7911,6 +7953,9 @@
 					6874E57C271C6A600055B1E5 = {
 						CreatedOnToolsVersion = 13.0;
 					};
+					687EF0ED2844BD58009D6B74 = {
+						CreatedOnToolsVersion = 13.4;
+					};
 					68820B222721CBE100825D73 = {
 						CreatedOnToolsVersion = 13.0;
 					};
@@ -7971,6 +8016,7 @@
 				6854474D271C996700EF030C /* MultiFit */,
 				686EC05B271C9EE300A69ED4 /* peramb-compare */,
 				68544778271C9D0800EF030C /* repair */,
+				687EF0ED2844BD58009D6B74 /* SynthData */,
 				68C0A4F0271CA165006BBD5E /* TensorDemo */,
 				68C0A4FF271CA44D006BBD5E /* xml3pt */,
 				68C0A50D271CA50C006BBD5E /* xmlGFWall */,
@@ -8230,6 +8276,14 @@
 				6874EA7B271C6C7F0055B1E5 /* PartialFractionFermion5DInstantiationWilsonImplF.cc in Sources */,
 				6874E9F4271C6C7E0055B1E5 /* Init.cc in Sources */,
 				6874EB49271C6C800055B1E5 /* Communicator_mpi3.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		687EF0EA2844BD58009D6B74 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				687EF0F52844C3A6009D6B74 /* SynthData.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8900,6 +8954,20 @@
 			};
 			name = Release;
 		};
+		687EF0F32844BD58009D6B74 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		687EF0F42844BD58009D6B74 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		68820B282721CBE200825D73 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -9203,6 +9271,15 @@
 			buildConfigurations = (
 				6874E57F271C6A600055B1E5 /* Debug */,
 				6874E580271C6A600055B1E5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		687EF0F22844BD58009D6B74 /* Build configuration list for PBXNativeTarget "SynthData" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				687EF0F32844BD58009D6B74 /* Debug */,
+				687EF0F42844BD58009D6B74 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

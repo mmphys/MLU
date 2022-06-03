@@ -40,6 +40,10 @@
 #include <set>
 //#include <sys/stat.h>
 
+using scalar = double;
+using Matrix = Common::Matrix<scalar>;
+using Vector = Common::Vector<scalar>;
+
 //#define DUMP_MATRICES
 #ifdef DUMP_MATRICES
 void Dump( const std::string &Name, const Matrix &m );
@@ -48,13 +52,10 @@ void Dump( const std::string &Name, const Vector &v );
 #define Dump( x, y )
 #endif
 
-using scalar = double;
 using Fold = Common::Fold<scalar>;
 using vCorrelator = std::vector<Fold>;
 using ModelFile = Common::Model<scalar>;
 using DataSet = Common::DataSet<scalar>;
-using Matrix = Common::Matrix<scalar>;
-using Vector = Common::Vector<scalar>;
 using vString = std::vector<std::string>;
 using vInt = std::vector<int>;
 using UniqueNames = Common::UniqueNames;
@@ -260,7 +261,8 @@ protected:
 public:
   FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
   virtual ~FitterThread() {}
-  void SetReplica( int idx, bool bShowOutput ); // Switch to this index
+  // Switch to this index
+  void SetReplica( int idx, bool bShowOutput, Matrix * pCorrel, Vector * pStdErrorMean );
   inline std::string ReplicaString( int iFitNum ) const
   {
     std::stringstream ss;
@@ -276,7 +278,7 @@ public:
   bool AnalyticJacobian( Matrix &Jacobian ) const;
   scalar RepeatFit( ParamState &Guess, int MaxGuesses );
   void UpdateGuess( Parameters &parGuess );
-  scalar FitOne( const Parameters &parGuess, const std::string &SaveCorMatFileName );
+  scalar FitOne( const Parameters &parGuess );
   // Implement this to support a new type of fitter
   virtual void Minimise( ParamState &Guess, int iNumGuesses ) = 0;
   virtual void MakeCovarCorrelated() {} // Override to adjust covariance matrix
@@ -340,8 +342,8 @@ public:
                    const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames_ );
   virtual ~Fitter() {}
   std::vector<Common::ValWithEr<scalar>>
-  PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName, const std::string &ModelSuffix,
-              Common::SeedType Seed );
+  PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName,
+              const std::string &ModelSuffix, Common::SeedType Seed, const Common::CovarParamsRebin &cpr );
 };
 
 #endif // MultiFit_hpp

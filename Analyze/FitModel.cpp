@@ -387,7 +387,7 @@ bool Model2pt::GuessE0( scalar &E0, const Vector &Corr ) const
 void Model2ptSinhCosh::ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const
 {
   for( int e = 0; e < NumExponents; ++e )
-    ScratchPad[e] = std::exp( - ModelParams[ParamIdxPerExp[e][0]] * HalfNt );
+    ScratchPad[e] = 2 * std::exp( - ModelParams[ParamIdxPerExp[e][0]] * HalfNt );
 }
 
 scalar ModelExp::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
