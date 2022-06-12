@@ -33,6 +33,7 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
 {
   using Traits    = GSLTraits<COMMON_GSL_TYPE>;
   using Scalar    = Traits::Scalar;
+  using value_type= Scalar;
   using Real      = Traits::Real;
   using GSLScalar = Traits::GSLScalar;
   using GSLBlock  = Traits::GSLBlockType;
@@ -228,6 +229,7 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
 {
   using Traits    = GSLTraits<COMMON_GSL_TYPE>;
   using Scalar    = Traits::Scalar;
+  using value_type= Scalar;
   using Real      = Traits::Real;
   using GSLScalar = Traits::GSLScalar;
   using GSLBlock  = Traits::GSLBlockType;
@@ -264,7 +266,14 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline MyVector CholeskySolve( const MyVector &b ) const;
   inline MyVector CholeskySolve( const MyVector &b, const MyVector &S ) const;
   inline Scalar CholeskyRCond() const;
+  inline MyVector CholeskyScale() const;
   inline void CholeskyScaleApply( const MyVector &S );
+  inline MyVector CholeskyExtract()
+  {
+    MyVector S{ CholeskyScale() };
+    CholeskyScaleApply( S );
+    return S;
+  }
 #endif
 #ifdef COMMON_GSL_OPTIONAL
   inline MyMatrix Inverse() const;
@@ -473,9 +482,19 @@ inline COMMON_GSL_TYPE Matrix<COMMON_GSL_TYPE>::CholeskyRCond() const
   return rcond;
 }
 
+inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::CholeskyScale() const
+{
+  MyVector S( size1 );
+  COMMON_GSL_FUNC( linalg, cholesky_scale )( this, &S );
+  return S;
+}
+
 inline void Matrix<COMMON_GSL_TYPE>::CholeskyScaleApply( const MyVector &S )
 {
   COMMON_GSL_FUNC( linalg, cholesky_scale_apply )( this, &S );
+  for( int i = 0; i < size1; ++i )
+    for( int j = 0; j < i; ++j )
+      (*this)( j, i ) = (*this)( i, j );
 }
 
 #endif // COMMON_GSL_DOUBLE
@@ -510,7 +529,7 @@ void Matrix<COMMON_GSL_TYPE>::CholeskyInvert()
 
 inline std::ostream & operator<<( std::ostream &os, const Matrix<COMMON_GSL_TYPE> &m )
 {
-  static constexpr int MaxRows = 30;
+  static constexpr int MaxRows = 8;
   static constexpr int MaxCols = 8;
   os << "Matrix { " << m.size1 << " x " << m.size2;
   if( m.size2 != m.tda )

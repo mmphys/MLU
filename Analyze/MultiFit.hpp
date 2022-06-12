@@ -243,9 +243,12 @@ public:
   static constexpr int FirstIndex{ std::numeric_limits<int>::lowest() };
   // These variables change on each iteration
   int idx;
-  Matrix Covar;
+  Matrix Covar; // Covariance matrix used in the fit
+  Vector StdErrorMean; // sqrt of diagonals of Covar
+  // GSL:     Cholesky decomposition of InverseCorrelationMatrix
+  // Minuit2: Cholesky decomposition of CorrelationMatrix
   Matrix Cholesky;
-  Vector CholeskyDiag;
+  Vector CholeskyDiag; // 1 / StdErrorMean
   Vector Data;            // Data points we are fitting
   Vector Error;           // Difference between model predictions (theory) and Data
   // These next are for model parameters
@@ -262,7 +265,8 @@ public:
   FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
   virtual ~FitterThread() {}
   // Switch to this index
-  void SetReplica( int idx, bool bShowOutput, Matrix * pCorrel, Vector * pStdErrorMean );
+  void SetReplica( int idx, bool bShowOutput = false, bool bSaveMatrices = false,
+                   const std::string *pBaseName = nullptr );
   inline std::string ReplicaString( int iFitNum ) const
   {
     std::stringstream ss;
@@ -281,7 +285,7 @@ public:
   scalar FitOne( const Parameters &parGuess );
   // Implement this to support a new type of fitter
   virtual void Minimise( ParamState &Guess, int iNumGuesses ) = 0;
-  virtual void MakeCovarCorrelated() {} // Override to adjust covariance matrix
+  virtual bool CholeskyAdjust() { return false; } // true to indicate Cholesky matrix needs inversion
   virtual int NumRetriesGuess() const = 0;
   virtual int NumRetriesFit() const = 0;
   virtual std::string Description() const { return std::string(); }
@@ -344,6 +348,8 @@ public:
   std::vector<Common::ValWithEr<scalar>>
   PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName,
               const std::string &ModelSuffix, Common::SeedType Seed, const Common::CovarParamsRebin &cpr );
+  void SaveMatrixFile( const Matrix &m, const std::string &Type, const std::string &Filename,
+                         const char *pGnuplotExtra = nullptr ) const;
 };
 
 #endif // MultiFit_hpp

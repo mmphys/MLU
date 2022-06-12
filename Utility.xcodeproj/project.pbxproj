@@ -987,6 +987,8 @@
 		687EF0F62844CA49009D6B74 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68820B2A2721CC1700825D73 /* GaugeCmp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */; };
 		68820B2B2721CC4300825D73 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
+		68A1B33D284A40060053103F /* ImportCorr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68A1B330284A3F6B0053103F /* ImportCorr.cpp */; };
+		68A1B33E284A40BA0053103F /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68A2B64E271C816600D9CB95 /* HadronsXmlRun.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61B94271C79E700A8B197 /* HadronsXmlRun.cpp */; };
 		68C0A4F8271CA178006BBD5E /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68C0A4FB271CA270006BBD5E /* TensorDemo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446DD271C8E5400EF030C /* TensorDemo.cpp */; };
@@ -1398,6 +1400,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		68820B212721CBE100825D73 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		68A1B334284A3FBA0053103F /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -2583,6 +2594,9 @@
 		687EF0EE2844BD58009D6B74 /* SynthData */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SynthData; sourceTree = BUILT_PRODUCTS_DIR; };
 		68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GaugeCmp.cpp; sourceTree = "<group>"; };
 		68820B232721CBE100825D73 /* GaugeCmp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GaugeCmp; sourceTree = BUILT_PRODUCTS_DIR; };
+		68A1B330284A3F6B0053103F /* ImportCorr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ImportCorr.cpp; sourceTree = "<group>"; };
+		68A1B331284A3F6B0053103F /* ImportCorr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ImportCorr.hpp; sourceTree = "<group>"; };
+		68A1B336284A3FBA0053103F /* ImportCorr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ImportCorr; sourceTree = BUILT_PRODUCTS_DIR; };
 		68A2B647271C7EE100D9CB95 /* HadronsXmlRun */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HadronsXmlRun; sourceTree = BUILT_PRODUCTS_DIR; };
 		68C0A4F1271CA165006BBD5E /* TensorDemo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TensorDemo; sourceTree = BUILT_PRODUCTS_DIR; };
 		68C0A500271CA44D006BBD5E /* xml3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xml3pt; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3345,6 +3359,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		68A1B333284A3FBA0053103F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68A1B33E284A40BA0053103F /* libMLU.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		68A2B644271C7EE100D9CB95 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -3492,6 +3514,8 @@
 				685446F9271C8E5400EF030C /* FitSummary.cpp */,
 				68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */,
 				685446EC271C8E5400EF030C /* hlxml.cpp */,
+				68A1B330284A3F6B0053103F /* ImportCorr.cpp */,
+				68A1B331284A3F6B0053103F /* ImportCorr.hpp */,
 				685446F5271C8E5400EF030C /* Makefile.am */,
 				685446F3271C8E5400EF030C /* MultiFit.cpp */,
 				685446FA271C8E5400EF030C /* MultiFit.hpp */,
@@ -3576,6 +3600,7 @@
 				68820B232721CBE100825D73 /* GaugeCmp */,
 				6868F2F9274536F000D73B89 /* Example_wall_wall_spectrum */,
 				687EF0EE2844BD58009D6B74 /* SynthData */,
+				68A1B336284A3FBA0053103F /* ImportCorr */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -7763,6 +7788,23 @@
 			productReference = 68820B232721CBE100825D73 /* GaugeCmp */;
 			productType = "com.apple.product-type.tool";
 		};
+		68A1B335284A3FBA0053103F /* ImportCorr */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 68A1B33A284A3FBA0053103F /* Build configuration list for PBXNativeTarget "ImportCorr" */;
+			buildPhases = (
+				68A1B332284A3FBA0053103F /* Sources */,
+				68A1B333284A3FBA0053103F /* Frameworks */,
+				68A1B334284A3FBA0053103F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ImportCorr;
+			productName = ImportCorr;
+			productReference = 68A1B336284A3FBA0053103F /* ImportCorr */;
+			productType = "com.apple.product-type.tool";
+		};
 		68A2B646271C7EE100D9CB95 /* HadronsXmlRun */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 68A2B64B271C7EE100D9CB95 /* Build configuration list for PBXNativeTarget "HadronsXmlRun" */;
@@ -7959,6 +8001,9 @@
 					68820B222721CBE100825D73 = {
 						CreatedOnToolsVersion = 13.0;
 					};
+					68A1B335284A3FBA0053103F = {
+						CreatedOnToolsVersion = 13.4;
+					};
 					68A2B646271C7EE100D9CB95 = {
 						CreatedOnToolsVersion = 13.0;
 					};
@@ -8012,6 +8057,7 @@
 				6854475E271C9BC400EF030C /* FitSummary */,
 				68820B222721CBE100825D73 /* GaugeCmp */,
 				6854476B271C9C9300EF030C /* hlxml */,
+				68A1B335284A3FBA0053103F /* ImportCorr */,
 				686EC04E271C9E6C00A69ED4 /* mixedop */,
 				6854474D271C996700EF030C /* MultiFit */,
 				686EC05B271C9EE300A69ED4 /* peramb-compare */,
@@ -8292,6 +8338,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				68820B2A2721CC1700825D73 /* GaugeCmp.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68A1B332284A3FBA0053103F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68A1B33D284A40060053103F /* ImportCorr.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8982,6 +9036,20 @@
 			};
 			name = Release;
 		};
+		68A1B33B284A3FBA0053103F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		68A1B33C284A3FBA0053103F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		68A2B64C271C7EE100D9CB95 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -9289,6 +9357,15 @@
 			buildConfigurations = (
 				68820B282721CBE200825D73 /* Debug */,
 				68820B292721CBE200825D73 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		68A1B33A284A3FBA0053103F /* Build configuration list for PBXNativeTarget "ImportCorr" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				68A1B33B284A3FBA0053103F /* Debug */,
+				68A1B33C284A3FBA0053103F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

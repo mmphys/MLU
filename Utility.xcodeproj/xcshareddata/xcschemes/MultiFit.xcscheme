@@ -73,23 +73,43 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-e 2 -t 5:9"
+            argument = "-e 2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--Hotelling 0"
+            argument = "-t 10:31 "
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--covsrc bootstrap,100"
+            argument = "--Hotelling 1.01"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--fitter Minuit2 --retry 150"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "Banana_A_[AB].fold.*.h5"
+            argument = "--savecmat"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "Banana_A_B.fold.2260752299.h5,cosh"
+            argument = "--covsrc raw"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--freeze"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t 5:9 -o FitBanana/ Banana_A_[AB].fold.*.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o Tobi/Fit/Full/ -i Tobi/binned_ pLS_pLS.&apos;*&apos;.h5 pLL_pLS.&apos;*&apos;.h5 pLS_aLS.&apos;*&apos;.h5 pLL_aLS.&apos;*&apos;.h5 aLS_aLS.&apos;*&apos;.h5 aLL_aLS.&apos;*&apos;.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o Tobi/Fit/PP/ -i Tobi/unbinned_ pLS_pLS.&apos;*&apos;.h5 pLL_pLS.&apos;*&apos;.h5"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

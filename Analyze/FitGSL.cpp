@@ -96,17 +96,6 @@ FitterThreadGSL::~FitterThreadGSL()
     gsl_multifit_nlinear_free( ws );
 }
 
-void FitterThreadGSL::MakeCovarCorrelated()
-{
-  // Cholesky is Cholesky decomposition of (i.e. LL^T=) CORRELATION matrix
-  // CholeskyInvert() finds the inverse correlation matrix
-  Cholesky.CholeskyInvert();
-  Dump( "Inverse Covar", Cholesky );
-  // Cholesky() finds the Cholesky decomposition of the inverse correlation matrix
-  Cholesky.Cholesky();
-  Dump( "Inverse Covar Cholesky", Cholesky );
-}
-
 int FitterThreadGSL::f( const Vector &FitParams, Vector &Error )
 {
   assert( FitParams.size == parent.NumVariable && "Parameter vector is not the right size" );

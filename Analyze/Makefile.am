@@ -2,7 +2,7 @@
 
 LDADD = ../MLU/libMLU.a $(MLU_LIBS)
 
-bin_PROGRAMS = bootstrap corr corrstat Debug Divide FitSummary GaugeCmp hlxml MultiFit repair SynthData
+bin_PROGRAMS = bootstrap corr corrstat Debug Divide FitSummary GaugeCmp hlxml ImportCorr MultiFit repair SynthData
 
 bootstrap_SOURCES = bootstrap.cpp
 corr_SOURCES = corr.cpp
@@ -12,6 +12,7 @@ Divide_SOURCES = Divide.cpp
 FitSummary_SOURCES =  FitSummary.cpp
 GaugeCmp_SOURCES = GaugeCmp.cpp
 hlxml_SOURCES = hlxml.cpp
+ImportCorr_SOURCES = hlxml.cpp
 MultiFit_SOURCES = FitGSL.cpp FitModel.cpp MultiFit.cpp
 if MINUIT2
 MultiFit_SOURCES += FitMinuit2.cpp

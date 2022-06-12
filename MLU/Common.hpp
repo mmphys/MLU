@@ -280,10 +280,17 @@ extern const std::string sBootstrap;
 extern const std::string sFold;
 extern const std::string sModel;
 extern const std::string sParams;
+extern const std::string sCovmat;
+extern const std::string sCovmatIn;
+extern const std::string sCovmatInv;
+extern const std::string sCovmatInvCholesky;
 extern const std::string sCormat;
+extern const std::string sCormatCholesky;
+extern const std::string sCormatInvCholesky;
 extern const std::string sNtUnfolded;
 extern const std::string st0Negated;
 extern const std::string sConjugated;
+extern const std::string sRawBootstrap;
 extern const std::string sTI;
 extern const std::string sTF;
 extern const std::string sDoF;
@@ -291,8 +298,15 @@ extern const std::string sNumExponents;
 extern const std::string sNumFiles;
 extern const std::string sFactorised;
 extern const std::string sCovarFrozen;
-extern const std::string sCorrelation_C;
-extern const std::string sStdErrorMean_C;
+extern const std::string s_C;
+extern const std::string sStdErrorMean;
+extern const std::string sCovariance;
+extern const std::string sCovarianceIn;
+extern const std::string sCovarianceInv;
+extern const std::string sCovarianceInvCholesky;
+extern const std::string sCorrelation;
+extern const std::string sCorrelationCholesky;
+extern const std::string sCorrelationInvCholesky;
 extern const std::string sOperators;
 extern const std::string sAuxNames;
 extern const std::string sSummaryNames;
@@ -1323,6 +1337,7 @@ namespace H5 {
   template<> struct Equiv<float>       { static const ::H5::PredType& Type; };
   template<> struct Equiv<double>      { static const ::H5::PredType& Type; };
   template<> struct Equiv<long double> { static const ::H5::PredType& Type; };
+  template<> struct Equiv<int>         { static const ::H5::PredType& Type; };
   template<> struct Equiv<std::string> { static const ::H5::StrType Type; };
   template<> struct Equiv<char *>      { static const ::H5::StrType& Type; };
   template<> struct Equiv<std::uint_fast32_t>{ static const ::H5::PredType& Type; };
@@ -1394,38 +1409,84 @@ namespace H5 {
   void WriteStringData( ::H5::Group &g, const std::string &DSName, const std::vector<std::string> &vs );
   // Read a vector from a dataset
   template<typename T>
-  void ReadVector( ::H5::Group &g, const std::string &DSName, Common::Vector<T> &v );
+  void ReadVector( ::H5::Group &g, const std::string &DSName, T &v );
+  template<typename T>
+  void ReadVector( ::H5::Group &g, const std::string &DSName, std::vector<Common::Matrix<T>> &v );
   // Write a vector to a dataset
   template<typename T>
   bool WriteVector( ::H5::Group &g, const std::string &DSName, const Common::Vector<T> &v );
+  template<typename T>
+  bool WriteVector( ::H5::Group &g, const std::string &DSName, const std::vector<T> &v );
   // Read a matrix from a dataset
   template<typename T>
   void ReadMatrix( ::H5::Group &g, const std::string &DSName, Common::Matrix<T> &m );
   // Write a matrix to a dataset
   template<typename T>
   bool WriteMatrix( ::H5::Group &g, const std::string &DSName, const Common::Matrix<T> &m );
+
+  // Should convert this to a class with many static members - so the Following can be protected
+  template<typename T> inline typename T::value_type * GetDataHelper( T & t ) { return t.data(); }
+  template<typename T> inline T * GetDataHelper( Common::Vector<T> & m ) { return m.data; }
+  // template<typename T> inline T * GetDataHelper( Common::Matrix<T> & m ) { return m.data; }
 };
 
-// Read a vector from a dataset
 template<typename T>
-void H5::ReadVector( ::H5::Group &g, const std::string &DSName, Common::Vector<T> &v )
+void H5::ReadVector( ::H5::Group &g, const std::string &DSName, T &v )
 {
   ::H5::DataSet ds = g.openDataSet( DSName );
   ::H5::DataSpace dsp = ds.getSpace();
   bool bError{ true };
-  if( dsp.getSimpleExtentNdims() == 1 )
+  const int nDims{ dsp.getSimpleExtentNdims() };
+  if( nDims == 1 )
   {
     hsize_t Dim;
     dsp.getSimpleExtentDims( &Dim );
-    if( Dim > 0 && Dim < std::numeric_limits<int>::max() )
+    if( Dim > 0 && Dim <= std::numeric_limits<std::size_t>::max() )
     {
-      v.resize( static_cast<int>( Dim ) );
-      ds.read( v.data, H5::Equiv<T>::Type );
+      v.resize( static_cast<std::size_t>( Dim ) );
+      ds.read( GetDataHelper( v ), H5::Equiv<typename T::value_type>::Type );
       bError = false;
     }
   }
   if( bError )
-    throw std::runtime_error( "Hdf5 object dimensions invalid: " + DSName );
+    throw std::runtime_error( "Dimensions (" + std::to_string( nDims ) + ") invalid reading " + DSName );
+}
+
+// Read a vector of matrices from a dataset
+template<typename T>
+void H5::ReadVector( ::H5::Group &g, const std::string &DSName, std::vector<Common::Matrix<T>> &v )
+{
+  ::H5::DataSet ds = g.openDataSet( DSName );
+  ::H5::DataSpace dsp = ds.getSpace();
+  bool bError{ true };
+  const int nDims{ dsp.getSimpleExtentNdims() };
+  if( nDims == 3 )
+  {
+    hsize_t hDims[3];
+    dsp.getSimpleExtentDims( hDims );
+    std::size_t Dims[3];
+    int i;
+    for( i = 0; i < 3 && hDims[i] > 0 && hDims[i] <= std::numeric_limits<std::size_t>::max(); ++i )
+      Dims[i] = static_cast<std::size_t>( hDims[i] );
+    const std::size_t MatrixSize{ Dims[1] * Dims[2] };
+    if( i == 3 && MatrixSize / Dims[1] == Dims[2] )
+    {
+      ::H5::DataSpace dspMemory( 2, &hDims[1] );
+      hDims[0] = 1; // This becomes the count
+      hsize_t hOffsets[3] = { 0, 0, 0 };
+      v.reserve( Dims[0] );
+      for( std::size_t i = 0; i < Dims[0]; ++i )
+      {
+        v.emplace_back( Dims[1], Dims[2] );
+        hOffsets[0] = i;
+        dsp.selectHyperslab( H5S_SELECT_SET, hDims, hOffsets );
+        ds.read( v.back().data, H5::Equiv<T>::Type, dspMemory, dsp );
+      }
+      bError = false;
+    }
+  }
+  if( bError )
+    throw std::runtime_error( "Dimensions (" + std::to_string( nDims ) + ") invalid reading " + DSName );
 }
 
 // Write a vector to a dataset
@@ -1447,6 +1508,23 @@ bool H5::WriteVector( ::H5::Group &g, const std::string &DSName, const Common::V
     ::H5::DataSpace dsp( 1, &Dim );
     ::H5::DataSet ds = g.createDataSet( DSName, Equiv<T>::Type, dsp );
     ds.write( pContiguous->data, Equiv<T>::Type );
+    ds.close();
+    dsp.close();
+  }
+  return bHasData;
+}
+
+template<typename T>
+bool H5::WriteVector( ::H5::Group &g, const std::string &DSName, const std::vector<T> &v )
+{
+  const bool bHasData{ v.size != 0 };
+  if( bHasData )
+  {
+    // Make sure the vector's memory is contiguous (copy it if not)
+    const hsize_t Dim{ v.size() };
+    ::H5::DataSpace dsp( 1, &Dim );
+    ::H5::DataSet ds = g.createDataSet( DSName, Equiv<T>::Type, dsp );
+    ds.write( v.data(), Equiv<T>::Type );
     ds.close();
     dsp.close();
   }
@@ -2292,6 +2370,7 @@ public:
   int SampleSize = 0; // Number of samples (after binning) used to create bootstrap
   std::vector<Common::ConfigCount> ConfigCount; // Info on every config in the bootstrap in order
   std::vector<std::string> FileList; // Info on every config in the bootstrap in order
+  bool bRawBootstrap = false; // Indicates the raw samples are bootstraps
   inline int NumSamples() const { return NumSamples_; }
   inline int GetNumExtraSamples() const { return NumExtraSamples; }
   inline int NumSamplesRaw() const { return NumSamplesRaw_; }
@@ -3085,6 +3164,19 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       {
         ::H5::Exception::clearErrorStack();
       }
+      std::int8_t i8;
+      try
+      {
+        a = g.openAttribute( sRawBootstrap );
+        a.read( ::H5::PredType::NATIVE_INT8, &i8 );
+        a.close();
+        bRawBootstrap = ( i8 != 0 );
+      }
+      catch(const ::H5::Exception &)
+      {
+        bRawBootstrap = false;
+        ::H5::Exception::clearErrorStack();
+      }
       std::vector<std::string> myFileList;
       // Try to load the FileList from dataSet first, falling back to attribute
       bool bGotFileList{ false };
@@ -3381,6 +3473,14 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
       a.write( H5::Equiv<Common::ConfigCount>::Type, &ConfigCount[0] );
       a.close();
       dsp.close();
+      NumAttributes++;
+    }
+    const std::int8_t i8{ 1 };
+    if( bRawBootstrap )
+    {
+      a = g.createAttribute( sRawBootstrap, ::H5::PredType::STD_U8LE, ds1 );
+      a.write( ::H5::PredType::NATIVE_INT8, &i8 );
+      a.close();
       NumAttributes++;
     }
     NumAttributes += WriteAttributes( g );
@@ -3702,8 +3802,14 @@ public:
   bool Factorised = false;
   bool CovarFrozen = false;
   CovarParamsRebin covarParamsRebin;
-  Common::Matrix<T> Correl;
-  Common::Vector<T> StdErrorMean;
+  Common::Vector<T> StdErrorMean; // From all samples of binned data
+  Common::Matrix<T> CovarIn;      // Optional. From correlation source
+  Common::Matrix<T> Covar;        // As used in the fit
+  Common::Matrix<T> Correl;       // As used in the fit
+  Common::Matrix<T> CorrelCholesky;
+  Common::Matrix<T> CovarInv;
+  Common::Matrix<T> CorrelInvCholesky;
+  Common::Matrix<T> CovarInvCholesky;
   std::vector<std::string> OpNames;
   using Base = Sample<T>;
   Model() : Base::Sample{} {}
@@ -3769,7 +3875,7 @@ public:
     covarParamsRebin.Count.clear();
     try
     {
-      H5::ReadVector( g, sStdErrorMean_C, StdErrorMean );
+      H5::ReadVector( g, sStdErrorMean+s_C, StdErrorMean );
     }
     catch(const ::H5::Exception &)
     {
@@ -3777,7 +3883,55 @@ public:
     }
     try
     {
-      H5::ReadMatrix( g, sCorrelation_C, Correl );
+      H5::ReadMatrix( g, sCovarianceIn+s_C, CovarIn );
+    }
+    catch(const ::H5::Exception &)
+    {
+      ::H5::Exception::clearErrorStack();
+    }
+    try
+    {
+      H5::ReadMatrix( g, sCovariance+s_C, Covar );
+    }
+    catch(const ::H5::Exception &)
+    {
+      ::H5::Exception::clearErrorStack();
+    }
+    try
+    {
+      H5::ReadMatrix( g, sCorrelation+s_C, Correl );
+    }
+    catch(const ::H5::Exception &)
+    {
+      ::H5::Exception::clearErrorStack();
+    }
+    try
+    {
+      H5::ReadMatrix( g, sCorrelationCholesky+s_C, CorrelCholesky );
+    }
+    catch(const ::H5::Exception &)
+    {
+      ::H5::Exception::clearErrorStack();
+    }
+    try
+    {
+      H5::ReadMatrix( g, sCovarianceInv+s_C, CovarInv );
+    }
+    catch(const ::H5::Exception &)
+    {
+      ::H5::Exception::clearErrorStack();
+    }
+    try
+    {
+      H5::ReadMatrix( g, sCorrelationInvCholesky+s_C, CorrelInvCholesky );
+    }
+    catch(const ::H5::Exception &)
+    {
+      ::H5::Exception::clearErrorStack();
+    }
+    try
+    {
+      H5::ReadMatrix( g, sCovarianceInvCholesky+s_C, CovarInvCholesky );
     }
     catch(const ::H5::Exception &)
     {
@@ -3855,9 +4009,21 @@ public:
     i8 = static_cast<std::int8_t>( CovarFrozen ? 1 : 0 );
     a = g.createAttribute( sCovarFrozen, ::H5::PredType::STD_U8LE, ds1 );
     a.write( ::H5::PredType::NATIVE_INT8, &i8 );
-    if( H5::WriteVector( g, sStdErrorMean_C, StdErrorMean ) )
+    if( H5::WriteVector( g, sStdErrorMean+s_C, StdErrorMean ) )
       iReturn++;
-    if( H5::WriteMatrix( g, sCorrelation_C, Correl ) )
+    if( H5::WriteMatrix( g, sCovarianceIn+s_C, CovarIn ) )
+      iReturn++;
+    if( H5::WriteMatrix( g, sCovariance+s_C, Covar ) )
+      iReturn++;
+    if( H5::WriteMatrix( g, sCorrelation+s_C, Correl ) )
+      iReturn++;
+    if( H5::WriteMatrix( g, sCorrelationCholesky+s_C, CorrelCholesky ) )
+      iReturn++;
+    if( H5::WriteMatrix( g, sCovarianceInv+s_C, CovarInv ) )
+      iReturn++;
+    if( H5::WriteMatrix( g, sCorrelationInvCholesky+s_C, CorrelInvCholesky ) )
+      iReturn++;
+    if( H5::WriteMatrix( g, sCovarianceInvCholesky+s_C, CovarInvCholesky ) )
       iReturn++;
     const int iIdx{ static_cast<int>( covarParamsRebin.Source ) };
     if( iIdx >= 0 || iIdx < CovarParamsRebin::aCovarSource.size() )
@@ -3926,8 +4092,10 @@ protected:
 public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
   inline bool empty() const { return corr.empty() && constFile.empty(); }
+  inline const CovarParams &GetCovarParams() const { return covarParams; }
   void clear();
-  int  LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags = COMPAT_DEFAULT );
+  int  LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags = COMPAT_DEFAULT,
+                       const char * PrintPrefix = "  " );
   void LoadModel     ( Common::FileNameAtt &&FileAtt, const std::string &Args );
   void SortOpNames( std::vector<std::string> &OpNames );
   void SetFitTimes( const std::vector<std::vector<int>> &FitTimes ); // A list of all the timeslices to include
@@ -3935,12 +4103,18 @@ public:
   void GetData( int idx, Vector<T> &vResult,
                 CovarParams::CovarSource covarSource = CovarParams::CovarSource::Bootstrap ) const;
   void GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedParam> &Params ) const;
+  int ValidateCovarSource( const CovarParams &covarParams ) const;
   int SetCovarSource( const CovarParams &covarParams );
-  void MakeInvErr( int idx, Vector<T> &Var ) const;
-  void MakeCovariance( int idx, Matrix<T> &Covar ) const;
-  void MakeCovarianceNormalised( int idx, Matrix<T> &Covar ) const;
-  void SaveCovariance( const std::string FileName, const Matrix<T> &Covar,
-                       const std::vector<std::vector<std::string>> *ModelOpDescriptions = nullptr ) const;
+  void MakeErr( int idx, Vector<T> &Var ) const;
+  void MakeCovariance( int idx, Matrix<T> &Covar, const CovarParams &covarParams_ ) const;
+  void MakeCovariance( int idx, Matrix<T> &Covar ) const { MakeCovariance( idx, Covar, covarParams ); };
+  void MakeCovarianceNormalised( int idx, Matrix<T> &Covar, const CovarParams &covarParams_ ) const;
+  void MakeCovarianceNormalised( int idx, Matrix<T> &Covar ) const
+     { MakeCovarianceNormalised( idx, Covar, covarParams ); }
+  void SaveMatrixFile( const Matrix<T> &m, const std::string &Type, const std::string &FileName,
+                       std::vector<std::string> &Abbreviations,
+                       const std::vector<std::string> *FileComments = nullptr,
+                       const char *pGnuplotExtra = nullptr ) const;
 };
 
 template <typename T>
@@ -4033,62 +4207,71 @@ void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedP
 }
 
 template <typename T>
-int DataSet<T>::SetCovarSource( const CovarParams &cp )
+int DataSet<T>::ValidateCovarSource( const CovarParams &cp ) const
 {
   using CS = CovarParams::CovarSource;
   const int enumIdx{ static_cast<int>( cp.Source ) };
   if( enumIdx < 0 || enumIdx >= CovarParams::aCovarSource.size() )
     throw std::runtime_error( "Invalid covariance source" );
-  covarParams = cp;
+  int CountActual{ 0 };
   if( !corr.empty() )
   {
-    if( covarParams.Source == CS::Bootstrap )
+    if( cp.Source == CS::Bootstrap )
     {
-      if( covarParams.Count == 0 || covarParams.Count > MaxSamples )
-        covarParams.Count = MaxSamples;
+      CountActual = cp.Count;
+      if( CountActual == 0 || CountActual > MaxSamples )
+        CountActual = MaxSamples;
     }
-    else if( covarParams.Source == CS::Binned || covarParams.Source == CS::Raw )
+    else if( cp.Source == CS::Binned || cp.Source == CS::Raw )
     {
       // There must be the same number of samples available on each correlator
       for( int i = 0; i < corr.size(); ++i )
       {
-        const int iNumSamples{ covarParams.Source == CS::Binned ? corr[i].NumSamplesBinned() : corr[0].NumSamplesRaw() };
+        const int iNumSamples{ cp.Source == CS::Binned ? corr[i].NumSamplesBinned() : corr[0].NumSamplesRaw() };
         if( !iNumSamples )
         {
           std::ostringstream os;
-          os << covarParams.Source << " samples unavailable corr " << i << CommaSpace << corr[i].Name_.Filename;
+          os << cp.Source << " samples unavailable corr " << i << CommaSpace << corr[i].Name_.Filename;
           throw std::runtime_error( os.str().c_str() );
         }
         if( i == 0 )
-          covarParams.Count = iNumSamples;
-        else if( covarParams.Count != iNumSamples )
+          CountActual = iNumSamples;
+        else if( CountActual != iNumSamples )
         {
           std::ostringstream os;
-          os << covarParams.Source << " samples " << iNumSamples << " != " << covarParams.Count << " on corr " << i
+          os << cp.Source << " samples " << iNumSamples << " != " << CountActual << " on corr " << i
              << CommaSpace << corr[i].Name_.Filename;
           throw std::runtime_error( os.str().c_str() );
         }
       }
     }
   }
-  return covarParams.Count;
+  return CountActual;
 }
 
-// Make the inverse of the error (i.e. inverse of square root of variance)
 template <typename T>
-void DataSet<T>::MakeInvErr( int idx, Vector<T> &Var ) const
+int DataSet<T>::SetCovarSource( const CovarParams &cp )
 {
-  if( covarParams.Count == 0 )
-    throw std::runtime_error( "Call DataSet<T>::UpdateCovarCount() before performing fit" );
+  const int CountActual{ ValidateCovarSource( cp ) };
+  covarParams = cp;
+  covarParams.Count = CountActual;
+  return CountActual;
+}
+
+// Make the error (i.e. square root of variance)
+// Always from all available bootstrap replicas
+template <typename T>
+void DataSet<T>::MakeErr( int idx, Vector<T> &Var ) const
+{
   Var.resize( Extent );
   for( int i = 0; i < Extent; ++i )
     Var[i] = 0;
   Vector<T> Data( Extent );
   Vector<T> Mean( Extent );
   GetData( idx, Mean, CovarParams::CovarSource::Bootstrap );
-  for( int replica = 0; replica < covarParams.Count; ++replica )
+  for( int replica = 0; replica < MaxSamples; ++replica )
   {
-    GetData( replica, Data, covarParams.Source );
+    GetData( replica, Data, CovarParams::CovarSource::Bootstrap );
     for( int i = 0; i < Extent; ++i )
     {
       double z{ ( Data[i] - Mean[i] ) };
@@ -4096,15 +4279,15 @@ void DataSet<T>::MakeInvErr( int idx, Vector<T> &Var ) const
     }
   }
   for( int i = 0; i < Extent; ++i )
-    Var[i] = std::sqrt( static_cast<T>( covarParams.Count ) / Var[i] );
+    Var[i] = std::sqrt( Var[i] / static_cast<T>( MaxSamples ) );
 }
 
 // Make covariance using mean from sample idx
 template <typename T>
-void DataSet<T>::MakeCovariance( int idx, Matrix<T> &Covar ) const
+void DataSet<T>::MakeCovariance( int idx, Matrix<T> &Covar, const CovarParams &cp ) const
 {
   using CS = CovarParams::CovarSource;
-  if( covarParams.Count <= 1 )
+  if( cp.Count <= 1 )
     throw std::runtime_error( "Call DataSet<T>::UpdateCovarCount() before performing fit" );
   Covar.resize( Extent, Extent );
   for( int i = 0; i < Extent; ++i )
@@ -4113,16 +4296,17 @@ void DataSet<T>::MakeCovariance( int idx, Matrix<T> &Covar ) const
   Vector<T> Data( Extent );
   Vector<T> Mean( Extent );
   GetData( idx, Mean, CS::Bootstrap );
-  for( int replica = 0; replica < covarParams.Count; ++replica )
+  for( int replica = 0; replica < cp.Count; ++replica )
   {
-    GetData( replica, Data, covarParams.Source );
+    GetData( replica, Data, cp.Source );
     for( int i = 0; i < Extent; ++i )
       Data[i] -= Mean[i];
     for( int i = 0; i < Extent; ++i )
       for( int j = 0; j <= i; ++j )
         Covar( i, j ) += Data[i] * Data[j];
   }
-  const T Norm{ 1 / ( covarParams.Count - ( covarParams.Source == CS::Bootstrap ? 0. : 1. ) ) };
+  const bool IsBootstrap{ cp.Source == CS::Bootstrap || ( cp.Source == CS::Raw && corr[0].bRawBootstrap ) };
+  const T Norm{ 1 / ( cp.Count - ( IsBootstrap ? 0. : 1. ) ) };
   for( int i = 0; i < Extent; ++i )
     for( int j = 0; j <= i; ++j )
     {
@@ -4137,71 +4321,63 @@ void DataSet<T>::MakeCovariance( int idx, Matrix<T> &Covar ) const
 // but for raw/re-binned data we must normalise standard deviation by sqrt(n)
 // ... or just divide every entry in the covariance matrix by n
 template <typename T>
-void DataSet<T>::MakeCovarianceNormalised( int idx, Matrix<T> &Covar ) const
+void DataSet<T>::MakeCovarianceNormalised( int idx, Matrix<T> &Covar, const CovarParams &cp ) const
 {
-  MakeCovariance( idx, Covar );
-  if( covarParams.Source != Common::CovarParams::CovarSource::Bootstrap )
+  MakeCovariance( idx, Covar, cp );
+  if( cp.Source == Common::CovarParams::CovarSource::Binned
+     || ( cp.Source == Common::CovarParams::CovarSource::Raw && !corr[0].bRawBootstrap ) )
     Covar /= covarParams.Count;
 }
 
 // Write covariance matrix to file
 template <typename T>
-void DataSet<T>::SaveCovariance( const std::string FileName, const Matrix<T> &Covar,
-                                 const std::vector<std::vector<std::string>> *ModelOpDescriptions ) const
+void DataSet<T>::SaveMatrixFile( const Matrix<T> &m, const std::string &Type, const std::string &Filename,
+                                 std::vector<std::string> &Abbreviations,
+                                 const std::vector<std::string> *FileComments, const char *pGnuplotExtra ) const
 {
+  // For now, all the matrices I write are square and match dataset, but this restriction can be safely relaxed
+  if( m.size1 != Extent || m.size1 != m.size2 )
+    throw std::runtime_error( Type + " matrix dimensions (" + std::to_string( m.size1 ) + Common::CommaSpace
+                             + std::to_string( m.size2 ) + ") don't match dataset" );
   // Header describing what the covariance matrix is for and how to plot it with gnuplot
-  assert( Covar.size1 == Extent && Covar.size1 == Covar.size2 && "Build covar before saving it" );
-  std::ofstream s{ FileName };
-  s << "# Correlation matrix: " << FileName << "\n# Files: " << corr.size() << Common::NewLine;
+  std::ofstream s{ Filename };
+  s << "# Matrix: " << Filename << "\n# Type: " << Type << "\n# Files: " << corr.size() << Common::NewLine;
   for( std::size_t f = 0; f < corr.size(); ++f )
   {
-    s << "# File" << f << ": " << corr[f].Name_.NameNoExt << Common::NewLine;
-    // Say which operators are in each file
-    if( ModelOpDescriptions )
-    {
-      if( !(*ModelOpDescriptions)[f][1].empty() )
-        s << "# OpsOneOff" << f << ": " << (*ModelOpDescriptions)[f][1] << NewLine;
-      if( !(*ModelOpDescriptions)[f][2].empty() )
-        s << "# OpsPerExp" << f << ": " << (*ModelOpDescriptions)[f][2] << NewLine;
-    }
-    s << "# Times" << f << ":";
+    s << "# File" << f << ": " << corr[f].Name_.NameNoExt << "\n# Times" << f << ":";
     for( int t : FitTimes[f] )
       s << Common::Space << t;
     s << Common::NewLine;
+    // Say which operators are in each file
+    if( FileComments && !(*FileComments)[f].empty() )
+      s << (*FileComments)[f]; // These are expected to have a trailing NewLine
+    // Make default abbreviation - a letter for each file
+    if( Abbreviations.size() < f )
+      Abbreviations.emplace_back( 1, 'A' + f );
   }
   // Save a command which can be used to plot this file
-  s << "# gnuplot: set xtics rotate noenhanced; set ytics noenhanced; set cbrange[-1:1]; set title noenhanced '" << FileName
-    << "'; set key font 'Arial,8' top right noenhanced; plot '" << FileName << "' matrix columnheaders rowheaders with image pixels\n";
+  s << "# gnuplot: set xtics rotate noenhanced; set ytics noenhanced; set title noenhanced '" << Filename
+    << "'; set key font 'Arial,8' top right noenhanced; ";
+  if( pGnuplotExtra && *pGnuplotExtra )
+    s << pGnuplotExtra << "; ";
+  s << "plot '" << Filename << "' matrix columnheaders rowheaders with image pixels\n";
   // Now save the column names. First column is matrix extent
   s << "# The next row contains column headers, starting with matrix extent\n" << Extent;
   for( std::size_t f = 0; f < corr.size(); ++f )
   {
-    const std::string FileLetter( 1, 'A' + f );
     for( int t : FitTimes[f] )
-    {
-      s << Common::Space;
-      if( ModelOpDescriptions )
-        s << (*ModelOpDescriptions)[f][0];
-      else
-        s << FileLetter;
-      s << t;
-    }
+      s << Common::Space << Abbreviations[f] << t;
   }
-  s << Common::NewLine;
+  s << Common::NewLine << std::setprecision( std::numeric_limits<T>::max_digits10 );
   // Now print the actual covariance matrix
   int i{ 0 };
   for( std::size_t f = 0; f < corr.size(); ++f )
   {
-    const std::string FileLetter( 1, 'A' + f );
     for( int t : FitTimes[f] )
     {
-      if( ModelOpDescriptions )
-        s << (*ModelOpDescriptions)[f][0];
-      else
-        s << FileLetter;
-      s << t;
+      s << Abbreviations[f] << t;
       for( int j = 0; j < Extent; ++j )
-        s << Common::Space << Covar( i, j );
+        s << Common::Space << m( i, j );
       s << Common::NewLine;
       ++i;
     }
@@ -4226,14 +4402,15 @@ void DataSet<T>::AddConstant( const std::string &Name, std::size_t File, std::si
 }
 
 template <typename T>
-int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags )
+int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags,
+                                const char * PrintPrefix )
 {
   if( corr.size() >= std::numeric_limits<int>::max() )
     throw std::runtime_error( "More than an integer's worth of correlators loaded!!??" );
   const int i{ static_cast<int>( corr.size() ) };
   corr.emplace_back();
   corr[i].SetName( std::move( FileAtt ) );
-  corr[i].Read( "  " );
+  corr[i].Read( PrintPrefix );
   // See whether this correlator is compatible with prior correlators
   if( i )
   {
@@ -4377,10 +4554,17 @@ CovarParams CovarParamsRebin::ApplyToDataSet( DataSet<T> &ds ) const
     case CovarParamsRebin::CovarSource::Rebin:
       for( int i = 0; i < ds.corr.size(); ++i )
       {
+        const char *pszErrorMsg{ nullptr };
+        static const char pszNoRawSamples[] = "Raw samples unavailable";
+        static const char pszRawBootstrap[] = "Raw samples are bootstrapped";
         if( !ds.corr[i].NumSamplesRaw() )
+          pszErrorMsg = pszNoRawSamples;
+        else if( ds.corr[i].bRawBootstrap )
+          pszErrorMsg = pszRawBootstrap;
+        if( pszErrorMsg )
         {
           std::ostringstream os;
-          os << "Raw samples unavailable for rebinning corr " << i << CommaSpace << ds.corr[i].Name_.Filename;
+          os << pszErrorMsg << " rebinning corr " << i << CommaSpace << ds.corr[i].Name_.Filename;
           throw std::runtime_error( os.str().c_str() );
         }
         // Rebin to the size specified (last bin size repeats to end).

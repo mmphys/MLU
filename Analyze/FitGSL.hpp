@@ -62,7 +62,7 @@ public:
   FitterThreadGSL( const Fitter &Fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
   virtual ~FitterThreadGSL();
   void Minimise( ParamState &Guess, int iNumGuesses ) override;
-  void MakeCovarCorrelated() override;
+  bool CholeskyAdjust() override { return true; }
   int NumRetriesGuess() const override { return parent.Retry; };
   int NumRetriesFit() const override { return parent.Retry; };
   std::string Description() const override;

@@ -525,6 +525,10 @@ ModelPtr Model::MakeModel(vString &Params, const ModelDefaultParams &Default, co
     }
   }
   // Make the model
+  std::cout << "  " << modelType;
+  for( std::string &s : Params )
+    std::cout << Common::Comma << s;
+  std::cout << Common::NewLine;
   ModelPtr model;
   switch( modelType )
   {
