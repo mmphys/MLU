@@ -290,7 +290,7 @@ extern const std::string sCormatInvCholesky;
 extern const std::string sNtUnfolded;
 extern const std::string st0Negated;
 extern const std::string sConjugated;
-extern const std::string sRawBootstrap;
+extern const std::string sBinnedBootstrap;
 extern const std::string sTI;
 extern const std::string sTF;
 extern const std::string sDoF;
@@ -300,6 +300,7 @@ extern const std::string sFactorised;
 extern const std::string sCovarFrozen;
 extern const std::string s_C;
 extern const std::string sStdErrorMean;
+extern const std::string sErrorScaled;
 extern const std::string sCovariance;
 extern const std::string sCovarianceIn;
 extern const std::string sCovarianceInv;
@@ -2370,7 +2371,7 @@ public:
   int SampleSize = 0; // Number of samples (after binning) used to create bootstrap
   std::vector<Common::ConfigCount> ConfigCount; // Info on every config in the bootstrap in order
   std::vector<std::string> FileList; // Info on every config in the bootstrap in order
-  bool bRawBootstrap = false; // Indicates the raw samples are bootstraps
+  bool bBinnedBootstrap = false; // Indicates the binned samples are bootstraps
   inline int NumSamples() const { return NumSamples_; }
   inline int GetNumExtraSamples() const { return NumExtraSamples; }
   inline int NumSamplesRaw() const { return NumSamplesRaw_; }
@@ -3167,14 +3168,14 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       std::int8_t i8;
       try
       {
-        a = g.openAttribute( sRawBootstrap );
+        a = g.openAttribute( sBinnedBootstrap );
         a.read( ::H5::PredType::NATIVE_INT8, &i8 );
         a.close();
-        bRawBootstrap = ( i8 != 0 );
+        bBinnedBootstrap = ( i8 != 0 );
       }
       catch(const ::H5::Exception &)
       {
-        bRawBootstrap = false;
+        bBinnedBootstrap = false;
         ::H5::Exception::clearErrorStack();
       }
       std::vector<std::string> myFileList;
@@ -3476,9 +3477,9 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
       NumAttributes++;
     }
     const std::int8_t i8{ 1 };
-    if( bRawBootstrap )
+    if( bBinnedBootstrap )
     {
-      a = g.createAttribute( sRawBootstrap, ::H5::PredType::STD_U8LE, ds1 );
+      a = g.createAttribute( sBinnedBootstrap, ::H5::PredType::STD_U8LE, ds1 );
       a.write( ::H5::PredType::NATIVE_INT8, &i8 );
       a.close();
       NumAttributes++;
@@ -3803,6 +3804,7 @@ public:
   bool CovarFrozen = false;
   CovarParamsRebin covarParamsRebin;
   Common::Vector<T> StdErrorMean; // From all samples of binned data
+  Common::Vector<T> ErrorScaled;  // (Theory - Data) * CholeskyScale
   Common::Matrix<T> CovarIn;      // Optional. From correlation source
   Common::Matrix<T> Covar;        // As used in the fit
   Common::Matrix<T> Correl;       // As used in the fit
@@ -3876,6 +3878,14 @@ public:
     try
     {
       H5::ReadVector( g, sStdErrorMean+s_C, StdErrorMean );
+    }
+    catch(const ::H5::Exception &)
+    {
+      ::H5::Exception::clearErrorStack();
+    }
+    try
+    {
+      H5::ReadVector( g, sErrorScaled+s_C, ErrorScaled );
     }
     catch(const ::H5::Exception &)
     {
@@ -4011,6 +4021,8 @@ public:
     a.write( ::H5::PredType::NATIVE_INT8, &i8 );
     if( H5::WriteVector( g, sStdErrorMean+s_C, StdErrorMean ) )
       iReturn++;
+    if( H5::WriteVector( g, sErrorScaled+s_C, ErrorScaled ) )
+      iReturn++;
     if( H5::WriteMatrix( g, sCovarianceIn+s_C, CovarIn ) )
       iReturn++;
     if( H5::WriteMatrix( g, sCovariance+s_C, Covar ) )
@@ -4089,6 +4101,7 @@ protected:
   std::vector<Model<T>>        constFile;// Each of the constant files (i.e. results from previous fits) I've loaded
   void AddConstant( const std::string &Name, std::size_t File, std::size_t idx );
   void AddConstant( const std::string &Name, std::size_t File, std::size_t idx, int e );
+  int GetNumSamples( CovarParams::CovarSource cs, int iCorr ) const;
 public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
   inline bool empty() const { return corr.empty() && constFile.empty(); }
@@ -4207,8 +4220,34 @@ void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedP
 }
 
 template <typename T>
+int DataSet<T>::GetNumSamples( CovarParams::CovarSource cs, int iCorr ) const
+{
+  int iNumSamples = 0;
+  switch( cs )
+  {
+    case CovarParams::CovarSource::Bootstrap:
+      iNumSamples = corr[iCorr].NumSamples();
+      break;
+    case CovarParams::CovarSource::Raw:
+      iNumSamples = corr[iCorr].NumSamplesRaw();
+      break;
+    case CovarParams::CovarSource::Binned:
+      iNumSamples = corr[iCorr].NumSamplesBinned();
+      break;
+  }
+  if( !iNumSamples )
+  {
+    std::ostringstream os;
+    os << cs << " samples unavailable corr " << iCorr << CommaSpace << corr[iCorr].Name_.Filename;
+    throw std::runtime_error( os.str().c_str() );
+  }
+  return iNumSamples;
+}
+
+template <typename T>
 int DataSet<T>::ValidateCovarSource( const CovarParams &cp ) const
 {
+  static const char sErrorBinMix[] = "Mixture of bootstrap and non-bootstrap replicas";
   using CS = CovarParams::CovarSource;
   const int enumIdx{ static_cast<int>( cp.Source ) };
   if( enumIdx < 0 || enumIdx >= CovarParams::aCovarSource.size() )
@@ -4222,18 +4261,26 @@ int DataSet<T>::ValidateCovarSource( const CovarParams &cp ) const
       if( CountActual == 0 || CountActual > MaxSamples )
         CountActual = MaxSamples;
     }
+    else if( cp.Source == CS::Binned && corr[0].bBinnedBootstrap )
+    {
+      CountActual = cp.Count;
+      for( int i = 0; i < corr.size(); ++i )
+      {
+        if( !corr[i].bBinnedBootstrap )
+          throw std::runtime_error( sErrorBinMix );
+        const int iNumSamples{ GetNumSamples( cp.Source, i ) };
+        if( CountActual == 0 || CountActual > iNumSamples )
+          CountActual = iNumSamples;
+      }
+    }
     else if( cp.Source == CS::Binned || cp.Source == CS::Raw )
     {
       // There must be the same number of samples available on each correlator
       for( int i = 0; i < corr.size(); ++i )
       {
-        const int iNumSamples{ cp.Source == CS::Binned ? corr[i].NumSamplesBinned() : corr[0].NumSamplesRaw() };
-        if( !iNumSamples )
-        {
-          std::ostringstream os;
-          os << cp.Source << " samples unavailable corr " << i << CommaSpace << corr[i].Name_.Filename;
-          throw std::runtime_error( os.str().c_str() );
-        }
+        if( cp.Source == CS::Binned && corr[i].bBinnedBootstrap )
+          throw std::runtime_error( sErrorBinMix );
+        const int iNumSamples{ GetNumSamples( cp.Source, i ) };
         if( i == 0 )
           CountActual = iNumSamples;
         else if( CountActual != iNumSamples )
@@ -4278,8 +4325,9 @@ void DataSet<T>::MakeErr( int idx, Vector<T> &Var ) const
       Var[i] += z * z;
     }
   }
+  const double Norm{ 1 / static_cast<double>( MaxSamples ) };
   for( int i = 0; i < Extent; ++i )
-    Var[i] = std::sqrt( Var[i] / static_cast<T>( MaxSamples ) );
+    Var[i] = static_cast<T>( std::sqrt( Var[i] * Norm ) );
 }
 
 // Make covariance using mean from sample idx
@@ -4305,7 +4353,7 @@ void DataSet<T>::MakeCovariance( int idx, Matrix<T> &Covar, const CovarParams &c
       for( int j = 0; j <= i; ++j )
         Covar( i, j ) += Data[i] * Data[j];
   }
-  const bool IsBootstrap{ cp.Source == CS::Bootstrap || ( cp.Source == CS::Raw && corr[0].bRawBootstrap ) };
+  const bool IsBootstrap{ cp.Source == CS::Bootstrap || ( cp.Source == CS::Binned && corr[0].bBinnedBootstrap)};
   const T Norm{ 1 / ( cp.Count - ( IsBootstrap ? 0. : 1. ) ) };
   for( int i = 0; i < Extent; ++i )
     for( int j = 0; j <= i; ++j )
@@ -4324,8 +4372,8 @@ template <typename T>
 void DataSet<T>::MakeCovarianceNormalised( int idx, Matrix<T> &Covar, const CovarParams &cp ) const
 {
   MakeCovariance( idx, Covar, cp );
-  if( cp.Source == Common::CovarParams::CovarSource::Binned
-     || ( cp.Source == Common::CovarParams::CovarSource::Raw && !corr[0].bRawBootstrap ) )
+  if( cp.Source == Common::CovarParams::CovarSource::Raw
+     || ( cp.Source == Common::CovarParams::CovarSource::Binned && !corr[0].bBinnedBootstrap ) )
     Covar /= covarParams.Count;
 }
 
@@ -4543,6 +4591,9 @@ CovarParams CovarParamsRebin::ApplyToDataSet( DataSet<T> &ds ) const
   {
     case CovarParamsRebin::CovarSource::Binned:
       cp.Source = CovarParams::CovarSource::Binned;
+      cp.Count = Count.empty() ? 0 : Count[0];
+      if( !Count.empty() && !ds.corr.empty() && !ds.corr[0].bBinnedBootstrap )
+        throw std::runtime_error( "Count specified for binned data, but they are not bootstraps" );
       break;
     case CovarParamsRebin::CovarSource::Raw:
       cp.Source = CovarParams::CovarSource::Raw;
@@ -4554,17 +4605,10 @@ CovarParams CovarParamsRebin::ApplyToDataSet( DataSet<T> &ds ) const
     case CovarParamsRebin::CovarSource::Rebin:
       for( int i = 0; i < ds.corr.size(); ++i )
       {
-        const char *pszErrorMsg{ nullptr };
-        static const char pszNoRawSamples[] = "Raw samples unavailable";
-        static const char pszRawBootstrap[] = "Raw samples are bootstrapped";
         if( !ds.corr[i].NumSamplesRaw() )
-          pszErrorMsg = pszNoRawSamples;
-        else if( ds.corr[i].bRawBootstrap )
-          pszErrorMsg = pszRawBootstrap;
-        if( pszErrorMsg )
         {
           std::ostringstream os;
-          os << pszErrorMsg << " rebinning corr " << i << CommaSpace << ds.corr[i].Name_.Filename;
+          os << "Raw samples unavailable rebinning corr " << i << CommaSpace << ds.corr[i].Name_.Filename;
           throw std::runtime_error( os.str().c_str() );
         }
         // Rebin to the size specified (last bin size repeats to end).

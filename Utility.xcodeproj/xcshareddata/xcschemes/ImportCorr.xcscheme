@@ -53,7 +53,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "forFelix.h5"
+            argument = "data_comparison&apos;*&apos;.h5 data_comparison&apos;*&apos;.h5,S"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--debug"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

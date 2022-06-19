@@ -110,7 +110,7 @@ const std::string sCormatInvCholesky{ sCormat + "_invchol" };
 const std::string sNtUnfolded{ "NtUnfolded" };
 const std::string st0Negated{ "t0Negated" };
 const std::string sConjugated{ "Conjugated" };
-const std::string sRawBootstrap{ "RawBootstrap" };
+const std::string sBinnedBootstrap{ "BinnedBootstrap" };
 const std::string sTI{ "TI" };
 const std::string sTF{ "TF" };
 const std::string sDoF{ "DoF" };
@@ -120,6 +120,7 @@ const std::string sFactorised{ "Factorised" };
 const std::string sCovarFrozen{ "CovarFrozen" };
 const std::string s_C{ "_C" };
 const std::string sStdErrorMean{ "StdErrorMean" };
+const std::string sErrorScaled{ "ErrorScaled" };
 const std::string sCovariance{ "Covariance" };
 const std::string sCovarianceIn{ sCovariance + "In" };
 const std::string sCovarianceInv{ sCovariance + "Inv" };
@@ -1402,8 +1403,10 @@ void CovarParamsRebin::Validate( std::size_t NumC ) const
   const int enumIdx{ static_cast<int>( Source ) };
   if( enumIdx < 0 || enumIdx >= aCovarSource.size() )
     throw std::runtime_error( "Invalid covariance source" );
-  if( ( Source == CovarSource::Raw || Source == CovarSource::Binned ) && !Count.empty() )
-    throw std::runtime_error( "Don't specify a size when using raw or binned data" );
+  if( Source == CovarSource::Raw && !Count.empty() )
+    throw std::runtime_error( "Don't specify a size when using raw data" );
+  if( Source == CovarSource::Binned && Count.size() > 1 )
+    throw std::runtime_error( "Specify at most one size when using binned data" );
   if( Source == CovarSource::Bootstrap && Count.size() > 1 )
     throw std::runtime_error( "Specify at most one size when getting covariance from bootstrap replicas" );
   if( NumC && Source == CovarSource::Rebin && Count.size() > 1 && Count.size() != NumC )

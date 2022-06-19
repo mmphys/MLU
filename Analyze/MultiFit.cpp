@@ -36,18 +36,6 @@
 #define HAVE_MINUIT2_SO_BUILD_IT
 #endif
 
-#ifdef DUMP_MATRICES
-void Dump( const std::string &Name, const Matrix &m )
-{
-  std::cout << Name << Common::Space << m << Common::NewLine;
-}
-
-void Dump( const std::string &Name, const Vector &v )
-{
-  std::cout << Name << Common::Space << v << Common::NewLine;
-}
-#endif
-
 // Indices for operators in correlator names
 const char * pSrcSnk[] = { "src", "snk" };
 const std::string E{ "E" };
@@ -171,6 +159,7 @@ FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile 
   StdErrorMean( Extent ),
   CholeskyDiag( Extent ),
   Data( Extent ),
+  Error( Extent ),
   ModelParams( fitter_.NumModelParams ),
   SortingHat( parent.NumExponents ),
   bCorrelated{ bCorrelated_ },
@@ -195,6 +184,8 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
   if( !bSaveMatrices && pBaseName )
     throw std::runtime_error( "Can only write matrices to file on central replica" );
   // Don't make the same covariance matrix twice in a row
+  // TODO: Correlated & Uncorrelated happen on different threads in MPI
+  // so same matrix built twice on central replica
   if( idx_ != idx )
   {
     // Switch to the requested replica
@@ -212,6 +203,14 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
       // Make variance. Always comes from the bootstrap
       using CP = Common::CovarParams; using CS = CP::CovarSource;
       const CP &cp{ parent.ds.GetCovarParams() };
+      if( parent.Dump( idx ) )
+      {
+        Vector v;
+        parent.ds.GetData( 0, v, cp.Source );
+        std::ostringstream ss;
+        ss << cp.Source << " covariance data";
+        parent.Dump( idx, ss.str(), v );
+      }
       const bool OneStep{ bCorrelated && cp.Source == CS::Bootstrap };
       if( OneStep )
       {
@@ -221,10 +220,10 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
       }
       else
         parent.ds.MakeErr( idx_, StdErrorMean );
-      Dump( "StdErrorMean", StdErrorMean );
+      parent.Dump( idx, "StdErrorMean", StdErrorMean );
       for( int i = 0; i < parent.ds.Extent; ++i )
         CholeskyDiag[i] = 1. / StdErrorMean[i];
-      Dump( "CholeskyDiag", CholeskyDiag );
+      parent.Dump( idx, "CholeskyDiag", CholeskyDiag );
       if( bSaveMatrices )
         OutputModel.StdErrorMean = StdErrorMean;
       if( bCorrelated )
@@ -238,7 +237,7 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
         }
         else
         {
-          Dump( "CovarianceIn", Covar );
+          parent.Dump( idx, "CovarianceIn", Covar );
           if( bSaveMatrices )
             OutputModel.CovarIn = Covar;
           if( pBaseName && !pBaseName->empty() )
@@ -250,8 +249,8 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
           // Now apply the variance from the data
           Covar.CholeskyScaleApply( StdErrorMean );
         }
-        Dump( "Covariance", Covar );
-        Dump( "Correlation", Correl );
+        parent.Dump( idx, "Covariance", Covar );
+        parent.Dump( idx, "Correlation", Correl );
         if( bSaveMatrices )
         {
           OutputModel.Covar = Covar;
@@ -275,19 +274,18 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
         for( int i = 0; i < Cholesky.size1; ++i )
           for( int j = i + 1; j < Cholesky.size2; ++j )
             Cholesky( i, j ) = 0;
-        Dump( "Cholesky", Cholesky );
+        parent.Dump( idx, "Cholesky", Cholesky );
         if( bSaveMatrices )
           OutputModel.CorrelCholesky = Cholesky;
         if( pBaseName && !pBaseName->empty() )
           parent.SaveMatrixFile( Cholesky, Common::sCorrelationCholesky,
                 Common::MakeFilename( *pBaseName, Common::sCormatCholesky, OutputModel.Name_.Seed, TEXT_EXT ) );
-#ifdef DUMP_MATRICES
+        if( parent.Dump( idx ) )
         {
           Matrix Copy{ Cholesky };
           Copy.blas_trmm( CblasRight, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
-          Dump( "L L^T", Copy );
+          parent.Dump( idx, "L L^T", Copy );
         }
-#endif
         if( idx_ == Fold::idxCentral && bShowOutput )
         {
           const double CondNumber{ Cholesky.CholeskyRCond() };
@@ -304,12 +302,12 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
           // Cholesky is Cholesky decomposition of (i.e. LL^T=) CORRELATION matrix
           // CholeskyInvert() finds the inverse correlation matrix
           Cholesky.CholeskyInvert();
-          Dump( "Inverse Correl", Cholesky );
+          parent.Dump( idx, "Inverse Correl", Cholesky );
           if( bSaveMatrices )
           {
             OutputModel.CovarInv = Cholesky;
             OutputModel.CovarInv.CholeskyScaleApply( CholeskyDiag );
-            Dump( "Inverse Covar", OutputModel.CovarInv );
+            parent.Dump( idx, "Inverse Covar", OutputModel.CovarInv );
             if( pBaseName && !pBaseName->empty() )
               parent.SaveMatrixFile( OutputModel.CovarInv, Common::sCovarianceInv,
                                     Common::MakeFilename( *pBaseName, Common::sCovmatInv, OutputModel.Name_.Seed,TEXT_EXT));
@@ -319,7 +317,7 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
           for( int i = 0; i < parent.ds.Extent; ++i )
             for( int j = i + 1; j < parent.ds.Extent; ++j )
               Cholesky( i, j ) = 0;
-          Dump( "Inverse Correl Cholesky", Cholesky );
+          parent.Dump( idx, "Inverse Correl Cholesky", Cholesky );
           if( bSaveMatrices )
           {
             OutputModel.CorrelInvCholesky = Cholesky;
@@ -352,7 +350,7 @@ void FitterThread::ReplicaMessage( const ParamState &state, int iFitNum ) const
   std::cout << ReplicaString( iFitNum ) << ", calls " << state.getNumCalls() << ", chi^2 " << ChiSq << Common::NewLine;
   state.ReplicaMessage( std::cout );
   std::cout << "dof " << parent.dof << ", chi^2/dof " << ( ChiSq / ( parent.dof ? parent.dof : 1 ) ) << Common::NewLine;
-  if( parent.Verbosity > 1 )
+  if( parent.Verbosity > 2 )
     std::cout << state;
   else
     std::cout << state.parameters;
@@ -405,9 +403,9 @@ bool FitterThread::AnalyticJacobian( Matrix &Jacobian ) const
   }
   if( bCorrelated )
   {
-    Dump( "Jacobian", Jacobian );
+    parent.Dump( idx, "Jacobian", Jacobian );
     Jacobian.blas_trmm( CblasLeft, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
-    Dump( "Jacobian Scaled", Jacobian );
+    parent.Dump( idx, "Jacobian Scaled", Jacobian );
   }
   return true;
 }
@@ -427,7 +425,8 @@ scalar FitterThread::RepeatFit( ParamState &Guess, int MaxGuesses )
     else if( iNumGuesses != 1 )
       bFinished = ( dTestStat == dNewTestStat );
     dTestStat = dNewTestStat;
-    if( idx == Fold::idxCentral && ( bFinished || parent.Verbosity ) )
+    if( ( idx == Fold::idxCentral && ( bFinished || parent.Verbosity ) )
+       || ( parent.Verbosity >= 2 && bFinished ) || parent.Verbosity > 2 )
       ReplicaMessage( Guess, iNumGuesses );
   }
   if( !bFinished )
@@ -482,9 +481,19 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
       const bool bOK{ qValue >= parent.HotellingCutoff };
       ss << ( bOK ? " >=" : " <" ) << " cutoff " << parent.HotellingCutoff;
       if( !bOK )
+      {
+        // Now add each component of the error vector
+        ss << std::setprecision( std::numeric_limits<scalar>::max_digits10 ) << "\nTheory - Data ("
+           << ( !bCorrelated || !CholeskyAdjust() ? "un" : "" ) << "correlated):";
+        for( std::size_t i = 0; i < Error.size; ++i )
+          ss << ( i ? Common::CommaSpace : Common::Space ) << Error[i];
         throw std::runtime_error( ss.str() );
+      }
     }
     std::cout << "OK: " << ss.str() << Common::NewLine;
+    OutputModel.ErrorScaled.resize( Extent );
+    for( std::size_t i = 0; i < Error.size; ++i )
+      OutputModel.ErrorScaled[i] = std::abs( Error[i] );
   }
   // Put the variable fit parameters into the full model parameter set (constants are already there)
   for( int i = 0; i < parent.NumVariable; ++i )
@@ -557,6 +566,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     bFreezeCovar{ cl.GotSwitch( "freeze" ) },
     Verbosity{ cl.SwitchValue<int>("v") },
     bForceSrcSnkDifferent{ cl.GotSwitch( "srcsnk" ) },
+    vGuess{ Common::ArrayFromString<scalar>( cl.SwitchValue<std::string>( "guess" ) ) },
     ds{ std::move( ds_ ) },
     NumFiles{ static_cast<int>( ds.corr.size() ) },
     OpNames{ opNames_ },
@@ -582,6 +592,9 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     throw std::invalid_argument( "Number of fit retries (retry) must be >= 0" );
   if( MaxIt < 0 )
     throw std::invalid_argument( "Maximum fitter iterations (iter) must be >= 0" );
+  if( vGuess.size() && vGuess.size() != NumVariable )
+    throw std::invalid_argument( "Guess contains " + std::to_string( vGuess.size() ) + " parameters, but "
+                                + std::to_string( NumVariable ) + " variable parameters" );
 }
 
 // Create all the models and return the number of exponents in the fit
@@ -965,11 +978,12 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
         }
       }
       // Make sure we've taken a guess for everything
+      int iVar = 0;
       for( int i = 0; i < NumModelParams; ++i )
       {
         assert( bKnown[i] && "Bad model: unable to guess all parameters" );
         if( !bFixed[i] )
-          parGuess.Add( ParamNames[i], modelParams[i], modelParams[i] * 0.1 );
+          parGuess.Add( ParamNames[i], vGuess.empty() ? modelParams[i] : vGuess[iVar++], 0 );
       }
     }
     // Protected by CancelCritSec
@@ -1015,7 +1029,8 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
               try
               {
                 fitThread.SetReplica( Fold::idxCentral, true, true, bSaveCMat ? &sModelBase : nullptr );
-                fitThread.UpdateGuess( parGuess );
+                if( vGuess.empty() )
+                  fitThread.UpdateGuess( parGuess );
               }
               catch( const std::exception &e )
               {
@@ -1201,6 +1216,7 @@ int main(int argc, const char *argv[])
       {"freeze", CL::SwitchType::Flag, nullptr},
       {"v", CL::SwitchType::Single, "0"},
       {"srcsnk", CL::SwitchType::Flag, nullptr},
+      {"guess", CL::SwitchType::Single, ""},
       // ModelDefaultParams
       {"e", CL::SwitchType::Single, "1"},
       // Other params
@@ -1450,12 +1466,13 @@ int main(int argc, const char *argv[])
     "         Raw       Use the raw (unbinned) data\n"
     "         Rebin     Rebin the raw data using bin size(s) specified\n"
     "         Bootstrap Use bootstrap replicas (optionally first n)\n"
+    "--guess  List of specific values to use for inital guess"
     "-t     Fit range1[,range2[,...]] (start:stop[:numstart=1[:numstop=numstart]])\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
     "-e     number of Exponents (default 1)\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
-    "-v     Verbosity, 0 (default)=central fit results, 1=all fits, 2=detailed\n"
+    "-v     Verbosity, 0 (default)=central, 1=detail, 2=all, 3=all detail\n"
     "Flags:\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
     "--freeze   Freeze the covariance matrix/variance on the central replica\n"

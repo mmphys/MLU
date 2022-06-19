@@ -81,7 +81,11 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--Hotelling 1.01"
+            argument = "--savecmat"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--Hotelling 0"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -89,11 +93,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--savecmat"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--covsrc raw"
+            argument = "--covsrc binned -o data_comparison1/FitAllDebug/ -i data_comparison1/boot_ "
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -101,16 +101,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--guess 0.968006347,38.15800731,0.589370772,68.50759443,0.846508647,1.395041623,31.34213091,0.1835100,84.75116241,0.512182153"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-t 5:9 -o FitBanana/ Banana_A_[AB].fold.*.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o Tobi/Fit/Full/ -i Tobi/binned_ pLS_pLS.&apos;*&apos;.h5 pLL_pLS.&apos;*&apos;.h5 pLS_aLS.&apos;*&apos;.h5 pLL_aLS.&apos;*&apos;.h5 aLS_aLS.&apos;*&apos;.h5 aLL_aLS.&apos;*&apos;.h5"
+            argument = "pLS_pLS.&apos;*&apos;.h5 pLL_pLS.&apos;*&apos;.h5 pLS_aLS.&apos;*&apos;.h5 pLS_aLL.&apos;*&apos;.h5 aLS_aLS.&apos;*&apos;.h5 aLL_aLS.&apos;*&apos;.h5"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o Tobi/Fit/PP/ -i Tobi/unbinned_ pLS_pLS.&apos;*&apos;.h5 pLL_pLS.&apos;*&apos;.h5"
-            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

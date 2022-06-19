@@ -126,9 +126,37 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "68820B222721CBE100825D73"
+               BuildableName = "GaugeCmp"
+               BlueprintName = "GaugeCmp"
+               ReferencedContainer = "container:Utility.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "6854476B271C9C9300EF030C"
                BuildableName = "hlxml"
                BlueprintName = "hlxml"
+               ReferencedContainer = "container:Utility.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "68A1B335284A3FBA0053103F"
+               BuildableName = "ImportCorr"
+               BlueprintName = "ImportCorr"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

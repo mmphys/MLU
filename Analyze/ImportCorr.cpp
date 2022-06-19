@@ -33,7 +33,7 @@ const std::vector<CorrInfo> Importer::corrInfo{
   { "pp_SSLL", "pLS", "pLS", Common::Parity::Even },
   { "pp_SLLL", "pLS", "pLL", Common::Parity::Even },
   { "ap_SSLL", "aLS", "pLS", Common::Parity::Odd },
-  { "ap_SLLL", "aLS", "pLL", Common::Parity::Odd },
+  { "ap_SLLL", "aLL", "pLS", Common::Parity::Odd },
   { "aa_SSLL", "aLS", "aLS", Common::Parity::Even },
   { "aa_SLLL", "aLS", "aLL", Common::Parity::Even },
 };
@@ -46,10 +46,9 @@ const std::vector<CorrInfo> Importer::corrInfo{
 *****************************************************************/
 
 Importer::Importer( const Common::CommandLine &cl )
-: Nt{ cl.SwitchValue<int>( "nt" ) },
-  NtOut{ Nt / 2 + 1 },
-  Seed{ cl.SwitchValue<Common::SeedType>( "r" ) },
+: Seed{ cl.SwitchValue<Common::SeedType>( "r" ) },
   outStem{ cl.SwitchValue<std::string>( "o" ) },
+  bDebug{ cl.GotSwitch( "debug" ) },
   GroupName{ cl.SwitchValue<std::string>( "g" ) }
 {
 }
@@ -65,6 +64,7 @@ void Importer::ReadCorrVector( ::H5::Group &g, const std::string &Name, std::vec
 {
   std::cout << "Reading vector from " << Name << Common::NewLine;
   ::H5::Group gName{ g.openGroup( Name ) };
+  v.clear();
   v.reserve( corrInfo.size() );
   for( const CorrInfo &i : corrInfo )
   {
@@ -76,11 +76,54 @@ void Importer::ReadCorrVector( ::H5::Group &g, const std::string &Name, std::vec
 
 /*****************************************************************
 
+ Dump part of a matrix for debugging
+
+*****************************************************************/
+
+void Importer::DebugDump( const std::vector<Matrix> &v ) const
+{
+  if( bDebug )
+  {
+    const std::size_t confs{ v.size() >= 3 ? 3 : v.size() };
+    for( int c = 0; c < confs; ++c )
+    {
+      const Matrix &m{ v[c] };
+      const std::size_t rows{ m.size1 >= 2 ? 2 : m.size1 };
+      const std::size_t cols{ m.size2 >= 5 ? 5 : m.size2 };
+      for( int i = 0; i < rows; ++i )
+      {
+        if( i == 0 )
+          std::cout << "Conf " << c << ":";
+        else
+          std::cout << std::string( 7, ' ' );
+        for( int j = 0; j < cols; ++j )
+          std::cout << Common::Space << m( i, j );
+        std::cout << Common::NewLine;
+      }
+    }
+  }
+}
+
+void Importer::DebugDump( const std::vector<std::vector<Matrix>> &v ) const
+{
+  if( bDebug )
+  {
+    std::cout << std::setprecision( std::numeric_limits<Scalar>::max_digits10 );
+    for( std::size_t f = 0; f < v.size(); ++f )
+    {
+      std::cout << Common::NewLine << corrInfo[f].id << Common::NewLine;
+      DebugDump( v[f] );
+    }
+  }
+}
+
+/*****************************************************************
+
  Import data from HDF5
 
 *****************************************************************/
 
-void Importer::Import( const std::string &Filename )
+void Importer::ReadInput( const std::string &Filename )
 {
   // Read source data
   {
@@ -100,6 +143,11 @@ void Importer::Import( const std::string &Filename )
     Common::H5::ReadVector( g, sCentral, vUnbinnedCentral );
     Common::H5::ReadMatrix( g, sBootstraps, mUnbinnedData );
   }
+  DebugDump( vRawData );
+  if( vRawData[0][0].size2 > std::numeric_limits<int>::max() || vRawData[0][0].size2 & 1 )
+    throw std::runtime_error( "Raw data Nt=" + std::to_string( vRawData[0][0].size2 ) + " invalid" );
+  Nt = static_cast<int>( vRawData[0][0].size2 );
+  NtOut = Nt / 2 + 1;
   std::cout << "Timeslices" << Common::NewLine;
   std::size_t TotalTimeslices{ 0 };
   bool bBadTimeslice{ false };
@@ -117,7 +165,7 @@ void Importer::Import( const std::string &Filename )
     std::cout << Common::NewLine;
     Common::NoDuplicates( vFitRanges[i], "Timeslice", 1 );
   }
-  static const std::string Suffix{ " timeslices != " + std::to_string( TotalTimeslices ) };
+  const std::string Suffix{ " timeslices != " + std::to_string( TotalTimeslices ) };
   if( TotalTimeslices != vBinnedCentral.size )
     throw std::runtime_error( "Binned central values " + std::to_string( vBinnedCentral.size ) + Suffix );
   if( TotalTimeslices != mBinnedData.size2 )
@@ -128,6 +176,11 @@ void Importer::Import( const std::string &Filename )
     throw std::runtime_error( "Unbinned data " + std::to_string( mUnbinnedData.size2 ) + Suffix );
   if( bBadTimeslice )
     throw std::runtime_error( "Timeslice < 0 || > " + std::to_string( Nt / 2 ) );
+  const std::string Suffix2{ " rows >= int_max " + std::to_string( std::numeric_limits<int>::max() ) };
+  if( mBinnedData.size1 > std::numeric_limits<int>::max() )
+    throw std::runtime_error( "Binned data " + std::to_string( mBinnedData.size1 ) + Suffix2 );
+  if( mUnbinnedData.size1 > std::numeric_limits<int>::max() )
+    throw std::runtime_error( "Binned data " + std::to_string( mUnbinnedData.size1 ) + Suffix2 );
 }
 
 /*****************************************************************
@@ -136,39 +189,108 @@ void Importer::Import( const std::string &Filename )
 
 *****************************************************************/
 
-void Importer::SpreadData( int idx, std::vector<Fold> &out, Scalar * &pSource )
+void Importer::SpreadData( std::vector<Fold> &out, const Scalar *pSource, int idx, int NumSamples )
 {
-  for( int i = 0; i < out.size(); ++i )
+  std::vector<Scalar *> C( out.size() );
+  for( int f = 0; f < out.size(); ++f )
+    C[f] = out[f][idx];
+  for( int s = 0; s < NumSamples; ++s )
   {
-    Scalar * C{ out[i][idx] };
-    for( int t = 0; t < out[i].Nt(); ++t )
-      C[t] = 0;
-    for( int j = 0; j < vFitRanges[i].size(); ++j )
-      C[vFitRanges[i][j]] = *pSource++;
+    for( int f = 0; f < out.size(); ++f )
+    {
+      for( int t = 0; t < out[f].Nt(); ++t )
+        C[f][t] = 0;
+      for( int j = 0; j < vFitRanges[f].size(); ++j )
+        C[f][vFitRanges[f][j]] = *pSource++;
+      C[f] += out[f].Nt();
+    }
   }
 }
 
-void Importer::SpreadDataRaw( std::vector<Fold> &out, const Matrix *pRawData )
+void Importer::SpreadDataBinned( std::vector<Fold> &out, const Matrix &BinnedData )
 {
-  if( pRawData )
+  const Scalar *pSource{ BinnedData.data };
+  std::vector<Scalar *> C( out.size() );
+  const int NumBinnedSamples{ static_cast<int>( BinnedData.size1 ) };
+  for( int f = 0; f < out.size(); ++f )
   {
-    const Scalar *pSource{ pRawData->data };
-    std::vector<Scalar *> C( out.size() );
-    const int NumRawSamples{ static_cast<int>( pRawData->size1 ) };
+    C[f] = out[f].resizeBinned( NumBinnedSamples );
+    out[f].bBinnedBootstrap = true;
+  }
+  for( int s = 0; s < NumBinnedSamples; ++s )
     for( int f = 0; f < out.size(); ++f )
     {
-      C[f] = out[f].resizeRaw( NumRawSamples );
-      out[f].bRawBootstrap = true;
+      for( int t = 0; t < out[f].Nt(); ++t )
+        C[f][t] = 0;
+      for( int j = 0; j < vFitRanges[f].size(); ++j )
+        C[f][vFitRanges[f][j]] = *pSource++;
+       C[f] += out[f].Nt();
     }
-    for( int s = 0; s < NumRawSamples; ++s )
-      for( int f = 0; f < out.size(); ++f )
+}
+
+// This folds the raw data, making positive or preserving sign
+void Importer::SaveRawData( std::vector<Fold> &out, bool bPreserveSign )
+{
+  for( std::size_t f = 0; f < out.size(); ++f )
+  {
+    const Scalar Multiplier{ corrInfo[f].parity == Common::Parity::Odd ? -1. : 1. };
+    std::string sName{ corrInfo[f].id };
+    sName.append( "_config_" );
+    const std::size_t SizeConf{ sName.length() };
+    static const std::string sErr{ "Raw data error: " };
+    if( out[f].Nt() != NtOut )
+      throw std::runtime_error( "Bug: bad NtOut" );
+    if( vRawData[f].size() < 1 || vRawData[f].size() > std::numeric_limits<int>::max() )
+      throw std::runtime_error( sErr + std::to_string( vRawData[f].size() ) + " configurations" );
+    if( vRawData[f][0].size1 < 1 || vRawData[f][0].size1 > std::numeric_limits<int>::max() )
+      throw std::runtime_error( sErr + std::to_string( vRawData[f][0].size1 ) + " timeslices" );
+    if( vRawData[f][0].size2 != Nt )
+      throw std::runtime_error( sErr + "NtIn " + std::to_string( vRawData[f][0].size2 ) );
+    const int NumConfigs   { static_cast<int>( vRawData[f].size() ) };
+    const int NumTimeslices{ static_cast<int>( vRawData[f][0].size1 ) };
+    const int NtIn         { static_cast<int>( vRawData[f][0].size2 ) };
+    const int NumSamplesRaw{ NumConfigs * NumTimeslices };
+    if( NumSamplesRaw / NumConfigs != NumTimeslices )
+      throw std::runtime_error( sErr + std::to_string( NumConfigs ) + " configs and "
+                               + std::to_string( NumTimeslices ) + " timeslices" );
+    const bool bNegate{ !bPreserveSign && vRawData[f][0]( 0, Nt >> 2 ) < 0 };
+    out[f].binSize = NumTimeslices;
+    out[f].sign = bNegate ? Common::Sign::Negative : Common::Sign::Positive;
+    out[f].ConfigCount.resize( NumConfigs );
+    out[f].SampleSize = NumConfigs;
+    out[f].binSize = NumTimeslices;
+    out[f].FileList.reserve( NumSamplesRaw );
+    out[f].resizeRaw( NumSamplesRaw );
+    Scalar * pRawData{ out[f].getRaw() };
+    for( int c = 0; c < NumConfigs; ++c )
+    {
+      sName.resize( SizeConf );
+      sName.append( std::to_string( c ) );
+      sName.append( "_t_" );
+      const std::size_t SizeT{ sName.length() };
+      const Matrix &m{ vRawData[f][c] };
+      if( m.size1 != NumTimeslices || m.size2 != NtIn )
+        throw std::runtime_error( "Bug: ragged matrices - not possible if read from hdf5 cube" );
+      out[f].ConfigCount[c].Config = c;
+      out[f].ConfigCount[c].Count = NumTimeslices;
+      for( int tSlice = 0; tSlice < NumTimeslices; ++tSlice )
       {
-        for( int t = 0; t < out[f].Nt(); ++t )
-          C[f][t] = 0;
-        for( int j = 0; j < vFitRanges[f].size(); ++j )
-          C[f][vFitRanges[f][j]] = *pSource++;
-         C[f] += out[f].Nt();
+        sName.resize( SizeT );
+        sName.append( std::to_string( tSlice ) );
+        out[f].FileList.push_back( sName );
+        for( int t = 0; t < NtOut; ++t )
+        {
+          Scalar z;
+          if( t == 0 || t == NtOut - 1 )
+            z = m( tSlice, t );
+          else
+            z = 0.5 * ( m( tSlice, t ) + Multiplier * m( tSlice, Nt - t ) );
+          if( bNegate )
+            z = -z;
+          *pRawData++ = z;
+        }
       }
+    }
   }
 }
 
@@ -178,34 +300,49 @@ void Importer::SpreadDataRaw( std::vector<Fold> &out, const Matrix *pRawData )
 
 *****************************************************************/
 
-void Importer::Write( const std::string &Base, Matrix &Data, Vector &Central, const Matrix *pRawData )
+void Importer::Write( const std::string &Base, bool bPreserveSign )
 {
-  const int NumSamples{ static_cast<int>( Data.size1 ) };
+  const int NumSamples{ static_cast<int>( mBinnedData.size1 ) };
   std::cout << "Writing " << Base << Common::NewLine;
+  Common::MakeAncestorDirs( Base );
   std::vector<Fold> out( corrInfo.size() );
   for( std::size_t f = 0; f < corrInfo.size(); ++f )
   {
     out[f].resize( NumSamples, NtOut );
     out[f].NtUnfolded = Nt;
     out[f].parity = corrInfo[f].parity;
-    out[f].sign = Common::Sign::Positive;
   }
-  SpreadData( Fold::idxCentral, out, Central.data );
-  for( int s = 0; s < NumSamples; ++s )
-    SpreadData( s, out, Data.data );
-  SpreadDataRaw( out, pRawData );
+  SpreadData( out, vBinnedCentral.data, Fold::idxCentral, 1 );
+  SpreadData( out, mBinnedData.data, 0, NumSamples );
+  SaveRawData( out, bPreserveSign );
+  SpreadDataBinned( out, mUnbinnedData );
+  std::string Filename{ Base };
+  const std::size_t BaseLen{ Filename.length() };
   for( std::size_t f = 0; f < corrInfo.size(); ++f )
   {
     out[f].MakeCorrSummary( nullptr );
-    std::string Filename{ Base };
-    Filename.append( 1, '_' );
-    Filename.append( corrInfo[f].opSnk );
-    Filename.append( 1, '_' );
-    Filename.append( corrInfo[f].opSrc );
-    std::string FullName{ Common::MakeFilename( Filename, Common::sFold, Seed, DEF_FMT ) };
-    Common::MakeAncestorDirs( FullName );
-    out[f].Write( FullName );
-    out[f].WriteSummary( Common::MakeFilename( Filename, Common::sFold, Seed, TEXT_EXT ) );
+    for( int i = 0; i < 2; ++i )
+    {
+      Filename.resize( BaseLen );
+      if( i == 0 )
+        Filename.append( "boot" );
+      else
+      {
+        out[f].bBinnedBootstrap = false;
+        out[f].resizeBinned( static_cast<int>( out[f].ConfigCount.size() ) );
+        out[f].Bin();
+        Filename.append( "binned" );
+      }
+      if( bPreserveSign )
+        Filename.append( 1, 's' );
+      Filename.append( 1, '_' );
+      Filename.append( corrInfo[f].opSnk );
+      Filename.append( 1, '_' );
+      Filename.append( corrInfo[f].opSrc );
+      std::string FullName{ Common::MakeFilename( Filename, Common::sFold, Seed, DEF_FMT ) };
+      out[f].Write( FullName );
+      out[f].WriteSummary( Common::MakeFilename( Filename, Common::sFold, Seed, TEXT_EXT ) );
+    }
   }
 }
 
@@ -215,9 +352,9 @@ void Importer::Write( const std::string &Base, Matrix &Data, Vector &Central, co
 
 *****************************************************************/
 
-void Importer::Run( const std::string &Filename )
+void Importer::Import( const std::string &Filename, bool bPreserveSign )
 {
-  Import( Filename );
+  ReadInput( Filename );
 
   // Get the base of the filename
   std::string Base{ outStem };
@@ -227,14 +364,7 @@ void Importer::Run( const std::string &Filename )
   if( pos != std::string::npos && ( LastSlash == std::string::npos || pos > LastSlash) )
     Base.resize( pos );
   Base.append( 1, '/' );
-
-  // Now write out the binned, then unbinned data
-  pos = Base.length();
-  Base.append( "binned" );
-  Write( Base, mBinnedData, vBinnedCentral, &mUnbinnedData );
-  Base.resize( pos );
-  Base.append( "unbinned" );
-  Write( Base, mUnbinnedData, vUnbinnedCentral, nullptr );
+  Write( Base, bPreserveSign );
 }
 
 /*****************************************************************
@@ -246,7 +376,6 @@ void Importer::Run( const std::string &Filename )
 int main(const int argc, const char *argv[])
 {
   const char pszDefaultGroupName[] = "/C0/sh/0.51";
-  const char pszDefaultNt[] = "96";
   const char pszDefaultSeed[] = "1";
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
@@ -257,18 +386,52 @@ int main(const int argc, const char *argv[])
   {
     const std::initializer_list<CL::SwitchDef> list = {
       {"g", CL::SwitchType::Single, pszDefaultGroupName},
+      {"i", CL::SwitchType::Single, ""},
       {"o", CL::SwitchType::Single, ""},
       {"r", CL::SwitchType::Single, pszDefaultSeed},
-      {"nt", CL::SwitchType::Single, pszDefaultNt},
+      {"debug", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
-    if( !cl.GotSwitch( "help" ) && cl.Args.size() == 1 )
+    if( !cl.GotSwitch( "help" ) && cl.Args.size() )
     {
       bShowUsage = false;
       Importer I( cl );
-      I.Run( cl.Args[0] );
-      bShowUsage = false;
+      std::size_t Count{ 0 };
+      for( std::string &Args : cl.Args )
+      {
+        bool bOK{ true };
+        bool bPreserveSign{ false };
+        std::string Files{ Common::ExtractToSeparator( Args ) };
+        if( Args.length() )
+        {
+          if( Args.length() == 1 && std::toupper( Args[0] ) == 'S' )
+            bPreserveSign = true;
+          else
+          {
+            iReturn = EXIT_FAILURE;
+            std::cerr << "Error: Bad argument \"" << Args << "\". Ignoring " << Files << Common::NewLine;
+            bOK = false;
+          }
+        }
+        if( bOK )
+        {
+          for( auto &File : Common::glob( &Files, &Files + 1, cl.SwitchValue<std::string>("i").c_str() ) )
+          {
+            try
+            {
+              I.Import( File, bPreserveSign );
+              Count++;
+            }
+            catch(const std::exception &e)
+            {
+              std::cerr << "Error: " << e.what() << std::endl;
+              iReturn = EXIT_FAILURE;
+            }
+          }
+        }
+      }
+      std::cout << Count << " files imported.\n";
     }
   }
   catch(const std::exception &e)
@@ -283,13 +446,16 @@ int main(const int argc, const char *argv[])
   {
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) <<
     "Import correlators.\n"
-    "usage: " << cl.Name << " <options> Import_Filename\n"
+    "usage: " << cl.Name << " <options> File[,Arg]...\n"
+    "Args:\n"
+    "s       Preserve the sign of sinh correlators"
     "Options:\n"
     "-g      Group name, default " << pszDefaultGroupName << "\n"
+    "-i      Input file base\n"
     "-o      Output file base\n"
     "-r      Random number seed, default " << pszDefaultSeed << "\n"
-    "--nt    Timeslices on ensemble, default" << pszDefaultNt << "\n"
     "Flags:\n"
+    "--debug Dump a portion of the raw data\n";
     "--help  This message\n";
   }
   return iReturn;

@@ -30,7 +30,6 @@
 
 #include <cmath>
 #include <iomanip>
-
 #include <MLU/Common.hpp>
 
 using Scalar = double;
@@ -38,11 +37,6 @@ using Fold = Common::Fold<Scalar>;
 using Algebra = Common::Gamma::Algebra;
 using Vector = Common::Vector<Scalar>;
 using Matrix = Common::Matrix<Scalar>;
-
-// Default number of bootstrap replicas
-#ifndef DEF_NSAMPLE
-#define DEF_NSAMPLE "10000"
-#endif
 
 struct CorrInfo
 {
@@ -60,11 +54,12 @@ Importer
 
 struct Importer
 {
-  const int Nt;
-  const int NtOut;
   const Common::SeedType Seed;
   const std::string outStem;
+  const bool bDebug;
 protected:
+  int Nt;
+  int NtOut;
   std::string GroupName;
   static const std::vector<CorrInfo> corrInfo; // The correlators I want to import - in order
   std::vector<std::vector<int>> vFitRanges;
@@ -75,13 +70,16 @@ protected:
   Matrix mUnbinnedData;
   template <typename T>
   void ReadCorrVector( ::H5::Group &g, const std::string &Name, std::vector<T> &v );
-  void Import( const std::string &Filename );
-  void SpreadData( int idx, std::vector<Fold> &out, Scalar * &pSource );
-  void SpreadDataRaw( std::vector<Fold> &out, const Matrix *pRawData );
-  void Write( const std::string &Base, Matrix &Data, Vector &Central, const Matrix *pRawData );
+  void DebugDump( const std::vector<Matrix> &v ) const;
+  void DebugDump( const std::vector<std::vector<Matrix>> &v ) const;
+  void ReadInput( const std::string &Filename );
+  void SpreadData( std::vector<Fold> &out, const Scalar *pSource, int idx, int NumSamples );
+  void SpreadDataBinned( std::vector<Fold> &out, const Matrix &RawData );
+  void SaveRawData( std::vector<Fold> &out, bool bPreserveSign );
+  void Write( const std::string &Base, bool bPreserveSign );
 public:
   Importer( const Common::CommandLine &cl );
-  void Run( const std::string &Filename );
+  void Import( const std::string &Filename, bool bPreserveSign );
 };
 
 #endif // ImportCorr_hpp

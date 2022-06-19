@@ -150,6 +150,7 @@ void FitterThreadGSL::Minimise( ParamState &Guess_, int iNumGuesses )
   Guess.nevalf = fdf.nevalf;
   Guess.nevaldf = fdf.nevaldf;
   const Vector &vResidual{ * reinterpret_cast<Vector *>( gsl_multifit_nlinear_residual( ws ) ) };
+  Error = vResidual;
   gsl_blas_ddot( &vResidual, &vResidual, &Guess.TestStat );
   i = 0;
   const Vector &vResult{ * reinterpret_cast<Vector *>( gsl_multifit_nlinear_position( ws ) ) };

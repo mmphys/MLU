@@ -29,7 +29,6 @@
 #ifndef MultiFit_hpp
 #define MultiFit_hpp
 
-//#include "CommonLatAn.hpp"
 #include <MLU/Common.hpp>
 
 // Uncomment the next line if your cmath doesn't define M_PI etc by default
@@ -43,14 +42,6 @@
 using scalar = double;
 using Matrix = Common::Matrix<scalar>;
 using Vector = Common::Vector<scalar>;
-
-//#define DUMP_MATRICES
-#ifdef DUMP_MATRICES
-void Dump( const std::string &Name, const Matrix &m );
-void Dump( const std::string &Name, const Vector &v );
-#else
-#define Dump( x, y )
-#endif
 
 using Fold = Common::Fold<scalar>;
 using vCorrelator = std::vector<Fold>;
@@ -250,7 +241,7 @@ public:
   Matrix Cholesky;
   Vector CholeskyDiag; // 1 / StdErrorMean
   Vector Data;            // Data points we are fitting
-  Vector Error;           // Difference between model predictions (theory) and Data
+  mutable Vector Error;   // (Theory - Data) * CholeskyScale
   // These next are for model parameters
   Vector ModelParams;
   std::vector<std::pair<double,int>> SortingHat;
@@ -307,6 +298,7 @@ public:
   const bool bFreezeCovar;
   const int Verbosity;
   const bool bForceSrcSnkDifferent;
+  const std::vector<scalar> vGuess;
   // More complex command-line options
   const DataSet &ds;
   const int NumFiles; // Number of correlator files in the dataset
@@ -345,6 +337,17 @@ public:
   explicit Fitter( const Common::CommandLine &cl, const DataSet &ds_,
                    const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames_ );
   virtual ~Fitter() {}
+  inline bool Dump( int idx ) const { return Verbosity > 2 || ( Verbosity >= 1 && idx == Fold::idxCentral ); }
+  inline void Dump( int idx, const std::string &Name, const Matrix &m ) const
+  {
+    if( Verbosity > 2 || ( Verbosity >= 1 && idx == Fold::idxCentral ) )
+      std::cout << Name << Common::Space << m << Common::NewLine;
+  }
+  void Dump( int idx, const std::string &Name, const Vector &v ) const
+  {
+    if( Verbosity > 2 || ( Verbosity >= 1 && idx == Fold::idxCentral ) )
+      std::cout << Name << Common::Space << v << Common::NewLine;
+  }
   std::vector<Common::ValWithEr<scalar>>
   PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName,
               const std::string &ModelSuffix, Common::SeedType Seed, const Common::CovarParamsRebin &cpr );

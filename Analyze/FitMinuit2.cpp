@@ -67,9 +67,6 @@ const ROOT::Minuit2::MnStrategy FitterThreadMinuit2::Strategy( FitterThreadMinui
 // Painful, but Minuit2 calls operator() const
 double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
 {
-  scalar localBuffer[Extent];
-  Vector Error;
-  Error.MapView( localBuffer, Extent );
   FitterThreadMinuit2 * pMe{ const_cast<FitterThreadMinuit2 *>( this ) };
   if( !pMe->SaveError( Error, &par[0], par.size() ) )
     return std::numeric_limits<double>::max();
