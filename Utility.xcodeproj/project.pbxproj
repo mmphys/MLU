@@ -983,6 +983,8 @@
 		6874ED74271C6C820055B1E5 /* BaseIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E9E3271C6C7E0055B1E5 /* BaseIO.cc */; };
 		6874ED75271C6C820055B1E5 /* JSON_IO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 6874E9E4271C6C7E0055B1E5 /* JSON_IO.cc */; };
 		6874ED76271C6C820055B1E5 /* JSON_IO.h in Headers */ = {isa = PBXBuildFile; fileRef = 6874E9E5271C6C7E0055B1E5 /* JSON_IO.h */; };
+		68768DA42860A49600354169 /* FitRange.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68768DA22860A49600354169 /* FitRange.hpp */; };
+		68768DA52860A49600354169 /* FitRange.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68768DA32860A49600354169 /* FitRange.cpp */; };
 		687EF0F52844C3A6009D6B74 /* SynthData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687EF0E82844BCD6009D6B74 /* SynthData.cpp */; };
 		687EF0F62844CA49009D6B74 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68820B2A2721CC1700825D73 /* GaugeCmp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */; };
@@ -2589,6 +2591,8 @@
 		6874E9E3271C6C7E0055B1E5 /* BaseIO.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BaseIO.cc; sourceTree = "<group>"; };
 		6874E9E4271C6C7E0055B1E5 /* JSON_IO.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JSON_IO.cc; sourceTree = "<group>"; };
 		6874E9E5271C6C7E0055B1E5 /* JSON_IO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSON_IO.h; sourceTree = "<group>"; };
+		68768DA22860A49600354169 /* FitRange.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitRange.hpp; sourceTree = "<group>"; };
+		68768DA32860A49600354169 /* FitRange.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitRange.cpp; sourceTree = "<group>"; };
 		687EF0E82844BCD6009D6B74 /* SynthData.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SynthData.cpp; sourceTree = "<group>"; };
 		687EF0E92844BCD7009D6B74 /* SynthData.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SynthData.hpp; sourceTree = "<group>"; };
 		687EF0EE2844BD58009D6B74 /* SynthData */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SynthData; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3463,6 +3467,8 @@
 		685446C6271C8B7E00EF030C /* MLU */ = {
 			isa = PBXGroup;
 			children = (
+				68768DA32860A49600354169 /* FitRange.cpp */,
+				68768DA22860A49600354169 /* FitRange.hpp */,
 				685446C7271C8B7E00EF030C /* Common.cpp */,
 				685446CE271C8B7E00EF030C /* Common.hpp */,
 				685446C9271C8B7E00EF030C /* CommonGrid.cpp */,
@@ -6534,6 +6540,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68768DA42860A49600354169 /* FitRange.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8087,6 +8094,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				685446D8271C8C4F00EF030C /* Common.cpp in Sources */,
+				68768DA52860A49600354169 /* FitRange.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

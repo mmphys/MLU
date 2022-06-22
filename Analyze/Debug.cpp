@@ -509,8 +509,49 @@ const char * NextString( int argc, char *argv[], int &i )
   return argv[++i];
 }
 
+bool FitRangeTest( int argc, char *argv[] )
+{
+  bool bReturn{ true };
+  try
+  {
+    if( argc <= 1 )
+      std::cout << "Please specify one or more fit ranges" << std::endl;
+    else
+    {
+      // Make FitRanges
+      std::vector<std::string> vs;
+      vs.reserve( argc - 1 );
+      for (int i = 1; i < argc; ++i)
+        vs.push_back( argv[i] );
+      Common::FitRanges fr( vs );
+      // Show FitRanges
+      for( std::size_t i = 0; i < fr.size(); ++i )
+        std::cout << i << ": " << fr[i] << std::endl;
+      // Iterate FitRanges
+      std::size_t Count{};
+      for( Common::FitRangesIterator it = fr.begin(); !it.PastEnd(); ++it )
+      {
+        std::cout << Count++ << ": " << it.to_string()
+                  << " --- " << it.to_string( "-", ", " )
+                  << " --- " << it.to_string( "_" )
+                  << std::endl;
+      }
+    }
+  }
+  catch(const std::exception &e)
+  {
+    std::cerr << "Error: " << e.what() << std::endl;
+    bReturn = false;
+  } catch( ... ) {
+    std::cerr << "Error: Unknown exception" << std::endl;
+    bReturn = false;
+  }
+  return true;
+}
+
 int main(int argc, char *argv[])
 {
+  //if( FitRangeTest( argc, argv ) ) return EXIT_SUCCESS;
   int iReturn = EXIT_SUCCESS;
   try
   {

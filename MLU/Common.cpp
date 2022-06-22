@@ -1388,7 +1388,7 @@ std::ostream& operator<<( std::ostream& os, CovarParams::CovarSource covarSource
 
 const std::string CovarParamsRebin::sCovarSource{ "CovarSource" };
 const std::string CovarParamsRebin::sCovarParams{ "CovarParams" };
-const std::array<std::string, 4> CovarParamsRebin::aCovarSource{ "Binned", "Raw", "Bootstrap", "Rebin" };
+const std::array<std::string, 5> CovarParamsRebin::aCovarSource{"Binned","Raw","Bootstrap","Rebin","Reboot"};
 
 std::ostream& operator<<( std::ostream& os, CovarParamsRebin::CovarSource covarSource )
 {
@@ -1403,14 +1403,19 @@ void CovarParamsRebin::Validate( std::size_t NumC ) const
   const int enumIdx{ static_cast<int>( Source ) };
   if( enumIdx < 0 || enumIdx >= aCovarSource.size() )
     throw std::runtime_error( "Invalid covariance source" );
+  if( Count.size() > std::numeric_limits<int>::max() )
+    throw std::invalid_argument( "Count.size() > std::numeric_limits<int>::max()" );
   if( Source == CovarSource::Raw && !Count.empty() )
     throw std::runtime_error( "Don't specify a size when using raw data" );
   if( Source == CovarSource::Binned && Count.size() > 1 )
     throw std::runtime_error( "Specify at most one size when using binned data" );
   if( Source == CovarSource::Bootstrap && Count.size() > 1 )
     throw std::runtime_error( "Specify at most one size when getting covariance from bootstrap replicas" );
-  if( NumC && Source == CovarSource::Rebin && Count.size() > 1 && Count.size() != NumC )
+  if( Source == CovarSource::Rebin && (Count.empty() || ( NumC && Count.size() > 1 && Count.size() != NumC ) ) )
     throw std::runtime_error( "Should either be one bin size, or same number as correlators" );
+  if( Source == CovarSource::Reboot && (Count.empty() || (NumC && Count.size() > 2 && Count.size()-1 != NumC)))
+    throw std::runtime_error( "Should either be one bin size, bootstrap and one bin size, or bootstrap and "
+                              "same number of bins as correlators" );
 }
 
 void CovarParamsRebin::Validate( std::size_t NumC )
@@ -1427,8 +1432,7 @@ void CovarParamsRebin::Validate( std::size_t NumC )
       Source = CovarSource::Raw;
     }
   }
-  const CovarParamsRebin &thisConst{ *this };
-  thisConst.Validate( NumC );
+  static_cast<const CovarParamsRebin *>( this )->Validate( NumC );
 }
 
 std::istream& operator>>( std::istream& is, CovarParamsRebin &p )

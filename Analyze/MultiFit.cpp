@@ -54,104 +54,6 @@ std::ostream & operator<<( std::ostream &os, const ParamState &State )
   return os;
 }
 
-std::ostream & operator<<( std::ostream &os, const FitRange &fr )
-{
-  char colon{ ':' };
-  os << fr.ti << colon << fr.tf;
-  if( fr.dti != fr.dtf )
-    os << colon << fr.dti << colon << fr.dtf;
-  else if( fr.dti != 1 )
-    os << colon << fr.dti;
-  return os;
-}
-
-std::istream & operator>>( std::istream &is, FitRange &fr_ )
-{
-  int Numbers[4];
-  int i{ 0 };
-  for( bool bMore = true; bMore && i < 4 && is >> Numbers[i]; )
-  {
-    if( ++i < 4 && !is.eof() && is.peek() == ':' )
-      is.get();
-    else
-      bMore = false;
-  }
-  if( i < 2 )
-    is.setstate( std::ios_base::failbit );
-  else
-  {
-    FitRange fr( Numbers[0], Numbers[1] );
-    if( i >= 3 )
-    {
-      fr.dti = Numbers[2];
-      fr.dtf = ( i == 3 ? Numbers[2] : Numbers[3] );
-    }
-    fr_ = fr;
-  }
-  return is;
-}
-
-FitRangesIterator FitRanges::begin()
-{
-  FitRangesIterator it( *this );
-  std::vector<FitRange> &fitRange( *this );
-  for( std::size_t i = 0; i < fitRange.size(); ++i )
-  {
-    it[i].ti = fitRange[i].ti;
-    it[i].tf = fitRange[i].tf;
-  }
-  return it;
-}
-
-FitRangesIterator FitRanges::end()
-{
-  FitRangesIterator it{ begin() };
-  std::vector<FitRange> &fitRange( *this );
-  it.back().tf = fitRange.back().tf + fitRange.back().dtf;
-  return it;
-}
-
-FitRangesIterator &FitRangesIterator::operator++()
-{
-  // Don't increment if we are already at the end
-  if( !AtEnd() )
-  {
-    std::vector<FitTime> &fitTime( *this );
-    bool bOverflow{ true };
-    for( std::size_t i = 0; bOverflow && i < fitTime.size(); ++i )
-    {
-      bOverflow = false;
-      if( ++fitTime[i].ti >= Ranges[i].ti + Ranges[i].dti )
-      {
-        fitTime[i].ti = Ranges[i].ti;
-        if( ++fitTime[i].tf >= Ranges[i].tf + Ranges[i].dtf )
-        {
-          fitTime[i].tf = Ranges[i].tf;
-          bOverflow = true;
-        }
-      }
-    }
-    if( bOverflow )
-      back().tf = Ranges.back().tf + Ranges.back().dtf;
-  }
-  return *this;
-}
-
-std::string FitRangesIterator::to_string( const std::string &Sep1, const std::string &Sep2 )
-{
-  std::string s;
-  std::vector<FitTime> &fitTime( *this );
-  for( std::size_t i = 0; i < fitTime.size(); ++i )
-  {
-    if( i )
-      s.append( Sep2 );
-    s.append( std::to_string( fitTime[i].ti ) );
-    s.append( Sep1 );
-    s.append( std::to_string( fitTime[i].tf ) );
-  }
-  return s;
-}
-
 FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_, vCorrelator &CorrSynthetic_ )
 : parent{ fitter_ },
   Extent{ fitter_.ds.Extent },
@@ -1242,11 +1144,9 @@ int main(int argc, const char *argv[])
       const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
       const bool bOpSort{ !cl.GotSwitch("opnames") };
 
-      FitRanges fitRanges;
-      if( cl.GotSwitch( "t") )
-        fitRanges = Common::ArrayFromString<FitRange>( cl.SwitchValue<std::string>( "t" ) );
-      if( !fitRanges.size() )
+      if( !cl.GotSwitch( "t") )
         throw std::runtime_error( "No fit ranges specified" );
+      Common::FitRanges fitRanges( Common::ArrayFromString( cl.SwitchValue<std::string>( "t" ) ) );
 
       // Walk the list of parameters on the command-line, loading correlators and making models
       bShowUsage = false;
@@ -1372,14 +1272,14 @@ int main(int argc, const char *argv[])
       std::unique_ptr<Fitter> m{ MakeFitter( cl, ds, ModelArgs, OpName ) };
       const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
       std::ofstream s;
-      for( FitRangesIterator it = fitRanges.begin(); !it.AtEnd(); ++it )
+      for( Common::FitRangesIterator it = fitRanges.begin(); !it.PastEnd(); ++it )
       {
         // Set fit ranges
         int MinExtent = delta;
         std::vector<std::vector<int>> fitTimes( ds.corr.size() );
         for( int i = 0; MinExtent >= delta && i < ds.corr.size(); ++i )
         {
-          const FitTime &ft{ it[ModelFitRange[i]] };
+          const Common::FitTime &ft{ it[ModelFitRange[i]] };
           const int Extent{ ft.tf - ft.ti + 1 };
           if( i == 0 || MinExtent > Extent )
             MinExtent = Extent;

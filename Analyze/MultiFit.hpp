@@ -62,56 +62,6 @@ enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant };
 std::ostream & operator<<( std::ostream &os, const ModelType m );
 std::istream & operator>>( std::istream &is, ModelType &m );
 
-// A single pair of start-stop times
-struct FitTime
-{
-  int ti;
-  int tf;
-};
-
-struct FitRange
-{
-  int ti;
-  int tf;
-  int dti;
-  int dtf;
-  FitRange( int ti_, int tf_, int dti_, int dtf_ ) : ti{ti_}, tf{tf_}, dti{dti_}, dtf{dtf_} {}
-  FitRange( int ti_, int tf_, int dt ) : FitRange( ti_, tf_, dt, dt ) {}
-  FitRange( int ti_, int tf_ ) : FitRange( ti_, tf_, 1, 1 ) {}
-  FitRange() : FitRange( 0, 0, 1, 1 ) {}
-  inline bool Validate( int Nt = std::numeric_limits<int>::max() ) const
-  {   return !(   ti < 0 || ti >= Nt || tf < ti || tf >= Nt || dti < 1 || dtf < 1 || dti >= Nt || dtf >= Nt
-               || ti + dti - 1 >= Nt || tf + dtf - 1 >= Nt ); }
-};
-std::ostream & operator<<( std::ostream &os, const FitRange &fr );
-std::istream & operator>>( std::istream &is, FitRange &fr );
-
-struct FitRangesIterator;
-
-struct FitRanges : public std::vector<FitRange>
-{
-  using Base = std::vector<FitRange>;
-  using Base::Base;
-  FitRanges() : std::vector<FitRange>() {}
-  FitRanges( std::vector<FitRange> &&fr ) : std::vector<FitRange>( fr ) {}
-  FitRangesIterator begin();
-  FitRangesIterator end();
-};
-
-struct FitRangesIterator : public std::vector<FitTime>
-{
-  const FitRanges &Ranges; // This is the FitRange I'm iterating over
-  using Base = std::vector<FitTime>;
-  using Base::Base;
-  FitRangesIterator( FitRanges &ranges_ ) : std::vector<FitTime>( ranges_.size() ), Ranges{ ranges_ } {}
-  FitRangesIterator( const FitRangesIterator &it ) : std::vector<FitTime>( it ), Ranges{ it.Ranges } {}
-  FitRangesIterator &operator++();
-  inline bool AtEnd() { return back().tf >= Ranges.back().tf + Ranges.back().dtf; }
-  inline FitRangesIterator operator++(int) { FitRangesIterator it(*this); return ++it; }
-  std::string to_string( const std::string &Sep1, const std::string &Sep2 );
-  std::string to_string( const std::string &Sep ) { return to_string( Sep, Sep ); }
-};
-
 // Default parameters for model creation
 struct ModelDefaultParams
 {

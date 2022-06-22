@@ -31,6 +31,7 @@
 #define Common_hpp
 
 #include <MLUconfig.h>
+#include <MLU/FitRange.hpp>
 
 // std c++
 #include <array>
@@ -2523,6 +2524,7 @@ public:
   template <typename U> void CopyAttributes( const Sample<U> &o );
   void Bin(); // Auto bin based on config count
   void Bin( int binSize_ );
+  void BootstrapBinned( int NumBoot );
   void Bootstrap( SeedType Seed, const std::string * pMachineName = nullptr );
   template <typename U> void Bootstrap( const Sample<U> &Random );
   virtual void SetName( const std::string &FileName, std::vector<std::string> * pOpNames = nullptr )
@@ -2756,6 +2758,7 @@ template <typename T> void Sample<T>::Bin()
     throw std::runtime_error( "ConfigCount doesn't match raw data" );
   SampleSize = static_cast<int>( ConfigCount.size() );
   T * pDst = resizeBinned( SampleSize );
+  bBinnedBootstrap = false;
   const T * pSrc = getRaw();
   binSize = ConfigCount[0].Count;
   for( const Common::ConfigCount &cc : ConfigCount )
@@ -2792,6 +2795,7 @@ template <typename T> void Sample<T>::Bin( int binSize_ )
   const bool PartialLastBin = NumSamplesRaw_ % binSize;
   SampleSize = NumSamplesRaw_ / binSize + ( PartialLastBin ? 1 : 0 );
   T * pDst = resizeBinned( SampleSize );
+  bBinnedBootstrap = false;
   const T * pSrc = getRaw();
   for( int Bin = 0; Bin < SampleSize; ++Bin )
   {
@@ -2837,6 +2841,41 @@ template <typename T> void Sample<T>::Bootstrap()
       for( int t = 0; t < Nt_; ++t)
         dst[t] /= NumSamplesBinned_;
   }
+}
+
+template <typename T> void Sample<T>::BootstrapBinned( int NumBoot )
+{
+  if( NumBoot < 2 )
+    throw std::invalid_argument( "Bootstrap size " + std::to_string( NumBoot ) + " invalid" );
+  if( bBinnedBootstrap )
+    throw std::runtime_error( "Binned data already bootstrapped" );
+  if( !Nt_ || !NumSamplesBinned_ || !getBinned() )
+    throw std::runtime_error( "No binned data to bootstrap" );
+  std::unique_ptr<T> Buffer( new T[ static_cast<std::size_t>( NumBoot ) * Nt_ ] );
+  T * dst{ Buffer.get() };
+  std::mt19937                        engine( Seed_ );
+  std::uniform_int_distribution<fint> random( 0, NumSamplesBinned_ - 1 );
+  for( int b = 0; b < NumBoot; ++b, dst += Nt_ )
+  {
+    for( int s = 0; s < NumSamplesBinned_; ++s )
+    {
+      const T * src{ getBinned() + static_cast<std::ptrdiff_t>( random( engine ) ) * Nt_ };
+      for( int t = 0; t < Nt_; t++ )
+      {
+        if( !s )
+          dst[t]  = *src++;
+        else
+          dst[t] += *src++;
+      }
+    }
+    // Turn the sum into an average
+    if( NumSamplesBinned_ > 1 )
+      for( int t = 0; t < Nt_; ++t)
+        dst[t] /= NumSamplesBinned_;
+  }
+  m_pDataBinned.reset( Buffer.release() );
+  bBinnedBootstrap = true;
+  NumSamplesBinned_ = NumBoot;
 }
 
 // Generate a new set of random numbers to use for the seed
@@ -3778,14 +3817,16 @@ struct CovarParamsRebin
 {
   static const std::string sCovarSource;
   static const std::string sCovarParams;
-  static const std::array<std::string, 4> aCovarSource;
-  enum class CovarSource { Binned, Raw, Bootstrap, Rebin };
+  static const std::array<std::string, 5> aCovarSource;
+  enum class CovarSource { Binned, Raw, Bootstrap, Rebin, Reboot };
   CovarSource Source = CovarSource::Bootstrap;
   std::vector<int> Count;
   void Validate( std::size_t NumCorrelators = 0 ) const;
   void Validate( std::size_t NumCorrelators = 0 );
   // Apply these covariance parameters to a DataSet - Rebinning it if requested
   template <typename T> CovarParams ApplyToDataSet( DataSet<T> &ds ) const;
+protected:
+  template <typename T> void ApplyToDataSetRebin( DataSet<T> &ds, const int *pCount, int CountNum ) const;
 };
 
 std::istream& operator>>( std::istream& is, CovarParamsRebin &p );
@@ -4583,9 +4624,31 @@ void DataSet<T>::SortOpNames( std::vector<std::string> &OpNames )
 }
 
 template <typename T>
+void CovarParamsRebin::ApplyToDataSetRebin( DataSet<T> &ds, const int *pCount, int CountNum ) const
+{
+  for( int i = 0; i < ds.corr.size(); ++i )
+  {
+    if( !ds.corr[i].NumSamplesRaw() )
+    {
+      std::ostringstream os;
+      os << "Raw samples unavailable rebinning corr " << i << CommaSpace << ds.corr[i].Name_.Filename;
+      throw std::runtime_error( os.str().c_str() );
+    }
+    // Rebin to the size specified (last bin size repeats to end).
+    // bin size 0 => auto (i.e. all measurements on same config binned together)
+    const int BinSize{ CountNum < 1 ? 0 : pCount[i < CountNum ? i : CountNum - 1] };
+    if( BinSize )
+      ds.corr[i].Bin( BinSize );
+    else
+      ds.corr[i].Bin();
+  }
+}
+
+template <typename T>
 CovarParams CovarParamsRebin::ApplyToDataSet( DataSet<T> &ds ) const
 {
   Validate( ds.corr.size() );
+  const int CountSize{ static_cast<int>( Count.size() ) }; // Validate() ensures this is ok
   CovarParams cp;
   switch( Source )
   {
@@ -4603,23 +4666,18 @@ CovarParams CovarParamsRebin::ApplyToDataSet( DataSet<T> &ds ) const
       cp.Count = Count.empty() ? 0 : Count[0];
       break;
     case CovarParamsRebin::CovarSource::Rebin:
-      for( int i = 0; i < ds.corr.size(); ++i )
-      {
-        if( !ds.corr[i].NumSamplesRaw() )
-        {
-          std::ostringstream os;
-          os << "Raw samples unavailable rebinning corr " << i << CommaSpace << ds.corr[i].Name_.Filename;
-          throw std::runtime_error( os.str().c_str() );
-        }
-        // Rebin to the size specified (last bin size repeats to end).
-        // bin size 0 => auto (i.e. all measurements on same config binned together)
-        const int BinSize{ Count.empty() ? 0 : i < Count.size() ? Count[i] : Count.back() };
-        if( BinSize )
-          ds.corr[i].Bin( BinSize );
-        else
-          ds.corr[i].Bin();
-      }
+      ApplyToDataSetRebin( ds, &Count[0], CountSize );
       cp.Source = CovarParams::CovarSource::Binned;
+      break;
+    case CovarParamsRebin::CovarSource::Reboot:
+    {
+      const int NumBoot{ CountSize < 2 || !Count[0] ? ds.MaxSamples : Count[0] };
+      const int Offset{ CountSize < 2 ? 0 : 1 };
+      ApplyToDataSetRebin( ds, &Count[Offset], CountSize - Offset );
+      for( Fold<T> &f : ds.corr )
+        f.BootstrapBinned( NumBoot );
+      cp.Source = CovarParams::CovarSource::Binned;
+    }
       break;
   }
   cp.Count = ds.SetCovarSource( cp );
