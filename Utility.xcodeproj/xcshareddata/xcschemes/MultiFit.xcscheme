@@ -94,6 +94,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--covsrc binned -o data_comparison1/FitAllDebug/ -i data_comparison1/boot_ "
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--covsrc reboot,666,24 -o data_comparison1/FitAllDebugReboot/ -i data_comparison1/boot_ "
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

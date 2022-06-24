@@ -366,16 +366,23 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
   {
     std::ostringstream ss;
     scalar qValue;
-    if( parent.dof )
+    const int FDist_p{ parent.dof };
+    const Common::CovarParams &cp{ parent.ds.GetCovarParams() };
+    using CS = Common::CovarParams::CovarSource;
+    const int FDist_m{ (     cp.Source == CS::Raw
+                        || ( cp.Source == CS::Binned && !parent.ds.corr[0].bBinnedBootstrap )
+                        ? cp.Count : parent.ds.corr[0].SampleSize ) - 1 };
+    ss << "p=" << FDist_p << ", m=" << FDist_m << ", ";
+    if( Common::HotellingDist::Usable( FDist_p, FDist_m ) )
     {
-      qValue = Common::qValueHotelling( dTestStat, parent.dof, Extent );
+      qValue = Common::HotellingDist::qValue( dTestStat, FDist_p, FDist_m );
       ss << "Hotelling";
     }
     else
     {
-      // dof=0 => Hotelling scaling factor infinite. Use chi-squared distribution instead
+      // Can't use Hotelling distribution. Use chi-squared distribution instead
       qValue = Common::qValueChiSq( dTestStat, parent.dof );
-      ss << "Extrapolation (dof=0) Chi^2";
+      ss << "n <= p, Chi^2";
     }
     ss << " qValue " << qValue;
     if( parent.HotellingCutoff )

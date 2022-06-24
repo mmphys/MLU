@@ -62,11 +62,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i fit/2ptp2/ -o fit/2ptp2/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "h447_h447_&apos;*&apos;.model.&apos;*&apos;.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;*&apos;.model.&apos;*&apos;.h5"
@@ -75,6 +75,10 @@
          <CommandLineArgument
             argument = "-p 0.05"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "data_comparison1/FitAllDebugReboot/*.model.*.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

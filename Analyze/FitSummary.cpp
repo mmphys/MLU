@@ -71,12 +71,15 @@ struct FitData
   scalar Stat;
   FitTimes ft;
   int dof;
+  int SampleSize;
   std::string Parameters;
   std::size_t idxModel;
   int Seq = 0;
   FitData() = default;
-  FitData(scalar sortBy_,scalar stat_,FitTimes ft_,int dof_,const std::string &Parameters_,std::size_t idx_Model)
-  : SortBy{sortBy_},Stat{stat_},ft{ft_},dof{dof_},Parameters{Parameters_},idxModel{idx_Model}{}
+  FitData( scalar sortBy_, scalar stat_, FitTimes ft_, int dof_, int SampleSize_,
+           const std::string &Parameters_,std::size_t idx_Model)
+  : SortBy{sortBy_}, Stat{stat_}, ft{ft_}, dof{dof_}, SampleSize{SampleSize_},
+    Parameters{Parameters_}, idxModel{idx_Model} {}
   void Write( std::ostream &s, unsigned int NumDataPoints ) const
   {
     std::string tfLabel{ std::to_string( ft.tf ) };
@@ -86,7 +89,7 @@ struct FitData
       tfLabel.append( ft.Extra );
     }
     s << Seq << Sep << ft.ti << Sep << ft.tf << Sep << tfLabel << Sep << NumDataPoints << Sep << dof
-      << Sep << Parameters << NL;
+      << Sep << SampleSize << Sep << Parameters << NL;
   }
 };
 
@@ -360,12 +363,22 @@ void Summariser::Run()
         // Chi squared statistic and Q-value (probability of a worse statistic)
         const vEr qValueChiSq{ ChiSq.qValueChiSq( m.dof ) };
         ss << Sep << qValueChiSq;
-        // Hotelling t statistic and Q-value
-        const vEr Hotelling{ ChiSq.qValueHotelling( m.dof, NumDataPoints ) };
-        ss << Sep << Hotelling;
+        // Hotelling t statistic and Q-value (might not be available)
+        scalar SortStat;
+        if( Common::HotellingDist::Usable( m.dof, m.SampleSize - 1 ) )
+        {
+          const vEr Hotelling{ ChiSq.qValueHotelling( m.dof, m.SampleSize - 1 ) };
+          ss << Sep << Hotelling;
+          SortStat = Hotelling.Central;
+        }
+        else
+        {
+          ss << Sep << qValueChiSq;
+          SortStat = qValueChiSq.Central;
+        }
         // save the model in my list
         Fits.emplace( std::make_pair( ThisFile.ft,
-                      FitData(1-Hotelling.Central,Hotelling.Central,ThisFile.ft,m.dof,ss.str(),Models.size())));
+                      FitData(1-SortStat,SortStat,ThisFile.ft,m.dof,m.SampleSize,ss.str(),Models.size())));
         Models.emplace_back( std::move( m ) );
       }
       catch( const std::exception &e )
@@ -375,7 +388,7 @@ void Summariser::Run()
       }
     }
     // Update the fits with sorted sequence number for test statistic and save sorted file
-    static const std::string InitialColumnNames{ " ti tf tfLabel NumDataPoints dof " };
+    static const std::string InitialColumnNames{ " ti tf tfLabel NumDataPoints dof SampleSize " };
     {
       // Sort the fits by chi-squared
       std::set<TestStatKey> SortSet;

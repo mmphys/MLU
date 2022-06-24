@@ -468,6 +468,30 @@ std::string GetHostName()
   return std::string( Buffer );
 }
 
+HotellingDist::HotellingDist( unsigned int p_, unsigned int m_ )
+: p{p_}, m{m_}, Nu{m - p + 1}, Factor{ Nu / ( static_cast<double>( p ) * m ) }
+{
+  if( !Usable( p, m ) )
+    throw std::runtime_error( "T^2 distribution m (degrees of freedom of covariance matrix) "
+                             + std::to_string( m ) + " < p (fit degrees of freedom) " + std::to_string( p ) );
+}
+
+double HotellingDist::operator()( double TestStatistic ) const
+{
+  const double ModifiedStatistic{ TestStatistic * Factor };
+  const double FDistQ{ gsl_cdf_fdist_Q( ModifiedStatistic, p, Nu ) };
+#ifdef DEBUG
+  const double FDistP{ gsl_cdf_fdist_P( ModifiedStatistic, p, Nu ) };
+  std::cout << "t^2=" << TestStatistic << ", Factor=" << Factor
+            << ", t^2 * Factor=" << ModifiedStatistic << ", p [dof]=" << p
+            << ", m [SampleSize-1]=" << m << ", Nu [m - p + 1]=" << Nu << Common::NewLine
+            << "gsl_cdf_fdist_Q( t^2 * Factor, p, Nu )=" << FDistQ << Common::NewLine
+            << "gsl_cdf_fdist_P( t^2 * Factor, p, Nu )=" << FDistP << Common::NewLine
+            << "gsl_cdf_fdist_Q + gsl_cdf_fdist_P = " << ( FDistQ + FDistP ) << Common::NewLine;
+#endif
+  return FDistQ;
+}
+
 // Sort the list of values, then extract the lower and upper 68th percentile error bars
 template<typename T>
 void ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count )

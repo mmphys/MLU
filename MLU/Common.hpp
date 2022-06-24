@@ -950,33 +950,30 @@ template <typename T> T qValueChiSq( T ChiSquared, unsigned int dof )
   return gsl_cdf_chisq_Q( ChiSquared, dof );
 }
 
-// The test statistic is computed exactly as one would for Chi Squared
+// Hotelling's T^2 test statistic is computed exactly as one would for Chi Squared
 // However, since the covariance matrix comes from the data (rather than being known a priori)
-// We find that the test statistic (t^2) times a factor has an F-distribution
+// We find that the test statistic (t^2) has an T^2-distribution with p and m dof
+//    p = Covariance matrix (i.e. fit) degrees of freedom: num data points - num model parameters
+//    m = Statistically independent samples used to build ovariance matrix: usually number of configs - 1
+// See my year 4 notes and
+// https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/ckelly/Gparity/hotelling_v10.pdf
 // https://en.wikipedia.org/wiki/Hotelling%27s_T-squared_distribution
 
-#define HOTELLING_PREAMBLE( T, dof, NumDataPoints ) \
-if( NumDataPoints < dof ) \
-  throw std::runtime_error( "Number of data points " + std::to_string( NumDataPoints ) \
-                           + " < degrees of freedom" + std::to_string( dof ) ); \
-const unsigned int NumParams{ NumDataPoints - dof }; \
-const T tFactor{ static_cast<T>( NumParams ) / ( dof * ( NumDataPoints - 1 ) ) }
-
-template <typename T> T qValueHotelling( T TestStatistic, unsigned int dof, unsigned int NumDataPoints )
+struct HotellingDist
 {
-  HOTELLING_PREAMBLE( T, dof, NumDataPoints );
-  const double FDistQ{ gsl_cdf_fdist_Q( TestStatistic * tFactor, dof, NumParams  ) };
-#ifdef _DEBUG
-  const double FDistP{ gsl_cdf_fdist_P( TestStatistic * tFactor, dof, NumParams  ) };
-  std::cout << "TestStatistic=" << TestStatistic << ", tFactor=" << tFactor << ", dof=" << dof
-            << ", NumParams=" << NumParams << Common::NewLine
-            << "gsl_cdf_fdist_Q( TestStatistic * tFactor, dof, NumParams )=" << FDistQ << Common::NewLine
-            << "gsl_cdf_fdist_P( TestStatistic * tFactor, dof, NumParams )=" << FDistP << Common::NewLine
-            << "gsl_cdf_fdist_Q + gsl_cdf_fdist_P = " << ( FDistQ + FDistP ) << Common::NewLine;
-#endif
-  return FDistQ;
-  //return gsl_cdf_fdist_Q( TestStatistic * tFactor, NumParams, dof );
-}
+  const unsigned int p; // Dimension of covariance matrix (degrees of freedom of fit)
+  const unsigned int m; // Degrees of freedom of covariance matrix (num samples to build covar - 1)
+  const unsigned int Nu;
+  const double Factor;
+  HotellingDist( unsigned int p, unsigned int m );
+  double operator()( double TestStatistic ) const;
+  inline static bool Usable( unsigned int p, unsigned int m ) { return p <= m; }
+  template <typename T> T static qValue( T TestStatistic, unsigned int p, unsigned int m )
+  {
+    HotellingDist TSq( p, m );
+    return TSq( TestStatistic );
+  }
+};
 
 // This is prior version. Not used except for reading in old files
 template <typename T> class ValWithErOldV1
@@ -1007,7 +1004,7 @@ public:
   ValWithEr<T>& operator *=( const T Scalar );
   ValWithEr<T>  operator * ( const T Scalar ) const;
   ValWithEr<T> qValueChiSq( unsigned int dof ) const;
-  ValWithEr<T> qValueHotelling( unsigned int dof, unsigned int NumDataPoints ) const;
+  ValWithEr<T> qValueHotelling( unsigned int p, unsigned int m ) const;
 };
 
 template <typename T> ValWithEr<T>::ValWithEr( T min_, T low_, T central_, T high_, T max_, T check_ )
@@ -1052,16 +1049,11 @@ template <typename T> ValWithEr<T> ValWithEr<T>::qValueChiSq( unsigned int dof )
                        Check );
 }
 
-template <typename T> ValWithEr<T> ValWithEr<T>::qValueHotelling( unsigned int dof, unsigned int NumDataPoints ) const
+template <typename T> ValWithEr<T> ValWithEr<T>::qValueHotelling( unsigned int p, unsigned int m ) const
 {
-  HOTELLING_PREAMBLE( T, dof, NumDataPoints );
+  HotellingDist TSq( p, m );
   // There is a deliberate inversion here: high statistic => low q-value
-  return ValWithEr<T>( gsl_cdf_fdist_Q( Max     * tFactor, dof, NumParams ),
-                       gsl_cdf_fdist_Q( High    * tFactor, dof, NumParams ),
-                       gsl_cdf_fdist_Q( Central * tFactor, dof, NumParams ),
-                       gsl_cdf_fdist_Q( Low     * tFactor, dof, NumParams ),
-                       gsl_cdf_fdist_Q( Min     * tFactor, dof, NumParams ),
-                       Check );
+  return ValWithEr<T>( TSq(Max), TSq(High), TSq(Central), TSq(Low), TSq(Min), Check );
 }
 
 template <typename T>
