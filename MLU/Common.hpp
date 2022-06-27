@@ -321,6 +321,7 @@ extern const std::string sConfigCount;
 extern const std::string sFileList;
 extern const std::string sBootstrapList;
 extern const std::string sBinSize;
+extern const std::string sCovarSampleSize;
 extern const std::string sNE;
 
 extern const std::vector<std::string> sCorrSummaryNames;
@@ -2789,11 +2790,11 @@ template <typename T> void Sample<T>::Bin( int binSize_ )
   T * pDst = resizeBinned( SampleSize );
   bBinnedBootstrap = false;
   const T * pSrc = getRaw();
-  for( int Bin = 0; Bin < SampleSize; ++Bin )
+  for( int Bin = 0; Bin < NumSamplesBinned_; ++Bin )
   {
     for( int t = 0; t < Nt_; ++t )
       pDst[t] = *pSrc++;
-    const int ThisBinSize{ PartialLastBin && Bin == ( SampleSize - 1 ) ? NumSamplesRaw_ % binSize : binSize };
+    const int ThisBinSize{ PartialLastBin && Bin==(NumSamplesBinned_-1) ? NumSamplesRaw_ % binSize : binSize };
     for( int i = 1; i < ThisBinSize; ++i )
       for( int t = 0; t < Nt_; ++t )
         pDst[t] += *pSrc++;
@@ -3576,8 +3577,8 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
       Dims[1] = SampleSize;
       dsp = ::H5::DataSpace( 2, Dims );
       // The values in this table go from 0 ... NumSamples_ + 1, so choose a space-minimising size in the file
-      ds = g.createDataSet( sRandom, SampleSize<=static_cast<int>(std::numeric_limits<std::uint8_t>::max())+1
-        ? ::H5::PredType::STD_U8LE : SampleSize<=static_cast<int>(std::numeric_limits<std::uint16_t>::max())+1
+      ds = g.createDataSet( sRandom, SampleSize<=static_cast<int>(std::numeric_limits<std::uint8_t>::max())
+        ? ::H5::PredType::STD_U8LE : SampleSize<=static_cast<int>(std::numeric_limits<std::uint16_t>::max())
         ? ::H5::PredType::STD_U16LE: ::H5::PredType::STD_U32LE, dsp );
       ds.write( m_pRandNum.get(), H5::Equiv<std::uint_fast32_t>::Type );
       ds.close();
@@ -3835,6 +3836,7 @@ public:
   int dof = 0;
   bool Factorised = false;
   bool CovarFrozen = false;
+  int CovarSampleSize = 0;
   CovarParamsRebin covarParamsRebin;
   Common::Vector<T> StdErrorMean; // From all samples of binned data
   Common::Vector<T> ErrorScaled;  // (Theory - Data) * CholeskyScale
@@ -4010,6 +4012,17 @@ public:
     {
       ::H5::Exception::clearErrorStack();
     }
+    try
+    {
+      a = g.openAttribute(sCovarSampleSize);
+      a.read( ::H5::PredType::NATIVE_INT, &CovarSampleSize );
+      a.close();
+    }
+    catch(const ::H5::Exception &)
+    {
+      CovarSampleSize = 0;
+      ::H5::Exception::clearErrorStack();
+    }
   }
   virtual void ValidateAttributes()
   {
@@ -4089,6 +4102,13 @@ public:
       }
     }
     a.close();
+    if( CovarSampleSize )
+    {
+      a = g.createAttribute( sCovarSampleSize, ::H5::PredType::STD_U32LE, ds1 );
+      a.write( ::H5::PredType::NATIVE_INT, &CovarSampleSize );
+      a.close();
+      iReturn++;
+    }
     H5::WriteAttribute( g, sOperators, OpNames );
     return iReturn;
   }
@@ -4129,6 +4149,8 @@ struct DataSet
   UniqueNames ConstantNames;
   UniqueNames ConstantNamesPerExp;
   ConstMap constMap;
+  int SampleSize;       // Original sample size - set when correlator loaded
+  int BinSize;          //                        i.e. before any rebinning (when applying covarParams)
 protected:
   CovarParams covarParams;
   std::vector<Model<T>>        constFile;// Each of the constant files (i.e. results from previous fits) I've loaded
@@ -4139,6 +4161,12 @@ public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
   inline bool empty() const { return corr.empty() && constFile.empty(); }
   inline const CovarParams &GetCovarParams() const { return covarParams; }
+  inline int CovarSampleSize() const
+  {
+    return covarParams.Source == CovarParams::CovarSource::Raw
+      || ( covarParams.Source == CovarParams::CovarSource::Binned && !corr[0].bBinnedBootstrap )
+    ? covarParams.Count : corr[0].SampleSize;
+  }
   void clear();
   int  LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags = COMPAT_DEFAULT,
                        const char * PrintPrefix = "  " );
@@ -4504,6 +4532,8 @@ int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int Comp
     MaxSamples = corr[i].NumSamples();
     if( NSamples == 0 || NSamples > MaxSamples )
       NSamples = MaxSamples;
+    SampleSize = corr[i].SampleSize;
+    BinSize = corr[i].binSize;
   }
   return i;
 }

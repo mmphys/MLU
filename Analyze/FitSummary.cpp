@@ -365,9 +365,9 @@ void Summariser::Run()
         ss << Sep << qValueChiSq;
         // Hotelling t statistic and Q-value (might not be available)
         scalar SortStat;
-        if( Common::HotellingDist::Usable( m.dof, m.SampleSize - 1 ) )
+        if( Common::HotellingDist::Usable( m.dof, m.CovarSampleSize - 1 ) )
         {
-          const vEr Hotelling{ ChiSq.qValueHotelling( m.dof, m.SampleSize - 1 ) };
+          const vEr Hotelling{ ChiSq.qValueHotelling( m.dof, m.CovarSampleSize - 1 ) };
           ss << Sep << Hotelling;
           SortStat = Hotelling.Central;
         }

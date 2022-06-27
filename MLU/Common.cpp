@@ -140,6 +140,7 @@ const std::string sConfigCount{ "ConfigCount" };
 const std::string sFileList{ "FileList" };
 const std::string sBootstrapList{ "BootstrapList" };
 const std::string sBinSize{ "BinSize" };
+const std::string sCovarSampleSize{ "CovarSampleSize" };
 const std::string sNE{ " != " };
 const std::vector<std::string> sCorrSummaryNames{ "corr", "bias", "exp", "cosh" };
 const double NaN{ std::nan( "" ) };
@@ -480,7 +481,7 @@ double HotellingDist::operator()( double TestStatistic ) const
 {
   const double ModifiedStatistic{ TestStatistic * Factor };
   const double FDistQ{ gsl_cdf_fdist_Q( ModifiedStatistic, p, Nu ) };
-#ifdef DEBUG
+#ifdef _DEBUG
   const double FDistP{ gsl_cdf_fdist_P( ModifiedStatistic, p, Nu ) };
   std::cout << "t^2=" << TestStatistic << ", Factor=" << Factor
             << ", t^2 * Factor=" << ModifiedStatistic << ", p [dof]=" << p

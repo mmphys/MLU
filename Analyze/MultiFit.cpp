@@ -367,11 +367,7 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
     std::ostringstream ss;
     scalar qValue;
     const int FDist_p{ parent.dof };
-    const Common::CovarParams &cp{ parent.ds.GetCovarParams() };
-    using CS = Common::CovarParams::CovarSource;
-    const int FDist_m{ (     cp.Source == CS::Raw
-                        || ( cp.Source == CS::Binned && !parent.ds.corr[0].bBinnedBootstrap )
-                        ? cp.Count : parent.ds.corr[0].SampleSize ) - 1 };
+    const int FDist_m{ parent.ds.CovarSampleSize() - 1 };
     ss << "p=" << FDist_p << ", m=" << FDist_m << ", ";
     if( Common::HotellingDist::Usable( FDist_p, FDist_m ) )
     {
@@ -382,7 +378,7 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
     {
       // Can't use Hotelling distribution. Use chi-squared distribution instead
       qValue = Common::qValueChiSq( dTestStat, parent.dof );
-      ss << "n <= p, Chi^2";
+      ss << "m <= p, Chi^2";
     }
     ss << " qValue " << qValue;
     if( parent.HotellingCutoff )
@@ -787,6 +783,9 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   }
   OutputModel.covarParamsRebin = cpr;
   OutputModel.Name_.Seed = Seed;
+  OutputModel.SampleSize = ds.SampleSize;
+  OutputModel.binSize = ds.BinSize;
+  OutputModel.CovarSampleSize = ds.CovarSampleSize();
 
   // See whether this fit already exists
   bool bPerformFit{ true };
