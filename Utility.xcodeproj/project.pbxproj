@@ -49,7 +49,7 @@
 		6854473C271C98AE00EF030C /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68544748271C990600EF030C /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68544749271C991600EF030C /* Divide.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446FD271C8E5400EF030C /* Divide.cpp */; };
-		68544755271C999100EF030C /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
+		68544755271C999100EF030C /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; settings = {ATTRIBUTES = (Required, ); }; };
 		68544756271C999E00EF030C /* FitGSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446F4271C8E5400EF030C /* FitGSL.cpp */; };
 		68544757271C99A300EF030C /* FitMinuit2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446EB271C8E5400EF030C /* FitMinuit2.cpp */; };
 		68544758271C99AA00EF030C /* FitModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446EA271C8E5400EF030C /* FitModel.cpp */; };
@@ -1273,6 +1273,16 @@
 		68F61B77271C786900A8B197 /* EigenPack.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A6C271C786700A8B197 /* EigenPack.hpp */; };
 		68F61B78271C786900A8B197 /* ModuleFactory.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 68F61A6D271C786700A8B197 /* ModuleFactory.hpp */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		68606E19286CA24F0088BBFB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6874E567271C67660055B1E5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 685446D3271C8BB800EF030C;
+			remoteInfo = MLU;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		685446BC271C879B00EF030C /* CopyFiles */ = {
@@ -7636,6 +7646,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				68606E1A286CA24F0088BBFB /* PBXTargetDependency */,
 			);
 			name = MultiFit;
 			productName = MultiFit;
@@ -8563,6 +8574,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		68606E1A286CA24F0088BBFB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 685446D3271C8BB800EF030C /* MLU */;
+			targetProxy = 68606E19286CA24F0088BBFB /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		685446C2271C879B00EF030C /* Debug */ = {

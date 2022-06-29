@@ -114,6 +114,7 @@ protected:
 };
 
 Fitter * MakeFitterMinuit2(const Common::CommandLine &cl, const DataSet &ds,
-                           const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames);
+                           const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                           CovarParams &&cp );
 
 #endif // FitMinuit2_hpp

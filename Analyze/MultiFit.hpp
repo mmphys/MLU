@@ -42,6 +42,8 @@
 using scalar = double;
 using Matrix = Common::Matrix<scalar>;
 using Vector = Common::Vector<scalar>;
+using MatrixView = Common::MatrixView<scalar>;
+using VectorView = Common::VectorView<scalar>;
 
 using Fold = Common::Fold<scalar>;
 using vCorrelator = std::vector<Fold>;
@@ -172,6 +174,42 @@ struct ParamState
 
 std::ostream & operator<<( std::ostream &os, const ParamState &State );
 
+// Fitter parameters
+struct CovarParams
+{
+  const DataSet &ds;
+  // Whether to rebin the data before computing covariances
+  std::vector<int> RebinSize;
+  // Where am I building the covariance from
+  using SS = Common::SampleSource;
+  SS Source;
+  // 0 = build correlation from CovarSource, then scale by the variance of the data on each bootstrap replica
+  // else this is the number of bootstrap replicas to use when estimating covariance
+  int CovarNumBoot;
+  // Random numbers to get the covariance from a bootstrap
+  using fint = Common::fint;
+  Common::MatrixView<fint> CovarRandom;
+  std::vector<fint> vCovarRandom; // Contains the random numbers iff I generated them
+  // Freeze covariance to the central replica
+  bool bFreeze;
+  CovarParams( const Common::CommandLine &cl, DataSet &ds );
+  // Source is a bootstrap - only valid to compute variance on central replica
+  inline bool CentralBootOnly() const
+  { return Source == SS::Bootstrap || ( Source == SS::Raw && ds.corr[0].bRawBootstrap ); }
+  // This is the appropriate parameter for m to use in the T^2 distribution
+  inline int CovarSampleSize() const
+  {
+    return CentralBootOnly() ? ds.corr[0].SampleSize
+                             : ds.corr[0].NumSamples( Source==SS::Raw ? SS::Raw : SS::Binned );
+  }
+  // Make correlation matrix, then scale it by variance of data on each replica
+  inline bool TwoStep() const { return Source == Common::SampleSource::Raw || !RebinSize.empty(); }
+  // How many covariance samples are there
+  inline int CovarCount() const { return ds.corr[0].NumSamples( Source ); }
+};
+
+std::ostream & operator<<( std::ostream &os, const CovarParams &cp );
+
 // Forward declaration of fitter for multi-exponential fit
 class Fitter;
 
@@ -190,7 +228,7 @@ public:
   // Minuit2: Cholesky decomposition of CorrelationMatrix
   Matrix Cholesky;
   Vector CholeskyDiag; // 1 / StdErrorMean
-  Vector Data;            // Data points we are fitting
+  VectorView Data;        // Data points we are fitting
   mutable Vector Error;   // (Theory - Data) * CholeskyScale
   // These next are for model parameters
   Vector ModelParams;
@@ -245,7 +283,6 @@ public:
   const double Tolerance;
   const bool bSaveCorr;
   const bool bSaveCMat;
-  const bool bFreezeCovar;
   const int Verbosity;
   const bool bForceSrcSnkDifferent;
   const std::vector<scalar> vGuess;
@@ -265,6 +302,7 @@ public:
   const int NumOneOff;      // Number of one-off (i.e. not per-exponent) parameters
   const int NumFixed;       // Number of fixed parameters
   const int NumVariable;    // Number of variable parameters (used by the fitting engines)
+  CovarParams cp;
 
   // These variables set once at the start of each fit
   int dof;
@@ -285,7 +323,8 @@ protected:
 public:
   virtual const std::string &Type() const = 0;
   explicit Fitter( const Common::CommandLine &cl, const DataSet &ds_,
-                   const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames_ );
+                   const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames_,
+                   CovarParams &&cp );
   virtual ~Fitter() {}
   inline bool Dump( int idx ) const { return Verbosity > 2 || ( Verbosity >= 1 && idx == Fold::idxCentral ); }
   inline void Dump( int idx, const std::string &Name, const Matrix &m ) const
@@ -300,7 +339,7 @@ public:
   }
   std::vector<Common::ValWithEr<scalar>>
   PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName,
-              const std::string &ModelSuffix, Common::SeedType Seed, const Common::CovarParamsRebin &cpr );
+              const std::string &ModelSuffix, Common::SeedType Seed );
   void SaveMatrixFile( const Matrix &m, const std::string &Type, const std::string &Filename,
                          const char *pGnuplotExtra = nullptr ) const;
 };

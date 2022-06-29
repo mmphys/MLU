@@ -193,7 +193,8 @@ const std::string & FitterGSL::Type() const
 }
 
 FitterGSL * FitterGSL::Make(const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                            const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames)
+                            const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                            CovarParams &&cp )
 {
   TRS trs{ TRS::lm };
   static const std::vector<std::string> Algorithms{ "lm", "lmaccel", "dogleg", "ddogleg", "subspace2d" };
@@ -204,11 +205,12 @@ FitterGSL * FitterGSL::Make(const std::string &FitterArgs, const Common::Command
       return nullptr;
     trs = static_cast<TRS>( idx );
   }
-  return new FitterGSL( trs, cl, ds, ModelArgs, opNames );
+  return new FitterGSL( trs, cl, ds, ModelArgs, opNames, std::move( cp ) );
 }
 
 Fitter * MakeFitterGSL( const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                        const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames )
+                        const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                        CovarParams &&cp )
 {
-  return FitterGSL::Make( FitterArgs, cl, ds, ModelArgs, opNames );
+  return FitterGSL::Make( FitterArgs, cl, ds, ModelArgs, opNames, std::move( cp ) );
 }

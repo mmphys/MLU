@@ -58,6 +58,7 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline void clear();
   inline void MapView( Scalar * data_, std::size_t size_, std::size_t stride_ = 1 );
   inline void MapView( std::vector<Scalar> &v ) { MapView( v.data(), v.size() ); }
+  inline void MapView( MyVector &v ) { MapView( reinterpret_cast<Scalar *>( v.data ), v.size, v.stride ); }
   inline const Scalar & operator[]( std::size_t i ) const;
   inline Scalar & operator[]( std::size_t i );
   inline bool IsFinite() const;
@@ -242,6 +243,7 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline Matrix( const MyMatrix &o ) : Matrix() { *this = o; };
   inline Matrix( MyMatrix &&o ) : Matrix() { *this = o; };
   inline ~Matrix();
+  inline MyMatrix & operator=( Scalar c );
   inline MyMatrix & operator=( const Matrix &o );
   inline MyMatrix & operator=( Matrix &&o );
   template <typename T> inline MyMatrix &operator+=( T c );
@@ -254,6 +256,9 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline std::size_t cols() const { return size2; }
   inline void resize( std::size_t size1, std::size_t size2 );
   inline void clear();
+  inline void MapView( Scalar * data_, std::size_t size1_, std::size_t size2_, std::size_t tda_ );
+  inline void MapView( Scalar * data_, std::size_t size1_, std::size_t size2_ )
+  { MapView( data_, size1_, size2_, size2_ ); }
   inline const Scalar & operator()( std::size_t i, std::size_t j ) const;
   inline Scalar & operator()( std::size_t i, std::size_t j );
   inline bool IsFinite( bool bDiagonalsOnly = false ) const;
@@ -261,6 +266,8 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline Real norm() const { return norm2(); }
   inline void blas_trmm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag,
                          Scalar alpha, const MyMatrix &A );
+  inline void Row( std::size_t idx, MyVector &v );
+  inline void Column( std::size_t idx, MyVector &v );
 #ifdef COMMON_GSL_DOUBLE
   inline MyMatrix Cholesky( MyVector &S ) const;
   inline MyVector CholeskySolve( const MyVector &b ) const;
@@ -298,6 +305,16 @@ Matrix<COMMON_GSL_TYPE>::~Matrix()
 {
   clear();
 };
+
+Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator=( Scalar c )
+{
+  if( size1 == 0 || size1 != size2 )
+    throw std::runtime_error( "Can't assign scalar to empty matrix" );
+  for( int i = 0; i < size1; ++i )
+    for( int j = 0; j < size2; ++j )
+      (*this)( i, j ) = ( i == j ) ? c : 0;
+  return *this;
+}
 
 Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator=( const Matrix &o )
 {
@@ -374,6 +391,16 @@ void Matrix<COMMON_GSL_TYPE>::clear()
   tda = 0;
 }
 
+void Matrix<COMMON_GSL_TYPE>::MapView(Scalar * data_, std::size_t size1_, std::size_t size2_, std::size_t tda_)
+{
+  clear();
+  size1 = size1_;
+  size2 = size2_;
+  tda = tda_;
+  data = reinterpret_cast<Real *>( data_ );
+}
+
+
 void Matrix<COMMON_GSL_TYPE>::resize( std::size_t size1_, std::size_t size2_ )
 {
   std::size_t size = size1_ * size2_;
@@ -436,6 +463,20 @@ void Matrix<COMMON_GSL_TYPE>::blas_trmm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, C
 {
   COMMON_GSL_BLAS( trmm )( Side, Uplo, TransA, Diag, * reinterpret_cast<GSLScalar*>( &alpha ),
                            reinterpret_cast<const GSLMatrix *>( &A ), reinterpret_cast<GSLMatrix *>( this ) );
+}
+
+void Matrix<COMMON_GSL_TYPE>::Row( std::size_t idx, MyVector &v )
+{
+  if( idx >= size1 )
+    throw std::runtime_error( "Row " + std::to_string( idx ) + " > " + std::to_string( size1 ) );
+  v.MapView( reinterpret_cast<Scalar *>( data ) + tda * idx, size2, 1 );
+}
+
+void Matrix<COMMON_GSL_TYPE>::Column( std::size_t idx, MyVector &v )
+{
+  if( idx >= size2 )
+    throw std::runtime_error( "Column " + std::to_string( idx ) + " > " + std::to_string( size2 ) );
+  v.MapView( reinterpret_cast<Scalar *>( data ) + idx, size1, tda );
 }
 
 /*

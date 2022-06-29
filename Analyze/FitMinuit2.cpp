@@ -106,9 +106,10 @@ const std::string & FitterMinuit2::Type() const
 }
 
 Fitter * MakeFitterMinuit2(const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                           const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames)
+                           const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                           CovarParams &&cp )
 {
   if( !FitterArgs.empty() )
     return nullptr;
-  return new FitterMinuit2( cl, ds, ModelArgs, opNames );
+  return new FitterMinuit2( cl, ds, ModelArgs, opNames, std::move( cp ) );
 }

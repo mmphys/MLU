@@ -54,13 +54,110 @@ std::ostream & operator<<( std::ostream &os, const ParamState &State )
   return os;
 }
 
+// Work out where the covariance matrix comes from
+CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ dsrw }
+{
+  // Decide on the covariance source
+  std::string sCovRebin{ cl.SwitchValue<std::string>( "covsrc" ) };
+  std::string sCovSrc{ Common::ExtractToSeparator( sCovRebin ) };
+  if( Common::EqualIgnoreCase( sCovSrc, "Rebin" ) )
+  {
+    dsrw.Rebin( Common::ArrayFromString<int>( sCovRebin ) );
+    RebinSize = ds.RebinSize;
+    std::cout << "Rebinned raw data:";
+    for( int i : RebinSize )
+      std::cout << Common::Space << i;
+    std::cout << Common::NewLine;
+    Source = SS::Binned;
+  }
+  else
+  {
+    Source = Common::FromString<SS>( sCovSrc );
+    if( !sCovRebin.empty() )
+      throw std::runtime_error( "Covariance source " + sCovSrc + " unexpected parameters: " + sCovRebin );
+  }
+
+  // Check that the raw data are available if
+  if( Source == SS::Raw || Source == SS::Binned )
+  {
+    // Using raw samples - check all files have the same number
+    for( std::size_t i = 0; i < ds.corr.size(); ++i )
+    {
+      const int Count{ ds.corr[i].NumSamples( Source ) };
+      if( Count == 0 || Count != ds.corr[0].NumSamples( Source ) )
+      {
+        std::ostringstream os;
+        os << "Can't use " << Source << " samples for covariance. "
+           << ds.corr[0].Name_.Filename << " has " << ds.corr[0].NumSamples( Source )
+        << " samples but " << ds.corr[i].Name_.Filename << " has " << ds.corr[i].NumSamples( Source );
+        throw std::runtime_error( os.str().c_str() );
+      }
+    }
+  }
+
+  // Now work out whether the covariance is determined by bootstrap
+  if( CentralBootOnly() )
+  {
+    // I have to use the bootstrap replicas
+    if( cl.GotSwitch( "covboot" ) )
+    {
+      CovarNumBoot = cl.SwitchValue<int>( "covboot" );
+      if( CovarNumBoot )
+        std::cout << "Ignoring --covboot " << CovarNumBoot << " - source is bootstrap" << Common::NewLine;
+    }
+    CovarNumBoot = 0;
+    // I will have to use frozen covariance matrix
+    bFreeze = true;
+  }
+  else
+  {
+    CovarNumBoot = cl.GotSwitch( "covboot" ) ? cl.SwitchValue<int>( "covboot" ) : 0;
+    if( CovarNumBoot == 0 || CovarNumBoot > ds.MaxSamples )
+      CovarNumBoot = ds.MaxSamples;
+    // I can use the raw samples directly, or bootstrap them
+    if( CovarNumBoot < 0 )
+      CovarNumBoot = 0;
+    // Default to unfrozen covariance, but allow it to be frozen
+    bFreeze = cl.GotSwitch( "freeze" );
+  }
+  // If I'm bootstrapping, I will need some random numbers
+  if( CovarNumBoot )
+  {
+    if(   ds.corr[0].RandNum() // Do I have original bootstrap random numbers
+       && ds.corr[0].SampleSize == CovarCount() // Are the random numbers over same range (0...SampleSize)
+       && CovarNumBoot <= ds.corr[0].NumSamples() ) // Are there enough replicas available
+    {
+      // Re-use existing random numbers
+      vCovarRandom.clear();
+      CovarRandom.Map( ds.corr[0].RandNum(), CovarNumBoot, CovarCount() );
+    }
+    else
+    {
+      Common::GenerateRandom( vCovarRandom, ds.corr[0].Seed_, CovarNumBoot, CovarCount() );
+      CovarRandom.Map( vCovarRandom.data(), CovarNumBoot, CovarCount() );
+    }
+  }
+  // Make sure the random numbers I'll need are built once and only once
+  dsrw.InitRandomNumber( Source );
+}
+
+std::ostream & operator<<( std::ostream &os, const CovarParams &cp )
+{
+  os << "Covariance matrix constructed from " << cp.CovarCount() << Common::Space;
+  if( cp.CovarCount() != cp.CovarSampleSize() )
+    os << "(" << cp.CovarSampleSize() << " independent) ";
+  if( cp.CentralBootOnly() )
+    os << "pre-bootstrapped ";
+  os << cp.Source << " samples";
+  return os;
+}
+
 FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_, vCorrelator &CorrSynthetic_ )
 : parent{ fitter_ },
   Extent{ fitter_.ds.Extent },
   idx{ FirstIndex }, // So we'll notice a change on the first call to SetReplica
   StdErrorMean( Extent ),
   CholeskyDiag( Extent ),
-  Data( Extent ),
   Error( Extent ),
   ModelParams( fitter_.NumModelParams ),
   SortingHat( parent.NumExponents ),
@@ -94,26 +191,21 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
     const bool bFirstTime{ idx == FirstIndex };
     idx = idx_;
     // Don't build covariance matrix if frozen (unless it's the first time)
-    if( !parent.bFreezeCovar || bFirstTime )
+    if( !parent.cp.bFreeze || bFirstTime )
     {
       // (Co)variance always comes from the central replica if frozen
-      if( parent.bFreezeCovar )
+      if( parent.cp.bFreeze )
         idx_ = Fold::idxCentral;
       // For correlated fits, start by constructing covariance matrix for correlation source
       if( bCorrelated )
-        parent.ds.MakeCovarianceNormalised( idx_, Covar );
-      // Make variance. Always comes from the bootstrap
-      using CP = Common::CovarParams; using CS = CP::CovarSource;
-      const CP &cp{ parent.ds.GetCovarParams() };
-      if( parent.Dump( idx ) )
       {
-        Vector v;
-        parent.ds.GetData( 0, v, cp.Source );
-        std::ostringstream ss;
-        ss << cp.Source << " covariance data";
-        parent.Dump( idx, ss.str(), v );
+        if( parent.cp.CovarNumBoot )
+          parent.ds.MakeCovariance(idx_, parent.cp.Source, Covar,parent.cp.CovarNumBoot,parent.cp.CovarRandom);
+        else
+          parent.ds.MakeCovariance(idx_, parent.cp.Source, Covar );
       }
-      const bool OneStep{ bCorrelated && cp.Source == CS::Bootstrap };
+      // Make variance. Always comes from the bootstrap
+      const bool OneStep{ bCorrelated && !parent.cp.TwoStep() };
       if( OneStep )
       {
         // Correlated fit with correlation matrix from bootstrap. Extract inverse variance from diagonals
@@ -240,6 +332,10 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
       }
     }
     // Now get the data for this replica
+    if( idx == Fold::idxCentral )
+      Data = parent.ds.vCentral;
+    else
+      Data.MapRow( parent.ds.mBoot, idx);
     parent.ds.GetData( idx, Data );
     // And get associated constants
     parent.ds.GetFixed( idx, ModelParams, parent.ParamFixed );
@@ -367,7 +463,7 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
     std::ostringstream ss;
     scalar qValue;
     const int FDist_p{ parent.dof };
-    const int FDist_m{ parent.ds.CovarSampleSize() - 1 };
+    const int FDist_m{ parent.cp.CovarSampleSize() - 1 };
     ss << "p=" << FDist_p << ", m=" << FDist_m << ", ";
     if( Common::HotellingDist::Usable( FDist_p, FDist_m ) )
     {
@@ -458,7 +554,8 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
 }
 
 Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
-                const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames_ )
+                const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames_,
+                CovarParams &&cp_ )
   : bAnalyticDerivatives{ cl.GotSwitch("analytic") },
     HotellingCutoff{ cl.SwitchValue<double>( "Hotelling" ) },
     RelEnergySep{ cl.SwitchValue<double>("sep") },
@@ -468,7 +565,6 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     Tolerance{ cl.SwitchValue<double>("tol") },
     bSaveCorr{ cl.GotSwitch("savecorr") },
     bSaveCMat{ cl.GotSwitch("savecmat") },
-    bFreezeCovar{ cl.GotSwitch( "freeze" ) },
     Verbosity{ cl.SwitchValue<int>("v") },
     bForceSrcSnkDifferent{ cl.GotSwitch( "srcsnk" ) },
     vGuess{ Common::ArrayFromString<scalar>( cl.SwitchValue<std::string>( "guess" ) ) },
@@ -486,7 +582,8 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     NumPerExp{ static_cast<int>( PerExpNames.size() ) },
     NumOneOff{ NumModelParams - NumExponents * NumPerExp },
     NumFixed{ static_cast<int>( ParamFixed.size() ) },
-    NumVariable{ static_cast<int>( ParamVariable.size() ) }
+    NumVariable{ static_cast<int>( ParamVariable.size() ) },
+    cp{ std::move( cp_ ) }
 {
   assert( ds.corr.size() == NumFiles && "Number of files extremely large" );
   assert( NumModelParams == NumFixed + NumVariable && "NumModelParams doesn't match fixed and variable" );
@@ -750,7 +847,7 @@ void Fitter::SaveMatrixFile( const Matrix &m, const std::string &Type, const std
 // Perform a fit - assume fit ranges have been set on the DataSet prior to the call
 std::vector<Common::ValWithEr<scalar>>
 Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::string &OutBaseName,
-                    const std::string &ModelSuffix, Common::SeedType Seed, const Common::CovarParamsRebin &cpr )
+                    const std::string &ModelSuffix, Common::SeedType Seed )
 {
   bCorrelated = Bcorrelated;
   dof = ds.Extent - NumVariable;
@@ -768,8 +865,8 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   // Make somewhere to store the results of the fit for each bootstrap sample
   const int tMin{ ds.FitTimes[0][0] };
   const int tMax{ ds.FitTimes[0].back() };
-  ModelFile OutputModel( OpNames, NumExponents, NumFiles, tMin, tMax, dof, !bForceSrcSnkDifferent, bFreezeCovar, ds.NSamples,
-                         NumModelParams + 1 );
+  ModelFile OutputModel( OpNames, NumExponents, NumFiles, tMin, tMax, dof, !bForceSrcSnkDifferent,
+                         cp.bFreeze, ds.NSamples, NumModelParams + 1 );
   for( const Fold &f : ds.corr )
     OutputModel.FileList.emplace_back( f.Name_.Filename );
   OutputModel.CopyAttributes( ds.corr[0] );
@@ -781,11 +878,13 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
     ColNames.push_back( "ChiSqPerDof" );
     OutputModel.SetColumnNames( ColNames );
   }
-  OutputModel.covarParamsRebin = cpr;
   OutputModel.Name_.Seed = Seed;
-  OutputModel.SampleSize = ds.SampleSize;
-  OutputModel.binSize = ds.BinSize;
-  OutputModel.CovarSampleSize = ds.CovarSampleSize();
+  OutputModel.binSize = ds.OriginalBinSize;
+  OutputModel.CovarFrozen = cp.bFreeze;
+  OutputModel.CovarSource = cp.Source;
+  OutputModel.CovarRebin = cp.RebinSize;
+  OutputModel.CovarNumBoot = cp.CovarNumBoot;
+  OutputModel.CovarSampleSize = cp.CovarSampleSize();
 
   // See whether this fit already exists
   bool bPerformFit{ true };
@@ -802,7 +901,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
     }
     if( dof != PreBuilt.dof )
       throw std::runtime_error( "Pre-built fit had different constraints" );
-    bPerformFit = PreBuilt.NewParamsMorePrecise( bFreezeCovar, ds.NSamples );
+    bPerformFit = PreBuilt.NewParamsMorePrecise( cp.bFreeze, ds.NSamples );
     if( !bPerformFit )
     {
       ChiSq = dof * PreBuilt.getSummaryData()[NumModelParams].Central; // Last summary has chi squared per dof
@@ -1072,23 +1171,26 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
 // This should be the only place which knows about different fitters
 
 Fitter * MakeFitterGSL( const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                        const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames );
+                        const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                        CovarParams &&cp );
 #ifdef HAVE_MINUIT2_SO_BUILD_IT
 Fitter * MakeFitterMinuit2(const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                           const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames);
+                           const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                           CovarParams &&cp );
 #endif
 
 Fitter * MakeFitter( const Common::CommandLine &cl, const DataSet &ds,
-                     const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames )
+                     const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                     CovarParams &&cp )
 {
   Fitter * f;
   std::string FitterArgs{ cl.SwitchValue<std::string>( "fitter" ) };
   std::string FitterType{ Common::ExtractToSeparator( FitterArgs ) };
   if( Common::EqualIgnoreCase( FitterType, "GSL" ) )
-    f = MakeFitterGSL( FitterArgs, cl, ds, ModelArgs, opNames );
+    f = MakeFitterGSL( FitterArgs, cl, ds, ModelArgs, opNames, std::move( cp ) );
 #ifdef HAVE_MINUIT2_SO_BUILD_IT
   else if( Common::EqualIgnoreCase( FitterType, "Minuit2" ) )
-    f = MakeFitterMinuit2( FitterArgs, cl, ds, ModelArgs, opNames );
+    f = MakeFitterMinuit2( FitterArgs, cl, ds, ModelArgs, opNames, std::move( cp ) );
 #endif
   else
     throw std::runtime_error( "Unrecognised fitter: " + FitterType );
@@ -1136,7 +1238,8 @@ int main(int argc, const char *argv[])
       {"n", CL::SwitchType::Single, "0"},
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"opnames", CL::SwitchType::Flag, nullptr},
-      {"covsrc", CL::SwitchType::Single, "Bootstrap"},
+      {"covsrc", CL::SwitchType::Single, "Binned"},
+      {"covboot", CL::SwitchType::Single, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -1232,13 +1335,9 @@ int main(int argc, const char *argv[])
         std::cout << " (all " << ds.MaxSamples << " for var/covar)";
       std::cout << Common::NewLine;
 
-      // Work out where the covariance matrix comes from
-      Common::CovarParamsRebin cpr{ cl.SwitchValue<Common::CovarParamsRebin>( "covsrc" ) };
-      {
-        Common::CovarParams cp{ cpr.ApplyToDataSet( ds ) };
-        std::cout << "Covariance matrix constructed from " << cp.Count << Common::Space
-                  << cp.Source << " samples" << Common::NewLine;
-      }
+      // Work out how covariance matrix should be constructed and tell user
+      CovarParams cp{ cl, ds };
+      std::cout << cp << Common::NewLine;
 
       // I'll need a sorted, concatenated list of the operators in the fit for filenames
       std::string sOpNameConcat;
@@ -1275,7 +1374,7 @@ int main(int argc, const char *argv[])
       const Common::SeedType Seed{ ds.corr[0].Name_.Seed };
 
       // All the models are loaded
-      std::unique_ptr<Fitter> m{ MakeFitter( cl, ds, ModelArgs, OpName ) };
+      std::unique_ptr<Fitter> m{ MakeFitter( cl, ds, ModelArgs, OpName, std::move( cp ) ) };
       const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
       std::ofstream s;
       for( Common::FitRangesIterator it = fitRanges.begin(); !it.PastEnd(); ++it )
@@ -1317,7 +1416,7 @@ int main(int argc, const char *argv[])
             outBaseFileName.resize( outBaseFileNameLen );
             outBaseFileName.append( it.to_string( Common::Underscore ) );
             outBaseFileName.append( 1, '.' );
-            auto params = m->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat, Seed, cpr );
+            auto params = m->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat, Seed );
           }
           catch(const std::exception &e)
           {
@@ -1371,7 +1470,8 @@ int main(int argc, const char *argv[])
     "         Binned    Use the already binned data\n"
     "         Raw       Use the raw (unbinned) data\n"
     "         Rebin     Rebin the raw data using bin size(s) specified\n"
-    "         Bootstrap Use bootstrap replicas (optionally first n)\n"
+    "         Bootstrap Use bootstrap replicas\n"
+    "--covboot How many bootstrap replicas in covariance (-1=no bootstrap)\n"
     "--guess  List of specific values to use for inital guess"
     "-t     Fit range1[,range2[,...]] (start:stop[:numstart=1[:numstop=numstart]])\n"
     "-i     Input  filename prefix\n"

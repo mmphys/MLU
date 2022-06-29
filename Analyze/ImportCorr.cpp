@@ -214,8 +214,8 @@ void Importer::SpreadDataBinned( std::vector<Fold> &out, const Matrix &BinnedDat
   const int NumBinnedSamples{ static_cast<int>( BinnedData.size1 ) };
   for( int f = 0; f < out.size(); ++f )
   {
-    C[f] = out[f].resizeBinned( NumBinnedSamples );
-    out[f].bBinnedBootstrap = true;
+    C[f] = out[f].resizeRaw( NumBinnedSamples );
+    out[f].bRawBootstrap = true;
   }
   for( int s = 0; s < NumBinnedSamples; ++s )
     for( int f = 0; f < out.size(); ++f )
@@ -315,31 +315,35 @@ void Importer::Write( const std::string &Base, bool bPreserveSign )
   SpreadData( out, vBinnedCentral.data, Fold::idxCentral, 1 );
   SpreadData( out, mBinnedData.data, 0, NumSamples );
   SaveRawData( out, bPreserveSign );
-  SpreadDataBinned( out, mUnbinnedData );
-  std::string Filename{ Base };
-  const std::size_t BaseLen{ Filename.length() };
   for( std::size_t f = 0; f < corrInfo.size(); ++f )
   {
+    out[f].Bin();
     out[f].MakeCorrSummary( nullptr );
-    for( int i = 0; i < 2; ++i )
+  }
+  std::string Filename{ Base };
+  const std::size_t BaseLen{ Filename.length() };
+  for( int i = 0; i < 2; ++i )
+  {
+    Filename.resize( BaseLen );
+    if( i == 0 )
+      Filename.append( "binned" );
+    else
     {
-      Filename.resize( BaseLen );
-      if( i == 0 )
-        Filename.append( "boot" );
-      else
-      {
-        out[f].bBinnedBootstrap = false;
-        out[f].resizeBinned( static_cast<int>( out[f].ConfigCount.size() ) );
-        out[f].Bin();
-        Filename.append( "binned" );
-      }
-      if( bPreserveSign )
-        Filename.append( 1, 's' );
-      Filename.append( 1, '_' );
+      SpreadDataBinned( out, mUnbinnedData );
+      Filename.append( "boot" );
+    }
+    if( bPreserveSign )
+      Filename.append( 1, 's' );
+    Filename.append( 1, '_' );
+    const std::size_t NextLen{ Filename.length() };
+    for( std::size_t f = 0; f < corrInfo.size(); ++f )
+    {
+      Filename.resize( NextLen );
       Filename.append( corrInfo[f].opSnk );
       Filename.append( 1, '_' );
       Filename.append( corrInfo[f].opSrc );
       std::string FullName{ Common::MakeFilename( Filename, Common::sFold, Seed, DEF_FMT ) };
+      std::cout << Common::Space << out[f].NumSamplesRaw() << Common::Space << FullName << Common::NewLine;
       out[f].Write( FullName );
       out[f].WriteSummary( Common::MakeFilename( Filename, Common::sFold, Seed, TEXT_EXT ) );
     }

@@ -93,12 +93,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--covsrc binned -o data_comparison1/FitAllDebug/ -i data_comparison1/boot_ "
-            isEnabled = "NO">
+            argument = "--covsrc raw -o data_comparison1/FitAllDebug/ -i data_comparison1/boot_ "
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--covsrc reboot,666,24 -o data_comparison1/FitAllDebugReboot/ -i data_comparison1/boot_ "
-            isEnabled = "YES">
+            argument = "--covsrc bootstrap -o data_comparison1/FitAllDebugBoot/ -i data_comparison1/boot_ "
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--freeze"
@@ -115,6 +115,10 @@
          <CommandLineArgument
             argument = "pLS_pLS.&apos;*&apos;.h5 pLL_pLS.&apos;*&apos;.h5 pLS_aLS.&apos;*&apos;.h5 pLS_aLL.&apos;*&apos;.h5 aLS_aLS.&apos;*&apos;.h5 aLL_aLS.&apos;*&apos;.h5"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-v 1"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
