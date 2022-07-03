@@ -29,7 +29,7 @@
 #include "MultiFit.hpp"
 
 // Uncomment this next line to debug without OpenMP
-//#define DEBUG_DISABLE_OMP
+#define DEBUG_DISABLE_OMP
 
 #ifdef HAVE_MINUIT2
 // Comment out the next line to disable Minuit2 (for testing)
@@ -57,27 +57,54 @@ std::ostream & operator<<( std::ostream &os, const ParamState &State )
 // Work out where the covariance matrix comes from
 CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ dsrw }
 {
-  // Decide on the covariance source
-  std::string sCovRebin{ cl.SwitchValue<std::string>( "covsrc" ) };
-  std::string sCovSrc{ Common::ExtractToSeparator( sCovRebin ) };
+  // Are we using a frozen covariance matrix? Or does it vary for each sample?
+  bFreeze = SupportsUnfrozen() ? cl.GotSwitch( "freeze" ) : false;
+
+  // Decode the user's choice of covariance source
+  std::string sCovOptions{ cl.SwitchValue<std::string>( "covsrc" ) };
+  std::string sCovSrc{ Common::ExtractToSeparator( sCovOptions ) };
   if( Common::EqualIgnoreCase( sCovSrc, "Rebin" ) )
   {
-    dsrw.Rebin( Common::ArrayFromString<int>( sCovRebin ) );
+    dsrw.Rebin( Common::ArrayFromString<int>( sCovOptions ) );
     RebinSize = ds.RebinSize;
     std::cout << "Rebinned raw data:";
     for( int i : RebinSize )
       std::cout << Common::Space << i;
     std::cout << Common::NewLine;
-    Source = SS::Binned;
+    Source = SS::Raw;
+  }
+  else if( Common::EqualIgnoreCase( sCovSrc, "h5" ) )
+  {
+    std::vector<std::string> Opts{ Common::ArrayFromString( sCovOptions ) };
+    if( Opts.size() < 2 || Opts.size() > 3 )
+      throw std::runtime_error( "Options should contain file[,group],dataset. Bad options: " + sCovOptions );
+    std::string sRoot( "/" );
+    const int iHaveGroupName{ Opts.size() == 2 ? 0 : 1 };
+    std::string &GroupName{ iHaveGroupName ? Opts[1] : sRoot };
+    std::string &DataSetName{ Opts[1 + iHaveGroupName] };
+    ::H5::H5File f;
+    ::H5::Group  g;
+    Common::H5::OpenFileGroup( f, g, Opts[0], "Loading covariance matrix from ", &GroupName );
+    try
+    {
+      Common::H5::ReadMatrix( g, DataSetName, Covar );
+    }
+    catch(const ::H5::Exception &)
+    {
+      ::H5::Exception::clearErrorStack();
+      throw std::runtime_error( "Unable to load covariance matrix " + sCovOptions );
+    }
+    Source = SS::Bootstrap;
+    bFreeze = true; // because we only have inv_cov. TODO: invert inv_cov if unfrozen? (Better to load cov)
   }
   else
   {
     Source = Common::FromString<SS>( sCovSrc );
-    if( !sCovRebin.empty() )
-      throw std::runtime_error( "Covariance source " + sCovSrc + " unexpected parameters: " + sCovRebin );
+    if( !sCovOptions.empty() )
+      throw std::runtime_error( "Covariance source " + sCovSrc + " unexpected parameters: " + sCovOptions );
   }
 
-  // Check that the raw data are available if
+  // Check that all the input files match for raw/rebinned (checked for binned data on load)
   if( Source == SS::Raw || Source == SS::Binned )
   {
     // Using raw samples - check all files have the same number
@@ -95,34 +122,27 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
     }
   }
 
-  // Now work out whether the covariance is determined by bootstrap
-  if( CentralBootOnly() )
-  {
-    // I have to use the bootstrap replicas
-    if( cl.GotSwitch( "covboot" ) )
-    {
-      CovarNumBoot = cl.SwitchValue<int>( "covboot" );
-      if( CovarNumBoot )
-        std::cout << "Ignoring --covboot " << CovarNumBoot << " - source is bootstrap" << Common::NewLine;
-    }
+  // Has the user requested we get covariance using a bootstrap
+  if( !cl.GotSwitch( "covboot" ) )
     CovarNumBoot = 0;
-    // I will have to use frozen covariance matrix
-    bFreeze = true;
-  }
   else
   {
-    CovarNumBoot = cl.GotSwitch( "covboot" ) ? cl.SwitchValue<int>( "covboot" ) : 0;
+    CovarNumBoot = cl.SwitchValue<int>( "covboot" );
+    if( CovarNumBoot < 0 || CovarNumBoot == 1 )
+      throw std::runtime_error( "Rebootstrapping with " + std::to_string( CovarNumBoot ) + " replicas" );
+    if( SourceIsBootstrap() )
+    {
+      std::ostringstream os;
+      os << "Can't use ";
+      if( Source == SS::Raw )
+        os << "bootstrapped ";
+      os << Source << " samples when bootstrapping covariance matrix";
+      throw std::runtime_error( os.str().c_str() );
+    }
+    // 0 => Use the maximum number of samples available
     if( CovarNumBoot == 0 || CovarNumBoot > ds.MaxSamples )
       CovarNumBoot = ds.MaxSamples;
-    // I can use the raw samples directly, or bootstrap them
-    if( CovarNumBoot < 0 )
-      CovarNumBoot = 0;
-    // Default to unfrozen covariance, but allow it to be frozen
-    bFreeze = cl.GotSwitch( "freeze" );
-  }
-  // If I'm bootstrapping, I will need some random numbers
-  if( CovarNumBoot )
-  {
+    // If I'm bootstrapping, I will need some random numbers
     if(   ds.corr[0].RandNum() // Do I have original bootstrap random numbers
        && ds.corr[0].SampleSize == CovarCount() // Are the random numbers over same range (0...SampleSize)
        && CovarNumBoot <= ds.corr[0].NumSamples() ) // Are there enough replicas available
@@ -137,16 +157,33 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
       CovarRandom.Map( vCovarRandom.data(), CovarNumBoot, CovarCount() );
     }
   }
+
   // Make sure the random numbers I'll need are built once and only once
-  dsrw.InitRandomNumber( Source );
+  for( int i = 0; i < 2; ++i )
+  {
+    const SS ss{ i == 0 ? SS::Raw : SS::Binned };
+    if( Source == ss || ( i == 1 && !bFreeze ) )
+    {
+      if( dsrw.InitRandomNumbers( ss ) )
+      {
+        std::stringstream os;
+        os << "Generated bootstrap random numbers for " << ss << " data using Mersenne Twister (C++ 11 std::mt19937) with seed " << ds.corr[0].Name_.Seed;
+        std::cout << os.str() << Common::NewLine;
+      }
+    }
+  }
 }
 
 std::ostream & operator<<( std::ostream &os, const CovarParams &cp )
 {
-  os << "Covariance matrix constructed from " << cp.CovarCount() << Common::Space;
+  if( cp.bFreeze )
+    os << "F";
+  else
+    os << "Unf";
+  os << "rozen covariance matrix constructed from " << cp.CovarCount() << Common::Space;
   if( cp.CovarCount() != cp.CovarSampleSize() )
     os << "(" << cp.CovarSampleSize() << " independent) ";
-  if( cp.CentralBootOnly() )
+  if( cp.SourceIsBootstrap() )
     os << "pre-bootstrapped ";
   os << cp.Source << " samples";
   return os;
@@ -156,9 +193,7 @@ FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile 
 : parent{ fitter_ },
   Extent{ fitter_.ds.Extent },
   idx{ FirstIndex }, // So we'll notice a change on the first call to SetReplica
-  StdErrorMean( Extent ),
   CholeskyDiag( Extent ),
-  Error( Extent ),
   ModelParams( fitter_.NumModelParams ),
   SortingHat( parent.NumExponents ),
   bCorrelated{ bCorrelated_ },
@@ -169,11 +204,23 @@ FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile 
   if( bCorrelated )
   {
     Covar.resize( Extent, Extent );
+    Correl.resize( Extent, Extent );
     Cholesky.resize( Extent, Extent );
   }
   // Make a buffer for each model to use as a scratchpad
   for( int f = 0; f < parent.NumFiles; f++ )
     ModelBuffer[f].resize( parent.model[f]->GetScratchPadSize() );
+}
+
+void FitterThread::SaveStdError()
+{
+  for( int i = 0; i < Extent; ++i )
+  {
+    StdErrorMean[i] = std::sqrt( StdErrorMean[i] );
+    CholeskyDiag[i] = 1. / StdErrorMean[i];
+  }
+  parent.Dump( idx, "StdErrorMean", StdErrorMean );
+  parent.Dump( idx, "CholeskyDiag", CholeskyDiag );
 }
 
 // Make the covariance matrix, for only the timeslices we are interested in
@@ -190,155 +237,190 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
     // Switch to the requested replica
     const bool bFirstTime{ idx == FirstIndex };
     idx = idx_;
-    // Don't build covariance matrix if frozen (unless it's the first time)
-    if( !parent.cp.bFreeze || bFirstTime )
-    {
-      // (Co)variance always comes from the central replica if frozen
-      if( parent.cp.bFreeze )
-        idx_ = Fold::idxCentral;
-      // For correlated fits, start by constructing covariance matrix for correlation source
-      if( bCorrelated )
-      {
-        if( parent.cp.CovarNumBoot )
-          parent.ds.MakeCovariance(idx_, parent.cp.Source, Covar,parent.cp.CovarNumBoot,parent.cp.CovarRandom);
-        else
-          parent.ds.MakeCovariance(idx_, parent.cp.Source, Covar );
-      }
-      // Make variance. Always comes from the bootstrap
-      const bool OneStep{ bCorrelated && !parent.cp.TwoStep() };
-      if( OneStep )
-      {
-        // Correlated fit with correlation matrix from bootstrap. Extract inverse variance from diagonals
-        for( int i = 0; i < parent.ds.Extent; ++i )
-          StdErrorMean[i] = std::sqrt( Covar( i, i ) );
-      }
-      else
-        parent.ds.MakeErr( idx_, StdErrorMean );
-      parent.Dump( idx, "StdErrorMean", StdErrorMean );
-      for( int i = 0; i < parent.ds.Extent; ++i )
-        CholeskyDiag[i] = 1. / StdErrorMean[i];
-      parent.Dump( idx, "CholeskyDiag", CholeskyDiag );
-      if( bSaveMatrices )
-        OutputModel.StdErrorMean = StdErrorMean;
-      if( bCorrelated )
-      {
-        // Make Covar(iance) and Correl(ation) matrices to be used in the fit
-        Matrix Correl( parent.ds.Extent, parent.ds.Extent );
-        if( OneStep )
-        {
-          Correl = Covar;
-          Correl.CholeskyScaleApply( CholeskyDiag );
-        }
-        else
-        {
-          parent.Dump( idx, "CovarianceIn", Covar );
-          if( bSaveMatrices )
-            OutputModel.CovarIn = Covar;
-          if( pBaseName && !pBaseName->empty() )
-            parent.SaveMatrixFile( Covar, Common::sCovarianceIn,
-                      Common::MakeFilename( *pBaseName, Common::sCovmatIn, OutputModel.Name_.Seed, TEXT_EXT ) );
-          // Make this a correlation matrix
-          Covar.CholeskyExtract();
-          Correl = Covar;
-          // Now apply the variance from the data
-          Covar.CholeskyScaleApply( StdErrorMean );
-        }
-        parent.Dump( idx, "Covariance", Covar );
-        parent.Dump( idx, "Correlation", Correl );
-        if( bSaveMatrices )
-        {
-          OutputModel.Covar = Covar;
-          OutputModel.Correl = Correl;
-        }
-        if( pBaseName && !pBaseName->empty() )
-        {
-          parent.SaveMatrixFile( Covar, Common::sCovariance,
-                    Common::MakeFilename( *pBaseName, Common::sCovmat, OutputModel.Name_.Seed, TEXT_EXT ) );
-          parent.SaveMatrixFile( Correl, Common::sCorrelation,
-                    Common::MakeFilename( *pBaseName, Common::sCormat, OutputModel.Name_.Seed, TEXT_EXT ),
-                                pszCorrelGnuplot );
-        }
-        // Cholesky decompose the covariance matrix
-        // CholeskyDiag[i] = 1/sqrt( \sigma_{ii} ) i.e. inverse of square root of variances
-        // Cholesky is generated by gsl_linalg_cholesky_decomp2
-        //   So lower triangle and diagonal is cholesky decomposition of CORRELATION matrix
-        //   Upper right triangle (excluding diagonal - assume 1) is CORRELATION matrix. NB: Not documentated
-        Cholesky = Correl;
-        Cholesky.Cholesky();
-        for( int i = 0; i < Cholesky.size1; ++i )
-          for( int j = i + 1; j < Cholesky.size2; ++j )
-            Cholesky( i, j ) = 0;
-        parent.Dump( idx, "Cholesky", Cholesky );
-        if( bSaveMatrices )
-          OutputModel.CorrelCholesky = Cholesky;
-        if( pBaseName && !pBaseName->empty() )
-          parent.SaveMatrixFile( Cholesky, Common::sCorrelationCholesky,
-                Common::MakeFilename( *pBaseName, Common::sCormatCholesky, OutputModel.Name_.Seed, TEXT_EXT ) );
-        if( parent.Dump( idx ) )
-        {
-          Matrix Copy{ Cholesky };
-          Copy.blas_trmm( CblasRight, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
-          parent.Dump( idx, "L L^T", Copy );
-        }
-        if( idx_ == Fold::idxCentral && bShowOutput )
-        {
-          const double CondNumber{ Cholesky.CholeskyRCond() };
-          const int CondDigits{ static_cast<int>( 0.5 - std::log10( CondNumber ) ) };
-          //std::cout << Common::NewLine;
-          if( CondDigits >= 12 )
-            std::cout << "WARNING see https://www.gnu.org/software/gsl/doc/html/linalg.html#cholesky-decomposition\n";
-          std::cout << "Covariance reciprocal condition number " << CondNumber
-                    << ", ~" << CondDigits << " digits\n";
-        }
-        // Allow GSL or Minuit2 to use the cholesky decomposition of the inverse covariance matrix
-        if( CholeskyAdjust() )
-        {
-          // Cholesky is Cholesky decomposition of (i.e. LL^T=) CORRELATION matrix
-          // CholeskyInvert() finds the inverse correlation matrix
-          Cholesky.CholeskyInvert();
-          parent.Dump( idx, "Inverse Correl", Cholesky );
-          if( bSaveMatrices )
-          {
-            OutputModel.CovarInv = Cholesky;
-            OutputModel.CovarInv.CholeskyScaleApply( CholeskyDiag );
-            parent.Dump( idx, "Inverse Covar", OutputModel.CovarInv );
-            if( pBaseName && !pBaseName->empty() )
-              parent.SaveMatrixFile( OutputModel.CovarInv, Common::sCovarianceInv,
-                                    Common::MakeFilename( *pBaseName, Common::sCovmatInv, OutputModel.Name_.Seed,TEXT_EXT));
-          }
-          // Cholesky() finds the Cholesky decomposition of the inverse correlation matrix
-          Cholesky.Cholesky();
-          for( int i = 0; i < parent.ds.Extent; ++i )
-            for( int j = i + 1; j < parent.ds.Extent; ++j )
-              Cholesky( i, j ) = 0;
-          parent.Dump( idx, "Inverse Correl Cholesky", Cholesky );
-          if( bSaveMatrices )
-          {
-            OutputModel.CorrelInvCholesky = Cholesky;
-            OutputModel.CovarInvCholesky = Cholesky;
-            // Apply scale on the left, i.e. S L
-            for( int i = 0; i < parent.ds.Extent; ++i )
-              for( int j = 0; j <= i; ++j )
-                OutputModel.CovarInvCholesky( i, j ) *= CholeskyDiag[i];
-            if( pBaseName && !pBaseName->empty() )
-            {
-              parent.SaveMatrixFile( Cholesky, Common::sCorrelationInvCholesky,
-              Common::MakeFilename( *pBaseName, Common::sCormatInvCholesky, OutputModel.Name_.Seed, TEXT_EXT));
-              parent.SaveMatrixFile( OutputModel.CovarInvCholesky, Common::sCovarianceInvCholesky,
-              Common::MakeFilename( *pBaseName, Common::sCovmatInvCholesky, OutputModel.Name_.Seed, TEXT_EXT));
-            }
-          }
-        }
-      }
-    }
     // Now get the data for this replica
     if( idx == Fold::idxCentral )
       Data = parent.ds.vCentral;
     else
       Data.MapRow( parent.ds.mBoot, idx);
+    OutputModel.ModelPrediction.MapView( Theory, idx );
+    OutputModel.ErrorScaled.MapView( Error, idx );
     parent.ds.GetData( idx, Data );
     // And get associated constants
     parent.ds.GetFixed( idx, ModelParams, parent.ParamFixed );
+    // Don't build covariance matrix if frozen (unless it's the first time)
+    if( !parent.cp.bFreeze || bFirstTime )
+    {
+      OutputModel.StdErrorMean.MapView( StdErrorMean, idx ); // Each FitterThread needs it's own work area
+      if( parent.cp.Covar.size1 == Extent )
+      {
+        // I've loaded the inverse covariance matrix already
+        if( bFirstTime )
+        {
+          if( !CholeskyAdjust() )
+            throw std::runtime_error( "Can't load inverse covariance matrix with this fitter" );
+          Cholesky = parent.cp.Covar;
+          for( int i = 0; i < Extent; ++i )
+          {
+            CholeskyDiag[i] = std::sqrt( Cholesky( i, i ) );
+            StdErrorMean[i] = 1. / CholeskyDiag[i];
+          }
+          Cholesky.CholeskyScaleApply( StdErrorMean, true );
+          Cholesky.Cholesky();
+          Cholesky.ZeroUpperTriangle();
+          parent.Dump( idx, "Inverse Correl Cholesky", Cholesky );
+          if( bSaveMatrices )
+          {
+            OutputModel.CovarInv = parent.cp.Covar;
+            OutputModel.CorrelInvCholesky = Cholesky;
+            OutputModel.CovarInvCholesky = Cholesky;
+            // Apply scale on the left, i.e. S L
+            for( int i = 0; i < Extent; ++i )
+              for( int j = 0; j <= i; ++j )
+                OutputModel.CovarInvCholesky( i, j ) *= CholeskyDiag[i];
+          }
+        }
+      }
+      else
+      {
+        // (Co)variance always comes from the central replica if frozen
+        if( parent.cp.bFreeze )
+          idx_ = Fold::idxCentral;
+        if( !bCorrelated || !parent.cp.OneStep( idx_ ) )
+        {
+          // Make the variance from the binned data on this replica
+          parent.ds.MakeVariance( idx_, Common::SampleSource::Binned, StdErrorMean );
+          SaveStdError();
+        }
+        if( bCorrelated )
+        {
+          if( parent.cp.OneStep( idx_ ) )
+          {
+            // I can construct the covariance matrix in one step
+            if( parent.cp.Covar.size1 == Extent && parent.cp.bFreeze )
+              Covar = parent.cp.Covar;
+            else if( parent.cp.CovarNumBoot )
+              parent.ds.MakeCovariance( idx_, parent.cp.Source, Covar, parent.cp.CovarRandom );
+            else
+              parent.ds.MakeCovariance( idx_, parent.cp.Source, Covar );
+            // Correlated fit with correlation matrix from bootstrap. Extract inverse variance from diagonals
+            for( int i = 0; i < Extent; ++i )
+              StdErrorMean[i] = Covar( i, i );
+            SaveStdError();
+            Correl = Covar;
+            Correl.CholeskyScaleApply( CholeskyDiag, true );
+          }
+          else
+          {
+            // Two step: correlation matrix from central replica + variance from binned data on each replica
+            if( bFirstTime )
+            {
+              // Make the correlation matrix from the central replica
+              if( parent.cp.Covar.size1 == Extent )
+                Correl = parent.cp.Covar;
+              else
+                parent.ds.MakeCovariance( Fold::idxCentral, parent.cp.Source, Correl );
+              parent.Dump( idx, "CovarianceIn", Correl );
+              if( bSaveMatrices )
+                OutputModel.CovarIn = Correl;
+              if( pBaseName && !pBaseName->empty() )
+                parent.SaveMatrixFile( Correl, Common::sCovarianceIn,
+                    Common::MakeFilename( *pBaseName, Common::sCovmatIn, OutputModel.Name_.Seed, TEXT_EXT ) );
+              // Make this a correlation matrix
+              Correl.CholeskyExtract();
+            }
+            // Now apply the variance from the binned data on this replica
+            Covar = Correl;
+            Covar.CholeskyScaleApply( StdErrorMean );
+          }
+          parent.Dump( idx, "Covariance", Covar );
+          parent.Dump( idx, "Correlation", Correl );
+          if( bSaveMatrices )
+          {
+            OutputModel.Covar = Covar;
+            OutputModel.Correl = Correl;
+          }
+          if( pBaseName && !pBaseName->empty() )
+          {
+            parent.SaveMatrixFile( Covar, Common::sCovariance,
+                      Common::MakeFilename( *pBaseName, Common::sCovmat, OutputModel.Name_.Seed, TEXT_EXT ) );
+            parent.SaveMatrixFile( Correl, Common::sCorrelation,
+                      Common::MakeFilename( *pBaseName, Common::sCormat, OutputModel.Name_.Seed, TEXT_EXT ),
+                                  pszCorrelGnuplot );
+          }
+          // Cholesky decompose the covariance matrix
+          // CholeskyDiag[i] = 1/sqrt( \sigma_{ii} ) i.e. inverse of square root of variances
+          // Cholesky is generated by gsl_linalg_cholesky_decomp2
+          //   So lower triangle and diagonal is cholesky decomposition of CORRELATION matrix
+          //   Upper right triangle (excluding diagonal - assume 1) is CORRELATION matrix. NB: Not documentated
+          Cholesky = Correl;
+          Cholesky.Cholesky();
+          for( int i = 0; i < Cholesky.size1; ++i )
+            for( int j = i + 1; j < Cholesky.size2; ++j )
+              Cholesky( i, j ) = 0;
+          parent.Dump( idx, "Cholesky", Cholesky );
+          if( bSaveMatrices )
+            OutputModel.CorrelCholesky = Cholesky;
+          if( pBaseName && !pBaseName->empty() )
+            parent.SaveMatrixFile( Cholesky, Common::sCorrelationCholesky,
+                  Common::MakeFilename( *pBaseName, Common::sCormatCholesky, OutputModel.Name_.Seed, TEXT_EXT ) );
+          if( parent.Dump( idx ) )
+          {
+            Matrix Copy{ Cholesky };
+            Copy.blas_trmm( CblasRight, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
+            parent.Dump( idx, "L L^T", Copy );
+          }
+          if( idx_ == Fold::idxCentral && bShowOutput )
+          {
+            const double CondNumber{ Cholesky.CholeskyRCond() };
+            const int CondDigits{ static_cast<int>( 0.5 - std::log10( CondNumber ) ) };
+            //std::cout << Common::NewLine;
+            if( CondDigits >= 12 )
+              std::cout << "WARNING see https://www.gnu.org/software/gsl/doc/html/linalg.html#cholesky-decomposition\n";
+            std::cout << "Covariance reciprocal condition number " << CondNumber
+                      << ", ~" << CondDigits << " digits\n";
+          }
+          // Allow GSL or Minuit2 to use the cholesky decomposition of the inverse covariance matrix
+          if( CholeskyAdjust() )
+          {
+            // Cholesky is Cholesky decomposition of (i.e. LL^T=) CORRELATION matrix
+            // CholeskyInvert() finds the inverse correlation matrix
+            Cholesky.CholeskyInvert();
+            parent.Dump( idx, "Inverse Correl", Cholesky );
+            if( bSaveMatrices )
+            {
+              OutputModel.CovarInv = Cholesky;
+              OutputModel.CovarInv.CholeskyScaleApply( CholeskyDiag );
+              parent.Dump( idx, "Inverse Covar", OutputModel.CovarInv );
+              if( pBaseName && !pBaseName->empty() )
+                parent.SaveMatrixFile( OutputModel.CovarInv, Common::sCovarianceInv,
+                                      Common::MakeFilename( *pBaseName, Common::sCovmatInv, OutputModel.Name_.Seed,TEXT_EXT));
+            }
+            // Cholesky() finds the Cholesky decomposition of the inverse correlation matrix
+            Cholesky.Cholesky();
+            for( int i = 0; i < Extent; ++i )
+              for( int j = i + 1; j < Extent; ++j )
+                Cholesky( i, j ) = 0;
+            parent.Dump( idx, "Inverse Correl Cholesky", Cholesky );
+            if( bSaveMatrices )
+            {
+              OutputModel.CorrelInvCholesky = Cholesky;
+              OutputModel.CovarInvCholesky = Cholesky;
+              // Apply scale on the left, i.e. S L
+              for( int i = 0; i < Extent; ++i )
+                for( int j = 0; j <= i; ++j )
+                  OutputModel.CovarInvCholesky( i, j ) *= CholeskyDiag[i];
+              if( pBaseName && !pBaseName->empty() )
+              {
+                parent.SaveMatrixFile( Cholesky, Common::sCorrelationInvCholesky,
+                Common::MakeFilename( *pBaseName, Common::sCormatInvCholesky, OutputModel.Name_.Seed, TEXT_EXT));
+                parent.SaveMatrixFile( OutputModel.CovarInvCholesky, Common::sCovarianceInvCholesky,
+                Common::MakeFilename( *pBaseName, Common::sCovmatInvCholesky, OutputModel.Name_.Seed, TEXT_EXT));
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 
@@ -372,7 +454,8 @@ bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::s
     const vInt &FitTimes{ parent.ds.FitTimes[f] };
     for( int t : FitTimes )
     {
-      Error[i] = ( m( t, ModelBuffer[f], ModelParams ) - Data[i] ) * CholeskyDiag[i];
+      Theory[i] = m( t, ModelBuffer[f], ModelParams );
+      Error[i] = ( Theory[i] - Data[i] ) * CholeskyDiag[i];
       if( !std::isfinite( Error[i++] ) )
         return false;
     }
@@ -457,6 +540,9 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
   // Perform fit
   std::unique_ptr<ParamState> Result( MakeParamState( parGuess ) );
   scalar dTestStat = RepeatFit( *Result, NumRetriesFit() );
+  // This is a convenience to make regression testing & comparison with errors generated by other codes easier
+  for( int i = 0; i < Extent; ++i )
+    Error[i] = std::abs( Error[i] );
   // Make sure the test statistic is within acceptable bounds
   if( idx == Fold::idxCentral )
   {
@@ -492,9 +578,6 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
       }
     }
     std::cout << "OK: " << ss.str() << Common::NewLine;
-    OutputModel.ErrorScaled.resize( Extent );
-    for( std::size_t i = 0; i < Error.size; ++i )
-      OutputModel.ErrorScaled[i] = std::abs( Error[i] );
   }
   // Put the variable fit parameters into the full model parameter set (constants are already there)
   for( int i = 0; i < parent.NumVariable; ++i )
@@ -885,6 +968,9 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   OutputModel.CovarRebin = cp.RebinSize;
   OutputModel.CovarNumBoot = cp.CovarNumBoot;
   OutputModel.CovarSampleSize = cp.CovarSampleSize();
+  OutputModel.StdErrorMean.resize( ds.Extent, ds.NSamples ); // Each thread needs to use its own replica
+  OutputModel.ModelPrediction.resize( ds.Extent, ds.NSamples );
+  OutputModel.ErrorScaled.resize( ds.Extent, ds.NSamples );
 
   // See whether this fit already exists
   bool bPerformFit{ true };
@@ -1107,6 +1193,10 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
       if( Abort )
         throw std::runtime_error( sError );
     }
+    if( cp.bFreeze )
+      OutputModel.StdErrorMean.Replica.clear();
+    OutputModel.FitInput.Central = ds.vCentral;
+    OutputModel.FitInput.Replica = ds.Cache( cp.Source );
     OutputModel.MakeCorrSummary( "Params" );
     {
       // Show parameters - in neat columns
@@ -1238,7 +1328,7 @@ int main(int argc, const char *argv[])
       {"n", CL::SwitchType::Single, "0"},
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"opnames", CL::SwitchType::Flag, nullptr},
-      {"covsrc", CL::SwitchType::Single, "Binned"},
+      {"covsrc", CL::SwitchType::Single, "Bootstrap"},
       {"covboot", CL::SwitchType::Single, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
@@ -1466,11 +1556,12 @@ int main(int argc, const char *argv[])
     "--mindof Minimum degrees of freedom (default 1)\n"
     "--fitter (GSL|Minuit2)[,options] fitter (default GSL,Levenberg-Marquardt)\n"
     "         GSL options: lm, lmaccel, dogleg, ddogleg, subspace2D\n"
-    "--covsrc source[,n[,n[...]]] build (co)variance from source, i.e. one of\n"
+    "--covsrc source[,options[,...]] build (co)variance from source, i.e. one of\n"
     "         Binned    Use the already binned data\n"
     "         Raw       Use the raw (unbinned) data\n"
     "         Rebin     Rebin the raw data using bin size(s) specified\n"
-    "         Bootstrap Use bootstrap replicas\n"
+    "         Bootstrap Use bootstrap replicas (default)\n"
+    "         H5,f[,g],d  Load INVERSE covariance from hdf5 file f, group g, dataset d"
     "--covboot How many bootstrap replicas in covariance (-1=no bootstrap)\n"
     "--guess  List of specific values to use for inital guess"
     "-t     Fit range1[,range2[,...]] (start:stop[:numstart=1[:numstop=numstart]])\n"

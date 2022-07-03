@@ -103,10 +103,7 @@ int FitterThreadGSL::f( const Vector &FitParams, Vector &Error )
   if( !SaveError( Error, FitParams.data, FitParams.size, FitParams.stride ) )
     throw std::runtime_error( "Error computing residuals" );
   if( bCorrelated )
-  {
     Error.blas_trmv( CblasLower, CblasTrans, CblasNonUnit, Cholesky );
-    //std::cout << Covar << Common::NewLine << Common::NewLine << Common::NewLine << CovarInv << Common::NewLine;
-  }
   return 0;
 }
 

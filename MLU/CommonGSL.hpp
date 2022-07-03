@@ -59,6 +59,8 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline void MapView( Scalar * data_, std::size_t size_, std::size_t stride_ = 1 );
   inline void MapView( std::vector<Scalar> &v ) { MapView( v.data(), v.size() ); }
   inline void MapView( MyVector &v ) { MapView( reinterpret_cast<Scalar *>( v.data ), v.size, v.stride ); }
+  inline void MapRow( MyMatrix &m, std::size_t Row );
+  inline void MapColumn( MyMatrix &m, std::size_t Column );
   inline const Scalar & operator[]( std::size_t i ) const;
   inline Scalar & operator[]( std::size_t i );
   inline bool IsFinite() const;
@@ -137,9 +139,12 @@ bool Vector<COMMON_GSL_TYPE>::operator==( const Vector &o ) const
 
 void Vector<COMMON_GSL_TYPE>::resize( std::size_t size_ )
 {
-  // Re-use existing buffer if it's big enough and I own it
-  if( size_ && owner && block->size >= size_ )
+  // Same size or smaller and I can keep the existing buffer (and stride) - which might be a mapped view
+  if( size_ && size_ <= size )
+    size = size_;
+  else if( size_ && owner && block->size >= size_ )
   {
+    // Re-use existing buffer if it's big enough and I own it
     size = size_;
     stride = 1;
   }
@@ -238,6 +243,8 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   using GSLMatrix = Traits::GSLMatrixType;
   using MyVector  = Vector<COMMON_GSL_TYPE>;
   using MyMatrix  = Matrix<COMMON_GSL_TYPE>;
+  inline void NotEmpty() { if( size1 == 0 || size2 == 0 ) throw std::runtime_error( "Matrix empty" ); }
+  inline void Square() { NotEmpty(); if( size1 != size2 ) throw std::runtime_error( "Matrix not square" ); }
   inline Matrix() : Matrix( 0, 0 ) {};
   inline Matrix( std::size_t size1, std::size_t size2 );
   inline Matrix( const MyMatrix &o ) : Matrix() { *this = o; };
@@ -268,19 +275,16 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
                          Scalar alpha, const MyMatrix &A );
   inline void Row( std::size_t idx, MyVector &v );
   inline void Column( std::size_t idx, MyVector &v );
+  inline void SetDiagonalOne();
+  inline void ZeroUpperTriangle();
 #ifdef COMMON_GSL_DOUBLE
   inline MyMatrix Cholesky( MyVector &S ) const;
   inline MyVector CholeskySolve( const MyVector &b ) const;
   inline MyVector CholeskySolve( const MyVector &b, const MyVector &S ) const;
   inline Scalar CholeskyRCond() const;
   inline MyVector CholeskyScale() const;
-  inline void CholeskyScaleApply( const MyVector &S );
-  inline MyVector CholeskyExtract()
-  {
-    MyVector S{ CholeskyScale() };
-    CholeskyScaleApply( S );
-    return S;
-  }
+  inline void CholeskyScaleApply( const MyVector &S, bool bSetDiagonalToOne = false );
+  inline MyVector CholeskyExtract( bool bSetDiagonalToOne = true );
 #endif
 #ifdef COMMON_GSL_OPTIONAL
   inline MyMatrix Inverse() const;
@@ -289,6 +293,24 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   //inline void TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag );
 #endif
 };
+
+void Vector<COMMON_GSL_TYPE>::MapRow( MyMatrix &m, std::size_t Row )
+{
+  if( m.size1 == 0 || m.size2 == 0 )
+    throw std::runtime_error( "Vector::MapRow() empty matrix" );
+  if( Row >= m.size1 )
+    throw std::runtime_error( "Row " + std::to_string( Row ) + " >= " + std::to_string( m.size1 ) );
+  MapView( reinterpret_cast<Scalar *>( m.data ) + m.tda * Row, m.size2, 1 );
+}
+
+void Vector<COMMON_GSL_TYPE>::MapColumn( MyMatrix &m, std::size_t Column )
+{
+  if( m.size1 == 0 || m.size2 == 0 )
+    throw std::runtime_error( "Vector::MapColumn() empty matrix" );
+  if( Column >= m.size2 )
+    throw std::runtime_error( "Column " + std::to_string( Column ) + " > " + std::to_string( m.size2 ) );
+  MapView( reinterpret_cast<Scalar *>( m.data ) + Column, m.size1, m.tda );
+}
 
 Matrix<COMMON_GSL_TYPE>::Matrix( std::size_t size1_, std::size_t size2_ )
 {
@@ -479,6 +501,21 @@ void Matrix<COMMON_GSL_TYPE>::Column( std::size_t idx, MyVector &v )
   v.MapView( reinterpret_cast<Scalar *>( data ) + idx, size1, tda );
 }
 
+inline void Matrix<COMMON_GSL_TYPE>::SetDiagonalOne()
+{
+  Square();
+  for( std::size_t i = 0; i < size1; ++i )
+    ( *this ) ( i, i ) = 1;
+}
+
+inline void Matrix<COMMON_GSL_TYPE>::ZeroUpperTriangle()
+{
+  Square();
+  for( std::size_t i = 0; i < size1; ++i )
+    for( std::size_t j = i + 1; j < size2; ++j )
+      ( *this ) ( i, j ) = 0;
+}
+
 /*
  Calling this matrix "A" and returned matrix "R" ...
  Input:   lower left and diagonals of A contain matrix to Cholesky decompose (assumed symmetric)
@@ -530,12 +567,25 @@ inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::CholeskyScale() const
   return S;
 }
 
-inline void Matrix<COMMON_GSL_TYPE>::CholeskyScaleApply( const MyVector &S )
+inline void Matrix<COMMON_GSL_TYPE>::CholeskyScaleApply( const MyVector &S, bool bSetDiagonalToOne )
 {
+  Square();
   COMMON_GSL_FUNC( linalg, cholesky_scale_apply )( this, &S );
   for( int i = 0; i < size1; ++i )
     for( int j = 0; j < i; ++j )
       (*this)( j, i ) = (*this)( i, j );
+  if( bSetDiagonalToOne )
+    SetDiagonalOne();
+}
+
+inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::CholeskyExtract( bool bSetDiagonalToOne )
+{
+  Square();
+  MyVector S{ CholeskyScale() };
+  CholeskyScaleApply( S );
+  if( bSetDiagonalToOne )
+    SetDiagonalOne();
+  return S;
 }
 
 #endif // COMMON_GSL_DOUBLE

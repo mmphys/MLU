@@ -309,6 +309,8 @@ extern const std::string sCovarianceInvCholesky;
 extern const std::string sCorrelation;
 extern const std::string sCorrelationCholesky;
 extern const std::string sCorrelationInvCholesky;
+extern const std::string sFitInput;
+extern const std::string sModelPrediction;
 extern const std::string sOperators;
 extern const std::string sAuxNames;
 extern const std::string sSummaryNames;
@@ -1044,6 +1046,47 @@ public:
   VectorView( const Vector<T> &m ) { *this = m; }
   VectorView( const VectorView<T> &m ) { *this = m; }
   VectorView( const std::vector<T> &m ) { *this = m; }
+};
+
+template<typename T> struct BootRep
+{
+  static constexpr int idxCentral{ -1 };
+  Vector<T> Central;
+  Matrix<T> Replica;
+  int extent() const { return Central.size; }
+  int size() const { return Replica.size1; }
+  void resize( int Extent, int NumBoot ) { Central.resize( Extent ); Replica.resize( NumBoot, Extent ); }
+  BootRep() = default;
+  BootRep( int Extent, int NumBoot ) { resize( Extent, NumBoot ); }
+  void Read( H5::Group &g, const std::string &Name );
+  void Write( H5::Group &g, const std::string &Name ) const;
+  inline T * operator[]( int idx )
+  {
+    if( Central.size == 0 )
+      throw std::runtime_error( "Can't access empty BootRep" );
+    if( idx == -1 )
+      return Central.data;
+    if( Replica.size2 != Central.size )
+      throw std::runtime_error( "BoootRep extent mismatch" );
+    if( idx >= Replica.size1 )
+      throw std::runtime_error( "BoootRep index " + std::to_string( idx ) + " >= NumBoot "
+                               + std::to_string( Replica.size1 ) );
+    return Replica.data + Replica.tda * idx;
+  }
+  inline void MapView( Vector<T> &v, int idx )
+  {
+    if( idx == idxCentral )
+      v.MapView( Central );
+    else
+      v.MapRow( Replica, idx );
+  }
+  inline void MapView( VectorView<T> &v, int idx ) const
+  {
+    if( idx == idxCentral )
+      v = Central;
+    else
+      v.MapRow( Replica, idx );
+  }
 };
 
 // A q-value is an integral of the distribution from x to infinity
@@ -2443,7 +2486,7 @@ public:
   using scalar_type = typename Traits::scalar_type;
   static constexpr bool is_complex { Traits::is_complex };
   static constexpr int scalar_count { Traits::scalar_count };
-  static constexpr int idxCentral{ -1 };
+  static constexpr int idxCentral{ BootRep<T>::idxCentral };
 protected:
   int NumSamples_;
   int Nt_;
@@ -2942,15 +2985,15 @@ template <typename T> void Sample<T>::Bin( int binSize_, SampleSource ssTo )
   {
     DeleteWhenOutOfScope = std::move( m_pDataRaw );
     NumSamplesRaw_ = 0;
-    pDst = resizeRaw( static_cast<int>( ConfigCount.size() ) );
+    pDst = resizeRaw( NewNumSamples );
   }
   else
     throw std::runtime_error( "Can only store binned data in Binned or Raw samples" );
-  for( int Bin = 0; Bin < NumSamplesBinned_; ++Bin )
+  for( int Bin = 0; Bin < NewNumSamples; ++Bin )
   {
     for( int t = 0; t < Nt_; ++t )
       pDst[t] = *pSrc++;
-    const int ThisBinSize{ PartialLastBin && Bin==(NumSamplesBinned_-1) ? NumSamplesRaw % binSize_ : binSize_ };
+    const int ThisBinSize{ PartialLastBin && Bin==(NewNumSamples-1) ? NumSamplesRaw % binSize_ : binSize_ };
     for( int i = 1; i < ThisBinSize; ++i )
       for( int t = 0; t < Nt_; ++t )
         pDst[t] += *pSrc++;
@@ -3977,15 +4020,17 @@ public:
   // else this is the number of bootstrap replicas to use when estimating covariance
   int CovarNumBoot = 0;
   int CovarSampleSize = 0;      // What is the appropriate parameter for m to use in the T^2 distribution
-  Common::Vector<T> StdErrorMean; // From all samples of binned data
-  Common::Vector<T> ErrorScaled;  // (Theory - Data) * CholeskyScale
-  Common::Matrix<T> CovarIn;      // Optional. From correlation source
-  Common::Matrix<T> Covar;        // As used in the fit
-  Common::Matrix<T> Correl;       // As used in the fit
-  Common::Matrix<T> CorrelCholesky;
-  Common::Matrix<T> CovarInv;
-  Common::Matrix<T> CorrelInvCholesky;
-  Common::Matrix<T> CovarInvCholesky;
+  Matrix<T> CovarIn;      // Optional. From correlation source
+  Matrix<T> Covar;        // As used in the fit
+  Matrix<T> Correl;       // As used in the fit
+  Matrix<T> CorrelCholesky;
+  Matrix<T> CovarInv;
+  Matrix<T> CorrelInvCholesky;
+  Matrix<T> CovarInvCholesky;
+  BootRep<T> StdErrorMean; // From all samples of binned data
+  BootRep<T> FitInput;
+  BootRep<T> ModelPrediction;
+  BootRep<T> ErrorScaled;  // (Theory - Data) * CholeskyScale
   std::vector<std::string> OpNames;
   using Base = Sample<T>;
   Model() : Base::Sample{} {}
@@ -4075,6 +4120,7 @@ protected:
   void AddConstant( const std::string &Name, std::size_t File, std::size_t idx );
   void AddConstant( const std::string &Name, std::size_t File, std::size_t idx, int e );
   void SetValidatedFitTimes( std::size_t Extent, std::vector<std::vector<int>> &&FitTimes );
+  void MakeCentralReplicaNonRandom();
 public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
   inline bool empty() const { return corr.empty() && constFile.empty(); }
@@ -4094,8 +4140,8 @@ public:
       vResult.MapRow( Cache( ss ), idx );
   }
   void GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedParam> &Params ) const;
-  void InitRandomNumber( SS ss ); // Make sure random numbers needed to build covariances are present
-  void InitRandomNumbers() { InitRandomNumber( SS::Raw ); InitRandomNumber( SS::Binned ); }
+  bool InitRandomNumbers( SS ss ); // Make sure random numbers needed to build covariances are present
+  void InitRandomNumbers() { InitRandomNumbers( SS::Raw ); InitRandomNumbers( SS::Binned ); }
   const std::vector<fint> &RandomCentral( SS ss ) const
   {
     const std::vector<fint> &r{ RandomCentralBuf[ ss == SS::Raw ? 0 : 1 ] };
@@ -4118,16 +4164,19 @@ public:
     }
     return r;
   }
-  void MakeErr( int idx, Vector<T> &Var ) const;
   // All of these functions make a covariance matrix estimate of \Sigma_{\bar{\vb{x}}}, i.e. error of the mean
   // From what is already a bootstrap replica, and therefore only the central replica
   void MakeCovarFromBootstrap( SS ss, Matrix<T> &Covar ) const;
+  void MakeVarFromBootstrap( SS ss, Vector<T> &Var ) const;
   // From the underlying raw/(re)binned data (without bootstrapping)
   void MakeCovarFromNonBootstrap( int idx, SS ss, Matrix<T> &Covar ) const;
+  void MakeVarFromNonBootstrap( int idx, SS ss, Vector<T> &Var ) const;
   // Calls the appropriate one of the previous two functions, depending on what the data are
   void MakeCovariance( int idx, SS ss, Matrix<T> &Covar ) const;
+  void MakeVariance( int idx, SS ss, Vector<T> &Covar ) const;
   // Make covariance matrix using a secondary bootstrap - Random numbers must be provided by caller
-  void MakeCovariance( int idx, SS ss, Matrix<T> &Covar, int CovarNumBoot, const MatrixView<fint> &Random)const;
+  // I.e. unfrozen covariance matrix
+  void MakeCovariance( int idx, SS ss, Matrix<T> &Covar, const MatrixView<fint> &Random)const;
   void SaveMatrixFile( const Matrix<T> &m, const std::string &Type, const std::string &FileName,
                        std::vector<std::string> &Abbreviations,
                        const std::vector<std::string> *FileComments = nullptr,

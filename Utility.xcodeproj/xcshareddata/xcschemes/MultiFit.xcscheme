@@ -82,7 +82,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--savecmat"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--Hotelling 0"
@@ -93,12 +93,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--covsrc raw -o data_comparison1/FitAllDebug/ -i data_comparison1/boot_ "
-            isEnabled = "YES">
+            argument = "--covsrc h5,fit_felix_central.hdf5,covarianceMatrix -o data_comparison2/FitDebugFelix/FelixCov_ -i data_comparison2/unbinned_"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--covsrc bootstrap -o data_comparison1/FitAllDebugBoot/ -i data_comparison1/boot_ "
+            argument = "--covsrc binned -o data_comparison2/FitDebugFelix/ -i data_comparison2/unbinned_"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--covsrc raw -o data_comparison2/FitDebugTobi/raw_ -i data_comparison2/binned_"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--freeze"
@@ -114,6 +118,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "pLS_pLS.&apos;*&apos;.h5 pLL_pLS.&apos;*&apos;.h5 pLS_aLS.&apos;*&apos;.h5 pLS_aLL.&apos;*&apos;.h5 aLS_aLS.&apos;*&apos;.h5 aLL_aLS.&apos;*&apos;.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "pLS_pLS.&apos;*&apos;.h5,,,n pLL_pLS.&apos;*&apos;.h5,,,n pLS_aLS.&apos;*&apos;.h5,,,n pLS_aLL.&apos;*&apos;.h5,,,n aLS_aLS.&apos;*&apos;.h5,,,n aLL_aLS.&apos;*&apos;.h5,,,n"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

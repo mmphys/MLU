@@ -53,8 +53,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "data_comparison&apos;*&apos;.h5 data_comparison&apos;*&apos;.h5,S"
+            argument = "data_comparison&apos;*&apos;.h5"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "data_comparison&apos;*&apos;.h5,S"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--debug"

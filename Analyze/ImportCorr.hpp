@@ -74,7 +74,7 @@ protected:
   void DebugDump( const std::vector<std::vector<Matrix>> &v ) const;
   void ReadInput( const std::string &Filename );
   void SpreadData( std::vector<Fold> &out, const Scalar *pSource, int idx, int NumSamples );
-  void SpreadDataBinned( std::vector<Fold> &out, const Matrix &RawData );
+  void SpreadDataRawBoot( std::vector<Fold> &out, const Matrix &RawData );
   void SaveRawData( std::vector<Fold> &out, bool bPreserveSign );
   void Write( const std::string &Base, bool bPreserveSign );
 public:

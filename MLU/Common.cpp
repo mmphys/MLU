@@ -128,6 +128,8 @@ const std::string sCovarianceInvCholesky{ sCovarianceInv + "Cholesky" };
 const std::string sCorrelation{ "Correlation" };
 const std::string sCorrelationCholesky{ sCorrelation + "Cholesky" };
 const std::string sCorrelationInvCholesky{ sCorrelation + "InvCholesky" };
+const std::string sFitInput{ "FitInput" };
+const std::string sModelPrediction{ "ModelPrediction" };
 const std::string sOperators{ "Operators" };
 const std::string sAuxNames{ "AuxNames" };
 const std::string sSummaryNames{ "SummaryNames" };
@@ -521,6 +523,22 @@ template class VectorView<double>;
 template class VectorView<float>;
 template class VectorView<std::complex<double>>;
 template class VectorView<std::complex<float>>;
+
+// Read a bootstrap replica from an HDF5 group
+template <typename T>
+void BootRep<T>::Read( ::H5::Group &g, const std::string &Name )
+{
+  H5::ReadVector( g, Name + s_C, Central );
+  H5::ReadMatrix( g, Name, Replica );
+}
+
+// Write a bootstrap replica to an HDF5 group
+template <typename T>
+void BootRep<T>::Write( ::H5::Group &g, const std::string &Name ) const
+{
+  H5::WriteVector( g, Name + s_C, Central );
+  H5::WriteMatrix( g, Name, Replica );
+}
 
 HotellingDist::HotellingDist( unsigned int p_, unsigned int m_ )
 : p{p_}, m{m_}, Nu{m - p + 1}, Factor{ Nu / ( static_cast<double>( p ) * m ) }
@@ -1491,22 +1509,6 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
   CovarFrozen = ( i8 != 0 );
   try
   {
-    H5::ReadVector( g, sStdErrorMean+s_C, StdErrorMean );
-  }
-  catch(const ::H5::Exception &)
-  {
-    ::H5::Exception::clearErrorStack();
-  }
-  try
-  {
-    H5::ReadVector( g, sErrorScaled+s_C, ErrorScaled );
-  }
-  catch(const ::H5::Exception &)
-  {
-    ::H5::Exception::clearErrorStack();
-  }
-  try
-  {
     H5::ReadMatrix( g, sCovarianceIn+s_C, CovarIn );
   }
   catch(const ::H5::Exception &)
@@ -1556,6 +1558,38 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
   try
   {
     H5::ReadMatrix( g, sCovarianceInvCholesky+s_C, CovarInvCholesky );
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  try
+  {
+    StdErrorMean.Read( g, sStdErrorMean );
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  try
+  {
+    FitInput.Read( g, sFitInput );
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  try
+  {
+    ModelPrediction.Read( g, sModelPrediction );
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  try
+  {
+    ErrorScaled.Read( g, sErrorScaled );
   }
   catch(const ::H5::Exception &)
   {
@@ -1665,24 +1699,17 @@ int Model<T>::WriteAttributes( ::H5::Group &g )
   a = g.createAttribute( sCovarFrozen, ::H5::PredType::STD_U8LE, ds1 );
   a.write( ::H5::PredType::NATIVE_INT8, &i8 );
   a.close();
-  if( H5::WriteVector( g, sStdErrorMean+s_C, StdErrorMean ) )
-    iReturn++;
-  if( H5::WriteVector( g, sErrorScaled+s_C, ErrorScaled ) )
-    iReturn++;
-  if( H5::WriteMatrix( g, sCovarianceIn+s_C, CovarIn ) )
-    iReturn++;
-  if( H5::WriteMatrix( g, sCovariance+s_C, Covar ) )
-    iReturn++;
-  if( H5::WriteMatrix( g, sCorrelation+s_C, Correl ) )
-    iReturn++;
-  if( H5::WriteMatrix( g, sCorrelationCholesky+s_C, CorrelCholesky ) )
-    iReturn++;
-  if( H5::WriteMatrix( g, sCovarianceInv+s_C, CovarInv ) )
-    iReturn++;
-  if( H5::WriteMatrix( g, sCorrelationInvCholesky+s_C, CorrelInvCholesky ) )
-    iReturn++;
-  if( H5::WriteMatrix( g, sCovarianceInvCholesky+s_C, CovarInvCholesky ) )
-    iReturn++;
+  H5::WriteMatrix( g, sCovarianceIn+s_C, CovarIn );
+  H5::WriteMatrix( g, sCovariance+s_C, Covar );
+  H5::WriteMatrix( g, sCorrelation+s_C, Correl );
+  H5::WriteMatrix( g, sCorrelationCholesky+s_C, CorrelCholesky );
+  H5::WriteMatrix( g, sCovarianceInv+s_C, CovarInv );
+  H5::WriteMatrix( g, sCorrelationInvCholesky+s_C, CorrelInvCholesky );
+  H5::WriteMatrix( g, sCovarianceInvCholesky+s_C, CovarInvCholesky );
+  StdErrorMean.Write( g, sStdErrorMean );
+  FitInput.Write( g, sFitInput );
+  ModelPrediction.Write( g, sModelPrediction );
+  ErrorScaled.Write( g, sErrorScaled );
   {
     std::ostringstream os;
     os << CovarSource;
@@ -1741,6 +1768,27 @@ template class Model<double>;
 template class Model<float>;
 template class Model<std::complex<double>>;
 template class Model<std::complex<float>>;
+
+// Make non-random numbers 0 ... m.size1 - 1 to simplify central replica code
+// If the sample is already bootstrapped, then we won't need these numbers
+template <typename T>
+void DataSet<T>::MakeCentralReplicaNonRandom()
+{
+  for( int i = 0; i < 2; ++i )
+  {
+    std::vector<fint> &c{ RandomCentralBuf[i] };
+    const SS ss{ i == 0 ? SS::Raw : SS::Binned };
+    const int Num{ corr.empty() || ( ss == SS::Raw && corr[0].bRawBootstrap ) ? 0 : corr[0].NumSamples( ss ) };
+    if( !Num )
+      c.clear();
+    else
+    {
+      c.resize( Num );
+      for( fint i = 0; i < c.size(); ++i )
+        c[i] = i;
+    }
+  }
+}
 
 template <typename T>
 void DataSet<T>::clear()
@@ -1854,24 +1902,25 @@ void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedP
     vResult[p.idx] = Src[p.src.File][p.src.idx];
 }
 
-// Initialise random numbers I will need
+// Initialise random numbers I will need if I'm to get (co)variance on non-central replicas
 template <typename T>
-void DataSet<T>::InitRandomNumber( SS ss )
+bool DataSet<T>::InitRandomNumbers( SS ss )
 {
-  if( ss == SS::Binned || ( ss == SS::Raw && !corr[0].bRawBootstrap ) )
+  bool bMade{ false };
+  if( ss == SS::Binned || ss == SS::Raw )
   {
     const int i{ ss == SS::Raw ? 0 : 1 };
-    const int Count{ corr[0].NumSamples( ss ) };
-    if( Count )
+    MatrixView<fint> &r{ RandomViews[i] };
+    std::vector<fint> &Buffer{ RandomBuffer[i] };
+    const int Count{corr.empty() || ( ss == SS::Raw && corr[0].bRawBootstrap ) ? 0 : corr[0].NumSamples( ss )};
+    if( !Count )
     {
-      // Make non-random numbers 0 ... m.size1 - 1 to simplify central replica code
-      std::vector<fint> &c{ RandomCentralBuf[i] };
-      c.resize( Count );
-      for( fint i = 0; i < c.size(); ++i )
-        c[i] = i;
+      r.clear();
+      Buffer.clear();
+    }
+    else
+    {
       // Make Random numbers
-      MatrixView<fint> &r{ RandomViews[i] };
-      std::vector<fint> &Buffer{ RandomBuffer[i] };
       if(   corr[0].RandNum() // Do I have original bootstrap random numbers
          && corr[0].SampleSize == Count ) // Are the random numbers over same range (0...SampleSize-1)
       {
@@ -1883,32 +1932,13 @@ void DataSet<T>::InitRandomNumber( SS ss )
       else
       {
         // Generate random numbers
-        GenerateRandom( Buffer, corr[0].Seed_, MaxSamples, Count );
-        r.Map( Buffer.data(), corr[0].NumSamples(), Count );
+        GenerateRandom( Buffer, corr[0].Name_.Seed, MaxSamples, Count );
+        r.Map( Buffer.data(), MaxSamples, Count );
+        bMade = true;
       }
     }
   }
-}
-
-// Make the error (i.e. square root of variance)
-// Always from all available bootstrap replicas
-template <typename T>
-void DataSet<T>::MakeErr( int idx, Vector<T> &Var ) const
-{
-  Var.resize( Extent );
-  for( int i = 0; i < Extent; ++i )
-    Var[i] = 0;
-  for( int replica = 0; replica < MaxSamples; ++replica )
-  {
-    for( int i = 0; i < Extent; ++i )
-    {
-      T z{ ( mBoot( replica, i) - vCentral[i] ) };
-      Var[i] += Common::Squared( z );
-    }
-  }
-  const auto Norm{ 1 / static_cast<typename GSLTraits<T>::Real>( MaxSamples ) };
-  for( int i = 0; i < Extent; ++i )
-    Var[i] = static_cast<T>( std::sqrt( Var[i] * Norm ) );
+  return bMade;
 }
 
 // Make a covariance matrix estimate of \Sigma_{\bar{\vb{x}}}, i.e. error of the mean
@@ -1941,6 +1971,28 @@ void DataSet<T>::MakeCovarFromBootstrap( SS ss, Matrix<T> &Covar ) const
       if( i != j )
         Covar( j, i ) = z;
     }
+}
+
+template <typename T>
+void DataSet<T>::MakeVarFromBootstrap( SS ss, Vector<T> &Var ) const
+{
+  Var.resize( Extent );
+  for( int i = 0; i < Extent; ++i )
+    Var[i] = 0;
+  VectorView<T> Data;
+  Vector<T> z( Extent );
+  const Matrix<T> &m{ Cache( ss ) };
+  for( int replica = 0; replica < m.size1; ++replica )
+  {
+    Data.MapRow( m, replica );
+    for( int i = 0; i < Extent; ++i )
+      z[i] = Data[i] - vCentral[i];
+    for( int i = 0; i < Extent; ++i )
+      Var[i] += Squared( z[i] );
+  }
+  const T Norm{ static_cast<T>( 1 ) / static_cast<T>( m.size1 ) };
+  for( int i = 0; i < Extent; ++i )
+    Var[i] *= Norm;
 }
 
 // Make a covariance matrix estimate of \Sigma_{\bar{\vb{x}}}, i.e. error of the mean
@@ -1990,6 +2042,43 @@ void DataSet<T>::MakeCovarFromNonBootstrap( int idx, SS ss, Matrix<T> &Covar ) c
     }
 }
 
+template <typename T>
+void DataSet<T>::MakeVarFromNonBootstrap( int idx, SS ss, Vector<T> &Var ) const
+{
+  VectorView<T> Mean;
+  VectorView<fint> Replace;
+  if( idx == Fold<T>::idxCentral )
+  {
+    // Central replica - no replacement
+    Mean = vCentral;
+    Replace = RandomCentral( ss );
+  }
+  else
+  {
+    // bootstrap replica
+    Mean.MapRow( mBoot, idx );
+    Replace.MapRow( RandomNumbers( ss ), idx );
+  }
+
+  Var.resize( Extent );
+  for( int i = 0; i < Extent; ++i )
+    Var[i] = 0;
+  VectorView<T> Data;
+  Vector<T> z( Extent );
+  const Matrix<T> &m{ Cache( ss ) };
+  for( int replica = 0; replica < m.size1; ++replica )
+  {
+    Data.MapRow( m, Replace[replica] );
+    for( int i = 0; i < Extent; ++i )
+      z[i] = Data[i] - Mean[i];
+    for( int i = 0; i < Extent; ++i )
+      Var[i] += Squared( z[i] );
+  }
+  const T Norm{ static_cast<T>( 1 ) / ( static_cast<T>( m.size1 - 1 ) * static_cast<T>( m.size1 ) ) };
+  for( int i = 0; i < Extent; ++i )
+    Var[i] *= Norm;
+}
+
 // Make a covariance matrix estimate of \Sigma_{\bar{\vb{x}}}, i.e. error of the mean
 // Call the appropriate one of the previous two functions, depending on what the data are
 template <typename T>
@@ -2005,12 +2094,34 @@ void DataSet<T>::MakeCovariance( int idx, SS ss, Matrix<T> &Covar ) const
     MakeCovarFromNonBootstrap( idx, ss, Covar );
 }
 
+template <typename T>
+void DataSet<T>::MakeVariance( int idx, SS ss, Vector<T> &Var ) const
+{
+  if( ss == SampleSource::Bootstrap || ( ss == SampleSource::Raw && corr[0].bRawBootstrap ) )
+  {
+    if( idx != Fold<T>::idxCentral )
+      throw std::runtime_error( "Can only make variance from bootstrap on central replica" );
+    MakeVarFromBootstrap( ss, Var );
+  }
+  else
+    MakeVarFromNonBootstrap( idx, ss, Var );
+}
+
 // Make covariance matrix using a secondary bootstrap - Random numbers must be provided by caller
+// I.e. unfrozen covariance matrix
 template <typename T> void DataSet<T>::
-MakeCovariance( int idx, SS ss, Matrix<T> &Covar, int CovarNumBoot, const MatrixView<fint> &Random ) const
+MakeCovariance( int idx, SS ss, Matrix<T> &Covar, const MatrixView<fint> &Random ) const
 {
   if( ss == SampleSource::Bootstrap || ( ss == SampleSource::Raw && corr[0].bRawBootstrap ) )
     throw std::runtime_error( "Can't rebootstrap a bootstrap" );
+  const Matrix<T> &m{ Cache( ss ) };
+  if( m.size1 != Random.size2() )
+  {
+    std::ostringstream os;
+    os << ss << " data have " << m.size1 << " samples, but random numbers expect "
+       << Random.size2() << " samples";
+    throw std::runtime_error( os.str().c_str() );
+  }
   VectorView<T> Mean;
   VectorView<fint> Replace;
   if( idx == Fold<T>::idxCentral )
@@ -2032,9 +2143,8 @@ MakeCovariance( int idx, SS ss, Matrix<T> &Covar, int CovarNumBoot, const Matrix
       Covar( i, j ) = 0;
   VectorView<T> Data;
   Vector<T> z( Extent );
-  const Matrix<T> &m{ Cache( ss ) };
   const T InvBootLen{ static_cast<T>( 1 ) / static_cast<T>( m.size1 ) };
-  for( int replica = 0; replica < CovarNumBoot; ++replica )
+  for( int replica = 0; replica < Random.size1(); ++replica )
   {
     // Perform the covariance (inner) bootstrap
     for( int i = 0; i < Extent; ++i )
@@ -2052,7 +2162,7 @@ MakeCovariance( int idx, SS ss, Matrix<T> &Covar, int CovarNumBoot, const Matrix
       for( int j = 0; j <= i; ++j )
         Covar( i, j ) += z[i] * z[j];
   }
-  const T Norm{ static_cast<T>( 1 ) / static_cast<T>( CovarNumBoot ) };
+  const T Norm{ static_cast<T>( 1 ) / static_cast<T>( Random.size1() ) };
   for( int i = 0; i < Extent; ++i )
     for( int j = 0; j <= i; ++j )
     {
@@ -2158,6 +2268,7 @@ int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int Comp
     if( NSamples == 0 || NSamples > MaxSamples )
       NSamples = MaxSamples;
     OriginalBinSize = corr[i].binSize; // Because this will be overwritten
+    MakeCentralReplicaNonRandom();
   }
   return i;
 }
@@ -2286,10 +2397,18 @@ void DataSet<T>::Rebin( const std::vector<int> &NewSize )
     // bin size 0 => auto (i.e. all measurements on same config binned together)
     RebinSize.push_back( NewSize.empty() ? 0 : NewSize[i < NewSize.size() ? i : NewSize.size() - 1] );
     if( RebinSize.back() )
-      corr[i].Bin( RebinSize.back() );
+      corr[i].Bin( RebinSize.back(), SS::Raw );
     else
-      corr[i].Bin();
+      corr[i].Bin( SS::Raw );
+    if( corr[i].NumSamplesRaw() != corr[0].NumSamplesRaw() )
+    {
+      std::ostringstream os;
+      os << "Rebinned corr " << i << " has " << corr[i].NumSamplesRaw()
+         << " samples, others have " << corr[i].NumSamplesRaw();
+      throw std::runtime_error( os.str().c_str() );
+    }
   }
+  MakeCentralReplicaNonRandom();
 }
 
 template class DataSet<double>;

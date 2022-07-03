@@ -192,18 +192,27 @@ struct CovarParams
   std::vector<fint> vCovarRandom; // Contains the random numbers iff I generated them
   // Freeze covariance to the central replica
   bool bFreeze;
+  // Manually loaded correlation matrix
+  Matrix Covar;
+  // Constructor
   CovarParams( const Common::CommandLine &cl, DataSet &ds );
+  // Can we compute (co)variance on non-central replicas - i.e. do we have rebinned data
+  inline bool SupportsUnfrozen() const { return ds.corr[0].NumSamplesBinned(); }
   // Source is a bootstrap - only valid to compute variance on central replica
-  inline bool CentralBootOnly() const
+  inline bool SourceIsBootstrap() const
   { return Source == SS::Bootstrap || ( Source == SS::Raw && ds.corr[0].bRawBootstrap ); }
   // This is the appropriate parameter for m to use in the T^2 distribution
   inline int CovarSampleSize() const
   {
-    return CentralBootOnly() ? ds.corr[0].SampleSize
-                             : ds.corr[0].NumSamples( Source==SS::Raw ? SS::Raw : SS::Binned );
+    return SourceIsBootstrap() ? ds.corr[0].SampleSize
+                               : ds.corr[0].NumSamples( Source==SS::Raw ? SS::Raw : SS::Binned );
   }
   // Make correlation matrix, then scale it by variance of data on each replica
-  inline bool TwoStep() const { return Source == Common::SampleSource::Raw || !RebinSize.empty(); }
+  inline bool OneStep( int Replica ) const
+  {
+    // TODO: support covar from replica data
+    return CovarNumBoot || (Replica == Fold::idxCentral && (Source == SS::Binned || Source == SS::Bootstrap) );
+  }
   // How many covariance samples are there
   inline int CovarCount() const { return ds.corr[0].NumSamples( Source ); }
 };
@@ -223,13 +232,15 @@ public:
   // These variables change on each iteration
   int idx;
   Matrix Covar; // Covariance matrix used in the fit
+  Matrix Correl; // Correlation matrix
   Vector StdErrorMean; // sqrt of diagonals of Covar
   // GSL:     Cholesky decomposition of InverseCorrelationMatrix
   // Minuit2: Cholesky decomposition of CorrelationMatrix
   Matrix Cholesky;
   Vector CholeskyDiag; // 1 / StdErrorMean
   VectorView Data;        // Data points we are fitting
-  mutable Vector Error;   // (Theory - Data) * CholeskyScale
+  Vector Theory;  // Theory prediction of our model on this replica
+  mutable Vector Error;   // (Theory - Data) * CholeskyScale (mutable because of Minuit2)
   // These next are for model parameters
   Vector ModelParams;
   std::vector<std::pair<double,int>> SortingHat;
@@ -240,6 +251,7 @@ protected:
   std::vector<Vector> ModelBuffer;
   // Helper functions
   virtual ParamState * MakeParamState( const Parameters &Params ) = 0;
+  void SaveStdError();
 public:
   FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
   virtual ~FitterThread() {}

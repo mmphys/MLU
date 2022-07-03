@@ -207,7 +207,7 @@ void Importer::SpreadData( std::vector<Fold> &out, const Scalar *pSource, int id
   }
 }
 
-void Importer::SpreadDataBinned( std::vector<Fold> &out, const Matrix &BinnedData )
+void Importer::SpreadDataRawBoot( std::vector<Fold> &out, const Matrix &BinnedData )
 {
   const Scalar *pSource{ BinnedData.data };
   std::vector<Scalar *> C( out.size() );
@@ -260,8 +260,7 @@ void Importer::SaveRawData( std::vector<Fold> &out, bool bPreserveSign )
     out[f].SampleSize = NumConfigs;
     out[f].binSize = NumTimeslices;
     out[f].FileList.reserve( NumSamplesRaw );
-    out[f].resizeRaw( NumSamplesRaw );
-    Scalar * pRawData{ out[f].getRaw() };
+    Scalar * pRawData{ out[f].resizeRaw( NumSamplesRaw ) };
     for( int c = 0; c < NumConfigs; ++c )
     {
       sName.resize( SizeConf );
@@ -322,15 +321,34 @@ void Importer::Write( const std::string &Base, bool bPreserveSign )
   }
   std::string Filename{ Base };
   const std::size_t BaseLen{ Filename.length() };
-  for( int i = 0; i < 2; ++i )
+  for( int i = 0; i < 3; ++i )
   {
     Filename.resize( BaseLen );
     if( i == 0 )
       Filename.append( "binned" );
+    else if( i == 1 )
+    {
+      SpreadDataRawBoot( out, mUnbinnedData );
+      Filename.append( "binned_rawboot" );
+    }
     else
     {
-      SpreadDataBinned( out, mUnbinnedData );
-      Filename.append( "boot" );
+      SpreadData( out, vUnbinnedCentral.data, Fold::idxCentral, 1 );
+      SpreadData( out, mUnbinnedData.data, 0, NumSamples );
+      SaveRawData( out, bPreserveSign );
+      for( std::size_t f = 0; f < corrInfo.size(); ++f )
+      {
+        out[f].Bin( 1 );
+        out[f].ConfigCount.resize( out[f].NumSamplesRaw() );
+        for( int j = 0; j < out[f].NumSamplesRaw(); ++j )
+        {
+          out[f].ConfigCount[j].Config = j;
+          out[f].ConfigCount[j].Count = 1;
+        }
+        out[f].resizeRaw( 0 );
+        out[f].MakeCorrSummary( nullptr );
+      }
+      Filename.append( "unbinned" );
     }
     if( bPreserveSign )
       Filename.append( 1, 's' );
