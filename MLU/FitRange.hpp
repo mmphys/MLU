@@ -64,10 +64,10 @@ FitRange_hpp
 
  FitRange specialisations
  
- FitRangeAbsolute:  ti:tf[dti[:dtf]]
+ FitRangeAbsolute:  ti:tf[:dti[:dtf]]
                     All combinations of Start [ti,ti+dti) ... [tf,tf+dtf)
 
- FitRangeRelative:  Rn:ti:tf[dti[:dtf]]
+ FitRangeRelative:  Rn:ti:tf[:dti[:dtf]]
                     All combinations of Range n ti + [ti,ti+dti) ... Range n tf +  [tf,tf+dtf)
 
  */
