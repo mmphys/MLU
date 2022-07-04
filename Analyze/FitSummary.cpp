@@ -4,7 +4,7 @@
  
  Source file: FitSummary.cpp
  
- Copyright (C) 2020
+ Copyright (C) 2020-2022
  
  Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
  
@@ -26,78 +26,79 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include <MLU/Common.hpp>
-
-#include <set>
-#include <gsl/gsl_randist.h>
-
-using scalar = double;
-using Model = Common::Model<scalar>;
+#include "FitSummary.hpp"
 
 const std::string &Sep{ Common::Space };
 const std::string &NL{ Common::NewLine };
 const std::string sIndent{ "  " };
 const std::string sError{ "Error: " };
 
-struct FitTimes
+std::string FitTimes::tfLabel() const
 {
-  int ti;
-  int tf;
-  std::string Extra;
-  unsigned int NumDataPoints;
-};
+  std::string s;
+  for( std::size_t i = 1; i < time.size(); ++i )
+  {
+    if( i != 1 )
+      s.append( 1, '_' );
+    s.append( std::to_string( time[i] ) );
+  }
+  return s;
+}
+
+// The old file format didn't have any information containing the timeslices in the fit
+// In this case I guess based on the filename and the number of files
+unsigned int FitTimes::GuessOldNumDataPoints( int NumFiles ) const
+{
+  unsigned int Num{ 0 };
+  for( std::size_t i = 0; i < time.size(); i += 2 )
+    Num += time[i+1] - time[i] + 1;
+  if( time.size() == 2 )
+    Num *= NumFiles;
+  return Num;
+}
+
+bool FitTimes::Parse( std::string Times )
+{
+  for( auto &c : Times )
+    if( c == '_' )
+      c = ' ';
+  try { time = Common::ArrayFromString<int>( Times ); } catch(...) {}
+  if( time.size() & 1 )
+    time.clear();
+  return !time.empty();
+}
 
 std::ostream &operator<<( std::ostream &s, const FitTimes &ft )
 {
-  s << ft.ti << ':' << ft.tf << "(";
-  if( !ft.Extra.empty() )
-    s << ft.Extra << ",";
-  s << ft.NumDataPoints << ")";
-  return s;
+  for( auto t : ft.time )
+    s << Sep << t;
+  return s << Sep << ft.tfLabel();
+}
+
+void FitTimes::WriteInitialColumnNames( std::ostream &s ) const
+{
+  s << " ti tf";
+  for( std::size_t i = 1; i * 2 < time.size(); ++i )
+  {
+    s << " ti" << i << " tf" << i;
+  }
+  s << " tfLabel NumDataPoints dof SampleSize ";
 }
 
 bool operator<( const FitTimes &lhs, const FitTimes &rhs )
 {
-  if( lhs.ti != rhs.ti )
-    return lhs.ti < rhs.ti;
-  if( lhs.tf != rhs.tf )
-    return lhs.tf < rhs.tf;
-  return Common::CompareIgnoreCase( lhs.Extra, rhs.Extra ) < 0;
+  if( lhs.time.empty() || lhs.time.size() != rhs.time.size() )
+    throw std::runtime_error( "Mismatched numbers of fit ranges" );
+  for( std::size_t i = 0; i < lhs.time.size(); ++i )
+    if( lhs.time[i] != rhs.time[i] )
+      return lhs.time[i] < rhs.time[i];
+  return false;
 }
 
-struct FitData
+std::ostream &operator<<( std::ostream &s, const FitData &d )
 {
-  scalar SortBy;
-  scalar Stat;
-  FitTimes ft;
-  int dof;
-  int SampleSize;
-  std::string Parameters;
-  std::size_t idxModel;
-  int Seq = 0;
-  FitData() = default;
-  FitData( scalar sortBy_, scalar stat_, FitTimes ft_, int dof_, int SampleSize_,
-           const std::string &Parameters_,std::size_t idx_Model)
-  : SortBy{sortBy_}, Stat{stat_}, ft{ft_}, dof{dof_}, SampleSize{SampleSize_},
-    Parameters{Parameters_}, idxModel{idx_Model} {}
-  void Write( std::ostream &s, unsigned int NumDataPoints ) const
-  {
-    std::string tfLabel{ std::to_string( ft.tf ) };
-    if( !ft.Extra.empty() )
-    {
-      tfLabel.append( 1, '_' );
-      tfLabel.append( ft.Extra );
-    }
-    s << Seq << Sep << ft.ti << Sep << ft.tf << Sep << tfLabel << Sep << NumDataPoints << Sep << dof
-      << Sep << SampleSize << Sep << Parameters << NL;
-  }
-};
-
-struct TestStatKey
-{
-  scalar TestStatistic;
-  FitTimes ft;
-};
+  return s << d.Seq << d.ft << Sep << d.NumDataPoints << Sep << d.dof << Sep << d.SampleSize << Sep << d.Parameters << NL;
+}
 
 bool operator<( const TestStatKey &lhs, const TestStatKey &rhs )
 {
@@ -105,31 +106,6 @@ bool operator<( const TestStatKey &lhs, const TestStatKey &rhs )
     return lhs.TestStatistic < rhs.TestStatistic;
   return lhs.ft < rhs.ft;
 }
-
-// When I first parse file names, I split them into separate lists for each base
-struct FileInfo
-{
-  FitTimes ft;
-  std::string FileName;
-  FileInfo( const FitTimes ft_, const std::string &FileName_ ) : ft{ft_}, FileName{FileName_} {}
-};
-
-struct Summariser
-{
-  const bool bSaveCMat;
-  const scalar Threshold;
-  const std::string inBase;
-  const std::string outBaseFileName;
-  using BaseList = std::map<std::string, std::vector<FileInfo>>;
-  BaseList lBase;
-protected:
-  BaseList MakeBaseList( const Common::CommandLine &cl );
-  void SaveCMat(const std::vector<Model> &Corr, const int NumBoot, const std::string &sFileName,
-                const std::vector<int> &OpIndices, bool bInvertNeg, bool bSingleModel );
-public:
-  void Run();
-  Summariser( const Common::CommandLine &cl );
-};
 
 void Summariser::SaveCMat( const std::vector<Model> &Corr, const int NumBoot, const std::string &sFileName,
                            const std::vector<int> &OpIndices, bool bInvertNeg, bool bSingleModel )
@@ -252,39 +228,12 @@ Summariser::Summariser( const Common::CommandLine &cl )
     std::size_t NumExtra{ n.Extra.size() };
     if( !Common::FileExists( sFileName ) )
       throw std::runtime_error( sFileName + " doesn't exist" );
-    if( !NumExtra )
+    if( NumExtra != 2 )
       throw std::runtime_error( "No fit type in " + sFileName );
     std::string sFitType{ n.Extra[NumExtra - 1] };
     const std::size_t pos_ti = sFitType.find_first_of( '_' );
-    bool bOK{ false };
     FitTimes ft;
-    if( pos_ti != std::string::npos )
-    {
-      const std::size_t pos_tf{ sFitType.find_first_of( '_', pos_ti + 1 ) };
-      if( pos_tf != std::string::npos )
-      {
-        const std::size_t pos_extra{ sFitType.find_first_of( '_', pos_tf + 1 ) };
-        if( pos_extra != std::string::npos )
-          ft.Extra = sFitType.substr( pos_extra + 1 );
-        for( std::size_t i = pos_ti + 1; i < sFitType.length(); ++i )
-          if( sFitType[i] == '_' )
-            sFitType[i] = ' ';
-        std::vector<int> Ranges;
-        try{
-          Ranges = Common::ArrayFromString<int>( sFitType.substr( pos_ti + 1 ) );
-        } catch(...) {}
-        if( !Ranges.empty() && !( Ranges.size() % 2 ) ) // Must contain an even number
-        {
-          ft.ti = Ranges[0];
-          ft.tf = Ranges[1];
-          ft.NumDataPoints = 0;
-          for( std::size_t i = 0; i < Ranges.size(); i += 2 )
-            ft.NumDataPoints += Ranges[i + 1] - Ranges[i] + 1;
-          bOK = true;
-        }
-      }
-    }
-    if( !bOK )
+    if( pos_ti == std::string::npos || !ft.Parse( sFitType.substr( pos_ti + 1 ) ) )
       throw std::runtime_error( "Error extracting fit ranges from " + sFileName );
     sFitType.resize( pos_ti );
     // The master key for this record is the base filename of the output
@@ -355,9 +304,6 @@ void Summariser::Run()
         // Save the summary of the parameters for this file
         ss.str("");
         m.WriteSummaryData( ss );
-        const unsigned int NumDataPoints{ ThisFile.ft.Extra.empty() ? (m.tf - m.ti + 1) * m.NumFiles
-                                        : ThisFile.ft.NumDataPoints};
-        ThisFile.ft.NumDataPoints = NumDataPoints;
         const vEr & ChisqDof{ m.getSummaryData()[m.Nt() - 1] };
         const vEr ChiSq{ ChisqDof * m.dof }; // Really wish I'd saved the test statistic, not reduced test statistic
         // Chi squared statistic and Q-value (probability of a worse statistic)
@@ -378,7 +324,9 @@ void Summariser::Run()
         }
         // save the model in my list
         Fits.emplace( std::make_pair( ThisFile.ft,
-                      FitData(1-SortStat,SortStat,ThisFile.ft,m.dof,m.SampleSize,ss.str(),Models.size())));
+                                      FitData( 1 - SortStat, SortStat, ThisFile.ft,
+                                               m.ErrorScaled.extent() ? m.ErrorScaled.extent() : m.NumFiles,
+                                               m.dof, m.SampleSize, ss.str(), Models.size() ) ) );
         Models.emplace_back( std::move( m ) );
       }
       catch( const std::exception &e )
@@ -388,7 +336,6 @@ void Summariser::Run()
       }
     }
     // Update the fits with sorted sequence number for test statistic and save sorted file
-    static const std::string InitialColumnNames{ " ti tf tfLabel NumDataPoints dof SampleSize " };
     {
       // Sort the fits by chi-squared
       std::set<TestStatKey> SortSet;
@@ -401,13 +348,15 @@ void Summariser::Run()
       std::ofstream s( sFileName );
       Common::SummaryHeader<scalar>( s, sFileName );
       s << Comments;
-      s << "Seq" << InitialColumnNames << ColumnNames << NL;
+      s << "Seq";
+      Fits.begin()->first.WriteInitialColumnNames( s );
+      s << ColumnNames << NL;
       int SortSeq{ 0 };
       for( const TestStatKey &z : SortSet )
       {
         FitData & d{ Fits[z.ft] };
         d.Seq = SortSeq++;
-        d.Write( s, z.ft.NumDataPoints );
+        s << d;
       }
     }
     // Now make the output file with blocks for each ti, sorted by tf
@@ -423,9 +372,9 @@ void Summariser::Run()
       {
         const FitData &d{ dt->second };
         // Write header before each block
-        if( t_last != d.ft.ti )
+        if( t_last != d.ft.ti() )
         {
-          t_last = d.ft.ti;
+          t_last = d.ft.ti();
           if( !s.is_open() )
           {
             s.open( sFileName );
@@ -439,12 +388,14 @@ void Summariser::Run()
             s << "\n\n";
           }
           // Name the data series
-          s << "# [ti=" << d.ft.ti << "]\n";
+          s << "# [ti=" << d.ft.ti() << "]\n";
           // Column names, with the series value embedded in the column header (best I can do atm)
-          s << "ti=" << d.ft.ti << InitialColumnNames << ColumnNames << NL;
+          s << "ti=" << d.ft.ti();
+          dt->first.WriteInitialColumnNames( s );
+          s << ColumnNames << NL;
         }
         // Now write this row
-        d.Write( s, d.ft.NumDataPoints );
+        s << d;
         // If the statistic is above threshold, include it in correlation matrix
         if( bSaveCMat && d.Stat >= Threshold )
           CorrModels.emplace_back( std::move( Models[d.idxModel] ) );

@@ -2603,6 +2603,7 @@
 		6874E9E5271C6C7E0055B1E5 /* JSON_IO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSON_IO.h; sourceTree = "<group>"; };
 		68768DA22860A49600354169 /* FitRange.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitRange.hpp; sourceTree = "<group>"; };
 		68768DA32860A49600354169 /* FitRange.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitRange.cpp; sourceTree = "<group>"; };
+		687A274B2873761D009D0766 /* FitSummary.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitSummary.hpp; sourceTree = "<group>"; };
 		687EF0E82844BCD6009D6B74 /* SynthData.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SynthData.cpp; sourceTree = "<group>"; };
 		687EF0E92844BCD7009D6B74 /* SynthData.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SynthData.hpp; sourceTree = "<group>"; };
 		687EF0EE2844BD58009D6B74 /* SynthData */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SynthData; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3528,6 +3529,7 @@
 				685446FB271C8E5400EF030C /* FitMinuit2.hpp */,
 				685446EA271C8E5400EF030C /* FitModel.cpp */,
 				685446F9271C8E5400EF030C /* FitSummary.cpp */,
+				687A274B2873761D009D0766 /* FitSummary.hpp */,
 				68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */,
 				685446EC271C8E5400EF030C /* hlxml.cpp */,
 				68A1B330284A3F6B0053103F /* ImportCorr.cpp */,
