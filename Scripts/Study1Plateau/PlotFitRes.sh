@@ -79,7 +79,6 @@ gnuplot -p <<-EOFMark
 PlotFile="$PlotFile"
 PlotFileSort="${mmplotfile_path}${mmplotfile_base}.${mmplotfile_type}_sort.${mmplotfile_seed}.${mmplotfile_ext}"
 my_key="${key:-bottom left maxrows 2}"
-my_yrange="${yrange:-*:*}"
 MyColumnHeadings="${MyColumnHeadings}"
 MyColumnHeadingsNoUS="${MyColumnHeadingsNoUS}"
 my_xtics="$xtics"
@@ -124,7 +123,7 @@ ConditionLong='! ('.Condition.') ? NaN :'
 WithLabels='with labels font ",5" rotate noenhanced left offset char 0, 0.25'
 XPos='idx+(Count[MyIndex(idx)] <= 3 ? 0.4 : 0.8)/(Count[MyIndex(idx)]-1)*(Seq[MyIndex(idx)] - (Count[MyIndex(idx)]+1)*0.5)'
 MyLabelText='stringcolumn("${serieslbl}")'
-MyLabelText=MyLabelText.'.( ${extralbl} )'
+if( 0${extralbl:+1} ) { MyLabelText=MyLabelText.'.( ${extralbl} )' }
 if( 0${pvalue+1} ) { MyLabelText=MyLabelText.'." p=".stringcolumn("pvalueH")' }
 if( 0${seq+1} ) { MyLabelText=MyLabelText.'."  ".Seq[MyIndex(idx)]."/".Count[MyIndex(idx)]' }
 #print "MyLabelText=".MyLabelText
@@ -136,7 +135,8 @@ array Count[MySeriesCount]
 array Seq[MySeriesCount]
 
 set key $key
-if( my_yrange ne "" ) { set yrange[$yrange] }
+if( "$xrange" ne "" ) { set xrange [${xrange}] }
+if( "$yrange" ne "" ) { set yrange [${yrange}] }
 
 # Default line width and point type
 DefWidth=0.75
