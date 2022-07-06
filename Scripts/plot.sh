@@ -247,6 +247,7 @@ if( NumFiles==1 && FileType eq "cormat" ) {
   }
   #print PlotCmd
   eval PlotCmd
+  if( SaveFile == 0 ) { pause mouse close }
 }
 EOFMark
 }

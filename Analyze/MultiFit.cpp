@@ -58,13 +58,14 @@ std::ostream & operator<<( std::ostream &os, const ParamState &State )
 CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ dsrw }
 {
   // Are we using a frozen covariance matrix? Or does it vary for each sample?
-  bFreeze = SupportsUnfrozen() ? cl.GotSwitch( "freeze" ) : false;
+  bFreeze = SupportsUnfrozen() ? cl.GotSwitch( "freeze" ) : true;
 
   // Decode the user's choice of covariance source
   std::string sCovOptions{ cl.SwitchValue<std::string>( "covsrc" ) };
   std::string sCovSrc{ Common::ExtractToSeparator( sCovOptions ) };
   if( Common::EqualIgnoreCase( sCovSrc, "Rebin" ) )
   {
+    // Rebin the raw data. Overwrites the raw data in the correlators
     dsrw.Rebin( Common::ArrayFromString<int>( sCovOptions ) );
     RebinSize = ds.RebinSize;
     std::cout << "Rebinned raw data:";
@@ -75,6 +76,7 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
   }
   else if( Common::EqualIgnoreCase( sCovSrc, "h5" ) )
   {
+    // Load inverse covariance matrix from hdf5 - for debugging and comparison with other fit code
     std::vector<std::string> Opts{ Common::ArrayFromString( sCovOptions ) };
     if( Opts.size() < 2 || Opts.size() > 3 )
       throw std::runtime_error( "Options should contain file[,group],dataset. Bad options: " + sCovOptions );
@@ -99,6 +101,7 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
   }
   else
   {
+    // See what the user has asked for
     Source = Common::FromString<SS>( sCovSrc );
     if( !sCovOptions.empty() )
       throw std::runtime_error( "Covariance source " + sCovSrc + " unexpected parameters: " + sCovOptions );
