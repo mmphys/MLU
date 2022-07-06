@@ -208,8 +208,9 @@ void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::Read(const std::string
   // Load the map from the key to the filename
   std::string FitListName{ model.Base };
   FitListName.append( Filename );
-  std::cout << "Reading 2pt fit list from " << FitListName << Common::NewLine;
-  KeyReadMapT m{ ReadNameMap( FitListName, "2pt fit file" ) };
+  static const char szDescription[]{ "2pt fit list" };
+  std::cout << "Reading " << szDescription << " from " << FitListName << Common::NewLine;
+  KeyReadMapT m{ ReadNameMap( FitListName, szDescription ) };
   // Put all the filenames in our cache and save their index
   // This delays loading until the files are referenced
   for( const auto &i : m )

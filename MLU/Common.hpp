@@ -750,7 +750,7 @@ public:
     }
     std::ostringstream os;
     os << ( ErrorMsgType ? ErrorMsgType : "Key/value file" ) << " \"" << Filename << "\" not found";
-    throw os.str().c_str();
+    throw std::runtime_error( os.str().c_str() );
   }
 };
 
