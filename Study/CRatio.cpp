@@ -230,6 +230,9 @@ int KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::GetIndex( const Key &ke
     typename KeyMapT::const_iterator it = KeyMap.find( key );
     if( it != KeyMap.end() )
       return it->second;
+    std::ostringstream os;
+    os << "Please add entry to cache for: " << key;
+    throw std::runtime_error( os.str().c_str() );
   }
   std::ostringstream os;
   os << "KeyFileCache: GetIndex(" << key << ") invalid when frozen";

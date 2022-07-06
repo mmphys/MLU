@@ -81,8 +81,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "quark_l_h447_gT_dt_&apos;*&apos;_p2_0_ps2_[01]_g5&apos;?&apos;_g5&apos;?&apos;.fold.1835672416.h5"
-            isEnabled = "NO">
+            argument = "quark_l_h385_gT_dt_&apos;*&apos;_p2_0_ps2_[01]_g5&apos;?&apos;_g5&apos;?&apos;.fold.1835672416.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "quark_h447_l_gT_dt_&apos;*&apos;_p2_[01]_ps2_0_g5&apos;?&apos;_g5&apos;?&apos;.fold.1835672416.h5"
