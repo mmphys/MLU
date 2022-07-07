@@ -214,6 +214,7 @@ public:
   //const Common::Momentum p;
   const bool bSymmetrise;
 protected:
+  const bool Overlap2ENorm;
   const bool RegExSwap;
   std::regex RegExExt;
   QPModelMap EFit;
