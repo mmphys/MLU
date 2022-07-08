@@ -655,7 +655,6 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
     }
     const double EProd = E[0] * E[1];
     const double C2Prod = std::abs( C2[0] * C2[1] );
-    const double OverlapNorm{ Overlap2ENorm ? std::sqrt( EProd ) * 2 : 1 };
     // Now compute the ratios
     for( int t = 0; t <= fna.DeltaT; ++t )
     {
@@ -690,7 +689,9 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
       else
       {
         // This is the R3 we expect to use
-        const Scalar OverProd{ OverlapCoeff[0][idxV] * OverlapCoeff[1][idxV] * OverlapNorm };
+        const Scalar OverlapNorm{ Overlap2ENorm ? 1 : 0.25 / EProd };
+        const Scalar OverProd{ OverlapCoeff[0][idxV] * OverlapCoeff[1][idxV]
+                              * std::sqrt( OverlapNorm * ZVSrc[idxV] * ZVSnk[idxV] ) };
         if( MakeRatio[2] ) // R3 - forward  (1st propagator)
           pDst[2][t] = OverProd * pSrc[0][t] / ( pC2[0][t] * pC2[1][fna.DeltaT - t] );
         if( MakeRatio[3] ) // R3 backward (2nd propagator)
@@ -864,7 +865,7 @@ int main(int argc, const char *argv[])
     "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
     //"-n     Number of samples to fit, 0 (default) = all available from bootstrap\n"
     "Flags:\n"
-    "--2e    Overlap coefficients are normalised by 1/sqrt{2E_0}\n"
+    "--2e    Overlap coefficients are already normalised by 1/sqrt{2E_0}\n"
     "--swap  Swap source / sink order in regex\n"
     "--nosym Disable Out[t]=(Out[t]+Out[deltaT-t])/2 for symmetric ratios\n"
     "--r3a   Use alternate definition of R3 (i.e. R3a)\n"

@@ -633,7 +633,7 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
     if( ModelBuffer[f].size )
       m.ModelParamsChanged( ModelBuffer[f], ModelParams );
     scalar * SyntheticData{ CorrSynthetic[f][idx] };
-    for( int t = 0; t < m.Nt; ++t )
+    for( int t = 0; t < CorrSynthetic[f].Nt(); ++t )
       *SyntheticData++ = m( t, ModelBuffer[f], ModelParams );
   }
   return dTestStat;

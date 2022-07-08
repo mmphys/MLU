@@ -113,20 +113,13 @@ public:
   virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const;
 };
 
-class Model2ptSinhCosh : public Model2pt
-{
-public:
-  virtual int GetScratchPadSize() const { return NumExponents; }
-  virtual void ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const;
-};
-
-class ModelSinh : public Model2ptSinhCosh
+class ModelSinh : public Model2pt
 {
 public:
   virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const;
 };
 
-class ModelCosh : public Model2ptSinhCosh
+class ModelCosh : public Model2pt
 {
 public:
   virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const;
@@ -135,7 +128,7 @@ public:
 class ModelThreePoint : public ModelOverlap
 {
 protected:
-  inline void SetParams( int Nt_, int HalfNt_, int NumExponents_ ) { ModelOverlap::SetParams( Nt_, HalfNt_, 1 ); }
+  inline void SetParams( int Nt_, int NumExponents_ ) { ModelOverlap::SetParams( Nt_, 1 ); }
 public:
   virtual void Construct( vString &Params, const ModelDefaultParams &Default, const Fold &Corr, const vString &OpName );
   virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const;
@@ -384,12 +377,6 @@ bool Model2pt::GuessE0( scalar &E0, const Vector &Corr ) const
   return true;
 }
 
-void Model2ptSinhCosh::ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const
-{
-  for( int e = 0; e < NumExponents; ++e )
-    ScratchPad[e] = 2 * std::exp( - ModelParams[ParamIdxPerExp[e][0]] * HalfNt );
-}
-
 scalar ModelExp::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
 {
   double z = 0;
@@ -409,10 +396,11 @@ scalar ModelCosh::operator()( int t, Vector &ScratchPad, const Vector &ModelPara
   double z = 0;
   for( int e = 0; e < NumExponents; ++e )
   {
-    double d = ScratchPad[e] * std::cosh( - ModelParams[ParamIdxPerExp[e][0]] * ( t - HalfNt ) );
+    double d = std::exp( - ModelParams[ParamIdxPerExp[e][0]] * t );
+    d += std::exp( - ModelParams[ParamIdxPerExp[e][0]] * ( Nt - t ) );
     d *= ModelParams[ParamIdxPerExp[e][1]] * ModelParams[ParamIdxPerExp[e][NumOverlap > 1 ? 2 : 1]];
     if( bNormalisationByEnergy )
-      d /= ModelParams[ParamIdxPerExp[e][0]];
+      d /= 2 * ModelParams[ParamIdxPerExp[e][0]];
     z += d;
   }
   return z;
@@ -423,10 +411,11 @@ scalar ModelSinh::operator()( int t, Vector &ScratchPad, const Vector &ModelPara
   double z = 0;
   for( int e = 0; e < NumExponents; ++e )
   {
-    double d = ScratchPad[e] * std::sinh( - ModelParams[ParamIdxPerExp[e][0]] * ( t - HalfNt ) );
+    double d = std::exp( - ModelParams[ParamIdxPerExp[e][0]] * t );
+    d -= std::exp( - ModelParams[ParamIdxPerExp[e][0]] * ( Nt - t ) );
     d *= ModelParams[ParamIdxPerExp[e][1]] * ModelParams[ParamIdxPerExp[e][NumOverlap > 1 ? 2 : 1]];
     if( bNormalisationByEnergy )
-      d /= ModelParams[ParamIdxPerExp[e][0]];
+      d /= 2 * ModelParams[ParamIdxPerExp[e][0]];
     z += d;
   }
   return z;
@@ -551,7 +540,7 @@ ModelPtr Model::MakeModel(vString &Params, const ModelDefaultParams &Default, co
       throw std::runtime_error( "Unrecognised ModelType for " + Corr.Name_.Filename );
   }
   // 2 part construction - now that virtual functions in place
-  model->SetParams( Corr.Nt(), Corr.NtUnfolded / 2, Default.NumExponents );
+  model->SetParams( Corr.NtUnfolded, Default.NumExponents );
   model->Construct( Params, Default, Corr, FileOps );
   return model;
 }

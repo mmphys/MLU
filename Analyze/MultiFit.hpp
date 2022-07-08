@@ -83,7 +83,6 @@ class Model
   friend class ModelSet;
 public:
   int Nt;
-  int HalfNt;
   int NumExponents;
   vString ParamNames;
   vString ParamNamesPerExp;                     // Be careful: these names EXCLUDE the energy
@@ -92,7 +91,7 @@ public:
   //protected:
   Vector Params;
 protected:
-  inline void SetParams( int Nt_, int HalfNt_, int NumExponents_ ) { Nt=Nt_; HalfNt=HalfNt_; NumExponents=NumExponents_; }
+  inline void SetParams( int Nt_, int NumExponents_ ) { Nt=Nt_; NumExponents=NumExponents_; }
   virtual void Construct( vString &Params, const ModelDefaultParams &Default, const Fold &Corr, const vString &OpName )
   { ParamNamesPerExp.push_back( E ); } // Make sure to call base if you override (because everything uses Energy)
 public:
