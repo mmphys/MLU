@@ -29,7 +29,7 @@
 #include "MultiFit.hpp"
 
 // Uncomment this next line to debug without OpenMP
-#define DEBUG_DISABLE_OMP
+//#define DEBUG_DISABLE_OMP
 
 #ifdef HAVE_MINUIT2
 // Comment out the next line to disable Minuit2 (for testing)
