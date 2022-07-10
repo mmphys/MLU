@@ -763,6 +763,7 @@ bool ExtractSuffix( std::string &String, std::string &Suffix, const char * pszDe
 
 // Remove the directory from the start of FileName (leave the trailing '/' in place)
 std::string ExtractDirPrefix( std::string &FileName );
+std::string GetDirPrefix( const std::string &FileName );
 
 // Split String into an array using specified delimeters
 std::vector<std::string> Split( const std::string &String, const char * pszDelimeters = nullptr );

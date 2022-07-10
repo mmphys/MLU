@@ -126,15 +126,16 @@ template<typename FileT>
 struct FileCache
 {
   static constexpr int BadIndex{ -1 };
-  const std::string Base;
   const char * PrintPrefix; // non-null to print filenames as they are loaded
 protected:
+  std::string Base;
   using TNameMap = std::map<std::string, int>;
   TNameMap NameMap;
   std::vector<FileT> Files;
 public:
+  void SetBase( const std::string &Base_ ) { Base = Base_; }
   std::vector<std::string> opNames; // These are operator names referred to by Files
-  FileCache( const std::string &base, const char * Prefix = nullptr ) : Base{base}, PrintPrefix{Prefix} {}
+  FileCache( const char * Prefix = nullptr ) : PrintPrefix{Prefix} {}
   void clear();
   // Add file to cache if not present - delay loading until accessed
   int GetIndex( const std::string &Filename, const char * printPrefix = nullptr );
@@ -152,6 +153,7 @@ struct QuarkReader : public std::string
 };
 
 // Static list of mappings from key to file. Can't be added to once read.
+// Two-step construction (i.e. constructor then Read) so virtual functions in place
 template<typename Key, typename LessKey, typename KeyRead = Key, typename LessKeyRead = LessKey,
          typename M = Model>
 struct KeyFileCache
@@ -180,7 +182,7 @@ protected:
 public:
   static constexpr int BadIndex{ FileCacheT::BadIndex };
   virtual void clear();
-  KeyFileCache( const std::string &Base ) : model{Base} { clear(); }
+  KeyFileCache() { clear(); }
   virtual ~KeyFileCache() {}
   // Use this to load a list of fit files
   void Read( const std::string &Filename, const char * PrintPrefix );
@@ -195,7 +197,6 @@ struct QPModelMap : public KeyFileCache<QP, LessQP, QuarkReader, Common::LessCas
 {
   using Base = KeyFileCache<QP, LessQP, QuarkReader, Common::LessCaseInsensitive>;
   std::string Spectator;
-  QPModelMap( const std::string &modelBase ) : Base( modelBase ) {}
   std::string Get2ptName( const QP &key );
   void clear() override;
 protected:

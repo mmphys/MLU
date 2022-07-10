@@ -308,13 +308,18 @@ bool ExtractSuffix( std::string &String, std::string &Suffix, const char * pszDe
 // Remove the directory from the start of FileName (leave the trailing '/' in place)
 std::string ExtractDirPrefix( std::string &FileName )
 {
+  std::string Dir = GetDirPrefix( FileName );
+  if( Dir.size() )
+    FileName.erase( 0, Dir.size() );
+  return Dir;
+}
+
+std::string GetDirPrefix( const std::string &FileName )
+{
   std::string Dir;
   std::size_t pos{ FileName.find_last_of( '/' ) };
   if( pos != std::string::npos )
-  {
     Dir = FileName.substr( 0, pos + 1 );
-    FileName.erase( 0, pos + 1 );
-  }
   return Dir;
 }
 

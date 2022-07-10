@@ -205,12 +205,11 @@ void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::Read(const std::string
   }
   FieldMap = Common::KeyValReader<std::string, std::string>::Read( Common::ArrayFromString( sParams ) );
 
-  // Load the map from the key to the filename
-  std::string FitListName{ model.Base };
-  FitListName.append( Filename );
   static const char szDescription[]{ "2pt fit list" };
-  std::cout << "Reading " << szDescription << " from " << FitListName << Common::NewLine;
-  KeyReadMapT m{ ReadNameMap( FitListName, szDescription ) };
+  std::cout << "Reading " << szDescription << " from " << Filename << Common::NewLine;
+  KeyReadMapT m{ ReadNameMap( Filename, szDescription ) };
+  // All the files in the cache are relative to the directory containing the fit list
+  model.SetBase( Common::GetDirPrefix( Filename ) );
   // Put all the filenames in our cache and save their index
   // This delays loading until the files are referenced
   for( const auto &i : m )
@@ -440,7 +439,7 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
 }
 
 RMaker::RMaker( const std::string &TypeParams, const Common::CommandLine &cl )
-: Maker( cl ), bAltR3{cl.GotSwitch("r3a")}, ZVmi( modelBase )
+: Maker( cl ), bAltR3{cl.GotSwitch("r3a")}
 {
   ZVmi.Read( TypeParams, LoadFilePrefix );
 }
@@ -752,18 +751,18 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
 
 Maker::Maker( const Common::CommandLine &cl )
 : MaxSamples{cl.SwitchValue<int>("n")},
-  modelBase{cl.SwitchValue<std::string>("im")},
   outBase{cl.SwitchValue<std::string>("o")},
   bSymmetrise{!cl.GotSwitch("nosym")},
   Overlap2ENorm{cl.GotSwitch("2e")},
   RegExSwap{cl.GotSwitch("swap")},
   RegExExt{std::regex( cl.SwitchValue<std::string>("ssre"), std::regex::extended | std::regex::icase )},
-  EFit{modelBase},
-  Cache2{cl.SwitchValue<std::string>("i2"), LoadFilePrefix },
-  Cache3{ "", LoadFilePrefix }
+  Cache2{ LoadFilePrefix },
+  Cache3{ LoadFilePrefix }
 {
-  Common::MakeAncestorDirs( outBase );
+  Cache2.SetBase( cl.SwitchValue<std::string>("i2") );
+  //Cache3.SetBase( cl.SwitchValue<std::string>("i3") );
   EFit.Read( cl.SwitchValue<std::string>( "efit" ), LoadFilePrefix );
+  Common::MakeAncestorDirs( outBase );
 }
 
 int main(int argc, const char *argv[])
@@ -781,7 +780,6 @@ int main(int argc, const char *argv[])
     const std::initializer_list<CL::SwitchDef> list = {
       {"i2", CL::SwitchType::Single, "" },
       {"i3", CL::SwitchType::Single, "" },
-      {"im", CL::SwitchType::Single, "" },
       {"n", CL::SwitchType::Single, "0"},
       {"o", CL::SwitchType::Single, "" },
       {"type", CL::SwitchType::Single, DefaultType },
@@ -847,7 +845,6 @@ int main(int argc, const char *argv[])
     "Create 3pt ratios using E0 from fits in FitListFile. <options> are:\n"
     "--i2   Input2 filename prefix\n"
     "--i3   Input3 filename prefix\n"
-    "--im   Input model filename prefix\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
     "-o     Output filename prefix\n"
     "--type Ratio type[,options[,...]] (default " << DefaultType << ")\n"

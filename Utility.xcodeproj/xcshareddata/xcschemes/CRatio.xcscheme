@@ -57,11 +57,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--i3 corr/3pt_sp2/ --i2 corr/2ptp2/ --im fit/ -o ratio/sp2/"
+            argument = "--i3 corr/3pt_sp2/ --i2 corr/2ptp2/ -o ratio/sp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--efit Fit_sp2.txt"
+            argument = "--efit fit/Fit_sp2.txt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -73,7 +73,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type R,FitZV_sp2.txt"
+            argument = "--type R,fitZV/FitZV_sp2.txt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
