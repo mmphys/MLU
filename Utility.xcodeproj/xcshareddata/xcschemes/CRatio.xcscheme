@@ -65,7 +65,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--efit ,l,g5W0=1000"
+            argument = "--efit ,s"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

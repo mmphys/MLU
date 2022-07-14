@@ -45,7 +45,7 @@ RefVal="${ref}"
 RefErr="${err}"
 RefText="${reftext}"
 RefSuffix="${refsuffix}"
-do_label="${label:+x}"
+do_label=((1-0${label+1}))
 do_SaveLabel=0${savelabel+1}
 SaveLabel="${savelabel}"
 PDFSize="${size}"
@@ -175,10 +175,14 @@ WithLabels='with labels font ",6" rotate noenhanced left offset char 0, 0.25'
 
 # Loop through all fields, plotting them
 
-if( do_label eq "x" ) {
-  LabelStart=NBlock
-} else {
-  LabelStart=BlockMin
+PlotCmd='plot for [idx=BlockMin:BlockMax] PlotFile index idx using ('.Condition
+PlotCmd=PlotCmd.' column(xAxisCol)):('.Condition.' column(MyField)):('.Condition
+PlotCmd=PlotCmd.' column(MyField."_low")):('.Condition.' column(MyField."_high"))'
+PlotCmd=PlotCmd.' with yerrorbars title columnheader(1)'
+if( do_label ) {
+  PlotCmd=PlotCmd.', for [idx=BlockMin:BlockMax] "" index idx using ('.Condition
+  PlotCmd=PlotCmd.' column(xAxisCol)):('.Condition.' column(MyField."_high")):(column("tfLabel"))'
+  PlotCmd=PlotCmd.' '.WithLabels.' notitle'
 }
 
 while( word(MyColumnHeadings,FieldOffset) ne "" ) {
@@ -218,12 +222,7 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
     if( ManualYLabelText eq "" ) { unset ylabel } else { set ylabel ManualYLabelText font ',16' enhanced }
   } else { set ylabel MyFieldNoUS font ',16' }
   
-  plot \
-    for [idx=BlockMin:BlockMax] PlotFile index idx using \
-      (@Condition column(xAxisCol)):(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \
-      with yerrorbars title columnheader(1), \
-    for [idx=LabelStart:BlockMax] '' index idx using (@Condition column(xAxisCol)):(@Condition column(MyField."_high")):(column("tfLabel")) \
-      @WithLabels notitle
+  eval PlotCmd
 
   if (IsEnergy) { unset object 1; unset arrow; unset label 2 }
   FieldOffset=FieldOffset + FieldsPerColumn
@@ -243,13 +242,8 @@ set key top left
 unset xtics
 
 MyField=xAxisName
-plot \
-  for [idx=BlockMin:BlockMax] PlotFile index idx using \
-    (@Condition column(1)):(@Condition column(MyField)):(@Condition column(MyField."_low")):(@Condition column(MyField."_high")) \
-    with yerrorbars title columnheader(1), \
-  for [idx=LabelStart:BlockMax] '' index idx using \
-    (@Condition column(1)):(@Condition column(MyField."_high")):(column("tfLabel")) \
-    @WithLabels notitle
+xAxisCol=1
+eval PlotCmd
 EOFMark
 
 fi

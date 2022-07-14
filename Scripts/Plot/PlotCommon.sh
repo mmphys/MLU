@@ -113,11 +113,11 @@ function GetMeson()
   case "${q:0:1}_${Spec}" in
     h_s)       NameHuman="D_s";;
     h_l)       NameHuman="D";;
-    l_l)       NameHuman="π";;
+    l_l)       [ -v OptionASCII ] && NameHuman="pi" || NameHuman="π";;
     l_s | s_l) NameHuman="K";;
             *) NameHuman="${q}${Spec}";;
   esac
-  [ -z "$qNum" ] || NameHuman="$NameHuman (m=0.$qNum)"
+  if ! [ -v OptionASCII ] && ! [ -z "$qNum" ]; then NameHuman="$NameHuman (m=0.$qNum)"; fi
 }
 
 # 1: 3pt filename to split
@@ -147,8 +147,16 @@ function Split3ptFile()
   opSnk=${PrefixParts[-2]}
   opSrc=${PrefixParts[-1]}
   HumanReadable
-  GetMeson MSnkHuman $qSnk $Spec
-  GetMeson MSrcHuman $qSrc $Spec
+  if [ "${Ratio:0:1}" == R ]
+  then
+    # I swapped the ordering for the ratios ... d'Oh!
+    # TODO: Check whether this is swapped for R3?
+    GetMeson MSnkHuman $qSrc $Spec
+    GetMeson MSrcHuman $qSnk $Spec
+  else
+    GetMeson MSnkHuman $qSnk $Spec
+    GetMeson MSrcHuman $qSrc $Spec
+  fi
   pMax=$p2
   if (( pMax < ps2 )); then pMax=$ps2; fi
 }

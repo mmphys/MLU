@@ -5,9 +5,6 @@
 # corr2: set some useful defaults for two correlators
 
 # Important defaults here
-min=${min:-5}
-max=${max:-15}
-tione=${tione:-$min}
 key=${key:-bottom left maxrows 2}
 series=${series:-ti}
 size=${size:-"7in,2in"}
@@ -33,9 +30,9 @@ if [ ${#@} == 0 ]; then
   echo "Precede with optional modifiers (key=value):"
   echo "sort      options to pass to sort utility to sort before plot"
   echo "          e.g. to sort on columns 2 through 5, specify '-V -k 2,5'"
-  echo "min       Minimum TI ($min)"
-  echo "max       Maximum TI ($max)"
-  echo "tione     Which colour should be number 1 ($tione)"
+  echo "min       Minimum $series (minimum in data)"
+  echo "max       Maximum $series (maximum in data)"
+  echo "tione     Which colour should be number 1 (minimum in data)"
   echo "series    Which field is the series category ($series)"
   echo "serieslbl Which field is the series label ($serieslbl)"
   echo "extralbl  Extra fields to plot in label ($extralbl)"
@@ -59,10 +56,10 @@ MyColumnHeadings=`awk '/^#/ {next}; {print \$0;exit}' $PlotFile`
 MyColumnHeadingsNoUS="${MyColumnHeadings//_/\\\\_}"
 
 # sort the file if requested
-if [ -v sort ]
+if ! [ -z "$sort" ]
 then
   # Make a temporary file for the header
-  TmpFile=$(mktemp tmp.Header.XXXXXX)
+  TmpFile=$(mktemp tmp.Sorted.XXXXXX)
   awk '/^#/ {print;next};{if(c++){exit}print}' $PlotFile > $TmpFile
   # Now append the sorted contents
   awk '/^ti=/ {next}; /^#/ {next}; !z {z=1}; {print}' $PlotFile | sort $sort >> $TmpFile
@@ -74,20 +71,30 @@ fi
 # Plot the extracted energy levels and test statistic associated with the model
 ###################################################
 
-gnuplot -p <<-EOFMark
+gnuplot <<-EOFMark
 
 PlotFile="$PlotFile"
-PlotFileSort="${mmplotfile_path}${mmplotfile_base}.${mmplotfile_type}_sort.${mmplotfile_seed}.${mmplotfile_ext}"
+MySeries="${series}"
+MySeriesCol='column("'.MySeries.'")'
 my_key="${key:-bottom left maxrows 2}"
 MyColumnHeadings="${MyColumnHeadings}"
 MyColumnHeadingsNoUS="${MyColumnHeadingsNoUS}"
 my_xtics="$xtics"
 PDFSize="$size"
 MyInteractive=1-0${save+1}
-MySeries="${series}"
-MySeriesMin=${min}
-MySeriesMax=${max}
-MyFirstColour=${tione}
+bGotWhere=0${where:+1}
+if(bGotWhere) {WhereCondition='!(${where}) ? NaN : '} else {WhereCondition=''}
+
+# The first series colour defaults to the lowest series value in the file
+stats PlotFile using MySeries nooutput
+MyFirstColour=${tione:-floor( STATS_min )}
+# If we have a where condition, we only display series that meet the condition
+if( bGotWhere ) { eval "stats PlotFile using (".WhereCondition.MySeriesCol.') nooutput' }
+MySeriesMin=${min:-floor( STATS_min )}
+MySeriesMax=${max:-floor( STATS_max )}
+NumRecords=STATS_records
+#print "NumRecords=".NumRecords
+#print "save=$save".", MySeriesMin=".MySeriesMin.", MySeriesMax=".MySeriesMax
 
 OutBase="${mmplotfile_base}.${mmplotfile_corr_all}.${mmplotfile_ops_all}.${save:+${save}_}"
 #if( 0${save:+1} ) { OutSuffix="$save_".OutSuffix }
@@ -116,12 +123,12 @@ while( word(MyColumnHeadings,NumFields*FieldsPerColumn+FieldOffset) ne "ChiSqPer
 #print "NumFields=".NumFields
 #print "FieldNames=".FieldNames
 
-Condition="column('".MySeries."') == idx"
+Condition=MySeriesCol." == idx"
 if( 0${where:+1} ) { Condition=Condition.' && ($where)' }
 #print "Condition=".Condition
 ConditionLong='! ('.Condition.') ? NaN :'
 WithLabels='with labels font ",5" rotate noenhanced left offset char 0, 0.25'
-XPos='idx+(Count[MyIndex(idx)] <= 3 ? 0.4 : 0.8)/(Count[MyIndex(idx)]-1)*(Seq[MyIndex(idx)] - (Count[MyIndex(idx)]+1)*0.5)'
+XPos='idx+(Count[MyIndex(idx)] <= 1 ? 0 : ((Count[MyIndex(idx)] <= 3 ? 0.4 : 0.8)/(Count[MyIndex(idx)]-1)*(Seq[MyIndex(idx)] - (Count[MyIndex(idx)]+1)*0.5)))'
 MyLabelText='stringcolumn("${serieslbl}")'
 if( 0${extralbl:+1} ) { MyLabelText=MyLabelText.'.( ${extralbl} )' }
 if( 0${pvalue+1} ) { MyLabelText=MyLabelText.'." p=".stringcolumn("pvalueH")' }
@@ -153,6 +160,8 @@ if( MyInteractive ) { DefSize=0.85 } else { DefSize=0.4 }
 #}
 
 # Looping over all files and saving them
+#if( NumRecords == 1 ) { set xrange [MySeriesMin-0.5:MySeriesMax+0.5] }
+set xrange [MySeriesMin-0.5:MySeriesMax+0.5]
 do for [MyFieldNum=NumFields:1:-1] {
 MyColumn=(MyFieldNum-1)*FieldsPerColumn+FieldOffset
 MyField = word(FieldNames,MyFieldNum)
@@ -172,9 +181,9 @@ if( MyInteractive ) {
   set output OutFile
 }
 
+do for [idx=1:MySeriesCount] { Count[idx]=0; Seq[idx]=0 }
+
 plot \
-  for [idx=MySeriesMin:MySeriesMax] PlotFile using \
-    (Count[MyIndex(idx)]=0, Seq[MyIndex(idx)]=0, NaN) : (NaN) notitle, \
   for [idx=MySeriesMin:MySeriesMax] PlotFile using \
     ((@Condition) ? Count[MyIndex(idx)]=Count[MyIndex(idx)] + 1 : 0, NaN) : (NaN) notitle, \
   for [idx=MySeriesMin:MySeriesMax] '' using \
@@ -184,7 +193,7 @@ plot \
     linestyle idx - MyFirstColour + 1 \
     lw DefWidth pt DefType ps DefSize \
     title "${series}=".idx, \
-  for [idx=MySeriesMin:MySeriesMax] '' using (Seq[MyIndex(idx)]=0, NaN) : (NaN) notitle, \
+  for [idx=1:MySeriesCount] '' every ::::0 using (Seq[idx]=0, NaN) : (NaN) notitle, \
   for [idx=MySeriesMin:MySeriesMax] '' using \
     ((@Condition) ? Seq[MyIndex(idx)]=Seq[MyIndex(idx)] + 1 : 0, @ConditionLong @XPos) : \
     (column(MyColumn+1)) : (@MyLabelText) \
@@ -196,7 +205,7 @@ if( MyInteractive ) { pause mouse close }
 EOFMark
 
 # Kill my temporary file
-[ -v sort ] && rm $TmpFile
+if ! [ -z "$sort" ]; then rm $TmpFile; fi
 
 fi
 done
