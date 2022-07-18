@@ -54,11 +54,11 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-ag5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ag5,gT5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT,gx,gy,gz,gxyz"
@@ -113,12 +113,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "ZF[PW]P/&apos;*&apos;.h5"
-            isEnabled = "NO">
+            argument = "ZF[PW]P/??_h447_l_p_0_&apos;*&apos;.h5 ZF[PW]P/??_l_h447_p_0_&apos;*&apos;.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "ZFPP/PP_h447_l_p_0_&apos;*&apos;.h5 -b 1"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ssre=^[GZ][F2]([[:alnum:]])([[:alnum:]])_"
@@ -133,8 +133,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-f"
-            isEnabled = "YES">
+            argument = "--nosort"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

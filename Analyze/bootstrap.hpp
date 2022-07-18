@@ -120,7 +120,8 @@ struct TrajList
 class BootstrapParams
 {
 public:
-  const bool b2ptFactorised;
+  const bool b2ptSymOp;
+  const bool b2ptSortZeroMom;
   const bool bWarnIfExists;
   const bool bVerboseSummaries;
   const int TimesliceDetail;

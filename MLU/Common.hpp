@@ -1411,6 +1411,7 @@ struct FileNameAtt
   std::string DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
                            const std::string &Ext ) const;
   const FileNameMomentum &GetMomentum( const std::string &Name = Momentum::DefaultPrefix ) const;
+  bool HasNonZeroMomentum() const;
   const FileNameMomentum &GetFirstNonZeroMomentum() const;
   void AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const;
   void AppendMomentum( std::string &s, const FileNameMomentum &fnp )const{AppendMomentum( s, fnp, fnp.Name );}

@@ -1024,6 +1024,14 @@ const FileNameMomentum &FileNameAtt::GetMomentum( const std::string &Name ) cons
   return it->second;
 }
 
+bool FileNameAtt::HasNonZeroMomentum() const
+{
+  for( auto it = p.begin(); it != p.end(); ++it )
+    if( it->second )
+      return true;
+  return false;
+}
+
 const FileNameMomentum &FileNameAtt::GetFirstNonZeroMomentum() const
 {
   if( p.empty() )

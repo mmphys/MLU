@@ -127,7 +127,8 @@ static ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, s
 }*/
 
 BootstrapParams::BootstrapParams( const Common::CommandLine &cl, const std::string MachineNameActual )
-: b2ptFactorised{ !cl.GotSwitch( "f" ) },
+: b2ptSymOp{ cl.GotSwitch( "symop" ) },
+  b2ptSortZeroMom{ !cl.GotSwitch( "nosort" ) },
   bWarnIfExists{ cl.GotSwitch( "w" ) },
   bVerboseSummaries{ !cl.GotSwitch( "terse" ) },
   TimesliceDetail{ cl.SwitchValue<int>( "t" ) },
@@ -191,7 +192,7 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
                         const TrajList &Traj, Algebra Snk, Algebra Src, bool bAlignTimeslices ) const
 {
   // Factorised 2pt functions with Snk!=Src will have both entries loaded
-  const int OpFactor{ ( !Traj.b3pt && b2ptFactorised && Snk != Src && Traj.OpSuffiiSame() ) ? 2 : 1 };
+  const int OpFactor{ ( !Traj.b3pt && b2ptSymOp && Snk != Src && Traj.OpSuffiiSame() ) ? 2 : 1 };
   // Count how many input records there are: in total; and per configuration
   int NumSamplesRaw{ 0 };
   std::map<int, int> ConfigCount;
@@ -237,10 +238,10 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
   for( Iter file = first; file != last; ++file )
   {
     const int TOffset{ bAlignTimeslices ? file->Timeslice() : 0 };
+    std::string Filename{ file->Name_.Filename };
+    const std::size_t FilenameLen{ Filename.length() };
     if( Snk == Algebra::Spatial )
     {
-      std::string Filename{ file->Name_.Filename };
-      const std::size_t FilenameLen{ Filename.length() };
       const Common::Momentum &p{ file->Name_.GetFirstNonZeroMomentum() };
       if( p.x )
       {
@@ -271,10 +272,18 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
     }
     else
     {
-      out.FileList.emplace_back( file->Name_.Filename );
       for( int o = 0; o < OpFactor; o++ )
       {
-        const std::complex<double> * const pSrc = (*file)( o ? Src : Snk, o ? Snk : Src );
+        const Algebra ThisSnk( o ? Src : Snk );
+        const Algebra ThisSrc( o ? Snk : Src );
+        if( OpFactor > 1 )
+        {
+          Filename.resize( FilenameLen );
+          Common::AppendGamma( Filename, ThisSnk, Common::Comma );
+          Common::AppendGamma( Filename, ThisSrc, Common::Comma );
+        }
+        out.FileList.emplace_back( Filename );
+        const std::complex<double> * const pSrc = (*file)( ThisSnk, ThisSrc );
         for( int t = 0; t < Nt; t++ )
           *pDst++ = pSrc[ ( t + TOffset ) % Nt ];
       }
@@ -327,7 +336,7 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
   Common::SampleC out( nSample, first->Nt() );
   for( int Snk = 0; Snk < SinkAlgebra.size(); Snk++ )
   {
-    const int UpperLimit{ !Traj.b3pt && b2ptFactorised && Traj.OpSuffiiSame()
+    const int UpperLimit{ !Traj.b3pt && b2ptSymOp && Traj.OpSuffiiSame()
                           ? Snk + 1 : static_cast<int>( SourceAlgebra.size() ) };
     for( int Src = 0; Src < UpperLimit; Src++ )
     {
@@ -797,8 +806,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
           Contraction.append( Suffix );
         }
       }
-      //if( !b3pt && bEnable2ptSort )
-      if( !b3pt && par.b2ptFactorised )
+      if( !b3pt && par.b2ptSortZeroMom && !Name_.HasNonZeroMomentum() )
       {
         // Sort all the separate, underscore delimited component parts
         std::vector<std::string> vs{ Common::ArrayFromString( Contraction, Common::Underscore ) };
@@ -970,7 +978,7 @@ int main(const int argc, const char *argv[])
       {"t", CL::SwitchType::Single, "0"},
       {"m", CL::SwitchType::Single, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
-      {"f", CL::SwitchType::Flag, nullptr},
+      {"symop", CL::SwitchType::Flag, nullptr},
       {"w", CL::SwitchType::Flag, nullptr},
       {"s", CL::SwitchType::Flag, nullptr},
       {"p2",CL::SwitchType::Flag, nullptr},
@@ -978,7 +986,7 @@ int main(const int argc, const char *argv[])
       {"ignore",CL::SwitchType::Single, DefaultIgnore},
       {"pignore",CL::SwitchType::Single, DefaultIgnoreMomenta},
       {"show", CL::SwitchType::Flag, nullptr},
-      //{"sort", CL::SwitchType::Flag, nullptr},
+      {"nosort", CL::SwitchType::Flag, nullptr},
       {"ssre", CL::SwitchType::Single, DefaultERE },
       {"terse", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -1032,18 +1040,19 @@ int main(const int argc, const char *argv[])
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
-    "-f     Disable Factorising operators, e.g. g5-gT5 same as gT5-g5 (2pt only)\n"
     "-w     Warn only if file exists. Default=error\n"
     "-s     Perform bootstrap for specified study numbers\n"
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"
     "--pignore List of momenta to ignore (default: " << DefaultIgnoreMomenta << ")\n"
     "--ignore  List of regular expressions to ignore (default: " << DefaultIgnore << ")\n"
+    "--nosort  Zero momentum 2pt functions of q1-q2 are grouped together with q2-q1\n"
+    "          This option disables this (only affects zero momentum 2pt functions)\n"
     "--show Show how files would be bootstrapped, but don't execute\n"
-    //"--sort Disable sort of correlator before group (2pt mode only)\n"
     "--ssre Sink / Source extended Regular Expression ('' to disable), default:\n       " << DefaultERE << "\n"
     "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
     "--terse Terse summaries (no file list)\n"
+    "--symop Symmetric operators e.g. g5-gT5 same as gT5-g5 (2pt only, experimental)\n"
     "--help This message\n";
   }
   return iReturn;
