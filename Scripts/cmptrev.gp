@@ -3,8 +3,8 @@
 Normalise=1
 C2TimeRev=1
 
-if( ARGC < 2 ) {
-  print ARG0." Corr1 Corr2 [Output_file [Title [Label1 [Label2 [Negate [field=corr]]]]]"
+if( ARGC < 1 ) {
+  print ARG0." Corr1 [Corr2 [Output_file [Title [Label1 [Label2 [Negate [field=corr [tf]]]]]]]"
   print "Compare two correlators, second is time reversed"
   print "Normalise correlators separately on each timeslice so C1(t)=1"
   print "Output [optional] is .pdf to save"
@@ -13,8 +13,8 @@ if( ARGC < 2 ) {
 
 NumFiles=2
 array Files[NumFiles]
-Files[1]=( ARG1 ne "" ) ? ARG1 : 'quark_l_h447_gT_dt_20_p2_0_ps2_1_g5W_g5P.fold.1835672416.txt'
-Files[2]=( ARG2 ne "" ) ? ARG2 : 'quark_h447_l_gT_dt_20_p2_1_ps2_0_g5P_g5W.fold.1835672416.txt'
+Files[1]=ARG1
+Files[2]=( ARG2 ne "" ) ? ARG2 : ARG1
 
 array MyColour[NumFiles]
 MyColour[1]=3
@@ -24,6 +24,10 @@ MyColour[2]=2
 GetDTSub(s)=strstrt(s,"_dt_") ? substr(s,strstrt(s,"_dt_")+4,strlen(s)) : "0_"
 GetDT(s)=substr(GetDTSub(s),1,strstrt(GetDTSub(s),"_")-1)+0
 
+stats Files[1] using 1 nooutput
+nT = floor(STATS_max) + 1
+#print 'nT='.nT
+
 if( C2TimeRev ) {
   DeltaT=GetDT(Files[1])
   DeltaT2=GetDT(Files[2])
@@ -32,9 +36,11 @@ if( C2TimeRev ) {
     exit 1
   }
   if( DeltaT == 0 ) {
-  DeltaT = 64
+    # There's no DeltaT in filename - set DeltaT = nT from file
+    DeltaT=nT
+    if( ARG2 eq "" ) { set xrange[-0.5:nT/2-0.5] }
   } else {
-    if( DeltaT < 32 ) {
+    if( DeltaT < nT/2 ) {
       set xrange[-0.5:DeltaT+0.5]
     } else {
       set xrange[0.5:DeltaT-0.5]
@@ -70,6 +76,8 @@ Field=( ARG8 ne "" ) ? ARG8 : 'corr'
 FieldNum=0+system("awk '!/^#/ {for(i=1;i<NF;++i){if($i==\"".Field."\"){print i;exit}}}' ".Files[1])
 #FieldsPerFile=0+system("awk '!/^#/ {print NF;exit}' ".Files[1])
 #print Field."=".sprintf("%d", FieldNum)." of ".sprintf("%d", FieldsPerFile)
+
+if( ARG9 ne "" ) { set xrange [*:@ARG9] }
 
 # Set up Awk command to read in the fields we're interested in only
 AwkPart1="awk '\\''!/(^#|^t)/ {if( $1 >= 0 && $1 <= ".DeltaT." ) print "

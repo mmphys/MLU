@@ -60,7 +60,7 @@ FBText=""
 if ( nt != 0) {
   # We want the backward propagating wave
   fb_max = 1
-  fb_prefix[2]="back "
+  fb_prefix[2]=" back"
   if ( nt < 0 ) {
     # We ONLY want the backward propagating wave
     nt = -nt
@@ -68,7 +68,7 @@ if ( nt != 0) {
     FBShort="_b"
     FBText=" backward"
   } else {
-    fb_prefix[1]="fwd "
+    fb_prefix[1]=" fwd"
     FBShort="_fb"
     FBText=" forward/backward"
   }
@@ -195,7 +195,7 @@ if( SaveFile != 2 ) {
 if( do_log ) { set logscale y }
 
 # Function to get a field - potentially negated
-GetField(Suffix)='('.'(word(Negate,File) eq "-" ? -1 : 1)*column(word(FieldNames,fld)."'.Suffix.'"))'
+GetField(Suffix)='('.(do_log < 0 ? 'abs(' : '').'(word(Negate,File) eq "-" ? -1 : 1)*column(word(FieldNames,fld)."'.Suffix.'")'.(do_log < 0 ? ')' : '').')'
 # Function to get the x-axis for a file
 #GetXAxis()=''
 
@@ -240,7 +240,22 @@ if( NumFiles==1 && FileType eq "cormat" ) {
   PlotCmd=PlotCmd.my_x_axis.") : nt - ("
   PlotCmd=PlotCmd.my_x_axis."))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : "
   PlotCmd=PlotCmd.PlotUsing.' '.PlotWith
-  PlotCmd=PlotCmd.' title ( (SaveFile == 2 || got_legend) ? PlotFileLegend[File]." " : "").fb_prefix[f+1].(got_legend ? "" : word(FieldNames,fld)) '.LegEnh.' '
+  PlotCmd=PlotCmd.' title '
+  if( SaveFile == 2 || got_legend ) {
+    if( |PlotFileLegend| == NumFiles * NumFields * NumFB ) {
+      PlotCmd=PlotCmd.'PlotFileLegend[((File-1)*NumFields+fld-1)*NumFB+f-fb_min+1]'
+    } else {
+      if( |PlotFileLegend| == NumFiles * NumFields ) {
+        PlotCmd=PlotCmd.'PlotFileLegend[(File-1)*NumFields+fld]'
+      } else {
+        PlotCmd=PlotCmd.'PlotFileLegend[File]." ".word(FieldNames,fld)'
+      }
+      PlotCmd=PlotCmd.'.fb_prefix[f+1]'
+    }
+  } else {
+    PlotCmd=PlotCmd.'word(FieldNames,fld).fb_prefix[f+1]'
+  }
+  PlotCmd=PlotCmd.' '.LegEnh.' '
   #PlotCmd=PlotCmd.PlotWith.' title "ΔT = ".word("12 14 16 20 24 28 32",File)'
   if( RefVal != -777 && RefText ne "MagicBanana" ) {
     PlotCmd=PlotCmd.", 1/0 lt 0 dashtype 2 title '".RefText."'"
