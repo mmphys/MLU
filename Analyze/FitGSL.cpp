@@ -101,7 +101,7 @@ int FitterThreadGSL::f( const Vector &FitParams, Vector &Error )
   assert( FitParams.size == parent.NumVariable && "Parameter vector is not the right size" );
   assert( Error.size == Extent && "Result vector is not the right size" );
   if( !SaveError( Error, FitParams.data, FitParams.size, FitParams.stride ) )
-    throw std::runtime_error( "Error computing residuals" );
+    throw std::runtime_error( "Overflow computing residuals (usually caused by bad guess)" );
   if( bCorrelated )
     Error.blas_trmv( CblasLower, CblasTrans, CblasNonUnit, Cholesky );
   return 0;

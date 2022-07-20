@@ -1885,7 +1885,10 @@ void DataSet<T>::SetValidatedFitTimes( std::size_t Extent_, std::vector<std::vec
     SampleSource ss{ i == 0 ? SampleSource::Raw : i == 1 ? SampleSource::Binned : SampleSource::Bootstrap };
     Matrix<T> &m{ i == 0 ? mRaw : i == 1 ? mBinned : mBoot };
     const int iCount{ corr[0].NumSamples( ss ) };
-    if( !iCount )
+    bool bGotMatchingCount{ iCount != 0 };
+    for( int f = 1; bGotMatchingCount && f < corr.size(); ++f )
+      bGotMatchingCount = ( corr[f].NumSamples( ss ) == iCount );
+    if( !bGotMatchingCount )
       m.clear();
     else
     {
