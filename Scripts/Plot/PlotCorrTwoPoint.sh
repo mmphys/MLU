@@ -25,8 +25,8 @@ do
   fi
   InDir=$InDir/2pt
 
-  #for f in $InDir/*_p_${Momenta[pSq]}_g*_g*.bootstrap.*.txt
-  for f in $InDir/s_l_p_1_?_?_g5P_g5P.bootstrap.*.txt
+  for f in $InDir/*_p_${Momenta[pSq]}_g*_g*.bootstrap.*.txt
+  #for f in $InDir/s_l_p_1_?_?_g5P_g5P.bootstrap.*.txt
   do
     Filename=${f##*/}
     Extra=(${Filename//./ })
@@ -47,20 +47,28 @@ do
         mkdir -p Corr/$meson
         title="$MesonName p(${parts[3]}, ${parts[4]}, ${parts[5]}) $opHuman (sink-source)"
         Legend="Real Imaginary"
-        save=Corr/$meson/$base key='top right' \
-          fields='corr corr_im' legend="$Legend" \
-          savelabel= title="$title" \
-          xlabel='t/a' ylabel="C(t/a)" \
-          plot.sh $f
+        save=Corr/$meson/$base
+        if ! [ -f $save.pdf ]
+        then
+          save=$save key='top right' \
+            fields='corr corr_im' legend="$Legend" \
+            savelabel= title="$title" \
+            xlabel='t/a' ylabel="C(t/a)" \
+            plot.sh $f
+        fi
       fi
       # compare real part of correlators with time-reversed self
       if (( DoRev )) && (( pSq <= 1 )); then
         mkdir -p Rev/$meson
         unset Neg; [ "${snk:0:-1}" != "${src:0:-1}" ] && Neg='-'
         unset Final; [ "$snk" == g5W ] && [ "$Src" == gT5P ] && Final=29
-        if ! cmptrev.gp $f '' Rev/$meson/$base '' '' '' "$Neg" '' $Final
+        save=Rev/$meson/$base
+        if ! [ -f $save.pdf ]
         then
-          echo "Error $? processing $f"
+          if ! cmptrev.gp $f '' $save '' '' '' "$Neg" '' $Final
+          then
+            echo "Error $? making $save.pdf from $f"
+          fi
         fi
       fi
     fi

@@ -16,11 +16,16 @@ do
     for f in $InDir/quark_{l,s}_h*_g*_dt_*_p2_0_ps2_*_g*_g*.fold.*.txt; do
       if Split3ptFile $f $Spec; then
         [ $Gamma = "gXYZ" ] && Negate="y" || unset Negate
-        cmptrev.gp $f \
-          $InDir/quark_${qSrc}_${qSnk}_${Gamma}_dt_${DeltaT}_p2_${ps2}_ps2_0_${opSrc}_${opSnk}.${f#*.} \
-          trev_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT}_p2_${pMax}_${opSnk}_${opSrc} \
-          "Time reverse check ${MSrcHuman}⟶${MSnkHuman}, n^2=${pMax}, ${GammaHuman} (${opHuman})" \
-          "${MSrcHuman}⟶${MSnkHuman}" "${MSrcHuman}⟵${MSnkHuman}" "$Negate"
+        Save=trev_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT}_p2_${pMax}_${opSnk}_${opSrc}
+        if ! [ -f $Save.pdf ]
+        then
+          echo $Save
+          cmptrev.gp $f \
+            $InDir/quark_${qSrc}_${qSnk}_${Gamma}_dt_${DeltaT}_p2_${ps2}_ps2_0_${opSrc}_${opSnk}.${f#*.} \
+            $Save \
+            "Time reverse check ${MSrcHuman}⟶${MSnkHuman}, n^2=${pMax}, ${GammaHuman} (${opHuman})" \
+            "${MSrcHuman}⟶${MSnkHuman}" "${MSrcHuman}⟵${MSnkHuman}" "$Negate"
+        fi
       fi
     done
   ) done

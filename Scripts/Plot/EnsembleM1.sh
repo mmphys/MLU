@@ -6,7 +6,7 @@ Ensemble=M1
 L=32
 T=64
 
-PlotData=/Volumes/QCD/tess/semilep/M1/analyse/h447
+PlotData=/Volumes/QCD/tursa/semilep/data/M1/analyse
 
 # Maximum psquared
 MaxPSq=4

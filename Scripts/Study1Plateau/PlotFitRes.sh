@@ -37,6 +37,7 @@ if [ ${#@} == 0 ]; then
   echo "serieslbl Which field is the series label ($serieslbl)"
   echo "extralbl  Extra fields to plot in label ($extralbl)"
   echo "where     Only plot points where constraint met ($where)"
+  echo "GotData   If set to zero, cancels the plot ($GotData)"
   echo "key       Defaults for legend ($key)"
   echo "seq       Add sequence number to label"
   echo "pvalue    Add pvalue to point label"
@@ -83,16 +84,28 @@ my_xtics="$xtics"
 PDFSize="$size"
 MyInteractive=1-0${save+1}
 bGotWhere=0${where:+1}
+bGotData=${GotData:-0}
 if(bGotWhere) {WhereCondition='!(${where}) ? NaN : '} else {WhereCondition=''}
 
-# The first series colour defaults to the lowest series value in the file
-stats PlotFile using MySeries nooutput
-MyFirstColour=${tione:-floor( STATS_min )}
-# If we have a where condition, we only display series that meet the condition
-if( bGotWhere ) { eval "stats PlotFile using (".WhereCondition.MySeriesCol.') nooutput' }
-MySeriesMin=${min:-floor( STATS_min )}
-MySeriesMax=${max:-floor( STATS_max )}
-NumRecords=STATS_records
+# stats command in Gnuplot 5.4 always throws an error
+# fixed in gnuplot 5.5, but that's not released yet.
+# This is my workaround. Don't like it because I need to be told there are no data
+#print "bGotData=".bGotData
+if( !bGotData ) {
+  MySeriesMin=${min:-1}
+  MySeriesMax=MySeriesMin+1
+  NumRecords=0
+  MyFirstColour=MySeriesMin
+} else {
+  # The first series colour defaults to the lowest series value in the file
+  stats PlotFile using MySeries nooutput
+  MyFirstColour=${tione:-floor( STATS_min )}
+  # If we have a where condition, we only display series that meet the condition
+  if( bGotWhere ) { eval "stats PlotFile using (".WhereCondition.MySeriesCol.') nooutput' }
+  MySeriesMin=${min:-floor( STATS_min )}
+  MySeriesMax=${max:-floor( STATS_max )}
+  NumRecords=STATS_records
+}
 #print "NumRecords=".NumRecords
 #print "save=$save".", MySeriesMin=".MySeriesMin.", MySeriesMax=".MySeriesMax
 
@@ -183,6 +196,9 @@ if( MyInteractive ) {
 
 do for [idx=1:MySeriesCount] { Count[idx]=0; Seq[idx]=0 }
 
+if( !bGotData ) {
+  plot for [idx=MySeriesMin:MySeriesMax] PlotFile every ::::0 using (idx):(idx) title 'no data'
+} else {
 plot \
   for [idx=MySeriesMin:MySeriesMax] PlotFile using \
     ((@Condition) ? Count[MyIndex(idx)]=Count[MyIndex(idx)] + 1 : 0, NaN) : (NaN) notitle, \
@@ -198,7 +214,7 @@ plot \
     ((@Condition) ? Seq[MyIndex(idx)]=Seq[MyIndex(idx)] + 1 : 0, @ConditionLong @XPos) : \
     (column(MyColumn+1)) : (@MyLabelText) \
     @WithLabels notitle
-
+}
 }
 
 if( MyInteractive ) { pause mouse close }
