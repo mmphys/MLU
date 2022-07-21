@@ -147,16 +147,8 @@ function Split3ptFile()
   opSnk=${PrefixParts[-2]}
   opSrc=${PrefixParts[-1]}
   HumanReadable
-  if [ "${Ratio:0:1}" == R ]
-  then
-    # I swapped the ordering for the ratios ... d'Oh!
-    # TODO: Check whether this is swapped for R3?
-    GetMeson MSnkHuman $qSrc $Spec
-    GetMeson MSrcHuman $qSnk $Spec
-  else
-    GetMeson MSnkHuman $qSnk $Spec
-    GetMeson MSrcHuman $qSrc $Spec
-  fi
+  GetMeson MSnkHuman $qSnk $Spec
+  GetMeson MSrcHuman $qSrc $Spec
   pMax=$p2
   if (( pMax < ps2 )); then pMax=$ps2; fi
 }

@@ -46,7 +46,7 @@ if( C2TimeRev ) {
       set xrange[0.5:DeltaT-0.5]
     }
   }
-}
+} else { DeltaT=nT }
 
 if( !Normalise ) {
   set logscale y

@@ -77,8 +77,8 @@ do
               legend="$Legend" \
               fields=corr savelabel= \
               title="${Ratio} ${MSrcHuman}⟶${MSnkHuman}, n^2=${p2}, ${GammaHuman} (${opHuman})" \
-              xlabel=t/ΔT ylabel="${Ratio}" offset=0 \
-              x='((column(1)<2 || column(1)>word(FileDT,File)-2) ? NaN : column(1)/word(FileDT,File))' \
+              xlabel=(t-ΔT/2)/a ylabel="${Ratio}" offset=0 \
+              x='((column(1)<2 || column(1)>word(FileDT,File)-2) ? NaN : column(1)-0.5*word(FileDT,File))' \
               plot.sh $FileNames
           fi
         done
