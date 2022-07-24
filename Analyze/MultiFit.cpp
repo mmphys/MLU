@@ -1481,9 +1481,12 @@ int main(int argc, const char *argv[])
           const int Extent{ ft.tf - ft.ti + 1 };
           if( i == 0 || MinExtent > Extent )
             MinExtent = Extent;
-          fitTimes[i].resize( Extent );
-          for( int j = 0; j < Extent; ++j )
-            fitTimes[i][j] = ft.ti + j;
+          if( Extent >= delta )
+          {
+            fitTimes[i].resize( Extent );
+            for( int j = 0; j < Extent; ++j )
+              fitTimes[i][j] = ft.ti + j;
+          }
         }
         if( MinExtent >= delta )
         {
