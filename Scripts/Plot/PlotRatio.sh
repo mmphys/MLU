@@ -62,7 +62,7 @@ do
       # For each souece/sink (point/wall), show the various Delta T
       if (( DoPW ))
       then
-        for f in $InDir/R${RatioNum}_*_dt_*_g*_g*.fold.*.txt; do
+        for f in $InDir/R${RatioNum}_*_dt_${EnsembleDeltaT[0]}_p2_*_g*_g*.fold.*.txt; do
           if Split3ptFile $f $Spec; then
             FilePrefix=${Ratio}_${qSnk}_${qSrc}_${Gamma}
             FileSuffix=p2_${p2}_${opSnk}_${opSrc}
@@ -78,7 +78,7 @@ do
               fields=corr savelabel= \
               title="${Ratio} ${MSrcHuman}⟶${MSnkHuman}, n^2=${p2}, ${GammaHuman} (${opHuman})" \
               xlabel=(t-ΔT/2)/a ylabel="${Ratio}" offset=0 \
-              x='((column(1)<2 || column(1)>word(FileDT,File)-2) ? NaN : column(1)-0.5*word(FileDT,File))' \
+              x='((column(1)<2 || column(1)>word(FileDT,File)-2) ? NaN : column(1)-0.5*word(FileDT,File)+(word(FileDT,File)-24)*.025)' \
               plot.sh $FileNames
           fi
         done

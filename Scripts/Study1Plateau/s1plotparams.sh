@@ -228,6 +228,8 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   FieldOffset=FieldOffset + FieldsPerColumn
 }
 
+# 22 Jul 2022 Not sure why this fails. Find this if statement above, but it's when blocks not contiguous
+if( STATS_max - STATS_min == NBlock - 1 ) {
 unset xrange
 unset logscale x
 #set yrange [*:${stat:-*}]
@@ -244,6 +246,7 @@ unset xtics
 MyField=xAxisName
 xAxisCol=1
 eval PlotCmd
+}
 EOFMark
 
 fi
