@@ -1150,6 +1150,8 @@ public:
   { Get( dCentral, Data, Count ); }
   ValWithEr( T Min, T Low, T Central, T High, T Max, T Check = 1 );
   static void Header( const std::string &FieldName, std::ostream &os, const std::string &Sep = Space );
+  ValWithEr<T>& operator = ( const T Scalar );
+  ValWithEr<T>& operator = ( const ValWithEr<T> &Other );
   ValWithEr<T>& operator *=( const T Scalar );
   ValWithEr<T>  operator * ( const T Scalar ) const;
   ValWithEr<T> qValueChiSq( unsigned int dof ) const;
@@ -1163,6 +1165,28 @@ template <typename T> void ValWithEr<T>::Header( const std::string &FieldName, s
 {
   os << FieldName << "_min" << Sep << FieldName << "_low" << Sep << FieldName << Sep
      << FieldName << "_high" << Sep << FieldName << "_max" << Sep << FieldName << "_check";
+}
+
+template <typename T> ValWithEr<T>& ValWithEr<T>::operator=( const T Scalar )
+{
+  Min     = Scalar;
+  Low     = Scalar;
+  Central = Scalar;
+  High    = Scalar;
+  Max     = Scalar;
+  Check   = 1;
+  return *this;
+}
+
+template <typename T> ValWithEr<T>& ValWithEr<T>::operator=( const ValWithEr<T> &Other )
+{
+  Min     = Other.Min;
+  Low     = Other.Low;
+  Central = Other.Central;
+  High    = Other.High;
+  Max     = Other.Max;
+  Check   = Other.Check;
+  return *this;
 }
 
 template <typename T> ValWithEr<T>& ValWithEr<T>::operator *=( const T Scalar )

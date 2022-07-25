@@ -276,8 +276,9 @@ void Summariser::Run()
         Model m;
         m.SetName( ThisFile.FileName, &FileNameOps );
         m.Read( "" );
-        if( m.dof < 1 )
-          throw std::runtime_error("dof=" + std::to_string( m.dof ) + " i.e. extrapolation, not fit");
+        if( m.dof < 0 )
+          throw std::runtime_error("dof=" + std::to_string( m.dof ) + " (<0 invalid)");
+        const bool bExtrapolation{ m.dof == 0 };
         std::ostringstream ss;
         m.WriteColumnNames( ss );
         ss << Sep;
@@ -305,13 +306,17 @@ void Summariser::Run()
         ss.str("");
         m.WriteSummaryData( ss );
         const vEr & ChisqDof{ m.getSummaryData()[m.Nt() - 1] };
-        const vEr ChiSq{ ChisqDof * m.dof }; // Really wish I'd saved the test statistic, not reduced test statistic
+        const vEr ChiSq{ ChisqDof * ( bExtrapolation ? 1 : m.dof ) }; // Really wish I'd saved the test statistic, not reduced test statistic
         // Chi squared statistic and Q-value (probability of a worse statistic)
-        const vEr qValueChiSq{ ChiSq.qValueChiSq( m.dof ) };
+        vEr qValueChiSq;
+        if( bExtrapolation )
+          qValueChiSq = 1.;
+        else
+          qValueChiSq = ChiSq.qValueChiSq( m.dof );
         ss << Sep << qValueChiSq;
         // Hotelling t statistic and Q-value (might not be available)
         scalar SortStat;
-        if( Common::HotellingDist::Usable( m.dof, m.CovarSampleSize - 1 ) )
+        if( !bExtrapolation && Common::HotellingDist::Usable( m.dof, m.CovarSampleSize - 1 ) )
         {
           const vEr Hotelling{ ChiSq.qValueHotelling( m.dof, m.CovarSampleSize - 1 ) };
           ss << Sep << Hotelling;
