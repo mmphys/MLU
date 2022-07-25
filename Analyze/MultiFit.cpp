@@ -554,6 +554,11 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
     const int FDist_p{ parent.dof };
     const int FDist_m{ parent.cp.CovarSampleSize() - 1 };
     ss << "p=" << FDist_p << ", m=" << FDist_m << ", ";
+    if( parent.dof == 0 )
+    {
+      qValue = 1;
+      ss << "Extrapolation";
+    }
     if( Common::HotellingDist::Usable( FDist_p, FDist_m ) )
     {
       qValue = Common::HotellingDist::qValue( dTestStat, FDist_p, FDist_m );

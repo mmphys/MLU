@@ -20,11 +20,14 @@ do
         if ! [ -f $Save.pdf ]
         then
           echo $Save
-          cmptrev.gp $f \
+          if ! cmptrev.gp $f \
             $InDir/quark_${qSrc}_${qSnk}_${Gamma}_dt_${DeltaT}_p2_${ps2}_ps2_0_${opSrc}_${opSnk}.${f#*.} \
             $Save \
             "Time reverse check ${MSrcHuman}⟶${MSnkHuman}, n^2=${pMax}, ${GammaHuman} (${opHuman})" \
             "${MSrcHuman}⟶${MSnkHuman}" "${MSrcHuman}⟵${MSnkHuman}" "$Negate"
+          then
+            echo "Error $?"
+          fi
         fi
       fi
     done

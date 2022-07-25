@@ -11,4 +11,5 @@ PlotData=/Volumes/QCD/tursa/semilep/data/C2/analyse
 # Maximum psquared
 MaxPSq=4
 
-EnsembleDeltaT=(12 16 20 24 28 32)
+#EnsembleDeltaT=(12 16 20 24 28 32)
+EnsembleDeltaT=(16 20 24 28 32)
