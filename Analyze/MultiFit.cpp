@@ -559,7 +559,7 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
       qValue = 1;
       ss << "Extrapolation";
     }
-    if( Common::HotellingDist::Usable( FDist_p, FDist_m ) )
+    else if( Common::HotellingDist::Usable( FDist_p, FDist_m ) )
     {
       qValue = Common::HotellingDist::qValue( dTestStat, FDist_p, FDist_m );
       ss << "Hotelling";
