@@ -25,6 +25,9 @@
 
 #include "CRatio.hpp"
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 /*namespace Common {
 template<std::size_t Num>
 std::istream & operator>>( std::istream &is, std::array<std::string,Num> &c )
@@ -307,8 +310,7 @@ std::string QPModelMap::Get2ptName( const QP &key )
 }
 
 // Incoming file should be a three-point function with a heavy sink and light(er) source
-
-void Maker::Make( std::string &FileName )
+void ZVRCommon::Make( std::string &FileName )
 {
   std::cout << "Processing " << FileName << Common::NewLine;
   std::vector<std::string> OpNames;
@@ -333,7 +335,7 @@ void Maker::Make( std::string &FileName )
   Make( fna, FileNameSuffix, Snk, Src );
 }
 
-ZVMaker::ZVMaker( const std::string &TypeParams, const Common::CommandLine &cl ) : Maker( cl )
+ZVMaker::ZVMaker( const std::string &TypeParams, const Common::CommandLine &cl ) : ZVRCommon( cl )
 {
   if( !TypeParams.empty() )
     throw std::runtime_error( "ZVMaker does not recognise any parameters: " + TypeParams );
@@ -439,7 +441,7 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
 }
 
 RMaker::RMaker( const std::string &TypeParams, const Common::CommandLine &cl )
-: Maker( cl ), bAltR3{cl.GotSwitch("r3a")}
+: ZVRCommon( cl ), bAltR3{cl.GotSwitch("r3a")}
 {
   ZVmi.Read( TypeParams, LoadFilePrefix );
 }
@@ -749,6 +751,251 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   }
 }
 
+FMaker::FMaker( const std::string &TypeParams, const Common::CommandLine &cl )
+: Maker( cl ), p("",0), i3Base{ cl.SwitchValue<std::string>("i3") },
+  L{ Common::FromString<int>( TypeParams ) },
+  ap{ 2 * M_PI / L }
+{
+}
+
+int FMaker::Weight( const std::string &Quark )
+{
+  int Weight = 0;
+  if( !Quark.empty() )
+    switch( std::toupper( Quark[0] ) )
+    {
+      case 'L':
+        Weight = 1;
+        break;
+      case 'S':
+        Weight = 2;
+        break;
+      case 'H':
+        Weight = 3;
+        break;
+    }
+  return Weight;
+}
+
+// Incoming file should be a three-point function with a heavy sink and light(er) source
+void FMaker::Make( std::string &FileName )
+{
+  // Parse Filename and check it contains what we need
+  std::cout << "Processing " << FileName << Common::NewLine;
+  std::vector<std::string> OpNames;
+  Common::FileNameAtt fna{ FileName, &OpNames };
+  fna.ParseExtra();
+  if( OpNames.empty() )
+    throw std::runtime_error( "Sink / source operator names mising" );
+  if( !fna.bGotDeltaT )
+    throw std::runtime_error( "DeltaT missing" );
+  if( fna.Gamma.size() != 1 )
+    throw std::runtime_error( FileName + " has " + std::to_string( fna.Gamma.size() ) + " currents" );
+  if( fna.Gamma[0] != Common::Gamma::Algebra::GammaT )
+  {
+    std::ostringstream ss;
+    ss << "Ignoring current " << fna.Gamma[0] << " - should be " << Common::Gamma::Algebra::GammaT << " only";
+    throw std::runtime_error( ss.str().c_str() );
+  }
+  if( fna.p.empty() )
+    throw std::runtime_error( FileName + " has no momenta" );
+  std::vector<std::string> Parts{ Common::ArrayFromString( fna.BaseShort, "_" ) };
+  if( Parts.size() < 3 || Parts[0].empty() || std::toupper( Parts[0][0] ) != 'R' || fna.Extra.empty() )
+    throw std::runtime_error( FileName + " is not a ratio file" );
+  RatioNum = Common::FromString<int>( Parts[0].substr( 1 ) );
+  qSnk = Parts[1];
+  qSrc = Parts[2];
+  p = fna.GetFirstNonZeroMomentum();
+  // Get the fit type and fit ranges
+  const std::string &FitTypeOriginal{ fna.Extra[0] };
+  {
+    std::string FitTypeBuffer{ FitTypeOriginal };
+    FitType = Common::ExtractToSeparator( FitTypeBuffer, Common::Underscore );
+    for( std::size_t pos = 0; ( pos = FitTypeBuffer.find( '_', pos ) ) != std::string::npos; )
+      FitTypeBuffer[pos] = ' ';
+    FitParts = Common::ArrayFromString<int>( FitTypeBuffer );
+    if( FitParts.empty() || FitParts.size() % 2 )
+      throw std::runtime_error( FileName + " fit info " + ( FitParts.empty() ? "missing" : "bad" ) );
+  }
+  // Get filename prefix
+  Prefix = std::to_string( RatioNum );
+  Prefix.append( 1, '_' );
+  Prefix.append( qSnk );
+  Prefix.append( 1, '_' );
+  Prefix.append( qSrc );
+  // Get filename suffix
+  std::string Suffix1;
+  Common::AppendDeltaT( Suffix1, fna.DeltaT );
+  Suffix1.append( p.FileString() );
+  for( std::size_t i = 3; i < Parts.size(); ++i ) // remainder of base filename
+  {
+    Suffix1.append( 1, '_' );
+    Suffix1.append( Parts[i] );
+  }
+  for( std::size_t i = fna.Extra.size(); i-- > 1; )
+  {
+    Suffix1.append( 1, '.' );
+    Suffix1.append( fna.Extra[i] );
+  }
+  std::string Suffix2{ Common::Period };
+  Suffix2.append( OpNames[fna.op[1]] );
+  Suffix2.append( 1, '_' );
+  Suffix2.append( OpNames[fna.op[0]] );
+  Suffix2.append( 1, '.' );
+  Suffix2.append( fna.Type );
+  Suffix2.append( 1, '.' );
+  Suffix2.append( fna.SeedString );
+  Suffix2.append( 1, '.' );
+  Suffix2.append( fna.Ext );
+  Suffix = Suffix1;
+  Suffix.append( 1, '.' );
+  Suffix.append( FitTypeOriginal );
+  Suffix.append( Suffix2 );
+  // Debug - show filename
+#if DEBUG
+  std::cout << RatioNum << Common::Space << qSnk << Common::Space << qSrc << Common::Space << fna.Gamma[0];
+  for( std::size_t i = 3; i < Parts.size(); ++i )
+    std::cout << Common::Space << Parts[i];
+  std::cout << " { " << FitType;
+  for( std::size_t i = 0; i < FitParts.size(); i += 2 )
+  {
+    if( i )
+      std::cout << Common::Comma;
+    std::cout << " [" << FitParts[i] << "," << FitParts[i+1] << "]";
+  }
+  std::cout << " }";
+  for( std::size_t i = fna.Extra.size(); i-- > 1; )
+    std::cout << " ." << fna.Extra[i];
+  std::cout << " Suffix=" << Suffix << Common::NewLine;
+#endif
+  // Check whether output exists
+  std::string OutFileName{ outBase };
+  OutFileName.append( 1, 'F' );
+  OutFileName.append( Prefix );
+  OutFileName.append( Suffix );
+  if( Common::FileExists( OutFileName ) )
+    throw std::runtime_error( OutFileName + " exists" );
+  // Open files
+  Model mT, mXYZ;
+  VectorView vT, vXYZ;
+  static const char szReading[] = " Reading ";
+  mT.Read( FileName, szReading );
+  assert( Model::idxCentral == -1 && "Bug: Model::idxCentral != -1" );
+  vT.Map( mT[Model::idxCentral], mT.NumSamples() - Model::idxCentral, mT.Nt() );
+  int NumSamples {};
+  std::string FileNameXYZ;
+  if( p )
+  {
+    std::string GlobName;
+    {
+      std::ostringstream ss;
+      ss << "R" << Prefix << Common::Underscore << Common::Gamma::Algebra::Spatial << Suffix1 << ".*" << Suffix2;
+      GlobName = ss.str();
+    }
+    std::vector<std::string> FileList{ Common::glob( &GlobName, &GlobName + 1, i3Base.c_str() ) };
+    if( FileList.empty() )
+      throw std::runtime_error( GlobName + " not found" );
+    if( FileList.size() != 1 )
+      std::cout << Common::Space << GlobName << " ambiguous" << Common::NewLine;
+    FileNameXYZ = std::move( FileList[0] );
+    mXYZ.Read( FileNameXYZ, szReading );
+    vXYZ.Map( mXYZ[Model::idxCentral], mXYZ.NumSamples() - Model::idxCentral, mXYZ.Nt() );
+    mT.IsCompatible( mXYZ, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+  }
+  // Load energies
+  const bool bSnkHeavier{ Weight( qSnk ) > Weight( qSrc ) };
+  const std::string &qHeavy{ bSnkHeavier ? qSnk : qSrc };
+  const std::string &qLight{ bSnkHeavier ? qSrc : qSnk };
+  QP qpMHeavy( qHeavy, Common::p0 );
+  QP qpMLight( qLight, Common::p0 );
+  QP qpELight( qLight, p );
+  Model &mMHeavy( EFit( qpMHeavy, szReading ) );
+  mT.IsCompatible( mMHeavy, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+  Model &mMLight( EFit( qpMLight, szReading ) );
+  mT.IsCompatible( mMLight, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+  Model &mELight( p ? EFit( qpELight, szReading ) : mMLight );
+  if( p )
+    mT.IsCompatible( mELight, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+  const Vector MHeavy{ EFit.GetVector( qpMHeavy ) };
+  const Vector MLight{ EFit.GetVector( qpMLight ) };
+  const Vector ELight{ EFit.GetVector( qpELight ) };
+
+  // Make output
+  static const std::vector<std::string> ParamNames{ "mL", "mH", "qSq", "kMu", "melV0", "melVi",
+                                                    "fPar", "fPerp", "fPlus", "f0" };
+  constexpr int EL{ 0 };
+  constexpr int mL{ 1 };
+  constexpr int mH{ 2 };
+  constexpr int qSq{ 3 };
+  constexpr int kMu{ 4 };
+  constexpr int melV0{ 5 };
+  constexpr int melVi{ 6 };
+  constexpr int fPar{ 7 };
+  constexpr int fPerp{ 8 };
+  constexpr int fPlus{ 9 };
+  constexpr int f0{ 10 };
+  constexpr int ChiSqDof{ 11 };
+  const int NumFiles{ 3 + ( p ? 2 : 0 ) };
+  Model Out( ParamNames, 1, NumFiles, FitParts[0], FitParts[1], 0, false, false, NumSamples,
+             static_cast<int>( ParamNames.size() ) + 2 );
+  Out.FileList.emplace_back( FileName );
+  if( p )
+    Out.FileList.emplace_back( FileNameXYZ );
+  Out.FileList.emplace_back( mMHeavy.Name_.Filename );
+  Out.FileList.emplace_back( mMLight.Name_.Filename );
+  if( p )
+    Out.FileList.emplace_back( mELight.Name_.Filename );
+  Out.CopyAttributes( mT );
+  {
+    std::vector<std::string> ColumnNames{ "EL" };
+    ColumnNames.insert( ColumnNames.end(), ParamNames.begin(), ParamNames.end() );
+    ColumnNames.emplace_back( Common::sChiSqPerDof );
+    Out.SetColumnNames( ColumnNames );
+  }
+  Out.Name_.Seed = mT.Name_.Seed;
+  Out.binSize = mT.binSize;
+  for( int idx = 0; idx < NumSamples - Model::idxCentral; ++idx )
+  {
+    Scalar *O = Out[idx + Model::idxCentral];
+    O[qSq] = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * ELight[idx];
+    O[mH] = MHeavy[idx];
+    O[mL] = MLight[idx];
+    O[EL] = ELight[idx];
+    O[melV0] = vT[idx];
+    const Scalar    Root2MH{ std::sqrt( MHeavy[idx] * 2 ) };
+    const Scalar InvRoot2MH{ 1. / Root2MH };
+    O[fPar] = vT[idx] * InvRoot2MH;
+    if( p )
+    {
+      O[kMu] = ap * p.x; // TODO: This only works up to p^2 = 4
+      O[melVi] = vXYZ[idx];
+      O[fPerp] = vXYZ[idx] * InvRoot2MH / O[kMu];
+      O[fPlus] = ( MHeavy[idx] - ELight[idx] ) * O[fPerp];
+      O[f0] = ( ELight[idx] * ELight[idx] - MLight[idx] * MLight[idx] ) * O[fPerp];
+    }
+    else
+    {
+      O[kMu] = 0;
+      O[melVi] = 0;
+      O[fPerp] = 0;
+      O[fPlus] = 0;
+      O[f0] = 0;
+    }
+    O[fPlus] += O[fPar];
+    O[fPlus] *= InvRoot2MH;
+    O[f0] += ( MHeavy[idx] - ELight[idx] ) * O[fPar];
+    O[f0] *= Root2MH / ( MHeavy[idx] * MHeavy[idx] - MLight[idx] * MLight[idx] );
+    O[ChiSqDof] = 0;
+  }
+  // Write output
+  std::cout << " Writing " << OutFileName <<Common::NewLine;
+  Out.MakeCorrSummary( "Column" );
+  Out.Write( OutFileName );
+  OutFileName.resize( OutFileName.length() - fna.Ext.length() );
+  OutFileName.append( TEXT_EXT );
+  Out.WriteSummary( OutFileName );
+}
+
 Maker::Maker( const Common::CommandLine &cl )
 : MaxSamples{cl.SwitchValue<int>("n")},
   outBase{cl.SwitchValue<std::string>("o")},
@@ -803,6 +1050,8 @@ int main(int argc, const char *argv[])
         m.reset( new RMaker( TypeParams, cl ) );
       else if( Common::EqualIgnoreCase( Type, "ZV" ) )
         m.reset( new ZVMaker( TypeParams, cl ) );
+      else if( Common::EqualIgnoreCase( Type, "F" ) )
+        m.reset( new FMaker( TypeParams, cl ) );
       else
         throw std::runtime_error( "I don't know how to make type " + Type );
       bShowUsage = false;

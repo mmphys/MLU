@@ -34,6 +34,7 @@ using Scalar = double;
 using Fold = Common::Fold<Scalar>;
 using Model = Common::Model<Scalar>;
 using Vector = Common::Vector<Scalar>;
+using VectorView = Common::VectorView<Scalar>;
 
 extern Model DummyModel;
 extern const std::string DefaultColumnName;
@@ -219,15 +220,6 @@ protected:
   const bool RegExSwap;
   std::regex RegExExt;
   QPModelMap EFit;
-  struct SSInfo
-  {
-    const std::string &op;
-    const QP qp;
-    Model &EModel;
-    const Vector E;
-    SSInfo( QPModelMap &efit, const std::string &op_, QP qp_ )
-    : op{op_}, qp{qp_}, EModel{efit(qp,LoadFilePrefix)}, E{efit.GetVector(qp)} {}
-  };
   struct CorrT
   {
     std::string Name;
@@ -239,39 +231,77 @@ public:
   CorrCache Cache2;
   CorrCache Cache3;
 protected:
+  std::string HeavyKey( const std::string &Heavy ) const;
+public:
+  Maker( const Common::CommandLine &cl );
+  virtual ~Maker() {}
+  virtual void Make( std::string &sFileName ) = 0;
+};
+
+class ZVRCommon : public Maker
+{
+protected:
+  struct SSInfo
+  {
+    const std::string &op;
+    const QP qp;
+    Model &EModel;
+    const Vector E;
+    SSInfo( QPModelMap &efit, const std::string &op_, QP qp_ )
+    : op{op_}, qp{qp_}, EModel{efit(qp,LoadFilePrefix)}, E{efit.GetVector(qp)} {}
+  };
   inline void AppendOp( std::string &s, const std::string &Op ) { Append( s, Op ); }
   inline void AppendOps( std::string &s, const std::string &Snk, const std::string &Src)
   {
     AppendOp( s, Snk );
     AppendOp( s, Src );
   }
-  std::string HeavyKey( const std::string &Heavy ) const;
   virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                      const SSInfo &Snk, const SSInfo &Src ) = 0;
 public:
-  Maker( const Common::CommandLine &cl );
-  virtual ~Maker() {}
-  void Make( std::string &sFileName );
+  void Make( std::string &sFileName ) override;
+  ZVRCommon( const Common::CommandLine &cl ) : Maker( cl ) {}
 };
 
 // Make Z_V: eq 2.7 pg 3 https://arxiv.org/pdf/1305.7217.pdf
-class ZVMaker : public Maker
+class ZVMaker : public ZVRCommon
 {
 protected:
-  virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                     const SSInfo &Snk, const SSInfo &Src );
+  void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+             const SSInfo &Snk, const SSInfo &Src ) override;
 public:
   ZVMaker( const std::string &TypeParams, const Common::CommandLine &cl );
 };
 
 // Make R1 and R2: eq 2.8 pg 4 https://arxiv.org/pdf/1305.7217.pdf
-class RMaker : public Maker
+class RMaker : public ZVRCommon
 {
 protected:
   const bool bAltR3;
   QDTModelMap ZVmi;
-  virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                     const SSInfo &Snk, const SSInfo &Src );
+  void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+             const SSInfo &Snk, const SSInfo &Src ) override;
 public:
   RMaker( const std::string &TypeParams, const Common::CommandLine &cl );
+};
+
+// Make F parralel, F perpendicular, F+ and F0
+class FMaker : public Maker
+{
+  const std::string i3Base;
+  const int L;
+  const Scalar ap;
+protected:
+  int RatioNum;
+  std::string qSnk;
+  std::string qSrc;
+  Common::FileNameMomentum p;
+  std::string Prefix;
+  std::string Suffix;
+  std::string FitType;
+  std::vector<int> FitParts;
+public:
+  static int Weight( const std::string &Quark );
+  FMaker( const std::string &TypeParams, const Common::CommandLine &cl );
+  void Make( std::string &sFileName ) override;
 };

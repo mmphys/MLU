@@ -966,7 +966,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
     //TODO: Work out how to copy parameter names into output file properly
     if( ColNames.size() == 1 )
       OutputModel.OpNames.clear();
-    ColNames.push_back( "ChiSqPerDof" );
+    ColNames.push_back( Common::sChiSqPerDof );
     OutputModel.SetColumnNames( ColNames );
   }
   OutputModel.Name_.Seed = Seed;

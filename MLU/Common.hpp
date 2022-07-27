@@ -329,6 +329,7 @@ extern const std::string sCovarSampleSize;
 extern const std::string sCovarNumBoot;
 extern const std::string sNE;
 extern const std::vector<std::string> sCorrSummaryNames;
+extern const std::string sChiSqPerDof;
 
 using SeedType = unsigned int;
 
@@ -1019,7 +1020,7 @@ public:
   {
     if( i >= size_ )
       throw std::runtime_error("VectorView index " + std::to_string(i) + " >= size " + std::to_string(size_));
-    return data_[i];
+    return data_[i * stride_];
   }
   inline void Map( const T * Data, std::size_t Size, std::size_t Stride = 1 )
   { data_ = Data; size_ = Size; stride_ = Stride; }
@@ -2818,7 +2819,19 @@ public: // Override these for specialisations
     {
       s << "# Configs: " << ConfigCount.size();
       for( const Common::ConfigCount &cc : ConfigCount )
-        s << ", " << cc;
+        s << CommaSpace << cc;
+      s << NewLine;
+    }
+    if( !ColumnNames.empty() )
+    {
+      s << "# NumColumns: " << ColumnNames.size() << " (rows t0 ... t" << (ColumnNames.size()-1) << ")"
+        << NewLine << "# " << sColumnNames << ": ";
+      for( std::size_t i = 0; i < ColumnNames.size(); ++i )
+      {
+        if( i )
+          s << CommaSpace;
+        s << ColumnNames[i];
+      }
       s << NewLine;
     }
     if( bVerboseSummary )

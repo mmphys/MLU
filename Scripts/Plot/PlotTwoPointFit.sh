@@ -46,7 +46,10 @@ do
     then
       Cmd="s1plotparams.sh ${f/params_sort/params}"
       (( NumRows > 75 )) && Cmd="label= $Cmd"
-      eval $Cmd
+      if ! eval $Cmd
+      then
+        echo "Error $?"
+      fi
     fi
     if (( NumRows && DoNew ))
     then

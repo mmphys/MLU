@@ -148,6 +148,7 @@ const std::string sCovarSampleSize{ "CovarSampleSize" };
 const std::string sCovarNumBoot{ "CovarNumBoot" };
 const std::string sNE{ " != " };
 const std::vector<std::string> sCorrSummaryNames{ "corr", "bias", "exp", "cosh" };
+const std::string sChiSqPerDof{ "ChiSqPerDof" };
 const double NaN{ std::nan( "" ) };
 
 namespace Gamma

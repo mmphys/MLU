@@ -58,11 +58,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--i3 corr/3pt_sp2/ --i2 corr/2ptp2/ -o ratio/sp2/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--efit fit/Fit_sp2.txt"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--efit ,s"
@@ -74,7 +74,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--type R,fitZV/FitZV_sp2.txt"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--type R"
@@ -82,7 +82,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "quark_l_h385_gT_dt_&apos;*&apos;_p2_0_ps2_[01]_g5&apos;?&apos;_g5&apos;?&apos;.fold.1835672416.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "quark_h447_l_gT_dt_&apos;*&apos;_p2_[01]_ps2_0_g5&apos;?&apos;_g5&apos;?&apos;.fold.1835672416.h5"
@@ -102,6 +102,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--2e"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--i2 analyse/corr/2ptp2/ --i3 analyse/RatioFit/sp2/ -o fratio/sp2/ --efit analyse/fit/Fit_sp2.txt --type f,48"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "*_p2_[01]*.h5"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
