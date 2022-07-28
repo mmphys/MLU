@@ -751,11 +751,14 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   }
 }
 
-FMaker::FMaker( const std::string &TypeParams, const Common::CommandLine &cl )
+FMaker::FMaker( std::string TypeParams, const Common::CommandLine &cl )
 : Maker( cl ), p("",0), i3Base{ cl.SwitchValue<std::string>("i3") },
-  L{ Common::FromString<int>( TypeParams ) },
+  L{ Common::FromString<int>( Common::ExtractToSeparator( TypeParams ) ) },
   ap{ 2 * M_PI / L }
 {
+  bAdjustGammaSpatial = Common::EqualIgnoreCase( TypeParams, "spatial" );
+  if( !bAdjustGammaSpatial && !TypeParams.empty() )
+    throw std::runtime_error( "Unrecognised form factor option: " + TypeParams );
 }
 
 int FMaker::Weight( const std::string &Quark )
@@ -873,8 +876,8 @@ void FMaker::Make( std::string &FileName )
   OutFileName.append( 1, 'F' );
   OutFileName.append( Prefix );
   OutFileName.append( Suffix );
-  if( Common::FileExists( OutFileName ) )
-    throw std::runtime_error( OutFileName + " exists" );
+  //if( Common::FileExists( OutFileName ) )
+    //throw std::runtime_error( OutFileName + " exists" );
   // Open files
   Model mT, mXYZ;
   VectorView vT, vXYZ;
@@ -967,7 +970,14 @@ void FMaker::Make( std::string &FileName )
     O[fPar] = vT[idx] * InvRoot2MH;
     if( p )
     {
-      O[kMu] = ap * p.x; // TODO: This only works up to p^2 = 4
+      O[kMu] = ap;
+      if( bAdjustGammaSpatial )
+      {
+        int FirstNonZero{ p.x ? p.x : p.y ? p.y : p.z };
+        if( ( p.y && p.y != FirstNonZero ) || ( p.z && p.z != FirstNonZero ) )
+          throw std::runtime_error( "Can't adjust gXYZ when momentum components differ" );
+        O[kMu] *= FirstNonZero;
+      }
       O[melVi] = vXYZ[idx];
       O[fPerp] = vXYZ[idx] * InvRoot2MH / O[kMu];
       O[fPlus] = ( MHeavy[idx] - ELight[idx] ) * O[fPerp];
@@ -1096,10 +1106,14 @@ int main(int argc, const char *argv[])
     "--i3   Input3 filename prefix\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
     "-o     Output filename prefix\n"
-    "--type Ratio type[,options[,...]] (default " << DefaultType << ")\n"
-    "       ZV Make ZV (no options)\n"
-    "       R  Make R ratios. options as per --efit, except a) Fit_list->ZV_List\n"
+    "--type Ratio type[,Options[,...]] (default " << DefaultType << ")\n"
+    "       ZV Make ZV (no Options)\n"
+    "       R  Make R ratios. Options as per --efit, except a) Fit_list->ZV_List\n"
     "          b) Spectator not required\n"
+    "       F  Make form factors. Options\n"
+    "          L i.e. spatial extent of lattice, (e.g. 24, 32, 64, ...)\n"
+    "          'spatial' flag to divide spatial current gXYZ by integer momentum\n"
+    "          (Should not be needed except for very old code)\n"
     "--efit Fit_list[,options[,...]] List of fit files for energies,\n"
     "         each row has 'Quark file' (one row per momenta).\n"
     "         First option can be 'c' to freeze values to central value,\n"

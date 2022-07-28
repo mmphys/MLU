@@ -292,6 +292,7 @@ class FMaker : public Maker
   const int L;
   const Scalar ap;
 protected:
+  bool bAdjustGammaSpatial;
   int RatioNum;
   std::string qSnk;
   std::string qSrc;
@@ -302,6 +303,6 @@ protected:
   std::vector<int> FitParts;
 public:
   static int Weight( const std::string &Quark );
-  FMaker( const std::string &TypeParams, const Common::CommandLine &cl );
+  FMaker( std::string TypeParams, const Common::CommandLine &cl );
   void Make( std::string &sFileName ) override;
 };
