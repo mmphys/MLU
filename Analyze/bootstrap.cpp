@@ -247,7 +247,7 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
       {
         Common::AppendGamma( Filename, Algebra::GammaX, Common::Comma );
         out.FileList.emplace_back( Filename );
-        const double Scale{ p.x == 1 ? 1. : ( 1. / p.x ) };
+        const double Scale{ std::abs( p.x ) == 1 ? 1. : ( 1. / std::abs( p.x ) ) };
         const std::complex<double> * const pSrc = (*file)( Algebra::GammaX, Src );
         for( int t = 0; t < Nt; t++ )
           *pDst++ = pSrc[ ( t + TOffset ) % Nt ] * Scale;
@@ -257,7 +257,7 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
         Filename.resize( FilenameLen );
         Common::AppendGamma( Filename, Algebra::GammaY, Common::Comma );
         out.FileList.emplace_back( Filename );
-        const double Scale{ p.y == 1 ? 1. : ( 1. / p.y ) };
+        const double Scale{ std::abs( p.y ) == 1 ? 1. : ( 1. / std::abs( p.y ) ) };
         const std::complex<double> * const pSrc = (*file)( Algebra::GammaY, Src );
         for( int t = 0; t < Nt; t++ )
           *pDst++ = pSrc[ ( t + TOffset ) % Nt ] * Scale;
@@ -267,7 +267,7 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
         Filename.resize( FilenameLen );
         Common::AppendGamma( Filename, Algebra::GammaZ, Common::Comma );
         out.FileList.emplace_back( Filename );
-        const double Scale{ p.z == 1 ? 1. : ( 1. / p.z ) };
+        const double Scale{ std::abs( p.z ) == 1 ? 1. : ( 1. / std::abs( p.z ) ) };
         const std::complex<double> * const pSrc = (*file)( Algebra::GammaZ, Src );
         for( int t = 0; t < Nt; t++ )
           *pDst++ = pSrc[ ( t + TOffset ) % Nt ] * Scale;
