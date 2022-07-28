@@ -5,6 +5,7 @@
 Ensemble=C2
 L=24
 T=64
+EnsembleaInv=1.7848 #GeV
 
 PlotData=/Volumes/QCD/tursa/semilep/data/C2/analyse
 
@@ -13,3 +14,4 @@ MaxPSq=4
 
 #EnsembleDeltaT=(12 16 20 24 28 32)
 EnsembleDeltaT=(16 20 24 28 32)
+Heavy=6413

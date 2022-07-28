@@ -5,6 +5,7 @@
 Ensemble=F1M
 L=48
 T=96
+EnsembleaInv=2.708 #GeV
 
 PlotData=/Volumes/QCD/tursa/semilep/data/F1M/analyse
 
@@ -12,3 +13,4 @@ PlotData=/Volumes/QCD/tursa/semilep/data/F1M/analyse
 MaxPSq=6
 
 EnsembleDeltaT=(16 20 24 28 32)
+Heavy=385

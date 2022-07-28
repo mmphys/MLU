@@ -63,6 +63,7 @@ do
       if (( DoPW ))
       then
         for f in $InDir/R${RatioNum}_*_dt_${EnsembleDeltaT[0]}_p2_*_g*_g*.fold.*.txt; do
+        #for f in $InDir/R${RatioNum}_l_h6413_gXYZ_dt_${EnsembleDeltaT[0]}_p2_4_g5P_g5P.fold.*.txt; do
           if Split3ptFile $f $Spec; then
             FilePrefix=${Ratio}_${qSnk}_${qSrc}_${Gamma}
             FileSuffix=p2_${p2}_${opSnk}_${opSrc}
