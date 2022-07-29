@@ -5,8 +5,8 @@
 
 # Plot ratios
 . PlotCommon.sh
-mkdir -p All/FRatio
-cd All/FRatio
+mkdir -p All/FormFactor
+cd All/FormFactor
 
 #set -x
 
@@ -90,8 +90,10 @@ xAxisLabel=xAxisLabel." / GeV^2"
 set xlabel xAxisLabel
 set ylabel yAxis.yAxisLabel
 set key bottom right maxrows 3
-set xrange [-0.2:2.3]
-set yrange [0.1:1.4]
+if( MesonSave eq "K_Ds" ) {
+  set xrange [-0.2:2.3]
+  set yrange [0.1:1.4]
+}
 
 f(dt,p)="F".RatioNum."_".MesonL.(MesonPos ? word(HeavyMasses, Ens) : "").MesonR. \
         "_dt_".dt."_p2_".p.".corr.g5P_g5P.params.1835672416.txt"
