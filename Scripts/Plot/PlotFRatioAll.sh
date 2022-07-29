@@ -40,24 +40,33 @@ xAxis="${xAxis:-qSq}"
 yAxis="${yAxis:-fPlus}"
 
 PlotData="/Volumes/QCD/tursa/semilep/data"
-Ensembles="F1M M1 M2 M3 C2"
+Ensembles="F1M M1 M2 M3 C1 C2"
 NumEnsembles=words(Ensembles)
-HeavyMasses="385 447 447 447 6413"
+HeavyMasses="385 447 447 447 6413 6413"
 
-array EnsembleaInv[5]
+array EnsembleaInv[6]
 EnsembleaInv[1]=2.708
 EnsembleaInv[2]=2.3833
 EnsembleaInv[3]=2.3833
 EnsembleaInv[4]=2.3833
 EnsembleaInv[5]=1.7848
+EnsembleaInv[6]=1.7848
+
+array pMax[6]
+pMax[1]=6
+pMax[2]=4
+pMax[3]=4
+pMax[4]=4
+pMax[5]=4
+pMax[6]=4
 
 # fPar and fPerp each require different scaling
-array EnsYScale[5]
+array EnsYScale[6]
 AdjustYAxis=( yAxis eq "fPerp" || yAxis eq "fPar" )
-yAxisLabel=( !AdjustYAxis ) ? "" : ( yAxis eq "fPar" ) ? " * a^{0.5}" : " * a^{-0.5}"
+yAxisLabel=( !AdjustYAxis ) ? "" : ( yAxis eq "fPerp" ) ? " * a^{0.5}" : " * a^{-0.5}"
 do for [idx=1:|EnsYScale|] {
     EnsYScale[idx] = ( !AdjustYAxis ) ? 1. : sqrt(EnsembleaInv[idx])
-    if( yAxis eq "fPar" ) { EnsYScale[idx] = 1. / EnsYScale[idx] }
+    if( yAxis eq "fPerp" ) { EnsYScale[idx] = 1. / EnsYScale[idx] }
 }
 
 xAxisH=xAxis."_high"
@@ -80,7 +89,9 @@ if( xAxis eq  "qSq" ) { xAxisLabel="q^2" } else { xAxisLabel=xAxis }
 xAxisLabel=xAxisLabel." / GeV^2"
 set xlabel xAxisLabel
 set ylabel yAxis.yAxisLabel
-set key top center maxrows 3
+set key bottom right maxrows 3
+set xrange [-0.2:2.3]
+set yrange [0.1:1.4]
 
 f(dt,p)="F".RatioNum."_".MesonL.(MesonPos ? word(HeavyMasses, Ens) : "").MesonR. \
         "_dt_".dt."_p2_".p.".corr.g5P_g5P.params.1835672416.txt"
@@ -88,12 +99,13 @@ f(dt,p)="F".RatioNum."_".MesonL.(MesonPos ? word(HeavyMasses, Ens) : "").MesonR.
 
 DeltaTStyle(dt)=dt/2-8
 
-array EnsembleColour[5]
+array EnsembleColour[6]
 EnsembleColour[1]=7
-EnsembleColour[2]=6
+EnsembleColour[2]=3
 EnsembleColour[3]=1
 EnsembleColour[4]=2
-EnsembleColour[5]=4
+EnsembleColour[5]=5
+EnsembleColour[6]=4
 
 DD=0.00025
 DD=0.0025
@@ -105,7 +117,7 @@ set pointsize 0.5
 if( yAxis eq "fPlus" || yAxis eq "fPerp" ) { pMin=1 } else { pMin=0 }
 
 plot \
-  for [Ens=1:NumEnsembles] for [p=pMin:4] \
+  for [Ens=1:NumEnsembles] for [p=pMin:pMax[Ens]] \
     PlotData."/".word(Ensembles, Ens).Dir.f(DeltaT,p) \
     using (column(xAxis)*EnsembleaInv[Ens]*EnsembleaInv[Ens]+(Ens-1)*DD) \
       :(column(yAxis) * EnsYScale[Ens]) \

@@ -12,5 +12,5 @@ PlotData=/Volumes/QCD/tursa/semilep/data/F1M/analyse
 # Maximum psquared
 MaxPSq=6
 
-EnsembleDeltaT=(16 20 24 28 32)
+EnsembleDeltaT=(12 16 20 24 28 32)
 Heavy=385

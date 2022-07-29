@@ -38,12 +38,13 @@ xAxis="${xAxis:-qSq}"
 yAxis="${yAxis:-fPlus}"
 aInv=${EnsembleaInv:-1.}
 xScale=aInv * aInv
+MaxPSq=${MaxPSq:-4}
 
 # fPar and fPerp each require different scaling
 AdjustYAxis=( yAxis eq "fPerp" || yAxis eq "fPar" )
-yAxisLabel=( !AdjustYAxis ) ? "" : ( yAxis eq "fPar" ) ? " * a^{0.5}" : " * a^{-0.5}"
+yAxisLabel=( !AdjustYAxis ) ? "" : ( yAxis eq "fPerp" ) ? " * a^{0.5}" : " * a^{-0.5}"
 yScale = ( !AdjustYAxis ) ? 1. : sqrt(aInv)
-if( yAxis eq "fPar" ) { yScale = 1. / yScale }
+if( yAxis eq "fPerp" ) { yScale = 1. / yScale }
 
 xAxisH=xAxis."_high"
 xAxisL=xAxis."_low"
@@ -69,7 +70,7 @@ set pointsize 0.5
 
 if( yAxis eq "fPlus" || yAxis eq "fPerp" ) { pMin=1 } else { pMin=0 }
 
-plot for [p=pMin:4] for [dt=24:32:4] Dir.f(dt,p) \
+plot for [p=pMin:MaxPSq] for [dt=24:32:4] Dir.f(dt,p) \
     using (column(xAxis)*xScale+(dt-28)*DD):(column(yAxis)*yScale) \
     :(column(xAxisL)*xScale+(dt-28)*DD):(column(xAxisH)*xScale+(dt-28)*DD) \
     :(column(yAxisL)*yScale):(column(yAxisH)*yScale) with xyerrorbars title "ΔT=".dt.", p^2=".p
