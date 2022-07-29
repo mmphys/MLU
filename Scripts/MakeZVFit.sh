@@ -58,6 +58,7 @@ do
 		    24) FitRange=4:13:8:8;;
 		    20) FitRange=4:11:6:6;;
 		    16) FitRange=4:9:4:4;;
+                    12) FitRange=4:7:3:3;;
 		    *)  unset FitRange; echo "Unrecognised DeltaT $DeltaT";;
 		esac
 		if [ -v FitRange ]
