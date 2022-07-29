@@ -26,7 +26,7 @@ function MakeAll()
 		Spec=${Spec:0:-2}
 	    fi
 	    # Make sure output doesn't already exist
-	    Outfile=ZVFit_${SpecGrp}.txt
+	    Outfile=ZVFit_${SpecGrp}.auto.txt
 	    if [ -f $Outfile ]
 	    then
 		echo $Outfile already exists. Skipping.
