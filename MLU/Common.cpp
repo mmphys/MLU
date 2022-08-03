@@ -727,26 +727,26 @@ double Momentum::LatticeDispersion( double am, unsigned int N ) const
 {
   if( ! ( *this ) )
     return am;
-  double z = std::sinh( 0.5 * am );
-  z *= z;
+  double Val = std::sinh( 0.5 * am );
+  Val *= Val;
   const double NInv{ 1. / N };
   double w;
   if( x )
   {
     w = std::sin( M_PI * x * NInv );
-    z += w * w;
+    Val += w * w;
   }
   if( y )
   {
     w = std::sin( M_PI * y * NInv );
-    z += w * w;
+    Val += w * w;
   }
   if( z )
   {
     w = std::sin( M_PI * z * NInv );
-    z += w * w;
+    Val += w * w;
   }
-  return 2 * std::asinh( std::sqrt( z ) );
+  return 2 * std::asinh( std::sqrt( Val ) );
 }
 
 // Take a squared momentum and make an approximate 3d momentum from it
