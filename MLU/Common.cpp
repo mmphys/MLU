@@ -722,6 +722,33 @@ void Momentum::Replace( std::string &s, const std::string &MomName, bool bNegati
   s.append( Search );
 }
 
+// Use Lattice Dispersion relation and N=L/a to boost am to aE(p)
+double Momentum::LatticeDispersion( double am, unsigned int N ) const
+{
+  if( ! ( *this ) )
+    return am;
+  double z = std::sinh( 0.5 * am );
+  z *= z;
+  const double NInv{ 1. / N };
+  double w;
+  if( x )
+  {
+    w = std::sin( M_PI * x * NInv );
+    z += w * w;
+  }
+  if( y )
+  {
+    w = std::sin( M_PI * y * NInv );
+    z += w * w;
+  }
+  if( z )
+  {
+    w = std::sin( M_PI * z * NInv );
+    z += w * w;
+  }
+  return 2 * std::asinh( std::sqrt( z ) );
+}
+
 // Take a squared momentum and make an approximate 3d momentum from it
 Momentum FileNameMomentum::FromSquared( const int p2Original )
 {

@@ -753,8 +753,8 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
 
 FMaker::FMaker( std::string TypeParams, const Common::CommandLine &cl )
 : Maker( cl ), p("",0), i3Base{ cl.SwitchValue<std::string>("i3") },
-  L{ Common::FromString<int>( Common::ExtractToSeparator( TypeParams ) ) },
-  ap{ 2 * M_PI / L }
+  N{ Common::FromString<unsigned int>( Common::ExtractToSeparator( TypeParams ) ) },
+  ap{ 2 * M_PI / N }
 {
   bAdjustGammaSpatial = Common::EqualIgnoreCase( TypeParams, "spatial" );
   if( !bAdjustGammaSpatial && !TypeParams.empty() )
@@ -925,7 +925,7 @@ void FMaker::Make( std::string &FileName )
 
   // Make output
   static const std::vector<std::string> ParamNames{ "mL", "mH", "qSq", "kMu", "melV0", "melVi",
-                                                    "fPar", "fPerp", "fPlus", "f0" };
+                                                    "fPar", "fPerp", "fPlus", "f0", "ELLat", "qSqLat" };
   constexpr int EL{ 0 };
   constexpr int mL{ 1 };
   constexpr int mH{ 2 };
@@ -937,7 +937,9 @@ void FMaker::Make( std::string &FileName )
   constexpr int fPerp{ 8 };
   constexpr int fPlus{ 9 };
   constexpr int f0{ 10 };
-  constexpr int ChiSqDof{ 11 };
+  constexpr int ELLat{ 11 }; // qSq ... but E_i derived from E_0 and lattice dispersion relation
+  constexpr int qSqLat{ 12 }; // qSq ... but E_i derived from E_0 and lattice dispersion relation
+  constexpr int ChiSqDof{ 13 };
   const int NumFiles{ 3 + ( p ? 2 : 0 ) };
   Model Out( ParamNames, 1, NumFiles, FitParts[0], FitParts[1], 0, false, false, NumSamples,
              static_cast<int>( ParamNames.size() ) + 2 );
@@ -964,6 +966,8 @@ void FMaker::Make( std::string &FileName )
     O[mH] = MHeavy[idx];
     O[mL] = MLight[idx];
     O[EL] = ELight[idx];
+    O[ELLat] = p.LatticeDispersion( MLight[idx], N );
+    O[qSqLat] = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * O[ELLat];
     O[melV0] = vT[idx];
     const Scalar    Root2MH{ std::sqrt( MHeavy[idx] * 2 ) };
     const Scalar InvRoot2MH{ 1. / Root2MH };

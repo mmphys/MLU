@@ -289,7 +289,7 @@ public:
 class FMaker : public Maker
 {
   const std::string i3Base;
-  const int L;
+  const unsigned int N;
   const Scalar ap;
 protected:
   bool bAdjustGammaSpatial;

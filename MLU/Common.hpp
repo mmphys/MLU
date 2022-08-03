@@ -1290,6 +1290,8 @@ struct Momentum
   bool Extract( std::string &s, const std::string &MomName, bool IgnoreSubsequentZeroNeg = false );
   bool Extract( std::string &s ) { return Extract( s, DefaultPrefix, true ); }
   void Replace( std::string &s, const std::string &MomName, bool bNegative = false ) const;
+  // Use Lattice Dispersion relation and N=L/a to boost am to aE(p)
+  double LatticeDispersion( double am, unsigned int N ) const;
 };
 
 extern const Momentum p0;
