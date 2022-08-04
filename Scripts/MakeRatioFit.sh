@@ -72,7 +72,7 @@ do
             do
                 Filename=${f##*/}
                 Parts=(${Filename//_/ })
-                if (( ${#Parts[@]} == 10 && ${Parts[5]} >= 24 ))
+                if (( ${#Parts[@]} == 10 ))
                 then
                     DTHalf=$(( ${Parts[5]} / 2 ))
                     echo "$Cmd ${DTHalf}:${DTHalf} ${Filename},const" >> $JobFileName
