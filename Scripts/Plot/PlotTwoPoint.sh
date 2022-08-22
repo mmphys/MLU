@@ -25,8 +25,10 @@ PlotFieldTitle=('log ' 'cosh ')
 
 OutSubDirs=(All Zoom)
 OutTI=(4.5 7.5)
+#OutTI=(4.5 4.5)
 OutTIRelErr=(0.5 4.5)
 OutTF=($((THalf-1)).5 $((THalf*6/10-1)).5)
+#OutTF=($((THalf-1)).5 23.5)
 WhichSinks=('g5P g5W' g5P)
 
 for Dir in {0..1}
@@ -38,32 +40,37 @@ do (
     ext=${base#*.}
     base=${base%%.*}
     parts=(${base//_/ })
+    #echo $base
     if [ ${#parts[@]} = 6 ]; then
+      OptionSimpleTitle= # Comment this out for more info in title
       meson=${parts[0]}_${parts[1]}
       PCQNameNoMass "${parts[1]}" qOne
       PCQNameNoMass "${parts[0]}" qTwo
-      MesonName="${qTwo}-${qOne}"
+      OptionNoMass=
+      GetMeson MesonName "${qTwo}" "${qOne}"
       # Plots by source and sink with all momenta on same chart
       if (( bypw )); then
         for snk in g5P g5W; do
           for src in g5P g5W; do
             PCPointWall $snk $src opHuman
-            title="$MesonName $opHuman (sink-source)"
+            title="$MesonName"
+            if ! [ -v OptionSimpleTitle ]; then title="$title $opHuman (sink-source)"; fi
             unset FileNames
             unset Legend
             pSq=$(( MaxPSq + 1 ))
             while (( pSq-- ))
             do
               FileNames="$FileNames $InDir/${meson}_p2_${pSq}_${snk}_${src}.$ext"
-              Legend="$Legend p^2=$pSq"
+              Legend="$Legend n^2=$pSq"
             done
             [ $snk == $src ] && key='top right' || key='bottom right'
             for field in {0..1}; do
               if (( domass[field] )); then
+                [ -v OptionSimpleTitle ] && ylabel="a E_{eff}" || ylabel="${PlotFieldTitle[field]}effective mass"
                 save=${meson}_${snk}_${src}_${PlotFields[field]} \
                   fields=${PlotFields[field]} ti=${OutTI[Dir]} tf=${OutTF[Dir]} key="$key" legend="$Legend" \
                   savelabel= title="$title" \
-                  xlabel='t/a' ylabel="${PlotFieldTitle[field]}effective mass" \
+                  xlabel='t/a' ylabel="$ylabel" legenh= \
                   plot.sh $FileNames
               fi
             done
@@ -83,7 +90,7 @@ do (
         pSq=$(( MaxPSq + 1 ))
         while (( pSq-- ))
         do
-          title="$MesonName p^2=$pSq (sink-source)"
+          title="$MesonName n^2=$pSq (sink-source)"
           (( PSq <= MaxPSq / 2 )) && key='top right' || key='bottom right'
           unset FileNames
           unset Legend

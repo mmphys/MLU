@@ -109,10 +109,11 @@ function GetMeson()
   declare -n NameHuman=$1
   local q="$2"
   local Spec="$3"
-  local qNum="${q:1}"
-  case "${q:0:1}_${Spec}" in
-    h_s)       NameHuman="D_s";;
-    h_l)       NameHuman="D";;
+  local qNum
+  [ -v OptionNoMass ] && unset qNum || qNum="${q:1}"
+  case "${q:0:1}_${Spec:0:1}" in
+    h_s | s_h) NameHuman="D_s";;
+    h_l | l_h) NameHuman="D";;
     l_l)       [ -v OptionASCII ] && NameHuman="pi" || NameHuman="π";;
     l_s | s_l) NameHuman="K";;
             *) NameHuman="${q}${Spec}";;

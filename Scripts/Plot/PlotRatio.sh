@@ -59,11 +59,13 @@ do
         fi
       done
       fi
-      # For each souece/sink (point/wall), show the various Delta T
+      # For each source/sink (point/wall), show the various Delta T
       if (( DoPW ))
       then
         for f in $InDir/R${RatioNum}_*_dt_${EnsembleDeltaT[0]}_p2_*_g*_g*.fold.*.txt; do
-        #for f in $InDir/R${RatioNum}_l_h6413_gXYZ_dt_${EnsembleDeltaT[0]}_p2_4_g5P_g5P.fold.*.txt; do
+        #for f in $InDir/R${RatioNum}_l_h*_g*_dt_${EnsembleDeltaT[0]}_p2_[2-4]_g5P_g5P.fold.*.txt; do
+          #echo ${f##*/}
+          #OptionNoMass= # Comment this out for more info in title
           if Split3ptFile $f $Spec; then
             FilePrefix=${Ratio}_${qSnk}_${qSrc}_${Gamma}
             FileSuffix=p2_${p2}_${opSnk}_${opSrc}
@@ -74,11 +76,17 @@ do
               FileNames="$FileNames $InDir/${FilePrefix}_dt_${DeltaT}_${FileSuffix}.$Ext"
               Legend="$Legend ΔT/a=${DeltaT}"
             done
+            case $Gamma in
+                gT) ylabel="R_4";;
+              gXYZ) ylabel="R_i";;
+                 *) ylabel="R_{$Gamma}";;
+            esac
+            title="${MSrcHuman}⟶${MSnkHuman}, n^2=${p2}"
+            [ -v OptionNoMass ] || title="$title, ${GammaHuman} (${opHuman})"
             save=${FilePrefix}_${FileSuffix} \
               legend="$Legend" \
               fields=corr savelabel= \
-              title="${Ratio} ${MSrcHuman}⟶${MSnkHuman}, n^2=${p2}, ${GammaHuman} (${opHuman})" \
-              xlabel=(t-ΔT/2)/a ylabel="${Ratio}" offset=0 \
+              title="$title" key='bottom center' xlabel=(t-ΔT/2)/a ylabel="$ylabel" offset=0 \
               x='((column(1)<2 || column(1)>word(FileDT,File)-2) ? NaN : column(1)-0.5*word(FileDT,File)+(word(FileDT,File)-24)*.025)' \
               plot.sh $FileNames
           fi

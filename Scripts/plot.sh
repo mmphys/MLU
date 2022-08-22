@@ -184,11 +184,11 @@ if( SaveFile != 2 ) {
   set linetype 1 pt 7 lc rgb 0x0070C0 #blue
   set linetype 2 pt 7 lc rgb 0xE36C09 #orange
   set linetype 3 pt 7 lc rgb 0x00B050 #green
-  set linetype 4 pt 7 lc rgb 'dark-violet'
-  set linetype 5 pt 7
-  set linetype 6 pt 7
-  set linetype 7 pt 7
-  set linetype 8 pt 7
+  set linetype 4 pt 7 lc rgb 'dark-violet' # 0x9400D3
+  set linetype 5 pt 7 lc rgb 0xFFC000 #yellow
+  set linetype 6 pt 7 lc rgb 0xFA60E4 #pink
+  set linetype 7 pt 7 lc rgb 0xC00000 #red
+  set linetype 8 pt 7 lc rgb 0x003860 #dark navy
 }
 
 # The logging variable becomes a log

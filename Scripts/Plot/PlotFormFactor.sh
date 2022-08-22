@@ -29,7 +29,7 @@ function PlotFunction()
   for yAxis in fPlus f0 fPerp fPar
   do
 gnuplot <<-EOFMark
-Dir="$PlotData/ffs/$1/"
+Dir="$PlotData/ffs/$1/Summary/"
 Meson="$2"
 MesonSave="$3"
 MyTitle="$4"

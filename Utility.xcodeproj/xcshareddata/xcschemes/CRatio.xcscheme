@@ -106,10 +106,18 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--i2 analyse/corr/2ptp2/ --i3 analyse/RatioFit/sp2/ -o fratio/sp2/ --efit analyse/fit/Fit_sp2.txt --type f,48"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*_p2_[01]*.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--i2 F1M/ --i3 F1M/ -o F1M/out/ --efit F1M/Fit.txt --type R,F1M/ZVFit.txt"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "quark_l_h385_gT_dt_28_p2_0_ps2_5_g5P_g5P.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
