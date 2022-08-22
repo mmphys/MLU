@@ -50,10 +50,6 @@
 		68544748271C990600EF030C /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68544749271C991600EF030C /* Divide.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446FD271C8E5400EF030C /* Divide.cpp */; };
 		68544755271C999100EF030C /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; settings = {ATTRIBUTES = (Required, ); }; };
-		68544756271C999E00EF030C /* FitGSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446F4271C8E5400EF030C /* FitGSL.cpp */; };
-		68544757271C99A300EF030C /* FitMinuit2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446EB271C8E5400EF030C /* FitMinuit2.cpp */; };
-		68544758271C99AA00EF030C /* FitModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446EA271C8E5400EF030C /* FitModel.cpp */; };
-		6854475A271C9A4700EF030C /* MultiFit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446F3271C8E5400EF030C /* MultiFit.cpp */; };
 		68544766271C9BDB00EF030C /* FitSummary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446F9271C8E5400EF030C /* FitSummary.cpp */; };
 		68544767271C9C1200EF030C /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68544773271C9CB200EF030C /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
@@ -61,6 +57,10 @@
 		68544780271C9D1C00EF030C /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68544781271C9D2300EF030C /* repair.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446EE271C8E5400EF030C /* repair.cpp */; };
 		6868F3002745375C00D73B89 /* Example_wall_wall_spectrum.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68F61906271C75AF00A8B197 /* Example_wall_wall_spectrum.cc */; };
+		686D8E9628B3AAE100671505 /* FitModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686D8E8F28B3AAE100671505 /* FitModel.cpp */; };
+		686D8E9728B3AAE100671505 /* FitMinuit2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686D8E9028B3AAE100671505 /* FitMinuit2.cpp */; };
+		686D8E9828B3AAE100671505 /* MultiFit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686D8E9228B3AAE100671505 /* MultiFit.cpp */; };
+		686D8E9928B3AAE100671505 /* FitGSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686D8E9328B3AAE100671505 /* FitGSL.cpp */; };
 		686EC056271C9E7D00A69ED4 /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446E7271C8E5400EF030C /* mixedop.cpp */; };
 		686EC057271C9E9A00A69ED4 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		686EC063271C9EF400A69ED4 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
@@ -1552,23 +1552,16 @@
 		685446E6271C8E5400EF030C /* xml3pt.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xml3pt.cpp; sourceTree = "<group>"; };
 		685446E7271C8E5400EF030C /* mixedop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mixedop.cpp; sourceTree = "<group>"; };
 		685446E8271C8E5400EF030C /* HadronsApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = HadronsApp.cpp; sourceTree = "<group>"; };
-		685446EA271C8E5400EF030C /* FitModel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FitModel.cpp; sourceTree = "<group>"; };
-		685446EB271C8E5400EF030C /* FitMinuit2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FitMinuit2.cpp; sourceTree = "<group>"; };
 		685446EC271C8E5400EF030C /* hlxml.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hlxml.cpp; sourceTree = "<group>"; };
 		685446ED271C8E5400EF030C /* Divide.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Divide.hpp; sourceTree = "<group>"; };
 		685446EE271C8E5400EF030C /* repair.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = repair.cpp; sourceTree = "<group>"; };
 		685446EF271C8E5400EF030C /* corr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = corr.cpp; sourceTree = "<group>"; };
-		685446F0271C8E5400EF030C /* FitGSL.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = FitGSL.hpp; sourceTree = "<group>"; };
 		685446F1271C8E5400EF030C /* bootstrap.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = bootstrap.hpp; sourceTree = "<group>"; };
-		685446F3271C8E5400EF030C /* MultiFit.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MultiFit.cpp; sourceTree = "<group>"; };
-		685446F4271C8E5400EF030C /* FitGSL.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FitGSL.cpp; sourceTree = "<group>"; };
 		685446F5271C8E5400EF030C /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
 		685446F6271C8E5400EF030C /* bootstrap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bootstrap.cpp; sourceTree = "<group>"; };
 		685446F7271C8E5400EF030C /* corrstat.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = corrstat.cpp; sourceTree = "<group>"; };
 		685446F8271C8E5400EF030C /* Debug.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Debug.cpp; sourceTree = "<group>"; };
 		685446F9271C8E5400EF030C /* FitSummary.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FitSummary.cpp; sourceTree = "<group>"; };
-		685446FA271C8E5400EF030C /* MultiFit.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MultiFit.hpp; sourceTree = "<group>"; };
-		685446FB271C8E5400EF030C /* FitMinuit2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = FitMinuit2.hpp; sourceTree = "<group>"; };
 		685446FD271C8E5400EF030C /* Divide.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Divide.cpp; sourceTree = "<group>"; };
 		685446FE271C8F9A00EF030C /* MLUconfig.h.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = MLUconfig.h.in; sourceTree = "<group>"; };
 		685446FF271C8F9A00EF030C /* configure.ac */ = {isa = PBXFileReference; lastKnownFileType = text; path = configure.ac; sourceTree = "<group>"; };
@@ -1589,6 +1582,13 @@
 		6854476C271C9C9300EF030C /* hlxml */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hlxml; sourceTree = BUILT_PRODUCTS_DIR; };
 		68544779271C9D0800EF030C /* repair */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = repair; sourceTree = BUILT_PRODUCTS_DIR; };
 		6868F2F9274536F000D73B89 /* Example_wall_wall_spectrum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Example_wall_wall_spectrum; sourceTree = BUILT_PRODUCTS_DIR; };
+		686D8E8F28B3AAE100671505 /* FitModel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitModel.cpp; sourceTree = "<group>"; };
+		686D8E9028B3AAE100671505 /* FitMinuit2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitMinuit2.cpp; sourceTree = "<group>"; };
+		686D8E9128B3AAE100671505 /* FitGSL.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitGSL.hpp; sourceTree = "<group>"; };
+		686D8E9228B3AAE100671505 /* MultiFit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MultiFit.cpp; sourceTree = "<group>"; };
+		686D8E9328B3AAE100671505 /* FitGSL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitGSL.cpp; sourceTree = "<group>"; };
+		686D8E9428B3AAE100671505 /* MultiFit.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MultiFit.hpp; sourceTree = "<group>"; };
+		686D8E9528B3AAE100671505 /* FitMinuit2.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitMinuit2.hpp; sourceTree = "<group>"; };
 		686EC04F271C9E6C00A69ED4 /* mixedop */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mixedop; sourceTree = BUILT_PRODUCTS_DIR; };
 		686EC05C271C9EE300A69ED4 /* peramb-compare */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "peramb-compare"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6870F90F271CCE670083F930 /* RandomGaugeTransformation.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RandomGaugeTransformation.hpp; sourceTree = "<group>"; };
@@ -2609,6 +2609,7 @@
 		687EF0EE2844BD58009D6B74 /* SynthData */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SynthData; sourceTree = BUILT_PRODUCTS_DIR; };
 		68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GaugeCmp.cpp; sourceTree = "<group>"; };
 		68820B232721CBE100825D73 /* GaugeCmp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GaugeCmp; sourceTree = BUILT_PRODUCTS_DIR; };
+		68A0451728B3B83300A1453F /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
 		68A1B330284A3F6B0053103F /* ImportCorr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ImportCorr.cpp; sourceTree = "<group>"; };
 		68A1B331284A3F6B0053103F /* ImportCorr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ImportCorr.hpp; sourceTree = "<group>"; };
 		68A1B336284A3FBA0053103F /* ImportCorr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ImportCorr; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3523,11 +3524,6 @@
 				685446F8271C8E5400EF030C /* Debug.cpp */,
 				685446FD271C8E5400EF030C /* Divide.cpp */,
 				685446ED271C8E5400EF030C /* Divide.hpp */,
-				685446F4271C8E5400EF030C /* FitGSL.cpp */,
-				685446F0271C8E5400EF030C /* FitGSL.hpp */,
-				685446EB271C8E5400EF030C /* FitMinuit2.cpp */,
-				685446FB271C8E5400EF030C /* FitMinuit2.hpp */,
-				685446EA271C8E5400EF030C /* FitModel.cpp */,
 				685446F9271C8E5400EF030C /* FitSummary.cpp */,
 				687A274B2873761D009D0766 /* FitSummary.hpp */,
 				68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */,
@@ -3535,8 +3531,6 @@
 				68A1B330284A3F6B0053103F /* ImportCorr.cpp */,
 				68A1B331284A3F6B0053103F /* ImportCorr.hpp */,
 				685446F5271C8E5400EF030C /* Makefile.am */,
-				685446F3271C8E5400EF030C /* MultiFit.cpp */,
-				685446FA271C8E5400EF030C /* MultiFit.hpp */,
 				685446EE271C8E5400EF030C /* repair.cpp */,
 				687EF0E82844BCD6009D6B74 /* SynthData.cpp */,
 				687EF0E92844BCD7009D6B74 /* SynthData.hpp */,
@@ -3549,6 +3543,21 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		686D8E8E28B3AAE100671505 /* MultiFit */ = {
+			isa = PBXGroup;
+			children = (
+				686D8E9328B3AAE100671505 /* FitGSL.cpp */,
+				686D8E9128B3AAE100671505 /* FitGSL.hpp */,
+				686D8E9028B3AAE100671505 /* FitMinuit2.cpp */,
+				686D8E9528B3AAE100671505 /* FitMinuit2.hpp */,
+				686D8E8F28B3AAE100671505 /* FitModel.cpp */,
+				68A0451728B3B83300A1453F /* Makefile.am */,
+				686D8E9228B3AAE100671505 /* MultiFit.cpp */,
+				686D8E9428B3AAE100671505 /* MultiFit.hpp */,
+			);
+			path = MultiFit;
 			sourceTree = "<group>";
 		};
 		6870F918271CCE9A0083F930 /* MGuesser */ = {
@@ -3573,6 +3582,7 @@
 				68F61803271C744E00A8B197 /* Grid */,
 				68F61944271C780100A8B197 /* Hadrons */,
 				685446C6271C8B7E00EF030C /* MLU */,
+				686D8E8E28B3AAE100671505 /* MultiFit */,
 				685446E9271C8E5400EF030C /* Analyze */,
 				685446D9271C8E5400EF030C /* Study */,
 				68544706271C8F9C00EF030C /* run */,
@@ -8155,10 +8165,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68544757271C99A300EF030C /* FitMinuit2.cpp in Sources */,
-				68544756271C999E00EF030C /* FitGSL.cpp in Sources */,
-				68544758271C99AA00EF030C /* FitModel.cpp in Sources */,
-				6854475A271C9A4700EF030C /* MultiFit.cpp in Sources */,
+				686D8E9928B3AAE100671505 /* FitGSL.cpp in Sources */,
+				686D8E9728B3AAE100671505 /* FitMinuit2.cpp in Sources */,
+				686D8E9628B3AAE100671505 /* FitModel.cpp in Sources */,
+				686D8E9828B3AAE100671505 /* MultiFit.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
