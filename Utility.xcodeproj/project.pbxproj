@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6805163E28B4F1030061187F /* FitModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6805163628B4F1030061187F /* FitModel.cpp */; };
+		6805163F28B4F1030061187F /* FitMinuit2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6805163728B4F1030061187F /* FitMinuit2.cpp */; };
+		6805164028B4F1030061187F /* MultiFit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6805163928B4F1030061187F /* MultiFit.cpp */; };
+		6805164128B4F1030061187F /* FitGSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6805163A28B4F1030061187F /* FitGSL.cpp */; };
 		680B62072729BF4A000CB627 /* VectorPackRef.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 680B62052729BF4A000CB627 /* VectorPackRef.hpp */; };
 		680B62082729BF4A000CB627 /* VectorPackRef.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 680B62062729BF4A000CB627 /* VectorPackRef.cpp */; };
 		684A3D8727DA218700C0ACF6 /* DistilMatrix.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 684A3D8527DA218600C0ACF6 /* DistilMatrix.hpp */; };
@@ -57,10 +61,6 @@
 		68544780271C9D1C00EF030C /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68544781271C9D2300EF030C /* repair.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446EE271C8E5400EF030C /* repair.cpp */; };
 		6868F3002745375C00D73B89 /* Example_wall_wall_spectrum.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68F61906271C75AF00A8B197 /* Example_wall_wall_spectrum.cc */; };
-		686D8E9628B3AAE100671505 /* FitModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686D8E8F28B3AAE100671505 /* FitModel.cpp */; };
-		686D8E9728B3AAE100671505 /* FitMinuit2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686D8E9028B3AAE100671505 /* FitMinuit2.cpp */; };
-		686D8E9828B3AAE100671505 /* MultiFit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686D8E9228B3AAE100671505 /* MultiFit.cpp */; };
-		686D8E9928B3AAE100671505 /* FitGSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686D8E9328B3AAE100671505 /* FitGSL.cpp */; };
 		686EC056271C9E7D00A69ED4 /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446E7271C8E5400EF030C /* mixedop.cpp */; };
 		686EC057271C9E9A00A69ED4 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		686EC063271C9EF400A69ED4 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
@@ -1495,6 +1495,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6805163628B4F1030061187F /* FitModel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitModel.cpp; sourceTree = "<group>"; };
+		6805163728B4F1030061187F /* FitMinuit2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitMinuit2.cpp; sourceTree = "<group>"; };
+		6805163828B4F1030061187F /* FitGSL.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitGSL.hpp; sourceTree = "<group>"; };
+		6805163928B4F1030061187F /* MultiFit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MultiFit.cpp; sourceTree = "<group>"; };
+		6805163A28B4F1030061187F /* FitGSL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitGSL.cpp; sourceTree = "<group>"; };
+		6805163B28B4F1030061187F /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
+		6805163C28B4F1030061187F /* MultiFit.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MultiFit.hpp; sourceTree = "<group>"; };
+		6805163D28B4F1030061187F /* FitMinuit2.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitMinuit2.hpp; sourceTree = "<group>"; };
 		680B62052729BF4A000CB627 /* VectorPackRef.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VectorPackRef.hpp; sourceTree = "<group>"; };
 		680B62062729BF4A000CB627 /* VectorPackRef.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VectorPackRef.cpp; sourceTree = "<group>"; };
 		683A3A1F272D2B09008EB025 /* Example_wall_wall_3pt.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Example_wall_wall_3pt.cc; sourceTree = "<group>"; };
@@ -1582,13 +1590,6 @@
 		6854476C271C9C9300EF030C /* hlxml */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hlxml; sourceTree = BUILT_PRODUCTS_DIR; };
 		68544779271C9D0800EF030C /* repair */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = repair; sourceTree = BUILT_PRODUCTS_DIR; };
 		6868F2F9274536F000D73B89 /* Example_wall_wall_spectrum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Example_wall_wall_spectrum; sourceTree = BUILT_PRODUCTS_DIR; };
-		686D8E8F28B3AAE100671505 /* FitModel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitModel.cpp; sourceTree = "<group>"; };
-		686D8E9028B3AAE100671505 /* FitMinuit2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitMinuit2.cpp; sourceTree = "<group>"; };
-		686D8E9128B3AAE100671505 /* FitGSL.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitGSL.hpp; sourceTree = "<group>"; };
-		686D8E9228B3AAE100671505 /* MultiFit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MultiFit.cpp; sourceTree = "<group>"; };
-		686D8E9328B3AAE100671505 /* FitGSL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitGSL.cpp; sourceTree = "<group>"; };
-		686D8E9428B3AAE100671505 /* MultiFit.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MultiFit.hpp; sourceTree = "<group>"; };
-		686D8E9528B3AAE100671505 /* FitMinuit2.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitMinuit2.hpp; sourceTree = "<group>"; };
 		686EC04F271C9E6C00A69ED4 /* mixedop */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mixedop; sourceTree = BUILT_PRODUCTS_DIR; };
 		686EC05C271C9EE300A69ED4 /* peramb-compare */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "peramb-compare"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6870F90F271CCE670083F930 /* RandomGaugeTransformation.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RandomGaugeTransformation.hpp; sourceTree = "<group>"; };
@@ -2609,7 +2610,6 @@
 		687EF0EE2844BD58009D6B74 /* SynthData */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SynthData; sourceTree = BUILT_PRODUCTS_DIR; };
 		68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GaugeCmp.cpp; sourceTree = "<group>"; };
 		68820B232721CBE100825D73 /* GaugeCmp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GaugeCmp; sourceTree = BUILT_PRODUCTS_DIR; };
-		68A0451728B3B83300A1453F /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
 		68A1B330284A3F6B0053103F /* ImportCorr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ImportCorr.cpp; sourceTree = "<group>"; };
 		68A1B331284A3F6B0053103F /* ImportCorr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ImportCorr.hpp; sourceTree = "<group>"; };
 		68A1B336284A3FBA0053103F /* ImportCorr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ImportCorr; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3448,6 +3448,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6805163528B4F1030061187F /* Fit */ = {
+			isa = PBXGroup;
+			children = (
+				6805163A28B4F1030061187F /* FitGSL.cpp */,
+				6805163828B4F1030061187F /* FitGSL.hpp */,
+				6805163728B4F1030061187F /* FitMinuit2.cpp */,
+				6805163D28B4F1030061187F /* FitMinuit2.hpp */,
+				6805163628B4F1030061187F /* FitModel.cpp */,
+				6805163B28B4F1030061187F /* Makefile.am */,
+				6805163928B4F1030061187F /* MultiFit.cpp */,
+				6805163C28B4F1030061187F /* MultiFit.hpp */,
+			);
+			path = Fit;
+			sourceTree = "<group>";
+		};
 		684A3D8027DA213500C0ACF6 /* benchmarks */ = {
 			isa = PBXGroup;
 			children = (
@@ -3545,21 +3560,6 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		686D8E8E28B3AAE100671505 /* MultiFit */ = {
-			isa = PBXGroup;
-			children = (
-				686D8E9328B3AAE100671505 /* FitGSL.cpp */,
-				686D8E9128B3AAE100671505 /* FitGSL.hpp */,
-				686D8E9028B3AAE100671505 /* FitMinuit2.cpp */,
-				686D8E9528B3AAE100671505 /* FitMinuit2.hpp */,
-				686D8E8F28B3AAE100671505 /* FitModel.cpp */,
-				68A0451728B3B83300A1453F /* Makefile.am */,
-				686D8E9228B3AAE100671505 /* MultiFit.cpp */,
-				686D8E9428B3AAE100671505 /* MultiFit.hpp */,
-			);
-			path = MultiFit;
-			sourceTree = "<group>";
-		};
 		6870F918271CCE9A0083F930 /* MGuesser */ = {
 			isa = PBXGroup;
 			children = (
@@ -3582,7 +3582,7 @@
 				68F61803271C744E00A8B197 /* Grid */,
 				68F61944271C780100A8B197 /* Hadrons */,
 				685446C6271C8B7E00EF030C /* MLU */,
-				686D8E8E28B3AAE100671505 /* MultiFit */,
+				6805163528B4F1030061187F /* Fit */,
 				685446E9271C8E5400EF030C /* Analyze */,
 				685446D9271C8E5400EF030C /* Study */,
 				68544706271C8F9C00EF030C /* run */,
@@ -8165,10 +8165,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				686D8E9928B3AAE100671505 /* FitGSL.cpp in Sources */,
-				686D8E9728B3AAE100671505 /* FitMinuit2.cpp in Sources */,
-				686D8E9628B3AAE100671505 /* FitModel.cpp in Sources */,
-				686D8E9828B3AAE100671505 /* MultiFit.cpp in Sources */,
+				6805163F28B4F1030061187F /* FitMinuit2.cpp in Sources */,
+				6805164128B4F1030061187F /* FitGSL.cpp in Sources */,
+				6805164028B4F1030061187F /* MultiFit.cpp in Sources */,
+				6805163E28B4F1030061187F /* FitModel.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
