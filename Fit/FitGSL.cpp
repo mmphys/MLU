@@ -1,12 +1,12 @@
 /*************************************************************************************
  
- Multi-exponential fits
- 
+ Use GSL as fitting exgine
+
  Source file: FitGSL.cpp
  
- Copyright (C) 2021
+ Copyright (C) 2019-2022
  
- Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
+ Author: Michael Marshall <Mike@lqcd.me>
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by

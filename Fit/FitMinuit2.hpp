@@ -1,13 +1,13 @@
 /*************************************************************************************
  
- Multi-exponential fits
- 
+ Use Minuit2 as fitting exgine (OPTIONAL)
+
  Source file: FitMinuit2.hpp
  
- Copyright (C) 2021
+ Copyright (C) 2019-2022
  
- Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
- 
+ Author: Michael Marshall <Mike@lqcd.me>
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -29,6 +29,9 @@
 #ifndef FitMinuit2_hpp
 #define FitMinuit2_hpp
 
+#include "Param.hpp"
+#include "Fitter.hpp"
+#include "FitterThread.hpp"
 #include <Minuit2/FCNBase.h>
 #include <Minuit2/Minuit2Minimizer.h>
 #include <Minuit2/VariableMetricMinimizer.h>
@@ -37,8 +40,6 @@
 #include <Minuit2/MinimumParameters.h>
 #include <Minuit2/MinimumState.h>
 #include <Minuit2/MnPrint.h>
-
-#include "MultiFit.hpp"
 
 struct ParamStateMinuit2: public ParamState
 {

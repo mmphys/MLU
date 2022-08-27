@@ -1,13 +1,13 @@
 /*************************************************************************************
  
- Fast (using OpenMP) multi-model fits to lattice QCD correlators
- 
- Source file: MultiFit.hpp
+ Manage model parameters
+
+ Source file: Param.cpp
  
  Copyright (C) 2019-2022
  
  Author: Michael Marshall <Mike@lqcd.me>
- 
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -26,31 +26,19 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef MultiFit_hpp
-#define MultiFit_hpp
+#include "Param.hpp"
 
-#include <MLU/Common.hpp>
+std::ostream & operator<<( std::ostream &os, const Parameters &Params )
+{
+  for( const Parameters::Parameter &p : Params )
+    os << std::string( Params.MaxLen() - p.Name.length() + 2, ' ' ) << p.Name
+       << Common::Space << p.Value << "\t+/- " << p.Error << Common::NewLine;
+  return os;
+}
 
-// Uncomment the next line if your cmath doesn't define M_PI etc by default
-//#define _USE_MATH_DEFINES
-#include <cmath>
-#include <set>
-//#include <sys/stat.h>
+std::ostream & operator<<( std::ostream &os, const ParamState &State )
+{
+  State.StandardOut( os );
+  return os;
+}
 
-using scalar = double;
-using Matrix = Common::Matrix<scalar>;
-using Vector = Common::Vector<scalar>;
-using MatrixView = Common::MatrixView<scalar>;
-using VectorView = Common::VectorView<scalar>;
-using Fold = Common::Fold<scalar>;
-using vCorrelator = std::vector<Fold>;
-using ModelFile = Common::Model<scalar>;
-using DataSet = Common::DataSet<scalar>;
-using vString = std::vector<std::string>;
-using vInt = std::vector<int>;
-using UniqueNames = Common::UniqueNames;
-
-constexpr int idxSrc{ 0 };
-constexpr int idxSnk{ 1 };
-
-#endif // MultiFit_hpp

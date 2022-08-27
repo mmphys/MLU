@@ -1,13 +1,13 @@
 /*************************************************************************************
  
- Multi-exponential fits
- 
+ Use GSL as fitting exgine (OPTIONAL)
+
  Source file: FitGSL.hpp
  
- Copyright (C) 2021
+ Copyright (C) 2019-2022
  
- Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
- 
+ Author: Michael Marshall <Mike@lqcd.me>
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -29,7 +29,9 @@
 #ifndef FitGSL_hpp
 #define FitGSL_hpp
 
-#include "MultiFit.hpp"
+#include "Param.hpp"
+#include "Fitter.hpp"
+#include "FitterThread.hpp"
 #include <gsl/gsl_multifit_nlinear.h>
 
 struct ParamStateGSL: public ParamState

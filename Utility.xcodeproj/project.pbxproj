@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		6805163E28B4F1030061187F /* FitModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6805163628B4F1030061187F /* FitModel.cpp */; };
 		6805163F28B4F1030061187F /* FitMinuit2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6805163728B4F1030061187F /* FitMinuit2.cpp */; };
 		6805164028B4F1030061187F /* MultiFit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6805163928B4F1030061187F /* MultiFit.cpp */; };
 		6805164128B4F1030061187F /* FitGSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6805163A28B4F1030061187F /* FitGSL.cpp */; };
@@ -989,9 +988,14 @@
 		687EF0F62844CA49009D6B74 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68820B2A2721CC1700825D73 /* GaugeCmp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */; };
 		68820B2B2721CC4300825D73 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
+		6889D2C028BA9DE500C0CD10 /* FitterThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6889D2BE28BA9DE500C0CD10 /* FitterThread.cpp */; };
 		68A1B33D284A40060053103F /* ImportCorr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68A1B330284A3F6B0053103F /* ImportCorr.cpp */; };
 		68A1B33E284A40BA0053103F /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68A2B64E271C816600D9CB95 /* HadronsXmlRun.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61B94271C79E700A8B197 /* HadronsXmlRun.cpp */; };
+		68B00B2C28BA82B7009D4B60 /* ModelBase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B00B2B28BA82B7009D4B60 /* ModelBase.cpp */; };
+		68B00B3028BA832F009D4B60 /* Covar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B00B2E28BA832F009D4B60 /* Covar.cpp */; };
+		68B00B3328BA88C5009D4B60 /* Param.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B00B3228BA88C4009D4B60 /* Param.cpp */; };
+		68B00B3628BA8F2C009D4B60 /* Fitter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B00B3428BA8F2B009D4B60 /* Fitter.cpp */; };
 		68C0A4F8271CA178006BBD5E /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68C0A4FB271CA270006BBD5E /* TensorDemo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446DD271C8E5400EF030C /* TensorDemo.cpp */; };
 		68C0A507271CA45F006BBD5E /* xml3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446E6271C8E5400EF030C /* xml3pt.cpp */; };
@@ -1495,7 +1499,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		6805163628B4F1030061187F /* FitModel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitModel.cpp; sourceTree = "<group>"; };
 		6805163728B4F1030061187F /* FitMinuit2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitMinuit2.cpp; sourceTree = "<group>"; };
 		6805163828B4F1030061187F /* FitGSL.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitGSL.hpp; sourceTree = "<group>"; };
 		6805163928B4F1030061187F /* MultiFit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MultiFit.cpp; sourceTree = "<group>"; };
@@ -2610,10 +2613,20 @@
 		687EF0EE2844BD58009D6B74 /* SynthData */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SynthData; sourceTree = BUILT_PRODUCTS_DIR; };
 		68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GaugeCmp.cpp; sourceTree = "<group>"; };
 		68820B232721CBE100825D73 /* GaugeCmp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GaugeCmp; sourceTree = BUILT_PRODUCTS_DIR; };
+		6889D2BE28BA9DE500C0CD10 /* FitterThread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitterThread.cpp; sourceTree = "<group>"; };
+		6889D2BF28BA9DE500C0CD10 /* FitterThread.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitterThread.hpp; sourceTree = "<group>"; };
 		68A1B330284A3F6B0053103F /* ImportCorr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ImportCorr.cpp; sourceTree = "<group>"; };
 		68A1B331284A3F6B0053103F /* ImportCorr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ImportCorr.hpp; sourceTree = "<group>"; };
 		68A1B336284A3FBA0053103F /* ImportCorr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ImportCorr; sourceTree = BUILT_PRODUCTS_DIR; };
 		68A2B647271C7EE100D9CB95 /* HadronsXmlRun */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HadronsXmlRun; sourceTree = BUILT_PRODUCTS_DIR; };
+		68B00B2B28BA82B7009D4B60 /* ModelBase.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelBase.cpp; sourceTree = "<group>"; };
+		68B00B2D28BA82E4009D4B60 /* ModelBase.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelBase.hpp; sourceTree = "<group>"; };
+		68B00B2E28BA832F009D4B60 /* Covar.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Covar.cpp; sourceTree = "<group>"; };
+		68B00B2F28BA832F009D4B60 /* Covar.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Covar.hpp; sourceTree = "<group>"; };
+		68B00B3128BA88C4009D4B60 /* Param.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Param.hpp; sourceTree = "<group>"; };
+		68B00B3228BA88C4009D4B60 /* Param.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Param.cpp; sourceTree = "<group>"; };
+		68B00B3428BA8F2B009D4B60 /* Fitter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Fitter.cpp; sourceTree = "<group>"; };
+		68B00B3528BA8F2C009D4B60 /* Fitter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Fitter.hpp; sourceTree = "<group>"; };
 		68C0A4F1271CA165006BBD5E /* TensorDemo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TensorDemo; sourceTree = BUILT_PRODUCTS_DIR; };
 		68C0A500271CA44D006BBD5E /* xml3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xml3pt; sourceTree = BUILT_PRODUCTS_DIR; };
 		68C0A50E271CA50C006BBD5E /* xmlGFWall */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlGFWall; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3451,14 +3464,23 @@
 		6805163528B4F1030061187F /* Fit */ = {
 			isa = PBXGroup;
 			children = (
+				68B00B2E28BA832F009D4B60 /* Covar.cpp */,
+				68B00B2F28BA832F009D4B60 /* Covar.hpp */,
 				6805163A28B4F1030061187F /* FitGSL.cpp */,
 				6805163828B4F1030061187F /* FitGSL.hpp */,
 				6805163728B4F1030061187F /* FitMinuit2.cpp */,
 				6805163D28B4F1030061187F /* FitMinuit2.hpp */,
-				6805163628B4F1030061187F /* FitModel.cpp */,
+				68B00B3428BA8F2B009D4B60 /* Fitter.cpp */,
+				68B00B3528BA8F2C009D4B60 /* Fitter.hpp */,
+				6889D2BE28BA9DE500C0CD10 /* FitterThread.cpp */,
+				6889D2BF28BA9DE500C0CD10 /* FitterThread.hpp */,
 				6805163B28B4F1030061187F /* Makefile.am */,
+				68B00B2B28BA82B7009D4B60 /* ModelBase.cpp */,
+				68B00B2D28BA82E4009D4B60 /* ModelBase.hpp */,
 				6805163928B4F1030061187F /* MultiFit.cpp */,
 				6805163C28B4F1030061187F /* MultiFit.hpp */,
+				68B00B3228BA88C4009D4B60 /* Param.cpp */,
+				68B00B3128BA88C4009D4B60 /* Param.hpp */,
 			);
 			path = Fit;
 			sourceTree = "<group>";
@@ -8167,8 +8189,12 @@
 			files = (
 				6805163F28B4F1030061187F /* FitMinuit2.cpp in Sources */,
 				6805164128B4F1030061187F /* FitGSL.cpp in Sources */,
+				68B00B3628BA8F2C009D4B60 /* Fitter.cpp in Sources */,
+				68B00B3028BA832F009D4B60 /* Covar.cpp in Sources */,
+				68B00B3328BA88C5009D4B60 /* Param.cpp in Sources */,
+				68B00B2C28BA82B7009D4B60 /* ModelBase.cpp in Sources */,
 				6805164028B4F1030061187F /* MultiFit.cpp in Sources */,
-				6805163E28B4F1030061187F /* FitModel.cpp in Sources */,
+				6889D2C028BA9DE500C0CD10 /* FitterThread.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

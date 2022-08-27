@@ -1,12 +1,12 @@
 /*************************************************************************************
  
- Multi-exponential fits
+ Base for all models
  
- Source file: FitModel.cpp
+ Source file: ModelBase.hpp
  
- Copyright (C) 2020
+ Copyright (C) 2019-2022
  
- Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
+ Author: Michael Marshall <Mike@lqcd.me>
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -28,7 +28,12 @@
 
 // Keep my models separate from my fitting code
 
-#include "MultiFit.hpp"
+#include "ModelBase.hpp"
+
+// Indices for operators in correlator names
+const char * pSrcSnk[] = { "src", "snk" };
+
+const std::string E{ "E" };
 
 static const std::string sModelTypeUnknown{ "Unknown" };
 static const std::string sModelTypeExp{ "Exp" };
@@ -169,10 +174,6 @@ void ModelOverlap::Construct(vString &Params,const ModelDefaultParams &Default,c
       return; // too many parameters - will throw on return
   }
   Params.clear();
-  if( !Params.empty() )
-  {
-    Params.erase( Params.begin() );
-  }
   if( Snk_Src.empty() )
   {
     // Take sink and source from filename
