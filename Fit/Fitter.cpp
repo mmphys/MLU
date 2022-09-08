@@ -26,15 +26,15 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include "Param.hpp"
 #include "Fitter.hpp"
 #include "FitterThread.hpp"
+#include "Param.hpp"
 
 // Uncomment this next line to debug without OpenMP
 //#define DEBUG_DISABLE_OMP
 
 Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
-                const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames_,
+                std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames_,
                 CovarParams &&cp_ )
   : bAnalyticDerivatives{ cl.GotSwitch("analytic") },
     HotellingCutoff{ cl.SwitchValue<double>( "Hotelling" ) },
@@ -46,43 +46,54 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     bSaveCorr{ cl.GotSwitch("savecorr") },
     bSaveCMat{ cl.GotSwitch("savecmat") },
     Verbosity{ cl.SwitchValue<int>("v") },
-    bForceSrcSnkDifferent{ cl.GotSwitch( "srcsnk" ) },
-    vGuess{ Common::ArrayFromString<scalar>( cl.SwitchValue<std::string>( "guess" ) ) },
+    UserGuess{ cl.GotSwitch( "guess" ) },
     ds{ std::move( ds_ ) },
     NumFiles{ static_cast<int>( ds.corr.size() ) },
     OpNames{ opNames_ },
-    NumOps{ static_cast<int>( OpNames.size() ) },
-    model{ CreateModels( ModelArgs, ModelDefaultParams( bForceSrcSnkDifferent, cl ) ) },
+    //NumOps{ static_cast<int>( OpNames.size() ) },
+    model{ CreateModels( cl, ModelArgs ) },
     NumExponents{ GetNumExponents() },
-    PerExpNames{ MakePerExpNames() },
-    ParamNames( MakeParamNames() ),
+    mp{ MakeModelParams() },
+    /*ParamNames( MakeParamNames() ),
     ParamFixed{ MakeParamFixed() },
     ParamVariable{ MakeParamVariable() },
     NumModelParams{ static_cast<int>( ParamNames.size() ) },
     NumPerExp{ static_cast<int>( PerExpNames.size() ) },
     NumOneOff{ NumModelParams - NumExponents * NumPerExp },
     NumFixed{ static_cast<int>( ParamFixed.size() ) },
-    NumVariable{ static_cast<int>( ParamVariable.size() ) },
-    cp{ std::move( cp_ ) }
+    NumVariable{ static_cast<int>( ParamVariable.size() ) },*/
+    cp{ std::move( cp_ ) },
+    Guess{ mp.NumScalars( Param::Type::All ) }
 {
   assert( ds.corr.size() == NumFiles && "Number of files extremely large" );
-  assert( NumModelParams == NumFixed + NumVariable && "NumModelParams doesn't match fixed and variable" );
-  assert( NumModelParams == NumExponents * NumPerExp + NumOneOff && "NumModelParams doesn't match NumPerExp and NumOneOff" );
+  /*assert( NumModelParams == NumFixed + NumVariable && "NumModelParams doesn't match fixed and variable" );
+  assert( NumModelParams == NumExponents * NumPerExp + NumOneOff && "NumModelParams doesn't match NumPerExp and NumOneOff" );*/
   if( MinDof < 0 )
     throw std::invalid_argument( "Degrees of freedom (mindof) must be >= 0" );
   if( Retry < 0 )
     throw std::invalid_argument( "Number of fit retries (retry) must be >= 0" );
   if( MaxIt < 0 )
     throw std::invalid_argument( "Maximum fitter iterations (iter) must be >= 0" );
-  if( vGuess.size() && vGuess.size() != NumVariable )
-    throw std::invalid_argument( "Guess contains " + std::to_string( vGuess.size() ) + " parameters, but "
-                                + std::to_string( NumVariable ) + " variable parameters" );
+  // If we've been given a guess, initialise variable parameters with the user-supplied guess
+  if( UserGuess )
+  {
+    const std::vector<scalar> vGuess{Common::ArrayFromString<scalar>(cl.SwitchValue<std::string>("guess"))};
+    if( vGuess.size() != mp.NumScalars( Param::Type::Variable ) )
+      throw std::invalid_argument( "Guess contains " + std::to_string( vGuess.size() )
+                                 + " parameters, but there are "
+                                 + std::to_string( mp.NumScalars( Param::Type::Variable ) )
+                                 + " variable parameters" );
+    mp.Import( Guess, vGuess );
+  }
+  // Load the constants into the fixed portion of the guess
+  ds.GetFixed( Fold::idxCentral, Guess, ParamFixed );
 }
 
 // Create all the models and return the number of exponents in the fit
-std::vector<ModelPtr> Fitter::CreateModels( const std::vector<std::string> &ModelArgs,
-                                            const ModelDefaultParams &modelDefault )
+std::vector<ModelPtr> Fitter::CreateModels( const Common::CommandLine &cl,
+                                            std::vector<Model::Args> &ModelArgs )
 {
+  Model::CreateParams cp( OpNames, cl );
   const int NumModels{ static_cast<int>( ds.corr.size() ) };
   if( NumModels == 0 )
     throw std::runtime_error( "Can't construct a ModelSet for an empty data set" );
@@ -95,11 +106,25 @@ std::vector<ModelPtr> Fitter::CreateModels( const std::vector<std::string> &Mode
   std::cout << "Making models\n";
   for( int i = 0; i < ModelArgs.size(); ++i )
   {
-    std::vector<std::string> vThisArg{ Common::ArrayFromString( ModelArgs[i] ) };
-    model.emplace_back( Model::MakeModel( vThisArg, modelDefault, ds.corr[i], OpNames ) );
-    if( !vThisArg.empty() )
-      throw std::runtime_error( "Model " + std::to_string( i ) + " has " + std::to_string( vThisArg.size() )
-                               + " leftover parameters \"" + ModelArgs[i] + "\"" );
+    cp.pCorr = &ds.corr[i];
+    model.emplace_back( Model::MakeModel( cp, ModelArgs[i] ) );
+    if( !ModelArgs[i].empty() )
+    {
+      std::ostringstream os;
+      os << "Model " << i << " has " << ModelArgs[i].size() << " invalid parameters: ";
+      bool bFirst{ true };
+      for( typename Model::Args::value_type v : ModelArgs[i] )
+      {
+        if( bFirst )
+          bFirst = false;
+        else
+          os << Common::CommaSpace;
+        os << v.first;
+        if( !v.second.empty() )
+          os << Common::EqualSign << v.second;
+      }
+      throw std::runtime_error( os.str().c_str() );
+    }
   }
   return model;
 }
@@ -118,19 +143,128 @@ int Fitter::GetNumExponents()
   return MaxExponents;
 }
 
-// The assumption is that only per energy level constants might or might not be soluble
-std::size_t Fitter::EnsureModelsSolubleHelper( UniqueNames &Names, std::size_t &NumWithUnknowns )
+// Finalise the parameter lists the models will fit
+// Build complete list of fixed and variable parameters
+// Tell each model where to get the parameters they are interested in
+Params Fitter::MakeModelParams()
 {
-  std::size_t NumUnknown{ 0 };
+  Params mp;
+  bool bSoluble{ false };
+  for( int pass = 0; pass < 2 && !bSoluble; ++pass )
+  {
+    if( pass )
+      for( ModelPtr &m : model )
+        m->ReduceUnknown();
+    // Ask all the models what parameters they need
+    mp.clear();
+    for( ModelPtr &m : model )
+      m->AddParameters( mp );
+    mp.AssignOffsets();
+    for( ModelPtr &m : model )
+      m->SaveParameters( mp );
+    // Loop through parameters - see if they are available as constants
+    DataSet::ConstantSource::Key key;
+    ParamFixed.clear();
+    for( typename Params::value_type it : mp )
+    {
+      const Param::Key &pk{ it.first };
+      const Param &p{ it.second };
+      key.Object = pk.Object;
+      key.Name = pk.Name;
+      typename DataSet::ConstMap::const_iterator cit{ ds.constMap.find( key ) };
+      if( cit != ds.constMap.end() )
+      {
+        // This is available as a constant
+        const DataSet::ConstantSource &cs{ cit->second };
+        if( cs.idx.size() < p.size )
+        {
+          std::ostringstream os;
+          os << "AreModelsSoluble " << pk.Object << "/" << pk.Name << "[" << p.size << "] has only "
+          << cs.idx.size() << " constants available";
+          throw std::runtime_error( os.str().c_str() );
+        }
+        mp.Add( pk, p.size, false, Param::Type::Fixed );
+        // Now remember where this comes from
+        ParamFixed.emplace_back( cs, p.size, static_cast<int>( p() ) );
+      }
+    }
+    // Create list of parameters we know - starting from constants
+    const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
+    std::vector<bool> ParamKnown( NumParams, false );
+    for( typename Params::value_type it : mp )
+    {
+      const Param &p{ it.second };
+      if( p.type == Param::Type::Fixed )
+      {
+        for( std::size_t i = 0; i < p.size; ++i )
+          ParamKnown[ p( i ) ] = true;
+      }
+    }
+    // Now ask the models whether they can guess parameters
+    std::size_t LastUnknown;
+    std::size_t NumUnknown{ 0 };
+    std::size_t NumWithUnknowns;
+    do
+    {
+      LastUnknown = NumUnknown;
+      NumUnknown = 0;
+      NumWithUnknowns = 0;
+      for( std::size_t i = 0; i < model.size(); ++i )
+      {
+        std::size_t z{ model[i]->Guessable( ParamKnown, false ) };
+        if( z )
+        {
+          NumUnknown += z;
+          NumWithUnknowns++;
+        }
+      }
+    }
+    while( NumUnknown && NumUnknown != LastUnknown );
+    bSoluble = ( NumUnknown <= NumWithUnknowns );
+    // If the model is soluble, but we've not guessed all parameters, force the models to do so
+    if( bSoluble && NumUnknown )
+    {
+      for( std::size_t i = 0; i < model.size(); ++i )
+        model[i]->Guessable( ParamKnown, true );
+      for( bool bKnown : ParamKnown )
+        if( !bKnown )
+          throw std::runtime_error( "Model is not solvable" );
+    }
+  }
+  if( mp.NumScalars( Param::Type::Variable ) == 0 )
+    throw std::runtime_error( "Model has no parameters to fit" );
+  return mp;
+}
+
+void Fitter::MakeGuess()
+{
+  // Create list of parameters we know - starting from constants
+  const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
+  if( Guess.size != NumParams )
+    throw std::runtime_error( "Fitter::MakeGuess() guess is wrong size" );
+  std::vector<bool> ParamKnown( NumParams, false );
+  for( typename Params::value_type it : mp )
+  {
+    const Param &p{ it.second };
+    if( p.type == Param::Type::Fixed )
+    {
+      for( std::size_t i = 0; i < p.size; ++i )
+        ParamKnown[ p( i ) ] = true;
+    }
+  }
+  ds.GetFixed( Fold::idxCentral, Guess, ParamFixed );
+  // Now ask the models to guess parameters
   std::size_t LastUnknown;
+  std::size_t NumUnknown{ 0 };
+  std::size_t NumWithUnknowns;
   do
   {
     LastUnknown = NumUnknown;
     NumUnknown = 0;
     NumWithUnknowns = 0;
-    for( ModelPtr &m : model )
+    for( std::size_t i = 0; i < model.size(); ++i )
     {
-      std::size_t z{ m->UnknownParameterCount( Names ) };
+      std::size_t z{ model[i]->Guess( Guess, ParamKnown, ds.vCentral, ds.FitTimes[i], false ) };
       if( z )
       {
         NumUnknown += z;
@@ -139,141 +273,15 @@ std::size_t Fitter::EnsureModelsSolubleHelper( UniqueNames &Names, std::size_t &
     }
   }
   while( NumUnknown && NumUnknown != LastUnknown );
-  return NumUnknown;
-}
-
-// Finalise the parameter lists the models will fit, then build a list of per-exponential parameter names
-// Tell each model which per-exponential parameters they are interested in
-std::vector<std::string> Fitter::MakePerExpNames()
-{
-  // Loop through all the models making sure we can solve for the parameters we've been given
-  // Throws an error if problematic
-  UniqueNames Names{ ds.ConstantNamesPerExp };
-  std::size_t NumWithUnknowns;
-  std::size_t NumUnknown{ EnsureModelsSolubleHelper( Names, NumWithUnknowns ) };
-  // See whether we can live with any remaining unknowns
-  if( NumUnknown > NumWithUnknowns )
+  // Since the model is soluble, but we've not guessed all parameters, give the models one last chance
+  if( NumUnknown )
   {
-    for( ModelPtr &m : model )
-      m->ReduceUnknown( Names ); // Which of course invalidates our name list
-    Names = ds.ConstantNamesPerExp;
-    NumUnknown = EnsureModelsSolubleHelper( Names, NumWithUnknowns );
-    if( NumUnknown > NumWithUnknowns )
-      throw std::runtime_error( "Insoluble: " + std::to_string( NumUnknown ) + " unknowns > "
-                               + std::to_string( NumUnknown ) + " correlators" );
+    for( std::size_t i = 0; i < model.size(); ++i )
+      model[i]->Guess( Guess, ParamKnown, ds.vCentral, ds.FitTimes[i], true );
+    for( bool bKnown : ParamKnown )
+      if( !bKnown )
+        throw std::runtime_error( "Bad model: unable to guess all parameters" );
   }
-  // Make a sorted list of all the per exponential parameters but WITHOUT energy, as this must be first
-  Names.clear();
-  for( ModelPtr &m : model )
-    for( const std::string &s : m->ParamNamesPerExp )
-      if( !Common::EqualIgnoreCase( E, s ) )
-        Names[s];
-  // Sort per-exponential parameters by name, adding energy as parameter 0
-  {
-    int PerExpSort{ 1 };
-    for( UniqueNames::iterator it = Names.begin(); it != Names.end(); ++it )
-      it->second = PerExpSort++;
-    Names.insert( { E, 0 } );
-  }
-  // Now tell every model which parameter to use for per-exponential parameters
-  const int NumParamsPerExp{ static_cast<int>( Names.size() ) };
-  for( ModelPtr &m : model )
-  {
-    m->ParamIdxPerExp.resize( m->NumExponents );
-    const int ModelPerExp{ static_cast<int>( m->ParamNamesPerExp.size() ) };
-    for( int i = 0; i < ModelPerExp; ++i )
-    {
-      UniqueNames::iterator it = Names.find( m->ParamNamesPerExp[i] );
-      assert( it != Names.end() && "ModelSet constructor buggy" );
-      int idx{ it->second };
-      for( int e = 0; e < m->NumExponents; ++e )
-      {
-        if( i == 0 )
-          m->ParamIdxPerExp[e].resize( ModelPerExp );
-        m->ParamIdxPerExp[e][i] = idx;
-        idx += NumParamsPerExp;
-      }
-    }
-  }
-  // Now Make our list of parameter names per exponent
-  std::vector<std::string> PerExpNames( NumParamsPerExp );
-  for( UniqueNames::iterator it = Names.begin(); it != Names.end(); ++it )
-    PerExpNames[it->second] = it->first;
-  return PerExpNames;
-}
-
-// Make the full list of all parameters. Tell models about one-off parameters they are interested in
-std::vector<std::string> Fitter::MakeParamNames()
-{
-  // Make a sorted list of all the per exponential parameters but WITHOUT energy, as this must be first
-  int idxParam{ 0 };
-  UniqueNames Names;
-  std::vector<std::string> ParamNames( PerExpNames.size() * NumExponents );
-  for( int e = 0; e < NumExponents; ++e )
-  {
-    const std::string eString{ std::to_string( e ) };
-    for( std::string s : PerExpNames )
-    {
-      s.append( eString );
-      ParamNames[idxParam] = s;
-      Names.insert( { s, idxParam++ } );
-    }
-  }
-  // Add one-off parameters from every model to the parameter list - if not there already
-  // While we're at it, tell each model the indices of the parameters they are interested in
-  for( ModelPtr &m : model )
-  {
-    const std::size_t peSize{ m->ParamNames.size() };
-    m->ParamIdx.resize( peSize );
-    for( int i = 0; i < peSize; ++i )
-    {
-      const std::string &s{ m->ParamNames[i] };
-      UniqueNames::iterator it = Names.find( s );
-      if( it == Names.end() )
-      {
-        m->ParamIdx[i] = idxParam;
-        Names.insert( { s, idxParam++ } );
-        ParamNames.push_back( s );
-      }
-      else
-        m->ParamIdx[i] = it->second;
-    }
-  }
-  return ParamNames;
-}
-
-// Now work out which parameters are fixed and which variable. Save info for back-references
-std::vector<DataSet::FixedParam> Fitter::MakeParamFixed()
-{
-  std::vector<DataSet::FixedParam> vFixed;
-  const int NumParams_{ static_cast<int>( ParamNames.size() ) };
-  assert( NumParams_ <= std::numeric_limits<int>::max() );
-  for( int i = 0; i < NumParams_; ++i )
-  {
-    DataSet::ConstMap::const_iterator it{ ds.constMap.find( ParamNames[i] ) };
-    if( it != ds.constMap.end() )
-      vFixed.emplace_back( i, it->second ); // fixed parameter
-  }
-  return vFixed;
-}
-
-// Now work out which parameters are fixed and which variable. Save info for back-references
-std::vector<int> Fitter::MakeParamVariable()
-{
-  const int NumParams_{ static_cast<int>( ParamNames.size() ) };
-  assert( NumParams_ <= std::numeric_limits<int>::max() );
-  const int NumFixed_{ static_cast<int>( ParamFixed.size() ) };
-  std::vector<int> vFree;
-  vFree.reserve( NumParams_ - NumFixed_ );
-  for( int i = 0; i < NumParams_; ++i )
-  {
-    DataSet::ConstMap::const_iterator it{ ds.constMap.find( ParamNames[i] ) };
-    if( it == ds.constMap.end() )
-      vFree.push_back( i );
-  }
-  if( vFree.empty() )
-    throw std::runtime_error( "Model has no parameters to fit" );
-  return vFree;
 }
 
 void Fitter::SayNumThreads( std::ostream &os )
@@ -307,43 +315,19 @@ void Fitter::SaveMatrixFile( const Matrix &m, const std::string &Type, const std
 {
   if( model.size() != ds.corr.size() )
     throw std::runtime_error( "ModelSet doesn't match DataSet" );
-  std::vector<std::string> Abbreviations( ds.corr.size() );
+  std::vector<std::string> Abbreviations;
+  Abbreviations.reserve( ds.corr.size() );
   std::vector<std::string> FileComments;
   FileComments.reserve( ds.corr.size() );
   for( std::size_t f = 0; f < model.size(); ++f )
   {
-    // Name of each operator THIS ONLY WORKS FOR MODELS WITH OVERLAP CONSTANTS - NEEDS TO BE FIXED
-    for( std::size_t op = 1; op < model[f]->ParamNamesPerExp.size(); ++op )
-      Abbreviations[f].append( model[f]->ParamNamesPerExp[op] );
-    if( model[f]->ParamNamesPerExp.size() == 2 )
-      Abbreviations[f].append( model[f]->ParamNamesPerExp[1] );
-    // Operators - one-off
+    Abbreviations.emplace_back( model[f]->Description() );
+    // Save type of each model and parameters
     std::ostringstream s;
-    if( !model[f]->ParamNames.empty() )
-    {
-      for( std::size_t i = 0; i < model[f]->ParamNames.size(); ++i )
-      {
-        if( i == 0 )
-          s << "# OpsOneOff" << f << ": ";
-        else
-          s << Common::CommaSpace;
-        s << model[f]->ParamNames[i];
-      }
-      s << Common::NewLine;
-    }
-    // Operators per energy
-    if( !model[f]->ParamNamesPerExp.empty() )
-    {
-      for( std::size_t i = 0; i < model[f]->ParamNamesPerExp.size(); ++i )
-      {
-        if( i == 0 )
-          s << "# OpsPerExp" << f << ": ";
-        else
-          s << Common::CommaSpace;
-        s << model[f]->ParamNamesPerExp[i];
-      }
-      s << Common::NewLine;
-    }
+    s << "# Model" << f << ": " << model[f]->Type();
+    for( std::size_t i = 0; i < model[f]->param.size(); ++i )
+      s << Common::CommaSpace << model[f]->param[i];
+    s << Common::NewLine;
     FileComments.emplace_back( s.str() );
   }
   // If we're saving the correlation matrix, it should have a similar name to the model
@@ -356,7 +340,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
                     const std::string &ModelSuffix, Common::SeedType Seed )
 {
   bCorrelated = Bcorrelated;
-  dof = ds.Extent - NumVariable;
+  dof = ds.Extent - mp.NumScalars( Param::Type::Variable );
   if( dof < MinDof )
   {
     std::string Message{};
@@ -371,13 +355,27 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   // Make somewhere to store the results of the fit for each bootstrap sample
   const int tMin{ ds.FitTimes[0][0] };
   const int tMax{ ds.FitTimes[0].back() };
-  ModelFile OutputModel( OpNames, NumExponents, NumFiles, tMin, tMax, dof, !bForceSrcSnkDifferent,
-                         cp.bFreeze, ds.NSamples, NumModelParams + 1 );
+  // TODO: This is temporary - makes it look like existing format
+  // TODO: Update to save the parameter list + additional columns
+  std::vector<std::string> OldFormatOpNames;
+  for( typename Params::value_type it : mp )
+  {
+    if( it.second.size > 1 && !Common::EqualIgnoreCase( E, it.first.Name ) )
+    {
+      std::ostringstream os;
+      os << it.first;
+      OldFormatOpNames.push_back( os.str() );
+    }
+  }
+  const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
+  ModelFile OutputModel( OldFormatOpNames, NumExponents, NumFiles, tMin, tMax, dof,
+                         true, //TODO: !bForceSrcSnkDifferent
+                         cp.bFreeze, ds.NSamples, NumParams + 1 );
   for( const Fold &f : ds.corr )
     OutputModel.FileList.emplace_back( f.Name_.Filename );
   OutputModel.CopyAttributes( ds.corr[0] );
   {
-    std::vector<std::string> ColNames{ ParamNames };
+    std::vector<std::string> ColNames{ NumParams + 1 };
     //TODO: Work out how to copy parameter names into output file properly
     if( ColNames.size() == 1 )
       OutputModel.OpNames.clear();
@@ -413,7 +411,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
     bPerformFit = PreBuilt.NewParamsMorePrecise( cp.bFreeze, ds.NSamples );
     if( !bPerformFit )
     {
-      ChiSq = dof * PreBuilt.getSummaryData()[NumModelParams].Central; // Last summary has chi squared per dof
+      ChiSq = dof * PreBuilt.getSummaryData()[NumParams].Central; // Last summary has chi squared per dof
       OutputModel = std::move( PreBuilt );
     }
     else
@@ -431,78 +429,33 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
       CorrSynthetic[f].CopyAttributes( ds.corr[f] );
     }
 
-    // Build Parameter lists and take initial guesses
-    Parameters parGuess; // Only the variable parameters - used by fitting engines
-    Vector modelParams( NumModelParams ); // All parameters - used by models
+    // If there's no user-supplied guess, guess based on the data we're fitting
+    if( !UserGuess )
+      MakeGuess();
+
+    // Fit the central replica, then use this thread as template for all others
+    std::unique_ptr<FitterThread> ftC{ MakeThread( bCorrelated, OutputModel, CorrSynthetic ) };
+    ftC->SetReplica( Fold::idxCentral, true, true, bSaveCMat ? &sModelBase : nullptr );
     {
-      for( int i = 0; i < NumModelParams; ++i )
-        modelParams[i] = 0;
-      // Get all the constants and start keeping track of which parameters we have managed to take a guess for
-      std::vector<bool> bKnown( NumModelParams, false );
-      ds.GetFixed( Fold::idxCentral , modelParams, ParamFixed );
-      for( const DataSet::FixedParam &p : ParamFixed )
-        bKnown[p.idx] = true;
-      const std::vector<bool> bFixed( bKnown );
-      // Take a guess for E0 if we didn't manage to load it
-      if( !bKnown[0] )
-      {
-        int E0Count{ 0 };
-        Vector vCorr;
-        for( int f = 0; f < NumFiles; ++f )
-        {
-          scalar z;
-          vCorr.MapView( const_cast<scalar *>( ds.corr[f][Fold::idxCentral] ), ds.corr[f].Nt() );
-          if( model[f]->GuessE0( z, vCorr ) )
-          {
-            modelParams[0] += z;
-            E0Count++;
-          }
-        }
-        assert( E0Count && "Nothing guessed E0" );
-        modelParams[0] /= E0Count;
-        bKnown[0] = true;
-      }
-      // Now guess excited state energies (increment of half the previous difference each time)
-      {
-        scalar EPrior{ 0 };
-        for( int e = 1; e < NumExponents; ++e )
-        {
-          const int idxE{ e * NumPerExp };
-          const int idxELast{ idxE - NumPerExp };
-          if( !bKnown[idxE] )
-          {
-            scalar PriorDiff{ modelParams[idxELast] - EPrior };
-            modelParams[idxE] = modelParams[idxELast] + PriorDiff / 2;
-            EPrior = modelParams[idxELast];
-            bKnown[idxE] = true;
-          }
-        }
-      }
-      // Now guess everything else
-      {
-        Vector vCorr;
-        int pass{ 0 };
-        for( bool bNeedAnotherPass = true; bNeedAnotherPass; ++pass )
-        {
-          bNeedAnotherPass = false;
-          for( int f = 0; f < NumFiles; ++f )
-          {
-            vCorr.MapView( const_cast<scalar *>( ds.corr[f][Fold::idxCentral] ), ds.corr[f].Nt() );
-            if( model[f]->Guess( modelParams, bKnown, pass, vCorr ) )
-              bNeedAnotherPass = true;
-          }
-        }
-      }
-      // Make sure we've taken a guess for everything
-      int iVar = 0;
-      for( int i = 0; i < NumModelParams; ++i )
-      {
-        assert( bKnown[i] && "Bad model: unable to guess all parameters" );
-        if( !bFixed[i] )
-          parGuess.Add( ParamNames[i], vGuess.empty() ? modelParams[i] : vGuess[iVar++], 0 );
-      }
+      const std::string sDescription{ ftC->Description() };
+      if( !sDescription.empty() )
+        std::cout << sDescription << Common::NewLine;
     }
-    // Protected by CancelCritSec
+    std::cout << "Tolerance " << Tolerance << ". Using uncorrelated fit as guess for each replica.\n";
+    if( mp.NumScalars( Param::Type::Fixed ) )
+    {
+      std::cout << " Fixed parameters:\n";
+      mp.Dump( std::cout, Guess, Param::Type::Fixed );
+    }
+    std::cout << " Initial guess:\n";
+    mp.Dump( std::cout, Guess, Param::Type::Variable );
+
+    // For correlated fits, perform an uncorrelated fit on the central replica to use as the guess
+    if( bCorrelated && !UserGuess )
+      Guess = ftC->UncorrelatedFit();
+
+    // Perform all the fits in parallel on separate OpenMP threads
+    // As long as exceptions are caught on the same thread that threw them all is well
     {
       volatile bool Abort{ false };
       std::string sError;
@@ -514,55 +467,9 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
         {
           // fitThread only throws an exception if the correlation matrix is frozen and bad
           // ... which will either happen for all threads or none
-          std::unique_ptr<FitterThread> ft{ MakeThread( bCorrelated, OutputModel, CorrSynthetic ) };
+          // By cloning the central replica thread, we can avoid rebuilding central replica correlation matrix
+          std::unique_ptr<FitterThread> ft{ ftC->Clone() };
           FitterThread &fitThread( *ft.get() );
-#ifndef DEBUG_DISABLE_OMP
-          #pragma omp single
-#endif
-          {
-            const std::string sDescription{ fitThread.Description() };
-            if( !sDescription.empty() )
-              std::cout << sDescription << Common::NewLine;
-            std::cout << "Tolerance " << Tolerance << ". Using uncorrelated fit as guess for each replica.\n";
-            if( NumFixed )
-            {
-              std::size_t MaxLen{ 0 };
-              for( const auto & p : ParamFixed )
-              {
-                std::size_t ThisLen{ ParamNames[p.idx].size() };
-                if( MaxLen < ThisLen )
-                  MaxLen = ThisLen;
-              }
-              std::cout << " Fixed parameters:\n";
-              for( const auto & p : ParamFixed )
-                std::cout << std::string( 2 + MaxLen - ParamNames[p.idx].size(), ' ' ) << ParamNames[p.idx]
-                          << Common::Space << modelParams[p.idx] << Common::NewLine;
-            }
-            std::cout << " Initial guess:\n" << parGuess;
-            if( bCorrelated )
-            {
-              // Perform an uncorrelated fit on the central replica, and use that as the guess for every replica
-              try
-              {
-                fitThread.SetReplica( Fold::idxCentral, true, true, bSaveCMat ? &sModelBase : nullptr );
-                if( vGuess.empty() )
-                  fitThread.UpdateGuess( parGuess );
-              }
-              catch( const std::exception &e )
-              {
-                bool WasAbort;
-#ifndef DEBUG_DISABLE_OMP
-                #pragma omp atomic capture
-#endif
-                {
-                  WasAbort = Abort;
-                  Abort = true;
-                }
-                if( !WasAbort )
-                  sError = e.what();
-              }
-            }
-          }
 #ifndef DEBUG_DISABLE_OMP
           #pragma omp for schedule(dynamic)
 #endif
@@ -570,7 +477,6 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
           {
             try
             {
-              // Use uncorrelated fit as guess for correlated fit
               bool WasAbort;
 #ifndef DEBUG_DISABLE_OMP
               #pragma omp atomic read
@@ -579,7 +485,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
               if( !WasAbort )
               {
                 fitThread.SetReplica( idx );
-                scalar z{ fitThread.FitOne( parGuess ) };
+                scalar z{ fitThread.FitOne() };
                 if( idx == Fold::idxCentral )
                   ChiSq = z;
               }
@@ -666,12 +572,13 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   }
   // Return the statistics on the fit results
   const int NumSummaries{ OutputModel.NumSamples() }; // because we might have read back an old fit
-  std::vector<Common::ValWithEr<scalar>> Results( NumModelParams );
-  std::vector<double> data( NumSummaries );
-  for( int p = 0; p < NumModelParams; p++ ) {
+  std::vector<Common::ValWithEr<scalar>> Results( mp.NumScalars( Param::Type::All ) );
+  std::vector<scalar> data( NumSummaries );
+  for( std::size_t p = 0; p < Results.size(); p++ ) {
     double Central = OutputModel[Fold::idxCentral][p];
     std::size_t Count{ 0 };
-    for( int j = 0; j < NumSummaries; ++j ) {
+    for( int j = 0; j < NumSummaries; ++j )
+    {
       double d = OutputModel[j][p];
       if( std::isfinite( d ) )
         data[Count++] = d;

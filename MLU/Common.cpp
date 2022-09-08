@@ -75,7 +75,7 @@ void GSLLibraryGlobal::GSLErrorHandler(const char * reason, const char * file, i
 {
   std::stringstream ss;
   ss << "gsl: " << file << ":" << line << ": errno " << gsl_errno << ": " << reason;
-  throw std::runtime_error( ss.str() );
+  throw std::runtime_error( ss.str().c_str() );
 }
 
 // Text required for summaries of correlators
@@ -1841,8 +1841,6 @@ void DataSet<T>::clear()
   corr.clear();
   FitTimes.clear();
   constFile.clear();
-  ConstantNames.clear();
-  ConstantNamesPerExp.clear();
   constMap.clear();
 }
 
@@ -1943,7 +1941,17 @@ void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedP
   for( int f = 0; f < constFile.size(); ++f )
     Src[f] = constFile[f][idx];
   for( const FixedParam &p : Params )
-    vResult[p.idx] = Src[p.src.File][p.src.idx];
+  {
+    if( p.Count > p.src.idx.size() )
+    {
+      std::ostringstream o;
+      o << "File " << p.src.File << " parameter " << constFile[p.src.File].GetColumnNames()[p.src.idx.size()-1]
+        << " is maximum, but " << p.Count << " parameters requested";
+      throw std::runtime_error( o.str().c_str() );
+    }
+    for( std::size_t i = 0; i < p.Count; ++i )
+      vResult[p.idx + i] = Src[p.src.File][p.src.idx[i]];
+  }
 }
 
 // Initialise random numbers I will need if I'm to get (co)variance on non-central replicas
@@ -2274,19 +2282,36 @@ void DataSet<T>::SaveMatrixFile( const Matrix<T> &m, const std::string &Type, co
 
 // Add a constant to my list of known constants - make sure it isn't already there
 template <typename T>
-void DataSet<T>::AddConstant( const std::string &Name, std::size_t File, std::size_t idx )
+void DataSet<T>::AddConstant( const typename ConstantSource::Key &Key, std::size_t File,
+                              std::size_t First, std::size_t Count, std::size_t Stride )
 {
-  if( constMap.find( Name ) != constMap.end() )
-    throw std::runtime_error( "Constant \"" + Name + "\" loaded from multiple model files" );
-  constMap.insert( { Name, ConstantSource( File, idx ) } );
-}
-
-template <typename T>
-void DataSet<T>::AddConstant( const std::string &Name, std::size_t File, std::size_t idx, int e )
-{
-  std::string s{ Name };
-  s.append( std::to_string( e ) );
-  AddConstant( s, File, idx );
+  static const char Invalid[] = " invalid";
+  std::ostringstream os;
+  os << "DataSet::AddConstant " << Key.Object << "/" << Key.Name << Space;
+  if( constMap.find( Key ) != constMap.end() )
+  {
+    os << "loaded from multiple model files";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  if( File >= constFile.size() )
+  {
+    os << "file " << File << Invalid;
+    throw std::runtime_error( os.str().c_str() );
+  }
+  if( Count < 1 || Count > constFile[File].NumExponents )
+  {
+    os << "count " << Count << Invalid;
+    throw std::runtime_error( os.str().c_str() );
+  }
+  if( ( Count > 1 && Stride < 1 ) || First + ( Count - 1 ) * Stride > constFile[File].Nt() )
+  {
+    os << "reads past end of file";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  std::vector<std::size_t> SrcIdx( Count );
+  for( std::size_t i = 0; i < Count; ++i )
+    SrcIdx[i] = First + i * Stride;
+  constMap.insert( { Key, ConstantSource( File, std::move( SrcIdx ) ) } );
 }
 
 template <typename T>
@@ -2350,23 +2375,30 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
   // Now see which parameters we want to read from the model
   const std::vector<std::string> &ColumnNames{ constFile[i].GetColumnNames() };
   const std::vector<std::string> &OpNames{ constFile[i].OpNames };
+  const unsigned int NumExponents{ static_cast<unsigned int>( constFile[i].NumExponents ) };
+  const std::size_t Stride{ OpNames.size() + 1 };
+  const std::size_t SingleOffset{ Stride * NumExponents };
+  const std::size_t SingleNum{ ColumnNames.size() - SingleOffset };
+  typename ConstantSource::Key Key;
+  Key.Object = constFile[i].Name_.Base;
   if( vThisArg.empty() )
   {
     // Load every constant in this file
-    for( int j = 0; j < ColumnNames.size(); ++j )
     {
-      // Add a map back to this specific parameter (making sure not already present)
-      AddConstant( ColumnNames[j], i, j );
-      // Now take best stab at whether this should be per exponent or individual
-      std::string s{ ColumnNames[j] };
-      int Exp;
-      if( Common::ExtractTrailing( s, Exp )
-         && ( Common::EqualIgnoreCase( EnergyPrefix, s ) || Common::IndexIgnoreCase( OpNames, s ) != OpNames.size() ) )
-      {
-        ConstantNamesPerExp[s];
-      }
-      else
-        ConstantNames[ColumnNames[j]];
+      Key.Name = ColumnNames[0];
+      if( Key.Name.back() == '0' )
+        Key.Name.resize( Key.Name.size() - 1 );
+      AddConstant( Key, i, 0, NumExponents, Stride );
+    }
+    for( int j = 1; j < Stride; ++j )
+    {
+      Key.Name = OpNames[j-1];
+      AddConstant( Key, i, j, NumExponents, Stride );
+    }
+    for( std::size_t j = SingleOffset; j < ColumnNames.size(); ++j )
+    {
+      Key.Name = ColumnNames[j];
+      AddConstant( Key, i, j, 1, 1 );
     }
   }
   else
@@ -2378,18 +2410,20 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
       if( vPar.empty() || vPar[0].empty() || vPar.size() > 2 || ( vPar.size() > 1 && vPar[1].empty() ) )
         throw std::runtime_error( "Cannot interpret model parameter string \"" + Args + "\"" );
       const std::string &vLookFor{ vPar.back() };
-      const std::string &vLoadAs{ vPar[0] };
+      Key.Name = vPar[0];
       // Have we asked for a per-exponent constant (which includes energies)
-      if( Common::EqualIgnoreCase( EnergyPrefix, vLookFor ) || Common::IndexIgnoreCase( OpNames, vLookFor )!=OpNames.size() )
-      {
-        for( int e = 0; e < constFile[i].NumExponents; ++e )
-          AddConstant( vLoadAs, i, constFile[i].GetColumnIndex( vLookFor, e ), e );
-        ConstantNamesPerExp[vLoadAs];
-      }
+      std::size_t j = 0;
+      if( !Common::EqualIgnoreCase( EnergyPrefix, vLookFor ) )
+        j = Common::IndexIgnoreCase( OpNames, vLookFor ) + 1;
+      if( j < Stride )
+        AddConstant( Key, i, j, NumExponents, Stride );
       else
       {
-        AddConstant( vLoadAs, i, constFile[i].GetColumnIndex( vLookFor ) );
-        ConstantNames[vLoadAs];
+        j = SingleOffset;
+        while( !Common::EqualIgnoreCase( ColumnNames[j], vLookFor ) )
+          if( ++j >= ColumnNames.size() )
+            throw std::runtime_error( "Parameter " + vLookFor + " not found" );
+        AddConstant( Key, i, j, 1, 1 );
       }
     }
   }

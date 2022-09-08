@@ -137,7 +137,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o h447_h447_p3/ -i /Volumes/QCD/tursa/semilep/data/M1/analyse/corr/2ptp2/h447_h447_p2_0_g5P_g5 &apos;P*.h5,,,n&apos; &apos;W*.h5,1,,,n&apos; --delta 8 --iter 10000"
+            argument = "-o h447_h447_p3/ -i /Volumes/QCD/tursa/semilep/data/M1/analyse/corr/2ptp2/h447_h447_p2_0_g5P_g5 &apos;P*.h5,e=3&apos; &apos;W*.h5,range=1,model=exp,e=4&apos; --delta 8 --iter 10000"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

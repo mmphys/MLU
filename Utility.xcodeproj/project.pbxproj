@@ -59,6 +59,11 @@
 		68544774271C9CBB00EF030C /* hlxml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446EC271C8E5400EF030C /* hlxml.cpp */; };
 		68544780271C9D1C00EF030C /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68544781271C9D2300EF030C /* repair.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446EE271C8E5400EF030C /* repair.cpp */; };
+		6858C39928C3458F0014F83D /* Model2pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6858C39828C3458F0014F83D /* Model2pt.cpp */; };
+		6858C39E28C348BE0014F83D /* Model3pt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6858C39C28C348BD0014F83D /* Model3pt.cpp */; };
+		6858C39F28C348BE0014F83D /* ModelConstant.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6858C39D28C348BE0014F83D /* ModelConstant.cpp */; };
+		6858C3A428C34BB40014F83D /* Model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6858C3A128C34BB30014F83D /* Model.cpp */; };
+		6858C3A528C34BB40014F83D /* ModelCommon.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6858C3A228C34BB30014F83D /* ModelCommon.cpp */; };
 		6868F3002745375C00D73B89 /* Example_wall_wall_spectrum.cc in Sources */ = {isa = PBXBuildFile; fileRef = 68F61906271C75AF00A8B197 /* Example_wall_wall_spectrum.cc */; };
 		686EC056271C9E7D00A69ED4 /* mixedop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685446E7271C8E5400EF030C /* mixedop.cpp */; };
 		686EC057271C9E9A00A69ED4 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
@@ -992,7 +997,6 @@
 		68A1B33D284A40060053103F /* ImportCorr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68A1B330284A3F6B0053103F /* ImportCorr.cpp */; };
 		68A1B33E284A40BA0053103F /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68A2B64E271C816600D9CB95 /* HadronsXmlRun.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61B94271C79E700A8B197 /* HadronsXmlRun.cpp */; };
-		68B00B2C28BA82B7009D4B60 /* ModelBase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B00B2B28BA82B7009D4B60 /* ModelBase.cpp */; };
 		68B00B3028BA832F009D4B60 /* Covar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B00B2E28BA832F009D4B60 /* Covar.cpp */; };
 		68B00B3328BA88C5009D4B60 /* Param.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B00B3228BA88C4009D4B60 /* Param.cpp */; };
 		68B00B3628BA8F2C009D4B60 /* Fitter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68B00B3428BA8F2B009D4B60 /* Fitter.cpp */; };
@@ -1592,6 +1596,16 @@
 		6854475F271C9BC400EF030C /* FitSummary */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FitSummary; sourceTree = BUILT_PRODUCTS_DIR; };
 		6854476C271C9C9300EF030C /* hlxml */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hlxml; sourceTree = BUILT_PRODUCTS_DIR; };
 		68544779271C9D0800EF030C /* repair */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = repair; sourceTree = BUILT_PRODUCTS_DIR; };
+		6858C39728C3458F0014F83D /* Model2pt.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Model2pt.hpp; sourceTree = "<group>"; };
+		6858C39828C3458F0014F83D /* Model2pt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Model2pt.cpp; sourceTree = "<group>"; };
+		6858C39A28C348BD0014F83D /* Model3pt.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Model3pt.hpp; sourceTree = "<group>"; };
+		6858C39B28C348BD0014F83D /* ModelConstant.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelConstant.hpp; sourceTree = "<group>"; };
+		6858C39C28C348BD0014F83D /* Model3pt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Model3pt.cpp; sourceTree = "<group>"; };
+		6858C39D28C348BE0014F83D /* ModelConstant.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelConstant.cpp; sourceTree = "<group>"; };
+		6858C3A028C34BB30014F83D /* ModelCommon.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelCommon.hpp; sourceTree = "<group>"; };
+		6858C3A128C34BB30014F83D /* Model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Model.cpp; sourceTree = "<group>"; };
+		6858C3A228C34BB30014F83D /* ModelCommon.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelCommon.cpp; sourceTree = "<group>"; };
+		6858C3A328C34BB30014F83D /* Model.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Model.hpp; sourceTree = "<group>"; };
 		6868F2F9274536F000D73B89 /* Example_wall_wall_spectrum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Example_wall_wall_spectrum; sourceTree = BUILT_PRODUCTS_DIR; };
 		686EC04F271C9E6C00A69ED4 /* mixedop */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mixedop; sourceTree = BUILT_PRODUCTS_DIR; };
 		686EC05C271C9EE300A69ED4 /* peramb-compare */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "peramb-compare"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2619,8 +2633,6 @@
 		68A1B331284A3F6B0053103F /* ImportCorr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ImportCorr.hpp; sourceTree = "<group>"; };
 		68A1B336284A3FBA0053103F /* ImportCorr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ImportCorr; sourceTree = BUILT_PRODUCTS_DIR; };
 		68A2B647271C7EE100D9CB95 /* HadronsXmlRun */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = HadronsXmlRun; sourceTree = BUILT_PRODUCTS_DIR; };
-		68B00B2B28BA82B7009D4B60 /* ModelBase.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelBase.cpp; sourceTree = "<group>"; };
-		68B00B2D28BA82E4009D4B60 /* ModelBase.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelBase.hpp; sourceTree = "<group>"; };
 		68B00B2E28BA832F009D4B60 /* Covar.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Covar.cpp; sourceTree = "<group>"; };
 		68B00B2F28BA832F009D4B60 /* Covar.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Covar.hpp; sourceTree = "<group>"; };
 		68B00B3128BA88C4009D4B60 /* Param.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Param.hpp; sourceTree = "<group>"; };
@@ -3475,8 +3487,16 @@
 				6889D2BE28BA9DE500C0CD10 /* FitterThread.cpp */,
 				6889D2BF28BA9DE500C0CD10 /* FitterThread.hpp */,
 				6805163B28B4F1030061187F /* Makefile.am */,
-				68B00B2B28BA82B7009D4B60 /* ModelBase.cpp */,
-				68B00B2D28BA82E4009D4B60 /* ModelBase.hpp */,
+				6858C3A128C34BB30014F83D /* Model.cpp */,
+				6858C3A328C34BB30014F83D /* Model.hpp */,
+				6858C39828C3458F0014F83D /* Model2pt.cpp */,
+				6858C39728C3458F0014F83D /* Model2pt.hpp */,
+				6858C39C28C348BD0014F83D /* Model3pt.cpp */,
+				6858C39A28C348BD0014F83D /* Model3pt.hpp */,
+				6858C3A228C34BB30014F83D /* ModelCommon.cpp */,
+				6858C3A028C34BB30014F83D /* ModelCommon.hpp */,
+				6858C39D28C348BE0014F83D /* ModelConstant.cpp */,
+				6858C39B28C348BD0014F83D /* ModelConstant.hpp */,
 				6805163928B4F1030061187F /* MultiFit.cpp */,
 				6805163C28B4F1030061187F /* MultiFit.hpp */,
 				68B00B3228BA88C4009D4B60 /* Param.cpp */,
@@ -8192,8 +8212,12 @@
 				68B00B3628BA8F2C009D4B60 /* Fitter.cpp in Sources */,
 				68B00B3028BA832F009D4B60 /* Covar.cpp in Sources */,
 				68B00B3328BA88C5009D4B60 /* Param.cpp in Sources */,
-				68B00B2C28BA82B7009D4B60 /* ModelBase.cpp in Sources */,
+				6858C39E28C348BE0014F83D /* Model3pt.cpp in Sources */,
+				6858C3A528C34BB40014F83D /* ModelCommon.cpp in Sources */,
+				6858C3A428C34BB40014F83D /* Model.cpp in Sources */,
 				6805164028B4F1030061187F /* MultiFit.cpp in Sources */,
+				6858C39928C3458F0014F83D /* Model2pt.cpp in Sources */,
+				6858C39F28C348BE0014F83D /* ModelConstant.cpp in Sources */,
 				6889D2C028BA9DE500C0CD10 /* FitterThread.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

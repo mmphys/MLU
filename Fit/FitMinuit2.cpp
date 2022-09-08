@@ -28,41 +28,26 @@
 
 #include "FitMinuit2.hpp"
 
-// Fill a Parameters structure from Minuit2 State
-void ParamStateMinuit2::CopyParameter( const ROOT::Minuit2::MnUserParameterState &State, Parameters & Par )
-{
-  // if( State.IsValid() ) // Do I need this
-  Par.clear();
-  for( const ROOT::Minuit2::MinuitParameter &mp : State.Parameters().Parameters() )
-    Par.Add( mp.GetName(), mp.Value(), mp.Error() );
-}
-
-// Make a Parameters structure from Minuit2 State
-Parameters ParamStateMinuit2::MakeParameter( const ROOT::Minuit2::MnUserParameterState &State )
-{
-  Parameters Par;
-  CopyParameter( State, Par );
-  return Par;
-}
-
-void ParamStateMinuit2::StandardOut( std::ostream &os ) const
-{
-  if( bGotMinuit2State )
-    os << Minuit2State;
-}
-
-void ParamStateMinuit2::ReplicaMessage( std::ostream &os ) const
-{
-  if( bGotMinuit2State )
-    os << "edm " << Edm() << ", ";
-}
-
-ParamState * FitterThreadMinuit2::MakeParamState( const Parameters &Params )
-{
-  return new ParamStateMinuit2( Params );
-}
-
 const ROOT::Minuit2::MnStrategy FitterThreadMinuit2::Strategy( FitterThreadMinuit2::StrategyLevel );
+
+void FitterThreadMinuit2::DumpParamsFitter( std::ostream &os ) const
+{
+  if( state.bValid )
+    os << Minuit2State;
+  else
+    parent.mp.Dump( os, ModelParams );
+}
+
+void FitterThreadMinuit2::ReplicaMessage( std::ostream &os ) const
+{
+  if( state.bValid )
+    os << "edm " << Minuit2State.Edm() << ", ";
+}
+
+FitterThread * FitterThreadMinuit2::Clone() const
+{
+  return new FitterThreadMinuit2( *this );
+}
 
 // Painful, but Minuit2 calls operator() const
 double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
@@ -84,19 +69,52 @@ double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
   return chi2;
 }
 
-void FitterThreadMinuit2::Minimise( ParamState &Guess_, int iNumGuesses )
+void FitterThreadMinuit2::Minimise( int iNumGuesses )
 {
-  ParamStateMinuit2 &Guess{ *dynamic_cast<ParamStateMinuit2*>( &Guess_ ) };
-  ROOT::Minuit2::MnUserParameters Minuit2Par;
-  if( !Guess.bGotMinuit2State )
-    for( const Parameters::Parameter & p : Guess.parameters )
-      Minuit2Par.Add( p.Name, p.Value, p.Error );
-  ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, Guess.bGotMinuit2State ? Guess.Minuit2State : Minuit2Par,
+  ROOT::Minuit2::MnUserParameters Par;
+  if( !state.bValid )
+  {
+    for( const Params::value_type &it : parent.mp )
+    {
+      const Param &p{ it.second };
+      if( p.type == Param::Type::Variable )
+      {
+        for( std::size_t i = 0; i < p.size; ++i )
+          Par.Add( it.first.FullName( i, p.size ), FitterParams[p(i,Param::Type::Variable)] );
+      }
+    }
+  }
+  ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, state.bValid ? Minuit2State : Par,
                                                            Strategy, parent.MaxIt, parent.Tolerance * 1000 );
-  const ROOT::Minuit2::MnUserParameterState &state{ min.UserState() };
-  if( !state.IsValid() )
+  const ROOT::Minuit2::MnUserParameterState &M2State{ min.UserState() };
+  if( !M2State.IsValid() )
     throw std::runtime_error( ReplicaString( iNumGuesses ) + " did not converge" );
-  Guess = state;
+  Minuit2State = M2State;
+  state.TestStat = M2State.Fval();
+  state.NumCalls = M2State.NFcn();
+  state.bValid = true;
+  const std::vector<double> M2Params{ M2State.Parameters().Params() };
+  const std::vector<double> M2Errors{ M2State.Parameters().Errors() };
+  if( M2Params.size() != FitterParams.size )
+    throw std::runtime_error( "FitterThreadMinuit2::Minimise incorrect parameter size "
+                             + std::to_string( M2Params.size() ) );
+  if( M2Errors.size() != state.FitterErrors.size )
+    throw std::runtime_error( "FitterThreadMinuit2::Minimise incorrect error size "
+                             + std::to_string( M2Errors.size() ) );
+  for( std::size_t i = 0; i < M2Errors.size(); ++i )
+  {
+    // Copy the error the fitter computed for each parameter
+    state.FitterErrors[i] = M2Errors[i];
+    // Don't think this is really necessary - we should already have the latest params from fitter
+    if( M2Params[i] != ModelParams[i] )
+    {
+      std::ostringstream os;
+      os << std::setprecision(std::numeric_limits<double>::digits10 + 1)
+         << "FitterThreadMinuit2::Minimise Minuit2 param[" << i << "] " << M2Params[i]
+         << " != FitterParam " << ModelParams[i];
+      throw std::runtime_error( os.str().c_str() );
+    }
+  }
 }
 
 const std::string & FitterMinuit2::Type() const
@@ -106,7 +124,7 @@ const std::string & FitterMinuit2::Type() const
 }
 
 Fitter * MakeFitterMinuit2(const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                           const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                           std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames,
                            CovarParams &&cp )
 {
   if( !FitterArgs.empty() )

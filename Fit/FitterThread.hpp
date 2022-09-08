@@ -33,13 +33,12 @@
 
 // Forward declaration of fitter for multi-exponential fit
 class Fitter;
-class Parameters;
+class Params;
 class ParamState;
 
 // Several of these will be running at the same time on different threads during a fit
-class FitterThread
+struct FitterThread
 {
-public:
   const Fitter &parent;
   const int Extent;
   static constexpr int FirstIndex{ std::numeric_limits<int>::lowest() };
@@ -55,41 +54,46 @@ public:
   VectorView Data;        // Data points we are fitting
   Vector Theory;  // Theory prediction of our model on this replica
   mutable Vector Error;   // (Theory - Data) * CholeskyScale (mutable because of Minuit2)
-  // These next are for model parameters
+  // Parameters used by models - fixed and variable
   Vector ModelParams;
-  std::vector<std::pair<double,int>> SortingHat;
+  // Parameters used by the fitter - variable only. NB: Translated, e.g. monotonic
+  Vector FitterParams;
 protected:
   bool bCorrelated;
   ModelFile &OutputModel; // Fill this with parameters for each replica
   vCorrelator &CorrSynthetic; // Fill this with data for model correlator
   std::vector<Vector> ModelBuffer;
+  // Fitter state
+  struct State {
+    bool bValid = false;
+    scalar TestStat = 0;
+    unsigned int NumCalls = 0;
+    Vector FitterErrors;
+    State( std::size_t Size ) : FitterErrors( Size ) {}
+  };
+  State state;
+  scalar getTestStat() const { return state.bValid ? state.TestStat : 0; }
+  unsigned int getNumCalls() const { return state.bValid ? state.NumCalls : 0; }
+  virtual void DumpParamsFitter( std::ostream &os ) const = 0;
+  virtual void ReplicaMessage( std::ostream &os ) const = 0;
   // Helper functions
-  virtual ParamState * MakeParamState( const Parameters &Params ) = 0;
   void SaveStdError();
 public:
   FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
   virtual ~FitterThread() {}
+  virtual FitterThread * Clone() const = 0; // This is a virtual alias for copy constructor
   // Switch to this index
   void SetReplica( int idx, bool bShowOutput = false, bool bSaveMatrices = false,
                    const std::string *pBaseName = nullptr );
-  inline std::string ReplicaString( int iFitNum ) const
-  {
-    std::stringstream ss;
-    ss << ( bCorrelated ? "C" : "Unc" ) << "orrelated fit " << iFitNum << " on ";
-    if( idx == Fold::idxCentral )
-      ss << "central replica";
-    else
-      ss << "replica " << idx;
-    return ss.str();
-  }
-  void ReplicaMessage( const ParamState &state, int iFitNum ) const;
+  std::string ReplicaString( int iFitNum ) const;
+  void ShowReplicaMessage( int iFitNum ) const;
   bool SaveError( Vector &Error, const scalar * FitterParams, std::size_t Size, std::size_t Stride = 1 );
   bool AnalyticJacobian( Matrix &Jacobian ) const;
-  scalar RepeatFit( ParamState &Guess, int MaxGuesses );
-  void UpdateGuess( Parameters &parGuess );
-  scalar FitOne( const Parameters &parGuess );
+  scalar RepeatFit( int MaxGuesses );
+  const Vector &UncorrelatedFit();
+  scalar FitOne();
   // Implement this to support a new type of fitter
-  virtual void Minimise( ParamState &Guess, int iNumGuesses ) = 0;
+  virtual void Minimise( int iNumGuesses ) = 0;
   virtual bool CholeskyAdjust() { return false; } // true to indicate Cholesky matrix needs inversion
   virtual int NumRetriesGuess() const = 0;
   virtual int NumRetriesFit() const = 0;

@@ -1,0 +1,109 @@
+/*************************************************************************************
+ 
+ Abstract base for all models. i.e. interface consumed by fitter
+ 
+ Source file: Model.hpp
+ 
+ Copyright (C) 2019-2022
+ 
+ Author: Michael Marshall <Mike@lqcd.me>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ See the full license in the file "LICENSE" in the top level distribution directory
+ *************************************************************************************/
+/*  END LEGAL */
+
+#ifndef Model_hpp
+#define Model_hpp
+
+#include "Param.hpp"
+
+// This is the name of an energy level
+extern const std::string E;
+
+enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant };
+std::ostream & operator<<( std::ostream &os, const ModelType m );
+std::istream & operator>>( std::istream &is, ModelType &m );
+
+// This represents the model I'm fitting to
+class Model;
+using ModelPtr = std::unique_ptr<Model>;
+
+struct Model
+{
+  struct Args : public std::map<std::string, std::string, Common::LessCaseInsensitive>
+  {
+    void FromString( const std::string &s, bool bOptionalValue );
+    std::string Remove( const std::string &key, bool * Removed = nullptr );
+    template <typename T> T Remove( const std::string &key, T Default, bool bPeek = false );
+  };
+
+  // Default parameters for model creation - these apply to all models
+  struct CreateParams
+  {
+    // These apply to all models
+    const vString &OpNames;
+    const Common::CommandLine &cl;
+    const int NumExponents; // Default if not specified per model
+    // These will change per model
+    const Fold *pCorr;
+    CreateParams( const vString &OpNames_, const Common::CommandLine &cl_ )
+    : OpNames{OpNames_}, cl{cl_}, NumExponents{cl.SwitchValue<int>("e")} {}
+  };
+  std::vector<Params::iterator> param;
+  const int Nt;
+  const int NumExponents;
+  //vString ParamNames;
+  //vString ParamNamesPerExp;                     // Be careful: these names EXCLUDE the energy
+  //vInt    ParamIdx;
+  //std::vector<std::vector<int>> ParamIdxPerExp; // Be careful: Zero'th element of this IS energy
+  //protected:
+  //Vector Params;
+protected:
+  Model( const CreateParams &cp, Args &args );
+public:
+  virtual ~Model() {}
+  // This is how to make a model
+  static ModelPtr MakeModel( const CreateParams &cp, Model::Args &Args );
+  // These must be implemented by the model
+  // Say which parameters this model wants
+  virtual void AddParameters( struct Params &mp ) = 0;
+  // Now that a complete model has been agreed, save the parameters this model will use
+  virtual void SaveParameters( const struct Params &mp ) = 0;
+  // Get a descriptive string for the model
+  virtual std::string Description() const = 0;
+  // Mark parameters guessable. Return number of unknown parameters remaining
+  // NB: Ignore excited states - i.e. each parameter counts as 1 regardless of size
+  virtual std::size_t Guessable( std::vector<bool> &bKnown, bool bLastChance ) const = 0;
+  // Guess unknown parameters. LastChance true -> fit about to be abandoned, so guess products of params
+  // Return number of unknown parameters remaining. NB: Count excited states - i.e. return sum of param.size
+  virtual std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,
+                     const Vector &FitData, std::vector<int> FitTimes, bool bLastChance ) const = 0;
+  // Get model type
+  virtual ModelType Type() const = 0;
+  // This is where the actual computation is performed
+  virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const = 0;
+  // Partial derivative of the model function on a timeslice with respect to each parameter
+  virtual double Derivative( int t, int p ) const { return 0; }
+  // Model insoluble - please reduce number of parameters if possible?
+  virtual void ReduceUnknown() {} // Most models won't be able to do this
+  // How big a scratchpad is required for each model?
+  virtual int GetScratchPadSize() const { return 0; }
+  // Cache values based solely on the model parameters (to speed up computation)
+  virtual void ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const {};
+};
+
+#endif // Model_hpp

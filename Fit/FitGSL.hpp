@@ -34,21 +34,10 @@
 #include "FitterThread.hpp"
 #include <gsl/gsl_multifit_nlinear.h>
 
-struct ParamStateGSL: public ParamState
-{
-  int ConvergeReason;
-  std::size_t nevalf;
-  std::size_t nevaldf;
-  ParamStateGSL( const class Parameters &Params ) : ParamState( Params ) {}
-  void StandardOut( std::ostream &os ) const override; //TODO: Deuglify
-  void ReplicaMessage( std::ostream &os ) const override; //TODO: Deuglify
-};
-
 // Several of these will be running at the same time on different threads during a fit
 class FitterThreadGSL : public FitterThread
 {
 protected:
-  Vector vGuess;
   gsl_multifit_nlinear_fdf fdf;
   gsl_multifit_nlinear_workspace * ws;
   int  f( const Vector &FitParams, Vector &Errors );
@@ -58,12 +47,17 @@ protected:
   { return ftGSL(data)-> f( *reinterpret_cast<const Vector*>(x), *reinterpret_cast<Vector*>(f_) ); }
   static int sdf( const gsl_vector * x, void *data, gsl_matrix * J  )
   { return ftGSL(data)->df( *reinterpret_cast<const Vector*>(x), *reinterpret_cast<Matrix*>(J) ); }
-  // Helper functions
-  ParamState * MakeParamState( const Parameters &Params ) override;
+  // Fitter state
+  int ConvergeReason;
+  std::size_t nevalf;
+  std::size_t nevaldf;
+  void DumpParamsFitter( std::ostream &os ) const override; //TODO: Deuglify
+  void ReplicaMessage( std::ostream &os ) const override; //TODO: Deuglify
 public:
   FitterThreadGSL( const Fitter &Fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
   virtual ~FitterThreadGSL();
-  void Minimise( ParamState &Guess, int iNumGuesses ) override;
+  FitterThread * Clone() const override;
+  void Minimise( int iNumGuesses ) override;
   bool CholeskyAdjust() override { return true; }
   int NumRetriesGuess() const override { return parent.Retry; };
   int NumRetriesFit() const override { return parent.Retry; };
@@ -75,11 +69,11 @@ struct FitterGSL : public Fitter
   enum class TRS{ lm, lmaccel, dogleg, ddogleg, subspace2D };
   const TRS trs;
   explicit FitterGSL( TRS trs_, const Common::CommandLine &cl, const DataSet &ds,
-                      const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                      std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames,
                       CovarParams &&cp )
   : Fitter( cl, ds, ModelArgs, opNames, std::move( cp ) ), trs{trs_} {}
   static FitterGSL * Make( const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                           const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                           std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames,
                            CovarParams &&cp );
 protected:
   const std::string &Type() const override;

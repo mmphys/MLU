@@ -30,11 +30,11 @@
 #define Fitter_hpp
 
 #include "Covar.hpp"
-#include "ModelBase.hpp"
+#include "Model.hpp"
+#include "Param.hpp"
 
 // Forward declarations to minimise coupling
 class FitterThread;       // OpenMP thread that will perform fit on each replica
-class ModelDefaultParams; // Default parameters passed to models when creating
 
 class Fitter
 {
@@ -50,45 +50,34 @@ public:
   const bool bSaveCorr;
   const bool bSaveCMat;
   const int Verbosity;
-  const bool bForceSrcSnkDifferent;
-  const std::vector<scalar> vGuess;
+  const bool UserGuess;
   // More complex command-line options
   const DataSet &ds;
   const int NumFiles; // Number of correlator files in the dataset
   const std::vector<std::string> &OpNames;
-  const int NumOps;
+  //const int NumOps;
   std::vector<ModelPtr> model;      // Model for each correlator
   const int NumExponents;
-  const std::vector<std::string> PerExpNames; // Names of all the per-energy-level parameters ("E" is first, rest sorted)
-  const std::vector<std::string> ParamNames; // Names of all parameters, with a numeric suffix for per-energy-level params
-  const std::vector<DataSet::FixedParam> ParamFixed; // Map from constants to parameters
-  const std::vector<int> ParamVariable;     // Map from fitting engine parameters to parameters
-  const int NumModelParams; // Total number of parameters = NumFixed + NumVariable = NumExponents * NumPerExp +
-  const int NumPerExp;      // Number of parameters per exponent (Needed when sorting)
-  const int NumOneOff;      // Number of one-off (i.e. not per-exponent) parameters
-  const int NumFixed;       // Number of fixed parameters
-  const int NumVariable;    // Number of variable parameters (used by the fitting engines)
+  const Params mp; // Model Parameters
+  std::vector<DataSet::FixedParam> ParamFixed; // Map from constants in DataSet to parameters
   CovarParams cp;
+  Vector Guess; // This is the guess all replicas should use
 
   // These variables set once at the start of each fit
   int dof;
   bool bCorrelated;
 
   explicit Fitter( const Common::CommandLine &cl, const DataSet &ds_,
-                   const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames_,
+                   std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames_,
                    CovarParams &&cp );
   virtual ~Fitter() {}
 
 protected:
   // Used during construction (so that we can make the results const)
-  std::vector<ModelPtr> CreateModels( const std::vector<std::string> &ModelArgs,
-                                      const ModelDefaultParams &modelDefault );
+  std::vector<ModelPtr> CreateModels(const Common::CommandLine &cl, std::vector<Model::Args> &ModelArgs);
   int GetNumExponents();
-  std::size_t EnsureModelsSolubleHelper( UniqueNames &Names, std::size_t &NumWithUnknowns );
-  std::vector<std::string> MakePerExpNames();
-  std::vector<std::string> MakeParamNames();
-  std::vector<DataSet::FixedParam> MakeParamFixed();
-  std::vector<int> MakeParamVariable();
+  Params MakeModelParams();
+  void MakeGuess();
   virtual FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic ) = 0;
 
 public:

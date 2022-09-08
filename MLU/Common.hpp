@@ -363,9 +363,38 @@ template<typename T> inline T FromString( const std::string &String )
 {
   T t;
   std::istringstream iss( String );
+  if( std::is_same<T, bool>::value )
+    iss >> std::boolalpha;
   if( !( iss >> t && StreamEmpty( iss ) ) )
     throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
   return t;
+}
+
+template<typename T> inline T FromString( std::string &&String )
+{
+  T t;
+  std::istringstream iss( std::move( String ) );
+  if( std::is_same<T, bool>::value )
+    iss >> std::boolalpha;
+  if( !( iss >> t && StreamEmpty( iss ) ) )
+    throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
+  return t;
+}
+
+// Converting a string to a string makes a copy
+template<> inline std::string FromString<std::string>( const std::string &String )
+{
+  std::string s{ String };
+  Trim( s );
+  return s;
+}
+
+// Converting a string to a string can also move
+template<> inline std::string FromString<std::string>( std::string &&String )
+{
+  std::string s{ std::move( String ) };
+  Trim( s );
+  return s;
 }
 
 // Generic conversion from a string to any type - with a default if missing
@@ -378,14 +407,6 @@ template<typename T> inline T FromString( const std::string &String, T Default )
   if( !( iss >> t && StreamEmpty( iss ) ) )
     throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
   return t;
-}
-
-// Converting a string to a string makes a copy
-template<> inline std::string FromString<std::string>( const std::string &String )
-{
-  std::string s{ String };
-  Trim( s );
-  return s;
 }
 
 // Converting a string to a string makes a copy - unless the string is empty, in which case we get the default
@@ -1045,6 +1066,7 @@ public:
   void MapColumn( const MatrixView<T> &m, std::size_t Column );
   // Constructors
   VectorView() { clear(); }
+  VectorView( const T * Data, std::size_t Size, std::size_t Stride = 1 ) { Map( Data, Size, Stride ); }
   VectorView( const Vector<T> &m ) { *this = m; }
   VectorView( const VectorView<T> &m ) { *this = m; }
   VectorView( const std::vector<T> &m ) { *this = m; }
@@ -4114,16 +4136,34 @@ struct DataSet
   using SS = SampleSource;
   struct ConstantSource
   {
+    struct Key
+    {
+      std::string Object; // Name of the object these parameters describe, e.g. D_s meson, p^2=1
+      std::string Name;   // Name of the parameter
+      std::size_t Len() const { return Object.length() + ( Object.empty() ? 0 : 1 ) + Name.length(); }
+      
+      struct Less
+      {
+        bool operator()( const Key &lhs, const Key &rhs ) const
+        {
+          int i = Common::CompareIgnoreCase( lhs.Object, rhs.Object );
+          if( i == 0 )
+            i = Common::CompareIgnoreCase( lhs.Name, rhs.Name );
+          return i < 0;
+        }
+      };
+    };
     std::size_t File; // Index of the constant file in the DataSet this comes from
-    std::size_t idx;  // Index of the parameter in this file
-    ConstantSource( std::size_t File_, std::size_t idx_ ) : File{File_}, idx{idx_} {}
+    std::vector<std::size_t> idx;  // Indices of the parameters in this file
+    ConstantSource( std::size_t File_, std::vector<std::size_t> &&idx_ ) : File{File_}, idx{idx_} {}
   };
-  using ConstMap = std::map<std::string, ConstantSource, Common::LessCaseInsensitive>;
+  using ConstMap = std::map<typename ConstantSource::Key, ConstantSource, typename ConstantSource::Key::Less>;
   struct FixedParam
   {
-    int             idx;  // Index of the parameter (relative to Fitter::ParamNames)
-    ConstantSource  src;  // Where to get the value from
-    FixedParam( int idx_, const ConstantSource &src_ ) : idx{idx_}, src{src_} {}
+    ConstantSource  src;   // Where to get values from
+    std::size_t     Count; // How many to get
+    int             idx;   // Where to put them (destination)
+    FixedParam(const ConstantSource &src_, std::size_t Count_, int idx_):src{src_}, Count{Count_}, idx{idx_}{}
   };
   int NSamples;   // Number of samples we are using. These are guaranteed to exist
   int MaxSamples; // Maximum number of samples available. Guaranteed to exist. >= NSamples.
@@ -4132,8 +4172,6 @@ struct DataSet
   int MaxExponents = 0;
   std::vector<Fold<T>>          corr;     // Correlator files
   std::vector<std::vector<int>> FitTimes; // The actual timeslices we are fitting to in each correlator
-  UniqueNames ConstantNames;
-  UniqueNames ConstantNamesPerExp;
   ConstMap constMap;
   std::vector<int> RebinSize; // Bin sizes if I've rebinned the raw data
   int OriginalBinSize;        // Bin size before any rebinning (to deal with covariance matrices)
@@ -4158,8 +4196,8 @@ protected:
   std::array< MatrixView<fint>, 2> RandomViews;
   std::array<std::vector<fint>, 2> RandomBuffer;
   std::vector<Model<T>> constFile;// Each of the constant files (i.e. results from previous fits) I've loaded
-  void AddConstant( const std::string &Name, std::size_t File, std::size_t idx );
-  void AddConstant( const std::string &Name, std::size_t File, std::size_t idx, int e );
+  void AddConstant( const typename ConstantSource::Key &Key, std::size_t File,
+                    std::size_t First, std::size_t Count, std::size_t Stride );
   void SetValidatedFitTimes( std::size_t Extent, std::vector<std::vector<int>> &&FitTimes );
   void MakeCentralReplicaNonRandom();
 public:

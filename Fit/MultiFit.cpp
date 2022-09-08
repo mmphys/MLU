@@ -28,24 +28,25 @@
 
 #include "Fitter.hpp"
 
-#ifdef HAVE_MINUIT2
-// Comment out the next line to disable Minuit2 (for testing)
-#define HAVE_MINUIT2_SO_BUILD_IT
-#endif
+// Uncomment the next line to disable Minuit2 (for testing)
+//#undef HAVE_MINUIT2
+
+// Indices for operators in correlator names
+const char * pSrcSnk[2] = { "src", "snk" };
 
 // This should be the only place which knows about different fitters
 
 Fitter * MakeFitterGSL( const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                        const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                        std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames,
                         CovarParams &&cp );
-#ifdef HAVE_MINUIT2_SO_BUILD_IT
+#ifdef HAVE_MINUIT2
 Fitter * MakeFitterMinuit2(const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                           const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                           std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames,
                            CovarParams &&cp );
 #endif
 
 Fitter * MakeFitter( const Common::CommandLine &cl, const DataSet &ds,
-                     const std::vector<std::string> &ModelArgs, const std::vector<std::string> &opNames,
+                     std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames,
                      CovarParams &&cp )
 {
   Fitter * f;
@@ -53,7 +54,7 @@ Fitter * MakeFitter( const Common::CommandLine &cl, const DataSet &ds,
   std::string FitterType{ Common::ExtractToSeparator( FitterArgs ) };
   if( Common::EqualIgnoreCase( FitterType, "GSL" ) )
     f = MakeFitterGSL( FitterArgs, cl, ds, ModelArgs, opNames, std::move( cp ) );
-#ifdef HAVE_MINUIT2_SO_BUILD_IT
+#ifdef HAVE_MINUIT2
   else if( Common::EqualIgnoreCase( FitterType, "Minuit2" ) )
     f = MakeFitterMinuit2( FitterArgs, cl, ds, ModelArgs, opNames, std::move( cp ) );
 #endif
@@ -66,7 +67,7 @@ Fitter * MakeFitter( const Common::CommandLine &cl, const DataSet &ds,
 
 int main(int argc, const char *argv[])
 {
-#ifndef HAVE_MINUIT2_SO_BUILD_IT
+#ifndef HAVE_MINUIT2
   std::ios_base::sync_with_stdio( false );
 #endif
   static const char DefaultEnergySep[] = "0"; // Default used to be 0.2 until 10 Jul 2021
@@ -129,13 +130,20 @@ int main(int argc, const char *argv[])
       // Split each argument at the first comma (so the first part can be treated as a filename to glob
       const std::size_t NumArgs{ cl.Args.size() };
       DataSet ds( NSamples );
-      std::vector<std::string> ModelArgs;
+      std::vector<Model::Args> ModelArgs;
       std::vector<int> ModelFitRange;
       std::vector<int> ModelFitRangeCount( fitRanges.size() );
       for( std::size_t ArgNum = 0; ArgNum < NumArgs; ++ArgNum )
       {
-        // First parameter is the filename we're looking for
+        // First parameter (up to comma) is the filename we're looking for
         std::string FileToGlob{ Common::ExtractToSeparator( cl.Args[ArgNum] ) };
+        // Anything after the comma is a list of arguments
+        Model::Args vArgs;
+        vArgs.FromString( cl.Args[ArgNum], true );
+        // Get the fit range (if present)
+        const int ThisFitRange{ vArgs.Remove<int>( "Range", 0 ) };
+        if( ThisFitRange < 0 || ThisFitRange >= fitRanges.size() )
+          throw std::runtime_error( "Fit range " + std::to_string( ThisFitRange ) + " invalid" );
         for( const std::string &sFileName : Common::glob( &FileToGlob, &FileToGlob + 1, inBase.c_str() ) )
         {
           Common::FileNameAtt Att( sFileName );
@@ -152,28 +160,13 @@ int main(int argc, const char *argv[])
             }
             ds.LoadCorrelator( std::move( Att ), Common::COMPAT_DEFAULT, PrintPrefix.c_str() );
             // Now see whether the first parameter is a fit range (i.e. integer index of a defined fit range)
-            std::string sModelArgs{ cl.Args[ArgNum] };
-            int ThisFitRange{ 0 };
+            if( !fitRanges[ThisFitRange].Validate( ds.corr.back().Nt() ) )
             {
-              int tmp;
-              std::string sPossibleFitRange{ Common::ExtractToSeparator( sModelArgs ) };
-              std::istringstream ss{ sPossibleFitRange };
-              if( ss >> tmp && Common::StreamEmpty( ss ) )
-              {
-                if( tmp < 0 || tmp >= fitRanges.size() )
-                  throw std::runtime_error( "Fit range " + sPossibleFitRange + " not defined" );
-                if( !fitRanges[tmp].Validate( ds.corr.back().Nt() ) )
-                {
-                  std::stringstream oss;
-                  oss << "Fit range " << fitRanges[tmp] << " not valid";
-                  throw std::runtime_error( oss.str() );
-                }
-                ThisFitRange = tmp;
-              }
-              else
-                sModelArgs = cl.Args[ArgNum]; // Unadulterated parameters
+              std::stringstream oss;
+              oss << "Fit range " << fitRanges[ThisFitRange] << " not valid";
+              throw std::runtime_error( oss.str() );
             }
-            ModelArgs.push_back( sModelArgs );
+            ModelArgs.emplace_back( vArgs );
             ModelFitRange.push_back( ThisFitRange );
             ++ModelFitRangeCount[ThisFitRange];
           }

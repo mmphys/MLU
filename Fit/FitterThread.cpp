@@ -35,8 +35,9 @@ FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile 
   Extent{ fitter_.ds.Extent },
   idx{ FirstIndex }, // So we'll notice a change on the first call to SetReplica
   CholeskyDiag( Extent ),
-  ModelParams( fitter_.NumModelParams ),
-  SortingHat( parent.NumExponents ),
+  ModelParams( fitter_.mp.NumScalars( Param::Type::All ) ),
+  FitterParams( fitter_.mp.NumScalars( Param::Type::Variable ) ),
+  state( fitter_.mp.NumScalars( Param::Type::Variable ) ),
   bCorrelated{ bCorrelated_ },
   OutputModel{ outputModel_ },
   CorrSynthetic( CorrSynthetic_ ),
@@ -71,13 +72,18 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
   if( !bSaveMatrices && pBaseName )
     throw std::runtime_error( "Can only write matrices to file on central replica" );
   // Don't make the same covariance matrix twice in a row
-  // TODO: Correlated & Uncorrelated happen on different threads in MPI
-  // so same matrix built twice on central replica
   if( idx_ != idx )
   {
     // Switch to the requested replica
     const bool bFirstTime{ idx == FirstIndex };
     idx = idx_;
+    // All replicas start from the same Guess
+    ModelParams = parent.Guess;
+    // Load the constants for this replica into the fixed portion of the guess
+    parent.ds.GetFixed( idx, ModelParams, parent.ParamFixed );
+    // Export variable parameters from the guess for the fitter to start with
+    parent.mp.Export( FitterParams, ModelParams, Param::Type::Variable );
+    state.bValid = false;
     // Now get the data for this replica
     if( idx == Fold::idxCentral )
       Data = parent.ds.vCentral;
@@ -86,8 +92,6 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
     OutputModel.ModelPrediction.MapView( Theory, idx );
     OutputModel.ErrorScaled.MapView( Error, idx );
     parent.ds.GetData( idx, Data );
-    // And get associated constants
-    parent.ds.GetFixed( idx, ModelParams, parent.ParamFixed );
     // Don't build covariance matrix if frozen (unless it's the first time)
     if( !parent.cp.bFreeze || bFirstTime )
     {
@@ -265,25 +269,37 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
   }
 }
 
-void FitterThread::ReplicaMessage( const ParamState &state, int iFitNum ) const
+std::string FitterThread::ReplicaString( int iFitNum ) const
 {
-  double ChiSq{ state.getTestStat() };
-  std::cout << ReplicaString( iFitNum ) << ", calls " << state.getNumCalls() << ", chi^2 " << ChiSq << Common::NewLine;
-  state.ReplicaMessage( std::cout );
-  std::cout << "dof " << parent.dof << ", chi^2/dof " << ( ChiSq / ( parent.dof ? parent.dof : 1 ) ) << Common::NewLine;
-  if( parent.Verbosity > 2 )
-    std::cout << state;
+  std::stringstream ss;
+  ss << ( bCorrelated ? "C" : "Unc" ) << "orrelated fit " << iFitNum << " on ";
+  if( idx == Fold::idxCentral )
+    ss << "central replica";
   else
-    std::cout << state.parameters;
+    ss << "replica " << idx;
+  return ss.str();
+}
+
+void FitterThread::ShowReplicaMessage( int iFitNum ) const
+{
+  double ChiSq{ getTestStat() };
+  std::cout << ReplicaString( iFitNum ) << ", calls " << getNumCalls() << ", chi^2 " << ChiSq << Common::NewLine;
+  ReplicaMessage( std::cout );
+  std::cout << "dof " << parent.dof << ", chi^2/dof " << ( ChiSq / ( parent.dof ? parent.dof : 1 ) ) << Common::NewLine;
+  // TODO: I don't think this first case is correct?
+  if( parent.Verbosity > 2 )
+    DumpParamsFitter( std::cout );
+  else
+    parent.mp.Dump( std::cout, ModelParams );
 }
 
 // Compute Cholesky scaled (theory - data) based on parameters from the fitting engine
 bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::size_t Size, std::size_t Stride )
 {
   // Put the fitter parameters into our model parameters
-  assert( Size == parent.NumVariable && "Fitter parameters don't match our variable parameters" );
-  for( int i = 0; i < parent.NumVariable; ++i )
-    ModelParams[parent.ParamVariable[i]] = FitterParams[i * Stride];
+  if( Size != parent.mp.NumScalars( Param::Type::Variable ) )
+    throw std::runtime_error( "Fitter parameters don't match our variable parameters" );
+  parent.mp.Import( ModelParams, VectorView( FitterParams, Size, Stride ) );
   // Compute theory - error for each timeslice
   int i{0};
   for( int f = 0; f < parent.NumFiles; ++f )
@@ -313,7 +329,7 @@ bool FitterThread::AnalyticJacobian( Matrix &Jacobian ) const
     const vInt &FitTimes{ parent.ds.FitTimes[f] };
     for( int t : FitTimes )
     {
-      for( int p = 0; p < parent.NumVariable; ++p )
+      for( int p = 0; p < parent.mp.NumScalars( Param::Type::Variable ); ++p )
       {
         double z = m.Derivative( t, p ) * CholeskyDiag[i];
         if( !std::isfinite( z ) )
@@ -332,16 +348,17 @@ bool FitterThread::AnalyticJacobian( Matrix &Jacobian ) const
   return true;
 }
 
-scalar FitterThread::RepeatFit( ParamState &Guess, int MaxGuesses )
+scalar FitterThread::RepeatFit( int MaxGuesses )
 {
   // Call the minimiser until it provides the same answer twice
+  state.bValid = false;
   double dTestStat = -747;
   int iNumGuesses{ 0 };
   bool bFinished{ false };
   while( !bFinished && iNumGuesses++ <= MaxGuesses )
   {
-    Minimise( Guess, iNumGuesses );
-    double dNewTestStat{ Guess.getTestStat() };
+    Minimise( iNumGuesses );
+    double dNewTestStat{ getTestStat() };
     if( MaxGuesses == 0 )
       bFinished = true;
     else if( iNumGuesses != 1 )
@@ -349,7 +366,7 @@ scalar FitterThread::RepeatFit( ParamState &Guess, int MaxGuesses )
     dTestStat = dNewTestStat;
     if( ( idx == Fold::idxCentral && ( bFinished || parent.Verbosity ) )
        || ( parent.Verbosity >= 2 && bFinished ) || parent.Verbosity > 2 )
-      ReplicaMessage( Guess, iNumGuesses );
+      ShowReplicaMessage( iNumGuesses );
   }
   if( !bFinished )
     throw std::runtime_error( "Fit did not converge within " + std::to_string( MaxGuesses ) + " retries" );
@@ -357,14 +374,13 @@ scalar FitterThread::RepeatFit( ParamState &Guess, int MaxGuesses )
 }
 
 // Perform an uncorrelated fit on the central timeslice to update parameters guessed
-void FitterThread::UpdateGuess( Parameters &Guess )
+const Vector &FitterThread::UncorrelatedFit()
 {
   bool bSaveCorrelated{ bCorrelated };
   bCorrelated = false;
-  std::unique_ptr<ParamState> ThisGuess( MakeParamState( Guess ) );
   try
   {
-    RepeatFit( *ThisGuess, NumRetriesGuess() );
+    RepeatFit( NumRetriesGuess() );
   }
   catch(...)
   {
@@ -372,15 +388,14 @@ void FitterThread::UpdateGuess( Parameters &Guess )
     throw;
   }
   bCorrelated = bSaveCorrelated;
-  Guess = ThisGuess->parameters;
+  return ModelParams;
 }
 
 // Perform a fit. NB: Only the fit on central replica updates ChiSq
-scalar FitterThread::FitOne( const Parameters &parGuess )
+scalar FitterThread::FitOne()
 {
   // Perform fit
-  std::unique_ptr<ParamState> Result( MakeParamState( parGuess ) );
-  scalar dTestStat = RepeatFit( *Result, NumRetriesFit() );
+  scalar dTestStat = RepeatFit( NumRetriesFit() );
   // This is a convenience to make regression testing & comparison with errors generated by other codes easier
   for( int i = 0; i < Extent; ++i )
     Error[i] = std::abs( Error[i] );
@@ -425,56 +440,36 @@ scalar FitterThread::FitOne( const Parameters &parGuess )
     }
     std::cout << "OK: " << ss.str() << Common::NewLine;
   }
-  // Put the variable fit parameters into the full model parameter set (constants are already there)
-  for( int i = 0; i < parent.NumVariable; ++i )
-    ModelParams[parent.ParamVariable[i]] = Result->parameters[i].Value;
-  // Save the fit parameters for this replica, sorted by E_0
-  for( int e = 0; e < parent.NumExponents; ++e )
-  {
-    SortingHat[e].first = ModelParams[e * parent.NumPerExp];
-    SortingHat[e].second = e;
-  }
-  std::sort( SortingHat.begin(), SortingHat.end() );
-
   // Copy results into OutputModel
   scalar * const OutputData{ OutputModel[idx] };
-  for( int e = 0; e < parent.NumExponents; ++e )
+  for( typename Params::value_type it : parent.mp )
   {
-    const int src{ SortingHat[e].second * parent.NumPerExp };
-    const int dst{            e         * parent.NumPerExp };
-    for( int i = 0; i < parent.NumPerExp; ++i )
-      OutputData[dst + i] = ModelParams[src + i];
-  }
-  // Now copy the one-off parameters and append Chi^2 per dof
-  int OutputDataSize{ parent.NumExponents * parent.NumPerExp };
-  for( int i = 0; i < parent.NumOneOff; ++i, ++OutputDataSize )
-    OutputData[OutputDataSize] = ModelParams[OutputDataSize];
-  OutputData[OutputDataSize++] = dTestStat / ( parent.dof ? parent.dof : 1 );
-
-  // Check whether energy levels are separated by minimum separation
-  if( idx == Fold::idxCentral && parent.RelEnergySep )
-  {
-    for( int e = 1; e < parent.NumExponents; e++ )
+    const Param::Key key{ it.first };
+    const Param p{ it.second };
+    const std::size_t Offset{ p() };
+    for( std::size_t i = 0; i < p.size; ++i )
     {
-      double RelSep = OutputData[e * parent.NumPerExp] / OutputData [ ( e - 1 ) * parent.NumPerExp];
-      if( ( RelSep - 1 ) < parent.RelEnergySep || RelSep * parent.RelEnergySep > 1 )
-        throw std::runtime_error( "Fit failed energy separation criteria: "
-                                 + std::to_string( 1 + parent.RelEnergySep ) + " < E_n / E_{n-1} < "
-                                 + std::to_string( 1 / parent.RelEnergySep ) );
+      OutputData[ Offset + i ] = ModelParams[ Offset + i ];
+      // Check whether energy levels are separated by minimum separation
+      if( i && p.bMonotonic && idx == Fold::idxCentral && parent.RelEnergySep )
+      {
+        double RelSep = OutputData[ Offset + i ] / OutputData [ Offset + i - 1 ];
+        if( ( RelSep - 1 ) < parent.RelEnergySep || RelSep * parent.RelEnergySep > 1 )
+        {
+          std::ostringstream es;
+          es << "Fit failed energy separation criteria: " << ( 1 + parent.RelEnergySep )
+             << " < " << key << i << " / " << key << i - 1 << " < " << ( 1 / parent.RelEnergySep );
+          throw std::runtime_error( es.str().c_str() );
+        }
+      }
     }
   }
+  OutputData[parent.mp.NumScalars( Param::Type::All )] = dTestStat / ( parent.dof ? parent.dof : 1 );
 
   // Save the reconstructed correlator values for this replica
-  // Put the fitter parameters into our model parameters
-  for( int i = 0; i < parent.NumModelParams; ++i )
-    ModelParams[i] = OutputData[i];
-  // Compute theory values for each timeslice of synthetic correlators
   for( int f = 0; f < parent.NumFiles; ++f )
   {
-    // Allow each model to cache any common computations based solely on the model parameters
     const Model &m{ *parent.model[f] };
-    if( ModelBuffer[f].size )
-      m.ModelParamsChanged( ModelBuffer[f], ModelParams );
     scalar * SyntheticData{ CorrSynthetic[f][idx] };
     for( int t = 0; t < CorrSynthetic[f].Nt(); ++t )
       *SyntheticData++ = m( t, ModelBuffer[f], ModelParams );

@@ -1,13 +1,13 @@
 /*************************************************************************************
  
- Fast (using OpenMP) multi-model fits to lattice QCD correlators
+ Fit to a constant
  
- Source file: MultiFit.hpp
+ Source file: ModelConstant.hpp
  
  Copyright (C) 2019-2022
  
  Author: Michael Marshall <Mike@lqcd.me>
- 
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -26,33 +26,25 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef MultiFit_hpp
-#define MultiFit_hpp
+#ifndef ModelConstant_hpp
+#define ModelConstant_hpp
 
-#include <MLU/Common.hpp>
+#include "ModelCommon.hpp"
 
-// Uncomment the next line if your cmath doesn't define M_PI etc by default
-//#define _USE_MATH_DEFINES
-#include <cmath>
-#include <set>
-//#include <sys/stat.h>
+struct ModelConstant : Model, Object
+{
+  ModelConstant( const Model::CreateParams &cp, Model::Args &Args );
+  void AddParameters( struct Params &mp ) override;
+  void SaveParameters( const struct Params &mp ) override;
+  std::string Description() const override;
+  std::size_t Guessable( std::vector<bool> &bKnown, bool bLastChance ) const override;
+  std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,
+               const Vector &FitData, std::vector<int> FitTimes, bool bLastChance ) const override;
+  ModelType Type() const override { return ModelType::Constant; }
+  scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
+  double Derivative( int t, int p ) const override;
+protected:
+  ModelParam Constant;
+};
 
-using scalar = double;
-using Matrix = Common::Matrix<scalar>;
-using Vector = Common::Vector<scalar>;
-using MatrixView = Common::MatrixView<scalar>;
-using VectorView = Common::VectorView<scalar>;
-using Fold = Common::Fold<scalar>;
-using vCorrelator = std::vector<Fold>;
-using ModelFile = Common::Model<scalar>;
-using DataSet = Common::DataSet<scalar>;
-using vString = std::vector<std::string>;
-using vInt = std::vector<int>;
-using UniqueNames = Common::UniqueNames;
-
-// Indices for operators in correlator names
-constexpr int idxSrc{ 0 };
-constexpr int idxSnk{ 1 };
-extern const char * pSrcSnk[2];
-
-#endif // MultiFit_hpp
+#endif // ModelConstant_hpp

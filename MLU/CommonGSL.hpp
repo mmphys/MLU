@@ -44,7 +44,7 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline Vector( std::size_t size );
   inline Vector() : Vector( 0 ) {};
   inline Vector( const MyVector &o ) : Vector() { *this = o; };
-  inline Vector( MyVector &&o ) : Vector() { *this = o; };
+  inline Vector( MyVector &&o ) : Vector() { *this = std::move( o ); };
   inline ~Vector();
   inline MyVector & operator=( const Vector &o );
   inline MyVector & operator=( Vector &&o );
@@ -248,7 +248,7 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline Matrix() : Matrix( 0, 0 ) {};
   inline Matrix( std::size_t size1, std::size_t size2 );
   inline Matrix( const MyMatrix &o ) : Matrix() { *this = o; };
-  inline Matrix( MyMatrix &&o ) : Matrix() { *this = o; };
+  inline Matrix( MyMatrix &&o ) : Matrix() { *this = std::move( o ); };
   inline ~Matrix();
   inline MyMatrix & operator=( Scalar c );
   inline MyMatrix & operator=( const Matrix &o );
