@@ -1033,9 +1033,10 @@ protected:
 public:
   const T * data() const { return data_; }
   std::size_t size() const { return size_; }
+  void size( std::size_t NewSize ) { size_ = NewSize; }
   std::size_t stride() const { return stride_; }
   const T * begin() const { return data_; }
-  const T * end() const { return data_ + size_; }
+  const T * end() const { return data_ + size_ * stride_; }
   void clear() { data_ = nullptr; size_ = 0; stride_ = 1; }
   inline const Scalar & operator[]( std::size_t i ) const
   {
@@ -1060,6 +1061,7 @@ public:
     Map( v.data(), v.size() );
     return *this;
   }
+  inline VectorView<T> operator+=( std::size_t Delta ) { data_ += Delta * stride_; return *this; };
   void MapRow( const Matrix<T> &m, std::size_t Row );
   void MapRow( const MatrixView<T> &m, std::size_t Row );
   void MapColumn( const Matrix<T> &m, std::size_t Column );

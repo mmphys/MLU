@@ -158,14 +158,17 @@ Params Fitter::MakeModelParams()
     // Ask all the models what parameters they need
     mp.clear();
     for( ModelPtr &m : model )
+    {
+      m->param.clear();
       m->AddParameters( mp );
+    }
     mp.AssignOffsets();
     for( ModelPtr &m : model )
       m->SaveParameters( mp );
     // Loop through parameters - see if they are available as constants
     DataSet::ConstantSource::Key key;
     ParamFixed.clear();
-    for( typename Params::value_type it : mp )
+    for( const typename Params::value_type &it : mp )
     {
       const Param::Key &pk{ it.first };
       const Param &p{ it.second };
@@ -191,7 +194,7 @@ Params Fitter::MakeModelParams()
     // Create list of parameters we know - starting from constants
     const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
     std::vector<bool> ParamKnown( NumParams, false );
-    for( typename Params::value_type it : mp )
+    for( const typename Params::value_type &it : mp )
     {
       const Param &p{ it.second };
       if( p.type == Param::Type::Fixed )
@@ -243,7 +246,7 @@ void Fitter::MakeGuess()
   if( Guess.size != NumParams )
     throw std::runtime_error( "Fitter::MakeGuess() guess is wrong size" );
   std::vector<bool> ParamKnown( NumParams, false );
-  for( typename Params::value_type it : mp )
+  for( const typename Params::value_type &it : mp )
   {
     const Param &p{ it.second };
     if( p.type == Param::Type::Fixed )
@@ -262,13 +265,21 @@ void Fitter::MakeGuess()
     LastUnknown = NumUnknown;
     NumUnknown = 0;
     NumWithUnknowns = 0;
+    VectorView Data( ds.vCentral );
     for( std::size_t i = 0; i < model.size(); ++i )
     {
-      std::size_t z{ model[i]->Guess( Guess, ParamKnown, ds.vCentral, ds.FitTimes[i], false ) };
+      Data.size( ds.FitTimes[i].size() );
+      std::size_t z{ model[i]->Guess( Guess, ParamKnown, Data, ds.FitTimes[i], false ) };
+      Data += Data.size();
       if( z )
       {
         NumUnknown += z;
         NumWithUnknowns++;
+      }
+      if( Verbosity )
+      {
+        std::cout << " Guess after model " << i << Common::Space << model[i]->Description() << Common::NewLine;
+        mp.Dump( std::cout, Guess, Param::Type::Variable, nullptr, &ParamKnown );
       }
     }
   }
@@ -358,7 +369,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   // TODO: This is temporary - makes it look like existing format
   // TODO: Update to save the parameter list + additional columns
   std::vector<std::string> OldFormatOpNames;
-  for( typename Params::value_type it : mp )
+  for( const typename Params::value_type &it : mp )
   {
     if( it.second.size > 1 && !Common::EqualIgnoreCase( E, it.first.Name ) )
     {
@@ -375,11 +386,17 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
     OutputModel.FileList.emplace_back( f.Name_.Filename );
   OutputModel.CopyAttributes( ds.corr[0] );
   {
-    std::vector<std::string> ColNames{ NumParams + 1 };
-    //TODO: Work out how to copy parameter names into output file properly
-    if( ColNames.size() == 1 )
+    if( !NumParams )
       OutputModel.OpNames.clear();
-    ColNames.push_back( Common::sChiSqPerDof );
+    std::vector<std::string> ColNames( NumParams + 1 );
+    for( const typename Params::value_type &it : mp )
+    {
+      const Param::Key &k{ it.first };
+      const Param &p{ it.second };
+      for( std::size_t i = 0; i < p.size; ++i )
+        ColNames[p(i)] = k.FullName( i, p.size );
+    }
+    ColNames[NumParams] = Common::sChiSqPerDof;
     OutputModel.SetColumnNames( ColNames );
   }
   OutputModel.Name_.Seed = Seed;

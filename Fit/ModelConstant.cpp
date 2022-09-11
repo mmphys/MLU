@@ -35,14 +35,14 @@ ModelConstant::ModelConstant( const Model::CreateParams &cp, Model::Args &Args )
   Constant.Key.Name = Args.Remove( "const", std::string( "C" ) );
 }
 
-void ModelConstant::AddParameters( struct Params &mp )
+void ModelConstant::AddParameters( Params &mp )
 {
-  Constant.it = mp.Add( Constant.Key, 1 );
+  AddParam( mp, Constant, 1 );
 }
 
-void ModelConstant::SaveParameters( const struct Params &mp )
+void ModelConstant::SaveParameters( const Params &mp )
 {
-  Constant.idx = Constant.it->second();
+  Constant.idx = mp.at( Constant.Key )();
 }
 
 std::string ModelConstant::Description() const
@@ -57,12 +57,13 @@ std::string ModelConstant::Description() const
 
 std::size_t ModelConstant::Guessable( std::vector<bool> &bKnown, bool bLastChance ) const
 {
-  bKnown[Constant.idx] = true;
+  for( std::size_t i = 0; i < Constant.param->size; ++i )
+    bKnown[Constant.idx + i] = true;
   return 0;
 }
 
 std::size_t ModelConstant::Guess( Vector &Guess, std::vector<bool> &bKnown,
-                            const Vector &FitData, std::vector<int> FitTimes, bool bLastChance ) const
+                            const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const
 {
   if( !bKnown[Constant.idx] )
   {

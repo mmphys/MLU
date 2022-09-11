@@ -73,7 +73,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-e 2"
+            argument = "-e 4"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -126,7 +126,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v 1"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--iter 10000 --delta 3 --opnames -o ZV/"
@@ -137,7 +137,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o h447_h447_p3/ -i /Volumes/QCD/tursa/semilep/data/M1/analyse/corr/2ptp2/h447_h447_p2_0_g5P_g5 &apos;P*.h5,e=3&apos; &apos;W*.h5,range=1,model=exp,e=4&apos; --delta 8 --iter 10000"
+            argument = "-o h447_h447_p2_0/ -i /Volumes/QCD/tursa/semilep/data/M1/analyse/corr/2ptp2/h447_h447_p2_0_g5P_g5 &apos;P*.h5&apos; &apos;W*.h5,range=1&apos; --delta 8 --iter 100000 -n 20"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -149,7 +149,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-t=6:18,R0:-2:0"
+            argument = "-t=4:18,R0:0:0"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

@@ -58,8 +58,8 @@ public:
   //const int NumOps;
   std::vector<ModelPtr> model;      // Model for each correlator
   const int NumExponents;
-  const Params mp; // Model Parameters
   std::vector<DataSet::FixedParam> ParamFixed; // Map from constants in DataSet to parameters
+  const Params mp; // Model Parameters
   CovarParams cp;
   Vector Guess; // This is the guess all replicas should use
 

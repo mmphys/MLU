@@ -53,8 +53,13 @@ protected:
   std::size_t nevaldf;
   void DumpParamsFitter( std::ostream &os ) const override; //TODO: Deuglify
   void ReplicaMessage( std::ostream &os ) const override; //TODO: Deuglify
+  void InitialiseGSL();
 public:
   FitterThreadGSL( const Fitter &Fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
+  FitterThreadGSL( const FitterThreadGSL &ftGSL );
+  FitterThreadGSL( FitterThreadGSL &&ftGSL ) = delete;
+  FitterThreadGSL &operator=( FitterThreadGSL &&ftGSL ) = delete;
+  const FitterThreadGSL &operator=( const FitterThreadGSL &ftGSL ) = delete;
   virtual ~FitterThreadGSL();
   FitterThread * Clone() const override;
   void Minimise( int iNumGuesses ) override;

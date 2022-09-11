@@ -39,12 +39,12 @@ struct Model2pt : public ModelOverlap
   std::string Description() const override;
   std::size_t Guessable( std::vector<bool> &bKnown, bool bLastChance ) const override;
   std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,
-                     const Vector &FitData, std::vector<int> FitTimes, bool bLastChance ) const override;
+               const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const override;
   double Derivative( int t, int p ) const override;
 
 protected:
-  scalar Estimate( Vector &Guess, const Vector &FitData, std::vector<int> FitTimes,
-                        std::size_t NumExp, std::size_t Timeslice ) const;
+  scalar Estimate( Vector &Guess, const VectorView &FitData, std::vector<int> FitTimes,
+                   std::size_t NumExp, std::size_t Timeslice ) const;
   ModelParam E;
 };
 

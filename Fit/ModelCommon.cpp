@@ -81,16 +81,16 @@ ModelOverlap::ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
     Overlap.resize( 1 );
 }
 
-void ModelOverlap::AddParameters( struct Params &mp )
+void ModelOverlap::AddParameters( Params &mp )
 {
-  for( ModelParam p : Overlap )
-    p.it = mp.Add( p.Key, NumOverlapExp );
+  for( ModelParam &p : Overlap )
+    AddParam( mp, p, NumOverlapExp );
 }
 
-void ModelOverlap::SaveParameters( const struct Params &mp )
+void ModelOverlap::SaveParameters( const Params &mp )
 {
-  for( ModelParam p : Overlap )
-    p.idx = p.it->second();
+  for( ModelParam &p : Overlap )
+    p.idx = mp.at( p.Key )();
 }
 
 // Get a descriptive string for the model
@@ -110,12 +110,16 @@ std::size_t ModelOverlap::Guessable( std::vector<bool> &bKnown, bool bLastChance
   // Assume the energies are known (or we wouldn't be called)
   std::size_t NumUnknown{ 0 };
   if( Overlap.size() == 1 )
-    bKnown[Overlap[0].idx] = true;
+    for( std::size_t i = 0; i < Overlap[0].param->size; ++i )
+      bKnown[Overlap[0].idx + i] = true;
   else if( bLastChance || bKnown[Overlap[0].idx] || bKnown[Overlap[1].idx] )
   {
     // I know at least one of them, so I in fact know both
-    bKnown[Overlap[0].idx] = true;
-    bKnown[Overlap[1].idx] = true;
+    for( std::size_t i = 0; i < Overlap[0].param->size; ++i )
+    {
+      bKnown[Overlap[0].idx + i] = true;
+      bKnown[Overlap[1].idx + i] = true;
+    }
   }
   else
     NumUnknown = 2;
@@ -141,7 +145,7 @@ std::size_t ModelOverlap::NumUnknown( std::vector<bool> &bKnown ) const
   std::size_t UnKnown{ 0 };
   for( const ModelParam &p : Overlap )
   {
-    for( std::size_t i = 0; i < p.it->second.size; ++i )
+    for( std::size_t i = 0; i < p.param->size; ++i )
     {
       if( !bKnown[p.idx + i] )
         ++UnKnown;

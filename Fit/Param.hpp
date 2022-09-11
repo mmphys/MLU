@@ -76,12 +76,23 @@ struct Param : public ParamBase
   T &operator()( std::vector<T> &v, std::size_t Idx = 0, Param::Type ListType = Param::Type::All ) const;
 };
 
+// Models use this structure to refer to the parameters they are interested in
+struct ModelParam
+{
+  ModelParam() = default;
+  Param::Key Key;
+  Param *param;
+  std::size_t idx;
+};
+
 struct Params : std::map<Param::Key, Param, Param::Key::Less>
 {
   //using MapT = std::map<Param::Key, Param, Param::Key::Less>;
   //using MapPairT = std::pair<iterator, bool>;
-  iterator Add( const Param::Key &key, std::size_t Size = 1, bool bMonotonic = false,
-                Param::Type = Param::Type::Variable );
+  //iterator Add( const Param::Key &key, std::size_t Size = 1, bool bMonotonic = false,
+                //Param::Type Type = Param::Type::Variable );
+  Params::iterator Add( const Param::Key &key, std::size_t Size = 1, bool bMonotonic = false,
+                        Param::Type Type = Param::Type::Variable );
   void AssignOffsets();
   std::size_t NumScalars( Param::Type Type ) const
   {
@@ -91,7 +102,7 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   void Export( Vector &vType, const Vector &All, Param::Type type = Param::Type::Variable ) const;
   void Import( Vector &All, const VectorView &vType, Param::Type type = Param::Type::Variable ) const;
   void Dump( std::ostream &os, const Vector &Values, Param::Type type = Param::Type::Variable,
-             const Vector *pErrors = nullptr ) const;
+             const Vector *pErrors = nullptr, const std::vector<bool> *pbKnown = nullptr ) const;
 protected:
   std::size_t NumFixed;
   std::size_t NumVariable;
@@ -106,13 +117,5 @@ Param::Flags operator|( Param::Flags l, Param::Flags r );
 Param::Flags operator&( Param::Flags l, Param::Flags r );
 Param::Flags &operator|=( Param::Flags &l, const Param::Flags &r );
 Param::Flags &operator&=( Param::Flags &l, const Param::Flags &r );*/
-
-struct ModelParam
-{
-  ModelParam  () = default;
-  Param::Key Key;
-  std::size_t idx;
-  typename Params::const_iterator it;
-};
 
 #endif // Param_hpp

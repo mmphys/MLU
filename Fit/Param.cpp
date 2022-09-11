@@ -96,7 +96,7 @@ bool Param::Key::Less::operator()( const Key &lhs, const Key &rhs ) const
 std::ostream &operator<<( std::ostream &os, const Param::Key &key )
 {
   if( !key.Object.empty() )
-    os << key.Object << Common::Underscore;
+    os << key.Object << '-';
   return os << key.Name;
 }
 
@@ -341,7 +341,8 @@ void Params::Import( Vector &All, const VectorView &vType, Param::Type type ) co
   }
 }
 
-void Params::Dump( std::ostream &os, const Vector &Values, Param::Type ShowType, const Vector *pErrors ) const
+void Params::Dump( std::ostream &os, const Vector &Values, Param::Type ShowType,
+                   const Vector *pErrors, const std::vector<bool> *pbKnown ) const
 {
   const Param::Type VectorType{ Param::Type::All };
   if( VectorType != Param::Type::All && VectorType != ShowType )
@@ -359,17 +360,21 @@ void Params::Dump( std::ostream &os, const Vector &Values, Param::Type ShowType,
   for( value_type it : *this )
   {
     Param &p{ it.second };
-    if( p.type == ShowType )
+    if( ShowType == Param::Type::All || p.type == ShowType )
     {
       const std::size_t &Offset{ VectorType == Param::Type::All ? p.OffsetAll : p.OffsetMyType };
       for( std::size_t i = 0; i < p.size; ++i )
       {
-        os << std::string( MaxLen - p.FieldLen + 2, ' ' ) << it.first;
-        if( p.size )
-          os << i;
-        os << Common::Space << Values[Offset + i];
-        if( pErrors )
-          os << "\t+/- " << pErrors[Offset + i] << Common::NewLine;
+        if( !pbKnown || (*pbKnown)[Offset + i] )
+        {
+          os << std::string( MaxLen - p.FieldLen + 2, ' ' ) << it.first;
+          if( p.size )
+            os << i;
+          os << Common::Space << Values[Offset + i];
+          if( pErrors && p.type == Param::Type::Variable )
+            os << "\t+/- " << (*pErrors)[p.OffsetMyType + i];
+          os << Common::NewLine;
+        }
       }
     }
   }

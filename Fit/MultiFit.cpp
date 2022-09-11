@@ -92,7 +92,7 @@ int main(int argc, const char *argv[])
       {"freeze", CL::SwitchType::Flag, nullptr},
       {"v", CL::SwitchType::Single, "0"},
       {"srcsnk", CL::SwitchType::Flag, nullptr},
-      {"guess", CL::SwitchType::Single, ""},
+      {"guess", CL::SwitchType::Single, nullptr},
       // ModelDefaultParams
       {"e", CL::SwitchType::Single, "1"},
       // Other params

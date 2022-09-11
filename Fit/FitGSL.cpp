@@ -30,7 +30,7 @@
 
 void FitterThreadGSL::DumpParamsFitter( std::ostream &os ) const
 {
-  parent.mp.Dump( os, ModelParams ); // TODO: Dump more of the GSL state
+  parent.mp.Dump( os, ModelParams, Param::Type::All, state.bValid ? &state.FitterErrors : nullptr ); // TODO: Dump more of the GSL state
 }
 
 void FitterThreadGSL::ReplicaMessage( std::ostream &os ) const
@@ -51,9 +51,7 @@ void FitterThreadGSL::ReplicaMessage( std::ostream &os ) const
   }
 }
 
-FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_,
-                                  vCorrelator &CorrSynthetic_ )
-: FitterThread( fitter_, bCorrelated_, outputModel_, CorrSynthetic_ )
+void FitterThreadGSL::InitialiseGSL()
 {
   const FitterGSL &parentGSL{ *dynamic_cast<const FitterGSL*>( &parent ) };
   // Define my finite difference function
@@ -87,6 +85,18 @@ FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, Mode
       break;
   }
   ws = gsl_multifit_nlinear_alloc( gsl_multifit_nlinear_trust, &fdf_params, fdf.n, fdf.p );
+}
+
+FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_,
+                                  vCorrelator &CorrSynthetic_ )
+: FitterThread( fitter_, bCorrelated_, outputModel_, CorrSynthetic_ )
+{
+  InitialiseGSL();
+}
+
+FitterThreadGSL::FitterThreadGSL( const FitterThreadGSL &ftGSL ) : FitterThread( ftGSL )
+{
+  InitialiseGSL();
 }
 
 FitterThreadGSL::~FitterThreadGSL()

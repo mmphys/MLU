@@ -63,7 +63,7 @@ struct Model
     CreateParams( const vString &OpNames_, const Common::CommandLine &cl_ )
     : OpNames{OpNames_}, cl{cl_}, NumExponents{cl.SwitchValue<int>("e")} {}
   };
-  std::vector<Params::iterator> param;
+  std::vector<Params::value_type *> param;
   const int Nt;
   const int NumExponents;
   //vString ParamNames;
@@ -74,15 +74,17 @@ struct Model
   //Vector Params;
 protected:
   Model( const CreateParams &cp, Args &args );
+  void AddParam( Params &mp, ModelParam &ModPar, std::size_t Size = 1, bool bMonotonic = false,
+                 Param::Type Type = Param::Type::Variable );
 public:
   virtual ~Model() {}
   // This is how to make a model
   static ModelPtr MakeModel( const CreateParams &cp, Model::Args &Args );
   // These must be implemented by the model
   // Say which parameters this model wants
-  virtual void AddParameters( struct Params &mp ) = 0;
+  virtual void AddParameters( Params &mp ) = 0;
   // Now that a complete model has been agreed, save the parameters this model will use
-  virtual void SaveParameters( const struct Params &mp ) = 0;
+  virtual void SaveParameters( const Params &mp ) = 0;
   // Get a descriptive string for the model
   virtual std::string Description() const = 0;
   // Mark parameters guessable. Return number of unknown parameters remaining
@@ -91,7 +93,7 @@ public:
   // Guess unknown parameters. LastChance true -> fit about to be abandoned, so guess products of params
   // Return number of unknown parameters remaining. NB: Count excited states - i.e. return sum of param.size
   virtual std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,
-                     const Vector &FitData, std::vector<int> FitTimes, bool bLastChance ) const = 0;
+                       const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const = 0;
   // Get model type
   virtual ModelType Type() const = 0;
   // This is where the actual computation is performed

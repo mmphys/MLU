@@ -85,13 +85,9 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
     parent.mp.Export( FitterParams, ModelParams, Param::Type::Variable );
     state.bValid = false;
     // Now get the data for this replica
-    if( idx == Fold::idxCentral )
-      Data = parent.ds.vCentral;
-    else
-      Data.MapRow( parent.ds.mBoot, idx);
+    parent.ds.GetData( idx, Data );
     OutputModel.ModelPrediction.MapView( Theory, idx );
     OutputModel.ErrorScaled.MapView( Error, idx );
-    parent.ds.GetData( idx, Data );
     // Don't build covariance matrix if frozen (unless it's the first time)
     if( !parent.cp.bFreeze || bFirstTime )
     {
@@ -290,7 +286,7 @@ void FitterThread::ShowReplicaMessage( int iFitNum ) const
   if( parent.Verbosity > 2 )
     DumpParamsFitter( std::cout );
   else
-    parent.mp.Dump( std::cout, ModelParams );
+    parent.mp.Dump( std::cout, ModelParams, Param::Type::All, state.bValid ? &state.FitterErrors : nullptr );
 }
 
 // Compute Cholesky scaled (theory - data) based on parameters from the fitting engine

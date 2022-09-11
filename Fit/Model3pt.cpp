@@ -56,19 +56,19 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args )
   MEL.Key.Name = Args.Remove( sMEL, sMEL );
 }
 
-void Model3pt::AddParameters( struct Params &mp )
+void Model3pt::AddParameters( Params &mp )
 {
   for( ModelParam &p : E )
-    p.it = mp.Add( p.Key, NumOverlapExp, true );
-  MEL.it = mp.Add( MEL.Key, NumExponents, true );
+    AddParam( mp, p, NumOverlapExp, true );
+  AddParam( mp, MEL, NumExponents, true );
   ModelOverlap::AddParameters( mp );
 }
 
-void Model3pt::SaveParameters( const struct Params &mp )
+void Model3pt::SaveParameters( const Params &mp )
 {
   for( ModelParam &p : E )
-    p.idx = p.it->second();
-  MEL.idx = MEL.it->second();
+    p.idx = mp.at( p.Key )();
+  MEL.idx = mp.at( MEL.Key )();
   ModelOverlap::SaveParameters( mp );
 }
 
@@ -91,19 +91,16 @@ std::string Model3pt::Description() const
 std::size_t Model3pt::Guessable( std::vector<bool> &bKnown, bool bLastChance ) const
 {
   // I can guess the matrix element
-  for( std::size_t i = 0; i < MEL.it->second.size; ++i )
-  {
-    if( !bKnown[MEL.idx + i] )
-      bKnown[MEL.idx + i] = true;
-  }
+  for( std::size_t i = 0; i < MEL.param->size; ++i )
+    bKnown[MEL.idx + i] = true;
   return 0; // TODO: Implement guessing
 }
 
 std::size_t Model3pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
-                       const Vector &FitData, std::vector<int> FitTimes, bool bLastChance ) const
+                       const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const
 {
   // I can guess the matrix element
-  for( std::size_t i = 0; i < MEL.it->second.size; ++i )
+  for( std::size_t i = 0; i < MEL.param->size; ++i )
   {
     if( !bKnown[MEL.idx + i] )
     {
@@ -131,7 +128,7 @@ std::size_t Model3pt::NumUnknown( std::vector<bool> &bKnown ) const
   std::size_t UnKnown{ ModelOverlap::NumUnknown( bKnown ) };
   for( const ModelParam &p : E )
   {
-    for( std::size_t i = 0; i < p.it->second.size; ++i )
+    for( std::size_t i = 0; i < p.param->size; ++i )
     {
       if( !bKnown[p.idx + i] )
         ++UnKnown;

@@ -165,6 +165,12 @@ Model::Model( const CreateParams &cp, Model::Args &Args )
 {
 }
 
+void Model::AddParam( Params &mp, ModelParam &ModPar, std::size_t Size, bool bMonotonic, Param::Type Type )
+{
+  param.emplace_back( &*mp.Add( ModPar.Key, Size, bMonotonic, Type ) );
+  ModPar.param = &param.back()->second;
+}
+
 // Create a model of the appropriate type - this is the only place with knowledge of this mapping
 ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
 {

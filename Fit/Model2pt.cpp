@@ -35,15 +35,15 @@ Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args )
   E.Key.Name = Args.Remove( "energy", ::E );
 }
 
-void Model2pt::AddParameters( struct Params &mp )
+void Model2pt::AddParameters( Params &mp )
 {
-  E.it = mp.Add( E.Key, NumOverlapExp, true );
+  AddParam( mp, E, NumOverlapExp, true );
   ModelOverlap::AddParameters( mp );
 }
 
-void Model2pt::SaveParameters( const struct Params &mp )
+void Model2pt::SaveParameters( const Params &mp )
 {
-  E.idx = E.it->second();
+  E.idx = mp.at( E.Key )();
   ModelOverlap::SaveParameters( mp );
 }
 
@@ -60,28 +60,32 @@ std::string Model2pt::Description() const
 std::size_t Model2pt::Guessable( std::vector<bool> &bKnown, bool bLastChance ) const
 {
   // I can guess the energy
-  bKnown[E.idx] = true;
+  for( std::size_t i = 0; i < E.param->size; ++i )
+    bKnown[E.idx + i] = true;
   return ModelOverlap::Guessable( bKnown, bLastChance );
 }
 
 // Take a guess as to my parameters
 std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
-                             const Vector &FitData, std::vector<int> FitTimes, bool bLastChance ) const
+                       const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const
 {
   // I need a minimum of two timeslices per energy level to guess
-  const std::size_t NumICanGuess{ FitData.size / 2 };
+  static constexpr std::size_t DataPointsPerGuess{ 2 };
+  const std::size_t NumICanGuess{ FitData.size() / DataPointsPerGuess };
   bool bOK{ NumICanGuess != 0 };
-  const double Stride{ NumICanGuess < NumOverlapExp ? 2.
-                      : static_cast<double>( FitData.size - 2 ) / ( NumOverlapExp - 1 ) };
+  const double Stride{ NumICanGuess < NumOverlapExp ? DataPointsPerGuess
+                     : NumOverlapExp <= 1 ? 0
+                     : static_cast<double>( FitData.size() - DataPointsPerGuess ) / ( NumOverlapExp - 1 ) };
   for( std::size_t i = 0; bOK && i < NumOverlapExp; ++i )
   {
+    const std::size_t tGuess{ NumOverlapExp <= 1 ? FitData.size() - DataPointsPerGuess
+                              : static_cast<std::size_t>( Stride * ( NumOverlapExp - 1 - i ) + 0.5 ) };
     // Guess the energy
     if( !bKnown[E.idx + i] )
     {
       if( i < NumICanGuess )
       {
         // Assume each new pair of data points can explain one more excited-state energy
-        const std::size_t tGuess{ static_cast<std::size_t>( Stride * ( NumOverlapExp - 1 - i ) + 0.5 ) };
         Guess[E.idx + i] = std::log( Estimate( Guess, FitData, FitTimes, i, tGuess )
                                    / Estimate( Guess, FitData, FitTimes, i, tGuess + 1 ) )
                            / ( FitTimes[tGuess + 1] - FitTimes[tGuess] );
@@ -108,47 +112,67 @@ std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
     // Do we need to guess overlap coefficients?
     const bool bKnow0{ bKnown[Overlap[0].idx + i] };
     const bool bKnow1{ bKnown[Overlap.back().idx + i] };
-    const bool Make1From0{  bKnow0 && !bKnow1 };
-    const bool Make0From1{ !bKnow0 &&  bKnow1 };
-    if( ( Overlap.size() == 1 && !bKnow0 )
-     || ( Overlap.size() == 2 && ( bLastChance || Make1From0 || Make0From1 ) ) )
+    if( !bKnow0 || !bKnow1 )
     {
-      if( i < NumICanGuess )
+      const bool Make1From0{  bKnow0 && !bKnow1 };
+      const bool Make0From1{ !bKnow0 &&  bKnow1 };
+      if( ( Overlap.size() == 1 && !bKnow0 )
+       || ( Overlap.size() == 2 && ( bLastChance || Make1From0 || Make0From1 || ( i && !bKnow0 && !bKnow1 ) ) ) )
       {
-        const std::size_t tGuess{ static_cast<std::size_t>( Stride * ( NumOverlapExp - 1 - i ) + 0.5 ) };
-        scalar Product{ Estimate( Guess, FitData, FitTimes, i, tGuess )
-                        * std::exp( Guess[E.idx + i] * FitTimes[tGuess] ) };
-        if( Overlap.size() == 1 )
-          Guess[Overlap[0].idx + i] = Product < 0 ? 0 : std::sqrt( Product );
-        else if( Make0From1 )
-          Guess[Overlap[0].idx + i] = Product / Guess[Overlap[1].idx + i];
-        else if( Make1From0 )
-          Guess[Overlap[1].idx + i] = Product / Guess[Overlap[0].idx + i];
-        else //if( bLastChance )
+        if( i < NumICanGuess )
         {
-          Guess[Overlap[0].idx + i] = std::sqrt( std::abs( Product ) );
-          Guess[Overlap[1].idx + i] = Guess[Overlap[0].idx + i];
-          if( Product < 0 )
-            Guess[Overlap[1].idx + i] = -Guess[Overlap[1].idx + i];
+          const scalar Residual{ Estimate( Guess, FitData, FitTimes, i, tGuess ) };
+          const scalar Product{ Residual * std::exp( Guess[E.idx + i] * FitTimes[tGuess] ) };
+          if( Overlap.size() == 1 )
+          {
+            if( Product > 0 )
+              Guess[Overlap[0].idx + i] = std::sqrt( Product );
+            else
+            {
+              scalar Factor;
+              if( i > 1 )
+                Factor = Guess[Overlap[0].idx + i - 1] / Guess[Overlap[0].idx + i - 2];
+              else
+                Factor = 0.5;
+              Guess[Overlap[0].idx + i] = Guess[Overlap[0].idx + i - 1] * Factor;
+            }
+          }
+          else if( Make0From1 )
+            Guess[Overlap[0].idx + i] = Product / Guess[Overlap[1].idx + i];
+          else if( Make1From0 )
+            Guess[Overlap[1].idx + i] = Product / Guess[Overlap[0].idx + i];
+          else //if( bLastChance )
+          {
+            Guess[Overlap[0].idx + i] = std::sqrt( std::abs( Product ) );
+            Guess[Overlap[1].idx + i] = Guess[Overlap[0].idx + i];
+            if( Product < 0 )
+              Guess[Overlap[1].idx + i] = -Guess[Overlap[1].idx + i];
+          }
         }
+        else if( i == 0 )
+        {
+          // I just don't have enough data points to fit anything
+          bOK = false;
+          break;
+        }
+        else
+        {
+          // Very crude guess, but assume each energy level is half the previous Delta E
+          Guess[Overlap[0].idx + i] = std::sqrt( 2 ) * Guess[Overlap[0].idx + i - 1];
+          if( Overlap.size() == 2 )
+            Guess[Overlap[1].idx + i] = std::sqrt( 2 ) * Guess[Overlap[1].idx + i - 1];
+        }
+        if( !bKnow0 )
+          bKnown[Overlap[0].idx + i] = true;
+        if( Overlap.size() > 1 && !bKnow1 )
+          bKnown[Overlap[1].idx + i] = true;
       }
-      else if( i == 0 )
+      else
       {
         // I just don't have enough data points to fit anything
         bOK = false;
         break;
       }
-      else
-      {
-        // Very crude guess, but assume each energy level is half the previous Delta E
-        Guess[Overlap[0].idx + i] = std::sqrt( 2 ) * Guess[Overlap[0].idx + i - 1];
-        if( Overlap.size() == 2 )
-          Guess[Overlap[1].idx + i] = std::sqrt( 2 ) * Guess[Overlap[1].idx + i - 1];
-      }
-      if( !bKnow0 )
-        bKnown[Overlap[0].idx + i] = true;
-      if( Overlap.size() == 2 && !bKnow1 )
-        bKnown[Overlap[1].idx + i] = true;
     }
   }
   std::size_t NumUnknown{ 0 };
@@ -219,8 +243,8 @@ double Model2pt::Derivative( int t, int p ) const
 }
 
 // This is used by the guesser to take an estimate of the excited state
-scalar Model2pt::Estimate( Vector &Guess, const Vector &FitData, std::vector<int> FitTimes,
-                      std::size_t NumExp, std::size_t Timeslice ) const
+scalar Model2pt::Estimate( Vector &Guess, const VectorView &FitData, std::vector<int> FitTimes,
+                           std::size_t NumExp, std::size_t Timeslice ) const
 {
   scalar Theory{ 0 };
   for( std::size_t i = 0; i < NumExp; ++i )

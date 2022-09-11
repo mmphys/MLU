@@ -35,7 +35,7 @@ void FitterThreadMinuit2::DumpParamsFitter( std::ostream &os ) const
   if( state.bValid )
     os << Minuit2State;
   else
-    parent.mp.Dump( os, ModelParams );
+    parent.mp.Dump( os, ModelParams, Param::Type::All, state.bValid ? &state.FitterErrors : nullptr );
 }
 
 void FitterThreadMinuit2::ReplicaMessage( std::ostream &os ) const
