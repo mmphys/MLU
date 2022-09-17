@@ -391,7 +391,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
             OldFormatOpNames.push_back( os.str() );
           }
           if( i < p.size )
-            Reorder[ p(i) ] = Order++;
+            Reorder[ p.GetOffset( i, Param::Type::All ) ] = Order++;
         }
       }
     // Now work out the order for any one-off parameters
@@ -399,7 +399,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
     {
       const Param &p{ it.second };
       if( p.size == 1 )
-        Reorder[ p() ] = Order++;
+        Reorder[ p.GetOffset( 0, Param::Type::All ) ] = Order++;
     }
     if( Order != NumParams )
       throw std::runtime_error( "Re-ordered only " + std::to_string( Order ) + " params" );
@@ -419,7 +419,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
       const Param::Key k{ std::vector<std::string>(), it.first.Name };
       const Param &p{ it.second };
       for( std::size_t i = 0; i < p.size; ++i )
-        ColNames[Reorder[p(i)]] = k.FullName( i, p.size );
+        ColNames[Reorder[p.GetOffset( i, Param::Type::All )]] = k.FullName( i, p.size );
     }
     ColNames[NumParams] = Common::sChiSqPerDof;
     OutputModel.SetColumnNames( ColNames );

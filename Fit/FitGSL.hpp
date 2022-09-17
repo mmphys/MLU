@@ -54,6 +54,7 @@ protected:
   void DumpParamsFitter( std::ostream &os ) const override; //TODO: Deuglify
   void ReplicaMessage( std::ostream &os ) const override; //TODO: Deuglify
   void InitialiseGSL();
+  static void SayConvergeReason( std::ostream &os, int ConvergeReason );
 public:
   FitterThreadGSL( const Fitter &Fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
   FitterThreadGSL( const FitterThreadGSL &ftGSL );

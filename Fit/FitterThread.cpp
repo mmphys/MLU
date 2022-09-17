@@ -361,8 +361,7 @@ scalar FitterThread::RepeatFit( int MaxGuesses )
     else if( iNumGuesses != 1 )
       bFinished = ( dTestStat == dNewTestStat );
     dTestStat = dNewTestStat;
-    if( ( idx == Fold::idxCentral && ( bFinished || parent.Verbosity ) )
-       || ( parent.Verbosity >= 2 && bFinished ) || parent.Verbosity > 2 )
+    if( !bFinished && ( ( idx == Fold::idxCentral && parent.Verbosity ) || parent.Verbosity > 2 ) )
       ShowReplicaMessage( iNumGuesses );
   }
   if( !bFinished )
@@ -374,6 +373,8 @@ scalar FitterThread::RepeatFit( int MaxGuesses )
   if( !SaveError( Error, FitterParams.data, FitterParams.size, FitterParams.stride ) )
     throw std::runtime_error( "NaN values on replica " + std::to_string( idx ) );
   parent.mp.Import<scalar>( state.ModelErrors, state.FitterErrors, Param::Type::Variable, &ModelParams );
+  if( idx == Fold::idxCentral || parent.Verbosity >= 2 )
+    ShowReplicaMessage( iNumGuesses );
   return dTestStat;
 }
 
@@ -450,7 +451,7 @@ scalar FitterThread::FitOne( const std::vector<std::size_t> &Reorder )
   {
     const Param::Key key{ it.first };
     const Param p{ it.second };
-    const std::size_t Offset{ p() };
+    const std::size_t Offset{ p.GetOffset( 0, Param::Type::All ) };
     for( std::size_t i = 0; i < p.size; ++i )
     {
       OutputData[ Reorder[ Offset + i ] ] = ModelParams[ Offset + i ];

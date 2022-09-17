@@ -48,6 +48,19 @@
 
 MLU_GSLVecMat_hpp
 
+// GSL error handling switched off when program starts
+class GSLLibraryGlobal
+{
+private:
+  gsl_error_handler_t * pOldErrorHandler;
+
+public:
+  GSLLibraryGlobal();
+  ~GSLLibraryGlobal();
+  // Use this to throw a std::runtime_error describing the GSL error
+  static void Error( const char * reason, const char * file, int line, int gsl_errno );
+};
+
 // test whether a type is complex
 template<typename T> struct is_gsl_scalar             : public std::false_type {};
 template<> struct is_gsl_scalar<float>                : public std::true_type {};

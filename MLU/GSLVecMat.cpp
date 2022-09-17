@@ -36,22 +36,11 @@ MLU_GSLVecMat_hpp
 
 *****************************************************************************/
 
-class GSLLibraryGlobal
-{
-private:
-  gsl_error_handler_t * pOldErrorHandler;
-  static void GSLErrorHandler(const char * reason, const char * file, int line, int gsl_errno );
-
-public:
-  GSLLibraryGlobal();
-  ~GSLLibraryGlobal();
-};
-
 GSLLibraryGlobal gslLibraryGlobal;
 
 GSLLibraryGlobal::GSLLibraryGlobal()
 {
-  pOldErrorHandler = gsl_set_error_handler( GSLErrorHandler );
+  pOldErrorHandler = gsl_set_error_handler_off();// gsl_set_error_handler( Error );
 }
 
 GSLLibraryGlobal::~GSLLibraryGlobal()
@@ -59,11 +48,16 @@ GSLLibraryGlobal::~GSLLibraryGlobal()
   gsl_set_error_handler( pOldErrorHandler );
 }
 
-void GSLLibraryGlobal::GSLErrorHandler(const char * reason, const char * file, int line, int gsl_errno )
+void GSLLibraryGlobal::Error( const char * reason, const char * file, int line, int gsl_errno )
 {
-  std::stringstream ss;
-  ss << "gsl: " << file << ":" << line << ": errno " << gsl_errno << ": " << reason;
-  throw std::runtime_error( ss.str().c_str() );
+  if( gsl_errno )
+  {
+    std::stringstream ss;
+    ss << "gsl: " << file << ":" << line << ": errno " << gsl_errno << ": " << gsl_strerror( gsl_errno );
+    if( reason )
+      ss << ": " << reason;
+    throw std::runtime_error( ss.str().c_str() );
+  }
 }
 
 /*****************************************************************************

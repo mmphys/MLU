@@ -81,13 +81,17 @@ struct Param
 
   Param( std::size_t Size, bool bMonotonic_, Type type_ = Type::Variable )
   : size{Size}, bMonotonic{bMonotonic_}, type{type_} {}
-  static void Validate( Type Type, const char * pErrorIfAll = nullptr );
+  void Validate( Type ListType = Type::All ) const;
+  // Underlying implementation for all operator(). Don't call this direct
+  std::size_t GetOffset( std::size_t Idx, Type ListType ) const;
   std::size_t operator()( std::size_t Idx = 0, Type ListType = Type::All ) const;
+  std::size_t operator()( std::size_t idxSnk, std::size_t idxSrc, Type ListType = Type::All ) const;
   template <typename T>
   T &operator()( std::vector<T> &v, std::size_t Idx = 0, Type ListType = Type::All ) const;
 
 protected:
   friend class Params;
+  const Key *pKey = nullptr;// Only valid after Params::AssignOffsets()
   std::size_t OffsetAll;    // Offset into a structure containing all parameters
   std::size_t OffsetMyType; // Offset into a structure containing parameters of selected type only
   std::size_t FieldLen;     // How long is this name including digits
@@ -103,7 +107,7 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   //using MapPairT = std::pair<iterator, bool>;
   //iterator Add( const Param::Key &key, std::size_t Size = 1, bool bMonotonic = false,
                 //Param::Type Type = Param::Type::Variable );
-  Params::iterator Add( const Param::Key &key, std::size_t Size = 1, bool bMonotonic = false,
+  Params::iterator Add( const Param::Key &key, std::size_t NumExp = 1, bool bMonotonic = false,
                         Param::Type Type = Param::Type::Variable );
   void AssignOffsets();
   std::size_t NumScalars( Param::Type Type ) const

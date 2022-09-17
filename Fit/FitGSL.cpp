@@ -38,14 +38,7 @@ void FitterThreadGSL::ReplicaMessage( std::ostream &os ) const
   if( state.bValid )
   {
     os << "Stop: ";
-    if( ConvergeReason == 1 )
-      os << "step size";
-    else if( ConvergeReason == 2 )
-      os << "gradient";
-    else if( ConvergeReason == 0 )
-      os << "iterations";
-    else
-      os << "unknown " << ConvergeReason;
+    SayConvergeReason( os, ConvergeReason );
     os << ", f()="  << nevalf
        << ", df()=" << nevaldf << ", ";
   }
@@ -85,6 +78,32 @@ void FitterThreadGSL::InitialiseGSL()
       break;
   }
   ws = gsl_multifit_nlinear_alloc( gsl_multifit_nlinear_trust, &fdf_params, fdf.n, fdf.p );
+  if( !ws )
+    throw std::runtime_error( "gsl_multifit_nlinear_alloc() failed" );
+}
+
+void FitterThreadGSL::SayConvergeReason( std::ostream &os, int ConvergeReason )
+{
+  switch( ConvergeReason )
+  {
+    case 1:
+      os << "step size";
+      break;
+    case 2:
+      os << "gradient";
+      break;
+    case 0:
+      os << "none (iterations?)";
+      break;
+    case GSL_EMAXITER:
+      os << "iterations";
+      break;
+    case GSL_ENOPROG:
+      os << "no progress (no new step delta)";
+      break;
+    default:
+      os << "unknown " << ConvergeReason;
+  }
 }
 
 FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_,
@@ -134,15 +153,24 @@ int FitterThreadGSL::df( const Vector &x, Matrix &J )
 void FitterThreadGSL::Minimise( int )
 {
   // First time around,  initialize solver with starting point and weights
+  int gsl_e;
   if( !state.bValid )
-    gsl_multifit_nlinear_init( &FitterParams, &fdf, ws );
+  {
+    gsl_e = gsl_multifit_nlinear_init( &FitterParams, &fdf, ws );
+    if( gsl_e )
+      GSLLG::Error( "FitterThreadGSL::Minimise() unable to start fit using gsl_multifit_nlinear_init()",
+                   __FILE__, __LINE__, gsl_e );
+  }
 
   // compute initial cost function
   if( idx == Fold::idxCentral )
   {
     double TestStat;
     const Vector &vResidual{ * reinterpret_cast<Vector *>( gsl_multifit_nlinear_residual( ws ) ) };
-    gsl_blas_ddot( &vResidual, &vResidual, &TestStat );
+    gsl_e = gsl_blas_ddot( &vResidual, &vResidual, &TestStat );
+    if( gsl_e )
+      GSLLG::Error( "FitterThreadGSL::Minimise() unable to compute starting residual using gsl_blas_ddot()",
+                   __FILE__, __LINE__, gsl_e );
     std::cout << (state.bValid ? "Intermediate" : "Guess") << " chi^2=" << TestStat << Common::NewLine;
   }
 
@@ -150,29 +178,32 @@ void FitterThreadGSL::Minimise( int )
   const auto tol = parent.Tolerance;
   // Use the requested number of iterations ... or infinite if zero
   const std::size_t MaxIt{ parent.MaxIt ? parent.MaxIt : std::numeric_limits<std::size_t>::max() };
-  gsl_multifit_nlinear_driver( MaxIt, tol, tol, tol, nullptr, nullptr, &ConvergeReason, ws );
+  gsl_e = gsl_multifit_nlinear_driver( MaxIt, tol, tol, tol, nullptr, nullptr, &ConvergeReason, ws );
+  if( gsl_e )
+  {
+    std::ostringstream es;
+    es << "Convergence reason ";
+    SayConvergeReason( es, ConvergeReason );
+    es << " during gsl_multifit_nlinear_driver()";
+    GSLLG::Error( es.str().c_str(), __FILE__, __LINE__, gsl_e );
+  }
   nevalf = fdf.nevalf;
   nevaldf = fdf.nevaldf;
   const std::size_t nIter{ gsl_multifit_nlinear_niter( ws ) };
   state.NumCalls = nIter < std::numeric_limits<unsigned int>::max()
                           ? static_cast<unsigned int>( nIter ) : std::numeric_limits<unsigned int>::max();
-  if( ConvergeReason != 1 && ConvergeReason != 2 )
-  {
-    std::ostringstream es;
-    if( ConvergeReason )
-      es << "Unknown GSL convergence reason " << ConvergeReason;
-    else
-      es << "Maximum number of iterations reached";
-    es << " after " << nIter << " iterations";
-    throw std::runtime_error( es.str().c_str() );
-  }
   const Vector &vResidual{ * reinterpret_cast<Vector *>( gsl_multifit_nlinear_residual( ws ) ) };
   Error = vResidual;
-  gsl_blas_ddot( &vResidual, &vResidual, &state.TestStat );
+  gsl_e = gsl_blas_ddot( &vResidual, &vResidual, &state.TestStat );
+  GSLLG::Error( "FitterThreadGSL::Minimise() unable to compute residual using gsl_blas_ddot()",
+               __FILE__, __LINE__, gsl_e );
   FitterParams = * reinterpret_cast<Vector *>( gsl_multifit_nlinear_position( ws ) );
   Matrix &mJacobian{ * reinterpret_cast<Matrix *>( gsl_multifit_nlinear_jac( ws ) ) };
   Matrix mErrors(parent.mp.NumScalars( Param::Type::Variable ), parent.mp.NumScalars(Param::Type::Variable));
-  gsl_multifit_nlinear_covar( &mJacobian, 0, &mErrors );
+  gsl_e = gsl_multifit_nlinear_covar( &mJacobian, 0, &mErrors );
+  if( gsl_e )
+    GSLLG::Error( "FitterThreadGSL::Minimise() gsl_multifit_nlinear_covar() failed",
+                 __FILE__, __LINE__, gsl_e );
   for( std::size_t i = 0; i < parent.mp.NumScalars( Param::Type::Variable ); ++i )
     state.FitterErrors[i] = std::sqrt( mErrors( i, i ) );
   state.bValid = true;

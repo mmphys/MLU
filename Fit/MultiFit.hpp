@@ -53,6 +53,7 @@ using vInt = std::vector<int>;
 using UniqueNames = Common::UniqueNames;
 using Param = Common::Param;
 using Params = Common::Params;
+using GSLLG = Common::GSLLibraryGlobal;
 
 // Indices for operators in correlator names
 constexpr int idxSrc{ 0 };

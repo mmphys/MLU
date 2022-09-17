@@ -43,7 +43,7 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   using MyMatrix  = Matrix<COMMON_GSL_TYPE>;
   inline Vector( std::size_t size );
   inline Vector() : Vector( 0 ) {};
-  inline Vector( const MyVector &o ) : Vector() { *this = o; };
+  inline Vector( const MyVector &o );
   inline Vector( MyVector &&o ) : Vector() { *this = std::move( o ); };
   inline ~Vector();
   inline MyVector & operator=( const Vector &o );
@@ -76,13 +76,31 @@ Vector<COMMON_GSL_TYPE>::Vector( std::size_t size_ )
   block = nullptr;
   data = nullptr;
   owner = false;
-  resize( size_ );
+  if( size_ )
+    resize( size_ );
 }
 
 Vector<COMMON_GSL_TYPE>::~Vector()
 {
   clear();
 };
+
+// Copy constructor
+Vector<COMMON_GSL_TYPE>::Vector( const Vector &o ) : Vector( 0 )
+{
+  if( o.owner )
+  {
+    // The other vector owns its memory - copy it
+    *this = o;
+  }
+  else
+  {
+    // The original vector is a view - I'll be a view too
+    size = o.size;
+    stride = o.stride;
+    data = o.data;
+  }
+}
 
 Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( const Vector &o )
 {
@@ -258,7 +276,7 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline void Square() { NotEmpty(); if( size1 != size2 ) throw std::runtime_error( "Matrix not square" ); }
   inline Matrix() : Matrix( 0, 0 ) {};
   inline Matrix( std::size_t size1, std::size_t size2 );
-  inline Matrix( const MyMatrix &o ) : Matrix() { *this = o; };
+  inline Matrix( const MyMatrix &o );
   inline Matrix( MyMatrix &&o ) : Matrix() { *this = std::move( o ); };
   inline ~Matrix();
   inline MyMatrix & operator=( Scalar c );
@@ -331,13 +349,32 @@ Matrix<COMMON_GSL_TYPE>::Matrix( std::size_t size1_, std::size_t size2_ )
   block = nullptr;
   data = nullptr;
   owner = false;
-  resize( size1_, size2_ );
+  if( size1_ * size2_ )
+    resize( size1_, size2_ );
 }
 
 Matrix<COMMON_GSL_TYPE>::~Matrix()
 {
   clear();
 };
+
+// Copy constructor
+Matrix<COMMON_GSL_TYPE>::Matrix( const Matrix &o ) : Matrix( 0, 0 )
+{
+  if( o.owner )
+  {
+    // The other matrix owns its memory - copy it
+    *this = o;
+  }
+  else
+  {
+    // The original matrix is a view - I'll be a view too
+    size1 = o.size1;
+    size2 = o.size2;
+    tda = o.tda;
+    data = o.data;
+  }
+}
 
 Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator=( Scalar c )
 {

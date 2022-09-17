@@ -165,9 +165,9 @@ Model::Model( const CreateParams &cp, Model::Args &Args )
 {
 }
 
-void Model::AddParam( Params &mp, ModelParam &ModPar, std::size_t Size, bool bMonotonic, Param::Type Type )
+void Model::AddParam( Params &mp, ModelParam &ModPar, std::size_t NumExp, bool bMonotonic, Param::Type Type )
 {
-  param.emplace_back( &*mp.Add( ModPar.Key, Size, bMonotonic, Type ) );
+  param.emplace_back( &*mp.Add( ModPar.Key, NumExp, bMonotonic, Type ) );
   ModPar.param = &param.back()->second;
 }
 

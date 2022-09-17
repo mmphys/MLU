@@ -83,31 +83,81 @@ bool Param::Key::Less::operator()( const Key &lhs, const Key &rhs ) const
   return CompareIgnoreCase( lhs.Name, rhs.Name ) < 0;
 }
 
-void Param::Validate( Param::Type Type, const char * pErrorIfAll )
+// Can this parameter be read from ListType?
+void Param::Validate( Param::Type ListType ) const
 {
-  if( Type == Param::Type::All && pErrorIfAll )
-    throw std::runtime_error( pErrorIfAll );
-  std::size_t i{ static_cast<std::size_t>( Type ) };
+  std::size_t i{ static_cast<std::size_t>( ListType ) };
   if( i >= ParamTypeHuman.size() )
-    throw std::runtime_error( "Param::Type \"" + std::to_string( i ) + "\" unrecognised" );
+  {
+    std::ostringstream s;
+    s << "Params::Type " << i << " invalid";
+    if( pKey )
+      s << ", Key=" << *pKey;
+    throw std::runtime_error( s.str().c_str() );
+  }
+  std::size_t j{ static_cast<std::size_t>( type ) };
+  if( j >= ParamTypeHuman.size() || type == Type::All )
+  {
+    std::ostringstream s;
+    s << "Params::Type " << type << " invalid";
+    if( pKey )
+      s << ", Key=" << *pKey;
+    throw std::runtime_error( s.str().c_str() );
+  }
+  if( type != ListType && ListType != Param::Type::All )
+  {
+    std::ostringstream s;
+    s << "Param::Validate() can't read " << type << " parameter from " << ListType << " list";
+    if( pKey )
+      s << ", Key=" << *pKey;
+    throw std::runtime_error( s.str().c_str() );
+  }
+}
+
+// Underlying implementation for all operator()
+std::size_t Param::GetOffset( std::size_t Idx, Type ListType ) const
+{
+  Validate( ListType );
+  if( Idx >= size )
+  {
+    std::ostringstream s;
+    s << "Param::GetOffset index " << Idx << " >= size " << size;
+    if( pKey )
+      s << ", Key=" << *pKey;
+    throw std::runtime_error( s.str().c_str() );
+  }
+  return ( ListType == Param::Type::All ? OffsetAll : OffsetMyType ) + Idx;
 }
 
 std::size_t Param::operator()( std::size_t Idx, Param::Type ListType ) const
 {
-  Param::Validate( ListType );
-  if( Idx >= size )
+  if( !pKey || pKey->Object.size() != 1 )
   {
     std::ostringstream s;
-    s << "Param::operator() Index " << Idx << " >= size " << size;
+    s << "Param::operator() not 1-dimensional object";
+    if( pKey )
+      s << ", Key=" << *pKey;
     throw std::runtime_error( s.str().c_str() );
   }
-  if( ListType != type && ListType != Param::Type::All )
+  return GetOffset( Idx, ListType );
+}
+
+std::size_t Param::operator()( std::size_t idxSnk, std::size_t idxSrc, Type ListType ) const
+{
+  if( !pKey || pKey->Object.size() < 1 || pKey->Object.size() > 2 )
   {
     std::ostringstream s;
-    s << "Param::operator() can't read " << type << " parameter from " << ListType << " list";
+    s << "Param::operator() not 2-dimensional object";
+    if( pKey )
+      s << ", Key=" << *pKey;
     throw std::runtime_error( s.str().c_str() );
   }
-  return ( ListType == Param::Type::All ? OffsetAll : OffsetMyType ) + Idx;
+  if( idxSnk > 1 || idxSrc > 1 )
+    throw std::runtime_error( "Model3pt::ParamIndex index out of bounds" );
+  std::size_t idx{ idxSnk + idxSrc };
+  if( idxSnk && pKey->Object.size() > 1 )
+    idx++;
+  return GetOffset( idx, ListType );
 }
 
 template <typename T>
@@ -155,12 +205,31 @@ std::ostream &operator<<( std::ostream &os, const Param::Key &key )
   return os << key.Name;
 }
 
-Params::iterator Params::Add( const Param::Key &key, std::size_t size, bool bMonotonic, Param::Type type_ )
+Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bMonotonic, Param::Type type_ )
 {
+  // Work out how many elements are needed
+  std::size_t size;
+  if( key.Object.size() == 1 )
+    size = NumExp;
+  else if( key.Object.size() == 2 )
+  {
+    if( NumExp < 1 || NumExp > 3 )
+      throw std::runtime_error( "Params::Add 3-point parameters support a maximum of 3 exponentials: "
+                                "1) Gnd-Gnd, 2) Gnd-Ex (and ^\\dag), 3) Ex-Ex" );
+    size = NumExp;
+    if( NumExp >= 2 && key.Object.size() == 2 )
+      ++size;
+  }
+  else
+  {
+    std::ostringstream es;
+    es << "Params::Add key " << key << ": " << key.Object.size() << " members unsupported";
+    throw std::runtime_error( es.str().c_str() );
+  }
   if( !size )
   {
     std::ostringstream ss;
-    ss << "Param::Add key " << key << " has zero members";
+    ss << "Params::Add key " << key << " has zero members";
     throw std::runtime_error( ss.str().c_str() );
   }
   iterator it{ find( key ) };
@@ -174,7 +243,7 @@ Params::iterator Params::Add( const Param::Key &key, std::size_t size, bool bMon
     catch( std::exception &e )
     {
       std::ostringstream ss;
-      ss << "Param::Add cannot add key " << key;
+      ss << "Params::Add cannot add key " << key;
       throw std::runtime_error( ss.str().c_str() );
     }
   }
@@ -225,14 +294,10 @@ void Params::AssignOffsets()
   {
     const Param::Key &k{ it.first };
     Param &p{ it.second };
+    // Save the pointer to the key
+    p.pKey = &k;
     // Validate the parameter type
-    if( p.type == Param::Type::All )
-    {
-      std::ostringstream s;
-      s << "Params::AssignOffsets() key " << k << " invalid type " << p.type;
-      throw std::runtime_error( s.str().c_str() );
-    }
-    Param::Validate( p.type );
+    p.Validate();
     // Assign positions of these parameters in tables
     p.OffsetAll = NumScalars( Param::Type::All );
     std::size_t &ThisNum{ p.type == Param::Type::Variable ? NumVariable : NumFixed };

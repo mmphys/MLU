@@ -77,7 +77,7 @@ struct Model
   const int NumExponents;
 protected:
   Model( const CreateParams &cp, Args &args );
-  void AddParam( Params &mp, ModelParam &ModPar, std::size_t Size = 1, bool bMonotonic = false,
+  void AddParam( Params &mp, ModelParam &ModPar, std::size_t NumExp = 1, bool bMonotonic = false,
                  Param::Type Type = Param::Type::Variable );
 public:
   virtual ~Model() {}

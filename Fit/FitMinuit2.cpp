@@ -80,7 +80,7 @@ void FitterThreadMinuit2::Minimise( int iNumGuesses )
       if( p.type == Param::Type::Variable )
       {
         for( std::size_t i = 0; i < p.size; ++i )
-          Par.Add( it.first.FullName( i, p.size ), FitterParams[p(i,Param::Type::Variable)], 0 );
+          Par.Add( it.first.FullName( i, p.size ), FitterParams[p.GetOffset(i,Param::Type::Variable)], 0 );
       }
     }
     state.NumCalls = 0;

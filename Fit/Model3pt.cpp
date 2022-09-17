@@ -32,6 +32,8 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args )
 : ModelOverlap( cp, Args, GetObjectNameSnkSrc( cp, Args ),
                 Args.Remove( "e", cp.NumExponents, true ) > 1 ? 2 : 1 )
 {
+  if( !cp.pCorr->Name_.bGotDeltaT )
+    throw std::runtime_error( "DeltaT not available in " + cp.pCorr->Name_.Filename );
   DeltaT = cp.pCorr->Name_.DeltaT;
   if( NumExponents > 3 )
     throw std::runtime_error( "Model3pt supports a maximum of 3 exponentials: "
@@ -57,7 +59,7 @@ void Model3pt::AddParameters( Params &mp )
 {
   for( ModelParam &p : E )
     AddParam( mp, p, NumOverlapExp, true );
-  AddParam( mp, MEL, NumExponents + ( NumExponents > 1 && E.size() > 1 ? 1 : 0 ), true );
+  AddParam( mp, MEL, NumExponents, true );
   ModelOverlap::AddParameters( mp );
 }
 
@@ -65,7 +67,7 @@ void Model3pt::SaveParameters( const Params &mp )
 {
   for( ModelParam &p : E )
     p.idx = mp.at( p.Key )();
-  MEL.idx = mp.at( MEL.Key )();
+  MEL.idx = mp.at( MEL.Key )( 0, 0 );
   ModelOverlap::SaveParameters( mp );
 }
 
@@ -120,16 +122,17 @@ scalar Model3pt::operator()( int t, Vector &ScratchPad, const Vector &ModelParam
   for( int eSnk = 0; eSnk < NumOverlapExp; ++eSnk )
   {
     const scalar &ESnk{ ModelParams[E.back().idx + eSnk] };
-    scalar ASnk = ModelParams[Overlap.back().idx + eSnk];
+    const scalar ASnk = ModelParams[Overlap.back().idx + eSnk];
     const scalar expSnk{ - ESnk * ( DeltaT - t ) };
     for( int eSrc = 0; eSrc < NumOverlapExp; ++eSrc )
     {
       if( !eSnk || !eSrc || NumExponents >= 3 )
       {
         const scalar &ESrc{ ModelParams[E[idxSrc].idx + eSrc] };
-        scalar ASrc = ModelParams[Overlap[idxSrc].idx + eSrc];
+        const scalar ASrc = ModelParams[Overlap[idxSrc].idx + eSrc];
         const scalar expSrc{ - ESrc * t };
-        scalar d{ ASnk * ASrc * ModelParams[MEL.idx + ParamIndex( eSnk, eSrc )] * std::exp( expSnk + expSrc ) };
+        const std::size_t idxMEL = ( *MEL.param )( eSnk, eSrc );
+        scalar d{ ASnk * ASrc * ModelParams[idxMEL] * std::exp( expSnk + expSrc ) };
         if( bNormalisationByEnergy )
           d /= 4 * ESnk * ESrc;
         z += d;
