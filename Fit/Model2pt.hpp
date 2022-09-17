@@ -34,8 +34,8 @@
 struct Model2pt : public ModelOverlap
 {
   Model2pt( const Model::CreateParams &cp, Model::Args &Args );
-  void AddParameters( struct Params &mp ) override;
-  void SaveParameters( const struct Params &mp ) override;
+  void AddParameters( Params &mp ) override;
+  void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
   std::size_t Guessable( std::vector<bool> &bKnown, bool bLastChance ) const override;
   std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,

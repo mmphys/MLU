@@ -34,8 +34,8 @@
 struct Model3pt : public ModelOverlap
 {
   Model3pt( const Model::CreateParams &cp, Model::Args &Args );
-  void AddParameters( struct Params &mp ) override;
-  void SaveParameters( const struct Params &mp ) override;
+  void AddParameters( Params &mp ) override;
+  void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
   std::size_t Guessable( std::vector<bool> &bKnown, bool bLastChance ) const override;
   std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,
@@ -45,9 +45,11 @@ struct Model3pt : public ModelOverlap
   scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
 
 protected:
+  std::size_t ParamIndex( std::size_t idxSnk, std::size_t idxSrc ) const;
   std::size_t NumUnknown( std::vector<bool> &bKnown ) const;
   std::vector<ModelParam> E;
   ModelParam MEL;
+  int DeltaT;
 };
 
 #endif // Model3pt_hpp

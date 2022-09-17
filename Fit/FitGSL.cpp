@@ -30,7 +30,7 @@
 
 void FitterThreadGSL::DumpParamsFitter( std::ostream &os ) const
 {
-  parent.mp.Dump( os, ModelParams, Param::Type::All, state.bValid ? &state.FitterErrors : nullptr ); // TODO: Dump more of the GSL state
+  parent.mp.Dump( os, ModelParams, Param::Type::Variable, state.bValid ? &state.ModelErrors : nullptr ); // TODO: Dump more of the GSL state
 }
 
 void FitterThreadGSL::ReplicaMessage( std::ostream &os ) const
@@ -156,6 +156,16 @@ void FitterThreadGSL::Minimise( int )
   const std::size_t nIter{ gsl_multifit_nlinear_niter( ws ) };
   state.NumCalls = nIter < std::numeric_limits<unsigned int>::max()
                           ? static_cast<unsigned int>( nIter ) : std::numeric_limits<unsigned int>::max();
+  if( ConvergeReason != 1 && ConvergeReason != 2 )
+  {
+    std::ostringstream es;
+    if( ConvergeReason )
+      es << "Unknown GSL convergence reason " << ConvergeReason;
+    else
+      es << "Maximum number of iterations reached";
+    es << " after " << nIter << " iterations";
+    throw std::runtime_error( es.str().c_str() );
+  }
   const Vector &vResidual{ * reinterpret_cast<Vector *>( gsl_multifit_nlinear_residual( ws ) ) };
   Error = vResidual;
   gsl_blas_ddot( &vResidual, &vResidual, &state.TestStat );

@@ -50,8 +50,8 @@ struct ModelOverlap : Model, Object
 {
   ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
                 std::vector<std::string> &&ObjectID, std::size_t NumOverlapExp );
-  void AddParameters( struct Params &mp ) override;
-  void SaveParameters( const struct Params &mp ) override;
+  void AddParameters( Params &mp ) override;
+  void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
   std::size_t Guessable( std::vector<bool> &bKnown, bool bLastChance ) const override;
   void ReduceUnknown() override;

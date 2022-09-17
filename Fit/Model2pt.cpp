@@ -31,7 +31,7 @@
 Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args )
 : ModelOverlap( cp, Args, GetObjectNameSingle( cp, Args ), Args.Remove( "e", cp.NumExponents, true ) )
 {
-  E.Key.Object = ObjectID( idxSrc );
+  E.Key.Object = { ObjectID( idxSrc ) };
   E.Key.Name = Args.Remove( "energy", ::E );
 }
 
@@ -86,9 +86,11 @@ std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
       if( i < NumICanGuess )
       {
         // Assume each new pair of data points can explain one more excited-state energy
-        Guess[E.idx + i] = std::log( Estimate( Guess, FitData, FitTimes, i, tGuess )
-                                   / Estimate( Guess, FitData, FitTimes, i, tGuess + 1 ) )
-                           / ( FitTimes[tGuess + 1] - FitTimes[tGuess] );
+        const scalar C1{ Estimate( Guess, FitData, FitTimes, i, tGuess ) };
+        const scalar C2{ Estimate( Guess, FitData, FitTimes, i, tGuess + 1 ) };
+        const scalar Log{ std::log( std::abs( C1 / C2 ) ) };
+        const int DeltaT{ FitTimes[tGuess + 1] - FitTimes[tGuess] };
+        Guess[E.idx + i] = Log / DeltaT;
         // Enforce monotonic
         if( i > 0 && Guess[E.idx + i] < Guess[E.idx + i - 1] )
           Guess[E.idx + i] = Guess[E.idx + i - 1];

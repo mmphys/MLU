@@ -29,8 +29,10 @@
 #include "Model3pt.hpp"
 
 Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args )
-: ModelOverlap( cp, Args, GetObjectNameSnkSrc( cp, Args ), NumExponents > 1 ? 2 : 1 )
+: ModelOverlap( cp, Args, GetObjectNameSnkSrc( cp, Args ),
+                Args.Remove( "e", cp.NumExponents, true ) > 1 ? 2 : 1 )
 {
+  DeltaT = cp.pCorr->Name_.DeltaT;
   if( NumExponents > 3 )
     throw std::runtime_error( "Model3pt supports a maximum of 3 exponentials: "
                               "Gnd-Gnd, Gnd-Ex (and ^\\dag), Ex-Ex" );
@@ -38,20 +40,15 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args )
   std::string ESnk = Args.Remove( "ESnk", ::E );
   const bool bESame{ objectID.size() == 1 && Common::EqualIgnoreCase( ESrc, ESnk ) };
   E.resize( bESame ? 1 : 2 );
-  E[idxSrc].Key.Object = ObjectID( idxSrc );
+  E[idxSrc].Key.Object = { ObjectID( idxSrc ) };
   E[idxSrc].Key.Name = std::move( ESrc );
   if( !bESame )
   {
-    E[idxSnk].Key.Object = ObjectID( idxSnk );
+    E[idxSnk].Key.Object = { ObjectID( idxSnk ) };
     E[idxSnk].Key.Name = std::move( ESnk );
   }
   // Now create the matrix element
-  for( std::size_t i = 0; i < objectID.size(); ++i )
-  {
-    if( i )
-      MEL.Key.Object.append( 1, '-' );
-    MEL.Key.Object.append( objectID[i] );
-  }
+  MEL.Key.Object = objectID;
   static const std::string sMEL{ "MEL" };
   MEL.Key.Name = Args.Remove( sMEL, sMEL );
 }
@@ -60,7 +57,7 @@ void Model3pt::AddParameters( Params &mp )
 {
   for( ModelParam &p : E )
     AddParam( mp, p, NumOverlapExp, true );
-  AddParam( mp, MEL, NumExponents, true );
+  AddParam( mp, MEL, NumExponents + ( NumExponents > 1 && E.size() > 1 ? 1 : 0 ), true );
   ModelOverlap::AddParameters( mp );
 }
 
@@ -119,7 +116,37 @@ double Model3pt::Derivative( int t, int p ) const
 
 scalar Model3pt::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
 {
-  return 0;
+  scalar z = 0;
+  for( int eSnk = 0; eSnk < NumOverlapExp; ++eSnk )
+  {
+    const scalar &ESnk{ ModelParams[E.back().idx + eSnk] };
+    scalar ASnk = ModelParams[Overlap.back().idx + eSnk];
+    const scalar expSnk{ - ESnk * ( DeltaT - t ) };
+    for( int eSrc = 0; eSrc < NumOverlapExp; ++eSrc )
+    {
+      if( !eSnk || !eSrc || NumExponents >= 3 )
+      {
+        const scalar &ESrc{ ModelParams[E[idxSrc].idx + eSrc] };
+        scalar ASrc = ModelParams[Overlap[idxSrc].idx + eSrc];
+        const scalar expSrc{ - ESrc * t };
+        scalar d{ ASnk * ASrc * ModelParams[MEL.idx + ParamIndex( eSnk, eSrc )] * std::exp( expSnk + expSrc ) };
+        if( bNormalisationByEnergy )
+          d /= 4 * ESnk * ESrc;
+        z += d;
+      }
+    }
+  }
+  return z;
+}
+
+std::size_t Model3pt::ParamIndex( std::size_t idxSnk, std::size_t idxSrc ) const
+{
+  if( idxSnk > 1 || idxSrc > 1 )
+    throw std::runtime_error( "Model3pt::ParamIndex index out of bounds" );
+  std::size_t idx{ idxSnk + idxSrc };
+  if( idxSnk && E.size() > 1 )
+    idx++;
+  return idx;
 }
 
 // TODO: Not sure I use this. Inconsistent definitions of how many parameters

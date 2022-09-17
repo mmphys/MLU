@@ -29,7 +29,7 @@
 #ifndef Model_hpp
 #define Model_hpp
 
-#include "Param.hpp"
+#include "MultiFit.hpp"
 
 // This is the name of an energy level
 extern const std::string E;
@@ -37,6 +37,15 @@ extern const std::string E;
 enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant };
 std::ostream & operator<<( std::ostream &os, const ModelType m );
 std::istream & operator>>( std::istream &is, ModelType &m );
+
+// Models use this structure to refer to the parameters they are interested in
+struct ModelParam
+{
+  ModelParam() = default;
+  Param::Key Key;
+  Param *param;
+  std::size_t idx;
+};
 
 // This represents the model I'm fitting to
 class Model;
@@ -55,23 +64,17 @@ struct Model
   struct CreateParams
   {
     // These apply to all models
-    const vString &OpNames;
+    const std::vector<std::string> &OpNames;
     const Common::CommandLine &cl;
     const int NumExponents; // Default if not specified per model
     // These will change per model
     const Fold *pCorr;
-    CreateParams( const vString &OpNames_, const Common::CommandLine &cl_ )
+    CreateParams( const std::vector<std::string> &OpNames_, const Common::CommandLine &cl_ )
     : OpNames{OpNames_}, cl{cl_}, NumExponents{cl.SwitchValue<int>("e")} {}
   };
   std::vector<Params::value_type *> param;
   const int Nt;
   const int NumExponents;
-  //vString ParamNames;
-  //vString ParamNamesPerExp;                     // Be careful: these names EXCLUDE the energy
-  //vInt    ParamIdx;
-  //std::vector<std::vector<int>> ParamIdxPerExp; // Be careful: Zero'th element of this IS energy
-  //protected:
-  //Vector Params;
 protected:
   Model( const CreateParams &cp, Args &args );
   void AddParam( Params &mp, ModelParam &ModPar, std::size_t Size = 1, bool bMonotonic = false,

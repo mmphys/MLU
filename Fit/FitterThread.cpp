@@ -37,7 +37,7 @@ FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile 
   CholeskyDiag( Extent ),
   ModelParams( fitter_.mp.NumScalars( Param::Type::All ) ),
   FitterParams( fitter_.mp.NumScalars( Param::Type::Variable ) ),
-  state( fitter_.mp.NumScalars( Param::Type::Variable ) ),
+  state( fitter_.mp.NumScalars( Param::Type::All ), fitter_.mp.NumScalars( Param::Type::Variable ) ),
   bCorrelated{ bCorrelated_ },
   OutputModel{ outputModel_ },
   CorrSynthetic( CorrSynthetic_ ),
@@ -286,7 +286,7 @@ void FitterThread::ShowReplicaMessage( int iFitNum ) const
   if( parent.Verbosity > 2 )
     DumpParamsFitter( std::cout );
   else
-    parent.mp.Dump( std::cout, ModelParams, Param::Type::All, state.bValid ? &state.FitterErrors : nullptr );
+    parent.mp.Dump( std::cout, ModelParams, Param::Type::Variable, state.bValid ? &state.ModelErrors : nullptr );
 }
 
 // Compute Cholesky scaled (theory - data) based on parameters from the fitting engine
@@ -298,6 +298,7 @@ bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::s
   parent.mp.Import( ModelParams, VectorView( FitterParams, Size, Stride ) );
   // Compute theory - error for each timeslice
   int i{0};
+  bool bOK{ true };
   for( int f = 0; f < parent.NumFiles; ++f )
   {
     // Allow each model to cache any common computations based solely on the model parameters
@@ -310,10 +311,10 @@ bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::s
       Theory[i] = m( t, ModelBuffer[f], ModelParams );
       Error[i] = ( Theory[i] - Data[i] ) * CholeskyDiag[i];
       if( !std::isfinite( Error[i++] ) )
-        return false;
+        bOK = false;
     }
   }
-  return true;
+  return bOK;
 }
 
 bool FitterThread::AnalyticJacobian( Matrix &Jacobian ) const
@@ -365,7 +366,14 @@ scalar FitterThread::RepeatFit( int MaxGuesses )
       ShowReplicaMessage( iNumGuesses );
   }
   if( !bFinished )
-    throw std::runtime_error( "Fit did not converge within " + std::to_string( MaxGuesses ) + " retries" );
+  {
+    std::ostringstream es;
+    es << "Fit on replica " << idx << " did not converge within " << MaxGuesses << " retries";
+    throw std::runtime_error( es.str().c_str() );
+  }
+  if( !SaveError( Error, FitterParams.data, FitterParams.size, FitterParams.stride ) )
+    throw std::runtime_error( "NaN values on replica " + std::to_string( idx ) );
+  parent.mp.Import<scalar>( state.ModelErrors, state.FitterErrors, Param::Type::Variable, &ModelParams );
   return dTestStat;
 }
 
@@ -388,7 +396,7 @@ const Vector &FitterThread::UncorrelatedFit()
 }
 
 // Perform a fit. NB: Only the fit on central replica updates ChiSq
-scalar FitterThread::FitOne()
+scalar FitterThread::FitOne( const std::vector<std::size_t> &Reorder )
 {
   // Perform fit
   scalar dTestStat = RepeatFit( NumRetriesFit() );
@@ -445,11 +453,11 @@ scalar FitterThread::FitOne()
     const std::size_t Offset{ p() };
     for( std::size_t i = 0; i < p.size; ++i )
     {
-      OutputData[ Offset + i ] = ModelParams[ Offset + i ];
+      OutputData[ Reorder[ Offset + i ] ] = ModelParams[ Offset + i ];
       // Check whether energy levels are separated by minimum separation
       if( i && p.bMonotonic && idx == Fold::idxCentral && parent.RelEnergySep )
       {
-        double RelSep = OutputData[ Offset + i ] / OutputData [ Offset + i - 1 ];
+        double RelSep = ModelParams[ Offset + i ] / ModelParams [ Offset + i - 1 ];
         if( ( RelSep - 1 ) < parent.RelEnergySep || RelSep * parent.RelEnergySep > 1 )
         {
           std::ostringstream es;

@@ -50,18 +50,9 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     ds{ std::move( ds_ ) },
     NumFiles{ static_cast<int>( ds.corr.size() ) },
     OpNames{ opNames_ },
-    //NumOps{ static_cast<int>( OpNames.size() ) },
     model{ CreateModels( cl, ModelArgs ) },
     NumExponents{ GetNumExponents() },
     mp{ MakeModelParams() },
-    /*ParamNames( MakeParamNames() ),
-    ParamFixed{ MakeParamFixed() },
-    ParamVariable{ MakeParamVariable() },
-    NumModelParams{ static_cast<int>( ParamNames.size() ) },
-    NumPerExp{ static_cast<int>( PerExpNames.size() ) },
-    NumOneOff{ NumModelParams - NumExponents * NumPerExp },
-    NumFixed{ static_cast<int>( ParamFixed.size() ) },
-    NumVariable{ static_cast<int>( ParamVariable.size() ) },*/
     cp{ std::move( cp_ ) },
     Guess{ mp.NumScalars( Param::Type::All ) }
 {
@@ -83,7 +74,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
                                  + " parameters, but there are "
                                  + std::to_string( mp.NumScalars( Param::Type::Variable ) )
                                  + " variable parameters" );
-    mp.Import( Guess, vGuess );
+    mp.Import<scalar>( Guess, vGuess );
   }
   // Load the constants into the fixed portion of the guess
   ds.GetFixed( Fold::idxCentral, Guess, ParamFixed );
@@ -162,11 +153,8 @@ Params Fitter::MakeModelParams()
       m->param.clear();
       m->AddParameters( mp );
     }
-    mp.AssignOffsets();
-    for( ModelPtr &m : model )
-      m->SaveParameters( mp );
     // Loop through parameters - see if they are available as constants
-    DataSet::ConstantSource::Key key;
+    ConstantSource::Key key;
     ParamFixed.clear();
     for( const typename Params::value_type &it : mp )
     {
@@ -178,18 +166,29 @@ Params Fitter::MakeModelParams()
       if( cit != ds.constMap.end() )
       {
         // This is available as a constant
-        const DataSet::ConstantSource &cs{ cit->second };
+        const ConstantSource &cs{ cit->second };
         if( cs.idx.size() < p.size )
         {
           std::ostringstream os;
-          os << "AreModelsSoluble " << pk.Object << "/" << pk.Name << "[" << p.size << "] has only "
+          os << "MakeModelParams " << pk << "[" << p.size << "] has only "
           << cs.idx.size() << " constants available";
           throw std::runtime_error( os.str().c_str() );
         }
         mp.Add( pk, p.size, false, Param::Type::Fixed );
-        // Now remember where this comes from
-        ParamFixed.emplace_back( cs, p.size, static_cast<int>( p() ) );
       }
+    }
+    mp.AssignOffsets();
+    for( ModelPtr &m : model )
+      m->SaveParameters( mp );
+    for( const typename Params::value_type &it : mp )
+    {
+      const Param::Key &pk{ it.first };
+      const Param &p{ it.second };
+      key.Object = pk.Object;
+      key.Name = pk.Name;
+      typename DataSet::ConstMap::const_iterator cit{ ds.constMap.find( key ) };
+      if( cit != ds.constMap.end() )
+        ParamFixed.emplace_back( cit->second, p.size, static_cast<int>( p() ) );
     }
     // Create list of parameters we know - starting from constants
     const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
@@ -279,7 +278,7 @@ void Fitter::MakeGuess()
       if( Verbosity )
       {
         std::cout << " Guess after model " << i << Common::Space << model[i]->Description() << Common::NewLine;
-        mp.Dump( std::cout, Guess, Param::Type::Variable, nullptr, &ParamKnown );
+        mp.Dump<scalar>( std::cout, Guess, Param::Type::Variable, nullptr, &ParamKnown );
       }
     }
   }
@@ -366,19 +365,45 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   // Make somewhere to store the results of the fit for each bootstrap sample
   const int tMin{ ds.FitTimes[0][0] };
   const int tMax{ ds.FitTimes[0].back() };
+  const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
   // TODO: This is temporary - makes it look like existing format
   // TODO: Update to save the parameter list + additional columns
+  std::vector<std::size_t> Reorder( NumParams );
   std::vector<std::string> OldFormatOpNames;
-  for( const typename Params::value_type &it : mp )
   {
-    if( it.second.size > 1 && !Common::EqualIgnoreCase( E, it.first.Name ) )
+    // Find the maximum exponent
+    std::size_t MaxLen{ 0 };
+    for( const typename Params::value_type &it : mp )
+      if( MaxLen < it.second.size )
+        MaxLen = it.second.size;
+    // First put repeated parameters in exponent order
+    std::size_t Order{ 0 };
+    for( std::size_t i = 0; i < MaxLen; ++i )
+      for( const typename Params::value_type &it : mp )
+      {
+        const Param &p{ it.second };
+        if( p.size != 1 )
+        {
+          if( i == 0 && !Common::EqualIgnoreCase( it.first.Name, ::E ) )
+          {
+            std::ostringstream os;
+            os << it.first.Name;
+            OldFormatOpNames.push_back( os.str() );
+          }
+          if( i < p.size )
+            Reorder[ p(i) ] = Order++;
+        }
+      }
+    // Now work out the order for any one-off parameters
+    for( const typename Params::value_type &it : mp )
     {
-      std::ostringstream os;
-      os << it.first;
-      OldFormatOpNames.push_back( os.str() );
+      const Param &p{ it.second };
+      if( p.size == 1 )
+        Reorder[ p() ] = Order++;
     }
+    if( Order != NumParams )
+      throw std::runtime_error( "Re-ordered only " + std::to_string( Order ) + " params" );
   }
-  const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
   ModelFile OutputModel( OldFormatOpNames, NumExponents, NumFiles, tMin, tMax, dof,
                          true, //TODO: !bForceSrcSnkDifferent
                          cp.bFreeze, ds.NSamples, NumParams + 1 );
@@ -391,10 +416,10 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
     std::vector<std::string> ColNames( NumParams + 1 );
     for( const typename Params::value_type &it : mp )
     {
-      const Param::Key &k{ it.first };
+      const Param::Key k{ std::vector<std::string>(), it.first.Name };
       const Param &p{ it.second };
       for( std::size_t i = 0; i < p.size; ++i )
-        ColNames[p(i)] = k.FullName( i, p.size );
+        ColNames[Reorder[p(i)]] = k.FullName( i, p.size );
     }
     ColNames[NumParams] = Common::sChiSqPerDof;
     OutputModel.SetColumnNames( ColNames );
@@ -464,7 +489,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
       std::cout << " Fixed parameters:\n";
       mp.Dump( std::cout, Guess, Param::Type::Fixed );
     }
-    std::cout << " Initial guess:\n";
+    std::cout << Common::Space << ( UserGuess ? "User supplied" : "Initial" ) << " guess:\n";
     mp.Dump( std::cout, Guess, Param::Type::Variable );
 
     // For correlated fits, perform an uncorrelated fit on the central replica to use as the guess
@@ -502,7 +527,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
               if( !WasAbort )
               {
                 fitThread.SetReplica( idx );
-                scalar z{ fitThread.FitOne() };
+                scalar z{ fitThread.FitOne( Reorder ) };
                 if( idx == Fold::idxCentral )
                   ChiSq = z;
               }

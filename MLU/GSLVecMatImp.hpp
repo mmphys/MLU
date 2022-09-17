@@ -87,19 +87,30 @@ Vector<COMMON_GSL_TYPE>::~Vector()
 Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( const Vector &o )
 {
   resize( o.size );
-  COMMON_GSL_FUNC( vector, memcpy )( this, &o );
+  if( size )
+    COMMON_GSL_FUNC( vector, memcpy )( this, &o );
   return *this;
 }
 
 Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( Vector &&o )
 {
-  clear(); // Release any memory I'm currently holding
-  size = o.size;
-  stride = o.stride;
-  data = o.data;
-  block = o.block;
-  owner = o.owner;
-  o.owner = false;
+  if( o.owner )
+  {
+    // Move - other object owns memory
+    clear();
+    o.owner = false;
+    owner = true;
+    size = o.size;
+    stride = o.stride;
+    data = o.data;
+    block = o.block;
+  }
+  else
+  {
+    // Copy - other object doesn't own memory
+    const MyVector &c{ o };
+    *this = c;
+  }
   o.clear();
   return *this;
 }
@@ -227,7 +238,7 @@ inline std::ostream & operator<<( std::ostream &os, const Vector<COMMON_GSL_TYPE
   os << " owner";
   const int imax{ v.size >= MaxCols ? MaxCols : static_cast<int>( v.size ) };
   for( int i = 0; i < imax; ++i )
-      os << Space << v[i];
+      os << " " << v[i];
   return os << " }";
 }
 
@@ -348,16 +359,25 @@ Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator=( const Matrix &o )
 
 Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator=( Matrix &&o )
 {
-  clear(); // Release any memory I'm currently holding
-  size1 = o.size1;
-  size2 = o.size2;
-  tda = o.tda;
-  data = o.data;
-  block = o.block;
-  owner = o.owner;
-  o.owner = false;
-  o.block = nullptr;
-  //o.clear(); // Might as well leave the original pointing to a copy of the data
+  if( o.owner )
+  {
+    // Move - other object owns memory
+    clear();
+    o.owner = false;
+    owner = true;
+    size1 = o.size1;
+    size2 = o.size2;
+    tda = o.tda;
+    data = o.data;
+    block = o.block;
+  }
+  else
+  {
+    // Copy - other object doesn't own memory
+    const MyMatrix &c{ o };
+    *this = c;
+  }
+  o.clear();
   return *this;
 }
 
@@ -632,7 +652,7 @@ inline std::ostream & operator<<( std::ostream &os, const Matrix<COMMON_GSL_TYPE
   const int ymax{ m.size2 >= MaxCols ? MaxCols : static_cast<int>( m.size2 ) };
   for( int x = 0; x < xmax; ++x )
     for( int y = 0; y < ymax; ++y )
-      os << ( y ? Space : NewLine ) << m(x,y);
+      os << ( y ? " " : "\n" ) << m(x,y);
   return os << " }";
 }
 

@@ -52,7 +52,7 @@ std::vector<std::string> Object::GetObjectNameSnkSrc( const Model::CreateParams 
   ObjectID[0] = Args.Remove( "Src", &bManualObjectID[0] );
   ObjectID[1] = Args.Remove( "Snk", &bManualObjectID[1] );
   if( !bManualObjectID[0] || !bManualObjectID[1] )
-    throw "Model3pt constructor: Snk and Src parameters are required (TODO: fix this)";
+    throw std::runtime_error( "Model3pt constructor: Snk and Src parameters are required (TODO: fix this)" );
   if( Common::EqualIgnoreCase( ObjectID[0], ObjectID[1] ) )
     ObjectID.resize( 1 );
   return { ObjectID };
@@ -72,7 +72,7 @@ ModelOverlap::ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
   Args.Remove( "srcsnk", &bForceSrcSnkDifferent );
   for( int i = idxSrc; i <= idxSnk; ++i )
   {
-    Overlap[i].Key.Object = ObjectID( i );
+    Overlap[i].Key.Object.push_back( ObjectID( i ) );
     Overlap[i].Key.Name = Args.Remove( pSrcSnk[i], cp.OpNames[cp.pCorr->Name_.op[i]] );
     if( bForceSrcSnkDifferent )
       Overlap[i].Key.Name.append( pSrcSnk[i] );
@@ -131,8 +131,10 @@ void ModelOverlap::ReduceUnknown()
 {
   if( Overlap.size() > 1 )
   {
-    if( !Common::EqualIgnoreCase( Overlap[0].Key.Object, Overlap[1].Key.Object ) )
-      Overlap[1].Key.Object.append( std::move( Overlap[0].Key.Object ) );
+    if( Overlap[0].Key.Object.size() != 1 || Overlap[1].Key.Object.size() != 1 )
+      throw std::runtime_error( "ModelOverlap::ReduceUnknown() : Class invariant breached" );
+    if( !Common::EqualIgnoreCase( Overlap[0].Key.Object[0], Overlap[1].Key.Object[0] ) )
+      Overlap[1].Key.Object.push_back( std::move( Overlap[0].Key.Object[0] ) );
     if( !Common::EqualIgnoreCase( Overlap[0].Key.Name, Overlap[1].Key.Name ) )
       Overlap[1].Key.Name.append( std::move( Overlap[0].Key.Name ) );
     Overlap[0].Key = std::move( Overlap[1].Key );

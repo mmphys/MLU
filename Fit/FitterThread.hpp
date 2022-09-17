@@ -33,8 +33,6 @@
 
 // Forward declaration of fitter for multi-exponential fit
 class Fitter;
-class Params;
-class ParamState;
 
 // Several of these will be running at the same time on different threads during a fit
 struct FitterThread
@@ -69,7 +67,8 @@ protected:
     scalar TestStat = 0;
     unsigned int NumCalls = 0;
     Vector FitterErrors;
-    State( std::size_t Size ) : FitterErrors( Size ) {}
+    Vector ModelErrors;
+    State( std::size_t SizeAll, std::size_t SizeVar ) : FitterErrors( SizeVar ), ModelErrors( SizeAll ) {}
   };
   State state;
   scalar getTestStat() const { return state.bValid ? state.TestStat : 0; }
@@ -91,7 +90,7 @@ public:
   bool AnalyticJacobian( Matrix &Jacobian ) const;
   scalar RepeatFit( int MaxGuesses );
   const Vector &UncorrelatedFit();
-  scalar FitOne();
+  scalar FitOne( const std::vector<std::size_t> &Reorder );
   // Implement this to support a new type of fitter
   virtual void Minimise( int iNumGuesses ) = 0;
   virtual bool CholeskyAdjust() { return false; } // true to indicate Cholesky matrix needs inversion

@@ -158,7 +158,8 @@ int main(int argc, const char *argv[])
               PrintPrefix.append( cl.Args[ArgNum] );
               PrintPrefix.append( 1, ' ' );
             }
-            ds.LoadCorrelator( std::move( Att ), Common::COMPAT_DEFAULT, PrintPrefix.c_str() );
+            ds.LoadCorrelator( std::move( Att ), Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT,
+                               PrintPrefix.c_str() );
             // Now see whether the first parameter is a fit range (i.e. integer index of a defined fit range)
             if( !fitRanges[ThisFitRange].Validate( ds.corr.back().Nt() ) )
             {
@@ -328,9 +329,9 @@ int main(int argc, const char *argv[])
     "         Raw       Use the raw (unbinned) data\n"
     "         Rebin     Rebin the raw data using bin size(s) specified\n"
     "         Bootstrap Use bootstrap replicas (default)\n"
-    "         H5,f[,g],d  Load INVERSE covariance from hdf5 file f, group g, dataset d"
+    "         H5,f[,g],d Load INVERSE covariance from .h5 file f, group g, dataset d\n"
     "--covboot How many bootstrap replicas in covariance (-1=no bootstrap)\n"
-    "--guess  List of specific values to use for inital guess"
+    "--guess  List of specific values to use for inital guess\n"
     "-t     Fit range1[,range2[,...]] (start:stop[:numstart=1[:numstop=numstart]])\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"

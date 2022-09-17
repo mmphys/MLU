@@ -47,37 +47,6 @@ extern "C" const char * MLUVersionInfoHuman()
 
 BEGIN_COMMON_NAMESPACE
 
-// I will use the GNU Scientific Library, but I will have GSL errors throw exceptions
-class GSLLibraryGlobal
-{
-private:
-  gsl_error_handler_t * pOldErrorHandler;
-  static void GSLErrorHandler(const char * reason, const char * file, int line, int gsl_errno );
-
-public:
-  GSLLibraryGlobal();
-  ~GSLLibraryGlobal();
-};
-
-GSLLibraryGlobal gslLibraryGlobal;
-
-GSLLibraryGlobal::GSLLibraryGlobal()
-{
-  pOldErrorHandler = gsl_set_error_handler( GSLErrorHandler );
-}
-
-GSLLibraryGlobal::~GSLLibraryGlobal()
-{
-  gsl_set_error_handler( pOldErrorHandler );
-}
-
-void GSLLibraryGlobal::GSLErrorHandler(const char * reason, const char * file, int line, int gsl_errno )
-{
-  std::stringstream ss;
-  ss << "gsl: " << file << ":" << line << ": errno " << gsl_errno << ": " << reason;
-  throw std::runtime_error( ss.str().c_str() );
-}
-
 // Text required for summaries of correlators
 namespace CorrSumm {
   const char sep[] = " ";
@@ -85,17 +54,6 @@ namespace CorrSumm {
   const char * FieldNames[NumFields] = { "corr", "exp", "cosh" };
 };
 
-extern const std::string Empty{ "" };
-extern const std::string Space{ " " };
-extern const std::string WhiteSpace{ " \t\n\r\f\v" };
-extern const std::string Underscore{ "_" };
-extern const std::string Period{ "." };
-extern const std::string Colon{ ":" };
-extern const std::string NewLine{ "\n" };
-extern const std::string Comma{ "," };
-extern const std::string CommaSpace{ ", " };
-extern const std::string Hash{ "#" };
-extern const std::string EqualSign{ "=" };
 const std::string sBootstrap{ "bootstrap" };
 const std::string sFold{ "fold" };
 const std::string sModel{ "model" };
@@ -268,162 +226,6 @@ namespace Gamma
   }
 };
 
-// Default delimeters for the next couple of functions
-extern const char szDefaultDelimeters[] = " \t,";
-
-// Remove anything past the last delimeter from string, returning the removed part in suffix
-// Return success / fail
-bool ExtractSuffix( std::string &String, std::string &Suffix, const char * pszDelimeters )
-{
-  if( !pszDelimeters || !*pszDelimeters )
-    pszDelimeters = szDefaultDelimeters;
-  std::size_t NumDelims{ 0 };
-  while( pszDelimeters[NumDelims] )
-    NumDelims++;
-  std::size_t Len{ String.length() };
-  bool bFoundDelim{ false };
-  while( !bFoundDelim && Len )
-  {
-    const char c{ String[--Len] };
-    for( std::size_t i = 0; !bFoundDelim && i < NumDelims; i++ )
-    {
-      bFoundDelim = ( pszDelimeters[i] == c );
-      if( bFoundDelim )
-      {
-        Suffix = String.substr( Len + 1 );
-        Trim( Suffix );
-        // Skip past multiple delimeters if they are all whitespace
-        if( c == ' ' || c == '\t' || c == '\r' || c == '\n' )
-        {
-          while( Len && ( String[Len - 1] == ' ' || String[Len - 1] == '\t'
-                         || String[Len - 1] == '\r' || String[Len - 1] == '\n' ) )
-            --Len;
-        }
-        String.resize( Len );
-      }
-    }
-  }
-  return bFoundDelim;
-}
-
-// Remove the directory from the start of FileName (leave the trailing '/' in place)
-std::string ExtractDirPrefix( std::string &FileName )
-{
-  std::string Dir = GetDirPrefix( FileName );
-  if( Dir.size() )
-    FileName.erase( 0, Dir.size() );
-  return Dir;
-}
-
-std::string GetDirPrefix( const std::string &FileName )
-{
-  std::string Dir;
-  std::size_t pos{ FileName.find_last_of( '/' ) };
-  if( pos != std::string::npos )
-    Dir = FileName.substr( 0, pos + 1 );
-  return Dir;
-}
-
-// Split String into an array using specified delimeters
-
-std::vector<std::string> Split( const std::string &String, const char * pszDelimeters )
-{
-  std::vector<std::string> a;
-  if( !pszDelimeters || !*pszDelimeters )
-    pszDelimeters = szDefaultDelimeters;
-  std::size_t NumDelims{ 0 };
-  while( pszDelimeters && pszDelimeters[NumDelims] )
-    NumDelims++;
-  const std::size_t Len{ String.length() };
-  std::size_t Start{ 0 };
-  while( Start < Len )
-  {
-    // Look for the next delimeter
-    std::size_t Pos{ Start };
-    bool bFoundDelim{ false };
-    char c = 0;
-    while( Pos < Len && !bFoundDelim )
-    {
-      c = String[Pos];
-      for( std::size_t i = 0; !bFoundDelim && i < NumDelims; i++ )
-        bFoundDelim = ( pszDelimeters[i] == c );
-      if( !bFoundDelim )
-        Pos++;
-    }
-    // Append this substring to list of items to return
-    a.push_back( String.substr( Start, Pos - Start ) );
-    // Skip past this delimeter
-    Start = Pos + 1;
-    // Skip past multiple delimeters if they are all whitespace
-    if( c == ' ' || c == '\t' || c == '\r' || c == '\n' )
-    {
-      while( Start < Len && ( String[Start] == ' ' || String[Start] == '\t'
-                             || String[Start] == '\r' || String[Start] == '\n' ) )
-        ++Start;
-    }
-  }
-  return a;
-}
-
-// Extract suffix, then split strings. Default delimeters '.' and '_' respectively
-bool ExtractSuffixSplit( std::string &String, std::vector<std::string> &Suffii,
-                        const char * pszStringDelim, const char * pszSuffixDelim )
-{
-  if( !pszStringDelim || !*pszStringDelim )
-    pszStringDelim = Period.c_str();
-  if( !pszSuffixDelim || !*pszSuffixDelim )
-    pszSuffixDelim = Underscore.c_str();
-  std::string Suffix;
-  const bool bExtracted{ ExtractSuffix( String, Suffix, pszStringDelim ) };
-  if( bExtracted )
-    Suffii = Split( Suffix, pszSuffixDelim );
-  return bExtracted;
-}
-
-// Zipper merge v1 and v2 if same size (otherwise just append)
-std::vector<std::string> ZipperMerge( const std::vector<std::string> &v1, const std::vector<std::string> &v2 )
-{
-  std::vector<std::string> myFileList;
-  // Merge the file lists
-  if( v1.size() == v2.size() )
-  {
-    // Same length - merge the lists like a zipper
-    myFileList.reserve( v1.size() + v2.size() );
-    auto p2 = v2.begin();
-    for( auto p1 = v1.begin(); p1 != v1.end(); ++p1, ++p2 )
-    {
-      myFileList.emplace_back( *p1 );
-      myFileList.emplace_back( *p2 );
-    }
-  }
-  else
-  {
-    myFileList = v1;
-    myFileList.insert( myFileList.end(), v2.begin(), v2.end() );
-  }
-  return myFileList;
-}
-
-// Dump the environment to stdout, prefixed by optional message
-void DumpEnv(int argc, const char * const *argv, const char * pStr )
-{
-  static const char sIndent2[]{ "    " };
-  static const char * sIndent1{ sIndent2 + 2 };
-  static const char sQuote[]{ "\"" };
-  if( pStr )
-    std::cout << pStr << std::endl;
-  std::cout << sIndent1 << argc << " arguments:" << std::endl;
-  for( int i = 0; i < argc; i++ )
-  {
-    std::cout << sIndent2 << "argv[" << i << "] = ";
-    if( argv[i] )
-      std::cout << sQuote << argv[i] << sQuote;
-    else
-      std::cout << "nullptr";
-    std::cout << std::endl;
-  }
-}
-
 // Does the specified file exist?
 bool FileExists( const std::string& Filename )
 {
@@ -479,56 +281,6 @@ std::string GetHostName()
   Buffer[BufLen] = 0;
   return std::string( Buffer );
 }
-
-template class MatrixView<double>;
-template class MatrixView<float>;
-template class MatrixView<std::complex<double>>;
-template class MatrixView<std::complex<float>>;
-
-template <typename T>
-void VectorView<T>::MapRow( const Matrix<T> &m, std::size_t Row )
-{
-  if( m.size1 == 0 || m.size2 == 0 )
-    throw std::runtime_error( "VectorView::MapRow() empty matrix" );
-  if( Row >= m.size1 )
-    throw std::runtime_error( "Row " + std::to_string( Row ) + " > " + std::to_string( m.size1 ) );
-  Map( reinterpret_cast<Scalar *>( m.data ) + m.tda * Row, m.size2, 1 );
-}
-
-template <typename T>
-void VectorView<T>::MapRow( const MatrixView<T> &m, std::size_t Row )
-{
-  if( m.size1() == 0 || m.size2() == 0 )
-    throw std::runtime_error( "VectorView::MapRow() empty matrix" );
-  if( Row >= m.size1() )
-    throw std::runtime_error( "Row " + std::to_string( Row ) + " > " + std::to_string( m.size1() ) );
-  Map( m.data() + m.tda() * Row, m.size2(), 1 );
-}
-
-template <typename T>
-void VectorView<T>::MapColumn( const Matrix<T> &m, std::size_t Column )
-{
-  if( m.size1 == 0 || m.size2 == 0 )
-    throw std::runtime_error( "VectorView::MapColumn() empty matrix" );
-  if( Column >= m.size2 )
-    throw std::runtime_error( "Column " + std::to_string( Column ) + " > " + std::to_string( m.size2 ) );
-  Map( reinterpret_cast<Scalar *>( m.data ) + Column, m.size1, m.tda );
-}
-
-template <typename T>
-void VectorView<T>::MapColumn( const MatrixView<T> &m, std::size_t Column )
-{
-  if( m.size1() == 0 || m.size2() == 0 )
-    throw std::runtime_error( "VectorView::MapColumn() empty matrix" );
-  if( Column >= m.size2() )
-    throw std::runtime_error( "Column " + std::to_string( Column ) + " > " + std::to_string( m.size2() ) );
-  Map( m.data() + Column, m.size1(), m.tda() );
-}
-
-template class VectorView<double>;
-template class VectorView<float>;
-template class VectorView<std::complex<double>>;
-template class VectorView<std::complex<float>>;
 
 // Read a bootstrap replica from an HDF5 group
 template <typename T>
@@ -1810,6 +1562,27 @@ template class Model<float>;
 template class Model<std::complex<double>>;
 template class Model<std::complex<float>>;
 
+bool ConstantSource::Key::Less::operator()( const Key &lhs, const Key &rhs ) const
+{
+  if( lhs.Object.size() != rhs.Object.size() )
+    return lhs.Object.size() < rhs.Object.size();
+  for( std::size_t i = 0; i < lhs.Object.size(); ++i )
+  {
+    int c{ Common::CompareIgnoreCase( lhs.Object[i], rhs.Object[i] ) };
+    if( c )
+      return c < 0;
+  }
+  return Common::CompareIgnoreCase( lhs.Name, rhs.Name ) < 0;
+}
+
+std::ostream &operator<<( std::ostream &os, const ConstantSource::Key &key )
+{
+  for( const std::string &s : key.Object )
+    os << s << '-';
+  return os << key.Name;
+}
+
+
 // Make non-random numbers 0 ... m.size1 - 1 to simplify central replica code
 // If the sample is already bootstrapped, then we won't need these numbers
 template <typename T>
@@ -2252,8 +2025,8 @@ void DataSet<T>::SaveMatrixFile( const Matrix<T> &m, const std::string &Type, co
       Abbreviations.emplace_back( 1, 'A' + f );
   }
   // Save a command which can be used to plot this file
-  s << "# gnuplot: set xtics rotate noenhanced; set ytics noenhanced; set title noenhanced '" << Filename
-    << "'; set key font 'Arial,8' top right noenhanced; ";
+  s << "# gnuplot: set xtics rotate noenhanced font 'Arial,4'; set ytics noenhanced font 'Arial,4';"
+    << " set title noenhanced '" << Filename << "'; unset key; ";
   if( pGnuplotExtra && *pGnuplotExtra )
     s << pGnuplotExtra << "; ";
   s << "plot '" << Filename << "' matrix columnheaders rowheaders with image pixels\n";
@@ -2287,7 +2060,7 @@ void DataSet<T>::AddConstant( const typename ConstantSource::Key &Key, std::size
 {
   static const char Invalid[] = " invalid";
   std::ostringstream os;
-  os << "DataSet::AddConstant " << Key.Object << "/" << Key.Name << Space;
+  os << "DataSet::AddConstant " << Key << Space;
   if( constMap.find( Key ) != constMap.end() )
   {
     os << "loaded from multiple model files";
@@ -2376,11 +2149,17 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
   const std::vector<std::string> &ColumnNames{ constFile[i].GetColumnNames() };
   const std::vector<std::string> &OpNames{ constFile[i].OpNames };
   const unsigned int NumExponents{ static_cast<unsigned int>( constFile[i].NumExponents ) };
-  const std::size_t Stride{ OpNames.size() + 1 };
-  const std::size_t SingleOffset{ Stride * NumExponents };
+  const std::size_t OpsPerExp{ OpNames.size() + 1 };
+  const bool bTempFormat{ NumExponents > 1 && ColumnNames[1].size() == 2
+                       && std::toupper( ColumnNames[1][0] ) == 'E' && ColumnNames[1][1] == '1' };
+  const std::size_t Stride{ bTempFormat ? 1 : OpsPerExp };
+  const std::size_t SingleOffset{ OpsPerExp * NumExponents };
   const std::size_t SingleNum{ ColumnNames.size() - SingleOffset };
   typename ConstantSource::Key Key;
-  Key.Object = constFile[i].Name_.Base;
+  Key.Object = { constFile[i].Name_.Base };
+  std::size_t pos = Key.Object[0].find_first_of( '.' );
+  if( pos != std::string::npos )
+    Key.Object[0].resize( pos );
   if( vThisArg.empty() )
   {
     // Load every constant in this file
@@ -2390,10 +2169,10 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
         Key.Name.resize( Key.Name.size() - 1 );
       AddConstant( Key, i, 0, NumExponents, Stride );
     }
-    for( int j = 1; j < Stride; ++j )
+    for( int j = 1; j < OpsPerExp; ++j )
     {
       Key.Name = OpNames[j-1];
-      AddConstant( Key, i, j, NumExponents, Stride );
+      AddConstant( Key, i, j * ( bTempFormat ? NumExponents : 1 ), NumExponents, Stride );
     }
     for( std::size_t j = SingleOffset; j < ColumnNames.size(); ++j )
     {
@@ -2415,8 +2194,8 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
       std::size_t j = 0;
       if( !Common::EqualIgnoreCase( EnergyPrefix, vLookFor ) )
         j = Common::IndexIgnoreCase( OpNames, vLookFor ) + 1;
-      if( j < Stride )
-        AddConstant( Key, i, j, NumExponents, Stride );
+      if( j < OpsPerExp )
+        AddConstant( Key, i, j * ( bTempFormat ? NumExponents : 1 ), NumExponents, Stride );
       else
       {
         j = SingleOffset;

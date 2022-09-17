@@ -30,6 +30,7 @@
 #define MultiFit_hpp
 
 #include <MLU/Common.hpp>
+#include "Param.hpp"
 
 // Uncomment the next line if your cmath doesn't define M_PI etc by default
 //#define _USE_MATH_DEFINES
@@ -46,9 +47,12 @@ using Fold = Common::Fold<scalar>;
 using vCorrelator = std::vector<Fold>;
 using ModelFile = Common::Model<scalar>;
 using DataSet = Common::DataSet<scalar>;
+using ConstantSource = Common::ConstantSource;
 using vString = std::vector<std::string>;
 using vInt = std::vector<int>;
 using UniqueNames = Common::UniqueNames;
+using Param = Common::Param;
+using Params = Common::Params;
 
 // Indices for operators in correlator names
 constexpr int idxSrc{ 0 };

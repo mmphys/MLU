@@ -35,7 +35,7 @@ void FitterThreadMinuit2::DumpParamsFitter( std::ostream &os ) const
   if( state.bValid )
     os << Minuit2State;
   else
-    parent.mp.Dump( os, ModelParams, Param::Type::All, state.bValid ? &state.FitterErrors : nullptr );
+    parent.mp.Dump( os, ModelParams, Param::Type::Variable, state.bValid ? &state.ModelErrors : nullptr );
 }
 
 void FitterThreadMinuit2::ReplicaMessage( std::ostream &os ) const
@@ -54,7 +54,7 @@ double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
 {
   FitterThreadMinuit2 * pMe{ const_cast<FitterThreadMinuit2 *>( this ) };
   if( !pMe->SaveError( Error, &par[0], par.size() ) )
-    return std::numeric_limits<double>::max();
+    return Common::NaN;
   double chi2;
   if( bCorrelated )
     chi2 = Error.Dot( Cholesky.CholeskySolve( Error ) );
@@ -80,9 +80,10 @@ void FitterThreadMinuit2::Minimise( int iNumGuesses )
       if( p.type == Param::Type::Variable )
       {
         for( std::size_t i = 0; i < p.size; ++i )
-          Par.Add( it.first.FullName( i, p.size ), FitterParams[p(i,Param::Type::Variable)] );
+          Par.Add( it.first.FullName( i, p.size ), FitterParams[p(i,Param::Type::Variable)], 0 );
       }
     }
+    state.NumCalls = 0;
   }
   ROOT::Minuit2::FunctionMinimum min = Minimiser.Minimize( *this, state.bValid ? Minuit2State : Par,
                                                            Strategy, parent.MaxIt, parent.Tolerance * 1000 );
@@ -91,29 +92,21 @@ void FitterThreadMinuit2::Minimise( int iNumGuesses )
     throw std::runtime_error( ReplicaString( iNumGuesses ) + " did not converge" );
   Minuit2State = M2State;
   state.TestStat = M2State.Fval();
-  state.NumCalls = M2State.NFcn();
+  state.NumCalls += M2State.NFcn();
   state.bValid = true;
   const std::vector<double> M2Params{ M2State.Parameters().Params() };
   const std::vector<double> M2Errors{ M2State.Parameters().Errors() };
   if( M2Params.size() != FitterParams.size )
     throw std::runtime_error( "FitterThreadMinuit2::Minimise incorrect parameter size "
                              + std::to_string( M2Params.size() ) );
-  if( M2Errors.size() != state.FitterErrors.size )
+  if( M2Errors.size() != state.FitterErrors.size || M2Errors.size() != M2Params.size() )
     throw std::runtime_error( "FitterThreadMinuit2::Minimise incorrect error size "
                              + std::to_string( M2Errors.size() ) );
+  // Copy the error the fitter computed for each parameter
   for( std::size_t i = 0; i < M2Errors.size(); ++i )
   {
-    // Copy the error the fitter computed for each parameter
+    FitterParams[i] = M2Params[i];
     state.FitterErrors[i] = M2Errors[i];
-    // Don't think this is really necessary - we should already have the latest params from fitter
-    if( M2Params[i] != ModelParams[i] )
-    {
-      std::ostringstream os;
-      os << std::setprecision(std::numeric_limits<double>::digits10 + 1)
-         << "FitterThreadMinuit2::Minimise Minuit2 param[" << i << "] " << M2Params[i]
-         << " != FitterParam " << ModelParams[i];
-      throw std::runtime_error( os.str().c_str() );
-    }
   }
 }
 

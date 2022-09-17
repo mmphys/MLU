@@ -32,13 +32,14 @@
 
 #include <MLUconfig.h>
 #include <MLU/FitRange.hpp>
+#include <MLU/GSLVecMat.hpp>
+#include <MLU/String.hpp>
 
 // std c++
 #include <array>
 #include <algorithm>
 #include <cassert>
 #include <cctype>
-#include <complex>
 #include <fstream>
 #include <iomanip>
 #include <ios>
@@ -54,25 +55,10 @@
 #include <glob.h>
 #include <unistd.h>
 
-// GSL
-#define HAVE_INLINE
-#define GSL_RANGE_CHECK_OFF
-#include <gsl/gsl_cdf.h>
-#include <gsl/gsl_blas.h>
-#include <gsl/gsl_block.h>
-#include <gsl/gsl_cblas.h>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_vector.h>
-
 // HDF5 Library
 #include <H5Cpp.h>
 #include <H5CompType.h>
 #include <H5public.h>
-
-// Eigen dense matrices
-#include <Grid/Eigen/Dense>
 
 // Default output file extension for binary data
 #ifndef DEF_FMT
@@ -103,42 +89,6 @@ template <typename T> int sgn( T x )
   return (T(0) < x) - (x < T(0));
 }
 
-// Compare characters, by default ignoring case
-template <class _CharT>
-inline int Compare( _CharT a, _CharT b, bool bIgnoreCase = true )
-{
-  if( bIgnoreCase )
-  {
-    a = std::toupper( a );
-    b = std::toupper( b );
-  }
-  if( a == b )
-    return 0;
-  if( a < b )
-    return -1;
-  return 1;
-}
-
-// Check that a stream is empty ... or only contains white space to end of stream
-template <class _CharT, class _Traits>
-inline bool StreamEmpty( std::basic_istream<_CharT, _Traits> & s )
-{
-  return s.eof() || ( s >> std::ws && s.eof() );
-}
-
-// Return true if the next, non-whitespace character in the stream is the character specified (and if so, consume it)
-template <class _CharT, class _Traits>
-inline bool NextCharIs( std::basic_istream<_CharT, _Traits> & s, _CharT c, bool bOptional = false, bool bIgnoreCase = true )
-{
-  if( StreamEmpty( s ) )
-    return bOptional;
-  _CharT d = s.peek();
-  const bool bIsEqual{ !Compare( c, d, bIgnoreCase ) };
-  if( bIsEqual )
-    s.get();
-  return bIsEqual;
-}
-
 // Text required for summaries of correlators
 namespace CorrSumm {
   extern const char sep[];
@@ -146,89 +96,6 @@ namespace CorrSumm {
   static constexpr int NumFields{ 3 };
   extern const char * FieldNames[NumFields];
 };
-
-extern const std::string Empty;
-extern const std::string Space;
-extern const std::string WhiteSpace;
-extern const std::string Underscore;
-extern const std::string Period;
-extern const std::string Colon;
-extern const std::string NewLine;
-extern const std::string Comma;
-extern const std::string CommaSpace;
-extern const std::string Hash;
-extern const std::string EqualSign;
-
-// Compare two strings, case insensitive
-inline int CompareIgnoreCase(const std::string &s1, const std::string &s2)
-{
-  const std::size_t Len1{ s1.size() };
-  const std::size_t Len2{ s2.size() };
-  const std::size_t Len{ std::min( Len1, Len2 ) };
-  for( std::size_t i = 0; i < Len; ++i )
-  {
-    int compare = Compare( s1[i], s2[i] );
-    if( compare )
-      return compare;
-  }
-  if( Len1 == Len2 )
-    return 0;
-  if( Len1 < Len2 )
-    return -1;
-  return 1;
-}
-
-// Compare two strings, case insensitive
-inline bool EqualIgnoreCase(const std::string &s1, const std::string &s2)
-{
-  if( s1.size() != s2.size() )
-    return false;
-  return !CompareIgnoreCase( s1, s2 );
-}
-
-// Find the index of the specified string in the array, or array size if not found
-template <typename C = std::vector<std::string>>
-inline int IndexIgnoreCase( const C &v, const std::string &s )
-{
-  assert( v.size() < std::numeric_limits<int>::max() && "Terribly inefficient search!" );
-  int idx = 0;
-  for( ; idx < v.size() && !Common::EqualIgnoreCase( v[idx], s ); ++idx )
-    ;
-  return idx;
-}
-
-// Ensure that the vector has the required length and no duplicates
-
-template <typename T> void NoDuplicates( const std::vector<T> &v, const std::string &sErrorPrefix, std::size_t MinSize )
-{
-  if( v.size() < MinSize )
-  {
-    std::stringstream ss;
-    ss << sErrorPrefix << " contains " << v.size() << " entries, but " << MinSize
-       << (MinSize == 1 ? " is" : " are") << " required";
-    throw std::runtime_error( ss.str() );
-  }
-  if( v.size() > 1 )
-  {
-    std::vector<T> vc{ v };
-    std::sort( vc.begin(), vc.end() );
-    const auto dup = std::adjacent_find( vc.begin(), vc.end() );
-    if( dup != vc.end() )
-    {
-      std::stringstream ss;
-      ss << sErrorPrefix << " contains duplicates, e.g. " << *dup;
-      throw std::runtime_error( ss.str() );
-    }
-  }
-}
-
-struct LessCaseInsensitive
-{
-  bool operator()( const std::string &lhs, const std::string &rhs ) const { return CompareIgnoreCase( lhs, rhs ) < 0;}
-};
-
-// A list of case insensitive, but unique names, each mapped to an int
-using UniqueNames = std::map<std::string, int, Common::LessCaseInsensitive>;
 
 namespace Gamma
 {
@@ -332,211 +199,6 @@ extern const std::vector<std::string> sCorrSummaryNames;
 extern const std::string sChiSqPerDof;
 
 using SeedType = unsigned int;
-
-// Remove leading and trailing whitespace from string
-// Returns true if the string contains something after the trim
-inline bool Trim( std::string &s )
-{
-  bool bHasString( !s.empty() );
-  if( bHasString )
-  {
-    std::size_t first{ s.find_first_not_of( WhiteSpace ) };
-    if( first == std::string::npos )
-    {
-      s.clear();
-      bHasString = false;
-    }
-    else
-    {
-      std::size_t OnePastLast{ s.find_last_not_of( WhiteSpace ) + 1 };
-      if( first )
-        s = s.substr( first, OnePastLast - first );
-      else if( OnePastLast != s.length() )
-        s.resize( OnePastLast );
-    }
-  }
-  return bHasString;
-}
-
-// Generic conversion from a string to any type
-template<typename T> inline T FromString( const std::string &String )
-{
-  T t;
-  std::istringstream iss( String );
-  if( std::is_same<T, bool>::value )
-    iss >> std::boolalpha;
-  if( !( iss >> t && StreamEmpty( iss ) ) )
-    throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
-  return t;
-}
-
-template<typename T> inline T FromString( std::string &&String )
-{
-  T t;
-  std::istringstream iss( std::move( String ) );
-  if( std::is_same<T, bool>::value )
-    iss >> std::boolalpha;
-  if( !( iss >> t && StreamEmpty( iss ) ) )
-    throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
-  return t;
-}
-
-// Converting a string to a string makes a copy
-template<> inline std::string FromString<std::string>( const std::string &String )
-{
-  std::string s{ String };
-  Trim( s );
-  return s;
-}
-
-// Converting a string to a string can also move
-template<> inline std::string FromString<std::string>( std::string &&String )
-{
-  std::string s{ std::move( String ) };
-  Trim( s );
-  return s;
-}
-
-// Generic conversion from a string to any type - with a default if missing
-template<typename T> inline T FromString( const std::string &String, T Default )
-{
-  std::istringstream iss( String );
-  if( StreamEmpty( iss ) )
-    return Default;
-  T t;
-  if( !( iss >> t && StreamEmpty( iss ) ) )
-    throw std::invalid_argument( "Argument \"" + String + "\" is not type " + typeid(T).name() );
-  return t;
-}
-
-// Converting a string to a string makes a copy - unless the string is empty, in which case we get the default
-template<> inline std::string FromString<std::string>( const std::string &String, std::string Default )
-{
-  std::string s{ String };
-  if( Trim( s ) )
-    return s;
-  return Default;
-}
-
-// Generic conversion from a string to an array of any type (comma or space separated)
-template<typename T> inline typename std::enable_if<!std::is_same<T, std::string>::value, std::vector<T>>::type
-  ArrayFromString( const std::string &String, std::vector<bool> *pNeg = nullptr )
-{
-  std::string s{ String };
-  for( std::size_t pos = 0; ( pos = s.find( ',', pos ) ) != std::string::npos; )
-    s[pos] = ' ';
-  std::istringstream iss( s );
-  std::vector<T> v;
-  if( pNeg )
-    pNeg->clear();
-  for( T t; !StreamEmpty( iss ); )
-  {
-    bool bSign{ pNeg && iss.peek() == '-' };
-    if( bSign )
-      assert( iss.get() == '-' );
-    if( !( iss >> t ) )
-      throw std::invalid_argument( "ArrayFromString: \"" + String + "\" is not type " + typeid(T).name() );
-    v.push_back( t );
-    if( pNeg )
-      pNeg->push_back( bSign );
-  }
-  return v;
-}
-
-// Split string into an array of strings using separator(s). Trim leading and trailing white space
-inline std::vector<std::string> ArrayFromString( const std::string &String, const std::string &Separators = Comma )
-{
-  std::vector<std::string> v;
-  std::string s{ String };
-  std::size_t pos = 0;
-  do
-  {
-    // Skip past leading white space
-    while( pos < s.size() && std::isspace( s[pos] ) )
-      pos++;
-    if( pos < s.size() )
-    {
-      // There is definitely a string here
-      std::size_t end = s.find_first_of( Separators, pos );
-      if( end == std::string::npos )
-        end = s.size();
-      const std::size_t LastSep{ end };
-      // Now remove trailing white space
-      while( end > pos && std::isspace( s[end - 1] ) )
-        --end;
-      v.emplace_back( &s[pos], end - pos );
-      // Start looking for next sub-string beyond the separator
-      pos = LastSep;
-      if( pos < s.size() )
-        ++pos;
-    }
-  }
-  while( pos < s.size() );
-  return v;
-}
-
-// Extract and return up to first separator. Trim leading and trailing white space
-inline std::string ExtractToSeparator( std::string &String, const std::string &Separators = Comma )
-{
-  std::string s;
-  if( !String.empty() )
-  {
-    const std::size_t first{ String.find_first_not_of( WhiteSpace ) };
-    if( first == std::string::npos )
-      String.clear();
-    else
-    {
-      std::size_t pos = String.find_first_of( Separators, first );
-      if( pos == std::string::npos )
-        s = std::move( String );
-      else
-      {
-        // Return the string from first non-whitespace up to the separator
-        s = String.substr( first, pos - first );
-        // Now trim the trailing string
-        const std::size_t part2_start{ String.find_first_not_of( WhiteSpace, pos + 1 ) };
-        if( part2_start == std::string::npos )
-          String.clear();
-        else
-        {
-          const std::size_t part2_stop{ String.find_last_not_of( WhiteSpace ) };
-          String = String.substr( part2_start, part2_stop - part2_start + 1 );
-        }
-      }
-      Trim( s );
-    }
-  }
-  return s;
-}
-
-// Remove the number from the end of a string
-inline bool ExtractTrailing( std::string &s, int &i )
-{
-  std::size_t pos{ s.find_last_not_of( WhiteSpace ) };
-  if( pos != std::string::npos && std::isdigit( s[pos] ) )
-  {
-    while( pos && std::isdigit( s[pos - 1] ) )
-      --pos;
-    if( pos && s[pos - 1] == '-' )
-      --pos;
-    std::stringstream ss( s.substr( pos ) );
-    if( ss >> i )
-    {
-      s.resize( pos );
-      return true;
-    }
-  }
-  return false;
-}
-
-inline std::string AppendSlash( const std::string & String )
-{
-  std::string s{ String };
-  std::size_t Len = s.length();
-  if( Len && s[Len - 1] != '/' )
-    s.append( 1, '/' );
-  return s;
-}
 
 template<typename T = int> struct StartStopStepIterator;
 
@@ -776,30 +438,6 @@ public:
   }
 };
 
-// Default delimeters for the next couple of functions
-extern const char szDefaultDelimeters[];
-
-// Remove anything past the last delimeter from string, returning the removed part in suffix
-// Return success / fail
-bool ExtractSuffix( std::string &String, std::string &Suffix, const char * pszDelimeters = nullptr );
-
-// Remove the directory from the start of FileName (leave the trailing '/' in place)
-std::string ExtractDirPrefix( std::string &FileName );
-std::string GetDirPrefix( const std::string &FileName );
-
-// Split String into an array using specified delimeters
-std::vector<std::string> Split( const std::string &String, const char * pszDelimeters = nullptr );
-
-// Extract suffix, then split strings. Default delimeters '.' and '_' respectively
-bool ExtractSuffixSplit( std::string &String, std::vector<std::string> &Suffii,
-                        const char * pszStringDelim = nullptr, const char * pszSuffixDelim = nullptr );
-
-// Zipper merge v1 and v2 if same size (otherwise just append)
-std::vector<std::string> ZipperMerge( const std::vector<std::string> &v1, const std::vector<std::string> &v2 );
-
-// Dump the environment to stdout, prefixed by optional message
-void DumpEnv(int argc, const char * const *argv, const char * pStr = nullptr );
-
 // Make the ancestor directories leading up to last element
 // NB: Don't test whether this worked, so that it if this is done simultaneously
 // by many threads, it will still work
@@ -842,237 +480,6 @@ std::vector<std::string> glob( const Iter &first, const Iter &last, const char *
 
 // Wrapper for posix gethostname()
 std::string GetHostName();
-
-extern const double NaN;
-
-// test whether a type is complex
-template<typename T> struct is_complex                  : public std::false_type {};
-template<typename T> struct is_complex<std::complex<T>> : public std::true_type {};
-
-// Allow real and complex numbers to be squared and square rooted
-template <typename T> typename std::enable_if< is_complex<T>::value, T>::type
-Squared( T z ) { return z * std::conj( z ); }
-template <typename T> typename std::enable_if<!is_complex<T>::value, T>::type
-Squared( T z ) { return z * z; }
-
-// Component-wise absolute value for complex types
-template<typename T> typename std::enable_if<is_complex<T>::value, T>::type
-ComponentAbs( T c ) { return { std::abs( c.real() ), std::abs( c.imag() ) }; }
-
-// Component-wise absolute value for scalars
-template<typename T> typename std::enable_if<!(is_complex<T>::value), T>::type
-ComponentAbs( T r ) { return std::abs( r ); }
-
-// IsFinite() for floats and complex types
-template<typename T> inline typename std::enable_if<is_complex<T>::value, bool>::type
-IsFinite( const T &c ) { return std::isfinite( c.real() ) && std::isfinite( c.imag() ); }
-template<typename T> inline typename std::enable_if<std::is_floating_point<T>::value, bool>::type
-IsFinite( const T &c ) { return std::isfinite( c ); }
-
-// Are all the floating point numbers pointed to finite
-template <typename T, typename I> inline bool IsFinite( const T * d, I n )
-{
-  while( n-- )
-    if( !IsFinite( *d++ ) )
-      return false;
-  return true;
-}
-
-// Are all the floating point numbers in this vector finite
-template <typename T> inline bool IsFinite( const std::vector<T> & v )
-{
-  for( const T &n : v )
-    if( !IsFinite( n ) )
-      return false;
-  return true;
-}
-
-// Are all the floating point numbers in this Eigen::matrix finite
-template <typename T> inline bool IsFinite( const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> & m, bool bDiagonalsOnly = false )
-{
-  for( Eigen::Index row = 0; row < m.rows(); ++row )
-    for( Eigen::Index col = 0; col < m.cols(); ++col )
-      if( ( !bDiagonalsOnly || row == col ) && !IsFinite( m( row, col ) ) )
-        return false;
-  return true;
-}
-
-// My support for vectors and matrices - wrapper for GSL
-template <typename T> struct GSLTraits;
-template <typename T> struct Vector;
-template <typename T> struct Matrix;
-
-template<> struct GSLTraits<double>
-{
-  using Scalar     = double;
-  using Real       = double;
-  using GSLScalar  = double;
-  using GSLBlockType  = gsl_block;
-  using GSLVectorType = gsl_vector;
-  using GSLMatrixType = gsl_matrix;
-};
-
-template<> struct GSLTraits<float>
-{
-  using Scalar     = float;
-  using Real       = float;
-  using GSLScalar  = float;
-  using GSLBlockType  = gsl_block_float;
-  using GSLVectorType = gsl_vector_float;
-  using GSLMatrixType = gsl_matrix_float;
-};
-
-template<> struct GSLTraits<std::complex<double>>
-{
-  using Scalar     = std::complex<double>;
-  using Real       = double;
-  using GSLScalar  = gsl_complex;
-  using GSLBlockType  = gsl_block_complex;
-  using GSLVectorType = gsl_vector_complex;
-  using GSLMatrixType = gsl_matrix_complex;
-};
-
-template<> struct GSLTraits<std::complex<float>>
-{
-  using Scalar     = std::complex<float>;
-  using Real       = float;
-  using GSLScalar  = gsl_complex_float;
-  using GSLBlockType  = gsl_block_complex_float;
-  using GSLVectorType = gsl_vector_complex_float;
-  using GSLMatrixType = gsl_matrix_complex_float;
-};
-
-//#define EXPAND(...) __VA_ARGS__
-
-#define COMMON_GSL_TYPE double
-#define COMMON_GSL_BLAS( x ) gsl_blas_d ## x
-#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_d ## x
-#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_d ## x
-#define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _ ## func
-#define COMMON_GSL_OPTIONAL
-#define COMMON_GSL_DOUBLE
-#include "CommonGSL.hpp"
-#undef COMMON_GSL_DOUBLE
-#undef COMMON_GSL_OPTIONAL
-#define COMMON_GSL_TYPE float
-#define COMMON_GSL_BLAS( x ) gsl_blas_s ## x
-#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_s ## x
-#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_s ## x
-#define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _float ## _ ## func
-#include "CommonGSL.hpp"
-#define COMMON_GSL_TYPE std::complex<double>
-#define COMMON_GSL_BLAS( x ) gsl_blas_z ## x
-#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_dz ## x
-#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_z ## x ## u
-#define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _complex ## _ ## func
-#define COMMON_GSL_OPTIONAL
-#include "CommonGSL.hpp"
-#undef COMMON_GSL_OPTIONAL
-#define COMMON_GSL_TYPE std::complex<float>
-#define COMMON_GSL_BLAS( x ) gsl_blas_c ## x
-#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_sc ## x
-#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_c ## x ## c
-#define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _complex_float ## _ ## func
-#include "CommonGSL.hpp"
-
-// GSL objects don't work well with const objects
-
-template <typename T> class MatrixView
-{
-  using Scalar = T;
-protected:
-  const T * data_;
-  std::size_t size1_;
-  std::size_t size2_;
-  std::size_t tda_;
-public:
-  const T * data() const { return data_; }
-  std::size_t size() const { return size1_ * size2_; }
-  std::size_t size1() const { return size1_; }
-  std::size_t size2() const { return size2_; }
-  std::size_t tda() const { return tda_; }
-  /*const T * begin() const { return data_; }
-  const T * end() const { return data_ + size_; }*/
-  void clear() { data_ = nullptr; size1_ = 0; size2_ = 0; tda_ = 0; }
-  inline const Scalar & operator()( std::size_t i, std::size_t j ) const
-  {
-    if( i >= size1_ || j >= size2_ )
-    {
-      std::ostringstream ss;
-      ss << "MatrixView( " << i << ", " << j << " ) out of bounds (" << size1_ << ", " << size2_ << ")";
-      throw std::runtime_error( ss.str().c_str() );
-    }
-    return data_[i * tda_ + j];
-  }
-  inline void Map( const T * Data, std::size_t Size1, std::size_t Size2, std::size_t Tda )
-  { data_ = Data; size1_ = Size1; size2_ = Size2; tda_ = Tda; }
-  inline void Map( const T * Data, std::size_t Size1, std::size_t Size2 ) { Map( Data, Size1, Size2, Size2 ); }
-  inline MatrixView<T> &operator=( const Matrix<T> &m )
-  {
-    Map( reinterpret_cast<T *>( m.data ), m.size1, m.size2, m.tda );
-    return *this;
-  }
-  inline MatrixView<T> &operator=( const MatrixView<T> &m )
-  {
-    Map( m.data(), m.size1(), m.size2(), m.tda() );
-    return *this;
-  }
-  // Constructors
-  MatrixView() { clear(); }
-  MatrixView( const Matrix<T> &m ) { *this = m; }
-  MatrixView( const MatrixView<T> &m ) { *this = m; }
-};
-
-template <typename T> class VectorView
-{
-  using Scalar = T;
-protected:
-  const T * data_;
-  std::size_t size_;
-  std::size_t stride_;
-public:
-  const T * data() const { return data_; }
-  std::size_t size() const { return size_; }
-  void size( std::size_t NewSize ) { size_ = NewSize; }
-  std::size_t stride() const { return stride_; }
-  const T * begin() const { return data_; }
-  const T * end() const { return data_ + size_ * stride_; }
-  void clear() { data_ = nullptr; size_ = 0; stride_ = 1; }
-  inline const Scalar & operator[]( std::size_t i ) const
-  {
-    if( i >= size_ )
-      throw std::runtime_error("VectorView index " + std::to_string(i) + " >= size " + std::to_string(size_));
-    return data_[i * stride_];
-  }
-  inline void Map( const T * Data, std::size_t Size, std::size_t Stride = 1 )
-  { data_ = Data; size_ = Size; stride_ = Stride; }
-  inline VectorView<T> &operator=( const Vector<T> &v )
-  {
-    Map( reinterpret_cast<T *>( v.data ), v.size, v.stride );
-    return *this;
-  }
-  inline VectorView<T> &operator=( const VectorView<T> &v )
-  {
-    Map( v.data(), v.size(), v.stride() );
-    return *this;
-  }
-  inline VectorView<T> &operator=( const std::vector<T> &v )
-  {
-    Map( v.data(), v.size() );
-    return *this;
-  }
-  inline VectorView<T> operator+=( std::size_t Delta ) { data_ += Delta * stride_; return *this; };
-  void MapRow( const Matrix<T> &m, std::size_t Row );
-  void MapRow( const MatrixView<T> &m, std::size_t Row );
-  void MapColumn( const Matrix<T> &m, std::size_t Column );
-  void MapColumn( const MatrixView<T> &m, std::size_t Column );
-  // Constructors
-  VectorView() { clear(); }
-  VectorView( const T * Data, std::size_t Size, std::size_t Stride = 1 ) { Map( Data, Size, Stride ); }
-  VectorView( const Vector<T> &m ) { *this = m; }
-  VectorView( const VectorView<T> &m ) { *this = m; }
-  VectorView( const std::vector<T> &m ) { *this = m; }
-};
 
 template<typename T> struct BootRep
 {
@@ -2516,7 +1923,6 @@ void CorrelatorFile<T>::WriteSummary( const std::string &Prefix, const std::vect
 }
 
 // Generate random numbers
-using fint = std::uint_fast32_t;
 void GenerateRandom( std::vector<fint> &Random, SeedType Seed, std::size_t NumBoot, std::size_t NumSamples );
 
 enum class SampleSource { Binned, Raw, Bootstrap };
@@ -4132,33 +3538,25 @@ public:
   void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const override;
 };
 
+struct ConstantSource
+{
+  struct Key
+  {
+    std::vector<std::string> Object; // Name of the object these parameters describe, e.g. D_s meson, p^2=1
+    std::string Name;   // Name of the parameter
+    struct Less { bool operator()( const Key &lhs, const Key &rhs ) const; };
+  };
+  std::size_t File; // Index of the constant file in the DataSet this comes from
+  std::vector<std::size_t> idx;  // Indices of the parameters in this file
+  ConstantSource( std::size_t File_, std::vector<std::size_t> &&idx_ ) : File{File_}, idx{idx_} {}
+};
+
+std::ostream &operator<<( std::ostream &os, const ConstantSource::Key &key );
+
 template <typename T>
 struct DataSet
 {
   using SS = SampleSource;
-  struct ConstantSource
-  {
-    struct Key
-    {
-      std::string Object; // Name of the object these parameters describe, e.g. D_s meson, p^2=1
-      std::string Name;   // Name of the parameter
-      std::size_t Len() const { return Object.length() + ( Object.empty() ? 0 : 1 ) + Name.length(); }
-      
-      struct Less
-      {
-        bool operator()( const Key &lhs, const Key &rhs ) const
-        {
-          int i = Common::CompareIgnoreCase( lhs.Object, rhs.Object );
-          if( i == 0 )
-            i = Common::CompareIgnoreCase( lhs.Name, rhs.Name );
-          return i < 0;
-        }
-      };
-    };
-    std::size_t File; // Index of the constant file in the DataSet this comes from
-    std::vector<std::size_t> idx;  // Indices of the parameters in this file
-    ConstantSource( std::size_t File_, std::vector<std::size_t> &&idx_ ) : File{File_}, idx{idx_} {}
-  };
   using ConstMap = std::map<typename ConstantSource::Key, ConstantSource, typename ConstantSource::Key::Less>;
   struct FixedParam
   {
