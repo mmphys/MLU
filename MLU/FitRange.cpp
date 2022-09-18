@@ -49,7 +49,7 @@ void FitRanges::Deserialise( const std::vector<std::string> &vString )
     Base New;
     New.reserve( vString.size() );
     for( std::size_t i = 0; i < vString.size(); ++i )
-      New.emplace_back( FitRange::Deserialise( vString[i] ) );
+      New.emplace_back( FitRange::Deserialise( vString[i], i ) );
     // Now sort them so that fit ranges appear BEFORE the fit ranges they depend on
     // Use Kahn's algorithm, https://en.wikipedia.org/wiki/Topological_sorting
     struct DepTrack
@@ -124,9 +124,9 @@ void FitRanges::Deserialise( const std::vector<std::string> &vString )
 
 // Deserialise a single fit range, by trying all possible deserialisations in turn
 
-FitRange * FitRange::Deserialise( const std::string &String )
+FitRange * FitRange::Deserialise( const std::string &String, std::size_t MyIndex )
 {
-  using DeserialiseFunc = FitRange * (*)( std::istringstream &is );
+  using DeserialiseFunc = FitRange * (*)( std::istringstream &, std::size_t );
   static const std::array<DeserialiseFunc, 2> aDeserialise{ &FitRangeAbsolute::Deserialise,
     &FitRangeRelative::Deserialise };
 
@@ -135,7 +135,7 @@ FitRange * FitRange::Deserialise( const std::string &String )
     try
     {
       std::istringstream is( String );
-      FitRange * p = ( *f )( is );
+      FitRange * p = ( *f )( is, MyIndex );
       if( p )
       {
         if( is.eof() || ( is >> std::ws && is.eof() ) )
@@ -290,7 +290,7 @@ void FitRangeAbsolute::Print( std::ostream &os ) const
     os << colon << dti;
 }
 
-FitRange * FitRangeAbsolute::Deserialise( std::istringstream &is )
+FitRange * FitRangeAbsolute::Deserialise( std::istringstream &is, std::size_t MyIndex )
 {
   int Numbers[4];
   int i{ 0 };
@@ -369,7 +369,7 @@ void FitRangeRelative::Print( std::ostream &os ) const
     os << colon << dti;
 }
 
-FitRange * FitRangeRelative::Deserialise( std::istringstream &is )
+FitRange * FitRangeRelative::Deserialise( std::istringstream &is, std::size_t MyIndex )
 {
   FitRangeRelative * p = nullptr;
   is >> std::ws;
@@ -388,7 +388,7 @@ FitRange * FitRangeRelative::Deserialise( std::istringstream &is )
     }
     if( i >= 3 )
     {
-      p = new FitRangeRelative( Numbers[0], Numbers[1], Numbers[2] );
+      p = new FitRangeRelative( Numbers[0] + MyIndex, Numbers[1], Numbers[2] );
       if( i >= 4 )
       {
         p->dti = Numbers[3];

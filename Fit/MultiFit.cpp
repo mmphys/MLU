@@ -98,7 +98,6 @@ int main(int argc, const char *argv[])
       // Other params
       {"fitter", CL::SwitchType::Single, "GSL"},
       {"delta", CL::SwitchType::Single, "3"},
-      {"t", CL::SwitchType::Single, nullptr},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"n", CL::SwitchType::Single, "0"},
@@ -119,10 +118,6 @@ int main(int argc, const char *argv[])
       const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
       const bool bOpSort{ !cl.GotSwitch("opnames") };
 
-      if( !cl.GotSwitch( "t") )
-        throw std::runtime_error( "No fit ranges specified" );
-      Common::FitRanges fitRanges( Common::ArrayFromString( cl.SwitchValue<std::string>( "t" ) ) );
-
       // Walk the list of parameters on the command-line, loading correlators and making models
       bShowUsage = false;
       std::vector<std::string> OpName;
@@ -132,7 +127,7 @@ int main(int argc, const char *argv[])
       DataSet ds( NSamples );
       std::vector<Model::Args> ModelArgs;
       std::vector<int> ModelFitRange;
-      std::vector<int> ModelFitRangeCount( fitRanges.size() );
+      std::vector<std::string> FitRangeSpec;
       for( std::size_t ArgNum = 0; ArgNum < NumArgs; ++ArgNum )
       {
         // First parameter (up to comma) is the filename we're looking for
@@ -140,10 +135,6 @@ int main(int argc, const char *argv[])
         // Anything after the comma is a list of arguments
         Model::Args vArgs;
         vArgs.FromString( cl.Args[ArgNum], true );
-        // Get the fit range (if present)
-        const int ThisFitRange{ vArgs.Remove<int>( "Range", 0 ) };
-        if( ThisFitRange < 0 || ThisFitRange >= fitRanges.size() )
-          throw std::runtime_error( "Fit range " + std::to_string( ThisFitRange ) + " invalid" );
         for( const std::string &sFileName : Common::glob( &FileToGlob, &FileToGlob + 1, inBase.c_str() ) )
         {
           Common::FileNameAtt Att( sFileName );
@@ -160,16 +151,15 @@ int main(int argc, const char *argv[])
             }
             ds.LoadCorrelator( std::move( Att ), Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT,
                                PrintPrefix.c_str() );
-            // Now see whether the first parameter is a fit range (i.e. integer index of a defined fit range)
-            if( !fitRanges[ThisFitRange].Validate( ds.corr.back().Nt() ) )
-            {
-              std::stringstream oss;
-              oss << "Fit range " << fitRanges[ThisFitRange] << " not valid";
-              throw std::runtime_error( oss.str() );
-            }
+            // Get the fit range (if present)
+            bool bGotFitRange;
+            std::string ThisFitRange = vArgs.Remove( "t", &bGotFitRange );
+            if( bGotFitRange )
+              FitRangeSpec.emplace_back( std::move( ThisFitRange ) );
+            else if( FitRangeSpec.empty() )
+              throw std::runtime_error( "The first correlator must specify a fit range" );
             ModelArgs.emplace_back( vArgs );
-            ModelFitRange.push_back( ThisFitRange );
-            ++ModelFitRangeCount[ThisFitRange];
+            ModelFitRange.push_back( static_cast<int>( FitRangeSpec.size() - 1 ) );
           }
           else
           {
@@ -179,11 +169,20 @@ int main(int argc, const char *argv[])
       }
       if( ds.corr.empty() )
         throw std::runtime_error( "At least one correlator must be loaded to perform a fit" );
-      for( int i = 0; i < ModelFitRangeCount.size(); ++i )
-        if( ModelFitRangeCount[i] == 0 )
-          throw std::runtime_error( "Models don't refer to all fit ranges" );
-      ds.SortOpNames( OpName );
+      // Now see whether the first parameter is a fit range (i.e. integer index of a defined fit range)
+      Common::FitRanges fitRanges( FitRangeSpec );
+      for( std::size_t i = 0; i < ds.corr.size(); ++i )
+      {
+        if( !fitRanges[ModelFitRange[i]].Validate( ds.corr[i].Nt() ) )
+        {
+          std::stringstream oss;
+          oss << "Fit range " << fitRanges[ModelFitRange[i]]
+              << " not valid for correlator " << ds.corr[i].Name_.Filename;
+          throw std::runtime_error( oss.str().c_str() );
+        }
+      }
       // Describe the number of replicas
+      ds.SortOpNames( OpName );
       std::cout << "Using ";
       if( ds.NSamples == ds.MaxSamples )
         std::cout << "all ";
@@ -332,7 +331,6 @@ int main(int argc, const char *argv[])
     "         H5,f[,g],d Load INVERSE covariance from .h5 file f, group g, dataset d\n"
     "--covboot How many bootstrap replicas in covariance (-1=no bootstrap)\n"
     "--guess  List of specific values to use for inital guess\n"
-    "-t     Fit range1[,range2[,...]] (start:stop[:numstart=1[:numstop=numstart]])\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
     "-e     number of Exponents (default 1)\n"
@@ -346,7 +344,19 @@ int main(int argc, const char *argv[])
     "--analytic Analytic derivatives for GSL (default: numeric)\n"
     "--srcsnk   Append _src and _snk to overlap coefficients (ie force different)\n"
     "--opnames  Disable sorting and deduplicating operator name list\n"
-    "--help     This message\n";
+    "--help     This message\n"
+    "Parameters accepted by all models:\n"
+    " e         Number of exponentials\n"
+    " model     Model type\n"
+    " t         Fit range: [R[n:]start:stop[:numstart=1[:numstop=numstart]])\n"
+    "Parameters accepted by models with overlap coefficients:\n"
+    " ENorm     Normalise overlap coefficients by 1/2E\n"
+    " SrcSnk    Force source and sink to be different (by appending 'src' and 'snk')\n"
+    "Parameters accepted by models for single objects (e.g. 2pt-functions):\n"
+    " ObjectID  Object identifier (defaults to base of filename)\n"
+    "Parameters accepted by models for dual objects (e.g. 3pt-functions):\n"
+    " Src       ObjectID for source\n"
+    " Snk       ObjectID for sink\n";
   }
   return iReturn;
 }

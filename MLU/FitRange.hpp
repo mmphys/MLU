@@ -106,7 +106,7 @@ struct FitRange
   virtual void Print( std::ostream &os ) const = 0;
   virtual const vDepend &GetDependencies() const { return DependsOn; };
   virtual ~FitRange() {};
-  static FitRange * Deserialise( const std::string &String );
+  static FitRange * Deserialise( const std::string &String, std::size_t MyIndex );
 protected:
   vDepend DependsOn;
 };
@@ -150,7 +150,7 @@ public:
   bool PastEnd( const FitTime &ft, const FitRangesIterator &it ) const override;
   bool Increment( FitTime &ft, const FitRangesIterator &it, bool bWrap ) const override;
   void Print( std::ostream &os ) const override;
-  static FitRange * Deserialise( std::istringstream &is );
+  static FitRange * Deserialise( std::istringstream &is, std::size_t MyIndex );
 };
 
 struct FitRangeRelative : FitRange
@@ -172,7 +172,7 @@ public:
   bool PastEnd( const FitTime &ft, const FitRangesIterator &it ) const override;
   bool Increment( FitTime &ft, const FitRangesIterator &it, bool bWrap ) const override;
   void Print( std::ostream &os ) const override;
-  static FitRange * Deserialise( std::istringstream &is );
+  static FitRange * Deserialise( std::istringstream &is, std::size_t MyIndex );
 };
 
 FitRange_hpp_end
