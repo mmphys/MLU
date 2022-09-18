@@ -29,7 +29,6 @@
 #ifndef FitGSL_hpp
 #define FitGSL_hpp
 
-#include "Param.hpp"
 #include "Fitter.hpp"
 #include "FitterThread.hpp"
 #include <gsl/gsl_multifit_nlinear.h>

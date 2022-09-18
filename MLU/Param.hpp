@@ -30,13 +30,7 @@
 #define MLU_Param_hpp namespace Common {
 #define MLU_Param_hpp_end };
 
-#include <MLU/GSLVecMat.hpp>
-#include <MLU/String.hpp>
-
-#include <array>
-#include <map>
-#include <string>
-#include <vector>
+#include <MLU/HDF5.hpp>
 
 MLU_Param_hpp
 

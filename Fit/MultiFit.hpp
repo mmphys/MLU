@@ -30,7 +30,6 @@
 #define MultiFit_hpp
 
 #include <MLU/Common.hpp>
-#include "Param.hpp"
 
 // Uncomment the next line if your cmath doesn't define M_PI etc by default
 //#define _USE_MATH_DEFINES

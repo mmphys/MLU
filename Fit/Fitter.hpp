@@ -31,7 +31,6 @@
 
 #include "Covar.hpp"
 #include "Model.hpp"
-#include "Param.hpp"
 
 // Forward declarations to minimise coupling
 class FitterThread;       // OpenMP thread that will perform fit on each replica

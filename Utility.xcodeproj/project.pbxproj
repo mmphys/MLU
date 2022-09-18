@@ -999,6 +999,11 @@
 		68820B2A2721CC1700825D73 /* GaugeCmp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68820B1E2721CBBA00825D73 /* GaugeCmp.cpp */; };
 		68820B2B2721CC4300825D73 /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		6889D2C028BA9DE500C0CD10 /* FitterThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6889D2BE28BA9DE500C0CD10 /* FitterThread.cpp */; };
+		689BAB0828D722E800996D16 /* HDF5.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 689BAB0628D722E800996D16 /* HDF5.cpp */; };
+		689BAB0928D722E800996D16 /* HDF5.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 689BAB0728D722E800996D16 /* HDF5.hpp */; };
+		689BAB0B28D72EE300996D16 /* Math.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 689BAB0A28D72EE300996D16 /* Math.cpp */; };
+		689BAB0E28D7325700996D16 /* Physics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 689BAB0C28D7325700996D16 /* Physics.cpp */; };
+		689BAB0F28D7325700996D16 /* Physics.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 689BAB0D28D7325700996D16 /* Physics.hpp */; };
 		68A1B33D284A40060053103F /* ImportCorr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68A1B330284A3F6B0053103F /* ImportCorr.cpp */; };
 		68A1B33E284A40BA0053103F /* libMLU.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 685446D4271C8BB800EF030C /* libMLU.a */; };
 		68A2B64E271C816600D9CB95 /* HadronsXmlRun.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68F61B94271C79E700A8B197 /* HadronsXmlRun.cpp */; };
@@ -2640,6 +2645,11 @@
 		68820B232721CBE100825D73 /* GaugeCmp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GaugeCmp; sourceTree = BUILT_PRODUCTS_DIR; };
 		6889D2BE28BA9DE500C0CD10 /* FitterThread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FitterThread.cpp; sourceTree = "<group>"; };
 		6889D2BF28BA9DE500C0CD10 /* FitterThread.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitterThread.hpp; sourceTree = "<group>"; };
+		689BAB0628D722E800996D16 /* HDF5.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HDF5.cpp; sourceTree = "<group>"; };
+		689BAB0728D722E800996D16 /* HDF5.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HDF5.hpp; sourceTree = "<group>"; };
+		689BAB0A28D72EE300996D16 /* Math.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Math.cpp; sourceTree = "<group>"; };
+		689BAB0C28D7325700996D16 /* Physics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Physics.cpp; sourceTree = "<group>"; };
+		689BAB0D28D7325700996D16 /* Physics.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Physics.hpp; sourceTree = "<group>"; };
 		68A1B330284A3F6B0053103F /* ImportCorr.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ImportCorr.cpp; sourceTree = "<group>"; };
 		68A1B331284A3F6B0053103F /* ImportCorr.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ImportCorr.hpp; sourceTree = "<group>"; };
 		68A1B336284A3FBA0053103F /* ImportCorr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ImportCorr; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3557,10 +3567,15 @@
 				6808978128D4BD890084F9BA /* GSLVecMat.cpp */,
 				6808977D28D4BD630084F9BA /* GSLVecMat.hpp */,
 				6808977E28D4BD640084F9BA /* GSLVecMatImp.hpp */,
+				689BAB0628D722E800996D16 /* HDF5.cpp */,
+				689BAB0728D722E800996D16 /* HDF5.hpp */,
 				685446CB271C8B7E00EF030C /* Makefile.am */,
+				689BAB0A28D72EE300996D16 /* Math.cpp */,
 				68B7EA2B28D4CDEE00B73308 /* Math.hpp */,
 				6808977A28D4B9940084F9BA /* Param.cpp */,
 				6808977928D4B9940084F9BA /* Param.hpp */,
+				689BAB0C28D7325700996D16 /* Physics.cpp */,
+				689BAB0D28D7325700996D16 /* Physics.hpp */,
 				68DBBA3128D4D68E00ECDBA8 /* String.cpp */,
 				68DBBA3028D4D68D00ECDBA8 /* String.hpp */,
 			);
@@ -6624,6 +6639,8 @@
 				6808977F28D4BD640084F9BA /* GSLVecMat.hpp in Headers */,
 				6808977B28D4B9950084F9BA /* Param.hpp in Headers */,
 				6808978028D4BD640084F9BA /* GSLVecMatImp.hpp in Headers */,
+				689BAB0928D722E800996D16 /* HDF5.hpp in Headers */,
+				689BAB0F28D7325700996D16 /* Physics.hpp in Headers */,
 				68768DA42860A49600354169 /* FitRange.hpp in Headers */,
 				68B7EA2C28D4CDEE00B73308 /* Math.hpp in Headers */,
 				68DBBA3228D4D68E00ECDBA8 /* String.hpp in Headers */,
@@ -8180,11 +8197,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				689BAB0828D722E800996D16 /* HDF5.cpp in Sources */,
+				689BAB0B28D72EE300996D16 /* Math.cpp in Sources */,
 				6808978228D4BD8A0084F9BA /* GSLVecMat.cpp in Sources */,
 				6808977C28D4B9950084F9BA /* Param.cpp in Sources */,
 				68DBBA3328D4D68E00ECDBA8 /* String.cpp in Sources */,
 				685446D8271C8C4F00EF030C /* Common.cpp in Sources */,
 				68768DA52860A49600354169 /* FitRange.cpp in Sources */,
+				689BAB0E28D7325700996D16 /* Physics.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

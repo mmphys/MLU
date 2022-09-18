@@ -29,7 +29,6 @@
 #ifndef FitMinuit2_hpp
 #define FitMinuit2_hpp
 
-#include "Param.hpp"
 #include "Fitter.hpp"
 #include "FitterThread.hpp"
 #include <Minuit2/FCNBase.h>

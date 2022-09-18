@@ -28,7 +28,6 @@
 
 #include "Fitter.hpp"
 #include "FitterThread.hpp"
-#include "Param.hpp"
 
 // Uncomment this next line to debug without OpenMP
 //#define DEBUG_DISABLE_OMP

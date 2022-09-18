@@ -30,8 +30,11 @@
 #define MLU_String_hpp namespace Common {
 #define MLU_String_hpp_end };
 
+#include <array>
 #include <istream>
+#include <ios>
 #include <map>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <vector>

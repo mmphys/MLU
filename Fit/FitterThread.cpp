@@ -26,7 +26,6 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include "Param.hpp"
 #include "Fitter.hpp"
 #include "FitterThread.hpp"
 
