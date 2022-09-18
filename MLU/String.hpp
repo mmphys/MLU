@@ -30,9 +30,11 @@
 #define MLU_String_hpp namespace Common {
 #define MLU_String_hpp_end };
 
+#include <algorithm>
 #include <array>
 #include <istream>
 #include <ios>
+#include <limits>
 #include <map>
 #include <ostream>
 #include <sstream>
@@ -263,7 +265,7 @@ template<typename T> inline typename std::enable_if<!std::is_same<T, std::string
   {
     bool bSign{ pNeg && iss.peek() == '-' };
     if( bSign )
-      assert( iss.get() == '-' );
+      iss.get();
     if( !( iss >> t ) )
       throw std::invalid_argument( "ArrayFromString: \"" + String + "\" is not type " + typeid(T).name() );
     v.push_back( t );

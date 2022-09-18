@@ -46,7 +46,7 @@ static const std::string sModelTypeSinh{ "Sinh" };
 static const std::string sModelTypeThreePoint{ "3pt" };
 static const std::string sModelTypeConstant{ "Const" };
 
-inline std::ostream & operator<<( std::ostream &os, const ModelType m )
+std::ostream & operator<<( std::ostream &os, const ModelType m )
 {
   switch( m )
   {
