@@ -48,7 +48,7 @@
 MLU_HDF5_hpp
 
 // My implementation of H5File - adds a definition of complex type
-struct H5 {
+namespace H5 {
   template<typename T> struct is_AttOrDS        : public std::false_type {};
   template<> struct is_AttOrDS<::H5::Attribute> : public std::true_type {};
   template<> struct is_AttOrDS<::H5::DataSet>   : public std::true_type {};
@@ -77,47 +77,48 @@ struct H5 {
    Read from the specified group name (if pGroupName is non-null and *pGroupName not empty)
    Otherwise read from the first group in the file, returning the group name if pGroupName not null
    */
-  static void OpenFileGroup( ::H5::H5File &f, ::H5::Group &g,
-                             const std::string &FileName, const char *PrintPrefix = nullptr,
-                             std::string * pGroupName = nullptr, unsigned int flags = H5F_ACC_RDONLY );
+  void OpenFileGroup( ::H5::H5File &f, ::H5::Group &g,
+                      const std::string &FileName, const char *PrintPrefix = nullptr,
+                      std::string * pGroupName = nullptr, unsigned int flags = H5F_ACC_RDONLY );
 
   // Get first groupname from specified group
-  static std::string GetFirstGroupName( ::H5::Group & g );
+  std::string GetFirstGroupName( ::H5::Group & g );
 
   // Read the gamma algebra attribute string and make sure it's valid
-  static Gamma::Algebra ReadGammaAttribute( ::H5::Group &g, const char * pAttName );
+  Gamma::Algebra ReadGammaAttribute( ::H5::Group &g, const char * pAttName );
 
-  template<typename AttOrDS> static std::vector<std::string> ReadStrings( const AttOrDS &a );
+  template<typename AttOrDS> std::vector<std::string> ReadStrings( const AttOrDS &a );
 
   // Make a multi-dimensional string attribute
-  static void WriteAttribute( ::H5::Group &g, const std::string &AttName, const std::vector<std::string> &vs );
+  void WriteAttribute( ::H5::Group &g, const std::string &AttName, const std::vector<std::string> &vs );
   // Make a multi-dimensional string dataset
-  static void WriteStringData( ::H5::Group &g, const std::string &DSName, const std::vector<std::string> &vs );
+  void WriteStringData( ::H5::Group &g, const std::string &DSName, const std::vector<std::string> &vs );
   // Read a vector from a dataset
   template<typename T>
-  static void ReadVector( ::H5::Group &g, const std::string &DSName, T &v );
+  void ReadVector( ::H5::Group &g, const std::string &DSName, T &v );
   template<typename T>
-  static void ReadVector( ::H5::Group &g, const std::string &DSName, std::vector<Common::Matrix<T>> &v );
+  void ReadVector( ::H5::Group &g, const std::string &DSName, std::vector<Common::Matrix<T>> &v );
   // Write a vector to a dataset
   template<typename T>
-  static bool WriteVector( ::H5::Group &g, const std::string &DSName, const Common::Vector<T> &v );
+  bool WriteVector( ::H5::Group &g, const std::string &DSName, const Common::Vector<T> &v );
   template<typename T>
-  static bool WriteVector( ::H5::Group &g, const std::string &DSName, const std::vector<T> &v );
+  bool WriteVector( ::H5::Group &g, const std::string &DSName, const std::vector<T> &v );
   // Read a matrix from a dataset
   template<typename T>
-  static void ReadMatrix( ::H5::Group &g, const std::string &DSName, Common::Matrix<T> &m );
+  void ReadMatrix( ::H5::Group &g, const std::string &DSName, Common::Matrix<T> &m );
   // Write a matrix to a dataset
   template<typename T>
-  static bool WriteMatrix( ::H5::Group &g, const std::string &DSName, const Common::Matrix<T> &m );
+  bool WriteMatrix( ::H5::Group &g, const std::string &DSName, const Common::Matrix<T> &m );
 
-protected:
+  // I would like these to be private members of a class full of static functions
+  // BUT explicit specialisations must be at class scope (until C++ 17)
   template<typename T>
-  static void ReadStringsHelper( const T &a, const ::H5::StrType &aType, char * * MDString );
+  void ReadStringsHelper( const T &a, const ::H5::StrType &aType, char * * MDString );
 
-  template<typename T> static inline typename T::value_type * GetDataHelper( T & t ) { return t.data(); }
-  template<typename T> static inline typename std::enable_if<!is_complex<T>::value, T *>::type
+  template<typename T> inline typename T::value_type * GetDataHelper( T & t ) { return t.data(); }
+  template<typename T> inline typename std::enable_if<!is_complex<T>::value, T *>::type
     GetDataHelper( Common::Vector<T> & m ) { return m.data; }
-  template<typename T> static inline typename std::enable_if< is_complex<T>::value, T *>::type
+  template<typename T> inline typename std::enable_if< is_complex<T>::value, T *>::type
     GetDataHelper( Common::Vector<T> & m ) { return reinterpret_cast<T *>( m.data ); }
   // template<typename T> inline T * GetDataHelper( Common::Matrix<T> & m ) { return m.data; }
 };

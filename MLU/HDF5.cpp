@@ -32,7 +32,7 @@
 MLU_HDF5_hpp
 
 // Make the same HDF5 complex type Grid uses
-template<typename T> static ::H5::CompType MakeComplex()
+template<typename T> ::H5::CompType MakeComplex()
 {
   ::H5::CompType myComplex( sizeof( std::complex<T> ) );
   myComplex.insertMember("re", 0 * sizeof(T), H5::Equiv<T>::Type);
