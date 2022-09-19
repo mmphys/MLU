@@ -84,6 +84,10 @@ namespace H5 {
   // Get first groupname from specified group
   std::string GetFirstGroupName( ::H5::Group & g );
 
+  bool OpenOptional( ::H5::Attribute &a, ::H5::Group &g, const std::string Name );
+  bool OpenOptional( ::H5::DataSet  &ds, ::H5::Group &g, const std::string Name );
+  bool OpenOptional( ::H5::Group  &gNew, ::H5::Group &g, const std::string Name );
+
   // Read the gamma algebra attribute string and make sure it's valid
   Gamma::Algebra ReadGammaAttribute( ::H5::Group &g, const char * pAttName );
 
@@ -94,6 +98,13 @@ namespace H5 {
   // Make a multi-dimensional string dataset
   void WriteStringData( ::H5::Group &g, const std::string &DSName, const std::vector<std::string> &vs );
   // Read a vector from a dataset
+  // TODO: Rationalise
+  inline void ReadAttOrDS( ::H5::Attribute &a, void * p, const ::H5::DataType &dt )
+  { a.read( dt, p ); }
+  inline void ReadAttOrDS( ::H5::DataSet  &ds, void * p, const ::H5::DataType &dt )
+  { ds.read( p, dt ); }
+  template<typename T, typename AttOrDS> typename std::enable_if<is_AttOrDS<AttOrDS>::value>::type
+  ReadVectorHelper( T &v, AttOrDS &a, const std::string &DSName );
   template<typename T>
   void ReadVector( ::H5::Group &g, const std::string &DSName, T &v );
   template<typename T>
@@ -121,14 +132,14 @@ namespace H5 {
   template<typename T> inline typename std::enable_if< is_complex<T>::value, T *>::type
     GetDataHelper( Common::Vector<T> & m ) { return reinterpret_cast<T *>( m.data ); }
   // template<typename T> inline T * GetDataHelper( Common::Matrix<T> & m ) { return m.data; }
+  std::string GetErrorClearStack( const ::H5::Exception &e );
 };
 
-template<typename T>
-void H5::ReadVector( ::H5::Group &g, const std::string &DSName, T &v )
+template<typename T, typename AttOrDS> typename std::enable_if<H5::is_AttOrDS<AttOrDS>::value>::type
+H5::ReadVectorHelper( T &v, AttOrDS &ds, const std::string &DSName )
 {
-  ::H5::DataSet ds = g.openDataSet( DSName );
-  ::H5::DataSpace dsp = ds.getSpace();
   bool bError{ true };
+  ::H5::DataSpace dsp = ds.getSpace();
   const int nDims{ dsp.getSimpleExtentNdims() };
   if( nDims == 1 )
   {
@@ -137,12 +148,19 @@ void H5::ReadVector( ::H5::Group &g, const std::string &DSName, T &v )
     if( Dim > 0 && Dim <= std::numeric_limits<std::size_t>::max() )
     {
       v.resize( static_cast<std::size_t>( Dim ) );
-      ds.read( GetDataHelper( v ), H5::Equiv<typename T::value_type>::Type );
+      ReadAttOrDS( ds, GetDataHelper( v ), H5::Equiv<typename T::value_type>::Type );
       bError = false;
     }
   }
   if( bError )
     throw std::runtime_error( "Dimensions (" + std::to_string( nDims ) + ") invalid reading " + DSName );
+}
+
+template<typename T>
+void H5::ReadVector( ::H5::Group &g, const std::string &DSName, T &v )
+{
+  ::H5::DataSet ds = g.openDataSet( DSName );
+  ReadVectorHelper( v, ds, DSName );
 }
 
 // Read a vector of matrices from a dataset

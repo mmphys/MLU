@@ -124,6 +124,84 @@ std::string H5::GetFirstGroupName( ::H5::Group & g )
   return std::string();
 }
 
+bool H5::OpenOptional( ::H5::Attribute &a, ::H5::Group &g, const std::string Name )
+{
+  bool bOpen{ false };
+  if( g.attrExists( Name ) )
+  {
+    H5E_auto2_t h5at;
+    void      * f5at_p;
+    ::H5::Exception::getAutoPrint( h5at, &f5at_p );
+    ::H5::Exception::dontPrint();
+    try
+    {
+      a = g.openAttribute( Name );
+      bOpen = true;
+    }
+    catch( const ::H5::Exception &e )
+    {
+      ::H5::Exception::clearErrorStack();
+    }
+    catch(...)
+    {
+      ::H5::Exception::setAutoPrint( h5at, f5at_p );
+      throw;
+    }
+    ::H5::Exception::setAutoPrint( h5at, f5at_p );
+  }
+  return bOpen;
+}
+
+bool H5::OpenOptional( ::H5::DataSet &ds, ::H5::Group &g, const std::string Name )
+{
+  bool bOpen{ false };
+  H5E_auto2_t h5at;
+  void      * f5at_p;
+  ::H5::Exception::getAutoPrint( h5at, &f5at_p );
+  ::H5::Exception::dontPrint();
+  try
+  {
+    ds = g.openDataSet( Name );
+    bOpen = true;
+  }
+  catch( const ::H5::Exception &e )
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  catch(...)
+  {
+    ::H5::Exception::setAutoPrint( h5at, f5at_p );
+    throw;
+  }
+  ::H5::Exception::setAutoPrint( h5at, f5at_p );
+  return bOpen;
+}
+
+bool H5::OpenOptional( ::H5::Group &gNew, ::H5::Group &gOld, const std::string Name )
+{
+  bool bOpen{ false };
+  H5E_auto2_t h5at;
+  void      * f5at_p;
+  ::H5::Exception::getAutoPrint( h5at, &f5at_p );
+  ::H5::Exception::dontPrint();
+  try
+  {
+    gNew = gOld.openGroup( Name );
+    bOpen = true;
+  }
+  catch( const ::H5::Exception &e )
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  catch(...)
+  {
+    ::H5::Exception::setAutoPrint( h5at, f5at_p );
+    throw;
+  }
+  ::H5::Exception::setAutoPrint( h5at, f5at_p );
+  return bOpen;
+}
+
 // Read the gamma algebra attribute string and make sure it's valid
 Gamma::Algebra H5::ReadGammaAttribute( ::H5::Group &g, const char * pAttName )
 {
@@ -218,6 +296,13 @@ void H5::WriteStringData( ::H5::Group &g, const std::string &DSName, const std::
   ::H5::DataSet ds{ g.createDataSet( DSName, Equiv<std::string>::Type, dsN ) };
   ds.write( MDString, Equiv<std::string>::Type );
   ds.close();
+}
+
+std::string H5::GetErrorClearStack( const ::H5::Exception &e )
+{
+  std::string s{ "HDF5 error in " + e.getFuncName() + ": " + e.getCDetailMsg() };
+  ::H5::Exception::clearErrorStack();
+  return s;
 }
 
 MLU_HDF5_hpp_end

@@ -117,10 +117,18 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   template <typename T>
   void Dump( std::ostream &os, const Vector<T> &Values, Param::Type type = Param::Type::Variable,
              const Vector<T> *pErrors = nullptr, const std::vector<bool> *pbKnown = nullptr ) const;
+  void ReadH5 ( ::H5::Group gParent, const std::string GroupName );
+  void WriteH5( ::H5::Group gParent, const std::string GroupName ) const;
 protected:
   std::size_t NumFixed;
   std::size_t NumVariable;
   std::size_t MaxLen;
+  static const std::string sCount;
+  static const std::string sObjectNames;
+  static const std::string sName;
+  static const std::string sTypeName;
+  static const std::string sSize;
+  static const std::string sMonotonic;
 };
 
 std::ostream &operator<<( std::ostream &os, const Params::iterator &it );

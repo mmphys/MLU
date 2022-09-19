@@ -462,6 +462,187 @@ template void Params::Dump<float>( std::ostream &os, const Vector<float> &Values
 template void Params::Dump<double>( std::ostream &os, const Vector<double> &Values, Param::Type ShowType,
                                     const Vector<double> *pErrors, const std::vector<bool> *pbKnown ) const;
 
+void Params::ReadH5 ( ::H5::Group gParent, const std::string GroupName )
+{
+  clear();
+  std::string sError;
+  H5E_auto2_t h5at;
+  void      * f5at_p;
+  ::H5::Exception::getAutoPrint(h5at, &f5at_p);
+  ::H5::Exception::dontPrint();
+  try
+  {
+    // Open the group
+    ::H5::Group g{ gParent.openGroup( GroupName ) };
+    // Get the object IDs TODO: add support for renaming the objects
+    ::H5::Attribute a{ g.openAttribute( sObjectNames ) };
+    std::vector<std::string> vObjects{ H5::ReadStrings( a ) };
+    a.close();
+    // Get number of params
+    int iNumParams;
+    a = g.openAttribute( sCount );
+    a.read( ::H5::PredType::NATIVE_INT, &iNumParams );
+    a.close();
+    // Load each param
+    std::string SubGroup{ GroupName };
+    const std::size_t SubGroupLen{ SubGroup.length() };
+    for( std::size_t i = 0; i < iNumParams; ++i )
+    {
+      Param::Key k;
+      // Open sub-group for each parameter
+      SubGroup.resize( SubGroupLen );
+      SubGroup.append( std::to_string( i ) );
+      ::H5::Group gSub{ g.openGroup( SubGroup ) };
+      // Read in the Object IDs
+      {
+        std::vector<int> vOID;
+        a = gSub.openAttribute( sObjectNames );
+        H5::ReadVectorHelper( vOID, a, sObjectNames );
+        k.Object.reserve( vOID.size() );
+        for( int i : vOID )
+          k.Object.push_back( vObjects[i] );
+        a.close();
+      }
+      // Parameter name
+      a = gSub.openAttribute( sName );
+      a.read( a.getStrType(), k.Name );
+      a.close();
+      // Parameter size
+      a = gSub.openAttribute( sSize );
+      int iSize;
+      a.read( ::H5::PredType::NATIVE_INT, &iSize );
+      a.close();
+      // Get the type (default Variable)
+      Param::Type type{ Param::Type::Variable };
+      if( H5::OpenOptional( a, gSub, sTypeName ) )
+      {
+        std::string s;
+        a.read( a.getStrType(), s );
+        a.close();
+        type = FromString<Param::Type>( s );
+      }
+      // Read monotonic
+      bool bMonotonic{ false };
+      if( H5::OpenOptional( a, gSub, sMonotonic ) )
+      {
+        std::int8_t i8;
+        a.read( ::H5::PredType::NATIVE_INT8, &i8 );
+        a.close();
+        if( i8 )
+          bMonotonic = true;
+      }
+      // Now create this parameter
+      insert( std::make_pair( std::move( k ), Param( iSize, bMonotonic, type ) ) );
+    }
+  }
+  catch( const ::H5::Exception &e )
+  {
+    clear();
+    sError = H5::GetErrorClearStack( e );
+  }
+  catch(...)
+  {
+    clear();
+    ::H5::Exception::setAutoPrint( h5at, f5at_p );
+    throw;
+  }
+  ::H5::Exception::setAutoPrint( h5at, f5at_p );
+  if( sError.size() )
+    throw std::runtime_error( sError );
+  AssignOffsets();
+}
+
+void Params::WriteH5( ::H5::Group gParent, const std::string GroupName ) const
+{
+  ::H5::Group g{ gParent.createGroup( GroupName ) };
+  if( empty() )
+    return;
+  // Get list of object IDs
+  UniqueNames OID;
+  for( value_type it : *this )
+  {
+    const Param::Key &k{ it.first };
+    for( std::size_t i = 0; i < k.Object.size(); ++i )
+      OID[k.Object[i]];
+  }
+  int iNumObjects = 0;
+  for( typename UniqueNames::value_type &it : OID )
+    it.second = iNumObjects++;
+  {
+    // Write all the object names
+    std::vector<std::string> vObjects( iNumObjects );
+    int i{ 0 };
+    for( typename UniqueNames::value_type &it : OID )
+      vObjects[i++] = it.first;
+    H5::WriteAttribute( g, sObjectNames, vObjects );
+  }
+  hsize_t Dims[1];
+  Dims[0] = 1;
+  ::H5::DataSpace ds1( 1, Dims );
+  {
+    int iNumParams{ static_cast<int>( size() ) };
+    ::H5::Attribute a = g.createAttribute( sCount, ::H5::PredType::STD_U16LE, ds1 );
+    a.write( ::H5::PredType::NATIVE_INT, &iNumParams );
+  }
+  // Now loop through and write each parameter
+  {
+    int i{ 0 };
+    std::string SubGroup{ GroupName };
+    const std::size_t SubGroupLen{ SubGroup.length() };
+    for( value_type it : *this )
+    {
+      const Param::Key &k{ it.first };
+      const Param &p{ it.second };
+      // Create a sub-group for each parameter
+      SubGroup.resize( SubGroupLen );
+      SubGroup.append( std::to_string( i++ ) );
+      ::H5::Group gSub{ g.createGroup( SubGroup ) };
+      // Write all the object IDS for this parameter
+      std::vector<int> vOIDs( k.Object.size() );
+      for( std::size_t j = 0; j < k.Object.size(); ++j )
+        vOIDs[j] = OID[k.Object[j]];
+      Dims[0] = vOIDs.size();
+      {
+        ::H5::DataSpace dsOID( 1, Dims );
+        ::H5::Attribute a = gSub.createAttribute( sObjectNames, ::H5::PredType::STD_U16LE, dsOID );
+        a.write( ::H5::PredType::NATIVE_INT, &vOIDs[0] );
+      }
+      {
+        // Parameter name
+        ::H5::Attribute a = gSub.createAttribute( sName, H5::Equiv<std::string>::Type, ds1 );
+        a.write( H5::Equiv<std::string>::Type, k.Name );
+      }
+      // Parameter Type - default is variable
+      if( p.type != Param::Type::Variable )
+      {
+        std::ostringstream ss;
+        ss << p.type;
+        ::H5::Attribute a = gSub.createAttribute( sTypeName, H5::Equiv<std::string>::Type, ds1 );
+        a.write( H5::Equiv<std::string>::Type, ss.str() );
+      }
+      {
+        // Size
+        int iSize{ static_cast<int>( p.size ) };
+        ::H5::Attribute a = gSub.createAttribute( sSize, ::H5::PredType::STD_U16LE, ds1 );
+        a.write( ::H5::PredType::NATIVE_INT, &iSize );
+      }
+      const std::int8_t i8{ 1 };
+      if( p.bMonotonic )
+      {
+        ::H5::Attribute a = gSub.createAttribute( sMonotonic, ::H5::PredType::STD_U8LE, ds1 );
+        a.write( ::H5::PredType::NATIVE_INT8, &i8 );
+      }
+    }
+  }
+}
+
+const std::string Params::sCount{ "Count" };
+const std::string Params::sObjectNames{ "Object" };
+const std::string Params::sName{ "Name" };
+const std::string Params::sTypeName{ "Type" };
+const std::string Params::sSize{ "Size" };
+const std::string Params::sMonotonic{ "Monotonic" };
+
 std::ostream &operator<<( std::ostream &os, const Params::iterator &it )
 {
   const Param &p{ it->second };
