@@ -75,16 +75,6 @@ std::ostream &operator<<( std::ostream &s, const FitTimes &ft )
   return s << Sep << ft.tfLabel();
 }
 
-void FitTimes::WriteInitialColumnNames( std::ostream &s ) const
-{
-  s << " ti tf";
-  for( std::size_t i = 1; i * 2 < time.size(); ++i )
-  {
-    s << " ti" << i << " tf" << i;
-  }
-  s << " tfLabel NumDataPoints dof SampleSize ";
-}
-
 bool operator<( const FitTimes &lhs, const FitTimes &rhs )
 {
   if( lhs.time.empty() || lhs.time.size() != rhs.time.size() )
@@ -192,9 +182,9 @@ void Summariser::SaveCMat( const std::vector<Model> &Corr, const int NumBoot, co
       {
         if( !bThisNeg )
           sOp.append( 1, ' ' );
-        sOp.append( std::to_string( Corr[f].ti ) );
+        sOp.append( std::to_string( Corr[f].FitTimes[0][0] ) );
         sOp.append( 1, ',' );
-        sOp.append( std::to_string( Corr[f].tf ) );
+        sOp.append( std::to_string( Corr[f].FitTimes[0].back() ) );
       }
       sOp.append( 1, '"' );
       s << Common::Space << sOp;
@@ -280,12 +270,7 @@ void Summariser::Run()
           throw std::runtime_error("dof=" + std::to_string( m.dof ) + " (<0 invalid)");
         const bool bExtrapolation{ m.dof == 0 };
         std::ostringstream ss;
-        m.WriteColumnNames( ss );
-        ss << Sep;
-        using vEr = Common::ValWithEr<scalar>;
-        vEr::Header( "pvalue", ss );
-        ss << Sep;
-        vEr::Header( "pvalueH", ss );
+        m.SummaryColumnNames( ss );
         if( Models.empty() )
         {
           ColumnNames = ss.str();
@@ -304,33 +289,16 @@ void Summariser::Run()
         }
         // Save the summary of the parameters for this file
         ss.str("");
-        m.WriteSummaryData( ss );
-        const vEr & ChisqDof{ m.getSummaryData()[m.Nt() - 1] };
-        const vEr ChiSq{ ChisqDof * ( bExtrapolation ? 1 : m.dof ) }; // Really wish I'd saved the test statistic, not reduced test statistic
-        // Chi squared statistic and Q-value (probability of a worse statistic)
-        vEr qValueChiSq;
-        if( bExtrapolation )
-          qValueChiSq = 1.;
-        else
-          qValueChiSq = ChiSq.qValueChiSq( m.dof );
-        ss << Sep << qValueChiSq;
-        // Hotelling t statistic and Q-value (might not be available)
-        scalar SortStat;
-        if( !bExtrapolation && Common::HotellingDist::Usable( m.dof, m.CovarSampleSize - 1 ) )
-        {
-          const vEr Hotelling{ ChiSq.qValueHotelling( m.dof, m.CovarSampleSize - 1 ) };
-          ss << Sep << Hotelling;
-          SortStat = Hotelling.Central;
-        }
-        else
-        {
-          ss << Sep << qValueChiSq;
-          SortStat = qValueChiSq.Central;
-        }
+        m.SummaryContents( ss );
+        using vEr = Common::ValWithEr<scalar>;
+        const vEr & pValueH{ m.getSummaryData()[m.Nt() - 1] };
+        scalar SortStat = pValueH.Central;
         // save the model in my list
+        int NumDataPoints{ 0 };
+        for( const std::vector<int> &v : m.FitTimes )
+          NumDataPoints += static_cast<int>( v.size() );
         Fits.emplace( std::make_pair( ThisFile.ft,
-                                      FitData( 1 - SortStat, SortStat, ThisFile.ft,
-                                               m.ErrorScaled.extent() ? m.ErrorScaled.extent() : m.NumFiles,
+                                      FitData( 1 - SortStat, SortStat, ThisFile.ft, NumDataPoints,
                                                m.dof, m.SampleSize, ss.str(), Models.size() ) ) );
         Models.emplace_back( std::move( m ) );
       }
@@ -353,15 +321,13 @@ void Summariser::Run()
       std::ofstream s( sFileName );
       Common::SummaryHeader<scalar>( s, sFileName );
       s << Comments;
-      s << "Seq";
-      Fits.begin()->first.WriteInitialColumnNames( s );
-      s << ColumnNames << NL;
+      s << "Seq " << ColumnNames << NL;
       int SortSeq{ 0 };
       for( const TestStatKey &z : SortSet )
       {
         FitData & d{ Fits[z.ft] };
         d.Seq = SortSeq++;
-        s << d;
+        s << d.Seq << Common::Space << d.Parameters;
       }
     }
     // Now make the output file with blocks for each ti, sorted by tf
@@ -395,12 +361,10 @@ void Summariser::Run()
           // Name the data series
           s << "# [ti=" << d.ft.ti() << "]\n";
           // Column names, with the series value embedded in the column header (best I can do atm)
-          s << "ti=" << d.ft.ti();
-          dt->first.WriteInitialColumnNames( s );
-          s << ColumnNames << NL;
+          s << "ti=" << d.ft.ti() << Common::Space << ColumnNames << NL;
         }
         // Now write this row
-        s << d;
+        s << d.Seq << Common::Space << d.Parameters;
         // If the statistic is above threshold, include it in correlation matrix
         if( bSaveCMat && d.Stat >= Threshold )
           CorrModels.emplace_back( std::move( Models[d.idxModel] ) );
@@ -408,7 +372,7 @@ void Summariser::Run()
     }
     // Now plot the correlation matrix for selected models
     Models.clear();
-    if( !CorrModels.empty() )
+    /*if( !CorrModels.empty() )
     {
       try
       {
@@ -457,7 +421,7 @@ void Summariser::Run()
       {
         std::cout << sIndent << sError << e.what() << NL;
       }
-    }
+    }*/
   }
 }
 

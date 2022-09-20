@@ -48,6 +48,7 @@ struct Param
     std::vector<std::string> Object; // Name of the object these parameters describe, e.g. D_s meson, p^2=1
     std::string Name;   // Name of the parameter
     std::size_t Len() const;
+    bool empty() const { return Object.empty() && Name.empty(); }
     std::string FullName( std::size_t idx=0, std::size_t Size=std::numeric_limits<std::size_t>::max() ) const;
     bool operator==( const Key &rhs ) const;
     bool operator!=( const Key &rhs ) const { return !operator==( rhs ); }
@@ -94,6 +95,7 @@ protected:
 std::ostream &operator<<( std::ostream &os, const Param::Type &type );
 std::istream &operator>>( std::istream &is, Param::Type &type );
 std::ostream &operator<<( std::ostream &os, const Param::Key &key );
+std::istream &operator>>( std::istream &is, Param::Key &key );
 
 struct Params : std::map<Param::Key, Param, Param::Key::Less>
 {
@@ -109,6 +111,7 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
     return Type == Param::Type::All      ? NumVariable + NumFixed
          : Type == Param::Type::Variable ? NumVariable : NumFixed;
   }
+  std::size_t MaxExponents() const;
   template <typename T>
   void Export( Vector<T> &vType, const Vector<T> &All, Param::Type type = Param::Type::Variable ) const;
   template <typename T>
@@ -117,6 +120,7 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   template <typename T>
   void Dump( std::ostream &os, const Vector<T> &Values, Param::Type type = Param::Type::Variable,
              const Vector<T> *pErrors = nullptr, const std::vector<bool> *pbKnown = nullptr ) const;
+  std::vector<std::string> GetNames( Param::Type type ) const;
   void ReadH5 ( ::H5::Group gParent, const std::string GroupName );
   void WriteH5( ::H5::Group gParent, const std::string GroupName ) const;
 protected:
@@ -131,7 +135,7 @@ protected:
   static const std::string sMonotonic;
 };
 
-std::ostream &operator<<( std::ostream &os, const Params::iterator &it );
+std::ostream &operator<<( std::ostream &os, const Params::value_type &param );
 
 MLU_Param_hpp_end
 #endif

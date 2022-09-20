@@ -108,7 +108,6 @@ extern const std::string sTF;
 extern const std::string sDoF;
 extern const std::string sNumExponents;
 extern const std::string sNumFiles;
-extern const std::string sFactorised;
 extern const std::string sCovarFrozen;
 extern const std::string s_C;
 extern const std::string sStdErrorMean;
@@ -138,9 +137,13 @@ extern const std::string sCovarSource;
 extern const std::string sCovarRebin;
 extern const std::string sCovarSampleSize;
 extern const std::string sCovarNumBoot;
+extern const std::string sParam;
+extern const std::string sFitTime;
 extern const std::string sNE;
 extern const std::vector<std::string> sCorrSummaryNames;
 extern const std::string sChiSqPerDof;
+extern const std::string sPValue;
+extern const std::string sPValueH;
 
 using SeedType = unsigned int;
 
@@ -317,7 +320,25 @@ protected:
   }
   template<class V = T> static typename std::enable_if<!std::is_same<V, std::string>::value, bool>::type
   GetValue( std::istringstream &iss, V &v ) { return iss >> v && Common::StreamEmpty( iss ); }
-  static void ReadLine( Map &m, const std::string &s )
+  template<class V = T> static void MyEmplace( std::multimap<Key, V, Compare> &m, Key &&k, V &&t )
+  {
+    // Multimap, so won't fail
+    m.emplace( std::make_pair( std::move( k ), std::move( t ) ) );
+  }
+  template<class V = T> static void MyEmplace( std::map<Key, V, Compare> &m, Key &&k, V &&t )
+  {
+    // Map - might be already present
+    using iterator = typename std::map<Key, V, Compare>::iterator;
+    using pair = std::pair<iterator, bool>;
+    pair a{ m.emplace( std::make_pair( std::move( k ), std::move( t ) ) ) };
+    if( !a.second )
+    {
+      std::ostringstream es;
+      es << "KeyValReader::ReadLine() duplicate key " << a.first->first;
+      throw std::runtime_error( es.str().c_str() );
+    }
+  }
+  static void ReadLine( Map &m, const std::string &s, bool bOptional = false )
   {
     std::istringstream iss( s );
     if( !Common::StreamEmpty( iss ) )
@@ -325,14 +346,18 @@ protected:
       Key k;
       if( !( iss >> k ) )
         throw std::runtime_error( "KeyValReader::ReadLine() bad key " + s );
-      T t;
-      if( !GetValue( iss, t ) )
-        throw std::runtime_error( "KeyValReader::ReadLine() bad value " + s );
-      m.emplace( std::make_pair( std::move( k ), std::move( t ) ) );
+      T t{};
+      if( !bOptional || !Common::StreamEmpty( iss ) )
+      {
+        if( !GetValue( iss, t ) )
+          throw std::runtime_error( "KeyValReader::ReadLine() bad value " + s );
+      }
+      MyEmplace( m, std::move( k ), std::move( t ) );
     }
   }
 public:
-  static Map Read( const std::vector<std::string> &v, const std::string *Separator = &EqualSign )
+  static Map Read( const std::vector<std::string> &v, const std::string *Separator = &EqualSign,
+                   bool bOptional = false )
   {
     Map m;
     std::string Tmp;
@@ -344,7 +369,7 @@ public:
         Tmp = s;
         Tmp[pos] = ' ';
       }
-      ReadLine( m, ( pos == std::string::npos ) ? s : Tmp );
+      ReadLine( m, ( pos == std::string::npos ) ? s : Tmp, bOptional );
     }
     return m;
   }
@@ -1695,24 +1720,78 @@ public: // Override these for specialisations
         s << CommaSpace << cc;
       s << NewLine;
     }
-    if( !ColumnNames.empty() )
+    s << "# NumColumns: " << Nt();
+    if( ColumnNames.empty() )
+      s << " (rows t0 ... t" << ( Nt() - 1 ) << ")";
+    else
     {
-      s << "# NumColumns: " << ColumnNames.size() << " (rows t0 ... t" << (ColumnNames.size()-1) << ")"
-        << NewLine << "# " << sColumnNames << ": ";
+      s << NewLine << "# " << sColumnNames << ": ";
       for( std::size_t i = 0; i < ColumnNames.size(); ++i )
       {
         if( i )
           s << CommaSpace;
         s << ColumnNames[i];
       }
-      s << NewLine;
     }
+    s << NewLine;
     if( bVerboseSummary )
     {
       s << "# FileCount: " << FileList.size() << NewLine;
       std::size_t i = 0;
       for( const std::string &f : FileList )
         s << "# File " << i++ << ": " << f << NewLine;
+    }
+  }
+  virtual void SummaryColumnNames( std::ostream &os ) const
+  {
+    if( ColumnNames.empty() )
+    {
+      // First column is timeslice, then each of the summary columns per timeslice
+      os << "t";
+      for( const std::string &Name : SummaryNames )
+      {
+        os << Space;
+        ValWithEr<T>::Header( Name, os, Space );
+      }
+    }
+    else
+    {
+      // Show the bootstrap central replica for every column on one row
+      bool bFirst{ true };
+      for( const std::string &Name : ColumnNames )
+      {
+        if( bFirst )
+          bFirst = false;
+        else
+          os << Space;
+        ValWithEr<T>::Header( Name, os, Space );
+      }
+    }
+  }
+  virtual void SummaryContents( std::ostream &os ) const
+  {
+    const ValWithEr<scalar_type> * p{ m_pSummaryData.get() };
+    if( ColumnNames.empty() )
+    {
+      // One row per timeslice, showing each of the summary values
+      for( int t = 0; t < Nt_; t++, p++ )
+      {
+        os << t;
+        for( std::size_t f = 0; f < SummaryNames.size(); f++ )
+          os << Space << p[f * Nt_];
+        os << NewLine;
+      }
+    }
+    else
+    {
+      // A single row, showing the central value for each column
+      for( int t = 0; t < Nt_; t++ )
+      {
+        if( t )
+          os << Space;
+        os << *p++;
+      }
+      os << NewLine;
     }
   }
   virtual void ReadAttributes( ::H5::Group &g ) {}
@@ -2046,23 +2125,9 @@ void Sample<T>::WriteSummary( const std::string &sOutFileName, bool bVerboseSumm
   std::ofstream s( sOutFileName );
   SummaryHeader<T>( s, sOutFileName );
   SummaryComments( s, bVerboseSummary );
-  // Now write all the field names
-  const std::string Sep{ " " };
-  s << "t";
-  for( const std::string &n : SummaryNames )
-  {
-    s << Sep;
-    ValWithEr<T>::Header( n, s, Sep );
-  }
+  SummaryColumnNames( s );
   s << NewLine;
-  const ValWithEr<scalar_type> * p{ m_pSummaryData.get() };
-  for( int t = 0; t < Nt_; t++, p++ )
-  {
-    s << t;
-    for( std::size_t f = 0; f < SummaryNames.size(); f++ )
-      s << Sep << p[f * Nt_];
-    s << NewLine;
-  }
+  SummaryContents( s );
 }
 
 // Make a summary of the data
@@ -2914,16 +2979,20 @@ public:
   }
 };
 
-template <typename T>
-class Model : public Sample<T>
+template <typename T> std::size_t GetExtent( const std::vector<std::vector<T>> &v )
 {
-public:
-  int NumExponents = 0;
-  int NumFiles = 0; // TODO: this duplicates FileList ... but FileList optional and added later ...
-  int ti = 0;
-  int tf = 0;
+  std::size_t Extent{ 0 };
+  for( const std::vector<T> & i : v )
+    Extent += i.size();
+  return Extent;
+}
+
+template <typename T>
+struct Model : public Sample<T>
+{
+  using Base = Sample<T>;
+  static const std::string EnergyPrefix;
   int dof = 0;
-  bool Factorised = false;
   bool CovarFrozen = false;
   using SS = SampleSource;
   SS CovarSource = SS::Binned;  // Where am I building the covariance from
@@ -2943,13 +3012,21 @@ public:
   BootRep<T> FitInput;
   BootRep<T> ModelPrediction;
   BootRep<T> ErrorScaled;  // (Theory - Data) * CholeskyScale
-  std::vector<std::string> OpNames;
-  using Base = Sample<T>;
+
+  // These variables were added in current format
+  Params params;
+  std::vector<std::vector<int>> FitTimes;
+
+  // Helper functions
+  int Extent() { return static_cast<int>( GetExtent( FitTimes ) ); };
+  int NumFitParams() { return static_cast<int>( params.NumScalars( Param::Type::Variable ) ); };
+  int NumParams() { return static_cast<int>( params.NumScalars( Param::Type::All ) ); };
+
   Model() : Base::Sample{} {}
-  Model( std::vector<std::string> OpNames_, int NumExponents_, int NumFiles_, int ti_, int tf_,
-         int dof_, bool Factorised_, bool CovarFrozen_, int NumSamples, int Nt )
-  : Base::Sample{ NumSamples, Nt }, OpNames{ OpNames_ }, NumExponents{ NumExponents_ },
-    NumFiles{ NumFiles_}, ti{ ti_ }, tf{ tf_ }, dof{ dof_ }, Factorised{ Factorised_ }, CovarFrozen{ CovarFrozen_ } {}
+  Model( int NumSamples, Params Params_, const std::vector<std::string> &ExtraColumns );
+  Model( int NumSamples, Params Params_, const std::vector<std::string> &ExtraColumns,
+         const std::vector<std::vector<int>> &FitTimes_, int dof_, int CovarSampleSize_,
+         bool CovarFrozen_, SampleSource CovarSource_, std::vector<int> CovarRebin_, int CovarNumBoot_ );
   const std::string & DefaultGroupName() override { return sModel; }
   inline bool NewParamsMorePrecise( bool covarFrozen_, int NumSamples ) const
   {
@@ -2977,28 +3054,25 @@ public:
   void ValidateAttributes() override;
   int WriteAttributes( ::H5::Group &g ) override;
   void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const override;
+  void SummaryColumnNames( std::ostream &os ) const override;
+  void SummaryContents( std::ostream &os ) const override;
+protected:
+  void ReorderOldFormat( int NumOps, int NumExponents, std::unique_ptr<T[]> &pData, int Num );
+  void CommonConstruct( const std::vector<std::string> &ExtraColumns );
 };
 
 struct ConstantSource
 {
-  struct Key
-  {
-    std::vector<std::string> Object; // Name of the object these parameters describe, e.g. D_s meson, p^2=1
-    std::string Name;   // Name of the parameter
-    struct Less { bool operator()( const Key &lhs, const Key &rhs ) const; };
-  };
   std::size_t File; // Index of the constant file in the DataSet this comes from
-  std::vector<std::size_t> idx;  // Indices of the parameters in this file
-  ConstantSource( std::size_t File_, std::vector<std::size_t> &&idx_ ) : File{File_}, idx{idx_} {}
+  const Param &param;
+  ConstantSource( std::size_t File_, const Param &param_ ) : File{File_}, param{param_} {}
 };
-
-std::ostream &operator<<( std::ostream &os, const ConstantSource::Key &key );
 
 template <typename T>
 struct DataSet
 {
   using SS = SampleSource;
-  using ConstMap = std::map<typename ConstantSource::Key, ConstantSource, typename ConstantSource::Key::Less>;
+  using ConstMap = std::map<Param::Key, ConstantSource, Param::Key::Less>;
   struct FixedParam
   {
     ConstantSource  src;   // Where to get values from
@@ -3009,8 +3083,6 @@ struct DataSet
   int NSamples;   // Number of samples we are using. These are guaranteed to exist
   int MaxSamples; // Maximum number of samples available. Guaranteed to exist. >= NSamples.
   int Extent = 0; // Number of data points in our fit (i.e. total number of elements in FitTimes)
-  int MinExponents = 0;
-  int MaxExponents = 0;
   std::vector<Fold<T>>          corr;     // Correlator files
   std::vector<std::vector<int>> FitTimes; // The actual timeslices we are fitting to in each correlator
   ConstMap constMap;
@@ -3037,9 +3109,8 @@ protected:
   std::array< MatrixView<fint>, 2> RandomViews;
   std::array<std::vector<fint>, 2> RandomBuffer;
   std::vector<Model<T>> constFile;// Each of the constant files (i.e. results from previous fits) I've loaded
-  void AddConstant( const typename ConstantSource::Key &Key, std::size_t File,
-                    std::size_t First, std::size_t Count, std::size_t Stride );
-  void SetValidatedFitTimes( std::size_t Extent, std::vector<std::vector<int>> &&FitTimes );
+  void AddConstant( const Param::Key &Key, std::size_t File, const Param &param );
+  void SetValidatedFitTimes( std::vector<std::vector<int>> &&FitTimes );
   void MakeCentralReplicaNonRandom();
 public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}

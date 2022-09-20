@@ -205,6 +205,17 @@ std::ostream &operator<<( std::ostream &os, const Param::Key &key )
   return os << key.Name;
 }
 
+std::istream &operator>>( std::istream &is, Param::Key &key )
+{
+  std::string s;
+  if( !( is >> s ) )
+    throw std::runtime_error( "Param::Key empty" );
+  key.Object = ArrayFromString( s, "-" );
+  key.Name = std::move( key.Object.back() );
+  key.Object.pop_back();
+  return is;
+}
+
 Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bMonotonic, Param::Type type_ )
 {
   // Work out how many elements are needed
@@ -315,6 +326,22 @@ void Params::AssignOffsets()
     if( MaxLen < p.FieldLen )
       MaxLen = p.FieldLen;
   }
+}
+
+std::size_t Params::MaxExponents() const
+{
+  std::size_t Max{ 0 };
+  for( const value_type &it : *this )
+  {
+    const Param::Key &k{ it.first };
+    const Param &p{ it.second };
+    std::size_t ThisSize{ p.size };
+    if( k.Object.size() > 1 && ThisSize > 2 )
+      ThisSize--;
+    if( Max < ThisSize )
+      Max = ThisSize;
+  }
+  return Max;
 }
 
 template <typename T>
@@ -461,6 +488,23 @@ template void Params::Dump<float>( std::ostream &os, const Vector<float> &Values
                                    const Vector<float> *pErrors, const std::vector<bool> *pbKnown ) const;
 template void Params::Dump<double>( std::ostream &os, const Vector<double> &Values, Param::Type ShowType,
                                     const Vector<double> *pErrors, const std::vector<bool> *pbKnown ) const;
+
+std::vector<std::string> Params::GetNames( Param::Type type ) const
+{
+  std::vector<std::string> Names( NumScalars( type ) );
+  for( const value_type &it : *this )
+  {
+    const Param &p{ it.second };
+    if( type == Param::Type::All || p.type == type )
+    {
+      const std::size_t &Offset{ type == Param::Type::All ? p.OffsetAll : p.OffsetMyType };
+      const Param::Key &k{ it.first };
+      for( std::size_t i = 0; i < p.size; ++i )
+        Names[Offset + i] = k.FullName( i, p.size );
+    }
+  }
+  return Names;
+}
 
 void Params::ReadH5 ( ::H5::Group gParent, const std::string GroupName )
 {
@@ -643,10 +687,10 @@ const std::string Params::sTypeName{ "Type" };
 const std::string Params::sSize{ "Size" };
 const std::string Params::sMonotonic{ "Monotonic" };
 
-std::ostream &operator<<( std::ostream &os, const Params::iterator &it )
+std::ostream &operator<<( std::ostream &os, const Params::value_type &param )
 {
-  const Param &p{ it->second };
-  os << it->first << '[' << p.size;
+  const Param &p{ param.second };
+  os << param.first << '[' << p.size;
   if( p.type != Param::Type::Variable )
     os << ',' << p.type;
   if( p.bMonotonic )

@@ -941,8 +941,9 @@ void FMaker::Make( std::string &FileName )
   constexpr int qSqLat{ 12 }; // qSq ... but E_i derived from E_0 and lattice dispersion relation
   constexpr int ChiSqDof{ 13 };
   const int NumFiles{ 3 + ( p ? 2 : 0 ) };
-  Model Out( ParamNames, 1, NumFiles, FitParts[0], FitParts[1], 0, false, false, NumSamples,
-             static_cast<int>( ParamNames.size() ) + 2 );
+  throw std::runtime_error( "TODO: Update based on new parameters" );
+  Model Out;//( ParamNames, 1, NumFiles, FitParts[0], FitParts[1], 0, false, NumSamples,
+             //static_cast<int>( ParamNames.size() ) + 2 );
   Out.FileList.emplace_back( FileName );
   if( p )
     Out.FileList.emplace_back( FileNameXYZ );

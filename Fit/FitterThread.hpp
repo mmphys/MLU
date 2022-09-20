@@ -90,7 +90,7 @@ public:
   bool AnalyticJacobian( Matrix &Jacobian ) const;
   scalar RepeatFit( int MaxGuesses );
   const Vector &UncorrelatedFit();
-  scalar FitOne( const std::vector<std::size_t> &Reorder );
+  scalar FitOne();
   // Implement this to support a new type of fitter
   virtual void Minimise( int iNumGuesses ) = 0;
   virtual bool CholeskyAdjust() { return false; } // true to indicate Cholesky matrix needs inversion

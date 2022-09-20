@@ -153,41 +153,41 @@ Params Fitter::MakeModelParams()
       m->AddParameters( mp );
     }
     // Loop through parameters - see if they are available as constants
-    ConstantSource::Key key;
     ParamFixed.clear();
-    for( const typename Params::value_type &it : mp )
+    for( const Params::value_type &it : mp )
     {
       const Param::Key &pk{ it.first };
       const Param &p{ it.second };
-      key.Object = pk.Object;
-      key.Name = pk.Name;
-      typename DataSet::ConstMap::const_iterator cit{ ds.constMap.find( key ) };
+      DataSet::ConstMap::const_iterator cit{ ds.constMap.find( pk ) };
       if( cit != ds.constMap.end() )
       {
         // This is available as a constant
         const ConstantSource &cs{ cit->second };
-        if( cs.idx.size() < p.size )
+        if( cs.param.size < p.size )
         {
           std::ostringstream os;
-          os << "MakeModelParams " << pk << "[" << p.size << "] has only "
-          << cs.idx.size() << " constants available";
+          os << "Fitter::MakeModelParams " << pk << "[" << p.size << "] has only "
+             << cs.param.size << " constants available";
           throw std::runtime_error( os.str().c_str() );
         }
+        // Change this parameter to constant
         mp.Add( pk, p.size, false, Param::Type::Fixed );
       }
     }
     mp.AssignOffsets();
     for( ModelPtr &m : model )
       m->SaveParameters( mp );
-    for( const typename Params::value_type &it : mp )
+    // Now make a list of the constants we are going to use
+    for( const Params::value_type &it : mp )
     {
       const Param::Key &pk{ it.first };
       const Param &p{ it.second };
-      key.Object = pk.Object;
-      key.Name = pk.Name;
-      typename DataSet::ConstMap::const_iterator cit{ ds.constMap.find( key ) };
-      if( cit != ds.constMap.end() )
-        ParamFixed.emplace_back( cit->second, p.size, static_cast<int>( p() ) );
+      if( p.type == Param::Type::Fixed )
+      {
+        DataSet::ConstMap::const_iterator cit{ ds.constMap.find( pk ) };
+        if( cit != ds.constMap.end() )
+          ParamFixed.emplace_back( cit->second, p.size, static_cast<int>( p() ) );
+      }
     }
     // Create list of parameters we know - starting from constants
     const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
@@ -349,7 +349,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
                     const std::string &ModelSuffix, Common::SeedType Seed )
 {
   bCorrelated = Bcorrelated;
-  dof = ds.Extent - mp.NumScalars( Param::Type::Variable );
+  dof = ds.Extent - static_cast<int>( mp.NumScalars( Param::Type::Variable ) );
   if( dof < MinDof )
   {
     std::string Message{};
@@ -362,74 +362,15 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   dof_ = dof;
 
   // Make somewhere to store the results of the fit for each bootstrap sample
-  const int tMin{ ds.FitTimes[0][0] };
-  const int tMax{ ds.FitTimes[0].back() };
   const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
-  // TODO: This is temporary - makes it look like existing format
-  // TODO: Update to save the parameter list + additional columns
-  std::vector<std::size_t> Reorder( NumParams );
-  std::vector<std::string> OldFormatOpNames;
-  {
-    // Find the maximum exponent
-    std::size_t MaxLen{ 0 };
-    for( const typename Params::value_type &it : mp )
-      if( MaxLen < it.second.size )
-        MaxLen = it.second.size;
-    // First put repeated parameters in exponent order
-    std::size_t Order{ 0 };
-    for( std::size_t i = 0; i < MaxLen; ++i )
-      for( const typename Params::value_type &it : mp )
-      {
-        const Param &p{ it.second };
-        if( p.size != 1 )
-        {
-          if( i == 0 && !Common::EqualIgnoreCase( it.first.Name, ::E ) )
-          {
-            std::ostringstream os;
-            os << it.first.Name;
-            OldFormatOpNames.push_back( os.str() );
-          }
-          if( i < p.size )
-            Reorder[ p.GetOffset( i, Param::Type::All ) ] = Order++;
-        }
-      }
-    // Now work out the order for any one-off parameters
-    for( const typename Params::value_type &it : mp )
-    {
-      const Param &p{ it.second };
-      if( p.size == 1 )
-        Reorder[ p.GetOffset( 0, Param::Type::All ) ] = Order++;
-    }
-    if( Order != NumParams )
-      throw std::runtime_error( "Re-ordered only " + std::to_string( Order ) + " params" );
-  }
-  ModelFile OutputModel( OldFormatOpNames, NumExponents, NumFiles, tMin, tMax, dof,
-                         true, //TODO: !bForceSrcSnkDifferent
-                         cp.bFreeze, ds.NSamples, NumParams + 1 );
+  ModelFile OutputModel( ds.NSamples, mp, { Common::sChiSqPerDof, Common::sPValue, Common::sPValueH },
+                         ds.FitTimes, dof, cp.CovarSampleSize(), cp.bFreeze, cp.Source, cp.RebinSize,
+                         cp.CovarNumBoot );
   for( const Fold &f : ds.corr )
     OutputModel.FileList.emplace_back( f.Name_.Filename );
   OutputModel.CopyAttributes( ds.corr[0] );
-  {
-    if( !NumParams )
-      OutputModel.OpNames.clear();
-    std::vector<std::string> ColNames( NumParams + 1 );
-    for( const typename Params::value_type &it : mp )
-    {
-      const Param::Key k{ std::vector<std::string>(), it.first.Name };
-      const Param &p{ it.second };
-      for( std::size_t i = 0; i < p.size; ++i )
-        ColNames[Reorder[p.GetOffset( i, Param::Type::All )]] = k.FullName( i, p.size );
-    }
-    ColNames[NumParams] = Common::sChiSqPerDof;
-    OutputModel.SetColumnNames( ColNames );
-  }
   OutputModel.Name_.Seed = Seed;
   OutputModel.binSize = ds.OriginalBinSize;
-  OutputModel.CovarFrozen = cp.bFreeze;
-  OutputModel.CovarSource = cp.Source;
-  OutputModel.CovarRebin = cp.RebinSize;
-  OutputModel.CovarNumBoot = cp.CovarNumBoot;
-  OutputModel.CovarSampleSize = cp.CovarSampleSize();
   OutputModel.StdErrorMean.resize( ds.Extent, ds.NSamples ); // Each thread needs to use its own replica
   OutputModel.ModelPrediction.resize( ds.Extent, ds.NSamples );
   OutputModel.ErrorScaled.resize( ds.Extent, ds.NSamples );
@@ -442,13 +383,13 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   {
     ModelFile PreBuilt;
     PreBuilt.Read( ModelFileName, "Pre-built: " );
-    if( std::tie( NumExponents, /*dof,*/ tMin, tMax, OutputModel.GetColumnNames() )
-        != std::tie( PreBuilt.NumExponents, /*PreBuilt.dof,*/ PreBuilt.ti, PreBuilt.tf, PreBuilt.GetColumnNames() ) )
-    {
+    // TODO: This comparison is incomplete ... but matches previous version
+    bool bOK{ OutputModel.dof == PreBuilt.dof };
+    bOK = bOK && OutputModel.Extent() != PreBuilt.Extent();
+    bOK = bOK && OutputModel.FitTimes != PreBuilt.FitTimes;
+    bOK = bOK && OutputModel.GetColumnNames() != PreBuilt.GetColumnNames();
+    if( !bOK )
       throw std::runtime_error( "Pre-built fit not compatible with parameters from this run" );
-    }
-    if( dof != PreBuilt.dof )
-      throw std::runtime_error( "Pre-built fit had different constraints" );
     bPerformFit = PreBuilt.NewParamsMorePrecise( cp.bFreeze, ds.NSamples );
     if( !bPerformFit )
     {
@@ -526,7 +467,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
               if( !WasAbort )
               {
                 fitThread.SetReplica( idx );
-                scalar z{ fitThread.FitOne( Reorder ) };
+                scalar z{ fitThread.FitOne() };
                 if( idx == Fold::idxCentral )
                   ChiSq = z;
               }
@@ -591,7 +532,7 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
     }
     // Save the file
     OutputModel.Write( ModelFileName );
-    //OutputModel.WriteSummary( Common::MakeFilename( sModelBase, Common::sModel, Seed, TEXT_EXT ) );
+    OutputModel.WriteSummary( Common::MakeFilename( sModelBase, Common::sModel, Seed, TEXT_EXT ) );
     for( int f = 0; f < NumFiles; f++ )
     {
       const int snk{ ds.corr[f].Name_.op[idxSnk] };

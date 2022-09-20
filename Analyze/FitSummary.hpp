@@ -45,7 +45,6 @@ struct FitTimes
   std::string tfLabel() const;
   unsigned int GuessOldNumDataPoints( int NumFiles ) const;
   bool Parse( std::string Times );
-  void WriteInitialColumnNames( std::ostream &s ) const;
 };
 
 struct FitData

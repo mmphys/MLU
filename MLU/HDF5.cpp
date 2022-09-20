@@ -77,6 +77,9 @@ const ::H5::PredType& H5::Equiv<float>                      ::Type{ ::H5::PredTy
 const ::H5::PredType& H5::Equiv<double>                     ::Type{ ::H5::PredType::NATIVE_DOUBLE };
 const ::H5::PredType& H5::Equiv<long double>                ::Type{ ::H5::PredType::NATIVE_LDOUBLE };
 const ::H5::PredType& H5::Equiv<int>                        ::Type{ ::H5::PredType::NATIVE_INT };
+const ::H5::PredType& H5::Equiv<std::size_t>                ::Type{  sizeof( std::size_t ) == 4
+                                                                    ? ::H5::PredType::NATIVE_UINT32
+                                                                    : ::H5::PredType::NATIVE_UINT64 };
 const ::H5::StrType   H5::Equiv<std::string>                ::Type{ ::H5::PredType::C_S1, H5T_VARIABLE };
 const ::H5::StrType&  H5::Equiv<char *>                     ::Type{   H5::Equiv<std::string>::Type };
 const ::H5::PredType& H5::Equiv<std::uint_fast32_t>         ::Type{ sizeof( std::uint_fast32_t ) == 4

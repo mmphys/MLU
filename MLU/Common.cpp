@@ -73,7 +73,6 @@ const std::string sTF{ "TF" };
 const std::string sDoF{ "DoF" };
 const std::string sNumExponents{ "NumExponents" };
 const std::string sNumFiles{ "NumFiles" };
-const std::string sFactorised{ "Factorised" };
 const std::string sCovarFrozen{ "CovarFrozen" };
 const std::string s_C{ "_C" };
 const std::string sStdErrorMean{ "StdErrorMean" };
@@ -103,9 +102,13 @@ const std::string sCovarSource{ "CovarSource" };
 const std::string sCovarRebin{ "CovarRebin" };
 const std::string sCovarSampleSize{ "CovarSampleSize" };
 const std::string sCovarNumBoot{ "CovarNumBoot" };
+const std::string sParam{ "Param" };
+const std::string sFitTime{ "FitTime" };
 const std::string sNE{ " != " };
 const std::vector<std::string> sCorrSummaryNames{ "corr", "bias", "exp", "cosh" };
 const std::string sChiSqPerDof{ "ChiSqPerDof" };
+const std::string sPValue{ "pvalue" };
+const std::string sPValueH{ "pvalueH" };
 const double NaN{ std::nan( "" ) };
 
 // Does the specified file exist?
@@ -747,34 +750,36 @@ std::istream& operator>>( std::istream& is, SampleSource &sampleSource )
   throw std::runtime_error( "SampleSource \"" + sEnum + "\" unrecognised" );
 }
 
+template <typename T> const std::string Model<T>::EnergyPrefix{ "E" };
+
+template <typename T>
+Model<T>::Model( int NumSamples, Params Params_, const std::vector<std::string> &ExtraColumns )
+: Base::Sample( NumSamples, static_cast<int>( Params_.NumScalars( Param::Type::All ) + ExtraColumns.size() ) ),
+  params{Params_}
+{
+  CommonConstruct( ExtraColumns );
+}
+
+template <typename T>
+Model<T>::Model( int NumSamples, Params Params_, const std::vector<std::string> &ExtraColumns,
+                 const std::vector<std::vector<int>> &FitTimes_, int dof_, int CovarSampleSize_,
+                 bool CovarFrozen_, SampleSource CovarSource_, std::vector<int> CovarRebin_, int CovarNumBoot_ )
+: Base::Sample( NumSamples, static_cast<int>( Params_.NumScalars( Param::Type::All ) + ExtraColumns.size() ) ),
+  params{Params_}, FitTimes{FitTimes_}, dof{dof_}, CovarSampleSize{CovarSampleSize_},
+  CovarFrozen{CovarFrozen_}, CovarSource{CovarSource_}, CovarRebin{CovarRebin_}, CovarNumBoot{CovarNumBoot_}
+{
+  CommonConstruct( ExtraColumns );
+}
+
 template <typename T>
 void Model<T>::ReadAttributes( ::H5::Group &g )
 {
   Base::ReadAttributes( g );
   ::H5::Attribute a;
-  a = g.openAttribute(sNumExponents);
-  a.read( ::H5::PredType::NATIVE_INT, &NumExponents );
-  a.close();
-  a = g.openAttribute(sNumFiles);
-  a.read( ::H5::PredType::NATIVE_INT, &NumFiles );
-  a.close();
-  a = g.openAttribute(sTI);
-  a.read( ::H5::PredType::NATIVE_INT, &ti );
-  a.close();
-  a = g.openAttribute(sTF);
-  a.read( ::H5::PredType::NATIVE_INT, &tf );
-  a.close();
   a = g.openAttribute(sDoF);
   a.read( ::H5::PredType::NATIVE_INT, &dof );
   a.close();
-  a = g.openAttribute(sOperators);
-  OpNames = H5::ReadStrings( a );
-  a.close();
   std::int8_t i8;
-  a = g.openAttribute(sFactorised);
-  a.read( ::H5::PredType::NATIVE_INT8, &i8 );
-  a.close();
-  Factorised = ( i8 != 0 );
   a = g.openAttribute(sCovarFrozen);
   a.read( ::H5::PredType::NATIVE_INT8, &i8 );
   a.close();
@@ -910,7 +915,7 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
   }
   catch(const ::H5::Exception &)
   {
-    CovarSampleSize = 0;
+    CovarSampleSize = this->SampleSize;
     ::H5::Exception::clearErrorStack();
   }
   try
@@ -924,19 +929,122 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
     CovarNumBoot = 0;
     ::H5::Exception::clearErrorStack();
   }
+  ::H5::Group gParam;
+  if( H5::OpenOptional( gParam, g, sParam ) )
+  {
+    // Read new format containing parameters
+    gParam.close();
+    params.ReadH5( g, sParam );
+    // Get the fit times
+    std::size_t NumFitTimes;
+    std::string sAttName{ sFitTime };
+    const std::size_t Len{ sAttName.length() };
+    a = g.openAttribute( sAttName );
+    a.read( H5::Equiv<std::size_t>::Type, &NumFitTimes );
+    a.close();
+    FitTimes.resize( NumFitTimes );
+    for( std::size_t i = 0; i < NumFitTimes; ++i )
+    {
+      sAttName.resize( Len );
+      sAttName.append( std::to_string( i ) );
+      a = g.openAttribute( sAttName );
+      ::H5::DataSpace dsp = a.getSpace();
+      const int nDims{ dsp.getSimpleExtentNdims() };
+      bool bError{ true };
+      if( nDims == 1 )
+      {
+        hsize_t Dim;
+        dsp.getSimpleExtentDims( &Dim );
+        if( Dim > 0 && Dim <= std::numeric_limits<std::size_t>::max() )
+        {
+          FitTimes[i].resize( static_cast<std::size_t>( Dim ) );
+          a.read( ::H5::PredType::NATIVE_INT, &FitTimes[i][0] );
+          bError = false;
+        }
+      }
+      if( bError )
+        throw std::runtime_error( "Error reading attribute " + sAttName  );
+      a.close();
+    }
+  }
+  else
+  {
+    // Read old format
+    int NumExponents;
+    a = g.openAttribute(sNumExponents);
+    a.read( ::H5::PredType::NATIVE_INT, &NumExponents );
+    a.close();
+    int NumFiles;
+    a = g.openAttribute(sNumFiles);
+    a.read( ::H5::PredType::NATIVE_INT, &NumFiles );
+    a.close();
+    int ti;
+    a = g.openAttribute(sTI);
+    a.read( ::H5::PredType::NATIVE_INT, &ti );
+    a.close();
+    int tf;
+    a = g.openAttribute(sTF);
+    a.read( ::H5::PredType::NATIVE_INT, &tf );
+    a.close();
+    a = g.openAttribute(sOperators);
+    std::vector<std::string> OpNames{ H5::ReadStrings( a ) };
+    a.close();
+    // Validate
+    const int NumOps{ static_cast<int>( OpNames.size() ) };
+    const int NumExpected{ NumExponents * ( NumOps + 1 ) + 1 };
+    if( Base::Nt_ != NumExpected )
+    {
+      std::ostringstream s;
+      s << "Have " << Base::Nt_ << " parameters, but expected " << NumExpected << ", i.e. " << NumExponents
+        << " exponents * ( " << NumOps << " operators + 1 energy ) + chi squared per degree of freedom";
+      throw std::runtime_error( s.str().c_str() );
+    }
+    // Recreate FitTimes
+    const int Extent{ tf - ti + 1 };
+    if( Extent <= 0 )
+      throw std::runtime_error( "TI " + std::to_string( ti ) + " > TF " + std::to_string( tf ) );
+    FitTimes.resize( NumFiles );
+    for( std::vector<int> &v : FitTimes )
+    {
+      v.resize( Extent );
+      for( int i = 0; i < Extent; ++i )
+        v[i] = ti + i;
+    }
+    // Now rebuild parameters
+    params.clear();
+    Param::Key k;
+    k.Object.push_back( this->Name_.Base );
+    std::size_t Len{ k.Object[0].find_first_of( '.' ) };
+    if( Len != std::string::npos )
+      k.Object[0].resize( Len );
+    k.Name = EnergyPrefix;
+    params.Add( k, NumExponents, true, Param::Type::Variable );
+    for( const std::string &s : OpNames )
+    {
+      k.Name = s;
+      params.Add( k, NumExponents, false, Param::Type::Variable );
+    }
+    params.AssignOffsets();
+    // If there's more than one exponent, data need reordering
+    ReorderOldFormat( NumOps + 1, NumExponents, this->m_pData,
+                      this->NumSamples_ + static_cast<int>( this->AuxNames.size() ) );
+    ReorderOldFormat( NumOps + 1, NumExponents, this->m_pDataRaw, this->NumSamplesRaw_ );
+    ReorderOldFormat( NumOps + 1, NumExponents, this->m_pDataBinned, this->NumSamplesBinned_ );
+    if( NumExponents > 1 )
+    {
+      // TODO: Renumber
+    }
+  }
 }
 
 template <typename T>
 void Model<T>::ValidateAttributes()
 {
   Base::ValidateAttributes();
-  const int NumOps{ static_cast<int>( OpNames.size() ) };
-  const int NumExpected{ NumExponents * ( NumOps + 1 ) + 1 };
-  if( Base::Nt_ != NumExpected )
+  if( Base::Nt_ < NumParams() )
   {
     std::ostringstream s;
-    s << "Have " << Base::Nt_ << " parameters, but expected " << NumExpected << ", i.e. "
-      << NumExponents << " exponents * ( " << NumOps << " operators + 1 energy ) + chi squared per degree of freedom";
+    s << "Model has " << NumParams() << " parameters, but " << Base::Nt_ << " columns";
     throw std::runtime_error( s.str().c_str() );
   }
 }
@@ -944,30 +1052,14 @@ void Model<T>::ValidateAttributes()
 template <typename T>
 int Model<T>::WriteAttributes( ::H5::Group &g )
 {
-  int iReturn = Base::WriteAttributes( g ) + 8;
+  int iReturn = Base::WriteAttributes( g ) + 4;
   const hsize_t OneDimension{ 1 };
   ::H5::DataSpace ds1( 1, &OneDimension );
   ::H5::Attribute a;
-  a = g.createAttribute( sNumExponents, ::H5::PredType::STD_U16LE, ds1 );
-  a.write( ::H5::PredType::NATIVE_INT, &NumExponents );
-  a.close();
-  a = g.createAttribute( sNumFiles, ::H5::PredType::STD_U16LE, ds1 );
-  a.write( ::H5::PredType::NATIVE_INT, &NumFiles );
-  a.close();
-  a = g.createAttribute( sTI, ::H5::PredType::STD_U16LE, ds1 );
-  a.write( ::H5::PredType::NATIVE_INT, &ti );
-  a.close();
-  a = g.createAttribute( sTF, ::H5::PredType::STD_U16LE, ds1 );
-  a.write( ::H5::PredType::NATIVE_INT, &tf );
-  a.close();
   a = g.createAttribute( sDoF, ::H5::PredType::STD_U16LE, ds1 );
   a.write( ::H5::PredType::NATIVE_INT, &dof );
   a.close();
-  std::int8_t i8{ static_cast<std::int8_t>( Factorised ? 1 : 0 ) };
-  a = g.createAttribute( sFactorised, ::H5::PredType::STD_U8LE, ds1 );
-  a.write( ::H5::PredType::NATIVE_INT8, &i8 );
-  a.close();
-  i8 = static_cast<std::int8_t>( CovarFrozen ? 1 : 0 );
+  std::int8_t i8{ static_cast<std::int8_t>( CovarFrozen ? 1 : 0 ) };
   a = g.createAttribute( sCovarFrozen, ::H5::PredType::STD_U8LE, ds1 );
   a.write( ::H5::PredType::NATIVE_INT8, &i8 );
   a.close();
@@ -1000,13 +1092,9 @@ int Model<T>::WriteAttributes( ::H5::Group &g )
     dsp.close();
     iReturn++;
   }
-  if( CovarSampleSize )
-  {
-    a = g.createAttribute( sCovarSampleSize, ::H5::PredType::STD_U32LE, ds1 );
-    a.write( ::H5::PredType::NATIVE_INT, &CovarSampleSize );
-    a.close();
-    iReturn++;
-  }
+  a = g.createAttribute( sCovarSampleSize, ::H5::PredType::STD_U32LE, ds1 );
+  a.write( ::H5::PredType::NATIVE_INT, &CovarSampleSize );
+  a.close();
   if( CovarNumBoot )
   {
     a = g.createAttribute( sCovarNumBoot, ::H5::PredType::STD_U32LE, ds1 );
@@ -1014,19 +1102,56 @@ int Model<T>::WriteAttributes( ::H5::Group &g )
     a.close();
     iReturn++;
   }
-  H5::WriteAttribute( g, sOperators, OpNames );
+  params.WriteH5( g, sParam );
+  // Write the fit times
+  std::size_t NumFitTimes{ FitTimes.size() };
+  std::string sAttName{ sFitTime };
+  const std::size_t Len{ sAttName.length() };
+  a = g.createAttribute( sAttName, ::H5::PredType::STD_U32LE, ds1 );
+  a.write( H5::Equiv<std::size_t>::Type, &NumFitTimes );
+  a.close();
+  for( std::size_t i = 0; i < NumFitTimes; ++i )
+  {
+    sAttName.resize( Len );
+    sAttName.append( std::to_string( i ) );
+    hsize_t Dims[1] = { FitTimes[i].size() };
+    ::H5::DataSpace dsp( 1, Dims );
+    a = g.createAttribute( sAttName, ::H5::PredType::STD_U16LE, dsp );
+    a.write( ::H5::PredType::NATIVE_INT, &FitTimes[i][0] );
+    a.close();
+    dsp.close();
+    iReturn++;
+  }
   return iReturn;
 }
 
 template <typename T>
 void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
 {
-  Base::SummaryComments( s, bVerboseSummary );
-  s << "# NumExponents: " << NumExponents << NewLine
-    << "# NumFiles: " << NumFiles << NewLine
-    << "# Factorised: " << Factorised << NewLine
-    << "# Frozen covariance: " << CovarFrozen << NewLine
+  Base::SummaryComments( s, true );
+  for( std::size_t i = 0; i < FitTimes.size(); ++i )
+  {
+    s << "# Fit Times " << i << Colon;
+    for( const int t : FitTimes[i] )
+      s << Space << t;
+    s << NewLine;
+  }
+  s << "# Frozen covariance: " << CovarFrozen << NewLine
     << "# Covariance source: " << CovarSource << NewLine;
+  if( !params.empty() )
+  {
+    s << "# Params: ";
+    bool bFirst{ true };
+    for( const Params::value_type &p : params )
+    {
+      if( bFirst )
+        bFirst = false;
+      else
+        s << CommaSpace;
+      s << p;
+    }
+    s << NewLine;
+  }
   if( !CovarRebin.empty() )
   {
     s << "# Covariance rebin:";
@@ -1034,33 +1159,87 @@ void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
       s << Space << i;
     s << NewLine;
   }
+  s << "# pvalue : ";
+  if( dof < 1 )
+    s << "Fit is extrapolation. All p-values=1";
+  else if( Common::HotellingDist::Usable( dof, CovarSampleSize - 1 ) )
+    s << "Hotelling (p=" << dof << ", m-1=" << ( CovarSampleSize - 1 ) << ")";
+  else
+    s << "Hotelling not usable - set to ChiSquared p-value instead";
+  s << NewLine;
+}
+
+template <typename T>
+void Model<T>::SummaryColumnNames( std::ostream &os ) const
+{
+  for( std::size_t i = 0; i < FitTimes.size(); ++i )
+  {
+    if( i == 0 )
+      os << "ti tf";
+    else
+      os << Space << "ti" << i << Space << "tf" << i;
+  }
+  os << " tfLabel NumDataPoints SampleSize dof CovarSampleSize ";
+  Base::SummaryColumnNames( os );
+}
+
+template <typename T>
+void Model<T>::SummaryContents( std::ostream &os ) const
+{
+  std::size_t NumDataPoints{ 0 };
+  std::ostringstream tfl;
+  for( std::size_t i = 0; i < FitTimes.size(); ++i )
+  {
+    NumDataPoints += FitTimes[i].size();
+    if( i )
+    {
+      os << Space;
+      tfl << Underscore << FitTimes[i][0] << Underscore;
+    }
+    os << FitTimes[i][0] << Space << FitTimes[i].back();
+    tfl << FitTimes[i].back();
+  }
+  os << Space << tfl.str();
+  os << Space << NumDataPoints;
+  os << Space << this->SampleSize;
+  os << Space << dof;
+  os << Space << CovarSampleSize;
+  os << Space;
+  Base::SummaryContents( os );
+}
+
+template <typename T>
+void Model<T>::ReorderOldFormat( int NumOps, int NumExponents, std::unique_ptr<T[]> &pData, int Num )
+{
+  T * p{ pData.get() };
+  if( NumExponents > 1 && NumOps && Num && p )
+  {
+    std::vector<T> Buffer( NumOps * NumExponents );
+    while( Num-- )
+    {
+      for( int e = 0; e < NumExponents; ++e )
+        for( int o = 0; e < NumOps; ++o )
+          Buffer[o * NumExponents + e] = p[e * NumOps + o];
+      for( int j = 0; j < Buffer.size(); ++j )
+        p[j] = Buffer[j];
+      p += this->Nt();
+    }
+  }
+}
+
+template <typename T> void Model<T>::CommonConstruct( const std::vector<std::string> &ExtraColumns )
+{
+  std::vector<std::string> Cols{ params.GetNames( Param::Type::All ) };
+  Cols.reserve( Cols.size() + ExtraColumns.size() );
+  for( const std::string &s : ExtraColumns )
+    Cols.push_back( s );
+  this->SetColumnNames( Cols );
 }
 
 template class Model<double>;
 template class Model<float>;
 template class Model<std::complex<double>>;
 template class Model<std::complex<float>>;
-
-bool ConstantSource::Key::Less::operator()( const Key &lhs, const Key &rhs ) const
-{
-  if( lhs.Object.size() != rhs.Object.size() )
-    return lhs.Object.size() < rhs.Object.size();
-  for( std::size_t i = 0; i < lhs.Object.size(); ++i )
-  {
-    int c{ Common::CompareIgnoreCase( lhs.Object[i], rhs.Object[i] ) };
-    if( c )
-      return c < 0;
-  }
-  return Common::CompareIgnoreCase( lhs.Name, rhs.Name ) < 0;
-}
-
-std::ostream &operator<<( std::ostream &os, const ConstantSource::Key &key )
-{
-  for( const std::string &s : key.Object )
-    os << s << '-';
-  return os << key.Name;
-}
-
 
 // Make non-random numbers 0 ... m.size1 - 1 to simplify central replica code
 // If the sample is already bootstrapped, then we won't need these numbers
@@ -1088,8 +1267,6 @@ void DataSet<T>::clear()
 {
   NSamples = 0;
   Extent = 0;
-  MinExponents = 0;
-  MaxExponents = 0;
   corr.clear();
   FitTimes.clear();
   constFile.clear();
@@ -1104,7 +1281,6 @@ void DataSet<T>::SetFitTimes( const std::vector<std::vector<int>> &fitTimes_ )
     throw std::runtime_error( std::to_string( fitTimes_.size() ) + " FitTimes but "
                              + std::to_string( corr.size() ) + " correlators" );
   std::vector<std::vector<int>> ft{ fitTimes_ };
-  std::size_t extent_ = 0;
   for( int i = 0; i < ft.size(); ++i )
   {
     if( !ft[i].empty() )
@@ -1114,10 +1290,9 @@ void DataSet<T>::SetFitTimes( const std::vector<std::vector<int>> &fitTimes_ )
          || std::adjacent_find( ft[i].begin(), ft[i].end() ) != ft[i].end() )
         throw std::runtime_error( "FitTimes[" + std::to_string( i ) + "]=[" + std::to_string( ft[i][0] )
                                  + "..." + std::to_string( ft[i].back() ) + "] invalid" );
-      extent_ += ft[i].size();
     }
   }
-  SetValidatedFitTimes( extent_, std::move( ft ) );
+  SetValidatedFitTimes( std::move( ft ) );
 }
 
 template <typename T>
@@ -1133,13 +1308,14 @@ void DataSet<T>::SetFitTimes( int tMin, int tMax )
     for( int j = tMin; j <= tMax; ++j )
       ft[i].push_back( j );
   }
-  SetValidatedFitTimes( corr.size() * extent_, std::move( ft ) );
+  SetValidatedFitTimes( std::move( ft ) );
 }
 
 // Cache the data for this data set
 template <typename T>
-void DataSet<T>::SetValidatedFitTimes( std::size_t Extent_, std::vector<std::vector<int>> &&FitTimes_ )
+void DataSet<T>::SetValidatedFitTimes( std::vector<std::vector<int>> &&FitTimes_ )
 {
+  std::size_t Extent_{ GetExtent( FitTimes_ ) };
   if( Extent_ == 0 )
     throw std::runtime_error( "Fit range empty" );
   if( Extent_ > std::numeric_limits<int>::max() )
@@ -1189,20 +1365,16 @@ void DataSet<T>::SetValidatedFitTimes( std::size_t Extent_, std::vector<std::vec
 template <typename T>
 void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedParam> &Params ) const
 {
+  // Get a pointer to the raw data in each model for replica idx
   std::vector<const T *> Src( constFile.size() );
   for( int f = 0; f < constFile.size(); ++f )
     Src[f] = constFile[f][idx];
+  // Now copy the data into vResult
   for( const FixedParam &p : Params )
   {
-    if( p.Count > p.src.idx.size() )
-    {
-      std::ostringstream o;
-      o << "File " << p.src.File << " parameter " << constFile[p.src.File].GetColumnNames()[p.src.idx.size()-1]
-        << " is maximum, but " << p.Count << " parameters requested";
-      throw std::runtime_error( o.str().c_str() );
-    }
+    std::size_t SrcIdx{ p.src.param.GetOffset( 0, Param::Type::All ) };
     for( std::size_t i = 0; i < p.Count; ++i )
-      vResult[p.idx + i] = Src[p.src.File][p.src.idx[i]];
+      vResult[p.idx + i] = Src[p.src.File][SrcIdx + i];
   }
 }
 
@@ -1534,8 +1706,7 @@ void DataSet<T>::SaveMatrixFile( const Matrix<T> &m, const std::string &Type, co
 
 // Add a constant to my list of known constants - make sure it isn't already there
 template <typename T>
-void DataSet<T>::AddConstant( const typename ConstantSource::Key &Key, std::size_t File,
-                              std::size_t First, std::size_t Count, std::size_t Stride )
+void DataSet<T>::AddConstant( const Param::Key &Key, std::size_t File, const Param &param )
 {
   static const char Invalid[] = " invalid";
   std::ostringstream os;
@@ -1550,20 +1721,7 @@ void DataSet<T>::AddConstant( const typename ConstantSource::Key &Key, std::size
     os << "file " << File << Invalid;
     throw std::runtime_error( os.str().c_str() );
   }
-  if( Count < 1 || Count > constFile[File].NumExponents )
-  {
-    os << "count " << Count << Invalid;
-    throw std::runtime_error( os.str().c_str() );
-  }
-  if( ( Count > 1 && Stride < 1 ) || First + ( Count - 1 ) * Stride > constFile[File].Nt() )
-  {
-    os << "reads past end of file";
-    throw std::runtime_error( os.str().c_str() );
-  }
-  std::vector<std::size_t> SrcIdx( Count );
-  for( std::size_t i = 0; i < Count; ++i )
-    SrcIdx[i] = First + i * Stride;
-  constMap.insert( { Key, ConstantSource( File, std::move( SrcIdx ) ) } );
+  constMap.insert( { Key, ConstantSource( File, param ) } );
 }
 
 template <typename T>
@@ -1598,9 +1756,6 @@ int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int Comp
 template <typename T>
 void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Args )
 {
-  static const std::string EnergyPrefix{ "E" };
-  // Break trailing arguments for this file into an array of strings
-  std::vector<std::string> vThisArg{ Common::ArrayFromString( Args ) };
   // This is a pre-built model (i.e. the result of a previous fit)
   const std::size_t i{ constFile.size() };
   constFile.emplace_back();
@@ -1611,78 +1766,31 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
     NSamples = constFile[i].NumSamples();
   else if( NSamples > constFile[i].NumSamples() )
     NSamples = constFile[i].NumSamples();
-  // Keep track of minimum and maximum number of exponents across all files
-  if( i )
-  {
-    if( MinExponents > constFile[i].NumExponents )
-      MinExponents = constFile[i].NumExponents;
-    if( MaxExponents < constFile[i].NumExponents )
-      MinExponents = constFile[i].NumExponents;
-  }
-  else
-  {
-    MinExponents = constFile[i].NumExponents;
-    MaxExponents = constFile[i].NumExponents;
-  }
   // Now see which parameters we want to read from the model
-  const std::vector<std::string> &ColumnNames{ constFile[i].GetColumnNames() };
-  const std::vector<std::string> &OpNames{ constFile[i].OpNames };
-  const unsigned int NumExponents{ static_cast<unsigned int>( constFile[i].NumExponents ) };
-  const std::size_t OpsPerExp{ OpNames.size() + 1 };
-  const bool bTempFormat{ NumExponents > 1 && ColumnNames[1].size() == 2
-                       && std::toupper( ColumnNames[1][0] ) == 'E' && ColumnNames[1][1] == '1' };
-  const std::size_t Stride{ bTempFormat ? 1 : OpsPerExp };
-  const std::size_t SingleOffset{ OpsPerExp * NumExponents };
-  const std::size_t SingleNum{ ColumnNames.size() - SingleOffset };
-  typename ConstantSource::Key Key;
-  Key.Object = { constFile[i].Name_.Base };
-  std::size_t pos = Key.Object[0].find_first_of( '.' );
-  if( pos != std::string::npos )
-    Key.Object[0].resize( pos );
-  if( vThisArg.empty() )
+  if( Args.find_first_not_of( Common::WhiteSpace ) == std::string::npos )
   {
     // Load every constant in this file
-    {
-      Key.Name = ColumnNames[0];
-      if( Key.Name.back() == '0' )
-        Key.Name.resize( Key.Name.size() - 1 );
-      AddConstant( Key, i, 0, NumExponents, Stride );
-    }
-    for( int j = 1; j < OpsPerExp; ++j )
-    {
-      Key.Name = OpNames[j-1];
-      AddConstant( Key, i, j * ( bTempFormat ? NumExponents : 1 ), NumExponents, Stride );
-    }
-    for( std::size_t j = SingleOffset; j < ColumnNames.size(); ++j )
-    {
-      Key.Name = ColumnNames[j];
-      AddConstant( Key, i, j, 1, 1 );
-    }
+    for( const Params::value_type &it : constFile[i].params )
+      AddConstant( it.first, i, it.second );
   }
   else
   {
     // Load only those constants specifically asked for
-    for( const std::string &ThisArg : vThisArg )
+    using ReadMap = std::map<Param::Key, Param::Key, Param::Key::Less>;
+    using KVR = KeyValReader<Param::Key, Param::Key, Param::Key::Less>;
+    ReadMap vThisArg{ KVR::Read( Common::ArrayFromString( Args ), &EqualSign, true ) };
+    for( const ReadMap::value_type &it : vThisArg )
     {
-      std::vector<std::string> vPar{ Common::ArrayFromString( ThisArg, "=" ) };
-      if( vPar.empty() || vPar[0].empty() || vPar.size() > 2 || ( vPar.size() > 1 && vPar[1].empty() ) )
-        throw std::runtime_error( "Cannot interpret model parameter string \"" + Args + "\"" );
-      const std::string &vLookFor{ vPar.back() };
-      Key.Name = vPar[0];
-      // Have we asked for a per-exponent constant (which includes energies)
-      std::size_t j = 0;
-      if( !Common::EqualIgnoreCase( EnergyPrefix, vLookFor ) )
-        j = Common::IndexIgnoreCase( OpNames, vLookFor ) + 1;
-      if( j < OpsPerExp )
-        AddConstant( Key, i, j * ( bTempFormat ? NumExponents : 1 ), NumExponents, Stride );
-      else
+      const Param::Key OldKey{ it.first };
+      const Param::Key NewKey{ it.second };
+      Params::iterator itP{ constFile[i].params.find( OldKey ) };
+      if( itP == constFile[i].params.end() )
       {
-        j = SingleOffset;
-        while( !Common::EqualIgnoreCase( ColumnNames[j], vLookFor ) )
-          if( ++j >= ColumnNames.size() )
-            throw std::runtime_error( "Parameter " + vLookFor + " not found" );
-        AddConstant( Key, i, j, 1, 1 );
+        std::ostringstream es;
+        es << "Parameter " << OldKey << " not found";
+        throw std::runtime_error( es.str().c_str() );
       }
+      AddConstant( NewKey.empty() ? OldKey : NewKey, i, itP->second );
     }
   }
 }

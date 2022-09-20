@@ -53,8 +53,8 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i PW35b0/fit/ -o PW35b0/fit/"
-            isEnabled = "NO">
+            argument = "-i NuFit/ -o NuFit/"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i PW35b0/fit_mixed/ -o PW35b0/fit_mixed/"
@@ -70,7 +70,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;*&apos;.model.&apos;*&apos;.h5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-p 0.05"
@@ -78,7 +78,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "*.model.*.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

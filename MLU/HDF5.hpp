@@ -58,6 +58,7 @@ namespace H5 {
   template<> struct Equiv<double>                       { static const ::H5::PredType& Type; };
   template<> struct Equiv<long double>                  { static const ::H5::PredType& Type; };
   template<> struct Equiv<int>                          { static const ::H5::PredType& Type; };
+  template<> struct Equiv<std::size_t>                  { static const ::H5::PredType& Type; };
   template<> struct Equiv<std::string>                  { static const ::H5::StrType   Type; };
   template<> struct Equiv<char *>                       { static const ::H5::StrType&  Type; };
   template<> struct Equiv<std::uint_fast32_t>           { static const ::H5::PredType& Type; };

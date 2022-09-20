@@ -231,7 +231,8 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   else
     MI[0].model.IsCompatible( m, nullptr, Common::COMPAT_DISABLE_BASE );
   // Check that the exponent we want is available
-  if( bFirst )
+  throw std::runtime_error( "Implement support for new parameters" );
+  /*if( bFirst )
     Exponent = ( Par.Exponent >= 0 ) ? Par.Exponent : Par.Exponent + m.NumExponents;
   if( Exponent < 0 || Exponent >= m.NumExponents )
     throw std::runtime_error( "Exponent " + std::to_string( Par.Exponent ) + " not available in model" );
@@ -239,8 +240,7 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   std::cout << "  Base: " << m.Name_.Base << Common::NewLine;
   for( std::size_t i = m.Name_.Extra.size(); i > 0; i-- )
     std::cout << "  Extra[" << std::to_string(i-1) << "]: " << m.Name_.Extra[i-1] << Common::NewLine;
-  std::cout << "  Fit: " << ( m.Factorised ? "F" : "Unf" ) << "actorised, ti="
-            << m.ti << ", tf=" << m.tf << Common::NewLine;
+  std::cout << "  Fit: ti=" << m.ti << ", tf=" << m.tf << Common::NewLine;
   for( std::size_t i = 0; i < m.OpNames.size(); i++ )
     std::cout << "  Model op[" << i << "]: " << m.OpNames[i] << Common::NewLine;
   // Now see which operators to use
@@ -266,7 +266,7 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
       mi.OpIdx[i]  = m.GetColumnIndex( Word[Word.size() == 2 ? 1 : 0], Exponent );
       ++i;
     }
-  }
+  }*/
   // Now say which operators we are using for normalisation
   for( int i = 0; i < ModelNumIndices; ++i )
     std::cout << "  normalisation[" << i << "]: " << mi.OpName[i] << Exponent << " = Model[" << mi.OpIdx[i] << "]" << Common::NewLine;
