@@ -30,6 +30,7 @@
 #define MLU_HDF5_hpp namespace Common {
 #define MLU_HDF5_hpp_end };
 
+#include <MLUconfig.h>
 #include <MLU/GSLVecMat.hpp>
 #include <MLU/Math.hpp>
 #include <MLU/Physics.hpp>
@@ -61,7 +62,9 @@ namespace H5 {
   template<> struct Equiv<std::size_t>                  { static const ::H5::PredType& Type; };
   template<> struct Equiv<std::string>                  { static const ::H5::StrType   Type; };
   template<> struct Equiv<char *>                       { static const ::H5::StrType&  Type; };
+#ifndef HAVE_FAST32_IS_SIZE_T
   template<> struct Equiv<std::uint_fast32_t>           { static const ::H5::PredType& Type; };
+#endif
   template<> struct Equiv<std::complex<float>>          { static const ::H5::CompType  Type; };
   template<> struct Equiv<std::complex<double>>         { static const ::H5::CompType  Type; };
   template<> struct Equiv<std::complex<long double>>    { static const ::H5::CompType  Type; };

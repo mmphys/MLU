@@ -277,6 +277,35 @@ CPPFLAGS+=" `$GSLConfig --cflags`"
 AC_CHECK_HEADER([Hadrons/Modules/MGuesser/BatchExactDeflation.hpp],
                 [AC_DEFINE([MLU_HADRONS_HAS_GUESSERS], [], [Hadrons supports guessers])])
 
+# Check whether fint and size_t are same
+AC_MSG_CHECKING([whether std::uint_fast32_t is the same as std::size_t]);
+AC_LINK_IFELSE(
+        [AC_LANG_SOURCE([[
+    #include <stdint.h>
+    #include <H5Cpp.h>
+    #include <H5CompType.h>
+    #include <H5public.h>
+    template <typename T> struct Equiv;
+    template<> struct Equiv<std::size_t>        { static const ::H5::PredType& Type; };
+    template<> struct Equiv<std::uint_fast32_t> { static const ::H5::PredType& Type; };
+    const ::H5::PredType& Equiv<std::size_t>        ::Type{  sizeof( std::size_t ) == 4
+                                                              ? ::H5::PredType::NATIVE_UINT32
+                                                              : ::H5::PredType::NATIVE_UINT64 };
+    const ::H5::PredType& Equiv<std::uint_fast32_t> ::Type{ sizeof( std::uint_fast32_t ) == 4
+                                                              ? ::H5::PredType::STD_U32LE
+                                                              : ::H5::PredType::STD_U64LE };
+    int main(int argc, char *argv[]) {
+        const ::H5::PredType& TypeA{ Equiv<std::size_t>::Type };
+        const ::H5::PredType& TypeB{ Equiv<std::uint_fast32_t>::Type };
+        return 0; }
+    ]])],
+    [AC_MSG_RESULT([no])]
+    [fast32_is_sizet=no],
+    [AC_MSG_RESULT([yes])]
+    [fast32_is_sizet=yes]
+    [AC_DEFINE([HAVE_FAST32_IS_SIZE_T], [], [std::uint_fast32_t same as std::size_t])])
+AM_CONDITIONAL([FAST32_IS_SIZE_T], [test x$fast32_is_sizet != xno])
+
 CPPFLAGS="-I${abs_srcdir} $CPPFLAGS -I$AbsMLUBuildDir"
 
 #AC_DEFINE_UNQUOTED([MLU_SHA], ["`git rev-parse HEAD`"], [git commit SHA])

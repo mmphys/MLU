@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "HDF5.hpp"
 #include <iostream>
 
@@ -82,9 +83,11 @@ const ::H5::PredType& H5::Equiv<std::size_t>                ::Type{  sizeof( std
                                                                     : ::H5::PredType::NATIVE_UINT64 };
 const ::H5::StrType   H5::Equiv<std::string>                ::Type{ ::H5::PredType::C_S1, H5T_VARIABLE };
 const ::H5::StrType&  H5::Equiv<char *>                     ::Type{   H5::Equiv<std::string>::Type };
+#ifndef HAVE_FAST32_IS_SIZE_T
 const ::H5::PredType& H5::Equiv<std::uint_fast32_t>         ::Type{ sizeof( std::uint_fast32_t ) == 4
                                                               ? ::H5::PredType::STD_U32LE
                                                               : ::H5::PredType::STD_U64LE };
+#endif
 const ::H5::CompType  H5::Equiv<std::complex<float>>        ::Type{ MakeComplex<float>() };
 const ::H5::CompType  H5::Equiv<std::complex<double>>       ::Type{ MakeComplex<double>() };
 const ::H5::CompType  H5::Equiv<std::complex<long double>>  ::Type{ MakeComplex<long double>() };
