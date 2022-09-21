@@ -37,6 +37,8 @@
 using scalar = double;
 using Model = Common::Model<scalar>;
 
+extern bool bReverseSort; // TODO: shouldn't be global
+
 struct FitTimes
 {
   std::vector<int> time;
@@ -49,7 +51,6 @@ struct FitTimes
 
 struct FitData
 {
-  scalar SortBy;
   scalar Stat;
   FitTimes ft;
   int NumDataPoints;
@@ -59,9 +60,9 @@ struct FitData
   std::size_t idxModel;
   int Seq = 0;
   FitData() = default;
-  FitData( scalar sortBy_, scalar stat_, FitTimes ft_, int NumDataPoints_, int dof_, int SampleSize_,
+  FitData( scalar stat_, FitTimes ft_, int NumDataPoints_, int dof_, int SampleSize_,
            const std::string &Parameters_,std::size_t idx_Model)
-  : SortBy{sortBy_}, Stat{stat_}, ft{ft_}, NumDataPoints{NumDataPoints_}, dof{dof_}, SampleSize{SampleSize_},
+  : Stat{stat_}, ft{ft_}, NumDataPoints{NumDataPoints_}, dof{dof_}, SampleSize{SampleSize_},
     Parameters{Parameters_}, idxModel{idx_Model} {}
 };
 
@@ -85,6 +86,7 @@ struct Summariser
   const scalar Threshold;
   const std::string inBase;
   const std::string outBaseFileName;
+  const std::string StatisticName;
   using BaseList = std::map<std::string, std::vector<FileInfo>>;
   BaseList lBase;
 protected:

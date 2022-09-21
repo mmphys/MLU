@@ -28,6 +28,8 @@
 
 #include "FitSummary.hpp"
 
+bool bReverseSort{ false };
+
 const std::string &Sep{ Common::Space };
 const std::string &NL{ Common::NewLine };
 const std::string sIndent{ "  " };
@@ -93,7 +95,11 @@ std::ostream &operator<<( std::ostream &s, const FitData &d )
 bool operator<( const TestStatKey &lhs, const TestStatKey &rhs )
 {
   if( lhs.TestStatistic != rhs.TestStatistic )
+  {
+    if( bReverseSort )
+      return lhs.TestStatistic > rhs.TestStatistic;
     return lhs.TestStatistic < rhs.TestStatistic;
+  }
   return lhs.ft < rhs.ft;
 }
 
@@ -208,8 +214,10 @@ Summariser::Summariser( const Common::CommandLine &cl )
 : bSaveCMat{ cl.GotSwitch( "p" ) },
   Threshold{ bSaveCMat ? cl.SwitchValue<scalar>("p") : 0 },
   inBase{ Common::AppendSlash( cl.SwitchValue<std::string>("i") ) },
-  outBaseFileName{ Common::AppendSlash( cl.SwitchValue<std::string>("o") ) }
+  outBaseFileName{ Common::AppendSlash( cl.SwitchValue<std::string>("o") ) },
+  StatisticName{ cl.SwitchValue<std::string>( "stat" ) }
 {
+  bReverseSort = !cl.GotSwitch( "inc" );
   Common::MakeAncestorDirs( outBaseFileName );
   for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
   {
@@ -291,15 +299,17 @@ void Summariser::Run()
         ss.str("");
         m.SummaryContents( ss );
         using vEr = Common::ValWithEr<scalar>;
-        const vEr & pValueH{ m.getSummaryData()[m.Nt() - 1] };
-        scalar SortStat = pValueH.Central;
+        int idxField{ Common::IndexIgnoreCase( m.GetColumnNames(), StatisticName ) };
+        if( idxField >= m.GetColumnNames().size() )
+          throw std::runtime_error( "Sort field " + StatisticName + " not available" );
+        const vEr & pValueH{ m.getSummaryData()[idxField] };
+        scalar TestStat = pValueH.Central;
         // save the model in my list
         int NumDataPoints{ 0 };
         for( const std::vector<int> &v : m.FitTimes )
           NumDataPoints += static_cast<int>( v.size() );
-        Fits.emplace( std::make_pair( ThisFile.ft,
-                                      FitData( 1 - SortStat, SortStat, ThisFile.ft, NumDataPoints,
-                                               m.dof, m.SampleSize, ss.str(), Models.size() ) ) );
+        FitData fd(TestStat,ThisFile.ft,NumDataPoints,m.dof,m.SampleSize,ss.str(),Models.size());
+        Fits.emplace( std::make_pair( ThisFile.ft, fd ) );
         Models.emplace_back( std::move( m ) );
       }
       catch( const std::exception &e )
@@ -315,7 +325,7 @@ void Summariser::Run()
       for( auto dt = Fits.begin(); dt != Fits.end(); ++dt )
       {
         const FitData &d{ dt->second };
-        SortSet.emplace( TestStatKey{ d.SortBy, dt->first } );
+        SortSet.emplace( TestStatKey{ d.Stat, dt->first } );
       }
       std::string sFileName=Common::MakeFilename(sSummaryName,Common::sParams+"_sort",Seed,TEXT_EXT);
       std::ofstream s( sFileName );
@@ -372,6 +382,7 @@ void Summariser::Run()
     }
     // Now plot the correlation matrix for selected models
     Models.clear();
+    // TODO: Reinstate below. NB: Support sort order reversal, i.e. above/below statistic
     /*if( !CorrModels.empty() )
     {
       try
@@ -438,6 +449,8 @@ int main(int argc, const char *argv[])
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"p", CL::SwitchType::Single, nullptr},
+      {"stat", CL::SwitchType::Single, Common::sPValueH.c_str() },
+      {"inc",  CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -465,7 +478,9 @@ int main(int argc, const char *argv[])
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
     "-p     save covariance matrix if p-value above threshold\n"
+    "--stat Statistic (default: " << Common::sPValueH << "\n"
     "Flags:\n"
+    "--inc  Sort increasing (default sort test stat decreasing)"
     "--help This message\n";
   }
   return iReturn;

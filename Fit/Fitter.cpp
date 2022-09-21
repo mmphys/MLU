@@ -385,9 +385,9 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
     PreBuilt.Read( ModelFileName, "Pre-built: " );
     // TODO: This comparison is incomplete ... but matches previous version
     bool bOK{ OutputModel.dof == PreBuilt.dof };
-    bOK = bOK && OutputModel.Extent() != PreBuilt.Extent();
-    bOK = bOK && OutputModel.FitTimes != PreBuilt.FitTimes;
-    bOK = bOK && OutputModel.GetColumnNames() != PreBuilt.GetColumnNames();
+    bOK = bOK && OutputModel.Extent() == PreBuilt.Extent();
+    bOK = bOK && OutputModel.FitTimes == PreBuilt.FitTimes;
+    bOK = bOK && OutputModel.GetColumnNames() == PreBuilt.GetColumnNames();
     if( !bOK )
       throw std::runtime_error( "Pre-built fit not compatible with parameters from this run" );
     bPerformFit = PreBuilt.NewParamsMorePrecise( cp.bFreeze, ds.NSamples );

@@ -59,7 +59,7 @@ void Model3pt::AddParameters( Params &mp )
 {
   for( ModelParam &p : E )
     AddParam( mp, p, NumOverlapExp, true );
-  AddParam( mp, MEL, NumExponents, true );
+  AddParam( mp, MEL, NumExponents, false );
   ModelOverlap::AddParameters( mp );
 }
 

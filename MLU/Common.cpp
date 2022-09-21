@@ -322,14 +322,12 @@ std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps,
       o.push_back( Base.substr( 0, LastPos + 1 ) );
       LastPos = 0;
     }
-    else if( i != NumOps - 1 && Base[pos] == '.' )
-    {
-      break;
-    }
     else
     {
       o.push_back( Base.substr( pos + 1, LastPos - pos ) );
       LastPos = pos;
+      if( Base[pos] == '.' )
+        i = NumOps - 1;
     }
   }
   if( i != NumOps )

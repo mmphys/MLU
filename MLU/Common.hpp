@@ -1770,6 +1770,7 @@ public: // Override these for specialisations
   }
   virtual void SummaryContents( std::ostream &os ) const
   {
+    os << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha;
     const ValWithEr<scalar_type> * p{ m_pSummaryData.get() };
     if( ColumnNames.empty() )
     {

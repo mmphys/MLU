@@ -57,7 +57,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-v 1 -n 20"
+            argument = "--mindof 0"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -65,8 +65,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--Hotelling 0"
-            isEnabled = "YES">
+            argument = "--Hotelling 0.01"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--fitter Minuit2 --retry 150"
@@ -110,19 +110,19 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "NuFit/h385_s_p2_0.corr_12_25_10_25.g5P_g5W.model.1835672416.h5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "corr/2ptp2/h385_s_p2_0_g5P_g5P.*.h5,t=12:25"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "corr/2ptp2/h385_s_p2_0_g5P_g5W.*.h5,t=R-1:-2:0"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "NuFit/s_l_p2_0.corr_10_23_12_23.g5P_g5W.model.1835672416.h5"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "corr/2ptp2/s_l_p2_0_g5P_g5P.*.h5,t=10:23"
@@ -141,24 +141,24 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_16_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=6:10"
-            isEnabled = "NO">
+            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_16_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=2:6:30:9"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_20_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=7:13"
-            isEnabled = "NO">
+            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_20_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=2:6:30:13"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_24_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=8:16"
-            isEnabled = "NO">
+            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_24_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=2:6:30:17"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_28_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=16:19"
-            isEnabled = "NO">
+            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_28_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=2:6:30:21"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_32_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=10:22"
-            isEnabled = "NO">
+            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_32_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=2:6:30:25"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
