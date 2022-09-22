@@ -82,18 +82,12 @@ struct FileInfo
 
 struct Summariser
 {
-  const bool bSaveCMat;
-  const scalar Threshold;
   const std::string inBase;
   const std::string outBaseFileName;
   const std::string StatisticName;
+  using FitMap = std::map<FitTimes, FitData>;
   using BaseList = std::map<std::string, std::vector<FileInfo>>;
   BaseList lBase;
-protected:
-  BaseList MakeBaseList( const Common::CommandLine &cl );
-  void SaveCMat(const std::vector<Model> &Corr, const int NumBoot, const std::string &sFileName,
-                const std::vector<int> &OpIndices, bool bInvertNeg, bool bSingleModel );
-public:
   void Run();
   Summariser( const Common::CommandLine &cl );
 };
