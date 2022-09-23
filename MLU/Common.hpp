@@ -1461,6 +1461,7 @@ public:
   }
   inline int Nt() const { return Nt_; }
   inline const fint * RandNum() const { return m_pRandNum.get(); };
+  // Return the summary data for the nth type (0=central, 1=bias, etc)
   inline ValWithEr<scalar_type> * getSummaryData( int idx = 0 )
   {
     const int iSize{ static_cast<int>( SummaryNames.size() ) };
@@ -1474,6 +1475,21 @@ public:
     if( Nt_ == 0 || idx < 0 || idx >= iSize )
       throw "Summary " + std::to_string(idx) + "/" + std::to_string(iSize) + " doesn't exist";
     return m_pSummaryData.get() + idx * Nt_;
+  }
+  // Return the central replica summary data for the nth column
+  inline ValWithEr<scalar_type> &getSummaryData( const std::string &ColumnName )
+  {
+    int idxField{ IndexIgnoreCase( GetColumnNames(), ColumnName ) };
+    if( idxField >= GetColumnNames().size() )
+      throw std::runtime_error( "Column " + ColumnName + " not available" );
+    return getSummaryData()[idxField];
+  }
+  inline const ValWithEr<scalar_type> &getSummaryData( const std::string &ColumnName ) const
+  {
+    int idxField{ IndexIgnoreCase( GetColumnNames(), ColumnName ) };
+    if( idxField >= GetColumnNames().size() )
+      throw std::runtime_error( "Column " + ColumnName + " not available" );
+    return getSummaryData()[idxField];
   }
   void WriteSummaryData( std::ostream &s, int idx = 0 ) const
   {

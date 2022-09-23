@@ -38,7 +38,7 @@ FitRange_hpp
 *****************************************************************/
 
 // Deserialise a set of fit ranges
-void FitRanges::Deserialise( const std::vector<std::string> &vString )
+void FitRanges::Deserialise( const std::vector<std::string> &vString, int MinDP )
 {
   clear();
   reserve( vString.size() );
@@ -49,7 +49,7 @@ void FitRanges::Deserialise( const std::vector<std::string> &vString )
     Base New;
     New.reserve( vString.size() );
     for( std::size_t i = 0; i < vString.size(); ++i )
-      New.emplace_back( FitRange::Deserialise( vString[i], i ) );
+      New.emplace_back( FitRange::Deserialise( vString[i], i, MinDP ) );
     // Now sort them so that fit ranges appear BEFORE the fit ranges they depend on
     // Use Kahn's algorithm, https://en.wikipedia.org/wiki/Topological_sorting
     struct DepTrack
@@ -124,23 +124,32 @@ void FitRanges::Deserialise( const std::vector<std::string> &vString )
 
 // Deserialise a single fit range, by trying all possible deserialisations in turn
 
-FitRange * FitRange::Deserialise( const std::string &String, std::size_t MyIndex )
+FitRange * FitRange::Deserialise( const std::string &String, std::size_t MyIndex, int MinDP )
 {
   using DeserialiseFunc = FitRange * (*)( std::istringstream &, std::size_t );
   static const std::array<DeserialiseFunc, 2> aDeserialise{ &FitRangeAbsolute::Deserialise,
     &FitRangeRelative::Deserialise };
-
+  if( MinDP < 0 )
+    throw std::runtime_error( "Minimum data points " + std::to_string( MinDP ) + " < 0" );
   for( DeserialiseFunc f : aDeserialise )
   {
     try
     {
       std::istringstream is( String );
-      FitRange * p = ( *f )( is, MyIndex );
+      std::unique_ptr<FitRange> p{ ( *f )( is, MyIndex ) };
       if( p )
       {
-        if( is.eof() || ( is >> std::ws && is.eof() ) )
-          return p;
-        delete p;
+        p->MinDP = MinDP;
+        int NextChar{ is.get() };
+        if( NextChar == std::istringstream::traits_type::eof()
+          || ( std::tolower( NextChar ) == 'd'
+              && ( is >> p->MinDP )
+              && ( is.eof() || ( is >> std::ws && is.eof() ) ) ) )
+        {
+          if( p->MinDP < 0 )
+            throw std::runtime_error( "Minimum data points " + std::to_string( p->MinDP ) + " < 0" );
+          return p.release();
+        }
       }
     }
     catch(...){}
@@ -182,13 +191,16 @@ FitRangesIterator::FitRangesIterator( const FitRanges &ranges_, bool bEnd )
     else
       RangeMemOrder[i]->GetStart( Base::operator[]( i ), *this );
   }
+  if( !bEnd && !GotMinDP() )
+    operator++();
 }
 
 // Prefix increment
 FitRangesIterator &FitRangesIterator::operator++()
 {
-  // Don't increment if we are already at the end
-  if( !PastEnd() )
+  // Keep incrementing until minimum data points satisfied or we hit the end
+  bool bMinDPOK{ false };
+  while( !bMinDPOK && !PastEnd() )
   {
     std::size_t i = 0;
     while( i < size() && RangeMemOrder[i]->Increment( Base::operator[]( i ), *this, i != size() - 1 ) )
@@ -198,6 +210,8 @@ FitRangesIterator &FitRangesIterator::operator++()
       if( !RangeMemOrder[i]->GetDependencies().empty() )
         RangeMemOrder[i]->GetStart( Base::operator[]( i ), *this );
     }
+    // See whether minimum number of data points for each range are satisfied
+    bMinDPOK = GotMinDP();
   }
   return *this;
 }

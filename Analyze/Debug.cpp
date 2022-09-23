@@ -524,7 +524,7 @@ bool FitRangeTest( int argc, char *argv[] )
       vs.reserve( argc - 1 );
       for (int i = 1; i < argc; ++i)
         vs.push_back( argv[i] );
-      Common::FitRanges fr( vs );
+      Common::FitRanges fr( vs, 1 );
       // Show FitRanges
       for( std::size_t i = 0; i < fr.size(); ++i )
         std::cout << i << ": " << fr[i] << std::endl;

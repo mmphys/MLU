@@ -72,6 +72,7 @@ int main(int argc, const char *argv[])
 #endif
   static const char DefaultEnergySep[] = "0"; // Default used to be 0.2 until 10 Jul 2021
   static const char DefaultHotelling[] = "0.05";
+  static const char DefaultMinDP[] = "3";
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;
@@ -84,6 +85,7 @@ int main(int argc, const char *argv[])
       {"Hotelling", CL::SwitchType::Single, DefaultHotelling},
       {"sep", CL::SwitchType::Single, DefaultEnergySep},
       {"mindof", CL::SwitchType::Single, "1"},
+      {"mindp", CL::SwitchType::Single, DefaultMinDP},
       {"retry", CL::SwitchType::Single, "0"},
       {"iter", CL::SwitchType::Single, "0"},
       {"tol", CL::SwitchType::Single, "1e-7"},
@@ -97,12 +99,12 @@ int main(int argc, const char *argv[])
       {"e", CL::SwitchType::Single, "1"},
       // Other params
       {"fitter", CL::SwitchType::Single, "GSL"},
-      {"delta", CL::SwitchType::Single, "3"},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"n", CL::SwitchType::Single, "0"},
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"opnames", CL::SwitchType::Flag, nullptr},
+      {"testrun", CL::SwitchType::Flag, nullptr},
       {"covsrc", CL::SwitchType::Single, "Bootstrap"},
       {"covboot", CL::SwitchType::Single, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -110,7 +112,6 @@ int main(int argc, const char *argv[])
     cl.Parse( argc, argv, list );
     if( !cl.GotSwitch( "help" ) && cl.Args.size() )
     {
-      const int delta{ cl.SwitchValue<int>("delta") };
       const std::string inBase{ cl.SwitchValue<std::string>("i") };
       std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
       Common::MakeAncestorDirs( outBaseFileName );
@@ -170,7 +171,8 @@ int main(int argc, const char *argv[])
       if( ds.corr.empty() )
         throw std::runtime_error( "At least one correlator must be loaded to perform a fit" );
       // Now see whether the first parameter is a fit range (i.e. integer index of a defined fit range)
-      Common::FitRanges fitRanges( FitRangeSpec );
+      const int MinDP{ cl.SwitchValue<int>( "mindp" ) };
+      Common::FitRanges fitRanges( FitRangeSpec, MinDP );
       for( std::size_t i = 0; i < ds.corr.size(); ++i )
       {
         if( !fitRanges[ModelFitRange[i]].Validate( ds.corr[i].Nt() ) )
@@ -238,48 +240,44 @@ int main(int argc, const char *argv[])
       for( Common::FitRangesIterator it = fitRanges.begin(); !it.PastEnd(); ++it )
       {
         // Set fit ranges
-        int MinExtent = delta;
         std::vector<std::vector<int>> fitTimes( ds.corr.size() );
-        for( int i = 0; MinExtent >= delta && i < ds.corr.size(); ++i )
+        for( int i = 0; i < ds.corr.size(); ++i )
         {
           const Common::FitTime &ft{ it[ModelFitRange[i]] };
           const int Extent{ ft.tf - ft.ti + 1 };
-          if( i == 0 || MinExtent > Extent )
-            MinExtent = Extent;
-          if( Extent >= delta )
-          {
-            fitTimes[i].resize( Extent );
-            for( int j = 0; j < Extent; ++j )
-              fitTimes[i][j] = ft.ti + j;
-          }
+          fitTimes[i].resize( Extent );
+          for( int j = 0; j < Extent; ++j )
+            fitTimes[i][j] = ft.ti + j;
         }
-        if( MinExtent >= delta )
+        ds.SetFitTimes( fitTimes );
+        // Log what file we're processing and when we started
+        std::time_t then;
+        std::time( &then );
+        try
         {
-          ds.SetFitTimes( fitTimes );
-          // Log what file we're processing and when we started
-          std::time_t then;
-          std::time( &then );
-          try
           {
-            {
-              std::stringstream ss;
-              ss << ( doCorr ? "C" : "unc" ) << "orrelated " << m->Type() << " fit on timeslices " << it.to_string( "-", ", " );
-              Fitter::SayNumThreads( ss );
-              const std::string &sMsg{ ss.str() };
-              std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine << sMsg << Common::NewLine;
-            }
-            double ChiSq;
-            int dof;
-            outBaseFileName.resize( outBaseFileNameLen );
-            outBaseFileName.append( it.to_string( Common::Underscore ) );
-            outBaseFileName.append( 1, '.' );
-            auto params = m->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat, Seed );
+            std::stringstream ss;
+            ss << ( doCorr ? "C" : "unc" ) << "orrelated " << m->Type() << " fit on timeslices " << it.to_string( "-", ", " );
+            Fitter::SayNumThreads( ss );
+            const std::string &sMsg{ ss.str() };
+            if( !m->bTestRun )
+              std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine;
+            std::cout << sMsg << Common::NewLine;
           }
-          catch(const std::exception &e)
-          {
-            std::cout << "Error: " << e.what() << "\n";
-          }
-          // Mention that we're finished, what the time is and how long it took
+          double ChiSq;
+          int dof;
+          outBaseFileName.resize( outBaseFileNameLen );
+          outBaseFileName.append( it.to_string( Common::Underscore ) );
+          outBaseFileName.append( 1, '.' );
+          m->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat, Seed );
+        }
+        catch(const std::exception &e)
+        {
+          std::cout << "Error: " << e.what() << "\n";
+        }
+        // Mention that we're finished, what the time is and how long it took
+        if( !m->bTestRun )
+        {
           std::time_t now;
           std::time( &now );
           double dNumSecs = std::difftime( now, then );
@@ -316,11 +314,11 @@ int main(int argc, const char *argv[])
     "<options> are:\n"
     "--Hotelling Minimum Hotelling Q-value on central replica (default " << DefaultHotelling << ")\n"
     "--sep    Minimum relative separation between energy levels (default " << DefaultEnergySep << ")\n"
-    "--delta  Minimum number of timeslices in fit range (default 3)\n"
     "--retry  Maximum number of times to retry fits (default Minuit2=10, GSL=0)\n"
     "--iter   Max iteration count, 0 (default) = unlimited\n"
     "--tol    Tolerance of required fits (default 1e-7)\n"
     "--mindof Minimum degrees of freedom (default 1)\n"
+    "--mindp  Minimum number of data points per fit range (default " << DefaultMinDP << ")\n"
     "--fitter (GSL|Minuit2)[,options] fitter (default GSL,Levenberg-Marquardt)\n"
     "         GSL options: lm, lmaccel, dogleg, ddogleg, subspace2D\n"
     "--covsrc source[,options[,...]] build (co)variance from source, i.e. one of\n"
@@ -344,6 +342,7 @@ int main(int argc, const char *argv[])
     "--analytic Analytic derivatives for GSL (default: numeric)\n"
     "--srcsnk   Append _src and _snk to overlap coefficients (ie force different)\n"
     "--opnames  Disable sorting and deduplicating operator name list\n"
+    "--testrun  Don't perform fits - just say which fits would be attempted\n"
     "--help     This message\n"
     "Parameters accepted by all models:\n"
     " e         Number of exponentials\n"

@@ -85,7 +85,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = " --delta 1 --iter 100000"
+            argument = "--testrun"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--mindp 8 --iter 100000"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -141,24 +145,24 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_16_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=2:6:30:9"
+            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_16_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=2:6:30:9d10"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_20_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=2:6:30:13"
+            argument = "corr/3pt_sp2/quark_l_h385_gT_dt_20_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=R-1:-2:2:5:5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "corr/3pt_sp2/quark_l_h385_gT_dt_24_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=2:6:30:17"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "corr/3pt_sp2/quark_l_h385_gT_dt_28_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=2:6:30:21"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "corr/3pt_sp2/quark_l_h385_gT_dt_32_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=2:6:30:25"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

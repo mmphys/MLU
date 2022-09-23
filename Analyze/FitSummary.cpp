@@ -186,11 +186,7 @@ void Summariser::Run()
         // Save the summary of the parameters for this file
         ss.str("");
         m.SummaryContents( ss );
-        using vEr = Common::ValWithEr<scalar>;
-        int idxField{ Common::IndexIgnoreCase( m.GetColumnNames(), StatisticName ) };
-        if( idxField >= m.GetColumnNames().size() )
-          throw std::runtime_error( "Sort field " + StatisticName + " not available" );
-        const vEr & pValueH{ m.getSummaryData()[idxField] };
+        const Common::ValWithEr<scalar> &pValueH{ m.getSummaryData( StatisticName ) };
         scalar TestStat = pValueH.Central;
         // save the model in my list
         int NumDataPoints{ 0 };

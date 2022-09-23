@@ -40,6 +40,7 @@ class Fitter
 public:
   // Simple command-line options
   const bool bAnalyticDerivatives;
+  const bool bTestRun;
   const double HotellingCutoff;
   const double RelEnergySep;
   const int MinDof;
@@ -86,8 +87,7 @@ public:
   void Dump( int idx, const std::string &Name, const Vector &v ) const;
   void SaveMatrixFile( const Matrix &m, const std::string &Type, const std::string &Filename,
                          const char *pGnuplotExtra = nullptr ) const;
-  std::vector<Common::ValWithEr<scalar>>
-  PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName,
+  void PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName,
               const std::string &ModelSuffix, Common::SeedType Seed );
   virtual const std::string &Type() const = 0;
 };

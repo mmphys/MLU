@@ -77,6 +77,7 @@ struct FitTime
 {
   int ti;
   int tf;
+  inline int Extent() const { return tf - ti + 1; }
 };
 
 struct FitRange;
@@ -87,8 +88,8 @@ struct FitRanges : public std::vector<std::unique_ptr<FitRange>>
   std::vector<std::size_t> vIndex;
   using Base = std::vector<std::unique_ptr<FitRange>>;
   using Base::Base; // Import base constructors
-  void Deserialise( const std::vector<std::string> &vString );
-  FitRanges( std::vector<std::string> vString ) { Deserialise( vString ); }
+  void Deserialise( const std::vector<std::string> &vString, int MinDP );
+  FitRanges( std::vector<std::string> vString, int MinDP ) { Deserialise( vString, MinDP ); }
   FitRangesIterator begin() const;
   FitRangesIterator end() const;
   const FitRange & operator[]( std::size_t Index ) const { return * Base::operator[]( vIndex[Index] ).get(); }
@@ -106,9 +107,11 @@ struct FitRange
   virtual void Print( std::ostream &os ) const = 0;
   virtual const vDepend &GetDependencies() const { return DependsOn; };
   virtual ~FitRange() {};
-  static FitRange * Deserialise( const std::string &String, std::size_t MyIndex );
+  static FitRange * Deserialise( const std::string &String, std::size_t MyIndex, int MinDP );
+  inline int GetMinDP() const { return MinDP; }
 protected:
   vDepend DependsOn;
+  int MinDP; // Minimum number of data points in this range
 };
 
 std::ostream & operator<<( std::ostream &os, const FitRange &fr );
@@ -130,6 +133,13 @@ struct FitRangesIterator : public FitRange::vFitTime
   const FitTime &operator[]( std::size_t Index ) const { return Base::operator[]( Ranges.vIndex[Index] ); }
 protected:
   const FitRanges::Base &RangeMemOrder;
+  inline bool GotMinDP() const
+  {
+    bool bMinDPOK = true;
+    for( std::size_t i = 0; bMinDPOK && i < size(); ++i )
+      bMinDPOK = Base::operator[]( i ).Extent() >= RangeMemOrder[i]->GetMinDP();
+    return bMinDPOK;
+  }
 };
 
 struct FitRangeAbsolute : FitRange

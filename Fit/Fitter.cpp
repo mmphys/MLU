@@ -36,6 +36,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
                 std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames_,
                 CovarParams &&cp_ )
   : bAnalyticDerivatives{ cl.GotSwitch("analytic") },
+    bTestRun{ cl.GotSwitch("testrun") },
     HotellingCutoff{ cl.SwitchValue<double>( "Hotelling" ) },
     RelEnergySep{ cl.SwitchValue<double>("sep") },
     MinDof{ cl.SwitchValue<int>("mindof") },
@@ -344,8 +345,7 @@ void Fitter::SaveMatrixFile( const Matrix &m, const std::string &Type, const std
 }
 
 // Perform a fit - assume fit ranges have been set on the DataSet prior to the call
-std::vector<Common::ValWithEr<scalar>>
-Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::string &OutBaseName,
+void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::string &OutBaseName,
                     const std::string &ModelSuffix, Common::SeedType Seed )
 {
   bCorrelated = Bcorrelated;
@@ -362,7 +362,6 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
   dof_ = dof;
 
   // Make somewhere to store the results of the fit for each bootstrap sample
-  const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
   ModelFile OutputModel( ds.NSamples, mp, { Common::sChiSqPerDof, Common::sPValue, Common::sPValueH },
                          ds.FitTimes, dof, cp.CovarSampleSize(), cp.bFreeze, cp.Source, cp.RebinSize,
                          cp.CovarNumBoot );
@@ -393,14 +392,14 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
     bPerformFit = PreBuilt.NewParamsMorePrecise( cp.bFreeze, ds.NSamples );
     if( !bPerformFit )
     {
-      ChiSq = dof * PreBuilt.getSummaryData()[NumParams].Central; // Last summary has chi squared per dof
+      ChiSq = dof * PreBuilt.getSummaryData( Common::sChiSqPerDof ).Central;
       OutputModel = std::move( PreBuilt );
     }
     else
       std::cout << "Overwriting\n";
   }
 
-  if( bPerformFit )
+  if( !bTestRun && bPerformFit )
   {
     // Make somewhere to hold the correlators corresponding to the fitted model
     vCorrelator CorrSynthetic( NumFiles ); // correlators resulting from the fit params
@@ -552,20 +551,4 @@ Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::strin
       CorrSynthetic[f].WriteSummary( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, TEXT_EXT ));
     }
   }
-  // Return the statistics on the fit results
-  const int NumSummaries{ OutputModel.NumSamples() }; // because we might have read back an old fit
-  std::vector<Common::ValWithEr<scalar>> Results( mp.NumScalars( Param::Type::All ) );
-  std::vector<scalar> data( NumSummaries );
-  for( std::size_t p = 0; p < Results.size(); p++ ) {
-    double Central = OutputModel[Fold::idxCentral][p];
-    std::size_t Count{ 0 };
-    for( int j = 0; j < NumSummaries; ++j )
-    {
-      double d = OutputModel[j][p];
-      if( std::isfinite( d ) )
-        data[Count++] = d;
-    }
-    Results[p].Get( Central, data, Count );
-  }
-  return Results;
 }
