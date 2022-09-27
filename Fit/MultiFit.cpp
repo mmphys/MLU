@@ -153,14 +153,29 @@ int main(int argc, const char *argv[])
             ds.LoadCorrelator( std::move( Att ), Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT,
                                PrintPrefix.c_str() );
             // Get the fit range (if present)
+            int FitRange;
             bool bGotFitRange;
             std::string ThisFitRange = vArgs.Remove( "t", &bGotFitRange );
             if( bGotFitRange )
-              FitRangeSpec.emplace_back( std::move( ThisFitRange ) );
-            else if( FitRangeSpec.empty() )
-              throw std::runtime_error( "The first correlator must specify a fit range" );
+            {
+              std::istringstream is( ThisFitRange );
+              if( is >> FitRange && ( is.eof() || ( is >> std::ws && is.eof() ) ) )
+                ; // Use the single number fit range we just decoded
+              else
+              {
+                // Treat this as a new fit range spec
+                FitRange = static_cast<int>( FitRangeSpec.size() );
+                FitRangeSpec.emplace_back( std::move( ThisFitRange ) );
+              }
+            }
+            else
+            {
+              if( ModelFitRange.empty() )
+                throw std::runtime_error( "The first correlator must specify a fit range" );
+              FitRange = ModelFitRange.back(); // Use same fit range as previous correlator
+            }
+            ModelFitRange.push_back( FitRange );
             ModelArgs.emplace_back( vArgs );
-            ModelFitRange.push_back( static_cast<int>( FitRangeSpec.size() - 1 ) );
           }
           else
           {
@@ -170,9 +185,26 @@ int main(int argc, const char *argv[])
       }
       if( ds.corr.empty() )
         throw std::runtime_error( "At least one correlator must be loaded to perform a fit" );
-      // Now see whether the first parameter is a fit range (i.e. integer index of a defined fit range)
+      // Make sure models refer to all fit ranges
       const int MinDP{ cl.SwitchValue<int>( "mindp" ) };
       Common::FitRanges fitRanges( FitRangeSpec, MinDP );
+      {
+        std::vector<bool> ModelFitRangeUsed( fitRanges.size(), false );
+        for( std::size_t i = 0; i < ds.corr.size(); ++i )
+        {
+          if( ModelFitRange[i] < 0 || ModelFitRange[i] >= ModelFitRangeUsed.size() )
+          {
+            std::ostringstream es;
+            es << "Model " << i << " refers to non-existent fit range " << ModelFitRange[i];
+            throw std::runtime_error( es.str().c_str() );
+          }
+          ModelFitRangeUsed[ModelFitRange[i]] = true;
+        }
+        for( std::size_t i = 0; i < ModelFitRangeUsed.size(); ++i )
+          if( !ModelFitRangeUsed[i] )
+            throw std::runtime_error( "Fit range " + std::to_string( i ) + " not referred to by any model" );
+      }
+      // Check whether each fit range is valid for each model using it
       for( std::size_t i = 0; i < ds.corr.size(); ++i )
       {
         if( !fitRanges[ModelFitRange[i]].Validate( ds.corr[i].Nt() ) )

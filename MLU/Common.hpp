@@ -842,6 +842,7 @@ template<typename ST, typename V = void> struct SampleTraits : public std::false
 template<typename ST> struct SampleTraits<ST, typename std::enable_if<std::is_floating_point<ST>::value>::type> : public std::true_type
 {
   using scalar_type = ST;
+  using value_type = ST;
   static constexpr bool is_complex = false;
   static constexpr int scalar_count = 1;
   static inline scalar_type * ScalarPtr( ST * p ) { return p; };
@@ -852,6 +853,7 @@ template<typename ST> struct SampleTraits<ST, typename std::enable_if<std::is_fl
 template<typename ST> struct SampleTraits<std::complex<ST>, typename std::enable_if<SampleTraits<ST>::value>::type> : public std::true_type
 {
   using scalar_type = typename SampleTraits<ST>::scalar_type;
+  using value_type = std::complex<ST>;
   static constexpr bool is_complex = true;
   static constexpr int scalar_count = 2;
   static inline scalar_type * ScalarPtr( std::complex<ST> * p )
@@ -1028,6 +1030,7 @@ class CorrelatorFile
 public:
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
+  using value_type = typename Traits::value_type;
   static constexpr bool is_complex { Traits::is_complex };
 private:
   int NumSnk_ = 0;

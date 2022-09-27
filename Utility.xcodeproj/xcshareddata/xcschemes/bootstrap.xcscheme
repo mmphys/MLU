@@ -54,15 +54,15 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-ag5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-ag5,gT5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-cgT,gx,gy,gz,gxyz"
+            argument = "-ag5,gT5"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-cgT,gx,gy,gz,gxyz"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-cgT,gx,gxyz"
@@ -70,7 +70,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--p2"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-r4147798751"
@@ -106,7 +106,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i /Volumes/QCD/tess/semilep/M1/test.hits/880/2pt/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "ZF[PW]P/&apos;*&apos;_t_[05].&apos;*&apos;.h5 ZF[PW]P/&apos;*&apos;_t_[05]_h&apos;*&apos;.h5"
@@ -114,7 +114,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "ZF[PW]P/??_h447_l_p_0_&apos;*&apos;.h5 ZF[PW]P/??_l_h447_p_0_&apos;*&apos;.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "ZFPP/PP_h447_l_p_0_&apos;*&apos;.h5 -b 1"
@@ -135,6 +135,18 @@
          <CommandLineArgument
             argument = "--nosort"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--timerev -i /Volumes/QCD/tursa/semilep/data/M3/run1/580/3pt_s/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "GFPW_quark/PW_quark_h447_l_g5_dt_20_ps_0_0_0_p_1_1_1_t_0.580.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "GFWP_quark_rev/WP_quark_rev_l_h447_g5_dt_20_ps_-1_-1_-1_p_0_0_0_t_44.580.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

@@ -52,6 +52,8 @@
   }
 }*/
 
+static const std::string sTimRev{ "timerev" };
+
 std::istream& operator>>(std::istream& is, BinOrder &binOrder )
 {
   std::string s;
@@ -71,60 +73,27 @@ std::istream& operator>>(std::istream& is, BinOrder &binOrder )
   return is;
 }
 
-/*const OperatorAttributes DefaultOperatorAttributes[]{
-  {Algebra::Gamma5, { Common::Reality::Real, Common::Parity::Even, Common::Sign::Negative} },
-  {Algebra::GammaTGamma5, { Common::Reality::Real, Common::Parity::Odd,  Common::Sign::Positive} },
-  {Algebra::GammaXGamma5, { Common::Reality::Imag, Common::Parity::Even, Common::Sign::Positive} },
-  {Algebra::GammaYGamma5, { Common::Reality::Imag, Common::Parity::Even, Common::Sign::Positive} },
-  {Algebra::GammaZGamma5, { Common::Reality::Imag, Common::Parity::Even, Common::Sign::Positive} },
-};
-static constexpr int NumDefaultOperatorAttributes{ sizeof( DefaultOperatorAttributes ) / sizeof( DefaultOperatorAttributes[0] )  };
-
-// Get the attributes of the specified product of operators
-const Common::RPS &DefaultOperatorAttribute( Algebra Alg )
+void TrajFile::Reverse( Common::CorrelatorFileC &File ) const
 {
-  for( int i = 0; i < NumDefaultOperatorAttributes; i++ )
-    if( DefaultOperatorAttributes[i].alg == Alg )
-      return DefaultOperatorAttributes[i].rps;
-  std::stringstream ss;
-  ss << "I don't know how to fold " << Alg;
-  throw std::runtime_error( ss.str() );
-}*/
-
-/*enum ExtractFilenameReturn {Good, Bad, No_trajectory};
-
-// Extract the contraction name and trajectory number from filename
-static ExtractFilenameReturn ExtractFilenameParts(const std::string &Filename, std::string &Contraction, int &traj)
-{
-  ExtractFilenameReturn r{Bad};
-  Contraction.clear();
-  traj = 0;
-  auto pos = Filename.find_last_of('/');
-  if( pos == std::string::npos )
-    pos = 0;
-  else
-    pos++;
-  auto delim = Filename.find_first_of('.', pos);
-  if( delim != std::string::npos )
+  if( bTimeRev )
   {
-    Contraction = Filename.substr(pos, delim - pos);
-    pos = delim + 1;
-    delim = Filename.find_first_of('.', pos);
-    if( delim != std::string::npos && delim != pos )
+    File.Name_.Filename.append( 1, ',' );
+    File.Name_.Filename.append( sTimRev );
+    const int Nt{ File.Nt() };
+    const int T0{ File.Timeslice() };
+    const int DeltaT{ File.Name_.bGotDeltaT ? File.Name_.DeltaT : 0 };
+    using ValueT = Common::CorrelatorFileC::value_type;
+    std::vector<ValueT> Buffer( Nt );
+    for( int row = 0; row < File.NumOps(); ++row )
     {
-      r = Good;
-      while( r == Good && pos < delim )
-      {
-        auto c = Filename[pos++] - '0';
-        if( c >=0 && c < 10 )
-          traj = traj * 10 + c;
-        else
-          r = No_trajectory;
-      }
+      ValueT * pCorr{ File[row] };
+      for( int t = 0; t < Nt; ++t )
+        Buffer[( T0 + t + Nt ) % Nt] = pCorr[( T0 + DeltaT - t + Nt ) % Nt];
+      for( int t = 0; t < Nt; ++t )
+        pCorr[t] = Buffer[t];
     }
   }
-  return r;
-}*/
+}
 
 BootstrapParams::BootstrapParams( const Common::CommandLine &cl, const std::string MachineNameActual )
 : b2ptSymOp{ cl.GotSwitch( "symop" ) },
@@ -351,8 +320,6 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
       {
         // The current insertion is what was at the contraction sink
         sOutBase.append( Common::Gamma::NameShort( SinkAlgebra[Snk], pszSep, nullptr ) );
-        sOutBase.append( "_dt_" );
-        sOutBase.append( std::to_string( Traj.DeltaT ) );
       }
       sOutBase.append( Traj.sShortSuffix );
       sOutBase.append( Suffix );
@@ -681,7 +648,7 @@ Manifest::Manifest( const Common::CommandLine &cl, const BootstrapParams &par_ )
                    std::regex *SSRegEx, bool bSwapSnkSrcRegEx )*/
 : par{ par_ },
   bShowOnly{ cl.GotSwitch( "show" ) },
-  //bEnable2ptSort{ !cl.GotSwitch( "sort" ) },
+  bTimeRev3pt{ cl.GotSwitch( sTimRev ) },
   GroupP{ GetGroupP( cl ) },
   InStem{ cl.SwitchValue<std::string>( "i" ) },
   DefaultGroup{ cl.SwitchValue<std::string>( "g" ) },
@@ -709,6 +676,9 @@ Manifest::Manifest( const Common::CommandLine &cl, const BootstrapParams &par_ )
     if( !ssre.empty() )
       SSRegEx.reset( new std::regex( ssre, std::regex::extended | std::regex::icase ) );
   }
+  if( bTimeRev3pt && AlgSource.size() != 1 )
+    throw std::runtime_error( "When --" + sTimRev + " specified, only 1 source/sink algebra supported"
+                              " and it must match the filename" );
 }
 
 void Manifest::MakeStudies( const std::vector<std::string> &Args )
@@ -750,13 +720,61 @@ void Manifest::MakeStudies( const std::vector<std::string> &Args )
   }
 }
 
+/*int Manifest::QuarkWeight( const char q ) const
+{
+  int iWeight{ std::toupper( q ) };
+  switch( iWeight )
+  {
+    case 'H':
+      iWeight = std::numeric_limits<int>::max();
+      break;
+    case 'L':
+      iWeight = std::numeric_limits<int>::min();
+      break;
+    case 'S':
+      iWeight = std::numeric_limits<int>::min() + 1;
+      break;
+  }
+  return iWeight;
+}*/
+
+bool Manifest::NeedsReverse( std::string &Contraction, MomentumMap &p, bool bRev ) const
+{
+  bool bNeedsReverse{ false };
+  if( p.size() == 2 )
+  {
+    std::vector<std::string> Parts( Common::ArrayFromString( Contraction, Common::Underscore ) );
+    if( Parts.size() == 3 && !Common::EqualIgnoreCase( Parts[1], Parts[2] ) )
+    {
+      /*const int Weight1{ QuarkWeight( Parts[1][0] ) };
+      const int Weight2{ QuarkWeight( Parts[2][0] ) };
+      bNeedsReverse = Weight1 < Weight2; // Should be other way around, but preserves GF wall-source*/
+      bNeedsReverse = bRev;
+      if( bNeedsReverse )
+      {
+        Contraction = Parts[0];
+        Contraction.append( 1, '_' );
+        Contraction.append( Parts[2] );
+        Contraction.append( 1, '_' );
+        Contraction.append( Parts[1] );
+        Common::FileNameMomentum &pOne{ p.begin()->second };
+        Common::FileNameMomentum &pTwo{ (++p.begin())->second };
+        std::swap( pOne.bp2, pTwo.bp2 );
+        Common::Momentum * p1{ &pOne };
+        Common::Momentum * p2{ &pTwo };
+        std::swap( *p1, *p2 );
+      }
+    }
+  }
+  return bNeedsReverse;
+}
+
 void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::vector<std::string> &Ignore )
 {
   static const std::string Sep{ "_" };
   // Now walk the list of arguments.
   // Any file that's not in the ignore list gets added to the manifest
   bool parsed = true;
-  std::map<std::string, TrajList> & Contractions = (* this);
   for( const std::string &Filename : Common::glob( Args.begin(), Args.end(), InStem.c_str() ) )
   {
     // See whether this file is in the ignore list
@@ -786,6 +804,8 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
       if( Name_.Gamma.size() > 1 )
         throw std::runtime_error( "Multiple gamma insertions unsupported" );
       const bool b3pt{ !Name_.Gamma.empty() && Name_.bGotDeltaT };
+      if( b3pt && AlgCurrent.empty() )
+        throw std::runtime_error( "3pt functions present, but current insertion not specified" );
       if( !Name_.Gamma.empty() && !Name_.bGotDeltaT )
         std::cout << "Warning: Gamma insertion without DeltaT. Possible 3pt function treated as 2pt" << std::endl;
       if( Name_.Gamma.empty() && Name_.bGotDeltaT )
@@ -822,17 +842,19 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
           Contraction.append( vs[i] );
         }
       }
+      const bool bTimeRev{ b3pt && bTimeRev3pt && AlgSource.size() == 1 && Name_.Gamma[0] == AlgSource[0]
+                           && NeedsReverse( Contraction, Name_.p, bRev ) };
+      if( bTimeRev )
+        std::swap( OpSuffixSnk, OpSuffixSrc );
       // Add attributes back into contraction string
-      std::string sShortPrefix{ Contraction };
-      for( Algebra a : Name_.Gamma )
-        Contraction.append( Common::Gamma::NameShort( a, Sep.c_str() ) );
+      std::string sShortPrefix{ Contraction }; // Prefix is everything before gamma
+      std::string sShortSuffix;  // Everything after the gamma
       if( Name_.bGotDeltaT )
       {
-        Contraction.append( "_dt_" );
-        Contraction.append( std::to_string( Name_.DeltaT ) );
+        sShortSuffix = "_dt_";
+        sShortSuffix.append( std::to_string( Name_.DeltaT ) );
       }
       // Add the momenta into the correlator if they were present
-      std::string sShortSuffix;
       for( const MomentumMapValue & mmv : Name_.p )
       {
         if( GroupP == GroupMomenta::Squared )
@@ -850,6 +872,9 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
             sShortSuffix.append( mmv.second.to_string( Sep ) );
         }
       }
+      // The contraction is everything that makes this unique
+      for( Algebra a : Name_.Gamma )
+        Contraction.append( Common::Gamma::NameShort( a, Sep.c_str() ) );
       Contraction.append( sShortSuffix );
       if( bOpSuffix )
       {
@@ -857,16 +882,18 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
         Contraction.append( OpSuffixSnk );
         Contraction.append( OpSuffixSrc );
       }
-      if( bRev )
+      if( bRev && !bTimeRev )
         Contraction.append( "_rev" );
       // Look for the contraction list this file belongs to
-      auto itc = Contractions.find( Contraction );
-      if( itc == Contractions.end() )
-        itc = Contractions.emplace( Contraction, TrajList( Contraction, sShortPrefix, sShortSuffix, OpSuffixSnk, OpSuffixSrc, b3pt, bRev, b3pt ? Name_.Gamma[0] : Algebra::MinusSigmaZT, Name_.DeltaT ) ).first;
+      auto itc = find( Contraction );
+      if( itc == end() )
+        itc = emplace( Contraction, TrajList( Contraction, sShortPrefix, sShortSuffix, OpSuffixSnk,
+                                              OpSuffixSrc, b3pt, bRev && !bTimeRev,
+                                              b3pt ? Name_.Gamma[0] : Algebra::MinusSigmaZT ) ).first;
       TrajList & cl{ itc->second };
       auto it = cl.FileInfo.find( Name_.Filename );
       if( it == cl.FileInfo.end() )
-        cl.FileInfo.emplace( Name_.Filename, TrajFile( Name_.bGotTimeslice, Name_.Timeslice, Name_.p, Name_.Seed ) );
+        cl.FileInfo.emplace( Name_.Filename, TrajFile( Name_.bGotTimeslice, Name_.Timeslice, Name_.p, Name_.Seed, bTimeRev, Name_.DeltaT ) );
       else
         std::cout << "Ignoring repetition of " << Name_.Filename << std::endl;
     }
@@ -926,7 +953,8 @@ bool Manifest::RunManifest()
         std::string GroupName{ DefaultGroup };
         InFiles[j].Read( Filename, l.b3pt ? AlgCurrentLoad : AlgSource, AlgSource,
                          tf.bHasTimeslice ? &tf.Timeslice : nullptr, nullptr, &GroupName,
-                         l.b3pt && tf.pFirstNonZero.IsNeg() ? &AlgCurrentLoadNeg : nullptr, DefaultDataSet.c_str() );
+                         l.b3pt && tf.pFirstNonZero.IsNeg() && AlgCurrentLoadNeg.size() ? &AlgCurrentLoadNeg : nullptr, DefaultDataSet.c_str() );
+        tf.Reverse( InFiles[j] );
       }
       try
       {
@@ -990,6 +1018,7 @@ int main(const int argc, const char *argv[])
       {"pignore",CL::SwitchType::Single, DefaultIgnoreMomenta},
       {"show", CL::SwitchType::Flag, nullptr},
       {"nosort", CL::SwitchType::Flag, nullptr},
+      {sTimRev.c_str(), CL::SwitchType::Flag, nullptr},
       {"ssre", CL::SwitchType::Single, DefaultERE },
       {"terse", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -1051,6 +1080,7 @@ int main(const int argc, const char *argv[])
     "--ignore  List of regular expressions to ignore (default: " << DefaultIgnore << ")\n"
     "--nosort  Zero momentum 2pt functions of q1-q2 are grouped together with q2-q1\n"
     "          This option disables this (only affects zero momentum 2pt functions)\n"
+    "--" << sTimRev << " Fold 3pt functions together with time-reversed partner\n"
     "--show Show how files would be bootstrapped, but don't execute\n"
     "--ssre Sink / Source extended Regular Expression ('' to disable), default:\n       " << DefaultERE << "\n"
     "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"

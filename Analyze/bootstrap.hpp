@@ -70,8 +70,10 @@ struct TrajFile
   MomentumMap p;
   int Config;
   Common::Momentum pFirstNonZero;
-  TrajFile( bool bHasTimeslice_, int Timeslice_, const MomentumMap &p_, int Config_ )
-  : bHasTimeslice{bHasTimeslice_}, Timeslice{Timeslice_}, p{p_}, Config{Config_}
+  bool bTimeRev;
+  int DeltaT;
+  TrajFile(bool bHasTimeslice_, int Timeslice_, const MomentumMap &p_, int Config_, bool bTimeRev_, int DeltaT_)
+  :bHasTimeslice{bHasTimeslice_},Timeslice{Timeslice_},p{p_},Config{Config_},bTimeRev{bTimeRev_},DeltaT{DeltaT_}
   {
     for( const MomentumMapValue & mmv : p )
     {
@@ -82,6 +84,7 @@ struct TrajFile
       }
     }
   }
+  void Reverse( Common::CorrelatorFileC &File ) const;
 };
 
 // This describes one contraction and each of its trajectory files
@@ -96,24 +99,18 @@ struct TrajList
   // These members only present if b3pt
   bool bRev;
   Common::Gamma::Algebra Alg3pt;
-  int DeltaT;
   // Filenames with corresponding timeslice info
   std::map<std::string, TrajFile> FileInfo;
   TrajList(const std::string &Name_, const std::string &sShortPrefix_, const std::string &sShortSuffix_,
            const std::string &opSuffixSnk_, const std::string &opSuffixSrc_,
-           bool b3pt_, bool brev_, Common::Gamma::Algebra Alg3pt_, int DeltaT_ )
+           bool b3pt_, bool brev_, Common::Gamma::Algebra Alg3pt_ )
   : Name{Name_}, sShortPrefix{sShortPrefix_}, sShortSuffix{ sShortSuffix_}, OpSuffixSnk{opSuffixSnk_},
-    OpSuffixSrc{opSuffixSrc_}, b3pt{b3pt_}, bRev{brev_}, Alg3pt{Alg3pt_}, DeltaT{DeltaT_} {}
+    OpSuffixSrc{opSuffixSrc_}, b3pt{b3pt_}, bRev{brev_}, Alg3pt{Alg3pt_} {}
   // 2pt Trajectory list
   TrajList(const std::string &Name_, const std::string &sShortPrefix_, const std::string &sShortSuffix_,
            const std::string &opSuffixSnk_, const std::string &opSuffixSrc_ )
   : TrajList( Name_, sShortPrefix_, sShortSuffix_, opSuffixSnk_, opSuffixSrc_,
-              false, false, Common::Gamma::Algebra::Gamma5, 0 ) {}
-  // 3pt Trajectory list
-  /*TrajList(const std::string &Name_, const std::string &sShortPrefix_, const std::string &sShortSuffix_,
-           const std::string &opSuffixSnk_, const std::string &opSuffixSrc_,
-           bool brev_, Common::Gamma::Algebra Alg3pt_, int DeltaT_ )
-  : TrajList( Name_, sShortPrefix_, sShortSuffix_, opSuffixSnk_, opSuffixSrc_, true, brev_, Alg3pt_, DeltaT_ ) {}*/
+              false, false, Common::Gamma::Algebra::MinusSigmaZT ) {}
   bool OpSuffiiSame() const { return Common::EqualIgnoreCase( OpSuffixSnk, OpSuffixSrc ); }
 };
 
@@ -159,6 +156,7 @@ struct Manifest : public std::map<std::string, TrajList>
 {
   const BootstrapParams &par;
   const bool bShowOnly;
+  const bool bTimeRev3pt;
   //const bool bEnable2ptSort; // Enables 2pt prefix sorting.
   const GroupMomenta GroupP;
   const std::string InStem;
@@ -176,6 +174,8 @@ protected:
   std::unique_ptr<std::regex> SSRegEx;
   std::vector<Algebra> GetCurrentAlgebra( const Common::CommandLine &cl );
   static GroupMomenta GetGroupP( const Common::CommandLine &cl );
+  //int QuarkWeight( const char q ) const;
+  bool NeedsReverse( std::string &Contraction, MomentumMap &p, bool bRev ) const;
 public:
   // Process list of files on the command-line, breaking them up into individual trajectories
   Manifest( const Common::CommandLine &cl, const BootstrapParams &par );

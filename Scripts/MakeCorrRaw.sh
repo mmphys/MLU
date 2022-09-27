@@ -18,7 +18,7 @@ echo "${Cmd}2ptp2/'*'_ -o 2ptp2/ 'g5[PW]_g5[PW].*.h5',per"
 echo "${Cmd}2ptp2/'*'_ -o 2ptp2/ 'gT5P_g5P.*.h5',nor"
 
 # 3pt functions
-for d in $BootNow/3pt_*p2; do
+for d in $BootNow/3*p2; do
     Spec=${d##*/}
     CmdBase="${Cmd}${Spec}/'*'_ -o ${Spec}/"
     echo "$CmdBase   gT_dt_'*'.h5,r"
