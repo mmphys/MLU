@@ -52,7 +52,7 @@
   }
 }*/
 
-static const std::string sTimRev{ "timerev" };
+static const std::string sTimeRev{ "timerev" };
 
 std::istream& operator>>(std::istream& is, BinOrder &binOrder )
 {
@@ -78,7 +78,7 @@ void TrajFile::Reverse( Common::CorrelatorFileC &File ) const
   if( bTimeRev )
   {
     File.Name_.Filename.append( 1, ',' );
-    File.Name_.Filename.append( sTimRev );
+    File.Name_.Filename.append( sTimeRev );
     const int Nt{ File.Nt() };
     const int T0{ File.Timeslice() };
     const int DeltaT{ File.Name_.bGotDeltaT ? File.Name_.DeltaT : 0 };
@@ -648,7 +648,8 @@ Manifest::Manifest( const Common::CommandLine &cl, const BootstrapParams &par_ )
                    std::regex *SSRegEx, bool bSwapSnkSrcRegEx )*/
 : par{ par_ },
   bShowOnly{ cl.GotSwitch( "show" ) },
-  bTimeRev3pt{ cl.GotSwitch( sTimRev ) },
+  bTimeRev3pt{ cl.GotSwitch( sTimeRev ) },
+  bRevRev3pt{ cl.GotSwitch( "revrev" ) },
   GroupP{ GetGroupP( cl ) },
   InStem{ cl.SwitchValue<std::string>( "i" ) },
   DefaultGroup{ cl.SwitchValue<std::string>( "g" ) },
@@ -677,8 +678,10 @@ Manifest::Manifest( const Common::CommandLine &cl, const BootstrapParams &par_ )
       SSRegEx.reset( new std::regex( ssre, std::regex::extended | std::regex::icase ) );
   }
   if( bTimeRev3pt && AlgSource.size() != 1 )
-    throw std::runtime_error( "When --" + sTimRev + " specified, only 1 source/sink algebra supported"
+    throw std::runtime_error( "When --" + sTimeRev + " specified, only 1 source/sink algebra supported"
                               " and it must match the filename" );
+  if( bRevRev3pt && !bTimeRev3pt )
+    throw std::runtime_error( "--revrev is only valid with --" + sTimeRev );
 }
 
 void Manifest::MakeStudies( const std::vector<std::string> &Args )
@@ -738,7 +741,8 @@ void Manifest::MakeStudies( const std::vector<std::string> &Args )
   return iWeight;
 }*/
 
-bool Manifest::NeedsReverse( std::string &Contraction, MomentumMap &p, bool bRev ) const
+bool Manifest::NeedsTimeReverse( std::string &Contraction, MomentumMap &p, bool &bRev,
+                                 std::string &OpSuffixSnk, std::string &OpSuffixSrc ) const
 {
   bool bNeedsReverse{ false };
   if( p.size() == 2 )
@@ -749,9 +753,10 @@ bool Manifest::NeedsReverse( std::string &Contraction, MomentumMap &p, bool bRev
       /*const int Weight1{ QuarkWeight( Parts[1][0] ) };
       const int Weight2{ QuarkWeight( Parts[2][0] ) };
       bNeedsReverse = Weight1 < Weight2; // Should be other way around, but preserves GF wall-source*/
-      bNeedsReverse = bRev;
+      bNeedsReverse = bRevRev3pt ? bRev : !bRev;
       if( bNeedsReverse )
       {
+        bRev = !bRev;
         Contraction = Parts[0];
         Contraction.append( 1, '_' );
         Contraction.append( Parts[2] );
@@ -763,6 +768,7 @@ bool Manifest::NeedsReverse( std::string &Contraction, MomentumMap &p, bool bRev
         Common::Momentum * p1{ &pOne };
         Common::Momentum * p2{ &pTwo };
         std::swap( *p1, *p2 );
+        std::swap( OpSuffixSnk, OpSuffixSrc );
       }
     }
   }
@@ -811,7 +817,8 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
       if( Name_.Gamma.empty() && Name_.bGotDeltaT )
         std::cout << "Warning: DeltaT without gamma insertion. Possible 3pt function treated as 2pt" << std::endl;
       std::string Contraction{ Name_.BaseShort };
-      const bool bRev{ b3pt ? Common::ExtractToken( Contraction, "[Rr][Ee][Vv]" ) : false };
+      // NB: bRev true means that the gamma in the name belongs with Q1
+      bool bRev{ b3pt ? Common::ExtractToken( Contraction, "[Rr][Ee][Vv]" ) : false };
       bool bOpSuffix{ false }; // Suffix for sink and source operators
       std::string OpSuffixSnk;
       std::string OpSuffixSrc;
@@ -843,9 +850,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
         }
       }
       const bool bTimeRev{ b3pt && bTimeRev3pt && AlgSource.size() == 1 && Name_.Gamma[0] == AlgSource[0]
-                           && NeedsReverse( Contraction, Name_.p, bRev ) };
-      if( bTimeRev )
-        std::swap( OpSuffixSnk, OpSuffixSrc );
+                           && NeedsTimeReverse( Contraction, Name_.p, bRev, OpSuffixSnk, OpSuffixSrc ) };
       // Add attributes back into contraction string
       std::string sShortPrefix{ Contraction }; // Prefix is everything before gamma
       std::string sShortSuffix;  // Everything after the gamma
@@ -882,13 +887,11 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
         Contraction.append( OpSuffixSnk );
         Contraction.append( OpSuffixSrc );
       }
-      if( bRev && !bTimeRev )
-        Contraction.append( "_rev" );
       // Look for the contraction list this file belongs to
       auto itc = find( Contraction );
       if( itc == end() )
         itc = emplace( Contraction, TrajList( Contraction, sShortPrefix, sShortSuffix, OpSuffixSnk,
-                                              OpSuffixSrc, b3pt, bRev && !bTimeRev,
+                                              OpSuffixSrc, b3pt, bRev,
                                               b3pt ? Name_.Gamma[0] : Algebra::MinusSigmaZT ) ).first;
       TrajList & cl{ itc->second };
       auto it = cl.FileInfo.find( Name_.Filename );
@@ -931,12 +934,14 @@ bool Manifest::RunManifest()
       }
       //Print a summary of each configuration
       static const std::string SepTab{ ",\t" };
-      std::cout << Contraction << SepTab << nFile << SepTab << ConfigCount.size();
+      std::cout << Contraction << (l.bRev ? "[Rev]" : "") << SepTab << nFile << SepTab << ConfigCount.size();
       for( auto it = ConfigCount.begin(); it != ConfigCount.end(); ++it )
         std::cout << Common::Comma << it->first;
       for( auto it = ConfigCount.begin(); it != ConfigCount.end(); ++it )
         std::cout << Common::Comma << it->second;
       std::cout << Common::NewLine;
+      //for( const auto &v : l.FileInfo )
+        //std::cout << "  " << v.first << (v.second.bTimeRev ? " trev" : "") << Common::NewLine;
     }
     else
     {
@@ -1018,7 +1023,8 @@ int main(const int argc, const char *argv[])
       {"pignore",CL::SwitchType::Single, DefaultIgnoreMomenta},
       {"show", CL::SwitchType::Flag, nullptr},
       {"nosort", CL::SwitchType::Flag, nullptr},
-      {sTimRev.c_str(), CL::SwitchType::Flag, nullptr},
+      {sTimeRev.c_str(), CL::SwitchType::Flag, nullptr},
+      {"revrev", CL::SwitchType::Flag, nullptr},
       {"ssre", CL::SwitchType::Single, DefaultERE },
       {"terse", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
@@ -1080,7 +1086,8 @@ int main(const int argc, const char *argv[])
     "--ignore  List of regular expressions to ignore (default: " << DefaultIgnore << ")\n"
     "--nosort  Zero momentum 2pt functions of q1-q2 are grouped together with q2-q1\n"
     "          This option disables this (only affects zero momentum 2pt functions)\n"
-    "--" << sTimRev << " Fold 3pt functions together with time-reversed partner\n"
+    "--" << sTimeRev << " Fold 3pt functions together with time-reversed partner\n"
+    "--revrev  When --" << sTimeRev << " in effect, reverses \"_rev\" correlators\n"
     "--show Show how files would be bootstrapped, but don't execute\n"
     "--ssre Sink / Source extended Regular Expression ('' to disable), default:\n       " << DefaultERE << "\n"
     "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"

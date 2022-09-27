@@ -97,7 +97,7 @@ struct TrajList
   const std::string OpSuffixSrc;
   const bool b3pt;
   // These members only present if b3pt
-  bool bRev;
+  bool bRev; // If set, the gamma in filename is quark 1(rhs/reversed), otherwise quark 2(lhs)
   Common::Gamma::Algebra Alg3pt;
   // Filenames with corresponding timeslice info
   std::map<std::string, TrajFile> FileInfo;
@@ -157,6 +157,7 @@ struct Manifest : public std::map<std::string, TrajList>
   const BootstrapParams &par;
   const bool bShowOnly;
   const bool bTimeRev3pt;
+  const bool bRevRev3pt;
   //const bool bEnable2ptSort; // Enables 2pt prefix sorting.
   const GroupMomenta GroupP;
   const std::string InStem;
@@ -174,8 +175,9 @@ protected:
   std::unique_ptr<std::regex> SSRegEx;
   std::vector<Algebra> GetCurrentAlgebra( const Common::CommandLine &cl );
   static GroupMomenta GetGroupP( const Common::CommandLine &cl );
-  //int QuarkWeight( const char q ) const;
-  bool NeedsReverse( std::string &Contraction, MomentumMap &p, bool bRev ) const;
+  int QuarkWeight( const char q ) const;
+  bool NeedsTimeReverse( std::string &Contraction, MomentumMap &p, bool &bRev,
+                         std::string &OpSuffixSnk, std::string &OpSuffixSrc ) const;
 public:
   // Process list of files on the command-line, breaking them up into individual trajectories
   Manifest( const Common::CommandLine &cl, const BootstrapParams &par );
