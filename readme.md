@@ -8,9 +8,8 @@ Item | Description
 
 ## Dependencies
 
-1. Install [GNU Scientific Library][gsl] (GSL), version 2.5 or later (I'm using 2.6 in production)
+1. Install [GNU Scientific Library][gsl] (GSL), version 2.5 or later (I'm using 2.7 in production)
 2. Install [CERN Minuit2][minuit2] standalone version (see paragraph 3, "... can be downloaded *here*.")
 
 [gsl]: https://www.gnu.org/software/gsl/
-[minuit2]: https://root.cern.ch/doc/master/Minuit2Page.html
-
+[minuit2]: https://seal.web.cern.ch/seal/MathLibs/Minuit2/html/index.html

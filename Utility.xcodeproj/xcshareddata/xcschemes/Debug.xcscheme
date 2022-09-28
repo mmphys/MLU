@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1300"
+   LastUpgradeVersion = "1400"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "NO">
+      buildImplicitDependencies = "YES">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "68544733271C979A00EF030C"
+               BlueprintIdentifier = "682C5CED28E4FC5800C8E004"
                BuildableName = "Debug"
                BlueprintName = "Debug"
                ReferencedContainer = "container:Utility.xcodeproj">
@@ -35,76 +35,22 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
-      useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "$(PROJECT_DIR)/run"
+      useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
-      allowLocationSimulation = "YES">
+      allowLocationSimulation = "YES"
+      viewDebuggingEnabled = "No">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "68544733271C979A00EF030C"
+            BlueprintIdentifier = "682C5CED28E4FC5800C8E004"
             BuildableName = "Debug"
             BlueprintName = "Debug"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-         <CommandLineArgument
-            argument = "test.M1.coul1e-12/880/2pt/*/*.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "test.M1.coul1e-12/880/2pt/ZFPP/PP_s_s_p_0_0_0_t_0.880.h5 "
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "Peter/ckpoint_lat.880_m1_m1_p_z2_meson.xml"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i /Volumes/QCD/tursa/prod/eigen/M2/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "/Volumes/QCD/tess/semilep/M1/M1.2pt/880/2pt/ZFWP/WP_l_l_p_0_0_0_t_0.880.h5 /Volumes/QCD/tursa/prod/eigen/M2/Peter3/ckpoint_lat_coulomb.880_p0_m0_m0_w_z2_meson.xml"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "/Volumes/QCD/tess/semilep/M1/M1.cpu/880/3pt_l/GFPW_quark/PW_quark_h447_l_g5_dt_16_ps_0_0_0_p_0_0_0_t_0.880.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "/Volumes/QCD/tursa/prod/eigen/M2/Peter3/ckpoint_lat_coulomb.880_3pt_p0_m0_p_gf_meson.xml"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "/Volumes/QCD/tess/semilep/M1/M1.cpu/880/3pt_l/ZFPP_quark/PP_quark_h447_l_g5_dt_16_ps_0_0_0_p_0_0_0_t_0.880.h5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "/Volumes/QCD/tursa/prod/eigen/M2/Peter3/ckpoint_lat_coulomb.880_3pt_p0_m0_p_z2_meson.xml"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-d 1e-6"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-p 1e-5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "5:6:2:3 R0:-1:-2:3:5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "R2:1:-1 5:6:2:3 R1:-1:-2:3:5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -116,7 +62,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "68544733271C979A00EF030C"
+            BlueprintIdentifier = "682C5CED28E4FC5800C8E004"
             BuildableName = "Debug"
             BlueprintName = "Debug"
             ReferencedContainer = "container:Utility.xcodeproj">

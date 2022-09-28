@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1300"
+   LastUpgradeVersion = "1400"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "NO">
+      buildImplicitDependencies = "YES">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -14,8 +14,8 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "685446D3271C8BB800EF030C"
-               BuildableName = "libMLU.a"
+               BlueprintIdentifier = "682C5C9D28E4F41300C8E004"
+               BuildableName = "libMLU.dylib"
                BlueprintName = "MLU"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
@@ -50,8 +50,8 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "685446D3271C8BB800EF030C"
-            BuildableName = "libMLU.a"
+            BlueprintIdentifier = "682C5C9D28E4F41300C8E004"
+            BuildableName = "libMLU.dylib"
             BlueprintName = "MLU"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
