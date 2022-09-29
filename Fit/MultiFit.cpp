@@ -133,11 +133,13 @@ int main(int argc, const char *argv[])
       {
         // First parameter (up to comma) is the filename we're looking for
         std::string FileToGlob{ Common::ExtractToSeparator( cl.Args[ArgNum] ) };
+        bool bGlobEmpty{ true };
         // Anything after the comma is a list of arguments
         Model::Args vArgs;
         vArgs.FromString( cl.Args[ArgNum], true );
         for( const std::string &sFileName : Common::glob( &FileToGlob, &FileToGlob + 1, inBase.c_str() ) )
         {
+          bGlobEmpty = false;
           Common::FileNameAtt Att( sFileName );
           const bool bIsCorr{ Common::EqualIgnoreCase( Att.Type, Common::sFold ) };
           if( bIsCorr )
@@ -182,6 +184,8 @@ int main(int argc, const char *argv[])
             ds.LoadModel( std::move( Att ), cl.Args[ArgNum] );
           }
         }
+        if( bGlobEmpty )
+          std::cout << "Warning: No files matched " << FileToGlob << Common::NewLine;
       }
       if( ds.corr.empty() )
         throw std::runtime_error( "At least one correlator must be loaded to perform a fit" );

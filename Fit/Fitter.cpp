@@ -367,6 +367,8 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
                          cp.CovarNumBoot );
   for( const Fold &f : ds.corr )
     OutputModel.FileList.emplace_back( f.Name_.Filename );
+  for( const std::string &f : ds.GetModelFilenames() )
+    OutputModel.FileList.emplace_back( f );
   OutputModel.CopyAttributes( ds.corr[0] );
   OutputModel.Name_.Seed = Seed;
   OutputModel.binSize = ds.OriginalBinSize;

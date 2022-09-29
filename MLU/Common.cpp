@@ -968,9 +968,8 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
   else
   {
     // Read old format
-    int NumExponents;
     a = g.openAttribute(sNumExponents);
-    a.read( ::H5::PredType::NATIVE_INT, &NumExponents );
+    a.read( ::H5::PredType::NATIVE_INT, &OldFormatNumExponents );
     a.close();
     int NumFiles;
     a = g.openAttribute(sNumFiles);
@@ -985,18 +984,8 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
     a.read( ::H5::PredType::NATIVE_INT, &tf );
     a.close();
     a = g.openAttribute(sOperators);
-    std::vector<std::string> OpNames{ H5::ReadStrings( a ) };
+    OldFormatOpNames = H5::ReadStrings( a );
     a.close();
-    // Validate
-    const int NumOps{ static_cast<int>( OpNames.size() ) };
-    const int NumExpected{ NumExponents * ( NumOps + 1 ) + 1 };
-    if( Base::Nt_ != NumExpected )
-    {
-      std::ostringstream s;
-      s << "Have " << Base::Nt_ << " parameters, but expected " << NumExpected << ", i.e. " << NumExponents
-        << " exponents * ( " << NumOps << " operators + 1 energy ) + chi squared per degree of freedom";
-      throw std::runtime_error( s.str().c_str() );
-    }
     // Recreate FitTimes
     const int Extent{ tf - ti + 1 };
     if( Extent <= 0 )
@@ -1008,7 +997,25 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
       for( int i = 0; i < Extent; ++i )
         v[i] = ti + i;
     }
-    // Now rebuild parameters
+  }
+}
+
+template <typename T>
+void Model<T>::ValidateAttributes()
+{
+  if( !OldFormatOpNames.empty() )
+  {
+    // Validate old format
+    const int NumOps{ static_cast<int>( OldFormatOpNames.size() ) + 1 };
+    const int NumExpected{ OldFormatNumExponents * NumOps + 1 };
+    if( Base::Nt_ != NumExpected )
+    {
+      std::ostringstream s;
+      s << "Have " << Base::Nt_ << " parameters, but expected " << NumExpected << ", i.e. " << OldFormatNumExponents
+      << " exponents * ( " << ( NumOps - 1 ) << " operators + 1 energy ) + chi squared per degree of freedom";
+      throw std::runtime_error( s.str().c_str() );
+    }
+    // Now build parameters
     params.clear();
     Param::Key k;
     k.Object.push_back( this->Name_.Base );
@@ -1016,28 +1023,19 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
     if( Len != std::string::npos )
       k.Object[0].resize( Len );
     k.Name = EnergyPrefix;
-    params.Add( k, NumExponents, true, Param::Type::Variable );
-    for( const std::string &s : OpNames )
+    params.Add( k, OldFormatNumExponents, true, Param::Type::Variable );
+    for( const std::string &s : OldFormatOpNames )
     {
       k.Name = s;
-      params.Add( k, NumExponents, false, Param::Type::Variable );
+      params.Add( k, OldFormatNumExponents, false, Param::Type::Variable );
     }
     params.AssignOffsets();
+    OldFormatOpNames.clear();
     // If there's more than one exponent, data need reordering
-    ReorderOldFormat( NumOps + 1, NumExponents, this->m_pData,
-                      this->NumSamples_ + static_cast<int>( this->AuxNames.size() ) );
-    ReorderOldFormat( NumOps + 1, NumExponents, this->m_pDataRaw, this->NumSamplesRaw_ );
-    ReorderOldFormat( NumOps + 1, NumExponents, this->m_pDataBinned, this->NumSamplesBinned_ );
-    if( NumExponents > 1 )
-    {
-      // TODO: Renumber
-    }
+    ReorderOldFormat( NumOps, OldFormatNumExponents, this->m_pData, this->NumSamples_ + this->NumExtraSamples );
+    ReorderOldFormat( NumOps, OldFormatNumExponents, this->m_pDataRaw, this->NumSamplesRaw_ );
+    ReorderOldFormat( NumOps, OldFormatNumExponents, this->m_pDataBinned, this->NumSamplesBinned_ );
   }
-}
-
-template <typename T>
-void Model<T>::ValidateAttributes()
-{
   Base::ValidateAttributes();
   if( Base::Nt_ < NumParams() )
   {
@@ -1210,13 +1208,13 @@ template <typename T>
 void Model<T>::ReorderOldFormat( int NumOps, int NumExponents, std::unique_ptr<T[]> &pData, int Num )
 {
   T * p{ pData.get() };
-  if( NumExponents > 1 && NumOps && Num && p )
+  if( p && NumExponents > 1 && NumOps > 1 )
   {
     std::vector<T> Buffer( NumOps * NumExponents );
     while( Num-- )
     {
       for( int e = 0; e < NumExponents; ++e )
-        for( int o = 0; e < NumOps; ++o )
+        for( int o = 0; o < NumOps; ++o )
           Buffer[o * NumExponents + e] = p[e * NumOps + o];
       for( int j = 0; j < Buffer.size(); ++j )
         p[j] = Buffer[j];
@@ -1791,6 +1789,15 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
       AddConstant( NewKey.empty() ? OldKey : NewKey, i, itP->second );
     }
   }
+}
+
+template <typename T>
+std::vector<std::string> DataSet<T>::GetModelFilenames() const
+{
+  std::vector<std::string> v;
+  for( const Model<T> &m : constFile )
+    v.emplace_back( m.Name_.Filename );
+  return v;
 }
 
 // Sort the operator names and renumber all the loaded correlators referring to them

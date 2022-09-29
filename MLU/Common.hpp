@@ -3077,6 +3077,8 @@ struct Model : public Sample<T>
   void SummaryColumnNames( std::ostream &os ) const override;
   void SummaryContents( std::ostream &os ) const override;
 protected:
+  int OldFormatNumExponents;
+  std::vector<std::string> OldFormatOpNames;
   void ReorderOldFormat( int NumOps, int NumExponents, std::unique_ptr<T[]> &pData, int Num );
   void CommonConstruct( const std::vector<std::string> &ExtraColumns );
 };
@@ -3139,6 +3141,7 @@ public:
   int  LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags = COMPAT_DEFAULT,
                        const char * PrintPrefix = "  " );
   void LoadModel     ( Common::FileNameAtt &&FileAtt, const std::string &Args );
+  std::vector<std::string> GetModelFilenames() const;
   void SortOpNames( std::vector<std::string> &OpNames );
   void Rebin( const std::vector<int> &RebinSize );
   void SetFitTimes( const std::vector<std::vector<int>> &FitTimes ); // A list of all the timeslices to include
