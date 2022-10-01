@@ -1205,6 +1205,86 @@ void Model<T>::SummaryContents( std::ostream &os ) const
 }
 
 template <typename T>
+void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSummary )
+{
+  using Scalar = typename is_complex<T>::Scalar;
+  using namespace CorrSumm;
+  assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
+  std::ofstream os( sOutFileName );
+  SummaryHeader<T>( os, sOutFileName );
+  SummaryComments( os, bVerboseSummary );
+  // Write column names
+  static constexpr int idxData{ 0 };
+  static constexpr int idxTheory{ 1 };
+  static const char * pFieldNames[] = { "data", "theory" };
+  os << "field fit seq model t ";
+  ValWithEr<T>::Header( pFieldNames[0], os );
+  os << Space;
+  ValWithEr<T>::Header( pFieldNames[1], os );
+  os << NewLine;
+  // Grab the model data and theory with bootstrapped errors
+  const int Extent{ GetExtent() };
+  if( !Extent )
+    return;
+  std::array<VectorView<T>, 2> vv;
+  std::vector<T> Buffer;
+  std::array<std::vector<ValWithEr<T>>,2> Value;
+  for( std::size_t i = 0; i < Value.size(); ++i )
+  {
+    BootRep<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
+    Value[i].resize( Extent );
+    for( int j = 0; j < Extent; ++j )
+    {
+      ThD.MapColumn( vv[0], j );
+      Value[i][j].Get( ThD.Central[j], vv[0], Buffer );
+    }
+  }
+  // Write theory and data values
+  int idx = 0;
+  for( std::size_t m = 0; m < FitTimes.size(); ++m )
+    for( const int t : FitTimes[m] )
+    {
+      os << "corr " << idx << Space << idx << Space << m << Space << t;
+      for( std::size_t i = 0; i < Value.size(); ++i )
+        os << Space << Value[i][idx];
+      os << NewLine;
+      ++idx;
+    }
+  // Write effective masses
+  Buffer.resize( FitInput.size() );
+  idx = 0;
+  ValWithEr<T> v;
+  for( std::size_t m = 0; m < FitTimes.size(); ++m )
+  {
+    ++idx;
+    for( std::size_t tidx = 1; tidx < FitTimes[m].size(); ++tidx )
+    {
+      const double t = 0.5 * ( FitTimes[m][tidx] + FitTimes[m][tidx - 1] );
+      const int DeltaT{ FitTimes[m][tidx] - FitTimes[m][tidx - 1] };
+      const Scalar DeltaTInv{ static_cast<Scalar>( DeltaT == 1 ? 1. : ( 1. / DeltaT ) ) };
+      os << "log " << idx << Space << ( idx - m - 1 ) << Space << m << Space << t;
+      for( std::size_t i = 0; i < Value.size(); ++i )
+      {
+        BootRep<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
+        ThD.MapColumn( vv[0], idx - 1 );
+        ThD.MapColumn( vv[1], idx );
+        int bootCount{ 0 };
+        for( int bootrep = 0; bootrep < ThD.size(); ++bootrep )
+        {
+          Buffer[bootCount] = std::log( vv[0][bootrep] / vv[1][bootrep] ) * DeltaTInv;
+          if( IsFinite( Buffer[bootCount] ) )
+            ++bootCount;
+        }
+        v.Get( std::log( ThD.Central[idx - 1] / ThD.Central[idx] ) * DeltaTInv, Buffer, bootCount );
+        os << Space << v;
+      }
+      os << NewLine;
+      ++idx;
+    }
+  }
+}
+
+template <typename T>
 void Model<T>::ReorderOldFormat( int NumOps, int NumExponents, std::unique_ptr<T[]> &pData, int Num )
 {
   T * p{ pData.get() };

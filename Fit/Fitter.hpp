@@ -47,7 +47,7 @@ public:
   const int Retry;
   const int MaxIt;
   const double Tolerance;
-  const bool bSaveCorr;
+  const int SummaryLevel;
   const bool bSaveCMat;
   const int Verbosity;
   const bool UserGuess;
@@ -78,7 +78,7 @@ protected:
   int GetNumExponents();
   Params MakeModelParams();
   void MakeGuess();
-  virtual FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic ) = 0;
+  virtual FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel ) = 0;
 
 public:
   static void SayNumThreads( std::ostream &os );

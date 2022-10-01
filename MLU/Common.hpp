@@ -489,6 +489,10 @@ template<typename T> struct BootRep
     else
       v.MapRow( Replica, idx );
   }
+  inline void MapColumn( VectorView<T> &v, int Column ) const
+  {
+    v.MapColumn( Replica, Column );
+  }
 };
 
 // Attributes for filenames in form base.type.seed.ext
@@ -3038,7 +3042,7 @@ struct Model : public Sample<T>
   std::vector<std::vector<int>> FitTimes;
 
   // Helper functions
-  int Extent() { return static_cast<int>( GetExtent( FitTimes ) ); };
+  int GetExtent() { return static_cast<int>( ::Common::GetExtent( FitTimes ) ); };
   int NumFitParams() { return static_cast<int>( params.NumScalars( Param::Type::Variable ) ); };
   int NumParams() { return static_cast<int>( params.NumScalars( Param::Type::All ) ); };
 
@@ -3076,6 +3080,7 @@ struct Model : public Sample<T>
   void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const override;
   void SummaryColumnNames( std::ostream &os ) const override;
   void SummaryContents( std::ostream &os ) const override;
+  void WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSummary = false );
 protected:
   int OldFormatNumExponents;
   std::vector<std::string> OldFormatOpNames;

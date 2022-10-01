@@ -89,7 +89,7 @@ int main(int argc, const char *argv[])
       {"retry", CL::SwitchType::Single, "0"},
       {"iter", CL::SwitchType::Single, "0"},
       {"tol", CL::SwitchType::Single, "1e-7"},
-      {"savecorr", CL::SwitchType::Flag, nullptr},
+      {"summary", CL::SwitchType::Single, "1"},
       {"savecmat", CL::SwitchType::Flag, nullptr},
       {"freeze", CL::SwitchType::Flag, nullptr},
       {"v", CL::SwitchType::Single, "0"},
@@ -261,7 +261,9 @@ int main(int argc, const char *argv[])
       }
 
       // Now make base filenames for output
-      outBaseFileName.append( ds.corr[0].Name_.Base );
+      // If the output base is given, but doesn't end in '/', then it already contains the correct name
+      if( outBaseFileName.empty() || outBaseFileName.back() == '/' )
+        outBaseFileName.append( ds.corr[0].Name_.Base ); // Very simplistic, but better is hard to automate
       outBaseFileName.append( 1, '.' );
       outBaseFileName.append( doCorr ? "corr" : "uncorr" );
       const std::string sSummaryBase{ outBaseFileName + Common::Period + sOpNameConcat };
@@ -364,7 +366,8 @@ int main(int argc, const char *argv[])
     "         Bootstrap Use bootstrap replicas (default)\n"
     "         H5,f[,g],d Load INVERSE covariance from .h5 file f, group g, dataset d\n"
     "--covboot How many bootstrap replicas in covariance (-1=no bootstrap)\n"
-    "--guess  List of specific values to use for inital guess\n"
+    "--guess   List of specific values to use for inital guess\n"
+    "--summary 0 no summaries; 1 model_td.seq.txt only; 2 model_td and model.seq.txt\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
     "-e     number of Exponents (default 1)\n"
@@ -373,7 +376,6 @@ int main(int argc, const char *argv[])
     "Flags:\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
     "--freeze   Freeze the covariance matrix/variance on the central replica\n"
-    "--savecorr Save bootstrap replicas of correlators\n"
     "--savecmat Save correlation matrix\n"
     "--analytic Analytic derivatives for GSL (default: numeric)\n"
     "--srcsnk   Append _src and _snk to overlap coefficients (ie force different)\n"

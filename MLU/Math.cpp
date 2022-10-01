@@ -92,14 +92,15 @@ template long double HotellingDist::qValue( long double TestStatistic, unsigned 
 
  ****************************************************************************/
 
-template <typename T> ValWithEr<T>::ValWithEr( T min_, T low_, T central_, T high_, T max_, T check_ )
-: Min{min_}, Low{low_}, Central{central_}, High{high_}, Max{max_}, Check{check_} {}
-
 template <typename T> void ValWithEr<T>::Header( const std::string &FieldName, std::ostream &os, const std::string &Sep )
 {
   os << FieldName << "_min" << Sep << FieldName << "_low" << Sep << FieldName << Sep
      << FieldName << "_high" << Sep << FieldName << "_max" << Sep << FieldName << "_check";
 }
+
+template <typename T>
+ValWithEr<T>::ValWithEr( T min_, T low_, T central_, T high_, T max_, ValWithEr<T>::Scalar check_ )
+: Min{min_}, Low{low_}, Central{central_}, High{high_}, Max{max_}, Check{check_} {}
 
 template <typename T> ValWithEr<T>& ValWithEr<T>::operator=( const T Scalar )
 {
@@ -208,15 +209,82 @@ ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count )
   const typename std::vector<T>::iterator itStart{ Data.begin() };
   const typename std::vector<T>::iterator itEnd  { itStart + Count };
   std::sort( itStart, itEnd );
-  const double OneSigma{ ( 1. - 0.682689492137086 ) * 0.5 }; // https://en.wikipedia.org/wiki/68–95–99.7_rule
-  std::size_t Index = OneSigma * Count + 0.5;
-  if( Index >= Count )
-    Index = Count - 1;
+  const std::size_t Index{ OneSigmaIndex( Count ) };
   Min  = Data[0];
   Max  = Data[Count - 1];
   Low  = Data[Index];
   High = Data[Count - 1 - Index];
   Check = static_cast<T>( static_cast<double>( Count ) / Data.size() );
+}
+
+// Sort the list of values, then extract the lower and upper 68th percentile error bars
+// Sort real and imaginary parts separately
+template <typename T> template <typename U> typename std::enable_if<is_complex<U>::value>::type
+ValWithEr<T>::Get( T Central_, const std::vector<T> &Data, std::size_t Count )
+{
+  assert( Data.size() >= Count && "ValWithErr<T>::Get() data too small" );
+  Central = Central_;
+  if( Count == 0 )
+  {
+    if( Data.size() == 0 )
+    {
+      // I wasn't trying to take an estimate over many samples
+      Min = Central;
+      Max = Central;
+      Low = Central;
+      High  = Central;
+      Check = 1;
+    }
+    else
+    {
+      // Tried to take an estimate over many samples, but all values NaN
+      Min = NaN;
+      Max = NaN;
+      Low = NaN;
+      High  = NaN;
+      Check = 0;
+    }
+    return;
+  }
+  using Scalar = typename T::value_type;
+  const std::size_t Index{ OneSigmaIndex( Count ) };
+  std::vector<Scalar> Buffer( Count );
+  for( int reim = 0; reim < 2; ++reim )
+  {
+    for( std::size_t i = 0; i < Count; ++i )
+      Buffer[i] = reim ? Data[i].imag() : Data[i].real();
+    const typename std::vector<Scalar>::iterator itStart{ Buffer.begin() };
+    std::sort( itStart, itStart + Count );
+    if( reim )
+    {
+       Min.imag( Buffer[0] );
+       Max.imag( Buffer[Count - 1] );
+       Low.imag( Buffer[Index] );
+      High.imag( Buffer[Count - 1 - Index] );
+    }
+    else
+    {
+      Min.real( Buffer[0] );
+      Max.real( Buffer[Count - 1] );
+      Low.real( Buffer[Index] );
+     High.real( Buffer[Count - 1 - Index] );
+    }
+  }
+  Check = static_cast<Scalar>( Count ) / Data.size();
+}
+
+template <typename T>
+void ValWithEr<T>::Get( T dCentral, const VectorView<T> &Source, std::vector<T> &ScratchBuffer )
+{
+  if( ScratchBuffer.size() < Source.size() )
+    ScratchBuffer.resize( Source.size() );
+  std::size_t Count{ 0 };
+  for( std::size_t i = 0; i < Source.size(); ++i )
+  {
+    if( IsFinite( Source[i] ) )
+      ScratchBuffer[Count++] = Source[i];
+  }
+  Get( dCentral, ScratchBuffer, Count );
 }
 
 template class ValWithEr<float>;

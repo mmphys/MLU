@@ -43,7 +43,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     Retry{ cl.SwitchValue<int>("retry") },
     MaxIt{ cl.SwitchValue<int>("iter") },
     Tolerance{ cl.SwitchValue<double>("tol") },
-    bSaveCorr{ cl.GotSwitch("savecorr") },
+    SummaryLevel{ cl.SwitchValue<int>("summary") },
     bSaveCMat{ cl.GotSwitch("savecmat") },
     Verbosity{ cl.SwitchValue<int>("v") },
     UserGuess{ cl.GotSwitch( "guess" ) },
@@ -65,6 +65,8 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     throw std::invalid_argument( "Number of fit retries (retry) must be >= 0" );
   if( MaxIt < 0 )
     throw std::invalid_argument( "Maximum fitter iterations (iter) must be >= 0" );
+  if( SummaryLevel < 0 || SummaryLevel > 2 )
+    throw std::invalid_argument( "--summary " + std::to_string( SummaryLevel ) + " invalid" );
   // If we've been given a guess, initialise variable parameters with the user-supplied guess
   if( UserGuess )
   {
@@ -386,7 +388,7 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     PreBuilt.Read( ModelFileName, "Pre-built: " );
     // TODO: This comparison is incomplete ... but matches previous version
     bool bOK{ OutputModel.dof == PreBuilt.dof };
-    bOK = bOK && OutputModel.Extent() == PreBuilt.Extent();
+    bOK = bOK && OutputModel.GetExtent() == PreBuilt.GetExtent();
     bOK = bOK && OutputModel.FitTimes == PreBuilt.FitTimes;
     bOK = bOK && OutputModel.GetColumnNames() == PreBuilt.GetColumnNames();
     if( !bOK )
@@ -403,21 +405,12 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
 
   if( !bTestRun && bPerformFit )
   {
-    // Make somewhere to hold the correlators corresponding to the fitted model
-    vCorrelator CorrSynthetic( NumFiles ); // correlators resulting from the fit params
-    for( int f = 0; f < NumFiles; f++ )
-    {
-      CorrSynthetic[f].resize( ds.NSamples, ds.corr[f].Nt() );
-      CorrSynthetic[f].FileList.push_back( ModelFileName );
-      CorrSynthetic[f].CopyAttributes( ds.corr[f] );
-    }
-
     // If there's no user-supplied guess, guess based on the data we're fitting
     if( !UserGuess )
       MakeGuess();
 
     // Fit the central replica, then use this thread as template for all others
-    std::unique_ptr<FitterThread> ftC{ MakeThread( bCorrelated, OutputModel, CorrSynthetic ) };
+    std::unique_ptr<FitterThread> ftC{ MakeThread( bCorrelated, OutputModel ) };
     ftC->SetReplica( Fold::idxCentral, true, true, bSaveCMat ? &sModelBase : nullptr );
     {
       const std::string sDescription{ ftC->Description() };
@@ -533,7 +526,10 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     }
     // Save the file
     OutputModel.Write( ModelFileName );
-    OutputModel.WriteSummary( Common::MakeFilename( sModelBase, Common::sModel, Seed, TEXT_EXT ) );
+    if( SummaryLevel >= 1 )
+      OutputModel.WriteSummaryTD( Common::MakeFilename( sModelBase, Common::sModel + "_td", Seed, TEXT_EXT ) );
+    if( SummaryLevel >= 2 )
+      OutputModel.WriteSummary( Common::MakeFilename( sModelBase, Common::sModel, Seed, TEXT_EXT ) );
     for( int f = 0; f < NumFiles; f++ )
     {
       const int snk{ ds.corr[f].Name_.op[idxSnk] };
@@ -547,10 +543,6 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       if( pos != std::string::npos )
         sSrc.resize( pos );
       const std::string SummaryBase{ OutBaseName + sSink + '_' + sSrc };
-      if( bSaveCorr )
-        CorrSynthetic[f].Write( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, DEF_FMT ) );
-      CorrSynthetic[f].MakeCorrSummary( nullptr );
-      CorrSynthetic[f].WriteSummary( Common::MakeFilename( SummaryBase, Common::sBootstrap, Seed, TEXT_EXT ));
     }
   }
 }

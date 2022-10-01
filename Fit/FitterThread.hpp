@@ -59,7 +59,6 @@ struct FitterThread
 protected:
   bool bCorrelated;
   ModelFile &OutputModel; // Fill this with parameters for each replica
-  vCorrelator &CorrSynthetic; // Fill this with data for model correlator
   std::vector<Vector> ModelBuffer;
   // Fitter state
   struct State {
@@ -78,7 +77,7 @@ protected:
   // Helper functions
   void SaveStdError();
 public:
-  FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
+  FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &OutputModel );
   virtual ~FitterThread() {}
   virtual FitterThread * Clone() const = 0; // This is a virtual alias for copy constructor
   // Switch to this index

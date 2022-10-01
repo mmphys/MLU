@@ -52,8 +52,8 @@ protected:
   void DumpParamsFitter( std::ostream &os ) const override; //TODO: Deuglify
   void ReplicaMessage( std::ostream &os ) const override; //TODO: Deuglify
 public:
-  FitterThreadMinuit2( const Fitter &fitter_, bool bCorrelated_, ModelFile &OutputModel, vCorrelator &CorrSynthetic_ )
-  : FitterThread( fitter_, bCorrelated_, OutputModel, CorrSynthetic_ ) {}
+  FitterThreadMinuit2( const Fitter &fitter_, bool bCorrelated_, ModelFile &OutputModel )
+  : FitterThread( fitter_, bCorrelated_, OutputModel ) {}
   virtual ~FitterThreadMinuit2() {}
   FitterThread * Clone() const override;
   // These are part of the FCNBase interface
@@ -70,9 +70,9 @@ class FitterMinuit2 : public Fitter
   using Fitter::Fitter; // Inherit constructor (with same visibility)
 protected:
   const std::string &Type() const override;
-  FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic ) override
+  FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel ) override
   {
-    return new FitterThreadMinuit2( *this, bCorrelated, OutputModel, CorrSynthetic );
+    return new FitterThreadMinuit2( *this, bCorrelated, OutputModel );
   }
 };
 

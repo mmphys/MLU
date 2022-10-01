@@ -31,7 +31,6 @@
 #define MLU_HDF5_hpp_end };
 
 #include <MLUconfig.h>
-#include <MLU/GSLVecMat.hpp>
 #include <MLU/Math.hpp>
 #include <MLU/Physics.hpp>
 #include <MLU/String.hpp>

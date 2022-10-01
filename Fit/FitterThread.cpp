@@ -29,7 +29,7 @@
 #include "Fitter.hpp"
 #include "FitterThread.hpp"
 
-FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_, vCorrelator &CorrSynthetic_ )
+FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_ )
 : parent{ fitter_ },
   Extent{ fitter_.ds.Extent },
   idx{ FirstIndex }, // So we'll notice a change on the first call to SetReplica
@@ -39,7 +39,6 @@ FitterThread::FitterThread( const Fitter &fitter_, bool bCorrelated_, ModelFile 
   state( fitter_.mp.NumScalars( Param::Type::All ), fitter_.mp.NumScalars( Param::Type::Variable ) ),
   bCorrelated{ bCorrelated_ },
   OutputModel{ outputModel_ },
-  CorrSynthetic( CorrSynthetic_ ),
   ModelBuffer( fitter_.NumFiles )
 {
   if( bCorrelated )
@@ -477,14 +476,5 @@ scalar FitterThread::FitOne()
   OutputData[NumScalars++] = parent.dof > 1 ? ( dTestStat / parent.dof ) : dTestStat;
   OutputData[NumScalars++] = qValue;
   OutputData[NumScalars++] = qValueH;
-
-  // Save the reconstructed correlator values for this replica
-  for( int f = 0; f < parent.NumFiles; ++f )
-  {
-    const Model &m{ *parent.model[f] };
-    scalar * SyntheticData{ CorrSynthetic[f][idx] };
-    for( int t = 0; t < CorrSynthetic[f].Nt(); ++t )
-      *SyntheticData++ = m( t, ModelBuffer[f], ModelParams );
-  }
   return dTestStat;
 }

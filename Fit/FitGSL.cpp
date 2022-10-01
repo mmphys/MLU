@@ -106,9 +106,8 @@ void FitterThreadGSL::SayConvergeReason( std::ostream &os, int ConvergeReason )
   }
 }
 
-FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_,
-                                  vCorrelator &CorrSynthetic_ )
-: FitterThread( fitter_, bCorrelated_, outputModel_, CorrSynthetic_ )
+FitterThreadGSL::FitterThreadGSL( const Fitter &fitter_, bool bCorrelated_, ModelFile &outputModel_ )
+: FitterThread( fitter_, bCorrelated_, outputModel_ )
 {
   InitialiseGSL();
 }

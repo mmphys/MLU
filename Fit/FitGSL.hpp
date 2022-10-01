@@ -55,7 +55,7 @@ protected:
   void InitialiseGSL();
   static void SayConvergeReason( std::ostream &os, int ConvergeReason );
 public:
-  FitterThreadGSL( const Fitter &Fitter, bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic );
+  FitterThreadGSL( const Fitter &Fitter, bool bCorrelated, ModelFile &OutputModel );
   FitterThreadGSL( const FitterThreadGSL &ftGSL );
   FitterThreadGSL( FitterThreadGSL &&ftGSL ) = delete;
   FitterThreadGSL &operator=( FitterThreadGSL &&ftGSL ) = delete;
@@ -82,9 +82,9 @@ struct FitterGSL : public Fitter
                            CovarParams &&cp );
 protected:
   const std::string &Type() const override;
-  FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel, vCorrelator &CorrSynthetic ) override
+  FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel ) override
   {
-    return new FitterThreadGSL( *this, bCorrelated, OutputModel, CorrSynthetic );
+    return new FitterThreadGSL( *this, bCorrelated, OutputModel );
   }
 };
 

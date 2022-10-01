@@ -30,59 +30,25 @@
 #define MLU_Math_hpp namespace Common {
 #define MLU_Math_hpp_end };
 
-#include <complex>
-#include <type_traits>
-#include <vector>
+#include <MLU/GSLVecMat.hpp>
 
-// Eigen dense matrices
+#include <type_traits>
+
+// Eigen dense matrices - TODO: Do I really need to support these?
 #include <Grid/Eigen/Dense>
 
 MLU_Math_hpp
 
-using fint = std::uint_fast32_t; // type for random numbers
-
 extern const double NaN;
 
-// test whether a type is complex
-template<typename T> struct is_complex                  : public std::false_type {};
-template<typename T> struct is_complex<std::complex<T>> : public std::true_type {};
-
-// Allow real and complex numbers to be squared and square rooted
-template <typename T> typename std::enable_if< is_complex<T>::value, T>::type
-Squared( T z ) { return z * std::conj( z ); }
-template <typename T> typename std::enable_if<!is_complex<T>::value, T>::type
-Squared( T z ) { return z * z; }
-
-// Component-wise absolute value for complex types
-template<typename T> typename std::enable_if<is_complex<T>::value, T>::type
-ComponentAbs( T c ) { return { std::abs( c.real() ), std::abs( c.imag() ) }; }
-
-// Component-wise absolute value for scalars
-template<typename T> typename std::enable_if<!(is_complex<T>::value), T>::type
-ComponentAbs( T r ) { return std::abs( r ); }
-
-// IsFinite() for floats and complex types
-template<typename T> inline typename std::enable_if<is_complex<T>::value, bool>::type
-IsFinite( const T &c ) { return std::isfinite( c.real() ) && std::isfinite( c.imag() ); }
-template<typename T> inline typename std::enable_if<std::is_floating_point<T>::value, bool>::type
-IsFinite( const T &c ) { return std::isfinite( c ); }
-
-// Are all the floating point numbers pointed to finite
-template <typename T, typename I> inline bool IsFinite( const T * d, I n )
+// https://en.wikipedia.org/wiki/68–95–99.7_rule
+constexpr double OneSigma{ 0.682689492137086 };
+// How far from in each end of a sorted bootstrap ensemble we should take 1 sigma errors
+constexpr double OneSigmaFromEnd{ ( 1. - OneSigma ) * 0.5 };
+// Get the index into a sorted bootstrap ensemble to take 1 sigma errors
+inline std::size_t OneSigmaIndex( std::size_t Count )
 {
-  while( n-- )
-    if( !IsFinite( *d++ ) )
-      return false;
-  return true;
-}
-
-// Are all the floating point numbers in this vector finite
-template <typename T> inline bool IsFinite( const std::vector<T> & v )
-{
-  for( const T &n : v )
-    if( !IsFinite( n ) )
-      return false;
-  return true;
+  return static_cast<std::size_t>( OneSigmaFromEnd * Count + 0.5 );
 }
 
 // Are all the floating point numbers in this Eigen::matrix finite
@@ -95,21 +61,36 @@ template <typename T> inline bool IsFinite( const Eigen::Matrix<T, Eigen::Dynami
   return true;
 }
 
-// A q-value is an integral of the distribution from x to infinity
-// i.e. the probability of obtaining a worse test statistic that is still explained by the model
-// (I think) this is what people normally discuss when they say "p-value"
-// Don't rely on this - the correct distribution (when covariance comes from the data) is Hotelling )below)
+/**
+ q-value according to chi^2 distribution, i.e. integral of chi^2( dof ) from ChiSquared to infinity
+ 
+ - Parameter ChiSquared: This is the test statistic (dot product of scaled error vector with itself)
+ - Parameter dof: Number of degrees of freedom (num data points - num model parameters)
+
+ This is the probability of obtaining a worse test statistic that is still explained by the model.
+ This is what people normally mean when they say "p-value".
+
+ - Warning: When covariance comes from the data, this is not the correct distribution.
+ Use the Hotelling distribution instead (below)
+ */
 template <typename T> T qValueChiSq( T ChiSquared, unsigned int dof );
 
-// Hotelling's T^2 test statistic is computed exactly as one would for Chi Squared
-// However, since the covariance matrix comes from the data (rather than being known a priori)
-// We find that the test statistic (t^2) has an T^2-distribution with p and m dof
-//    p = Covariance matrix (i.e. fit) degrees of freedom: num data points - num model parameters
-//    m = Statistically independent samples used to build ovariance matrix: usually number of configs - 1
-// See my year 4 notes and
-// https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/ckelly/Gparity/hotelling_v10.pdf
-// https://en.wikipedia.org/wiki/Hotelling%27s_T-squared_distribution
+/**
+ q-value according to Hotelling's T^2 distribution, i.e. integral of Hotelling( p, m ) from TestStatistic to infinity
+ 
+ - Parameter p: Covariance matrix (i.e. fit) degrees of freedom: num data points - num model parameters
+ - Parameter m: Statistically independent samples used to build ovariance matrix: usually number of configs - 1
 
+ When the covariance matrix comes from the data (rather than being known a priori),
+ Hotelling found that the test statistic (t^2) has an T^2-distribution with p and m degrees of freedom.
+ 
+ See: My year 4 notes;
+ [Chris Kelly's Hotelling Study](https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/ckelly/Gparity/hotelling_v10.pdf);
+ [Wikipedia T^2 distribution](https://en.wikipedia.org/wiki/Hotelling%27s_T-squared_distribution)
+ 
+ - Warning: This is the correct distribution when covariance comes from the data (not chi^2)
+ - Throws: std::runtime_error when p <= m. In order to avoid this, check `Usable()` returns `true` before calling `qValue()`
+ */
 struct HotellingDist
 {
   const unsigned int p; // Dimension of covariance matrix (degrees of freedom of fit)
@@ -131,22 +112,33 @@ template <typename T> struct ValWithErOldV1
   T Check;
 };
 
-template <typename T = double>
-struct ValWithEr
+/**
+ Value with error
+ 
+ The size of the Data buffer vector is the maximum number of samples.
+ NaNs will be discarded and the proportion of non-NaN values recorded in Count as a fraction [0,1]
+ 
+ - Warning: Non-`const std::vector<T> &Data` versions of `Get()` sort the data vector in-place
+ */
+template <typename T = double> struct ValWithEr
 {
+  using value_type = T;
+  using Scalar = typename is_complex<T>::Scalar;
+
   T Min;
   T Low;
   T Central;
   T High;
   T Max;
-  T Check;
+  Scalar Check;
+
+  static void Header( const std::string &FieldName, std::ostream &os, const std::string &Sep = " " );
+
   ValWithEr() = default;
   template <typename U=T>
-  ValWithEr( typename std::enable_if<!is_complex<U>::value, T>::type dCentral,
-             std::vector<T> &Data, std::size_t Count )
-  { Get( dCentral, Data, Count ); }
-  ValWithEr( T Min, T Low, T Central, T High, T Max, T Check = 1 );
-  static void Header( const std::string &FieldName, std::ostream &os, const std::string &Sep = " " );
+  ValWithEr( T dCentral, std::vector<T> &Data, std::size_t Count ) { Get( dCentral, Data, Count ); }
+  ValWithEr( T Min, T Low, T Central, T High, T Max, Scalar Check = 1 );
+
   ValWithEr<T>& operator = ( const T Scalar );
   ValWithEr<T>& operator = ( const ValWithEr<T> &Other );
   template <typename U=T> typename std::enable_if<!is_complex<U>::value, ValWithEr<T>&>::type
@@ -160,6 +152,9 @@ struct ValWithEr
   qValueHotelling( unsigned int p, unsigned int m ) const;
   template <typename U=T> typename std::enable_if<!is_complex<U>::value>::type
   Get( T dCentral, std::vector<T> &Data, std::size_t Count );
+  template <typename U=T> typename std::enable_if< is_complex<U>::value>::type
+  Get( T dCentral, const std::vector<T> &Data, std::size_t Count );
+  void Get( T dCentral, const VectorView<T> &Source, std::vector<T> &ScratchBuffer = std::vector<T>() );
 };
 
 template <typename T>

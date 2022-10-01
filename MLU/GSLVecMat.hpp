@@ -30,8 +30,8 @@
 #define MLU_GSLVecMat_hpp namespace Common {
 #define MLU_GSLVecMat_hpp_end };
 
-#include <MLU/Math.hpp>
-
+#include <complex>
+#include <cstdint>
 #include <vector>
 
 // GSL
@@ -48,7 +48,53 @@
 
 MLU_GSLVecMat_hpp
 
-// GSL error handling switched off when program starts
+using fint = std::uint_fast32_t; // type for random numbers
+
+/// Test whether a type is complex. Provide underlying Scalar type
+template<typename T> struct is_complex                  : public std::false_type { using Scalar = T; };
+template<typename T> struct is_complex<std::complex<T>> : public std::true_type { using Scalar = T; };
+
+// Allow real and complex numbers to be squared and square rooted
+template <typename T> typename std::enable_if< is_complex<T>::value, T>::type
+Squared( T z ) { return z * std::conj( z ); }
+template <typename T> typename std::enable_if<!is_complex<T>::value, T>::type
+Squared( T z ) { return z * z; }
+
+// Component-wise absolute value for complex types
+template<typename T> typename std::enable_if<is_complex<T>::value, T>::type
+ComponentAbs( T c ) { return { std::abs( c.real() ), std::abs( c.imag() ) }; }
+
+// Component-wise absolute value for scalars
+template<typename T> typename std::enable_if<!(is_complex<T>::value), T>::type
+ComponentAbs( T r ) { return std::abs( r ); }
+
+// IsFinite() for floats and complex types
+template<typename T> inline typename std::enable_if<is_complex<T>::value, bool>::type
+IsFinite( const T &c ) { return std::isfinite( c.real() ) && std::isfinite( c.imag() ); }
+template<typename T> inline typename std::enable_if<std::is_floating_point<T>::value, bool>::type
+IsFinite( const T &c ) { return std::isfinite( c ); }
+
+// Are all the floating point numbers pointed to finite
+template <typename T, typename I> inline bool IsFinite( const T * d, I n )
+{
+  while( n-- )
+    if( !IsFinite( *d++ ) )
+      return false;
+  return true;
+}
+
+// Are all the floating point numbers in this vector finite
+template <typename T> inline bool IsFinite( const std::vector<T> & v )
+{
+  for( const T &n : v )
+    if( !IsFinite( n ) )
+      return false;
+  return true;
+}
+
+/**
+ GSL error handling switched off when program starts
+ */
 class GSLLibraryGlobal
 {
 private:
