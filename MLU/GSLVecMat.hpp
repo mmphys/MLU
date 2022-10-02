@@ -30,6 +30,7 @@
 #define MLU_GSLVecMat_hpp namespace Common {
 #define MLU_GSLVecMat_hpp_end };
 
+#include <cassert>
 #include <complex>
 #include <cstdint>
 #include <vector>
