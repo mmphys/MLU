@@ -183,6 +183,8 @@ void Vector<COMMON_GSL_TYPE>::resize( std::size_t size_ )
     if( size_ )
     {
       block = COMMON_GSL_FUNC( block, alloc )( size_ );
+      if( !block )
+        throw std::bad_alloc();
       data = block->data;
       size = size_;
       owner = true;
@@ -272,8 +274,8 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   using GSLMatrix = Traits::GSLMatrixType;
   using MyVector  = Vector<COMMON_GSL_TYPE>;
   using MyMatrix  = Matrix<COMMON_GSL_TYPE>;
-  inline void NotEmpty() { if( size1 == 0 || size2 == 0 ) throw std::runtime_error( "Matrix empty" ); }
-  inline void Square() { NotEmpty(); if( size1 != size2 ) throw std::runtime_error( "Matrix not square" ); }
+  inline void NotEmpty() const { if( size1 == 0 || size2 == 0 ) throw std::runtime_error( "Matrix empty" ); }
+  inline void Square() const { NotEmpty(); if( size1 != size2 ) throw std::runtime_error( "Matrix not square");}
   inline Matrix() : Matrix( 0, 0 ) {};
   inline Matrix( std::size_t size1, std::size_t size2 );
   inline Matrix( const MyMatrix &o );
@@ -300,6 +302,10 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline bool IsFinite( bool bDiagonalsOnly = false ) const;
   inline Real norm2() const;
   inline Real norm() const { return norm2(); }
+  inline void blas_gemm( CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, Scalar alpha,
+                        const MyMatrix &A, const MyMatrix &B, Scalar beta );
+  inline void blas_symm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, Scalar alpha, const MyMatrix &A,
+                         const MyMatrix &B, Scalar beta );
   inline void blas_trmm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag,
                          Scalar alpha, const MyMatrix &A );
   inline void Row( std::size_t idx, MyVector &v );
@@ -314,10 +320,11 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline MyVector CholeskyScale() const;
   inline void CholeskyScaleApply( const MyVector &S, bool bSetDiagonalToOne = false );
   inline MyVector CholeskyExtract( bool bSetDiagonalToOne = true );
+  inline MyVector GetEigenValues( MyMatrix *pEigenVectors = nullptr ) const;
 #endif
 #ifdef COMMON_GSL_OPTIONAL
   inline MyMatrix Inverse() const;
-  inline void Cholesky();
+  inline bool Cholesky( bool bZeroUpperTriangle );
   inline void CholeskyInvert();
   //inline void TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag );
 #endif
@@ -497,6 +504,8 @@ void Matrix<COMMON_GSL_TYPE>::resize( std::size_t size1_, std::size_t size2_ )
     if( size )
     {
       block = COMMON_GSL_FUNC( block, alloc )( size );
+      if( !block )
+        throw std::bad_alloc();
       data = block->data;
       size1 = size1_;
       size2 = size2_;
@@ -535,6 +544,30 @@ Matrix<COMMON_GSL_TYPE>::Real Matrix<COMMON_GSL_TYPE>::norm2() const
   v.data = data;
   v.stride = 1;
   return v.norm2();
+}
+
+void Matrix<COMMON_GSL_TYPE>::blas_gemm( CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, Scalar alpha,
+                                         const Matrix<COMMON_GSL_TYPE> &A, const Matrix<COMMON_GSL_TYPE> &B,
+                                         Scalar beta )
+{
+  // TODO: complex untested
+  GSLScalar &gAlpha{ *reinterpret_cast<GSLScalar *>( &alpha ) };
+  GSLScalar &gBeta { *reinterpret_cast<GSLScalar *>( &beta  ) };
+  COMMON_GSL_BLAS( gemm )( TransA, TransB, gAlpha, reinterpret_cast<const GSLMatrix *>( &A ),
+                           reinterpret_cast<const GSLMatrix *>( &B ), gBeta,
+                           reinterpret_cast<GSLMatrix *>( this ) );
+}
+
+void Matrix<COMMON_GSL_TYPE>::blas_symm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo,
+                                         Scalar alpha, const Matrix<COMMON_GSL_TYPE> &A,
+                                         const Matrix<COMMON_GSL_TYPE> &B, Scalar beta )
+{
+  // TODO: complex untested
+  GSLScalar &gAlpha{ *reinterpret_cast<GSLScalar *>( &alpha ) };
+  GSLScalar &gBeta { *reinterpret_cast<GSLScalar *>( &beta  ) };
+  COMMON_GSL_BLAS( symm )( Side, Uplo, gAlpha, reinterpret_cast<const GSLMatrix *>( &A ),
+                           reinterpret_cast<const GSLMatrix *>( &B ), gBeta,
+                           reinterpret_cast<GSLMatrix *>( this ) );
 }
 
 void Matrix<COMMON_GSL_TYPE>::blas_trmm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag,
@@ -587,25 +620,30 @@ inline void Matrix<COMMON_GSL_TYPE>::ZeroUpperTriangle()
 #ifdef COMMON_GSL_DOUBLE
 inline Matrix<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::Cholesky( MyVector &S ) const
 {
-  assert( size1 && size1 == size2 && "Cholesky decomposition of a non-square matrix" );
+  Square();
   MyMatrix a( *this );
   S.resize( size1 );
-  //Vector<COMMON_GSL_TYPE> x( size1 * size2 );
-  COMMON_GSL_FUNC( linalg, cholesky_decomp2 )( &a, &S );
+  int gsl_e{ COMMON_GSL_FUNC( linalg, cholesky_decomp2 )( &a, &S ) };
+  if( gsl_e )
+    GSLLibraryGlobal::Error( "Unable to Cholesky decompose2 matrix", __FILE__, __LINE__, gsl_e );
   return a;
 }
 
 inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::CholeskySolve( const MyVector &b ) const
 {
   MyVector x( size1 );
-  COMMON_GSL_FUNC( linalg, cholesky_solve )( this, &b, &x );
+  int gsl_e{ COMMON_GSL_FUNC( linalg, cholesky_solve )( this, &b, &x ) };
+  if( gsl_e )
+    GSLLibraryGlobal::Error( "Unable to solve Ax=b using Cholesky decomposition", __FILE__, __LINE__, gsl_e );
   return x;
 }
 
 inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::CholeskySolve( const MyVector &b, const MyVector &S ) const
 {
   MyVector x( size1 );
-  COMMON_GSL_FUNC( linalg, cholesky_solve2 )( this, &S, &b, &x );
+  int gsl_e{ COMMON_GSL_FUNC( linalg, cholesky_solve2 )( this, &S, &b, &x ) };
+  if( gsl_e )
+    GSLLibraryGlobal::Error( "Unable to solve2 Ax=b using Cholesky decomposition", __FILE__, __LINE__, gsl_e );
   return x;
 }
 
@@ -613,21 +651,27 @@ inline COMMON_GSL_TYPE Matrix<COMMON_GSL_TYPE>::CholeskyRCond() const
 {
   MyVector v( size1 * 3 );
   double rcond;
-  COMMON_GSL_FUNC( linalg, cholesky_rcond )( this, &rcond, &v );
+  int gsl_e{ COMMON_GSL_FUNC( linalg, cholesky_rcond )( this, &rcond, &v ) };
+  if( gsl_e )
+    GSLLibraryGlobal::Error( "Unable to estimate reciprocal condition number", __FILE__, __LINE__, gsl_e );
   return rcond;
 }
 
 inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::CholeskyScale() const
 {
   MyVector S( size1 );
-  COMMON_GSL_FUNC( linalg, cholesky_scale )( this, &S );
+  int gsl_e{ COMMON_GSL_FUNC( linalg, cholesky_scale )( this, &S ) };
+  if( gsl_e )
+    GSLLibraryGlobal::Error( "Unable to Cholesky scale", __FILE__, __LINE__, gsl_e );
   return S;
 }
 
 inline void Matrix<COMMON_GSL_TYPE>::CholeskyScaleApply( const MyVector &S, bool bSetDiagonalToOne )
 {
   Square();
-  COMMON_GSL_FUNC( linalg, cholesky_scale_apply )( this, &S );
+  int gsl_e{ COMMON_GSL_FUNC( linalg, cholesky_scale_apply )( this, &S ) };
+  if( gsl_e )
+    GSLLibraryGlobal::Error( "Unable to apply Cholesky scale", __FILE__, __LINE__, gsl_e );
   for( int i = 0; i < size1; ++i )
     for( int j = 0; j < i; ++j )
       (*this)( j, i ) = (*this)( i, j );
@@ -645,32 +689,66 @@ inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::CholeskyExtract( bool bS
   return S;
 }
 
+inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::GetEigenValues( MyMatrix *pEigenVectors ) const
+{
+  Square();
+  MyVector EigenValues{ size1 };
+  MyMatrix WorkingCopy( *this );
+  int gsl_e;
+  if( pEigenVectors )
+  {
+    pEigenVectors->resize( size1, size2 );
+    gsl_eigen_symmv_workspace *ws{ gsl_eigen_symmv_alloc( size1 ) };
+    if( !ws )
+      throw std::bad_alloc();
+    gsl_e = gsl_eigen_symmv( &WorkingCopy, &EigenValues, pEigenVectors, ws );
+    gsl_eigen_symmv_free( ws );
+  }
+  else
+  {
+    gsl_eigen_symm_workspace *ws{ gsl_eigen_symm_alloc( size1 ) };
+    if( !ws )
+      throw std::bad_alloc();
+    gsl_e = gsl_eigen_symm( &WorkingCopy, &EigenValues, ws );
+    gsl_eigen_symm_free( ws );
+  }
+  if( gsl_e )
+    GSLLibraryGlobal::Error( "Unable to GetEigenValues()", __FILE__, __LINE__, gsl_e );
+  return EigenValues;
+}
 #endif // COMMON_GSL_DOUBLE
 
 #ifdef COMMON_GSL_OPTIONAL
+// Dump debugging info for real-symmetric matrix: eigenvalues and pivoted Cholesky decomposition diagonal
 Matrix<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::Inverse() const
 {
   MyMatrix a( *this );
-  a.Cholesky();
-  COMMON_GSL_FUNC( linalg, cholesky_invert )( &a );
+  a.Cholesky( false );
+  a.CholeskyInvert();
   return a;
 }
 
-inline void Matrix<COMMON_GSL_TYPE>::Cholesky()
+inline bool Matrix<COMMON_GSL_TYPE>::Cholesky( bool bZeroUpperTriangle )
 {
-  //assert( size1 && size1 == size2 && "Cholesky decomposition of a non-square matrix" );
-  //Vector<COMMON_GSL_TYPE> x( size1 * size2 );
-  COMMON_GSL_FUNC( linalg, cholesky_decomp )( this );
+  Square();
+  const bool bOK{ COMMON_GSL_FUNC( linalg, cholesky_decomp )( this ) == 0 };
+  if( bOK && bZeroUpperTriangle )
+    ZeroUpperTriangle();
+  return bOK;
 }
 
 void Matrix<COMMON_GSL_TYPE>::CholeskyInvert()
 {
-  COMMON_GSL_FUNC( linalg, cholesky_invert )( this );
+  int gsl_e{ COMMON_GSL_FUNC( linalg, cholesky_invert )( this ) };
+  if( gsl_e )
+    GSLLibraryGlobal::Error( "Unable to Cholesky invert matrix", __FILE__, __LINE__, gsl_e );
 }
 
 /*void Matrix<COMMON_GSL_TYPE>::TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag )
 {
-  COMMON_GSL_FUNC( linalg, tri_invert )( Uplo, Diag, this );
+  int gsl_e{ COMMON_GSL_FUNC( linalg, tri_invert )( Uplo, Diag, this ) };
+  if( gsl_e )
+    GSLLibraryGlobal::Error( "Unable to triangular invert matrix", __FILE__, __LINE__, gsl_e );
   }*/
 
 #endif // COMMON_GSL_OPTIONAL

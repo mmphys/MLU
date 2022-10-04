@@ -134,8 +134,6 @@ int FitterThreadGSL::f( const Vector &FitParams, Vector &Error )
   assert( Error.size == Extent && "Result vector is not the right size" );
   if( !SaveError( Error, FitParams.data, FitParams.size, FitParams.stride ) )
     throw std::runtime_error( "Overflow computing residuals (usually caused by bad guess)" );
-  if( bCorrelated )
-    Error.blas_trmv( CblasLower, CblasTrans, CblasNonUnit, Cholesky );
   return 0;
 }
 
@@ -191,12 +189,11 @@ void FitterThreadGSL::Minimise( int )
   const std::size_t nIter{ gsl_multifit_nlinear_niter( ws ) };
   state.NumCalls = nIter < std::numeric_limits<unsigned int>::max()
                           ? static_cast<unsigned int>( nIter ) : std::numeric_limits<unsigned int>::max();
-  const Vector &vResidual{ * reinterpret_cast<Vector *>( gsl_multifit_nlinear_residual( ws ) ) };
-  Error = vResidual;
-  gsl_e = gsl_blas_ddot( &vResidual, &vResidual, &state.TestStat );
+  FitterParams = * reinterpret_cast<Vector *>( gsl_multifit_nlinear_position( ws ) );
+  f( FitterParams, Error );
+  gsl_e = gsl_blas_ddot( &Error, &Error, &state.TestStat );
   GSLLG::Error( "FitterThreadGSL::Minimise() unable to compute residual using gsl_blas_ddot()",
                __FILE__, __LINE__, gsl_e );
-  FitterParams = * reinterpret_cast<Vector *>( gsl_multifit_nlinear_position( ws ) );
   Matrix &mJacobian{ * reinterpret_cast<Matrix *>( gsl_multifit_nlinear_jac( ws ) ) };
   Matrix mErrors(parent.mp.NumScalars( Param::Type::Variable ), parent.mp.NumScalars(Param::Type::Variable));
   gsl_e = gsl_multifit_nlinear_covar( &mJacobian, 0, &mErrors );

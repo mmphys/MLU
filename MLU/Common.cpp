@@ -82,6 +82,7 @@ const std::string sCovarianceIn{ sCovariance + "In" };
 const std::string sCovarianceInv{ sCovariance + "Inv" };
 const std::string sCovarianceInvCholesky{ sCovarianceInv + "Cholesky" };
 const std::string sCorrelation{ "Correlation" };
+const std::string sCorrelationInv{ sCorrelation + "Inv" };
 const std::string sCorrelationCholesky{ sCorrelation + "Cholesky" };
 const std::string sCorrelationInvCholesky{ sCorrelation + "InvCholesky" };
 const std::string sFitInput{ "FitInput" };
@@ -824,6 +825,14 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
   }
   try
   {
+    H5::ReadMatrix( g, sCorrelationInv+s_C, CorrelInv );
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  try
+  {
     H5::ReadMatrix( g, sCorrelationInvCholesky+s_C, CorrelInvCholesky );
   }
   catch(const ::H5::Exception &)
@@ -1064,6 +1073,7 @@ int Model<T>::WriteAttributes( ::H5::Group &g )
   H5::WriteMatrix( g, sCorrelation+s_C, Correl );
   H5::WriteMatrix( g, sCorrelationCholesky+s_C, CorrelCholesky );
   H5::WriteMatrix( g, sCovarianceInv+s_C, CovarInv );
+  H5::WriteMatrix( g, sCorrelationInv+s_C, CorrelInv );
   H5::WriteMatrix( g, sCorrelationInvCholesky+s_C, CorrelInvCholesky );
   H5::WriteMatrix( g, sCovarianceInvCholesky+s_C, CovarInvCholesky );
   StdErrorMean.Write( g, sStdErrorMean );
@@ -1215,9 +1225,9 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
   SummaryComments( os, bVerboseSummary );
   // Write column names
   static constexpr int idxData{ 0 };
-  static constexpr int idxTheory{ 1 };
+  //static constexpr int idxTheory{ 1 };
   static const char * pFieldNames[] = { "data", "theory" };
-  os << "field fit seq model t ";
+  os << "field seq model t ";
   ValWithEr<T>::Header( pFieldNames[0], os );
   os << Space;
   ValWithEr<T>::Header( pFieldNames[1], os );
@@ -1244,7 +1254,7 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
   for( std::size_t m = 0; m < FitTimes.size(); ++m )
     for( const int t : FitTimes[m] )
     {
-      os << "corr " << idx << Space << idx << Space << m << Space << t;
+      os << "corr " << idx << Space << m << Space << t;
       for( std::size_t i = 0; i < Value.size(); ++i )
         os << Space << Value[i][idx];
       os << NewLine;
@@ -1262,7 +1272,7 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
       const double t = 0.5 * ( FitTimes[m][tidx] + FitTimes[m][tidx - 1] );
       const int DeltaT{ FitTimes[m][tidx] - FitTimes[m][tidx - 1] };
       const Scalar DeltaTInv{ static_cast<Scalar>( DeltaT == 1 ? 1. : ( 1. / DeltaT ) ) };
-      os << "log " << idx << Space << ( idx - m - 1 ) << Space << m << Space << t;
+      os << "log " << idx << Space << m << Space << t;
       for( std::size_t i = 0; i < Value.size(); ++i )
       {
         BootRep<T> &ThD{ i == idxData ? FitInput : ModelPrediction };

@@ -49,7 +49,7 @@ struct CovarParams
   std::vector<fint> vCovarRandom; // Contains the random numbers iff I generated them
   // Freeze covariance to the central replica
   bool bFreeze;
-  // Manually loaded correlation matrix
+  // Manually loaded inverse covariance matrix
   Matrix Covar;
   // Constructor
   CovarParams( const Common::CommandLine &cl, DataSet &ds );

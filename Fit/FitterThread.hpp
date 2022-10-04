@@ -92,7 +92,6 @@ public:
   scalar FitOne();
   // Implement this to support a new type of fitter
   virtual void Minimise( int iNumGuesses ) = 0;
-  virtual bool CholeskyAdjust() { return false; } // true to indicate Cholesky matrix needs inversion
   virtual int NumRetriesGuess() const = 0;
   virtual int NumRetriesFit() const = 0;
   virtual std::string Description() const { return std::string(); }

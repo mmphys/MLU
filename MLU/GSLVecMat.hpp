@@ -33,6 +33,7 @@
 #include <cassert>
 #include <complex>
 #include <cstdint>
+#include <iostream>
 #include <vector>
 
 // GSL
@@ -42,6 +43,7 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_block.h>
 #include <gsl/gsl_cblas.h>
+#include <gsl/gsl_eigen.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_matrix.h>

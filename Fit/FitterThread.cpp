@@ -95,8 +95,6 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
         // I've loaded the inverse covariance matrix already
         if( bFirstTime )
         {
-          if( !CholeskyAdjust() )
-            throw std::runtime_error( "Can't load inverse covariance matrix with this fitter" );
           Cholesky = parent.cp.Covar;
           for( int i = 0; i < Extent; ++i )
           {
@@ -104,8 +102,7 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
             StdErrorMean[i] = 1. / CholeskyDiag[i];
           }
           Cholesky.CholeskyScaleApply( StdErrorMean, true );
-          Cholesky.Cholesky();
-          Cholesky.ZeroUpperTriangle();
+          Cholesky.Cholesky( true );
           parent.Dump( idx, "Inverse Correl Cholesky", Cholesky );
           if( bSaveMatrices )
           {
@@ -155,7 +152,7 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
             {
               // Make the correlation matrix from the central replica
               if( parent.cp.Covar.size1 == Extent )
-                Correl = parent.cp.Covar;
+                Correl = parent.cp.Covar; // Manually loaded covariance matrix
               else
                 parent.ds.MakeCovariance( Fold::idxCentral, parent.cp.Source, Correl );
               parent.Dump( idx, "CovarianceIn", Correl );
@@ -192,25 +189,54 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
           //   So lower triangle and diagonal is cholesky decomposition of CORRELATION matrix
           //   Upper right triangle (excluding diagonal - assume 1) is CORRELATION matrix. NB: Not documentated
           Cholesky = Correl;
-          Cholesky.Cholesky();
-          for( int i = 0; i < Cholesky.size1; ++i )
-            for( int j = i + 1; j < Cholesky.size2; ++j )
-              Cholesky( i, j ) = 0;
-          parent.Dump( idx, "Cholesky", Cholesky );
-          if( bSaveMatrices )
-            OutputModel.CorrelCholesky = Cholesky;
-          if( pBaseName && !pBaseName->empty() )
-            parent.SaveMatrixFile( Cholesky, Common::sCorrelationCholesky,
-                  Common::MakeFilename( *pBaseName, Common::sCormatCholesky, OutputModel.Name_.Seed, TEXT_EXT ) );
-          if( parent.Dump( idx ) )
+          Matrix CorrelInv( Cholesky.size1, Cholesky.size2 );
+          double CondNumber = 1.;
+          if( Cholesky.Cholesky( true ) )
           {
-            Matrix Copy{ Cholesky };
-            Copy.blas_trmm( CblasRight, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
-            parent.Dump( idx, "L L^T", Copy );
+            // Cholesky decomposition of correlation matrix worked
+            if( idx_ == Fold::idxCentral && bShowOutput )
+              CondNumber = Cholesky.CholeskyRCond();
+            // Cholesky is Cholesky decomposition of (i.e. LL^T=) CORRELATION matrix
+            // CholeskyInvert() finds the inverse correlation matrix
+            CorrelInv = Cholesky;
+            CorrelInv.CholeskyInvert();
+          }
+          else
+          {
+            // Cholesky decomposition failed. Dump eigenvalues
+            Vector S( Correl.GetEigenValues() );
+            std::cout << "Cholesky decomp of correlation matrix failed. Eigenvalues:\n";
+            for( std::size_t i = 0; i < S.size; ++i )
+              std::cout << '\t' << i << '\t' << S[i] << '\n';
+            // Try pivoted Cholesky decomposition
+            Cholesky = Correl;
+            gsl_permutation *Perm{ gsl_permutation_alloc( Cholesky.size1 ) };
+            try
+            {
+              if( gsl_linalg_pcholesky_decomp2( &Cholesky, Perm, &S ) )
+                throw std::runtime_error( "Unable to pivoted Cholesky decompose correlation matrix" );
+              if( idx_ == Fold::idxCentral && bShowOutput )
+              {
+                Vector CondBuffer( 3 * Cholesky.size1 );
+                const int e2{ gsl_linalg_pcholesky_rcond( &Cholesky, Perm, &CondNumber, &CondBuffer ) };
+                if( e2 )
+                  Common::GSLLibraryGlobal::Error( "Unable to get condition number using pivoted Cholesky"
+                                                  " decomposition", __FILE__, __LINE__, e2 );
+              }
+              if( gsl_linalg_pcholesky_invert( &Cholesky, Perm, &CorrelInv ) )
+                throw std::runtime_error( "Unable to pivoted Cholesky invert correlation matrix" );
+            }
+            catch(...)
+            {
+              gsl_permutation_free( Perm );
+              throw;
+            }
+            gsl_permutation_free( Perm );
+            if( !CorrelInv.IsFinite() )
+              throw std::runtime_error( "Pivoted Cholesky inversion of correlation matrix produced NaNs" );
           }
           if( idx_ == Fold::idxCentral && bShowOutput )
           {
-            const double CondNumber{ Cholesky.CholeskyRCond() };
             const int CondDigits{ static_cast<int>( 0.5 - std::log10( CondNumber ) ) };
             //std::cout << Common::NewLine;
             if( CondDigits >= 12 )
@@ -218,43 +244,52 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
             std::cout << "Covariance reciprocal condition number " << CondNumber
                       << ", ~" << CondDigits << " digits\n";
           }
-          // Allow GSL or Minuit2 to use the cholesky decomposition of the inverse covariance matrix
-          if( CholeskyAdjust() )
+          parent.Dump( idx, "Correlation Cholesky", Cholesky );
+          if( bSaveMatrices )
+            OutputModel.CorrelCholesky = Cholesky;
+          if( pBaseName && !pBaseName->empty() )
+            parent.SaveMatrixFile( Cholesky, Common::sCorrelationCholesky,
+                                   Common::MakeFilename( *pBaseName, Common::sCormatCholesky,
+                                                         OutputModel.Name_.Seed, TEXT_EXT ) );
+          if( parent.Dump( idx ) )
           {
-            // Cholesky is Cholesky decomposition of (i.e. LL^T=) CORRELATION matrix
-            // CholeskyInvert() finds the inverse correlation matrix
-            Cholesky.CholeskyInvert();
-            parent.Dump( idx, "Inverse Correl", Cholesky );
-            if( bSaveMatrices )
-            {
-              OutputModel.CovarInv = Cholesky;
-              OutputModel.CovarInv.CholeskyScaleApply( CholeskyDiag );
-              parent.Dump( idx, "Inverse Covar", OutputModel.CovarInv );
-              if( pBaseName && !pBaseName->empty() )
-                parent.SaveMatrixFile( OutputModel.CovarInv, Common::sCovarianceInv,
-                                      Common::MakeFilename( *pBaseName, Common::sCovmatInv, OutputModel.Name_.Seed,TEXT_EXT));
-            }
-            // Cholesky() finds the Cholesky decomposition of the inverse correlation matrix
-            Cholesky.Cholesky();
+            Matrix Copy{ Cholesky };
+            Copy.blas_trmm( CblasRight, CblasLower, CblasTrans, CblasNonUnit, 1, Cholesky );
+            parent.Dump( idx, "L L^T = Correlation", Copy );
+            Matrix One{ Copy.size1, Copy.size2 };
+            One = 0.;
+            One.blas_symm( CblasLeft, CblasLower, 1, Copy, CorrelInv, 1 );
+            parent.Dump( idx, "L L^T C^{-1} = 1", One );
+          }
+          parent.Dump( idx, "Inverse Correl", CorrelInv );
+          if( bSaveMatrices )
+          {
+            OutputModel.CorrelInv = CorrelInv;
+            OutputModel.CovarInv = CorrelInv;
+            OutputModel.CovarInv.CholeskyScaleApply( CholeskyDiag );
+            parent.Dump( idx, "Inverse Covar", OutputModel.CovarInv );
+            if( pBaseName && !pBaseName->empty() )
+              parent.SaveMatrixFile( OutputModel.CovarInv, Common::sCovarianceInv,
+                                    Common::MakeFilename( *pBaseName, Common::sCovmatInv, OutputModel.Name_.Seed,TEXT_EXT));
+          }
+          // Cholesky() finds the Cholesky decomposition of the inverse correlation matrix
+          Cholesky = CorrelInv;
+          Cholesky.Cholesky( true );
+          parent.Dump( idx, "Inverse Correl Cholesky", Cholesky );
+          if( bSaveMatrices )
+          {
+            OutputModel.CorrelInvCholesky = Cholesky;
+            OutputModel.CovarInvCholesky = Cholesky;
+            // Apply scale on the left, i.e. S L
             for( int i = 0; i < Extent; ++i )
-              for( int j = i + 1; j < Extent; ++j )
-                Cholesky( i, j ) = 0;
-            parent.Dump( idx, "Inverse Correl Cholesky", Cholesky );
-            if( bSaveMatrices )
+              for( int j = 0; j <= i; ++j )
+                OutputModel.CovarInvCholesky( i, j ) *= CholeskyDiag[i];
+            if( pBaseName && !pBaseName->empty() )
             {
-              OutputModel.CorrelInvCholesky = Cholesky;
-              OutputModel.CovarInvCholesky = Cholesky;
-              // Apply scale on the left, i.e. S L
-              for( int i = 0; i < Extent; ++i )
-                for( int j = 0; j <= i; ++j )
-                  OutputModel.CovarInvCholesky( i, j ) *= CholeskyDiag[i];
-              if( pBaseName && !pBaseName->empty() )
-              {
-                parent.SaveMatrixFile( Cholesky, Common::sCorrelationInvCholesky,
-                Common::MakeFilename( *pBaseName, Common::sCormatInvCholesky, OutputModel.Name_.Seed, TEXT_EXT));
-                parent.SaveMatrixFile( OutputModel.CovarInvCholesky, Common::sCovarianceInvCholesky,
-                Common::MakeFilename( *pBaseName, Common::sCovmatInvCholesky, OutputModel.Name_.Seed, TEXT_EXT));
-              }
+              parent.SaveMatrixFile( Cholesky, Common::sCorrelationInvCholesky,
+              Common::MakeFilename( *pBaseName, Common::sCormatInvCholesky, OutputModel.Name_.Seed, TEXT_EXT));
+              parent.SaveMatrixFile( OutputModel.CovarInvCholesky, Common::sCovarianceInvCholesky,
+              Common::MakeFilename( *pBaseName, Common::sCovmatInvCholesky, OutputModel.Name_.Seed, TEXT_EXT));
             }
           }
         }
@@ -311,6 +346,11 @@ bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::s
       if( !std::isfinite( Error[i++] ) )
         bOK = false;
     }
+  }
+  if( bOK && bCorrelated )
+  {
+    Error.blas_trmv( CblasLower, CblasTrans, CblasNonUnit, Cholesky );
+    bOK = Error.IsFinite();
   }
   return bOK;
 }
@@ -440,7 +480,7 @@ scalar FitterThread::FitOne()
       {
         // Now add each component of the error vector
         ss << std::setprecision( std::numeric_limits<scalar>::max_digits10 ) << "\nTheory - Data ("
-           << ( !bCorrelated || !CholeskyAdjust() ? "un" : "" ) << "correlated):";
+           << ( bCorrelated ? "" : "un" ) << "correlated):";
         for( std::size_t i = 0; i < Error.size; ++i )
           ss << ( i ? Common::CommaSpace : Common::Space ) << Error[i];
         throw std::runtime_error( ss.str() );

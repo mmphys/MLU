@@ -3030,6 +3030,7 @@ struct Model : public Sample<T>
   Matrix<T> Correl;       // As used in the fit
   Matrix<T> CorrelCholesky;
   Matrix<T> CovarInv;
+  Matrix<T> CorrelInv;
   Matrix<T> CorrelInvCholesky;
   Matrix<T> CovarInvCholesky;
   BootRep<T> StdErrorMean; // From all samples of binned data

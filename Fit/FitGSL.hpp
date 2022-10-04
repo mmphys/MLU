@@ -63,7 +63,6 @@ public:
   virtual ~FitterThreadGSL();
   FitterThread * Clone() const override;
   void Minimise( int iNumGuesses ) override;
-  bool CholeskyAdjust() override { return true; }
   int NumRetriesGuess() const override { return parent.Retry; };
   int NumRetriesFit() const override { return parent.Retry; };
   std::string Description() const override;

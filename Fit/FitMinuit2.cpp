@@ -57,7 +57,7 @@ double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
     return Common::NaN;
   double chi2;
   if( bCorrelated )
-    chi2 = Error.Dot( Cholesky.CholeskySolve( Error ) );
+    chi2 = Error.Dot( Error );
   else
   {
     chi2 = 0;
@@ -65,7 +65,7 @@ double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
       chi2 += Error[i] * Error[i];
   }
   if( chi2 < 0 )
-    throw std::runtime_error( "Chi^2 < 0 on replica " + std::to_string( idx ) );
+    return Common::NaN;
   return chi2;
 }
 
@@ -108,6 +108,8 @@ void FitterThreadMinuit2::Minimise( int iNumGuesses )
     FitterParams[i] = M2Params[i];
     state.FitterErrors[i] = M2Errors[i];
   }
+  // Save the result
+  ( *this )( M2Params );
 }
 
 const std::string & FitterMinuit2::Type() const
