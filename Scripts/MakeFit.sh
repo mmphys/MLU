@@ -88,11 +88,11 @@ do
     for Combo in ${!Combos[@]}
     do
 	Out=$Dir/$Combo
-	unset Range
+	unset Range1
         unset Range2
         unset Options
 	FitRanges ${Combos[$Combo]}
-	if ! [ -v Range ]
+	if ! [ -v Range1 ] || ! [ -v Range2 ]
         then
             echo "Unsupported job type ${Combos[$Combo]}"
             exit 1
@@ -101,16 +101,16 @@ do
 	do
 	    Prefix=${p##*/}               #Leave the filename only
 	    Prefix=${Prefix%%${Point}*h5} #Chop off everything past point/wall
-	    Cmd="MultiFit --iter 10000 -t=$Range -e 2 --delta 8"
+	    Cmd="MultiFit --iter 10000 -e 2 --mindp 8"
 	    if [ -v uncorr  ]; then Cmd="$Cmd --uncorr"; fi
-	    if [ -v minuit  ]; then Cmd="$Cmd --minuit2"; fi
+	    if [ -v minuit  ]; then Cmd="$Cmd --fitter minuit2"; fi
 	    if [ -v num     ]; then Cmd="$Cmd -n $num"; fi
 	    if [ -v Options ]; then Cmd="$Cmd $Options"; fi
 	    # NB the trailing 'n' = normalise by energy
 	    Cmd="$Cmd -o $Out/ -i $InDir/"
 	    #Cmd="$Cmd ${Prefix}{${Point},${Wall}}*h5,,,n"
-	    Cmd="$Cmd ${Prefix}${Point}*h5,,,n"
-	    Cmd="$Cmd ${Prefix}${Wall}*h5,${Range2},,n"
+	    Cmd="$Cmd ${Prefix}${Point}*h5,t=${Range1},eNorm=true"
+	    Cmd="$Cmd ${Prefix}${Wall}*h5,t=${Range2},eNorm=true"
 	    echo "$Cmd" >> $JobFileName
 	done
 	# Now summarise the output
