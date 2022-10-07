@@ -49,6 +49,15 @@ std::string Param::Key::FullName( std::size_t idx, std::size_t Size ) const
   return os.str();
 }
 
+std::string Param::Key::ShortName( std::size_t idx, std::size_t Size ) const
+{
+  std::ostringstream os;
+  os << Name;
+  if( Size > 1 )
+    os << idx;
+  return os.str();
+}
+
 void Param::Key::ValidateKey()
 {
   for( std::size_t i = 0; i < Object.size(); ++i )
@@ -60,14 +69,14 @@ void Param::Key::ValidateKey()
     }
 }
 
-bool Param::Key::operator==( const Key &rhs ) const
+bool Param::Key::SameObject( const Key &rhs ) const
 {
   if( Object.size() != rhs.Object.size() )
     return false;
   for( std::size_t i = 0; i < Object.size(); ++i )
-   if( CompareIgnoreCase( Object[i], rhs.Object[i] ) )
+    if( !EqualIgnoreCase( Object[i], rhs.Object[i] ) )
       return false;
-  return EqualIgnoreCase( Name, rhs.Name );
+  return true;
 }
 
 bool Param::Key::Less::operator()( const Key &lhs, const Key &rhs ) const
@@ -489,8 +498,30 @@ template void Params::Dump<float>( std::ostream &os, const Vector<float> &Values
 template void Params::Dump<double>( std::ostream &os, const Vector<double> &Values, Param::Type ShowType,
                                     const Vector<double> *pErrors, const std::vector<bool> *pbKnown ) const;
 
-std::vector<std::string> Params::GetNames( Param::Type type ) const
+// Get the name of the parameters. Short names don't include object name - but has to be only 1 object
+std::vector<std::string> Params::GetNames( Param::Type type, bool bLongNames ) const
 {
+  if( !bLongNames )
+  {
+    // We must also show long names if any object names differ
+    const Param::Key *FirstKey = nullptr;
+    for( const value_type &it : *this )
+    {
+      const Param &p{ it.second };
+      if( type == Param::Type::All || p.type == type )
+      {
+        const Param::Key &k{ it.first };
+        if( !FirstKey )
+          FirstKey = &k;
+        else if( !FirstKey->SameObject( k ) )
+        {
+          // Object names differ, shjow long names
+          bLongNames = true;
+          break;
+        }
+      }
+    }
+  }
   std::vector<std::string> Names( NumScalars( type ) );
   for( const value_type &it : *this )
   {
@@ -500,7 +531,7 @@ std::vector<std::string> Params::GetNames( Param::Type type ) const
       const std::size_t &Offset{ type == Param::Type::All ? p.OffsetAll : p.OffsetMyType };
       const Param::Key &k{ it.first };
       for( std::size_t i = 0; i < p.size; ++i )
-        Names[Offset + i] = k.FullName( i, p.size );
+        Names[Offset + i] = bLongNames ? k.FullName( i, p.size ) : k.ShortName( i, p.size );
     }
   }
   return Names;

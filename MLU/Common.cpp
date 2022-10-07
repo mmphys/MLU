@@ -1325,7 +1325,7 @@ void Model<T>::ReorderOldFormat( int NumOps, int NumExponents, std::unique_ptr<T
 
 template <typename T> void Model<T>::CommonConstruct( const std::vector<std::string> &ExtraColumns )
 {
-  std::vector<std::string> Cols{ params.GetNames( Param::Type::All ) };
+  std::vector<std::string> Cols{ params.GetNames( Param::Type::All, false ) };
   Cols.reserve( Cols.size() + ExtraColumns.size() );
   for( const std::string &s : ExtraColumns )
     Cols.push_back( s );

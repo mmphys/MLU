@@ -50,7 +50,9 @@ struct Param
     std::size_t Len() const;
     bool empty() const { return Object.empty() && Name.empty(); }
     std::string FullName( std::size_t idx=0, std::size_t Size=std::numeric_limits<std::size_t>::max() ) const;
-    bool operator==( const Key &rhs ) const;
+    std::string ShortName( std::size_t idx=0, std::size_t Size=std::numeric_limits<std::size_t>::max() ) const;
+    bool SameObject( const Key &rhs ) const;
+    bool operator==( const Key &rhs ) const { return SameObject( rhs ) && EqualIgnoreCase( Name, rhs.Name ); }
     bool operator!=( const Key &rhs ) const { return !operator==( rhs ); }
     struct Less { bool operator()( const Key &lhs, const Key &rhs ) const; };
     // Constructors
@@ -120,7 +122,7 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   template <typename T>
   void Dump( std::ostream &os, const Vector<T> &Values, Param::Type type = Param::Type::Variable,
              const Vector<T> *pErrors = nullptr, const std::vector<bool> *pbKnown = nullptr ) const;
-  std::vector<std::string> GetNames( Param::Type type ) const;
+  std::vector<std::string> GetNames( Param::Type type, bool bLongNames ) const;
   void ReadH5 ( ::H5::Group gParent, const std::string GroupName );
   void WriteH5( ::H5::Group gParent, const std::string GroupName ) const;
 protected:

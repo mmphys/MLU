@@ -114,7 +114,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o Simul/Ds_K_p2_0 -n 100"
+            argument = "-o Simul/Ds_K_p2_0"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

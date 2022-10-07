@@ -580,7 +580,7 @@ std::ostream & operator<<( std::ostream &os, const CKelly::Entry &e )
 
 void CKelly::Test( const Entry &e ) const
 {
-  const double ChisqQ{ gsl_cdf_chisq_Q( e.ChiSq, TSq.p ) };
+  const double ChisqQ{ Common::qValueChiSq( e.ChiSq, TSq.p ) };
   const double FDistQ{ TSq( e.ChiSq ) };
   std::cout << "CHISQ=" << e.ChiSq << " CHISQ/dof=" << e.ChiSq / TSq.p
             << " P(T2)=" << FDistQ << " P(CHI2)=" << ChisqQ
@@ -741,9 +741,15 @@ const CKelly::Table CKellyTable4{
 
 CKelly CK4( 5, 100, CKellyTable4 );
 
+const CKelly::Table MikeTable1{
+  { 234.8155764934, 2.257842081667, -1, -2 },
+};
+
+CKelly CompareMikeFit( 104, 128, MikeTable1 );
+
 int main(int argc, char *argv[])
 {
-  //if( CK1.Test() && CK2.Test() && CK3.Test() && CK4.Test() ) return EXIT_SUCCESS;
+  if( CK1.Test() && CK2.Test() && CK3.Test() && CK4.Test() && CompareMikeFit.Test() ) return EXIT_SUCCESS;
   //if( FitRangeTest( argc, argv ) ) return EXIT_SUCCESS;
   int iReturn = EXIT_SUCCESS;
   try
