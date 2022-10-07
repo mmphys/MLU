@@ -101,7 +101,7 @@ do
 	do
 	    Prefix=${p##*/}               #Leave the filename only
 	    Prefix=${Prefix%%${Point}*h5} #Chop off everything past point/wall
-	    Cmd="MultiFit --iter 10000 -e 2 --mindp 8"
+	    Cmd="MultiFit --iter 10000 -e 2 --mindp 8 --summary 2"
 	    if [ -v uncorr  ]; then Cmd="$Cmd --uncorr"; fi
 	    if [ -v minuit  ]; then Cmd="$Cmd --fitter minuit2"; fi
 	    if [ -v num     ]; then Cmd="$Cmd -n $num"; fi
