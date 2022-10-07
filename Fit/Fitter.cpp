@@ -500,6 +500,7 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     }
     if( cp.bFreeze )
       OutputModel.StdErrorMean.Replica.clear();
+    OutputModel.Guess = Guess;
     OutputModel.FitInput.Central = ds.vCentral;
     OutputModel.FitInput.Replica = ds.Cache( cp.Source );
     OutputModel.MakeCorrSummary( "Params" );

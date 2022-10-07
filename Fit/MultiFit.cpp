@@ -341,15 +341,10 @@ int main(int argc, const char *argv[])
   if( bShowUsage )
   {
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
-    " <options> Bootstrap1[[,FitRange1],model1[,params1]] [Bootstrap2[[,FitRange1],model2[,params2]] ...]\n"
-    "Perform a multi-exponential fit of the specified bootstrap replicas, where:\n"
-    " FitRange chooses the n'th fit range (default=0)\n"
-    " model    is one of {Exp, Cosh, Sinh, ThreePoint, Const}\n"
-    " params   Depend on the model:\n"
-    " Exp/Cosh/Sinh\n"
-    "   Param1 Snk_Src, sink and source names\n"
-    "   Param2 'n' to normalise by energy\n"
-    "<options> are:\n"
+    " [Options] BootstrapOrModel[,params]...\n"
+    "Perform a multi-exponential fit of the specified bootstrap replicas, \n"
+    "reading in parameters from previous fit results (Models).\n"
+    "Options:\n"
     "--Hotelling Minimum Hotelling Q-value on central replica (default " << DefaultHotelling << ")\n"
     "--sep    Minimum relative separation between energy levels (default " << DefaultEnergySep << ")\n"
     "--retry  Maximum number of times to retry fits (default Minuit2=10, GSL=0)\n"
@@ -384,7 +379,7 @@ int main(int argc, const char *argv[])
     "--help     This message\n"
     "Parameters accepted by all models:\n"
     " e         Number of exponentials\n"
-    " model     Model type\n"
+    " model     Model type {Exp, Cosh, Sinh, ThreePoint, Const}\n"
     " t         Fit range: [R[n:]start:stop[:numstart=1[:numstop=numstart]])\n"
     "Parameters accepted by models with overlap coefficients:\n"
     " ENorm     Normalise overlap coefficients by 1/2E\n"

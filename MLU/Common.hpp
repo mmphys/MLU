@@ -137,6 +137,7 @@ extern const std::string sCovarSource;
 extern const std::string sCovarRebin;
 extern const std::string sCovarSampleSize;
 extern const std::string sCovarNumBoot;
+extern const std::string sGuess;
 extern const std::string sParam;
 extern const std::string sFitTime;
 extern const std::string sNE;
@@ -3025,6 +3026,7 @@ struct Model : public Sample<T>
   // else this is the number of bootstrap replicas to use when estimating covariance
   int CovarNumBoot = 0;
   int CovarSampleSize = 0;      // What is the appropriate parameter for m to use in the T^2 distribution
+  Vector<T> Guess;
   Matrix<T> CovarIn;      // Optional. From correlation source
   Matrix<T> Covar;        // As used in the fit
   Matrix<T> Correl;       // As used in the fit

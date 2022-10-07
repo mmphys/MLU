@@ -103,6 +103,7 @@ const std::string sCovarSource{ "CovarSource" };
 const std::string sCovarRebin{ "CovarRebin" };
 const std::string sCovarSampleSize{ "CovarSampleSize" };
 const std::string sCovarNumBoot{ "CovarNumBoot" };
+const std::string sGuess{ "Guess" };
 const std::string sParam{ "Param" };
 const std::string sFitTime{ "FitTime" };
 const std::string sNE{ " != " };
@@ -785,6 +786,14 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
   CovarFrozen = ( i8 != 0 );
   try
   {
+    H5::ReadVector( g, sGuess+s_C, Guess );
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  try
+  {
     H5::ReadMatrix( g, sCovarianceIn+s_C, CovarIn );
   }
   catch(const ::H5::Exception &)
@@ -1068,6 +1077,7 @@ int Model<T>::WriteAttributes( ::H5::Group &g )
   a = g.createAttribute( sCovarFrozen, ::H5::PredType::STD_U8LE, ds1 );
   a.write( ::H5::PredType::NATIVE_INT8, &i8 );
   a.close();
+  H5::WriteVector( g, sGuess+s_C, Guess );
   H5::WriteMatrix( g, sCovarianceIn+s_C, CovarIn );
   H5::WriteMatrix( g, sCovariance+s_C, Covar );
   H5::WriteMatrix( g, sCorrelation+s_C, Correl );
