@@ -54,31 +54,83 @@ ManualTitleText="${title}"
 ManualYLabel=0${ylabel+1}
 ManualYLabelText="${ylabel}"
 
-# Work out how many fields there are per column by checking for absolute minimum
-GotAbsMin=(system("awk '! /#/ {print (\$0 ~ /E0_min/) ? 1 : 0; exit}' ".word(PlotFile,1)) eq "0") ? 0 : 1
-FieldsPerColumn=GotAbsMin ? 6 : 4
-#print "FieldsPerColumn=".sprintf("%d",FieldsPerColumn)
 
-# Find a column marked E0
-MyColumnHeadings=system("awk '/^#/ {next}; {print \$0;exit}' ".PlotFile)
+NumMyColumnHeadings=words( MyColumnHeadings )
 #print MyColumnHeadings
-#print "MyField=".word(MyColumnHeadings,5)
+#print "NumMyColumnHeadings=".NumMyColumnHeadings
+
+# New format has a column headings comment
+ColumnHeadings=system("awk '/^# ColumnNames: / {print substr(\$0,16);exit}; ! /^#/ {exit}' ".PlotFile)
+NumColumnHeadings=words(ColumnHeadings)
+OldFormat=( NumColumnHeadings < 1 )
+if( OldFormat ) {
+  FirstFieldName="E0"
+} else {
+  # Strip the trailing comma from each field name
+  OldColumnHeadings=ColumnHeadings
+  ColumnHeadings=""
+  do for [col in OldColumnHeadings] {
+    if( ColumnHeadings ne "" ) { ColumnHeadings=ColumnHeadings." " }
+    pos=strstrt( col, "," )
+    if( pos ) { ColumnHeadings=ColumnHeadings.col[1:pos-1] } else { ColumnHeadings=ColumnHeadings.col }
+  }
+  # Now save name of first field
+  FirstFieldName=word( ColumnHeadings, 1 )
+}
+if( FirstFieldName[strlen(FirstFieldName):] eq "0" ) {
+  FirstFieldNameBase=FirstFieldName[:strlen(FirstFieldName)-1]
+} else {
+  FirstFieldNameBase=FirstFieldName
+}
+#print "ColumnHeadings=\"".ColumnHeadings."\""
+#print "OldFormat=".OldFormat
+#print "FirstFieldName=".FirstFieldName
+#print "FirstFieldNameBase=".FirstFieldNameBase
+
+# Find a column named FirstFieldName
 FieldOffset=1
-while( word(MyColumnHeadings,FieldOffset) ne "E0" ) {
-  if( word(MyColumnHeadings,FieldOffset) eq "" ) { print "Can't find field E0"; exit gnuplot }
+while( FieldOffset <= NumMyColumnHeadings ) {
+  if( word( MyColumnHeadings, FieldOffset ) eq FirstFieldName ) { break }
   FieldOffset=FieldOffset+1
 }
-#print "E0 field in column ".FieldOffset
-#Work out how many exponentials there were in the fit
+if( FieldOffset > NumMyColumnHeadings ) {
+  print "Can't find field ".FirstFieldName;
+  exit gnuplot
+}
+#print FirstFieldName." field in column (FieldOffset=)".FieldOffset
+
+# Work out how many fields there are per column by checking for absolute minimum
+FieldsPerColumn=word( MyColumnHeadings, FieldOffset - 2 ) eq FirstFieldName."_min" ? 6 : 4
+#print "FieldsPerColumn=".FieldsPerColumn
+
+# Work out how many total fields there are
+NumFields=(NumMyColumnHeadings-FieldOffset-(FieldsPerColumn==6?3:2))/FieldsPerColumn+1
+#print "TotalNumFields=".NumFields
+
+# Work out how many statistics fields there are
+StatFieldOffset=NumFields
+while( StatFieldOffset >= 1 ) {
+  if( word( MyColumnHeadings, FieldOffset+(StatFieldOffset-1)*FieldsPerColumn ) eq "ChiSqPerDof" ) { break }
+  StatFieldOffset=StatFieldOffset - 1
+}
+if( StatFieldOffset < 1 ) {
+  print "Can't find field ChiSqPerDof";
+  exit gnuplot
+}
+NumStatFields=NumFields - StatFieldOffset + 1
+NumFields=NumFields - NumStatFields
+StatFieldOffset=FieldOffset+(StatFieldOffset-1)*FieldsPerColumn
+#print "NumFields=".NumFields
+#print "NumStatFields=".NumStatFields
+#print "StatFieldOffset=".StatFieldOffset
+
+#Work out how many exponentials there were in the fit. This is only needed for the title wording
 NumExp=1
-#while( word(MyColumnHeadings,FieldOffset+NumExp*FieldsPerColumn) eq "E".NumExp ) { NumExp=NumExp+1 }
-SearchField=1
-while( word(MyColumnHeadings,FieldOffset+SearchField*FieldsPerColumn) ne "" ) {
-  ThisField=word(MyColumnHeadings,FieldOffset+SearchField*FieldsPerColumn)
-  if( ThisField[1:1] eq "E" ) {
-    ThisNumExp=ThisField[2:*]+1
-    if( NumExp < ThisNumExp ) { NumExp = ThisNumExp }
-  }
+SearchField=2
+while( SearchField <= NumFields ) {
+  ThisField=word(MyColumnHeadings,FieldOffset+(SearchField-1)*FieldsPerColumn)
+  #print "Test: ".ThisField." eq ".FirstFieldNameBase.NumExp
+  if( ThisField eq FirstFieldNameBase.NumExp ) { NumExp=NumExp + 1 }
   SearchField=SearchField+1
 }
 #print "NumExp=".NumExp

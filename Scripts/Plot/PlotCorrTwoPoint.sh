@@ -17,7 +17,7 @@ for (( pSq=0; pSq <= MaxPSq; ++pSq ))
 do
   echo p ${Momenta[pSq]}
   # Temporarily, M1 zero momentum comes from special directory
-  if [ "$Ensemble" == M1 ] && (( pSq == 0 ))
+  if [ "$Ensemble" == M1 ] && (( pSq == 0 )) && [ pigs == fly ]
   then
     InDir=$PlotData/bootstrapf
   else

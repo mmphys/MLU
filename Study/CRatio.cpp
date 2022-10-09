@@ -99,7 +99,7 @@ int FileCache<FileT>::GetIndex( const std::string &Filename, const char * printP
   {
     // File doesn't exist
     if( printPrefix )
-      std::cout << printPrefix << "- " << Filename << std::endl;
+      std::cout << printPrefix << "- missing - " << Base << Filename << std::endl;
     return BadIndex;
   }
   // Needs to be added - check we're not going to overflow
@@ -525,10 +525,20 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
     Corr3[Snk_Src].Handle = Cache3.GetIndex( Corr3[Snk_Src].Name );
     if( Corr3[Snk_Src].Handle == CorrCache::BadIndex )
     {
+      if( Snk_Src == 1 && Corr3[0].Handle == CorrCache::BadIndex )
+        throw std::runtime_error( "At least one (forward or reversed) 3pt numerator required" );
+      MakeRatio[1] = false; // R2 needs every correlator
       if( Snk_Src < 2 )
-        throw std::runtime_error( "Forward and reversed 3pt functions are required" );
-      MakeRatio[1] = false;
-      Corr3[Snk_Src == 2 ? 3 : 2].Handle = CorrCache::BadIndex; // Other not required
+      {
+        // One of our numerators are missing
+        MakeRatio[0] = false; // R1 needs both numerators
+        MakeRatio[2 + Snk_Src] = false; // Don't make the R3 we don't have
+      }
+      else
+      {
+        // One of our 3pt denominators are missing. Ignore the other, since both are required for R2
+        Corr3[Snk_Src == 2 ? 3 : 2].Handle = CorrCache::BadIndex; // Other not required
+      }
       break;
     }
   }
