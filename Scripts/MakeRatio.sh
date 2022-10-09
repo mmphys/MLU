@@ -41,7 +41,7 @@ function DoesFileExist()
 }
 
 # Walk each of the 3pt directories
-for d in $CorrDirNow/3pt_*
+for d in $CorrDirNow/3??_*
 do
     Dir=${d##*/}
     Spec=${Dir:4}
@@ -72,10 +72,10 @@ do
     fi
     if ! [ -v bOK ]
     then
-	echo "Can't make ratios for $SpecGrp"
+	echo "Can't make ratios for $Dir"
     else
 	ZVFit=R${ZVFit:+,$ZVFit}
-	echo "Making ratios for $SpecGrp"
+	echo "Making ratios for $Dir"
 	# Get a list (associative array) of the work to be done
 	unset Meson
 	unset DeltaT
@@ -95,7 +95,7 @@ do
 	    fi
 	done
 	# Now make a job for each Quark
-	Cmd="CRatio --i3 $CorrDir/$Dir/ --i2 $CorrDir/2pt${PGroup}/ -o $SpecGrp/"
+	Cmd="CRatio --i3 $CorrDir/$Dir/ --i2 $CorrDir/2pt${PGroup}/ -o $Dir/"
 	Cmd="$Cmd --efit $EFit --type $ZVFit --2e"
 	unset f
 	for m in ${!Meson[@]}
