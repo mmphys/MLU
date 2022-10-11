@@ -23,15 +23,24 @@ mkdir -p $OutSub; cd $OutSub
 echo "$Ensemble: Three point $OutSub ratios"
 shopt -s nullglob
 
-for RatioNum in {1..3}
+for PGroup in p2 #''
 do
-  [ RatioNum == 3 ] && Log=1 || Log=0
-  for PGroup in p2 #''
+for Spec in l s
+do
+  for RatioNum in {1..3}
   do
-    for Spec in l s
+    DirPrefixList=3pt_
+    if (( RatioNum == 3 ))
+    then
+      Log=1
+      DirPrefixList="$DirPrefixList 3sm_"
+    else
+      Log=0
+    fi
+    for DirPrefix in $DirPrefixList
     do (
-      Dir=${Spec}${PGroup}
-      InDir=$PlotData/ratio$dir/$Dir #3pt_$Dir
+      Dir=${DirPrefix}${Spec}${PGroup}
+      InDir=$PlotData/ratio$dir/$Dir
       Dir=R$RatioNum/$Dir
       echo Dir="\"$Dir\""
       mkdir -p $Dir; cd $Dir
@@ -95,4 +104,5 @@ do
     )
     done
   done
+done
 done
