@@ -181,7 +181,7 @@
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "OMP_NUM_THREADS"
-            value = "2"
+            value = "20"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

@@ -12,7 +12,7 @@ echo 'Grid source located in '$Grid
 for MyEnv in $Grid/build${GridSelect}*
 do
   ShortEnv=${MyEnv#${Grid}/build}
-  Dest=$GridPre/$ShortEnv
+  Dest=$GridPre$ShortEnv
   echo "${ShortEnv}: $Dest --> $MyEnv"
   # bin
   mkdir -p $Dest/bin
@@ -47,7 +47,7 @@ echo 'Hadrons source located in '$Hadrons
 for MyEnv in $Hadrons/build${GridSelect}*
 do
   ShortEnv=${MyEnv#${Hadrons}/build}
-  Dest=$GridPre/$ShortEnv
+  Dest=$GridPre$ShortEnv
   echo "${ShortEnv}: $Dest --> $MyEnv"
   # bin
   mkdir -p $Dest/bin

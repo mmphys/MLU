@@ -44,7 +44,6 @@ template <typename T> T qValueChiSq( T ChiSquared, unsigned int dof )
 
 template float  qValueChiSq( float  ChiSquared, unsigned int dof );
 template double qValueChiSq( double ChiSquared, unsigned int dof );
-template long double qValueChiSq( long double ChiSquared, unsigned int dof );
 
 /*****************************************************************************
  
@@ -84,7 +83,6 @@ template <typename T> T HotellingDist::qValue( T TestStatistic, unsigned int p, 
 
 template float  HotellingDist::qValue( float  TestStatistic, unsigned int p, unsigned int m );
 template double HotellingDist::qValue( double TestStatistic, unsigned int p, unsigned int m );
-template long double HotellingDist::qValue( long double TestStatistic, unsigned int p, unsigned int m );
 
 /*****************************************************************************
  
@@ -289,7 +287,6 @@ void ValWithEr<T>::Get( T dCentral, const VectorView<T> &Source, std::vector<T> 
 
 template class ValWithEr<float>;
 template class ValWithEr<double>;
-template class ValWithEr<long double>;
 template class ValWithEr<std::complex<float>>;
 template class ValWithEr<std::complex<double>>;
 
@@ -297,22 +294,16 @@ template typename std::enable_if<!is_complex<float>::value, ValWithEr<float>>::t
 ValWithEr<float>::qValueChiSq( unsigned int dof ) const;
 template typename std::enable_if<!is_complex<double>::value, ValWithEr<double>>::type
 ValWithEr<double>::qValueChiSq( unsigned int dof ) const;
-template typename std::enable_if<!is_complex<long double>::value, ValWithEr<long double>>::type
-ValWithEr<long double>::qValueChiSq( unsigned int dof ) const;
 
 template typename std::enable_if<!is_complex<float>::value, ValWithEr<float>>::type
 ValWithEr<float>::qValueHotelling( unsigned int p, unsigned int m ) const;
 template typename std::enable_if<!is_complex<double>::value, ValWithEr<double>>::type
 ValWithEr<double>::qValueHotelling( unsigned int p, unsigned int m ) const;
-template typename std::enable_if<!is_complex<long double>::value, ValWithEr<long double>>::type
-ValWithEr<long double>::qValueHotelling( unsigned int p, unsigned int m ) const;
 
 template typename std::enable_if<!is_complex<float>::value>::type
 ValWithEr<float>::Get( float Central_, std::vector<float> &Data, std::size_t Count );
 template typename std::enable_if<!is_complex<double>::value>::type
 ValWithEr<double>::Get( double Central_, std::vector<double> &Data, std::size_t Count );
-template typename std::enable_if<!is_complex<long double>::value>::type
-ValWithEr<long double>::Get( long double Central_, std::vector<long double> &Data, std::size_t Count );
 
 template <typename T>
 std::ostream & operator<<( std::ostream &os, const ValWithEr<T> &v )

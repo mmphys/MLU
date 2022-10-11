@@ -76,7 +76,6 @@ static ::H5::CompType MakeConfigCount()
 
 const ::H5::PredType& H5::Equiv<float>                      ::Type{ ::H5::PredType::NATIVE_FLOAT };
 const ::H5::PredType& H5::Equiv<double>                     ::Type{ ::H5::PredType::NATIVE_DOUBLE };
-const ::H5::PredType& H5::Equiv<long double>                ::Type{ ::H5::PredType::NATIVE_LDOUBLE };
 const ::H5::PredType& H5::Equiv<int>                        ::Type{ ::H5::PredType::NATIVE_INT };
 const ::H5::PredType& H5::Equiv<std::size_t>                ::Type{  sizeof( std::size_t ) == 4
                                                                     ? ::H5::PredType::NATIVE_UINT32
@@ -90,13 +89,10 @@ const ::H5::PredType& H5::Equiv<std::uint_fast32_t>         ::Type{ sizeof( std:
 #endif
 const ::H5::CompType  H5::Equiv<std::complex<float>>        ::Type{ MakeComplex<float>() };
 const ::H5::CompType  H5::Equiv<std::complex<double>>       ::Type{ MakeComplex<double>() };
-const ::H5::CompType  H5::Equiv<std::complex<long double>>  ::Type{ MakeComplex<long double>() };
 const ::H5::CompType  H5::Equiv<ValWithEr<float>>           ::Type{ MakeValWithEr<float>() };
 const ::H5::CompType  H5::Equiv<ValWithEr<double>>          ::Type{ MakeValWithEr<double>() };
-const ::H5::CompType  H5::Equiv<ValWithEr<long double>>     ::Type{ MakeValWithEr<long double>() };
 const ::H5::CompType  H5::Equiv<ValWithErOldV1<float>>      ::Type{ MakeValWithErOldV1<float>() };
 const ::H5::CompType  H5::Equiv<ValWithErOldV1<double>>     ::Type{ MakeValWithErOldV1<double>() };
-const ::H5::CompType  H5::Equiv<ValWithErOldV1<long double>>::Type{ MakeValWithErOldV1<long double>() };
 const ::H5::CompType  H5::Equiv<ConfigCount>                ::Type{ MakeConfigCount() };
 
 // Open the specified HDF5File and group

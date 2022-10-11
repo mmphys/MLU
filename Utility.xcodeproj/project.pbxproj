@@ -1668,17 +1668,17 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					/opt/local/include,
-					/opt/local/include/libomp,
-					$GridPre/Release/include,
+					$GridPkg/include,
+					$GridPkg/include/libomp,
+					"$(GridPre)Release/include",
 					$GridPre/include,
 					$PROJECT_DIR,
 					$PROJECT_DIR/buildRelease,
 				);
 				LIBRARY_SEARCH_PATHS = (
-					/opt/local/lib,
-					/opt/local/lib/libomp,
-					$GridPre/Release/lib,
+					$GridPkg/lib,
+					$GridPkg/lib/libomp,
+					"$(GridPre)Release/lib",
 					$GridPre/lib,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.3;
@@ -1698,8 +1698,6 @@
 					"-lz",
 					"-lcrypto",
 					"-llime",
-					"-lfftw3f",
-					"-lfftw3",
 					"-lmpfr",
 					"-lgmp",
 					"-lm",
@@ -1758,17 +1756,17 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					/opt/local/include,
-					/opt/local/include/libomp,
-					$GridPre/Release/include,
+					$GridPkg/include,
+					$GridPkg/include/libomp,
+					"$(GridPre)Release/include",
 					$GridPre/include,
 					$PROJECT_DIR,
 					$PROJECT_DIR/buildRelease,
 				);
 				LIBRARY_SEARCH_PATHS = (
-					/opt/local/lib,
-					/opt/local/lib/libomp,
-					$GridPre/Release/lib,
+					$GridPkg/lib,
+					$GridPkg/lib/libomp,
+					"$(GridPre)Release/lib",
 					$GridPre/lib,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.3;
@@ -1787,8 +1785,6 @@
 					"-lz",
 					"-lcrypto",
 					"-llime",
-					"-lfftw3f",
-					"-lfftw3",
 					"-lmpfr",
 					"-lgmp",
 					"-lm",

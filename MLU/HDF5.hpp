@@ -56,7 +56,6 @@ namespace H5 {
   template <typename T> struct Equiv;
   template<> struct Equiv<float>                        { static const ::H5::PredType& Type; };
   template<> struct Equiv<double>                       { static const ::H5::PredType& Type; };
-  template<> struct Equiv<long double>                  { static const ::H5::PredType& Type; };
   template<> struct Equiv<int>                          { static const ::H5::PredType& Type; };
   template<> struct Equiv<std::size_t>                  { static const ::H5::PredType& Type; };
   template<> struct Equiv<std::string>                  { static const ::H5::StrType   Type; };
@@ -66,13 +65,10 @@ namespace H5 {
 #endif
   template<> struct Equiv<std::complex<float>>          { static const ::H5::CompType  Type; };
   template<> struct Equiv<std::complex<double>>         { static const ::H5::CompType  Type; };
-  template<> struct Equiv<std::complex<long double>>    { static const ::H5::CompType  Type; };
   template<> struct Equiv<ValWithEr<float>>             { static const ::H5::CompType  Type; };
   template<> struct Equiv<ValWithEr<double>>            { static const ::H5::CompType  Type; };
-  template<> struct Equiv<ValWithEr<long double>>       { static const ::H5::CompType  Type; };
   template<> struct Equiv<ValWithErOldV1<float>>        { static const ::H5::CompType  Type; };
   template<> struct Equiv<ValWithErOldV1<double>>       { static const ::H5::CompType  Type; };
-  template<> struct Equiv<ValWithErOldV1<long double>>  { static const ::H5::CompType  Type; };
   template<> struct Equiv<ConfigCount>                  { static const ::H5::CompType  Type; };
 
   /**

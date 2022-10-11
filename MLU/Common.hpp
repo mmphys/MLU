@@ -843,7 +843,7 @@ inline std::ostream & operator<<( std::ostream &os, const FoldProp &f )
 // SampleTraits<ST>::value is true for supported types (floating point and complex)
 template<typename ST, typename V = void> struct SampleTraits : public std::false_type{};
 
-// Traits for floating point types: float; double; long double
+// Traits for floating point types: float; double
 template<typename ST> struct SampleTraits<ST, typename std::enable_if<std::is_floating_point<ST>::value>::type> : public std::true_type
 {
   using scalar_type = ST;
@@ -910,9 +910,6 @@ void SummaryHeader(std::ostream &s, const std::string & sOutFileName,
       case sizeof( double ):
         psz = "std::complex<double>";
         break;
-      case sizeof( long double ):
-        psz = "std::complex<long double>";
-        break;
     }
   }
   else
@@ -924,9 +921,6 @@ void SummaryHeader(std::ostream &s, const std::string & sOutFileName,
         break;
       case sizeof( double ):
         psz = "double";
-        break;
-      case sizeof( long double ):
-        psz = "long double";
         break;
     }
   }

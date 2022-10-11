@@ -1995,10 +1995,8 @@ template<typename T> void ReadArray( template_ReadArrayArgs( T ) )
 // Make sure all the specialisations I support are instantiated
 template void ReadArray<float>( template_ReadArrayArgs( float ) );
 template void ReadArray<double>( template_ReadArrayArgs( double ) );
-template void ReadArray<long double>( template_ReadArrayArgs( long double ) );
 template void ReadArray<std::complex<float>>( template_ReadArrayArgs( std::complex<float> ) );
 template void ReadArray<std::complex<double>>( template_ReadArrayArgs( std::complex<double> ) );
-template void ReadArray<std::complex<long double>>( template_ReadArrayArgs(std::complex<long double>));
 
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl)
 {
