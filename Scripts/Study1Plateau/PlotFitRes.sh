@@ -113,28 +113,84 @@ OutBase="${mmplotfile_base}.${mmplotfile_corr_all}.${mmplotfile_ops_all}.${save:
 #if( 0${save:+1} ) { OutSuffix="$save_".OutSuffix }
 OutSuffix=".${mmplotfile_seed}.pdf"
 
-# Find the column number of the first of the value fields
-FieldNames="E0"
+NumMyColumnHeadings=words( MyColumnHeadings )
+#print MyColumnHeadings
+#print "NumMyColumnHeadings=".NumMyColumnHeadings
+
+# New format has a column headings comment
+FieldNames=system("awk '/^# ColumnNames: / {print substr(\$0,16);exit}; ! /^#/ {exit}' ".PlotFile)
+OldFormat=( words(FieldNames) < 1 )
+if( OldFormat ) {
+  FirstFieldName="E0"
+} else {
+  # Strip the trailing comma from each field name
+  FirstFieldName=FieldNames
+  FieldNames=""
+  do for [col in FirstFieldName] {
+    if( FieldNames ne "" ) { FieldNames=FieldNames." " }
+    pos=strstrt( col, "," )
+    if( pos ) { FieldNames=FieldNames.col[1:pos-1] } else { FieldNames=FieldNames.col }
+  }
+  # Now save name of first field
+  FirstFieldName=word( FieldNames, 1 )
+}
+if( FirstFieldName[strlen(FirstFieldName):] eq "0" ) {
+  FirstFieldNameBase=FirstFieldName[:strlen(FirstFieldName)-1]
+} else {
+  FirstFieldNameBase=FirstFieldName
+}
+#print "FieldNames=\"".FieldNames."\""
+#print "OldFormat=".OldFormat
+#print "FirstFieldName=".FirstFieldName
+#print "FirstFieldNameBase=".FirstFieldNameBase
+
+# Find a column named FirstFieldName
 FieldOffset=1
-while( word(MyColumnHeadings,FieldOffset) ne FieldNames ) {
-  if( word(MyColumnHeadings,FieldOffset) eq "" ) { print "Can't find field ".FieldNames; exit gnuplot }
+while( FieldOffset <= NumMyColumnHeadings ) {
+  if( word( MyColumnHeadings, FieldOffset ) eq FirstFieldName ) { break }
   FieldOffset=FieldOffset+1
 }
-#print FieldNames." is field ".FieldOffset
+if( FieldOffset > NumMyColumnHeadings ) {
+  print "Can't find field ".FirstFieldName;
+  exit gnuplot
+}
+#print FirstFieldName." field in column (FieldOffset=)".FieldOffset
 
 # Work out how many fields there are per column by checking for absolute minimum
-FieldsPerColumn=word(MyColumnHeadings,FieldOffset-2) eq "E0_min" ? 6 : 4
+FieldsPerColumn=word( MyColumnHeadings, FieldOffset - 2 ) eq FirstFieldName."_min" ? 6 : 4
 #print "FieldsPerColumn=".FieldsPerColumn
 
-# Get a list of all the available fields
-NumFields=words(FieldNames)
-while( word(MyColumnHeadings,NumFields*FieldsPerColumn+FieldOffset) ne "ChiSqPerDof" && \
-       word(MyColumnHeadings,NumFields*FieldsPerColumn+FieldOffset) ne "" ) {
-  FieldNames=FieldNames." ".word(MyColumnHeadings,FieldOffset+NumFields*FieldsPerColumn)
-  NumFields=NumFields+1
+# Work out how many total fields there are
+NumFields=(NumMyColumnHeadings-FieldOffset-(FieldsPerColumn==6?3:2))/FieldsPerColumn+1
+#print "TotalNumFields=".NumFields
+
+# Work out how many statistics fields there are
+StatFieldOffset=NumFields
+while( StatFieldOffset >= 1 ) {
+  if( word( MyColumnHeadings, FieldOffset+(StatFieldOffset-1)*FieldsPerColumn ) eq "ChiSqPerDof" ) { break }
+  StatFieldOffset=StatFieldOffset - 1
 }
+if( StatFieldOffset < 1 ) {
+  print "Can't find field ChiSqPerDof";
+  exit gnuplot
+}
+NumStatFields=NumFields - StatFieldOffset + 1
+NumFields=NumFields - NumStatFields
+StatFieldOffset=FieldOffset+(StatFieldOffset-1)*FieldsPerColumn
 #print "NumFields=".NumFields
-#print "FieldNames=".FieldNames
+#print "NumStatFields=".NumStatFields
+#print "StatFieldOffset=".StatFieldOffset
+
+#Work out how many exponentials there were in the fit. This is only needed for the title wording
+NumExp=1
+SearchField=2
+while( SearchField <= NumFields ) {
+  ThisField=word(MyColumnHeadings,FieldOffset+(SearchField-1)*FieldsPerColumn)
+  #print "Test: ".ThisField." eq ".FirstFieldNameBase.NumExp
+  if( ThisField eq FirstFieldNameBase.NumExp ) { NumExp=NumExp + 1 }
+  SearchField=SearchField+1
+}
+#print "NumExp=".NumExp
 
 Condition=MySeriesCol." == idx"
 if( 0${where:+1} ) { Condition=Condition.' && ($where)' }

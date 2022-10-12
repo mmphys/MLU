@@ -5,6 +5,7 @@ set -e
 #set -x
 
 Ensemble="$1"
+PlotDocDir=~/Work/Uni/PhD/SemiLep/Plot
 
 # Get full path of parameter 2 in variable referenced by 1
 function PCGetFullPath()
@@ -38,7 +39,6 @@ if ! [ -f "$PlotCommonRoot/$EnsembleBase$Ensemble.sh" ]; then
   $RetExit 1
 fi
 
-PlotDocDir=~/Documents/SemiLep/Plot
 if ! [ -f "$PlotDocDir/$EnsembleBase$Ensemble.tex" ]; then
   Echo "$PlotDocDir/$EnsembleBase$Ensemble.tex missing"
   $RetExit 1

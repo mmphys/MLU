@@ -7,7 +7,7 @@ PlotPathSplit "$PlotFile" 6
 if [[ "$mmplotfile_type" == "params_sort" ]]
 then
   # Quietly skip the sorted version of parameter file
-  mmplotfile_type="$mmplotfile_type"
+  echo "Ignoring $mmplotfile_type file: $mmplotfile_name"
 elif [[ "$mmplotfile_type" != "params" ]]
 then
   echo "Not params file: $mmplotfile_name"
@@ -60,29 +60,28 @@ NumMyColumnHeadings=words( MyColumnHeadings )
 #print "NumMyColumnHeadings=".NumMyColumnHeadings
 
 # New format has a column headings comment
-ColumnHeadings=system("awk '/^# ColumnNames: / {print substr(\$0,16);exit}; ! /^#/ {exit}' ".PlotFile)
-NumColumnHeadings=words(ColumnHeadings)
-OldFormat=( NumColumnHeadings < 1 )
+FieldNames=system("awk '/^# ColumnNames: / {print substr(\$0,16);exit}; ! /^#/ {exit}' ".PlotFile)
+OldFormat=( words(FieldNames) < 1 )
 if( OldFormat ) {
   FirstFieldName="E0"
 } else {
   # Strip the trailing comma from each field name
-  OldColumnHeadings=ColumnHeadings
-  ColumnHeadings=""
-  do for [col in OldColumnHeadings] {
-    if( ColumnHeadings ne "" ) { ColumnHeadings=ColumnHeadings." " }
+  FirstFieldName=FieldNames
+  FieldNames=""
+  do for [col in FirstFieldName] {
+    if( FieldNames ne "" ) { FieldNames=FieldNames." " }
     pos=strstrt( col, "," )
-    if( pos ) { ColumnHeadings=ColumnHeadings.col[1:pos-1] } else { ColumnHeadings=ColumnHeadings.col }
+    if( pos ) { FieldNames=FieldNames.col[1:pos-1] } else { FieldNames=FieldNames.col }
   }
   # Now save name of first field
-  FirstFieldName=word( ColumnHeadings, 1 )
+  FirstFieldName=word( FieldNames, 1 )
 }
 if( FirstFieldName[strlen(FirstFieldName):] eq "0" ) {
   FirstFieldNameBase=FirstFieldName[:strlen(FirstFieldName)-1]
 } else {
   FirstFieldNameBase=FirstFieldName
 }
-#print "ColumnHeadings=\"".ColumnHeadings."\""
+#print "FieldNames=\"".FieldNames."\""
 #print "OldFormat=".OldFormat
 #print "FirstFieldName=".FirstFieldName
 #print "FirstFieldNameBase=".FirstFieldNameBase
