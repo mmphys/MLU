@@ -92,7 +92,9 @@ function OutFitCommands
     tf=${tNums[1]}
     local Sub="${ti}_${tf}"
 
-    Cmd="MultiFit -e $NumExp --mindp $MinDP -i ../ -o $OutDir/$Sub/MEL $Models"
+    Cmd="MultiFit -e $NumExp --mindp $MinDP -i ../ -o $OutDir/$Sub/MEL"
+    Cmd="$Cmd --debug-signals"
+    Cmd="$Cmd $Models"
     Cmd="$Cmd ${CorrPrefix}${dtLow}${CorrSuffix},t=${range}"
     for (( i=1; i < ${#dt[@]}; ++i ))
     do

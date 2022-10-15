@@ -33,6 +33,7 @@
 #include <cstdio>
 #include <cxxabi.h>
 #include <fenv.h>
+#include <memory>
 #include <string>
 #include <signal.h>
 
