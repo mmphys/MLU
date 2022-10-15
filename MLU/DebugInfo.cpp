@@ -177,9 +177,9 @@ void Grid_debug_handler_init(void)
   sigaction(SIGBUS,&sa,NULL);
   sigaction(SIGUSR2,&sa,NULL);
 
-  feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
-
-  sigaction(SIGFPE,&sa,NULL);
+  // In my case I let floating point exceptions occur and user code looks for NaN
+  /*feenableexcept( FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO);
+  sigaction(SIGFPE,&sa,NULL);*/
   sigaction(SIGKILL,&sa,NULL);
   sigaction(SIGILL,&sa,NULL);
 
