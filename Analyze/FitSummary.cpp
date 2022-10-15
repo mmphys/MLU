@@ -163,7 +163,6 @@ void Summariser::Run()
         m.Read( "" );
         if( m.dof < 0 )
           throw std::runtime_error("dof=" + std::to_string( m.dof ) + " (<0 invalid)");
-        const bool bExtrapolation{ m.dof == 0 };
         std::ostringstream ss;
         m.SummaryColumnNames( ss );
         if( ModelNum == 0 )

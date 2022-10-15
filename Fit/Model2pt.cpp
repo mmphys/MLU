@@ -98,7 +98,6 @@ std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
       else if( i == 0 )
       {
         // I just don't have enough data points to fit anything
-        bOK = false;
         break;
       }
       else
@@ -154,7 +153,6 @@ std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
         else if( i == 0 )
         {
           // I just don't have enough data points to fit anything
-          bOK = false;
           break;
         }
         else
@@ -172,7 +170,6 @@ std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
       else
       {
         // I just don't have enough data points to fit anything
-        bOK = false;
         break;
       }
     }

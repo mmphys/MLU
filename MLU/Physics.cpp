@@ -242,6 +242,7 @@ void Momentum::Replace( std::string &s, const std::string &MomName, bool bNegati
   const std::regex Pattern{ MakeRegex( MomName ) };
   bool bFound{ false };
   std::string Search{ std::move( s ) };
+  s.clear();
   while( std::regex_search( Search, match, Pattern ) )
   {
     s.append( match.prefix() );

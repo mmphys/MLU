@@ -113,6 +113,8 @@ const std::string sPValue{ "pvalue" };
 const std::string sPValueH{ "pvalueH" };
 const double NaN{ std::nan( "" ) };
 
+const std::vector<std::string> DefaultModelStats{ Common::sChiSqPerDof, Common::sPValue, Common::sPValueH };
+
 // Does the specified file exist?
 bool FileExists( const std::string& Filename )
 {
@@ -540,6 +542,7 @@ std::vector<Gamma::Algebra> ExtractGamma( std::string &Prefix )
   std::vector<Gamma::Algebra> v;
   std::smatch match;
   std::string Search{ std::move( Prefix ) };
+  Prefix.clear();
   while( std::regex_search( Search, match, GammaPattern ) )
   {
     Prefix.append( match.prefix() );
@@ -583,6 +586,7 @@ void ReplaceGamma( std::string &Prefix, Gamma::Algebra gFrom, Gamma::Algebra gTo
   }
   std::smatch match;
   std::string Search{ std::move( Prefix ) };
+  Prefix.clear();
   while( std::regex_search( Search, match, GammaPattern ) )
   {
     Prefix.append( match.prefix() );

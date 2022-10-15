@@ -277,6 +277,8 @@ CPPFLAGS+=" `$GSLConfig --cflags`"
 AC_CHECK_HEADER([Hadrons/Modules/MGuesser/BatchExactDeflation.hpp],
                 [AC_DEFINE([MLU_HADRONS_HAS_GUESSERS], [], [Hadrons supports guessers])])
 
+AC_CHECK_HEADERS(execinfo.h)
+
 # Check whether fint and size_t are same
 AC_MSG_CHECKING([whether std::uint_fast32_t is the same as std::size_t]);
 AC_LINK_IFELSE(

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		27953EAD28FB226D00A4CF67 /* DebugInfo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */; };
+		27953EAE28FB226D00A4CF67 /* DebugInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27953EAC28FB226D00A4CF67 /* DebugInfo.cpp */; };
 		682C5CA228E4F7BF00C8E004 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C4728E4F2C300C8E004 /* Common.cpp */; };
 		682C5CA328E4F7CA00C8E004 /* Common.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682C5C5B28E4F2C300C8E004 /* Common.hpp */; };
 		682C5CA628E4F82500C8E004 /* FitRange.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682C5C4E28E4F2C300C8E004 /* FitRange.hpp */; };
@@ -250,6 +252,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DebugInfo.hpp; sourceTree = "<group>"; };
+		27953EAC28FB226D00A4CF67 /* DebugInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DebugInfo.cpp; sourceTree = "<group>"; };
 		6820525B28E505CA003AD91D /* Xml */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Xml; sourceTree = "<group>"; };
 		6820525C28E505CA003AD91D /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		6820525D28E50661003AD91D /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
@@ -523,10 +527,12 @@
 			children = (
 				682C5C4728E4F2C300C8E004 /* Common.cpp */,
 				682C5C5B28E4F2C300C8E004 /* Common.hpp */,
-				682C5C5A28E4F2C300C8E004 /* CommonGrid.hpp */,
 				682C5C5028E4F2C300C8E004 /* CommonGrid.cpp */,
+				682C5C5A28E4F2C300C8E004 /* CommonGrid.hpp */,
 				682C5C5328E4F2C300C8E004 /* CommonLatAn.cpp */,
 				682C5C4928E4F2C300C8E004 /* CommonLatAn.hpp */,
+				27953EAC28FB226D00A4CF67 /* DebugInfo.cpp */,
+				27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */,
 				682C5C5828E4F2C300C8E004 /* FitRange.cpp */,
 				682C5C4E28E4F2C300C8E004 /* FitRange.hpp */,
 				682C5C4A28E4F2C300C8E004 /* GSLVecMat.cpp */,
@@ -684,6 +690,7 @@
 			files = (
 				682C5CA628E4F82500C8E004 /* FitRange.hpp in Headers */,
 				682C5CA728E4F82500C8E004 /* GSLVecMat.hpp in Headers */,
+				27953EAD28FB226D00A4CF67 /* DebugInfo.hpp in Headers */,
 				682C5CA828E4F82500C8E004 /* GSLVecMatImp.hpp in Headers */,
 				682C5CA928E4F82500C8E004 /* HDF5.hpp in Headers */,
 				682C5CAA28E4F82500C8E004 /* Math.hpp in Headers */,
@@ -1156,6 +1163,7 @@
 				682C5CB128E4F86C00C8E004 /* Math.cpp in Sources */,
 				682C5CB228E4F86C00C8E004 /* Param.cpp in Sources */,
 				682C5CB328E4F86C00C8E004 /* Physics.cpp in Sources */,
+				27953EAE28FB226D00A4CF67 /* DebugInfo.cpp in Sources */,
 				682C5CB428E4F86C00C8E004 /* String.cpp in Sources */,
 				682C5CA228E4F7BF00C8E004 /* Common.cpp in Sources */,
 			);
@@ -1772,6 +1780,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 12.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = (
 					"-Xpreprocessor",
 					"-fopenmp",

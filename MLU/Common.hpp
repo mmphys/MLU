@@ -146,6 +146,8 @@ extern const std::string sChiSqPerDof;
 extern const std::string sPValue;
 extern const std::string sPValueH;
 
+extern const std::vector<std::string> DefaultModelStats;
+
 using SeedType = unsigned int;
 
 template<typename T = int> struct StartStopStepIterator;
@@ -324,14 +326,14 @@ protected:
   template<class V = T> static void MyEmplace( std::multimap<Key, V, Compare> &m, Key &&k, V &&t )
   {
     // Multimap, so won't fail
-    m.emplace( std::make_pair( std::move( k ), std::move( t ) ) );
+    m.emplace( std::make_pair( std::move( k ), std::forward<V>( t ) ) );
   }
   template<class V = T> static void MyEmplace( std::map<Key, V, Compare> &m, Key &&k, V &&t )
   {
     // Map - might be already present
     using iterator = typename std::map<Key, V, Compare>::iterator;
     using pair = std::pair<iterator, bool>;
-    pair a{ m.emplace( std::make_pair( std::move( k ), std::move( t ) ) ) };
+    pair a{ m.emplace( std::make_pair( std::move( k ), std::forward<V>( t ) ) ) };
     if( !a.second )
     {
       std::ostringstream es;

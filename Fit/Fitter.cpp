@@ -364,7 +364,7 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
   dof_ = dof;
 
   // Make somewhere to store the results of the fit for each bootstrap sample
-  ModelFile OutputModel( ds.NSamples, mp, { Common::sChiSqPerDof, Common::sPValue, Common::sPValueH },
+  ModelFile OutputModel( ds.NSamples, mp, Common::DefaultModelStats,
                          ds.FitTimes, dof, cp.CovarSampleSize(), cp.bFreeze, cp.Source, cp.RebinSize,
                          cp.CovarNumBoot );
   for( const Fold &f : ds.corr )

@@ -1128,7 +1128,7 @@ int main(int argc, const char *argv[])
     "       F  Make form factors. Options\n"
     "          L i.e. spatial extent of lattice, (e.g. 24, 32, 64, ...)\n"
     "          'spatial' flag to divide spatial current gXYZ by integer momentum\n"
-    "          (Should not be needed except for very old code)\n"
+    "          (Should not be needed except for very old bootstrap files)\n"
     "--efit Fit_list[,options[,...]] List of fit files for energies,\n"
     "         each row has 'Quark file' (one row per momenta).\n"
     "         First option can be 'c' to freeze values to central value,\n"

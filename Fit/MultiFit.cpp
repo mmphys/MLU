@@ -27,6 +27,7 @@
 /*  END LEGAL */
 
 #include "Fitter.hpp"
+#include <MLU/DebugInfo.hpp>
 
 // Uncomment the next line to disable Minuit2 (for testing)
 //#undef HAVE_MINUIT2
@@ -107,11 +108,14 @@ int main(int argc, const char *argv[])
       {"testrun", CL::SwitchType::Flag, nullptr},
       {"covsrc", CL::SwitchType::Single, "Bootstrap"},
       {"covboot", CL::SwitchType::Single, nullptr},
+      {"debug-signals", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
     if( !cl.GotSwitch( "help" ) && cl.Args.size() )
     {
+      if( cl.GotSwitch( "debug-signals" ) )
+        Common::Grid_debug_handler_init();
       const std::string inBase{ cl.SwitchValue<std::string>("i") };
       std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
       Common::MakeAncestorDirs( outBaseFileName );
@@ -376,6 +380,7 @@ int main(int argc, const char *argv[])
     "--srcsnk   Append _src and _snk to overlap coefficients (ie force different)\n"
     "--opnames  Disable sorting and deduplicating operator name list\n"
     "--testrun  Don't perform fits - just say which fits would be attempted\n"
+    "--debug-signals Trap signals (code courtesy of Grid)\n"
     "--help     This message\n"
     "Parameters accepted by all models:\n"
     " e         Number of exponentials\n"
