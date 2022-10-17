@@ -104,7 +104,7 @@ function OutFitCommands
     echo $Cmd >> $Analyse1
     OutSub="$OutSub${OutSub:+,}${Sub}"
   done
-  echo "FitSummary -i $OutDir/ -o $OutDir/ {$OutSub}'*.model.$Suffix'" >> $Analyse2
+  echo "FitSummary -i $OutDir/ -o $OutDir/ {$OutSub}/'*.model.$Suffix'" >> $Analyse2
 }
 
 ############################################################
