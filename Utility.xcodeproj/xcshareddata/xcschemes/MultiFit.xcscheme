@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
    LastUpgradeVersion = "1400"
-   version = "1.3">
+   version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
@@ -74,6 +74,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--chisqdof 7"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--fitter Minuit2 --retry 150"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -92,6 +96,10 @@
          <CommandLineArgument
             argument = "--testrun"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--debug-signals"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--mindp 8 --iter 100000"
@@ -122,7 +130,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/fit/2ptp2/h385_s/h385_s_p2_0.corr_12_25_10_25.g5P_g5W.model.1835672416.h5"
+            argument = "F1M/fit/2ptp2/h385_s/h385_s_p2_0.corr_12_25_12_25.g5P_g5W.model.1835672416.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -134,7 +142,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/fit/2ptp2/s_l/s_l_p2_0.corr_10_23_12_23.g5P_g5W.model.1835672416.h5"
+            argument = "F1M/fit/2ptp2/s_l/s_l_p2_0.corr_6_19_6_19.g5P_g5W.model.1835672416.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -158,7 +166,23 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "M1/corr/3sm_sp2/quark_l_h447_gT_dt_16_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h447_s_p2_0,t=9:12"
+            argument = "F1M/corr/3pt_sp2/quark_l_h385_gT_dt_20_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=R-1:-2:2:5:5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/corr/3pt_sp2/quark_l_h385_gT_dt_24_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=R-2:-2:6:5:5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/corr/3pt_sp2/quark_l_h385_gT_dt_28_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=R-3:-2:10:5:5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/corr/3pt_sp2/quark_l_h385_gT_dt_32_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=R-4:-2:14:5:5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "M1/corr/3sm_sp2/quark_l_h447_gT_dt_16_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h447_s_p2_0,t=9:12:2:2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -182,15 +206,20 @@
          <EnvironmentVariable
             key = "OMP_NUM_THREADS"
             value = "20"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
       </EnvironmentVariables>
+      <LocationScenarioReference
+         identifier = "com.apple.dt.IDEFoundation.CurrentLocationScenarioIdentifier"
+         referenceType = "1">
+      </LocationScenarioReference>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
       shouldUseLaunchSchemeArgsEnv = "YES"
       savedToolIdentifier = ""
-      useCustomWorkingDirectory = "NO"
+      useCustomWorkingDirectory = "YES"
+      customWorkingDirectory = "$PROJECT_DIR/run"
       debugDocumentVersioning = "YES">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">

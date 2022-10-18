@@ -34,6 +34,7 @@
 
 MLU_DebugInfo_hpp
 
+extern bool Grid_exit_handler_disable; // Set to true just before exit so nothing printed
 void Grid_debug_handler_init(void);
 
 MLU_DebugInfo_hpp_end

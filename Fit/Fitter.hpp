@@ -42,6 +42,7 @@ public:
   const bool bAnalyticDerivatives;
   const bool bTestRun;
   const double HotellingCutoff;
+  const double ChiSqDofCutoff;
   const double RelEnergySep;
   const int MinDof;
   const int Retry;

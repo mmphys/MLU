@@ -161,10 +161,15 @@ void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
   return;
 };
 
+bool Grid_exit_handler_disable = false;
+
 void Grid_exit_handler(void)
 {
-  BACKTRACEFP(stdout);
-  fflush(stdout);
+  if( !Grid_exit_handler_disable )
+  {
+    BACKTRACEFP(stdout);
+    fflush(stdout);
+  }
 }
 void Grid_debug_handler_init(void)
 {

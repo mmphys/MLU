@@ -444,6 +444,7 @@ scalar FitterThread::FitOne()
     Error[i] = std::abs( Error[i] );
   // Get test statistic
   scalar qValue, qValueH;
+  scalar ChiSqPerDof{ dTestStat };
   const int FDist_p{ parent.dof };
   const int FDist_m{ parent.cp.CovarSampleSize() - 1 };
   if( parent.dof == 0 )
@@ -453,6 +454,7 @@ scalar FitterThread::FitOne()
   }
   else
   {
+    ChiSqPerDof /= parent.dof;
     qValue = Common::qValueChiSq( dTestStat, parent.dof );
     if( Common::HotellingDist::Usable( FDist_p, FDist_m ) )
       qValueH = Common::HotellingDist::qValue( dTestStat, FDist_p, FDist_m );
@@ -472,19 +474,28 @@ scalar FitterThread::FitOne()
     else
       ss << "m <= p, Chi^2";
     ss << " qValue " << qValueH;
+    bool bOK{ true };
     if( parent.HotellingCutoff )
     {
-      const bool bOK{ qValueH >= parent.HotellingCutoff };
+      bOK = qValueH >= parent.HotellingCutoff;
       ss << ( bOK ? " >=" : " <" ) << " cutoff " << parent.HotellingCutoff;
-      if( !bOK )
-      {
-        // Now add each component of the error vector
-        ss << std::setprecision( std::numeric_limits<scalar>::max_digits10 ) << "\nTheory - Data ("
-           << ( bCorrelated ? "" : "un" ) << "correlated):";
-        for( std::size_t i = 0; i < Error.size; ++i )
-          ss << ( i ? Common::CommaSpace : Common::Space ) << Error[i];
-        throw std::runtime_error( ss.str() );
-      }
+    }
+    ss << ", chi^2/dof " << ChiSqPerDof;
+    if( parent.ChiSqDofCutoff )
+    {
+      const bool bOKC{ ChiSqPerDof <= parent.ChiSqDofCutoff };
+      ss << ( bOKC ? " <=" : " >" ) << " cutoff " << parent.ChiSqDofCutoff;
+      if( !bOKC )
+        bOK = false;
+    }
+    if( !bOK )
+    {
+      // Now add each component of the error vector
+      ss << std::setprecision( std::numeric_limits<scalar>::max_digits10 ) << "\nTheory - Data ("
+         << ( bCorrelated ? "" : "un" ) << "correlated):";
+      for( std::size_t i = 0; i < Error.size; ++i )
+        ss << ( i ? Common::CommaSpace : Common::Space ) << Error[i];
+      throw std::runtime_error( ss.str() );
     }
     std::cout << "OK: " << ss.str() << Common::NewLine;
   }

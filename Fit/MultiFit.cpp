@@ -84,6 +84,7 @@ int main(int argc, const char *argv[])
       // Fitter parameters
       {"analytic", CL::SwitchType::Flag, nullptr},
       {"Hotelling", CL::SwitchType::Single, DefaultHotelling},
+      {"chisqdof", CL::SwitchType::Single, "0"},
       {"sep", CL::SwitchType::Single, DefaultEnergySep},
       {"mindof", CL::SwitchType::Single, "1"},
       {"mindp", CL::SwitchType::Single, DefaultMinDP},
@@ -350,6 +351,7 @@ int main(int argc, const char *argv[])
     "reading in parameters from previous fit results (Models).\n"
     "Options:\n"
     "--Hotelling Minimum Hotelling Q-value on central replica (default " << DefaultHotelling << ")\n"
+    "--chisqdof  Maximum chi^2 / dof on central replica\n"
     "--sep    Minimum relative separation between energy levels (default " << DefaultEnergySep << ")\n"
     "--retry  Maximum number of times to retry fits (default Minuit2=10, GSL=0)\n"
     "--iter   Max iteration count, 0 (default) = unlimited\n"
@@ -395,5 +397,6 @@ int main(int argc, const char *argv[])
     " Src       ObjectID for source\n"
     " Snk       ObjectID for sink\n";
   }
+  Common::Grid_exit_handler_disable = true;
   return iReturn;
 }

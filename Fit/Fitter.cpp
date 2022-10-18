@@ -38,6 +38,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
   : bAnalyticDerivatives{ cl.GotSwitch("analytic") },
     bTestRun{ cl.GotSwitch("testrun") },
     HotellingCutoff{ cl.SwitchValue<double>( "Hotelling" ) },
+    ChiSqDofCutoff{ cl.SwitchValue<double>( "chisqdof" ) },
     RelEnergySep{ cl.SwitchValue<double>("sep") },
     MinDof{ cl.SwitchValue<int>("mindof") },
     Retry{ cl.SwitchValue<int>("retry") },
@@ -61,6 +62,10 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
   assert( NumModelParams == NumExponents * NumPerExp + NumOneOff && "NumModelParams doesn't match NumPerExp and NumOneOff" );*/
   if( MinDof < 0 )
     throw std::invalid_argument( "Degrees of freedom (mindof) must be >= 0" );
+  if( HotellingCutoff < 0 )
+    throw std::invalid_argument( "Hotelling cutoff must be >= 0" );
+  if( ChiSqDofCutoff < 0 )
+    throw std::invalid_argument( "chi^2 / dof cutoff must be >= 0" );
   if( Retry < 0 )
     throw std::invalid_argument( "Number of fit retries (retry) must be >= 0" );
   if( MaxIt < 0 )
