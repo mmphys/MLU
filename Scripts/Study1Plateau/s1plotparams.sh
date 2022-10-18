@@ -18,7 +18,6 @@ if [[ "$timin" == "" ]]; then do_timin=0; else do_timin=1; fi
 if [[ "$timax" == "" ]]; then do_timax=0; else do_timax=1; fi
 if [[ "$log" == "" ]]; then do_log=0; else let do_log=$log; fi
 MyColumnHeadings=`awk '/^#/ {next}; {print \$0;exit}' $PlotFile`
-MyColumnHeadingsNoUS="${MyColumnHeadings//_/\\\\_}"
 
 ###################################################
 # Plot the extracted energy levels and test statistic associated with the model
@@ -37,7 +36,6 @@ TIMax=${timax:-0}
 my_key="${key:-bottom left maxrows 2}"
 my_yrange="${yrange:-*:*}"
 MyColumnHeadings="${MyColumnHeadings}"
-MyColumnHeadingsNoUS="${MyColumnHeadingsNoUS}"
 my_xtics="${xtics}"
 do_log=${do_log}
 xAxisName="${xaxis:-pvalueH pvalue ChiSqPerDof}"
@@ -49,6 +47,8 @@ do_label=((1-0${label+1}))
 do_SaveLabel=0${savelabel+1}
 SaveLabel="${savelabel}"
 PDFSize="${size}"
+DoFieldNames=1-0${fields:+1}
+FieldNames="${fields}"
 ManualTitle=0${title+1}
 ManualTitleText="${title}"
 ManualYLabel=0${ylabel+1}
@@ -60,10 +60,13 @@ NumMyColumnHeadings=words( MyColumnHeadings )
 #print "NumMyColumnHeadings=".NumMyColumnHeadings
 
 # New format has a column headings comment
+NumFields=words( FieldNames )
+if( NumFields != 0 ) {
+  FirstFieldName=word( FieldNames, 1 )
+} else {
 FieldNames=system("awk '/^# ColumnNames: / {print substr(\$0,16);exit}; ! /^#/ {exit}' ".PlotFile)
-OldFormat=( words(FieldNames) < 1 )
-if( OldFormat ) {
-  FirstFieldName="E0"
+if( words(FieldNames) < 1 ) {
+  FirstFieldName="E0" # Old format
 } else {
   # Strip the trailing comma from each field name
   FirstFieldName=FieldNames
@@ -76,13 +79,12 @@ if( OldFormat ) {
   # Now save name of first field
   FirstFieldName=word( FieldNames, 1 )
 }
+}
 if( FirstFieldName[strlen(FirstFieldName):] eq "0" ) {
   FirstFieldNameBase=FirstFieldName[:strlen(FirstFieldName)-1]
 } else {
   FirstFieldNameBase=FirstFieldName
 }
-#print "FieldNames=\"".FieldNames."\""
-#print "OldFormat=".OldFormat
 #print "FirstFieldName=".FirstFieldName
 #print "FirstFieldNameBase=".FirstFieldNameBase
 
@@ -103,11 +105,11 @@ FieldsPerColumn=word( MyColumnHeadings, FieldOffset - 2 ) eq FirstFieldName."_mi
 #print "FieldsPerColumn=".FieldsPerColumn
 
 # Work out how many total fields there are
-NumFields=(NumMyColumnHeadings-FieldOffset-(FieldsPerColumn==6?3:2))/FieldsPerColumn+1
-#print "TotalNumFields=".NumFields
+TotalNumFields=(NumMyColumnHeadings-FieldOffset-(FieldsPerColumn==6?3:2))/FieldsPerColumn+1
+#print "TotalNumFields=".TotalNumFields
 
 # Work out how many statistics fields there are
-StatFieldOffset=NumFields
+StatFieldOffset=TotalNumFields
 while( StatFieldOffset >= 1 ) {
   if( word( MyColumnHeadings, FieldOffset+(StatFieldOffset-1)*FieldsPerColumn ) eq "ChiSqPerDof" ) { break }
   StatFieldOffset=StatFieldOffset - 1
@@ -116,12 +118,19 @@ if( StatFieldOffset < 1 ) {
   print "Can't find field ChiSqPerDof";
   exit gnuplot
 }
-NumStatFields=NumFields - StatFieldOffset + 1
-NumFields=NumFields - NumStatFields
+NumStatFields=TotalNumFields - StatFieldOffset + 1
+if( NumFields == 0 ) {
+  NumFields=TotalNumFields - NumStatFields
+  do for [MyFieldNum=1:NumFields] {
+    if( MyFieldNum > 1 ) { FieldNames=FieldNames." " }
+    FieldNames=FieldNames.word( MyColumnHeadings, FieldOffset+(MyFieldNum-1)*FieldsPerColumn )
+  }
+}
 StatFieldOffset=FieldOffset+(StatFieldOffset-1)*FieldsPerColumn
 #print "NumFields=".NumFields
 #print "NumStatFields=".NumStatFields
 #print "StatFieldOffset=".StatFieldOffset
+#print "FieldNames=\"".FieldNames."\""
 
 #Work out how many exponentials there were in the fit. This is only needed for the title wording
 NumExp=1
@@ -236,11 +245,14 @@ if( do_label ) {
   PlotCmd=PlotCmd.' '.WithLabels.' notitle'
 }
 
-while( word(MyColumnHeadings,FieldOffset) ne "" ) {
-  MyField=word(MyColumnHeadings,FieldOffset)
-  MyFieldNoUS=word(MyColumnHeadingsNoUS,FieldOffset)
+EscapeUS(s)=(i0=strstrt(s,"_"),i0 ? s[:i0-1]."\\\_".EscapeUS(s[i0+1:]) : s)
+
+do for [MyField in FieldNames] {
+  MyFieldNoUS=EscapeUS(MyField)
   OutFile=OutBase.MyField.OutSuffix
-  #print "MyField=".MyField.", OutFile=".OutFile
+  #print "MyField=".MyField
+  #print "MyFieldNoUS=".MyFieldNoUS
+  #print "OutFile=".OutFile
   set output OutFile
   #set label 1 OutFile noenhanced at screen 1, 0 right font ",8" front textcolor "grey40" offset character -1, character 0.75
   if( do_SaveLabel ) { OutFileLabel=SaveLabel } else { OutFileLabel=OutFile }
@@ -266,8 +278,7 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   if( ManualTitle ) {
     if( ManualTitleText eq "" ) { unset title } else { set title ManualTitleText enhanced }
   } else {
-    MyTitle = MyFieldNoUS.FitName
-    set title MyTitle noenhanced
+    set title MyFieldNoUS.FitName
   }
   if( ManualYLabel ) {
     if( ManualYLabelText eq "" ) { unset ylabel } else { set ylabel ManualYLabelText font ',16' enhanced }
@@ -276,11 +287,10 @@ while( word(MyColumnHeadings,FieldOffset) ne "" ) {
   eval PlotCmd
 
   if (IsEnergy) { unset object 1; unset arrow; unset label 2 }
-  FieldOffset=FieldOffset + FieldsPerColumn
 }
 
 # 22 Jul 2022 Not sure why this fails. Find this if statement above, but it's when blocks not contiguous
-if( STATS_max - STATS_min == NBlock - 1 ) {
+if( DoFieldNames && STATS_max - STATS_min == NBlock - 1 ) {
 unset xrange
 unset logscale x
 #set yrange [*:${stat:-*}]
