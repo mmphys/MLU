@@ -37,7 +37,8 @@ if [ ${#@} == 0 ]; then
   echo "serieslbl Which field is the series label ($serieslbl)"
   echo "extralbl  Extra fields to plot in label ($extralbl)"
   echo "where     Only plot points where constraint met ($where)"
-  echo "GotData   If set to zero, cancels the plot ($GotData)"
+  echo "fields    List of the field names to plot (empty=all)"
+  echo "GotData   Set to zero to show an empty plot ($GotData)"
   echo "key       Defaults for legend ($key)"
   echo "seq       Add sequence number to label"
   echo "pvalue    Add pvalue to point label"
@@ -83,8 +84,9 @@ MyColumnHeadingsNoUS="${MyColumnHeadingsNoUS}"
 my_xtics="$xtics"
 PDFSize="$size"
 MyInteractive=1-0${save+1}
+FieldNames="${fields}"
 bGotWhere=0${where:+1}
-bGotData=${GotData:-0}
+bGotData=${GotData:-1}
 if(bGotWhere) {WhereCondition='!(${where}) ? NaN : '} else {WhereCondition=''}
 
 # stats command in Gnuplot 5.4 always throws an error
@@ -118,10 +120,13 @@ NumMyColumnHeadings=words( MyColumnHeadings )
 #print "NumMyColumnHeadings=".NumMyColumnHeadings
 
 # New format has a column headings comment
+NumFields=words( FieldNames )
+if( NumFields != 0 ) {
+  FirstFieldName=word( FieldNames, 1 )
+} else {
 FieldNames=system("awk '/^# ColumnNames: / {print substr(\$0,16);exit}; ! /^#/ {exit}' ".PlotFile)
-OldFormat=( words(FieldNames) < 1 )
-if( OldFormat ) {
-  FirstFieldName="E0"
+if( words(FieldNames) < 1 ) {
+  FirstFieldName="E0" # Old format
 } else {
   # Strip the trailing comma from each field name
   FirstFieldName=FieldNames
@@ -134,13 +139,13 @@ if( OldFormat ) {
   # Now save name of first field
   FirstFieldName=word( FieldNames, 1 )
 }
+}
 if( FirstFieldName[strlen(FirstFieldName):] eq "0" ) {
   FirstFieldNameBase=FirstFieldName[:strlen(FirstFieldName)-1]
 } else {
   FirstFieldNameBase=FirstFieldName
 }
 #print "FieldNames=\"".FieldNames."\""
-#print "OldFormat=".OldFormat
 #print "FirstFieldName=".FirstFieldName
 #print "FirstFieldNameBase=".FirstFieldNameBase
 
@@ -161,11 +166,11 @@ FieldsPerColumn=word( MyColumnHeadings, FieldOffset - 2 ) eq FirstFieldName."_mi
 #print "FieldsPerColumn=".FieldsPerColumn
 
 # Work out how many total fields there are
-NumFields=(NumMyColumnHeadings-FieldOffset-(FieldsPerColumn==6?3:2))/FieldsPerColumn+1
-#print "TotalNumFields=".NumFields
+TotalNumFields=(NumMyColumnHeadings-FieldOffset-(FieldsPerColumn==6?3:2))/FieldsPerColumn+1
+#print "TotalNumFields=".TotalNumFields
 
 # Work out how many statistics fields there are
-StatFieldOffset=NumFields
+StatFieldOffset=TotalNumFields
 while( StatFieldOffset >= 1 ) {
   if( word( MyColumnHeadings, FieldOffset+(StatFieldOffset-1)*FieldsPerColumn ) eq "ChiSqPerDof" ) { break }
   StatFieldOffset=StatFieldOffset - 1
@@ -174,8 +179,8 @@ if( StatFieldOffset < 1 ) {
   print "Can't find field ChiSqPerDof";
   exit gnuplot
 }
-NumStatFields=NumFields - StatFieldOffset + 1
-NumFields=NumFields - NumStatFields
+NumStatFields=TotalNumFields - StatFieldOffset + 1
+if( NumFields == 0 ) { NumFields=TotalNumFields - NumStatFields }
 StatFieldOffset=FieldOffset+(StatFieldOffset-1)*FieldsPerColumn
 #print "NumFields=".NumFields
 #print "NumStatFields=".NumStatFields
