@@ -8,7 +8,6 @@ shopt -s nullglob # globs return empty strings if no match
 #   minuit= Use Minuit2 as fitter
 #   num     Number of bootstrap replicas to fit (default all)
 #   exp     Number of exponentials
-exp=${exp:-2} # Default two exponentials
 JobRoot=${JobRoot:-analyse}
 JobIn=${JobIn:-corr}
 JobOut=${JobOut:-fit}
@@ -20,11 +19,13 @@ CorrDirNow=$JobRoot/$JobIn
 FitDirNow=$JobRoot/$JobOut
 
 # Don't expect these to be overriden
-JobBaseName=${FitDirNow//\//.}
+JobBaseName=${FitDirNow//\//.}$exp
 JobFileName=${JobBaseName}.sh
 JobFilePost=${JobBaseName}.2.sh
 Point=g5P_g5P
 Wall=g5P_g5W
+
+exp=${exp:-2} # Default two exponentials
 
 if ! [ -r ./FitRanges.sh ]
 then
