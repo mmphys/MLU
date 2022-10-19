@@ -38,6 +38,7 @@ if [ ${#@} == 0 ]; then
   echo "extralbl  Extra fields to plot in label ($extralbl)"
   echo "where     Only plot points where constraint met ($where)"
   echo "fields    List of the field names to plot (empty=all)"
+  echo "yranges   List of the yranges for each plot"
   echo "GotData   Set to zero to show an empty plot ($GotData)"
   echo "key       Defaults for legend ($key)"
   echo "seq       Add sequence number to label"
@@ -83,6 +84,7 @@ my_xtics="$xtics"
 PDFSize="$size"
 MyInteractive=1-0${save+1}
 FieldNames="${fields}"
+YRanges="${yranges}"
 bGotWhere=0${where:+1}
 bGotData=${GotData:-1}
 if(bGotWhere) {WhereCondition='!(${where}) ? NaN : '} else {WhereCondition=''}
@@ -221,7 +223,6 @@ array Seq[MySeriesCount]
 
 set key $key
 if( "$xrange" ne "" ) { set xrange [${xrange}] }
-if( "$yrange" ne "" ) { set yrange [${yrange}] }
 
 # Default line width and point type
 DefWidth=0.75
@@ -244,6 +245,9 @@ do for [MyFieldNum=NumFields:1:-1] {
 MyColumn=(MyFieldNum-1)*FieldsPerColumn+FieldOffset
 MyField = word(FieldNames,MyFieldNum)
 #print MyField." is field ".MyFieldNum.", column number ".MyColumn
+
+MyYRange = word( YRanges, MyFieldNum )
+if( MyYRange eq "" ) { unset yrange } else { eval 'set yrange ['.MyYRange.']' }
 
 if( MyInteractive ) {
   # Looking at one file interactively
