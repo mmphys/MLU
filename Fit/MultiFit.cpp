@@ -28,6 +28,7 @@
 
 #include "Fitter.hpp"
 #include <MLU/DebugInfo.hpp>
+#include <chrono>
 
 // Uncomment the next line to disable Minuit2 (for testing)
 //#undef HAVE_MINUIT2
