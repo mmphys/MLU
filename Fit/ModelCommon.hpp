@@ -45,7 +45,30 @@ protected:
   static std::vector<std::string> GetObjectNameSnkSrc( const Model::CreateParams &cp, Model::Args &Args );
 };
 
-// A model with two overlap coefficients
+/**
+ A model with two overlap coefficients
+
+ Overlap factor normalisation
+ 
+ Call the overlap factors A = <n| O^\dag | \Omega>
+ we have two choices of normalisation.
+ 
+ - Parameters:
+  - `bOverlapAltNorm = false` : **Default Normalisation**
+ 
+      C2(t) = \sum_{j=1}^n \frac{A}{2 E_j} \exp{- E_j t}
+
+ - `bOverlapAltNorm = true` : Alternate Normalisation
+ 
+      C2(t) = \sum_{j=1}^n        A        \exp{- E_j t}
+ 
+  - Warning: Do not mix and match!
+ The same normalisation must be used everywhere.
+ I.e. you **cannot** perform a two point fit with one normalisation...
+ ...then feed that into a second fit using a different normalisation.
+ 
+ - Warning: **Do not use the alternate normalisation unless you know what you are doing**
+ */
 struct ModelOverlap : Model, Object
 {
   ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
@@ -55,9 +78,10 @@ struct ModelOverlap : Model, Object
   std::string Description() const override;
   std::size_t Guessable( std::vector<bool> &bKnown, bool bLastChance ) const override;
   void ReduceUnknown() override;
-protected:
-  std::size_t NumUnknown( std::vector<bool> &bKnown ) const;
-  const bool bNormalisationByEnergy;
+// TODO: These really shouldn't be accessed directly - otherwise we might forget to normalise
+//protected:
+  //std::size_t NumUnknown( std::vector<bool> &bKnown ) const;
+  const bool bOverlapAltNorm;
   std::size_t NumOverlapExp;
   std::vector<ModelParam> Overlap;
 };

@@ -99,6 +99,7 @@ int main(int argc, const char *argv[])
       {"guess", CL::SwitchType::Single, nullptr},
       // ModelDefaultParams
       {"e", CL::SwitchType::Single, "1"},
+      {Common::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
       // Other params
       {"fitter", CL::SwitchType::Single, "GSL"},
       {"i", CL::SwitchType::Single, "" },
@@ -294,8 +295,7 @@ int main(int argc, const char *argv[])
         }
         ds.SetFitTimes( fitTimes );
         // Log what file we're processing and when we started
-        std::time_t then;
-        std::time( &then );
+        const auto then{ std::chrono::steady_clock::now() };
         try
         {
           {
@@ -321,16 +321,18 @@ int main(int argc, const char *argv[])
         // Mention that we're finished, what the time is and how long it took
         if( !m->bTestRun )
         {
-          std::time_t now;
-          std::time( &now );
-          double dNumSecs = std::difftime( now, then );
-          std::string sNow{ std::ctime( &now ) };
-          while( sNow.length() && sNow[sNow.length() - 1] == '\n' )
-            sNow.resize( sNow.length() - 1 );
-          std::stringstream ss;
-          ss << sNow << ". Total duration " << std::fixed << std::setprecision(1)
-                     << dNumSecs << " seconds.\n";
-          std::cout << ss.str();
+          const auto now{ std::chrono::steady_clock::now() };
+          const auto mS{ std::chrono::duration_cast<std::chrono::milliseconds>( now - then ) };
+          std::cout << "Total duration ";
+          if( mS.count() < 1100 )
+            std::cout << mS.count() << " milliseconds.\n";
+          else
+          {
+            const auto S{ std::chrono::duration_cast<std::chrono::duration<double>>( now - then ) };
+            std::ostringstream ss;
+            ss << std::fixed << std::setprecision(1) << S.count() << " seconds.\n";
+            std::cout << ss.str();
+          }
         }
       }
     }
@@ -383,13 +385,13 @@ int main(int argc, const char *argv[])
     "--opnames  Disable sorting and deduplicating operator name list\n"
     "--testrun  Don't perform fits - just say which fits would be attempted\n"
     "--debug-signals Trap signals (code courtesy of Grid)\n"
+    "--" << Common::sOverlapAltNorm << "  Alternate normalisation for overlap factors. DEPRECATED\n"
     "--help     This message\n"
     "Parameters accepted by all models:\n"
     " e         Number of exponentials\n"
     " model     Model type {Exp, Cosh, Sinh, ThreePoint, Const}\n"
     " t         Fit range: [R[n:]start:stop[:numstart=1[:numstop=numstart]])\n"
     "Parameters accepted by models with overlap coefficients:\n"
-    " ENorm     Normalise overlap coefficients by 1/2E\n"
     " SrcSnk    Force source and sink to be different (by appending 'src' and 'snk')\n"
     "Parameters accepted by models for single objects (e.g. 2pt-functions):\n"
     " ObjectID  Object identifier (defaults to base of filename)\n"

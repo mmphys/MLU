@@ -34,7 +34,7 @@
 // This is the name of an energy level
 extern const std::string E;
 
-enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant };
+enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant, R3 };
 std::ostream & operator<<( std::ostream &os, const ModelType m );
 std::istream & operator>>( std::istream &is, ModelType &m );
 
@@ -57,7 +57,16 @@ struct Model
   {
     void FromString( const std::string &s, bool bOptionalValue );
     std::string Remove( const std::string &key, bool * Removed = nullptr );
-    template <typename T> T Remove( const std::string &key, T Default, bool bPeek = false );
+    template <typename T> T Remove( const std::string &key, T Default, bool bPeek = false )
+    {
+      typename Model::Args::iterator it = find( key );
+      if( it == end() )
+        return Default;
+      T t{ Common::FromString<T>( it->second ) };
+      if( !bPeek )
+        erase( it );
+      return t;
+    }
   };
 
   // Default parameters for model creation - these apply to all models
@@ -67,10 +76,10 @@ struct Model
     const std::vector<std::string> &OpNames;
     const Common::CommandLine &cl;
     const int NumExponents; // Default if not specified per model
+    const bool bOverlapAltNorm;
     // These will change per model
     const Fold *pCorr;
-    CreateParams( const std::vector<std::string> &OpNames_, const Common::CommandLine &cl_ )
-    : OpNames{OpNames_}, cl{cl_}, NumExponents{cl.SwitchValue<int>("e")} {}
+    CreateParams( const std::vector<std::string> &OpNames_, const Common::CommandLine &cl_ );
   };
   std::vector<Params::value_type *> param;
   const int Nt;

@@ -111,6 +111,11 @@ const std::vector<std::string> sCorrSummaryNames{ "corr", "bias", "exp", "cosh" 
 const std::string sChiSqPerDof{ "ChiSqPerDof" };
 const std::string sPValue{ "pvalue" };
 const std::string sPValueH{ "pvalueH" };
+
+// String containing switch name to enable alternate overlap normalisation
+// (see definition of ModelOverlap in Fit/ModelCommon.hpp)
+const std::string sOverlapAltNorm{ "AltOver" };
+
 const double NaN{ std::nan( "" ) };
 
 const std::vector<std::string> DefaultModelStats{ Common::sChiSqPerDof, Common::sPValue, Common::sPValueH };
@@ -1931,6 +1936,19 @@ void DataSet<T>::SortOpNames( std::vector<std::string> &OpNames )
         f.Name_.op[i] = SortIndex[f.Name_.op[i]];
     OpNames = SortedNames;
   }
+}
+
+template <typename T>
+int DataSet<T>::NumSamplesBinned() const
+{
+  int NSB{ corr.empty() ? 0 : corr[0].NumSamplesBinned() };
+  for( std::size_t i = 1; NSB && i < corr.size(); ++i )
+  {
+    const int ThisNSB{ corr[i].NumSamplesBinned() };
+    if( NSB > ThisNSB )
+      NSB = ThisNSB;
+  }
+  return NSB;
 }
 
 template <typename T>

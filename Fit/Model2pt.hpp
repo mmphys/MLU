@@ -33,7 +33,8 @@
 
 struct Model2pt : public ModelOverlap
 {
-  Model2pt( const Model::CreateParams &cp, Model::Args &Args );
+  Model2pt( const Model::CreateParams &cp, Model::Args &Args )
+  : Model2pt( cp, Args, GetObjectNameSingle( cp, Args ), Args.Remove( "e", cp.NumExponents, true ) ) {}
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
@@ -43,6 +44,8 @@ struct Model2pt : public ModelOverlap
   double Derivative( int t, int p ) const override;
 
 protected:
+  Model2pt( const Model::CreateParams &cp, Model::Args &Args,
+            std::vector<std::string> &&ObjectID, std::size_t NumOverlapExp );
   scalar Estimate( Vector &Guess, const VectorView &FitData, std::vector<int> FitTimes,
                    std::size_t NumExp, std::size_t Timeslice ) const;
   ModelParam E;
@@ -50,21 +53,33 @@ protected:
 
 struct ModelExp : public Model2pt
 {
-  ModelExp( const Model::CreateParams &cp, Model::Args &Args ) : Model2pt( cp, Args ) {}
+  ModelExp( const Model::CreateParams &cp, Model::Args &Args,
+            std::vector<std::string> &&objectID, std::size_t NumOverlapExp )
+  : Model2pt( cp, Args, std::move( objectID ), NumOverlapExp ) {}
+  ModelExp( const Model::CreateParams &cp, Model::Args &Args )
+  : ModelExp(cp, Args, GetObjectNameSingle( cp, Args ), Args.Remove( "e", cp.NumExponents, true )) {}
   ModelType Type() const override { return ModelType::Exp; }
   scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
 };
 
 struct ModelCosh : public Model2pt
 {
-  ModelCosh( const Model::CreateParams &cp, Model::Args &Args ) : Model2pt( cp, Args ) {}
+  ModelCosh( const Model::CreateParams &cp, Model::Args &Args,
+             std::vector<std::string> &&objectID, std::size_t NumOverlapExp )
+  : Model2pt( cp, Args, std::move( objectID ), NumOverlapExp ) {}
+  ModelCosh( const Model::CreateParams &cp, Model::Args &Args )
+  : ModelCosh(cp, Args, GetObjectNameSingle( cp, Args ), Args.Remove( "e", cp.NumExponents, true )) {}
   ModelType Type() const override { return ModelType::Cosh; }
   scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
 };
 
 struct ModelSinh : public Model2pt
 {
-  ModelSinh( const Model::CreateParams &cp, Model::Args &Args ) : Model2pt( cp, Args ) {}
+  ModelSinh( const Model::CreateParams &cp, Model::Args &Args,
+             std::vector<std::string> &&objectID, std::size_t NumOverlapExp )
+  : Model2pt( cp, Args, std::move( objectID ), NumOverlapExp ) {}
+  ModelSinh( const Model::CreateParams &cp, Model::Args &Args )
+  : ModelSinh(cp, Args, GetObjectNameSingle( cp, Args ), Args.Remove( "e", cp.NumExponents, true )) {}
   ModelType Type() const override { return ModelType::Sinh; }
   scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
 };

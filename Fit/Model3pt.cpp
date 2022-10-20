@@ -133,7 +133,7 @@ scalar Model3pt::operator()( int t, Vector &ScratchPad, const Vector &ModelParam
         const scalar expSrc{ - ESrc * t };
         const std::size_t idxMEL = ( *MEL.param )( eSnk, eSrc );
         scalar d{ ASnk * ASrc * ModelParams[idxMEL] * std::exp( expSnk + expSrc ) };
-        if( bNormalisationByEnergy )
+        if( !bOverlapAltNorm )
           d /= 4 * ESnk * ESrc;
         z += d;
       }
@@ -142,7 +142,7 @@ scalar Model3pt::operator()( int t, Vector &ScratchPad, const Vector &ModelParam
   return z;
 }
 
-std::size_t Model3pt::ParamIndex( std::size_t idxSnk, std::size_t idxSrc ) const
+/*std::size_t Model3pt::ParamIndex( std::size_t idxSnk, std::size_t idxSrc ) const
 {
   if( idxSnk > 1 || idxSrc > 1 )
     throw std::runtime_error( "Model3pt::ParamIndex index out of bounds" );
@@ -165,4 +165,4 @@ std::size_t Model3pt::NumUnknown( std::vector<bool> &bKnown ) const
     }
   }
   return UnKnown;
-}
+}*/

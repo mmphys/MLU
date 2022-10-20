@@ -146,6 +146,10 @@ extern const std::string sChiSqPerDof;
 extern const std::string sPValue;
 extern const std::string sPValueH;
 
+// String containing switch name to enable alternate overlap normalisation
+// (see definition of ModelOverlap in Fit/ModelCommon.hpp)
+extern const std::string sOverlapAltNorm;
+
 extern const std::vector<std::string> DefaultModelStats;
 
 using SeedType = unsigned int;
@@ -3148,6 +3152,7 @@ public:
   std::vector<std::string> GetModelFilenames() const;
   void SortOpNames( std::vector<std::string> &OpNames );
   void Rebin( const std::vector<int> &RebinSize );
+  int NumSamplesBinned() const; // Minimum number of binned samples supported by all correlators
   void SetFitTimes( const std::vector<std::vector<int>> &FitTimes ); // A list of all the timeslices to include
   void SetFitTimes( int tMin, int tMax ); // All fit ranges are the same
   void GetData( int idx, VectorView<T> &vResult, SS ss = SS::Bootstrap ) const

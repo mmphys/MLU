@@ -36,6 +36,7 @@
 #include "Model2pt.hpp"
 #include "Model3pt.hpp"
 #include "ModelConstant.hpp"
+#include "ModelRatio.hpp"
 
 const std::string E{ "E" };
 
@@ -45,6 +46,7 @@ static const std::string sModelTypeCosh{ "Cosh" };
 static const std::string sModelTypeSinh{ "Sinh" };
 static const std::string sModelTypeThreePoint{ "3pt" };
 static const std::string sModelTypeConstant{ "Const" };
+static const std::string sModelTypeRatio{ "R3" };
 
 std::ostream & operator<<( std::ostream &os, const ModelType m )
 {
@@ -64,6 +66,9 @@ std::ostream & operator<<( std::ostream &os, const ModelType m )
       break;
     case ModelType::Constant:
       os << sModelTypeConstant;
+      break;
+    case ModelType::R3:
+      os << sModelTypeRatio;
       break;
     default:
       os << sModelTypeUnknown;
@@ -87,6 +92,8 @@ std::istream & operator>>( std::istream &is, ModelType &m )
       m = ModelType::ThreePoint;
     else if( Common::EqualIgnoreCase( s, sModelTypeConstant ) )
       m = ModelType::Constant;
+    else if( Common::EqualIgnoreCase( s, sModelTypeRatio ) )
+      m = ModelType::R3;
     else
     {
       m = ModelType::Unknown;
@@ -110,21 +117,6 @@ std::string Model::Args::Remove( const std::string &key, bool * Removed )
     *Removed = bFound;
   return s;
 }
-
-template <typename T> T Model::Args::Remove( const std::string &key, T Default, bool bPeek )
-{
-  typename Model::Args::iterator it = find( key );
-  if( it == end() )
-    return Default;
-  T t{ Common::FromString<T>( std::move( it->second ) ) };
-  if( !bPeek )
-    erase( it );
-  return t;
-}
-
-template std::string Model::Args::Remove<std::string>(const std::string &key, std::string Default, bool bPeek);
-template int Model::Args::Remove<int>( const std::string &key, int Default, bool bPeek );
-template bool Model::Args::Remove<bool>( const std::string &key, bool Default, bool bPeek );
 
 // Read key-Value map. In future this should work for any type - but for now, it's string only
 void Model::Args::FromString( const std::string &s, bool bOptionalValue )
@@ -157,6 +149,15 @@ void Model::Args::FromString( const std::string &s, bool bOptionalValue )
     if( !emplace( std::pair<std::string, std::string>( sKey, Value ) ).second )
       throw std::runtime_error( "Repeated Key \"" + sKey + "\"" );
   }
+}
+
+Model::CreateParams::CreateParams( const std::vector<std::string> &o, const Common::CommandLine &c )
+: OpNames{ o }, cl{ c },
+  NumExponents{ cl.SwitchValue<int>( "e" ) },
+  bOverlapAltNorm{ cl.GotSwitch( Common::sOverlapAltNorm.c_str() ) }
+{
+  if( bOverlapAltNorm )
+    std::cout << "WARNING: Use of --" << Common::sOverlapAltNorm << " is deprecated.\n";
 }
 
 // Model constructor
@@ -231,6 +232,9 @@ ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
       break;
     case ModelType::Constant:
       model.reset( new ModelConstant( cp, Args ) );
+      break;
+    case ModelType::R3:
+      model.reset( new ModelRatio( cp, Args ) );
       break;
     default:
       throw std::runtime_error( "Unrecognised ModelType for " + cp.pCorr->Name_.Filename );

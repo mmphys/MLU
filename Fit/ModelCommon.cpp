@@ -63,7 +63,7 @@ ModelOverlap::ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
                             std::vector<std::string> &&OID, std::size_t NumOverlapExp_ )
 : Model( cp, Args ),
   Object( std::move( OID ) ),
-  bNormalisationByEnergy{ Args.Remove( "ENorm", true ) },
+  bOverlapAltNorm{ cp.bOverlapAltNorm },
   NumOverlapExp{ NumOverlapExp_ },
   Overlap( 2 )
 {
@@ -142,7 +142,7 @@ void ModelOverlap::ReduceUnknown()
   }
 }
 
-std::size_t ModelOverlap::NumUnknown( std::vector<bool> &bKnown ) const
+/*std::size_t ModelOverlap::NumUnknown( std::vector<bool> &bKnown ) const
 {
   std::size_t UnKnown{ 0 };
   for( const ModelParam &p : Overlap )
@@ -154,7 +154,7 @@ std::size_t ModelOverlap::NumUnknown( std::vector<bool> &bKnown ) const
     }
   }
   return UnKnown;
-}
+}*/
 /***********************************
  
  Guess

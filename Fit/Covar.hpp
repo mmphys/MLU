@@ -54,7 +54,7 @@ struct CovarParams
   // Constructor
   CovarParams( const Common::CommandLine &cl, DataSet &ds );
   // Can we compute (co)variance on non-central replicas - i.e. do we have rebinned data
-  inline bool SupportsUnfrozen() const { return ds.corr[0].NumSamplesBinned(); }
+  inline bool SupportsUnfrozen() const { return ds.NumSamplesBinned(); }
   // Source is a bootstrap - only valid to compute variance on central replica
   inline bool SourceIsBootstrap() const
   { return Source == SS::Bootstrap || ( Source == SS::Raw && ds.corr[0].bRawBootstrap ); }

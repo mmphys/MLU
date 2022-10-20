@@ -1,8 +1,8 @@
 /*************************************************************************************
  
- Models for 3pt functions
+ Models for Ratios
 
- Source file: Model3pt.hpp
+ Source file: ModelRatio.hpp
  
  Copyright (C) 2019-2022
  
@@ -26,30 +26,24 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef Model3pt_hpp
-#define Model3pt_hpp
+#ifndef ModelRatio_hpp
+#define ModelRatio_hpp
 
-#include "ModelCommon.hpp"
+#include "Model2pt.hpp"
+#include "Model3pt.hpp"
 
-struct Model3pt : public ModelOverlap
+struct ModelRatio : public Model3pt
 {
-  Model3pt( const Model::CreateParams &cp, Model::Args &Args );
+  ModelRatio( const Model::CreateParams &cp, Model::Args &Args );
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
-  std::size_t Guessable( std::vector<bool> &bKnown, bool bLastChance ) const override;
-  std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,
-               const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const override;
   double Derivative( int t, int p ) const override;
   ModelType Type() const override { return ModelType::ThreePoint; }
   scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
 
 protected:
-  //std::size_t ParamIndex( std::size_t idxSnk, std::size_t idxSrc ) const;
-  //std::size_t NumUnknown( std::vector<bool> &bKnown ) const;
-  std::vector<ModelParam> E;
-  ModelParam MEL;
-  int DeltaT;
+  std::vector<std::unique_ptr<Model2pt>> C2;
 };
 
-#endif // Model3pt_hpp
+#endif // ModelRatio_hpp

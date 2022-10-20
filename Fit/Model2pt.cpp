@@ -28,8 +28,9 @@
 
 #include "Model2pt.hpp"
 
-Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args )
-: ModelOverlap( cp, Args, GetObjectNameSingle( cp, Args ), Args.Remove( "e", cp.NumExponents, true ) )
+Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args,
+                    std::vector<std::string> &&objectID, std::size_t NumOverlapExp )
+: ModelOverlap( cp, Args, std::move( objectID ), NumOverlapExp )
 {
   E.Key.Object = { ObjectID( idxSrc ) };
   E.Key.Name = Args.Remove( "energy", ::E );
@@ -261,7 +262,7 @@ scalar ModelExp::operator()( int t, Vector &ScratchPad, const Vector &ModelParam
   {
     double d = std::exp( - ModelParams[E.idx + e] * t );
     d *= ModelParams[Overlap[0].idx + e] * ModelParams[Overlap.back().idx + e];
-    if( bNormalisationByEnergy )
+    if( !bOverlapAltNorm )
       d /= 2 * ModelParams[E.idx + e];
     z += d;
   }
@@ -276,7 +277,7 @@ scalar ModelCosh::operator()( int t, Vector &ScratchPad, const Vector &ModelPara
     double d = std::exp( - ModelParams[E.idx + e] * t );
     d += std::exp( - ModelParams[E.idx + e] * ( Nt - t ) );
     d *= ModelParams[Overlap[0].idx + e] * ModelParams[Overlap.back().idx + e];
-    if( bNormalisationByEnergy )
+    if( !bOverlapAltNorm )
       d /= 2 * ModelParams[E.idx + e];
     z += d;
   }
@@ -291,7 +292,7 @@ scalar ModelSinh::operator()( int t, Vector &ScratchPad, const Vector &ModelPara
     double d = std::exp( - ModelParams[E.idx + e] * t );
     d -= std::exp( - ModelParams[E.idx + e] * ( Nt - t ) );
     d *= ModelParams[Overlap[0].idx + e] * ModelParams[Overlap.back().idx + e];
-    if( bNormalisationByEnergy )
+    if( !bOverlapAltNorm )
       d /= 2 * ModelParams[E.idx + e];
     z += d;
   }

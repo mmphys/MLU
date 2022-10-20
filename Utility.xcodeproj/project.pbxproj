@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		27953EAD28FB226D00A4CF67 /* DebugInfo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */; };
 		27953EAE28FB226D00A4CF67 /* DebugInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27953EAC28FB226D00A4CF67 /* DebugInfo.cpp */; };
+		27E8B36128FF2DE80047FEF1 /* ModelRatio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27E8B36028FF2DE80047FEF1 /* ModelRatio.cpp */; };
 		682C5CA228E4F7BF00C8E004 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C4728E4F2C300C8E004 /* Common.cpp */; };
 		682C5CA328E4F7CA00C8E004 /* Common.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682C5C5B28E4F2C300C8E004 /* Common.hpp */; };
 		682C5CA628E4F82500C8E004 /* FitRange.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682C5C4E28E4F2C300C8E004 /* FitRange.hpp */; };
@@ -254,6 +255,8 @@
 /* Begin PBXFileReference section */
 		27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DebugInfo.hpp; sourceTree = "<group>"; };
 		27953EAC28FB226D00A4CF67 /* DebugInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DebugInfo.cpp; sourceTree = "<group>"; };
+		27E8B35F28FF2DE80047FEF1 /* ModelRatio.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelRatio.hpp; sourceTree = "<group>"; };
+		27E8B36028FF2DE80047FEF1 /* ModelRatio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelRatio.cpp; sourceTree = "<group>"; };
 		6820525B28E505CA003AD91D /* Xml */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Xml; sourceTree = "<group>"; };
 		6820525C28E505CA003AD91D /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		6820525D28E50661003AD91D /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
@@ -598,6 +601,8 @@
 				682C5C7228E4F2C300C8E004 /* ModelCommon.hpp */,
 				682C5C7528E4F2C300C8E004 /* ModelConstant.cpp */,
 				682C5C7C28E4F2C300C8E004 /* ModelConstant.hpp */,
+				27E8B36028FF2DE80047FEF1 /* ModelRatio.cpp */,
+				27E8B35F28FF2DE80047FEF1 /* ModelRatio.hpp */,
 				682C5C7928E4F2C300C8E004 /* MultiFit.cpp */,
 				682C5C8028E4F2C300C8E004 /* MultiFit.hpp */,
 			);
@@ -1268,6 +1273,7 @@
 				682C5D6028E4FF9400C8E004 /* FitterThread.cpp in Sources */,
 				682C5D6128E4FF9400C8E004 /* Model.cpp in Sources */,
 				682C5D6228E4FF9400C8E004 /* Model2pt.cpp in Sources */,
+				27E8B36128FF2DE80047FEF1 /* ModelRatio.cpp in Sources */,
 				682C5D6328E4FF9400C8E004 /* Model3pt.cpp in Sources */,
 				682C5D6428E4FF9400C8E004 /* ModelCommon.cpp in Sources */,
 				682C5D6528E4FF9400C8E004 /* ModelConstant.cpp in Sources */,
