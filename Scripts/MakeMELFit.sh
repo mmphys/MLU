@@ -42,7 +42,7 @@ function FitRangeTobi
 function OutFitCommands
 {
   local SpecDir=$1; shift
-  local NumExp=$1; shift
+  local NumFitExp=$1; shift
   local CorrBase=$1; shift
   local Decay=$1; shift
   local Gamma=$1; shift
@@ -68,6 +68,9 @@ function OutFitCommands
         CorrSuffix=_${Mom3pt}_${CorrSuffix},snk=${SnkMesonMom},src=${SrcMesonMom}
   local ModelSuffix=g5P_g5W.model.$Suffix
 
+  local ModelDir=fit
+  if [ "$NumFitExp" != 2 ]; then ModelDir=$ModelDir$NumFitExp; fi
+  local ModelDir=$ModelDir/2ptp2
   local Models=$ModelDir/$SnkMeson/${SnkMesonMom}.corr_${SnkFit}_${SnkFit}.$ModelSuffix
   Models="$Models $ModelDir/$SrcMeson/${SrcMesonMom}.corr_${SrcFit}_${SrcFit}.$ModelSuffix"
 
@@ -81,7 +84,7 @@ function OutFitCommands
   local Cmd
   local RelRange
 
-  local OutDir=$SpecDir/${BDG}_${Mom3pt}/dt_$dtString/E${NumExp}_${SnkFit}_${SrcFit}
+  local OutDir=$SpecDir/${BDG}_${Mom3pt}/dt_$dtString/E${NumFitExp}_${SnkFit}_${SrcFit}
   local OutSub
 
   FitRangeTobi
@@ -92,8 +95,9 @@ function OutFitCommands
     tf=${tNums[1]}
     local Sub="${ti}_${tf}"
 
-    Cmd="MultiFit -e $NumExp --mindp $MinDP -i ../ -o $OutDir/$Sub/MEL"
+    Cmd="MultiFit -e 2 --mindp $MinDP -i ../ -o $OutDir/$Sub/MEL"
     Cmd="$Cmd --debug-signals"
+    Cmd="$Cmd --chisqdof 4"
     Cmd="$Cmd $Models"
     Cmd="$Cmd ${CorrPrefix}${dtLow}${CorrSuffix},t=${range}"
     for (( i=1; i < ${#dt[@]}; ++i ))
@@ -114,11 +118,9 @@ function OutFitCommands
 ############################################################
 
 Heavy=h385
-ModelDir=fit/2ptp2
 Suffix=1835672416.h5
 
 MinDP=2 # Minimum number of data points in each correlator
-tStart=2 # How far in from each edge
 tDelta=2 # How close must each other range be
 
 Analyse=analyse.MELFit
@@ -129,13 +131,22 @@ if [ -f $Analyse2 ]; then rm $Analyse2; fi
 
 #echo "From $dtLow to $dtHigh"
 
-for deltaT in '16 20 24 28 32' #'16 20 24 28' '20 24 28 32'
+deltaTChoices=('16 20 24 28 32' '20 24 28 32' '24 28 32')
+
+NumFitExp=3
+for (( idxDT=0; idxDT < ${#deltaTChoices[@]}; ++idxDT ))
 do
+  deltaT=${deltaTChoices[idxDT]}
+  dt=($deltaT)
+  dtLow=${dt[0]}
+  tStart=7 # How far in from each edge
+  if (( dtLow <= 16 )); then tStart=5; fi
   for SnkFit in 6_19 9_22
   do
-    for SrcFit in 9_22 12_25
+    for SrcFit in 4_23 8_23
     do
-      OutFitCommands 3sm_sp2 2 quark l_${Heavy} gT "$deltaT" s_l 0 $SnkFit ${Heavy}_s 0 $SrcFit
+      OutFitCommands 3sm_sp2 $NumFitExp quark l_${Heavy} gT "$deltaT" \
+          s_l 0 $SnkFit ${Heavy}_s 0 $SrcFit
     done
   done
 done
