@@ -51,8 +51,18 @@ std::vector<std::string> Object::GetObjectNameSnkSrc( const Model::CreateParams 
   std::vector<std::string> ObjectID( 2 );
   ObjectID[0] = Args.Remove( "Src", &bManualObjectID[0] );
   ObjectID[1] = Args.Remove( "Snk", &bManualObjectID[1] );
-  if( !bManualObjectID[0] || !bManualObjectID[1] )
-    throw std::runtime_error( "Model3pt constructor: Snk and Src parameters are required (TODO: fix this)" );
+  if( !bManualObjectID[0] )
+  {
+    if( cp.pCorr->Name_.MesonMom.empty() )
+      throw std::runtime_error( "GetObjectNameSnkSrc(): Src unavailable - specify manually" );
+    ObjectID[0] = cp.pCorr->Name_.MesonMom[0];
+  }
+  if( !bManualObjectID[1] )
+  {
+    if( cp.pCorr->Name_.Meson.size() < 2 )
+      throw std::runtime_error( "GetObjectNameSnkSrc(): Snk unavailable - specify manually" );
+    ObjectID[1] = cp.pCorr->Name_.MesonMom[1];
+  }
   if( Common::EqualIgnoreCase( ObjectID[0], ObjectID[1] ) )
     ObjectID.resize( 1 );
   return { ObjectID };

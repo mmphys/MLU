@@ -797,16 +797,9 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
     else
     {
       // Parse the name. Not expecting a type, so if present, put it back on the end of Base
-      Common::FileNameAtt Name_{ Filename, nullptr, &vIgnoreMomenta, &vIgnoreRegEx };
+      Common::FileNameAtt Name_{ Filename, nullptr, &vIgnoreMomenta, &vIgnoreRegEx, true };
       if( !Name_.bSeedNum )
         throw std::runtime_error( "Contraction files must contain a configuration number" );
-      if( !Name_.Type.empty() )
-      {
-        // Not sure whether I should bother doing this?
-        Name_.BaseShort.append( 1, '.' );
-        Name_.BaseShort.append( Name_.Type );
-        Name_.Type.clear();
-      }
       if( Name_.Gamma.size() > 1 )
         throw std::runtime_error( "Multiple gamma insertions unsupported" );
       const bool b3pt{ !Name_.Gamma.empty() && Name_.bGotDeltaT };
@@ -816,7 +809,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
         std::cout << "Warning: Gamma insertion without DeltaT. Possible 3pt function treated as 2pt" << std::endl;
       if( Name_.Gamma.empty() && Name_.bGotDeltaT )
         std::cout << "Warning: DeltaT without gamma insertion. Possible 3pt function treated as 2pt" << std::endl;
-      std::string Contraction{ Name_.BaseShort };
+      std::string Contraction{ Name_.GetBaseShortExtra() };
       // NB: bRev true means that the gamma in the name belongs with Q1
       bool bRev{ b3pt ? Common::ExtractToken( Contraction, "[Rr][Ee][Vv]" ) : false };
       bool bOpSuffix{ false }; // Suffix for sink and source operators

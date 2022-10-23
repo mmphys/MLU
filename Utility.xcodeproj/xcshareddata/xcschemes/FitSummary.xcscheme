@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "682C5CC628E4FB6300C8E004"
-               BuildableName = "corr"
-               BlueprintName = "corr"
+               BlueprintIdentifier = "682C5D1228E4FE0600C8E004"
+               BuildableName = "FitSummary"
+               BlueprintName = "FitSummary"
                ReferencedContainer = "container:Utility.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,23 +46,23 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "682C5CC628E4FB6300C8E004"
-            BuildableName = "corr"
-            BlueprintName = "corr"
+            BlueprintIdentifier = "682C5D1228E4FE0600C8E004"
+            BuildableName = "FitSummary"
+            BlueprintName = "FitSummary"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i /Volumes/QCD/tursa/semilep/data/M2/analyse/bootstrap/"
+            argument = "-o Summary/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o corr_raw/2ptp2/ 2ptp2/&apos;h*_s_p2_[0-2]_g5P_g5P.*.h5&apos;,per"
-            isEnabled = "NO">
+            argument = "-i /Volumes/QCD/tursa/semilep/data/"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o corr_raw/3pt_sp2/ 3pt_sp2/&apos;*_l_h*_gT_dt_16_*_ps2_[0-2]_g5P_g5P.*&apos;.h5,r"
+            argument = "F1M/analyse/fit/2ptp2/h385_s/h385_s_p2_0.corr_9_23_&apos;*.g5P_g5W.model.*.h5&apos;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
@@ -77,9 +77,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "682C5CC628E4FB6300C8E004"
-            BuildableName = "corr"
-            BlueprintName = "corr"
+            BlueprintIdentifier = "682C5D1228E4FE0600C8E004"
+            BuildableName = "FitSummary"
+            BlueprintName = "FitSummary"
             ReferencedContainer = "container:Utility.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

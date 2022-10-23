@@ -96,7 +96,7 @@ do
 	done
 	# Now make a job for each Quark
 	Cmd="CRatio --i3 $CorrDir/$Dir/ --i2 $CorrDir/2pt${PGroup}/ -o $Dir/"
-	Cmd="$Cmd --efit $EFit --type $ZVFit --2e"
+	Cmd="$Cmd --efit $EFit --type $ZVFit"
 	unset f
 	for m in ${!Meson[@]}
 	do

@@ -223,7 +223,6 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   MI.emplace_back();
   ModelInfo &mi{ MI.back() };
   Model &m{ mi.model };
-  fna.ParseExtra();
   m.SetName( std::move( fna ) );
   m.Read( ( "Read model " + idxString + Common::Space ).c_str() );
   if( bFirst )
@@ -231,7 +230,6 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   else
     MI[0].model.IsCompatible( m, nullptr, Common::COMPAT_DISABLE_BASE );
   // Check that the exponent we want is available
-  throw std::runtime_error( "Implement support for new parameters" );
   /*if( bFirst )
     Exponent = ( Par.Exponent >= 0 ) ? Par.Exponent : Par.Exponent + m.NumExponents;
   if( Exponent < 0 || Exponent >= m.NumExponents )
@@ -405,7 +403,7 @@ void MixedOp::DoOneAngle( degrees Phi, degrees Theta, std::string &Out, std::siz
   }
   //if( Normalisation )
     //Out.append( "_N" );
-  Out.append( 1, '_' );
+  Out.append( 1, '.' );
   Out.append( IsSink()   ? MI[ModelSnk].MixedOpName : FileOpNames[CorrIn[0][0].Name_.op[idxSnk]] );
   Out.append( 1, '_' );
   Out.append( IsSource() ? MI[ModelSrc].MixedOpName : FileOpNames[CorrIn[0][0].Name_.op[idxSrc]] );
@@ -457,9 +455,9 @@ void MixedOp::Make( const std::string &FileName )
   // Output base name for the output files is the input + fit times + theta
   std::string OutBase{ fnaName.GetBaseExtra() };
   if( IsSink() )
-    MI[ModelSnk].model.Name_.AppendExtra( OutBase, 1 );
+    MI[ModelSnk].model.Name_.AppendExtra( OutBase );
   if( IsSource() )
-    MI[ModelSrc].model.Name_.AppendExtra( OutBase, 1 );
+    MI[ModelSrc].model.Name_.AppendExtra( OutBase );
   // Add normalisation info to name
   {
     std::string Norm{ NormString() };

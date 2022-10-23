@@ -361,13 +361,32 @@ inline bool ExtractTrailing( std::string &s, int &i )
   return false;
 }
 
-inline std::string AppendSlash( const std::string & String )
+inline std::string AppendSlash( const std::string &String )
 {
   std::string s{ String };
   std::size_t Len = s.length();
   if( Len && s[Len - 1] != '/' )
     s.append( 1, '/' );
   return s;
+}
+
+inline void TrimTrailingSlash( std::string &String )
+{
+  std::size_t Len = String.length();
+  if( Len > 1 && String[Len - 1] != '/' )
+    String.resize( Len - 1 );
+}
+
+inline std::string &Append( std::string &Dest, const std::string &Source,
+                            const std::string &Separator = Underscore )
+{
+  if( Source.length() )
+  {
+    if( Dest.length() )
+      Dest.append( Separator );
+    Dest.append( Source );
+  }
+  return Dest;
 }
 
 // Remove anything past the last delimeter from string, returning the removed part in suffix

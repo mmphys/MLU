@@ -146,43 +146,43 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_16_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=8:11d4"
+            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_16_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=8:11d4"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_20_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=10:14"
+            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_20_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=10:14"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_24_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=10:16"
+            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_24_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=10:16"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_28_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=12:21"
+            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_28_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=12:21"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_32_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=12:23"
+            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_32_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=12:23"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_16_p2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=8:11,model=R3,c2model=cosh"
+            argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_16_p2_0_g5P_g5P.fold.1835672416.h5,t=8:11"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_20_p2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=10:15,model=R3"
+            argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_20_p2_0_g5P_g5P.fold.1835672416.h5,t=10:15"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_24_p2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=10:16,model=R3"
+            argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_24_p2_0_g5P_g5P.fold.1835672416.h5,t=10:16"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_28_p2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=12:21,model=R3"
+            argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_28_p2_0_g5P_g5P.fold.1835672416.h5,t=12:21"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_32_p2_0_g5P_g5P.fold.1835672416.h5,snk=s_l_p2_0,src=h385_s_p2_0,t=12:23,model=R3"
+            argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_32_p2_0_g5P_g5P.fold.1835672416.h5,t=12:23"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

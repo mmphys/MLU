@@ -508,14 +508,15 @@ struct FileNameAtt
   std::string Filename; // Full (and unadulterated) original filename
   std::string NameNoExt;// Original filename, without path and without extension
   std::string Dir;      // Directory part of the filename (with trailing '/')
-  std::string Base;     // Base of the filename (still containing momentum, current, delta T and timeslice)
-  std::string BaseShort;// Base with momentum, current, delta T and timeslice removed
+  std::string Base;     // Base of the filename (containing momentum, current, delta T and timeslice)
+  std::vector<std::string> BaseShortParts;// BaseShort split into parts at separator '_'
   std::string Type;
   std::string SeedString;
   bool        bSeedNum = false;
   SeedType    Seed = 0; // Numeric value of SeedString, but only if bSeedNum == true
   std::string Ext;
-  std::vector<int> op;
+  std::vector<int> op; // These indices only match opNames if no global opName vector used
+  std::vector<std::string> opNames; // These will always be present
   std::vector<std::string> Extra;
   bool bGotTimeslice = false;
   int         Timeslice = 0;
@@ -523,30 +524,13 @@ struct FileNameAtt
   MomentumMap p;
   bool bGotDeltaT = false;
   int         DeltaT;
-  std::vector<Gamma::Algebra> Gamma; // Gamma algebras extracted from name (after source and sink operators removed)
-  /*FileNameAtt( FileNameAtt &&o ) { *this = o; }
-  FileNameAtt & operator=( FileNameAtt &&o )
-  {
-    Filename = std::move( Filename );
-    NameNoExt = std::move( NameNoExt );
-    Dir = std::move( Dir );
-    Base = std::move( Base );
-    BaseShort = std::move( BaseShort );
-    Type = std::move( Type );
-    SeedString = std::move( SeedString );
-    bool        bSeedNum = false;
-    SeedType    Seed = 0; // Numeric value of SeedString, but only if bSeedNum == true
-    std::string Ext;
-    std::vector<int> op;
-    std::vector<std::string> Extra;
-    bool bGotTimeslice = false;
-    int         Timeslice;
-    bool bGotMomentum = false;
-    Momentum    p;
-    bool bGotDeltaT = false;
-    int         DeltaT;
-    std::vector<Gamma::Algebra> Gamma; // Gamma algebras extracted from name (after source and sink operators removed)
-  }*/
+  std::vector<Gamma::Algebra> Gamma; // Gamma algebras extracted from name
+  // SpecDir and Spectator are either both set or neither is
+  std::string SpecDir;
+  std::string Spectator;
+  bool bSpectatorGotSuffix = false;
+  std::vector<std::string> Meson; // 0 is source, 1 is sink
+  std::vector<std::string> MesonMom; // With momenta
   // reset contents
   void clear()
   {
@@ -554,18 +538,24 @@ struct FileNameAtt
     NameNoExt.clear();
     Dir.clear();
     Base.clear();
-    BaseShort.clear();
+    BaseShortParts.clear();
     Type.clear();
     SeedString.clear();
     bSeedNum = false;
     Seed = 0;
     Ext.clear();
     op.clear();
+    opNames.clear();
     Extra.clear();
     bGotTimeslice = false;
     p.clear();
     bGotDeltaT = false;
     Gamma.clear();
+    SpecDir.clear();
+    Spectator.clear();
+    bSpectatorGotSuffix = false;
+    Meson.clear();
+    MesonMom.clear();
   }
   void swap( FileNameAtt &o )
   {
@@ -573,13 +563,14 @@ struct FileNameAtt
     std::swap( NameNoExt, o.NameNoExt );
     std::swap( Dir, o.Dir );
     std::swap( Base, o.Base );
-    std::swap( BaseShort, o.BaseShort );
+    std::swap( BaseShortParts, o.BaseShortParts );
     std::swap( Type, o.Type );
     std::swap( SeedString, o.SeedString );
     std::swap( bSeedNum, o.bSeedNum );
     std::swap( Seed, o.Seed );
     std::swap( Ext, o.Ext );
     std::swap( op, o.op );
+    std::swap( opNames, o.opNames );
     std::swap( Extra, o.Extra );
     std::swap( bGotTimeslice, o.bGotTimeslice );
     std::swap( Timeslice, o.Timeslice );
@@ -587,28 +578,35 @@ struct FileNameAtt
     std::swap( bGotDeltaT, o.bGotDeltaT );
     std::swap( DeltaT, o.DeltaT );
     std::swap( Gamma, o.Gamma );
+    std::swap( SpecDir, o.SpecDir );
+    std::swap( Spectator, o.Spectator );
+    std::swap( bSpectatorGotSuffix, o.bSpectatorGotSuffix );
+    std::swap( Meson, o.Meson );
+    std::swap( MesonMom, o.MesonMom );
+  }
+  friend void swap( FileNameAtt &l, FileNameAtt &r )
+  {
+    l.swap( r );
   }
   void Parse( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr,
               const std::vector<std::string> * pIgnoreMomenta = nullptr,
-              const std::vector<std::string> * pIgnoreRegEx = nullptr );
-  std::vector<std::string> ParseOpNames( int NumOps = 2,
-                                         const std::vector<std::string> * pIgnoreMomenta = nullptr,
-                                         const std::vector<std::string> * pIgnoreRegEx = nullptr );
-  void ParseOpNames( std::vector<std::string> &OpNames, int NumOps = 2,
-                     const std::vector<std::string> * pIgnoreMomenta = nullptr,
-                     const std::vector<std::string> * pIgnoreRegEx = nullptr );
+              const std::vector<std::string> * pIgnoreRegEx = nullptr,
+              bool bPreBootstrap = false );
   FileNameAtt() = default;
   explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr,
                         const std::vector<std::string> * pIgnoreMomenta = nullptr,
-                        const std::vector<std::string> * pIgnoreRegEx = nullptr )
-    { Parse( Filename, pOpNames, pIgnoreMomenta, pIgnoreRegEx ); }
-  void ParseExtra( unsigned int MaxElements = UINT_MAX,
-                   const std::vector<std::string> * pIgnoreMomenta = nullptr,
-                   const std::vector<std::string> * pIgnoreRegEx = nullptr );
+                        const std::vector<std::string> * pIgnoreRegEx = nullptr,
+                        bool bPreBootstrap = false )
+    { Parse( Filename, pOpNames, pIgnoreMomenta, pIgnoreRegEx, bPreBootstrap ); }
   // Append the extra info to the string
-  void AppendExtra( std::string &s, int Last = 0, int First = -1 ) const;
+  void AppendExtra( std::string &s, int Last = 0, int First = INT_MAX ) const;
+  void AppendOps( std::string &s, const std::string &FirstSeparator,
+                  std::vector<std::string> * pOpNames = nullptr ) const;
+  void AppendOps( std::string &s, std::vector<std::string> * pOpNames = nullptr ) const
+  { AppendOps( s, Extra.size() ? Period : Underscore, pOpNames ); }
+  std::string GetBaseShort( int First = 0, int Last = UINT_MAX ) const;
+  std::string GetBaseShortExtra( int First = 0, int Last = UINT_MAX ) const;
   std::string GetBaseExtra( int Last = 0, int First = -1 ) const;
-  //std::string GetBaseShortExtra( int Last = 0, int First = -1 ) const;
   // Make a new name based on this one, overriding specified elements
   std::string DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
                            const std::string &Ext ) const;
@@ -617,15 +615,11 @@ struct FileNameAtt
   const FileNameMomentum &GetFirstNonZeroMomentum() const;
   void AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const;
   void AppendMomentum( std::string &s, const FileNameMomentum &fnp )const{AppendMomentum( s, fnp, fnp.Name );}
+  std::string MakeMesonName( const std::string &Quark ) const
+  { return ::Common::MakeMesonName( Quark, Spectator ); }
 protected:
-  void ParseShort( const std::vector<std::string> * pIgnoreMomenta, // Should work out how to do this better
-                   const std::vector<std::string> * pIgnoreRegEx = nullptr );
+  std::vector<std::string> ParseOpNames( int NumOps );
 };
-
-inline void swap( FileNameAtt &l, FileNameAtt &r )
-{
-  l.swap( r );
-}
 
 // Make a filename "Base.Type.seed.Ext"
 std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext);
@@ -3061,12 +3055,6 @@ struct Model : public Sample<T>
     if( ( CovarFrozen && !covarFrozen_ ) || ( !CovarFrozen && covarFrozen_ ) )
       return CovarFrozen;
     return NumSamples > Base::NumSamples_;
-  }
-  using Base::SetName;
-  void SetName( const std::string &FileName, std::vector<std::string> * pOpNames = nullptr ) override
-  {
-    Base::SetName( FileName, pOpNames );
-    Base::Name_.ParseExtra( 1 ); // Extra info contains the model info only
   }
   /*void Read( const char *PrintPrefix = nullptr, std::string *pGroupName =nullptr )
   {

@@ -321,15 +321,12 @@ void ZVRCommon::Make( std::string &FileName )
     throw std::runtime_error( "DeltaT missing" );
   if( fna.Gamma.size() != 1 )
     throw std::runtime_error( FileName + " has " + std::to_string( fna.Gamma.size() ) + " currents" );
-  std::smatch base_match;
-  if( !std::regex_search( fna.BaseShort, base_match, RegExExt ) || base_match.size() != 4 )
-    throw std::runtime_error( "Can't extract sink/source from " + fna.BaseShort );
-  const std::string qSnk = base_match[RegExSwap ? 3 : 2];
-  const std::string qSrc = base_match[RegExSwap ? 2 : 3];
-  const std::string FileNameSuffix{ base_match.suffix() };
-  std::string FileNamePrefix{ base_match.prefix() };
-  FileNamePrefix.append( base_match[1] );
-  fna.BaseShort = FileNamePrefix;
+  if( fna.BaseShortParts.size() < 3 )
+    throw std::runtime_error( "Can't extract sink/source from " + fna.GetBaseShort() );
+  const std::string qSnk = fna.BaseShortParts[1];
+  const std::string qSrc = fna.BaseShortParts[2];
+  const std::string FileNameSuffix{ fna.GetBaseShort( 3 ) };
+  fna.BaseShortParts.resize( 1 );
   SSInfo Snk( EFit, OpNames[fna.op[1]], QP( qSnk, fna.GetMomentum( Common::Momentum::SinkPrefix ) ) );
   SSInfo Src( EFit, OpNames[fna.op[0]], QP( qSrc, fna.GetMomentum() ) );
   Make( fna, FileNameSuffix, Snk, Src );
@@ -508,19 +505,16 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
         break;
     }
     Corr3[Snk_Src].Name = fna.Dir;
-    Corr3[Snk_Src].Name.append( fna.BaseShort );
-    Corr3[Snk_Src].Name.append( iSnk == iInitial ? qSrc : qSnk );
-    Corr3[Snk_Src].Name.append( 1, '_' );
-    Corr3[Snk_Src].Name.append( iSrc == iInitial ? qSrc : qSnk );
+    Corr3[Snk_Src].Name.append( fna.GetBaseShort() );
+    Common::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? qSrc : qSnk );
+    Common::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? qSrc : qSnk );
     Corr3[Snk_Src].Name.append( fnaSuffix );
     Common::AppendGammaDeltaT( Corr3[Snk_Src].Name, iSnk==iSrc ? Common::Gamma::Algebra::GammaT : fna.Gamma[0],
                                fna.DeltaT );
     fna.AppendMomentum( Corr3[Snk_Src].Name, iSrc == iFinal ? Snk.qp.p : Src.qp.p, Src.qp.p.Name );
     fna.AppendMomentum( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.qp.p : Snk.qp.p, Snk.qp.p.Name );
-    Corr3[Snk_Src].Name.append( Common::Underscore );
-    Corr3[Snk_Src].Name.append( iSnk == iInitial ? Src.op : Snk.op );
-    Corr3[Snk_Src].Name.append( Common::Underscore );
-    Corr3[Snk_Src].Name.append( iSrc == iInitial ? Src.op : Snk.op );
+    Common::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.op : Snk.op );
+    Common::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? Src.op : Snk.op );
     Corr3[Snk_Src].Name = Common::MakeFilename( Corr3[Snk_Src].Name, fna.Type, fna.Seed, fna.Ext );
     Corr3[Snk_Src].Handle = Cache3.GetIndex( Corr3[Snk_Src].Name );
     if( Corr3[Snk_Src].Handle == CorrCache::BadIndex )
@@ -700,7 +694,7 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
       else
       {
         // This is the R3 we expect to use
-        const Scalar OverlapNorm{ Overlap2ENorm ? 1 : 0.25 / EProd };
+        const Scalar OverlapNorm{ bOverlapAltNorm ? ( 0.25 / EProd ) : 1 };
         const Scalar OverProd{ OverlapCoeff[0][idxV] * OverlapCoeff[1][idxV]
                               * std::sqrt( OverlapNorm * ZVSrc[idxV] * ZVSnk[idxV] ) };
         if( MakeRatio[2] ) // R3 - forward  (1st propagator)
@@ -790,14 +784,13 @@ int FMaker::Weight( const std::string &Quark )
   return Weight;
 }
 
-// Incoming file should be a three-point function with a heavy sink and light(er) source
+// Incoming file should be a three-point function with (generally) a heavy source and light(er) sink
 void FMaker::Make( std::string &FileName )
 {
   // Parse Filename and check it contains what we need
   std::cout << "Processing " << FileName << Common::NewLine;
   std::vector<std::string> OpNames;
   Common::FileNameAtt fna{ FileName, &OpNames };
-  fna.ParseExtra();
   if( OpNames.empty() )
     throw std::runtime_error( "Sink / source operator names mising" );
   if( !fna.bGotDeltaT )
@@ -812,12 +805,12 @@ void FMaker::Make( std::string &FileName )
   }
   if( fna.p.empty() )
     throw std::runtime_error( FileName + " has no momenta" );
-  std::vector<std::string> Parts{ Common::ArrayFromString( fna.BaseShort, "_" ) };
-  if( Parts.size() < 3 || Parts[0].empty() || std::toupper( Parts[0][0] ) != 'R' || fna.Extra.empty() )
+  if( fna.BaseShortParts.size() < 3 || fna.BaseShortParts[0].size() < 2
+     || std::toupper( fna.BaseShortParts[0][0] ) != 'R' || fna.Extra.empty() )
     throw std::runtime_error( FileName + " is not a ratio file" );
-  RatioNum = Common::FromString<int>( Parts[0].substr( 1 ) );
-  qSnk = Parts[1];
-  qSrc = Parts[2];
+  RatioNum = Common::FromString<int>( fna.BaseShortParts[0].substr( 1 ) );
+  qSnk = fna.BaseShortParts[1];
+  qSrc = fna.BaseShortParts[2];
   p = fna.GetFirstNonZeroMomentum();
   // Get the fit type and fit ranges
   const std::string &FitTypeOriginal{ fna.Extra[0] };
@@ -840,16 +833,8 @@ void FMaker::Make( std::string &FileName )
   std::string Suffix1;
   Common::AppendDeltaT( Suffix1, fna.DeltaT );
   Suffix1.append( p.FileString() );
-  for( std::size_t i = 3; i < Parts.size(); ++i ) // remainder of base filename
-  {
-    Suffix1.append( 1, '_' );
-    Suffix1.append( Parts[i] );
-  }
-  for( std::size_t i = fna.Extra.size(); i-- > 1; )
-  {
-    Suffix1.append( 1, '.' );
-    Suffix1.append( fna.Extra[i] );
-  }
+  Common::Append( Suffix1, fna.GetBaseShort( 3 ) );
+  fna.AppendExtra( Suffix1 );
   std::string Suffix2{ Common::Period };
   Suffix2.append( OpNames[fna.op[1]] );
   Suffix2.append( 1, '_' );
@@ -867,8 +852,8 @@ void FMaker::Make( std::string &FileName )
   // Debug - show filename
 #if DEBUG
   std::cout << RatioNum << Common::Space << qSnk << Common::Space << qSrc << Common::Space << fna.Gamma[0];
-  for( std::size_t i = 3; i < Parts.size(); ++i )
-    std::cout << Common::Space << Parts[i];
+  for( std::size_t i = 3; i < fna.BaseShortParts.size(); ++i )
+    std::cout << Common::Space << fna.BaseShortParts[i];
   std::cout << " { " << FitType;
   for( std::size_t i = 0; i < FitParts.size(); i += 2 )
   {
@@ -1025,12 +1010,12 @@ Maker::Maker( const Common::CommandLine &cl )
 : MaxSamples{cl.SwitchValue<int>("n")},
   outBase{cl.SwitchValue<std::string>("o")},
   bSymmetrise{!cl.GotSwitch("nosym")},
-  Overlap2ENorm{cl.GotSwitch("2e")},
-  RegExSwap{cl.GotSwitch("swap")},
-  RegExExt{std::regex( cl.SwitchValue<std::string>("ssre"), std::regex::extended | std::regex::icase )},
+  bOverlapAltNorm{ cl.GotSwitch( Common::sOverlapAltNorm.c_str() ) },
   Cache2{ LoadFilePrefix },
   Cache3{ LoadFilePrefix }
 {
+  if( bOverlapAltNorm )
+    std::cout << "WARNING: Use of --" << Common::sOverlapAltNorm << " is deprecated.\n";
   Cache2.SetBase( cl.SwitchValue<std::string>("i2") );
   //Cache3.SetBase( cl.SwitchValue<std::string>("i3") );
   EFit.Read( cl.SwitchValue<std::string>( "efit" ), LoadFilePrefix );
@@ -1041,7 +1026,6 @@ int main(int argc, const char *argv[])
 {
   //if(!Debug()) return EXIT_FAILURE;
   static const char DefaultType[]{ "ZV" };
-  static const char DefaultERE[]{ R"((quark_|anti_)([[:alpha:]]+[[:digit:]]*)_([[:alpha:]]+[[:digit:]]*))" };
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
@@ -1055,10 +1039,8 @@ int main(int argc, const char *argv[])
       {"n", CL::SwitchType::Single, "0"},
       {"o", CL::SwitchType::Single, "" },
       {"type", CL::SwitchType::Single, DefaultType },
-      {"ssre", CL::SwitchType::Single, DefaultERE },
       {"efit", CL::SwitchType::Single, ""},
-      {"2e", CL::SwitchType::Flag, nullptr},
-      {"swap", CL::SwitchType::Flag, nullptr},
+      {Common::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
       {"zv", CL::SwitchType::Flag, nullptr},
       {"nosym", CL::SwitchType::Flag, nullptr},
       {"r3a", CL::SwitchType::Flag, nullptr},
@@ -1136,15 +1118,11 @@ int main(int argc, const char *argv[])
     "       If Fit_list='', then first option=spectator and is required,\n"
     "         then comma separated list of Variable=Value pairs follows.\n"
     "         Any constants not mentioned are frozen to 1\n"
-    "--ssre Extended regex for sink/source type, default\n       " << DefaultERE << "\n"
-    "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
-    //"-n     Number of samples to fit, 0 (default) = all available from bootstrap\n"
     "Flags:\n"
-    "--2e    Overlap coefficients are already normalised by 1/sqrt{2E_0}\n"
-    "--swap  Swap source / sink order in regex\n"
-    "--nosym Disable Out[t]=(Out[t]+Out[deltaT-t])/2 for symmetric ratios\n"
-    "--r3a   Use alternate definition of R3 (i.e. R3a)\n"
-    "--help  This message\n";
+    "--" << Common::sOverlapAltNorm << " Alternate normalisation for overlap factors. DEPRECATED\n"
+    "--nosym   Disable Out[t]=(Out[t]+Out[deltaT-t])/2 for symmetric ratios\n"
+    "--r3a     Use alternate definition of R3 (i.e. R3a)\n"
+    "--help    This message\n";
   }
   return iReturn;
 }

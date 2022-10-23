@@ -192,7 +192,13 @@ ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
     // We haven't been told which model to use. Choose a suitable default
     const bool b3pt{ cp.pCorr->Name_.bGotDeltaT && cp.pCorr->Name_.Gamma.size() == 1 };
     if( b3pt )
-      modelType = ModelType::ThreePoint;
+    {
+      if( !cp.pCorr->Name_.BaseShortParts.empty()
+         && Common::EqualIgnoreCase( cp.pCorr->Name_.BaseShortParts[0], "R3" ) )
+        modelType = ModelType::R3;
+      else
+        modelType = ModelType::ThreePoint;
+    }
     else switch( cp.pCorr->parity )
     {
       case Common::Parity::Even:

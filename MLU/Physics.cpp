@@ -152,10 +152,31 @@ std::ostream & operator<<( std::ostream &os, const ConfigCount &cc )
   return os << "{" << cc.Config << "," << cc.Count << "}";
 }
 
+// For my current project, I always have the heavier quark at the sink
+std::string MakeMesonName( const std::string &Quark, const std::string &Spec )
+{
+  std::string s;
+  if( QuarkWeight( Quark ) < QuarkWeight( Spec ) )
+  {
+    s.append( Spec );
+    s.append( Underscore );
+    s.append( Quark );
+  }
+  else
+  {
+    s.append( Quark );
+    s.append( Underscore );
+    s.append( Spec );
+  }
+  return s;
+}
+
 const Momentum p0(0,0,0);
 const std::string Momentum::DefaultPrefix{ "p" };
 const std::string Momentum::SinkPrefix{ DefaultPrefix + "s" };
 const std::string Momentum::SquaredSuffix{ "2" };
+const std::string Momentum::DefaultPrefixSquared{ DefaultPrefix + SquaredSuffix };
+const std::string Momentum::SinkPrefixSquared{ SinkPrefix + SquaredSuffix };
 
 std::string Momentum::p2_string( const std::string &separator, const std::string Prefix ) const
 {

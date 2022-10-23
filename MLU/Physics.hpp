@@ -97,12 +97,42 @@ struct ConfigCount {
 
 std::ostream & operator<<( std::ostream &os, const ConfigCount &cc );
 
+/**
+ Specific to my project
+ 
+ The absolute weights are meaningless. Relative masses are important.
+ */
+inline int QuarkWeight( const std::string &Quark )
+{
+  int Weight;
+  switch( std::toupper( Quark[0] ) )
+  {
+    case 'H':
+      Weight = 1;
+      break;
+    case 'S':
+      Weight = 0;
+      break;
+    case 'L':
+      Weight = -1;
+      break;
+    default:
+      throw std::runtime_error( "Relative weight of " + Quark + " quark unknown" );
+      break;
+  }
+  return Weight;
+}
+
+std::string MakeMesonName( const std::string &Quark, const std::string &Spec );
+
 // Generic representation of momentum
 struct Momentum
 {
   static const std::string DefaultPrefix;
   static const std::string SinkPrefix;
   static const std::string SquaredSuffix;
+  static const std::string DefaultPrefixSquared;
+  static const std::string SinkPrefixSquared;
   int x;
   int y;
   int z;
@@ -181,6 +211,7 @@ struct FileNameMomentum : public Momentum
   std::string Name;
   bool bp2;
   static Momentum FromSquared( const int p2 );
+  FileNameMomentum( const std::string &Name_, const bool bp2_ ) : Name{Name_}, bp2{bp2_} {}
   FileNameMomentum( const std::string &Name_, int x_, int y_, int z_ ) : Momentum(x_,y_,z_), Name{Name_}, bp2{false} {}
   FileNameMomentum( const std::string &Name_, int p2 ) : Momentum(FromSquared(p2)), Name{Name_}, bp2{true} {}
   FileNameMomentum( const FileNameMomentum &o ) : Momentum(o), Name{o.Name}, bp2{o.bp2} {}

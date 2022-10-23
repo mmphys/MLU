@@ -147,12 +147,11 @@ int main(int argc, const char *argv[])
         for( const std::string &sFileName : Common::glob( &FileToGlob, &FileToGlob + 1, inBase.c_str() ) )
         {
           bGlobEmpty = false;
-          Common::FileNameAtt Att( sFileName );
+          Common::FileNameAtt Att( sFileName, &OpName );
           const bool bIsCorr{ Common::EqualIgnoreCase( Att.Type, Common::sFold ) };
           if( bIsCorr )
           {
             // This is a correlator - load it
-            Att.ParseOpNames( OpName );
             std::string PrintPrefix( 2, ' ' );
             if( !cl.Args[ArgNum].empty() )
             {

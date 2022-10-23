@@ -195,7 +195,8 @@ void BootRep<T>::Write( ::H5::Group &g, const std::string &Name ) const
 // These are the attributes I like to use in my filenames
 void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> * pOpNames,
                          const std::vector<std::string> * pIgnoreMomenta,
-                         const std::vector<std::string> * pIgnoreRegEx )
+                         const std::vector<std::string> * pIgnoreRegEx,
+                         bool bPreBootstrap )
 {
   clear();
   Filename = Filename_;
@@ -203,11 +204,44 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   if( pos == std::string::npos )
     pos = 0;
   else
+  {
+    // Work out whether the last subdirectory is a Spectator directory
+    if( pos )
+    {
+      std::size_t Prev = Filename.find_last_of( '/', pos - 1 );
+      if( Prev == std::string::npos )
+        Prev = 0;
+      else
+        ++Prev;
+      // Spectator directories look like "3*_{spec}[p2]" ... with only one underscore
+      if( Filename[Prev] == '3' )
+      {
+        std::string SpecDir{ Filename.substr( Prev, pos - Prev ) };
+        Prev = SpecDir.find_first_of( '_', 1 );
+        if( Prev != std::string::npos && Prev < SpecDir.length() - 1
+           && SpecDir.find_first_of( '_', Prev + 1 ) == std::string::npos )
+        {
+          this->SpecDir = SpecDir;
+          Spectator = SpecDir.substr( Prev + 1 );
+          std::size_t SpecLen{ Spectator.length() };
+          std::size_t SuffixLen{ Common::Momentum::DefaultPrefixSquared.length() };
+          if( SpecLen > SuffixLen
+              && Common::EqualIgnoreCase( Spectator.substr( SpecLen - SuffixLen ),
+                                          Common::Momentum::DefaultPrefixSquared ) )
+          {
+            Spectator.resize( SpecLen - SuffixLen );
+            bSpectatorGotSuffix = true;
+          }
+        }
+      }
+    }
+    // Save the directory
     Dir = Filename.substr( 0, ++pos );
+  }
   Base = Filename.substr( pos );
   NameNoExt = Base;
   int i = 0;
-  while( i < 3 && ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
+  while( i < ( bPreBootstrap ? 2 : 3 ) && ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
   {
     switch( i )
     {
@@ -232,16 +266,31 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
       NameNoExt = Base;
     i++;
   }
-  // Now see whether we can extract operator names
-  if( pOpNames )
-    ParseOpNames( *pOpNames, 2, pIgnoreMomenta, pIgnoreRegEx );
-  else
-    ParseShort( pIgnoreMomenta, pIgnoreRegEx );
-}
+  // If there are extra segments, the last contains operator names. Otherwise extract 2 op names
+  if( !bPreBootstrap )
+  {
+    pos = Base.find_last_of( '.' );
+    opNames = ParseOpNames( pos == std::string::npos ? 2 : INT_MAX );
+    op.resize( opNames.size() );
+    std::vector<std::string> &OpNames{ pOpNames ? * pOpNames : opNames };
+    for( int i = 0; i < opNames.size(); ++i )
+    {
+      // We want to be able to compare the indices to see whether source and sink same
+      // ... even when a global operator list not used
+      op[i] = 0;
+      while( op[i] < OpNames.size() && !EqualIgnoreCase( opNames[i], OpNames[op[i]] ) )
+        op[i]++;
+      if( op[i] == OpNames.size() )
+        OpNames.emplace_back( opNames[i] );
+    }
+  }
+  // Save any extra segments after '.'. I parse backward, so [0] is last, [1] is second last, etc
+  while( ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
+  {
+    Extra.push_back( Base.substr( pos + 1 ) );
+    Base.resize( pos );
+  }
 
-void FileNameAtt::ParseShort( const std::vector<std::string> * pIgnoreMomenta,
-                              const std::vector<std::string> * pIgnoreRegEx )
-{
   // Remove momenta we are going to ignore in the filename
   Momentum pIgnore;
   if( pIgnoreMomenta )
@@ -261,7 +310,7 @@ void FileNameAtt::ParseShort( const std::vector<std::string> * pIgnoreMomenta,
         ;
     }
   }
-  BaseShort = Base;
+  std::string BaseShort = Base;
   // Now get the remaining momenta and save them
   std::smatch match;
   std::regex Pattern{ Momentum::MakeRegex( "([pP][[:alnum:]]*)" ) };
@@ -307,13 +356,39 @@ void FileNameAtt::ParseShort( const std::vector<std::string> * pIgnoreMomenta,
   ExtractDeltaT( BaseShort, bGotDeltaT, DeltaT );
   Gamma.clear();
   Gamma = ExtractGamma( BaseShort );
+  BaseShortParts = ArrayFromString( BaseShort, Underscore );
+  if( !Spectator.empty() && BaseShortParts.size() >= 3 )
+  {
+    Meson.emplace_back( MakeMesonName( BaseShortParts[2] ) );
+    Meson.emplace_back( MakeMesonName( BaseShortParts[1] ) );
+    auto pp = p.find( Momentum::DefaultPrefix );
+    if( pp != p.end() )
+    {
+      MesonMom = Meson;
+      auto pps = p.find( Momentum::SinkPrefix );
+      if( pps != p.end() )
+      {
+        // We have two momenta
+        MesonMom[0].append( pp->second.FileString() );
+        Common::FileNameMomentum fnp{ pps->second };
+        fnp.Name = Momentum::DefaultPrefix;
+        MesonMom[1].append( fnp.FileString() );
+      }
+      else
+      {
+        // We only have one momentum - this goes with the lightest meson
+        const bool bSourceHeavier{ QuarkWeight(BaseShortParts[2]) >= QuarkWeight(BaseShortParts[1]) };
+        MesonMom[bSourceHeavier ? 1 : 0].append( pp->second.FileString() );
+        Common::FileNameMomentum fnp( Momentum::DefaultPrefix, pp->second.bp2 );
+        MesonMom[bSourceHeavier ? 0 : 1].append( fnp.FileString() );
+      }
+    }
+  }
 }
 
 // Parse operator names from the end of Base, building up a list of all the operator names
 // NB: Because I parse from the end, op[0] is the last operator, op[1] second last, etc
-std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps,
-                                                    const std::vector<std::string> * pIgnoreMomenta,
-                                                    const std::vector<std::string> * pIgnoreRegEx )
+std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps )
 {
   static const char Sep[] = "_.";
   constexpr std::size_t NumSeps{ sizeof( Sep ) / sizeof( Sep[0] ) - 1 };
@@ -345,51 +420,72 @@ std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps,
   {
     Base.resize( LastPos ); // Shorten the base
   }
-  ParseShort( pIgnoreMomenta, pIgnoreRegEx );
   return o;
-}
-
-void FileNameAtt::ParseOpNames( std::vector<std::string> &OpNames, int NumOps,
-                                const std::vector<std::string> * pIgnoreMomenta,
-                                const std::vector<std::string> * pIgnoreRegEx )
-{
-  std::vector<std::string> Ops{ ParseOpNames( NumOps, pIgnoreMomenta, pIgnoreRegEx ) };
-  op.clear();
-  op.reserve( NumOps );
-  for( std::string &s : Ops )
-  {
-    int iOp = 0;
-    while( iOp < OpNames.size() && !EqualIgnoreCase( s, OpNames[iOp] ) )
-      iOp++;
-    if( iOp == OpNames.size() )
-      OpNames.emplace_back( std::move( s ) );
-    op.push_back( iOp );
-  }
-}
-
-void FileNameAtt::ParseExtra( unsigned int MaxElements, const std::vector<std::string> * pIgnoreMomenta,
-                              const std::vector<std::string> * pIgnoreRegEx )
-{
-  std::size_t pos;
-  while( MaxElements-- && ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
-  {
-    Extra.push_back( Base.substr( pos + 1 ) );
-    Base.resize( pos );
-  }
-  ParseShort( pIgnoreMomenta, pIgnoreRegEx );
 }
 
 // Append the extra info to the string
 void FileNameAtt::AppendExtra( std::string &s, int Last, int First ) const
 {
-  int Num{ static_cast<int>( Extra.size() ) };
-  if( First >= 0 && First < Num )
-    Num = First;
-  while( Num-- > Last )
+  if( Extra.size() )
   {
-    s.append( 1, '.' );
-    s.append( Extra[Num] );
+    if( Last < 0 )
+      Last = 0;
+    if( First < 0 )
+      First = static_cast<int>( Extra.size() - 1 + First );
+    if( First < 0 || First >= Extra.size() )
+      First = static_cast<int>( Extra.size() - 1 );
+    for( int i = First; i >= Last; --i )
+    {
+      s.append( 1, '.' );
+      s.append( Extra[i] );
+    }
   }
+}
+
+void FileNameAtt::AppendOps( std::string &s, const std::string &FirstSeparator,
+                             std::vector<std::string> * pOpNames ) const
+{
+  const std::vector<std::string> &OpNames{ pOpNames ? * pOpNames : opNames };
+  bool bFirst{ true };
+  for( std::size_t i = op.size(); i--; )
+  {
+    s.append( bFirst ? FirstSeparator : Underscore );
+    bFirst = false;
+    s.append( OpNames[op[i]] );
+  }
+}
+
+std::string FileNameAtt::GetBaseShort( int First, int Last ) const
+{
+  std::string s;
+  const int iSize{ static_cast<int>( BaseShortParts.size() ) };
+  if( iSize )
+  {
+    // Negative inputs are counts from the end
+    if( First < 0 )
+      First += iSize;
+    if( Last < 0 )
+      Last += iSize;
+    // Now we range check
+    if( First < 0 )
+      First = 0;
+    if( Last >= iSize )
+      Last = iSize - 1;
+    while( First <= Last )
+    {
+      if( !s.empty() )
+        s.append( 1, '_' );
+      s.append( BaseShortParts[First++] );
+    }
+  }
+  return s;
+}
+
+std::string FileNameAtt::GetBaseShortExtra( int First, int Last ) const
+{
+  std::string s{ GetBaseShort() };
+  AppendExtra( s );
+  return s;
 }
 
 std::string FileNameAtt::GetBaseExtra( int Last, int First ) const
@@ -398,13 +494,6 @@ std::string FileNameAtt::GetBaseExtra( int Last, int First ) const
   AppendExtra( s, Last, First );
   return s;
 }
-
-/*std::string FileNameAtt::GetBaseShortExtra( int Last, int First ) const
-{
-  std::string s{ BaseShort };
-  AppendExtra( s, Last, First );
-  return s;
-}*/
 
 // Make a new name based on this one, overriding specified elements
 std::string FileNameAtt::DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,

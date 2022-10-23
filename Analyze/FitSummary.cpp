@@ -114,13 +114,12 @@ Summariser::Summariser( const Common::CommandLine &cl )
   for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
   {
     Common::FileNameAtt n{ sFileName, };
-    n.ParseExtra( 2 );
     std::size_t NumExtra{ n.Extra.size() };
     if( !Common::FileExists( sFileName ) )
       throw std::runtime_error( sFileName + " doesn't exist" );
-    if( NumExtra != 2 )
+    if( NumExtra == 0 )
       throw std::runtime_error( "No fit type in " + sFileName );
-    std::string sFitType{ n.Extra[NumExtra - 1] };
+    std::string sFitType{ n.Extra[0] };
     const std::size_t pos_ti = sFitType.find_first_of( '_' );
     FitTimes ft;
     if( pos_ti == std::string::npos || !ft.Parse( sFitType.substr( pos_ti + 1 ) ) )
@@ -130,8 +129,7 @@ Summariser::Summariser( const Common::CommandLine &cl )
     std::string sOutFile{ n.Base };
     sOutFile.append( 1, '.' );
     sOutFile.append( sFitType );
-    sOutFile.append( 1, '.' );
-    sOutFile.append( n.Extra[0] );
+    n.AppendOps( sOutFile );
     lBase[sOutFile].emplace_back( FileInfo( ft, sFileName ) );
   }
 }
