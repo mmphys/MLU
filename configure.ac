@@ -258,6 +258,19 @@ fi
 LDFLAGS+=" `$GSLConfig --libs`"
 CPPFLAGS+=" `$GSLConfig --cflags`"
 
+# Do we have cuda BLAS library?
+AC_MSG_CHECKING([for CUDA BLAS]);
+AC_LINK_IFELSE(
+        [AC_LANG_SOURCE([[
+    #include <iostream>
+    int main() {
+        std::cout << "Hello world" << std::endl;
+        return 0; }
+    ]])],
+    [AC_MSG_RESULT([yes])]
+    LDFLAGS="-lcublas $LDFLAGS",
+    [AC_MSG_RESULT([no])])
+
 #AC_SEARCH_LIBS([gsl_set_error_handler], [gsl], [],
 #               [AC_MSG_ERROR([GNU Scientific Library not found])])
 #if test x"$ac_cv_search_gsl_set_error_handler" != x"none required" ; then
