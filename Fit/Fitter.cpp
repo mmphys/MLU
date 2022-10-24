@@ -55,7 +55,9 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     NumExponents{ GetNumExponents() },
     mp{ MakeModelParams() },
     cp{ std::move( cp_ ) },
-    Guess{ mp.NumScalars( Param::Type::All ) }
+    Guess{ mp.NumScalars( Param::Type::All ) },
+    OutputModel( ds.NSamples, mp, Common::DefaultModelStats,
+                 cp.CovarSampleSize(), cp.bFreeze, cp.Source, cp.RebinSize, cp.CovarNumBoot )
 {
   assert( ds.corr.size() == NumFiles && "Number of files extremely large" );
   /*assert( NumModelParams == NumFixed + NumVariable && "NumModelParams doesn't match fixed and variable" );
@@ -85,6 +87,13 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
   }
   // Load the constants into the fixed portion of the guess
   ds.GetFixed( Fold::idxCentral, Guess, ParamFixed );
+  //
+  for( const Fold &f : ds.corr )
+    OutputModel.FileList.emplace_back( f.Name_.Filename );
+  for( const std::string &f : ds.GetModelFilenames() )
+    OutputModel.FileList.emplace_back( f );
+  OutputModel.CopyAttributes( ds.corr[0] );
+  OutputModel.binSize = ds.OriginalBinSize;
 }
 
 // Create all the models and return the number of exponents in the fit
@@ -367,21 +376,11 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     throw std::runtime_error( Message );
   }
   dof_ = dof;
-
-  // Make somewhere to store the results of the fit for each bootstrap sample
-  ModelFile OutputModel( ds.NSamples, mp, Common::DefaultModelStats,
-                         ds.FitTimes, dof, cp.CovarSampleSize(), cp.bFreeze, cp.Source, cp.RebinSize,
-                         cp.CovarNumBoot );
-  for( const Fold &f : ds.corr )
-    OutputModel.FileList.emplace_back( f.Name_.Filename );
-  for( const std::string &f : ds.GetModelFilenames() )
-    OutputModel.FileList.emplace_back( f );
-  OutputModel.CopyAttributes( ds.corr[0] );
-  OutputModel.Name_.Seed = Seed;
-  OutputModel.binSize = ds.OriginalBinSize;
-  OutputModel.StdErrorMean.resize( ds.Extent, ds.NSamples ); // Each thread needs to use its own replica
-  OutputModel.ModelPrediction.resize( ds.Extent, ds.NSamples );
-  OutputModel.ErrorScaled.resize( ds.Extent, ds.NSamples );
+  if( bTestRun )
+  {
+    ChiSq = 0;
+    return;
+  }
 
   // See whether this fit already exists
   bool bPerformFit{ true };
@@ -392,24 +391,29 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     ModelFile PreBuilt;
     PreBuilt.Read( ModelFileName, "Pre-built: " );
     // TODO: This comparison is incomplete ... but matches previous version
-    bool bOK{ OutputModel.dof == PreBuilt.dof };
-    bOK = bOK && OutputModel.GetExtent() == PreBuilt.GetExtent();
-    bOK = bOK && OutputModel.FitTimes == PreBuilt.FitTimes;
+    bool bOK{ dof == PreBuilt.dof };
+    bOK = bOK && ds.Extent == PreBuilt.GetExtent();
+    bOK = bOK && ds.FitTimes == PreBuilt.FitTimes;
     bOK = bOK && OutputModel.GetColumnNames() == PreBuilt.GetColumnNames();
     if( !bOK )
       throw std::runtime_error( "Pre-built fit not compatible with parameters from this run" );
     bPerformFit = PreBuilt.NewParamsMorePrecise( cp.bFreeze, ds.NSamples );
     if( !bPerformFit )
-    {
       ChiSq = dof * PreBuilt.getSummaryData( Common::sChiSqPerDof ).Central;
-      OutputModel = std::move( PreBuilt );
-    }
     else
       std::cout << "Overwriting\n";
   }
 
-  if( !bTestRun && bPerformFit )
+  if( bPerformFit )
   {
+    // Make somewhere to store the results of the fit for each bootstrap sample
+    OutputModel.StdErrorMean.resize( ds.Extent, ds.NSamples ); // Each thread needs its own replica
+    OutputModel.ModelPrediction.resize( ds.Extent, ds.NSamples );
+    OutputModel.ErrorScaled.resize( ds.Extent, ds.NSamples );
+    OutputModel.Name_.Seed = Seed; // TODO: Required?
+    OutputModel.FitTimes = ds.FitTimes;
+    OutputModel.dof = dof;
+
     // If there's no user-supplied guess, guess based on the data we're fitting
     if( !UserGuess )
       MakeGuess();

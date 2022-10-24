@@ -65,7 +65,7 @@ function OutFitCommands
 
   local CorrPrefix=corr/$SpecDir/${BDG}_dt_
   local CorrSuffix=g5P_g5P.fold.$Suffix
-        CorrSuffix=_${Mom3pt}_${CorrSuffix},snk=${SnkMesonMom},src=${SrcMesonMom}
+        CorrSuffix=_${Mom3pt}_${CorrSuffix} #,snk=${SnkMesonMom},src=${SrcMesonMom}
   local ModelSuffix=g5P_g5W.model.$Suffix
 
   local ModelDir=fit
@@ -146,7 +146,7 @@ do
     for SrcFit in 4_23 8_23
     do
       OutFitCommands 3sm_sp2 $NumFitExp quark l_${Heavy} gT "$deltaT" \
-          s_l 0 $SnkFit ${Heavy}_s 0 $SrcFit
+          s_l 1 $SnkFit ${Heavy}_s 0 $SrcFit
     done
   done
 done

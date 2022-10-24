@@ -279,10 +279,14 @@ int main(int argc, const char *argv[])
 
       // All the models are loaded
       std::unique_ptr<Fitter> m{ MakeFitter( cl, ds, ModelArgs, OpName, std::move( cp ) ) };
-      const std::string sFitFilename{ Common::MakeFilename( sSummaryBase, "params", Seed, TEXT_EXT ) };
-      std::ofstream s;
+      std::size_t CountTotal{ 0 };
+      std::size_t CountOK{ 0 };
+      const auto Start{ std::chrono::steady_clock::now() };
       for( Common::FitRangesIterator it = fitRanges.begin(); !it.PastEnd(); ++it )
       {
+        // Log what file we're processing and when we started
+        const auto then{ std::chrono::steady_clock::now() };
+        ++CountTotal;
         // Set fit ranges
         std::vector<std::vector<int>> fitTimes( ds.corr.size() );
         for( int i = 0; i < ds.corr.size(); ++i )
@@ -294,8 +298,6 @@ int main(int argc, const char *argv[])
             fitTimes[i][j] = ft.ti + j;
         }
         ds.SetFitTimes( fitTimes );
-        // Log what file we're processing and when we started
-        const auto then{ std::chrono::steady_clock::now() };
         try
         {
           {
@@ -313,6 +315,7 @@ int main(int argc, const char *argv[])
           outBaseFileName.append( it.to_string( Common::Underscore ) );
           outBaseFileName.append( 1, '.' );
           m->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat, Seed );
+          ++CountOK;
         }
         catch(const std::exception &e)
         {
@@ -323,7 +326,7 @@ int main(int argc, const char *argv[])
         {
           const auto now{ std::chrono::steady_clock::now() };
           const auto mS{ std::chrono::duration_cast<std::chrono::milliseconds>( now - then ) };
-          std::cout << "Total duration ";
+          std::cout << "Fit duration ";
           if( mS.count() < 1100 )
             std::cout << mS.count() << " milliseconds.\n";
           else
@@ -335,6 +338,24 @@ int main(int argc, const char *argv[])
           }
         }
       }
+      const auto now{ std::chrono::steady_clock::now() };
+      auto S{ std::chrono::duration_cast<std::chrono::seconds>( now - Start ).count() };
+      std::cout << std::string( 50, '=' ) << Common::NewLine
+                << CountOK << " fits succeeded of " << CountTotal << " attempted\n"
+                << "Total duration ";
+      constexpr unsigned int DaySeconds{ 24 * 60 * 60 };
+      if( S >= DaySeconds )
+      {
+        std::cout << S / DaySeconds << '-';
+        S %= DaySeconds;
+      }
+      const int Hours{ static_cast<int>( S / 3600 ) };
+      S %= 3600;
+      const int Minutes{ static_cast<int>( S / 60 ) };
+      S %= 60;
+      std::cout << std::setfill( '0' ) << std::setw(2) << Hours
+         << ':' << std::setfill( '0' ) << std::setw(2) << Minutes
+         << ':' << std::setfill( '0' ) << std::setw(2) << S << Common::NewLine;
     }
   }
   catch(const std::exception &e)
@@ -389,7 +410,7 @@ int main(int argc, const char *argv[])
     "--help     This message\n"
     "Parameters accepted by all models:\n"
     " e         Number of exponentials\n"
-    " model     Model type {Exp, Cosh, Sinh, ThreePoint, Const}\n"
+    " model     Model type {Exp, Cosh, Sinh, ThreePoint, R3, Const}\n"
     " t         Fit range: [R[n:]start:stop[:numstart=1[:numstop=numstart]])\n"
     "Parameters accepted by models with overlap coefficients:\n"
     " SrcSnk    Force source and sink to be different (by appending 'src' and 'snk')\n"
@@ -397,7 +418,9 @@ int main(int argc, const char *argv[])
     " ObjectID  Object identifier (defaults to base of filename)\n"
     "Parameters accepted by models for dual objects (e.g. 3pt-functions):\n"
     " Src       ObjectID for source\n"
-    " Snk       ObjectID for sink\n";
+    " Snk       ObjectID for sink\n"
+    "Parameters accepted by R3 model:\n"
+    " C2Model   Which model to use for 2pt: Exp (default); Cosh; Sinh";
   }
   Common::Grid_exit_handler_disable = true;
   return iReturn;

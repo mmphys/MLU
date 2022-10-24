@@ -3046,8 +3046,8 @@ struct Model : public Sample<T>
   Model() : Base::Sample{} {}
   Model( int NumSamples, Params Params_, const std::vector<std::string> &ExtraColumns );
   Model( int NumSamples, Params Params_, const std::vector<std::string> &ExtraColumns,
-         const std::vector<std::vector<int>> &FitTimes_, int dof_, int CovarSampleSize_,
-         bool CovarFrozen_, SampleSource CovarSource_, std::vector<int> CovarRebin_, int CovarNumBoot_ );
+         int CovarSampleSize_, bool CovarFrozen_, SampleSource CovarSource_,
+         std::vector<int> CovarRebin_, int CovarNumBoot_ );
   const std::string & DefaultGroupName() override { return sModel; }
   inline bool NewParamsMorePrecise( bool covarFrozen_, int NumSamples ) const
   {

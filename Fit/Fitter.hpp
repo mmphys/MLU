@@ -61,8 +61,9 @@ public:
   const int NumExponents;
   std::vector<DataSet::FixedParam> ParamFixed; // Map from constants in DataSet to parameters
   const Params mp; // Model Parameters
-  CovarParams cp;
+  const CovarParams cp;
   Vector Guess; // This is the guess all replicas should use
+  ModelFile OutputModel;
 
   // These variables set once at the start of each fit
   int dof;

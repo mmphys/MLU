@@ -860,11 +860,10 @@ Model<T>::Model( int NumSamples, Params Params_, const std::vector<std::string> 
 
 template <typename T>
 Model<T>::Model( int NumSamples, Params Params_, const std::vector<std::string> &ExtraColumns,
-                 const std::vector<std::vector<int>> &FitTimes_, int dof_, int CovarSampleSize_,
-                 bool CovarFrozen_, SampleSource CovarSource_, std::vector<int> CovarRebin_, int CovarNumBoot_ )
+                 int CovarSampleSize_, bool CovarFrozen_, SampleSource CovarSource_, std::vector<int> CovarRebin_, int CovarNumBoot_ )
 : Base::Sample( NumSamples, static_cast<int>( Params_.NumScalars( Param::Type::All ) + ExtraColumns.size() ) ),
-  params{Params_}, FitTimes{FitTimes_}, dof{dof_}, CovarSampleSize{CovarSampleSize_},
-  CovarFrozen{CovarFrozen_}, CovarSource{CovarSource_}, CovarRebin{CovarRebin_}, CovarNumBoot{CovarNumBoot_}
+  params{Params_}, CovarSampleSize{CovarSampleSize_}, CovarFrozen{CovarFrozen_},
+  CovarSource{CovarSource_}, CovarRebin{CovarRebin_}, CovarNumBoot{CovarNumBoot_}
 {
   CommonConstruct( ExtraColumns );
 }
