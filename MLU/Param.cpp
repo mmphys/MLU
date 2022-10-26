@@ -420,9 +420,9 @@ void Params::Export( Vector<T> &vType, const Vector<T> &All, Param::Type type ) 
 }
 
 template void Params::Export<float>( Vector<float> &vType,
-                const Vector<float> &All, Param::Type type = Param::Type::Variable ) const;
+                const Vector<float> &All, Param::Type type ) const;
 template void Params::Export<double>( Vector<double> &vType,
-                const Vector<double> &All, Param::Type type = Param::Type::Variable ) const;
+                const Vector<double> &All, Param::Type type ) const;
 
 // Import values
 // If Ref is given, then we are importing errors, which we add in quadrature

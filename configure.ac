@@ -261,7 +261,7 @@ CPPFLAGS+=" `$GSLConfig --cflags`"
 # Do we have cuda BLAS library?
 AC_MSG_CHECKING([for CUDA BLAS]);
 OldLDFLAGS="$LDFLAGS"
-LDFLAGS="-lcublas $LDFLAGS"
+LDFLAGS="-lnvblas $LDFLAGS"
 AC_LINK_IFELSE(
     [AC_LANG_SOURCE([[
     #include <iostream>
