@@ -140,7 +140,7 @@ std::size_t Param::GetOffset( std::size_t Idx, Type ListType ) const
 
 std::size_t Param::operator()( std::size_t Idx, Param::Type ListType ) const
 {
-  if( !pKey || pKey->Object.size() != 1 )
+  if( !pKey ) //|| pKey->Object.size() != 1 ) // TODO: Do I need to support Matrix Element src/snk?
   {
     std::ostringstream s;
     s << "Param::operator() not 1-dimensional object";
@@ -163,6 +163,8 @@ std::size_t Param::operator()( std::size_t idxSnk, std::size_t idxSrc, Type List
   }
   if( idxSnk > 1 || idxSrc > 1 )
     throw std::runtime_error( "Model3pt::ParamIndex index out of bounds" );
+  if( bSwapSourceSink )
+    std::swap( idxSnk, idxSrc );
   std::size_t idx{ idxSnk + idxSrc };
   if( idxSnk && pKey->Object.size() > 1 )
     idx++;
@@ -302,6 +304,24 @@ Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bM
     if( p.size < size )
       p.size = size;
   }
+  return it;
+}
+
+// Make a parameter fixed. Must exist
+Params::iterator Params::MakeFixed( const Param::Key &key, bool bSwapSourceSink )
+{
+  iterator it{ find( key ) };
+  if( it == end() )
+  {
+    // Doesn't exist
+    std::ostringstream ss;
+    ss << "Params::Add cannot add key " << key;
+    throw std::runtime_error( ss.str().c_str() );
+  }
+  Param &p{ it->second };
+  p.type = Param::Type::Fixed;
+  p.bMonotonic = false;
+  p.bSwapSourceSink = bSwapSourceSink;
   return it;
 }
 

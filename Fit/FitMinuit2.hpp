@@ -51,6 +51,7 @@ protected:
   ROOT::Minuit2::MnUserParameterState Minuit2State;
   void DumpParamsFitter( std::ostream &os ) const override; //TODO: Deuglify
   void ReplicaMessage( std::ostream &os ) const override; //TODO: Deuglify
+  std::string DescriptionImpl() const override;
 public:
   FitterThreadMinuit2( const Fitter &fitter_, bool bCorrelated_, ModelFile &OutputModel )
   : FitterThread( fitter_, bCorrelated_, OutputModel ) {}

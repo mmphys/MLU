@@ -1468,14 +1468,16 @@ public:
   {
     const int iSize{ static_cast<int>( SummaryNames.size() ) };
     if( Nt_ == 0 || idx < 0 || idx >= iSize )
-      throw "Summary " + std::to_string(idx) + "/" + std::to_string(iSize) + " doesn't exist";
+      throw std::runtime_error( "Summary " + std::to_string(idx) + "/" + std::to_string(iSize)
+                               + " doesn't exist" );
     return m_pSummaryData.get() + idx * Nt_;
   }
   inline const ValWithEr<scalar_type> * getSummaryData( int idx = 0 ) const
   {
     const int iSize{ static_cast<int>( SummaryNames.size() ) };
     if( Nt_ == 0 || idx < 0 || idx >= iSize )
-      throw "Summary " + std::to_string(idx) + "/" + std::to_string(iSize) + " doesn't exist";
+      throw std::runtime_error( "Summary " + std::to_string(idx) + "/" + std::to_string(iSize)
+                               + " doesn't exist" );
     return m_pSummaryData.get() + idx * Nt_;
   }
   // Return the central replica summary data for the nth column

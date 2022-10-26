@@ -1249,8 +1249,6 @@ void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
       s << Space << t;
     s << NewLine;
   }
-  s << "# Frozen covariance: " << CovarFrozen << NewLine
-    << "# Covariance source: " << CovarSource << NewLine;
   if( !params.empty() )
   {
     s << "# Params: ";
@@ -1265,6 +1263,8 @@ void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
     }
     s << NewLine;
   }
+  s << "# Frozen covariance: " << CovarFrozen << NewLine
+    << "# Covariance source: " << CovarSource << NewLine;
   if( !CovarRebin.empty() )
   {
     s << "# Covariance rebin:";
@@ -1272,14 +1272,30 @@ void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
       s << Space << i;
     s << NewLine;
   }
-  s << "# pvalue : ";
+  // Now write info about statistics
   if( dof < 1 )
-    s << "Fit is extrapolation. All p-values=1";
-  else if( Common::HotellingDist::Usable( dof, CovarSampleSize - 1 ) )
-    s << "Hotelling (p=" << dof << ", m-1=" << ( CovarSampleSize - 1 ) << ")";
+    s << "# Extrapolation : All p-values=1\n";
+  // Chi^2 per dof
+  int iCol{ this->GetColumnIndexNoThrow( sChiSqPerDof ) };
+  if( iCol >= 0 )
+    s << "# " << sChiSqPerDof << " : " << (*this)[Model<T>::idxCentral][iCol]
+      << " (dof=" << dof << ")" << NewLine;
+  // Hotelling pValue
+  s << "# " << sPValueH << " : Hotelling (p=" << dof << ", m-1=" << ( CovarSampleSize - 1 ) << ")";
+  bool bHotellingUsable{ Common::HotellingDist::Usable( dof, CovarSampleSize - 1 ) };
+  if( !bHotellingUsable )
+    s << ". Not usable - set to ChiSquared p-value instead";
   else
-    s << "Hotelling not usable - set to ChiSquared p-value instead";
+  {
+    iCol = this->GetColumnIndexNoThrow( sPValueH );
+    if( iCol >= 0 )
+      s << " = " << (*this)[Model<T>::idxCentral][iCol];
+  }
   s << NewLine;
+  // Chi^2 pValue
+  iCol = this->GetColumnIndexNoThrow( sPValue );
+  if( iCol >= 0 )
+    s << "# " << sPValue << " : Chi^2 = " << (*this)[Model<T>::idxCentral][iCol] << NewLine;
 }
 
 template <typename T>

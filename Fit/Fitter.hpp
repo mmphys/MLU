@@ -61,6 +61,7 @@ public:
   const int NumExponents;
   std::vector<DataSet::FixedParam> ParamFixed; // Map from constants in DataSet to parameters
   const Params mp; // Model Parameters
+  const bool bAllParamsKnown; // Do I already know everything? No fit - just produce theory - data
   const CovarParams cp;
   Vector Guess; // This is the guess all replicas should use
   ModelFile OutputModel;

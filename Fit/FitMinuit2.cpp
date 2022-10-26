@@ -44,6 +44,11 @@ void FitterThreadMinuit2::ReplicaMessage( std::ostream &os ) const
     os << "edm " << Minuit2State.Edm() << ", ";
 }
 
+std::string FitterThreadMinuit2::DescriptionImpl() const
+{
+  return "Minuit2 fitter";
+}
+
 FitterThread * FitterThreadMinuit2::Clone() const
 {
   return new FitterThreadMinuit2( *this );

@@ -54,6 +54,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     model{ CreateModels( cl, ModelArgs ) },
     NumExponents{ GetNumExponents() },
     mp{ MakeModelParams() },
+    bAllParamsKnown{ mp.NumScalars( Param::Type::Variable ) == 0 },
     cp{ std::move( cp_ ) },
     Guess{ mp.NumScalars( Param::Type::All ) },
     OutputModel( ds.NSamples, mp, Common::DefaultModelStats,
@@ -72,7 +73,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     throw std::invalid_argument( "Number of fit retries (retry) must be >= 0" );
   if( MaxIt < 0 )
     throw std::invalid_argument( "Maximum fitter iterations (iter) must be >= 0" );
-  if( SummaryLevel < 0 || SummaryLevel > 2 )
+  if( SummaryLevel < ( bAllParamsKnown ? 1 : 0 ) || SummaryLevel > 2 )
     throw std::invalid_argument( "--summary " + std::to_string( SummaryLevel ) + " invalid" );
   // If we've been given a guess, initialise variable parameters with the user-supplied guess
   if( UserGuess )
@@ -176,6 +177,15 @@ Params Fitter::MakeModelParams()
       const Param::Key &pk{ it.first };
       const Param &p{ it.second };
       DataSet::ConstMap::const_iterator cit{ ds.constMap.find( pk ) };
+      bool bSwapSourceSink{ false };
+      if( cit == ds.constMap.end() && pk.Object.size() == 2 )
+      {
+        std::vector<std::string> ObjectReverse( 2 );
+        ObjectReverse[0] = pk.Object[1];
+        ObjectReverse[1] = pk.Object[2];
+        cit = ds.constMap.find( Param::Key( std::move( ObjectReverse ), pk.Name ) );
+        bSwapSourceSink = true;
+      }
       if( cit != ds.constMap.end() )
       {
         // This is available as a constant
@@ -188,7 +198,7 @@ Params Fitter::MakeModelParams()
           throw std::runtime_error( os.str().c_str() );
         }
         // Change this parameter to constant
-        mp.Add( pk, p.size, false, Param::Type::Fixed );
+        mp.MakeFixed( pk, bSwapSourceSink );
       }
     }
     mp.AssignOffsets();
@@ -206,51 +216,54 @@ Params Fitter::MakeModelParams()
           ParamFixed.emplace_back( cit->second, p.size, static_cast<int>( p() ) );
       }
     }
-    // Create list of parameters we know - starting from constants
-    const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
-    std::vector<bool> ParamKnown( NumParams, false );
-    for( const typename Params::value_type &it : mp )
+    if( mp.NumScalars( Param::Type::Variable ) == 0 )
+      bSoluble = true;
+    else
     {
-      const Param &p{ it.second };
-      if( p.type == Param::Type::Fixed )
+      // Create list of parameters we know - starting from constants
+      const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
+      std::vector<bool> ParamKnown( NumParams, false );
+      for( const typename Params::value_type &it : mp )
       {
-        for( std::size_t i = 0; i < p.size; ++i )
-          ParamKnown[ p( i ) ] = true;
-      }
-    }
-    // Now ask the models whether they can guess parameters
-    std::size_t LastUnknown;
-    std::size_t NumUnknown{ 0 };
-    std::size_t NumWithUnknowns;
-    do
-    {
-      LastUnknown = NumUnknown;
-      NumUnknown = 0;
-      NumWithUnknowns = 0;
-      for( std::size_t i = 0; i < model.size(); ++i )
-      {
-        std::size_t z{ model[i]->Guessable( ParamKnown, false ) };
-        if( z )
+        const Param &p{ it.second };
+        if( p.type == Param::Type::Fixed )
         {
-          NumUnknown += z;
-          NumWithUnknowns++;
+          for( std::size_t i = 0; i < p.size; ++i )
+            ParamKnown[ p( i ) ] = true;
         }
       }
-    }
-    while( NumUnknown && NumUnknown != LastUnknown );
-    bSoluble = ( NumUnknown <= NumWithUnknowns );
-    // If the model is soluble, but we've not guessed all parameters, force the models to do so
-    if( bSoluble && NumUnknown )
-    {
-      for( std::size_t i = 0; i < model.size(); ++i )
-        model[i]->Guessable( ParamKnown, true );
-      for( bool bKnown : ParamKnown )
-        if( !bKnown )
-          throw std::runtime_error( "Model is not solvable" );
+      // Now ask the models whether they can guess parameters
+      std::size_t LastUnknown;
+      std::size_t NumUnknown{ 0 };
+      std::size_t NumWithUnknowns;
+      do
+      {
+        LastUnknown = NumUnknown;
+        NumUnknown = 0;
+        NumWithUnknowns = 0;
+        for( std::size_t i = 0; i < model.size(); ++i )
+        {
+          std::size_t z{ model[i]->Guessable( ParamKnown, false ) };
+          if( z )
+          {
+            NumUnknown += z;
+            NumWithUnknowns++;
+          }
+        }
+      }
+      while( NumUnknown && NumUnknown != LastUnknown );
+      bSoluble = ( NumUnknown <= NumWithUnknowns );
+      // If the model is soluble, but we've not guessed all parameters, force the models to do so
+      if( bSoluble && NumUnknown )
+      {
+        for( std::size_t i = 0; i < model.size(); ++i )
+          model[i]->Guessable( ParamKnown, true );
+        for( bool bKnown : ParamKnown )
+          if( !bKnown )
+            throw std::runtime_error( "Model is not solvable" );
+      }
     }
   }
-  if( mp.NumScalars( Param::Type::Variable ) == 0 )
-    throw std::runtime_error( "Model has no parameters to fit" );
   return mp;
 }
 
@@ -415,7 +428,7 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     OutputModel.dof = dof;
 
     // If there's no user-supplied guess, guess based on the data we're fitting
-    if( !UserGuess )
+    if( !UserGuess && !bAllParamsKnown )
       MakeGuess();
 
     // Fit the central replica, then use this thread as template for all others
@@ -426,18 +439,31 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       if( !sDescription.empty() )
         std::cout << sDescription << Common::NewLine;
     }
-    std::cout << "Tolerance " << Tolerance << ". Using uncorrelated fit as guess for each replica.\n";
+    std::cout << "Tolerance " << Tolerance << Common::NewLine;
+    if( !bAllParamsKnown )
+    {
+      std::cout << "Using ";
+      if( UserGuess )
+        std::cout << "user supplied";
+      else if( bCorrelated )
+        std::cout << "uncorrelated fit as";
+      else
+        std::cout << "simple";
+      std::cout << " guess for each replica.\n";
+    }
     if( mp.NumScalars( Param::Type::Fixed ) )
     {
       std::cout << " Fixed parameters:\n";
       mp.Dump( std::cout, Guess, Param::Type::Fixed );
     }
-    std::cout << Common::Space << ( UserGuess ? "User supplied" : "Initial" ) << " guess:\n";
-    mp.Dump( std::cout, Guess, Param::Type::Variable );
-
-    // For correlated fits, perform an uncorrelated fit on the central replica to use as the guess
-    if( bCorrelated && !UserGuess )
-      Guess = ftC->UncorrelatedFit();
+    if( !bAllParamsKnown )
+    {
+      std::cout << Common::Space << ( UserGuess ? "User supplied" : "Initial" ) << " guess:\n";
+      mp.Dump( std::cout, Guess, Param::Type::Variable );
+      // For correlated fits, perform an uncorrelated fit on the central replica to use as the guess
+      if( bCorrelated && !UserGuess )
+        Guess = ftC->UncorrelatedFit();
+    }
 
     // Perform all the fits in parallel on separate OpenMP threads
     // As long as exceptions are caught on the same thread that threw them all is well
@@ -535,7 +561,8 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       }
     }
     // Save the file
-    OutputModel.Write( ModelFileName );
+    if( !bAllParamsKnown )
+      OutputModel.Write( ModelFileName );
     if( SummaryLevel >= 1 )
       OutputModel.WriteSummaryTD( Common::MakeFilename( sModelBase, Common::sModel + "_td", Seed, TEXT_EXT ) );
     if( SummaryLevel >= 2 )

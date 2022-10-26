@@ -64,32 +64,13 @@ void FitterThread::SaveStdError()
 }
 
 // Make the covariance matrix, for only the timeslices we are interested in
-void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, const std::string *pBaseName )
+void FitterThread::MakeReplicaCovar( int idx_, bool bFirstTime, bool bShowOutput, bool bSaveMatrices,
+                                     const std::string *pBaseName )
 {
   static const char pszCorrelGnuplot[] = "set cbrange[-1:1]";
   if( !bSaveMatrices && pBaseName )
     throw std::runtime_error( "Can only write matrices to file on central replica" );
-  // Don't make the same covariance matrix twice in a row
-  if( idx_ != idx )
-  {
-    // Switch to the requested replica
-    const bool bFirstTime{ idx == FirstIndex };
-    idx = idx_;
-    // All replicas start from the same Guess
-    ModelParams = parent.Guess;
-    // Load the constants for this replica into the fixed portion of the guess
-    parent.ds.GetFixed( idx, ModelParams, parent.ParamFixed );
-    // Export variable parameters from the guess for the fitter to start with
-    parent.mp.Export( FitterParams, ModelParams, Param::Type::Variable );
-    state.bValid = false;
-    // Now get the data for this replica
-    parent.ds.GetData( idx, Data );
-    OutputModel.ModelPrediction.MapView( Theory, idx );
-    OutputModel.ErrorScaled.MapView( Error, idx );
-    // Don't build covariance matrix if frozen (unless it's the first time)
-    if( !parent.cp.bFreeze || bFirstTime )
-    {
-      OutputModel.StdErrorMean.MapView( StdErrorMean, idx ); // Each FitterThread needs it's own work area
+  OutputModel.StdErrorMean.MapView( StdErrorMean, idx ); // Each FitterThread needs it's own work area
       if( parent.cp.Covar.size1 == Extent )
       {
         // I've loaded the inverse covariance matrix already
@@ -294,6 +275,34 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices, c
           }
         }
       }
+}
+
+void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices,
+                               const std::string *pBaseName )
+{
+  // Don't make the same covariance matrix twice in a row
+  if( idx_ != idx )
+  {
+    // Switch to the requested replica
+    const bool bFirstTime{ idx == FirstIndex };
+    idx = idx_;
+    // All replicas start from the same Guess
+    ModelParams = parent.Guess;
+    // Load the constants for this replica into the fixed portion of the guess
+    parent.ds.GetFixed( idx, ModelParams, parent.ParamFixed );
+    state.bValid = false;
+    // Now get the data for this replica
+    parent.ds.GetData( idx, Data );
+    OutputModel.ModelPrediction.MapView( Theory, idx );
+    OutputModel.ErrorScaled.MapView( Error, idx );
+    // Speed optimisation - only calculate covariance on central replica if we know all parameters
+    if( !parent.bAllParamsKnown || idx_ == Fold::idxCentral )
+    {
+      // Export variable parameters from the guess for the fitter to start with
+      parent.mp.Export( FitterParams, ModelParams, Param::Type::Variable );
+      // Don't build covariance matrix if frozen (unless it's the first time)
+      if( !parent.cp.bFreeze || bFirstTime )
+        MakeReplicaCovar( idx_, bFirstTime, bShowOutput, bSaveMatrices, pBaseName );
     }
   }
 }
@@ -328,7 +337,8 @@ bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::s
   // Put the fitter parameters into our model parameters
   if( Size != parent.mp.NumScalars( Param::Type::Variable ) )
     throw std::runtime_error( "Fitter parameters don't match our variable parameters" );
-  parent.mp.Import( ModelParams, VectorView( FitterParams, Size, Stride ) );
+  if( Size )
+    parent.mp.Import( ModelParams, VectorView( FitterParams, Size, Stride ) );
   // Compute theory - error for each timeslice
   int i{0};
   bool bOK{ true };
@@ -392,13 +402,28 @@ scalar FitterThread::RepeatFit( int MaxGuesses )
   bool bFinished{ false };
   while( !bFinished && iNumGuesses++ <= MaxGuesses )
   {
-    Minimise( iNumGuesses );
-    double dNewTestStat{ getTestStat() };
-    if( MaxGuesses == 0 )
+    if( parent.bAllParamsKnown )
+    {
+      if( !SaveError( Error, nullptr, 0, 0 ) )
+        throw std::runtime_error( "NaN values on replica " + std::to_string( idx ) );
+      int gsl_e = gsl_blas_ddot( &Error, &Error, &dTestStat );
+      if( gsl_e )
+        GSLLG::Error( "FitterThread::RepeatFit() unable to compute test statistic"
+                      " using gsl_blas_ddot()", __FILE__, __LINE__, gsl_e );
       bFinished = true;
-    else if( iNumGuesses != 1 )
-      bFinished = ( dTestStat == dNewTestStat );
-    dTestStat = dNewTestStat;
+      state.bValid = true;
+      state.TestStat = dTestStat;
+    }
+    else
+    {
+      Minimise( iNumGuesses );
+      double dNewTestStat{ getTestStat() };
+      if( MaxGuesses == 0 )
+        bFinished = true;
+      else if( iNumGuesses != 1 )
+        bFinished = ( dTestStat == dNewTestStat );
+      dTestStat = dNewTestStat;
+    }
     if( !bFinished && ( ( idx == Fold::idxCentral && parent.Verbosity ) || parent.Verbosity > 2 ) )
       ShowReplicaMessage( iNumGuesses );
   }
@@ -408,9 +433,13 @@ scalar FitterThread::RepeatFit( int MaxGuesses )
     es << "Fit on replica " << idx << " did not converge within " << MaxGuesses << " retries";
     throw std::runtime_error( es.str().c_str() );
   }
-  if( !SaveError( Error, FitterParams.data, FitterParams.size, FitterParams.stride ) )
-    throw std::runtime_error( "NaN values on replica " + std::to_string( idx ) );
-  parent.mp.Import<scalar>( state.ModelErrors, state.FitterErrors, Param::Type::Variable, &ModelParams );
+  if( !parent.bAllParamsKnown )
+  {
+    if( !SaveError( Error, FitterParams.data, FitterParams.size, FitterParams.stride ) )
+      throw std::runtime_error( "NaN values on replica " + std::to_string( idx ) );
+    parent.mp.Import<scalar>( state.ModelErrors, state.FitterErrors, Param::Type::Variable,
+                              &ModelParams );
+  }
   if( idx == Fold::idxCentral || parent.Verbosity >= 2 )
     ShowReplicaMessage( iNumGuesses );
   return dTestStat;

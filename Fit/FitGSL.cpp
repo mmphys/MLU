@@ -46,6 +46,11 @@ void FitterThreadGSL::ReplicaMessage( std::ostream &os ) const
 
 void FitterThreadGSL::InitialiseGSL()
 {
+  if( parent.bAllParamsKnown )
+  {
+    ws = nullptr;
+    return;
+  }
   const FitterGSL &parentGSL{ *dynamic_cast<const FitterGSL*>( &parent ) };
   // Define my finite difference function
   std::memset( &fdf, 0, sizeof( fdf ) );
@@ -215,7 +220,7 @@ void FitterThreadGSL::Minimise( int )
   }*/
 }
 
-std::string FitterThreadGSL::Description() const
+std::string FitterThreadGSL::DescriptionImpl() const
 {
   std::stringstream ss;
   ss << gsl_multifit_nlinear_name( ws ) << "/" << gsl_multifit_nlinear_trs_name( ws ) << " with ";

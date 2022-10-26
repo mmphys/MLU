@@ -52,6 +52,7 @@ protected:
   std::size_t nevaldf;
   void DumpParamsFitter( std::ostream &os ) const override; //TODO: Deuglify
   void ReplicaMessage( std::ostream &os ) const override; //TODO: Deuglify
+  std::string DescriptionImpl() const override;
   void InitialiseGSL();
   static void SayConvergeReason( std::ostream &os, int ConvergeReason );
 public:
@@ -65,7 +66,6 @@ public:
   void Minimise( int iNumGuesses ) override;
   int NumRetriesGuess() const override { return parent.Retry; };
   int NumRetriesFit() const override { return parent.Retry; };
-  std::string Description() const override;
 };
 
 struct FitterGSL : public Fitter

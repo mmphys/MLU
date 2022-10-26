@@ -74,8 +74,11 @@ protected:
   unsigned int getNumCalls() const { return state.bValid ? state.NumCalls : 0; }
   virtual void DumpParamsFitter( std::ostream &os ) const = 0;
   virtual void ReplicaMessage( std::ostream &os ) const = 0;
+  virtual std::string DescriptionImpl() const = 0;
   // Helper functions
   void SaveStdError();
+  void MakeReplicaCovar( int idx, bool bFirstTime, bool bShowOutput, bool bSaveMatrices,
+                         const std::string *pBaseName );
 public:
   FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &OutputModel );
   virtual ~FitterThread() {}
@@ -90,11 +93,12 @@ public:
   scalar RepeatFit( int MaxGuesses );
   const Vector &UncorrelatedFit();
   scalar FitOne();
+  std::string Description() const
+  { return parent.bAllParamsKnown ? "model built from preloaded parameters" : DescriptionImpl(); }
   // Implement this to support a new type of fitter
   virtual void Minimise( int iNumGuesses ) = 0;
   virtual int NumRetriesGuess() const = 0;
   virtual int NumRetriesFit() const = 0;
-  virtual std::string Description() const { return std::string(); }
 };
 
 #endif // FitterThread_hpp

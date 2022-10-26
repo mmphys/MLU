@@ -40,6 +40,7 @@ struct Param
 
   std::size_t size;   // How many values (e.g. energy levels) this parameter has
   bool bMonotonic;    // strictly increasing - implemented as p_n = p_{n-1} + a^2
+  bool bSwapSourceSink = false;
   Type type;
 
   struct Key
@@ -107,6 +108,7 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
                 //Param::Type Type = Param::Type::Variable );
   Params::iterator Add( const Param::Key &key, std::size_t NumExp = 1, bool bMonotonic = false,
                         Param::Type Type = Param::Type::Variable );
+  Params::iterator MakeFixed( const Param::Key &key, bool bSwapSourceSink );
   void AssignOffsets();
   std::size_t NumScalars( Param::Type Type ) const
   {
