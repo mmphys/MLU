@@ -59,7 +59,7 @@ struct ModelExp : public Model2pt
   ModelExp( const Model::CreateParams &cp, Model::Args &Args )
   : ModelExp(cp, Args, GetObjectNameSingle( cp, Args ), Args.Remove( "e", cp.NumExponents, true )) {}
   ModelType Type() const override { return ModelType::Exp; }
-  scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
+  scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 };
 
 struct ModelCosh : public Model2pt
@@ -70,7 +70,7 @@ struct ModelCosh : public Model2pt
   ModelCosh( const Model::CreateParams &cp, Model::Args &Args )
   : ModelCosh(cp, Args, GetObjectNameSingle( cp, Args ), Args.Remove( "e", cp.NumExponents, true )) {}
   ModelType Type() const override { return ModelType::Cosh; }
-  scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
+  scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 };
 
 struct ModelSinh : public Model2pt
@@ -81,7 +81,7 @@ struct ModelSinh : public Model2pt
   ModelSinh( const Model::CreateParams &cp, Model::Args &Args )
   : ModelSinh(cp, Args, GetObjectNameSingle( cp, Args ), Args.Remove( "e", cp.NumExponents, true )) {}
   ModelType Type() const override { return ModelType::Sinh; }
-  scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
+  scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 };
 
 #endif // Model2pt_hpp

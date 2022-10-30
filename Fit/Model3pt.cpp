@@ -44,10 +44,14 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args )
   E.resize( bESame ? 1 : 2 );
   E[idxSrc].Key.Object = { ObjectID( idxSrc ) };
   E[idxSrc].Key.Name = std::move( ESrc );
+  std::string sEDiff{ Args.Remove( ::EDiff, ::EDiff ) };
   if( !bESame )
   {
     E[idxSnk].Key.Object = { ObjectID( idxSnk ) };
     E[idxSnk].Key.Name = std::move( ESnk );
+    // Different source and sink energies - save the difference
+    EDiff.Key.Object = objectID;
+    EDiff.Key.Name = sEDiff;
   }
   // Now create the matrix element
   MEL.Key.Object = objectID;
@@ -61,6 +65,8 @@ void Model3pt::AddParameters( Params &mp )
     AddParam( mp, p, NumOverlapExp, true );
   AddParam( mp, MEL, NumExponents, false );
   ModelOverlap::AddParameters( mp );
+  if( !EDiff.Key.Object.empty() )
+    AddParam( mp, EDiff, 1, false, Param::Type::Derived );
 }
 
 void Model3pt::SaveParameters( const Params &mp )
@@ -69,6 +75,8 @@ void Model3pt::SaveParameters( const Params &mp )
     p.idx = mp.at( p.Key )();
   MEL.idx = mp.at( MEL.Key )( 0, 0 );
   ModelOverlap::SaveParameters( mp );
+  if( !EDiff.Key.Object.empty() )
+    EDiff.idx = mp.at( EDiff.Key )();
 }
 
 // Get a descriptive string for the model
@@ -116,7 +124,7 @@ double Model3pt::Derivative( int t, int p ) const
   return 0;
 }
 
-scalar Model3pt::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
+scalar Model3pt::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
   scalar z = 0;
   for( int eSnk = 0; eSnk < NumOverlapExp; ++eSnk )
@@ -136,6 +144,8 @@ scalar Model3pt::operator()( int t, Vector &ScratchPad, const Vector &ModelParam
         if( !bOverlapAltNorm )
           d /= 4 * ESnk * ESrc;
         z += d;
+        if( !eSnk && !eSrc )
+          ModelParams[EDiff.idx] = ESrc - ESnk;
       }
     }
   }

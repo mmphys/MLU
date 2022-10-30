@@ -40,7 +40,7 @@ struct ModelRatio : public Model3pt
   std::string Description() const override;
   double Derivative( int t, int p ) const override;
   ModelType Type() const override { return ModelType::ThreePoint; }
-  scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
+  scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 
 protected:
   std::vector<std::unique_ptr<Model2pt>> C2;

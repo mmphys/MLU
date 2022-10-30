@@ -94,7 +94,7 @@ double ModelRatio::Derivative( int t, int p ) const
   return 0;
 }
 
-scalar ModelRatio::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
+scalar ModelRatio::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
   scalar Numerator{ Model3pt::operator()( t, ScratchPad, ModelParams ) };
   const scalar ZSource{ ModelParams[C2[idxSrc]->Overlap[0].idx] };

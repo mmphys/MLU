@@ -42,12 +42,13 @@ struct Model3pt : public ModelOverlap
                const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const override;
   double Derivative( int t, int p ) const override;
   ModelType Type() const override { return ModelType::ThreePoint; }
-  scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const override;
+  scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 
 protected:
   //std::size_t ParamIndex( std::size_t idxSnk, std::size_t idxSrc ) const;
   //std::size_t NumUnknown( std::vector<bool> &bKnown ) const;
   std::vector<ModelParam> E;
+  ModelParam EDiff;
   ModelParam MEL;
   int DeltaT;
 };

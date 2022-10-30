@@ -36,7 +36,16 @@ MLU_Param_hpp
 
 struct Param
 {
-  enum class Type{ All, Variable, Fixed };
+  /**
+  Parameter types
+   
+   Variable: These are optimised by the fitter
+   
+   Fixed: Loaded from previous fit results
+   
+   Derived: Computed by models, but not optimised by the fitter
+   */
+  enum class Type{ All, Variable, Fixed, Derived };
 
   std::size_t size;   // How many values (e.g. energy levels) this parameter has
   bool bMonotonic;    // strictly increasing - implemented as p_n = p_{n-1} + a^2
@@ -46,7 +55,7 @@ struct Param
   struct Key
   {
     Key() = default;
-    std::vector<std::string> Object; // Name of the object these parameters describe, e.g. D_s meson, p^2=1
+    std::vector<std::string> Object; // Name of the object parameters describe, e.g. D_s meson, p^2=1
     std::string Name;   // Name of the parameter
     std::size_t Len() const;
     bool empty() const { return Object.empty() && Name.empty(); }
@@ -112,8 +121,18 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   void AssignOffsets();
   std::size_t NumScalars( Param::Type Type ) const
   {
-    return Type == Param::Type::All      ? NumVariable + NumFixed
-         : Type == Param::Type::Variable ? NumVariable : NumFixed;
+    switch( Type )
+    {
+      case Param::Type::All:
+        return NumVariable + NumFixed + NumDerived;
+      case Param::Type::Variable:
+        return NumVariable;
+      case Param::Type::Fixed:
+        return NumFixed;
+      case Param::Type::Derived:
+        return NumDerived;
+    }
+    throw std::runtime_error( "Unknown Param::Type " + std::to_string( static_cast<int>( Type ) ) );
   }
   std::size_t MaxExponents() const;
   template <typename T>
@@ -130,6 +149,7 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
 protected:
   std::size_t NumFixed;
   std::size_t NumVariable;
+  std::size_t NumDerived;
   std::size_t MaxLen;
   static const std::string sCount;
   static const std::string sObjectNames;
@@ -137,6 +157,19 @@ protected:
   static const std::string sTypeName;
   static const std::string sSize;
   static const std::string sMonotonic;
+  std::size_t &SizeType( Param::Type Type )
+  {
+    switch( Type )
+    {
+      case Param::Type::Variable:
+        return NumVariable;
+      case Param::Type::Fixed:
+        return NumFixed;
+      case Param::Type::Derived:
+        return NumDerived;
+    }
+    throw std::runtime_error( "Unknown Param::Type " + std::to_string( static_cast<int>( Type ) ) );
+  }
 };
 
 std::ostream &operator<<( std::ostream &os, const Params::value_type &param );

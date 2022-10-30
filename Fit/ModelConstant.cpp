@@ -76,7 +76,7 @@ std::size_t ModelConstant::Guess( Vector &Guess, std::vector<bool> &bKnown,
   return 0;
 }
 
-scalar ModelConstant::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
+scalar ModelConstant::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
   return ModelParams[Constant.idx];
 }

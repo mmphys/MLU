@@ -420,6 +420,7 @@ int main(int argc, const char *argv[])
     "Parameters accepted by models for dual objects (e.g. 3pt-functions):\n"
     " Src       ObjectID for source\n"
     " Snk       ObjectID for sink\n"
+    " " << ::EDiff << "     Name of derived parameter for energy difference (default: " << ::EDiff << ")\n"
     "Parameters accepted by R3 model:\n"
     " C2Model   Which model to use for 2pt: Exp (default); Cosh; Sinh\n";
   }

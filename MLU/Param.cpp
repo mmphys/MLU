@@ -30,7 +30,7 @@
 
 MLU_Param_hpp
 
-static const std::array<std::string,3> ParamTypeHuman{ "All", "Variable", "Fixed" };
+static const std::array<std::string,4> ParamTypeHuman{ "All", "Variable", "Fixed", "Derived" };
 
 std::size_t Param::Key::Len() const
 {
@@ -231,7 +231,7 @@ Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bM
 {
   // Work out how many elements are needed
   std::size_t size;
-  if( key.Object.size() == 1 )
+  if( key.Object.size() == 1 ) // TODO: This won't work for matrix elements with src=snk
     size = NumExp;
   else if( key.Object.size() == 2 )
   {
@@ -277,7 +277,7 @@ Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bM
     {
       // Type is changing.
       const bool bCantShrink{ type_ == Param::Type::Fixed && size < p.size };
-      const bool bCantGrow{ type_ == Param::Type::Variable && size > p.size };
+      const bool bCantGrow  { type_ != Param::Type::Fixed && size > p.size };
       if( bCantShrink || bCantGrow )
       {
         std::ostringstream s;
@@ -286,8 +286,8 @@ Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bM
           << "] to " << type_ << "[" << size << "] parameters";
         throw std::runtime_error( s.str().c_str() );
       }
-      // Can't become variable ... but can go the other way
-      if( type_ != Param::Type::Variable )
+      // Can become fixed ... but can't go the other way
+      if( type_ == Param::Type::Fixed )
       {
         p.type = type_;
         p.bMonotonic = bMonotonic; // Doesn't really do anything unless Variable
@@ -297,7 +297,7 @@ Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bM
     if( ( p.bMonotonic && !bMonotonic ) || ( !p.bMonotonic && bMonotonic ) )
     {
       // Silently ignore requests to remove monotonic from Variable parameters
-      if( !( !bMonotonic && p.type == Param::Type::Variable ) )
+      if( !( !bMonotonic && p.type != Param::Type::Fixed ) )
         p.bMonotonic = bMonotonic;
     }
     // Allow growth
@@ -340,7 +340,7 @@ void Params::AssignOffsets()
     p.Validate();
     // Assign positions of these parameters in tables
     p.OffsetAll = NumScalars( Param::Type::All );
-    std::size_t &ThisNum{ p.type == Param::Type::Variable ? NumVariable : NumFixed };
+    std::size_t &ThisNum{ SizeType( p.type) };
     p.OffsetMyType = ThisNum;
     ThisNum += p.size;
     // To simplify printing, save the maximum length of this field name
@@ -398,7 +398,7 @@ void Params::Export( Vector<T> &vType, const Vector<T> &All, Param::Type type ) 
       const std::size_t &Offset{ type == Param::Type::All ? p.OffsetAll : p.OffsetMyType };
       for( std::size_t i = 0; i < p.size; ++i )
       {
-        if( i == 0 || !p.bMonotonic || type != Param::Type::Variable )
+        if( i == 0 || !p.bMonotonic || type == Param::Type::Fixed )
           vType[Offset + i] = All[p.OffsetAll + i];
         else
         {
@@ -445,7 +445,7 @@ void Params::Import( Vector<T> &All, const VectorView<T> &vType, Param::Type typ
       const std::size_t &Offset{ type == Param::Type::All ? p.OffsetAll : p.OffsetMyType };
       for( std::size_t i = 0; i < p.size; ++i )
       {
-        if( i == 0 || !p.bMonotonic || type != Param::Type::Variable )
+        if( i == 0 || !p.bMonotonic || type == Param::Type::Fixed )
           All[p.OffsetAll + i] = vType[Offset + i];
         else
         {
@@ -501,7 +501,7 @@ void Params::Dump( std::ostream &os, const Vector<T> &Values, Param::Type ShowTy
         if( !pbKnown || (*pbKnown)[Offset + i] )
         {
           os << std::string( MaxLen - p.FieldLen + 2, ' ' ) << it.first;
-          if( p.size )
+          if( p.size > 1 )
             os << i;
           os << " " << Values[Offset + i];
           if( pErrors && p.type == Param::Type::Variable )

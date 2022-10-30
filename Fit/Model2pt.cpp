@@ -255,7 +255,7 @@ scalar Model2pt::Estimate( Vector &Guess, const VectorView &FitData, std::vector
   return FitData[Timeslice] - Theory;
 }
 
-scalar ModelExp::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
+scalar ModelExp::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
   double z = 0;
   for( int e = 0; e < NumOverlapExp; ++e )
@@ -269,7 +269,7 @@ scalar ModelExp::operator()( int t, Vector &ScratchPad, const Vector &ModelParam
   return z;
 }
 
-scalar ModelCosh::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
+scalar ModelCosh::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
   double z = 0;
   for( int e = 0; e < NumOverlapExp; ++e )
@@ -284,7 +284,7 @@ scalar ModelCosh::operator()( int t, Vector &ScratchPad, const Vector &ModelPara
   return z;
 }
 
-scalar ModelSinh::operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const
+scalar ModelSinh::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
   double z = 0;
   for( int e = 0; e < NumOverlapExp; ++e )

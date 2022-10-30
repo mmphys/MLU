@@ -33,6 +33,7 @@
 
 // This is the name of an energy level
 extern const std::string E;
+extern const std::string EDiff;
 
 enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant, R3 };
 std::ostream & operator<<( std::ostream &os, const ModelType m );
@@ -108,8 +109,12 @@ public:
                        const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const = 0;
   // Get model type
   virtual ModelType Type() const = 0;
-  // This is where the actual computation is performed
-  virtual scalar operator()( int t, Vector &ScratchPad, const Vector &ModelParams ) const = 0;
+  /**
+   This is where the actual computation is performed
+   
+   - Warning: Don't change any ModelParams other than Derived
+   */
+  virtual scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const = 0;
   // Partial derivative of the model function on a timeslice with respect to each parameter
   virtual double Derivative( int t, int p ) const { return 0; }
   // Model insoluble - please reduce number of parameters if possible?
