@@ -113,6 +113,8 @@ OutLongName=${OutPart1}.${OutPart2}.${OutPart3}
 
 # Fit the data
 
+mkdir -p $OutSubDir
+
 AllFitTimes=corr
 for (( i = 0; i < ${#DeltaT[@]}; ++i ))
 do
