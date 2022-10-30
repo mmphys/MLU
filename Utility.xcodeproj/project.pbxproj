@@ -253,6 +253,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2747DF85290DAFFD00B72F55 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DebugInfo.hpp; sourceTree = "<group>"; };
 		27953EAC28FB226D00A4CF67 /* DebugInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DebugInfo.cpp; sourceTree = "<group>"; };
 		27E8B35F28FF2DE80047FEF1 /* ModelRatio.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelRatio.hpp; sourceTree = "<group>"; };
@@ -636,6 +637,7 @@
 		682C5CC128E4FA3200C8E004 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2747DF85290DAFFD00B72F55 /* Accelerate.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -1723,8 +1725,9 @@
 					"-lm",
 					"-lomp",
 					"-lz",
+					"-framework",
+					Accelerate,
 					"-lgsl",
-					"-lgslcblas",
 					"-lMinuit2",
 				);
 				SDKROOT = macosx;
@@ -1813,8 +1816,9 @@
 					"-lm",
 					"-lomp",
 					"-lz",
+					"-framework",
+					Accelerate,
 					"-lgsl",
-					"-lgslcblas",
 					"-lMinuit2",
 				);
 				SDKROOT = macosx;

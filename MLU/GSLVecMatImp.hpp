@@ -70,6 +70,74 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline void blas_trmv( CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag, const GSLMatrix &A );
 };
 
+template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::GSLMatrixType
+{
+  using Traits    = GSLTraits<COMMON_GSL_TYPE>;
+  using Scalar    = Traits::Scalar;
+  using value_type= Scalar;
+  using Real      = Traits::Real;
+  using GSLScalar = Traits::GSLScalar;
+  using GSLBlock  = Traits::GSLBlockType;
+  using GSLVector = Traits::GSLVectorType;
+  using GSLMatrix = Traits::GSLMatrixType;
+  using MyVector  = Vector<COMMON_GSL_TYPE>;
+  using MyMatrix  = Matrix<COMMON_GSL_TYPE>;
+  inline void NotEmpty() const { if( size1 == 0 || size2 == 0 ) throw std::runtime_error( "Matrix empty" ); }
+  inline void Square() const { NotEmpty(); if( size1 != size2 ) throw std::runtime_error( "Matrix not square");}
+  inline Matrix() : Matrix( 0, 0 ) {};
+  inline Matrix( std::size_t size1, std::size_t size2 );
+  inline Matrix( const MyMatrix &o );
+  inline Matrix( MyMatrix &&o ) : Matrix() { *this = std::move( o ); };
+  inline ~Matrix();
+  inline MyMatrix & operator=( Scalar c );
+  inline MyMatrix & operator=( const Matrix &o );
+  inline MyMatrix & operator=( Matrix &&o );
+  template <typename T> inline MyMatrix &operator+=( T c );
+  template <typename T> inline MyMatrix &operator-=( T c );
+  template <typename T> inline MyMatrix &operator*=( T c );
+  template <typename T> inline MyMatrix &operator/=( T c );
+  inline bool operator==( const Matrix &o ) const;
+  inline bool operator!=( const Matrix &o ) const { return !operator==( o ); }
+  inline std::size_t rows() const { return size1; }
+  inline std::size_t cols() const { return size2; }
+  inline void resize( std::size_t size1, std::size_t size2 );
+  inline void clear();
+  inline void MapView( Scalar * data_, std::size_t size1_, std::size_t size2_, std::size_t tda_ );
+  inline void MapView( Scalar * data_, std::size_t size1_, std::size_t size2_ )
+  { MapView( data_, size1_, size2_, size2_ ); }
+  inline const Scalar & operator()( std::size_t i, std::size_t j ) const;
+  inline Scalar & operator()( std::size_t i, std::size_t j );
+  inline bool IsFinite( bool bDiagonalsOnly = false ) const;
+  inline Real norm2() const;
+  inline Real norm() const { return norm2(); }
+  inline void blas_gemm( CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, Scalar alpha,
+                        const MyMatrix &A, const MyMatrix &B, Scalar beta );
+  inline void blas_symm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, Scalar alpha, const MyMatrix &A,
+                         const MyMatrix &B, Scalar beta );
+  inline void blas_trmm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag,
+                         Scalar alpha, const MyMatrix &A );
+  inline void Row( std::size_t idx, MyVector &v );
+  inline void Column( std::size_t idx, MyVector &v );
+  inline void SetDiagonalOne();
+  inline void ZeroUpperTriangle();
+#ifdef COMMON_GSL_DOUBLE
+  inline MyMatrix Cholesky( MyVector &S ) const;
+  inline MyVector CholeskySolve( const MyVector &b ) const;
+  inline MyVector CholeskySolve( const MyVector &b, const MyVector &S ) const;
+  inline Scalar CholeskyRCond() const;
+  inline MyVector CholeskyScale() const;
+  inline void CholeskyScaleApply( const MyVector &S, bool bSetDiagonalToOne = false );
+  inline MyVector CholeskyExtract( bool bSetDiagonalToOne = true );
+  inline MyVector GetEigenValues( MyMatrix *pEigenVectors = nullptr ) const;
+#endif
+#ifdef COMMON_GSL_OPTIONAL
+  inline MyMatrix Inverse() const;
+  inline bool Cholesky( bool bZeroUpperTriangle );
+  inline void CholeskyInvert();
+  //inline void TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag );
+#endif
+};
+
 Vector<COMMON_GSL_TYPE>::Vector( std::size_t size_ )
 {
   size = 0;
@@ -241,10 +309,16 @@ inline Vector<COMMON_GSL_TYPE>::Scalar Vector<COMMON_GSL_TYPE>::Dot( const MyVec
   return * reinterpret_cast<Scalar *>( &result );
 }
 
-inline void Vector<COMMON_GSL_TYPE>::blas_trmv( CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag,
-                                                const Vector<COMMON_GSL_TYPE>::GSLMatrix &A )
+inline void Vector<COMMON_GSL_TYPE>::blas_trmv( CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA,
+                                                CBLAS_DIAG_t Diag, const GSLMatrix &a )
 {
-  COMMON_GSL_BLAS( trmv )( Uplo, TransA, Diag, &A, reinterpret_cast<GSLVector *>( this ) );
+  const MyMatrix &A{ * reinterpret_cast<const MyMatrix *>( &a ) };
+  A.Square();
+  if( size != A.size1 )
+    throw std::runtime_error( "Matrix wrong order for trmv" );
+  COMMON_GSL_CBLAS( trmv )( CblasRowMajor, Uplo, TransA, Diag, static_cast<int>( A.size1 ),
+                            reinterpret_cast<const Scalar *>( A.data ), static_cast<int>( A.tda ),
+                            reinterpret_cast<Scalar *>( this->data ), static_cast<int>( stride ) );
 }
 
 inline std::ostream & operator<<( std::ostream &os, const Vector<COMMON_GSL_TYPE> &v )
@@ -261,74 +335,6 @@ inline std::ostream & operator<<( std::ostream &os, const Vector<COMMON_GSL_TYPE
       os << " " << v[i];
   return os << " }";
 }
-
-template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::GSLMatrixType
-{
-  using Traits    = GSLTraits<COMMON_GSL_TYPE>;
-  using Scalar    = Traits::Scalar;
-  using value_type= Scalar;
-  using Real      = Traits::Real;
-  using GSLScalar = Traits::GSLScalar;
-  using GSLBlock  = Traits::GSLBlockType;
-  using GSLVector = Traits::GSLVectorType;
-  using GSLMatrix = Traits::GSLMatrixType;
-  using MyVector  = Vector<COMMON_GSL_TYPE>;
-  using MyMatrix  = Matrix<COMMON_GSL_TYPE>;
-  inline void NotEmpty() const { if( size1 == 0 || size2 == 0 ) throw std::runtime_error( "Matrix empty" ); }
-  inline void Square() const { NotEmpty(); if( size1 != size2 ) throw std::runtime_error( "Matrix not square");}
-  inline Matrix() : Matrix( 0, 0 ) {};
-  inline Matrix( std::size_t size1, std::size_t size2 );
-  inline Matrix( const MyMatrix &o );
-  inline Matrix( MyMatrix &&o ) : Matrix() { *this = std::move( o ); };
-  inline ~Matrix();
-  inline MyMatrix & operator=( Scalar c );
-  inline MyMatrix & operator=( const Matrix &o );
-  inline MyMatrix & operator=( Matrix &&o );
-  template <typename T> inline MyMatrix &operator+=( T c );
-  template <typename T> inline MyMatrix &operator-=( T c );
-  template <typename T> inline MyMatrix &operator*=( T c );
-  template <typename T> inline MyMatrix &operator/=( T c );
-  inline bool operator==( const Matrix &o ) const;
-  inline bool operator!=( const Matrix &o ) const { return !operator==( o ); }
-  inline std::size_t rows() const { return size1; }
-  inline std::size_t cols() const { return size2; }
-  inline void resize( std::size_t size1, std::size_t size2 );
-  inline void clear();
-  inline void MapView( Scalar * data_, std::size_t size1_, std::size_t size2_, std::size_t tda_ );
-  inline void MapView( Scalar * data_, std::size_t size1_, std::size_t size2_ )
-  { MapView( data_, size1_, size2_, size2_ ); }
-  inline const Scalar & operator()( std::size_t i, std::size_t j ) const;
-  inline Scalar & operator()( std::size_t i, std::size_t j );
-  inline bool IsFinite( bool bDiagonalsOnly = false ) const;
-  inline Real norm2() const;
-  inline Real norm() const { return norm2(); }
-  inline void blas_gemm( CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, Scalar alpha,
-                        const MyMatrix &A, const MyMatrix &B, Scalar beta );
-  inline void blas_symm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, Scalar alpha, const MyMatrix &A,
-                         const MyMatrix &B, Scalar beta );
-  inline void blas_trmm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag,
-                         Scalar alpha, const MyMatrix &A );
-  inline void Row( std::size_t idx, MyVector &v );
-  inline void Column( std::size_t idx, MyVector &v );
-  inline void SetDiagonalOne();
-  inline void ZeroUpperTriangle();
-#ifdef COMMON_GSL_DOUBLE
-  inline MyMatrix Cholesky( MyVector &S ) const;
-  inline MyVector CholeskySolve( const MyVector &b ) const;
-  inline MyVector CholeskySolve( const MyVector &b, const MyVector &S ) const;
-  inline Scalar CholeskyRCond() const;
-  inline MyVector CholeskyScale() const;
-  inline void CholeskyScaleApply( const MyVector &S, bool bSetDiagonalToOne = false );
-  inline MyVector CholeskyExtract( bool bSetDiagonalToOne = true );
-  inline MyVector GetEigenValues( MyMatrix *pEigenVectors = nullptr ) const;
-#endif
-#ifdef COMMON_GSL_OPTIONAL
-  inline MyMatrix Inverse() const;
-  inline bool Cholesky( bool bZeroUpperTriangle );
-  inline void CholeskyInvert();
-  //inline void TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag );
-#endif
-};
 
 void Vector<COMMON_GSL_TYPE>::MapRow( MyMatrix &m, std::size_t Row )
 {
@@ -546,16 +552,33 @@ Matrix<COMMON_GSL_TYPE>::Real Matrix<COMMON_GSL_TYPE>::norm2() const
   return v.norm2();
 }
 
-void Matrix<COMMON_GSL_TYPE>::blas_gemm( CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, Scalar alpha,
-                                         const Matrix<COMMON_GSL_TYPE> &A, const Matrix<COMMON_GSL_TYPE> &B,
-                                         Scalar beta )
+void Matrix<COMMON_GSL_TYPE>::blas_gemm( CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB,
+                                         Scalar Alpha,
+                                         const Matrix<COMMON_GSL_TYPE> &A,
+                                         const Matrix<COMMON_GSL_TYPE> &B,
+                                         Scalar Beta )
 {
   // TODO: complex untested
-  GSLScalar &gAlpha{ *reinterpret_cast<GSLScalar *>( &alpha ) };
-  GSLScalar &gBeta { *reinterpret_cast<GSLScalar *>( &beta  ) };
-  COMMON_GSL_BLAS( gemm )( TransA, TransB, gAlpha, reinterpret_cast<const GSLMatrix *>( &A ),
-                           reinterpret_cast<const GSLMatrix *>( &B ), gBeta,
-                           reinterpret_cast<GSLMatrix *>( this ) );
+  NotEmpty();
+  if( size1 != A.size1 )
+    throw std::runtime_error( "blas_gemm() A doesn't have " + std::to_string( size1 ) + " rows" );
+  if( size2 != B.size2 )
+    throw std::runtime_error( "blas_gemm() B doesn't have " + std::to_string( size2 ) + " columns" );
+  if( A.size2 != B.size1 )
+    throw std::runtime_error( "blas_gemm() A and B not correct shape for multiply" );
+  COMMON_GSL_CBLAS( gemm )( CblasRowMajor, TransA, TransB, static_cast<int>( size1 ),
+                            static_cast<int>( size2 ), static_cast<int>( A.size2 ),
+#ifdef COMMON_GSL_IS_COMPLEX
+                            &
+#endif
+                            Alpha,
+                            reinterpret_cast<const Scalar *>( A.data ), static_cast<int>( A.tda ),
+                            reinterpret_cast<const Scalar *>( B.data ), static_cast<int>( B.tda ),
+#ifdef COMMON_GSL_IS_COMPLEX
+                            &
+#endif
+                            Beta,
+                            reinterpret_cast<Scalar *>( this->data ), static_cast<int>( tda ) );
 }
 
 void Matrix<COMMON_GSL_TYPE>::blas_symm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo,
@@ -773,6 +796,7 @@ inline std::ostream & operator<<( std::ostream &os, const Matrix<COMMON_GSL_TYPE
 
 #undef COMMON_GSL_TYPE
 #undef COMMON_GSL_BLAS
+#undef COMMON_GSL_CBLAS
 #undef COMMON_GSL_BLAS_REAL
 #undef COMMON_GSL_BLAS_CPLX
 #undef COMMON_GSL_FUNC
