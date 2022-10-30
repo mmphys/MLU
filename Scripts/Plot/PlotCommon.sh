@@ -101,6 +101,20 @@ function HumanReadable
   PCPointWall ${opSnk} ${opSrc}
 }
 
+# 1: Where to save the Meson (file) name
+# 2: q
+# 3: spectator
+function GetMesonFile()
+{
+  declare -n MesonFile=$1
+  local q="$2"
+  local Spec="$3"
+  case "${q:0:1}_${Spec:0:1}" in
+    s_h | l_h | l_s) MesonFile="${Spec}_${q}";;
+                  *) MesonFile="${q}_${Spec}";;
+  esac
+}
+
 # 1: Where to save the Meson (human-readable) name
 # 2: q
 # 3: spectator

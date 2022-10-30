@@ -41,6 +41,7 @@ public:
   // Simple command-line options
   const bool bAnalyticDerivatives;
   const bool bTestRun;
+  const bool bOverwrite;
   const double HotellingCutoff;
   const double ChiSqDofCutoff;
   const double RelEnergySep;

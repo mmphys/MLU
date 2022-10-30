@@ -84,6 +84,8 @@ int main(int argc, const char *argv[])
     const std::initializer_list<CL::SwitchDef> list = {
       // Fitter parameters
       {"analytic", CL::SwitchType::Flag, nullptr},
+      {"testrun", CL::SwitchType::Flag, nullptr},
+      {"overwrite", CL::SwitchType::Flag, nullptr},
       {"Hotelling", CL::SwitchType::Single, DefaultHotelling},
       {"chisqdof", CL::SwitchType::Single, "0"},
       {"sep", CL::SwitchType::Single, DefaultEnergySep},
@@ -94,13 +96,15 @@ int main(int argc, const char *argv[])
       {"tol", CL::SwitchType::Single, "1e-7"},
       {"summary", CL::SwitchType::Single, "1"},
       {"savecmat", CL::SwitchType::Flag, nullptr},
-      {"freeze", CL::SwitchType::Flag, nullptr},
       {"v", CL::SwitchType::Single, "0"},
-      {"srcsnk", CL::SwitchType::Flag, nullptr},
       {"guess", CL::SwitchType::Single, nullptr},
       // ModelDefaultParams
       {"e", CL::SwitchType::Single, "1"},
       {Common::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
+      // Covariance parameters
+      {"covsrc", CL::SwitchType::Single, "Bootstrap"},
+      {"covboot", CL::SwitchType::Single, nullptr},
+      {"freeze", CL::SwitchType::Flag, nullptr},
       // Other params
       {"fitter", CL::SwitchType::Single, "GSL"},
       {"i", CL::SwitchType::Single, "" },
@@ -108,9 +112,6 @@ int main(int argc, const char *argv[])
       {"n", CL::SwitchType::Single, "0"},
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"opnames", CL::SwitchType::Flag, nullptr},
-      {"testrun", CL::SwitchType::Flag, nullptr},
-      {"covsrc", CL::SwitchType::Single, "Bootstrap"},
-      {"covboot", CL::SwitchType::Single, nullptr},
       {"debug-signals", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
@@ -402,9 +403,9 @@ int main(int argc, const char *argv[])
     "--freeze   Freeze the covariance matrix/variance on the central replica\n"
     "--savecmat Save correlation matrix\n"
     "--analytic Analytic derivatives for GSL (default: numeric)\n"
-    "--srcsnk   Append _src and _snk to overlap coefficients (ie force different)\n"
     "--opnames  Disable sorting and deduplicating operator name list\n"
     "--testrun  Don't perform fits - just say which fits would be attempted\n"
+    "--overwrite Overwite always. Default: only overwrite smaller Nboot\n"
     "--debug-signals Trap signals (code courtesy of Grid)\n"
     "--" << Common::sOverlapAltNorm << "  Alternate normalisation for overlap factors. DEPRECATED\n"
     "--help     This message\n"
@@ -420,7 +421,7 @@ int main(int argc, const char *argv[])
     " Src       ObjectID for source\n"
     " Snk       ObjectID for sink\n"
     "Parameters accepted by R3 model:\n"
-    " C2Model   Which model to use for 2pt: Exp (default); Cosh; Sinh";
+    " C2Model   Which model to use for 2pt: Exp (default); Cosh; Sinh\n";
   }
   Common::Grid_exit_handler_disable = true;
   return iReturn;

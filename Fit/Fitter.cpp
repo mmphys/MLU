@@ -37,6 +37,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
                 CovarParams &&cp_ )
   : bAnalyticDerivatives{ cl.GotSwitch("analytic") },
     bTestRun{ cl.GotSwitch("testrun") },
+    bOverwrite{ cl.GotSwitch("overwrite") },
     HotellingCutoff{ cl.SwitchValue<double>( "Hotelling" ) },
     ChiSqDofCutoff{ cl.SwitchValue<double>( "chisqdof" ) },
     RelEnergySep{ cl.SwitchValue<double>("sep") },
@@ -399,7 +400,7 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
   bool bPerformFit{ true };
   const std::string sModelBase{ OutBaseName + ModelSuffix };
   const std::string ModelFileName{ Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ) };
-  if( Common::FileExists( ModelFileName ) )
+  if( !bOverwrite && Common::FileExists( ModelFileName ) )
   {
     ModelFile PreBuilt;
     PreBuilt.Read( ModelFileName, "Pre-built: " );
