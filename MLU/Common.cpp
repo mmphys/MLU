@@ -89,6 +89,7 @@ const std::string sFitInput{ "FitInput" };
 const std::string sModelPrediction{ "ModelPrediction" };
 const std::string sOperators{ "Operators" };
 const std::string sAuxNames{ "AuxNames" };
+const std::string sSummaryDSName{ "Summary" };
 const std::string sSummaryNames{ "SummaryNames" };
 const std::string sColumnNames{ "ColumnNames" };
 const std::string sSeed{ "Seed" };

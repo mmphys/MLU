@@ -329,6 +329,7 @@ void Params::AssignOffsets()
 {
   NumFixed = 0;
   NumVariable = 0;
+  NumDerived = 0;
   MaxLen = 0;
   for( value_type &it : *this )
   {

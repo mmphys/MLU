@@ -2,7 +2,7 @@
 
 LDADD = ../MLU/libMLU.a $(MLU_LIBS)
 
-bin_PROGRAMS = bootstrap corr corrstat Debug Divide FitSummary GaugeCmp hlxml ImportCorr repair SynthData
+bin_PROGRAMS = bootstrap corr corrstat Debug Divide FitSummary GaugeCmp GetColumn hlxml ImportCorr repair SynthData
 
 bootstrap_SOURCES = bootstrap.cpp
 corr_SOURCES = corr.cpp
@@ -11,6 +11,7 @@ Debug_SOURCES = Debug.cpp
 Divide_SOURCES = Divide.cpp
 FitSummary_SOURCES =  FitSummary.cpp
 GaugeCmp_SOURCES = GaugeCmp.cpp
+GetColumn_SOURCES = GetColumn.cpp
 hlxml_SOURCES = hlxml.cpp
 ImportCorr_SOURCES = hlxml.cpp
 repair_SOURCES = repair.cpp

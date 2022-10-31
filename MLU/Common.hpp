@@ -123,6 +123,7 @@ extern const std::string sFitInput;
 extern const std::string sModelPrediction;
 extern const std::string sOperators;
 extern const std::string sAuxNames;
+extern const std::string sSummaryDSName;
 extern const std::string sSummaryNames;
 extern const std::string sColumnNames;
 extern const std::string sSeed;
@@ -2580,7 +2581,7 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
                   {
                     dsp.close();
                     ds.close();
-                    ds = g.openDataSet( "Summary" );
+                    ds = g.openDataSet( sSummaryDSName );
                     dsp = ds.getSpace();
                     nDims = dsp.getSimpleExtentNdims();
                     if( nDims == 2 )
@@ -2774,7 +2775,7 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
       Dims[0] = SummaryNames.size();
       Dims[1] = Nt_;
       dsp = ::H5::DataSpace( 2, Dims );
-      ds = g.createDataSet( "Summary", H5::Equiv<ValWithEr<scalar_type>>::Type, dsp );
+      ds = g.createDataSet( sSummaryDSName, H5::Equiv<ValWithEr<scalar_type>>::Type, dsp );
       ds.write( m_pSummaryData.get(), H5::Equiv<ValWithEr<scalar_type>>::Type );
       ds.close();
       dsp.close();

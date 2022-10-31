@@ -109,6 +109,11 @@ std::istream &operator>>( std::istream &is, Param::Type &type );
 std::ostream &operator<<( std::ostream &os, const Param::Key &key );
 std::istream &operator>>( std::istream &is, Param::Key &key );
 
+/**
+ List of parameters
+ 
+ - Warning: sizes (i.e. protected members) only valid after AssignOffsets()
+ */
 struct Params : std::map<Param::Key, Param, Param::Key::Less>
 {
   //using MapT = std::map<Param::Key, Param, Param::Key::Less>;
@@ -147,6 +152,7 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   void ReadH5 ( ::H5::Group gParent, const std::string GroupName );
   void WriteH5( ::H5::Group gParent, const std::string GroupName ) const;
 protected:
+  // Only valid after AssignOffsets()
   std::size_t NumFixed;
   std::size_t NumVariable;
   std::size_t NumDerived;
@@ -167,6 +173,8 @@ protected:
         return NumFixed;
       case Param::Type::Derived:
         return NumDerived;
+      case Param::Type::All:
+        break;
     }
     throw std::runtime_error( "Unknown Param::Type " + std::to_string( static_cast<int>( Type ) ) );
   }

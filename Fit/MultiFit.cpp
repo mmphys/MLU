@@ -74,7 +74,7 @@ int main(int argc, const char *argv[])
 #endif
   static const char DefaultEnergySep[] = "0"; // Default used to be 0.2 until 10 Jul 2021
   static const char DefaultHotelling[] = "0.05";
-  static const char DefaultMinDP[] = "3";
+  static const char DefaultMinDP[] = "1";
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;

@@ -27,6 +27,8 @@ OriginalTI="${ti}"
 OriginalTF="${tf}"
 OriginalFiles="${files}"
 DoLog=0${log+1}
+RefVal="$RefVal"
+RefText="$RefText"
 
 xOffset=FieldName eq "log" ? -0.5 : 0.0
 NumTI=words( OriginalTI )
@@ -113,7 +115,19 @@ PlotSuffix=', PlotFile '.UsingX
 PlotSuffix=PlotSuffix.': (column("data")):(column("data_low")):(column("data_high"))'
 PlotSuffix=PlotSuffix.' with yerrorbars notitle lc "red" pt 13 ps '.PointSizeData
 
+if( RefText ne '' ) {
+  set label 2 RefText at screen 0, screen 1 font ",10" front textcolor "blue" \
+    offset character 0.5, -0.7
+}
+
 set multiplot layout 1, NumModels
+
+if( RefVal ne '' ) {
+  set object 1 rect from graph 0, first word(RefVal,3) to graph 1, first word(RefVal,5) \
+      fs solid 1 noborder fc rgb 0xD0D0D0 behind
+  set arrow from graph 0, first word(RefVal,4) to graph 1, first word(RefVal,4) \
+      nohead front lc rgb "gray40" lw 0.25 dashtype "-"
+}
 
 do for [model=1:NumModels] {
 
