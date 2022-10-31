@@ -37,7 +37,7 @@ PW=${PW:-g5P_g5P}
 Seed=${Seed:-1835672416}
 Analyse=${Analyse:-analyse}
 Corr=${Corr:-corr}
-Ratio=${Ratio:-ratio.manual}
+Ratio=${Ratio:-ratio}
 Fit=${Fit:-fit}
 MELFit=${MELFit:-MELFit}
 LongPaths=0${Long+1}
@@ -121,7 +121,7 @@ fi
 OutPart1=${qSnk}_${qSrc}_${Gamma}_p2_${pSrc}_ps2_${pSnk}
 OutPart2=dt_$DeltaTAll
 OutPart3=${OutPart3}${Exp2pt}_${RangeSnk}_${RangeSrc}
-OutSubDir=$MELFit/$SpecDir
+OutSubDir=$MELFit/$Ensemble/$SpecDir
 ((LongPaths)) && OutSubDir=$OutSubDir/$OutPart1/$OutPart2/$OutPart3/${TI}_${TF}
 OutLongName=${OutPart1}.${OutPart2}.${OutPart3}
 
@@ -162,7 +162,7 @@ Cmd="$MultiFit --summary 2 -i $DataDir/ -o $BuildModelBase $InputMesonSnk $Input
 BuildModelBase=$BuildModelBase.${FitType}
 BuildModel=$BuildModelBase.$SuffixModel
 echo "A: $Cmd"
-echo "$Cmd"  > $BuildModel.$Seed.log
+echo "$Cmd"  #> $BuildModel.$Seed.log
       $Cmd  >> $BuildModel.$Seed.log
 
 # Get the energy difference
@@ -187,7 +187,7 @@ Cmd="files='$DataList' ti='$LabelTI' tf='$LabelTF' save=$Plot/${BuildModelBase} 
 [ -v MEL ] && [ "$Field" = corr ] && Cmd="$Cmd RefVal='$MEL'"
 [ -v ChiSqPerDof ] && Cmd="$Cmd RefText='$ChiSqPerDof'"
 Cmd="$Cmd title='$Title' field=$Field plottd.sh ${BuildModel}_td.$Seed.txt"
-echo "B: $Cmd"
+#echo "B: $Cmd"
 eval  $Cmd
 
 # Use the model to create the alternate
@@ -208,7 +208,7 @@ PlotModelBase=$OutSubDir/${PlotWhat}_${OutLongName}
 Cmd="$MultiFit -o $PlotModelBase ${BuildModel}.$Seed.h5 $FitList"
 PlotModelBase=$PlotModelBase.${FitTypePlot}
 PlotModel=$PlotModelBase.$SuffixModel
-echo "C: $Cmd"
+#echo "C: $Cmd"
 echo "$Cmd"  > $PlotModel.$Seed.log
       $Cmd  >> $PlotModel.$Seed.log
 
@@ -221,6 +221,6 @@ Cmd="files='$DataList' ti='$LabelTI' tf='$LabelTF' save=$Plot/${PlotModelBase}"
 [ -v MEL ] && [ "$PlotField" = corr ] && Cmd="$Cmd RefVal='$MEL'"
 [ -v ChiSqPerDof ] && Cmd="$Cmd RefText='$ChiSqPerDof'"
 Cmd="$Cmd title='$Title' field=$PlotField plottd.sh ${PlotModel}_td.$Seed.txt"
-echo "D: $Cmd"
+#echo "D: $Cmd"
 eval  $Cmd
 
