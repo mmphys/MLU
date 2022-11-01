@@ -162,7 +162,7 @@ Cmd="$MultiFit --summary 2 -i $DataDir/ -o $BuildModelBase $InputMesonSnk $Input
 BuildModelBase=$BuildModelBase.${FitType}
 BuildModel=$BuildModelBase.$SuffixModel
 echo "A: $Cmd"
-echo "$Cmd"  #> $BuildModel.$Seed.log
+echo "$Cmd"  > $BuildModel.$Seed.log
       $Cmd  >> $BuildModel.$Seed.log
 
 # Get the energy difference

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2723910429115E560045DE24 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2723910329115E560045DE24 /* Accelerate.framework */; };
 		277FBE8E290ED83700E82279 /* libMLU.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 682C5C9E28E4F41300C8E004 /* libMLU.dylib */; };
 		278BA037290ED57000960730 /* GetColumn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 278BA02A290ED4AB00960730 /* GetColumn.cpp */; };
 		27953EAD28FB226D00A4CF67 /* DebugInfo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */; };
@@ -274,6 +275,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2723910329115E560045DE24 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		278BA02A290ED4AB00960730 /* GetColumn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GetColumn.cpp; sourceTree = "<group>"; };
 		278BA030290ED52400960730 /* GetColumn */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GetColumn; sourceTree = BUILT_PRODUCTS_DIR; };
 		27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DebugInfo.hpp; sourceTree = "<group>"; };
@@ -503,6 +505,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				682C5D5B28E4FF6E00C8E004 /* libMLU.dylib in Frameworks */,
+				2723910429115E560045DE24 /* Accelerate.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -678,6 +681,7 @@
 		682C5CC128E4FA3200C8E004 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2723910329115E560045DE24 /* Accelerate.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -1844,6 +1848,8 @@
 					"-fopenmp",
 				);
 				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
 					"-lGrid",
 					"-lHadrons",
 					"-ldl",
@@ -1858,7 +1864,6 @@
 					"-lomp",
 					"-lz",
 					"-lgsl",
-					"-lgslcblas",
 					"-lMinuit2",
 				);
 				SDKROOT = macosx;
@@ -1934,6 +1939,8 @@
 					"-fopenmp",
 				);
 				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
 					"-lGrid",
 					"-lHadrons",
 					"-ldl",
@@ -1948,7 +1955,6 @@
 					"-lomp",
 					"-lz",
 					"-lgsl",
-					"-lgslcblas",
 					"-lMinuit2",
 				);
 				SDKROOT = macosx;

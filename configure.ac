@@ -11,7 +11,7 @@ AC_CONFIG_SRCDIR([MLU/CommonGrid.cpp])
 #AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([MLUconfig.h],
     [$SED_INPLACE -e 's|#define PACKAGE|#define MLU_PACKAGE|g' -e 's|#define VERSION|#define MLU_VERSION|g' MLUconfig.h],
-    [if test x"$host_os" == x"${host_os#darwin}" ; then]
+    [if test x"$host_os" = x"${host_os#darwin}" ; then]
         [SED_INPLACE="sed -i"]
     [else]
         [SED_INPLACE="sed -i .bak"]
@@ -34,7 +34,7 @@ AC_ARG_WITH([grid],
     [fi]
     [AC_MSG_CHECKING([   Grid --prefix])]
     [with_grid="`$GridConfig --prefix`"]
-    [if test x"$with_grid" == x ; then]
+    [if test x"$with_grid" = x ; then]
         [AC_MSG_ERROR([grid-config --prefix returns empty string])]
     [fi]
     [AC_MSG_RESULT([$with_grid])])
@@ -51,7 +51,7 @@ AC_ARG_WITH([hadrons],
     [fi]
     [AC_MSG_CHECKING([Hadrons --prefix])]
     [with_hadrons="`$HadronsConfig --prefix`"]
-    [if test x"$with_hadrons" == x ; then]
+    [if test x"$with_hadrons" = x ; then]
         [AC_MSG_ERROR([hadrons-config --prefix returns empty string])]
     [fi]
     [AC_MSG_RESULT([$with_hadrons])])
@@ -85,7 +85,7 @@ AC_ARG_WITH([minuit2],
 
 # If the user hasn't specified a CXX compiler, get it from Hadrons
 
-if test x"$CXX" == x ; then
+if test x"$CXX" = x ; then
     CXX="`$HadronsConfig --cxx`"
     if test x"$CXX" != x ; then
         AC_MSG_NOTICE([hadrons-config --cxx=$CXX])
@@ -93,7 +93,7 @@ if test x"$CXX" == x ; then
         AC_MSG_WARN([hadrons-config --cxx unknown])
     fi
 fi
-if test x"$CXXLD" == x ; then
+if test x"$CXXLD" = x ; then
     CXXLD="`$HadronsConfig --cxxld`"
     if test x"$CXXLD" != x ; then
         AC_MSG_NOTICE([hadrons-config --cxxld=$CXXLD])
@@ -156,7 +156,7 @@ AC_MSG_NOTICE([MLUBuildDir=$MLUBuildDir])
 # Check for Minuit2 by making a small test program (can't check libraries as pure C++)
 
 if test x$with_minuit2 != xno ; then
-  if test x$with_minuit2 == xyes ; then
+  if test x$with_minuit2 = xyes ; then
     # See whether I've already installed a version in prefix
     if test -d $prefix/include/Minuit2 ; then
         AC_MSG_NOTICE([Using Minuit2 previously installed in --prefix])
@@ -172,7 +172,7 @@ if test x$with_minuit2 != xno ; then
         mkdir -p "$Minuit2Dir"
         cd "$Minuit2Dir"
         OldCXX="$CXX"
-        if test x${OldCXX:0:4} == xnvcc ; then
+        if test x${OldCXX:0:4} = xnvcc ; then
             OldCC="$CC"
             OldCPPFLAGS="$CPPFLAGS"
             OldCXXDEPMODE="$CXXDEPMODE"
@@ -185,7 +185,7 @@ if test x$with_minuit2 != xno ; then
             CXXFLAGS=""
             unset CXXLD
             for f in $OldCXXFlags ; do
-                if test x${f:0:2} == x-I ; then
+                if test x${f:0:2} = x-I ; then
                     CXXFLAGS="$CXXFLAGS $f"
                 fi
             done
@@ -193,7 +193,7 @@ if test x$with_minuit2 != xno ; then
         $Minuit2ConfigureDir/configure --prefix="$prefix"
         make -j 12
         make install
-        if test x${OldCXX:0:4} == xnvcc ; then
+        if test x${OldCXX:0:4} = xnvcc ; then
             CXX="$OldCXX"
             CC="$OldCC"
             CPPFLAGS="$OldCPPFLAGS"
@@ -230,9 +230,53 @@ if test x$with_minuit2 != xno ; then
 fi
 AM_CONDITIONAL([MINUIT2], [test x$with_minuit2 != xno])
 
+# Do we have NVidia's CUDA BLAS library?
+# Disable BLAS libraries with GSL_CBLAS_LIB=-lgslcblas before configure
+if test x$GSL_CBLAS_LIB = x ; then
+  AC_MSG_CHECKING([for CUDA BLAS]);
+  GSL_CBLAS_LIB="-lnvblas"
+  OldLDFLAGS="$LDFLAGS"
+  LDFLAGS="$GSL_CBLAS_LIB $LDFLAGS"
+  AC_LINK_IFELSE(
+      [AC_LANG_SOURCE([[
+      #include <iostream>
+      int main() {
+          std::cout << "Hello world" << std::endl;
+          return 0; }
+      ]])],
+      [AC_MSG_RESULT([yes])],
+      [AC_MSG_RESULT([no])]
+      [unset GSL_CBLAS_LIB])
+  LDFLAGS="$OldLDFLAGS"
+fi
+
+# Can we use CBLAS from Apple's Accelerate framework?
+if test x$GSL_CBLAS_LIB = x ; then
+  AC_MSG_CHECKING([for Apple Accelerate]);
+  GSL_CBLAS_LIB="-framework Accelerate"
+  OldLDFLAGS="$LDFLAGS"
+  LDFLAGS="$GSL_CBLAS_LIB $LDFLAGS"
+  AC_LINK_IFELSE(
+      [AC_LANG_SOURCE([[
+      #include <iostream>
+      int main() {
+          std::cout << "Hello world" << std::endl;
+          return 0; }
+      ]])],
+      [AC_MSG_RESULT([yes])],
+      [AC_MSG_RESULT([no])]
+      [unset GSL_CBLAS_LIB])
+  LDFLAGS="$OldLDFLAGS"
+fi
+
 # Check for GSL
 
-if test x$GSLInstall == xyes ; then
+if test x"$GSL_CBLAS_LIB" = x ; then
+  GSL_LIB_OPTION=--libs
+else
+  GSL_LIB_OPTION=--libs-without-cblas
+fi
+if test x$GSLInstall = xyes ; then
     GSLConfig="$prefix/bin/$GSLConfig"
     if test -x "$GSLConfig" ; then
         AC_MSG_NOTICE([Using GSL previously installed in --prefix])
@@ -255,23 +299,8 @@ if test x$GSLInstall == xyes ; then
         fi
     fi
 fi
-LDFLAGS+=" `$GSLConfig --libs`"
+LDFLAGS+=" $GSL_CBLAS_LIB `$GSLConfig $GSL_LIB_OPTION`"
 CPPFLAGS+=" `$GSLConfig --cflags`"
-
-# Do we have cuda BLAS library?
-AC_MSG_CHECKING([for CUDA BLAS]);
-OldLDFLAGS="$LDFLAGS"
-LDFLAGS="-lnvblas $LDFLAGS"
-AC_LINK_IFELSE(
-    [AC_LANG_SOURCE([[
-    #include <iostream>
-    int main() {
-        std::cout << "Hello world" << std::endl;
-        return 0; }
-    ]])],
-    [AC_MSG_RESULT([yes])],
-    [AC_MSG_RESULT([no])]
-    LDFLAGS="$OldLDFLAGS")
 
 #AC_SEARCH_LIBS([gsl_set_error_handler], [gsl], [],
 #               [AC_MSG_ERROR([GNU Scientific Library not found])])
