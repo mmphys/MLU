@@ -118,7 +118,7 @@ do
 	    echo "$Cmd" >> $JobFileName
 	done
 	# Now summarise the output
-	Cmd="FitSummary -o $Dir/Summary/ -i $Out/ ${Combo}_'*.model.*'.h5"
+	Cmd="FitSummary --strict -o $Dir/Summary/ -i $Out/ ${Combo}_'*.model.*'.h5"
 	echo "$Cmd" >> $JobFilePost
     done
 done
