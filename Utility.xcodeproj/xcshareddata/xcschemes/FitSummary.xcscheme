@@ -62,8 +62,12 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/analyse/fit/2ptp2/h385_s/h385_s_p2_0.corr_9_23_&apos;*.g5P_g5W.model.*.h5&apos;"
+            argument = "F1M/analyse/fit3/2ptp2/h385_s/h385_s_p2_0.corr_&apos;*.g5P_g5W.model.*.h5&apos;"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--strict"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

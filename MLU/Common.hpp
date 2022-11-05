@@ -1405,13 +1405,13 @@ std::ostream& operator<<( std::ostream& os, SampleSource sampleSource );
  If AuxNames are specified, then there are 3 * AuxNames.count() auxiliarry records (value, low and high)
  Fields are in memory in reverse order, so that index -1 is always the central value
 */
-
 template <typename T>
 class Sample
 {
 public:
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
+  using value_type = typename Traits::value_type;
   static constexpr bool is_complex { Traits::is_complex };
   static constexpr int scalar_count { Traits::scalar_count };
   static constexpr int idxCentral{ BootRep<T>::idxCentral };
@@ -3071,6 +3071,10 @@ struct Model : public Sample<T>
   void ReadAttributes( ::H5::Group &g ) override;
   void ValidateAttributes() override;
   int WriteAttributes( ::H5::Group &g ) override;
+  /**
+   Make Check field in summary reflect whether each var parameter is different from zero and unique
+   */
+  bool CheckParameters();
   void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const override;
   void SummaryColumnNames( std::ostream &os ) const override;
   void SummaryContents( std::ostream &os ) const override;

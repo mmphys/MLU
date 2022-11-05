@@ -107,7 +107,8 @@ bool operator<( const TestStatKey &lhs, const TestStatKey &rhs )
 Summariser::Summariser( const Common::CommandLine &cl )
 : inBase{ Common::AppendSlash( cl.SwitchValue<std::string>("i") ) },
   outBaseFileName{ Common::AppendSlash( cl.SwitchValue<std::string>("o") ) },
-  StatisticName{ cl.SwitchValue<std::string>( "stat" ) }
+  StatisticName{ cl.SwitchValue<std::string>( "stat" ) },
+  bStrict{ cl.GotSwitch( "strict" ) }
 {
   bReverseSort = !cl.GotSwitch( "inc" );
   Common::MakeAncestorDirs( outBaseFileName );
@@ -161,6 +162,9 @@ void Summariser::Run()
         m.Read( "" );
         if( m.dof < 0 )
           throw std::runtime_error("dof=" + std::to_string( m.dof ) + " (<0 invalid)");
+        const bool bParamsOK{ m.CheckParameters() };
+        if( bStrict && !bParamsOK )
+          throw std::runtime_error("Parameter(s) compatible with 0 and/or not unique");
         std::ostringstream ss;
         m.SummaryColumnNames( ss );
         if( ModelNum == 0 )
@@ -268,6 +272,7 @@ int main(int argc, const char *argv[])
       {"o", CL::SwitchType::Single, "" },
       {"stat", CL::SwitchType::Single, Common::sPValueH.c_str() },
       {"inc",  CL::SwitchType::Flag, nullptr},
+      {"strict",  CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -296,8 +301,9 @@ int main(int argc, const char *argv[])
     "-o     Output filename prefix\n"
     "--stat Statistic (default: " << Common::sPValueH << ")\n"
     "Flags:\n"
-    "--inc  Sort increasing (default sort test stat decreasing)\n"
-    "--help This message\n";
+    "--inc    Sort increasing (default sort test stat decreasing)\n"
+    "--strict Only include models where all parameters are non-zero and unique\n"
+    "--help   This message\n";
   }
   return iReturn;
 }

@@ -1240,6 +1240,38 @@ int Model<T>::WriteAttributes( ::H5::Group &g )
 }
 
 template <typename T>
+bool Model<T>::CheckParameters()
+{
+  bool bResult{ !this->SummaryNames.empty() };
+  if( bResult )
+  {
+    using scalar_type = typename Sample<T>::scalar_type;
+    Common::ValWithEr<scalar_type> *VE = this->getSummaryData();
+    for( const Params::value_type &it : params )
+    {
+      //const Param::Key &pk{ it.first };
+      const Param &p{ it.second };
+      if( p.type == Param::Type::Variable )
+      {
+        const std::size_t o{ p.GetOffset( 0, Param::Type::All ) };
+        for( std::size_t i = 0; i < p.size; ++i )
+        {
+          // All elements must be statistically different from zero
+          bool bOK{(VE[o+i].Low > 0 && VE[o+i].High > 0 ) || ( VE[o+i].Low < 0 && VE[o+i].High < 0)};
+          // All elements must be different from each other
+          for( std::size_t j = 0; bOK && j < i; ++j )
+            bOK = VE[o+i].Low > VE[o+j].High || VE[o+i].High < VE[o+j].Low;
+          VE[o+i].Check = bOK ? 1 : 0;
+          if( !bOK )
+            bResult = false;
+        }
+      }
+    }
+  }
+  return bResult;
+}
+
+template <typename T>
 void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
 {
   Base::SummaryComments( s, true );

@@ -540,6 +540,7 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     OutputModel.FitInput.Central = ds.vCentral;
     OutputModel.FitInput.Replica = ds.Cache( cp.Source );
     OutputModel.MakeCorrSummary( "Params" );
+    OutputModel.CheckParameters();
     {
       // Show parameters - in neat columns
       std::cout << OutputModel.GetSummaryNames()[0] << " after " << OutputModel.NumSamples()
