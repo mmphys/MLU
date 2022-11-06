@@ -25,8 +25,10 @@ JobBaseName=${FitDirNow//\//.}
 if [ "$exp" != 2 ]; then JobBaseName=$JobBaseName$exp; fi
 JobFileName=${JobBaseName}.sh
 JobFilePost=${JobBaseName}.2.sh
-Point=g5P_g5P
-Wall=g5P_g5W
+OpP=g5P
+OpW=g5W
+Point=${OpP}_${OpP}
+Wall=${OpP}_${OpW}
 
 if ! [ -r ./FitRanges.sh ]
 then
@@ -105,7 +107,7 @@ do
 	do
 	    Prefix=${p##*/}               #Leave the filename only
 	    Prefix=${Prefix%%${Point}*h5} #Chop off everything past point/wall
-	    Cmd="MultiFit --iter 10000 -e $exp --mindp 8 --summary 2"
+	    Cmd="MultiFit --iter 10000 -e $exp --mindp 8 --summary 2 --product ${OpP},${OpW}"
 	    if [ -v uncorr  ]; then Cmd="$Cmd --uncorr"; fi
 	    if [ -v minuit  ]; then Cmd="$Cmd --fitter minuit2"; fi
 	    if [ -v num     ]; then Cmd="$Cmd -n $num"; fi
@@ -118,7 +120,7 @@ do
 	    echo "$Cmd" >> $JobFileName
 	done
 	# Now summarise the output
-	Cmd="FitSummary --strict -o $Dir/Summary/ -i $Out/ ${Combo}_'*.model.*'.h5"
+	Cmd="FitSummary --strict 3 -o $Dir/Summary/ -i $Out/ ${Combo}_'*.model.*'.h5"
 	echo "$Cmd" >> $JobFilePost
     done
 done
