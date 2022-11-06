@@ -85,7 +85,8 @@ struct Summariser
   const std::string inBase;
   const std::string outBaseFileName;
   const std::string StatisticName;
-  const bool bStrict;
+  const int Strictness;
+  const scalar MonotonicUpperLimit;
   using FitMap = std::map<FitTimes, FitData>;
   using BaseList = std::map<std::string, std::vector<FileInfo>>;
   BaseList lBase;

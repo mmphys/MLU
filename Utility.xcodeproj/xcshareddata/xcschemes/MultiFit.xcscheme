@@ -71,7 +71,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--Hotelling 0"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--overwrite"
@@ -110,6 +110,14 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--strict 1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--product g5p,g5w"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--covsrc h5,fit_felix_central.hdf5,covarianceMatrix -o data_comparison2/FitDebugFelix/FelixCov_ -i data_comparison2/unbinned_"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -127,6 +135,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o Simul/Ds_K_p2_0_E3"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o 2ptp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -143,10 +155,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "F1M/corr/2ptp2/s_l_p2_0_g5P_g5P.fold.1835672416.h5,t=9:22,e=3"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/2ptp2/h385_s_p2_0_g5P_g5P.fold.1835672416.h5,t=8:23,e=3"
+            argument = "F1M/corr/2ptp2/h385_s_p2_0_g5P_g5[PW].fold.1835672416.h5,t=8:23,e=3"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -163,19 +175,19 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_20_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=11:14"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_24_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=11:18"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_28_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=11:22"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_32_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=11:26"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_16_p2_0_g5P_g5P.fold.1835672416.h5,t=8:11"

@@ -1240,13 +1240,19 @@ int Model<T>::WriteAttributes( ::H5::Group &g )
 }
 
 template <typename T>
-bool Model<T>::CheckParameters()
+bool Model<T>::CheckParameters( int Strictness, scalar_type MonotonicUpperLimit )
 {
   bool bResult{ !this->SummaryNames.empty() };
-  if( bResult )
+  if( bResult && ( Strictness >= 0 || MonotonicUpperLimit < std::numeric_limits<scalar_type>::max() ) )
   {
-    using scalar_type = typename Sample<T>::scalar_type;
-    Common::ValWithEr<scalar_type> *VE = this->getSummaryData();
+    const bool bVeryStrictNonZero{ ( Strictness & 1 ) != 0 };
+    const bool bVeryStrictDifferent{ ( Strictness & 2 ) != 0 };
+    using TypeVE = Common::ValWithEr<scalar_type>;
+    TypeVE *VE = this->getSummaryData();
+    scalar_type TypeVE::* const pLowZ { bVeryStrictNonZero ? &TypeVE::Min : &TypeVE::Low };
+    scalar_type TypeVE::* const pHighZ{ bVeryStrictNonZero ? &TypeVE::Max : &TypeVE::High };
+    scalar_type TypeVE::* const pLowD { bVeryStrictDifferent ? &TypeVE::Min : &TypeVE::Low };
+    scalar_type TypeVE::* const pHighD{ bVeryStrictDifferent ? &TypeVE::Max : &TypeVE::High };
     for( const Params::value_type &it : params )
     {
       //const Param::Key &pk{ it.first };
@@ -1257,10 +1263,15 @@ bool Model<T>::CheckParameters()
         for( std::size_t i = 0; i < p.size; ++i )
         {
           // All elements must be statistically different from zero
-          bool bOK{(VE[o+i].Low > 0 && VE[o+i].High > 0 ) || ( VE[o+i].Low < 0 && VE[o+i].High < 0)};
+          bool bOK{  ( VE[o+i].*pLowZ > 0 && VE[o+i].*pHighZ > 0 )
+                  || ( VE[o+i].*pLowZ < 0 && VE[o+i].*pHighZ < 0 ) };
+          // Monotonic parameters (energies) must be < limit
+          if( bOK && p.bMonotonic && VE[o+i].Central > MonotonicUpperLimit )
+            bOK = false;
           // All elements must be different from each other
           for( std::size_t j = 0; bOK && j < i; ++j )
-            bOK = VE[o+i].Low > VE[o+j].High || VE[o+i].High < VE[o+j].Low;
+            bOK = VE[o+i].*pLowD > VE[o+j].*pHighD || VE[o+i].*pHighD < VE[o+j].*pLowD;
+          // Save results
           VE[o+i].Check = bOK ? 1 : 0;
           if( !bOK )
             bResult = false;

@@ -108,7 +108,8 @@ Summariser::Summariser( const Common::CommandLine &cl )
 : inBase{ Common::AppendSlash( cl.SwitchValue<std::string>("i") ) },
   outBaseFileName{ Common::AppendSlash( cl.SwitchValue<std::string>("o") ) },
   StatisticName{ cl.SwitchValue<std::string>( "stat" ) },
-  bStrict{ cl.GotSwitch( "strict" ) }
+  Strictness{ cl.SwitchValue<int>( "strict" ) },
+  MonotonicUpperLimit{ cl.SwitchValue<scalar>( "maxE" ) }
 {
   bReverseSort = !cl.GotSwitch( "inc" );
   Common::MakeAncestorDirs( outBaseFileName );
@@ -132,6 +133,8 @@ Summariser::Summariser( const Common::CommandLine &cl )
     sOutFile.append( sFitType );
     n.AppendOps( sOutFile );
     lBase[sOutFile].emplace_back( FileInfo( ft, sFileName ) );
+    if( Strictness < -1 || Strictness > 3 )
+      throw std::runtime_error( "--strict " + std::to_string( Strictness ) + " invalid" );
   }
 }
 
@@ -162,8 +165,7 @@ void Summariser::Run()
         m.Read( "" );
         if( m.dof < 0 )
           throw std::runtime_error("dof=" + std::to_string( m.dof ) + " (<0 invalid)");
-        const bool bParamsOK{ m.CheckParameters() };
-        if( bStrict && !bParamsOK )
+        if( !m.CheckParameters( Strictness, MonotonicUpperLimit ) )
           throw std::runtime_error("Parameter(s) compatible with 0 and/or not unique");
         std::ostringstream ss;
         m.SummaryColumnNames( ss );
@@ -203,6 +205,7 @@ void Summariser::Run()
       }
     }
     // Update the fits with sorted sequence number for test statistic and save sorted file
+    if( !Fits.empty() )
     {
       // Sort the fits by selected test statistic
       std::set<TestStatKey> SortSet;
@@ -223,6 +226,7 @@ void Summariser::Run()
       }
     }
     // Now make the output file with blocks for each ti, sorted by tf
+    if( !Fits.empty() )
     {
       std::ofstream s;
       const std::string sFileName{Common::MakeFilename(sSummaryName,Common::sParams,Seed,TEXT_EXT)};
@@ -272,7 +276,8 @@ int main(int argc, const char *argv[])
       {"o", CL::SwitchType::Single, "" },
       {"stat", CL::SwitchType::Single, Common::sPValueH.c_str() },
       {"inc",  CL::SwitchType::Flag, nullptr},
-      {"strict",  CL::SwitchType::Flag, nullptr},
+      {"strict",  CL::SwitchType::Single, "-1"},
+      {"maxE",  CL::SwitchType::Single, "10"},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -297,12 +302,16 @@ int main(int argc, const char *argv[])
     ( iReturn == EXIT_SUCCESS ? std::cout : std::cerr ) << "usage: " << cl.Name <<
     " <options> Model1 [Model2 ...]\n"
     "Summarise the fits contained in each model (ready for plotting), where <options> are:\n"
-    "-i     Input  filename prefix\n"
-    "-o     Output filename prefix\n"
-    "--stat Statistic (default: " << Common::sPValueH << ")\n"
+    "-i       Input  filename prefix\n"
+    "-o       Output filename prefix\n"
+    "--stat   Statistic (default: " << Common::sPValueH << ")\n"
+    "--strict Mask. Only include models where all parameters are non-zero and unique\n"
+    "         Strictness bits: Off=+/- 1 sigma; On=every replica\n"
+    "         Bit 0: Difference from 0\n"
+    "         Bit 1: Difference from other parameters in same series\n"
+    "--maxE   Maximum energy (default 10 - decays so fast effectively undetermined)\n"
     "Flags:\n"
     "--inc    Sort increasing (default sort test stat decreasing)\n"
-    "--strict Only include models where all parameters are non-zero and unique\n"
     "--help   This message\n";
   }
   return iReturn;

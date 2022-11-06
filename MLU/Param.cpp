@@ -327,6 +327,8 @@ Params::iterator Params::MakeFixed( const Param::Key &key, bool bSwapSourceSink 
 
 void Params::AssignOffsets()
 {
+  const Param::Key * pFirstKey{ nullptr };
+  bSingleObject = true;
   NumFixed = 0;
   NumVariable = 0;
   NumDerived = 0;
@@ -335,6 +337,11 @@ void Params::AssignOffsets()
   {
     const Param::Key &k{ it.first };
     Param &p{ it.second };
+    // See whether this is a multi-object set of parameters
+    if( !pFirstKey )
+      pFirstKey = &k;
+    else if( bSingleObject )
+      bSingleObject = pFirstKey->SameObject( k );
     // Save the pointer to the key
     p.pKey = &k;
     // Validate the parameter type
@@ -729,6 +736,41 @@ void Params::WriteH5( ::H5::Group gParent, const std::string GroupName ) const
         a.write( ::H5::PredType::NATIVE_INT8, &i8 );
       }
     }
+  }
+}
+
+void Params::SetProducts( const std::string &sProducts )
+{
+  static const std::string sNotFound{ "Product key not found: " };
+  const std::vector<std::string> &Products{ ArrayFromString( sProducts ) };
+  if( Products.size() & 1 )
+    throw std::invalid_argument( "Odd number of products: " + sProducts );
+  // Add every pair
+  for( std::size_t i = 0; i < Products.size(); i += 2 )
+  {
+    Param::Key k[2];
+    k[0] = FromString<Param::Key>( Products[i] );
+    if( bSingleObject && k[0].Object.empty() )
+      k[0].Object = begin()->first.Object;
+    iterator it{ find( k[0] ) };
+    if( it == end() )
+      throw std::invalid_argument( sNotFound + Products[i] );
+    k[1] = FromString<Param::Key>( Products[i + 1] );
+    if( bSingleObject && k[1].Object.empty() )
+      k[1].Object = k[0].Object;
+    iterator it2{ find( k[1] ) };
+    if( it2 == end() )
+      throw std::invalid_argument( sNotFound + Products[i + 1] );
+    // Check whether these make a good pair
+    Param &pFirst{ it->second };
+    Param &pSecond{ it2->second };
+    if( pFirst.type != Param::Type::Variable || pFirst.type != pSecond.type )
+      throw std::invalid_argument( "Products " + Products[i] + " and " + Products[i+1]
+                                  + " not both Variable" );
+    if( pFirst.size != pSecond.size )
+      throw std::invalid_argument( "Products " + Products[i] + " and " + Products[i+1]
+                                  + " not both same size" );
+    pSecond.pProductWith = &pFirst;
   }
 }
 

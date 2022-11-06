@@ -98,6 +98,9 @@ int main(int argc, const char *argv[])
       {"savecmat", CL::SwitchType::Flag, nullptr},
       {"v", CL::SwitchType::Single, "0"},
       {"guess", CL::SwitchType::Single, nullptr},
+      {"product", CL::SwitchType::Single, ""},
+      {"strict",  CL::SwitchType::Single, "0"},
+      {"maxE",  CL::SwitchType::Single, "10"},
       // ModelDefaultParams
       {"e", CL::SwitchType::Single, "1"},
       {Common::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
@@ -384,6 +387,12 @@ int main(int argc, const char *argv[])
     "--mindp  Minimum number of data points per fit range (default " << DefaultMinDP << ")\n"
     "--fitter (GSL|Minuit2)[,options] fitter (default GSL,Levenberg-Marquardt)\n"
     "         GSL options: lm, lmaccel, dogleg, ddogleg, subspace2D\n"
+    "--product Op1,Op2[,Op3,Op4,...] I only know product of Ops. Choose 2nd negative\n"
+    "--strict Mask. Check field shows whether parameters are non-zero and unique\n"
+    "         Strictness bits: Off=+/- 1 sigma; On=every replica (default 0)\n"
+    "         Bit 0: Difference from 0\n"
+    "         Bit 1: Difference from other parameters in same series\n"
+    "--maxE   Maximum energy (default 10 - decays so fast effectively undetermined)\n"
     "--covsrc source[,options[,...]] build (co)variance from source, i.e. one of\n"
     "         Binned    Use the already binned data\n"
     "         Raw       Use the raw (unbinned) data\n"

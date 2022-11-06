@@ -54,10 +54,12 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     OpNames{ opNames_ },
     model{ CreateModels( cl, ModelArgs ) },
     NumExponents{ GetNumExponents() },
-    mp{ MakeModelParams() },
+    mp{ MakeModelParams( cl.SwitchValue<std::string>( "product" ) ) },
     bAllParamsKnown{ mp.NumScalars( Param::Type::Variable ) == 0 },
     cp{ std::move( cp_ ) },
     Guess{ mp.NumScalars( Param::Type::All ) },
+    Strictness{ cl.SwitchValue<int>("strict") },
+    MonotonicUpperLimit{ cl.SwitchValue<scalar>("maxE") },
     OutputModel( ds.NSamples, mp, Common::DefaultModelStats,
                  cp.CovarSampleSize(), cp.bFreeze, cp.Source, cp.RebinSize, cp.CovarNumBoot )
 {
@@ -155,7 +157,7 @@ int Fitter::GetNumExponents()
 // Finalise the parameter lists the models will fit
 // Build complete list of fixed and variable parameters
 // Tell each model where to get the parameters they are interested in
-Params Fitter::MakeModelParams()
+Params Fitter::MakeModelParams( const std::string &sProducts )
 {
   Params mp;
   bool bSoluble{ false };
@@ -265,6 +267,8 @@ Params Fitter::MakeModelParams()
       }
     }
   }
+  //
+  mp.SetProducts( sProducts );
   return mp;
 }
 
@@ -540,7 +544,7 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     OutputModel.FitInput.Central = ds.vCentral;
     OutputModel.FitInput.Replica = ds.Cache( cp.Source );
     OutputModel.MakeCorrSummary( "Params" );
-    OutputModel.CheckParameters();
+    OutputModel.CheckParameters( Strictness, MonotonicUpperLimit );
     {
       // Show parameters - in neat columns
       std::cout << OutputModel.GetSummaryNames()[0] << " after " << OutputModel.NumSamples()
