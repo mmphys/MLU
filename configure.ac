@@ -232,9 +232,9 @@ AM_CONDITIONAL([MINUIT2], [test x$with_minuit2 != xno])
 
 # Do we have NVidia's CUDA BLAS library?
 # Disable BLAS libraries with GSL_CBLAS_LIB=-lgslcblas before configure
-if test x$GSL_CBLAS_LIB = x ; then
+if test x"$GSL_CBLAS_LIB" = x ; then
   AC_MSG_CHECKING([for CUDA BLAS]);
-  GSL_CBLAS_LIB="-lnvblas"
+  GSL_CBLAS_LIB="-lnvblas -lgslcblas" #nvblas only provides some functions, rest from gslcblas
   OldLDFLAGS="$LDFLAGS"
   LDFLAGS="$GSL_CBLAS_LIB $LDFLAGS"
   AC_LINK_IFELSE(
@@ -251,7 +251,7 @@ if test x$GSL_CBLAS_LIB = x ; then
 fi
 
 # Can we use CBLAS from Apple's Accelerate framework?
-if test x$GSL_CBLAS_LIB = x ; then
+if test x"$GSL_CBLAS_LIB" = x ; then
   AC_MSG_CHECKING([for Apple Accelerate]);
   GSL_CBLAS_LIB="-framework Accelerate"
   OldLDFLAGS="$LDFLAGS"
