@@ -3013,6 +3013,9 @@ template <typename T>
 struct Model : public Sample<T>
 {
   using Base = Sample<T>;
+  using Traits = typename Base::Traits;
+  using scalar_type = typename Traits::scalar_type;
+  using value_type = typename Traits::value_type;
   static const std::string EnergyPrefix;
   int dof = 0;
   bool CovarFrozen = false;
@@ -3073,8 +3076,12 @@ struct Model : public Sample<T>
   int WriteAttributes( ::H5::Group &g ) override;
   /**
    Make Check field in summary reflect whether each var parameter is different from zero and unique
+   
+   - Parameters:
+     - Strictness: -1 to disable, otherwise bitmask: bit 0=When comparing to zero; bit 1=When comparing to other parameters of same set. Strictness bits are: true to make sure every single replica has same sign; False for +/- 1 sigma
    */
-  bool CheckParameters();
+  bool CheckParameters( int Strictness = -1,
+                        scalar_type MonotonicUpperLimit = std::numeric_limits<scalar_type>::max() );
   void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const override;
   void SummaryColumnNames( std::ostream &os ) const override;
   void SummaryContents( std::ostream &os ) const override;

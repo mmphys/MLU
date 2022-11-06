@@ -526,7 +526,44 @@ scalar FitterThread::FitOne()
         ss << ( i ? Common::CommaSpace : Common::Space ) << Error[i];
       throw std::runtime_error( ss.str() );
     }
+    // See whether any of the energies is so large it's effectively indeterminate
+    for( const Params::value_type &it : parent.mp )
+    {
+      const Param &p{ it.second };
+      if( p.type == Param::Type::Variable && p.bMonotonic )
+      {
+        const std::size_t Offset{ p.GetOffset( 0, Param::Type::All ) };
+        for( std::size_t i = 0; i < p.size; ++i )
+        {
+          if( ModelParams[Offset + i] > parent.MonotonicUpperLimit )
+          {
+            const Param::Key &pk{ it.first };
+            ss << "\n" << pk.FullName( i, p.size ) << " > " << parent.MonotonicUpperLimit;
+            throw std::runtime_error( ss.str() );
+          }
+        }
+      }
+    }
     std::cout << "OK: " << ss.str() << Common::NewLine;
+  }
+  // Make pairs of parameters the right sign
+  for( typename Params::value_type it : parent.mp )
+  {
+    const Param p{ it.second };
+    if( p.pProductWith )
+    {
+      const std::size_t Offset{ p.GetOffset( 0, Param::Type::All ) };
+      const std::size_t OffsetOther{ p.pProductWith->GetOffset( 0, Param::Type::All ) };
+      for( std::size_t i = 0; i < p.size; ++i )
+      {
+        const bool bNegOther{ std::signbit( ModelParams[OffsetOther + i] ) };
+        if( bNegOther )
+        {
+          ModelParams[OffsetOther + i] = - ModelParams[OffsetOther + i];
+          ModelParams[Offset      + i] = - ModelParams[Offset      + i];
+        }
+      }
+    }
   }
   // Copy results into OutputModel
   scalar * const OutputData{ OutputModel[idx] };

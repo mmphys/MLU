@@ -53,6 +53,8 @@ public:
   const bool bSaveCMat;
   const int Verbosity;
   const bool UserGuess;
+  const int Strictness;
+  const scalar MonotonicUpperLimit;
   // More complex command-line options
   const DataSet &ds;
   const int NumFiles; // Number of correlator files in the dataset
@@ -80,7 +82,7 @@ protected:
   // Used during construction (so that we can make the results const)
   std::vector<ModelPtr> CreateModels(const Common::CommandLine &cl, std::vector<Model::Args> &ModelArgs);
   int GetNumExponents();
-  Params MakeModelParams();
+  Params MakeModelParams( const std::string &sProducts );
   void MakeGuess();
   virtual FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel ) = 0;
 

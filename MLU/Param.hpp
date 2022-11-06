@@ -51,6 +51,8 @@ struct Param
   bool bMonotonic;    // strictly increasing - implemented as p_n = p_{n-1} + a^2
   bool bSwapSourceSink = false;
   Type type;
+  // The second member of a pair points to its mate
+  Param * pProductWith = nullptr;
 
   struct Key
   {
@@ -151,8 +153,17 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   std::vector<std::string> GetNames( Param::Type type, bool bLongNames ) const;
   void ReadH5 ( ::H5::Group gParent, const std::string GroupName );
   void WriteH5( ::H5::Group gParent, const std::string GroupName ) const;
+  bool SingleObject() const { return bSingleObject; }
+  /**
+   I might only know the product of some parameters.
+   If there's a choice, make the second of each pair negative
+   - Parameters:
+    - Products: even list of parameter pairs
+   */
+  void SetProducts( const std::string &sProducts );
 protected:
   // Only valid after AssignOffsets()
+  bool bSingleObject;
   std::size_t NumFixed;
   std::size_t NumVariable;
   std::size_t NumDerived;
