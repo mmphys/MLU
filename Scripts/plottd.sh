@@ -26,6 +26,7 @@ ModelMax=${mmax:--1}
 OriginalTI="${ti}"
 OriginalTF="${tf}"
 OriginalFiles="${files}"
+ExtraFiles="${extra}"
 DoLog=0${log+1}
 RefVal="$RefVal"
 RefText="$RefText"
@@ -140,28 +141,47 @@ set xtics ceil(PlotTMin[model]), 2, floor(PlotTMax[model])
 
 if( model == 2 ) { set format y ''; unset ylabel }
 
+OtherFieldName=(FieldName eq "log") ? "exp" : FieldName
+ConditionTMin='>='.sprintf("%g",PlotTMin[model])
+ConditionTMax='<='.sprintf("%g",PlotTMax[model])
+
 ThisFile=word( OriginalFiles, model )
+if( ThisFile eq '' ) {
+  OriginalPlot=''
+} else {
+  ColumnX="(column('t')+(".sprintf("%g",xOffset)."))"
+  #print 'ColumnX='.ColumnX
+  ConditionA=ColumnX.ConditionTMin.' && '.ColumnX.'<'.sprintf("%g",FitTMin[model])
+  #print 'ConditionA='.ConditionA
+  ConditionB=ColumnX.ConditionTMax.' && '.ColumnX.'>'.sprintf("%g",FitTMax[model])
+  #print 'ConditionB='.ConditionB
+  Condition='(('.ConditionA.') || ('.ConditionB.'))'
+  #print 'Condition='.Condition
+  OriginalPlot=', "'.ThisFile.'" using ('.Condition.' ? '.ColumnX.' : NaN )'
+  OriginalPlot=OriginalPlot.": (column('".OtherFieldName."'))"
+  OriginalPlot=OriginalPlot.": (column('".OtherFieldName."_low'))"
+  OriginalPlot=OriginalPlot.": (column('".OtherFieldName."_high'))"
+  OriginalPlot=OriginalPlot." with yerrorbars notitle lc 'black' pt 13 ps ".PointSizeData
+  #print 'OriginalPlot='.OriginalPlot
+}
+
+ThisFile=word( ExtraFiles, model )
 if( ThisFile eq '' ) {
   ExtraPlot=''
 } else {
-  OtherFieldName=(FieldName eq "log") ? "exp" : FieldName
-  ColumnX="(column('t')+(".sprintf("%g",xOffset)."))"
+  ColumnX="(column('t')+(".sprintf("%g",xOffset+0.1)."))"
   #print 'ColumnX='.ColumnX
-  ConditionA=ColumnX.'>='.sprintf("%g",PlotTMin[model]).' && '.ColumnX.'<'.sprintf("%g",FitTMin[model])
-  #print 'ConditionA='.ConditionA
-  ConditionB=ColumnX.'<='.sprintf("%g",PlotTMax[model]).' && '.ColumnX.'>'.sprintf("%g",FitTMax[model])
-  #print 'ConditionB='.ConditionB
-  Condition='(('.ConditionA.') || ('.ConditionB.'))'
+  Condition='('.ColumnX.ConditionTMin.' && '.ColumnX.ConditionTMax.')'
   #print 'Condition='.Condition
   ExtraPlot=', "'.ThisFile.'" using ('.Condition.' ? '.ColumnX.' : NaN )'
   ExtraPlot=ExtraPlot.": (column('".OtherFieldName."'))"
   ExtraPlot=ExtraPlot.": (column('".OtherFieldName."_low'))"
   ExtraPlot=ExtraPlot.": (column('".OtherFieldName."_high'))"
-  ExtraPlot=ExtraPlot." with yerrorbars notitle lc 'black' pt 13 ps ".PointSizeData
+  ExtraPlot=ExtraPlot." with yerrorbars notitle lc 'gold' pt 6 ps ".PointSizeData
   #print 'ExtraPlot='.ExtraPlot
 }
 
-eval PlotPrefix.ExtraPlot.PlotSuffix
+eval PlotPrefix.ExtraPlot.OriginalPlot.PlotSuffix
 }
 
 unset multiplot

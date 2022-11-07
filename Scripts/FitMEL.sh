@@ -2,6 +2,8 @@
 #. common_utility.sh
 . PlotCommon.sh
 
+# Perform a fit for matrix elements given a choice of 2pt fit ranges
+
 #set -x
 set -e
 
@@ -56,6 +58,8 @@ PlotDataFrom=${PlotDataFrom:-4} # how far in from source and sink to plot data p
 # Ranges for 2pt fits
 RangeSnk=${TISnk}_${TFSnk}
 RangeSrc=${TISrc}_${TFSrc}
+RangeSnk2=$((TISnk-1))_${TFSnk}
+RangeSrc2=$((TISrc-1))_${TFSrc}
 
 DeltaTAll=${DeltaT[@]}
 DeltaTAll=${DeltaTAll// /_}
@@ -113,8 +117,8 @@ else
   Input2ptDir=$Input2ptDir/2ptp2
   SuffixModel=g5P_g5W.model
   Suffix2pt=$SuffixModel.$Seed.h5
-  InputMesonSnk=$Input2ptDir/$MesonSnk/${MesonSnk}_p2_${pSnk}.corr_${RangeSnk}_${RangeSnk}.${Suffix2pt}
-  InputMesonSrc=$Input2ptDir/$MesonSrc/${MesonSrc}_p2_${pSrc}.corr_${RangeSrc}_${RangeSrc}.${Suffix2pt}
+  InputMesonSnk=$Input2ptDir/$MesonSnk/${MesonSnk}_p2_${pSnk}.corr_${RangeSnk}_${RangeSnk2}.${Suffix2pt}
+  InputMesonSrc=$Input2ptDir/$MesonSrc/${MesonSrc}_p2_${pSrc}.corr_${RangeSrc}_${RangeSrc2}.${Suffix2pt}
   OutPart3=E
 fi
 
@@ -161,7 +165,7 @@ MultiFit="$MultiFit --debug-signals"
 Cmd="$MultiFit --summary 2 -i $DataDir/ -o $BuildModelBase $InputMesonSnk $InputMesonSrc $FitList"
 BuildModelBase=$BuildModelBase.${FitType}
 BuildModel=$BuildModelBase.$SuffixModel
-echo "A: $Cmd"
+#echo "A: $Cmd"
 echo "$Cmd"  > $BuildModel.$Seed.log
       $Cmd  >> $BuildModel.$Seed.log
 

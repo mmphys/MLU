@@ -54,6 +54,7 @@ ManualTitleText="${title}"
 ManualYLabel=0${ylabel+1}
 ManualYLabelText="${ylabel}"
 
+EscapeUS(s)=(i0=strstrt(s,"_"),i0 ? s[:i0-1]."\\\_".EscapeUS(s[i0+1:]) : s)
 
 NumMyColumnHeadings=words( MyColumnHeadings )
 #print MyColumnHeadings
@@ -68,6 +69,7 @@ FieldNames=system("awk '/^# ColumnNames: / {print substr(\$0,16);exit}; ! /^#/ {
 if( words(FieldNames) < 1 ) {
   FirstFieldName="E0" # Old format
 } else {
+  NumFields=words( FieldNames )
   # Strip the trailing comma from each field name
   FirstFieldName=FieldNames
   FieldNames=""
@@ -185,7 +187,7 @@ if( xAxisName eq "ChiSqPerDof" ) {
 
 if( do_stat ) { sStatDescr=sStatDescr.' '.sStatCondHuman.' '.sprintf("%g",stat_limit) }
 #FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit using ${mmplotfile_ops_all//_/ }"
-FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit of ${mmplotfile_base_short}"
+FitName=' from '.NumExp."-exponential ${mmplotfile_corr}elated fit of ".EscapeUS("${mmplotfile_base_short}")
 if( "${mmplotfile_pName}" ne '' ) {
   FitName=FitName." (${mmplotfile_pName}=${mmplotfile_p}".')'
 }
@@ -244,8 +246,6 @@ if( do_label ) {
   PlotCmd=PlotCmd.' column(xAxisCol)):('.Condition.' column(MyField."_high")):(column("tfLabel"))'
   PlotCmd=PlotCmd.' '.WithLabels.' notitle'
 }
-
-EscapeUS(s)=(i0=strstrt(s,"_"),i0 ? s[:i0-1]."\\\_".EscapeUS(s[i0+1:]) : s)
 
 do for [MyField in FieldNames] {
   MyFieldNoUS=EscapeUS(MyField)

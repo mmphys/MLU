@@ -195,7 +195,7 @@ int main(int argc, const char *argv[])
           }
         }
         if( bGlobEmpty )
-          std::cout << "Warning: No files matched " << FileToGlob << Common::NewLine;
+          throw std::runtime_error( "No files matched " + FileToGlob );
       }
       if( ds.corr.empty() )
         throw std::runtime_error( "At least one correlator must be loaded to perform a fit" );
@@ -360,6 +360,9 @@ int main(int argc, const char *argv[])
       std::cout << std::setfill( '0' ) << std::setw(2) << Hours
          << ':' << std::setfill( '0' ) << std::setw(2) << Minutes
          << ':' << std::setfill( '0' ) << std::setw(2) << S << Common::NewLine;
+      // Error if only one fit requested and it failed
+      if( CountTotal == 1 && CountOK == 0 )
+        iReturn = 2;
     }
   }
   catch(const std::exception &e)

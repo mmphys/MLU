@@ -128,6 +128,7 @@ FieldNames=system("awk '/^# ColumnNames: / {print substr(\$0,16);exit}; ! /^#/ {
 if( words(FieldNames) < 1 ) {
   FirstFieldName="E0" # Old format
 } else {
+  NumFields=words( FieldNames )
   # Strip the trailing comma from each field name
   FirstFieldName=FieldNames
   FieldNames=""

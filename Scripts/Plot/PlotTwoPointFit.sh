@@ -5,9 +5,6 @@
 PCMakeScriptOutDir
 echo "$Ensemble: Two point fits"
 
-InDir=$PlotData/fit/2ptp2/Summary
-echo InDir=$InDir
-
 #set -x
 shopt -s nullglob
 
@@ -16,6 +13,15 @@ shopt -s nullglob
 # noold:  Set to anything to disable old plots
 DoNew=$((1-0${nonew+1}))
 DoOld=$((1-0${noold+1}))
+NumExp=${NumExp:-2}
+
+mkdir -p Exp$NumExp
+cd Exp$NumExp
+
+InDir=$PlotData/fit
+if [ "$NumExp" != 2 ]; then InDir=$InDir$NumExp; fi
+InDir=$InDir/2ptp2/Summary
+echo InDir=$InDir
 
 declare -A WhereClauses
 WhereClauses[eq]='column("ti") == column("ti1")'
