@@ -43,7 +43,7 @@ CorrPrefix=$Corr/2ptp2/${Meson}_p2_${p}_
 MesonPrefix=$Fit/2ptp2/$Meson/${Meson}_p2_${p}.$FitType.g5P_g5W.model
 
 CorrFiles="$DataDir/${CorrPrefix}g5P_g5P.fold.$Suffix $DataDir/${CorrPrefix}g5P_g5W.fold.$Suffix"
-ExtraFiles="$DataDir/${CorrPrefix}gT5P_g5P.fold.$Suffix" #$DataDir/${CorrPrefix}g5P_g5W.fold.$Suffix"
+ExtraFiles="$DataDir/${CorrPrefix}gT5P_g5P.fold.$Suffix $DataDir/${CorrPrefix}gT5P_g5W.fold.$Suffix"
 
 LabelTF="${LabelTF} ${LabelTF}"
 
