@@ -11,20 +11,20 @@ set -e
 
 ############################################################
 
-Meson=${Meson:-s_l}
+Meson=${Meson:-h385_s}
 p=${p:-0}
 Ensemble=${Ensemble:-F1M}
 InBase=${InBase:-/Volumes/QCD/tursa/semilep/data}
 NumExp=${NumExp:-2}
-TI=${TI:-7}
-TF=${TF:-18}
+TI=${TI:-12}
+TF=${TF:-25}
 LabelTF=${LabelTF:-30}
 
 Seed=${Seed:-1835672416}
 Analyse=${Analyse:-analyse}
 Corr=${Corr:-corr}
 Fit=${Fit:-fit}
-Plot=${Plot:-Plot}
+MELFit=${MELFit:-MELFit}
 
 ############################################################
 
@@ -47,7 +47,7 @@ ExtraFiles="$DataDir/${CorrPrefix}gT5P_g5P.fold.$Suffix $DataDir/${CorrPrefix}gT
 
 LabelTF="${LabelTF} ${LabelTF}"
 
-OutSubDir=$Plot/$Fit/$Ensemble
+OutSubDir=$Ensemble/$MELFit/2ptp2
 OutFile=$OutSubDir/${Meson}_p2_${p}.E${NumExp}_${FitType}
 
 ############################################################

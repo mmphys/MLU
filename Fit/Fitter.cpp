@@ -557,7 +557,8 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       const int NumWidth{ static_cast<int>( std::cout.precision() ) + 7 };
       for( int i = 0; i < OutputModel.Nt(); ++i )
       {
-        std::cout << std::setw(maxLen) << Cols[i] << std::left
+        const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
+        std::cout << cOK << std::setw(maxLen) << Cols[i] << std::left
                   << Common::Space << std::setw(NumWidth) << v[i].Central
                   << " +"    << std::setw(NumWidth) << (v[i].High - v[i].Central)
                   << " -"    << std::setw(NumWidth) << (v[i].Central - v[i].Low)

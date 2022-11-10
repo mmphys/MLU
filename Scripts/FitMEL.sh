@@ -42,6 +42,7 @@ Corr=${Corr:-corr}
 Ratio=${Ratio:-ratio}
 Fit=${Fit:-fit}
 MELFit=${MELFit:-MELFit}
+MELPlot=${MELPlot:-MELPlot}
 LongPaths=0${Long+1}
 
 FitWhat=${FitWhat:-quark}
@@ -84,7 +85,9 @@ case "$FitWhat" in
         SuffixPlot=$SuffixR3
         PlotWhat=R3
         Field=log
-        PlotField=corr;;
+        PlotField=corr
+        [ -v yrangeMEL ] && yrangeFit="$yrangeMEL"
+        [ -v yrangeR3 ] && yrangePlot="$yrangeR3";;
   R3)
         PrefixFit=$Ratio/$SpecDir/$PrefixR3
         SuffixFit=$SuffixR3
@@ -92,7 +95,9 @@ case "$FitWhat" in
         SuffixPlot=$SuffixCorr
         PlotWhat=quark
         Field=corr
-        PlotField=log;;
+        PlotField=log
+        [ -v yrangeR3 ] && yrangeFit="$yrangeR3"
+        [ -v yrangeMEL ] && yrangePlot="$yrangeMEL";;
   *) echo "Error: FitWhat=$FitWhat"; exit 1;;
 esac
 
@@ -125,7 +130,7 @@ fi
 OutPart1=${qSnk}_${qSrc}_${Gamma}_p2_${pSrc}_ps2_${pSnk}
 OutPart2=dt_$DeltaTAll
 OutPart3=${OutPart3}${Exp2pt}_${RangeSnk}_${RangeSrc}
-OutSubDir=$MELFit/$Ensemble/$SpecDir
+OutSubDir=$Ensemble/$MELFit/$SpecDir
 ((LongPaths)) && OutSubDir=$OutSubDir/$OutPart1/$OutPart2/$OutPart3/${TI}_${TF}
 OutLongName=${OutPart1}.${OutPart2}.${OutPart3}
 
@@ -143,7 +148,7 @@ OutLongName=${OutPart1}.${OutPart2}.${OutPart3}
 
 # Fit the data
 
-mkdir -p $OutSubDir
+mkdir -p $OutSubDir/1Fit
 
 for (( i = 0; i < ${#DeltaT[@]}; ++i ))
 do
@@ -157,7 +162,7 @@ do
   MySep=" "
 done
 
-BuildModelBase=$OutSubDir/${FitWhat}_${OutLongName}
+BuildModelBase=$OutSubDir/1Fit/${FitWhat}_${OutLongName}
 
 MultiFit="MultiFit -e 2 --Hotelling 0 --mindp 1"
 MultiFit="$MultiFit --overwrite"
@@ -165,7 +170,7 @@ MultiFit="$MultiFit --debug-signals"
 Cmd="$MultiFit --summary 2 -i $DataDir/ -o $BuildModelBase $InputMesonSnk $InputMesonSrc $FitList"
 BuildModelBase=$BuildModelBase.${FitType}
 BuildModel=$BuildModelBase.$SuffixModel
-#echo "A: $Cmd"
+echo "A: $Cmd"
 echo "$Cmd"  > $BuildModel.$Seed.log
       $Cmd  >> $BuildModel.$Seed.log
 
@@ -184,14 +189,13 @@ fi
 
 # Plot it
 
-mkdir -p $Plot/$OutSubDir
-Cmd="files='$DataList' ti='$LabelTI' tf='$LabelTF' save=$Plot/${BuildModelBase} $ModelMin"
-[ -v yrangeMEL ] && Cmd="$Cmd yrange='$yrangeMEL'"
+Cmd="files='$DataList' ti='$LabelTI' tf='$LabelTF' save=${BuildModelBase} $ModelMin"
+[ -v yrangeFit ] && Cmd="$Cmd yrange='$yrangeFit'"
 [ -v EDiff ] && [ "$Field" = log ] && Cmd="$Cmd RefVal='$EDiff'"
 [ -v MEL ] && [ "$Field" = corr ] && Cmd="$Cmd RefVal='$MEL'"
 [ -v ChiSqPerDof ] && Cmd="$Cmd RefText='$ChiSqPerDof'"
 Cmd="$Cmd title='$Title' field=$Field plottd.sh ${BuildModel}_td.$Seed.txt"
-#echo "B: $Cmd"
+echo "B: $Cmd"
 eval  $Cmd
 
 # Use the model to create the alternate
@@ -207,24 +211,23 @@ do
   MySep=" "
 done
 
-PlotModelBase=$OutSubDir/${PlotWhat}_${OutLongName}
+mkdir -p $OutSubDir/2Other
+PlotModelBase=$OutSubDir/2Other/${PlotWhat}_${OutLongName}
 
 Cmd="$MultiFit -o $PlotModelBase ${BuildModel}.$Seed.h5 $FitList"
 PlotModelBase=$PlotModelBase.${FitTypePlot}
 PlotModel=$PlotModelBase.$SuffixModel
-#echo "C: $Cmd"
+echo "C: $Cmd"
 echo "$Cmd"  > $PlotModel.$Seed.log
       $Cmd  >> $PlotModel.$Seed.log
 
 # Plot it
 
-mkdir -p $Plot/$OutSubDir
-Cmd="files='$DataList' ti='$LabelTI' tf='$LabelTF' save=$Plot/${PlotModelBase}"
-[ -v yrangeR3 ] && Cmd="$Cmd yrange='$yrangeR3'"
+Cmd="files='$DataList' ti='$LabelTI' tf='$LabelTF' save=${PlotModelBase}"
+[ -v yrangePlot ] && Cmd="$Cmd yrange='$yrangePlot'"
 [ -v EDiff ] && [ "$PlotField" = log ] && Cmd="$Cmd RefVal='$EDiff'"
 [ -v MEL ] && [ "$PlotField" = corr ] && Cmd="$Cmd RefVal='$MEL'"
 [ -v ChiSqPerDof ] && Cmd="$Cmd RefText='$ChiSqPerDof'"
 Cmd="$Cmd title='$Title' field=$PlotField plottd.sh ${PlotModel}_td.$Seed.txt"
-#echo "D: $Cmd"
+echo "D: $Cmd"
 eval  $Cmd
-

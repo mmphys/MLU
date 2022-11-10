@@ -54,7 +54,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-e 2"
+            argument = "-e 3"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -110,12 +110,12 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--strict 1"
+            argument = "--strict 3"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--product g5p,g5w"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--covsrc h5,fit_felix_central.hdf5,covarianceMatrix -o data_comparison2/FitDebugFelix/FelixCov_ -i data_comparison2/unbinned_"
@@ -154,11 +154,27 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/2ptp2/s_l_p2_0_g5P_g5P.fold.1835672416.h5,t=9:22,e=3"
+            argument = "F1M/corr/2ptp2/s_l_p2_0_g5P_g5P.fold.1835672416.h5,t=4:18,e=3"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/2ptp2/h385_s_p2_0_g5P_g5[PW].fold.1835672416.h5,t=8:23,e=3"
+            argument = "F1M/corr/2ptp2/s_l_p2_0_g5P_g5W.fold.1835672416.h5,t=r-1:-1:0,e=3"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/corr/2ptp2/s_l_p2_0_gT5P_g5P.fold.1835672416.h5,t=r-2:0:0,e=3"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/corr/2ptp2/s_l_p2_0_gT5P_g5W.fold.1835672416.h5,t=r-2:0:0,e=3"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/corr/2ptp2/h385_s_p2_0_g5P_g5P.fold.1835672416.h5,t=6:29,e=3"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/corr/2ptp2/h385_s_p2_0_g5P_g5W.fold.1835672416.h5,t=R-1:-1:0,e=3"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
