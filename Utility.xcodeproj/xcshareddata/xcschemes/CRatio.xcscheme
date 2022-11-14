@@ -58,15 +58,19 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--i3 F1M/corr/3sm_sp2/"
+            argument = "--i3 F1M/corr/3pt_lp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o Ratio/3sm_sp2/"
+            argument = "-o Ratio/3pt_lp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--efit F1M/fit/Fit_sp2.txt"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--efit ,l"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -78,7 +82,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;*&apos;_l_h&apos;*&apos;_gT_dt_&apos;*&apos;_p2_0_ps2_[01]_g5P_g5P.fold.1835672416.h5"
+            argument = "&apos;*&apos;_l_h&apos;*&apos;_gT_dt_28_p2_0_ps2_[5]_g5P_g5W.fold.1835672416.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--debug-signals"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

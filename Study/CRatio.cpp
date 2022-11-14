@@ -24,6 +24,7 @@
 /*  END LEGAL */
 
 #include "CRatio.hpp"
+#include <MLU/DebugInfo.hpp>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -1044,11 +1045,14 @@ int main(int argc, const char *argv[])
       {"zv", CL::SwitchType::Flag, nullptr},
       {"nosym", CL::SwitchType::Flag, nullptr},
       {"r3a", CL::SwitchType::Flag, nullptr},
+      {"debug-signals", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
     if( !cl.GotSwitch( "help" ) && cl.Args.size() )
     {
+      if( cl.GotSwitch( "debug-signals" ) )
+        Common::Grid_debug_handler_init();
       // Read the list of fits I've chosen to use
       std::string TypeParams{ cl.SwitchValue<std::string>("type") };
       const std::string Type{ Common::ExtractToSeparator( TypeParams ) };
@@ -1122,7 +1126,9 @@ int main(int argc, const char *argv[])
     "--" << Common::sOverlapAltNorm << " Alternate normalisation for overlap factors. DEPRECATED\n"
     "--nosym   Disable Out[t]=(Out[t]+Out[deltaT-t])/2 for symmetric ratios\n"
     "--r3a     Use alternate definition of R3 (i.e. R3a)\n"
+    "--debug-signals Trap signals (code courtesy of Grid)\n"
     "--help    This message\n";
   }
+  Common::Grid_exit_handler_disable = true;
   return iReturn;
 }

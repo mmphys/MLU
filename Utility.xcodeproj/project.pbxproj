@@ -276,6 +276,7 @@
 
 /* Begin PBXFileReference section */
 		2723910329115E560045DE24 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		274303EF291FBABF00812BB2 /* run */ = {isa = PBXFileReference; lastKnownFileType = folder; path = run; sourceTree = "<group>"; };
 		278BA02A290ED4AB00960730 /* GetColumn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GetColumn.cpp; sourceTree = "<group>"; };
 		278BA030290ED52400960730 /* GetColumn */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GetColumn; sourceTree = BUILT_PRODUCTS_DIR; };
 		27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DebugInfo.hpp; sourceTree = "<group>"; };
@@ -693,6 +694,7 @@
 				682C5C8728E4F2C300C8E004 /* Analyze */,
 				682C5C6E28E4F2C300C8E004 /* Fit */,
 				682C5C5E28E4F2C300C8E004 /* Study */,
+				274303EF291FBABF00812BB2 /* run */,
 				6820525C28E505CA003AD91D /* Scripts */,
 				6820525B28E505CA003AD91D /* Xml */,
 				682C5CC128E4FA3200C8E004 /* Frameworks */,

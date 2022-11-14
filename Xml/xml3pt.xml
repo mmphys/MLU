@@ -117,12 +117,12 @@
       <mutationRate>0.1</mutationRate>
     </genetic>
     <Nt>64</Nt>
-    <!--<Gauge>/tessfs1/work/dp008/dp008/shared/dwf_2+1f/M1/ckpoint_lat</Gauge>
+    <!--<Gauge>/mnt/lustre/tursafs1/home/dp207/dp207/shared/dwf_2+1f/M1/ckpoint_lat</Gauge>
     <GaugeFixed></GaugeFixed>
     <GaugeFixedXform></GaugeFixedXform>-->
     <Gauge></Gauge>
-    <GaugeFixed>/home/dp008/dp008/dc-mars3/data/Study3/M1/GaugeFixed/ckpoint_lat_coulomb</GaugeFixed>
-    <GaugeFixedXform>/home/dp008/dp008/dc-mars3/data/Study3/M1/GaugeFixed/ckpoint_lat_coulomb_xform</GaugeFixedXform>
+    <GaugeFixed>/mnt/lustre/tursafs1/home/dp207/dp207/shared/dwf_2+1f/M1_Coulomb/ckpoint_lat_coulomb</GaugeFixed>
+    <GaugeFixedXform>/mnt/lustre/tursafs1/home/dp207/dp207/shared/dwf_2+1f/M1_Coulomb/ckpoint_lat_coulomb_xform</GaugeFixedXform>
     <GaugeFix>
       <gauge>Not used</gauge>
       <alpha>0.05</alpha>
@@ -136,6 +136,7 @@
       <gauge>Not used</gauge>
       <steps>3</steps>
       <rho>0.1</rho>
+      <orthogDim/>
     </StoutSmear>
     <SpatialPos>0 0 0</SpatialPos>
     <RegionSize>1 1 1 1</RegionSize>
