@@ -104,31 +104,34 @@ Vector<COMMON_GSL_TYPE>::Vector( const Vector &o ) : Vector( 0 )
 
 Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( const Vector &o )
 {
-  resize( o.size );
-  if( size )
+  if( o.size == 0 )
+    clear();
+  else if( o.stride == 0 )
+  {
+    // Copy vector where all members are the same constant
+    clear();
+    resize( 1 );
+    * data = * o.data;
+    size = o.size;
+    stride = 0;
+  }
+  else
+  {
+    resize( o.size );
     COMMON_GSL_FUNC( vector, memcpy )( this, &o );
+  }
   return *this;
 }
 
 Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( Vector &&o )
 {
-  if( o.owner )
-  {
-    // Move - other object owns memory
-    clear();
-    o.owner = false;
-    owner = true;
-    size = o.size;
-    stride = o.stride;
-    data = o.data;
-    block = o.block;
-  }
-  else
-  {
-    // Copy - other object doesn't own memory
-    const MyVector &c{ o };
-    *this = c;
-  }
+  clear();
+  owner = o.owner;
+  size = o.size;
+  stride = o.stride;
+  data = o.data;
+  block = o.block;
+  o.owner = false;
   o.clear();
   return *this;
 }
@@ -403,24 +406,14 @@ Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator=( const Matrix &o )
 
 Matrix<COMMON_GSL_TYPE>& Matrix<COMMON_GSL_TYPE>::operator=( Matrix &&o )
 {
-  if( o.owner )
-  {
-    // Move - other object owns memory
-    clear();
-    o.owner = false;
-    owner = true;
-    size1 = o.size1;
-    size2 = o.size2;
-    tda = o.tda;
-    data = o.data;
-    block = o.block;
-  }
-  else
-  {
-    // Copy - other object doesn't own memory
-    const MyMatrix &c{ o };
-    *this = c;
-  }
+  clear();
+  owner = o.owner;
+  size1 = o.size1;
+  size2 = o.size2;
+  tda = o.tda;
+  data = o.data;
+  block = o.block;
+  o.owner = false;
   o.clear();
   return *this;
 }
