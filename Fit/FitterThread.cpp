@@ -495,6 +495,22 @@ scalar FitterThread::FitOne()
   if( idx == Fold::idxCentral )
   {
     std::ostringstream ss;
+    // Now add each component of the error vector
+    ss << (bCorrelated ? "C" : "Unc") << "orrelated ( Theory - Data ) / sigma components:\n";
+    std::size_t idxError = 0;
+    for( std::size_t Corr = 0; Corr < parent.ds.FitTimes.size(); Corr++ )
+    {
+      ss << "C(" << Corr << "): ";
+      for( std::size_t idxT = 0; idxT < parent.ds.FitTimes[Corr].size(); idxT++ )
+      {
+        if( idxT )
+          ss << ", ";
+        ss << '[' << parent.ds.FitTimes[Corr][idxT] << "]=" << Error[idxError++];
+      }
+      ss << "\n";
+    }
+    std::cout << ss.str();
+    ss.str(std::string());
     ss << "p=" << FDist_p << ", m=" << FDist_m << ", ";
     if( parent.dof == 0 )
       ss << "Extrapolation";
@@ -518,14 +534,7 @@ scalar FitterThread::FitOne()
         bOK = false;
     }
     if( !bOK )
-    {
-      // Now add each component of the error vector
-      ss << std::setprecision( std::numeric_limits<scalar>::max_digits10 ) << "\nTheory - Data ("
-         << ( bCorrelated ? "" : "un" ) << "correlated):";
-      for( std::size_t i = 0; i < Error.size; ++i )
-        ss << ( i ? Common::CommaSpace : Common::Space ) << Error[i];
       throw std::runtime_error( ss.str() );
-    }
     // See whether any of the energies is so large it's effectively indeterminate
     for( const Params::value_type &it : parent.mp )
     {
