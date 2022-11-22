@@ -71,6 +71,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--efit ,s"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--efit fit3/Fit_sp2.txt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -82,7 +86,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;*&apos;_l_h&apos;*&apos;_gXYZ_dt_&apos;*&apos;_p2_0_ps2_&apos;*&apos;_g5P_g5P.fold.1835672416.h5"
+            argument = "&apos;*&apos;_l_h&apos;*&apos;_g&apos;*&apos;_dt_&apos;*&apos;_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

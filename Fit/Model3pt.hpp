@@ -33,6 +33,7 @@
 
 struct Model3pt : public ModelOverlap
 {
+  static const std::string sR3Raw;
   Model3pt( const Model::CreateParams &cp, Model::Args &Args );
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
@@ -45,12 +46,14 @@ struct Model3pt : public ModelOverlap
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 
 protected:
+  int DeltaT;
   //std::size_t ParamIndex( std::size_t idxSnk, std::size_t idxSrc ) const;
   //std::size_t NumUnknown( std::vector<bool> &bKnown ) const;
   std::vector<ModelParam> E;
-  ModelParam EDiff;
   ModelParam MEL;
-  int DeltaT;
+  // Derived parameters
+  ModelParam EDiff;
+  ModelParam R3Raw;
 };
 
 #endif // Model3pt_hpp

@@ -28,6 +28,8 @@
 
 #include "ModelRatio.hpp"
 
+const std::string ModelRatio::sRaw{ "Raw" };
+
 ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args )
 : Model3pt( cp, Args )
 {
@@ -57,6 +59,8 @@ ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args )
         break;
     }
   }
+  // The raw option means the ratio was constructed without the overlap coefficients
+  Args.Remove( sRaw, &bRaw );
 }
 
 void ModelRatio::AddParameters( Params &mp )
@@ -96,16 +100,26 @@ double ModelRatio::Derivative( int t, int p ) const
 
 scalar ModelRatio::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
-  scalar Numerator{ Model3pt::operator()( t, ScratchPad, ModelParams ) };
-  const scalar ZSource{ ModelParams[C2[idxSrc]->Overlap[0].idx] };
-  const scalar ZSink{ ModelParams[C2.back()->Overlap[0].idx] };
-  if( bOverlapAltNorm )
-  {
-    // DEPRECATED: But if the overlap factors already contain 1/2E, we need to get rid of them
-    Numerator *= 2 * std::sqrt( ModelParams[E[idxSrc].idx] * ModelParams[E.back().idx] );
-  }
+  const scalar C3{ Model3pt::operator()( t, ScratchPad, ModelParams ) };
   const scalar CSource{ (*C2[idxSrc])( t, ScratchPad, ModelParams ) };
   const scalar CSink{ (*C2.back())( DeltaT - t, ScratchPad, ModelParams ) };
-  const scalar Result{ ZSource * ZSink * Numerator / ( CSource * CSink ) };
+  const scalar CProd{ CSource * CSink };
+  const scalar RawRatio{ C3 / CProd };
+  const scalar ZSource{ ModelParams[C2[idxSrc]->Overlap[0].idx] };
+  const scalar ZSink{ ModelParams[C2.back()->Overlap[0].idx] };
+  scalar ZProd{ ZSource * ZSink };
+  if( bOverlapAltNorm ) // DEPRECATED
+  {
+    // DEPRECATED: If the overlap factors absorbed 1/2E, we need to get rid of that
+    if( E.size() < 2 )
+      ZProd *= 2 * ModelParams[E[idxSrc].idx];
+    else
+      ZProd *= 2 * std::sqrt( ModelParams[E[idxSrc].idx] * ModelParams[E[idxSnk].idx] );
+  }
+  scalar Result{ RawRatio };
+  if( bRaw )
+    ModelParams[R3Raw.idx] = ModelParams[ ( *MEL.param )( 0, 0 ) ] / ZProd;
+  else
+    Result *= ZProd;
   return Result;
 }

@@ -34,6 +34,7 @@
 
 struct ModelRatio : public Model3pt
 {
+  static const std::string sRaw;
   ModelRatio( const Model::CreateParams &cp, Model::Args &Args );
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
@@ -43,6 +44,7 @@ struct ModelRatio : public Model3pt
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 
 protected:
+  bool bRaw;
   std::vector<std::unique_ptr<Model2pt>> C2;
 };
 

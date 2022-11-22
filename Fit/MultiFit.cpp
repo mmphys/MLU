@@ -306,7 +306,7 @@ int main(int argc, const char *argv[])
         {
           {
             std::stringstream ss;
-            ss << ( doCorr ? "C" : "unc" ) << "orrelated " << m->Type() << " fit on timeslices " << it.to_string( "-", ", " );
+            ss << ( doCorr ? "C" : "Unc" ) << "orrelated " << m->Type() << " fit on timeslices " << it.to_string( "-", ", " );
             Fitter::SayNumThreads( ss );
             const std::string &sMsg{ ss.str() };
             if( !m->bTestRun )
@@ -434,7 +434,8 @@ int main(int argc, const char *argv[])
     " Snk       ObjectID for sink\n"
     " " << ::EDiff << "     Name of derived parameter for energy difference (default: " << ::EDiff << ")\n"
     "Parameters accepted by R3 model:\n"
-    " C2Model   Which model to use for 2pt: Exp (default); Cosh; Sinh\n";
+    " C2Model   Which model to use for 2pt: Exp (default); Cosh; Sinh\n"
+    " Raw       R3 ratio was constructed as a raw ratio - no overlap coefficients\n";
   }
   Common::Grid_exit_handler_disable = true;
   return iReturn;

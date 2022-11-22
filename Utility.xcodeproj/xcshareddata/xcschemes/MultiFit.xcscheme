@@ -54,7 +54,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-e 3"
+            argument = "-e 2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -71,7 +71,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--Hotelling 0"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--overwrite"
@@ -134,24 +134,24 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o Simul/Ds_K_p2_0_E3"
-            isEnabled = "NO">
+            argument = "-o Simul/Ds_K_p2_0_E3_R3_Raw"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o 2ptp2Ax/"
-            isEnabled = "YES">
+            argument = "-o 2ptp2/"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i /Volumes/QCD/tursa/semilep/data/F1M/analyse/corr/"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/fit3/2ptp2/s_l/s_l_p2_0.corr_9_22_9_22.g5P_g5W.model.1835672416.h5"
-            isEnabled = "NO">
+            argument = "F1M/fit3/2ptp2/s_l/s_l_p2_0.corr_4_18_3_18.g5P_g5W.model.1835672416.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/fit3/2ptp2/h385_s/h385_s_p2_0.corr_8_23_8_23.g5P_g5W.model.1835672416.h5"
-            isEnabled = "NO">
+            argument = "F1M/fit3/2ptp2/h385_s/h385_s_p2_0.corr_6_29_5_29.g5P_g5W.model.1835672416.h5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "F1M/corr/2ptp2/s_l_p2_0_g5P_g5P.fold.1835672416.h5,t=4:18,e=3"
@@ -171,15 +171,19 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "F1M/corr/2ptp2/h385_s_p2_0_g5P_g5P.fold.1835672416.h5,t=6:29,e=3"
-            isEnabled = "YES">
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/corr/2ptp2/h385_s_p2_0_g5P_g5W.fold.1835672416.h5,t=R-1:-1:0,e=3"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "F1M/corr/2ptp2/h385_s_p2_0_gT5P_g5P.fold.1835672416.h5,t=7:28,e=3"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "F1M/corr/2ptp2/h385_s_p2_0_gT5P_g5W.fold.1835672416.h5,t=6:29,e=3"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "Simul/Ds_K_p2_0_E3.corr_10_13_12_16_14_20_10_26.g5P_g5W.model.1835672416.h5"
@@ -194,19 +198,19 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_20_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=11:14"
+            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_20_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=12:14"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_24_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=11:18"
+            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_24_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=13:16"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_28_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=11:22"
+            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_28_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=15:20"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_32_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=11:26"
+            argument = "F1M/corr/3sm_sp2/quark_l_h385_gT_dt_32_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5,t=15:24"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -228,6 +232,26 @@
          <CommandLineArgument
             argument = "F1M/ratio.manual/3sm_sp2/R3_l_h385_gT_dt_32_p2_0_g5P_g5P.fold.1835672416.h5,t=10:19"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/ratioE1ZV1/3sm_sp2/R3_l_h385_gT_dt_16_p2_0_g5P_g5P.fold.1835672416.h5,raw,t=8:11"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/ratioE1ZV1/3sm_sp2/R3_l_h385_gT_dt_20_p2_0_g5P_g5P.fold.1835672416.h5,raw,t=13:14"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/ratioE1ZV1/3sm_sp2/R3_l_h385_gT_dt_24_p2_0_g5P_g5P.fold.1835672416.h5,raw,t=13:16"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/ratioE1ZV1/3sm_sp2/R3_l_h385_gT_dt_28_p2_0_g5P_g5P.fold.1835672416.h5,raw,t=13:20"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "F1M/ratioE1ZV1/3sm_sp2/R3_l_h385_gT_dt_32_p2_0_g5P_g5P.fold.1835672416.h5,raw,t=13:24"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <LocationScenarioReference

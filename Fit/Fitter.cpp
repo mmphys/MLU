@@ -185,7 +185,7 @@ Params Fitter::MakeModelParams( const std::string &sProducts )
       {
         std::vector<std::string> ObjectReverse( 2 );
         ObjectReverse[0] = pk.Object[1];
-        ObjectReverse[1] = pk.Object[2];
+        ObjectReverse[1] = pk.Object[0];
         cit = ds.constMap.find( Param::Key( std::move( ObjectReverse ), pk.Name ) );
         bSwapSourceSink = true;
       }
