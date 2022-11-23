@@ -124,9 +124,9 @@ if( RefText ne '' ) {
 set multiplot layout 1, NumModels
 
 if( RefVal ne '' ) {
-  set object 1 rect from graph 0, first word(RefVal,3) to graph 1, first word(RefVal,5) \
+  set object 1 rect from graph 0, first word(RefVal,4) to graph 1, first word(RefVal,6) \
       fs solid 1 noborder fc rgb 0xD0D0D0 behind
-  set arrow from graph 0, first word(RefVal,4) to graph 1, first word(RefVal,4) \
+  set arrow from graph 0, first word(RefVal,5) to graph 1, first word(RefVal,5) \
       nohead front lc rgb "gray40" lw 0.25 dashtype "-"
 }
 

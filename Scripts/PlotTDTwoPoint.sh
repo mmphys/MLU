@@ -64,8 +64,8 @@ if [ "$?" != 0 ]; then
 else
   echo "OK: $ColumnValues"
   ColumnValues=($ColumnValues)
-  ChiSqPerDof="χ²/dof=${ColumnValues[@]:3:1}"
-  E0="${ColumnValues[@]:7:7}"
+  ChiSqPerDof="χ²/dof=${ColumnValues[@]:4:1}"
+  E0="${ColumnValues[@]:8:8}"
 fi
 
 # Plot it

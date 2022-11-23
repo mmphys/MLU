@@ -42,18 +42,23 @@ struct Extractor
   const std::vector<std::string> ExactNames;
   const std::vector<std::string> PartialNames;
   const std::string DefaultGroup;
+  const int SigFig;
+  const int ErrFig;
   Extractor( Common::CommandLine &cl );
   bool Run( const std::vector<std::string> &Args );
 protected:
   NameValue ReadFile( const std::string &Filename );
   void Show( const NameValue &NV, const std::vector<std::string> Selection, bool bExact ) const;
+  void ShowOne( const NameValue &NV, std::size_t i ) const;
 };
 
 Extractor::Extractor( Common::CommandLine &cl )
 : inBase{ cl.SwitchValue<std::string>("i") },
   ExactNames{ Common::ArrayFromString( cl.SwitchValue<std::string>( "exact" ) ) },
   PartialNames{ Common::ArrayFromString( cl.SwitchValue<std::string>( "partial" ) ) },
-  DefaultGroup{ cl.SwitchValue<std::string>( "group" ) }
+  DefaultGroup{ cl.SwitchValue<std::string>( "group" ) },
+  SigFig{ cl.SwitchValue<int>( "sig" ) },
+  ErrFig{ cl.SwitchValue<int>( "err" ) }
 {
 }
 
@@ -67,7 +72,7 @@ bool Extractor::Run( const std::vector<std::string> &Args )
       NameValue NV{ ReadFile( s ) };
       if( ExactNames.empty() && PartialNames.empty() )
         for( std::size_t i = 0; i < NV.Name.size(); ++i )
-          std::cout << NV.Name[i] << Common::Space << NV.Value[i] << Common::NewLine;
+          ShowOne( NV, i );
       else
       {
         if( !ExactNames.empty() )
@@ -103,8 +108,14 @@ void Extractor::Show( const NameValue &NV, const std::vector<std::string> Select
     }
     if( !bFound )
       throw std::runtime_error( "Unknown column " + s );
-    std::cout << NV.Name[i] << Common::Space << NV.Value[i] << Common::NewLine;
+    ShowOne( NV, i );
   }
+}
+
+void Extractor::ShowOne( const NameValue &NV, std::size_t i ) const
+{
+  std::cout << NV.Name[i] << Common::Space << NV.Value[i].to_string( SigFig, ErrFig ) << Common::Space
+            << NV.Value[i] << Common::NewLine;
 }
 
 Extractor::NameValue Extractor::ReadFile( const std::string &Filename )
@@ -123,7 +134,7 @@ Extractor::NameValue Extractor::ReadFile( const std::string &Filename )
   std::vector<ValErType> ValEr;
   try
   {
-    try // to load from LatAnalyze format
+    try
     {
       ::H5::Attribute a{ g.openAttribute( Common::sColumnNames ) };
       ColumnNames = Common::H5::ReadStrings( a );
@@ -171,6 +182,8 @@ Extractor::NameValue Extractor::ReadFile( const std::string &Filename )
 
 int main(int argc, const char *argv[])
 {
+  static const char szDefaultSigFig[] = "4";
+  static const char szDefaultErrFig[] = "1";
   std::ios_base::sync_with_stdio( false );
   int iReturn = EXIT_SUCCESS;
   bool bShowUsage{ true };
@@ -184,6 +197,8 @@ int main(int argc, const char *argv[])
       {"exact", CL::SwitchType::Single, ""},
       {"partial", CL::SwitchType::Single, ""},
       {"group", CL::SwitchType::Single, ""},
+      {"sig", CL::SwitchType::Single, szDefaultSigFig},
+      {"err", CL::SwitchType::Single, szDefaultErrFig},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -213,6 +228,8 @@ int main(int argc, const char *argv[])
     "--exact   Comma separated list of column names which must match exactly\n"
     "--partial Comma separated list of column names which must partially match\n"
     "--group   HDF5 group to read from (default: first)\n"
+    "--sig     Number of significant figures in central value (default " << szDefaultSigFig << ")\n"
+    "--err     Number of significant figures in error (default " << szDefaultErrFig << ")\n"
     "Flags:\n"
     "--help    This message\n";
   }

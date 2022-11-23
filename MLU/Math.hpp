@@ -112,6 +112,23 @@ template <typename T> struct ValWithErOldV1
   T Check;
 };
 
+template <typename T> struct ValWithSigFig
+{
+  using value_type = T;
+  T Value;
+  int SigFig;
+  bool bZero;
+  bool bNegative;
+  int Exponent;
+  ValWithSigFig( T Value, int SigFig );
+  ValWithSigFig() : ValWithSigFig( 0, 1 ) {}
+  void AdjustExp( int Adjust );
+  operator std::string() const;
+  bool ScientificHigh() const { return Exponent > 4; }
+  bool ScientificLow() const { return Exponent < -4; }
+  bool Scientific() const { return ScientificHigh() || ScientificLow(); }
+};
+
 /**
  Value with error
  
@@ -124,6 +141,7 @@ template <typename T = double> struct ValWithEr
 {
   using value_type = T;
   using Scalar = typename is_complex<T>::Scalar;
+  using ValSigFig = ValWithSigFig<T>;
 
   T Min;
   T Low;
@@ -155,6 +173,10 @@ template <typename T = double> struct ValWithEr
   template <typename U=T> typename std::enable_if< is_complex<U>::value>::type
   Get( T dCentral, const std::vector<T> &Data, std::size_t Count );
   void Get( T dCentral, const VectorView<T> &Source, std::vector<T> &ScratchBuffer = std::vector<T>() );
+  template <typename U=T> typename std::enable_if<!is_complex<U>::value, std::string>::type
+  to_string( int SigFigValue, int SigFigError ) const;
+  template <typename U=T> typename std::enable_if<!is_complex<U>::value, std::string>::type
+  to_string() const { return to_string( 3, 2 ); }
 };
 
 template <typename T>

@@ -28,6 +28,7 @@
 
 #include "Math.hpp"
 #include <gsl/gsl_cdf.h>
+#include <iomanip>
 
 MLU_Math_hpp
 
@@ -83,6 +84,67 @@ template <typename T> T HotellingDist::qValue( T TestStatistic, unsigned int p, 
 
 template float  HotellingDist::qValue( float  TestStatistic, unsigned int p, unsigned int m );
 template double HotellingDist::qValue( double TestStatistic, unsigned int p, unsigned int m );
+
+template <typename T> ValWithSigFig<T>::ValWithSigFig( T Value_, int SigFig_ )
+: Value{ std::abs( Value_ ) },
+  SigFig{ SigFig_ },
+  bZero{ Value_ == 0. },
+  bNegative{ std::signbit( Value_ ) },
+  Exponent{ std::numeric_limits<int>::min() }
+{
+  const int iClass{ std::fpclassify( Value_ ) };
+  if( iClass != FP_INFINITE && iClass != FP_NAN && !bZero )
+  {
+    Exponent = std::floor( std::log10( Value ) );
+  }
+}
+
+template <typename T> void ValWithSigFig<T>::AdjustExp( int Adjust )
+{
+  if( Adjust )
+  {
+    T Multiplier{ static_cast<T>( Adjust < 0 ? 0.1 : 10. ) };
+    for( int i = std::abs( Adjust ); i--; )
+      Value *= Multiplier;
+    Exponent += Adjust;
+  }
+}
+
+template <typename T> ValWithSigFig<T>::operator std::string() const
+{
+  std::ostringstream ss;
+  if( bNegative )
+    ss << '-';
+  const int iClass{ std::fpclassify( Value ) };
+  if( iClass == FP_INFINITE )
+    ss << "Inf";
+  else if( iClass == FP_NAN )
+    ss << "NaN";
+  else if( bZero && Exponent == std::numeric_limits<T>::min() )
+  {
+    ss << std::fixed << std::setprecision( SigFig - 1 ) << Value;
+  }
+  else if( Scientific() )
+  {
+    // Scientific notation
+    ss << std::scientific << std::setprecision( SigFig - 1 ) << Value;
+  }
+  else if( Exponent - SigFig >= 0 )
+  {
+    // This is a number with trailing zeros before decimal point
+    const int NumTrailingZero{ Exponent - SigFig + 1 };
+    T Number{ Value };
+    for( unsigned int i = 0; i < NumTrailingZero; ++i )
+      Number *= 0.1;
+    ss << static_cast<std::size_t>( Number + 0.5 ) << std::string( NumTrailingZero, '0' );
+  }
+  else
+  {
+    // Fixed precision should do this
+    ss << std::fixed << std::setprecision( SigFig - ( Exponent + 1 ) ) << Value;
+  }
+  return ss.str();
+}
 
 /*****************************************************************************
  
@@ -285,6 +347,75 @@ void ValWithEr<T>::Get( T dCentral, const VectorView<T> &Source, std::vector<T> 
   Get( dCentral, ScratchBuffer, Count );
 }
 
+template <typename T>
+template <typename U> typename std::enable_if<!is_complex<U>::value, std::string>::type
+ValWithEr<T>::to_string( int SigFigValue, int SigFigError ) const
+{
+  if( SigFigValue <= 0 )
+    throw std::invalid_argument( "SigFigValue " + std::to_string( SigFigValue ) + " invalid" );
+  if( SigFigError == 0 )
+    throw std::invalid_argument( "SigFigError " + std::to_string( SigFigError ) + " invalid" );
+  if( SigFigError > SigFigValue )
+    throw std::invalid_argument( "SigFigError " + std::to_string( SigFigError )
+                                + " > SigFigValue " + std::to_string( SigFigValue ) + " invalid" );
+  switch( std::fpclassify( Central ) )
+  {
+    case FP_INFINITE:
+      return "INF";
+    case FP_NAN:
+      return "NAN";
+  }
+  // Get central value and error as a value with specified number of significant figures
+  ValSigFig Number( Central, SigFigValue );
+  ValSigFig Error( std::abs( ( High - Low ) / 2 ), SigFigError );
+  //std::cout << "<" << static_cast<std::string>( Number ) << " +/- " << static_cast<std::string>( Error ) << "> ";
+  const bool ErrorNonCentral{ Central < Low || Central > High };
+  // Does the error need adjusting
+  const int ErrorExpShouldBe{ Number.Exponent - ( SigFigValue - SigFigError ) };
+  if( Error.Exponent < ErrorExpShouldBe )
+  {
+    // The error is smaller than the number of digits requested
+    const int NumTooLow{ ErrorExpShouldBe - Error.Exponent };
+    if( NumTooLow < Error.SigFig )
+      Error.SigFig -= NumTooLow;
+    else
+    {
+      Error.Exponent = ErrorExpShouldBe;
+      Error.SigFig = 1;
+    }
+  }
+  else if( Error.Exponent > ErrorExpShouldBe )
+  {
+    // The error is larger than requested - add digits
+    Error.SigFig += Error.Exponent - ErrorExpShouldBe;
+  }
+  const bool bScientific{ Number.Scientific() };
+  const int ScientificExponent{ Number.Exponent };
+  if( bScientific )
+  {
+    Number.AdjustExp( -ScientificExponent );
+    Error.AdjustExp( -ScientificExponent );
+  }
+  const bool bErrorStraddlesZero{ Error.Exponent >= 0 && Error.Exponent + 1 < Error.SigFig };
+  if( !bErrorStraddlesZero )
+  {
+    if( Error.Exponent < 0 )
+      Error.AdjustExp( Error.SigFig - Error.Exponent - 1 );
+  }
+  std::string s{ static_cast<std::string>( Number ) };
+  s.append( 1, '(' );
+  if( ErrorNonCentral )
+    s.append( 1, '~' );
+  s.append( static_cast<std::string>( Error ) );
+  s.append( 1, ')' );
+  if( bScientific )
+  {
+    s.append( 1, 'E' );
+    s.append( std::to_string( ScientificExponent ) );
+  }
+  return s;
+}
+
 template class ValWithEr<float>;
 template class ValWithEr<double>;
 template class ValWithEr<std::complex<float>>;
@@ -304,6 +435,11 @@ template typename std::enable_if<!is_complex<float>::value>::type
 ValWithEr<float>::Get( float Central_, std::vector<float> &Data, std::size_t Count );
 template typename std::enable_if<!is_complex<double>::value>::type
 ValWithEr<double>::Get( double Central_, std::vector<double> &Data, std::size_t Count );
+
+template typename std::enable_if<!is_complex<float>::value, std::string>::type
+ValWithEr<float>::to_string( int SigFigValue, int SigFigError ) const;
+template typename std::enable_if<!is_complex<double>::value, std::string>::type
+ValWithEr<double>::to_string( int SigFigValue, int SigFigError ) const;
 
 template <typename T>
 std::ostream & operator<<( std::ostream &os, const ValWithEr<T> &v )

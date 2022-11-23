@@ -184,10 +184,10 @@ if [ "$?" != 0 ]; then
 else
   echo "OK: $ColumnValues"
   ColumnValues=($ColumnValues)
-  ChiSqPerDof="χ²/dof=${ColumnValues[@]:3:1}"
-  EDiff="${ColumnValues[@]:7:7}"
-  MEL="${ColumnValues[@]:14:7}"
-  R3Raw="${ColumnValues[@]:21:7}"
+  ChiSqPerDof="χ²/dof=${ColumnValues[@]:4:1}"
+  EDiff="${ColumnValues[@]:8:8}"
+  MEL="${ColumnValues[@]:16:8}"
+  R3Raw="${ColumnValues[@]:24:8}"
 fi
 
 # Plot it
