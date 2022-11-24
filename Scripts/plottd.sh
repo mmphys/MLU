@@ -118,7 +118,7 @@ PlotSuffix=PlotSuffix.' with yerrorbars notitle lc "red" pt 13 ps '.PointSizeDat
 
 if( RefText ne '' ) {
   set label 2 RefText at screen 0, screen 1 font ",10" front textcolor "blue" \
-    offset character 0.5, -0.7
+    offset character 0.5, -0.5
 }
 
 set multiplot layout 1, NumModels

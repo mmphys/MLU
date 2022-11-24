@@ -379,7 +379,7 @@ void Fitter::SaveMatrixFile( const Matrix &m, const std::string &Type, const std
 }
 
 // Perform a fit - assume fit ranges have been set on the DataSet prior to the call
-void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::string &OutBaseName,
+bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::string &OutBaseName,
                     const std::string &ModelSuffix, Common::SeedType Seed )
 {
   bCorrelated = Bcorrelated;
@@ -397,7 +397,7 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
   if( bTestRun )
   {
     ChiSq = 0;
-    return;
+    return true;
   }
 
   // See whether this fit already exists
@@ -422,6 +422,7 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       std::cout << "Overwriting\n";
   }
 
+  bool bOK = true;
   if( bPerformFit )
   {
     // Make somewhere to store the results of the fit for each bootstrap sample
@@ -547,14 +548,14 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     OutputModel.CheckParameters( Strictness, MonotonicUpperLimit );
     {
       // Show parameters - in neat columns
-      std::cout << OutputModel.GetSummaryNames()[0] << " after " << OutputModel.NumSamples()
-                << " bootstrap replicas" << Common::NewLine;
       const Common::ValWithEr<scalar> * const v{ OutputModel.getSummaryData() };
       const std::vector<std::string> &Cols{ OutputModel.GetColumnNames() };
       const int maxLen{ static_cast<int>( std::max_element( Cols.begin(), Cols.end(),
                                           [](const std::string &a, const std::string &b)
                                           { return a.length() < b.length(); } )->length() ) };
       const int NumWidth{ static_cast<int>( std::cout.precision() ) + 7 };
+      std::cout << OutputModel.GetSummaryNames()[0] << " after " << OutputModel.NumSamples()
+                << " bootstrap replicas" << Common::NewLine;
       for( int i = 0; i < OutputModel.Nt(); ++i )
       {
         const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
@@ -564,6 +565,18 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
                   << " -"    << std::setw(NumWidth) << (v[i].Central - v[i].Low)
                   << " Max " << std::setw(NumWidth) << v[i].Max
                   << " Min "                        << v[i].Min
+                  << Common::NewLine << std::right; // Right-aligned is the default
+      }
+      // Show parameters again - but this time in simplified format
+      std::cout << OutputModel.GetSummaryNames()[0] << " after " << OutputModel.NumSamples()
+                << " bootstrap replicas" << Common::NewLine;
+      for( int i = 0; i < OutputModel.Nt(); ++i )
+      {
+        const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
+        if( v[i].Check == 0 )
+          bOK = false;
+        std::cout << cOK << std::setw(maxLen) << Cols[i] << std::left
+                  << Common::Space << v[i].to_string(4, 1)
                   << Common::NewLine << std::right; // Right-aligned is the default
       }
     }
@@ -589,4 +602,5 @@ void Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       const std::string SummaryBase{ OutBaseName + sSink + '_' + sSrc };
     }
   }
+  return bOK;
 }

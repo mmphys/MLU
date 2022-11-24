@@ -44,6 +44,8 @@ Fit=${Fit:-fit}
 MELFit=${MELFit:-MELFit}
 MELPlot=${MELPlot:-MELPlot}
 LongPaths=0${Long+1}
+ayrangeR3=($yrangeR3)
+RawR3=$((1-0${RawR3+1}))
 
 FitWhat=${FitWhat:-quark}
 
@@ -79,17 +81,19 @@ SuffixCorr=_p2_${pSrc}_ps2_${pSnk}_${PW}.fold.${Seed}
 
 case "$FitWhat" in
   quark)
+        unset FitOptions
         PrefixFit=$Corr/$SpecDir/$PrefixCorr
         SuffixFit=$SuffixCorr
-        PrefixPlotDirList=("$Ratio" 'ratioE1ZV1')
+        PrefixPlotDirList=("$Ratio") # 'ratioE1ZV1')
         PrefixPlot=$SpecDir/$PrefixR3
         SuffixPlot=$SuffixR3
         PlotWhat=R3
         Field=log
         PlotField=corr
         [ -v yrangeMEL ] && yrangeFit="$yrangeMEL"
-        yrangePlot=("$yrangeR3" "$yrangeR3Raw");;
+        yrangePlot=($yrangeR3);;
   R3)
+        FitOptions=",raw"
         PrefixFit=$Ratio/$SpecDir/$PrefixR3
         SuffixFit=$SuffixR3
         PrefixPlotDirList=("$Corr")
@@ -98,7 +102,7 @@ case "$FitWhat" in
         PlotWhat=quark
         Field=corr
         PlotField=log
-        [ -v yrangeR3 ] && yrangeFit="$yrangeR3"
+        [ "${ayrangeR3[0]}" != "" ] && yrangeFit="${ayrangeR3[0]}"
         yrangePlot=("$yrangeMEL");;
   *) echo "Error: FitWhat=$FitWhat"; exit 1;;
 esac
@@ -154,7 +158,7 @@ mkdir -p $OutSubDir/1Fit
 
 for (( i = 0; i < ${#DeltaT[@]}; ++i ))
 do
-  FitList="$FitList${MySep}${PrefixFit}${DeltaT[i]}${SuffixFit}.h5,t=${TI[i]}:${TF[i]}"
+  FitList="$FitList${MySep}${PrefixFit}${DeltaT[i]}${SuffixFit}.h5,t=${TI[i]}:${TF[i]}${FitOptions}"
   DataList="$DataList${DataList:+ }$DataDir/${PrefixFit}${DeltaT[i]}${SuffixFit}.txt"
   Title="$Title${MySep}ΔT=${DeltaT[i]}"
   LabelTI="$LabelTI${MySep}${PlotDataFrom}"
@@ -172,42 +176,48 @@ MultiFit="$MultiFit --debug-signals"
 Cmd="$MultiFit --summary 2 -i $DataDir/ -o $BuildModelBase $InputMesonSnk $InputMesonSrc $FitList"
 BuildModelBase=$BuildModelBase.${FitType}
 BuildModel=$BuildModelBase.$SuffixModel
-echo "A: $Cmd"
+#echo "A: $Cmd"
 echo "$Cmd"  > $BuildModel.$Seed.log
-      $Cmd  >> $BuildModel.$Seed.log
+if  ! $Cmd &>> $BuildModel.$Seed.log
+then
+  LastError=${PIPESTATUS[0]}
+  echo "Warning $LastError: $Cmd"
+fi
 
 # Get the energy difference
 ColumnValues=$(GetColumn --exact ChiSqPerDof --partial EDiff,MEL0,R3Raw ${BuildModel}.$Seed.h5)
 if [ "$?" != 0 ]; then
   echo "Error: $ColumnValues"
   unset ColumnValues
+  unset RefText
 else
-  echo "OK: $ColumnValues"
+  #echo "OK: $ColumnValues"
   ColumnValues=($ColumnValues)
-  ChiSqPerDof="χ²/dof=${ColumnValues[@]:4:1}"
   EDiff="${ColumnValues[@]:8:8}"
   MEL="${ColumnValues[@]:16:8}"
   R3Raw="${ColumnValues[@]:24:8}"
+  RefText="MEL0=${ColumnValues[17]} χ²/dof=${ColumnValues[@]:4:1}"
 fi
 
 # Plot it
 
 Cmd="files='$DataList' ti='$LabelTI' tf='$LabelTF' save=${BuildModelBase} $ModelMin"
 [ -v yrangeFit ] && Cmd="$Cmd yrange='$yrangeFit'"
-[ -v EDiff ] && [ "$Field" = log ] && Cmd="$Cmd RefVal='$EDiff'"
-[ -v MEL ] && [ "$Field" = corr ] && Cmd="$Cmd RefVal='$MEL'"
-[ -v ChiSqPerDof ] && Cmd="$Cmd RefText='$ChiSqPerDof'"
+[ "$Field" = log ] && [ -v EDiff ] && Cmd="$Cmd RefVal='$EDiff'"
+[ "$Field" = corr ] && ((RawR3!=0)) && [ -v R3Raw ] && Cmd="$Cmd RefVal='${R3Raw}'"
+[ "$Field" = corr ] && ((RawR3==0)) && [ -v MEL ] && Cmd="$Cmd RefVal='$MEL'"
+[ -v RefText ] && Cmd="$Cmd RefText='$RefText'"
 Cmd="$Cmd title='$Title' field=$Field plottd.sh ${BuildModel}_td.$Seed.txt"
-echo "B: $Cmd"
+#echo "B: $Cmd"
 eval  $Cmd
 
 # Use the model to create the alternate
 
-echo "PrefixPlotDirList=${PrefixPlotDirList[@]}"
-echo "\${#PrefixPlotDirList[@]}=${#PrefixPlotDirList[@]}"
+#echo "PrefixPlotDirList=${PrefixPlotDirList[@]}"
+#echo "\${#PrefixPlotDirList[@]}=${#PrefixPlotDirList[@]}"
 for (( DirNum = 0; DirNum < ${#PrefixPlotDirList[@]}; ++DirNum ))
 do
-echo "DirNum=$DirNum"
+#echo "DirNum=$DirNum"
 PrefixPlotDir=${PrefixPlotDirList[DirNum]}
 OutSubDirName=$OutSubDir/$((DirNum+2))Other
 
@@ -229,15 +239,15 @@ PlotModelBase=$OutSubDirName/${PlotWhat}_${OutLongName}
 Cmd="$MultiFit -o $PlotModelBase ${BuildModel}.$Seed.h5 $FitList"
 PlotModelBase=$PlotModelBase.${FitTypePlot}
 PlotModel=$PlotModelBase.$SuffixModel
-echo "C: $Cmd"
+#echo "C: $Cmd"
 echo "$Cmd"  > $PlotModel.$Seed.log
-      $Cmd  >> $PlotModel.$Seed.log
+      $Cmd &>> $PlotModel.$Seed.log
 
 # Plot it
 
 Cmd="files='$DataList' ti='$LabelTI' tf='$LabelTF' save=${PlotModelBase}"
-[ ${yrangePlot[DirNum]} != "" ] && Cmd="$Cmd yrange='${yrangePlot[DirNum]}'"
-[ -v ChiSqPerDof ] && Cmd="$Cmd RefText='$ChiSqPerDof'"
+[ "${yrangePlot[DirNum]}" != "" ] && Cmd="$Cmd yrange='${yrangePlot[DirNum]}'"
+[ -v RefText ] && Cmd="$Cmd RefText='$RefText'"
 if [ "$PlotField" = log ]
 then
   [ -v EDiff ] && Cmd="$Cmd RefVal='$EDiff'"
@@ -247,6 +257,6 @@ then
   (( DirNum==1 )) && [ -v R3Raw ] && Cmd="$Cmd RefVal='$R3Raw'"
 fi
 Cmd="$Cmd title='$Title' field=$PlotField plottd.sh ${PlotModel}_td.$Seed.txt"
-echo "D: $Cmd"
-if eval  $Cmd; then echo OK; else echo "Error: $?"; fi
+#echo "D: $Cmd"
+if ! eval $Cmd; then echo "Error: $?"; fi
 done

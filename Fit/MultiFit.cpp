@@ -285,6 +285,7 @@ int main(int argc, const char *argv[])
       std::unique_ptr<Fitter> m{ MakeFitter( cl, ds, ModelArgs, OpName, std::move( cp ) ) };
       std::size_t CountTotal{ 0 };
       std::size_t CountOK{ 0 };
+      bool bAllParamsResolved{ true };
       const auto Start{ std::chrono::steady_clock::now() };
       for( Common::FitRangesIterator it = fitRanges.begin(); !it.PastEnd(); ++it )
       {
@@ -318,6 +319,7 @@ int main(int argc, const char *argv[])
           outBaseFileName.resize( outBaseFileNameLen );
           outBaseFileName.append( it.to_string( Common::Underscore ) );
           outBaseFileName.append( 1, '.' );
+          bAllParamsResolved =
           m->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat, Seed );
           ++CountOK;
         }
@@ -360,9 +362,14 @@ int main(int argc, const char *argv[])
       std::cout << std::setfill( '0' ) << std::setw(2) << Hours
          << ':' << std::setfill( '0' ) << std::setw(2) << Minutes
          << ':' << std::setfill( '0' ) << std::setw(2) << S << Common::NewLine;
-      // Error if only one fit requested and it failed
-      if( CountTotal == 1 && CountOK == 0 )
-        iReturn = 2;
+      // Error if only one fit requested and it failed ... or all params not resolved
+      if( CountTotal == 1 )
+      {
+        if( CountOK == 0 )
+          iReturn = 2;
+        else if( !bAllParamsResolved )
+          iReturn = 3;
+      }
     }
   }
   catch(const std::exception &e)

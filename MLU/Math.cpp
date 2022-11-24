@@ -405,7 +405,7 @@ ValWithEr<T>::to_string( int SigFigValue, int SigFigError ) const
   std::string s{ static_cast<std::string>( Number ) };
   s.append( 1, '(' );
   if( ErrorNonCentral )
-    s.append( 1, '~' );
+    s.append( 1, '-' );
   s.append( static_cast<std::string>( Error ) );
   s.append( 1, ')' );
   if( bScientific )
