@@ -85,42 +85,112 @@ template <typename T> T HotellingDist::qValue( T TestStatistic, unsigned int p, 
 template float  HotellingDist::qValue( float  TestStatistic, unsigned int p, unsigned int m );
 template double HotellingDist::qValue( double TestStatistic, unsigned int p, unsigned int m );
 
-template <typename T> ValWithSigFig<T>::ValWithSigFig( T Value_, int SigFig_ )
-: Value{ std::abs( Value_ ) },
-  SigFig{ SigFig_ },
-  bZero{ Value_ == 0. },
-  bNegative{ std::signbit( Value_ ) },
-  Exponent{ std::numeric_limits<int>::min() }
+template <typename T> int ValSigFig<T>::GetExponent() const
 {
-  const int iClass{ std::fpclassify( Value_ ) };
-  if( iClass != FP_INFINITE && iClass != FP_NAN && !bZero )
+  if( SigFig <= 0 )
+    throw std::invalid_argument( "SigFig " + std::to_string( SigFig ) + " invalid" );
+  int iExp;
+  const int iClass{ Class() };
+  if( iClass == FP_INFINITE || iClass == FP_NAN || Zero() )
   {
-    Exponent = std::floor( std::log10( Value ) );
+    iExp = std::numeric_limits<int>::min();
+  }
+  else
+  {
+    // Save the exponent of the leading digit
+    iExp = static_cast<int>( std::floor( std::log10( std::abs( Value ) ) ) );
+    // See whether rounding increases the number of digits
+    T One{ static_cast<T>( std::pow( 10., iExp - ( SigFig - 1 ) ) ) };
+    T Overflow{ static_cast<T>( One * std::pow( 10., SigFig ) ) };
+    if( std::abs( Value ) + One * 0.5 >= Overflow )
+      ++iExp;
+  }
+  return iExp;
+}
+
+template <typename T> ValSigFig<T>::ValSigFig( T Value_, unsigned char SigFig_ )
+: Value{ Value_ }, SigFig{ SigFig_ }, Exponent{ GetExponent() }
+{
+}
+
+template <typename T> ValSigFig<T>::ValSigFig( T Value_, const ValSigFig<T> &Error )
+: Value{ Value_ }, Exponent{ Error.Exponent }
+{
+  int iClass{ Error.Class() };
+  if( iClass == FP_INFINITE || iClass == FP_NAN || Error.Zero() )
+  {
+    // I don't know what the error is - just get a reasonable number of digits
+    SigFig = std::min( Error.SigFig * 2 + 1, std::numeric_limits<T>::max_digits10 );
+    Exponent = GetExponent();
+  }
+  else
+  {
+    // I know the exponent of the error
+    iClass = Class();
+    if( iClass == FP_INFINITE || iClass == FP_NAN || Zero() )
+    {
+      SigFig = Error.SigFig;
+    }
+    else
+    {
+      // Work out how many digits in number
+      Exponent = static_cast<int>( std::floor( std::log10( std::abs( Value ) ) ) );
+      if( Exponent < Error.Exponent )
+      {
+        // The number is smaller than the error
+        Exponent = Error.Exponent;
+        SigFig = Error.SigFig;
+      }
+      else
+      {
+        // The number has same or more digits than error
+        SigFig = Exponent - Error.Exponent + Error.SigFig;
+        // See whether rounding increases the number of digits
+        T One{ GetUnit() };
+        T Overflow{ static_cast<T>( One * std::pow( 10., SigFig ) ) };
+        if( std::abs( Value ) + One * 0.5 >= Overflow )
+        {
+          ++SigFig;
+          ++Exponent;
+        }
+      }
+    }
   }
 }
 
-template <typename T> void ValWithSigFig<T>::AdjustExp( int Adjust )
+template <typename T> void ValSigFig<T>::AdjustExp( int Adjust )
 {
   if( Adjust )
   {
-    T Multiplier{ static_cast<T>( Adjust < 0 ? 0.1 : 10. ) };
-    for( int i = std::abs( Adjust ); i--; )
-      Value *= Multiplier;
+    Value *= std::pow( 10., Adjust );
     Exponent += Adjust;
   }
 }
 
-template <typename T> ValWithSigFig<T>::operator std::string() const
+template <typename T> void ValSigFig<T>::Truncate()
+{
+  const int iClass{ Class() };
+  if( iClass != FP_INFINITE && iClass != FP_NAN && !Zero() )
+  {
+    const T One{ GetUnit() };
+    Value = std::round( Value / One ) * One;
+  }
+}
+
+template <typename T> ValSigFig<T>::operator std::string() const
 {
   std::ostringstream ss;
-  if( bNegative )
-    ss << '-';
-  const int iClass{ std::fpclassify( Value ) };
-  if( iClass == FP_INFINITE )
-    ss << "Inf";
-  else if( iClass == FP_NAN )
-    ss << "NaN";
-  else if( bZero && Exponent == std::numeric_limits<T>::min() )
+  const int iClass{ Class() };
+  if( iClass == FP_INFINITE || iClass == FP_NAN )
+  {
+    if( Negative() )
+      ss << '-';
+    if( iClass == FP_INFINITE )
+      ss << "Inf";
+    else
+      ss << "NaN";
+  }
+  else if( Zero() && Exponent == std::numeric_limits<T>::min() )
   {
     ss << std::fixed << std::setprecision( SigFig - 1 ) << Value;
   }
@@ -129,19 +199,11 @@ template <typename T> ValWithSigFig<T>::operator std::string() const
     // Scientific notation
     ss << std::scientific << std::setprecision( SigFig - 1 ) << Value;
   }
-  else if( Exponent - SigFig >= 0 )
-  {
-    // This is a number with trailing zeros before decimal point
-    const int NumTrailingZero{ Exponent - SigFig + 1 };
-    T Number{ Value };
-    for( unsigned int i = 0; i < NumTrailingZero; ++i )
-      Number *= 0.1;
-    ss << static_cast<std::size_t>( Number + 0.5 ) << std::string( NumTrailingZero, '0' );
-  }
   else
   {
     // Fixed precision should do this
-    ss << std::fixed << std::setprecision( SigFig - ( Exponent + 1 ) ) << Value;
+    const int NumDecimalPlaces{ ( SigFig - 1 ) - Exponent };
+    ss << std::fixed << std::setprecision( std::max( 0, NumDecimalPlaces ) ) << Value;
   }
   return ss.str();
 }
@@ -349,15 +411,10 @@ void ValWithEr<T>::Get( T dCentral, const VectorView<T> &Source, std::vector<T> 
 
 template <typename T>
 template <typename U> typename std::enable_if<!is_complex<U>::value, std::string>::type
-ValWithEr<T>::to_string( int SigFigValue, int SigFigError ) const
+ValWithEr<T>::to_string( unsigned char SigFigError ) const
 {
-  if( SigFigValue <= 0 )
-    throw std::invalid_argument( "SigFigValue " + std::to_string( SigFigValue ) + " invalid" );
-  if( SigFigError == 0 )
+  if( SigFigError <= 0 )
     throw std::invalid_argument( "SigFigError " + std::to_string( SigFigError ) + " invalid" );
-  if( SigFigError > SigFigValue )
-    throw std::invalid_argument( "SigFigError " + std::to_string( SigFigError )
-                                + " > SigFigValue " + std::to_string( SigFigValue ) + " invalid" );
   switch( std::fpclassify( Central ) )
   {
     case FP_INFINITE:
@@ -366,29 +423,10 @@ ValWithEr<T>::to_string( int SigFigValue, int SigFigError ) const
       return "NAN";
   }
   // Get central value and error as a value with specified number of significant figures
-  ValSigFig Number( Central, SigFigValue );
-  ValSigFig Error( std::abs( ( High - Low ) / 2 ), SigFigError );
+  ValSigFigT Error( std::abs( ( High - Low ) * 0.5 ), SigFigError );
+  ValSigFigT Number( Central, Error );
   //std::cout << "<" << static_cast<std::string>( Number ) << " +/- " << static_cast<std::string>( Error ) << "> ";
   const bool ErrorNonCentral{ Central < Low || Central > High };
-  // Does the error need adjusting
-  const int ErrorExpShouldBe{ Number.Exponent - ( SigFigValue - SigFigError ) };
-  if( Error.Exponent < ErrorExpShouldBe )
-  {
-    // The error is smaller than the number of digits requested
-    const int NumTooLow{ ErrorExpShouldBe - Error.Exponent };
-    if( NumTooLow < Error.SigFig )
-      Error.SigFig -= NumTooLow;
-    else
-    {
-      Error.Exponent = ErrorExpShouldBe;
-      Error.SigFig = 1;
-    }
-  }
-  else if( Error.Exponent > ErrorExpShouldBe )
-  {
-    // The error is larger than requested - add digits
-    Error.SigFig += Error.Exponent - ErrorExpShouldBe;
-  }
   const bool bScientific{ Number.Scientific() };
   const int ScientificExponent{ Number.Exponent };
   if( bScientific )
@@ -400,7 +438,9 @@ ValWithEr<T>::to_string( int SigFigValue, int SigFigError ) const
   if( !bErrorStraddlesZero )
   {
     if( Error.Exponent < 0 )
-      Error.AdjustExp( Error.SigFig - Error.Exponent - 1 );
+      Error.AdjustExp( Error.SigFig - 1 - Error.Exponent );
+    else if( Error.Exponent > Error.SigFig - 1 )
+      Error.Truncate();
   }
   std::string s{ static_cast<std::string>( Number ) };
   s.append( 1, '(' );
@@ -437,9 +477,9 @@ template typename std::enable_if<!is_complex<double>::value>::type
 ValWithEr<double>::Get( double Central_, std::vector<double> &Data, std::size_t Count );
 
 template typename std::enable_if<!is_complex<float>::value, std::string>::type
-ValWithEr<float>::to_string( int SigFigValue, int SigFigError ) const;
+ValWithEr<float>::to_string( unsigned char SigFigError ) const;
 template typename std::enable_if<!is_complex<double>::value, std::string>::type
-ValWithEr<double>::to_string( int SigFigValue, int SigFigError ) const;
+ValWithEr<double>::to_string( unsigned char SigFigError ) const;
 
 template <typename T>
 std::ostream & operator<<( std::ostream &os, const ValWithEr<T> &v )

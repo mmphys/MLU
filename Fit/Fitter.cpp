@@ -49,6 +49,9 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     bSaveCMat{ cl.GotSwitch("savecmat") },
     Verbosity{ cl.SwitchValue<int>("v") },
     UserGuess{ cl.GotSwitch( "guess" ) },
+    Strictness{ cl.SwitchValue<int>("strict") },
+    MonotonicUpperLimit{ cl.SwitchValue<scalar>("maxE") },
+    ErrorDigits{ cl.SwitchValue<int>("errdig") },
     ds{ std::move( ds_ ) },
     NumFiles{ static_cast<int>( ds.corr.size() ) },
     OpNames{ opNames_ },
@@ -58,8 +61,6 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     bAllParamsKnown{ mp.NumScalars( Param::Type::Variable ) == 0 },
     cp{ std::move( cp_ ) },
     Guess{ mp.NumScalars( Param::Type::All ) },
-    Strictness{ cl.SwitchValue<int>("strict") },
-    MonotonicUpperLimit{ cl.SwitchValue<scalar>("maxE") },
     OutputModel( ds.NSamples, mp, Common::DefaultModelStats,
                  cp.CovarSampleSize(), cp.bFreeze, cp.Source, cp.RebinSize, cp.CovarNumBoot )
 {
@@ -576,7 +577,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
         if( v[i].Check == 0 )
           bOK = false;
         std::cout << cOK << std::setw(maxLen) << Cols[i] << std::left
-                  << Common::Space << v[i].to_string(4, 1)
+                  << Common::Space << v[i].to_string( ErrorDigits )
                   << Common::NewLine << std::right; // Right-aligned is the default
       }
     }

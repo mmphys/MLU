@@ -55,6 +55,7 @@ public:
   const bool UserGuess;
   const int Strictness;
   const scalar MonotonicUpperLimit;
+  const int ErrorDigits;
   // More complex command-line options
   const DataSet &ds;
   const int NumFiles; // Number of correlator files in the dataset

@@ -33,7 +33,7 @@ case $Exp2pt in
   export TFSrc=29;;
   3)
   export TISnk=4
-        aTFSnk=(18 18 20 18)
+        aTFSnk=(18 18 23 18)
   export TISrc=6
   export TFSrc=29;;
 esac

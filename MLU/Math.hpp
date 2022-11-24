@@ -112,21 +112,28 @@ template <typename T> struct ValWithErOldV1
   T Check;
 };
 
-template <typename T> struct ValWithSigFig
+template <typename T> struct ValSigFig
 {
   using value_type = T;
   T Value;
-  int SigFig;
-  bool bZero;
-  bool bNegative;
+  unsigned char SigFig;
   int Exponent;
-  ValWithSigFig( T Value, int SigFig );
-  ValWithSigFig() : ValWithSigFig( 0, 1 ) {}
-  void AdjustExp( int Adjust );
-  operator std::string() const;
-  bool ScientificHigh() const { return Exponent > 4; }
+protected:
+  int GetExponent() const;
+public:
+  ValSigFig( T Value, unsigned char SigFig );
+  ValSigFig() : ValSigFig( 0, 2u ) {}
+  ValSigFig( T Value, const ValSigFig<T> &Error );
+  bool Zero() const { return Value == 0.; }
+  bool Negative() const { return std::signbit( Value ); }
+  int Class() const { return std::fpclassify( Value ); }
+  bool ScientificHigh() const { return Exponent > std::max( 4, SigFig + 2 ); }
   bool ScientificLow() const { return Exponent < -4; }
   bool Scientific() const { return ScientificHigh() || ScientificLow(); }
+  T GetUnit() const { return std::pow( 10., Exponent - ( SigFig - 1 ) ); }
+  void AdjustExp( int Adjust );
+  void Truncate();
+  operator std::string() const;
 };
 
 /**
@@ -141,7 +148,7 @@ template <typename T = double> struct ValWithEr
 {
   using value_type = T;
   using Scalar = typename is_complex<T>::Scalar;
-  using ValSigFig = ValWithSigFig<T>;
+  using ValSigFigT = ValSigFig<T>;
 
   T Min;
   T Low;
@@ -174,9 +181,9 @@ template <typename T = double> struct ValWithEr
   Get( T dCentral, const std::vector<T> &Data, std::size_t Count );
   void Get( T dCentral, const VectorView<T> &Source, std::vector<T> &ScratchBuffer = std::vector<T>() );
   template <typename U=T> typename std::enable_if<!is_complex<U>::value, std::string>::type
-  to_string( int SigFigValue, int SigFigError ) const;
+  to_string( unsigned char SigFigError ) const;
   template <typename U=T> typename std::enable_if<!is_complex<U>::value, std::string>::type
-  to_string() const { return to_string( 3, 2 ); }
+  to_string() const { return to_string( 2u ); }
 };
 
 template <typename T>

@@ -42,8 +42,7 @@ struct Extractor
   const std::vector<std::string> ExactNames;
   const std::vector<std::string> PartialNames;
   const std::string DefaultGroup;
-  const int SigFig;
-  const int ErrFig;
+  const int ErrDig;
   Extractor( Common::CommandLine &cl );
   bool Run( const std::vector<std::string> &Args );
 protected:
@@ -57,8 +56,7 @@ Extractor::Extractor( Common::CommandLine &cl )
   ExactNames{ Common::ArrayFromString( cl.SwitchValue<std::string>( "exact" ) ) },
   PartialNames{ Common::ArrayFromString( cl.SwitchValue<std::string>( "partial" ) ) },
   DefaultGroup{ cl.SwitchValue<std::string>( "group" ) },
-  SigFig{ cl.SwitchValue<int>( "sig" ) },
-  ErrFig{ cl.SwitchValue<int>( "err" ) }
+  ErrDig{ cl.SwitchValue<int>( "errdig" ) }
 {
 }
 
@@ -114,7 +112,7 @@ void Extractor::Show( const NameValue &NV, const std::vector<std::string> Select
 
 void Extractor::ShowOne( const NameValue &NV, std::size_t i ) const
 {
-  std::cout << NV.Name[i] << Common::Space << NV.Value[i].to_string( SigFig, ErrFig ) << Common::Space
+  std::cout << NV.Name[i] << Common::Space << NV.Value[i].to_string( ErrDig ) << Common::Space
             << NV.Value[i] << Common::NewLine;
 }
 
@@ -182,8 +180,7 @@ Extractor::NameValue Extractor::ReadFile( const std::string &Filename )
 
 int main(int argc, const char *argv[])
 {
-  static const char szDefaultSigFig[] = "4";
-  static const char szDefaultErrFig[] = "1";
+  static const char DefaultErrDig[] = "2";
   std::ios_base::sync_with_stdio( false );
   int iReturn = EXIT_SUCCESS;
   bool bShowUsage{ true };
@@ -197,8 +194,7 @@ int main(int argc, const char *argv[])
       {"exact", CL::SwitchType::Single, ""},
       {"partial", CL::SwitchType::Single, ""},
       {"group", CL::SwitchType::Single, ""},
-      {"sig", CL::SwitchType::Single, szDefaultSigFig},
-      {"err", CL::SwitchType::Single, szDefaultErrFig},
+      {"errdig", CL::SwitchType::Single, DefaultErrDig},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -228,8 +224,7 @@ int main(int argc, const char *argv[])
     "--exact   Comma separated list of column names which must match exactly\n"
     "--partial Comma separated list of column names which must partially match\n"
     "--group   HDF5 group to read from (default: first)\n"
-    "--sig     Number of significant figures in central value (default " << szDefaultSigFig << ")\n"
-    "--err     Number of significant figures in error (default " << szDefaultErrFig << ")\n"
+    "--errdig  Number of significant figures in error (default " << DefaultErrDig << ")\n"
     "Flags:\n"
     "--help    This message\n";
   }

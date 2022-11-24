@@ -75,6 +75,7 @@ int main(int argc, const char *argv[])
   static const char DefaultEnergySep[] = "0"; // Default used to be 0.2 until 10 Jul 2021
   static const char DefaultHotelling[] = "0.05";
   static const char DefaultMinDP[] = "1";
+  static const char DefaultErrDig[] = "2";
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;
@@ -101,6 +102,7 @@ int main(int argc, const char *argv[])
       {"product", CL::SwitchType::Single, ""},
       {"strict",  CL::SwitchType::Single, "0"},
       {"maxE",  CL::SwitchType::Single, "10"},
+      {"errdig", CL::SwitchType::Single, DefaultErrDig},
       // ModelDefaultParams
       {"e", CL::SwitchType::Single, "1"},
       {Common::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
@@ -403,6 +405,7 @@ int main(int argc, const char *argv[])
     "         Bit 0: Difference from 0\n"
     "         Bit 1: Difference from other parameters in same series\n"
     "--maxE   Maximum energy (default 10 - decays so fast effectively undetermined)\n"
+    "--errdig Number of significant figures in error (default " << DefaultErrDig << ")\n"
     "--covsrc source[,options[,...]] build (co)variance from source, i.e. one of\n"
     "         Binned    Use the already binned data\n"
     "         Raw       Use the raw (unbinned) data\n"
