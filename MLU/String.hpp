@@ -94,6 +94,11 @@ inline bool NextCharIs( std::basic_istream<_CharT, _Traits> & s, _CharT c, bool 
   return bIsEqual;
 }
 
+enum class NegateStar { None, Negate, Star, NegateStar };
+
+std::ostream & operator<<( std::ostream &os, const NegateStar &ns );
+std::istream & operator>>( std::istream& is, NegateStar &ns );
+
 // Compare two strings, case insensitive
 inline int CompareIgnoreCase(const std::string &s1, const std::string &s2)
 {
@@ -252,7 +257,7 @@ template<> inline std::string FromString<std::string>( const std::string &String
 
 // Generic conversion from a string to an array of any type (comma or space separated)
 template<typename T> inline typename std::enable_if<!std::is_same<T, std::string>::value, std::vector<T>>::type
-  ArrayFromString( const std::string &String, std::vector<bool> *pNeg = nullptr )
+  ArrayFromString( const std::string &String, std::vector<NegateStar> *pNeg = nullptr )
 {
   std::string s{ String };
   for( std::size_t pos = 0; ( pos = s.find( ',', pos ) ) != std::string::npos; )
@@ -263,14 +268,14 @@ template<typename T> inline typename std::enable_if<!std::is_same<T, std::string
     pNeg->clear();
   for( T t; !StreamEmpty( iss ); )
   {
-    bool bSign{ pNeg && iss.peek() == '-' };
-    if( bSign )
-      iss.get();
+    NegateStar NS = NegateStar::None;
+    if( pNeg )
+      iss >> NS;
     if( !( iss >> t ) )
       throw std::invalid_argument( "ArrayFromString: \"" + String + "\" is not type " + typeid(T).name() );
     v.push_back( t );
     if( pNeg )
-      pNeg->push_back( bSign );
+      pNeg->push_back( NS );
   }
   return v;
 }

@@ -46,6 +46,54 @@ extern const std::string EqualSign{ "=" };
 // Default delimeters for the next couple of functions
 extern const char szDefaultDelimeters[] = " \t,";
 
+std::ostream & operator<<( std::ostream &os, const NegateStar &ns )
+{
+  switch( ns )
+  {
+    case NegateStar::None:
+      break;
+    case NegateStar::Negate:
+      os << '-';
+      break;
+    case NegateStar::Star:
+      os << '*';
+      break;
+    case NegateStar::NegateStar:
+      os << "-*";
+      break;
+    default:
+      os << "(NegateStarUnknown=" << static_cast<std::underlying_type_t<NegateStar>>( ns ) << ')';
+      break;
+  }
+  return os;
+}
+
+std::istream & operator>>( std::istream& is, NegateStar &ns )
+{
+  char Buffer[2];
+  int i = 0;
+  while( i < 2 && !StreamEmpty( is ) )
+  {
+    Buffer[i] = is.peek();
+    if( ( Buffer[i] == '-' || Buffer[i] == '*' ) && ( i == 0 || Buffer[i] != Buffer[i-1] ) )
+    {
+      is.get();
+      ++i;
+    }
+    else
+      break;
+  }
+  if( i == 0 )
+    ns = NegateStar::None;
+  else if( i == 2 )
+    ns = NegateStar::NegateStar;
+  else if( Buffer[0] == '-' )
+    ns = NegateStar::Negate;
+  else
+    ns = NegateStar::Star;
+  return is;
+}
+
 // Remove anything past the last delimeter from string, returning the removed part in suffix
 // Return success / fail
 bool ExtractSuffix( std::string &String, std::string &Suffix, const char * pszDelimeters )

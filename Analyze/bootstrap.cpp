@@ -584,12 +584,12 @@ std::vector<Algebra> Manifest::GetCurrentAlgebra( const Common::CommandLine &cl 
   std::vector<Algebra> Alg3pt;
   if( cl.GotSwitch( "c" ) )
   {
-    std::vector<bool>    NegRequested;
+    std::vector<Common::NegateStar> NegRequested;
     Alg3pt = Common::ArrayFromString<Algebra>( cl.SwitchValue<std::string>( "c" ), &NegRequested );
     Common::NoDuplicates( Alg3pt, "Current algebra", 1 );
     // Copy algebra to be saved into algebra to be loaded, removing Spatial
-    bool bGammaSpatialNeg{ false };
-    std::vector<bool> AlgGammaXYZFound( 3, false ); // Index into the loaded currents of Gamma X, Y and Z respectively
+    Common::NegateStar bGammaSpatialNeg{ Common::NegateStar::None };
+    std::vector<bool> AlgGammaXYZFound( 3, false );
     for( int i = 0; i < Alg3pt.size(); ++i )
     {
       bool bCopy;
@@ -764,10 +764,7 @@ bool Manifest::NeedsTimeReverse( std::string &Contraction, MomentumMap &p, bool 
         Contraction.append( Parts[1] );
         Common::FileNameMomentum &pOne{ p.begin()->second };
         Common::FileNameMomentum &pTwo{ (++p.begin())->second };
-        std::swap( pOne.bp2, pTwo.bp2 );
-        Common::Momentum * p1{ &pOne };
-        Common::Momentum * p2{ &pTwo };
-        std::swap( *p1, *p2 );
+        pOne.SwapKeepName( pTwo );
         std::swap( OpSuffixSnk, OpSuffixSrc );
       }
     }
@@ -1065,6 +1062,7 @@ int main(const int argc, const char *argv[])
     "-o     Output prefix\n"
     "-a     list of gamma Algebras we're interested in at source (and sink for 2pt)\n"
     "-c     list of gamma algebras for current insertion         (Enable 3-pt mode)\n"
+    "       Precede each by - and/or * to negate / conjugate negative momenta\n"
     "-g     Group name to read correlators from\n"
     "-d     DataSet name to read correlators from\n"
     "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"

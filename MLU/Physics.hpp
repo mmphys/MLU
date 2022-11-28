@@ -217,6 +217,11 @@ struct FileNameMomentum : public Momentum
   FileNameMomentum( const FileNameMomentum &o ) : Momentum(o), Name{o.Name}, bp2{o.bp2} {}
   FileNameMomentum( const Momentum &o ) : Momentum(o), bp2{false} {}
   std::string FileString( const std::string &separator = "_" ) const;
+  inline void SwapKeepName( FileNameMomentum &rhs ) noexcept
+  {
+    std::swap( * dynamic_cast<Momentum *>( this ), * dynamic_cast<Momentum *>( &rhs ) );
+    std::swap( bp2, rhs.bp2 );
+  }
 };
 
 MLU_Physics_hpp_end

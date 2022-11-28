@@ -168,7 +168,7 @@ struct Manifest : public std::map<std::string, TrajList>
   std::vector<Algebra> AlgSource;  // Also the sink algebra for two-point functions. Empty=wildcard, loaded from first file
 protected:
   std::vector<Algebra> AlgCurrentLoad; // These are the current algebra to load. Gammai removed and Gamma X, Y & Z added
-  std::vector<bool> AlgCurrentLoadNeg; // Whether to negate currents on load
+  std::vector<Common::NegateStar> AlgCurrentLoadNeg; // Whether to negate currents on load
 public:
   const std::vector<Algebra> AlgCurrent; // Current algebra we wish to save for 3pt. May include Gammai. Empty = wildcard
 protected:

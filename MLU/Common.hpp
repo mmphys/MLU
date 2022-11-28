@@ -80,6 +80,14 @@ template <typename T> int sgn( T x )
   return (T(0) < x) - (x < T(0));
 }
 
+template <typename T> inline void ApplyNegateStar( T &Value, NegateStar ns )
+{
+  if( ns == NegateStar::Negate || ns == NegateStar::NegateStar )
+    Value = -Value;
+  if( ns == NegateStar::Star || ns == NegateStar::NegateStar )
+    Value = std::conj( Value ); // Does nothing for real numbers
+}
+
 // Text required for summaries of correlators
 namespace CorrSumm {
   extern const char sep[];
@@ -1109,7 +1117,7 @@ public:
   }
   void Read (const std::string &FileName, std::vector<Gamma::Algebra> &AlgSnk, std::vector<Gamma::Algebra> &AlgSrc,
              const int * pTimeslice = nullptr, const char * PrintPrefix = nullptr,
-             std::string *pGroupName = nullptr, const std::vector<bool> *pAlgSnkNeg = nullptr,
+             std::string *pGroupName = nullptr, const std::vector<NegateStar> *pAlgSnkNeg = nullptr,
              const char * pDSName = nullptr );
   //void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void WriteSummary(const std::string &Prefix, const std::vector<Gamma::Algebra> &AlgSnk,
@@ -1154,7 +1162,7 @@ template <typename T>
 void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Algebra> &AlgSnk,
                              std::vector<Gamma::Algebra> &AlgSrc, const int * pTimeslice,
                              const char * PrintPrefix, std::string *pGroupName,
-                             const std::vector<bool> *pAlgSnkNeg, const char * pDSName )
+                             const std::vector<NegateStar> *pAlgSnkNeg, const char * pDSName )
 {
   const bool bSameAlgebras{&AlgSnk == &AlgSrc};
   if( pAlgSnkNeg )
@@ -1221,9 +1229,9 @@ void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Alg
           T * const pData{ (*this)[0] };
           ds.read( pData, H5::Equiv<T>::Type );
           // Negate this correlator if requested
-          if( pAlgSnkNeg && (*pAlgSnkNeg)[0] )
+          if( pAlgSnkNeg )
             for( int i = 0; i < Nt_; i++ )
-              pData[i] = -pData[i];
+              ApplyNegateStar( pData[i], (*pAlgSnkNeg)[0] );
           bOK = true;
         }
       }
@@ -1317,9 +1325,9 @@ void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Alg
                   T * const pData{ (*this)[idx] };
                   ds.read( pData, H5::Equiv<T>::Type );
                   count[idx]++;
-                  if( pAlgSnkNeg && (*pAlgSnkNeg)[idxSnk] )
+                  if( pAlgSnkNeg )
                     for( int i = 0; i < Nt_; i++ )
-                      pData[i] = -pData[i];
+                      ApplyNegateStar( pData[i], (*pAlgSnkNeg)[idxSnk] );
                 }
               }
             }
