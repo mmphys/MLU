@@ -33,7 +33,7 @@
 //#define DEBUG_DISABLE_OMP
 
 Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
-                std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames_,
+                std::vector<Model::Args> &&ModelArgs_, const std::vector<std::string> &opNames_,
                 CovarParams &&cp_ )
   : bAnalyticDerivatives{ cl.GotSwitch("analytic") },
     bTestRun{ cl.GotSwitch("testrun") },
@@ -55,7 +55,8 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     ds{ std::move( ds_ ) },
     NumFiles{ static_cast<int>( ds.corr.size() ) },
     OpNames{ opNames_ },
-    model{ CreateModels( cl, ModelArgs ) },
+    ModelArgs{ ModelArgs_ }, // Save the original model arguments
+    model{ CreateModels( cl, ModelArgs ) }, // Pass in a copy of model arguments
     NumExponents{ GetNumExponents() },
     mp{ MakeModelParams( cl.SwitchValue<std::string>( "product" ) ) },
     bAllParamsKnown{ mp.NumScalars( Param::Type::Variable ) == 0 },
@@ -99,11 +100,14 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     OutputModel.FileList.emplace_back( f );
   OutputModel.CopyAttributes( ds.corr[0] );
   OutputModel.binSize = ds.OriginalBinSize;
+  OutputModel.NumExponents = NumExponents;
+  OutputModel.ModelType = GetModelTypes();
+  OutputModel.ModelArgs = GetModelArgs();
 }
 
 // Create all the models and return the number of exponents in the fit
 std::vector<ModelPtr> Fitter::CreateModels( const Common::CommandLine &cl,
-                                            std::vector<Model::Args> &ModelArgs )
+                                            std::vector<Model::Args> ModelArgs )
 {
   Model::CreateParams cp( OpNames, cl );
   const int NumModels{ static_cast<int>( ds.corr.size() ) };
@@ -604,4 +608,26 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     }
   }
   return bOK;
+}
+
+std::vector<std::string> Fitter::GetModelTypes() const
+{
+  std::vector<std::string> vs;
+  for( const ModelPtr &p : model )
+  {
+    std::ostringstream os;
+    os << p->Type();
+    vs.push_back( os.str() );
+  }
+  return vs;
+}
+
+std::vector<std::string> Fitter::GetModelArgs() const
+{
+  std::vector<std::string> vs;
+  for( const Model::Args &a : ModelArgs )
+    vs.push_back( a.ToString() );
+  while( vs.size() && vs.back().empty() )
+    vs.resize( vs.size() - 1 );
+  return vs;
 }

@@ -39,26 +39,26 @@ const char * pSrcSnk[2] = { "src", "snk" };
 // This should be the only place which knows about different fitters
 
 Fitter * MakeFitterGSL( const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                        std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames,
+                        std::vector<Model::Args> &&ModelArgs, const std::vector<std::string> &opNames,
                         CovarParams &&cp );
 #ifdef HAVE_MINUIT2
 Fitter * MakeFitterMinuit2(const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                           std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames,
+                           std::vector<Model::Args> &&ModelArgs, const std::vector<std::string> &opNames,
                            CovarParams &&cp );
 #endif
 
 Fitter * MakeFitter( const Common::CommandLine &cl, const DataSet &ds,
-                     std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames,
+                     std::vector<Model::Args> &&ModelArgs, const std::vector<std::string> &opNames,
                      CovarParams &&cp )
 {
   Fitter * f;
   std::string FitterArgs{ cl.SwitchValue<std::string>( "fitter" ) };
   std::string FitterType{ Common::ExtractToSeparator( FitterArgs ) };
   if( Common::EqualIgnoreCase( FitterType, "GSL" ) )
-    f = MakeFitterGSL( FitterArgs, cl, ds, ModelArgs, opNames, std::move( cp ) );
+    f = MakeFitterGSL( FitterArgs, cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) );
 #ifdef HAVE_MINUIT2
   else if( Common::EqualIgnoreCase( FitterType, "Minuit2" ) )
-    f = MakeFitterMinuit2( FitterArgs, cl, ds, ModelArgs, opNames, std::move( cp ) );
+    f = MakeFitterMinuit2( FitterArgs, cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) );
 #endif
   else
     throw std::runtime_error( "Unrecognised fitter: " + FitterType );
@@ -284,7 +284,7 @@ int main(int argc, const char *argv[])
       const Common::SeedType Seed{ ds.corr[0].Name_.Seed };
 
       // All the models are loaded
-      std::unique_ptr<Fitter> m{ MakeFitter( cl, ds, ModelArgs, OpName, std::move( cp ) ) };
+      std::unique_ptr<Fitter> m{ MakeFitter( cl, ds, std::move( ModelArgs ), OpName, std::move( cp ) ) };
       std::size_t CountTotal{ 0 };
       std::size_t CountOK{ 0 };
       bool bAllParamsResolved{ true };

@@ -60,6 +60,7 @@ public:
   const DataSet &ds;
   const int NumFiles; // Number of correlator files in the dataset
   const std::vector<std::string> &OpNames;
+  const std::vector<Model::Args> ModelArgs;
   //const int NumOps;
   std::vector<ModelPtr> model;      // Model for each correlator
   const int NumExponents;
@@ -75,13 +76,14 @@ public:
   bool bCorrelated;
 
   explicit Fitter( const Common::CommandLine &cl, const DataSet &ds_,
-                   std::vector<Model::Args> &ModelArgs, const std::vector<std::string> &opNames_,
+                   std::vector<Model::Args> &&ModelArgs, const std::vector<std::string> &opNames_,
                    CovarParams &&cp );
   virtual ~Fitter() {}
 
 protected:
   // Used during construction (so that we can make the results const)
-  std::vector<ModelPtr> CreateModels(const Common::CommandLine &cl, std::vector<Model::Args> &ModelArgs);
+  std::vector<ModelPtr> CreateModels( const Common::CommandLine &cl,
+                                      std::vector<Model::Args> ModelArgs );
   int GetNumExponents();
   Params MakeModelParams( const std::string &sProducts );
   void MakeGuess();
@@ -97,6 +99,8 @@ public:
   bool PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName,
               const std::string &ModelSuffix, Common::SeedType Seed );
   virtual const std::string &Type() const = 0;
+  std::vector<std::string> GetModelTypes() const;
+  std::vector<std::string> GetModelArgs() const;
 };
 
 #endif // Fitter_hpp

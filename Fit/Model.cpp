@@ -152,6 +152,23 @@ void Model::Args::FromString( const std::string &s, bool bOptionalValue )
   }
 }
 
+std::string Model::Args::ToString() const
+{
+  std::string s;
+  for( const value_type &v : *this )
+  {
+    if( !s.empty() )
+      s.append( 1, ',' );
+    s.append( v.first );
+    if( !v.second.empty() )
+    {
+      s.append( 1, '=' );
+      s.append( v.second );
+    }
+  }
+  return s;
+}
+
 Model::CreateParams::CreateParams( const std::vector<std::string> &o, const Common::CommandLine &c )
 : OpNames{ o }, cl{ c },
   NumExponents{ cl.SwitchValue<int>( "e" ) },

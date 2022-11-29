@@ -149,6 +149,8 @@ extern const std::string sCovarNumBoot;
 extern const std::string sGuess;
 extern const std::string sParam;
 extern const std::string sFitTime;
+extern const std::string sModelTypeList;
+extern const std::string sModelArgsList;
 extern const std::string sNE;
 extern const std::vector<std::string> sCorrSummaryNames;
 extern const std::string sChiSqPerDof;
@@ -3025,6 +3027,7 @@ struct Model : public Sample<T>
   using scalar_type = typename Traits::scalar_type;
   using value_type = typename Traits::value_type;
   static const std::string EnergyPrefix;
+  int NumExponents = 0;
   int dof = 0;
   bool CovarFrozen = false;
   using SS = SampleSource;
@@ -3051,6 +3054,8 @@ struct Model : public Sample<T>
   // These variables were added in current format
   Params params;
   std::vector<std::vector<int>> FitTimes;
+  std::vector<std::string> ModelType;
+  std::vector<std::string> ModelArgs;
 
   // Helper functions
   int GetExtent() { return static_cast<int>( ::Common::GetExtent( FitTimes ) ); };

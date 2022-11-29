@@ -86,6 +86,9 @@ namespace H5 {
   bool OpenOptional( ::H5::Attribute &a, ::H5::Group &g, const std::string Name );
   bool OpenOptional( ::H5::DataSet  &ds, ::H5::Group &g, const std::string Name );
   bool OpenOptional( ::H5::Group  &gNew, ::H5::Group &g, const std::string Name );
+  bool ExistsAttribute( ::H5::Group &g, const std::string Name );
+  bool ExistsDataSet( ::H5::Group &g, const std::string Name );
+  bool ExistsGroup( ::H5::Group &g, const std::string Name );
 
   // Read the gamma algebra attribute string and make sure it's valid
   Gamma::Algebra ReadGammaAttribute( ::H5::Group &g, const char * pAttName );

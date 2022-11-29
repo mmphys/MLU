@@ -107,6 +107,8 @@ const std::string sCovarNumBoot{ "CovarNumBoot" };
 const std::string sGuess{ "Guess" };
 const std::string sParam{ "Param" };
 const std::string sFitTime{ "FitTime" };
+const std::string sModelTypeList{ "ModelType" };
+const std::string sModelArgsList{ "ModelArgs" };
 const std::string sNE{ " != " };
 const std::vector<std::string> sCorrSummaryNames{ "corr", "bias", "exp", "cosh" };
 const std::string sChiSqPerDof{ "ChiSqPerDof" };
@@ -884,6 +886,16 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
   CovarFrozen = ( i8 != 0 );
   try
   {
+    a = g.openAttribute( sNumExponents );
+    a.read( ::H5::PredType::NATIVE_INT, &NumExponents );
+    a.close();
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  try
+  {
     H5::ReadVector( g, sGuess+s_C, Guess );
   }
   catch(const ::H5::Exception &)
@@ -1043,6 +1055,28 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
     CovarNumBoot = 0;
     ::H5::Exception::clearErrorStack();
   }
+  ModelType.clear();
+  try
+  {
+    a = g.openAttribute( sModelTypeList );
+    ModelType = H5::ReadStrings( a );
+    a.close();
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  ModelArgs.clear();
+  try
+  {
+    a = g.openAttribute( sModelArgsList );
+    ModelArgs = H5::ReadStrings( a );
+    a.close();
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
   ::H5::Group gParam;
   if( H5::OpenOptional( gParam, g, sParam ) )
   {
@@ -1168,6 +1202,9 @@ int Model<T>::WriteAttributes( ::H5::Group &g )
   const hsize_t OneDimension{ 1 };
   ::H5::DataSpace ds1( 1, &OneDimension );
   ::H5::Attribute a;
+  a = g.createAttribute( sNumExponents, ::H5::PredType::STD_U16LE, ds1 );
+  a.write( ::H5::PredType::NATIVE_INT, &NumExponents );
+  a.close();
   a = g.createAttribute( sDoF, ::H5::PredType::STD_U16LE, ds1 );
   a.write( ::H5::PredType::NATIVE_INT, &dof );
   a.close();
@@ -1216,6 +1253,10 @@ int Model<T>::WriteAttributes( ::H5::Group &g )
     a.close();
     iReturn++;
   }
+  if( ModelType.size() )
+    H5::WriteAttribute( g, sModelTypeList, ModelType );
+  if( ModelArgs.size() )
+    H5::WriteAttribute( g, sModelArgsList, ModelArgs );
   params.WriteH5( g, sParam );
   // Write the fit times
   std::size_t NumFitTimes{ FitTimes.size() };
@@ -1293,6 +1334,11 @@ void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
       s << Space << t;
     s << NewLine;
   }
+  for( std::size_t i = 0; i < ModelType.size(); ++i )
+    s << "# ModelType " << i << ": " << ModelType[i] << NewLine;
+  for( std::size_t i = 0; i < ModelArgs.size(); ++i )
+    s << "# ModelArgs " << i << ": " << ModelArgs[i] << NewLine;
+  s << "# NumExponents: " << NumExponents << NewLine;
   if( !params.empty() )
   {
     s << "# Params: ";

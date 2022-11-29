@@ -57,6 +57,7 @@ struct Model
   struct Args : public std::map<std::string, std::string, Common::LessCaseInsensitive>
   {
     void FromString( const std::string &s, bool bOptionalValue );
+    std::string ToString() const;
     std::string Remove( const std::string &key, bool * Removed = nullptr );
     template <typename T> T Remove( const std::string &key, T Default, bool bPeek = false )
     {

@@ -204,6 +204,33 @@ bool H5::OpenOptional( ::H5::Group &gNew, ::H5::Group &gOld, const std::string N
   return bOpen;
 }
 
+bool H5::ExistsAttribute( ::H5::Group &g, const std::string Name )
+{
+  ::H5::Attribute a;
+  bool bExists{ OpenOptional( a, g, Name ) };
+  if( bExists )
+    a.close();
+  return bExists;
+}
+
+bool H5::ExistsDataSet( ::H5::Group &g, const std::string Name )
+{
+  ::H5::DataSet ds;
+  bool bExists{ OpenOptional( ds, g, Name ) };
+  if( bExists )
+    ds.close();
+  return bExists;
+}
+
+bool H5::ExistsGroup( ::H5::Group &g, const std::string Name )
+{
+  ::H5::Group gParam;
+  bool bExists{ OpenOptional( gParam, g, Name ) };
+  if( bExists )
+    gParam.close();
+  return bExists;
+}
+
 // Read the gamma algebra attribute string and make sure it's valid
 Gamma::Algebra H5::ReadGammaAttribute( ::H5::Group &g, const char * pAttName )
 {
