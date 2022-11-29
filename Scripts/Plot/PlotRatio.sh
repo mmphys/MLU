@@ -85,17 +85,12 @@ do
               FileNames="$FileNames $InDir/${FilePrefix}_dt_${DeltaT}_${FileSuffix}.$Ext"
               Legend="$Legend ΔT/a=${DeltaT}"
             done
-            case $Gamma in
-                gT) ylabel="R_4";;
-              gXYZ) ylabel="R_i";;
-                 *) ylabel="R_{$Gamma}";;
-            esac
             title="${MSrcHuman}⟶${MSnkHuman}, n^2=${p2}"
             [ -v OptionNoMass ] || title="$title, ${GammaHuman} (${opHuman})"
             save=${FilePrefix}_${FileSuffix} \
               legend="$Legend" \
               fields=corr savelabel= \
-              title="$title" key='bottom center' xlabel=(t-ΔT/2)/a ylabel="$ylabel" offset=0 \
+              title="$title" key='bottom center' xlabel=(t-ΔT/2)/a ylabel="${Ratio}" offset=0 \
               x='((column(1)<2 || column(1)>word(FileDT,File)-2) ? NaN : column(1)-0.5*word(FileDT,File)+(word(FileDT,File)-24)*.025)' \
               plot.sh $FileNames
           fi

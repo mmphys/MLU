@@ -172,9 +172,9 @@ function Split3ptFile()
 PCGetFullPath "${BASH_SOURCE[0]}" PlotCommonRoot
 
 # Load parameters
-PlotEnsemble="$PlotCommonRoot/Ensemble.sh"
-if ! [ -h "$PlotEnsemble" ]; then
-  echo "Link missing: $PlotEnsemble"
+PlotEnsemble="$PlotCommonRoot/Ensemble${Ensemble}.sh"
+if ! [ -e "$PlotEnsemble" ]; then
+  echo "Missing: $PlotEnsemble"
   set +e; return 1
 fi
 unset PlotData
