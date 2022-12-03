@@ -112,4 +112,5 @@ Cmd="title='point-point point-wall' files='$CorrFiles' tf='$LabelTF' save='$OutF
 [ -v ExtraFiles ] && Cmd="$Cmd extra='$ExtraFiles'"
 Cmd="$Cmd plottd.sh $OutSubDir/${MesonPrefix}_td.$Suffix"
 #echo "$Cmd"
+echo "$Cmd" >> $OutFile.log
 eval  $Cmd

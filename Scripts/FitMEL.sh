@@ -2,9 +2,6 @@
 
 # Perform a fit for matrix elements given a choice of 2pt fit ranges
 
-#set -x
-set -e
-
 ############################################################
 
 # Inputs
@@ -14,44 +11,39 @@ set -e
 #Ensemble=${Ensemble:-F1M}
 . PlotCommon.sh
 
+#set -x
+set -e
+
 qSrc=${qSrc:-h$Heavy}
 qSnk=${qSnk:-l}
 qSpec=${qSpec:-s}
 
 pSnk=${pSnk:-0}
 pSrc=0
-Gamma=gT
-
-DeltaT=(${DeltaT:-24 28 32})
-TI=(${TI:-13 15 15})
-TF=(${TF:-16 20 24})
+Gamma=${Gamma:-gT}
 
 # Ranges for 2pt fits
-Exp2ptSnk=${Exp2ptSnk:-2}
-TISnk=${TISnk:-10}
-TFSnk=${TFSnk:-28}
-Exp2ptSrc=${Exp2ptSrc:-3}
-TISrc=${TISrc:-6}
-TFSrc=${TFSrc:-29}
+FitSnk=${FitSnk:-corr_10_26_7_26}
+FitSrc=${FitSrc:-corr_6_29_5_29}
+
+DeltaT=(${DeltaT:-24 28 32})
+TI=(${TI:-13 14 14})
+TF=(${TF:-16 20 24})
 
 case "$FitWhat" in
   R3 | quark) : ;;
           "") FitWhat=R3;;
            *) echo "FitWhat=$FitWhat unrecognised"; exit 1;;
 esac
-Simul=0${Simul+1} # Set to anything to perform simultaneous 2- and 3-pt fit
-NumExp3pt=${NumExp3pt:-2} # How many exponentials in the 3pt fit
+NumExp=${NumExp:-3} # How many exponentials in the 3pt fit
 
 PW=${PW:-g5P_g5P}
 Seed=${Seed:-1835672416}
-Corr=${Corr:-corr}
 Ratio=${Ratio:-ratioE1ZV1}
-Fit=${Fit:-fit}
+Corr=${Corr:-corr}
 MELFit=${MELFit:-MELFit}
-MELPlot=${MELPlot:-MELPlot}
-LongPaths=0${Long+1}
-yrangeR3=${yrangeR3:-0.00060:0.00071}
-yrangeMEL=${yrangeMEL:-0.527:0.537}
+#yrangeR3=${yrangeR3:-0.00068:0.000782}
+#yrangeMEL=${yrangeMEL:-0.527:0.537}
 
 Plot=${Plot:-Plot}
 PlotDataFrom=${PlotDataFrom:-4} # how far in from source and sink to plot data points
@@ -62,32 +54,11 @@ PlotDataFrom=${PlotDataFrom:-4} # how far in from source and sink to plot data p
 
 ############################################################
 
-# Get fit directory for specified number of exponentials
-# Parameters:
-#   1: Variable to receive directory name
-#   2: Number of exponentials
-function GetFitDir()
-{
-  declare -n RetVal=$1
-  local NumExp="$2"
-  RetVal="$Fit"
-  if [ "$NumExp" != "2" ]
-  then
-    RetVal="$RetVal$NumExp"
-  fi
-}
-
 ############################################################
 
 # Derived
 
 ############################################################
-
-# Ranges for 2pt fits
-RangeSnk=${TISnk}_${TFSnk}
-RangeSrc=${TISrc}_${TFSrc}
-RangeSnk2=$((TISnk-1))_${TFSnk}
-RangeSrc2=$((TISrc-1))_${TFSrc}
 
 DeltaTAll=${DeltaT[@]}
 DeltaTAll=${DeltaTAll// /_}
@@ -97,9 +68,9 @@ GetMesonFile MesonSrc $qSrc $qSpec
 
 SpecDir=3sm_${qSpec}p2
 
-PrefixR3=R3_${qSnk}_${qSrc}_${Gamma}_dt_
+PrefixR3=$PlotData/$Ratio/$SpecDir/R3_${qSnk}_${qSrc}_${Gamma}_dt_
 SuffixR3=_p2_${pSnk}_${PW}.fold.${Seed}
-PrefixCorr=quark_${qSnk}_${qSrc}_${Gamma}_dt_
+PrefixCorr=$PlotData/$Corr/$SpecDir/quark_${qSnk}_${qSrc}_${Gamma}_dt_
 SuffixCorr=_p2_${pSrc}_ps2_${pSnk}_${PW}.fold.${Seed}
 
 case "$FitWhat" in
@@ -107,9 +78,9 @@ case "$FitWhat" in
         FitName="C^{(3)}"
         PlotName=R_3
         PlotOptions=",raw"
-        PrefixFit=$Corr/$SpecDir/$PrefixCorr
+        PrefixFit=$PrefixCorr
         SuffixFit=$SuffixCorr
-        PrefixPlot=$Ratio/$SpecDir/$PrefixR3
+        PrefixPlot=$PrefixR3
         SuffixPlot=$SuffixR3
         PlotWhat=R3
         Field=log
@@ -120,9 +91,9 @@ case "$FitWhat" in
         FitName=R_3
         PlotName="C^{(3)}"
         FitOptions=",raw"
-        PrefixFit=$Ratio/$SpecDir/$PrefixR3
+        PrefixFit=$PrefixR3
         SuffixFit=$SuffixR3
-        PrefixPlot=$Corr/$SpecDir/$PrefixCorr
+        PrefixPlot=$PrefixCorr
         SuffixPlot=$SuffixCorr
         PlotWhat=quark
         Field=corr
@@ -133,34 +104,15 @@ case "$FitWhat" in
 esac
 
 FitType=corr
-FitTypePlot=$FitType
-if (( Simul ))
-then
-  FitType=${FitType}_${RangeSnk}_${RangeSrc}
-  SuffixModel=g5P.model
-  Suffix2pt=g5P_g5P.fold.$Seed
-  InputMesonSnk=${Corr}/2ptp2/${MesonSnk}_p2_${pSnk}_${Suffix2pt}
-  InputMesonSrc=${Corr}/2ptp2/${MesonSrc}_p2_${pSrc}_${Suffix2pt}
-  DataList="$PlotData/$InputMesonSnk.txt $PlotData/$InputMesonSrc.txt"
-  InputMesonSnk=$InputMesonSnk.h5,t=${TISnk}:${TFSnk},e=${Exp2ptSnk}
-  InputMesonSrc=$InputMesonSrc.h5,t=${TISrc}:${TFSrc},e=${Exp2ptSrc}
-  OutPart3=S
-  ModelMin="mmin=2"
-else
-  SuffixModel=g5P_g5W.model
-  Suffix2pt=$SuffixModel.$Seed.h5
-  GetFitDir InputMesonSnk $Exp2ptSnk
-  InputMesonSnk=$InputMesonSnk/2ptp2/$MesonSnk/${MesonSnk}_p2_${pSnk}.corr_${RangeSnk}_${RangeSnk2}.${Suffix2pt}
-  GetFitDir InputMesonSrc $Exp2ptSrc
-  InputMesonSrc=$InputMesonSrc/2ptp2/$MesonSrc/${MesonSrc}_p2_${pSrc}.corr_${RangeSrc}_${RangeSrc2}.${Suffix2pt}
-  OutPart3=E
-fi
+SuffixModel=g5P_g5W.model
+Suffix2pt=$SuffixModel.$Seed.h5
+InputMesonSnk=$Ensemble/$MELFit/2ptp2/$MesonSnk/${MesonSnk}_p2_${pSnk}.$FitSnk.${Suffix2pt}
+InputMesonSrc=$Ensemble/$MELFit/2ptp2/$MesonSrc/${MesonSrc}_p2_${pSrc}.$FitSrc.${Suffix2pt}
 
-OutPart1=${qSnk}_${qSrc}_${Gamma}_p2_${pSrc}_ps2_${pSnk}
+OutPart1=${qSnk}_${qSrc}_${Gamma}_p2_$((pSrc > pSnk ? pSrc : pSnk))
 OutPart2=dt_$DeltaTAll
-OutPart3=${OutPart3}${Exp2ptSnk}${Exp2ptSrc}_${RangeSnk}_${RangeSrc}
+OutPart3=$FitSnk.$FitSrc.E$NumExp
 OutSubDir=$Ensemble/$MELFit/$SpecDir
-((LongPaths)) && OutSubDir=$OutSubDir/$OutPart1/$OutPart2/$OutPart3/${TI}_${TF}
 OutLongName=${OutPart1}.${OutPart2}.${OutPart3}
 
 ############################################################
@@ -176,21 +128,20 @@ mkdir -p $OutSubDir/1Fit
 for (( i = 0; i < ${#DeltaT[@]}; ++i ))
 do
   FitList="$FitList${MySep}${PrefixFit}${DeltaT[i]}${SuffixFit}.h5,t=${TI[i]}:${TF[i]}${FitOptions}"
-  DataList="$DataList${DataList:+ }$PlotData/${PrefixFit}${DeltaT[i]}${SuffixFit}.txt"
+  DataList="$DataList${DataList:+ }${PrefixFit}${DeltaT[i]}${SuffixFit}.txt"
   Title="$Title${MySep}ΔT=${DeltaT[i]}"
   LabelTI="$LabelTI${MySep}${PlotDataFrom}"
   LabelTF="$LabelTF${MySep}$(( ${DeltaT[i]} - PlotDataFrom ))"
   FitType=${FitType}_${TI[i]}_${TF[i]}
-  FitTypePlot=${FitTypePlot}_${TI[i]}_${TF[i]}
   MySep=" "
 done
 
 BuildModelBase=$OutSubDir/1Fit/${FitWhat}_${OutLongName}
 
-MultiFit="MultiFit -e $NumExp3pt --Hotelling 0 --mindp 1"
+MultiFit="MultiFit -e $NumExp --Hotelling 0 --mindp 1"
 MultiFit="$MultiFit --overwrite"
 MultiFit="$MultiFit --debug-signals"
-Cmd="$MultiFit --summary 2 -i $PlotData/ -o $BuildModelBase $InputMesonSnk $InputMesonSrc $FitList"
+Cmd="$MultiFit --summary 2 -o $BuildModelBase $InputMesonSnk $InputMesonSrc $FitList"
 BuildModelBase=$BuildModelBase.${FitType}
 BuildModel=$BuildModelBase.$SuffixModel
 #echo "A: $Cmd"
@@ -198,7 +149,11 @@ echo "$Cmd"  > $BuildModel.$Seed.log
 if  ! $Cmd &>> $BuildModel.$Seed.log
 then
   LastError=${PIPESTATUS[0]}
-  echo "Warning $LastError: $Cmd"
+  if [ "$LastError" = 3 ]; then
+    echo "Warning: Not all parameters resolved"
+  else
+    echo "Warning $LastError: $Cmd"
+  fi
 fi
 
 # Get the fit characteristics: energy difference, matrix element, test stat, ...
@@ -245,7 +200,7 @@ unset FitList
 unset DataList
 for (( i = 0; i < ${#DeltaT[@]}; ++i ))
 do
-  ThisFile=$PlotData/${PrefixPlot}${DeltaT[i]}${SuffixPlot}
+  ThisFile=${PrefixPlot}${DeltaT[i]}${SuffixPlot}
   FitList="$FitList${MySep}${ThisFile}.h5,t=${TI[i]}:${TF[i]}${PlotOptions}"
   DataList="$DataList${MySep}${ThisFile}.txt"
   MySep=" "
@@ -255,7 +210,7 @@ mkdir -p $OutSubDirName
 PlotModelBase=$OutSubDirName/${PlotWhat}_${OutLongName}
 
 Cmd="$MultiFit -o $PlotModelBase ${BuildModel}.$Seed.h5 $FitList"
-PlotModelBase=$PlotModelBase.${FitTypePlot}
+PlotModelBase=$PlotModelBase.${FitType}
 PlotModel=$PlotModelBase.$SuffixModel
 #echo "C: $Cmd"
 echo "$Cmd"  > $PlotModel.$Seed.log

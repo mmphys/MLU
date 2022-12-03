@@ -83,6 +83,8 @@ do for [model=1:NumModels] {
   TotalPlotTWidth=TotalPlotTWidth+PlotTWidth[model]
 }
 set yrange [@my_yrange]
+#set ytics font ', 8'
+set format y "%.6f"
 #set xrange [8.3:10.7]
 #set xrange [7.8:11.2]
 if( DoLog ) { set logscale y }
