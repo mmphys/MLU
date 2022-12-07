@@ -1522,6 +1522,19 @@ public:
       for( const std::string & s : summaryNames_ )
         SummaryNames.push_back( s + "_im" );
   }
+  void SetSummaryNames( const std::string &sAvgName )
+  {
+    std::string sBias{ "bias" };
+    std::vector<std::string> v{ sAvgName, sBias };
+    SetSummaryNames( v );
+  }
+  void SetSummaryNames( const char *pAvgName )
+  {
+    if( pAvgName )
+      SetSummaryNames( std::string( pAvgName ) );
+    else
+      SetSummaryNames( sCorrSummaryNames );
+  }
   void SetColumnNames( const std::vector<std::string> &columnNames_ )
   {
     if( columnNames_.size() != Nt_ )
@@ -2171,22 +2184,13 @@ void Sample<T>::MakeCorrSummary( const char * pAvgName )
 {
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
   // Now perform summaries
-  const int NumFields{ pAvgName ? 2 : static_cast<int>( sCorrSummaryNames.size() ) };
-  if( pAvgName )
-  {
-    std::string s1{ pAvgName };
-    std::string s2{ "bias" };
-    std::vector<std::string> v{ s1, s2 };
-    SetSummaryNames( v );
-  }
-  else
-    SetSummaryNames( sCorrSummaryNames );
+  SetSummaryNames( pAvgName );
   const int tMid{ bFolded() ? Nt_ : Nt_ / 2 };
   std::vector<scalar_type> Data( NumSamples_ );
   ValWithEr<scalar_type> * pDest = m_pSummaryData.get();
   for( int i = 0; i < Traits::scalar_count; i++ ) // real or imaginary
   {
-    for(int f = 0; f < NumFields; f++) // each field
+    for(int f = 0; f < SummaryNames.size(); f++) // each field
     {
       for(int t = 0; t < Nt_; t++, pDest++ )
       {

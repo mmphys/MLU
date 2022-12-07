@@ -1080,6 +1080,7 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
   ::H5::Group gParam;
   if( H5::OpenOptional( gParam, g, sParam ) )
   {
+    OldFormatNumExponents = std::numeric_limits<int>::min();
     // Read new format containing parameters
     gParam.close();
     params.ReadH5( g, sParam );
@@ -1153,7 +1154,7 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
 template <typename T>
 void Model<T>::ValidateAttributes()
 {
-  if( !OldFormatOpNames.empty() )
+  if( OldFormatNumExponents != std::numeric_limits<int>::min() )
   {
     // Validate old format
     const int NumOps{ static_cast<int>( OldFormatOpNames.size() ) + 1 };

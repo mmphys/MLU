@@ -756,7 +756,7 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   }
 }
 
-FMaker::FMaker( std::string TypeParams, const Common::CommandLine &cl )
+FFitConstMaker::FFitConstMaker( std::string TypeParams, const Common::CommandLine &cl )
 : Maker( cl ), p("",0), i3Base{ cl.SwitchValue<std::string>("i3") },
   N{ Common::FromString<unsigned int>( Common::ExtractToSeparator( TypeParams ) ) },
   ap{ 2 * M_PI / N }
@@ -766,7 +766,7 @@ FMaker::FMaker( std::string TypeParams, const Common::CommandLine &cl )
     throw std::runtime_error( "Unrecognised form factor option: " + TypeParams );
 }
 
-int FMaker::Weight( const std::string &Quark )
+int FFitConstMaker::Weight( const std::string &Quark )
 {
   int Weight = 0;
   if( !Quark.empty() )
@@ -786,7 +786,7 @@ int FMaker::Weight( const std::string &Quark )
 }
 
 // Incoming file should be a three-point function with (generally) a heavy source and light(er) sink
-void FMaker::Make( std::string &FileName )
+void FFitConstMaker::Make( std::string &FileName )
 {
   // Parse Filename and check it contains what we need
   std::cout << "Processing " << FileName << Common::NewLine;
@@ -920,8 +920,8 @@ void FMaker::Make( std::string &FileName )
   const Vector ELight{ EFit.GetVector( qpELight ) };
 
   // Make output
-  static const std::vector<std::string> ParamNames{ "mL", "mH", "qSq", "kMu", "melV0", "melVi",
-                                                    "fPar", "fPerp", "fPlus", "f0", "ELLat", "qSqLat" };
+  static const std::vector<std::string> ParamNames{ "EL", "mL", "mH", "qSq", "kMu", "melV0", "melVi",
+                  "fPar", "fPerp", "fPlus", "f0", "ELLat", "qSqLat" };
   constexpr int EL{ 0 };
   constexpr int mL{ 1 };
   constexpr int mH{ 2 };
@@ -935,11 +935,7 @@ void FMaker::Make( std::string &FileName )
   constexpr int f0{ 10 };
   constexpr int ELLat{ 11 }; // qSq ... but E_i derived from E_0 and lattice dispersion relation
   constexpr int qSqLat{ 12 }; // qSq ... but E_i derived from E_0 and lattice dispersion relation
-  constexpr int ChiSqDof{ 13 };
-  const int NumFiles{ 3 + ( p ? 2 : 0 ) };
-  throw std::runtime_error( "TODO: Update based on new parameters" );
-  Model Out;//( ParamNames, 1, NumFiles, FitParts[0], FitParts[1], 0, false, NumSamples,
-             //static_cast<int>( ParamNames.size() ) + 2 );
+  Model Out( NumSamples, Common::Params( ParamNames ), {} );
   Out.FileList.emplace_back( FileName );
   if( p )
     Out.FileList.emplace_back( FileNameXYZ );
@@ -948,12 +944,6 @@ void FMaker::Make( std::string &FileName )
   if( p )
     Out.FileList.emplace_back( mELight.Name_.Filename );
   Out.CopyAttributes( mT );
-  {
-    std::vector<std::string> ColumnNames{ "EL" };
-    ColumnNames.insert( ColumnNames.end(), ParamNames.begin(), ParamNames.end() );
-    ColumnNames.emplace_back( Common::sChiSqPerDof );
-    Out.SetColumnNames( ColumnNames );
-  }
   Out.Name_.Seed = mT.Name_.Seed;
   Out.binSize = mT.binSize;
   for( int idx = 0; idx < NumSamples - Model::idxCentral; ++idx )
@@ -996,11 +986,10 @@ void FMaker::Make( std::string &FileName )
     O[fPlus] *= InvRoot2MH;
     O[f0] += ( MHeavy[idx] - ELight[idx] ) * O[fPar];
     O[f0] *= Root2MH / ( MHeavy[idx] * MHeavy[idx] - MLight[idx] * MLight[idx] );
-    O[ChiSqDof] = 0;
   }
   // Write output
   std::cout << " Writing " << OutFileName <<Common::NewLine;
-  Out.MakeCorrSummary( "Column" );
+  Out.MakeCorrSummary( Common::sParams.c_str() );
   Out.Write( OutFileName );
   OutFileName.resize( OutFileName.length() - fna.Ext.length() );
   OutFileName.append( TEXT_EXT );
@@ -1061,8 +1050,8 @@ int main(int argc, const char *argv[])
         m.reset( new RMaker( TypeParams, cl ) );
       else if( Common::EqualIgnoreCase( Type, "ZV" ) )
         m.reset( new ZVMaker( TypeParams, cl ) );
-      else if( Common::EqualIgnoreCase( Type, "F" ) )
-        m.reset( new FMaker( TypeParams, cl ) );
+      else if( Common::EqualIgnoreCase( Type, "FFC" ) )
+        m.reset( new FFitConstMaker( TypeParams, cl ) );
       else
         throw std::runtime_error( "I don't know how to make type " + Type );
       bShowUsage = false;
@@ -1108,13 +1097,13 @@ int main(int argc, const char *argv[])
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
     "-o     Output filename prefix\n"
     "--type Ratio type[,Options[,...]] (default " << DefaultType << ")\n"
-    "       ZV Make ZV (no Options)\n"
-    "       R  Make R ratios. Options as per --efit, except a) Fit_list->ZV_List\n"
-    "          b) Spectator not required\n"
-    "       F  Make form factors. Options\n"
-    "          L i.e. spatial extent of lattice, (e.g. 24, 32, 64, ...)\n"
-    "          'spatial' flag to divide spatial current gXYZ by integer momentum\n"
-    "          (Should not be needed except for very old bootstrap files)\n"
+    "       ZV  Make ZV (no Options)\n"
+    "       R   Make R ratios. Options as per --efit, except a) Fit_list->ZV_List\n"
+    "           b) Spectator not required\n"
+    "       FFC Make form factors from fit to constant. Options\n"
+    "           L i.e. spatial extent of lattice, (e.g. 24, 32, 64, ...)\n"
+    "           'spatial' flag to divide spatial current gXYZ by integer momentum\n"
+    "           (Should not be needed except for very old bootstrap files)\n"
     "--efit Fit_list[,options[,...]] List of fit files for energies,\n"
     "         each row has 'Quark file' (one row per momenta).\n"
     "         First option can be 'c' to freeze values to central value,\n"

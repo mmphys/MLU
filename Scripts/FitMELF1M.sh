@@ -62,8 +62,8 @@ Gamma=gT
 if [ "${DoAll+x}" = x ]; then
 NumExp=2 DeltaT="24 28 32" TI='13 14 14' TF='16 20 24' yrangeR3=0.00068:0.000782 yrangeMEL=0.527:0.537 DoFit 0
 
-NumExp=2 DeltaT="28 32" TI='12 12' TF='20 24' yrangeR3=0.00060:0.00070 yrangeMEL=0.486:0.496 DoFit 1 # Alternate
-NumExp=2 DeltaT="24 28 32" TI='13 13 13' TF='16 19 23' yrangeR3=0.00060:0.00070 yrangeMEL=0.486:0.496 DoFit 1 # Preferred
+NumExp=2 DeltaT="28 32" TI='12 12' TF='20 24' yrangeR3=0.00060:0.00070 yrangeMEL=0.486:0.496 DoFit 1 # Preferred
+NumExp=2 DeltaT="24 28 32" TI='13 13 13' TF='16 19 23' yrangeR3=0.00060:0.00070 yrangeMEL=0.486:0.496 DoFit 1 #Alternate
 
 NumExp=2 DeltaT="24 28 32" TI='14 15 15' TF='17 20 24' yrangeR3=0.000185:0.000225 yrangeMEL=0.45:0.46 Gamma=gXYZ DoFit 1
 

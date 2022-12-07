@@ -120,8 +120,8 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
 {
   //using MapT = std::map<Param::Key, Param, Param::Key::Less>;
   //using MapPairT = std::pair<iterator, bool>;
-  //iterator Add( const Param::Key &key, std::size_t Size = 1, bool bMonotonic = false,
-                //Param::Type Type = Param::Type::Variable );
+  Params() {};
+  Params( const std::vector<std::string> &ParamNames ); // List of single, variable parameters
   Params::iterator Add( const Param::Key &key, std::size_t NumExp = 1, bool bMonotonic = false,
                         Param::Type Type = Param::Type::Variable );
   Params::iterator MakeFixed( const Param::Key &key, bool bSwapSourceSink );

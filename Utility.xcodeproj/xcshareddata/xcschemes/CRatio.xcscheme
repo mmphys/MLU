@@ -54,15 +54,15 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--i2 F1M/corr/2ptp2/"
+            argument = "--i2 C1/corr/2ptp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--i3 F1M/corr/3sm_sp2/"
+            argument = "--i3 C1/RatioFit/lp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o Ratio/3sm_sp2/"
+            argument = "-o FFS/C1/lp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -74,11 +74,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--efit fit3/Fit_sp2.txt"
+            argument = "--efit C1/fit/Fit_lp2.txt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type R"
+            argument = "--type FFC,24"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -86,7 +86,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;*&apos;_l_h&apos;*&apos;_g&apos;*&apos;_dt_&apos;*&apos;_p2_0_ps2_0_g5P_g5P.fold.1835672416.h5"
+            argument = "&apos;*&apos;_l_h&apos;*&apos;_g&apos;*&apos;_dt_&apos;*&apos;_p2_0.&apos;*&apos;.g5P_g5P.model.1835672416.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

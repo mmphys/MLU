@@ -549,7 +549,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     OutputModel.Guess = Guess;
     OutputModel.FitInput.Central = ds.vCentral;
     OutputModel.FitInput.Replica = ds.Cache( cp.Source );
-    OutputModel.MakeCorrSummary( "Params" );
+    OutputModel.MakeCorrSummary( Common::sParams.c_str() );
     OutputModel.CheckParameters( Strictness, MonotonicUpperLimit );
     {
       // Show parameters - in neat columns

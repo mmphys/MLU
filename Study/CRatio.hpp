@@ -284,7 +284,7 @@ public:
 };
 
 // Make F parralel, F perpendicular, F+ and F0
-class FMaker : public Maker
+class FFitConstMaker : public Maker
 {
   const std::string i3Base;
   const unsigned int N;
@@ -301,6 +301,6 @@ protected:
   std::vector<int> FitParts;
 public:
   static int Weight( const std::string &Quark );
-  FMaker( std::string TypeParams, const Common::CommandLine &cl );
+  FFitConstMaker( std::string TypeParams, const Common::CommandLine &cl );
   void Make( std::string &sFileName ) override;
 };

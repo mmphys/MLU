@@ -227,11 +227,22 @@ std::istream &operator>>( std::istream &is, Param::Key &key )
   return is;
 }
 
+Params::Params( const std::vector<std::string> &ParamNames )
+{
+  Param::Key k;
+  for( const std::string &s : ParamNames )
+  {
+    k.Name = s;
+    Add( k );
+  }
+  AssignOffsets();
+}
+
 Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bMonotonic, Param::Type type_ )
 {
   // Work out how many elements are needed
   std::size_t size;
-  if( key.Object.size() == 1 ) // TODO: This won't work for matrix elements with src=snk
+  if( key.Object.size() <= 1 ) // TODO: This won't work for matrix elements with src=snk
     size = NumExp;
   else if( key.Object.size() == 2 )
   {
@@ -578,12 +589,18 @@ void Params::ReadH5 ( ::H5::Group gParent, const std::string GroupName )
     // Open the group
     ::H5::Group g{ gParent.openGroup( GroupName ) };
     // Get the object IDs TODO: add support for renaming the objects
-    ::H5::Attribute a{ g.openAttribute( sObjectNames ) };
-    std::vector<std::string> vObjects{ H5::ReadStrings( a ) };
-    a.close();
+    std::vector<std::string> vObjects;
+    try
+    {
+      vObjects = H5::ReadStrings( g.openAttribute( sObjectNames ) );
+    }
+    catch( const ::H5::Exception &e )
+    {
+      H5::GetErrorClearStack( e );
+    }
     // Get number of params
     int iNumParams;
-    a = g.openAttribute( sCount );
+    ::H5::Attribute a{ g.openAttribute( sCount ) };
     a.read( ::H5::PredType::NATIVE_INT, &iNumParams );
     a.close();
     // Load each param
@@ -597,6 +614,7 @@ void Params::ReadH5 ( ::H5::Group gParent, const std::string GroupName )
       SubGroup.append( std::to_string( i ) );
       ::H5::Group gSub{ g.openGroup( SubGroup ) };
       // Read in the Object IDs
+      try
       {
         std::vector<int> vOID;
         a = gSub.openAttribute( sObjectNames );
@@ -605,6 +623,10 @@ void Params::ReadH5 ( ::H5::Group gParent, const std::string GroupName )
         for( int i : vOID )
           k.Object.push_back( vObjects[i] );
         a.close();
+      }
+      catch( const ::H5::Exception &e )
+      {
+        H5::GetErrorClearStack( e );
       }
       // Parameter name
       a = gSub.openAttribute( sName );
@@ -671,6 +693,7 @@ void Params::WriteH5( ::H5::Group gParent, const std::string GroupName ) const
   int iNumObjects = 0;
   for( typename UniqueNames::value_type &it : OID )
     it.second = iNumObjects++;
+  if( iNumObjects )
   {
     // Write all the object names
     std::vector<std::string> vObjects( iNumObjects );
@@ -701,11 +724,12 @@ void Params::WriteH5( ::H5::Group gParent, const std::string GroupName ) const
       SubGroup.append( std::to_string( i++ ) );
       ::H5::Group gSub{ g.createGroup( SubGroup ) };
       // Write all the object IDS for this parameter
-      std::vector<int> vOIDs( k.Object.size() );
-      for( std::size_t j = 0; j < k.Object.size(); ++j )
-        vOIDs[j] = OID[k.Object[j]];
-      Dims[0] = vOIDs.size();
+      if( ! k.Object.empty() )
       {
+        std::vector<int> vOIDs( k.Object.size() );
+        for( std::size_t j = 0; j < k.Object.size(); ++j )
+          vOIDs[j] = OID[k.Object[j]];
+        Dims[0] = vOIDs.size();
         ::H5::DataSpace dsOID( 1, Dims );
         ::H5::Attribute a = gSub.createAttribute( sObjectNames, ::H5::PredType::STD_U16LE, dsOID );
         a.write( ::H5::PredType::NATIVE_INT, &vOIDs[0] );
