@@ -367,24 +367,26 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
     auto pp = p.find( Momentum::DefaultPrefix );
     if( pp != p.end() )
     {
-      MesonMom = Meson;
       auto pps = p.find( Momentum::SinkPrefix );
       if( pps != p.end() )
       {
         // We have two momenta
-        MesonMom[0].append( pp->second.FileString() );
-        Common::FileNameMomentum fnp{ pps->second };
-        fnp.Name = Momentum::DefaultPrefix;
-        MesonMom[1].append( fnp.FileString() );
+        MesonP.emplace_back( pp->second );
+        MesonP.emplace_back( pps->second );
+        MesonP.back().Name = Momentum::DefaultPrefix;
       }
       else
       {
+        MesonP.resize( 2 ); // They will both default to zero momentum
         // We only have one momentum - this goes with the lightest meson
         const bool bSourceHeavier{ QuarkWeight(BaseShortParts[2]) >= QuarkWeight(BaseShortParts[1]) };
-        MesonMom[bSourceHeavier ? 1 : 0].append( pp->second.FileString() );
-        Common::FileNameMomentum fnp( Momentum::DefaultPrefix, pp->second.bp2 );
-        MesonMom[bSourceHeavier ? 0 : 1].append( fnp.FileString() );
+        MesonP[bSourceHeavier ? 1 : 0] = pp->second;
+        MesonP[bSourceHeavier ? 0 : 1].bp2 = pp->second.bp2;
+        MesonP[bSourceHeavier ? 0 : 1].Name = Momentum::DefaultPrefix;
       }
+      MesonMom = Meson;
+      for( std::size_t i = 0; i < MesonMom.size(); ++i )
+        MesonMom[i].append( MesonP[i].FileString() );
     }
   }
 }
@@ -396,7 +398,6 @@ std::vector<std::string> FileNameAtt::ParseOpNames( int NumOps )
   static const char Sep[] = "_.";
   constexpr std::size_t NumSeps{ sizeof( Sep ) / sizeof( Sep[0] ) - 1 };
   std::vector<std::string> o;
-  o.reserve( NumOps );
   std::size_t LastPos = Base.length();
   int i = 0;
   for( ; LastPos && i < NumOps; ++i )
@@ -852,6 +853,31 @@ std::istream& operator>>( std::istream& is, SampleSource &sampleSource )
 }
 
 template <typename T> const std::string Model<T>::EnergyPrefix{ "E" };
+
+template <typename T>
+Vector<T> Model<T>::GetVector( Param::Key &k, std::size_t Index )
+{
+  Params::const_iterator it = params.FindPromiscuous( k );
+  if( it == params.cend() )
+  {
+    std::ostringstream os;
+    os << k.FullName( Index, std::numeric_limits<std::size_t>::max() ) << " not found";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  const Param &p{ it->second };
+  if( Index >= p.size )
+  {
+    std::ostringstream os;
+    os << k.FullName( Index, p.size ) << " not found - only " << p.size << " elements";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  Vector<T> v;
+  assert( Model::idxCentral == -1 && "Bug: Model::idxCentral != -1" );
+  const std::size_t MyOffset{ p.GetOffset( Index, Param::Type::All ) };
+  v.MapView( (*this)[Model::idxCentral] + MyOffset, this->NumSamples() - Model::idxCentral,
+             this->Nt() );
+  return v;
+}
 
 template <typename T>
 Model<T>::Model( int NumSamples, Params Params_, const std::vector<std::string> &ExtraColumns )
@@ -1399,7 +1425,9 @@ void Model<T>::SummaryColumnNames( std::ostream &os ) const
     else
       os << Space << "ti" << i << Space << "tf" << i;
   }
-  os << " tfLabel NumDataPoints SampleSize dof CovarSampleSize ";
+  if( FitTimes.size() )
+    os << " tfLabel ";
+  os << "NumDataPoints SampleSize dof CovarSampleSize ";
   Base::SummaryColumnNames( os );
 }
 
@@ -1407,20 +1435,23 @@ template <typename T>
 void Model<T>::SummaryContents( std::ostream &os ) const
 {
   std::size_t NumDataPoints{ 0 };
-  std::ostringstream tfl;
-  for( std::size_t i = 0; i < FitTimes.size(); ++i )
+  if( FitTimes.size() )
   {
-    NumDataPoints += FitTimes[i].size();
-    if( i )
+    std::ostringstream tfl;
+    for( std::size_t i = 0; i < FitTimes.size(); ++i )
     {
-      os << Space;
-      tfl << Underscore << FitTimes[i][0] << Underscore;
+      NumDataPoints += FitTimes[i].size();
+      if( i )
+      {
+        os << Space;
+        tfl << Underscore << FitTimes[i][0] << Underscore;
+      }
+      os << FitTimes[i][0] << Space << FitTimes[i].back();
+      tfl << FitTimes[i].back();
     }
-    os << FitTimes[i][0] << Space << FitTimes[i].back();
-    tfl << FitTimes[i].back();
+    os << Space << tfl.str() << Space;
   }
-  os << Space << tfl.str();
-  os << Space << NumDataPoints;
+  os << NumDataPoints;
   os << Space << this->SampleSize;
   os << Space << dof;
   os << Space << CovarSampleSize;

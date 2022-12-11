@@ -59,7 +59,7 @@ unsigned int FitTimes::GuessOldNumDataPoints( int NumFiles ) const
   return Num;
 }
 
-bool FitTimes::Parse( std::string Times )
+bool FitTimes::ParseTimes( std::string Times )
 {
   for( auto &c : Times )
     if( c == '_' )
@@ -68,6 +68,19 @@ bool FitTimes::Parse( std::string Times )
   if( time.size() & 1 )
     time.clear();
   return !time.empty();
+}
+
+bool FitTimes::ParseTypeTimes( std::string &TypeTimes )
+{
+  bool bOK{ false };
+  const std::size_t pos{ TypeTimes.find_first_of( '_' ) };
+  if( pos != std::string::npos && pos < TypeTimes.length() - 1 )
+  {
+    bOK = ParseTimes( TypeTimes.substr( pos + 1 ) );
+    if( bOK )
+      TypeTimes.resize( pos );
+  }
+  return bOK;
 }
 
 std::ostream &operator<<( std::ostream &s, const FitTimes &ft )
@@ -79,7 +92,7 @@ std::ostream &operator<<( std::ostream &s, const FitTimes &ft )
 
 bool operator<( const FitTimes &lhs, const FitTimes &rhs )
 {
-  if( lhs.time.empty() || lhs.time.size() != rhs.time.size() )
+  if( lhs.time.size() != rhs.time.size() )
     throw std::runtime_error( "Mismatched numbers of fit ranges" );
   for( std::size_t i = 0; i < lhs.time.size(); ++i )
     if( lhs.time[i] != rhs.time[i] )
@@ -111,30 +124,41 @@ Summariser::Summariser( const Common::CommandLine &cl )
   Strictness{ cl.SwitchValue<int>( "strict" ) },
   MonotonicUpperLimit{ cl.SwitchValue<scalar>( "maxE" ) }
 {
+  if( Strictness < -1 || Strictness > 3 )
+    throw std::runtime_error( "--strict " + std::to_string( Strictness ) + " invalid" );
   bReverseSort = !cl.GotSwitch( "inc" );
   Common::MakeAncestorDirs( outBaseFileName );
+  int SeqNum{ 0 };
   for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
   {
     Common::FileNameAtt n{ sFileName, };
-    std::size_t NumExtra{ n.Extra.size() };
     if( !Common::FileExists( sFileName ) )
       throw std::runtime_error( sFileName + " doesn't exist" );
-    if( NumExtra == 0 )
-      throw std::runtime_error( "No fit type in " + sFileName );
-    std::string sFitType{ n.Extra[0] };
-    const std::size_t pos_ti = sFitType.find_first_of( '_' );
     FitTimes ft;
-    if( pos_ti == std::string::npos || !ft.Parse( sFitType.substr( pos_ti + 1 ) ) )
-      throw std::runtime_error( "Error extracting fit ranges from " + sFileName );
-    sFitType.resize( pos_ti );
+    std::string sFitType;
+    bool bIsFit{ false };
+    if( n.Extra.size() )
+    {
+      sFitType = n.Extra[0];
+      bIsFit = ft.ParseTypeTimes( sFitType );
+    }
+    if( !bIsFit )
+    {
+      // If there are no fit times, give every item a unique number so it can be sorted
+      ft.time.resize( 2 );
+      ft.time[0] = 0;
+      ft.time[1] = ++SeqNum;
+    }
     // The master key for this record is the base filename of the output
     std::string sOutFile{ n.Base };
-    sOutFile.append( 1, '.' );
-    sOutFile.append( sFitType );
-    n.AppendOps( sOutFile );
-    lBase[sOutFile].emplace_back( FileInfo( ft, sFileName ) );
-    if( Strictness < -1 || Strictness > 3 )
-      throw std::runtime_error( "--strict " + std::to_string( Strictness ) + " invalid" );
+    if( bIsFit && sFitType.size() )
+    {
+      sOutFile.append( 1, '.' );
+      sOutFile.append( sFitType );
+    }
+    n.AppendOps( sOutFile, Common::Period );
+    std::cout << sOutFile << Common::Space << sFileName << Common::NewLine;
+    lBase[sOutFile].emplace_back( FileInfo( ft, sFileName, bIsFit ) );
   }
 }
 
@@ -189,7 +213,11 @@ void Summariser::Run()
         // Save the summary of the parameters for this file
         ss.str("");
         m.SummaryContents( ss );
-        const Common::ValWithEr<scalar> &pValueH{ m.getSummaryData( StatisticName ) };
+        const int idxpValue{ m.GetColumnIndexNoThrow( StatisticName ) };
+        if( idxpValue < 0 && ThisFile.bIsFit )
+          throw std::runtime_error( StatisticName + " unavailable - required for fit" );
+        const Common::ValWithEr<scalar> One(1,1,1,1,1,1);
+        const Common::ValWithEr<scalar> &pValueH{ idxpValue < 0 ? One : *m.getSummaryData( idxpValue ) };
         scalar TestStat = pValueH.Central;
         // save the model in my list
         int NumDataPoints{ 0 };

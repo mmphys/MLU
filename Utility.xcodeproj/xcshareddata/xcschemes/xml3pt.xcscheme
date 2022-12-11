@@ -55,6 +55,10 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "eigtest.trunc.820.xml"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "../xml/xml3pt.xml"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

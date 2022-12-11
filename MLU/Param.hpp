@@ -121,10 +121,15 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   //using MapT = std::map<Param::Key, Param, Param::Key::Less>;
   //using MapPairT = std::pair<iterator, bool>;
   Params() {};
-  Params( const std::vector<std::string> &ParamNames ); // List of single, variable parameters
+  /// Create list of single, variable parameters
+  Params( const std::vector<std::string> &ParamNames );
+  /// Create list of single, variable parameters and get their indices
+  Params( const std::vector<std::string> &ParamNames, std::vector<std::size_t> &vIdx );
   Params::iterator Add( const Param::Key &key, std::size_t NumExp = 1, bool bMonotonic = false,
                         Param::Type Type = Param::Type::Variable );
   Params::iterator MakeFixed( const Param::Key &key, bool bSwapSourceSink );
+  /// Find the key. If Params have only one objectID, match anything
+  Params::const_iterator FindPromiscuous( const Param::Key &key ) const;
   void AssignOffsets();
   std::size_t NumScalars( Param::Type Type ) const
   {

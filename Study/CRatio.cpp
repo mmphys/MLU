@@ -29,6 +29,8 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+static const char szReading[] = " Reading ";
+
 /*namespace Common {
 template<std::size_t Num>
 std::istream & operator>>( std::istream &is, std::array<std::string,Num> &c )
@@ -756,14 +758,284 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   }
 }
 
-FFitConstMaker::FFitConstMaker( std::string TypeParams, const Common::CommandLine &cl )
-: Maker( cl ), p("",0), i3Base{ cl.SwitchValue<std::string>("i3") },
-  N{ Common::FromString<unsigned int>( Common::ExtractToSeparator( TypeParams ) ) },
-  ap{ 2 * M_PI / N }
+const std::vector<std::string> FormFactor::ParamNames{ "EL", "mL", "mH", "qSq", "kMu",
+  "melV0", "melVi", "fPar", "fPerp", "fPlus", "f0", "ELLat", "qSqLat" };
+
+FormFactor::FormFactor( std::string TypeParams )
+: N{ Common::FromString<unsigned int>( Common::ExtractToSeparator( TypeParams ) ) },
+  ap{ 2 * M_PI / N },
+  bAdjustGammaSpatial{ Common::EqualIgnoreCase( TypeParams, "spatial" ) }
 {
-  bAdjustGammaSpatial = Common::EqualIgnoreCase( TypeParams, "spatial" );
   if( !bAdjustGammaSpatial && !TypeParams.empty() )
     throw std::runtime_error( "Unrecognised form factor option: " + TypeParams );
+}
+
+void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFrom,
+                        std::vector<std::string> &&SourceFileNames, int NumSamples,
+                        const Vector &MHeavy, const Vector &ELight,
+                        const Vector &vT, const Common::Momentum &p,
+                        // These only required for non-zero momentum
+                        const Vector *pMLight, const Vector *pvXYZ )
+{
+  assert( Model::idxCentral == -1 && "Bug: Model::idxCentral != -1" );
+  if( p )
+  {
+    if( !pMLight )
+      throw std::invalid_argument( "pMLight must be specified for non-zero momentum" );
+    if( !pvXYZ )
+      throw std::invalid_argument( "pvXYZ must be specified for non-zero momentum" );
+  }
+  const Vector &MLight{ p ? *pMLight : ELight };
+  std::vector<std::size_t> vIdx;
+  Model Out( NumSamples, Common::Params( ParamNames, vIdx ), {} );
+  Out.FileList = std::move( SourceFileNames );
+  Out.CopyAttributes( CopyAttributesFrom );
+  Out.Name_.Seed = CopyAttributesFrom.Name_.Seed;
+  Out.binSize = CopyAttributesFrom.binSize;
+  for( int idx = 0; idx < NumSamples - Model::idxCentral; ++idx )
+  {
+    Scalar *O = Out[idx + Model::idxCentral];
+    O[vIdx[qSq]] = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * ELight[idx];
+    O[vIdx[mH]] = MHeavy[idx];
+    O[vIdx[mL]] = MLight[idx];
+    O[vIdx[EL]] = ELight[idx];
+    O[vIdx[ELLat]] = p.LatticeDispersion( MLight[idx], N );
+    O[vIdx[qSqLat]] = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * O[vIdx[ELLat]];
+    O[vIdx[melV0]] = vT[idx];
+    const Scalar    Root2MH{ std::sqrt( MHeavy[idx] * 2 ) };
+    const Scalar InvRoot2MH{ 1. / Root2MH };
+    O[vIdx[fPar]] = vT[idx] * InvRoot2MH;
+    if( p )
+    {
+      O[vIdx[kMu]] = ap;
+      if( bAdjustGammaSpatial )
+      {
+        int FirstNonZero{ p.x ? p.x : p.y ? p.y : p.z };
+        if( ( p.y && p.y != FirstNonZero ) || ( p.z && p.z != FirstNonZero ) )
+          throw std::runtime_error( "Can't adjust gXYZ when momentum components differ" );
+        O[vIdx[kMu]] *= FirstNonZero;
+      }
+      O[vIdx[melVi]] = (*pvXYZ)[idx];
+      O[vIdx[fPerp]] = (*pvXYZ)[idx] * InvRoot2MH / O[vIdx[kMu]];
+      O[vIdx[fPlus]] = ( MHeavy[idx] - ELight[idx] ) * O[vIdx[fPerp]];
+      O[vIdx[f0]] = ( ELight[idx] * ELight[idx] - MLight[idx] * MLight[idx] ) * O[vIdx[fPerp]];
+    }
+    else
+    {
+      O[vIdx[kMu]] = 0;
+      O[vIdx[melVi]] = 0;
+      O[vIdx[fPerp]] = 0;
+      O[vIdx[fPlus]] = 0;
+      O[vIdx[f0]] = 0;
+    }
+    O[vIdx[fPlus]] += O[vIdx[fPar]];
+    O[vIdx[fPlus]] *= InvRoot2MH;
+    O[vIdx[f0]] += ( MHeavy[idx] - ELight[idx] ) * O[vIdx[fPar]];
+    O[vIdx[f0]] *= Root2MH / ( MHeavy[idx] * MHeavy[idx] - MLight[idx] * MLight[idx] );
+  }
+  // Write output
+  std::cout << " Writing " << OutFileName <<Common::NewLine;
+  Out.MakeCorrSummary( Common::sParams.c_str() );
+  Out.Write( OutFileName );
+  OutFileName.resize( OutFileName.length() - Out.Name_.Ext.length() );
+  OutFileName.append( TEXT_EXT );
+  Out.WriteSummary( OutFileName );
+}
+
+bool FMaker::RatioFile::Less::operator()( const RatioFile &lhs, const RatioFile &rhs ) const
+{
+  int i{ Common::CompareIgnoreCase( lhs.Prefix, rhs.Prefix ) };
+  if( i )
+    return i < 0;
+  i = Common::CompareIgnoreCase( lhs.Sink, rhs.Sink );
+  if( i )
+    return i < 0;
+  i = Common::CompareIgnoreCase( lhs.Source, rhs.Source );
+  if( i )
+    return i < 0;
+  return lhs.p < rhs.p;
+}
+
+void FMaker::Make( std::string &FileName )
+{
+  // Parse Filename and check it contains what we need
+  //std::cout << "Processing " << FileName << Common::NewLine;
+  std::vector<std::string> OpNames;
+  Common::FileNameAtt fna{ FileName, &OpNames };
+  if( OpNames.empty() )
+    throw std::runtime_error( "Sink / source operator names mising" );
+  if( fna.Gamma.size() != 1 )
+    throw std::runtime_error( FileName + " has " + std::to_string( fna.Gamma.size() ) + " currents" );
+  const bool bGammaT{ fna.Gamma[0] == Common::Gamma::Algebra::GammaT };
+  if( !bGammaT && fna.Gamma[0] != Common::Gamma::Algebra::Spatial )
+  {
+    std::ostringstream ss;
+    ss << "Ignoring current " << fna.Gamma[0] << " - should be "
+       << Common::Gamma::Algebra::GammaT << " or " << Common::Gamma::Algebra::Spatial << " only";
+    throw std::runtime_error( ss.str().c_str() );
+  }
+  if( fna.p.empty() )
+    throw std::runtime_error( FileName + " has no momenta" );
+  if( fna.Meson.size() != 2 || fna.MesonMom.size() != 2 )
+    throw std::runtime_error( FileName + " unable to decode mesons" );
+  //std::cout << "  " << fna.MesonMom[0] << " -> " << fna.Gamma[0] << " -> " << fna.MesonMom[1] << Common::NewLine;
+  const Common::FileNameMomentum &p{ fna.p.begin()->second };
+  RatioFile rf( p, fna.Meson[0], fna.Meson[1] );
+  std::vector<std::string> &vs{ map[bGammaT ? 0 : 1][rf] };
+  vs.emplace_back( FileName );
+}
+
+void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::string> &FileList )
+{
+  // Parse each filename and group by decay, momentum and gamma
+  for( std::string &f : FileList )
+  {
+    try
+    {
+      Make( f ); // Parse
+    }
+    catch( const std::exception &e )
+    {
+      std::cerr << "Error: " << e.what() << std::endl;
+    }
+    catch( ... )
+    {
+      std::cerr << "Error: Unknown exception" << std::endl;
+    }
+  }
+  // Walk the list of every prefix, decay and momentum
+  for( const typename FileMap::value_type &vt : map[0] )
+  {
+    try
+    {
+      // Get information about this decay
+      const RatioFile &rf{ vt.first };
+      const std::vector<std::string> &vFileGammaT{ vt.second };
+      std::vector<std::string> OpNames;
+      Common::FileNameAtt fna{ vFileGammaT[0], &OpNames };
+      std::string sOpNames;
+      fna.AppendOps( sOpNames, Common::Period, &OpNames );
+      const Common::FileNameMomentum &p{ fna.GetFirstNonZeroMomentum() };
+      std::string Description;
+      {
+        std::ostringstream os;
+        os << rf.Source << " --> " << rf.Sink << p.FileString( " " );
+        Description = os.str();
+      }
+      std::cout << Description << Common::NewLine;
+      std::array<std::string,2> q{ fna.BaseShortParts[2], fna.BaseShortParts[1] };
+      const int iLight{ fna.MesonP[0] ? 0 : 1 }; // Work out which meson is heavy (ie got momentum)
+      const int iHeavy{ 1 - iLight };
+      // If non-zero momentum, build a list of corresponding spatial correlators
+      std::vector<Model> mGammaXYZ;
+      Model * pmMLight = nullptr; // Doesn't own what it points to
+      Vector MLight;
+      if( !rf.p )
+        mGammaXYZ.resize( 1 ); // A single, dummy model so the loop works
+      else
+      {
+        // Get the zero-momentum version of the light
+        const Common::FileNameMomentum p0( p.Name, p.bp2 );
+        QP qpMLight( q[iLight], p0 );
+        pmMLight = &EFit( qpMLight, szReading );
+        MLight = EFit.GetVector( qpMLight );
+        // Read all the gamma spatial
+        typename FileMap::iterator it{ map[1].find( rf ) };
+        if( it == map[1].end() )
+          throw std::runtime_error( "Gamma spatial not found for " + Description );
+        std::vector<std::string> SpatialNames{ std::move( it->second ) };
+        map[1].erase( it );
+        for( std::string &File : SpatialNames )
+        {
+          try
+          {
+            Model m;
+            m.Read( File, " reading spatial model", &OpNames );
+            mGammaXYZ.emplace_back( std::move( m ) );
+          }
+          catch( const std::exception &e )
+          {
+            std::cerr << "Error: " << e.what() << std::endl;
+          }
+        }
+        if( mGammaXYZ.empty() )
+          throw std::runtime_error( "Gamma spatial not found for " + Description );
+      }
+      // For each temporal correlator - process with all corresponding spatial
+      int iSeq{ 0 };
+      std::string OutFileName{ outBase };
+      OutFileName.append( 1, 'F' );
+      OutFileName.append( fna.GetBaseShort() );
+      OutFileName.append( p.FileString() );
+      const std::size_t OutFileNameLen{ OutFileName.length() };
+      for( const std::string &File : vFileGammaT )
+      {
+        try
+        {
+          Model mGT;
+          mGT.Read( File, " reading temporal model", &OpNames );
+          // Most of the data can come from the temporal file
+          Common::Param::Key k( fna.MesonMom[iLight], mGT.EnergyPrefix );
+          Vector ELight = mGT.GetVector( k );
+          k.Object[0] = fna.MesonMom[iHeavy];
+          Vector MHeavy = mGT.GetVector( k );
+          k.Object[0] = fna.MesonMom[0];
+          k.Object.emplace_back( fna.MesonMom[1] );
+          k.Name = "MEL";
+          Vector vT = mGT.GetVector( k );
+          // NB: There's a single, dummy spatial model in the list for zero momentum
+          for( Model &mSpatial : mGammaXYZ )
+          {
+            ++Total;
+            try
+            {
+              int NumSamples{ mGT.NumSamples() };
+              std::vector<std::string> vSourceFiles{ mGT.Name_.Filename };
+              Vector vXYZ;
+              if( rf.p )
+              {
+                mGT.IsCompatible( mSpatial, &NumSamples,
+                                  Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+                mGT.IsCompatible( *pmMLight, &NumSamples,
+                                  Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+                vSourceFiles.emplace_back( mSpatial.Name_.Filename );
+                vSourceFiles.emplace_back( pmMLight->Name_.Filename );
+                vXYZ = mSpatial.GetVector( k );
+              }
+              OutFileName.resize( OutFileNameLen );
+              if( iSeq )
+              {
+                OutFileName.append( 1, '.' );
+                OutFileName.append( std::to_string( iSeq ) );
+              }
+              OutFileName.append( sOpNames );
+              OutFileName = Common::MakeFilename( OutFileName, Common::sModel, mGT.Name_.Seed, DEF_FMT );
+              Write( OutFileName, mGT, std::move( vSourceFiles ), NumSamples, MHeavy, ELight,
+                     vT, rf.p, &MLight, &vXYZ );
+              ++NumOK;
+              ++iSeq;
+            }
+            catch( const std::exception &e )
+            {
+              std::cerr << "Error: " << e.what() << std::endl;
+            }
+          }
+        }
+        catch( const std::exception &e )
+        {
+          std::cerr << "Error: " << e.what() << std::endl;
+        }
+      }
+    }
+    catch( const std::exception &e )
+    {
+      std::cerr << "Error: " << e.what() << std::endl;
+    }
+    catch( ... )
+    {
+      std::cerr << "Error: Unknown exception" << std::endl;
+    }
+  }
 }
 
 int FFitConstMaker::Weight( const std::string &Quark )
@@ -876,11 +1148,10 @@ void FFitConstMaker::Make( std::string &FileName )
     //throw std::runtime_error( OutFileName + " exists" );
   // Open files
   Model mT, mXYZ;
-  VectorView vT, vXYZ;
-  static const char szReading[] = " Reading ";
+  Vector vT, vXYZ;
   mT.Read( FileName, szReading );
   assert( Model::idxCentral == -1 && "Bug: Model::idxCentral != -1" );
-  vT.Map( mT[Model::idxCentral], mT.NumSamples() - Model::idxCentral, mT.Nt() );
+  vT.MapView( mT[Model::idxCentral], mT.NumSamples() - Model::idxCentral, mT.Nt() );
   int NumSamples {};
   std::string FileNameXYZ;
   if( p )
@@ -898,7 +1169,7 @@ void FFitConstMaker::Make( std::string &FileName )
       std::cout << Common::Space << GlobName << " ambiguous" << Common::NewLine;
     FileNameXYZ = std::move( FileList[0] );
     mXYZ.Read( FileNameXYZ, szReading );
-    vXYZ.Map( mXYZ[Model::idxCentral], mXYZ.NumSamples() - Model::idxCentral, mXYZ.Nt() );
+    vXYZ.MapView( mXYZ[Model::idxCentral], mXYZ.NumSamples() - Model::idxCentral, mXYZ.Nt() );
     mT.IsCompatible( mXYZ, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
   }
   // Load energies
@@ -920,80 +1191,14 @@ void FFitConstMaker::Make( std::string &FileName )
   const Vector ELight{ EFit.GetVector( qpELight ) };
 
   // Make output
-  static const std::vector<std::string> ParamNames{ "EL", "mL", "mH", "qSq", "kMu", "melV0", "melVi",
-                  "fPar", "fPerp", "fPlus", "f0", "ELLat", "qSqLat" };
-  constexpr int EL{ 0 };
-  constexpr int mL{ 1 };
-  constexpr int mH{ 2 };
-  constexpr int qSq{ 3 };
-  constexpr int kMu{ 4 };
-  constexpr int melV0{ 5 };
-  constexpr int melVi{ 6 };
-  constexpr int fPar{ 7 };
-  constexpr int fPerp{ 8 };
-  constexpr int fPlus{ 9 };
-  constexpr int f0{ 10 };
-  constexpr int ELLat{ 11 }; // qSq ... but E_i derived from E_0 and lattice dispersion relation
-  constexpr int qSqLat{ 12 }; // qSq ... but E_i derived from E_0 and lattice dispersion relation
-  Model Out( NumSamples, Common::Params( ParamNames ), {} );
-  Out.FileList.emplace_back( FileName );
+  std::vector<std::string> SourceFileNames{ FileName };
   if( p )
-    Out.FileList.emplace_back( FileNameXYZ );
-  Out.FileList.emplace_back( mMHeavy.Name_.Filename );
-  Out.FileList.emplace_back( mMLight.Name_.Filename );
+    SourceFileNames.emplace_back( FileNameXYZ );
+  SourceFileNames.emplace_back( mMHeavy.Name_.Filename );
+  SourceFileNames.emplace_back( mMLight.Name_.Filename );
   if( p )
-    Out.FileList.emplace_back( mELight.Name_.Filename );
-  Out.CopyAttributes( mT );
-  Out.Name_.Seed = mT.Name_.Seed;
-  Out.binSize = mT.binSize;
-  for( int idx = 0; idx < NumSamples - Model::idxCentral; ++idx )
-  {
-    Scalar *O = Out[idx + Model::idxCentral];
-    O[qSq] = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * ELight[idx];
-    O[mH] = MHeavy[idx];
-    O[mL] = MLight[idx];
-    O[EL] = ELight[idx];
-    O[ELLat] = p.LatticeDispersion( MLight[idx], N );
-    O[qSqLat] = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * O[ELLat];
-    O[melV0] = vT[idx];
-    const Scalar    Root2MH{ std::sqrt( MHeavy[idx] * 2 ) };
-    const Scalar InvRoot2MH{ 1. / Root2MH };
-    O[fPar] = vT[idx] * InvRoot2MH;
-    if( p )
-    {
-      O[kMu] = ap;
-      if( bAdjustGammaSpatial )
-      {
-        int FirstNonZero{ p.x ? p.x : p.y ? p.y : p.z };
-        if( ( p.y && p.y != FirstNonZero ) || ( p.z && p.z != FirstNonZero ) )
-          throw std::runtime_error( "Can't adjust gXYZ when momentum components differ" );
-        O[kMu] *= FirstNonZero;
-      }
-      O[melVi] = vXYZ[idx];
-      O[fPerp] = vXYZ[idx] * InvRoot2MH / O[kMu];
-      O[fPlus] = ( MHeavy[idx] - ELight[idx] ) * O[fPerp];
-      O[f0] = ( ELight[idx] * ELight[idx] - MLight[idx] * MLight[idx] ) * O[fPerp];
-    }
-    else
-    {
-      O[kMu] = 0;
-      O[melVi] = 0;
-      O[fPerp] = 0;
-      O[fPlus] = 0;
-      O[f0] = 0;
-    }
-    O[fPlus] += O[fPar];
-    O[fPlus] *= InvRoot2MH;
-    O[f0] += ( MHeavy[idx] - ELight[idx] ) * O[fPar];
-    O[f0] *= Root2MH / ( MHeavy[idx] * MHeavy[idx] - MLight[idx] * MLight[idx] );
-  }
-  // Write output
-  std::cout << " Writing " << OutFileName <<Common::NewLine;
-  Out.MakeCorrSummary( Common::sParams.c_str() );
-  Out.Write( OutFileName );
-  OutFileName.resize( OutFileName.length() - fna.Ext.length() );
-  OutFileName.append( TEXT_EXT );
-  Out.WriteSummary( OutFileName );
+    SourceFileNames.emplace_back( mELight.Name_.Filename );
+  Write( OutFileName, mT, std::move( SourceFileNames ), NumSamples, MHeavy, ELight, vT, p, &MLight, &vXYZ );
 }
 
 Maker::Maker( const Common::CommandLine &cl )
@@ -1050,22 +1255,23 @@ int main(int argc, const char *argv[])
         m.reset( new RMaker( TypeParams, cl ) );
       else if( Common::EqualIgnoreCase( Type, "ZV" ) )
         m.reset( new ZVMaker( TypeParams, cl ) );
+      else if( Common::EqualIgnoreCase( Type, "F" ) )
+        m.reset( new FMaker( TypeParams, cl ) );
       else if( Common::EqualIgnoreCase( Type, "FFC" ) )
         m.reset( new FFitConstMaker( TypeParams, cl ) );
       else
         throw std::runtime_error( "I don't know how to make type " + Type );
       bShowUsage = false;
       const std::string Prefix3pt{ cl.SwitchValue<std::string>("i3") };
-      std::vector<std::string> FileList{ Common::glob( cl.Args.begin(), cl.Args.end(), Prefix3pt.c_str() ) };
+      std::vector<std::string> FileList{ Common::glob( cl.Args.begin(), cl.Args.end(),
+                                                       Prefix3pt.c_str() ) };
       std::size_t Count{ 0 };
       std::size_t Done{ 0 };
-      for( std::string &sFile : FileList )
+      if( m->CanRun() )
       {
         try
         {
-          ++Count;
-          m->Make( sFile );
-          ++Done;
+          m->Run( Done, Count, FileList );
         }
         catch(const std::exception &e)
         {
@@ -1076,7 +1282,27 @@ int main(int argc, const char *argv[])
           std::cerr << "Error: Unknown exception" << std::endl;
         }
       }
-      std::cout << Done << " of " << Count << Common::Space << Type << " ratios created" << Common::NewLine;
+      else
+      {
+        for( std::string &sFile : FileList )
+        {
+          try
+          {
+            ++Count;
+            m->Make( sFile );
+            ++Done;
+          }
+          catch(const std::exception &e)
+          {
+            std::cerr << "Error: " << e.what() << std::endl;
+          }
+          catch( ... )
+          {
+            std::cerr << "Error: Unknown exception" << std::endl;
+          }
+        }
+      }
+      std::cout << Done << " of " << Count << Common::Space << Type << " ratios created\n";
     }
   }
   catch(const std::exception &e)
@@ -1100,6 +1326,8 @@ int main(int argc, const char *argv[])
     "       ZV  Make ZV (no Options)\n"
     "       R   Make R ratios. Options as per --efit, except a) Fit_list->ZV_List\n"
     "           b) Spectator not required\n"
+    "       F   Make form factors from matrix element fits. Options\n"
+    "           L i.e. spatial extent of lattice, (e.g. 24, 32, 64, ...)\n"
     "       FFC Make form factors from fit to constant. Options\n"
     "           L i.e. spatial extent of lattice, (e.g. 24, 32, 64, ...)\n"
     "           'spatial' flag to divide spatial current gXYZ by integer momentum\n"

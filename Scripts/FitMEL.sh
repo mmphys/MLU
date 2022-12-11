@@ -123,7 +123,7 @@ OutLongName=${OutPart1}.${OutPart2}.${OutPart3}
 
 # Fit the data
 
-mkdir -p $OutSubDir/1Fit
+mkdir -p $OutSubDir
 
 for (( i = 0; i < ${#DeltaT[@]}; ++i ))
 do
@@ -136,7 +136,7 @@ do
   MySep=" "
 done
 
-BuildModelBase=$OutSubDir/1Fit/${FitWhat}_${OutLongName}
+BuildModelBase=$OutSubDir/${FitWhat}_${OutLongName}
 
 MultiFit="MultiFit -e $NumExp --Hotelling 0 --mindp 1"
 MultiFit="$MultiFit --overwrite"

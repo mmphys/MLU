@@ -238,6 +238,18 @@ Params::Params( const std::vector<std::string> &ParamNames )
   AssignOffsets();
 }
 
+Params::Params( const std::vector<std::string> &ParamNames, std::vector<std::size_t> &vIdx )
+: Params( ParamNames )
+{
+  Common::Param::Key k;
+  vIdx.resize( ParamNames.size() );
+  for( std::size_t i = 0; i < ParamNames.size(); ++i )
+  {
+    k.Name = ParamNames[i];
+    vIdx[i] = at( k )();
+  }
+}
+
 Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bMonotonic, Param::Type type_ )
 {
   // Work out how many elements are needed
@@ -334,6 +346,15 @@ Params::iterator Params::MakeFixed( const Param::Key &key, bool bSwapSourceSink 
   p.bMonotonic = false;
   p.bSwapSourceSink = bSwapSourceSink;
   return it;
+}
+
+Params::const_iterator Params::FindPromiscuous( const Param::Key &key ) const
+{
+  if( empty() )
+    return end();
+  if( bSingleObject )
+    return find( Param::Key( begin()->first.Object[0], key.Name ) );
+  return find( key );
 }
 
 void Params::AssignOffsets()

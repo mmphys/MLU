@@ -46,7 +46,8 @@ struct FitTimes
   int tf() const { return time[1]; };
   std::string tfLabel() const;
   unsigned int GuessOldNumDataPoints( int NumFiles ) const;
-  bool Parse( std::string Times );
+  bool ParseTimes( std::string Times );
+  bool ParseTypeTimes( std::string &TypeTimes );
 };
 
 struct FitData
@@ -77,7 +78,9 @@ struct FileInfo
 {
   FitTimes ft;
   std::string FileName;
-  FileInfo( const FitTimes ft_, const std::string &FileName_ ) : ft{ft_}, FileName{FileName_} {}
+  bool bIsFit;
+  FileInfo( const FitTimes ft_, const std::string &FileName_, bool bIsFit_ )
+  : ft{ft_}, FileName{FileName_}, bIsFit{bIsFit_} {}
 };
 
 struct Summariser

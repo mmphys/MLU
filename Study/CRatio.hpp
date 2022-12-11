@@ -234,6 +234,8 @@ public:
   Maker( const Common::CommandLine &cl );
   virtual ~Maker() {}
   virtual void Make( std::string &sFileName ) = 0;
+  virtual bool CanRun() const { return false; }
+  virtual void Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::string> &FileList ) {}
 };
 
 class ZVRCommon : public Maker
@@ -283,14 +285,66 @@ public:
   RMaker( const std::string &TypeParams, const Common::CommandLine &cl );
 };
 
-// Make F parralel, F perpendicular, F+ and F0
-class FFitConstMaker : public Maker
+struct FormFactor
 {
-  const std::string i3Base;
+  static const std::vector<std::string> ParamNames;
+  static constexpr int EL{ 0 };
+  static constexpr int mL{ 1 };
+  static constexpr int mH{ 2 };
+  static constexpr int qSq{ 3 };
+  static constexpr int kMu{ 4 };
+  static constexpr int melV0{ 5 };
+  static constexpr int melVi{ 6 };
+  static constexpr int fPar{ 7 };
+  static constexpr int fPerp{ 8 };
+  static constexpr int fPlus{ 9 };
+  static constexpr int f0{ 10 };
+  static constexpr int ELLat{ 11 };  // EL,  but E_i derived from E_0 and lattice dispersion relation
+  static constexpr int qSqLat{ 12 }; // qSq, but E_i derived from E_0 and lattice dispersion relation
   const unsigned int N;
   const Scalar ap;
+  const bool bAdjustGammaSpatial;
+  FormFactor( std::string TypeParams );
+  void Write( std::string &OutFileName, const Model &CopyAttributesFrom,
+              std::vector<std::string> &&SourceFileNames, int NumSamples,
+              const Vector &MHeavy, const Vector &ELight,
+              const Vector &vT, const Common::Momentum &p,
+             // These only required for non-zero momentum
+              const Vector *pMLight, const Vector *pvXYZ );
+};
+
+// Make F parralel, F perpendicular, F+ and F0
+class FMaker : public Maker, public FormFactor
+{
+  struct RatioFile
+  {
+    Common::Momentum p;
+    std::string Prefix;
+    std::string Source;
+    std::string Sink;
+    struct Less { bool operator()( const RatioFile &lhs, const RatioFile &rhs ) const; };
+    RatioFile( const Common::Momentum &p_, const std::string &Source_, const std::string &Sink_ )
+    : p{p_}, Source{Source_}, Sink{Sink_} {}
+  };
+  using FileMap = std::map<RatioFile, std::vector<std::string>, RatioFile::Less>;
+
+  const std::string i3Base;
 protected:
-  bool bAdjustGammaSpatial;
+  std::array<FileMap,2> map;
+public:
+  static int Weight( const std::string &Quark );
+  FMaker( std::string TypeParams, const Common::CommandLine &cl )
+  : Maker( cl ), FormFactor{TypeParams}, i3Base{ cl.SwitchValue<std::string>("i3") } {}
+  void Make( std::string &sFileName ) override;
+  bool CanRun() const override { return true; }
+  void Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::string> &FileList ) override;
+};
+
+// Make F parralel, F perpendicular, F+ and F0
+class FFitConstMaker : public Maker, public FormFactor
+{
+  const std::string i3Base;
+protected:
   int RatioNum;
   std::string qSnk;
   std::string qSrc;
@@ -301,6 +355,7 @@ protected:
   std::vector<int> FitParts;
 public:
   static int Weight( const std::string &Quark );
-  FFitConstMaker( std::string TypeParams, const Common::CommandLine &cl );
+  FFitConstMaker( std::string TypeParams, const Common::CommandLine &cl )
+  : Maker( cl ), FormFactor{TypeParams}, i3Base{ cl.SwitchValue<std::string>("i3") } {}
   void Make( std::string &sFileName ) override;
 };

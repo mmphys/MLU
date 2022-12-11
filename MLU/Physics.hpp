@@ -211,6 +211,7 @@ struct FileNameMomentum : public Momentum
   std::string Name;
   bool bp2;
   static Momentum FromSquared( const int p2 );
+  FileNameMomentum() {}
   FileNameMomentum( const std::string &Name_, const bool bp2_ ) : Name{Name_}, bp2{bp2_} {}
   FileNameMomentum( const std::string &Name_, int x_, int y_, int z_ ) : Momentum(x_,y_,z_), Name{Name_}, bp2{false} {}
   FileNameMomentum( const std::string &Name_, int p2 ) : Momentum(FromSquared(p2)), Name{Name_}, bp2{true} {}

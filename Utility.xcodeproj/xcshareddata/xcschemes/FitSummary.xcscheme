@@ -59,10 +59,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i /Volumes/QCD/tursa/semilep/data/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "F1M/analyse/fit3/2ptp2/s_l/s_l_p2_0.corr_&apos;*.g5P_g5W.model.*.h5&apos;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "FFS/F1M/3sm_sp2/FR3_l_h385_p2_1*.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

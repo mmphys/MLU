@@ -541,7 +541,8 @@ struct FileNameAtt
   std::string Spectator;
   bool bSpectatorGotSuffix = false;
   std::vector<std::string> Meson; // 0 is source, 1 is sink
-  std::vector<std::string> MesonMom; // With momenta
+  std::vector<std::string> MesonMom; // With momenta - if available
+  std::vector<FileNameMomentum> MesonP; // The momenta - if available
   // reset contents
   void clear()
   {
@@ -1566,11 +1567,10 @@ public:
   const std::vector<std::string> & GetColumnNames() const { return ColumnNames; }
   inline int GetColumnIndexNoThrow( const std::string & ColumnName ) const
   {
-    assert( ColumnNames.size() <= std::numeric_limits<int>::max() && "Wow that's a lot of columns!" );
-    for( int i = 0; i < ColumnNames.size(); i++ )
-      if( EqualIgnoreCase( ColumnNames[i], ColumnName ) )
-        return i;
-    return -1;
+    int idxField{ IndexIgnoreCase( GetColumnNames(), ColumnName ) };
+    if( idxField >= GetColumnNames().size() )
+      idxField = -1;
+    return idxField;
   }
   inline int GetColumnIndexNoThrow( const std::string & ColumnName, int idx ) const
   {
@@ -3065,6 +3065,7 @@ struct Model : public Sample<T>
   int GetExtent() { return static_cast<int>( ::Common::GetExtent( FitTimes ) ); };
   int NumFitParams() { return static_cast<int>( params.NumScalars( Param::Type::Variable ) ); };
   int NumParams() { return static_cast<int>( params.NumScalars( Param::Type::All ) ); };
+  Vector<T> GetVector( Param::Key &k, std::size_t Index = 0 );
 
   Model() : Base::Sample{} {}
   Model( int NumSamples, Params Params_, const std::vector<std::string> &ExtraColumns );
