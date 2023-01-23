@@ -852,7 +852,7 @@ std::istream& operator>>( std::istream& is, SampleSource &sampleSource )
   throw std::runtime_error( "SampleSource \"" + sEnum + "\" unrecognised" );
 }
 
-template <typename T> const std::string Model<T>::EnergyPrefix{ "E" };
+const std::string ModelBase::EnergyPrefix{ "E" };
 
 template <typename T>
 Vector<T> Model<T>::GetVector( Param::Key &k, std::size_t Index )

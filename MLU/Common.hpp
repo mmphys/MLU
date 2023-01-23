@@ -3023,14 +3023,18 @@ template <typename T> std::size_t GetExtent( const std::vector<std::vector<T>> &
   return Extent;
 }
 
+struct ModelBase
+{
+  static const std::string EnergyPrefix;
+};
+
 template <typename T>
-struct Model : public Sample<T>
+struct Model : public Sample<T>, public ModelBase
 {
   using Base = Sample<T>;
   using Traits = typename Base::Traits;
   using scalar_type = typename Traits::scalar_type;
   using value_type = typename Traits::value_type;
-  static const std::string EnergyPrefix;
   int NumExponents = 0;
   int dof = 0;
   bool CovarFrozen = false;

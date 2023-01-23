@@ -93,14 +93,28 @@ void Extractor::Show( const NameValue &NV, const std::vector<std::string> Select
 {
   for( const std::string &s : Selection )
   {
+    const bool bLookingForZero{ !s.empty() && s.back() == '0' };
+    const std::string sWithoutZero{ bLookingForZero ? s.substr( 0, s.size() - 1 ) : "" };
     bool bFound{ false };
     std::size_t i = 0;
     while( !bFound && i < NV.Name.size() )
     {
       if( bExact )
+      {
+        // The whole string must match - with or without trailing zero
         bFound = Common::EqualIgnoreCase( s, NV.Name[i] );
+        if( !bFound )
+          bFound = Common::EqualIgnoreCase( sWithoutZero, NV.Name[i] );
+      }
       else
+      {
+        // Either I find what I'm looking for anywhere in the string
         bFound = NV.Name[i].find( s ) != std::string::npos;
+        // ... or the end matches without the trailing zero
+        if( !bFound && bLookingForZero && NV.Name[i].size() >= sWithoutZero.size() )
+          bFound = Common::EqualIgnoreCase( sWithoutZero, NV.Name[i].substr( NV.Name[i].size()
+                                                                          - sWithoutZero.size() ) );
+      }
       if( !bFound )
         ++i;
     }

@@ -44,6 +44,7 @@ Corr=${Corr:-corr}
 MELFit=${MELFit:-MELFit}
 #yrangeR3=${yrangeR3:-0.00068:0.000782}
 #yrangeMEL=${yrangeMEL:-0.527:0.537}
+FitOptionsPerFile=($Options)
 
 Plot=${Plot:-Plot}
 PlotDataFrom=${PlotDataFrom:-4} # how far in from source and sink to plot data points
@@ -128,6 +129,7 @@ mkdir -p $OutSubDir
 for (( i = 0; i < ${#DeltaT[@]}; ++i ))
 do
   FitList="$FitList${MySep}${PrefixFit}${DeltaT[i]}${SuffixFit}.h5,t=${TI[i]}:${TF[i]}${FitOptions}"
+  if (( ${#FitOptionsPerFile[i]} )); then FitList="$FitList,${FitOptionsPerFile[i]}"; echo "$i: ${FitOptionsPerFile[i]}"; fi
   DataList="$DataList${DataList:+ }${PrefixFit}${DeltaT[i]}${SuffixFit}.txt"
   Title="$Title${MySep}ΔT=${DeltaT[i]}"
   LabelTI="$LabelTI${MySep}${PlotDataFrom}"

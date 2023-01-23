@@ -90,8 +90,8 @@ set format y "%.6f"
 if( DoLog ) { set logscale y }
 
 # Work out layout
-LMar=0.075
-RMar=0.025
+LMar=0.090
+RMar=0.015
 PlotWidth=1-LMar-RMar
 
 array SubPlotWidth[NumModels]

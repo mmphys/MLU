@@ -965,7 +965,12 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
       int iSeq{ 0 };
       std::string OutFileName{ outBase };
       OutFileName.append( 1, 'F' );
-      OutFileName.append( fna.GetBaseShort() );
+      {
+        std::string sShort{ fna.GetBaseShort() };
+        if( !sShort.empty() && std::toupper( sShort[0] ) == 'R' )
+          sShort.erase( 0, 1 );
+        OutFileName.append( sShort );
+      }
       OutFileName.append( p.FileString() );
       const std::size_t OutFileNameLen{ OutFileName.length() };
       for( const std::string &File : vFileGammaT )

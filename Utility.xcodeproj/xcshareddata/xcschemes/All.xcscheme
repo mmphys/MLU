@@ -140,6 +140,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "278BA02F290ED52400960730"
+               BuildableName = "GetColumn"
+               BlueprintName = "GetColumn"
+               ReferencedContainer = "container:Utility.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "682C5D2C28E4FEA200C8E004"
                BuildableName = "hlxml"
                BlueprintName = "hlxml"
