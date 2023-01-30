@@ -37,6 +37,7 @@
 #include <limits>
 #include <map>
 #include <ostream>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -169,6 +170,24 @@ struct LessCaseInsensitive
 
 // A list of case insensitive, but unique names, each mapped to an int
 using UniqueNames = std::map<std::string, int, Common::LessCaseInsensitive>;
+using UniqueNameSet = std::set<std::string, Common::LessCaseInsensitive>;
+
+inline bool operator==( const UniqueNameSet &lhs, const UniqueNameSet &rhs )
+{
+  if( lhs.size() != rhs.size() )
+    return false;
+  UniqueNameSet::const_iterator l{ lhs.cbegin() };
+  UniqueNameSet::const_iterator r{ rhs.cbegin() };
+  for( ; l != lhs.cend(); ++l, ++r )
+    if( !EqualIgnoreCase( *l, *r ) )
+      return false;
+  return true;
+}
+
+inline bool operator!=( const UniqueNameSet &lhs, const UniqueNameSet &rhs )
+{
+  return !( lhs == rhs );
+}
 
 // Remove leading and trailing whitespace from string
 // Returns true if the string contains something after the trim

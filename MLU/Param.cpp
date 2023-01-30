@@ -250,6 +250,41 @@ Params::Params( const std::vector<std::string> &ParamNames, std::vector<std::siz
   }
 }
 
+bool Params::operator==( const Params &rhs ) const
+{
+  if( size() != rhs.size() || NumScalars( Param::Type::All ) != rhs.NumScalars( Param::Type::All ) )
+    return false;
+  for( const value_type &it : *this )
+  {
+    const Param::Key &k{ it.first };
+    const Param &p{ it.second };
+    const_iterator it2{ rhs.find( k ) };
+    if( it2 == rhs.end() || p.size != it2->second.size )
+      return false;
+  }
+  return true;
+}
+
+bool Params::operator<=( const Params &rhs ) const
+{
+  for( const value_type &it : *this )
+  {
+    const Param::Key &k{ it.first };
+    const Param &p{ it.second };
+    const_iterator it2{ rhs.find( k ) };
+    if( it2 == rhs.end() || p.size > it2->second.size )
+      return false;
+  }
+  if( NumScalars( Param::Type::All ) != rhs.NumScalars( Param::Type::All ) )
+    return false;
+  return true;
+}
+
+bool Params::operator<( const Params &rhs ) const
+{
+  return NumScalars( Param::Type::All ) < rhs.NumScalars( Param::Type::All ) && *this <= rhs;
+}
+
 Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bMonotonic, Param::Type type_ )
 {
   // Work out how many elements are needed
@@ -784,6 +819,15 @@ void Params::WriteH5( ::H5::Group gParent, const std::string GroupName ) const
   }
 }
 
+std::string Params::GetName( const value_type &param, std::size_t idx ) const
+{
+  const Param::Key &k{ param.first };
+  const Param &p{ param.second };
+  if( SingleObject() )
+    return k.ShortName( idx, p.size );
+  return k.FullName( idx, p.size );
+}
+
 void Params::SetProducts( const std::string &sProducts )
 {
   static const std::string sNotFound{ "Product key not found: " };
@@ -816,6 +860,52 @@ void Params::SetProducts( const std::string &sProducts )
       throw std::invalid_argument( "Products " + Products[i] + " and " + Products[i+1]
                                   + " not both same size" );
     pSecond.pProductWith = &pFirst;
+  }
+}
+
+void Params::KeepCommon( const Params &Other )
+{
+  for( iterator it = begin(); it != end(); )
+  {
+    const Param::Key &k{ it->first };
+    const_iterator it2{ Other.find( k ) };
+    if( it2 == Other.end() )
+    {
+      // Not in the other list - delete my copy
+      it = erase( it );
+    }
+    else
+    {
+      // In the other list - shrink if other is smaller
+      Param &p{ it->second };
+      if( p.size > it2->second.size )
+        p.size = it2->second.size;
+      if( p.size )
+        ++it;
+      else
+        it = erase( it );
+    }
+  }
+}
+
+void Params::Merge( const Params &Other )
+{
+  for( const value_type &it : Other )
+  {
+    const Param::Key &k{ it.first };
+    iterator itMe{ find( k ) };
+    if( itMe == end() )
+    {
+      // Not in my list - add it
+      insert( it );
+    }
+    else
+    {
+      // In the other list - grow if other is larger
+      Param &p{ itMe->second };
+      if( p.size < it.second.size )
+        p.size = it.second.size;
+    }
   }
 }
 

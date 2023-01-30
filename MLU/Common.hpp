@@ -4,7 +4,7 @@
  
  Source file: Common.hpp
  
- Copyright (C) 2019
+ Copyright (C) 2019 - 2023
  
  Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
  
@@ -1651,7 +1651,7 @@ public:
   bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
       static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
   template <typename U>
-  void IsCompatible( const Sample<U> &o, int * pNumSamples = nullptr, unsigned int CompareFlags = COMPAT_DEFAULT ) const;
+  void IsCompatible( const Sample<U> &o, int * pNumSamples = nullptr, unsigned int CompareFlags = COMPAT_DEFAULT, bool bSuffix = true ) const;
   template <typename U> void CopyAttributes( const Sample<U> &o );
   void Bin( SampleSource ssTo = SampleSource::Binned ); // Auto bin based on config count
   void Bin( int binSize_, SampleSource ssTo = SampleSource::Binned );
@@ -1812,6 +1812,14 @@ public: // Override these for specialisations
       }
     }
   }
+  /**
+   Write a summary of this sample, showing central value, +/- errors and abs min/max
+
+   If there are no ColumnNames, write one row per timeslice.
+   Otherwise write all columns on a single row
+   
+   - Important: There is no final NewLine written
+   */
   virtual void SummaryContents( std::ostream &os ) const
   {
     os << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha;
@@ -1824,7 +1832,8 @@ public: // Override these for specialisations
         os << t;
         for( std::size_t f = 0; f < SummaryNames.size(); f++ )
           os << Space << p[f * Nt_];
-        os << NewLine;
+        if( t != Nt_ - 1 )
+          os << NewLine;
       }
     }
     else
@@ -1836,7 +1845,6 @@ public: // Override these for specialisations
           os << Space;
         os << *p++;
       }
-      os << NewLine;
     }
   }
   virtual void ReadAttributes( ::H5::Group &g ) {}
@@ -1849,10 +1857,11 @@ using SampleD = Sample<double>;
 
 // Initialise *pNumSamples either to 0, or to the size of the first Sample before first call
 template <typename T> template <typename U>
-void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, unsigned int CompareFlags ) const
+void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, unsigned int CompareFlags,
+                              bool bSuffix ) const
 {
   static const std::string sPrefix{ "Incompatible " + sBootstrap + " samples - " };
-  std::string sSuffix{ ":\n  " + Name_.Filename + "\nvs " + o.Name_.Filename };
+  const std::string sSuffix{ bSuffix ? ":\n  " + Name_.Filename + "\nv " + o.Name_.Filename : "" };
   if( !( CompareFlags & COMPAT_DISABLE_BASE ) && !Common::EqualIgnoreCase( o.Name_.Base, Name_.Base ) )
     throw std::runtime_error( sPrefix + "base " + o.Name_.Base + sNE + Name_.Base + sSuffix );
   if( !( CompareFlags & COMPAT_DISABLE_TYPE ) && !Common::EqualIgnoreCase( o.Name_.Type, Name_.Type ) )
@@ -2173,6 +2182,7 @@ void Sample<T>::WriteSummary( const std::string &sOutFileName, bool bVerboseSumm
   SummaryColumnNames( s );
   s << NewLine;
   SummaryContents( s );
+  s << NewLine;
 }
 
 // Make a summary of the data
@@ -3026,6 +3036,7 @@ template <typename T> std::size_t GetExtent( const std::vector<std::vector<T>> &
 struct ModelBase
 {
   static const std::string EnergyPrefix;
+  static const char SummaryColumnPrefix[];
 };
 
 template <typename T>
@@ -3066,10 +3077,13 @@ struct Model : public Sample<T>, public ModelBase
   std::vector<std::string> ModelArgs;
 
   // Helper functions
-  int GetExtent() { return static_cast<int>( ::Common::GetExtent( FitTimes ) ); };
-  int NumFitParams() { return static_cast<int>( params.NumScalars( Param::Type::Variable ) ); };
-  int NumParams() { return static_cast<int>( params.NumScalars( Param::Type::All ) ); };
+  int GetExtent() const { return static_cast<int>( ::Common::GetExtent( FitTimes ) ); };
+  int NumFitParams() const { return static_cast<int>( params.NumScalars( Param::Type::Variable ) ); };
+  int NumParams() const { return static_cast<int>( params.NumScalars( Param::Type::All ) ); };
   Vector<T> GetVector( Param::Key &k, std::size_t Index = 0 );
+  int NumStatColumns() const { return Base::ColumnNames.size() <= NumParams() ? 0
+                                : static_cast<int>( Base::ColumnNames.size() - NumParams() ); }
+  UniqueNameSet GetStatColumnNames() const;
 
   Model() : Base::Sample{} {}
   Model( int NumSamples, Params Params_, const std::vector<std::string> &ExtraColumns );
@@ -3106,13 +3120,19 @@ struct Model : public Sample<T>, public ModelBase
                         scalar_type MonotonicUpperLimit = std::numeric_limits<scalar_type>::max() );
   void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const override;
   void SummaryColumnNames( std::ostream &os ) const override;
+  void SummaryColumnNames( std::ostream &os, std::size_t NumFitTimes,
+                           const Params &ParamNames, const UniqueNameSet &StatNames ) const;
   void SummaryContents( std::ostream &os ) const override;
+  void SummaryContents( std::ostream &os, const Params &ParamNames,
+                        const UniqueNameSet &StatNames ) const;
   void WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSummary = false );
 protected:
   int OldFormatNumExponents;
   std::vector<std::string> OldFormatOpNames;
   void ReorderOldFormat( int NumOps, int NumExponents, std::unique_ptr<T[]> &pData, int Num );
   void CommonConstruct( const std::vector<std::string> &ExtraColumns );
+  void SummaryContentsPrefix( std::ostream &os ) const;
+  void SummaryContentsSuffix( std::ostream &os ) const;
 };
 
 struct ConstantSource

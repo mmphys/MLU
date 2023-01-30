@@ -90,11 +90,30 @@ struct Summariser
   const std::string StatisticName;
   const int Strictness;
   const scalar MonotonicUpperLimit;
+  const bool bAll;
+  const bool bFast;
   using FitMap = std::map<FitTimes, FitData>;
   using BaseList = std::map<std::string, std::vector<FileInfo>>;
   BaseList lBase;
   void Run();
   Summariser( const Common::CommandLine &cl );
+protected:
+  using FileInfoIterator = std::vector<FileInfo>::iterator;
+  bool bDoPassOne;
+  std::array<Model, 2> Models;
+  std::vector<std::string> FileNameOps;
+  std::size_t MaxFitTimes; // Maximum number of TI-TF pairs
+  Common::Params Params{ Models[0].params };
+  Common::UniqueNameSet StatColumnNames{ Models[0].GetStatColumnNames() };
+  FitMap Fits;
+  // Saved about first model by BuildFitMap()
+  std::string Comments;
+  Common::SeedType Seed{ 0 };
+  int NumSamples{ 0 };
+  bool ReadModel( Model &m, FileInfoIterator &it, std::vector<FileInfo> &Files,
+                  std::vector<std::string> &FileNameOps, bool bShow );
+  bool GetCommonParameters( std::vector<FileInfo> &Files, bool bMaximum );
+  void BuildFitMap( std::vector<FileInfo> &Files );
 };
 
 #endif //Fit_Summary_hpp

@@ -125,6 +125,15 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   Params( const std::vector<std::string> &ParamNames );
   /// Create list of single, variable parameters and get their indices
   Params( const std::vector<std::string> &ParamNames, std::vector<std::size_t> &vIdx );
+  /// For now, comparison operators ignore parameter type
+  bool operator==( const Params &rhs ) const;
+  bool operator!=( const Params &rhs ) const { return !operator==( rhs ); }
+  /// this is a subset of rhs
+  bool operator<=( const Params &rhs ) const;
+  /// this is a proper subset of rhs
+  bool operator< ( const Params &rhs ) const;
+  bool operator>=( const Params &rhs ) const { return rhs <  *this; }
+  bool operator> ( const Params &rhs ) const { return rhs <= *this; }
   Params::iterator Add( const Param::Key &key, std::size_t NumExp = 1, bool bMonotonic = false,
                         Param::Type Type = Param::Type::Variable );
   Params::iterator MakeFixed( const Param::Key &key, bool bSwapSourceSink );
@@ -159,13 +168,22 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   void ReadH5 ( ::H5::Group gParent, const std::string GroupName );
   void WriteH5( ::H5::Group gParent, const std::string GroupName ) const;
   bool SingleObject() const { return bSingleObject; }
+  std::string GetName( const value_type &param, std::size_t idx=0 ) const;
   /**
+   Choose which of a pair of products becomes negative.
+   
    I might only know the product of some parameters.
    If there's a choice, make the second of each pair negative
-   - Parameters:
-    - Products: even list of parameter pairs
+   - Parameter Products: even list of parameter pairs
    */
   void SetProducts( const std::string &sProducts );
+  /**
+   Keep only those parameters that are common to both sets
+   - Parameter Other: other set of parameters
+   - Warning: Ignores parameter type when comparing
+   */
+  void KeepCommon( const Params &Other );
+  void Merge( const Params &Other );
 protected:
   // Only valid after AssignOffsets()
   bool bSingleObject;

@@ -16,9 +16,11 @@ if [[ "$tfmax" == "" ]]; then do_tfmax=0; else do_tfmax=1; fi
 
 gnuplot <<-EOFMark
 
-q1="${q1:-h1}"
+L=${L:-24}
+q1="${q1:-s}"
 q2="${q2:-l}"
-seed="${seed:-4147798751}"
+#seed="${seed:-4147798751}"
+seed="${seed:-1835672416}"
 #fit="${fit:-corr.g5_gT5}"
 fit="${fit:-*}"
 do_chi=${do_chi}
@@ -35,12 +37,21 @@ num=${num:-15}
 RefVal=${ref:--777}
 RefText="E_0=${ref}"
 if( "${reftext}" ne "" ) { RefText=RefText." ${reftext}" }
+DoOldMomenta=0${oldmom+1}
 
 OutFileName=q1."_".q2
 if( fit ne "*" && fit ne "" ) { OutFileName=OutFileName.'.'.fit }
-OutFileName=OutFileName.".disp.4147798751.pdf"
+OutFileName=OutFileName.".disp.".seed.".pdf"
 
-filename(n)=system("ls ".q1."_".q2."_p_".word("0_0_0 1_0_0 1_1_0 1_1_1 2_0_0",n+1).".".fit.".params_sort.".seed.".txt")
+Momenta="0 1 2 3 4 5 6"
+MomentumSuffix="2"
+if( DoOldMomenta ) {
+  Momenta="0_0_0 1_0_0 1_1_0 1_1_1 2_0_0 2_1_0 2_1_1"
+  MomentumSuffix=""
+}
+FilenamePrefix=q1."_".q2."_p".MomentumSuffix."_"
+FilenameSuffix=".".fit.".params_sort.".seed.".txt"
+filename(n)=system("ls ".FilenamePrefix.word(Momenta,n+1).FilenameSuffix)
 
 SeriesName(n)="ti=".n
 
@@ -82,28 +93,46 @@ stats filename(0) using (@Condition (count=count + 1, column("tf"))) nooutput
 WhichTF=int(STATS_min)
 #print 'STATS_min='.gprintf("%g",STATS_min).' STATS_max='.gprintf("%g",STATS_max)
 
+# These are the (components of p)^2 terms in continuum dispersion relation (excluding 0)
+array PComponent[2]
+do for [i=1:|PComponent|] {
+  PComponent[i]=i * 2 * pi / L
+  PComponent[i]=PComponent[i] * PComponent[i]
+}
+
+# This is p dot p (sum of p^2 terms) in continuum dispersion relation (excluding 0)
+array PSquared[6]
+PSquared[1]=PComponent[1]
+PSquared[2]=PComponent[1] * 2
+PSquared[3]=PComponent[1] * 3
+PSquared[4]=PComponent[2] + PComponent[1]
+PSquared[5]=PComponent[2] + PComponent[1] * 2
+PSquared[6]=PComponent[2] + PComponent[1] * 3
+
+# This is the sin^2 term in Lattice dispersion relation (excluding 0)
+array SinTerm[2]
+do for [i=1:|SinTerm|] {
+  SinTerm[i]=sin( i * pi / L )
+  SinTerm[i]=SinTerm[i] * SinTerm[i]
+}
+
+# This is the sum of the sin^2 terms in Lattice dispersion relation (excluding 0)
+array SumSinTerm[6]
+SumSinTerm[1]=SinTerm[1]
+SumSinTerm[2]=SinTerm[1] * 2
+SumSinTerm[3]=SinTerm[1] * 3
+SumSinTerm[4]=SinTerm[2]
+SumSinTerm[5]=SinTerm[2] + SinTerm[1]
+SumSinTerm[6]=SinTerm[2] + SinTerm[1] * 2
+
 MyField="E0"
-#E0=0.99656
-L=24
-kFactorSq=2 * pi / L
-kFactorSq=kFactorSq * kFactorSq
-#Momentum from k_x^2 + k_y^2 + k_z^2
-#Momentum(KDotK)=kFactor * sqrt(KDotK)
-#Dispersion relation from p
-disp2(KDotK)=KDotK >= 5 ? NaN : E0 * E0 + kFactorSq * ( KDotK > 5 ? 5 : int(KDotK) )
-disp(KDotK)=sqrt(disp2(KDotK))
+#Dispersion relation from N^2 (squared momentum in lattice units)
+disp(NSquared)=sqrt( E0 * E0 + ( NSquared < 1 ? 0 : PSquared[NSquared >= |PSquared| ? |PSquared| : NSquared] ) )
 #Lattice dispersion relation
 #Delta=1/L
 SinhSqE0=sinh(E0/2)
 SinhSqE0=SinhSqE0 * SinhSqE0
-K1Factor=sin(pi/L)
-K1Factor=K1Factor*K1Factor
-K2Factor=sin(2*pi/L)
-K2Factor=K2Factor*K2Factor
-SinSum(KDotK)=KDotK < 1 ? 0 : KDotK < 4 ? int( KDotK ) * K1Factor : K2Factor + int(KDotK-4) * K1Factor;
-LatDisp(KDotK)=KDotK >= 5 ? NaN : 2*asinh(sqrt(SinhSqE0 + SinSum(KDotK)))
-LatDisp2(KDotK)=LatDisp(KDotK)*LatDisp(KDotK)
-
+LatDisp(NSquared)=NSquared < 1 ? E0 : 2*asinh(sqrt(SinhSqE0 + SumSinTerm[NSquared >= |SumSinTerm| ? |SumSinTerm| : NSquared]))
 
 #sChiDescr='{/Times:Italic χ}^2 per d.o.f.'
 sChiDescr='p-value'
@@ -117,7 +146,7 @@ if( do_chi ) { MyTitle=MyTitle." (".sChiDescr." ≤ ".sprintf("%g",chi_max).")" 
 set title MyTitle
 set ylabel 'a E_{eff}'
 #set xlabel 'k^2 (sorted by '.sChiDescr.", ".num." best fits)"
-set xlabel 'k^2 (sorted by '.sChiDescr.")"
+set xlabel 'n^2 (sorted by '.sChiDescr.")"
 set xtics 1
 set key top left reverse Left
 set pointsize 0.5
@@ -141,7 +170,7 @@ WithLabels='with labels font "Arial,6" offset char 0,'
 #set label "E_0=0.99656(95), ArXiv:1812.08791" at graph 1, graph 0 font "Arial,8" front textcolor "grey40" offset character -1, character 1 right
 if( RefVal == -777 ) { RefText='E_0='.gprintf("%g",E0).' from fit at ti='.WhichTI.', tf='.WhichTF }
 set label RefText at graph 1, graph 0 font "Arial,8" front textcolor "grey40" offset character -1, character 1 right
-set xrange [0:6]
+set xrange [0:4.99]
 set samples 1000
 MyScale=1./num < 0.08 ? 0.08 : 1./num
 count = 0

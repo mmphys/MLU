@@ -67,10 +67,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "FFS/F1M/3sm_sp2/FR3_l_h385_p2_1*.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--strict 0"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Users/mike/NoSync/C1/MELFit/2ptp2/s_l/*.h5"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

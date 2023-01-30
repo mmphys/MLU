@@ -9,9 +9,10 @@ export Ensemble=C1
 if [ "${DoAll+x}" = x ]; then
 
 # D_s
-p=0 TI=6 TF=29 NumExp=2 TI2=5 Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh # Preferred
+p=0 TI=8 TF=29 NumExp=2 TI2=8 Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh #25 Jan 23
+p=0 TI=6 TF=29 NumExp=2 TI2=5 Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh
 p=0 TI=6 TF=29 NumExp=2 TI2=13 TF2=27 NumExp2=1  Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh
-p=0 TI=6 TF=29 NumExp=2 TI2=17 TF2=27 NumExp2=1  Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh
+p=0 TI=6 TF=29 NumExp=2 TI2=17 TF2=27 NumExp2=1  Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh  # Prev preferred
 
 # Kaon
 p=0 TI=6 TF=22 NumExp=2 TI2=5 TF2=23 Meson=s_l yrange='0.3:0.315' NumExp2=2 ti='3 3' LabelTF=30 FitTwoPoint.sh
@@ -34,5 +35,5 @@ fi
 
 
 #Mtg Thu 19 Jan
-p=0 TI=9 TF=29 NumExp=2 TI2=7 TF2=29 NumExp2=2  Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh
+p=0 TI=5 TF=29 NumExp=3 TI2=7 TF2=29 NumExp2=2  Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh
 #End mtg

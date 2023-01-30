@@ -1594,6 +1594,7 @@
 		682C5D1828E4FE0600C8E004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1601,6 +1602,7 @@
 		682C5D1928E4FE0600C8E004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

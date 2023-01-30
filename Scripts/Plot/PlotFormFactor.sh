@@ -174,7 +174,7 @@ else
   InPrefix=../.. # $HOME/NoSync/$Ensemble
   MELFit=$InPrefix/MELFit
   SpecDir="3sm_${Spec[i]}"
-  FitFile=$InPrefix/Fit_${Spec[i]}.txt
+  FitFile=$MELFit/Fit_${Spec[i]}.txt
   Cmd="CRatio --type f,$L --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/ '*.h5'"
   LogFile="FFS_$SpecDir.log"
   echo "$Cmd"

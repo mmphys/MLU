@@ -122,10 +122,14 @@ Summariser::Summariser( const Common::CommandLine &cl )
   outBaseFileName{ Common::AppendSlash( cl.SwitchValue<std::string>("o") ) },
   StatisticName{ cl.SwitchValue<std::string>( "stat" ) },
   Strictness{ cl.SwitchValue<int>( "strict" ) },
-  MonotonicUpperLimit{ cl.SwitchValue<scalar>( "maxE" ) }
+  MonotonicUpperLimit{ cl.SwitchValue<scalar>( "maxE" ) },
+  bAll{ cl.GotSwitch( "all" ) },
+  bFast{ cl.GotSwitch( "fast" ) }
 {
   if( Strictness < -1 || Strictness > 3 )
     throw std::runtime_error( "--strict " + std::to_string( Strictness ) + " invalid" );
+  if( bAll && bFast )
+    throw std::runtime_error( "--fast implies all models have same parameters. --all incompatible" );
   bReverseSort = !cl.GotSwitch( "inc" );
   Common::MakeAncestorDirs( outBaseFileName );
   int SeqNum{ 0 };
@@ -162,76 +166,159 @@ Summariser::Summariser( const Common::CommandLine &cl )
   }
 }
 
-// Process every base name and it's list of models separately
-void Summariser::Run()
+bool Summariser::ReadModel( Model &m, FileInfoIterator &it, std::vector<FileInfo> &Files,
+                            std::vector<std::string> &FileNameOps, bool bShow )
 {
-  for( BaseList::iterator it = lBase.begin(); it != lBase.end(); ++it )
+  m.SetName( it->FileName, &FileNameOps );
+  try
   {
-    const std::string &sOutFile{ it->first };
-    const std::string &sSummaryName{ outBaseFileName + sOutFile };
-    std::cout << sSummaryName << NL;
-    // Read every model, saving all the data I'll need to reconstruct the summary
-    int NumSamples{ 0 };
-    std::string ColumnNames;
-    std::string Comments;
-    std::vector<std::string> FileNameOps; // For now I get these, but don't check them
-    Common::SeedType Seed{ 0 };
-    int ModelNum = 0;
-    std::array<Model, 2> Models;
-    FitMap Fits;
-    for( FileInfo &ThisFile : it->second )
+    m.Read( bShow ? " " : nullptr );
+  }
+  catch( const std::exception &e )
+  {
+    std::cout << sIndent << sError << e.what() << NL;
+    it = Files.erase( it );
+    return false;
+  }
+  ++it;
+  return true;
+}
+
+bool Summariser::GetCommonParameters( std::vector<FileInfo> &Files, bool bMaximum )
+{
+  bool bFirst{ true };
+  for( FileInfoIterator itFI = Files.begin(); itFI != Files.end(); )
+  {
+    if( bFirst )
+    {
+      bFirst = false;
+      ++itFI;
+    }
+    else if( ReadModel( Models[1], itFI, Files, FileNameOps, true ) )
+    {
+      // Subsequent model
+      if( MaxFitTimes < Models[1].FitTimes.size() )
+        MaxFitTimes = Models[1].FitTimes.size();
+      if( bAll )
+        Params.Merge( Models[1].params );
+      else
+        Params.KeepCommon( Models[1].params );
+      // Remove statistics columns not present in this model
+      using UNS = Common::UniqueNameSet;
+      const UNS mStat{ Models[1].GetStatColumnNames() };
+      if( bAll )
+      {
+        for( const std::string &s : mStat )
+          StatColumnNames.insert( s ); // I'm merging - add this to my list of names
+      }
+      else
+      {
+        for( UNS::iterator it = StatColumnNames.begin(); it != StatColumnNames.end(); )
+        {
+          if( mStat.find( *it ) == mStat.end() )
+            it = StatColumnNames.erase( it ); // Not in the other list - delete my copy
+          else
+            ++it;
+        }
+      }
+    }
+  }
+  // Not finding any common parameters on the first pass is an error
+  if( Params.empty() )
+    std::cout << sIndent << sError << "No common parameters" << NL;
+  else
+    Params.AssignOffsets(); // Because we might have deleted a few
+  return !Params.empty();
+}
+
+void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
+{
+  const unsigned int CompatFlags{ bDoPassOne ? Common::COMPAT_DISABLE_NT
+                                             : Common::COMPAT_DEFAULT };
+  int ModelNum = 0;
+  Fits.clear();
+  for( FileInfoIterator itFI = Files.begin(); itFI != Files.end(); )
+  {
+    Model &m{ Models[ModelNum] };
+    FileInfo &ThisFile{ *itFI };
+    if( ModelNum == 0 )
+      ++itFI;
+    if( ModelNum == 0 || ReadModel( m, itFI, Files, FileNameOps, !bDoPassOne ) )
     {
       try
       {
         // Check the model characteristics
-        Model &m{ Models[ModelNum] };
-        m.SetName( ThisFile.FileName, &FileNameOps );
-        m.Read( "" );
         if( m.dof < 0 )
           throw std::runtime_error("dof=" + std::to_string( m.dof ) + " (<0 invalid)");
         if( !m.CheckParameters( Strictness, MonotonicUpperLimit ) )
           throw std::runtime_error("Parameter(s) compatible with 0 and/or not unique");
-        std::ostringstream ss;
-        m.SummaryColumnNames( ss );
         if( ModelNum == 0 )
         {
-          ModelNum++;
-          ColumnNames = ss.str();
-          ss.str("");
+          ++ModelNum;
+          std::ostringstream ss;
           m.SummaryComments( ss );
-          ss << "# column(1) is the row order when sorted by pValueH (Hotelling p-value)\n";
+          ss << "# column(1) is the row order when sorted by " << StatisticName << Common::Space
+             << ( bReverseSort ? "de" : "a" ) << "scending\n";
           Comments = ss.str();
           Seed = m.Name_.Seed;
           NumSamples = m.NumSamples();
         }
         else
         {
-          Models[0].IsCompatible( m, &NumSamples );
-          if( !Common::EqualIgnoreCase( ColumnNames, ss.str() ) )
+          Models[0].IsCompatible( m, &NumSamples, CompatFlags, false );
+          if( !bDoPassOne && ( Params != m.params || StatColumnNames != m.GetStatColumnNames() ) )
             throw std::runtime_error( "Fit column names don't match" );
         }
         // Save the summary of the parameters for this file
-        ss.str("");
-        m.SummaryContents( ss );
+        std::ostringstream ss;
+        m.SummaryContents( ss, Params, StatColumnNames );
+        // Get the test statistic
         const int idxpValue{ m.GetColumnIndexNoThrow( StatisticName ) };
         if( idxpValue < 0 && ThisFile.bIsFit )
           throw std::runtime_error( StatisticName + " unavailable - required for fit" );
-        const Common::ValWithEr<scalar> One(1,1,1,1,1,1);
-        const Common::ValWithEr<scalar> &pValueH{ idxpValue < 0 ? One : *m.getSummaryData( idxpValue ) };
-        scalar TestStat = pValueH.Central;
+        scalar TestStat = idxpValue < 0 ? 1 : m.getSummaryData()[idxpValue].Central;
         // save the model in my list
-        int NumDataPoints{ 0 };
-        for( const std::vector<int> &v : m.FitTimes )
-          NumDataPoints += static_cast<int>( v.size() );
+        const int NumDataPoints{ static_cast<int>( Common::GetExtent( m.FitTimes ) ) };
         FitData fd(TestStat,ThisFile.ft,NumDataPoints,m.dof,m.SampleSize,ss.str(),Models.size());
         Fits.emplace( std::make_pair( ThisFile.ft, fd ) );
       }
       catch( const std::exception &e )
       {
-        //std::cout << sFileName << Sep << sError << e.what() << NL;
         std::cout << sIndent << sError << e.what() << NL;
       }
     }
+  }
+}
+
+// Process every base name and it's list of models separately
+void Summariser::Run()
+{
+  for( BaseList::iterator it = lBase.begin(); it != lBase.end(); ++it )
+  {
+    const std::string &sSummaryName{ outBaseFileName + it->first };
+    std::cout << sSummaryName << NL;
+    std::vector<FileInfo> &Files{ it->second };
+    FileNameOps.clear(); // For now I get these, but don't check them
+    // Load the first Model
+    {
+      bool Model0Loaded{ false };
+      for( FileInfoIterator itFI = Files.begin(); !Model0Loaded && itFI != Files.end(); )
+        Model0Loaded = ReadModel( Models[0], itFI, Files, FileNameOps, true );
+      if( !Model0Loaded )
+        continue;
+    }
+    MaxFitTimes = Models[0].FitTimes.size(); // Maximum number of TI-TF pairs
+    Params = Models[0].params;
+    StatColumnNames = Models[0].GetStatColumnNames();
+    // Optional first pass - build a list of common parameters and statistics columns
+    bDoPassOne = !bFast && Files.size() > 1;
+    if( bDoPassOne && !GetCommonParameters( Files, false ) )
+      continue;
+    // Make sure the requested statistic is included
+    if( StatColumnNames.find( StatisticName ) == StatColumnNames.end() )
+      StatColumnNames.insert( StatisticName );
+    // Read every model, saving all the data I'll need to reconstruct the summary
+    BuildFitMap( Files );
     // Update the fits with sorted sequence number for test statistic and save sorted file
     if( !Fits.empty() )
     {
@@ -243,8 +330,9 @@ void Summariser::Run()
       std::string sFileName=Common::MakeFilename(sSummaryName,Common::sParams+"_sort",Seed,TEXT_EXT);
       std::ofstream s( sFileName );
       Common::SummaryHeader<scalar>( s, sFileName );
-      s << Comments;
-      s << "Seq " << ColumnNames << NL;
+      s << Comments << "Seq ";
+      Models[0].SummaryColumnNames( s, MaxFitTimes, Params, StatColumnNames );
+      s << NL;
       int SortSeq{ 0 };
       for( const TestStatKey &z : SortSet )
       {
@@ -281,12 +369,15 @@ void Summariser::Run()
           // Name the data series
           s << "# [ti=" << d.ft.ti() << "]\n";
           // Column names, with the series value embedded in the column header (best I can do atm)
-          s << "ti=" << d.ft.ti() << Common::Space << ColumnNames << NL;
+          s << "ti=" << d.ft.ti() << Common::Space;
+          Models[0].SummaryColumnNames( s, MaxFitTimes, Params, StatColumnNames );
+          s << NL;
         }
         // Now write this row
         s << d.Seq << Common::Space << d.Parameters;
       }
     }
+    Fits.clear();
   }
 }
 
@@ -306,6 +397,8 @@ int main(int argc, const char *argv[])
       {"inc",  CL::SwitchType::Flag, nullptr},
       {"strict",  CL::SwitchType::Single, "-1"},
       {"maxE",  CL::SwitchType::Single, "10"},
+      {"fast",  CL::SwitchType::Flag, nullptr},
+      {"all",  CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -340,6 +433,8 @@ int main(int argc, const char *argv[])
     "--maxE   Maximum energy (default 10 - decays so fast effectively undetermined)\n"
     "Flags:\n"
     "--inc    Sort increasing (default sort test stat decreasing)\n"
+    "--fast   Skip first pass reading models to find common parameters\n"
+    "--all    Save all parameters. Default: only save common parameters\n"
     "--help   This message\n";
   }
   return iReturn;

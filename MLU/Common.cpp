@@ -4,7 +4,7 @@
  
  Source file: Common.cpp
  
- Copyright (C) 2019
+ Copyright (C) 2019 - 2023
  
  Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
  
@@ -880,6 +880,17 @@ Vector<T> Model<T>::GetVector( Param::Key &k, std::size_t Index )
 }
 
 template <typename T>
+UniqueNameSet Model<T>::GetStatColumnNames() const
+{
+  UniqueNameSet Names;
+  const std::size_t NumParams{ params.NumScalars( Common::Param::Type::All ) };
+  const std::size_t NumColumns{ Base::ColumnNames.size() };
+  for( std::size_t i = NumParams; i < NumColumns; ++i )
+    Names.insert( Base::ColumnNames[i] );
+  return Names;
+}
+
+template <typename T>
 Model<T>::Model( int NumSamples, Params Params_, const std::vector<std::string> &ExtraColumns )
 : Base::Sample( NumSamples, static_cast<int>( Params_.NumScalars( Param::Type::All ) + ExtraColumns.size() ) ),
   params{Params_}
@@ -1415,48 +1426,120 @@ void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
     s << "# " << sPValue << " : Chi^2 = " << (*this)[Model<T>::idxCentral][iCol] << NewLine;
 }
 
+const char ModelBase::SummaryColumnPrefix[] = "ti tf tiLabel tfLabel NumDataPoints dof SampleSize CovarSampleSize ";
+
 template <typename T>
 void Model<T>::SummaryColumnNames( std::ostream &os ) const
 {
-  for( std::size_t i = 0; i < FitTimes.size(); ++i )
-  {
-    if( i == 0 )
-      os << "ti tf";
-    else
-      os << Space << "ti" << i << Space << "tf" << i;
-  }
-  if( FitTimes.size() )
-    os << " tfLabel ";
-  os << "NumDataPoints SampleSize dof CovarSampleSize ";
+  os << SummaryColumnPrefix;
   Base::SummaryColumnNames( os );
+  for( std::size_t i = 1; i < FitTimes.size(); ++i )
+    os << Space << "ti" << i << Space << "tf" << i;
+}
+
+template <typename T>
+void Model<T>::SummaryColumnNames( std::ostream &os, std::size_t NumFitTimes,
+                                   const Params &ParamNames, const UniqueNameSet &StatNames ) const
+{
+  os << SummaryColumnPrefix;
+  // Write parameter names
+  for( const Params::value_type &it : ParamNames )
+  {
+    //const Param::Key &k{ it.first };
+    const Param &p{ it.second };
+    for( std::size_t i = 0; i < p.size; ++i )
+    {
+      os << Space;
+      ValWithEr<T>::Header( ParamNames.GetName( it, i ), os, Space );
+    }
+  }
+  // Write statistic names
+  for( const std::string &s : StatNames )
+  {
+    os << Space;
+    ValWithEr<T>::Header( s, os, Space );
+  }
+  // Write additional fit time pair names
+  for( std::size_t i = 1; i < NumFitTimes; ++i )
+    os << Space << "ti" << i << Space << "tf" << i;
+}
+
+template <typename T>
+void Model<T>::SummaryContentsPrefix( std::ostream &os ) const
+{
+  if( FitTimes.size() )
+  {
+    os << FitTimes[0][0] << Space << FitTimes[0].back();
+    // Write tiLabel
+    os << Space << FitTimes[0][0];
+    for( std::size_t i = 1; i < FitTimes.size(); ++i )
+      os << Underscore << FitTimes[i][0] << Underscore << FitTimes[i].back();
+    // Write tfLabel
+    os << Space << FitTimes[0].back();
+    for( std::size_t i = 1; i < FitTimes.size(); ++i )
+      os << Underscore << FitTimes[i][0] << Underscore << FitTimes[i].back();
+  }
+  else
+    os << "0 0 0 0";
+  os << Space << GetExtent();
+  os << Space << dof;
+  os << Space << this->SampleSize;
+  os << Space << CovarSampleSize;
+}
+
+template <typename T>
+void Model<T>::SummaryContentsSuffix( std::ostream &os ) const
+{
+  // Write all the fit times
+  for( std::size_t i = 1; i < FitTimes.size(); ++i )
+    os << Space << FitTimes[i][0] << Space << FitTimes[i].back();
+  os << NewLine;
 }
 
 template <typename T>
 void Model<T>::SummaryContents( std::ostream &os ) const
 {
-  std::size_t NumDataPoints{ 0 };
-  if( FitTimes.size() )
-  {
-    std::ostringstream tfl;
-    for( std::size_t i = 0; i < FitTimes.size(); ++i )
-    {
-      NumDataPoints += FitTimes[i].size();
-      if( i )
-      {
-        os << Space;
-        tfl << Underscore << FitTimes[i][0] << Underscore;
-      }
-      os << FitTimes[i][0] << Space << FitTimes[i].back();
-      tfl << FitTimes[i].back();
-    }
-    os << Space << tfl.str() << Space;
-  }
-  os << NumDataPoints;
-  os << Space << this->SampleSize;
-  os << Space << dof;
-  os << Space << CovarSampleSize;
+  SummaryContentsPrefix( os );
   os << Space;
   Base::SummaryContents( os );
+  SummaryContentsSuffix( os );
+}
+
+template <typename T>
+void Model<T>::SummaryContents( std::ostream &os, const Params &ParamNames,
+                                const UniqueNameSet &StatNames ) const
+{
+  using Scalar = typename Base::scalar_type;
+  const ValWithEr<Scalar> Zero(0,0,0,0,0,0);
+  const ValWithEr<Scalar> *pData{ Base::getSummaryData() };
+  SummaryContentsPrefix( os );
+  // Write out all the parameters in param name list. NB: I might not have a copy of these
+  for( const Params::value_type &it : ParamNames )
+  {
+    const Param::Key &k{ it.first };
+    const Param &p{ it.second };
+    const std::size_t NumToWrite{ p.size };
+    Params::const_iterator itMe{ params.find( k ) };
+    const std::size_t NumHave{ itMe == params.cend() ? 0 : itMe->second.size };
+    // Write out the parameters I have
+    if( NumHave )
+    {
+      const Param &pMe{ itMe->second };
+      std::size_t MyOffset{ pMe.GetOffset( 0, Param::Type::All ) };
+      for( std::size_t i = 0; i < std::min( NumHave, NumToWrite ); ++i )
+        os << Space << pData[MyOffset + i];
+    }
+    // Now write out dummy values for those I don't have
+    for( std::size_t i = NumHave; i < NumToWrite; ++i )
+      os << Space << Zero;
+  }
+  // Now write out all the statistics columns
+  for( const std::string &StatName : StatNames )
+  {
+    const int idx{ Base::GetColumnIndexNoThrow( StatName ) };
+    os << Space << ( idx < 0 ? Zero : pData[idx] );
+  }
+  SummaryContentsSuffix( os );
 }
 
 template <typename T>

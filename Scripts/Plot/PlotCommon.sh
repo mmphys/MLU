@@ -9,6 +9,22 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   set +e; exit 1
 fi
 
+# Copy the specified file to the same directory with a fixed name
+# Parameters:
+#   1: Full path to file to copy
+#   2: Standardised name for file, default A_Latest
+function PCSaveLatest()
+{
+  set -x
+  local InFile=$1
+  local StandardName=${2-A_Latest}
+
+  local Ext=${InFile##*/}; Ext=${Ext##*.}
+  local OutFile=${InFile%/*}; OutFile=$OutFile/$StandardName.$Ext
+  echo cp $InFile $OutFile
+  set +x
+}
+
 # Get full path
 # Parameters:
 #   1: Filename to get full path of
