@@ -3120,11 +3120,9 @@ struct Model : public Sample<T>, public ModelBase
                         scalar_type MonotonicUpperLimit = std::numeric_limits<scalar_type>::max() );
   void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const override;
   void SummaryColumnNames( std::ostream &os ) const override;
-  void SummaryColumnNames( std::ostream &os, std::size_t NumFitTimes,
-                           const Params &ParamNames, const UniqueNameSet &StatNames ) const;
   void SummaryContents( std::ostream &os ) const override;
-  void SummaryContents( std::ostream &os, const Params &ParamNames,
-                        const UniqueNameSet &StatNames ) const;
+  std::vector<ValWithEr<scalar_type>> GetValWithEr( const Params &ParamNames,
+                                                    const UniqueNameSet &StatNames ) const;
   void WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSummary = false );
 protected:
   int OldFormatNumExponents;

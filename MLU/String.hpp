@@ -172,6 +172,20 @@ struct LessCaseInsensitive
 using UniqueNames = std::map<std::string, int, Common::LessCaseInsensitive>;
 using UniqueNameSet = std::set<std::string, Common::LessCaseInsensitive>;
 
+inline std::ostream &operator<<( std::ostream &os, const UniqueNameSet &uns )
+{
+  bool bFirst{ true };
+  for( const std::string &s : uns )
+  {
+    if( bFirst )
+      bFirst = false;
+    else
+      os << Space;
+    os << s;
+  }
+  return os;
+}
+
 inline bool operator==( const UniqueNameSet &lhs, const UniqueNameSet &rhs )
 {
   if( lhs.size() != rhs.size() )

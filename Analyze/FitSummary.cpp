@@ -28,21 +28,42 @@
 
 #include "FitSummary.hpp"
 
-bool bReverseSort{ false };
-
 const std::string &Sep{ Common::Space };
 const std::string &NL{ Common::NewLine };
 const std::string sIndent{ "  " };
 const std::string sError{ "Error: " };
 
+void FitTimes::tiLabelSuffix( std::string &s ) const
+{
+  for( std::size_t i = 2; i < time.size(); ++i )
+  {
+    s.append( 1, '_' );
+    s.append( std::to_string( time[i] ) );
+  }
+}
+
+std::string FitTimes::tiLabel() const
+{
+  std::string s;
+  if( time.empty() )
+    s = std::string( 1, '0' );
+  else
+  {
+    s = std::to_string( time[0] );
+    tiLabelSuffix( s );
+  }
+  return s;
+}
+
 std::string FitTimes::tfLabel() const
 {
   std::string s;
-  for( std::size_t i = 1; i < time.size(); ++i )
+  if( time.size() < 1 )
+    s = std::string( 1, '0' );
+  else
   {
-    if( i != 1 )
-      s.append( 1, '_' );
-    s.append( std::to_string( time[i] ) );
+    s = std::to_string( time[1] );
+    tiLabelSuffix( s );
   }
   return s;
 }
@@ -83,37 +104,92 @@ bool FitTimes::ParseTypeTimes( std::string &TypeTimes )
   return bOK;
 }
 
-std::ostream &operator<<( std::ostream &s, const FitTimes &ft )
+bool FitTimes::operator<( const FitTimes &rhs ) const
+{
+  // First sort by the values of the times in common
+  for( std::size_t i = 0; i < std::min( time.size(), rhs.time.size() ); ++i )
+    if( time[i] != rhs.time[i] )
+      return time[i] < rhs.time[i];
+  // All other things equal, the shorter sequence sorts first
+  return time.size() < rhs.time.size();
+}
+
+/*std::ostream &operator<<( std::ostream &s, const FitTimes &ft )
 {
   for( auto t : ft.time )
     s << Sep << t;
   return s << Sep << ft.tfLabel();
-}
+}*/
 
-bool operator<( const FitTimes &lhs, const FitTimes &rhs )
-{
-  if( lhs.time.size() != rhs.time.size() )
-    throw std::runtime_error( "Mismatched numbers of fit ranges" );
-  for( std::size_t i = 0; i < lhs.time.size(); ++i )
-    if( lhs.time[i] != rhs.time[i] )
-      return lhs.time[i] < rhs.time[i];
-  return false;
-}
-
-std::ostream &operator<<( std::ostream &s, const FitData &d )
+/*std::ostream &operator<<( std::ostream &s, const FitData &d )
 {
   return s << d.Seq << d.ft << Sep << d.NumDataPoints << Sep << d.dof << Sep << d.SampleSize << Sep << d.Parameters << NL;
+}*/
+
+void FitData::WriteLongFormat( std::ostream &os, const FitTimes &ft ) const
+{
+  os << Seq << Common::Space << idxLoadOrder << Common::Space;
+  if( ft.NumFitTimes() == 0 )
+    os << "0 0 0 0";
+  else
+  {
+    os << ft.ti( 0 ) << Common::Space << ft.tf( 0 )
+       << Common::Space << ft.tiLabel() << Common::Space << ft.tfLabel();
+  }
+  os << Common::Space << NumDataPoints;
+  os << Common::Space << dof;
+  os << Common::Space << SampleSize;
+  os << Common::Space << CovarSampleSize;
+  for( const veScalar &v : Parameters )
+    os << Common::Space << v;
+  for( int i = 1; i < ft.NumFitTimes(); ++i )
+    os << Common::Space << ft.ti( i ) << Common::Space << ft.tf( i );
+  os << Common::NewLine;
 }
 
-bool operator<( const TestStatKey &lhs, const TestStatKey &rhs )
+void FitData::WriteTableFormat( std::ostream &os, const FitTimes &ft, std::size_t StatIndex,
+                                unsigned char ErrorDigits ) const
 {
-  if( lhs.TestStatistic != rhs.TestStatistic )
+  for( int i = 0; i < ft.NumFitTimes(); ++i )
+  {
+    if( i )
+      os << Common::CommaSpace;
+    os << "$ \\left[ " << ft.ti( i );
+    if( ft.tf( i ) != ft.ti( i ) )
+      os << "\\text{-}" << ft.tf( i );
+    os << " \\right] $";
+  }
+  for( std::size_t i = 0; i < Parameters.size(); ++i )
+  {
+    const veScalar &v{ Parameters[i] };
+    os << " & ";
+    if( v.Check )
+    {
+      std::string s{ v.to_string( ErrorDigits ) };
+      if( i >= StatIndex )
+      {
+        // Don't show the error bar on the statistic - meaningless
+        const std::size_t pos{ s.find( '(' ) };
+        if( pos != std::string::npos )
+          s.resize( pos );
+      }
+      os << s;
+    }
+  }
+  os << "\\\\\n";
+}
+
+bool TestStatKey::bReverseSort{ false };
+
+bool TestStatKey::operator<( const TestStatKey &rhs ) const
+{
+  if( TestStatistic != rhs.TestStatistic )
   {
     if( bReverseSort )
-      return lhs.TestStatistic > rhs.TestStatistic;
-    return lhs.TestStatistic < rhs.TestStatistic;
+      return TestStatistic > rhs.TestStatistic;
+    return TestStatistic < rhs.TestStatistic;
   }
-  return lhs.ft < rhs.ft;
+  return ft < rhs.ft;
 }
 
 // Parse the command line, splitting into separate lists for each base
@@ -124,13 +200,15 @@ Summariser::Summariser( const Common::CommandLine &cl )
   Strictness{ cl.SwitchValue<int>( "strict" ) },
   MonotonicUpperLimit{ cl.SwitchValue<scalar>( "maxE" ) },
   bAll{ cl.GotSwitch( "all" ) },
-  bFast{ cl.GotSwitch( "fast" ) }
+  bFast{ cl.GotSwitch( "fast" ) },
+  bTableN{ cl.GotSwitch( "tablen" ) },
+  ErrorDigits{ static_cast<unsigned char>( cl.SwitchValue<unsigned int>( "errdig" ) ) }
 {
   if( Strictness < -1 || Strictness > 3 )
     throw std::runtime_error( "--strict " + std::to_string( Strictness ) + " invalid" );
   if( bAll && bFast )
     throw std::runtime_error( "--fast implies all models have same parameters. --all incompatible" );
-  bReverseSort = !cl.GotSwitch( "inc" );
+  TestStatKey::bReverseSort = !cl.GotSwitch( "inc" );
   Common::MakeAncestorDirs( outBaseFileName );
   int SeqNum{ 0 };
   for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
@@ -162,7 +240,11 @@ Summariser::Summariser( const Common::CommandLine &cl )
     }
     n.AppendOps( sOutFile, Common::Period );
     std::cout << sOutFile << Common::Space << sFileName << Common::NewLine;
-    lBase[sOutFile].emplace_back( FileInfo( ft, sFileName, bIsFit ) );
+    // Have we seen this base before?
+    BaseList::iterator it{ lBase.find( sOutFile ) };
+    if( it == lBase.end() )
+      it = lBase.emplace( sOutFile, BaseInfo( n.GetFirstNonZeroMomentum() ) ).first;
+    it->second.vFI.emplace_back( ft, sFileName, bIsFit );
   }
 }
 
@@ -236,6 +318,7 @@ void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
   const unsigned int CompatFlags{ bDoPassOne ? Common::COMPAT_DISABLE_NT
                                              : Common::COMPAT_DEFAULT };
   int ModelNum = 0;
+  std::size_t idxLoadOrder{ 0 };
   Fits.clear();
   for( FileInfoIterator itFI = Files.begin(); itFI != Files.end(); )
   {
@@ -258,7 +341,7 @@ void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
           std::ostringstream ss;
           m.SummaryComments( ss );
           ss << "# column(1) is the row order when sorted by " << StatisticName << Common::Space
-             << ( bReverseSort ? "de" : "a" ) << "scending\n";
+             << ( TestStatKey::bReverseSort ? "de" : "a" ) << "scending\n";
           Comments = ss.str();
           Seed = m.Name_.Seed;
           NumSamples = m.NumSamples();
@@ -269,9 +352,6 @@ void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
           if( !bDoPassOne && ( Params != m.params || StatColumnNames != m.GetStatColumnNames() ) )
             throw std::runtime_error( "Fit column names don't match" );
         }
-        // Save the summary of the parameters for this file
-        std::ostringstream ss;
-        m.SummaryContents( ss, Params, StatColumnNames );
         // Get the test statistic
         const int idxpValue{ m.GetColumnIndexNoThrow( StatisticName ) };
         if( idxpValue < 0 && ThisFile.bIsFit )
@@ -279,7 +359,8 @@ void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
         scalar TestStat = idxpValue < 0 ? 1 : m.getSummaryData()[idxpValue].Central;
         // save the model in my list
         const int NumDataPoints{ static_cast<int>( Common::GetExtent( m.FitTimes ) ) };
-        FitData fd(TestStat,ThisFile.ft,NumDataPoints,m.dof,m.SampleSize,ss.str(),Models.size());
+        FitData fd( TestStat, NumDataPoints, m.dof, m.SampleSize, m.CovarSampleSize,
+                    idxLoadOrder++, m.GetValWithEr( Params, StatColumnNames ) );
         Fits.emplace( std::make_pair( ThisFile.ft, fd ) );
       }
       catch( const std::exception &e )
@@ -290,6 +371,113 @@ void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
   }
 }
 
+void Summariser::SummaryColumnNames( std::ostream &os, std::size_t NumFitTimes,
+              const Common::Params &ParamNames, const Common::UniqueNameSet &StatNames ) const
+{
+  os << "Load " << Model::SummaryColumnPrefix << Common::Space;
+  ParamNames.WriteNamesValWithEr( os );
+  os << Common::Space << StatNames;
+  // Write additional fit time pair names
+  for( std::size_t i = 1; i < NumFitTimes; ++i )
+    os << Common::Space << "ti" << i << Common::Space << "tf" << i;
+}
+
+// Write sorted list. Must be done first because this fills in the sort sequence number
+void Summariser::WriteSorted( const std::string &sFileName, const std::set<TestStatKey> &SortSet,
+                              bool SetSeq )
+{
+  // Create file and write header
+  std::ofstream s( sFileName );
+  Common::SummaryHeader<scalar>( s, sFileName );
+  s << Comments << "Seq ";
+  SummaryColumnNames( s, MaxFitTimes, Params, StatColumnNames );
+  s << NL;
+  // Update the fits with sorted sequence number and write each row
+  int SortSeq{ 0 };
+  for( const TestStatKey &z : SortSet )
+  {
+    FitData & d{ Fits[z.ft] };
+    if( SetSeq )
+      d.Seq = SortSeq++;
+    d.WriteLongFormat( s, z.ft );
+  }
+}
+
+// Now make the output file with blocks for each ti, sorted by tf
+void Summariser::WriteUnsorted( const std::string &sFileName ) const
+{
+  std::ofstream s;
+  std::size_t t_last = std::numeric_limits<int>::min();
+  for( const FitMap::value_type &dt : Fits )
+  {
+    const FitTimes &ft{ dt.first };
+    const FitData &d{ dt.second };
+    // Write header before each block
+    if( t_last != ft.ti() )
+    {
+      t_last = ft.ti();
+      if( !s.is_open() )
+      {
+        s.open( sFileName );
+        Common::SummaryHeader<scalar>( s, sFileName );
+        s << Comments;
+        s << "# columnheader(1) is the block (index) title\n";
+      }
+      else
+      {
+        // two blank lines at start of new data block
+        s << "\n\n";
+      }
+      // Name the data series
+      s << "# [ti=" << ft.ti() << "]\n";
+      // Column names, with the series value embedded in the column header (best I can do atm)
+      s << "ti=" << ft.ti() << Common::Space;
+      SummaryColumnNames( s, MaxFitTimes, Params, StatColumnNames );
+      s << NL;
+    }
+    // Now write this row
+    d.WriteLongFormat( s, ft );
+  }
+}
+
+void Summariser::WriteTabular( const std::string &sFileName, const BaseInfo &bi ) const
+{
+  const std::string sMom{ std::to_string( bi.fnp.p2() ) };
+  // Write header
+  std::ofstream os( sFileName );
+  os << "{\\tiny\n\\begin{tabular}{|c|";
+  if( bTableN )
+    os << "c|";
+  for( std::size_t i = 0; i < NumParams() + NumStats(); i++ )
+    os << "c|";
+  os << "}\n\\hline\n";
+  // Write column names
+  if( bTableN )
+    os << "$n^2$ & ";
+  os << "Fit";
+  for( const Common::Params::value_type &it : Params )
+  {
+    const Common::Param &p{ it.second };
+    for( std::size_t i = 0; i < p.size; ++i )
+      os << " & " << Params.GetName( it, i );
+  }
+  // Write stat column names
+  for( const std::string &s : StatColumnNames )
+    os << " & " << s;
+  os << "\\\\\n\\hline\n";
+  // Write each row
+  for( const FitMap::value_type &dt : Fits )
+  {
+    const FitTimes &ft{ dt.first };
+    const FitData &d{ dt.second };
+    // Now write this row
+    if( bTableN )
+      os << sMom << " & ";
+    d.WriteTableFormat( os, ft, NumParams(), ErrorDigits );
+  }
+  os << "\\hline\n\\end{tabular}\n}\n";
+}
+
 // Process every base name and it's list of models separately
 void Summariser::Run()
 {
@@ -297,7 +485,8 @@ void Summariser::Run()
   {
     const std::string &sSummaryName{ outBaseFileName + it->first };
     std::cout << sSummaryName << NL;
-    std::vector<FileInfo> &Files{ it->second };
+    BaseInfo &bi{ it->second };
+    std::vector<FileInfo> &Files{ bi.vFI };
     FileNameOps.clear(); // For now I get these, but don't check them
     // Load the first Model
     {
@@ -319,71 +508,27 @@ void Summariser::Run()
       StatColumnNames.insert( StatisticName );
     // Read every model, saving all the data I'll need to reconstruct the summary
     BuildFitMap( Files );
-    // Update the fits with sorted sequence number for test statistic and save sorted file
     if( !Fits.empty() )
     {
-      // Sort the fits by selected test statistic
-      std::set<TestStatKey> SortSet;
-      for( FitMap::value_type &dt : Fits )
-        SortSet.emplace( TestStatKey{ dt.second.Stat, dt.first } );
-      // Now write this out to file
-      std::string sFileName=Common::MakeFilename(sSummaryName,Common::sParams+"_sort",Seed,TEXT_EXT);
-      std::ofstream s( sFileName );
-      Common::SummaryHeader<scalar>( s, sFileName );
-      s << Comments << "Seq ";
-      Models[0].SummaryColumnNames( s, MaxFitTimes, Params, StatColumnNames );
-      s << NL;
-      int SortSeq{ 0 };
-      for( const TestStatKey &z : SortSet )
       {
-        FitData & d{ Fits[z.ft] };
-        d.Seq = SortSeq++;
-        s << d.Seq << Common::Space << d.Parameters;
+        // Sort the fits by selected test statistic
+        std::set<TestStatKey> SortSet;
+        for( FitMap::value_type &dt : Fits )
+          SortSet.emplace( TestStatKey{ dt.second.Stat, dt.first } );
+        WriteSorted( Common::MakeFilename(sSummaryName,Common::sParams+"_sort",Seed,TEXT_EXT),
+                     SortSet, true );
       }
+      WriteUnsorted( Common::MakeFilename(sSummaryName,Common::sParams,Seed,TEXT_EXT) );
+      WriteTabular( Common::MakeFilename(sSummaryName,Common::sParams+"_table",Seed,TEXT_EXT), bi );
+      Fits.clear();
     }
-    // Now make the output file with blocks for each ti, sorted by tf
-    if( !Fits.empty() )
-    {
-      std::ofstream s;
-      const std::string sFileName{Common::MakeFilename(sSummaryName,Common::sParams,Seed,TEXT_EXT)};
-      std::size_t t_last = std::numeric_limits<int>::min();
-      for( auto dt = Fits.begin(); dt != Fits.end(); ++dt )
-      {
-        const FitData &d{ dt->second };
-        // Write header before each block
-        if( t_last != d.ft.ti() )
-        {
-          t_last = d.ft.ti();
-          if( !s.is_open() )
-          {
-            s.open( sFileName );
-            Common::SummaryHeader<scalar>( s, sFileName );
-            s << Comments;
-            s << "# columnheader(1) is the block (index) title\n";
-          }
-          else
-          {
-            // two blank lines at start of new data block
-            s << "\n\n";
-          }
-          // Name the data series
-          s << "# [ti=" << d.ft.ti() << "]\n";
-          // Column names, with the series value embedded in the column header (best I can do atm)
-          s << "ti=" << d.ft.ti() << Common::Space;
-          Models[0].SummaryColumnNames( s, MaxFitTimes, Params, StatColumnNames );
-          s << NL;
-        }
-        // Now write this row
-        s << d.Seq << Common::Space << d.Parameters;
-      }
-    }
-    Fits.clear();
   }
 }
 
 int main(int argc, const char *argv[])
 {
   std::ios_base::sync_with_stdio( false );
+  static const char DefaultErrDig[] = "2";
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;
@@ -399,6 +544,8 @@ int main(int argc, const char *argv[])
       {"maxE",  CL::SwitchType::Single, "10"},
       {"fast",  CL::SwitchType::Flag, nullptr},
       {"all",  CL::SwitchType::Flag, nullptr},
+      {"errdig", CL::SwitchType::Single, DefaultErrDig},
+      {"tablen", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -435,6 +582,8 @@ int main(int argc, const char *argv[])
     "--inc    Sort increasing (default sort test stat decreasing)\n"
     "--fast   Skip first pass reading models to find common parameters\n"
     "--all    Save all parameters. Default: only save common parameters\n"
+    "--errdig Number of significant figures in error (default " << DefaultErrDig << ")\n"
+    "--tablen Include n^2 in the parameters table\n"
     "--help   This message\n";
   }
   return iReturn;

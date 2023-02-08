@@ -1426,7 +1426,7 @@ void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
     s << "# " << sPValue << " : Chi^2 = " << (*this)[Model<T>::idxCentral][iCol] << NewLine;
 }
 
-const char ModelBase::SummaryColumnPrefix[] = "ti tf tiLabel tfLabel NumDataPoints dof SampleSize CovarSampleSize ";
+const char ModelBase::SummaryColumnPrefix[] = "ti tf tiLabel tfLabel NumDataPoints dof SampleSize CovarSampleSize";
 
 template <typename T>
 void Model<T>::SummaryColumnNames( std::ostream &os ) const
@@ -1434,33 +1434,6 @@ void Model<T>::SummaryColumnNames( std::ostream &os ) const
   os << SummaryColumnPrefix;
   Base::SummaryColumnNames( os );
   for( std::size_t i = 1; i < FitTimes.size(); ++i )
-    os << Space << "ti" << i << Space << "tf" << i;
-}
-
-template <typename T>
-void Model<T>::SummaryColumnNames( std::ostream &os, std::size_t NumFitTimes,
-                                   const Params &ParamNames, const UniqueNameSet &StatNames ) const
-{
-  os << SummaryColumnPrefix;
-  // Write parameter names
-  for( const Params::value_type &it : ParamNames )
-  {
-    //const Param::Key &k{ it.first };
-    const Param &p{ it.second };
-    for( std::size_t i = 0; i < p.size; ++i )
-    {
-      os << Space;
-      ValWithEr<T>::Header( ParamNames.GetName( it, i ), os, Space );
-    }
-  }
-  // Write statistic names
-  for( const std::string &s : StatNames )
-  {
-    os << Space;
-    ValWithEr<T>::Header( s, os, Space );
-  }
-  // Write additional fit time pair names
-  for( std::size_t i = 1; i < NumFitTimes; ++i )
     os << Space << "ti" << i << Space << "tf" << i;
 }
 
@@ -1505,15 +1478,16 @@ void Model<T>::SummaryContents( std::ostream &os ) const
   SummaryContentsSuffix( os );
 }
 
-template <typename T>
-void Model<T>::SummaryContents( std::ostream &os, const Params &ParamNames,
-                                const UniqueNameSet &StatNames ) const
+template <typename T> std::vector<ValWithEr<typename Model<T>::scalar_type>>
+Model<T>::GetValWithEr( const Params &ParamNames, const UniqueNameSet &StatNames ) const
 {
-  using Scalar = typename Base::scalar_type;
+  using Scalar = typename Model<T>::scalar_type;
   const ValWithEr<Scalar> Zero(0,0,0,0,0,0);
   const ValWithEr<Scalar> *pData{ Base::getSummaryData() };
-  SummaryContentsPrefix( os );
-  // Write out all the parameters in param name list. NB: I might not have a copy of these
+  const std::size_t NumScalars{ ParamNames.NumScalars( Param::Type::All ) };
+  const std::size_t NumStats{ StatNames.size() };
+  std::vector<ValWithEr<Scalar>> v;
+  v.reserve( NumScalars + NumStats );
   for( const Params::value_type &it : ParamNames )
   {
     const Param::Key &k{ it.first };
@@ -1527,19 +1501,19 @@ void Model<T>::SummaryContents( std::ostream &os, const Params &ParamNames,
       const Param &pMe{ itMe->second };
       std::size_t MyOffset{ pMe.GetOffset( 0, Param::Type::All ) };
       for( std::size_t i = 0; i < std::min( NumHave, NumToWrite ); ++i )
-        os << Space << pData[MyOffset + i];
+        v.emplace_back( pData[MyOffset + i] );
     }
     // Now write out dummy values for those I don't have
     for( std::size_t i = NumHave; i < NumToWrite; ++i )
-      os << Space << Zero;
+      v.emplace_back( Zero );
   }
   // Now write out all the statistics columns
   for( const std::string &StatName : StatNames )
   {
     const int idx{ Base::GetColumnIndexNoThrow( StatName ) };
-    os << Space << ( idx < 0 ? Zero : pData[idx] );
+    v.emplace_back( idx < 0 ? Zero : pData[idx] );
   }
-  SummaryContentsSuffix( os );
+  return v;
 }
 
 template <typename T>

@@ -632,6 +632,42 @@ std::vector<std::string> Params::GetNames( Param::Type type, bool bLongNames ) c
   return Names;
 }
 
+void Params::WriteNames( std::ostream &os ) const
+{
+  // Write parameter names
+  bool bFirst{ true };
+  for( const Params::value_type &it : *this )
+  {
+    const Param &p{ it.second };
+    for( std::size_t i = 0; i < p.size; ++i )
+    {
+      if( bFirst )
+        bFirst = false;
+      else
+        os << Space;
+      os << GetName( it, i );
+    }
+  }
+}
+
+void Params::WriteNamesValWithEr( std::ostream &os ) const
+{
+  // Write parameter names
+  bool bFirst{ true };
+  for( const Params::value_type &it : *this )
+  {
+    const Param &p{ it.second };
+    for( std::size_t i = 0; i < p.size; ++i )
+    {
+      if( bFirst )
+        bFirst = false;
+      else
+        os << Space;
+      ValWithEr<double>::Header( GetName( it, i ), os, Space ); // Header is type independent
+    }
+  }
+}
+
 void Params::ReadH5 ( ::H5::Group gParent, const std::string GroupName )
 {
   clear();

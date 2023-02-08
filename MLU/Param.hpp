@@ -165,6 +165,8 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   void Dump( std::ostream &os, const Vector<T> &Values, Param::Type type = Param::Type::Variable,
              const Vector<T> *pErrors = nullptr, const std::vector<bool> *pbKnown = nullptr ) const;
   std::vector<std::string> GetNames( Param::Type type, bool bLongNames ) const;
+  void WriteNames( std::ostream &os ) const;
+  void WriteNamesValWithEr( std::ostream &os ) const;
   void ReadH5 ( ::H5::Group gParent, const std::string GroupName );
   void WriteH5( ::H5::Group gParent, const std::string GroupName ) const;
   bool SingleObject() const { return bSingleObject; }
