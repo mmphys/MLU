@@ -75,31 +75,42 @@ ModelOverlap::ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
   Object( std::move( OID ) ),
   bOverlapAltNorm{ cp.bOverlapAltNorm },
   NumOverlapExp{ NumOverlapExp_ },
-  Overlap( 2 )
+  NumOverlapExpDual{ NumOverlapExp_ },
+  vOverlap( 2 )
 {
   // Overlap coefficient names come from the correlator file name
   bool bForceSrcSnkDifferent;
   Args.Remove( "srcsnk", &bForceSrcSnkDifferent );
   for( int i = idxSrc; i <= idxSnk; ++i )
   {
-    Overlap[i].Key.Object.push_back( ObjectID( i ) );
-    Overlap[i].Key.Name = Args.Remove( pSrcSnk[i], cp.OpNames[cp.pCorr->Name_.op[i]] );
+    vOverlap[i].Key.Object.push_back( ObjectID( i ) );
+    vOverlap[i].Key.Name = Args.Remove( pSrcSnk[i], cp.OpNames[cp.pCorr->Name_.op[i]] );
     if( bForceSrcSnkDifferent )
-      Overlap[i].Key.Name.append( pSrcSnk[i] );
+      vOverlap[i].Key.Name.append( pSrcSnk[i] );
   }
-  if( Overlap[0].Key == Overlap[1].Key )
-    Overlap.resize( 1 );
+  if( vOverlap[0].Key == vOverlap[1].Key )
+  {
+    vOverlap.resize( 1 );
+    NumOverlapExpDual = 0;
+  }
 }
 
 void ModelOverlap::AddParameters( Params &mp )
 {
-  for( ModelParam &p : Overlap )
-    AddParam( mp, p, NumOverlapExp );
+  if( NumOverlapExpDual )
+  {
+    AddParam( mp, vOverlap[idxSrc], NumOverlapExpDual );
+    AddParam( mp, vOverlap[idxSnk], NumOverlapExpDual );
+    if( NumOverlapExp > NumOverlapExpDual )
+      AddParam( mp, vOverlap[2], NumOverlapExp - NumOverlapExpDual );
+  }
+  else
+    AddParam( mp, vOverlap[0], NumOverlapExp );
 }
 
 void ModelOverlap::SaveParameters( const Params &mp )
 {
-  for( ModelParam &p : Overlap )
+  for( ModelParam &p : vOverlap )
     p.idx = mp.at( p.Key )();
 }
 
@@ -107,48 +118,63 @@ void ModelOverlap::SaveParameters( const Params &mp )
 std::string ModelOverlap::Description() const
 {
   std::string s;
-  for( std::size_t i = Overlap.size(); i-- > 0; )
+  for( std::size_t i = vOverlap.size(); i-- > 0; )
   {
     s.append( 1, ',' );
-    s.append( Overlap[i].Key.Name );
+    s.append( vOverlap[i].Key.Name );
   }
   return s;
 }
 
-std::size_t ModelOverlap::Guessable( std::vector<bool> &bKnown, bool bLastChance ) const
+void ModelOverlap::Guessable( ParamsPairs &PP ) const
 {
-  // Assume the energies are known (or we wouldn't be called)
-  std::size_t NumUnknown{ 0 };
-  if( Overlap.size() == 1 )
-    for( std::size_t i = 0; i < Overlap[0].param->size; ++i )
-      bKnown[Overlap[0].idx + i] = true;
-  else if( bLastChance || bKnown[Overlap[0].idx] || bKnown[Overlap[1].idx] )
+  // Dual overlap factors are products
+  if( NumOverlapExpDual )
   {
-    // I know at least one of them, so I in fact know both
-    for( std::size_t i = 0; i < Overlap[0].param->size; ++i )
+    ParamsPairs::Key key0{ vOverlap[0].Key, 0 };
+    ParamsPairs::Key key1{ vOverlap[1].Key, 0 };
+    for( key0.Index = 0; key0.Index < NumOverlapExpDual; ++key0.Index )
     {
-      bKnown[Overlap[0].idx + i] = true;
-      bKnown[Overlap[1].idx + i] = true;
+      key1.Index = key0.Index;
+      PP.KnowProduct( key0, key1 );
     }
   }
-  else
-    NumUnknown = 2;
-  return NumUnknown;
+  // If I only have one overlap factor, I can guess it from the data (but not its sign)
+  if( NumOverlapExp - NumOverlapExpDual )
+    PP.SetState( ParamsPairs::State::AmbiguousSign, vOverlap[NumOverlapExpDual ? 2 : 0].Key,
+                 NumOverlapExp - NumOverlapExpDual );
 }
 
 // If I can't work out what the overlap coefficients are, I might be able to determine their product
-void ModelOverlap::ReduceUnknown()
+void ModelOverlap::ReduceUnknown( const ParamsPairs &PP )
 {
-  if( Overlap.size() > 1 )
+  if( NumOverlapExpDual )
   {
-    if( Overlap[0].Key.Object.size() != 1 || Overlap[1].Key.Object.size() != 1 )
-      throw std::runtime_error( "ModelOverlap::ReduceUnknown() : Class invariant breached" );
-    if( !Common::EqualIgnoreCase( Overlap[0].Key.Object[0], Overlap[1].Key.Object[0] ) )
-      Overlap[1].Key.Object.push_back( std::move( Overlap[0].Key.Object[0] ) );
-    if( !Common::EqualIgnoreCase( Overlap[0].Key.Name, Overlap[1].Key.Name ) )
-      Overlap[1].Key.Name.append( std::move( Overlap[0].Key.Name ) );
-    Overlap[0].Key = std::move( Overlap[1].Key );
-    Overlap.resize( 1 );
+    // I have at least one differing overlap coefficients
+    std::size_t NewDual{ PP.NumKnownProducts( vOverlap[0].Key, vOverlap[1].Key, NumOverlapExpDual ) };
+    if( NumOverlapExpDual != NewDual )
+    {
+      // I need to reduce my number of overlap coefficients
+      if( NumOverlapExpDual == NumOverlapExp )
+      {
+        // I need to make a new name
+        if( vOverlap[0].Key.Object.size() != 1 || vOverlap[1].Key.Object.size() != 1 )
+          throw std::runtime_error( "ModelOverlap::ReduceUnknown() : Class invariant breached" );
+        vOverlap.resize( 3 );
+        vOverlap[2].Key = vOverlap[1].Key;
+        if( !Common::EqualIgnoreCase( vOverlap[0].Key.Object[0], vOverlap[1].Key.Object[0] ) )
+          vOverlap[2].Key.Object.push_back( vOverlap[0].Key.Object[0] );
+        if( !Common::EqualIgnoreCase( vOverlap[0].Key.Name, vOverlap[1].Key.Name ) )
+          vOverlap[2].Key.Name.append( vOverlap[0].Key.Name );
+      }
+      if( NewDual == 0 )
+      {
+        // I know the name of the combined operator and no longer have individual operators
+        vOverlap[0] = std::move( vOverlap[2] );
+        vOverlap.resize( 1 );
+      }
+      NumOverlapExpDual = NewDual;
+    }
   }
 }
 
@@ -157,7 +183,7 @@ void ModelOverlap::ReduceUnknown()
   std::size_t UnKnown{ 0 };
   for( const ModelParam &p : Overlap )
   {
-    for( std::size_t i = 0; i < p.param->size; ++i )
+    for( std::size_t i = 0; i < NumOverlapExp; ++i )
     {
       if( !bKnown[p.idx + i] )
         ++UnKnown;

@@ -463,7 +463,13 @@ void Summariser::WriteTabular( const std::string &sFileName, const BaseInfo &bi 
   }
   // Write stat column names
   for( const std::string &s : StatColumnNames )
-    os << " & " << s;
+  {
+    os << " & ";
+    if( Common::EqualIgnoreCase( s, Common::sChiSqPerDof ) )
+      os << "$\\flatfrac{\\chi^2}{\\textrm{dof}}$";
+    else
+      os << s;
+  }
   os << "\\\\\n\\hline\n";
   // Write each row
   for( const FitMap::value_type &dt : Fits )

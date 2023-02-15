@@ -33,14 +33,15 @@
 #include "Model.hpp"
 
 // Forward declarations to minimise coupling
-class FitterThread;       // OpenMP thread that will perform fit on each replica
+struct FitterThread;       // OpenMP thread that will perform fit on each replica
 
-class Fitter
+struct Fitter
 {
 public:
   // Simple command-line options
   const bool bAnalyticDerivatives;
   const bool bTestRun;
+  const bool bCentralGuess; // Use fit on central replica as guess for other replicas
   const bool bOverwrite;
   const double HotellingCutoff;
   const double ChiSqDofCutoff;
@@ -85,7 +86,7 @@ protected:
   std::vector<ModelPtr> CreateModels( const Common::CommandLine &cl,
                                       std::vector<Model::Args> ModelArgs );
   int GetNumExponents();
-  Params MakeModelParams( const std::string &sProducts );
+  Params MakeModelParams();
   void MakeGuess();
   virtual FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel ) = 0;
 

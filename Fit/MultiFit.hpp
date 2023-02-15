@@ -52,6 +52,7 @@ using vInt = std::vector<int>;
 using UniqueNames = Common::UniqueNames;
 using Param = Common::Param;
 using Params = Common::Params;
+using ParamsPairs = Common::ParamsPairs;
 using GSLLG = Common::GSLLibraryGlobal;
 
 // Indices for operators in correlator names

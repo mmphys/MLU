@@ -49,7 +49,7 @@ struct ModelParam
 };
 
 // This represents the model I'm fitting to
-class Model;
+struct Model;
 using ModelPtr = std::unique_ptr<Model>;
 
 struct Model
@@ -103,7 +103,7 @@ public:
   virtual std::string Description() const = 0;
   // Mark parameters guessable. Return number of unknown parameters remaining
   // NB: Ignore excited states - i.e. each parameter counts as 1 regardless of size
-  virtual std::size_t Guessable( std::vector<bool> &bKnown, bool bLastChance ) const = 0;
+  virtual void Guessable( ParamsPairs &PP ) const = 0;
   // Guess unknown parameters. LastChance true -> fit about to be abandoned, so guess products of params
   // Return number of unknown parameters remaining. NB: Count excited states - i.e. return sum of param.size
   virtual std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,
@@ -119,7 +119,7 @@ public:
   // Partial derivative of the model function on a timeslice with respect to each parameter
   virtual double Derivative( int t, int p ) const { return 0; }
   // Model insoluble - please reduce number of parameters if possible?
-  virtual void ReduceUnknown() {} // Most models won't be able to do this
+  virtual void ReduceUnknown( const ParamsPairs &PP ) {} // Most models won't be able to do this
   // How big a scratchpad is required for each model?
   virtual int GetScratchPadSize() const { return 0; }
   // Cache values based solely on the model parameters (to speed up computation)

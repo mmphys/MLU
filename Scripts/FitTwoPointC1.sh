@@ -35,5 +35,10 @@ fi
 
 
 #Mtg Thu 19 Jan
-p=0 TI=5 TF=29 NumExp=3 TI2=7 TF2=29 NumExp2=2  Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh
+#p=0 TI=5 TF=29 NumExp=3 TI2=7 TF2=29 NumExp2=2  Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh
 #End mtg
+
+# Debugging test file
+FitOptions='--central' \
+p=0 TI=6 TF=22 NumExp=2 TI2=12 TF2=23 Meson=s_l yrange='0.3:0.315' NumExp2=1 ti='3 3' LabelTF=30 FitTwoPoint.sh
+#

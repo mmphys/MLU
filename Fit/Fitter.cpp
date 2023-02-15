@@ -37,6 +37,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
                 CovarParams &&cp_ )
   : bAnalyticDerivatives{ cl.GotSwitch("analytic") },
     bTestRun{ cl.GotSwitch("testrun") },
+    bCentralGuess{ !cl.GotSwitch("central") },
     bOverwrite{ cl.GotSwitch("overwrite") },
     HotellingCutoff{ cl.SwitchValue<double>( "Hotelling" ) },
     ChiSqDofCutoff{ cl.SwitchValue<double>( "chisqdof" ) },
@@ -58,7 +59,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     ModelArgs{ ModelArgs_ }, // Save the original model arguments
     model{ CreateModels( cl, ModelArgs ) }, // Pass in a copy of model arguments
     NumExponents{ GetNumExponents() },
-    mp{ MakeModelParams( cl.SwitchValue<std::string>( "product" ) ) },
+    mp{ MakeModelParams() },
     bAllParamsKnown{ mp.NumScalars( Param::Type::Variable ) == 0 },
     cp{ std::move( cp_ ) },
     Guess{ mp.NumScalars( Param::Type::All ) },
@@ -89,7 +90,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
                                  + " parameters, but there are "
                                  + std::to_string( mp.NumScalars( Param::Type::Variable ) )
                                  + " variable parameters" );
-    mp.Import<scalar>( Guess, vGuess );
+    mp.Import<scalar>( Guess, vGuess, Param::Type::Variable, false );
   }
   // Load the constants into the fixed portion of the guess
   ds.GetFixed( Fold::idxCentral, Guess, ParamFixed );
@@ -162,24 +163,24 @@ int Fitter::GetNumExponents()
 // Finalise the parameter lists the models will fit
 // Build complete list of fixed and variable parameters
 // Tell each model where to get the parameters they are interested in
-Params Fitter::MakeModelParams( const std::string &sProducts )
+Params Fitter::MakeModelParams()
 {
   Params mp;
   bool bSoluble{ false };
   for( int pass = 0; pass < 2 && !bSoluble; ++pass )
   {
     if( pass )
-      for( ModelPtr &m : model )
-        m->ReduceUnknown();
+    {
+      mp.clear();
+      ParamFixed.clear();
+    }
     // Ask all the models what parameters they need
-    mp.clear();
     for( ModelPtr &m : model )
     {
       m->param.clear();
       m->AddParameters( mp );
     }
     // Loop through parameters - see if they are available as constants
-    ParamFixed.clear();
     for( const Params::value_type &it : mp )
     {
       const Param::Key &pk{ it.first };
@@ -188,6 +189,7 @@ Params Fitter::MakeModelParams( const std::string &sProducts )
       bool bSwapSourceSink{ false };
       if( cit == ds.constMap.end() && pk.Object.size() == 2 )
       {
+        // Try swapping the meson at source and sink
         std::vector<std::string> ObjectReverse( 2 );
         ObjectReverse[0] = pk.Object[1];
         ObjectReverse[1] = pk.Object[0];
@@ -209,10 +211,11 @@ Params Fitter::MakeModelParams( const std::string &sProducts )
         mp.MakeFixed( pk, bSwapSourceSink );
       }
     }
+    // At this point we have a definitive list of parameters - models can save offsets
     mp.AssignOffsets();
     for( ModelPtr &m : model )
       m->SaveParameters( mp );
-    // Now make a list of the constants we are going to use
+    // Make list of constants - need to wait until after AssignOffsets()
     for( const Params::value_type &it : mp )
     {
       const Param::Key &pk{ it.first };
@@ -220,60 +223,49 @@ Params Fitter::MakeModelParams( const std::string &sProducts )
       if( p.type == Param::Type::Fixed )
       {
         DataSet::ConstMap::const_iterator cit{ ds.constMap.find( pk ) };
-        if( cit != ds.constMap.end() )
-          ParamFixed.emplace_back( cit->second, p.size, static_cast<int>( p() ) );
+        assert( cit != ds.constMap.cend() && "Constant unavailable (bug)" );
+        ParamFixed.emplace_back( cit->second, p.size, static_cast<int>( p() ) );
       }
     }
     if( mp.NumScalars( Param::Type::Variable ) == 0 )
-      bSoluble = true;
+      bSoluble = true; // Trivial case - no variable parameters
     else
     {
-      // Create list of parameters we know - starting from constants
-      const std::size_t NumParams{ mp.NumScalars( Param::Type::All ) };
-      std::vector<bool> ParamKnown( NumParams, false );
-      for( const typename Params::value_type &it : mp )
-      {
-        const Param &p{ it.second };
-        if( p.type == Param::Type::Fixed )
-        {
-          for( std::size_t i = 0; i < p.size; ++i )
-            ParamKnown[ p( i ) ] = true;
-        }
-      }
-      // Now ask the models whether they can guess parameters
-      std::size_t LastUnknown;
-      std::size_t NumUnknown{ 0 };
-      std::size_t NumWithUnknowns;
+      // Ask the models whether they can guess parameters
+      Common::ParamsPairs PP( mp );
+      ParamsPairs::StateSize ss{ PP.GetStateSize() };
+      ParamsPairs::StateSize ssLast;
       do
       {
-        LastUnknown = NumUnknown;
-        NumUnknown = 0;
-        NumWithUnknowns = 0;
+        ssLast = ss;
         for( std::size_t i = 0; i < model.size(); ++i )
         {
-          std::size_t z{ model[i]->Guessable( ParamKnown, false ) };
-          if( z )
-          {
-            NumUnknown += z;
-            NumWithUnknowns++;
-          }
+          model[i]->Guessable( PP );
+          if( Verbosity )
+            std::cout << "Model " << i << Common::NewLine << PP;
         }
+        ss = PP.GetStateSize();
       }
-      while( NumUnknown && NumUnknown != LastUnknown );
-      bSoluble = ( NumUnknown <= NumWithUnknowns );
-      // If the model is soluble, but we've not guessed all parameters, force the models to do so
-      if( bSoluble && NumUnknown )
+      while( !ss && ss != ssLast );
+      bSoluble = ss.Unknown == 0; // Ok if some have ambiguous sign or we only know product
+      // If we have unknown product pairs, try ask all the models to minimise number of parameters
+      if( bSoluble )
       {
-        for( std::size_t i = 0; i < model.size(); ++i )
-          model[i]->Guessable( ParamKnown, true );
-        for( bool bKnown : ParamKnown )
-          if( !bKnown )
-            throw std::runtime_error( "Model is not solvable" );
+        Common::SignChoice sc( PP, Verbosity );
+        mp.SignList = sc;
+        std::cout << "Sign groups: " << sc << Common::NewLine;
+        mp.DumpSignList( std::cout );
+      }
+      else if( pass == 0 )
+      {
+        if( PP.HasUnknownProducts() )
+          for( ModelPtr &m : model )
+            m->ReduceUnknown( PP );
+        else
+          pass = 1;
       }
     }
   }
-  //
-  mp.SetProducts( sProducts );
   return mp;
 }
 
@@ -456,6 +448,8 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       std::cout << "Using ";
       if( UserGuess )
         std::cout << "user supplied";
+      else if( bCentralGuess )
+        std::cout << "central replica fit as";
       else if( bCorrelated )
         std::cout << "uncorrelated fit as";
       else
@@ -474,6 +468,14 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       // For correlated fits, perform an uncorrelated fit on the central replica to use as the guess
       if( bCorrelated && !UserGuess )
         Guess = ftC->UncorrelatedFit();
+    }
+
+    // Unless I need the central fit as the guess for each replica, I can do it in parallel below
+    if( bCentralGuess )
+    {
+      // Perform the fit on the central replica. Use that as guess for all other replicas
+      ChiSq = ftC->FitOne();
+      Guess=ftC->ModelParams;
     }
 
     // Perform all the fits in parallel on separate OpenMP threads
@@ -495,7 +497,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
 #ifndef DEBUG_DISABLE_OMP
           #pragma omp for schedule(dynamic)
 #endif
-          for( int idx = Fold::idxCentral; idx < ds.NSamples; ++idx )
+          for( int idx = bCentralGuess ? 0 : Fold::idxCentral; idx < ds.NSamples; ++idx )
           {
             try
             {

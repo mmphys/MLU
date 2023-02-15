@@ -105,8 +105,11 @@ scalar ModelRatio::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) 
   const scalar CSink{ (*C2.back())( DeltaT - t, ScratchPad, ModelParams ) };
   const scalar CProd{ CSource * CSink };
   const scalar RawRatio{ C3 / CProd };
-  const scalar ZSource{ ModelParams[C2[idxSrc]->Overlap[0].idx] };
-  const scalar ZSink{ ModelParams[C2.back()->Overlap[0].idx] };
+  // Assumption here is that the overlap factors at source and sink are the same
+  assert( C2[idxSrc]->Overlap( 0, idxSrc ) == C2[idxSrc]->Overlap( 0, idxSnk ) );
+  assert( C2.back()->Overlap( 0, idxSrc ) == C2.back()->Overlap( 0, idxSnk ) );
+  const scalar ZSource{ ModelParams[C2[idxSrc]->Overlap( 0, idxSrc )] };
+  const scalar ZSink{ ModelParams[C2.back()->Overlap( 0, idxSrc )] };
   scalar ZProd{ ZSource * ZSink };
   if( bOverlapAltNorm ) // DEPRECATED
   {

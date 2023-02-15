@@ -31,6 +31,7 @@
 #define MLU_Param_hpp_end };
 
 #include <MLU/HDF5.hpp>
+#include <list>
 
 MLU_Param_hpp
 
@@ -51,8 +52,6 @@ struct Param
   bool bMonotonic;    // strictly increasing - implemented as p_n = p_{n-1} + a^2
   bool bSwapSourceSink = false;
   Type type;
-  // The second member of a pair points to its mate
-  Param * pProductWith = nullptr;
 
   struct Key
   {
@@ -120,6 +119,7 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
 {
   //using MapT = std::map<Param::Key, Param, Param::Key::Less>;
   //using MapPairT = std::pair<iterator, bool>;
+  std::vector<std::vector<std::size_t>> SignList;
   Params() {};
   /// Create list of single, variable parameters
   Params( const std::vector<std::string> &ParamNames );
@@ -139,6 +139,7 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   Params::iterator MakeFixed( const Param::Key &key, bool bSwapSourceSink );
   /// Find the key. If Params have only one objectID, match anything
   Params::const_iterator FindPromiscuous( const Param::Key &key ) const;
+  /// Once the list of parameters is finalised, call this to assign each parameter a fixed offset
   void AssignOffsets();
   std::size_t NumScalars( Param::Type Type ) const
   {
@@ -159,8 +160,8 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   template <typename T>
   void Export( Vector<T> &vType, const Vector<T> &All, Param::Type type = Param::Type::Variable ) const;
   template <typename T>
-  void Import( Vector<T> &All, const VectorView<T> &vType, Param::Type type = Param::Type::Variable,
-               const Vector<T> * pRef = nullptr ) const;
+  void Import( Vector<T> &All, const VectorView<T> &Source, Param::Type SourceType,
+               bool bSourceMonotonic, const Vector<T> * pRef = nullptr ) const;
   template <typename T>
   void Dump( std::ostream &os, const Vector<T> &Values, Param::Type type = Param::Type::Variable,
              const Vector<T> *pErrors = nullptr, const std::vector<bool> *pbKnown = nullptr ) const;
@@ -172,20 +173,14 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   bool SingleObject() const { return bSingleObject; }
   std::string GetName( const value_type &param, std::size_t idx=0 ) const;
   /**
-   Choose which of a pair of products becomes negative.
-   
-   I might only know the product of some parameters.
-   If there's a choice, make the second of each pair negative
-   - Parameter Products: even list of parameter pairs
-   */
-  void SetProducts( const std::string &sProducts );
-  /**
    Keep only those parameters that are common to both sets
    - Parameter Other: other set of parameters
    - Warning: Ignores parameter type when comparing
    */
   void KeepCommon( const Params &Other );
   void Merge( const Params &Other );
+  template <typename T> void AdjustSigns( Vector<T> &data ) const;
+  void DumpSignList( std::ostream &os ) const;
 protected:
   // Only valid after AssignOffsets()
   bool bSingleObject;
@@ -217,6 +212,104 @@ protected:
 };
 
 std::ostream &operator<<( std::ostream &os, const Params::value_type &param );
+
+/**
+ Used to keep track of pairs of parameters that are only known as a product
+ 
+ Will preferentially select A^2 overlap factors to be positive over A-B.
+ Correctly tracks multiple dependencies, e.g. C-C, A-B and B-C will sign flip A, B & C to keep C positive
+ 
+ - Warning: Does not yet support cyclic dependencies. E.g. does not work for A-B, B-C and C-A
+ */
+struct ParamsPairs
+{
+  enum class State{ Unknown, Known, AmbiguousSign, ProductOnly };
+
+  struct Key : public Param::Key
+  {
+    std::size_t Index;
+    Key( const Param::Key &key, std::size_t index = 0 ) : Param::Key(key), Index{index} {}
+    bool operator==( const Key &rhs ) const;
+    bool operator!=( const Key &rhs ) const { return !operator==( rhs ); }
+    struct Less { bool operator()( const Key &lhs, const Key &rhs ) const; };
+  };
+
+  struct Pair : std::array<Key, 2>
+  {
+    static constexpr std::size_t size{ 2 };
+    Pair( const Key &key0, const Key &key1 );
+    bool operator==( const Pair &rhs ) const { return (*this)[0] == rhs[0] && (*this)[1] == rhs[1]; }
+    bool operator!=( const Pair &rhs ) const { return !operator==( rhs ); }
+    struct Less { bool operator()( const Pair &lhs, const Pair &rhs ) const; };
+  };
+
+  struct StateSize
+  {
+    std::size_t Known = 0;
+    std::size_t Unknown = 0;
+    std::size_t Other = 0;
+    /// true iff all parameters known
+    operator bool() const { return Unknown == 0 && Other == 0; }
+    bool operator==( const StateSize &rhs ) const
+    { return Known == rhs.Known && Unknown == rhs.Unknown && Other == rhs.Other; }
+    bool operator!=( const StateSize &rhs ) const { return !operator==( rhs ); }
+  };
+
+  const Params &params;
+  std::vector<State> keystate;
+  using PairSet = std::set<Pair, Pair::Less>;
+  PairSet pairs;
+
+  ParamsPairs( Params &params_ ) : params{params_} { clear(); }
+
+  StateSize GetStateSize() const;
+  /// Reset: Fixed parameters are known; Variable parameters Unknown; Ambiguous and pairs empty
+  void clear();
+  void SetState( State NewState, const Key &key ) { SetState( NewState, key, 1, key.Index ); }
+  void SetState( State NewState, const Param::Key &key, std::size_t Size, std::size_t Index = 0 );
+  /// Only the product of these keys is known
+  void KnowProduct( const Key &key0, const Key &key1 );
+  void KnowProduct( const Param::Key &key0, const Param::Key &key1, std::size_t Size );
+  /// true iff there are product pairs where both members are unknown (unguessable)
+  bool HasUnknownProducts() const;
+  /// For the given key, how many known products are there
+  std::size_t NumKnownProducts( const Param::Key &k0, const Param::Key &k1, std::size_t Size ) const;
+protected:
+  void GetPairState( std::array<Params::const_iterator, Pair::size> &it,
+                     const Pair &pair, bool bUnknownOk = false ) const;
+  std::array<const State *, Pair::size> GetPairState(const Pair &pair, bool bUnknownOk = false)const;
+  std::array<State *, Pair::size> GetPairState( const Pair &pair, bool bUnknownOk = false );
+  void SetState( State NewState, Params::const_iterator &it, std::size_t Size, std::size_t Index );
+  /// Keep walking the list of product pairs, propagating anything new we know
+  void PropagateKnown();
+  friend std::ostream &operator<<( std::ostream &os, const ParamsPairs &PP );
+};
+
+std::ostream &operator<<( std::ostream &os, const ParamsPairs::State &state );
+std::ostream &operator<<( std::ostream &os, const ParamsPairs::Key &key );
+std::ostream &operator<<( std::ostream &os, const ParamsPairs::Pair &pair );
+std::ostream &operator<<( std::ostream &os, const ParamsPairs &PP );
+
+struct SignChoice
+{
+  const ParamsPairs &PP;
+  const bool bShowSigns;
+  using Key = ParamsPairs::Key;
+  using Pair = ParamsPairs::Pair;
+  using Set = std::set<Key, ParamsPairs::Key::Less>; // First -> +. Remainder sign flipped as needed
+  using List = std::list<Set>;
+  List list;
+  void Add( const Pair &pair );
+  bool find( const Key &key, List::iterator &lit, Set::iterator &sit );
+  operator std::vector<std::vector<std::size_t>>() const;
+  SignChoice( const ParamsPairs &PP, bool bShowSigns );
+protected:
+  void find( const Pair &pair, std::array<bool, Pair::size> &bFound,
+             std::array<List::iterator, Pair::size> &lit,
+             std::array<Set::iterator, Pair::size> &sit );
+};
+
+std::ostream &operator<<( std::ostream &os, const SignChoice &sc );
 
 MLU_Param_hpp_end
 #endif

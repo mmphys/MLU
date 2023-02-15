@@ -55,11 +55,9 @@ std::string ModelConstant::Description() const
   return s;
 }
 
-std::size_t ModelConstant::Guessable( std::vector<bool> &bKnown, bool bLastChance ) const
+void ModelConstant::Guessable( ParamsPairs &PP ) const
 {
-  for( std::size_t i = 0; i < Constant.param->size; ++i )
-    bKnown[Constant.idx + i] = true;
-  return 0;
+  PP.SetState( ParamsPairs::State::Known, Constant.Key, Constant.param->size );
 }
 
 std::size_t ModelConstant::Guess( Vector &Guess, std::vector<bool> &bKnown,

@@ -76,14 +76,43 @@ struct ModelOverlap : Model, Object
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
-  std::size_t Guessable( std::vector<bool> &bKnown, bool bLastChance ) const override;
-  void ReduceUnknown() override;
+  void Guessable( ParamsPairs &PP ) const override;
+  void ReduceUnknown( const ParamsPairs &PP ) override;
 // TODO: These really shouldn't be accessed directly - otherwise we might forget to normalise
 //protected:
   //std::size_t NumUnknown( std::vector<bool> &bKnown ) const;
   const bool bOverlapAltNorm;
-  std::size_t NumOverlapExp;
-  std::vector<ModelParam> Overlap;
+  const std::size_t NumOverlapExp;
+  void OverlapValidateExp( std::size_t Exp ) const
+  {
+    if( Exp >= NumOverlapExp )
+      throw std::domain_error( "OverlapIdx() Overlap exponent out of bounds" );
+  }
+  void OverlapValidate( std::size_t Exp, int SourceSink ) const
+  {
+    OverlapValidateExp( Exp );
+    if( SourceSink < idxSrc || SourceSink > idxSnk )
+      throw std::domain_error( "OverlapIdx() SourceSink out of bounds" );
+  }
+  std::size_t OverlapCount( std::size_t Exp ) const
+  {
+    OverlapValidateExp( Exp );
+    return Exp < NumOverlapExpDual ? 2 : 1;
+  }
+  std::size_t Overlap( std::size_t Exp, int SourceSink ) const
+  {
+    OverlapValidate( Exp, SourceSink );
+    if( Exp < NumOverlapExpDual )
+      return vOverlap[SourceSink].idx + Exp;
+    return vOverlap[NumOverlapExpDual ? 2 : 0].idx + Exp - NumOverlapExpDual;
+  }
+private:
+  // NumOverlapExpDual is the number of dual overlap factors, e.g. P * W (optional)
+  // If present, these are stored in Overlap[0]=Source and Overlap[1]=Sink
+  // Followed by NumOverlapExp - NumOverlapExpDual single overlap factors, e.g. P^2
+  // in Overlap[2], or Overlap[0] if NumOverlapExpDual==0
+  std::size_t NumOverlapExpDual;
+  std::vector<ModelParam> vOverlap;
 };
 
 #endif // ModelCommon_hpp

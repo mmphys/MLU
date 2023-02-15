@@ -25,6 +25,8 @@ TF=${TF:-18}
 TI2=${TI2:-$((TI-1))}
 TF2=${TF2:-$TF}
 MaxTF=$(( TF2 > TF ? TF2 : TF ))
+# Stat - which statistic
+# FitOptions - extra options to MultiFit
 
 #LabelTF=${LabelTF:-$((THalf-2))}
 LabelTF=${LabelTF:-$(( MaxTF + 2 ))}
@@ -67,6 +69,7 @@ Cmd="MultiFit -e $NumExp --mindp 1"
 [ -v Stat ] && Cmd="$Cmd --Hotelling $Stat"
 Cmd="$Cmd --overwrite"
 #Cmd="$Cmd --debug-signals"
+[ -v FitOptions ] && Cmd="$Cmd $FitOptions"
 Cmd="$Cmd --summary 2 -i $PlotData/${CorrPrefix} -o $OutSubDir/$Meson/"
 Cmd="$Cmd g5P_g5P.fold.$Seed.h5,t=${TI}:${TF},e=$NumExp"
 Cmd="$Cmd g5P_g5W.fold.$Seed.h5,t=${TI2}:${TF2},e=$NumExp2"

@@ -32,7 +32,7 @@
 #include "MultiFit.hpp"
 
 // Forward declaration of fitter for multi-exponential fit
-class Fitter;
+struct Fitter;
 
 // Several of these will be running at the same time on different threads during a fit
 struct FitterThread

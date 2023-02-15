@@ -373,7 +373,7 @@ Params::iterator Params::MakeFixed( const Param::Key &key, bool bSwapSourceSink 
   {
     // Doesn't exist
     std::ostringstream ss;
-    ss << "Params::Add cannot add key " << key;
+    ss << "Params::MakeFixed key " << key << " not found";
     throw std::runtime_error( ss.str().c_str() );
   }
   Param &p{ it->second };
@@ -502,31 +502,32 @@ template void Params::Export<double>( Vector<double> &vType,
 // Import values
 // If Ref is given, then we are importing errors, which we add in quadrature
 template <typename T>
-void Params::Import( Vector<T> &All, const VectorView<T> &vType, Param::Type type, const Vector<T> *pRef ) const
+void Params::Import( Vector<T> &All, const VectorView<T> &Source, Param::Type SourceType,
+                     bool bSourceMonotonic, const Vector<T> * pRef ) const
 {
   if( All.size < NumScalars( Param::Type::All ) )
     throw( "Params::Import() All is too short" );
-  if( vType.size() < NumScalars( type ) )
+  if( Source.size() < NumScalars( SourceType ) )
   {
     std::ostringstream es;
-    es << "Params::Import() " << type << " is too short";
+    es << "Params::Import() " << SourceType << " is too short";
     throw( es.str().c_str() );
   }
   for( const value_type &it : *this )
   {
     const Param &p{ it.second };
-    if( p.type == type )
+    if( p.type == SourceType )
     {
-      const std::size_t &Offset{ type == Param::Type::All ? p.OffsetAll : p.OffsetMyType };
+      const std::size_t &Offset{ SourceType == Param::Type::All ? p.OffsetAll : p.OffsetMyType };
       for( std::size_t i = 0; i < p.size; ++i )
       {
-        if( i == 0 || !p.bMonotonic || type == Param::Type::Fixed )
-          All[p.OffsetAll + i] = vType[Offset + i];
+        if( i == 0 || !p.bMonotonic || !bSourceMonotonic || SourceType == Param::Type::Fixed )
+          All[p.OffsetAll + i] = Source[Offset + i];
         else
         {
           // Monotonically increasing set of values. Implemented as a sum of squares
           T Previous{ All[p.OffsetAll + i - 1] };
-          T Current{ vType[Offset + i] };
+          T Current{ Source[Offset + i] };
           if( pRef )
           {
             const T PrevVal{ (*pRef)[p.OffsetAll + i - 1] };
@@ -544,9 +545,9 @@ void Params::Import( Vector<T> &All, const VectorView<T> &vType, Param::Type typ
 }
 
 template void Params::Import<float>( Vector<float> &All, const VectorView<float> &vType,
-                                     Param::Type type, const Vector<float> *pRef ) const;
+              Param::Type type, bool bSourceMonotonic, const Vector<float> * pRef ) const;
 template void Params::Import<double>( Vector<double> &All, const VectorView<double> &vType,
-                                      Param::Type type, const Vector<double> *pRef ) const;
+              Param::Type type, bool bSourceMonotonic, const Vector<double> * pRef ) const;
 
 template <typename T>
 void Params::Dump( std::ostream &os, const Vector<T> &Values, Param::Type ShowType,
@@ -864,41 +865,6 @@ std::string Params::GetName( const value_type &param, std::size_t idx ) const
   return k.FullName( idx, p.size );
 }
 
-void Params::SetProducts( const std::string &sProducts )
-{
-  static const std::string sNotFound{ "Product key not found: " };
-  const std::vector<std::string> &Products{ ArrayFromString( sProducts ) };
-  if( Products.size() & 1 )
-    throw std::invalid_argument( "Odd number of products: " + sProducts );
-  // Add every pair
-  for( std::size_t i = 0; i < Products.size(); i += 2 )
-  {
-    Param::Key k[2];
-    k[0] = FromString<Param::Key>( Products[i] );
-    if( bSingleObject && k[0].Object.empty() )
-      k[0].Object = begin()->first.Object;
-    iterator it{ find( k[0] ) };
-    if( it == end() )
-      throw std::invalid_argument( sNotFound + Products[i] );
-    k[1] = FromString<Param::Key>( Products[i + 1] );
-    if( bSingleObject && k[1].Object.empty() )
-      k[1].Object = k[0].Object;
-    iterator it2{ find( k[1] ) };
-    if( it2 == end() )
-      throw std::invalid_argument( sNotFound + Products[i + 1] );
-    // Check whether these make a good pair
-    Param &pFirst{ it->second };
-    Param &pSecond{ it2->second };
-    if( pFirst.type != Param::Type::Variable || pFirst.type != pSecond.type )
-      throw std::invalid_argument( "Products " + Products[i] + " and " + Products[i+1]
-                                  + " not both Variable" );
-    if( pFirst.size != pSecond.size )
-      throw std::invalid_argument( "Products " + Products[i] + " and " + Products[i+1]
-                                  + " not both same size" );
-    pSecond.pProductWith = &pFirst;
-  }
-}
-
 void Params::KeepCommon( const Params &Other )
 {
   for( iterator it = begin(); it != end(); )
@@ -945,6 +911,40 @@ void Params::Merge( const Params &Other )
   }
 }
 
+template <typename T> void Params::AdjustSigns( Vector<T> &data ) const
+{
+  for( std::size_t i = 0; i < SignList.size(); ++i )
+  {
+    if( data[SignList[i][0]] < 0 )
+    {
+      for( std::size_t j = 0; j < SignList[i].size(); ++j )
+      {
+        data[SignList[i][j]] = -data[SignList[i][j]];
+      }
+    }
+  }
+}
+
+void Params::DumpSignList( std::ostream &os ) const
+{
+  os << "Sign indices: ";
+  for( std::size_t i = 0; i < SignList.size(); ++i )
+  {
+    if( i )
+      os << "; ";
+    for( std::size_t j = 0; j < SignList[i].size(); ++j )
+    {
+      if( j )
+        os << Comma;
+      os << SignList[i][j];
+    }
+  }
+  os << NewLine;
+}
+
+template void Params::AdjustSigns<float>( Vector<float> &data ) const;
+template void Params::AdjustSigns<double>( Vector<double> &data ) const;
+
 const std::string Params::sCount{ "Count" };
 const std::string Params::sObjectNames{ "Object" };
 const std::string Params::sName{ "Name" };
@@ -961,6 +961,533 @@ std::ostream &operator<<( std::ostream &os, const Params::value_type &param )
   if( p.bMonotonic )
     os << 'M';
   return os << ']';
+}
+
+ParamsPairs::StateSize ParamsPairs::GetStateSize() const
+{
+  StateSize ss;
+  for( const State &s : keystate )
+  {
+    switch( s )
+    {
+      case State::Known:
+        ++ss.Known;
+        break;
+      case State::Unknown:
+        ++ss.Unknown;
+        break;
+      default:
+        ++ss.Other;
+    }
+  }
+  for( const Pair &pair : pairs )
+  {
+    std::array<const State *, Pair::size> aState{ GetPairState( pair, true ) };
+    if( *aState[0] == State::ProductOnly && *aState[1] == State::ProductOnly )
+    {
+      ss.Other -= 2;
+      ss.Unknown += 2;
+    }
+  }
+  return ss;
+}
+
+void ParamsPairs::clear()
+{
+  keystate.resize( params.NumScalars( Param::Type::All ) );
+  for( State &s : keystate )
+    s = State::Unknown;
+  pairs.clear();
+  // Initialise state of Fixed=Known and Variable=Unknown parameters
+  for( const Params::value_type &it : params )
+  {
+    const Param &p{ it.second };
+    if( p.type != Param::Type::Variable )
+    {
+      for( std::size_t i = 0; i < p.size; ++i )
+        keystate[p(i)] = State::Known;
+    }
+  }
+}
+
+void ParamsPairs::SetState( State NewState, const Param::Key &key, std::size_t Size, std::size_t Idx )
+{
+  Params::const_iterator it{ params.find( key ) };
+  if( it == params.cend() )
+  {
+    std::ostringstream os;
+    os << "ParamsPairs::SetState() key not found " << key << "[" << Idx << "]x" << Size
+       << " setting new state " << NewState;
+    throw std::runtime_error( os.str().c_str() );
+  }
+  SetState( NewState, it, Size, Idx );
+}
+
+void ParamsPairs::KnowProduct( const Key &key0, const Key &key1 )
+{
+  // Find each key's state
+  bool bChanged{ false };
+  Pair pProd( key0, key1 );
+  std::array<State *, Pair::size> aState{ GetPairState( pProd, true ) };
+  const bool bDefinite{ *aState[0] == State::Known || *aState[1] == State::Known };
+  if( bDefinite )
+  {
+    // I know at least one for sure - I know them both for sure
+    for( std::size_t i = 0; i < aState.size(); ++i )
+    {
+      if( *aState[i] != State::Known )
+      {
+        bChanged = true;
+        *aState[i] = State::Known;
+      }
+    }
+    // Since I know both for sure, I don't need to track them as a pair
+    PairSet::iterator it = pairs.find( pProd );
+    if( it != pairs.end() )
+      it = pairs.erase( it );
+  }
+  else
+  {
+    // I don't know either for sure - add them to list of pairs
+    pairs.insert( std::move( pProd ) ); // It's ok if they are in the pair list already
+    // At least one is either Known or AmbiguousSign - I can determine both
+    for( std::size_t i = 0; i < aState.size(); ++i )
+    {
+      if( *aState[i] != State::AmbiguousSign && *aState[i] != State::ProductOnly )
+      {
+        *aState[i] = State::ProductOnly;
+        bChanged = true;
+      }
+    }
+  }
+  if( bChanged )
+    PropagateKnown();
+}
+
+void ParamsPairs::KnowProduct( const Param::Key &key0, const Param::Key &key1, std::size_t Size )
+{
+  Key k0( key0, 0 );
+  Key k1( key1, 0 );
+  for( k0.Index = 0; k0.Index < Size; ++k0.Index )
+  {
+    k1.Index = k0.Index;
+    KnowProduct( k0, k1 );
+  }
+}
+
+bool ParamsPairs::HasUnknownProducts() const
+{
+  for( const PairSet::value_type &pair : pairs )
+  {
+    std::array<const State *, Pair::size> aState{ GetPairState( pair, true ) };
+    if( *aState[0] == State::ProductOnly && *aState[1] == State::ProductOnly )
+      return true;
+  }
+  return false;
+}
+
+std::size_t ParamsPairs::NumKnownProducts( const Param::Key &k0, const Param::Key &k1,
+                                           std::size_t Size ) const
+{
+  Pair pair( Key( k0, Size ), Key( k1, Size ) );
+  while( pair[0].Index-- )
+  {
+    pair[1].Index = pair[0].Index;
+    std::array<const ParamsPairs::State *, ParamsPairs::Pair::size> aState = GetPairState( pair );
+    if( *aState[0] != State::ProductOnly || *aState[1] != State::ProductOnly )
+      return pair[0].Index + 1;
+  }
+  return 0;
+}
+
+void ParamsPairs::GetPairState( std::array<Params::const_iterator, ParamsPairs::Pair::size> &it,
+                                const Pair &pair, bool bUnknownOk ) const
+{
+  for( std::size_t i = 0; i < it.size(); ++i )
+  {
+    it[i] = params.find( pair[i] );
+    if( it[i] == params.cend() )
+    {
+      std::ostringstream os;
+      os << "ParamsPairs::GetPairState() key not found " << pair[i];
+      throw std::runtime_error( os.str().c_str() );
+    }
+    const Param &p{ it[i]->second };
+    State state = keystate[ p( pair[i].Index ) ];
+    if( !bUnknownOk && state == State::Unknown ) // Shouldn't happen (this is debugging)
+    {
+      std::ostringstream os;
+      os << "ParamsPairs::GetPairState() key " << pair[i] << " state " << state;
+      throw std::runtime_error( os.str().c_str() );
+    }
+  }
+}
+
+std::array<const ParamsPairs::State *, ParamsPairs::Pair::size>
+ParamsPairs::GetPairState( const Pair &pair, bool bUnknownOk ) const
+{
+  std::array<Params::const_iterator, ParamsPairs::Pair::size> it;
+  GetPairState( it, pair, bUnknownOk );
+  std::array<const State *, Pair::size> aState;
+  for( std::size_t i = 0; i < aState.size(); ++i )
+  {
+    const Param &p{ it[i]->second };
+    aState[i] = &keystate[ p( pair[i].Index ) ];
+  }
+  return aState;
+}
+
+std::array<ParamsPairs::State *, ParamsPairs::Pair::size>
+ParamsPairs::GetPairState( const Pair &pair, bool bUnknownOk )
+{
+  std::array<Params::const_iterator, ParamsPairs::Pair::size> it;
+  GetPairState( it, pair, bUnknownOk );
+  std::array<State *, Pair::size> aState;
+  for( std::size_t i = 0; i < aState.size(); ++i )
+  {
+    const Param &p{ it[i]->second };
+    aState[i] = &keystate[ p( pair[i].Index ) ];
+  }
+  return aState;
+}
+
+void ParamsPairs::SetState( State NewState, Params::const_iterator &it, std::size_t Size,
+                            std::size_t Index )
+{
+  const Param::Key &key{ it->first };
+  if( NewState != State::Known && NewState != State::AmbiguousSign )
+  {
+    std::ostringstream os;
+    os << "ParamsPairs::SetState() key " << key << "[" << Index << "]x" << Size
+       << "=" << NewState << " invalid";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  const Param &p{ it->second };
+  bool bNeedPropagate{ false };
+  for( std::size_t i = 0; i < Size; ++i )
+  {
+    State &state{ keystate[ p( Index + i ) ] };
+    if( NewState == state || ( NewState == State::AmbiguousSign && state == State::Known ) )
+    {
+      // Silently ignore when state doesn't change, or we already know for sure
+    }
+    else
+    {
+      // Transition to the new state
+      const State PriorState{ state };
+      state = NewState;
+      if( NewState == State::AmbiguousSign )
+      {
+        // Unknown -> AmbiguousSign - nothing to do
+      }
+      else if( PriorState == State::Unknown )
+      {
+        // Unknown -> Known - nothing to do
+      }
+      else
+      {
+        // AmbiguousSign -> Known
+        // If we appeared in any products, those products are no longer ambiguous
+        bNeedPropagate = true;
+      }
+    }
+  }
+  if( bNeedPropagate )
+    PropagateKnown();
+}
+
+void ParamsPairs::PropagateKnown()
+{
+  bool bChanged;
+  do
+  {
+    bChanged = false;
+    for( PairSet::iterator it = pairs.begin(); !bChanged && it != pairs.end(); )
+    {
+      // Find each key's state
+      const Pair &pair{ *it };
+      std::array<State *, Pair::size> aState{ GetPairState( pair ) };
+      // If we know at least one of this pair, we actually know both of them
+      bChanged = *aState[0] == State::Known || *aState[1] == State::Known;
+      if( bChanged )
+      {
+        // Mark both as known
+        for( std::size_t i = 0; i < aState.size(); ++i )
+          *aState[i] = State::Known;
+        // Remove pair from list
+        it = pairs.erase( it );
+      }
+      else
+        ++it;
+    }
+  }
+  while( bChanged );
+}
+
+bool ParamsPairs::Key::operator==( const Key &rhs ) const
+{
+  const Param::Key &pkRhs{ rhs };
+  const Param::Key &pkLhs{ *this };
+  return pkLhs == pkRhs && Index == rhs.Index;
+}
+
+bool ParamsPairs::Key::Less::operator()( const Key &lhs, const Key &rhs ) const
+{
+  const Param::Key &pkLhs{ lhs };
+  const Param::Key &pkRhs{ rhs };
+  if( pkLhs != pkRhs )
+    return Param::Key::Less()( pkLhs, pkRhs );
+  return lhs.Index < rhs.Index;
+}
+
+ParamsPairs::Pair::Pair( const Key &key0, const Key &key1 ) : std::array<Key, 2>{ key0, key1 }
+{
+  if( key0 == key1 )
+  {
+    std::ostringstream os;
+    os << "ParamsPairs::Pair::Pair() repeated key " << key0;
+    throw std::runtime_error( os.str().c_str() );
+  }
+  if( Param::Key::Less()( key1, key0 ) )
+    std::swap( (*this)[0], (*this)[1] );
+}
+
+bool ParamsPairs::Pair::Less::operator()( const Pair &lhs, const Pair &rhs ) const
+{
+  if( lhs[0] != rhs[0] )
+    return ParamsPairs::Key::Less()( lhs[0], rhs[0] );
+  return ParamsPairs::Key::Less()( lhs[1], rhs[1] );
+}
+
+std::ostream &operator<<( std::ostream &os, const ParamsPairs::State &state )
+{
+  switch( state )
+  {
+    case ParamsPairs::State::Unknown:
+      os << "unknown";
+      break;
+    case ParamsPairs::State::Known:
+      os << "known";
+      break;
+    case ParamsPairs::State::AmbiguousSign:
+      os << "ambiguousSign";
+      break;
+    case ParamsPairs::State::ProductOnly:
+      os << "productOnly";
+      break;
+    default:
+      os << "undefinedState"
+         << static_cast<typename std::underlying_type<ParamsPairs::State>::type>( state );
+      break;
+  }
+  return os;
+}
+
+std::ostream &operator<<( std::ostream &os, const ParamsPairs::Key &key )
+{
+  const Param::Key &base{ key };
+  os << base << "[" << key.Index << "]";
+  return os;
+}
+
+std::ostream &operator<<( std::ostream &os, const ParamsPairs::Pair &pair )
+{
+  for( std::size_t i = 0; i < pair.size; ++i )
+  {
+    if( i )
+      os << Comma;
+    os << pair[i];
+  }
+  return os;
+}
+
+std::ostream &operator<<( std::ostream &os, const ParamsPairs &PP )
+{
+  const char Indent[] = "  ";
+  for( const Params::value_type &vt : PP.params )
+  {
+    const Param::Key &key{ vt.first };
+    const Param &p{ vt.second };
+    const std::size_t Index{ p() };
+    os << Indent << key << Space;
+    for( std::size_t i = 0; i < p.size; ++i )
+    {
+      if( i )
+        os << CommaSpace;
+      os << "[" << i << "]=" << PP.keystate[Index + i];
+    }
+    os << NewLine;
+  }
+  // Now show pairs
+  if( !PP.pairs.empty() )
+  {
+    os << Indent << "Pairs:";
+    for( const ParamsPairs::PairSet::value_type &pair : PP.pairs )
+      os << Space << pair;
+    os << NewLine;
+  }
+  return os;
+}
+
+SignChoice::SignChoice( const ParamsPairs &PP_, bool bShowSigns_ )
+: PP{ PP_ }, bShowSigns{bShowSigns_}
+{
+  // Add all the pairs
+  for( const ParamsPairs::Pair &pair : PP.pairs )
+    Add( pair );
+  // Add individual AmbiguousSign objects
+  for( const Params::value_type &it : PP.params )
+  {
+    const Param p{ it.second };
+    Key key{ it.first, 0 };
+    for( key.Index = 0; key.Index < p.size; ++key.Index )
+    {
+      std::size_t Index{ p( key.Index ) };
+      const ParamsPairs::State &state{ PP.keystate[Index] };
+      SignChoice::List::iterator lit;
+      SignChoice::Set::iterator sit;
+      if( state == ParamsPairs::State::AmbiguousSign && !find( key, lit, sit ) )
+        list.emplace_back( Set( { key } ) );
+    }
+  }
+}
+
+void SignChoice::Add( const Pair &pair )
+{
+  std::array<bool, Pair::size> bFound;
+  std::array<List::iterator, Pair::size> lit;
+  std::array<Set::iterator, Pair::size> sit;
+  find( pair, bFound, lit, sit );
+  const int NumFound{ ( bFound[0] ? 1 : 0 ) + ( bFound[1] ? 1 : 0 ) };
+  if( NumFound == 2 )
+  {
+    // Found both. Merge if each is in a different set
+    if( lit[0] != lit[1] )
+    {
+      for( Set::iterator it = lit[1]->begin(); it != lit[1]->end(); )
+      {
+        if( !lit[0]->insert( *it ).second ) // insert to new
+        {
+          // Couldn't insert
+          std::ostringstream os;
+          os << "SignChoice::Add() couldn't move key " << (*it);
+          throw std::runtime_error( os.str().c_str() );
+        }
+        it = lit[1]->erase( it ); // remove from old
+      }
+      list.erase( lit[1] );
+    }
+  }
+  else if( NumFound == 1 )
+  {
+    // Add the new member to same set as first
+    int kExist{ bFound[0] ? 0 : 1 };
+    int kNew{ bFound[0] ? 1 : 0 };
+    if( !lit[kExist]->insert( pair[kNew] ).second )
+    {
+      // Couldn't insert
+      std::ostringstream os;
+      os << "SignChoice::Add() couldn't insert key " << pair[kNew];
+      throw std::runtime_error( os.str().c_str() );
+    }
+  }
+  else
+  {
+    // Couldn't find either - they go in a new list
+    lit[0] = list.insert( list.end(), Set( { pair[0], pair[1] } ) );
+  }
+}
+
+bool SignChoice::find( const Key &key, List::iterator &lit, Set::iterator &sit )
+{
+  for( lit = list.begin(); lit != list.end(); ++lit )
+  {
+    sit = lit->find( key );
+    if( sit != lit->end() )
+      return true;
+  }
+  return false;
+}
+
+SignChoice::operator std::vector<std::vector<std::size_t>>() const
+{
+  // Convert SignChoice into list of groups of parameters to sign-flip collectively
+  std::vector<std::vector<std::size_t>> SignList( list.size() );
+  std::size_t i{ 0 };
+  for( const SignChoice::Set &s : list )
+  {
+    std::vector<std::size_t> &l{ SignList[i++] };
+    l.reserve( s.size() );
+    // Start with an AmbiguousSign
+    SignChoice::Set::iterator itAmbig{ s.size() > 1 ? s.cbegin() : s.cend() };
+    for( ; itAmbig != s.cend(); ++itAmbig )
+    {
+      const Key &key{ *itAmbig };
+      Params::const_iterator pit{ PP.params.find( key ) };
+      if( pit == PP.params.cend() )
+      {
+        std::ostringstream os;
+        os << "SignChoice::operator std::vector<std::vector<std::size_t>>() key not found " << key;
+        throw std::runtime_error( os.str().c_str() );
+      }
+      const Param &p{ pit->second };
+      std::size_t Index{ p( key.Index ) };
+      const ParamsPairs::State &state{ PP.keystate[Index] };
+      if( state == ParamsPairs::State::AmbiguousSign )
+      {
+        l.emplace_back( Index );
+        break;
+      }
+    }
+    // Now add all the other entries
+    for( SignChoice::Set::iterator it = s.cbegin(); it != s.cend(); ++it )
+    {
+      if( it != itAmbig )
+      {
+        const Key &key{ *it };
+        Params::const_iterator pit{ PP.params.find( key ) };
+        if( pit == PP.params.cend() )
+        {
+          std::ostringstream os;
+          os << "SignChoice::operator std::vector<std::vector<std::size_t>>() key not found " << key;
+          throw std::runtime_error( os.str().c_str() );
+        }
+        const Param &p{ pit->second };
+        l.emplace_back( p( key.Index ) );
+      }
+    }
+  }
+  return SignList;
+}
+
+void SignChoice::find( const Pair &pair, std::array<bool, Pair::size> &bFound,
+                       std::array<List::iterator, Pair::size> &lit,
+                       std::array<Set::iterator, Pair::size> &sit )
+{
+  for( std::size_t i = 0; i < Pair::size; ++i )
+    bFound[i] = find( pair[i], lit[i], sit[i] );
+}
+
+std::ostream &operator<<( std::ostream &os, const SignChoice &sc )
+{
+  bool bFirst{ true };
+  for( const SignChoice::List::value_type &l : sc.list )
+  {
+    if( bFirst )
+      bFirst = false;
+    else
+      os << "; ";
+    bool bOne{ true };
+    for( const SignChoice::Set::value_type &s : l )
+    {
+      if( bOne )
+        bOne = false;
+      else
+        os << CommaSpace;
+      os << s;
+    }
+  }
+  return os;
 }
 
 MLU_Param_hpp_end

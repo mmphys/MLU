@@ -101,12 +101,11 @@ std::string Model3pt::Description() const
 }
 
 // For now, all we can guess are matrix elements - and we assume they are 1
-std::size_t Model3pt::Guessable( std::vector<bool> &bKnown, bool bLastChance ) const
+void Model3pt::Guessable( ParamsPairs &PP ) const
 {
   // I can guess the matrix element
-  for( std::size_t i = 0; i < MEL.param->size; ++i )
-    bKnown[MEL.idx + i] = true;
-  return 0; // TODO: Implement guessing
+  PP.SetState( ParamsPairs::State::Known, MEL.Key, MEL.param->size );
+  // TODO: Implement guessing
 }
 
 std::size_t Model3pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
@@ -136,14 +135,14 @@ scalar Model3pt::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) co
   for( int eSnk = 0; eSnk < NumOverlapExp; ++eSnk )
   {
     const scalar &ESnk{ ModelParams[E.back().idx + eSnk] };
-    const scalar ASnk = ModelParams[Overlap.back().idx + eSnk];
+    const scalar ASnk = ModelParams[Overlap( eSnk, idxSnk )];
     const scalar expSnk{ - ESnk * ( DeltaT - t ) };
     for( int eSrc = 0; eSrc < NumOverlapExp; ++eSrc )
     {
       if( !eSnk || !eSrc || NumExponents >= 3 )
       {
         const scalar &ESrc{ ModelParams[E[idxSrc].idx + eSrc] };
-        const scalar ASrc = ModelParams[Overlap[idxSrc].idx + eSrc];
+        const scalar ASrc = ModelParams[Overlap( eSrc, idxSrc )];
         const scalar expSrc{ - ESrc * t };
         const scalar &thisMEL{ ModelParams[ ( *MEL.param )( eSnk, eSrc ) ] };
         const scalar OverProd{ ASnk * ASrc };

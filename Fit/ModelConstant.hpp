@@ -37,7 +37,7 @@ struct ModelConstant : Model, Object
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
-  std::size_t Guessable( std::vector<bool> &bKnown, bool bLastChance ) const override;
+  void Guessable( ParamsPairs &PP ) const override;
   std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,
                const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const override;
   ModelType Type() const override { return ModelType::Constant; }

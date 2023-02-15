@@ -58,12 +58,11 @@ std::string Model2pt::Description() const
   return s;
 }
 
-std::size_t Model2pt::Guessable( std::vector<bool> &bKnown, bool bLastChance ) const
+void Model2pt::Guessable( ParamsPairs &PP ) const
 {
   // I can guess the energy
-  for( std::size_t i = 0; i < E.param->size; ++i )
-    bKnown[E.idx + i] = true;
-  return ModelOverlap::Guessable( bKnown, bLastChance );
+  PP.SetState( ParamsPairs::State::Known, E.Key, NumOverlapExp );
+  ModelOverlap::Guessable( PP );
 }
 
 // Take a guess as to my parameters
@@ -112,43 +111,44 @@ std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
       bKnown[E.idx + i] = true;
     }
     // Do we need to guess overlap coefficients?
-    const bool bKnow0{ bKnown[Overlap[0].idx + i] };
-    const bool bKnow1{ bKnown[Overlap.back().idx + i] };
+    const std::size_t OverlapSize{ OverlapCount( i ) };
+    const bool bKnow0{ bKnown[Overlap( i, idxSrc )] };
+    const bool bKnow1{ bKnown[Overlap( i, idxSnk )] };
     if( !bKnow0 || !bKnow1 )
     {
       const bool Make1From0{  bKnow0 && !bKnow1 };
       const bool Make0From1{ !bKnow0 &&  bKnow1 };
-      if( ( Overlap.size() == 1 && !bKnow0 )
-       || ( Overlap.size() == 2 && ( bLastChance || Make1From0 || Make0From1 || ( i && !bKnow0 && !bKnow1 ) ) ) )
+      if( ( OverlapSize == 1 && !bKnow0 )
+       || ( OverlapSize == 2 && ( bLastChance || Make1From0 || Make0From1 || ( i && !bKnow0 && !bKnow1 ) ) ) )
       {
         if( i < NumICanGuess )
         {
           const scalar Residual{ Estimate( Guess, FitData, FitTimes, i, tGuess ) };
           const scalar Product{ Residual * std::exp( Guess[E.idx + i] * FitTimes[tGuess] ) };
-          if( Overlap.size() == 1 )
+          if( OverlapSize == 1 )
           {
             if( Product > 0 )
-              Guess[Overlap[0].idx + i] = std::sqrt( Product );
+              Guess[Overlap( i, idxSrc )] = std::sqrt( Product );
             else
             {
               scalar Factor;
               if( i > 1 )
-                Factor = Guess[Overlap[0].idx + i - 1] / Guess[Overlap[0].idx + i - 2];
+                Factor = Guess[Overlap( i - 1, idxSrc )] / Guess[Overlap( i - 2, idxSrc )];
               else
                 Factor = 0.5;
-              Guess[Overlap[0].idx + i] = Guess[Overlap[0].idx + i - 1] * Factor;
+              Guess[Overlap( i, idxSrc )] = Guess[Overlap( i - 1, idxSrc )] * Factor;
             }
           }
           else if( Make0From1 )
-            Guess[Overlap[0].idx + i] = Product / Guess[Overlap[1].idx + i];
+            Guess[Overlap( i, idxSrc )] = Product / Guess[Overlap( i, idxSnk )];
           else if( Make1From0 )
-            Guess[Overlap[1].idx + i] = Product / Guess[Overlap[0].idx + i];
+            Guess[Overlap( i, idxSnk )] = Product / Guess[Overlap( i, idxSrc )];
           else //if( bLastChance )
           {
-            Guess[Overlap[0].idx + i] = std::sqrt( std::abs( Product ) );
-            Guess[Overlap[1].idx + i] = Guess[Overlap[0].idx + i];
+            Guess[Overlap( i, idxSrc )] = std::sqrt( std::abs( Product ) );
+            Guess[Overlap( i, idxSnk )] = Guess[Overlap( i, idxSrc )];
             if( Product < 0 )
-              Guess[Overlap[1].idx + i] = -Guess[Overlap[1].idx + i];
+              Guess[Overlap( i, idxSnk )] = -Guess[Overlap( i, idxSnk )];
           }
         }
         else if( i == 0 )
@@ -159,14 +159,16 @@ std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
         else
         {
           // Very crude guess, but assume each energy level is half the previous Delta E
-          Guess[Overlap[0].idx + i] = std::sqrt( 2 ) * Guess[Overlap[0].idx + i - 1];
-          if( Overlap.size() == 2 )
-            Guess[Overlap[1].idx + i] = std::sqrt( 2 ) * Guess[Overlap[1].idx + i - 1];
+          Guess[Overlap( i, idxSrc )] = std::sqrt( 2 ) * Guess[Overlap( i - 1, idxSrc )];
+          if( OverlapSize == 2 )
+            Guess[Overlap( i, idxSnk )] = std::sqrt( 2 ) * Guess[Overlap( i, idxSnk - 1 )];
+          else if( i && OverlapCount( i - 1 ) == 2 ) // Combined, but previous level wasn't
+            Guess[Overlap( i, idxSrc )] *= std::sqrt( 2 ) * Guess[Overlap( i - 1, idxSnk )];
         }
         if( !bKnow0 )
-          bKnown[Overlap[0].idx + i] = true;
-        if( Overlap.size() > 1 && !bKnow1 )
-          bKnown[Overlap[1].idx + i] = true;
+          bKnown[Overlap( i, idxSrc )] = true;
+        if( OverlapSize > 1 && !bKnow1 )
+          bKnown[Overlap( i, idxSnk )] = true;
       }
       else
       {
@@ -180,8 +182,8 @@ std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
   {
     if( !bKnown[E.idx + i] )
       NumUnknown++;
-    for( std::size_t j = 0; j < Overlap.size(); ++j )
-      if( !bKnown[Overlap[j].idx + i] )
+    for( int j = 0; j < OverlapCount( i ); ++j )
+      if( !bKnown[Overlap( i, j )] )
         NumUnknown++;
   }
   return NumUnknown;
@@ -249,7 +251,7 @@ scalar Model2pt::Estimate( Vector &Guess, const VectorView &FitData, std::vector
   scalar Theory{ 0 };
   for( std::size_t i = 0; i < NumExp; ++i )
   {
-    Theory += Guess[Overlap[0].idx + i] * Guess[Overlap.back().idx + i]
+    Theory += Guess[Overlap( i, idxSrc )] * Guess[Overlap( i, idxSnk )]
               * std::exp( - Guess[E.idx + i] * FitTimes[Timeslice] );
   }
   return FitData[Timeslice] - Theory;
@@ -261,7 +263,7 @@ scalar ModelExp::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) co
   for( int e = 0; e < NumOverlapExp; ++e )
   {
     double d = std::exp( - ModelParams[E.idx + e] * t );
-    d *= ModelParams[Overlap[0].idx + e] * ModelParams[Overlap.back().idx + e];
+    d *= ModelParams[Overlap( e, idxSrc )] * ModelParams[Overlap( e, idxSnk )];
     if( !bOverlapAltNorm )
       d /= 2 * ModelParams[E.idx + e];
     z += d;
@@ -276,7 +278,7 @@ scalar ModelCosh::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) c
   {
     double d = std::exp( - ModelParams[E.idx + e] * t );
     d += std::exp( - ModelParams[E.idx + e] * ( Nt - t ) );
-    d *= ModelParams[Overlap[0].idx + e] * ModelParams[Overlap.back().idx + e];
+    d *= ModelParams[Overlap( e, idxSrc )] * ModelParams[Overlap( e, idxSnk )];
     if( !bOverlapAltNorm )
       d /= 2 * ModelParams[E.idx + e];
     z += d;
@@ -291,7 +293,7 @@ scalar ModelSinh::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) c
   {
     double d = std::exp( - ModelParams[E.idx + e] * t );
     d -= std::exp( - ModelParams[E.idx + e] * ( Nt - t ) );
-    d *= ModelParams[Overlap[0].idx + e] * ModelParams[Overlap.back().idx + e];
+    d *= ModelParams[Overlap( e, idxSrc )] * ModelParams[Overlap( e, idxSnk )];
     if( !bOverlapAltNorm )
       d /= 2 * ModelParams[E.idx + e];
     z += d;

@@ -338,7 +338,8 @@ bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::s
   if( Size != parent.mp.NumScalars( Param::Type::Variable ) )
     throw std::runtime_error( "Fitter parameters don't match our variable parameters" );
   if( Size )
-    parent.mp.Import( ModelParams, VectorView( FitterParams, Size, Stride ) );
+    parent.mp.Import( ModelParams, VectorView( FitterParams, Size, Stride ),
+                      Param::Type::Variable, true );
   // Compute theory - error for each timeslice
   int i{0};
   bool bOK{ true };
@@ -438,7 +439,7 @@ scalar FitterThread::RepeatFit( int MaxGuesses )
     if( !SaveError( Error, FitterParams.data, FitterParams.size, FitterParams.stride ) )
       throw std::runtime_error( "NaN values on replica " + std::to_string( idx ) );
     parent.mp.Import<scalar>( state.ModelErrors, state.FitterErrors, Param::Type::Variable,
-                              &ModelParams );
+                              true, &ModelParams );
   }
   if( idx == Fold::idxCentral || parent.Verbosity >= 2 )
     ShowReplicaMessage( iNumGuesses );
@@ -556,24 +557,7 @@ scalar FitterThread::FitOne()
     std::cout << "OK: " << ss.str() << Common::NewLine;
   }
   // Make pairs of parameters the right sign
-  for( typename Params::value_type it : parent.mp )
-  {
-    const Param p{ it.second };
-    if( p.pProductWith )
-    {
-      const std::size_t Offset{ p.GetOffset( 0, Param::Type::All ) };
-      const std::size_t OffsetOther{ p.pProductWith->GetOffset( 0, Param::Type::All ) };
-      for( std::size_t i = 0; i < p.size; ++i )
-      {
-        const bool bNegOther{ std::signbit( ModelParams[OffsetOther + i] ) };
-        if( bNegOther )
-        {
-          ModelParams[OffsetOther + i] = - ModelParams[OffsetOther + i];
-          ModelParams[Offset      + i] = - ModelParams[Offset      + i];
-        }
-      }
-    }
-  }
+  parent.mp.AdjustSigns( ModelParams );
   // Copy results into OutputModel
   scalar * const OutputData{ OutputModel[idx] };
   for( typename Params::value_type it : parent.mp )

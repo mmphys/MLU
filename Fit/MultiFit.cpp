@@ -86,6 +86,7 @@ int main(int argc, const char *argv[])
       // Fitter parameters
       {"analytic", CL::SwitchType::Flag, nullptr},
       {"testrun", CL::SwitchType::Flag, nullptr},
+      {"central", CL::SwitchType::Flag, nullptr},
       {"overwrite", CL::SwitchType::Flag, nullptr},
       {"Hotelling", CL::SwitchType::Single, DefaultHotelling},
       {"chisqdof", CL::SwitchType::Single, "0"},
@@ -99,7 +100,6 @@ int main(int argc, const char *argv[])
       {"savecmat", CL::SwitchType::Flag, nullptr},
       {"v", CL::SwitchType::Single, "0"},
       {"guess", CL::SwitchType::Single, nullptr},
-      {"product", CL::SwitchType::Single, ""},
       {"strict",  CL::SwitchType::Single, "0"},
       {"maxE",  CL::SwitchType::Single, "10"},
       {"errdig", CL::SwitchType::Single, DefaultErrDig},
@@ -399,7 +399,6 @@ int main(int argc, const char *argv[])
     "--mindp  Minimum number of data points per fit range (default " << DefaultMinDP << ")\n"
     "--fitter (GSL|Minuit2)[,options] fitter (default GSL,Levenberg-Marquardt)\n"
     "         GSL options: lm, lmaccel, dogleg, ddogleg, subspace2D\n"
-    "--product Op1,Op2[,Op3,Op4,...] I only know product of Ops. Choose 2nd negative\n"
     "--strict Mask. Check field shows whether parameters are non-zero and unique\n"
     "         Strictness bits: Off=+/- 1 sigma; On=every replica (default 0)\n"
     "         Bit 0: Difference from 0\n"
@@ -427,6 +426,7 @@ int main(int argc, const char *argv[])
     "--analytic Analytic derivatives for GSL (default: numeric)\n"
     "--opnames  Disable sorting and deduplicating operator name list\n"
     "--testrun  Don't perform fits - just say which fits would be attempted\n"
+    "--central  Don't use the central replica as guess for each replica\n"
     "--overwrite Overwite always. Default: only overwrite smaller Nboot\n"
     "--debug-signals Trap signals (code courtesy of Grid)\n"
     "--" << Common::sOverlapAltNorm << "  Alternate normalisation for overlap factors. DEPRECATED\n"
