@@ -201,7 +201,8 @@ Summariser::Summariser( const Common::CommandLine &cl )
   MonotonicUpperLimit{ cl.SwitchValue<scalar>( "maxE" ) },
   bAll{ cl.GotSwitch( "all" ) },
   bFast{ cl.GotSwitch( "fast" ) },
-  bTableN{ cl.GotSwitch( "tablen" ) },
+  bTableN{ cl.GotSwitch( "tabn" ) },
+  TableRowsPerPage{ cl.SwitchValue<std::size_t>( "tablen" ) },
   ErrorDigits{ static_cast<unsigned char>( cl.SwitchValue<unsigned int>( "errdig" ) ) }
 {
   if( Strictness < -1 || Strictness > 3 )
@@ -255,6 +256,11 @@ bool Summariser::ReadModel( Model &m, FileInfoIterator &it, std::vector<FileInfo
   try
   {
     m.Read( bShow ? " " : nullptr );
+    // Check the model characteristics
+    if( m.dof < 0 )
+      throw std::runtime_error("dof=" + std::to_string( m.dof ) + " (<0 invalid)");
+    if( !m.CheckParameters( Strictness, MonotonicUpperLimit ) )
+      throw std::runtime_error("Parameter(s) compatible with 0 and/or not unique");
   }
   catch( const std::exception &e )
   {
@@ -330,11 +336,6 @@ void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
     {
       try
       {
-        // Check the model characteristics
-        if( m.dof < 0 )
-          throw std::runtime_error("dof=" + std::to_string( m.dof ) + " (<0 invalid)");
-        if( !m.CheckParameters( Strictness, MonotonicUpperLimit ) )
-          throw std::runtime_error("Parameter(s) compatible with 0 and/or not unique");
         if( ModelNum == 0 )
         {
           ++ModelNum;
@@ -440,12 +441,9 @@ void Summariser::WriteUnsorted( const std::string &sFileName ) const
   }
 }
 
-void Summariser::WriteTabular( const std::string &sFileName, const BaseInfo &bi ) const
+void Summariser::WriteTableHeader( std::ofstream &os ) const
 {
-  const std::string sMom{ std::to_string( bi.fnp.p2() ) };
-  // Write header
-  std::ofstream os( sFileName );
-  os << "{\\tiny\n\\begin{tabular}{|c|";
+  os << "\\begin{tabular}{|c|";
   if( bTableN )
     os << "c|";
   for( std::size_t i = 0; i < NumParams() + NumStats(); i++ )
@@ -471,17 +469,47 @@ void Summariser::WriteTabular( const std::string &sFileName, const BaseInfo &bi 
       os << s;
   }
   os << "\\\\\n\\hline\n";
+}
+
+void Summariser::WriteTableFooter( std::ofstream &os ) const
+{
+  os << "\\hline\n\\end{tabular}\n";
+}
+
+void Summariser::WriteTabular( const std::string &sFileName, const BaseInfo &bi ) const
+{
+  const std::string sMom{ std::to_string( bi.fnp.p2() ) };
+  // Write header
+  std::ofstream os( sFileName );
+  os << "{\\tiny\n";
+  std::size_t RowNumber{ 0 };
+  bool bFirst{ true };
   // Write each row
   for( const FitMap::value_type &dt : Fits )
   {
+    if( !RowNumber++ )
+    {
+      if( bFirst )
+        bFirst = false;
+      else
+        os << Common::NewLine;
+      WriteTableHeader( os );
+    }
     const FitTimes &ft{ dt.first };
     const FitData &d{ dt.second };
     // Now write this row
     if( bTableN )
       os << sMom << " & ";
     d.WriteTableFormat( os, ft, NumParams(), ErrorDigits );
+    if( RowNumber == TableRowsPerPage )
+    {
+      WriteTableFooter( os );
+      RowNumber = 0;
+    }
   }
-  os << "\\hline\n\\end{tabular}\n}\n";
+  if( RowNumber )
+    WriteTableFooter( os );
+  os << "}\n";
 }
 
 // Process every base name and it's list of models separately
@@ -535,6 +563,7 @@ int main(int argc, const char *argv[])
 {
   std::ios_base::sync_with_stdio( false );
   static const char DefaultErrDig[] = "2";
+  static const char DefaultTableLen[] = "66";
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;
@@ -551,7 +580,8 @@ int main(int argc, const char *argv[])
       {"fast",  CL::SwitchType::Flag, nullptr},
       {"all",  CL::SwitchType::Flag, nullptr},
       {"errdig", CL::SwitchType::Single, DefaultErrDig},
-      {"tablen", CL::SwitchType::Flag, nullptr},
+      {"tabn", CL::SwitchType::Flag, nullptr},
+      {"tablen", CL::SwitchType::Single, DefaultTableLen},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -584,12 +614,13 @@ int main(int argc, const char *argv[])
     "         Bit 0: Difference from 0\n"
     "         Bit 1: Difference from other parameters in same series\n"
     "--maxE   Maximum energy (default 10 - decays so fast effectively undetermined)\n"
+    "--errdig Number of significant figures in error (default " << DefaultErrDig << ")\n"
+    "--tablen Number of rows per page in table (default " << DefaultTableLen << ")\n"
     "Flags:\n"
     "--inc    Sort increasing (default sort test stat decreasing)\n"
     "--fast   Skip first pass reading models to find common parameters\n"
     "--all    Save all parameters. Default: only save common parameters\n"
-    "--errdig Number of significant figures in error (default " << DefaultErrDig << ")\n"
-    "--tablen Include n^2 in the parameters table\n"
+    "--tabn   Include n^2 in the parameters table\n"
     "--help   This message\n";
   }
   return iReturn;

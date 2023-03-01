@@ -107,7 +107,7 @@ do
 	do
 	    Prefix=${p##*/}               #Leave the filename only
 	    Prefix=${Prefix%%${Point}*h5} #Chop off everything past point/wall
-	    Cmd="MultiFit --iter 10000 -e $exp --mindp 8 --summary 2 --product ${OpP},${OpW}"
+	    Cmd="MultiFit --iter 10000 -e $exp --mindp 8 --summary 2"
 	    if [ -v uncorr  ]; then Cmd="$Cmd --uncorr"; fi
 	    if [ -v minuit  ]; then Cmd="$Cmd --fitter minuit2"; fi
 	    if [ -v num     ]; then Cmd="$Cmd -n $num"; fi
@@ -115,8 +115,8 @@ do
 	    # NB the trailing 'n' = normalise by energy
 	    Cmd="$Cmd -o $Out/ -i $InDir/"
 	    #Cmd="$Cmd ${Prefix}{${Point},${Wall}}*h5,,,n"
-	    Cmd="$Cmd ${Prefix}${Point}*h5,t=${Range1},eNorm=true"
-	    Cmd="$Cmd ${Prefix}${Wall}*h5,t=${Range2},eNorm=true"
+	    Cmd="$Cmd ${Prefix}${Point}*h5,t=${Range1}"
+	    Cmd="$Cmd ${Prefix}${Wall}*h5,t=${Range2}"
 	    echo "$Cmd" >> $JobFileName
 	done
 	# Now summarise the output

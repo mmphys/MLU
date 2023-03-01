@@ -110,6 +110,7 @@ struct Summariser
   const bool bFast;
   const bool bTableN;
   const unsigned char ErrorDigits;
+  const std::size_t TableRowsPerPage;
   using FitMap = std::map<FitTimes, FitData>;
   using BaseList = std::map<std::string, BaseInfo>;
   BaseList lBase;
@@ -138,6 +139,8 @@ protected:
               const Common::Params &ParamNames, const Common::UniqueNameSet &StatNames ) const;
   void WriteSorted( const std::string &sFileName, const std::set<TestStatKey> &SortSet, bool SetSeq );
   void WriteUnsorted( const std::string &sFileName ) const;
+  void WriteTableHeader( std::ofstream &os ) const;
+  void WriteTableFooter( std::ofstream &os ) const;
   void WriteTabular( const std::string &sFileName, const BaseInfo &bi ) const;
 };
 

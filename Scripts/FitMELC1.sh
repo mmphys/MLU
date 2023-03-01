@@ -14,29 +14,13 @@ set -e
 
 declare -A MesonFit
 
-#MesonFit[h${Heavy}_s,0]=corr_6_29_5_29 # Preferred fit
-#MesonFit[h${Heavy}_s,0]=corr_6_29_13_27
-#MesonFit[h${Heavy}_s,0]=corr_6_29_17_27 # Prev preferred
-#MesonFit[h${Heavy}_s,0]=corr_8_29_8_29 # Prev preferred
-MesonFit[h${Heavy}_s,0]=corr_10_29_10_29 # With Peter 25 Jan
+MesonFit[h${Heavy}_s,0]=corr_6_27_14_27
 
-## TEMP - was using this Thu 19 Jan & Mon 23 Jan
-#MesonFit[h${Heavy}_s,0]=corr_6_27_5_27
-## TEMP END
-
-MesonFit[s_l,0]=corr_6_22_5_23 # Preferred fit
-#MesonFit[s_l,0]=corr_6_22_7_23
-#MesonFit[s_l,0]=corr_6_22_12_23
-
-MesonFit[s_l,1]=corr_6_22_5_23 # Preferred fit
-#MesonFit[s_l,1]=corr_6_14_5_23
-#MesonFit[s_l,1]=corr_6_14_12_23
-#MesonFit[s_l,1]=corr_6_22_12_23
-
-MesonFit[s_l,2]=corr_6_22_5_23 # 20221211
-MesonFit[s_l,3]=corr_6_22_5_23 # 20221211
-#MesonFit[s_l,4]=corr_6_22_5_23 # 20221211
-MesonFit[s_l,4]=corr_6_22_7_23 # 20221211
+MesonFit[s_l,0]=corr_6_23_7_23
+MesonFit[s_l,1]=corr_6_23_7_23
+MesonFit[s_l,2]=corr_5_20_5_20
+MesonFit[s_l,3]=corr_6_23_7_23
+MesonFit[s_l,4]=corr_6_23_7_23
 
 ############################################################
 
@@ -72,7 +56,7 @@ Gamma=gT
 
 if [ "${DoAll+x}" = x ]; then
   NumExp=2 DeltaT="20 24 28" TI='9 11 13' TF='14 18 18' yrangeR3=0.0015:0.0019 yrangeMEL=0.76:0.8 DoFit 0 # Preferred
-  NumExp=2 DeltaT="20 24 28" TI='11 14 13' TF='12 15 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 DoFit 1
+  NumExp=2 DeltaT="20 24 28" TI='11 14 13' TF='12 15 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.68:0.71 DoFit 1
   NumExp=2 DeltaT="20 24 28" TI='8 12 16' TF='12 16 19' yrangeR3=0.0013:0.00160 yrangeMEL=0.58:0.66 DoFit 2
   NumExp=2 DeltaT="20 24 28" TI='8 12 16' TF='14 16 19' yrangeR3=0.0010:0.00160 yrangeMEL=0.50:0.64 DoFit 3
   NumExp=2 DeltaT="20 24" TI='8 12' TF='14 16' yrangeR3=0.0010:0.00150 yrangeMEL=0.44:0.62 DoFit 4

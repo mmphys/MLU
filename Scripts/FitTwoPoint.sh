@@ -22,7 +22,7 @@ NumExp2=${NumExp2:-${NumExp}}
 MaxExp=$(( NumExp2 > NumExp ? NumExp2 : NumExp ))
 TI=${TI:-4}
 TF=${TF:-18}
-TI2=${TI2:-$((TI-1))}
+TI2=${TI2:-$TI}
 TF2=${TF2:-$TF}
 MaxTF=$(( TF2 > TF ? TF2 : TF ))
 # Stat - which statistic
