@@ -18,8 +18,8 @@ if [ -v DoScanP ]; then
   p=0 Meson=s_l SubDir=e2_1a TwoPointScan.sh t=3:23:10:1,e=2 t=7:23,e=1
   p=1 Meson=s_l SubDir=e2_1a TwoPointScan.sh t=3:23:10:1,e=2 t=7:23,e=1
   p=2 Meson=s_l SubDir=e2_1a TwoPointScan.sh t=3:20:10:1,e=2 t=5:20,e=1
-  p=3 Meson=s_l SubDir=e2_1a TwoPointScan.sh t=3:23:10:1,e=2 t=7:23,e=1
-  p=4 Meson=s_l SubDir=e2_1a TwoPointScan.sh t=3:23:10:1,e=2 t=7:23,e=1
+  p=3 Meson=s_l SubDir=e2_1a TwoPointScan.sh t=3:20:10:1,e=2 t=5:20,e=1
+  p=4 Meson=s_l SubDir=e2_1a TwoPointScan.sh t=3:18:10:1,e=2 t=5:18,e=1
 fi
 
 if [ -v DoScanW ]; then
@@ -27,8 +27,8 @@ if [ -v DoScanW ]; then
   p=0 Meson=s_l SubDir=e2_1b TwoPointScan.sh t=6:23,e=2 t=3:23:13:1,e=1
   p=1 Meson=s_l SubDir=e2_1b TwoPointScan.sh t=6:23,e=2 t=3:23:13:1,e=1
   p=2 Meson=s_l SubDir=e2_1b TwoPointScan.sh t=5:20,e=2 t=3:20:13:1,e=1
-  p=3 Meson=s_l SubDir=e2_1b TwoPointScan.sh t=6:23,e=2 t=3:23:13:1,e=1
-  p=4 Meson=s_l SubDir=e2_1b TwoPointScan.sh t=6:23,e=2 t=3:23:13:1,e=1
+  p=3 Meson=s_l SubDir=e2_1b TwoPointScan.sh t=5:20,e=2 t=3:20:13:1,e=1
+  p=4 Meson=s_l SubDir=e2_1b TwoPointScan.sh t=5:18,e=2 t=3:18:13:1,e=1
 fi
 
 if [ "${DoAll+x}" = x ]; then
@@ -41,8 +41,8 @@ if [ "${DoAll+x}" = x ]; then
   export ti='3 2'
   p=0 TI=6 TF=23 NumExp=2 TI2=7 TF2=23 NumExp2=1 Meson=s_l yrange='0.28:0.33' FitTwoPoint.sh
   p=1 TI=6 TF=23 NumExp=2 TI2=7 TF2=23 NumExp2=1 Meson=s_l yrange='0.37:0.44' FitTwoPoint.sh
-  p=2 TI=6 TF=23 NumExp=2 TI2=7 TF2=23 NumExp2=1 Meson=s_l yrange='0.42:0.52' FitTwoPoint.sh
-  p=3 TI=6 TF=23 NumExp=2 TI2=7 TF2=23 NumExp2=1 Meson=s_l yrange='0.48:0.6' FitTwoPoint.sh
-  p=4 TI=6 TF=23 NumExp=2 TI2=7 TF2=23 NumExp2=1 Meson=s_l yrange='0.48:0.8' FitTwoPoint.sh
+  p=2 TI=5 TF=20 NumExp=2 TI2=5 TF2=20 NumExp2=1 Meson=s_l yrange='0.42:0.52' FitTwoPoint.sh
+  p=3 TI=5 TF=20 NumExp=2 TI2=5 TF2=20 NumExp2=1 Meson=s_l yrange='0.48:0.6' FitTwoPoint.sh
+  p=4 TI=5 TF=18 NumExp=2 TI2=5 TF2=18 NumExp2=1 Meson=s_l yrange='0.48:0.8' FitTwoPoint.sh
 fi
 

@@ -19,8 +19,8 @@ MesonFit[h${Heavy}_s,0]=corr_6_27_14_27
 MesonFit[s_l,0]=corr_6_23_7_23
 MesonFit[s_l,1]=corr_6_23_7_23
 MesonFit[s_l,2]=corr_5_20_5_20
-MesonFit[s_l,3]=corr_6_23_7_23
-MesonFit[s_l,4]=corr_6_23_7_23
+MesonFit[s_l,3]=corr_5_20_5_20
+MesonFit[s_l,4]=corr_5_18_5_18
 
 ############################################################
 
