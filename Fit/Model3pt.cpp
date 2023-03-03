@@ -28,8 +28,6 @@
 
 #include "Model3pt.hpp"
 
-const std::string Model3pt::sR3Raw{ "R3Raw" };
-
 Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args )
 : ModelOverlap( cp, Args, GetObjectNameSnkSrc( cp, Args ),
                 Args.Remove( "e", cp.NumExponents, true ) > 1 ? 2 : 1 )
@@ -59,8 +57,6 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args )
   MEL.Key.Object = objectID;
   static const std::string sMEL{ "MEL" };
   MEL.Key.Name = Args.Remove( sMEL, sMEL );
-  R3Raw.Key.Object = objectID;
-  R3Raw.Key.Name = sR3Raw;
 }
 
 void Model3pt::AddParameters( Params &mp )
@@ -71,7 +67,6 @@ void Model3pt::AddParameters( Params &mp )
   ModelOverlap::AddParameters( mp );
   if( !EDiff.Key.Object.empty() )
     AddParam( mp, EDiff, 1, false, Param::Type::Derived );
-  AddParam( mp, R3Raw, 1, false, Param::Type::Derived );
 }
 
 void Model3pt::SaveParameters( const Params &mp )
@@ -82,7 +77,6 @@ void Model3pt::SaveParameters( const Params &mp )
   ModelOverlap::SaveParameters( mp );
   if( !EDiff.Key.Object.empty() )
     EDiff.idx = mp.at( EDiff.Key )();
-  R3Raw.idx = mp.at( R3Raw.Key )();
 }
 
 // Get a descriptive string for the model
@@ -157,9 +151,6 @@ scalar Model3pt::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) co
         {
           if( !EDiff.Key.Object.empty() )
             ModelParams[EDiff.idx] = ESrc - ESnk;
-          ModelParams[R3Raw.idx] = thisMEL / OverProd;
-          if( bOverlapAltNorm )
-            ModelParams[R3Raw.idx] *= 4 * ESnk * ESrc;
         }
       }
     }

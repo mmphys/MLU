@@ -170,7 +170,7 @@ else
   EDiff="${ColumnValues[@]:16:8}"
   MEL="${ColumnValues[@]:24:8}"
   R3Raw="${ColumnValues[@]:32:8}"
-  RefText="MEL0=${ColumnValues[25]} χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})"
+  RefText="MEL0=${ColumnValues[25]} χ²/dof=${ColumnValues[4]} (pH=${ColumnValues[12]})"
 fi
 
 case "$FitWhat" in

@@ -35,6 +35,7 @@
 struct ModelRatio : public Model3pt
 {
   static const std::string sRaw;
+  static const std::string sR3Raw;
   ModelRatio( const Model::CreateParams &cp, Model::Args &Args );
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
@@ -46,6 +47,8 @@ struct ModelRatio : public Model3pt
 protected:
   bool bRaw;
   std::vector<std::unique_ptr<Model2pt>> C2;
+  // Derived parameters
+  ModelParam R3Raw;
 };
 
 #endif // ModelRatio_hpp

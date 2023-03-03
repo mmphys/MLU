@@ -29,6 +29,7 @@
 #include "ModelRatio.hpp"
 
 const std::string ModelRatio::sRaw{ "Raw" };
+const std::string ModelRatio::sR3Raw{ "R3Raw" };
 
 ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args )
 : Model3pt( cp, Args )
@@ -59,6 +60,8 @@ ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args )
         break;
     }
   }
+  R3Raw.Key.Object = objectID;
+  R3Raw.Key.Name = sR3Raw;
   // The raw option means the ratio was constructed without the overlap coefficients
   Args.Remove( sRaw, &bRaw );
 }
@@ -68,6 +71,7 @@ void ModelRatio::AddParameters( Params &mp )
   Model3pt::AddParameters( mp );
   for( std::unique_ptr<Model2pt> &m : C2 )
     m->AddParameters( mp );
+  AddParam( mp, R3Raw, 1, false, Param::Type::Derived );
 }
 
 void ModelRatio::SaveParameters( const Params &mp )
@@ -75,6 +79,7 @@ void ModelRatio::SaveParameters( const Params &mp )
   Model3pt::SaveParameters( mp );
   for( std::unique_ptr<Model2pt> &m : C2 )
     m->SaveParameters( mp );
+  R3Raw.idx = mp.at( R3Raw.Key )();
 }
 
 // Get a descriptive string for the model
@@ -105,7 +110,7 @@ scalar ModelRatio::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) 
   const scalar CSink{ (*C2.back())( DeltaT - t, ScratchPad, ModelParams ) };
   const scalar CProd{ CSource * CSink };
   const scalar RawRatio{ C3 / CProd };
-  // Assumption here is that the overlap factors at source and sink are the same
+  // Assumption here is that the overlap factors at source and sink of 2pt functions are the same
   assert( C2[idxSrc]->Overlap( 0, idxSrc ) == C2[idxSrc]->Overlap( 0, idxSnk ) );
   assert( C2.back()->Overlap( 0, idxSrc ) == C2.back()->Overlap( 0, idxSnk ) );
   const scalar ZSource{ ModelParams[C2[idxSrc]->Overlap( 0, idxSrc )] };
@@ -119,10 +124,6 @@ scalar ModelRatio::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) 
     else
       ZProd *= 2 * std::sqrt( ModelParams[E[idxSrc].idx] * ModelParams[E[idxSnk].idx] );
   }
-  scalar Result{ RawRatio };
-  if( bRaw )
-    ModelParams[R3Raw.idx] = ModelParams[ ( *MEL.param )( 0, 0 ) ] / ZProd;
-  else
-    Result *= ZProd;
-  return Result;
+  ModelParams[R3Raw.idx] = ModelParams[ ( *MEL.param )( 0, 0 ) ] / ZProd;
+  return bRaw ? RawRatio : RawRatio * ZProd;
 }

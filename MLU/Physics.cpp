@@ -281,6 +281,7 @@ void Momentum::Replace( std::string &s, const std::string &MomName, bool bNegati
 }
 
 // Use Lattice Dispersion relation and N=L/a to boost am to aE(p)
+// PhDYear3Diary.pdf eq (22)
 double Momentum::LatticeDispersion( double am, unsigned int N ) const
 {
   if( ! ( *this ) )

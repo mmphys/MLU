@@ -33,7 +33,6 @@
 
 struct Model3pt : public ModelOverlap
 {
-  static const std::string sR3Raw;
   Model3pt( const Model::CreateParams &cp, Model::Args &Args );
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
@@ -53,7 +52,6 @@ protected:
   ModelParam MEL;
   // Derived parameters
   ModelParam EDiff;
-  ModelParam R3Raw;
 };
 
 #endif // Model3pt_hpp
