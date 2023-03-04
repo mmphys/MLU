@@ -36,7 +36,12 @@ struct ModelRatio : public Model3pt
 {
   static const std::string sRaw;
   static const std::string sR3Raw;
-  ModelRatio( const Model::CreateParams &cp, Model::Args &Args );
+  ModelRatio( const Model::CreateParams &cp, Model::Args &Args,
+              std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
+              std::size_t NumOverlapExp );
+  ModelRatio( const Model::CreateParams &cp, Model::Args &Args )
+  : ModelRatio( cp, Args, GetObjectNameSnkSrc( cp, Args ), ModelOverlap::GetOpNames( cp, Args ),
+                Args.Remove( "e", cp.NumExponents, true ) ) {}
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;

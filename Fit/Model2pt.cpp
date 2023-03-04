@@ -29,8 +29,9 @@
 #include "Model2pt.hpp"
 
 Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args,
-                    std::vector<std::string> &&objectID, std::size_t NumOverlapExp )
-: ModelOverlap( cp, Args, std::move( objectID ), NumOverlapExp )
+                    std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
+                    std::size_t NumOverlapExp )
+: ModelOverlap( cp, Args, std::move( objectID ), std::move( opNames ), NumOverlapExp )
 {
   E.Key.Object = { ObjectID( idxSrc ) };
   E.Key.Name = Args.Remove( "energy", ::E );

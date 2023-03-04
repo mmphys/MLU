@@ -31,8 +31,10 @@
 const std::string ModelRatio::sRaw{ "Raw" };
 const std::string ModelRatio::sR3Raw{ "R3Raw" };
 
-ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args )
-: Model3pt( cp, Args )
+ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args,
+                        std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
+                        std::size_t NumOverlapExp )
+: Model3pt( cp, Args, std::vector<std::string>( objectID ), std::vector<std::string>( opNames ), NumOverlapExp )
 {
   static const std::string ChildModel{ "C2Model" };
   ModelType ChildType = Args.Remove<ModelType>( ChildModel, ModelType::Exp );
@@ -45,18 +47,18 @@ ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args )
   C2.reserve( E.size() );
   for( std::size_t i = 0 ; i < E.size(); ++i )
   {
-    std::vector<std::string> oid( 1 );
-    oid[0] = objectID[i];
+    std::vector<std::string> oid{ objectID[i] };
+    std::vector<std::string> on{ opNames[i], opNames[i] };
     switch( ChildType )
     {
       case ModelType::Exp:
-        C2.emplace_back( new ModelExp( cp, Args, std::move( oid ), NumOverlapExp ) );
+        C2.emplace_back(new ModelExp(cp, Args, std::move(oid), std::move(on), NumOverlapExp));
         break;
       case ModelType::Cosh:
-        C2.emplace_back( new ModelCosh( cp, Args, std::move( oid ), NumOverlapExp ) );
+        C2.emplace_back(new ModelCosh(cp, Args, std::move(oid), std::move(on), NumOverlapExp));
         break;
       default:
-        C2.emplace_back( new ModelSinh( cp, Args, std::move( oid ), NumOverlapExp ) );
+        C2.emplace_back(new ModelSinh(cp, Args, std::move(oid), std::move(on), NumOverlapExp));
         break;
     }
   }
@@ -111,8 +113,8 @@ scalar ModelRatio::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) 
   const scalar CProd{ CSource * CSink };
   const scalar RawRatio{ C3 / CProd };
   // Assumption here is that the overlap factors at source and sink of 2pt functions are the same
-  assert( C2[idxSrc]->Overlap( 0, idxSrc ) == C2[idxSrc]->Overlap( 0, idxSnk ) );
-  assert( C2.back()->Overlap( 0, idxSrc ) == C2.back()->Overlap( 0, idxSnk ) );
+  for( const std::unique_ptr<Model2pt> &C : C2 )
+    assert( C->OverlapCount( 0 ) == 1 );
   const scalar ZSource{ ModelParams[C2[idxSrc]->Overlap( 0, idxSrc )] };
   const scalar ZSink{ ModelParams[C2.back()->Overlap( 0, idxSrc )] };
   scalar ZProd{ ZSource * ZSink };

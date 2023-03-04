@@ -68,9 +68,24 @@ std::vector<std::string> Object::GetObjectNameSnkSrc( const Model::CreateParams 
   return { ObjectID };
 }
 
+std::vector<std::string> ModelOverlap::GetOpNames( const Model::CreateParams &cp, Model::Args &Args )
+{
+  bool bForceSrcSnkDifferent;
+  Args.Remove( "srcsnk", &bForceSrcSnkDifferent );
+  std::vector<std::string> v( 2 );
+  for( int i = 0; i < v.size(); ++i )
+  {
+    v[i] = Args.Remove( pSrcSnk[i], cp.GetOpName( i ) );
+    if( bForceSrcSnkDifferent )
+      v[i].append( pSrcSnk[i] );
+  }
+  return v;
+}
+
 // 2nd phase of construction (now that virtual functions in place)
 ModelOverlap::ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
-                            std::vector<std::string> &&OID, std::size_t NumOverlapExp_ )
+                            std::vector<std::string> &&OID, std::vector<std::string> &&opNames,
+                            std::size_t NumOverlapExp_ )
 : Model( cp, Args ),
   Object( std::move( OID ) ),
   bOverlapAltNorm{ cp.bOverlapAltNorm },
@@ -78,15 +93,10 @@ ModelOverlap::ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
   NumOverlapExpDual{ NumOverlapExp_ },
   vOverlap( 2 )
 {
-  // Overlap coefficient names come from the correlator file name
-  bool bForceSrcSnkDifferent;
-  Args.Remove( "srcsnk", &bForceSrcSnkDifferent );
   for( int i = idxSrc; i <= idxSnk; ++i )
   {
     vOverlap[i].Key.Object.push_back( ObjectID( i ) );
-    vOverlap[i].Key.Name = Args.Remove( pSrcSnk[i], cp.OpNames[cp.pCorr->Name_.op[i]] );
-    if( bForceSrcSnkDifferent )
-      vOverlap[i].Key.Name.append( pSrcSnk[i] );
+    vOverlap[i].Key.Name = opNames[i];
   }
   if( vOverlap[0].Key == vOverlap[1].Key )
   {

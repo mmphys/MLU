@@ -82,6 +82,7 @@ struct Model
     // These will change per model
     const Fold *pCorr;
     CreateParams( const std::vector<std::string> &OpNames_, const Common::CommandLine &cl_ );
+    std::string GetOpName( int Idx ) const { return OpNames[pCorr->Name_.op[Idx]]; }
   };
   std::vector<Params::value_type *> param;
   const int Nt;

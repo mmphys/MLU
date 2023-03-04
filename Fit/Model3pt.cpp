@@ -28,9 +28,10 @@
 
 #include "Model3pt.hpp"
 
-Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args )
-: ModelOverlap( cp, Args, GetObjectNameSnkSrc( cp, Args ),
-                Args.Remove( "e", cp.NumExponents, true ) > 1 ? 2 : 1 )
+Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args,
+                    std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
+                    std::size_t NumOverlapExp )
+: ModelOverlap( cp, Args, std::move( objectID ), std::move( opNames ), NumOverlapExp > 1 ? 2 : 1 )
 {
   if( !cp.pCorr->Name_.bGotDeltaT )
     throw std::runtime_error( "DeltaT not available in " + cp.pCorr->Name_.Filename );

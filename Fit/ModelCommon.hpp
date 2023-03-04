@@ -71,15 +71,23 @@ protected:
  */
 struct ModelOverlap : Model, Object
 {
+  /**
+   Get names for overlap coefficients
+   
+   Names come from `src` and `snk` options if present, otherwise from filename.
+   If srcsnk option is present, the source and sink operators are treated differently (by appending `src` and `snk` to their names)
+   */
+  static std::vector<std::string> GetOpNames( const Model::CreateParams &cp, Model::Args &Args );
   ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
-                std::vector<std::string> &&ObjectID, std::size_t NumOverlapExp );
+                std::vector<std::string> &&ObjectID, std::vector<std::string> &&opNames,
+                std::size_t NumOverlapExp );
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
   void Guessable( ParamsPairs &PP ) const override;
   void ReduceUnknown( const ParamsPairs &PP ) override;
 // TODO: These really shouldn't be accessed directly - otherwise we might forget to normalise
-//protected:
+protected:
   //std::size_t NumUnknown( std::vector<bool> &bKnown ) const;
   const bool bOverlapAltNorm;
   const std::size_t NumOverlapExp;
@@ -94,11 +102,13 @@ struct ModelOverlap : Model, Object
     if( SourceSink < idxSrc || SourceSink > idxSnk )
       throw std::domain_error( "OverlapIdx() SourceSink out of bounds" );
   }
+public:
   std::size_t OverlapCount( std::size_t Exp ) const
   {
     OverlapValidateExp( Exp );
     return Exp < NumOverlapExpDual ? 2 : 1;
   }
+  /// Get the index (into table of all parameters) of the requested overlap factor
   std::size_t Overlap( std::size_t Exp, int SourceSink ) const
   {
     OverlapValidate( Exp, SourceSink );
