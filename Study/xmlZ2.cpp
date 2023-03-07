@@ -117,8 +117,8 @@ void Make( Application &application, unsigned int nt, bool bRandom, bool bEigenp
   std::array<std::string, NumMomenta> SinkName;
   for( unsigned int p = 0; p < NumMomenta; p++ ) {
     MSink::Point::Par sinkPar;
-    sinkPar.mom = Momenta[p].to_string( Space, true );
-    SinkName[p] = "sink_p_" + Momenta[p].to_string( Sep, true );
+    sinkPar.mom = Momenta[p].to_string3d( Space, true );
+    SinkName[p] = "sink_p_" + Momenta[p].to_string3d( Sep, true );
     application.createModule<MSink::ScalarPoint>(SinkName[p], sinkPar);
   }
   
@@ -179,7 +179,7 @@ void Make( Application &application, unsigned int nt, bool bRandom, bool bEigenp
     const std::string timeSuffix{ Sep + "t" + Sep + std::to_string( t ) };
     const std::string sZ2{ "Z2" };
     // I will always need the momentum 0 Z_2 wall source for this timeslice
-    const std::string Suffix0{ timeSuffix + Sep + "p" + Sep + Common::Momentum( 0, 0, 0 ).to_string( Sep ) };
+    const std::string Suffix0{ timeSuffix + Sep + "p" + Sep + Common::p0.to_string3d( Sep ) };
     const std::string srcName0{ sZ2 + Suffix0 };
     {
       MSource::Z2::Par z2Par;
@@ -199,7 +199,7 @@ void Make( Application &application, unsigned int nt, bool bRandom, bool bEigenp
     }
     // Loop through all momenta
     for( unsigned int p = 0; p < NumMomenta; ++p ) {
-      const std::string momentumSuffix{ Sep + "p" + Sep + Momenta[p].to_string( Sep ) };
+      const std::string momentumSuffix{ Sep + "p" + Sep + Momenta[p].to_string3d( Sep ) };
       const std::string Suffix{ momentumSuffix + timeSuffix };
 
       // Z2 source with this momenta (doesn't need creating for momentum 0)
@@ -207,7 +207,7 @@ void Make( Application &application, unsigned int nt, bool bRandom, bool bEigenp
       if( Momenta[p] ) {
         MSource::MomentumPhase::Par z2Par;
         z2Par.src = srcName0;
-        z2Par.mom = Momenta[p].to_string( Space ) + Space + "0";
+        z2Par.mom = Momenta[p].to_string3d( Space ) + Space + "0";
         application.createModule<MSource::MomentumPhase>(srcName, z2Par);
       }
       // Make propagators

@@ -62,7 +62,7 @@ std::ostream & operator<<( std::ostream &os, const QDT &qdt )
 
 std::ostream & operator<<( std::ostream &os, const QP &qp )
 {
-  return os << "q=" << qp.q << ", " << qp.p.Name << "=" << qp.p;
+  return os << "q=" << qp.q << ", " << qp.pName << "=" << qp.p;
 }
 
 struct SnkSrcString
@@ -146,8 +146,9 @@ QP QuarkReader::operator()( const std::string &Filename ) const
 {
   Common::FileNameAtt fna( Filename );
   if( fna.p.empty() )
-    return QP( *this, Common::p0 );
-  return QP( *this, fna.p.begin()->second );
+    return QP( *this, Common::Momentum::DefaultPrefix, Common::Momentum( true ) );
+  const Common::NamedMomentum &np{ *fna.p.begin() };
+  return QP( *this, np.first, np.second );
 }
 
 template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename M>
@@ -298,9 +299,7 @@ std::string QPModelMap::Get2ptName( const QP &key )
   {
     s.append( key.q );
     Append( s, Spectator );
-    Common::FileNameMomentum p( key.p );
-    p.Name = Common::Momentum::DefaultPrefix;
-    s.append( p.FileString() );
+    s.append( key.p.FileString( Common::Momentum::DefaultPrefix ) );
   }
   else
   {
@@ -330,8 +329,10 @@ void ZVRCommon::Make( std::string &FileName )
   const std::string qSrc = fna.BaseShortParts[2];
   const std::string FileNameSuffix{ fna.GetBaseShort( 3 ) };
   fna.BaseShortParts.resize( 1 );
-  SSInfo Snk( EFit, OpNames[fna.op[1]], QP( qSnk, fna.GetMomentum( Common::Momentum::SinkPrefix ) ) );
-  SSInfo Src( EFit, OpNames[fna.op[0]], QP( qSrc, fna.GetMomentum() ) );
+  const Common::NamedMomentum &npSrc{ fna.GetMomentum() };
+  const Common::NamedMomentum &npSnk{ fna.GetMomentum( Common::Momentum::SinkPrefix ) };
+  SSInfo Snk( EFit, OpNames[fna.op[1]], QP( qSnk, npSnk.first, npSnk.second ) );
+  SSInfo Src( EFit, OpNames[fna.op[0]], QP( qSrc, npSrc.first, npSrc.second ) );
   Make( fna, FileNameSuffix, Snk, Src );
 }
 
@@ -346,8 +347,8 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
 {
   const std::string &qSnk{ Snk.qp.q };
   const std::string &qSrc{ Src.qp.q };
-  const Common::FileNameMomentum &MomSrc{ Snk.qp.p };
-  const Common::FileNameMomentum &MomSnk{ Src.qp.p };
+  const Common::Momentum &MomSrc{ Snk.qp.p };
+  const Common::Momentum &MomSnk{ Src.qp.p };
   // Complain about errors
   {
     std::ostringstream os;
@@ -514,8 +515,8 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
     Corr3[Snk_Src].Name.append( fnaSuffix );
     Common::AppendGammaDeltaT( Corr3[Snk_Src].Name, iSnk==iSrc ? Common::Gamma::Algebra::GammaT : fna.Gamma[0],
                                fna.DeltaT );
-    fna.AppendMomentum( Corr3[Snk_Src].Name, iSrc == iFinal ? Snk.qp.p : Src.qp.p, Src.qp.p.Name );
-    fna.AppendMomentum( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.qp.p : Snk.qp.p, Snk.qp.p.Name );
+    fna.AppendMomentum( Corr3[Snk_Src].Name, iSrc == iFinal ? Snk.qp.p : Src.qp.p, Src.qp.pName );
+    fna.AppendMomentum( Corr3[Snk_Src].Name, iSnk==iInitial ? Src.qp.p : Snk.qp.p, Snk.qp.pName );
     Common::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.op : Snk.op );
     Common::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? Src.op : Snk.op );
     Corr3[Snk_Src].Name = Common::MakeFilename( Corr3[Snk_Src].Name, fna.Type, fna.Seed, fna.Ext );
@@ -742,7 +743,7 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
       OutFileName.append( NameReverse[i] ? qSnk : qSrc );
       OutFileName.append( fnaSuffix );
       Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT );
-      fna.AppendMomentum( OutFileName, Src.qp.p ? Src.qp.p : Snk.qp.p, Src.qp.p.Name );
+      fna.AppendMomentum( OutFileName, Src.qp.p ? Src.qp.p : Snk.qp.p, Src.qp.pName );
       AppendOps( OutFileName, NameReverse[i] ? Src.op : Snk.op, NameReverse[i] ? Snk.op : Src.op );
       OutFileName = Common::MakeFilename( OutFileName, fna.Type, fna.Seed, fna.Ext );
       std::cout << "->" << OutFileName << Common::NewLine;
@@ -879,7 +880,7 @@ void FMaker::Make( std::string &FileName )
   if( fna.Meson.size() != 2 || fna.MesonMom.size() != 2 )
     throw std::runtime_error( FileName + " unable to decode mesons" );
   //std::cout << "  " << fna.MesonMom[0] << " -> " << fna.Gamma[0] << " -> " << fna.MesonMom[1] << Common::NewLine;
-  const Common::FileNameMomentum &p{ fna.p.begin()->second };
+  const Common::Momentum &p{ fna.p.begin()->second };
   RatioFile rf( p, fna.Meson[0], fna.Meson[1] );
   std::vector<std::string> &vs{ map[bGammaT ? 0 : 1][rf] };
   vs.emplace_back( FileName );
@@ -915,11 +916,11 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
       Common::FileNameAtt fna{ vFileGammaT[0], &OpNames };
       std::string sOpNames;
       fna.AppendOps( sOpNames, Common::Period, &OpNames );
-      const Common::FileNameMomentum &p{ fna.GetFirstNonZeroMomentum() };
+      const Common::NamedMomentum &p{ fna.GetFirstNonZeroMomentum() };
       std::string Description;
       {
         std::ostringstream os;
-        os << rf.Source << " --> " << rf.Sink << p.FileString( " " );
+        os << rf.Source << " --> " << rf.Sink << p.second.FileString( p.first, Common::Space );
         Description = os.str();
       }
       std::cout << Description << Common::NewLine;
@@ -935,8 +936,8 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
       else
       {
         // Get the zero-momentum version of the light
-        const Common::FileNameMomentum p0( p.Name, p.bp2 );
-        QP qpMLight( q[iLight], p0 );
+        const Common::NamedMomentum p0( p.first, p.second.bp2 );
+        QP qpMLight( q[iLight], p0.first, p0.second );
         pmMLight = &EFit( qpMLight, szReading );
         MLight = EFit.GetVector( qpMLight );
         // Read all the gamma spatial
@@ -971,7 +972,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
           sShort.erase( 0, 1 );
         OutFileName.append( sShort );
       }
-      OutFileName.append( p.FileString() );
+      OutFileName.append( p.second.FileString( p.first ) );
       const std::size_t OutFileNameLen{ OutFileName.length() };
       for( const std::string &File : vFileGammaT )
       {
@@ -1089,7 +1090,11 @@ void FFitConstMaker::Make( std::string &FileName )
   RatioNum = Common::FromString<int>( fna.BaseShortParts[0].substr( 1 ) );
   qSnk = fna.BaseShortParts[1];
   qSrc = fna.BaseShortParts[2];
-  p = fna.GetFirstNonZeroMomentum();
+  {
+    const Common::NamedMomentum &np{ fna.GetFirstNonZeroMomentum() };
+    p = np.second;
+    pName = np.first;
+  }
   // Get the fit type and fit ranges
   const std::string &FitTypeOriginal{ fna.Extra[0] };
   {
@@ -1110,7 +1115,7 @@ void FFitConstMaker::Make( std::string &FileName )
   // Get filename suffix
   std::string Suffix1;
   Common::AppendDeltaT( Suffix1, fna.DeltaT );
-  Suffix1.append( p.FileString() );
+  Suffix1.append( p.FileString( pName ) );
   Common::Append( Suffix1, fna.GetBaseShort( 3 ) );
   fna.AppendExtra( Suffix1 );
   std::string Suffix2{ Common::Period };
@@ -1181,9 +1186,9 @@ void FFitConstMaker::Make( std::string &FileName )
   const bool bSnkHeavier{ Weight( qSnk ) > Weight( qSrc ) };
   const std::string &qHeavy{ bSnkHeavier ? qSnk : qSrc };
   const std::string &qLight{ bSnkHeavier ? qSrc : qSnk };
-  QP qpMHeavy( qHeavy, Common::p0 );
-  QP qpMLight( qLight, Common::p0 );
-  QP qpELight( qLight, p );
+  QP qpMHeavy( qHeavy, Common::Momentum::DefaultPrefix, Common::p0 );
+  QP qpMLight( qLight, Common::Momentum::DefaultPrefix, Common::p0 );
+  QP qpELight( qLight, Common::Momentum::DefaultPrefix, p );
   Model &mMHeavy( EFit( qpMHeavy, szReading ) );
   mT.IsCompatible( mMHeavy, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
   Model &mMLight( EFit( qpMLight, szReading ) );

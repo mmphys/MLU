@@ -266,6 +266,8 @@ Params Fitter::MakeModelParams()
       }
     }
   }
+  if( !mp.dispMap.empty() )
+    std::cout << mp.dispMap << Common::NewLine;
   return mp;
 }
 

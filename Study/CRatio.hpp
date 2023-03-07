@@ -53,12 +53,14 @@ inline void Append( std::string &s, const std::string &Add )
   s.append( Add );
 }
 
-// A quark with a sepecified momentum
+// A quark with a named momentum
 struct QP
 {
   std::string q;
-  Common::FileNameMomentum p;
-  QP( const std::string &Q, const Common::FileNameMomentum &P ) : q{Q}, p{P} {}
+  std::string pName;
+  Common::Momentum p;
+  QP( const std::string &Q, const std::string &pName_, const Common::Momentum &P )
+  : q{Q}, pName{pName_}, p{P} {}
 };
 
 // Case insensitive compare of QP
@@ -348,7 +350,7 @@ protected:
   int RatioNum;
   std::string qSnk;
   std::string qSrc;
-  Common::FileNameMomentum p;
+  Common::Momentum p; std::string pName;
   std::string Prefix;
   std::string Suffix;
   std::string FitType;

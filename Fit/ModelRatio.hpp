@@ -45,6 +45,7 @@ struct ModelRatio : public Model3pt
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
+  void Guessable( ParamsPairs &PP ) const override;
   double Derivative( int t, int p ) const override;
   ModelType Type() const override { return ModelType::R3; }
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;

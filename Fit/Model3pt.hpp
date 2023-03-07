@@ -50,6 +50,7 @@ struct Model3pt : public ModelOverlap
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 
 protected:
+  const int N;
   int DeltaT;
   //std::size_t ParamIndex( std::size_t idxSnk, std::size_t idxSrc ) const;
   //std::size_t NumUnknown( std::vector<bool> &bKnown ) const;

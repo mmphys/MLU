@@ -303,12 +303,12 @@ inline void Append( std::string &sDest, Species species )
 
 inline void AppendP( std::string &sDest, const Common::Momentum &p, const std::string & sMomentumName = defaultMomName )
 {
-  Append( sDest, sMomentumName, p.to_string( Sep ) );
+  Append( sDest, sMomentumName, p.to_string3d( Sep ) );
 }
 
 inline void AppendPSeq( std::string &sDest, const Common::Momentum &p )
 {
-  Append( sDest, "ps", p.to_string( Sep ) );
+  Append( sDest, "ps", p.to_string3d( Sep ) );
 }
 
 inline void AppendT( std::string &sDest, int t )

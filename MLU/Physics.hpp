@@ -37,6 +37,8 @@
 
 MLU_Physics_hpp
 
+extern const std::string Underscore;
+
 namespace Gamma
 {
   enum class Algebra
@@ -133,18 +135,65 @@ struct Momentum
   static const std::string SquaredSuffix;
   static const std::string DefaultPrefixSquared;
   static const std::string SinkPrefixSquared;
+  static const std::string DefaultRegexName;
   int x;
   int y;
   int z;
-  static std::regex MakeRegex( const std::string &MomName );
-  Momentum( int _x, int _y, int _z ) : x(_x), y(_y), z(_z) {}
-  Momentum() : Momentum(0,0,0) {}
-  Momentum( const Momentum &o ) : Momentum( o.x, o.y, o.z ) {}
-  Momentum& operator=(const Momentum& rhs) { if( this != &rhs ) { x = rhs.x; y = rhs.y; z=rhs.z; } return *this; }
+  bool bp2;
+  Momentum( int _x, int _y, int _z, bool _bp2 ) : x(_x), y(_y), z(_z), bp2{_bp2} {}
+  Momentum( int _x, int _y, int _z ) : Momentum( _x, _y , _z, false ) {}
+  Momentum( bool _bp2 ) : Momentum( 0, 0 , 0, _bp2 ) {}
+  Momentum() : Momentum( 0, 0, 0, false ) {}
+  Momentum( const Momentum &o ) : Momentum( o.x, o.y, o.z, o.bp2 ) {}
+  Momentum( int p2 ) : x(0), y(0), z(0), bp2{true} { *this = p2; }
+
+  inline int p2() const { return x * x + y * y + z * z; }
+
+  int &operator[]( int i )
+  {
+    if( i == 0 )
+      return x;
+    else if( i == 1 )
+      return y;
+    else if( i == 2 )
+      return z;
+    throw std::domain_error( "Bad Momentum index " + std::to_string( i ) );
+  }
+
+  const int &operator[]( int i ) const
+  {
+    if( i == 0 )
+      return x;
+    else if( i == 1 )
+      return y;
+    else if( i == 2 )
+      return z;
+    throw std::domain_error( "Bad Momentum index " + std::to_string( i ) );
+  }
+
+  /// Set momentum to p^2 (throw error if not possible)
+  Momentum& operator=( const int p2 );
+  Momentum& operator=( const Momentum& rhs )
+  {
+    if( this != &rhs )
+    {
+      x = rhs.x;
+      y = rhs.y;
+      z = rhs.z;
+      bp2 = rhs.bp2;
+    }
+    return *this;
+  }
   inline explicit operator bool() const { return x!=0 || y!=0 || z!=0; }
-  inline Momentum operator-() const { return Momentum(-x, -y, -z); }
-  inline Momentum abs() const { return Momentum( x<0?-x:x, y<0?-y:y, z<0?-z:z ); }
-  inline bool operator==(const Momentum &m) const { return x==m.x && y==m.y && z==m.z; }
+  inline Momentum operator-() const { return Momentum( -x, -y, -z, bp2 ); }
+  inline Momentum abs() const { return Momentum( x<0?-x:x, y<0?-y:y, z<0?-z:z, bp2 ); }
+  inline bool operator==( const Momentum &rhs ) const
+  {
+    if( bp2 || rhs.bp2 )
+      return p2() == rhs.p2();
+    return x == rhs.x && y == rhs.y && z == rhs.z;
+  }
+  inline bool operator!=( const Momentum &rhs ) const { return ! ( *this == rhs ); }
   Momentum& operator+=(const Momentum& rhs)
   {
     x += rhs.x;
@@ -173,16 +222,22 @@ struct Momentum
 
   inline bool IsNeg() const { return x<0 || ( x==0 && ( y<0 || ( y==0 && z < 0 ))); }
   inline bool EqualsNeg(const Momentum &m) const { return x==-m.x || y==-m.y || z==-m.z; }
-  inline int p2() const { return x * x + y * y + z * z; }
-  std::string p2_string  ( const std::string &separator, const std::string Prefix = DefaultPrefix ) const;
-  std::string to_string  ( const std::string &separator, bool bNegative = false ) const;
+  /// Convert to p^2 string: _Name_p^2
+  std::string p2_string  ( const std::string &separator, const std::string &Name=DefaultPrefix )const;
+  /// Convert to x-y-z components
+  std::string to_string3d( const std::string &separator, bool bNegative = false ) const;
+  /// Convert to x-y-z-t components (assume t=0)
   std::string to_string4d( const std::string &separator, bool bNegative = false ) const;
+  /// Convert momentum to original format, with name
+  std::string FileString( const std::string &Name, const std::string &Separator = Underscore ) const;
+  /// Make a regular expression suitable for parsing momenta 3d or squared
+  static std::regex MakeRegex( bool bp2, const std::string &Name = DefaultRegexName );
   // Strip out momentum info from string if present
   bool Extract( std::string &s, const std::string &MomName, bool IgnoreSubsequentZeroNeg = false );
   bool Extract( std::string &s ) { return Extract( s, DefaultPrefix, true ); }
   void Replace( std::string &s, const std::string &MomName, bool bNegative = false ) const;
   // Use Lattice Dispersion relation and N=L/a to boost am to aE(p)
-  double LatticeDispersion( double am, unsigned int N ) const;
+  double LatticeDispersion( double am, unsigned int N, bool bGetGroundFromExcited = false ) const;
 };
 
 extern const Momentum p0;
@@ -204,26 +259,6 @@ inline bool operator<( const Momentum &l, const Momentum &r )
     return l.y < r.y;
   return l.z < r.z;
 }
-
-// This is a momentum with a name, and is either squared or three-component
-struct FileNameMomentum : public Momentum
-{
-  std::string Name;
-  bool bp2;
-  static Momentum FromSquared( const int p2 );
-  FileNameMomentum() {}
-  FileNameMomentum( const std::string &Name_, const bool bp2_ ) : Name{Name_}, bp2{bp2_} {}
-  FileNameMomentum( const std::string &Name_, int x_, int y_, int z_ ) : Momentum(x_,y_,z_), Name{Name_}, bp2{false} {}
-  FileNameMomentum( const std::string &Name_, int p2 ) : Momentum(FromSquared(p2)), Name{Name_}, bp2{true} {}
-  FileNameMomentum( const FileNameMomentum &o ) : Momentum(o), Name{o.Name}, bp2{o.bp2} {}
-  FileNameMomentum( const Momentum &o ) : Momentum(o), bp2{false} {}
-  std::string FileString( const std::string &separator = "_" ) const;
-  inline void SwapKeepName( FileNameMomentum &rhs ) noexcept
-  {
-    std::swap( * dynamic_cast<Momentum *>( this ), * dynamic_cast<Momentum *>( &rhs ) );
-    std::swap( bp2, rhs.bp2 );
-  }
-};
 
 MLU_Physics_hpp_end
 #endif

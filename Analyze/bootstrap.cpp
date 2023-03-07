@@ -171,7 +171,7 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
     int iNum{ Snk == Algebra::Spatial ? 0 : OpFactor };
     if( !iNum )
     {
-      const Common::Momentum &p{ it->Name_.GetFirstNonZeroMomentum() };
+      const Common::Momentum &p{ it->Name_.GetFirstNonZeroMomentum().second };
       if( p.x )
         iNum++;
       if( p.y )
@@ -211,7 +211,7 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
     const std::size_t FilenameLen{ Filename.length() };
     if( Snk == Algebra::Spatial )
     {
-      const Common::Momentum &p{ file->Name_.GetFirstNonZeroMomentum() };
+      const Common::Momentum &p{ file->Name_.GetFirstNonZeroMomentum().second };
       if( p.x )
       {
         Common::AppendGamma( Filename, Algebra::GammaX, Common::Comma );
@@ -468,9 +468,9 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
   static const std::string Space{ " " };  // whitespace as field separator / human readable info
   static const std::string Sink{ Sep + "sink" };    // used inside filenames
   static const std::string sProp{ "prop" + Sep };    // used inside filenames
-  static const std::string sMom0{ Sep + "p" + Sep + Common::Momentum(0,0,0).to_string( Sep ) };
-  const std::string sMom{ Sep + "p" + Sep + mom.to_string( Sep )};
-  const std::string sMomNeg{ Sep + "p" + Sep + mom.to_string( Sep, true )};
+  static const std::string sMom0{ Sep + "p" + Sep + Common::p0.to_string3d( Sep ) };
+  const std::string sMom{ Sep + "p" + Sep + mom.to_string3d( Sep )};
+  const std::string sMomNeg{ Sep + "p" + Sep + mom.to_string3d( Sep, true )};
   //assert( alg.size() == algNames.size() && "Abbreviations should match gamma algebra" );
   const std::string CorrPrefix{ Heavy + Sep + Light + sMom };
   /*std::vector<std::string> CorrSuffixes( NumCorr );
@@ -762,9 +762,9 @@ bool Manifest::NeedsTimeReverse( std::string &Contraction, MomentumMap &p, bool 
         Contraction.append( Parts[2] );
         Contraction.append( 1, '_' );
         Contraction.append( Parts[1] );
-        Common::FileNameMomentum &pOne{ p.begin()->second };
-        Common::FileNameMomentum &pTwo{ (++p.begin())->second };
-        pOne.SwapKeepName( pTwo );
+        Common::Momentum &pOne{ p.begin()->second };
+        Common::Momentum &pTwo{ (++p.begin())->second };
+        std::swap( pOne, pTwo );
         std::swap( OpSuffixSnk, OpSuffixSrc );
       }
     }
@@ -862,9 +862,9 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
           sShortSuffix.append( mmv.first );
           sShortSuffix.append( Sep );
           if( GroupP == GroupMomenta::Abs )
-            sShortSuffix.append( mmv.second.abs().to_string( Sep ) );
+            sShortSuffix.append( mmv.second.abs().to_string3d( Sep ) );
           else
-            sShortSuffix.append( mmv.second.to_string( Sep ) );
+            sShortSuffix.append( mmv.second.to_string3d( Sep ) );
         }
       }
       // The contraction is everything that makes this unique

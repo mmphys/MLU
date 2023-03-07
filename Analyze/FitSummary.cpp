@@ -244,7 +244,7 @@ Summariser::Summariser( const Common::CommandLine &cl )
     // Have we seen this base before?
     BaseList::iterator it{ lBase.find( sOutFile ) };
     if( it == lBase.end() )
-      it = lBase.emplace( sOutFile, BaseInfo( n.GetFirstNonZeroMomentum() ) ).first;
+      it = lBase.emplace( sOutFile, BaseInfo( n.GetFirstNonZeroMomentum().second ) ).first;
     it->second.vFI.emplace_back( ft, sFileName, bIsFit );
   }
 }
@@ -478,7 +478,7 @@ void Summariser::WriteTableFooter( std::ofstream &os ) const
 
 void Summariser::WriteTabular( const std::string &sFileName, const BaseInfo &bi ) const
 {
-  const std::string sMom{ std::to_string( bi.fnp.p2() ) };
+  const std::string sMom{ std::to_string( bi.p.p2() ) };
   // Write header
   std::ofstream os( sFileName );
   os << "{\\tiny\n";

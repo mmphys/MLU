@@ -195,6 +195,40 @@ void BootRep<T>::Write( ::H5::Group &g, const std::string &Name ) const
   H5::WriteMatrix( g, Name, Replica );
 }
 
+void MomentumMap::Parse( std::string &BaseShort )
+{
+  // Now get the remaining momenta and save them
+  std::smatch match;
+  for( int pLoop = 0; pLoop < 2; ++pLoop )
+  {
+    const std::regex Pattern{ Momentum::MakeRegex( pLoop ) };
+    while( std::regex_search( BaseShort, match, Pattern ) )
+    {
+      // Extract the momentum
+      const std::string sMom{ match[1] };
+      std::vector<Momentum> np;
+      np.reserve( 1 );
+      if( pLoop == 0 )
+        np.emplace_back( std::stoi( match[2] ), std::stoi( match[3] ), std::stoi( match[4] ) );
+      else
+        np.emplace_back( std::stoi( match[2] ) );
+      const std::string sSuffix{ match.suffix() };
+      BaseShort = match.prefix();
+      BaseShort.append( sSuffix );
+      // Now see whether we already have it
+      auto it = find( sMom );
+      if( it == end() )
+        emplace( std::make_pair( sMom, np[0] ) );
+      else if( it->second != np[0] )
+      {
+        std::stringstream ss;
+        ss << "Repeated momentum " << sMom << CommaSpace << it->second << " != " << np[0];
+        throw std::runtime_error( ss.str().c_str() );
+      }
+    }
+  }
+}
+
 // These are the attributes I like to use in my filenames
 void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> * pOpNames,
                          const std::vector<std::string> * pIgnoreMomenta,
@@ -295,13 +329,13 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   }
 
   // Remove momenta we are going to ignore in the filename
-  Momentum pIgnore;
   if( pIgnoreMomenta )
   {
+    Momentum pIgnore;
     for( const std::string &s : *pIgnoreMomenta )
     {
       while( pIgnore.Extract( Base, s ) ) // There might be more than one copy
-        ; //momIgnore.emplace_back( s, pIgnore );
+        ;
     }
   }
   if( pIgnoreRegEx )
@@ -314,46 +348,7 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
     }
   }
   std::string BaseShort = Base;
-  // Now get the remaining momenta and save them
-  std::smatch match;
-  std::regex Pattern{ Momentum::MakeRegex( "([pP][[:alnum:]]*)" ) };
-  for( int pLoop = 0; pLoop < 2; ++pLoop )
-  {
-    while( std::regex_search( BaseShort, match, Pattern ) )
-    {
-      // Extract the momentum
-      const std::string sMom{ match[1] };
-      std::vector<FileNameMomentum> fnp;
-      fnp.reserve( 1 );
-      if( pLoop == 0 )
-      {
-        fnp.emplace_back( sMom, std::stoi( match[2] ), std::stoi( match[3] ), std::stoi( match[4] ) );
-      }
-      else
-      {
-        fnp.emplace_back( sMom, std::stoi( match[2] ) );
-      }
-      const std::string sSuffix{ match.suffix() };
-      BaseShort = match.prefix();
-      BaseShort.append( sSuffix );
-      // Now see whether we already have it
-      auto it = p.find( sMom );
-      if( it == p.end() )
-        p.emplace( std::make_pair( sMom, fnp[0] ) );
-      else if( ! ( it->second == fnp[0] ) )
-      {
-        std::stringstream ss;
-        ss << "Repeated momentum " << sMom << CommaSpace << it->second << " != " << pIgnore;
-        throw std::runtime_error( ss.str() );
-      }
-    }
-    // Second time through the loop, we're looking for p^2
-    if( pLoop == 0 )
-    {
-      const std::string sPattern{ "_([pP][[:alnum:]]*)" + Momentum::SquaredSuffix + "_(-?[0-9]+)" };
-      Pattern = sPattern;
-    }
-  }
+  p.Parse( BaseShort );
   // Extract other attributes from filename
   ExtractTimeslice( BaseShort, bGotTimeslice, Timeslice );
   ExtractDeltaT( BaseShort, bGotDeltaT, DeltaT );
@@ -373,7 +368,6 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
         // We have two momenta
         MesonP.emplace_back( pp->second );
         MesonP.emplace_back( pps->second );
-        MesonP.back().Name = Momentum::DefaultPrefix;
       }
       else
       {
@@ -382,11 +376,10 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
         const bool bSourceHeavier{ QuarkWeight(BaseShortParts[2]) >= QuarkWeight(BaseShortParts[1]) };
         MesonP[bSourceHeavier ? 1 : 0] = pp->second;
         MesonP[bSourceHeavier ? 0 : 1].bp2 = pp->second.bp2;
-        MesonP[bSourceHeavier ? 0 : 1].Name = Momentum::DefaultPrefix;
       }
       MesonMom = Meson;
       for( std::size_t i = 0; i < MesonMom.size(); ++i )
-        MesonMom[i].append( MesonP[i].FileString() );
+        MesonMom[i].append( MesonP[i].FileString( Momentum::DefaultPrefix ) );
     }
   }
 }
@@ -518,14 +511,14 @@ std::string FileNameAtt::DerivedName( const std::string &Suffix, const std::stri
   return s;
 }
 
-const FileNameMomentum &FileNameAtt::GetMomentum( const std::string &Name ) const
+const NamedMomentum &FileNameAtt::GetMomentum( const std::string &Name ) const
 {
   auto it = p.find( Name );
   if( it == p.end() )
     it = p.find( Name + Momentum::SquaredSuffix );
   if( it == p.end() )
     throw std::runtime_error( "Momentum " + Name + " not available" );
-  return it->second;
+  return *it;
 }
 
 bool FileNameAtt::HasNonZeroMomentum() const
@@ -536,26 +529,14 @@ bool FileNameAtt::HasNonZeroMomentum() const
   return false;
 }
 
-const FileNameMomentum &FileNameAtt::GetFirstNonZeroMomentum() const
+const NamedMomentum &FileNameAtt::GetFirstNonZeroMomentum() const
 {
   if( p.empty() )
     throw std::runtime_error( "No momenta available" );
   for( auto it = p.begin(); it != p.end(); ++it )
     if( it->second )
-      return it->second;
-  return p.begin()->second;
-}
-
-void FileNameAtt::AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const
-{
-  if( fnp.bp2 )
-    s.append( fnp.p2_string( Underscore, Name ) );
-  else
-  {
-    s.append( Underscore );
-    s.append( Name );
-    s.append( fnp.to_string( Underscore ) );
-  }
+      return *it;
+  return *p.begin();
 }
 
 // Make a filename "Base.Type.seed.Ext"

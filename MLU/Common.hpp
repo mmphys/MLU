@@ -513,6 +513,14 @@ template<typename T> struct BootRep
   }
 };
 
+struct MomentumMap : std::map<std::string, Momentum, LessCaseInsensitive>
+{
+  void Parse( std::string &ExtractFrom );
+  MomentumMap() = default;
+  MomentumMap( std::string &ExtractFrom ) { Parse( ExtractFrom ); }
+};
+using NamedMomentum = MomentumMap::value_type;
+
 // Attributes for filenames in form base.type.seed.ext
 struct FileNameAtt
 {
@@ -531,7 +539,6 @@ struct FileNameAtt
   std::vector<std::string> Extra;
   bool bGotTimeslice = false;
   int         Timeslice = 0;
-  using MomentumMap = std::map<std::string, FileNameMomentum, LessCaseInsensitive>;
   MomentumMap p;
   bool bGotDeltaT = false;
   int         DeltaT;
@@ -542,7 +549,7 @@ struct FileNameAtt
   bool bSpectatorGotSuffix = false;
   std::vector<std::string> Meson; // 0 is source, 1 is sink
   std::vector<std::string> MesonMom; // With momenta - if available
-  std::vector<FileNameMomentum> MesonP; // The momenta - if available
+  std::vector<Momentum> MesonP; // The momenta - if available
   // reset contents
   void clear()
   {
@@ -622,11 +629,13 @@ struct FileNameAtt
   // Make a new name based on this one, overriding specified elements
   std::string DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
                            const std::string &Ext ) const;
-  const FileNameMomentum &GetMomentum( const std::string &Name = Momentum::DefaultPrefix ) const;
+  const NamedMomentum &GetMomentum( const std::string &Name = Momentum::DefaultPrefix ) const;
   bool HasNonZeroMomentum() const;
-  const FileNameMomentum &GetFirstNonZeroMomentum() const;
-  void AppendMomentum( std::string &s, const FileNameMomentum &fnp, const std::string &Name ) const;
-  void AppendMomentum( std::string &s, const FileNameMomentum &fnp )const{AppendMomentum( s, fnp, fnp.Name );}
+  const NamedMomentum &GetFirstNonZeroMomentum() const;
+  void AppendMomentum( std::string &s, const Momentum &p, const std::string &Name ) const
+  { s.append( p.FileString( Name ) ); }
+  void AppendMomentum( std::string &s, const NamedMomentum &np ) const
+  { AppendMomentum( s, np.second, np.first );}
   std::string MakeMesonName( const std::string &Quark ) const
   { return ::Common::MakeMesonName( Quark, Spectator ); }
 protected:

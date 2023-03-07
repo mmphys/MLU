@@ -110,6 +110,15 @@ std::istream &operator>>( std::istream &is, Param::Type &type );
 std::ostream &operator<<( std::ostream &os, const Param::Key &key );
 std::istream &operator>>( std::istream &is, Param::Key &key );
 
+/// Single entry in my list of dispersion relations
+struct DispEntry
+{
+  Param::Key ParentKey;
+  int N;
+  Momentum p;
+  DispEntry( Param::Key &ParentKey_, int N_, Momentum p_ ) : ParentKey{ParentKey_}, N{N_}, p{p_} {}
+};
+
 /**
  List of parameters
  
@@ -117,14 +126,18 @@ std::istream &operator>>( std::istream &is, Param::Key &key );
  */
 struct Params : std::map<Param::Key, Param, Param::Key::Less>
 {
-  //using MapT = std::map<Param::Key, Param, Param::Key::Less>;
+  using Base = std::map<Param::Key, Param, Param::Key::Less>;
   //using MapPairT = std::pair<iterator, bool>;
+  using DispMap = std::map<Param::Key, DispEntry, Param::Key::Less>;
+  DispMap dispMap;
   std::vector<std::vector<std::size_t>> SignList;
   Params() {};
   /// Create list of single, variable parameters
   Params( const std::vector<std::string> &ParamNames );
   /// Create list of single, variable parameters and get their indices
   Params( const std::vector<std::string> &ParamNames, std::vector<std::size_t> &vIdx );
+  Params::iterator       Find( const Param::Key &key, const std::string &ErrorPrefix );
+  Params::const_iterator Find( const Param::Key &key, const std::string &ErrorPrefix ) const;
   /// For now, comparison operators ignore parameter type
   bool operator==( const Params &rhs ) const;
   bool operator!=( const Params &rhs ) const { return !operator==( rhs ); }
@@ -134,8 +147,16 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   bool operator< ( const Params &rhs ) const;
   bool operator>=( const Params &rhs ) const { return rhs <  *this; }
   bool operator> ( const Params &rhs ) const { return rhs <= *this; }
+  void clear() noexcept;
   Params::iterator Add( const Param::Key &key, std::size_t NumExp = 1, bool bMonotonic = false,
                         Param::Type Type = Param::Type::Variable );
+  /// Use the dispersion relation if ( N = L/a ) != 0
+  Params::iterator AddEnergy( const Param::Key &key, std::size_t NumExp, int N );
+  template <typename T>
+  void GuessEnergy( Vector<T> &Guess, std::vector<bool> &bKnown, Param::Key &key, std::size_t idx, T Energy ) const;
+  template <typename T>
+  /// If bKnown not passed, assume all values known and walk the list once
+  void PropagateEnergy( Vector<T> &Guess, std::vector<bool> *bKnown = nullptr ) const;
   Params::iterator MakeFixed( const Param::Key &key, bool bSwapSourceSink );
   /// Find the key. If Params have only one objectID, match anything
   Params::const_iterator FindPromiscuous( const Param::Key &key ) const;
@@ -212,6 +233,8 @@ protected:
 };
 
 std::ostream &operator<<( std::ostream &os, const Params::value_type &param );
+std::ostream &operator<<( std::ostream &os, const Params::DispMap::value_type &dv );
+std::ostream &operator<<( std::ostream &os, const Params::DispMap &dm );
 
 /**
  Used to keep track of pairs of parameters that are only known as a product
@@ -282,6 +305,7 @@ protected:
   void SetState( State NewState, Params::const_iterator &it, std::size_t Size, std::size_t Index );
   /// Keep walking the list of product pairs, propagating anything new we know
   void PropagateKnown();
+  void PropagateDisp();
   friend std::ostream &operator<<( std::ostream &os, const ParamsPairs &PP );
 };
 

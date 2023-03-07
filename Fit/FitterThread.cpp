@@ -335,11 +335,14 @@ void FitterThread::ShowReplicaMessage( int iFitNum ) const
 bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::size_t Size, std::size_t Stride )
 {
   // Put the fitter parameters into our model parameters
-  if( Size != parent.mp.NumScalars( Param::Type::Variable ) )
-    throw std::runtime_error( "Fitter parameters don't match our variable parameters" );
   if( Size )
+  {
+    if( Size != parent.mp.NumScalars( Param::Type::Variable ) )
+      throw std::runtime_error( "Fitter parameters don't match our variable parameters" );
     parent.mp.Import( ModelParams, VectorView( FitterParams, Size, Stride ),
                       Param::Type::Variable, true );
+  }
+  parent.mp.PropagateEnergy( ModelParams );
   // Compute theory - error for each timeslice
   int i{0};
   bool bOK{ true };

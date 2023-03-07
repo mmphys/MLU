@@ -345,7 +345,7 @@ ModSink::ModSink(HModList &ModList, const Taxonomy &taxonomy, const Common::Mome
 void ModSink::AddDependencies( HModList &ModList ) const
 {
   MSink::ScalarPoint::Par sinkPar;
-  sinkPar.mom = p.to_string( Space );
+  sinkPar.mom = p.to_string3d( Space );
   ModList.application.createModule<MSink::ScalarPoint>(Name(), sinkPar);
 }
 
@@ -365,7 +365,7 @@ ModSinkSmear::ModSinkSmear(HModList &ModList, const Taxonomy &taxonomy, const Co
 void ModSinkSmear::AddDependencies( HModList &ModList ) const
 {
   MSink::Point::Par sinkPar;
-  sinkPar.mom = p.to_string( Space );
+  sinkPar.mom = p.to_string3d( Space );
   ModList.application.createModule<MSink::Point>(Name(), sinkPar);
 }
 

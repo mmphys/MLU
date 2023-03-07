@@ -227,6 +227,25 @@ std::istream &operator>>( std::istream &is, Param::Key &key )
   return is;
 }
 
+std::ostream &operator<<( std::ostream &os, const Params::DispMap::value_type &dv )
+{
+  const Common::Param::Key &dk{ dv.first };
+  const Common::DispEntry &de{ dv.second };
+  return os << dk << " derived from " << de.ParentKey << " N=" << de.N << ", p="
+            << de.p.to_string3d( Common::Comma );
+}
+
+std::ostream &operator<<( std::ostream &os, const Params::DispMap &dm )
+{
+  for( Params::DispMap::const_iterator it = dm.cbegin(); it != dm.cend() ; )
+  {
+    os << *it;
+    if( ++it != dm.cend() )
+      os << Common::NewLine;
+  }
+  return os;
+}
+
 Params::Params( const std::vector<std::string> &ParamNames )
 {
   Param::Key k;
@@ -248,6 +267,32 @@ Params::Params( const std::vector<std::string> &ParamNames, std::vector<std::siz
     k.Name = ParamNames[i];
     vIdx[i] = at( k )();
   }
+}
+
+Params::iterator Params::Find( const Param::Key &key, const std::string &ErrorPrefix )
+{
+  iterator it{ find( key ) };
+  if( it == end() )
+  {
+    // Doesn't exist
+    std::ostringstream ss;
+    ss << ErrorPrefix << Space << key << " not found";
+    throw std::runtime_error( ss.str().c_str() );
+  }
+  return it;
+}
+
+Params::const_iterator Params::Find( const Param::Key &key, const std::string &ErrorPrefix ) const
+{
+  const_iterator it{ find( key ) };
+  if( it == cend() )
+  {
+    // Doesn't exist
+    std::ostringstream ss;
+    ss << ErrorPrefix << Space << key << " not found";
+    throw std::runtime_error( ss.str().c_str() );
+  }
+  return it;
 }
 
 bool Params::operator==( const Params &rhs ) const
@@ -283,6 +328,12 @@ bool Params::operator<=( const Params &rhs ) const
 bool Params::operator<( const Params &rhs ) const
 {
   return NumScalars( Param::Type::All ) < rhs.NumScalars( Param::Type::All ) && *this <= rhs;
+}
+
+void Params::clear() noexcept
+{
+  Base::clear();
+  dispMap.clear();
 }
 
 Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bMonotonic, Param::Type type_ )
@@ -365,21 +416,127 @@ Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bM
   return it;
 }
 
+Params::iterator Params::AddEnergy( const Param::Key &key, std::size_t NumExp, int N )
+{
+  bool bMonotonic{ true };
+  Param::Type pt{ Param::Type::Variable };
+  if( N )
+  {
+    // I would like to use the dispersion relation
+    if( key.Object.size() != 1 )
+    {
+      std::ostringstream os;
+      os << "Params::AddEnergy unexpected composite key " << key;
+      throw std::runtime_error( os.str().c_str() );
+    }
+    std::string Key0{ key.Object[0] };
+    Common::Momentum p;
+    if( p.Extract( Key0 ) && p )
+    {
+      // I'm adding an energy parameter for non-zero momentum
+      Common::Momentum p0( p.bp2 );
+      Key0.append( p0.FileString( Common::Momentum::DefaultPrefix ) );
+      Param::Key k0( std::move( Key0 ), key.Name );
+      Add( k0, NumExp, true, Param::Type::Variable );
+      dispMap.emplace( key, DispEntry( k0, N, p ) );
+      bMonotonic = false;
+      pt = Param::Type::Derived;
+    }
+  }
+  return Add( key, NumExp, bMonotonic, pt );
+}
+
+template <typename T>
+void Params::GuessEnergy( Vector<T> &Guess, std::vector<bool> &bKnown,
+                          Param::Key &key, std::size_t idx, T Energy ) const
+{
+  const_iterator it{ Find( key, "Params::GuessEnergy()" ) };
+  const Param &p{ it->second };
+  std::size_t idxEnergy{ p( idx ) };
+  if( bKnown[idxEnergy] )
+    std::cout << "  Ignoring guess " << key << "[" << idx << "] = " << Energy
+              << ". Keeping previous guess " << Guess[idxEnergy];
+  else
+  {
+    Guess[idxEnergy] = Energy;
+    bKnown[idxEnergy] = true;
+    // Now see whether we are using the dispersion relation for this
+    DispMap::const_iterator itd{ dispMap.find( key ) };
+    if( itd != dispMap.cend() )
+    {
+      // Propagate this up to parent using dispersion relation
+      const DispEntry &de{ itd->second };
+      const_iterator itParent{ Find( de.ParentKey, "Params::GuessEnergy() parent" ) };
+      const Param &pParent{ itParent->second };
+      std::size_t idxParent{ pParent( idx ) };
+      if( bKnown[idxParent] )
+        std::cout << "  Ignoring guess " << de.ParentKey << "[" << idx << "] = " << Energy
+                  << ". Keeping previous guess " << Guess[idxParent];
+      else
+      {
+        Guess[idxParent] = de.p.LatticeDispersion( Energy, de.N, true );
+        bKnown[idxParent] = true;
+      }
+    }
+    // Now propagate guesses down through all children
+    PropagateEnergy( Guess, bKnown );
+  }
+}
+
+template <typename T>
+void Params::PropagateEnergy( Vector<T> &Guess, std::vector<bool> *bKnown ) const
+{
+  bool bChanged;
+  do
+  {
+    bChanged = false;
+    // Loop through every entry in the dispersion table
+    for( const Params::DispMap::value_type &v : dispMap )
+    {
+      static const std::string ErrorMsg{ "ParamsPairs::PropagateEnergy() Bug - dispersion" };
+      // Get (derived) parameter in dispersion table
+      const Param::Key &key{ v.first };
+      const DispEntry &de{ v.second };
+      Params::const_iterator it{ Find( key, ErrorMsg ) };
+      const Param &p{ it->second };
+      std::size_t idx{ p() };
+      // Get parent parameter
+      Params::const_iterator itParent{ Find( de.ParentKey, ErrorMsg ) };
+      const Param &pParent{ itParent->second };
+      std::size_t idxParent{ pParent() };
+      if( pParent.size < p.size )
+        throw std::runtime_error( "ParamsPairs::PropagateEnergy() parent size "
+                + std::to_string( pParent.size ) + " < dispersion " + std::to_string( p.size ) );
+      // Propagate each parameter
+      for( std::size_t i = 0; i < p.size; ++i )
+      {
+        if( !bKnown || ( !(*bKnown)[idx + i] && (*bKnown)[idxParent + i] ) )
+        {
+          Guess[idx + i] = de.p.LatticeDispersion( Guess[idxParent + i], de.N );
+          if( bKnown )
+          {
+            (*bKnown)[idx + i] = true;
+            bChanged = true;
+          }
+        }
+      }
+    }
+  }
+  while( bChanged );
+}
+
+template void Params::PropagateEnergy<float>( Vector<float> &Guess, std::vector<bool> *bKnown ) const;
+template void Params::PropagateEnergy<double>(Vector<double> &Guess, std::vector<bool> *bKnown) const;
+
 // Make a parameter fixed. Must exist
 Params::iterator Params::MakeFixed( const Param::Key &key, bool bSwapSourceSink )
 {
-  iterator it{ find( key ) };
-  if( it == end() )
-  {
-    // Doesn't exist
-    std::ostringstream ss;
-    ss << "Params::MakeFixed key " << key << " not found";
-    throw std::runtime_error( ss.str().c_str() );
-  }
+  iterator it{ Find( key, "Params::MakeFixed()" ) };
   Param &p{ it->second };
   p.type = Param::Type::Fixed;
   p.bMonotonic = false;
   p.bSwapSourceSink = bSwapSourceSink;
+  dispMap.erase( key ); // Also remove it from dispersion list (if present)
   return it;
 }
 
@@ -998,16 +1155,17 @@ void ParamsPairs::clear()
   for( State &s : keystate )
     s = State::Unknown;
   pairs.clear();
-  // Initialise state of Fixed=Known and Variable=Unknown parameters
+  // Initialise state of Fixed=Known and Derived/Variable=Unknown parameters
   for( const Params::value_type &it : params )
   {
     const Param &p{ it.second };
-    if( p.type != Param::Type::Variable )
+    if( p.type == Param::Type::Fixed )
     {
       for( std::size_t i = 0; i < p.size; ++i )
         keystate[p(i)] = State::Known;
     }
   }
+  PropagateDisp(); // Propagate anything known down through dispersion relations
 }
 
 void ParamsPairs::SetState( State NewState, const Param::Key &key, std::size_t Size, std::size_t Idx )
@@ -1105,13 +1263,7 @@ void ParamsPairs::GetPairState( std::array<Params::const_iterator, ParamsPairs::
 {
   for( std::size_t i = 0; i < it.size(); ++i )
   {
-    it[i] = params.find( pair[i] );
-    if( it[i] == params.cend() )
-    {
-      std::ostringstream os;
-      os << "ParamsPairs::GetPairState() key not found " << pair[i];
-      throw std::runtime_error( os.str().c_str() );
-    }
+    it[i] = params.Find( pair[i], "ParamsPairs::GetPairState()" );
     const Param &p{ it[i]->second };
     State state = keystate[ p( pair[i].Index ) ];
     if( !bUnknownOk && state == State::Unknown ) // Shouldn't happen (this is debugging)
@@ -1194,6 +1346,7 @@ void ParamsPairs::SetState( State NewState, Params::const_iterator &it, std::siz
   }
   if( bNeedPropagate )
     PropagateKnown();
+  PropagateDisp(); // Propagate anything known down through dispersion relations
 }
 
 void ParamsPairs::PropagateKnown()
@@ -1219,6 +1372,55 @@ void ParamsPairs::PropagateKnown()
       }
       else
         ++it;
+    }
+  }
+  while( bChanged );
+}
+
+void ParamsPairs::PropagateDisp()
+{
+  bool bChanged;
+  do
+  {
+    bChanged = false;
+    // Loop through every entry in the dispersion table
+    for( const Params::DispMap::value_type &v : params.dispMap )
+    {
+      static const std::string ErrorMsg{ "ParamsPairs::PropagateDisp() Bug - dispersion" };
+      // Get (derived) parameter in dispersion table
+      const Param::Key &key{ v.first };
+      const DispEntry &de{ v.second };
+      Params::const_iterator it{ params.Find( key, ErrorMsg ) };
+      const Param &p{ it->second };
+      std::size_t idx{ p() };
+      // Get parent parameter
+      Params::const_iterator itParent{ params.Find( de.ParentKey, ErrorMsg ) };
+      const Param &pParent{ itParent->second };
+      std::size_t idxParent{ pParent() };
+      if( pParent.size < p.size )
+        throw std::runtime_error( "ParamsPairs::PropagateDisp() parent size "
+                + std::to_string( pParent.size ) + " < dispersion " + std::to_string( p.size ) );
+      // Propagate each parameter
+      for( std::size_t i = 0; i < p.size; ++i )
+      {
+        if( keystate[idx + i] != keystate[idxParent + i] )
+        {
+          if(     keystate[idxParent+i] == State::Known
+             || ( keystate[idxParent+i] == State::AmbiguousSign && keystate[idx+i] != State::Known ) )
+          {
+            // Propagate downwards from parent
+            keystate[idx+i] = keystate[idxParent+i];
+            bChanged = true;
+          }
+          else if( keystate[idx+i] == State::Known
+              || ( keystate[idx+i] == State::AmbiguousSign && keystate[idxParent+i] != State::Known))
+          {
+            // Propagate upwards to parent
+            keystate[idxParent + i] = keystate[idx + i];
+            bChanged = true;
+          }
+        }
+      }
     }
   }
   while( bChanged );
@@ -1414,6 +1616,7 @@ SignChoice::operator std::vector<std::vector<std::size_t>>() const
   // Convert SignChoice into list of groups of parameters to sign-flip collectively
   std::vector<std::vector<std::size_t>> SignList( list.size() );
   std::size_t i{ 0 };
+  static const std::string ErrorMsg{ "SignChoice::operator std::vector<std::vector<std::size_t>>()" };
   for( const SignChoice::Set &s : list )
   {
     std::vector<std::size_t> &l{ SignList[i++] };
@@ -1423,13 +1626,7 @@ SignChoice::operator std::vector<std::vector<std::size_t>>() const
     for( ; itAmbig != s.cend(); ++itAmbig )
     {
       const Key &key{ *itAmbig };
-      Params::const_iterator pit{ PP.params.find( key ) };
-      if( pit == PP.params.cend() )
-      {
-        std::ostringstream os;
-        os << "SignChoice::operator std::vector<std::vector<std::size_t>>() key not found " << key;
-        throw std::runtime_error( os.str().c_str() );
-      }
+      Params::const_iterator pit{ PP.params.Find( key, ErrorMsg ) };
       const Param &p{ pit->second };
       std::size_t Index{ p( key.Index ) };
       const ParamsPairs::State &state{ PP.keystate[Index] };
@@ -1445,13 +1642,7 @@ SignChoice::operator std::vector<std::vector<std::size_t>>() const
       if( it != itAmbig )
       {
         const Key &key{ *it };
-        Params::const_iterator pit{ PP.params.find( key ) };
-        if( pit == PP.params.cend() )
-        {
-          std::ostringstream os;
-          os << "SignChoice::operator std::vector<std::vector<std::size_t>>() key not found " << key;
-          throw std::runtime_error( os.str().c_str() );
-        }
+        Params::const_iterator pit{ PP.params.Find( key, ErrorMsg ) };
         const Param &p{ pit->second };
         l.emplace_back( p( key.Index ) );
       }

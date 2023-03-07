@@ -94,9 +94,9 @@ struct FileInfo
 
 struct BaseInfo
 {
-  const Common::FileNameMomentum fnp;
+  const Common::Momentum p;
   std::vector<FileInfo> vFI;
-  BaseInfo( const Common::FileNameMomentum &fnp_ ) : fnp{fnp_} {}
+  BaseInfo( const Common::Momentum &p_ ) : p{p_} {}
 };
 
 struct Summariser

@@ -31,7 +31,8 @@
 Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args,
                     std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
                     std::size_t NumOverlapExp )
-: ModelOverlap( cp, Args, std::move( objectID ), std::move( opNames ), NumOverlapExp > 1 ? 2 : 1 )
+: ModelOverlap( cp, Args, std::move( objectID ), std::move( opNames ), NumOverlapExp > 1 ? 2 : 1 ),
+  N{ cp.N }
 {
   if( !cp.pCorr->Name_.bGotDeltaT )
     throw std::runtime_error( "DeltaT not available in " + cp.pCorr->Name_.Filename );
@@ -63,7 +64,7 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args,
 void Model3pt::AddParameters( Params &mp )
 {
   for( ModelParam &p : E )
-    AddParam( mp, p, NumOverlapExp, true );
+    AddEnergy( mp, p, NumOverlapExp, N );
   AddParam( mp, MEL, NumExponents, false );
   ModelOverlap::AddParameters( mp );
   if( !EDiff.Key.Object.empty() )
@@ -100,6 +101,13 @@ void Model3pt::Guessable( ParamsPairs &PP ) const
 {
   // I can guess the matrix element
   PP.SetState( ParamsPairs::State::Known, MEL.Key, MEL.param->size );
+  if( !EDiff.Key.Object.empty()
+     && PP.keystate[E[idxSrc].idx] == ParamsPairs::State::Known
+     && PP.keystate[E[idxSnk].idx] == ParamsPairs::State::Known )
+  {
+    // I know the energies, so I know their difference
+    PP.SetState( ParamsPairs::State::Known, EDiff.Key, EDiff.param->size );
+  }
   // TODO: Implement guessing
 }
 

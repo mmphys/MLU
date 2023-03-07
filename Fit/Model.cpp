@@ -172,10 +172,13 @@ std::string Model::Args::ToString() const
 Model::CreateParams::CreateParams( const std::vector<std::string> &o, const Common::CommandLine &c )
 : OpNames{ o }, cl{ c },
   NumExponents{ cl.SwitchValue<int>( "e" ) },
+  N{ cl.SwitchValue<int>( "N" ) },
   bOverlapAltNorm{ cl.GotSwitch( Common::sOverlapAltNorm.c_str() ) }
 {
   if( bOverlapAltNorm )
     std::cout << "WARNING: Use of --" << Common::sOverlapAltNorm << " is deprecated.\n";
+  if( N < 0 )
+    throw std::runtime_error( "L/a " + std::to_string( N ) + " < 0");
 }
 
 // Model constructor
@@ -187,6 +190,12 @@ Model::Model( const CreateParams &cp, Model::Args &Args )
 void Model::AddParam( Params &mp, ModelParam &ModPar, std::size_t NumExp, bool bMonotonic, Param::Type Type )
 {
   param.emplace_back( &*mp.Add( ModPar.Key, NumExp, bMonotonic, Type ) );
+  ModPar.param = &param.back()->second;
+}
+
+void Model::AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N )
+{
+  param.emplace_back( &*mp.AddEnergy( ModPar.Key, NumExp, N ) );
   ModPar.param = &param.back()->second;
 }
 

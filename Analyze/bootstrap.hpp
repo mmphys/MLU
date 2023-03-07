@@ -30,7 +30,7 @@
 #define bootstrap_hpp
 
 #include <MLU/Common.hpp>
-using MomentumMap = Common::FileNameAtt::MomentumMap;
+using MomentumMap = Common::MomentumMap;
 using MomentumMapValue = typename MomentumMap::value_type;
 using Algebra = Common::Gamma::Algebra;
 //using namespace Common;

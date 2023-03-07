@@ -105,6 +105,7 @@ int main(int argc, const char *argv[])
       {"errdig", CL::SwitchType::Single, DefaultErrDig},
       // ModelDefaultParams
       {"e", CL::SwitchType::Single, "1"},
+      {"N", CL::SwitchType::Single, "0"},
       {Common::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
       // Covariance parameters
       {"covsrc", CL::SwitchType::Single, "Bootstrap"},
@@ -418,6 +419,7 @@ int main(int argc, const char *argv[])
     "-o     Output filename prefix\n"
     "-e     number of Exponents (default 1)\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
+    "-N     Use lattice dispersion relation for boosted energies with N=L/a\n"
     "-v     Verbosity, 0 (default)=central, 1=detail, 2=all, 3=all detail\n"
     "Flags:\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"
@@ -439,9 +441,12 @@ int main(int argc, const char *argv[])
     " SrcSnk    Force source and sink to be different (by appending 'src' and 'snk')\n"
     "Parameters accepted by models for single objects (e.g. 2pt-functions):\n"
     " ObjectID  Object identifier (defaults to base of filename)\n"
+    " Energy    Energy parameter name (defaults to " << ::E << ")\n"
     "Parameters accepted by models for dual objects (e.g. 3pt-functions):\n"
     " Src       ObjectID for source\n"
     " Snk       ObjectID for sink\n"
+    " ESrc      Energy parameter name at source (defaults to " << ::E << ")\n"
+    " ESnk      Energy parameter name at sink   (defaults to " << ::E << ")\n"
     " " << ::EDiff << "     Name of derived parameter for energy difference (default: " << ::EDiff << ")\n"
     "Parameters accepted by R3 model:\n"
     " C2Model   Which model to use for 2pt: Exp (default); Cosh; Sinh\n"

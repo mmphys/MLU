@@ -208,11 +208,11 @@ void CreateApp( Application &application )
 
   // Contraction sink for all momentum
   static const std::string ContractionSinkPrefix{ "sink_contract_p_" };
-  static const std::string ContractionSinkName0{ ContractionSinkPrefix + Momentum0.to_string( Sep ) };
+  static const std::string ContractionSinkName0{ ContractionSinkPrefix + Momentum0.to_string3d( Sep ) };
   std::array<std::string,NumMomenta> ContractionSinkName;
   {
     MSink::ScalarPoint::Par sinkPar;
-    sinkPar.mom = Momentum0.to_string( Space );
+    sinkPar.mom = Momentum0.to_string3d( Space );
     application.createModule<MSink::ScalarPoint>(ContractionSinkName0, sinkPar);
     for( unsigned int p = 0; p < NumMomenta; ++p )
     {
@@ -220,8 +220,8 @@ void CreateApp( Application &application )
         ContractionSinkName[p] = ContractionSinkName0;
       else
       {
-        ContractionSinkName[p] = ContractionSinkPrefix + Momenta[p].to_string( Sep );
-        sinkPar.mom = Momenta[p].to_string( Space );
+        ContractionSinkName[p] = ContractionSinkPrefix + Momenta[p].to_string3d( Sep );
+        sinkPar.mom = Momenta[p].to_string3d( Space );
         application.createModule<MSink::ScalarPoint>(ContractionSinkName[p], sinkPar);
       }
     }
@@ -229,11 +229,11 @@ void CreateApp( Application &application )
   
   // Smearing sink for all momentum
   static const std::string SmearSinkPrefix{ "sink_smear_p_" };
-  static const std::string SmearSinkName0{ SmearSinkPrefix + Momentum0.to_string( Sep ) };
+  static const std::string SmearSinkName0{ SmearSinkPrefix + Momentum0.to_string3d( Sep ) };
   std::array<std::string,NumMomenta> SmearSinkName;
   {
     MSink::Point::Par sinkPar;
-    sinkPar.mom = Momentum0.to_string( Space );
+    sinkPar.mom = Momentum0.to_string3d( Space );
     application.createModule<MSink::Point>(SmearSinkName0, sinkPar);
     for( unsigned int p = 0; p < NumMomenta; ++p )
     {
@@ -241,8 +241,8 @@ void CreateApp( Application &application )
         SmearSinkName[p] = SmearSinkName0;
       else
       {
-        SmearSinkName[p] = SmearSinkPrefix + Momenta[p].to_string( Sep );
-        sinkPar.mom = Momenta[p].to_string( Space );
+        SmearSinkName[p] = SmearSinkPrefix + Momenta[p].to_string3d( Sep );
+        sinkPar.mom = Momenta[p].to_string3d( Space );
         application.createModule<MSink::Point>(SmearSinkName[p], sinkPar);
       }
     }
@@ -252,7 +252,7 @@ void CreateApp( Application &application )
   for (unsigned int t = NtStart; t < Nt; t += NtIncrement )
   {
     const std::string TimeSuffix{ Sep + "t" + Sep + std::to_string( t ) };
-    const std::string Suffix0{ Sep + "p" + Sep + Momentum0.to_string( Sep ) + TimeSuffix};
+    const std::string Suffix0{ Sep + "p" + Sep + Momentum0.to_string3d( Sep ) + TimeSuffix};
 
     // Make zero-momentum wall-source
     const std::string srcName0{ "wallsrc" + Suffix0 };
@@ -285,7 +285,7 @@ void CreateApp( Application &application )
     // Loop through all momenta
     for( unsigned int p = 0; p < NumMomenta; ++p )
     {
-      const std::string Suffix{ Sep + "p" + Sep + Momenta[p].to_string( Sep ) + TimeSuffix};
+      const std::string Suffix{ Sep + "p" + Sep + Momenta[p].to_string3d( Sep ) + TimeSuffix};
 
       // Wall-source(s) with this momentum
       const std::string srcName{ Momenta[p] ? "wallsrc" + Suffix : srcName0 };

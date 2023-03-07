@@ -79,11 +79,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--Hotelling 0"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--overwrite"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--chisqdof 7"
@@ -122,6 +122,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-N=24"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--product g5p,g5w"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -146,7 +150,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o FitMEL/"
+            argument = "-o 2ptp2/s_l/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -155,18 +159,50 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "2ptp2/s_l/s_l_p2_0.corr_6_23_7_23.g5P_g5W.model.1835672416.h5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "2ptp2/h6413_s/h6413_s_p2_0.corr_6_27_14_27.g5P_g5W.model.1835672416.h5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "C1/corr/2ptp2/s_l_p2_0_g5P_g5P.fold.1835672416.h5,t=6:23,e=2"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "2ptp2/h6413_s/h6413_s_p2_0.corr_6_27_14_27.g5P_g5W.model.1835672416.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C1/corr/2ptp2/s_l_p2_0_g5P_g5P.fold.1835672416.h5,t=6:23,e=2"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "C1/corr/2ptp2/s_l_p2_0_g5P_g5W.fold.1835672416.h5,t=7:23,e=1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C1/corr/2ptp2/s_l_p2_1_g5P_g5P.fold.1835672416.h5,t=6:23,e=2"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C1/corr/2ptp2/s_l_p2_1_g5P_g5W.fold.1835672416.h5,t=7:23,e=1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C1/corr/2ptp2/s_l_p2_2_g5P_g5P.fold.1835672416.h5,t=5:20,e=2"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C1/corr/2ptp2/s_l_p2_2_g5P_g5W.fold.1835672416.h5,t=5:20,e=1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C1/corr/2ptp2/s_l_p2_3_g5P_g5P.fold.1835672416.h5,t=5:20,e=2"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C1/corr/2ptp2/s_l_p2_3_g5P_g5W.fold.1835672416.h5,t=5:20,e=1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C1/corr/2ptp2/s_l_p2_4_g5P_g5P.fold.1835672416.h5,t=5:18,e=2"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C1/corr/2ptp2/s_l_p2_4_g5P_g5W.fold.1835672416.h5,t=5:18,e=1"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -247,15 +283,15 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "C1/ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_20_p2_0_g5P_g5P.fold.1835672416.h5,raw,t=9:14"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "C1/ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_24_p2_0_g5P_g5P.fold.1835672416.h5,raw,t=11:18"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "C1/ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_28_p2_0_g5P_g5P.fold.1835672416.h5,raw,t=13:18"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "C1/ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_32_p2_0_g5P_g5P.fold.1835672416.h5,raw,t=13:24"

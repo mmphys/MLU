@@ -78,6 +78,7 @@ struct Model
     const std::vector<std::string> &OpNames;
     const Common::CommandLine &cl;
     const int NumExponents; // Default if not specified per model
+    const int N; // When non-zero, this is L/a (lattice spatial extent) use dispersion relation
     const bool bOverlapAltNorm;
     // These will change per model
     const Fold *pCorr;
@@ -91,6 +92,10 @@ protected:
   Model( const CreateParams &cp, Args &args );
   void AddParam( Params &mp, ModelParam &ModPar, std::size_t NumExp = 1, bool bMonotonic = false,
                  Param::Type Type = Param::Type::Variable );
+  /**
+   Add energy. If N != 0 then use the lattice dispersion relation for this parameter
+   */
+  void AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N );
 public:
   virtual ~Model() {}
   // This is how to make a model

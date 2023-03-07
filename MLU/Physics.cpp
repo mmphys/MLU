@@ -177,18 +177,54 @@ const std::string Momentum::SinkPrefix{ DefaultPrefix + "s" };
 const std::string Momentum::SquaredSuffix{ "2" };
 const std::string Momentum::DefaultPrefixSquared{ DefaultPrefix + SquaredSuffix };
 const std::string Momentum::SinkPrefixSquared{ SinkPrefix + SquaredSuffix };
+const std::string Momentum::DefaultRegexName{ "[pP][[:alnum:]]*" };
 
-std::string Momentum::p2_string( const std::string &separator, const std::string Prefix ) const
+Momentum& Momentum::operator=( const int p2Original )
 {
-  std::string s{ separator };
-  s.append( Prefix );
-  s.append( SquaredSuffix );
-  s.append( separator );
+  int p2{ p2Original };
+  int p[3];
+  const bool bNegative{ p2 < 0 };
+  if( bNegative )
+  {
+    p2 = - p2;
+    throw std::domain_error( "Negative Momentum^2 " + std::to_string( p2Original ) );
+  }
+  for( int i = 0; i < 3; ++i )
+    p[i] = 0;
+  for( int i = 0; i < 3 && p2; ++i )
+  {
+    int root = 1;
+    while( ( root + 1 ) * ( root + 1 ) <= p2 )
+      ++root;
+    p2 -= root * root;
+    p[i] = root;
+  }
+  if( p2 )
+    throw std::domain_error( std::to_string( p2Original )
+                             + " can't be expressed as a three-momentum" );
+  x = p[0];
+  y = p[1];
+  z = p[2];
+  bp2 = true;
+  if( bNegative )
+    x = -x;
+  return *this;
+}
+
+std::string Momentum::p2_string( const std::string &Separator, const std::string &Name ) const
+{
+  std::string s{ Separator };
+  s.append( Name );
+  if( !s.empty() )
+  {
+    s.append( SquaredSuffix );
+    s.append( Separator.empty() ? Underscore : Separator );
+  }
   s.append( std::to_string( p2() ) );
   return s;
 }
 
-std::string Momentum::to_string( const std::string &separator, bool bNegative ) const
+std::string Momentum::to_string3d( const std::string &separator, bool bNegative ) const
 {
   return std::to_string( bNegative ? -x : x ) + separator
   + std::to_string( bNegative ? -y : y ) + separator
@@ -197,165 +233,137 @@ std::string Momentum::to_string( const std::string &separator, bool bNegative ) 
 
 std::string Momentum::to_string4d( const std::string &separator, bool bNegative ) const
 {
-  return to_string( separator, bNegative ) + separator + "0";
+  return to_string3d( separator, bNegative ) + separator + "0";
 }
 
-std::regex Momentum::MakeRegex( const std::string &MomName )
+std::string Momentum::FileString( const std::string &Name, const std::string &Separator ) const
 {
-  std::string sPattern( Common::Underscore );
-  sPattern.append( MomName );
-  sPattern.append( "_(-?[0-9]+)_(-?[0-9]+)_(-?[0-9]+)" );
+  if( bp2 )
+    return p2_string( Separator, Name );
+  std::string s{ Separator };
+  s.append( Name );
+  const std::string &Sep{ Separator.empty() ? Underscore : Separator };
+  if( !s.empty() )
+    s.append( Sep );
+  s.append( to_string3d( Sep ) );
+  return s;
+}
+
+std::regex Momentum::MakeRegex( bool bp2, const std::string &Name )
+{
+  static const char szDigits[] = "_(-?[0-9]+)";
+  std::string sPattern( "_(" );
+  sPattern.append( Name );
+  sPattern.append( ")" );
+  if( bp2 )
+  {
+    sPattern.append( Momentum::SquaredSuffix );
+    sPattern.append( szDigits );
+  }
+  else
+  {
+    for( int i = 0; i < 3; ++i )
+      sPattern.append( szDigits );
+  }
   return std::regex( sPattern );
 }
 
 // Strip out momentum info from string if present
-bool Momentum::Extract( std::string &Prefix, const std::string &MomName, bool IgnoreSubsequentZeroNeg )
+bool Momentum::Extract(std::string &Prefix, const std::string &MomName, bool IgnoreSubsequentZeroNeg)
 {
+  Momentum Other;
   bool bGotMomentum = false;
   std::smatch match;
-  const std::regex Pattern{ MakeRegex( MomName ) };
-  while( std::regex_search( Prefix, match, Pattern ) )
+  for( int Pass = 0; Pass < 2; ++Pass )
   {
-    int px{ std::stoi( match[1] ) };
-    int py{ std::stoi( match[2] ) };
-    int pz{ std::stoi( match[3] ) };
-    if( !bGotMomentum )
+    const std::regex Pattern{ MakeRegex( Pass, MomName ) };
+    while( std::regex_search( Prefix, match, Pattern ) )
     {
-      bGotMomentum = true;
-      x = px;
-      y = py;
-      z = pz;
-    }
-    else if( x != px || y != py || z != pz )
-    {
-      if( IgnoreSubsequentZeroNeg && !(*this) ) // i.e. previous momentum was zero
-      {
-        x = px;
-        y = py;
-        z = pz;
-      }
-      else if(IgnoreSubsequentZeroNeg && ((px==0 && py==0 && pz==0) || (px==-x && py==-y && pz==-z)))
-        ;
+      if( Pass )
+        Other = std::stoi( match[2] );
       else
       {
-        static const std::string Sep{ "," };
-        static const std::string m1{ to_string( Sep ) };
-        x = px;
-        y = py;
-        z = pz;
-        throw std::runtime_error( "Multiple momenta: " + m1 + " != " + to_string( Sep ) );
+        Other.bp2 = false;
+        Other.x = std::stoi( match[2] );
+        Other.y = std::stoi( match[3] );
+        Other.z = std::stoi( match[4] );
       }
+      if( !bGotMomentum )
+      {
+        bGotMomentum = true;
+        *this = Other;
+      }
+      else if( *this != Other )
+      {
+        if( IgnoreSubsequentZeroNeg && !*this ) // i.e. previous momentum was zero
+          *this = Other;
+        else if( IgnoreSubsequentZeroNeg && ( !Other || EqualsNeg( Other ) ) )
+          ;
+        else
+          throw std::runtime_error( "Multiple momenta " + MomName + Space + FileString( "", "" )
+                                   + " != " + Other.FileString( "", "" ) );
+      }
+      const std::string sSuffix{ match.suffix() };
+      Prefix = match.prefix();
+      Prefix.append( sSuffix );
     }
-    const std::string sSuffix{ match.suffix() };
-    Prefix = match.prefix();
-    Prefix.append( sSuffix );
   }
   return bGotMomentum;
 }
 
 void Momentum::Replace( std::string &s, const std::string &MomName, bool bNegative ) const
 {
-  std::string Replace( Common::Underscore );
-  Replace.append( MomName );
-  Replace.append( Common::Underscore );
-  Replace.append( to_string( Common::Underscore, bNegative ) );
+  const std::string Replace( FileString( MomName ) );
   std::smatch match;
-  const std::regex Pattern{ MakeRegex( MomName ) };
   bool bFound{ false };
-  std::string Search{ std::move( s ) };
-  s.clear();
-  while( std::regex_search( Search, match, Pattern ) )
+  for( int Pass = 0; Pass < 2; ++Pass )
   {
-    s.append( match.prefix() );
-    s.append( Replace );
-    Search = match.suffix();
-    bFound = true;
+    const std::regex Pattern{ MakeRegex( Pass, MomName ) };
+    std::string Search{ std::move( s ) };
+    s.clear();
+    while( std::regex_search( Search, match, Pattern ) )
+    {
+      s.append( match.prefix() );
+      s.append( Replace );
+      Search = match.suffix();
+      bFound = true;
+    }
+    if( !bFound )
+    {
+      std::ostringstream ss;
+      ss << "momentum " << MomName << " not found in " << s;
+      throw std::runtime_error( ss.str() );
+    }
+    s.append( Search );
   }
-  if( !bFound )
-  {
-    std::ostringstream ss;
-    ss << "momentum " << MomName << " not found in " << s;
-    throw std::runtime_error( ss.str() );
-  }
-  s.append( Search );
 }
 
 // Use Lattice Dispersion relation and N=L/a to boost am to aE(p)
 // PhDYear3Diary.pdf eq (22)
-double Momentum::LatticeDispersion( double am, unsigned int N ) const
+double Momentum::LatticeDispersion( double am, unsigned int N, bool bGetGroundFromExcited ) const
 {
   if( ! ( *this ) )
     return am;
   double Val = std::sinh( 0.5 * am );
   Val *= Val;
   const double NInv{ 1. / N };
-  double w;
-  if( x )
+  for( int i = 0; i < 3; ++i )
   {
-    w = std::sin( M_PI * x * NInv );
-    Val += w * w;
-  }
-  if( y )
-  {
-    w = std::sin( M_PI * y * NInv );
-    Val += w * w;
-  }
-  if( z )
-  {
-    w = std::sin( M_PI * z * NInv );
-    Val += w * w;
-  }
-  return 2 * std::asinh( std::sqrt( Val ) );
-}
-
-// Take a squared momentum and make an approximate 3d momentum from it
-Momentum FileNameMomentum::FromSquared( const int p2Original )
-{
-  int p2{ p2Original };
-  Momentum p;
-  const bool bNegative{ p2 < 0 };
-  if( bNegative )
-    p2 = - p2;
-  for( int i = 0; i < 3 && p2; ++i )
-  {
-    int root = 1;
-    while( ( root + 1 ) * ( root + 1 ) <= p2 )
-      root++;
-    p2 -= root * root;
-    switch( i )
+    if( (*this)[i] )
     {
-      case 0:
-        p.x = root;
-        break;
-      case 1:
-        p.y = root;
-        break;
-      case 2:
-        p.z = root;
-        break;
+      double w = std::sin( M_PI * (*this)[i] * NInv );
+      w *= w;
+      if( bGetGroundFromExcited )
+        w = -w;
+      Val += w;
     }
   }
-  if( p2 )
-    throw std::runtime_error( std::to_string( p2Original ) + " can't be expressed as a three-momentum" );
-  if( bNegative )
-    p.x = -p.x;
-  return p;
-}
-
-std::string FileNameMomentum::FileString( const std::string &separator ) const
-{
-  if( bp2 )
-    return p2_string( separator, Name );
-  std::string s{ separator };
-  s.append( Name );
-  s.append( separator );
-  s.append( to_string( separator ) );
-  return s;
+  return ( Val <= 0 ) ? 0 : 2 * std::asinh( std::sqrt( Val ) );
 }
 
 std::ostream& operator<<( std::ostream& os, const Momentum &p )
 {
-  return os << p.to_string( Underscore );
+  return os << p.to_string3d( Underscore );
 }
 
 std::istream& operator>>( std::istream& is, Momentum &p )

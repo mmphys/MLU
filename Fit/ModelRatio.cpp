@@ -99,6 +99,15 @@ std::string ModelRatio::Description() const
   return s;
 }
 
+// For now, all we can guess are matrix elements - and we assume they are 1
+void ModelRatio::Guessable( ParamsPairs &PP ) const
+{
+  Model3pt::Guessable( PP ); // Let 3pt guess MEL & EDiff
+  // I can guess the matrix element
+  PP.SetState( ParamsPairs::State::Known, R3Raw.Key, R3Raw.param->size );
+  // TODO: Implement guessing
+}
+
 // TODO: Make sure we add partial derivatives for all models
 double ModelRatio::Derivative( int t, int p ) const
 {

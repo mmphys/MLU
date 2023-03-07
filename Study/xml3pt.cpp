@@ -255,7 +255,7 @@ std::string Study2::RunID() const
     s << Sep << "pos";
   s << Sep << "p";
   for( const Common::Momentum &p : Momenta )
-    s << Sep << p.to_string( Sep );
+    s << Sep << p.to_string3d( Sep );
   if( ThreePoint )
   {
     s << Sep << "dT";
