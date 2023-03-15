@@ -26,10 +26,6 @@
 #pragma once
 #include <MLU/Common.hpp>
 
-//static const std::vector<std::string> vHeavy{ "h0", "h1", "h2", "h3" };
-//static const int NumHeavy{ static_cast<int>( vHeavy.size() ) };
-//static const std::vector<int> vDeltaT{ 12, 14, 16, 20 };
-//static const int NumDeltaT{ static_cast<int>( vDeltaT.size() ) };
 using Scalar = double;
 using Fold = Common::Fold<Scalar>;
 using Model = Common::Model<Scalar>;
@@ -37,7 +33,6 @@ using Vector = Common::Vector<Scalar>;
 using VectorView = Common::VectorView<Scalar>;
 
 extern Model DummyModel;
-extern const std::string DefaultColumnName;
 extern const char LoadFilePrefix[];
 
 enum class Freeze
@@ -53,74 +48,42 @@ inline void Append( std::string &s, const std::string &Add )
   s.append( Add );
 }
 
-// A quark with a named momentum
-struct QP
+// A meson with a named momentum
+struct MP
 {
-  std::string q;
-  std::string pName;
+  std::string Meson;
   Common::Momentum p;
-  QP( const std::string &Q, const std::string &pName_, const Common::Momentum &P )
-  : q{Q}, pName{pName_}, p{P} {}
+  std::string pName;
+  MP() {};
+  MP( const std::string &Meson_, const Common::Momentum &P,
+      const std::string &pName_ =  Common::Momentum::DefaultPrefix )
+  : Meson{Meson_}, p{P}, pName{pName_} {}
+  std::string Name() const { return Meson + p.FileString( pName ); }
+  Common::Param::Key PK( const std::string &FieldName = Common::ModelBase::EnergyPrefix ) const
+  { return Common::Param::Key( Name(), FieldName ); }
+  /// Get name of two-point correlator
+  std::string C2Name() const { return Meson + p.FileString( pName ); }
 };
 
-// Case insensitive compare of QP
-struct LessQP
+std::ostream &operator<<( std::ostream &os, const MP &mp );
+
+// Case insensitive compare of MesonMom
+struct LessMP
 {
-  bool operator()( const QP &lhs, const QP &rhs ) const
+  bool operator()( const MP &lhs, const MP &rhs ) const
   {
-    int i = Common::CompareIgnoreCase( lhs.q, rhs.q );
+    int i = Common::CompareIgnoreCase( lhs.Meson, rhs.Meson );
     if( i )
       return i < 0;
     return lhs.p < rhs.p;
   }
 };
 
-// Map from QP -> ModelInfo
-/*struct QPMapModelInfo : public std::map<QP, ModelInfo, LessQP>
+// Allows a meson with momentum to be read in as a string
+struct MPReader : public std::string
 {
-  int MaxModelSamples;
-  Common::SeedType Seed;
-  QPMapModelInfo( const std::string &Filename,
-                  const std::string &modelBase, const std::string &C2Base );
-};*/
-
-// A quark with a sepecified DeltaT
-struct QDT
-{
-  std::string q;
-  int deltaT = 0;
-  std::string opSnk;
-  std::string opSrc;
-  QDT() {}
-  QDT( std::string q_, int deltaT_, const std::string &opSnk_, const std::string &opSrc_ )
-  : q{q_}, deltaT{deltaT_}, opSnk{opSnk_}, opSrc{opSrc_} {}
+  MP operator()( const std::string &Filename ) const;
 };
-
-// Case insensitive compare of QP
-struct LessQDT
-{
-  bool operator()( const QDT &lhs, const QDT &rhs ) const
-  {
-    int i = Common::CompareIgnoreCase( lhs.q, rhs.q );
-    if( i )
-      return i < 0;
-    if( lhs.deltaT != rhs.deltaT )
-      return lhs.deltaT < rhs.deltaT;
-    i = Common::CompareIgnoreCase( lhs.opSnk, rhs.opSnk );
-    if( i )
-      return i < 0;
-    i = Common::CompareIgnoreCase( lhs.opSrc, rhs.opSrc );
-    return i < 0;
-  }
-};
-
-// Map from a DeltaT -> ModelInfo
-/*struct QDTMapModelInfo : public std::map<QDT, ModelInfo, LessQDT>
-{
-  int MaxModelSamples;
-  Common::SeedType Seed;
-  QDTMapModelInfo( const std::string &FitListName, const std::string &modelBase, const std::string &C2Base );
-};*/
 
 // File cache
 // BEWARE: Loading files, i.e. GetIndex(), can invalidate FileT references (by moving Files)
@@ -148,19 +111,14 @@ public:
   inline const FileT &operator[]( const std::string &Filename ) const { return (*this)[GetIndex(Filename)]; }
 };
 
-// Allows a quark name to be read in as a string
-// Extracts the momentum from the file name
-struct QuarkReader : public std::string
-{
-  QP operator()( const std::string &Filename ) const;
-};
-
 // Static list of mappings from key to file. Can't be added to once read.
 // Two-step construction (i.e. constructor then Read) so virtual functions in place
-template<typename Key, typename LessKey, typename KeyRead = Key, typename LessKeyRead = LessKey,
-         typename M = Model>
+template<typename Key, typename LessKey = std::less<Key>, typename KeyRead = Key,
+         typename LessKeyRead = LessKey, typename Scalar = ::Scalar >
 struct KeyFileCache
 {
+  using M = Common::Model<Scalar>;
+  using Vector = Common::Vector<Scalar>;
 //  const std::string C2Base;
   Freeze freeze;
 protected:
@@ -181,7 +139,6 @@ protected:
   typename std::enable_if<!std::is_same<K, R>::value, KeyReadMapT>::type
   ReadNameMap( const std::string &Filename, const char *pErrorMsg );
   int GetIndex( const Key &k ) const; // Only call this of we know we're not frozen to a constant
-  virtual void FrozenOptions( std::string &sOptions ) {}
 public:
   static constexpr int BadIndex{ FileCacheT::BadIndex };
   virtual void clear();
@@ -191,20 +148,12 @@ public:
   void Read( const std::string &Filename, const char * PrintPrefix );
   M &operator()( const Key &key, const char * PrintPrefix ); // Make sure model loaded and print message
   inline M &operator[]( const Key &key ) { return operator()( key, nullptr ); }
-  Vector GetVector( const Key &key, const std::string &ColumnName = DefaultColumnName );
+  Vector GetVector( const Key &key, const Common::Param::Key &pKey, std::size_t Index = 0 );
 };
 
-using QDTModelMap = KeyFileCache<QDT, LessQDT>;
+using ZVModelMap = KeyFileCache<std::string>;
 
-struct QPModelMap : public KeyFileCache<QP, LessQP, QuarkReader, Common::LessCaseInsensitive>
-{
-  using Base = KeyFileCache<QP, LessQP, QuarkReader, Common::LessCaseInsensitive>;
-  std::string Spectator;
-  std::string Get2ptName( const QP &key );
-  void clear() override;
-protected:
-  void FrozenOptions( std::string &sOptions ) override;
-};
+using MPModelMap = KeyFileCache<MP, LessMP, MPReader, Common::LessCaseInsensitive>;
 
 // Base class for ratio construction
 class Maker
@@ -219,7 +168,7 @@ public:
   const bool bSymmetrise;
 protected:
   const bool bOverlapAltNorm;
-  QPModelMap EFit;
+  MPModelMap EFit;
   struct CorrT
   {
     std::string Name;
@@ -246,11 +195,12 @@ protected:
   struct SSInfo
   {
     const std::string &op;
-    const QP qp;
+    const MP mp;
+    const std::string q;
     Model &EModel;
     const Vector E;
-    SSInfo( QPModelMap &efit, const std::string &op_, QP qp_ )
-    : op{op_}, qp{qp_}, EModel{efit(qp,LoadFilePrefix)}, E{efit.GetVector(qp)} {}
+    SSInfo( MPModelMap &efit, const std::string &op_, MP mp_, const std::string &q_ )
+    : op{op_}, mp{mp_}, q{q_}, EModel{efit(mp,LoadFilePrefix)}, E{efit.GetVector(mp, mp.PK())} {}
   };
   inline void AppendOp( std::string &s, const std::string &Op ) { Append( s, Op ); }
   inline void AppendOps( std::string &s, const std::string &Snk, const std::string &Src)
@@ -280,7 +230,7 @@ class RMaker : public ZVRCommon
 {
 protected:
   const bool bAltR3;
-  QDTModelMap ZVmi;
+  ZVModelMap ZVmi;
   void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
              const SSInfo &Snk, const SSInfo &Src ) override;
 public:
@@ -305,6 +255,7 @@ struct FormFactor
   static constexpr int qSqLat{ 12 }; // qSq, but E_i derived from E_0 and lattice dispersion relation
   const unsigned int N;
   const Scalar ap;
+  const Scalar apInv;
   const bool bAdjustGammaSpatial;
   FormFactor( std::string TypeParams );
   void Write( std::string &OutFileName, const Model &CopyAttributesFrom,
@@ -321,7 +272,7 @@ class FMaker : public Maker, public FormFactor
   struct RatioFile
   {
     Common::Momentum p;
-    std::string Prefix;
+    //std::string Prefix;
     std::string Source;
     std::string Sink;
     struct Less { bool operator()( const RatioFile &lhs, const RatioFile &rhs ) const; };

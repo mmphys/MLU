@@ -31,10 +31,6 @@
 
 #include "MultiFit.hpp"
 
-// This is the name of an energy level
-extern const std::string E;
-extern const std::string EDiff;
-
 enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant, R3 };
 std::ostream & operator<<( std::ostream &os, const ModelType m );
 std::istream & operator>>( std::istream &is, ModelType &m );

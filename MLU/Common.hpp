@@ -3045,6 +3045,8 @@ template <typename T> std::size_t GetExtent( const std::vector<std::vector<T>> &
 struct ModelBase
 {
   static const std::string EnergyPrefix;
+  static const std::string EDiffPrefix;
+  static const std::string ConstantPrefix;
   static const char SummaryColumnPrefix[];
 };
 
@@ -3089,7 +3091,7 @@ struct Model : public Sample<T>, public ModelBase
   int GetExtent() const { return static_cast<int>( ::Common::GetExtent( FitTimes ) ); };
   int NumFitParams() const { return static_cast<int>( params.NumScalars( Param::Type::Variable ) ); };
   int NumParams() const { return static_cast<int>( params.NumScalars( Param::Type::All ) ); };
-  Vector<T> GetVector( Param::Key &k, std::size_t Index = 0 );
+  Vector<T> GetVector( const Param::Key &k, std::size_t Index = 0 );
   int NumStatColumns() const { return Base::ColumnNames.size() <= NumParams() ? 0
                                 : static_cast<int>( Base::ColumnNames.size() - NumParams() ); }
   UniqueNameSet GetStatColumnNames() const;

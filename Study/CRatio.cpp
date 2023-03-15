@@ -31,53 +31,27 @@
 
 static const char szReading[] = " Reading ";
 
-/*namespace Common {
-template<std::size_t Num>
-std::istream & operator>>( std::istream &is, std::array<std::string,Num> &c )
-{
-  for( std::size_t i = 0; i < c.size(); ++i )
-    if( ! ( is >> c[i] ) )
-      throw std::runtime_error( "Error reading array of " + std::to_string(Num) + " strings" );
-  return is;
-}
-}*/
-
 Model DummyModel{};
-const std::string DefaultColumnName{ "E0" };
 const char LoadFilePrefix[] = "  ";
 static Scalar ConstantOne{ 1 };
 
-std::istream & operator>>( std::istream &is, QDT &qdt )
+std::ostream &operator<<( std::ostream &os, const MP &mp )
 {
-  if( is >> qdt.q >> qdt.deltaT >> qdt.opSnk >> qdt.opSrc )
-    return is;
-  throw std::runtime_error( "Error reading QDT" );
+  os << "meson=" << mp.Meson << ", " << mp.pName;
+  if( mp.p.bp2 )
+    os << "^2=" << mp.p.p2();
+  else
+    os << "=" << mp.p.to_string3d( Common::Space );
+  return os;
 }
 
-std::ostream & operator<<( std::ostream &os, const QDT &qdt )
+MP MPReader::operator()( const std::string &Filename ) const
 {
-  return os << "q=" << qdt.q << ", deltaT=" << qdt.deltaT
-            << ", sink=" << qdt.opSnk << ", source=" << qdt.opSrc;
-}
-
-std::ostream & operator<<( std::ostream &os, const QP &qp )
-{
-  return os << "q=" << qp.q << ", " << qp.pName << "=" << qp.p;
-}
-
-struct SnkSrcString
-{
-  int         DeltaT;
-  std::string Snk;
-  std::string Src;
-  std::string s;
-};
-
-std::istream & operator>>( std::istream &is, SnkSrcString &sss )
-{
-  if( is >> sss.DeltaT >> sss.Snk >> sss.Src >> sss.s )
-    return is;
-  throw std::runtime_error( "Error reading SnkSrcString" );
+  MP mp;
+  mp.Meson = *this;
+  mp.pName = Common::Momentum::DefaultPrefix;
+  mp.p.Extract( mp.Meson, mp.pName );
+  return mp;
 }
 
 template<typename FileT>
@@ -98,11 +72,15 @@ int FileCache<FileT>::GetIndex( const std::string &Filename, const char * printP
   if( it != NameMap.end() )
     return it->second;
   // Needs to be added
-  if( !Common::FileExists( Base + Filename ) )
+  std::string Fullname;
+  if( Filename.empty() || Filename[0] != '/' )
+    Fullname = Base;
+  Fullname.append( Filename );
+  if( !Common::FileExists( Fullname ) )
   {
     // File doesn't exist
     if( printPrefix )
-      std::cout << printPrefix << "- missing - " << Base << Filename << std::endl;
+      std::cout << printPrefix << "- missing - " << Fullname << std::endl;
     return BadIndex;
   }
   // Needs to be added - check we're not going to overflow
@@ -114,8 +92,6 @@ int FileCache<FileT>::GetIndex( const std::string &Filename, const char * printP
   try
   {
     Files.resize( iIndex + 1 );
-    std::string Fullname{ Base };
-    Fullname.append( Filename );
     Files[iIndex].SetName( Fullname, &opNames );
   }
   catch(...)
@@ -142,17 +118,8 @@ FileT & FileCache<FileT>::operator()( int iIndex, const char * printPrefix )
   return f;
 }
 
-QP QuarkReader::operator()( const std::string &Filename ) const
-{
-  Common::FileNameAtt fna( Filename );
-  if( fna.p.empty() )
-    return QP( *this, Common::Momentum::DefaultPrefix, Common::Momentum( true ) );
-  const Common::NamedMomentum &np{ *fna.p.begin() };
-  return QP( *this, np.first, np.second );
-}
-
-template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename M>
-void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::clear()
+template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename S>
+void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, S>::clear()
 {
   model.clear();
   KeyMap.clear();
@@ -161,18 +128,18 @@ void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::clear()
   ConstantMap.clear();
 }
 
-template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename M>
+template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename S>
 template<typename K, typename R>
 typename std::enable_if<std::is_same<K, R>::value, std::map<Key, std::string, LessKey>>::type
-KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::ReadNameMap( const std::string &Filename, const char *p )
+KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, S>::ReadNameMap( const std::string &Filename, const char *p )
 {
   return Common::KeyValReader<Key, std::string, LessKey>::Read( Filename, p );
 }
 
-template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename M>
+template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename S>
 template<typename K, typename R>
 typename std::enable_if<!std::is_same<K, R>::value, std::map<Key, std::string, LessKey>>::type
-KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::ReadNameMap( const std::string &Filename, const char *p )
+KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, S>::ReadNameMap( const std::string &Filename, const char *p )
 {
   // Read the file list
   using KeyNameRead = std::multimap<KeyRead, std::string, LessKeyRead>;
@@ -185,8 +152,8 @@ KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::ReadNameMap( const std::str
   return m;
 }
 
-template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename M>
-void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::Read(const std::string &filename, const char *Prefix)
+template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename S>
+void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, S>::Read(const std::string &filename, const char *Prefix)
 {
   clear();
   std::string sParams{ filename };
@@ -194,7 +161,6 @@ void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::Read(const std::string
   if( Filename.empty() )
   {
     freeze = Freeze::Constant;
-    FrozenOptions( sParams );
     ConstantMap = Common::KeyValReader<std::string, Scalar>::Read( Common::ArrayFromString( sParams ) );
     return;
   }
@@ -228,8 +194,8 @@ void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::Read(const std::string
 }
 
 // Throws informative errors if frozen to constant, or index out of bounds
-template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename M>
-int KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::GetIndex( const Key &key ) const
+template<typename Key, typename L, typename KR, typename LKR, typename S>
+int KeyFileCache<Key,L,KR,LKR,S>::GetIndex( const Key &key ) const
 {
   if( freeze != Freeze::Constant )
   {
@@ -246,69 +212,37 @@ int KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::GetIndex( const Key &ke
   throw std::runtime_error( os.str().c_str() );
 }
 
-template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename M>
-M & KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::operator()( const Key &key, const char * PrintPrefix )
+template<typename Key, typename L, typename KR, typename LKR, typename S>
+Common::Model<S> &KeyFileCache<Key,L,KR,LKR,S>::operator()( const Key &key, const char * PrintPrefix )
 {
   if( freeze==Freeze::Constant )
     return DummyModel;
   return model( GetIndex( key ), PrintPrefix );
 }
 
-template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename M>
-Vector KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, M>::GetVector(const Key &key, const std::string &Name)
+template<typename Key, typename L, typename KR, typename LKR, typename S>
+Common::Vector<S> KeyFileCache<Key,L,KR,LKR,S>::GetVector( const Key &key, const Common::Param::Key &pKey, std::size_t Index )
 {
-  Vector v;
   if( freeze == Freeze::Constant )
   {
     // Freeze to value specified on command line, or 1 if not specified
-    typename ConstantMapT::iterator it = ConstantMap.find( Name );
-    v.MapView( it == ConstantMap.end() ? &ConstantOne : &it->second, std::numeric_limits<int>::max(), 0 );
+    Vector v;
+    typename ConstantMapT::iterator it = ConstantMap.find( pKey.FullName( Index ) );
+    v.MapView( it == ConstantMap.end() ? &ConstantOne : &it->second,
+               std::numeric_limits<int>::max(), 0 );
+    return v;
   }
   else
   {
     M &m{ operator[]( key ) };
-    typename FieldMapT::iterator it = FieldMap.find( Name );
-    Scalar * p{ m[M::idxCentral] + m.GetColumnIndex( it == FieldMap.end() ? Name : it->second ) };
+    // TODO: Reinstate field mapping (not quite sure how to define it?)
+    //typename FieldMapT::iterator it = FieldMap.find( Name );
+    //Scalar * p{ m[M::idxCentral] + m.GetColumnIndex( it == FieldMap.end() ? Name : it->second ) };
+    Vector v{ m.GetVector( pKey, Index) };
     if( freeze == Freeze::Central )
-      v.MapView( p, std::numeric_limits<int>::max(), 0 );
-    else
-      v.MapView( p, m.NumSamples() - Model::idxCentral, m.Nt() );
+      v.MapView( v.data, std::numeric_limits<int>::max(), 0 );
+    return v;
   }
-  return v;
-}
-
-void QPModelMap::clear()
-{
-  Spectator.clear();
-  Base::clear();
-}
-
-void QPModelMap::FrozenOptions( std::string &Options )
-{
-  std::string Spec{ Common::ExtractToSeparator( Options ) };
-  // Spectator is immediately followed by Key=Value pairs, so check spectator is actually present
-  if( Spec.empty() || Spec.find_first_of( Common::EqualSign ) != std::string::npos )
-    throw std::runtime_error( "Spectator must be passed in options when energies frozen" );
-  Spectator = std::move( Spec );
-}
-
-std::string QPModelMap::Get2ptName( const QP &key )
-{
-  std::string s;//{ C2Base };
-  if( freeze == Freeze::Constant )
-  {
-    s.append( key.q );
-    Append( s, Spectator );
-    s.append( key.p.FileString( Common::Momentum::DefaultPrefix ) );
-  }
-  else
-  {
-    const Model &m{ model[GetIndex( key )] };
-    s = m.Name_.Base;
-    if( m.Name_.Extra.size() != 1 )
-      throw std::runtime_error( "Expected " + s + " to have model info removed by parser" );
-  }
-  return s;
 }
 
 // Incoming file should be a three-point function with a heavy sink and light(er) source
@@ -323,16 +257,12 @@ void ZVRCommon::Make( std::string &FileName )
     throw std::runtime_error( "DeltaT missing" );
   if( fna.Gamma.size() != 1 )
     throw std::runtime_error( FileName + " has " + std::to_string( fna.Gamma.size() ) + " currents" );
-  if( fna.BaseShortParts.size() < 3 )
-    throw std::runtime_error( "Can't extract sink/source from " + fna.GetBaseShort() );
-  const std::string qSnk = fna.BaseShortParts[1];
-  const std::string qSrc = fna.BaseShortParts[2];
+  if( fna.MesonMom.size() < 2 )
+    throw std::runtime_error( "Can't extract sink/source mesons/momenta from " + fna.GetBaseShort() );
   const std::string FileNameSuffix{ fna.GetBaseShort( 3 ) };
   fna.BaseShortParts.resize( 1 );
-  const Common::NamedMomentum &npSrc{ fna.GetMomentum() };
-  const Common::NamedMomentum &npSnk{ fna.GetMomentum( Common::Momentum::SinkPrefix ) };
-  SSInfo Snk( EFit, OpNames[fna.op[1]], QP( qSnk, npSnk.first, npSnk.second ) );
-  SSInfo Src( EFit, OpNames[fna.op[0]], QP( qSrc, npSrc.first, npSrc.second ) );
+  SSInfo Snk( EFit, OpNames[fna.op[1]], MP( fna.Meson[1], fna.MesonP[1] ), fna.BaseShortParts[2] );
+  SSInfo Src( EFit, OpNames[fna.op[0]], MP( fna.Meson[0], fna.MesonP[0] ), fna.BaseShortParts[1] );
   Make( fna, FileNameSuffix, Snk, Src );
 }
 
@@ -345,25 +275,21 @@ ZVMaker::ZVMaker( const std::string &TypeParams, const Common::CommandLine &cl )
 void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                     const SSInfo &Snk, const SSInfo &Src )
 {
-  const std::string &qSnk{ Snk.qp.q };
-  const std::string &qSrc{ Src.qp.q };
-  const Common::Momentum &MomSrc{ Snk.qp.p };
-  const Common::Momentum &MomSnk{ Src.qp.p };
   // Complain about errors
   {
     std::ostringstream os;
-    if( Common::CompareIgnoreCase( qSnk, qSrc ) )
-      os << "qSnk " << qSnk << " != qSrc " << qSrc;
+    if( Common::CompareIgnoreCase( Snk.q, Src.q ) )
+      os << "qSnk " << Snk.q << " != qSrc " << Src.q;
     else if( fna.Gamma[0] != Common::Gamma::Algebra::GammaT )
       os << "Gamma " << fna.Gamma[0] << " != " << Common::Gamma::Algebra::GammaT;
-    else if( MomSnk )
-      os << "Sink momentum " << MomSnk;
-    else if( MomSrc )
-      os << "Source momentum " << MomSrc;
+    else if( Snk.mp.p )
+      os << "Sink momentum " << Snk.mp.p.FileString( Snk.mp.pName );
+    else if( Src.mp.p )
+      os << "Source momentum " << Src.mp.p.FileString( Src.mp.pName );
     if( os.tellp() != std::streampos( 0 ) )
     {
       os << " file " << fna.Filename;
-      throw std::runtime_error( os.str() );
+      throw std::runtime_error( os.str().c_str() );
     }
   }
 
@@ -377,7 +303,8 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
     throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
 
   // Now read the two-point function corresponding to the model (Src and Snk are the same)
-  std::string C2Name{ EFit.Get2ptName( Snk.qp ) };
+  std::string C2Name{ Src.mp.C2Name() }; // Src and Snk same, so we can choose either
+
   // DON'T DO THIS - IT JUST MAKES THE ERRORS LARGER
   // Wall sink - Point source ==> swap source and sink on the 2-point for accuracy
   //if( std::toupper( opSnk.back() ) == 'W' && std::toupper( opSrc.back() ) == 'P' )
@@ -425,7 +352,7 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
   out.MakeCorrSummary( nullptr );
   std::string OutFileName{ outBase };
   OutFileName.append( "ZV_" );
-  OutFileName.append( qSnk );
+  OutFileName.append( Snk.q );
   //OutFileName.append( Suffix );
   Common::AppendDeltaT( OutFileName, fna.DeltaT );
   AppendOps( OutFileName, Snk.op, Src.op );
@@ -451,21 +378,17 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
                    const SSInfo &Snk, const SSInfo &Src )
 {
   // Make sure I have the model for Z_V already loaded
-  const std::string &qSnk{ Snk.qp.q };
-  const std::string &qSrc{ Src.qp.q };
-  QDT QDTSnk( qSnk, fna.DeltaT, Src.op, Snk.op );
-  QDT QDTSrc( qSrc, fna.DeltaT, Snk.op, Src.op );
-  Model &ZVModelSnk{ZVmi( QDTSnk, LoadFilePrefix )};
-  Model &ZVModelSrc{ZVmi( QDTSrc, LoadFilePrefix )};
-  Vector ZVSnk{ ZVmi.GetVector( QDTSnk ) };
-  Vector ZVSrc{ ZVmi.GetVector( QDTSrc ) };
+  Model &ZVModelSnk{ ZVmi( Snk.q, LoadFilePrefix ) };
+  Model &ZVModelSrc{ ZVmi( Src.q, LoadFilePrefix ) };
+  Vector ZVSnk{ZVmi.GetVector( Snk.q, Common::Param::Key( Snk.q, Common::ModelBase::ConstantPrefix))};
+  Vector ZVSrc{ZVmi.GetVector( Src.q, Common::Param::Key( Src.q, Common::ModelBase::ConstantPrefix))};
 
   // Get the names of all 2pt correlators we will need
   std::array<CorrT, 2> Corr2;
   static constexpr int NumC2{ static_cast<int>( Corr2.size() ) };
-  Corr2[0].Name = EFit.Get2ptName( Src.qp );
+  Corr2[0].Name = Src.mp.C2Name();
   AppendOps( Corr2[0].Name, Src.op, Src.op );
-  Corr2[1].Name = EFit.Get2ptName( Snk.qp );
+  Corr2[1].Name = Snk.mp.C2Name();
   AppendOps( Corr2[1].Name, Snk.op, Snk.op );
   // Must put both in the cache before trying to dereference either
   for( int i = 0; i < NumC2; ++i )
@@ -510,13 +433,13 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
     }
     Corr3[Snk_Src].Name = fna.Dir;
     Corr3[Snk_Src].Name.append( fna.GetBaseShort() );
-    Common::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? qSrc : qSnk );
-    Common::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? qSrc : qSnk );
+    Common::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.q : Snk.q );
+    Common::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? Src.q : Snk.q );
     Corr3[Snk_Src].Name.append( fnaSuffix );
     Common::AppendGammaDeltaT( Corr3[Snk_Src].Name, iSnk==iSrc ? Common::Gamma::Algebra::GammaT : fna.Gamma[0],
                                fna.DeltaT );
-    fna.AppendMomentum( Corr3[Snk_Src].Name, iSrc == iFinal ? Snk.qp.p : Src.qp.p, Src.qp.pName );
-    fna.AppendMomentum( Corr3[Snk_Src].Name, iSnk==iInitial ? Src.qp.p : Snk.qp.p, Snk.qp.pName );
+    fna.AppendMomentum( Corr3[Snk_Src].Name, iSrc == iFinal ? Snk.mp.p : Src.mp.p, Src.mp.pName );
+    fna.AppendMomentum( Corr3[Snk_Src].Name, iSnk==iInitial ? Src.mp.p : Snk.mp.p, Snk.mp.pName );
     Common::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.op : Snk.op );
     Common::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? Src.op : Snk.op );
     Corr3[Snk_Src].Name = Common::MakeFilename( Corr3[Snk_Src].Name, fna.Type, fna.Seed, fna.Ext );
@@ -588,9 +511,8 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   std::array<Vector, 2> OverlapCoeff;
   if( !bAltR3 && ( MakeRatio[2] || MakeRatio[3] ) )
   {
-    static const char Zero[] = "0";
-    OverlapCoeff[0] = EFit.GetVector( Src.qp, Src.op + Zero );
-    OverlapCoeff[1] = EFit.GetVector( Snk.qp, Snk.op + Zero );
+    OverlapCoeff[0] = EFit.GetVector( Src.mp, Src.mp.PK( Src.op ) );
+    OverlapCoeff[1] = EFit.GetVector( Snk.mp, Snk.mp.PK( Snk.op ) );
   }
 
   // Ensure 3pt correlator includes timeslice DeltaT
@@ -738,12 +660,12 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
       std::string OutFileName{ outBase };
       OutFileName.append( RatioNames[i] );
       OutFileName.append( 1, '_' );
-      OutFileName.append( NameReverse[i] ? qSrc : qSnk );
+      OutFileName.append( NameReverse[i] ? Src.q : Snk.q );
       OutFileName.append( 1, '_' );
-      OutFileName.append( NameReverse[i] ? qSnk : qSrc );
+      OutFileName.append( NameReverse[i] ? Snk.q : Src.q );
       OutFileName.append( fnaSuffix );
       Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT );
-      fna.AppendMomentum( OutFileName, Src.qp.p ? Src.qp.p : Snk.qp.p, Src.qp.pName );
+      fna.AppendMomentum( OutFileName, Src.mp.p ? Src.mp.p : Snk.mp.p, Src.mp.pName );
       AppendOps( OutFileName, NameReverse[i] ? Src.op : Snk.op, NameReverse[i] ? Snk.op : Src.op );
       OutFileName = Common::MakeFilename( OutFileName, fna.Type, fna.Seed, fna.Ext );
       std::cout << "->" << OutFileName << Common::NewLine;
@@ -765,6 +687,7 @@ const std::vector<std::string> FormFactor::ParamNames{ "EL", "mL", "mH", "qSq", 
 FormFactor::FormFactor( std::string TypeParams )
 : N{ Common::FromString<unsigned int>( Common::ExtractToSeparator( TypeParams ) ) },
   ap{ 2 * M_PI / N },
+  apInv{ 1. / ap },
   bAdjustGammaSpatial{ Common::EqualIgnoreCase( TypeParams, "spatial" ) }
 {
   if( !bAdjustGammaSpatial && !TypeParams.empty() )
@@ -809,15 +732,15 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
     if( p )
     {
       O[vIdx[kMu]] = ap;
+      O[vIdx[melVi]] = (*pvXYZ)[idx];
       if( bAdjustGammaSpatial )
       {
         int FirstNonZero{ p.x ? p.x : p.y ? p.y : p.z };
         if( ( p.y && p.y != FirstNonZero ) || ( p.z && p.z != FirstNonZero ) )
           throw std::runtime_error( "Can't adjust gXYZ when momentum components differ" );
-        O[vIdx[kMu]] *= FirstNonZero;
+        O[vIdx[melVi]] /= FirstNonZero;
       }
-      O[vIdx[melVi]] = (*pvXYZ)[idx];
-      O[vIdx[fPerp]] = (*pvXYZ)[idx] * InvRoot2MH / O[vIdx[kMu]];
+      O[vIdx[fPerp]] = O[vIdx[melVi]] * InvRoot2MH * apInv;
       O[vIdx[fPlus]] = ( MHeavy[idx] - ELight[idx] ) * O[vIdx[fPerp]];
       O[vIdx[f0]] = ( ELight[idx] * ELight[idx] - MLight[idx] * MLight[idx] ) * O[vIdx[fPerp]];
     }
@@ -845,10 +768,10 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
 
 bool FMaker::RatioFile::Less::operator()( const RatioFile &lhs, const RatioFile &rhs ) const
 {
-  int i{ Common::CompareIgnoreCase( lhs.Prefix, rhs.Prefix ) };
+  /*int i{ Common::CompareIgnoreCase( lhs.Prefix, rhs.Prefix ) };
   if( i )
-    return i < 0;
-  i = Common::CompareIgnoreCase( lhs.Sink, rhs.Sink );
+    return i < 0;*/
+  int i = Common::CompareIgnoreCase( lhs.Sink, rhs.Sink );
   if( i )
     return i < 0;
   i = Common::CompareIgnoreCase( lhs.Source, rhs.Source );
@@ -937,9 +860,9 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
       {
         // Get the zero-momentum version of the light
         const Common::NamedMomentum p0( p.first, p.second.bp2 );
-        QP qpMLight( q[iLight], p0.first, p0.second );
-        pmMLight = &EFit( qpMLight, szReading );
-        MLight = EFit.GetVector( qpMLight );
+        MP mpMLight( fna.Meson[iLight], p0.second, p0.first );
+        pmMLight = &EFit( mpMLight, szReading );
+        MLight = EFit.GetVector( mpMLight, mpMLight.PK() );
         // Read all the gamma spatial
         typename FileMap::iterator it{ map[1].find( rf ) };
         if( it == map[1].end() )
@@ -951,7 +874,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
           try
           {
             Model m;
-            m.Read( File, " reading spatial model", &OpNames );
+            m.Read( File, " reading spatial model ", &OpNames );
             mGammaXYZ.emplace_back( std::move( m ) );
           }
           catch( const std::exception &e )
@@ -979,7 +902,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
         try
         {
           Model mGT;
-          mGT.Read( File, " reading temporal model", &OpNames );
+          mGT.Read( File, " reading temporal model ", &OpNames );
           // Most of the data can come from the temporal file
           Common::Param::Key k( fna.MesonMom[iLight], mGT.EnergyPrefix );
           Vector ELight = mGT.GetVector( k );
@@ -1090,6 +1013,9 @@ void FFitConstMaker::Make( std::string &FileName )
   RatioNum = Common::FromString<int>( fna.BaseShortParts[0].substr( 1 ) );
   qSnk = fna.BaseShortParts[1];
   qSrc = fna.BaseShortParts[2];
+  const bool bSnkHeavier{ Weight( qSnk ) > Weight( qSrc ) };
+  const std::string &MesonHeavy{ fna.Meson[bSnkHeavier ? 1 : 0] };
+  const std::string &MesonLight{ fna.Meson[bSnkHeavier ? 0 : 1] };
   {
     const Common::NamedMomentum &np{ fna.GetFirstNonZeroMomentum() };
     p = np.second;
@@ -1183,22 +1109,19 @@ void FFitConstMaker::Make( std::string &FileName )
     mT.IsCompatible( mXYZ, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
   }
   // Load energies
-  const bool bSnkHeavier{ Weight( qSnk ) > Weight( qSrc ) };
-  const std::string &qHeavy{ bSnkHeavier ? qSnk : qSrc };
-  const std::string &qLight{ bSnkHeavier ? qSrc : qSnk };
-  QP qpMHeavy( qHeavy, Common::Momentum::DefaultPrefix, Common::p0 );
-  QP qpMLight( qLight, Common::Momentum::DefaultPrefix, Common::p0 );
-  QP qpELight( qLight, Common::Momentum::DefaultPrefix, p );
-  Model &mMHeavy( EFit( qpMHeavy, szReading ) );
+  MP mpMHeavy( MesonHeavy, Common::p0 );
+  MP mpMLight( MesonLight, Common::p0 );
+  MP mpELight( MesonLight, p );
+  Model &mMHeavy( EFit( mpMHeavy, szReading ) );
   mT.IsCompatible( mMHeavy, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
-  Model &mMLight( EFit( qpMLight, szReading ) );
+  Model &mMLight( EFit( mpMLight, szReading ) );
   mT.IsCompatible( mMLight, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
-  Model &mELight( p ? EFit( qpELight, szReading ) : mMLight );
+  Model &mELight( p ? EFit( mpELight, szReading ) : mMLight );
   if( p )
     mT.IsCompatible( mELight, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
-  const Vector MHeavy{ EFit.GetVector( qpMHeavy ) };
-  const Vector MLight{ EFit.GetVector( qpMLight ) };
-  const Vector ELight{ EFit.GetVector( qpELight ) };
+  const Vector MHeavy{ EFit.GetVector( mpMHeavy, mpMHeavy.PK() ) };
+  const Vector MLight{ EFit.GetVector( mpMLight, mpMLight.PK() ) };
+  const Vector ELight{ EFit.GetVector( mpELight, mpELight.PK() ) };
 
   // Make output
   std::vector<std::string> SourceFileNames{ FileName };
@@ -1334,20 +1257,18 @@ int main(int argc, const char *argv[])
     "-o     Output filename prefix\n"
     "--type Ratio type[,Options[,...]] (default " << DefaultType << ")\n"
     "       ZV  Make ZV (no Options)\n"
-    "       R   Make R ratios. Options as per --efit, except a) Fit_list->ZV_List\n"
-    "           b) Spectator not required\n"
+    "       R   Make R ratios. Options as per --efit, except Fit_list->ZV_List\n"
     "       F   Make form factors from matrix element fits. Options\n"
     "           L i.e. spatial extent of lattice, (e.g. 24, 32, 64, ...)\n"
-    "       FFC Make form factors from fit to constant. Options\n"
+    "       FFC Make form factors from fit to constant. Deprecated. Options\n"
     "           L i.e. spatial extent of lattice, (e.g. 24, 32, 64, ...)\n"
     "           'spatial' flag to divide spatial current gXYZ by integer momentum\n"
     "           (Should not be needed except for very old bootstrap files)\n"
     "--efit Fit_list[,options[,...]] List of fit files for energies,\n"
-    "         each row has 'Quark file' (one row per momenta).\n"
+    "         each row has 'Meson_Momentum file' (one row per momentum).\n"
     "         First option can be 'c' to freeze values to central value,\n"
     "         then comma separated list of Key=Key_in_file pairs to rename keys.\n"
-    "       If Fit_list='', then first option=spectator and is required,\n"
-    "         then comma separated list of Variable=Value pairs follows.\n"
+    "       If Fit_list='', comma separated list of Variable=Value pairs follows.\n"
     "         Any constants not mentioned are frozen to 1\n"
     "Flags:\n"
     "--" << Common::sOverlapAltNorm << " Alternate normalisation for overlap factors. DEPRECATED\n"

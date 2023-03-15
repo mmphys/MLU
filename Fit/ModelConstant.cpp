@@ -32,7 +32,7 @@ ModelConstant::ModelConstant( const Model::CreateParams &cp, Model::Args &Args )
 : Model( cp, Args ), Object( GetObjectNameSingle( cp, Args ) )
 {
   Constant.Key.Object = { ObjectID( idxSrc ) };
-  Constant.Key.Name = Args.Remove( "const", std::string( "C" ) );
+  Constant.Key.Name = Args.Remove( "const", Common::ModelBase::ConstantPrefix );
 }
 
 void ModelConstant::AddParameters( Params &mp )

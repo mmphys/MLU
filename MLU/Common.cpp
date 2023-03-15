@@ -834,9 +834,11 @@ std::istream& operator>>( std::istream& is, SampleSource &sampleSource )
 }
 
 const std::string ModelBase::EnergyPrefix{ "E" };
+const std::string ModelBase::EDiffPrefix{ "EDiff" };
+const std::string ModelBase::ConstantPrefix{ "K" };
 
 template <typename T>
-Vector<T> Model<T>::GetVector( Param::Key &k, std::size_t Index )
+Vector<T> Model<T>::GetVector( const Param::Key &k, std::size_t Index )
 {
   Params::const_iterator it = params.FindPromiscuous( k );
   if( it == params.cend() )

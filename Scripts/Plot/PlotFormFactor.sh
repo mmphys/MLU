@@ -11,6 +11,7 @@ PCMakeScriptOutDir
 
 # Computed from input
 OutSub=${dir:-final}
+FileSpec="${FileSpec:+*$FileSpec}*.h5"
 
 # Optional environment variables
 # nodt:  Set to anything to disable plots individual DeltaT all point-wall
@@ -156,7 +157,8 @@ EOFMark
 mkdir -p $OutSub
 cd $OutSub
 
-Spec=(sp2 lp2 lp2)
+#Spec=(sp2 lp2 lp2)
+Spec=(sp2)
 Meson=(l_h$Heavy s_h$Heavy l_h$Heavy)
 MesonSave=(K_Ds$Heavy K_D$Heavy pi_D$Heavy)
 Title=("D_s ⟹ K" "D ⟹ K" "D ⟹ π")
@@ -174,8 +176,8 @@ else
   InPrefix=../.. # $HOME/NoSync/$Ensemble
   MELFit=$InPrefix/MELFit
   SpecDir="3sm_${Spec[i]}"
-  FitFile=$MELFit/Fit_${Spec[i]}.txt
-  Cmd="CRatio --type f,$L --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/ '*.h5'"
+  FitFile=$MELFit/Fit_${Spec[i]}_$OutSub.txt
+  Cmd="CRatio --type f,$L --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/ '$FileSpec'"
   LogFile="FFS_$SpecDir.log"
   echo "$Cmd"
   echo "$Cmd"   > $LogFile

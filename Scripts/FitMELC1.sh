@@ -12,15 +12,34 @@ set -e
 
 ############################################################
 
-declare -A MesonFit
+declare -A aMesonFit
+declare -A aMesonFileOp
+declare -A aMesonFileMom
 
-MesonFit[h${Heavy}_s,0]=corr_6_27_14_27
+aMesonFit[h${Heavy}_s,0]=corr_6_27_14_27
+aMesonFileOp[h${Heavy}_s,0]=g5P_g5W
+aMesonFileMom[h${Heavy}_s,0]=_p2_0
 
-MesonFit[s_l,0]=corr_6_23_7_23
-MesonFit[s_l,1]=corr_6_23_7_23
-MesonFit[s_l,2]=corr_5_20_5_20
-MesonFit[s_l,3]=corr_5_20_5_20
-MesonFit[s_l,4]=corr_5_18_5_18
+if (( 0 )); then
+  # Versions using different PP+PW fit on each momentum
+  FileSeries=old
+  aMesonFit[s_l,0]=corr_6_23_7_23
+  aMesonFit[s_l,1]=corr_6_23_7_23
+  aMesonFit[s_l,2]=corr_5_20_5_20
+  aMesonFit[s_l,3]=corr_5_20_5_20
+  aMesonFit[s_l,4]=corr_5_18_5_18
+  for((i = 0; i < 5; ++i)); do
+    aMesonFileOp[s_l,$i]=g5P_g5W
+    aMesonFileMom[s_l,$i]=_p2_$i
+  done
+else
+  # These are all links to the same simultaneous fit to PP at all momenta using dispersion relation
+  FileSeries=disp
+  for((i = 0; i < 5; ++i)); do
+    aMesonFit[s_l,$i]=corr_6_23_6_23_5_20_5_20_5_18
+    aMesonFileOp[s_l,$i]=g5P
+  done
+fi
 
 ############################################################
 
@@ -35,8 +54,12 @@ function DoFit()
   local pSnk=$1
   local MesonSnk; GetMesonFile MesonSnk $qSnk $qSpec
   local MesonSrc; GetMesonFile MesonSrc $qSrc $qSpec
-  local FitSnk=${MesonFit[$MesonSnk,$pSnk]}
-  local FitSrc=${MesonFit[$MesonSrc,0]}
+  local FitSnk=${aMesonFit[$MesonSnk,$pSnk]}
+  local FitSrc=${aMesonFit[$MesonSrc,0]}
+  local FileOpSnk=${aMesonFileOp[$MesonSnk,$pSnk]}
+  local FileOpSrc=${aMesonFileOp[$MesonSrc,0]}
+  local FileMomSnk=${aMesonFileMom[$MesonSnk,$pSnk]}
+  local FileMomSrc=${aMesonFileMom[$MesonSrc,0]}
   ( . FitMEL.sh ) #export everything including arrays, but don't upset my environment
 }
 
@@ -80,5 +103,5 @@ fi
 ##NumExp=2 DeltaT="20 24 28" TI='10 10 13' TF='13 18 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 DoFit 1 # I prefer this one
 #NumExp=2 DeltaT="20 24 28" TI='10 14 13' TF='13 15 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 DoFit 1 # I prefer this one
 # This works
-NumExp=2 DeltaT="16 20" TI='6 8 12' TF='9 14 16' yrangeR3=0.0008:0.00150 yrangeMEL=0.44:0.62 DoFit 4
+#NumExp=2 DeltaT="16 20" TI='6 8 12' TF='9 14 16' yrangeR3=0.0008:0.00150 yrangeMEL=0.44:0.62 DoFit 4
 # This works - end

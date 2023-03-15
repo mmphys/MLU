@@ -106,6 +106,8 @@ std::ostream & operator<<( std::ostream &os, const ConfigCount &cc );
  */
 inline int QuarkWeight( const std::string &Quark )
 {
+  if( Quark.empty() )
+    throw std::runtime_error( "QuarkWeight() called for empty Quark name" );
   int Weight;
   switch( std::toupper( Quark[0] ) )
   {

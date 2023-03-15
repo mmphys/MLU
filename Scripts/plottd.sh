@@ -132,6 +132,8 @@ if( RefVal ne '' ) {
       nohead front lc rgb "gray40" lw 0.25 dashtype "-"
 }
 
+#print "TotalPlotTWidth=".sprintf("%g",TotalPlotTWidth)
+
 do for [model=1:NumModels] {
 
 if( MyTitle ne "" ) { set title word(MyTitle,model) }
@@ -139,7 +141,9 @@ if( MyTitle ne "" ) { set title word(MyTitle,model) }
 set lmargin at screen SubPlotLeft[model]
 set rmargin at screen SubPlotRight[model]
 
-set xtics ceil(PlotTMin[model]), 2, floor(PlotTMax[model])
+set xtics ceil(PlotTMin[model]) + 1, 2, floor(PlotTMax[model])
+if( TotalPlotTWidth >= 120 ) { set xtics font ", 7" }
+else { if( TotalPlotTWidth >= 75 ) { set xtics font ", 9" } }
 
 if( model == 2 ) { set format y ''; unset ylabel }
 

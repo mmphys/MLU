@@ -206,3 +206,4 @@ fi
 # Computed parameters
 LHalf=$((L/2))
 THalf=$((T/2))
+Seed=${Seed:-1835672416}

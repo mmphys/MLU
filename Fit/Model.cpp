@@ -38,9 +38,6 @@
 #include "ModelConstant.hpp"
 #include "ModelRatio.hpp"
 
-const std::string E{ "E" };
-const std::string EDiff{ "EDiff" };
-
 static const std::string sModelTypeUnknown{ "Unknown" };
 static const std::string sModelTypeExp{ "Exp" };
 static const std::string sModelTypeCosh{ "Cosh" };

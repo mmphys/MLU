@@ -441,16 +441,23 @@ int main(int argc, const char *argv[])
     " SrcSnk    Force source and sink to be different (by appending 'src' and 'snk')\n"
     "Parameters accepted by models for single objects (e.g. 2pt-functions):\n"
     " ObjectID  Object identifier (defaults to base of filename)\n"
-    " Energy    Energy parameter name (defaults to " << ::E << ")\n"
+    " Energy    Energy parameter name (defaults to " << Common::ModelBase::EnergyPrefix << ")\n"
     "Parameters accepted by models for dual objects (e.g. 3pt-functions):\n"
     " Src       ObjectID for source\n"
     " Snk       ObjectID for sink\n"
-    " ESrc      Energy parameter name at source (defaults to " << ::E << ")\n"
-    " ESnk      Energy parameter name at sink   (defaults to " << ::E << ")\n"
-    " " << ::EDiff << "     Name of derived parameter for energy difference (default: " << ::EDiff << ")\n"
+    " ESrc      Energy parameter name at source (defaults to "
+        << Common::ModelBase::EnergyPrefix << ")\n"
+    " ESnk      Energy parameter name at sink   (defaults to "
+        << Common::ModelBase::EnergyPrefix << ")\n"
+    " " << Common::ModelBase::EDiffPrefix
+        << "     Name of derived parameter for energy difference (default: "
+        << Common::ModelBase::EDiffPrefix << ")\n"
     "Parameters accepted by R3 model:\n"
     " C2Model   Which model to use for 2pt: Exp (default); Cosh; Sinh\n"
-    " Raw       R3 ratio was constructed as a raw ratio - no overlap coefficients\n";
+    " Raw       R3 ratio was constructed as a raw ratio - no overlap coefficients\n"
+    "Parameters accepted by constant model:\n"
+    " const     Constant name to use in output (defaults to '"
+                << Common::ModelBase::ConstantPrefix << "')\n";
   }
   Common::Grid_exit_handler_disable = true;
   return iReturn;

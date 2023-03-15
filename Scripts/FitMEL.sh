@@ -25,6 +25,10 @@ Gamma=${Gamma:-gT}
 # Ranges for 2pt fits
 FitSnk=${FitSnk:-corr_10_26_7_26}
 FitSrc=${FitSrc:-corr_6_29_5_29}
+FileOpSnk=${FileOpSnk:-g5P_g5W}
+FileOpSrc=${FileOpSrc:-g5P_g5W}
+FileMomSnk=${FileMomSnk-_p2_$pSnk}
+FileMomSrc=${FileMomSrc-_p2_$pSrc}
 
 DeltaT=(${DeltaT:-24 28 32})
 TI=(${TI:-13 14 14})
@@ -36,6 +40,7 @@ case "$FitWhat" in
            *) echo "FitWhat=$FitWhat unrecognised"; exit 1;;
 esac
 NumExp=${NumExp:-3} # How many exponentials in the 3pt fit
+FileSeries=${FileSeries:-E$NumExp}
 
 PW=${PW:-g5P_g5P}
 Seed=${Seed:-1835672416}
@@ -106,13 +111,13 @@ esac
 
 FitType=corr
 SuffixModel=g5P_g5W.model
-Suffix2pt=$SuffixModel.$Seed.h5
-InputMesonSnk=$Ensemble/$MELFit/2ptp2/$MesonSnk/${MesonSnk}_p2_${pSnk}.$FitSnk.${Suffix2pt}
-InputMesonSrc=$Ensemble/$MELFit/2ptp2/$MesonSrc/${MesonSrc}_p2_${pSrc}.$FitSrc.${Suffix2pt}
+MesonDir=$Ensemble/$MELFit/2ptp2
+InputMesonSnk=$MesonDir/$MesonSnk/${MesonSnk}${FileMomSnk}.$FitSnk.${FileOpSnk}.model.$Seed.h5
+InputMesonSrc=$MesonDir/$MesonSrc/${MesonSrc}${FileMomSrc}.$FitSrc.${FileOpSrc}.model.$Seed.h5
 
 OutPart1=${qSnk}_${qSrc}_${Gamma}_p2_$((pSrc > pSnk ? pSrc : pSnk))
 OutPart2=dt_$DeltaTAll
-OutPart3=$FitSnk.$FitSrc.E$NumExp
+OutPart3=$FitSnk.$FitSrc.$FileSeries
 OutSubDir=$Ensemble/$MELFit/$SpecDir
 OutLongName=${OutPart1}.${OutPart2}.${OutPart3}
 

@@ -44,5 +44,80 @@ if [ "${DoAll+x}" = x ]; then
   p=2 TI=5 TF=20 NumExp=2 TI2=5 TF2=20 NumExp2=1 Meson=s_l yrange='0.42:0.52' FitTwoPoint.sh
   p=3 TI=5 TF=20 NumExp=2 TI2=5 TF2=20 NumExp2=1 Meson=s_l yrange='0.48:0.6' FitTwoPoint.sh
   p=4 TI=5 TF=18 NumExp=2 TI2=5 TF2=18 NumExp2=1 Meson=s_l yrange='0.48:0.8' FitTwoPoint.sh
+  unset ti
 fi
 
+function DoCmd()
+{
+  #echo $Cmd
+  echo $Cmd &>> $LogFile
+  eval $Cmd &>> $LogFile
+}
+
+. PlotCommon.sh
+if [ -d $Ensemble ]; then
+mkdir -p $Ensemble/MELFit
+cd $Ensemble/MELFit
+
+InDir=$PlotData/corr/2ptp2
+OutDir=2ptp2/s_l
+
+aFitFiles=()
+for((i=0; i < 5; ++i)); do
+  aFitFiles+=($InDir/s_l_p2_${i}_g5P_g5P.fold.$Seed)
+done
+aTimes=(6:23 6:23 5:20 5:20 5:18)
+sTimes="${aTimes[*]}"
+sTimes=${sTimes// /_}
+sTimes=${sTimes//:/_}
+
+# Perform Fit
+Cmd="MultiFit -e 2 -N 24 --Hotelling 0 --overwrite --debug-signals --strict 3 -o $OutDir/s_l"
+for((i=0; i < ${#aFitFiles[@]}; ++i)); do
+  Cmd="$Cmd ${aFitFiles[i]}.h5,t=${aTimes[i]}"
+done
+BaseFile="$OutDir/s_l.corr_$sTimes.g5P.model"
+LogFile="$BaseFile.$Seed.log"
+DoCmd
+
+# Get the energy difference
+for((i=0; i < ${#aFitFiles[@]}; ++i)); do
+  EKeys=$EKeys${EKeys:+,}s_l_p2_${i}-E0
+done
+if ColumnValues=$(GetColumn --exact ChiSqPerDof,pValueH,$EKeys $BaseFile.$Seed.h5)
+#if ColumnValues=$(GetColumn --exact ChiSqPerDof,pValueH --partial E0 $BaseFile.$Seed.h5)
+then
+  #echo "OK: $ColumnValues"
+  ColumnValues=($ColumnValues)
+  E0="${ColumnValues[@]:16:8}"
+  RefText="E_0(n^2=0)=${ColumnValues[@]:17:1}, χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})"
+else
+  LastError=${PIPESTATUS[0]}
+  echo "Error $LastError: $ColumnValues"
+  unset RefText
+fi
+
+# Now plot it
+for((i=0; i < ${#aFitFiles[@]}; ++i)); do
+  ThisTF=${aTimes[i]}; ThisTF=${ThisTF##*:}; ThisTF=$((ThisTF+3))
+  tf="$tf${tf:+ }$ThisTF"
+  title="$title${title:+ }n^2=$i"
+  files="$files${files:+ }${aFitFiles[i]}.txt"
+done
+Cmd="tf='$tf' title='$title' files='$files'"
+[ -v RefText ] && Cmd="$Cmd RefText='$RefText'"
+Cmd="$Cmd save='$BaseFile.$Seed' yrange=0.3:0.7 plottd.sh ${BaseFile}_td.$Seed.txt"
+DoCmd
+for((i=0; i < ${#aFitFiles[@]}; ++i)); do
+  tf=${aTimes[i]}; tf=${tf##*:}; tf=$((tf+3))
+  title="n^2=$i"
+  files="${aFitFiles[i]}.txt"
+  Cmd="title='$title' files='$files'"
+  #Cmd="$Cmd tf='$tf'"
+  [ -v RefText ] && Cmd="$Cmd RefText='E_0(n^2=${i})=${ColumnValues[@]:$((17+i*8)):1}, χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})'"
+  Cmd="$Cmd save='$OutDir/s_l_p2_${i}.corr_$sTimes.g5P.model.$Seed'"
+  Cmd="$Cmd mmin=$i mmax=$i plottd.sh ${BaseFile}_td.$Seed.txt"
+  DoCmd
+done
+
+fi

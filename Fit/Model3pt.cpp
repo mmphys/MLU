@@ -40,13 +40,13 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args,
   if( NumExponents > 3 )
     throw std::runtime_error( "Model3pt supports a maximum of 3 exponentials: "
                               "Gnd-Gnd, Gnd-Ex (and ^\\dag), Ex-Ex" );
-  std::string ESrc = Args.Remove( "ESrc", ::E );
-  std::string ESnk = Args.Remove( "ESnk", ::E );
+  std::string ESrc = Args.Remove( "ESrc", Common::ModelBase::EnergyPrefix );
+  std::string ESnk = Args.Remove( "ESnk", Common::ModelBase::EnergyPrefix );
   const bool bESame{ objectID.size() == 1 && Common::EqualIgnoreCase( ESrc, ESnk ) };
   E.resize( bESame ? 1 : 2 );
   E[idxSrc].Key.Object = { ObjectID( idxSrc ) };
   E[idxSrc].Key.Name = std::move( ESrc );
-  std::string sEDiff{ Args.Remove( ::EDiff, ::EDiff ) };
+  std::string sEDiff{ Args.Remove( Common::ModelBase::EDiffPrefix, Common::ModelBase::EDiffPrefix ) };
   if( !bESame )
   {
     E[idxSnk].Key.Object = { ObjectID( idxSnk ) };

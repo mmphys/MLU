@@ -35,7 +35,7 @@ Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args,
   N{ cp.N }
 {
   E.Key.Object = { ObjectID( idxSrc ) };
-  E.Key.Name = Args.Remove( "Energy", ::E );
+  E.Key.Name = Args.Remove( "Energy", Common::ModelBase::EnergyPrefix );
 }
 
 void Model2pt::AddParameters( Params &mp )
