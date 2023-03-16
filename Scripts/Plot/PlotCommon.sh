@@ -75,7 +75,7 @@ function PCQName()
   fi
 }
 
-# Get humand readable version of sink and source
+# Get human readable version of sink and source
 # Parameters:
 #   1: Operator at sink (e.g. g5P)
 #   2: Operator at source (e.g. g5P)
@@ -92,6 +92,38 @@ function PCPointWall()
     g5W_g5W) RetVal="wall-wall";;
           *) RetVal="${opSnk}-${opSrc}";;
   esac
+}
+
+# Get column values from .h5 file
+# Parameters:
+#   1: Filename
+#   2: Prefix for RefText
+#   3: Comma separated list of exact field names
+#   4: Comma separated list of partial field names
+# Returns:
+#   ColumnValues: Array of column values in following order:
+#                 1) ChiSqPerDof 2) pValueH 3) Exact parameters 4) Partial parameters
+#   RefText: Reference string containing first column value, chi^2/dof and pValueH
+#   On error, these are unset
+function GetColumnValues()
+{
+  local Filename="$1"
+        RefText="$2"
+  local Exact="$3"
+  local Partial="$4"
+  if ColumnValues=$(GetColumn --exact "ChiSqPerDof,pValueH${Exact:+,$Exact}" \
+                    ${Partial:+--partial "$Partial"} "$Filename")
+  then
+    #echo "OK: $ColumnValues"
+    ColumnValues=($ColumnValues)
+    RefText="$RefText${ColumnValues[@]:17:1}, χ²/dof=${ColumnValues[@]:4:1}, pH=${ColumnValues[@]:12:1}"
+  else
+    LastError=${PIPESTATUS[0]}
+    #echo "Error $LastError: $ColumnValues" # GetColumn shows its own error messages
+    unset ColumnValues
+    unset RefText
+    #return $LastError
+  fi
 }
 
 # Get script name without path prefix or extension

@@ -6,6 +6,14 @@
 set -e
 export Ensemble=C1
 
+declare -A ayRange
+ayRange[h6413_s,0]='1.08:1.12'
+ayRange[s_l,0]='0.28:0.33'
+ayRange[s_l,1]='0.37:0.44'
+ayRange[s_l,2]='0.42:0.52'
+ayRange[s_l,3]='0.48:0.6'
+ayRange[s_l,4]='0.48:0.8'
+
 if [ -v DoScan ]; then
   DoScanP=
   DoScanW=
@@ -33,29 +41,40 @@ fi
 
 if [ "${DoAll+x}" = x ]; then
   # D_s
-  p=0 TI=6 TF=27 NumExp=2 TI2=14 TF2=27 NumExp2=1 Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh # Preferred 1 Mar 23
-  p=0 TI=6 TF=27 NumExp=2 TI2=17 TF2=27 NumExp2=1 Meson=h6413_s yrange='1.08:1.12' ti='8 8' FitTwoPoint.sh
-
+  (
+  export Meson=h6413_s
+  export ti='8 8'
+  p=0 TI=6 TF=27 NumExp=2 TI2=14 TF2=27 NumExp2=1 yrange="${ayRange[$Meson,0]}" FitTwoPoint.sh # Preferred 1 Mar 23
+  p=0 TI=6 TF=27 NumExp=2 TI2=17 TF2=27 NumExp2=1 FitTwoPoint.sh
+  )
   # Kaon
+  (
+  export Meson=s_l
   export LabelTF=30
   export ti='3 2'
-  p=0 TI=6 TF=23 NumExp=2 TI2=7 TF2=23 NumExp2=1 Meson=s_l yrange='0.28:0.33' FitTwoPoint.sh
-  p=1 TI=6 TF=23 NumExp=2 TI2=7 TF2=23 NumExp2=1 Meson=s_l yrange='0.37:0.44' FitTwoPoint.sh
-  p=2 TI=5 TF=20 NumExp=2 TI2=5 TF2=20 NumExp2=1 Meson=s_l yrange='0.42:0.52' FitTwoPoint.sh
-  p=3 TI=5 TF=20 NumExp=2 TI2=5 TF2=20 NumExp2=1 Meson=s_l yrange='0.48:0.6' FitTwoPoint.sh
-  p=4 TI=5 TF=18 NumExp=2 TI2=5 TF2=18 NumExp2=1 Meson=s_l yrange='0.48:0.8' FitTwoPoint.sh
-  unset ti
+  p=0 TI=6 TF=23 NumExp=2 TI2=7 TF2=23 NumExp2=1 yrange="${ayRange[$Meson,0]}" FitTwoPoint.sh
+  p=1 TI=6 TF=23 NumExp=2 TI2=7 TF2=23 NumExp2=1 yrange="${ayRange[$Meson,1]}" FitTwoPoint.sh
+  p=2 TI=5 TF=20 NumExp=2 TI2=5 TF2=20 NumExp2=1 yrange="${ayRange[$Meson,2]}" FitTwoPoint.sh
+  p=3 TI=5 TF=20 NumExp=2 TI2=5 TF2=20 NumExp2=1 yrange="${ayRange[$Meson,3]}" FitTwoPoint.sh
+  p=4 TI=5 TF=18 NumExp=2 TI2=5 TF2=18 NumExp2=1 yrange="${ayRange[$Meson,4]}" FitTwoPoint.sh
+  )
 fi
 
 function DoCmd()
 {
   #echo $Cmd
   echo $Cmd &>> $LogFile
-  eval $Cmd &>> $LogFile
+  if ! eval $Cmd &>> $LogFile; then
+    echo "Error ${PIPESTATUS[0]} executing $Cmd"
+  fi
 }
 
 . PlotCommon.sh
-if [ -d $Ensemble ]; then
+if ! [ -d $Ensemble ]; then
+  echo "Ensemble $Ensemble doesn't exist. Change directory?"
+  exit
+fi
+
 mkdir -p $Ensemble/MELFit
 cd $Ensemble/MELFit
 
@@ -71,8 +90,14 @@ sTimes="${aTimes[*]}"
 sTimes=${sTimes// /_}
 sTimes=${sTimes//:/_}
 
-# Perform Fit
-Cmd="MultiFit -e 2 -N 24 --Hotelling 0 --overwrite --debug-signals --strict 3 -o $OutDir/s_l"
+aTimesW=(7:23 7:23 5:20 5:20 5:18)
+PriorFitTimes="6_23_7_23"
+
+MultiFit="MultiFit --Hotelling 0 --overwrite --debug-signals --strict 3"
+
+# Simultaneous fits of point-point data at all momenta
+if [ "${DoAll+x}" = x ]; then
+Cmd="$MultiFit -e 2 -N 24 -o $OutDir/s_l"
 for((i=0; i < ${#aFitFiles[@]}; ++i)); do
   Cmd="$Cmd ${aFitFiles[i]}.h5,t=${aTimes[i]}"
 done
@@ -84,18 +109,7 @@ DoCmd
 for((i=0; i < ${#aFitFiles[@]}; ++i)); do
   EKeys=$EKeys${EKeys:+,}s_l_p2_${i}-E0
 done
-if ColumnValues=$(GetColumn --exact ChiSqPerDof,pValueH,$EKeys $BaseFile.$Seed.h5)
-#if ColumnValues=$(GetColumn --exact ChiSqPerDof,pValueH --partial E0 $BaseFile.$Seed.h5)
-then
-  #echo "OK: $ColumnValues"
-  ColumnValues=($ColumnValues)
-  E0="${ColumnValues[@]:16:8}"
-  RefText="E_0(n^2=0)=${ColumnValues[@]:17:1}, χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})"
-else
-  LastError=${PIPESTATUS[0]}
-  echo "Error $LastError: $ColumnValues"
-  unset RefText
-fi
+GetColumnValues $BaseFile.$Seed.h5 "E_0(n^2=0)=" $EKeys
 
 # Now plot it
 for((i=0; i < ${#aFitFiles[@]}; ++i)); do
@@ -117,6 +131,54 @@ for((i=0; i < ${#aFitFiles[@]}; ++i)); do
   [ -v RefText ] && Cmd="$Cmd RefText='E_0(n^2=${i})=${ColumnValues[@]:$((17+i*8)):1}, χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})'"
   Cmd="$Cmd save='$OutDir/s_l_p2_${i}.corr_$sTimes.g5P.model.$Seed'"
   Cmd="$Cmd mmin=$i mmax=$i plottd.sh ${BaseFile}_td.$Seed.txt"
+  DoCmd
+done
+
+# For each non-zero momentum fit pp & pw data using E(n^2=0) and lattice dispersion relation
+for((i=1; i < 5; ++i)); do
+  sTimes="${aTimes[i]} ${aTimesW[i]}"
+  sTimes=${sTimes// /_}
+  sTimes=${sTimes//:/_}
+  BaseFile="$OutDir/s_l_p2_$i.priorPW_$PriorFitTimes"
+  Cmd="$MultiFit -e 2 -N 24 -o $BaseFile"
+  Cmd="$Cmd $OutDir/s_l_p2_0.corr_$PriorFitTimes.g5P_g5W.model.1835672416.h5"
+  ThisFile="${aFitFiles[i]}.h5"
+  Cmd="$Cmd $ThisFile,t=${aTimes[i]}"
+  Cmd="$Cmd ${ThisFile//g5P_g5P/g5P_g5W},t=${aTimesW[i]},e=1"
+  BaseFile="$BaseFile.corr_$sTimes.g5P_g5W.model"
+  LogFile="$BaseFile.$Seed.log"
+  DoCmd
+
+  GetColumnValues $BaseFile.$Seed.h5 "E_0(n^2=$i)=" s_l_p2_${i}-E0
+
+  ThisFile="${aFitFiles[i]}.txt"
+  Cmd="title='point-point point-wall' files='$ThisFile ${ThisFile//g5P_g5P/g5P_g5W}'"
+  [ -v RefText ] && Cmd="$Cmd RefText='$RefText'"
+  Cmd="$Cmd yrange='${ayRange[s_l,$i]}'"
+  Cmd="$Cmd save='$BaseFile.$Seed'"
+  Cmd="$Cmd plottd.sh ${BaseFile}_td.$Seed.txt"
+  DoCmd
+done
+
+# For each non-zero momentum fit pp data using E(n^2=0) and lattice dispersion relation
+for((i=1; i < 5; ++i)); do
+  sTimes="${aTimes[i]}"
+  sTimes=${sTimes//:/_}
+  BaseFile="$OutDir/s_l_p2_$i.priorP_$PriorFitTimes"
+  Cmd="$MultiFit -e 2 -N 24 -o $BaseFile"
+  Cmd="$Cmd $OutDir/s_l_p2_0.corr_$PriorFitTimes.g5P_g5W.model.1835672416.h5"
+  Cmd="$Cmd ${aFitFiles[i]}.h5,t=${aTimes[i]}"
+  BaseFile="$BaseFile.corr_$sTimes.g5P_g5W.model"
+  LogFile="$BaseFile.$Seed.log"
+  DoCmd
+
+  GetColumnValues $BaseFile.$Seed.h5 "E_0(n^2=$i)=" s_l_p2_${i}-E0
+
+  Cmd="title='point-point n^2=$i' files='${aFitFiles[i]}.txt'"
+  [ -v RefText ] && Cmd="$Cmd RefText='$RefText'"
+  Cmd="$Cmd yrange='${ayRange[s_l,$i]}'"
+  Cmd="$Cmd save='$BaseFile.$Seed'"
+  Cmd="$Cmd plottd.sh ${BaseFile}_td.$Seed.txt"
   DoCmd
 done
 

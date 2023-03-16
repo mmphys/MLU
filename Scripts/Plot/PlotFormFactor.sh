@@ -10,15 +10,14 @@ PCMakeScriptOutDir
 #set -x
 
 # Computed from input
-OutSub=${dir:-final}
-FileSpec="${FileSpec:+*$FileSpec}*.h5"
 
 # Optional environment variables
 # nodt:  Set to anything to disable plots individual DeltaT all point-wall
 # nopw:  Set to anything to disable plots individual point-wall all DeltaT
 #DoDeltaT=$((1-0${nodt+1}))
 #DoPW=$((1-0${nopw+1}))
-Old=$((0${Old+1}))
+Old=$((0${dir:+1}))
+if [ "$series" = all ]; then series="disp old priorPW priorP"; fi
 
 ###################################################
 # Make a plot of all four form factors - old version - various DeltaT
@@ -154,9 +153,6 @@ EOFMark
 # Main
 ###################################################
 
-mkdir -p $OutSub
-cd $OutSub
-
 #Spec=(sp2 lp2 lp2)
 Spec=(sp2)
 Meson=(l_h$Heavy s_h$Heavy l_h$Heavy)
@@ -165,23 +161,30 @@ Title=("D_s ⟹ K" "D ⟹ K" "D ⟹ π")
 
 if (( Old ))
 then
+  mkdir -p $dir
+  cd $dir
 for (( i=0; i < ${#Spec[@]}; ++i ))
 do
   echo $i/${#Spec[@]} PlotFunction "${Spec[i]}" "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 1
                       PlotFunction "${Spec[i]}" "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 1
   if (( i==0 )); then PlotFunction "${Spec[i]}" "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 3; fi
 done
-else
+fi
+
+for OutSub in $series; do
+  mkdir -p $OutSub
+  cd $OutSub
   i=0
   InPrefix=../.. # $HOME/NoSync/$Ensemble
   MELFit=$InPrefix/MELFit
   SpecDir="3sm_${Spec[i]}"
   FitFile=$MELFit/Fit_${Spec[i]}_$OutSub.txt
-  Cmd="CRatio --type f,$L --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/ '$FileSpec'"
+  Cmd="CRatio --type f,$L --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/ '*.$OutSub.*.h5'"
   LogFile="FFS_$SpecDir.log"
   echo "$Cmd"
   echo "$Cmd"   > $LogFile
   eval "$Cmd" &>> $LogFile
   echo PlotFuncNew $SpecDir "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 3
        PlotFuncNew $SpecDir "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 3
-fi
+  cd ..
+done
