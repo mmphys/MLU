@@ -339,8 +339,8 @@ void Momentum::Replace( std::string &s, const std::string &MomName, bool bNegati
 }
 
 // Use Lattice Dispersion relation and N=L/a to boost am to aE(p)
-// PhDYear3Diary.pdf eq (22)
-double Momentum::LatticeDispersion( double am, unsigned int N, bool bGetGroundFromExcited ) const
+double Momentum::LatticeDispersion( double am, unsigned int N, bool bEnablePHat,
+                                    bool bGetGroundFromExcited ) const
 {
   if( ! ( *this ) )
     return am;
@@ -351,7 +351,9 @@ double Momentum::LatticeDispersion( double am, unsigned int N, bool bGetGroundFr
   {
     if( (*this)[i] )
     {
-      double w = std::sin( M_PI * (*this)[i] * NInv );
+      double w = M_PI * NInv * (*this)[i]; // w = a p / 2
+      if( bEnablePHat )
+        w = std::sin( w );                 // w = a p_hat / 2
       w *= w;
       if( bGetGroundFromExcited )
         w = -w;

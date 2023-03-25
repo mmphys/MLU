@@ -43,14 +43,16 @@ struct Model3pt : public ModelOverlap
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
   void Guessable( ParamsPairs &PP ) const override;
-  std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,
-               const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const override;
+  std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
+                     const VectorView &FitData, std::vector<int> FitTimes,
+                     bool bLastChance ) const override;
   double Derivative( int t, int p ) const override;
   ModelType Type() const override { return ModelType::ThreePoint; }
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 
 protected:
   const int N;
+  const bool bEnablePHat;
   int DeltaT;
   //std::size_t ParamIndex( std::size_t idxSnk, std::size_t idxSrc ) const;
   //std::size_t NumUnknown( std::vector<bool> &bKnown ) const;

@@ -126,6 +126,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--nophat"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--product g5p,g5w"
             isEnabled = "NO">
          </CommandLineArgument>

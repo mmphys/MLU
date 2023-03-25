@@ -60,8 +60,9 @@ void ModelConstant::Guessable( ParamsPairs &PP ) const
   PP.SetState( ParamsPairs::State::Known, Constant.Key, Constant.param->size );
 }
 
-std::size_t ModelConstant::Guess( Vector &Guess, std::vector<bool> &bKnown,
-                            const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const
+std::size_t ModelConstant::Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
+                                  const VectorView &FitData, std::vector<int> FitTimes,
+                                  bool bLastChance ) const
 {
   if( !bKnown[Constant.idx] )
   {

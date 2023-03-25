@@ -54,15 +54,12 @@ protected:
  we have two choices of normalisation.
  
  - Parameters:
-  - `bOverlapAltNorm = false` : **Default Normalisation**
- 
+    - bOverlapAltNorm: `false` **Default Normalisation**
       C2(t) = \sum_{j=1}^n \frac{A}{2 E_j} \exp{- E_j t}
-
- - `bOverlapAltNorm = true` : Alternate Normalisation
+    - bOverlapAltNorm: `true` Alternate Normalisation
+       C2(t) = \sum_{j=1}^n        A        \exp{- E_j t}
  
-      C2(t) = \sum_{j=1}^n        A        \exp{- E_j t}
- 
-  - Warning: Do not mix and match!
+ - Warning: Do not mix and match!
  The same normalisation must be used everywhere.
  I.e. you **cannot** perform a two point fit with one normalisation...
  ...then feed that into a second fit using a different normalisation.

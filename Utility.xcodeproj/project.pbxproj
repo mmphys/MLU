@@ -1682,6 +1682,25 @@
 		682C5D7028E5000300C8E004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
+					"-lGrid",
+					"-lHadrons",
+					"-ldl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lz",
+					"-llime",
+					"-lmpfr",
+					"-lgmp",
+					"-lm",
+					"-lomp",
+					"-lz",
+					"-lgsl",
+					"-lMinuit2",
+					"-lcrypto",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1689,6 +1708,25 @@
 		682C5D7128E5000300C8E004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
+					"-lGrid",
+					"-lHadrons",
+					"-ldl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lz",
+					"-llime",
+					"-lmpfr",
+					"-lgmp",
+					"-lm",
+					"-lomp",
+					"-lz",
+					"-lgsl",
+					"-lMinuit2",
+					"-lcrypto",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1724,6 +1762,25 @@
 		682C5D9728E500DA00C8E004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
+					"-lGrid",
+					"-lHadrons",
+					"-ldl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lz",
+					"-llime",
+					"-lmpfr",
+					"-lgmp",
+					"-lm",
+					"-lomp",
+					"-lz",
+					"-lgsl",
+					"-lMinuit2",
+					"-lcrypto",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1731,6 +1788,25 @@
 		682C5D9828E500DA00C8E004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
+					"-lGrid",
+					"-lHadrons",
+					"-ldl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lz",
+					"-llime",
+					"-lmpfr",
+					"-lgmp",
+					"-lm",
+					"-lomp",
+					"-lz",
+					"-lgsl",
+					"-lMinuit2",
+					"-lcrypto",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1738,6 +1814,25 @@
 		682C5DA528E501D300C8E004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
+					"-lGrid",
+					"-lHadrons",
+					"-ldl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lz",
+					"-llime",
+					"-lmpfr",
+					"-lgmp",
+					"-lm",
+					"-lomp",
+					"-lz",
+					"-lgsl",
+					"-lMinuit2",
+					"-lcrypto",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1745,6 +1840,25 @@
 		682C5DA628E501D300C8E004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
+					"-lGrid",
+					"-lHadrons",
+					"-ldl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lz",
+					"-llime",
+					"-lmpfr",
+					"-lgmp",
+					"-lm",
+					"-lomp",
+					"-lz",
+					"-lgsl",
+					"-lMinuit2",
+					"-lcrypto",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1752,6 +1866,25 @@
 		682C5DB228E5023700C8E004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
+					"-lGrid",
+					"-lHadrons",
+					"-ldl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lz",
+					"-llime",
+					"-lmpfr",
+					"-lgmp",
+					"-lm",
+					"-lomp",
+					"-lz",
+					"-lgsl",
+					"-lMinuit2",
+					"-lcrypto",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1759,6 +1892,25 @@
 		682C5DB328E5023700C8E004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
+					"-lGrid",
+					"-lHadrons",
+					"-ldl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lz",
+					"-llime",
+					"-lmpfr",
+					"-lgmp",
+					"-lm",
+					"-lomp",
+					"-lz",
+					"-lgsl",
+					"-lMinuit2",
+					"-lcrypto",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1766,6 +1918,25 @@
 		682C5DBF28E5029B00C8E004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
+					"-lGrid",
+					"-lHadrons",
+					"-ldl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lz",
+					"-llime",
+					"-lmpfr",
+					"-lgmp",
+					"-lm",
+					"-lomp",
+					"-lz",
+					"-lgsl",
+					"-lMinuit2",
+					"-lcrypto",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1773,6 +1944,25 @@
 		682C5DC028E5029B00C8E004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-framework",
+					Accelerate,
+					"-lGrid",
+					"-lHadrons",
+					"-ldl",
+					"-lhdf5_cpp",
+					"-lhdf5",
+					"-lz",
+					"-llime",
+					"-lmpfr",
+					"-lgmp",
+					"-lm",
+					"-lomp",
+					"-lz",
+					"-lgsl",
+					"-lMinuit2",
+					"-lcrypto",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1860,7 +2050,6 @@
 					"-lhdf5_cpp",
 					"-lhdf5",
 					"-lz",
-					"-lcrypto",
 					"-llime",
 					"-lmpfr",
 					"-lgmp",
@@ -1951,7 +2140,6 @@
 					"-lhdf5_cpp",
 					"-lhdf5",
 					"-lz",
-					"-lcrypto",
 					"-llime",
 					"-lmpfr",
 					"-lgmp",

@@ -17,7 +17,10 @@ PCMakeScriptOutDir
 #DoDeltaT=$((1-0${nodt+1}))
 #DoPW=$((1-0${nopw+1}))
 Old=$((0${dir:+1}))
-if [ "$series" = all ]; then series="disp old priorPW priorP"; fi
+series="${series-disp old priorPW betterPW priorP betterP}"
+yRange=${yRange:-0.65:1.3}
+yRangeRaw=${yRangeRaw:-0.5:1.5}
+MaxX=${MaxX:-2.1}
 
 ###################################################
 # Make a plot of all four form factors - old version - various DeltaT
@@ -188,3 +191,5 @@ for OutSub in $series; do
        PlotFuncNew $SpecDir "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 3
   cd ..
 done
+
+#series=all yRange=0.65:1.3 yRangeRaw=0.5:1.5 MaxX=2.1 PlotFormFactor.sh

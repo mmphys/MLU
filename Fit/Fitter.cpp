@@ -116,11 +116,15 @@ std::vector<ModelPtr> Fitter::CreateModels( const Common::CommandLine &cl,
     throw std::runtime_error( "Can't construct a ModelSet for an empty data set" );
   if( NumModels != ModelArgs.size() )
     throw std::runtime_error( "ModelSet for " + std::to_string( NumModels ) + " correrlators, but "
-                     + std::to_string( ModelArgs.size() ) + " arguments" );
+                             + std::to_string( ModelArgs.size() ) + " arguments" );
   // Create this model
   std::vector<ModelPtr> model;
   model.reserve( ModelArgs.size() );
-  std::cout << "Making models\n";
+  std::cout << "Making models";
+  std::string sDescription{ cp.Description() };
+  if( !sDescription.empty() )
+    std::cout << " (" << sDescription << ")";
+  std::cout << Common::NewLine;
   for( int i = 0; i < ModelArgs.size(); ++i )
   {
     cp.pCorr = &ds.corr[i];
@@ -301,7 +305,7 @@ void Fitter::MakeGuess()
     for( std::size_t i = 0; i < model.size(); ++i )
     {
       Data.size( ds.FitTimes[i].size() );
-      std::size_t z{ model[i]->Guess( Guess, ParamKnown, Data, ds.FitTimes[i], false ) };
+      std::size_t z{ model[i]->Guess( Guess, ParamKnown, mp, Data, ds.FitTimes[i], false ) };
       Data += Data.size();
       if( z )
       {
@@ -320,10 +324,13 @@ void Fitter::MakeGuess()
   if( NumUnknown )
   {
     for( std::size_t i = 0; i < model.size(); ++i )
-      model[i]->Guess( Guess, ParamKnown, ds.vCentral, ds.FitTimes[i], true );
+      model[i]->Guess( Guess, ParamKnown, mp, ds.vCentral, ds.FitTimes[i], true );
     for( bool bKnown : ParamKnown )
       if( !bKnown )
+      {
+        mp.Dump<scalar>( std::cerr, Guess, Param::Type::Variable, nullptr, &ParamKnown );
         throw std::runtime_error( "Bad model: unable to guess all parameters" );
+      }
   }
 }
 

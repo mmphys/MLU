@@ -170,12 +170,32 @@ Model::CreateParams::CreateParams( const std::vector<std::string> &o, const Comm
 : OpNames{ o }, cl{ c },
   NumExponents{ cl.SwitchValue<int>( "e" ) },
   N{ cl.SwitchValue<int>( "N" ) },
+  bEnablePHat{ !cl.GotSwitch( "nophat" ) },
   bOverlapAltNorm{ cl.GotSwitch( Common::sOverlapAltNorm.c_str() ) }
 {
   if( bOverlapAltNorm )
     std::cout << "WARNING: Use of --" << Common::sOverlapAltNorm << " is deprecated.\n";
   if( N < 0 )
     throw std::runtime_error( "L/a " + std::to_string( N ) + " < 0");
+}
+
+std::string Model::CreateParams::Description() const
+{
+  std::string s;
+  if( N )
+  {
+    s.append( "using dispersion relation N=" );
+    s.append( std::to_string( N ) );
+    s.append( " with " );
+    s.append( bEnablePHat ? "p_hat" : "p" );
+  }
+  if( bOverlapAltNorm )
+  {
+    if( !s.empty() )
+      s.append( Common::CommaSpace );
+    s.append( "overlap alternate normalisation - deprecated" );
+  }
+  return s;
 }
 
 // Model constructor
@@ -190,9 +210,9 @@ void Model::AddParam( Params &mp, ModelParam &ModPar, std::size_t NumExp, bool b
   ModPar.param = &param.back()->second;
 }
 
-void Model::AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N )
+void Model::AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N, bool bEnablePHat )
 {
-  param.emplace_back( &*mp.AddEnergy( ModPar.Key, NumExp, N ) );
+  param.emplace_back( &*mp.AddEnergy( ModPar.Key, NumExp, N, bEnablePHat ) );
   ModPar.param = &param.back()->second;
 }
 

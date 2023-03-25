@@ -238,8 +238,19 @@ struct Momentum
   bool Extract( std::string &s, const std::string &MomName, bool IgnoreSubsequentZeroNeg = false );
   bool Extract( std::string &s ) { return Extract( s, DefaultPrefix, true ); }
   void Replace( std::string &s, const std::string &MomName, bool bNegative = false ) const;
-  // Use Lattice Dispersion relation and N=L/a to boost am to aE(p)
-  double LatticeDispersion( double am, unsigned int N, bool bGetGroundFromExcited = false ) const;
+  /**
+   Use Lattice Dispersion relation and N=L/a to boost am to aE(p)
+   
+   - Parameters:
+      - am: input mass (or energy - see `bGetGroundFromExcited`) in lattice units
+      - N: integer spatial extent of lattice (i.e. number of sites)
+      - bEnablePHat: `true` **default** use p_hat in dispersion relation (per the definition), `false` just use p
+      - bGetGroundFromExcited: `false` **default** get aE(p) given am, `true` get am given aE(p)
+   
+   PhDYear3Diary.pdf eq (22)
+   */
+  double LatticeDispersion( double am, unsigned int N, bool bEnablePHat = true,
+                            bool bGetGroundFromExcited = false ) const;
 };
 
 extern const Momentum p0;

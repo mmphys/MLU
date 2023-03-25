@@ -416,7 +416,7 @@ Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bM
   return it;
 }
 
-Params::iterator Params::AddEnergy( const Param::Key &key, std::size_t NumExp, int N )
+Params::iterator Params::AddEnergy( const Param::Key &key, std::size_t NumExp, int N, bool bEnablePHat )
 {
   bool bMonotonic{ true };
   Param::Type pt{ Param::Type::Variable };
@@ -438,7 +438,7 @@ Params::iterator Params::AddEnergy( const Param::Key &key, std::size_t NumExp, i
       Key0.append( p0.FileString( Common::Momentum::DefaultPrefix ) );
       Param::Key k0( std::move( Key0 ), key.Name );
       Add( k0, NumExp, true, Param::Type::Variable );
-      dispMap.emplace( key, DispEntry( k0, N, p ) );
+      dispMap.emplace( key, DispEntry( k0, N, p, bEnablePHat ) );
       bMonotonic = false;
       pt = Param::Type::Derived;
     }
@@ -448,16 +448,33 @@ Params::iterator Params::AddEnergy( const Param::Key &key, std::size_t NumExp, i
 
 template <typename T>
 void Params::GuessEnergy( Vector<T> &Guess, std::vector<bool> &bKnown,
-                          Param::Key &key, std::size_t idx, T Energy ) const
+                          const Param::Key &key, std::size_t idx, T Energy ) const
 {
   const_iterator it{ Find( key, "Params::GuessEnergy()" ) };
   const Param &p{ it->second };
   std::size_t idxEnergy{ p( idx ) };
   if( bKnown[idxEnergy] )
     std::cout << "  Ignoring guess " << key << "[" << idx << "] = " << Energy
-              << ". Keeping previous guess " << Guess[idxEnergy];
+              << ". Keeping previous guess " << Guess[idxEnergy] << NewLine;
   else
   {
+    // Enforce monotonic
+    if( p.bMonotonic && idx > 0 )
+    {
+      if( !bKnown[idxEnergy - 1] )
+      {
+        std::ostringstream os;
+        os << "Can't guess " << key << "[" << idx << "] = " << Energy
+           << " when " << key << "[" << (idx - 1) << "] unknown" << NewLine;
+        throw std::runtime_error( os.str().c_str() );
+      }
+      if( Energy < Guess[idxEnergy - 1] )
+      {
+        std::cout << "  Adjusting guess " << key << "[" << idx << "] = " << Energy
+                  << " to " << Guess[idxEnergy - 1] << NewLine;
+        Energy = Guess[idxEnergy - 1];
+      }
+    }
     Guess[idxEnergy] = Energy;
     bKnown[idxEnergy] = true;
     // Now see whether we are using the dispersion relation for this
@@ -468,20 +485,25 @@ void Params::GuessEnergy( Vector<T> &Guess, std::vector<bool> &bKnown,
       const DispEntry &de{ itd->second };
       const_iterator itParent{ Find( de.ParentKey, "Params::GuessEnergy() parent" ) };
       const Param &pParent{ itParent->second };
-      std::size_t idxParent{ pParent( idx ) };
+      std::size_t idxParent{ pParent() }; // Zero'th entry of the parent
       if( bKnown[idxParent] )
-        std::cout << "  Ignoring guess " << de.ParentKey << "[" << idx << "] = " << Energy
-                  << ". Keeping previous guess " << Guess[idxParent];
+        std::cout << "  Ignoring parent guess " << de.ParentKey << "[0] = " << Energy
+                  << ". Keeping previous guess " << Guess[idxParent] << NewLine;
       else
       {
-        Guess[idxParent] = de.p.LatticeDispersion( Energy, de.N, true );
+        Guess[idxParent] = de.p.LatticeDispersion( Energy, de.N, de.bEnablePHat, true );
         bKnown[idxParent] = true;
       }
     }
     // Now propagate guesses down through all children
-    PropagateEnergy( Guess, bKnown );
+    PropagateEnergy( Guess, &bKnown );
   }
 }
+
+template void Params::GuessEnergy<float>( Vector<float> &Guess, std::vector<bool> &bKnown,
+                                  const Param::Key &key, std::size_t idx, float Energy ) const;
+template void Params::GuessEnergy<double>( Vector<double> &Guess, std::vector<bool> &bKnown,
+                                  const Param::Key &key, std::size_t idx, double Energy ) const;
 
 template <typename T>
 void Params::PropagateEnergy( Vector<T> &Guess, std::vector<bool> *bKnown ) const
@@ -512,7 +534,7 @@ void Params::PropagateEnergy( Vector<T> &Guess, std::vector<bool> *bKnown ) cons
       {
         if( !bKnown || ( !(*bKnown)[idx + i] && (*bKnown)[idxParent + i] ) )
         {
-          Guess[idx + i] = de.p.LatticeDispersion( Guess[idxParent + i], de.N );
+          Guess[idx + i] = de.p.LatticeDispersion( Guess[idxParent + i], de.N, de.bEnablePHat );
           if( bKnown )
           {
             (*bKnown)[idx + i] = true;
@@ -731,16 +753,19 @@ void Params::Dump( std::ostream &os, const Vector<T> &Values, Param::Type ShowTy
       const std::size_t &Offset{ VectorType == Param::Type::All ? p.OffsetAll : p.OffsetMyType };
       for( std::size_t i = 0; i < p.size; ++i )
       {
+        os << std::string( MaxLen - p.FieldLen + 2, ' ' ) << it.first;
+        if( p.size > 1 )
+          os << i;
+        os << " ";
         if( !pbKnown || (*pbKnown)[Offset + i] )
         {
-          os << std::string( MaxLen - p.FieldLen + 2, ' ' ) << it.first;
-          if( p.size > 1 )
-            os << i;
-          os << " " << Values[Offset + i];
+          os << Values[Offset + i];
           if( pErrors && p.type == Param::Type::Variable )
             os << "\t+/- " << (*pErrors)[p.OffsetMyType + i];
-          os << "\n";
         }
+        else
+          os << "unknown";
+        os << "\n";
       }
     }
   }

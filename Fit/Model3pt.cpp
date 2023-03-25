@@ -32,7 +32,8 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args,
                     std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
                     std::size_t NumOverlapExp )
 : ModelOverlap( cp, Args, std::move( objectID ), std::move( opNames ), NumOverlapExp > 1 ? 2 : 1 ),
-  N{ cp.N }
+  N{ cp.N },
+  bEnablePHat{ cp.bEnablePHat }
 {
   if( !cp.pCorr->Name_.bGotDeltaT )
     throw std::runtime_error( "DeltaT not available in " + cp.pCorr->Name_.Filename );
@@ -64,7 +65,7 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args,
 void Model3pt::AddParameters( Params &mp )
 {
   for( ModelParam &p : E )
-    AddEnergy( mp, p, NumOverlapExp, N );
+    AddEnergy( mp, p, NumOverlapExp, N, bEnablePHat );
   AddParam( mp, MEL, NumExponents, false );
   ModelOverlap::AddParameters( mp );
   if( !EDiff.Key.Object.empty() )
@@ -111,8 +112,9 @@ void Model3pt::Guessable( ParamsPairs &PP ) const
   // TODO: Implement guessing
 }
 
-std::size_t Model3pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
-                       const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const
+std::size_t Model3pt::Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
+                             const VectorView &FitData, std::vector<int> FitTimes,
+                             bool bLastChance ) const
 {
   // I can guess the matrix element
   for( std::size_t i = 0; i < MEL.param->size; ++i )

@@ -32,7 +32,8 @@ Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args,
                     std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
                     std::size_t NumOverlapExp )
 : ModelOverlap( cp, Args, std::move( objectID ), std::move( opNames ), NumOverlapExp ),
-  N{ cp.N }
+  N{ cp.N },
+  bEnablePHat{ cp.bEnablePHat }
 {
   E.Key.Object = { ObjectID( idxSrc ) };
   E.Key.Name = Args.Remove( "Energy", Common::ModelBase::EnergyPrefix );
@@ -40,7 +41,7 @@ Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args,
 
 void Model2pt::AddParameters( Params &mp )
 {
-  AddEnergy( mp, E, NumOverlapExp, N );
+  AddEnergy( mp, E, NumOverlapExp, N, bEnablePHat );
   ModelOverlap::AddParameters( mp );
 }
 
@@ -68,8 +69,9 @@ void Model2pt::Guessable( ParamsPairs &PP ) const
 }
 
 // Take a guess as to my parameters
-std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
-                       const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const
+std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
+                             const VectorView &FitData, std::vector<int> FitTimes,
+                             bool bLastChance ) const
 {
   // I need a minimum of two timeslices per energy level to guess
   static constexpr std::size_t DataPointsPerGuess{ 2 };
@@ -85,6 +87,7 @@ std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
     // Guess the energy
     if( !bKnown[E.idx + i] )
     {
+      scalar ThisEnergy;
       if( i < NumICanGuess )
       {
         // Assume each new pair of data points can explain one more excited-state energy
@@ -92,10 +95,7 @@ std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
         const scalar C2{ Estimate( Guess, FitData, FitTimes, i, tGuess + 1 ) };
         const scalar Log{ std::log( std::abs( C1 / C2 ) ) };
         const int DeltaT{ FitTimes[tGuess + 1] - FitTimes[tGuess] };
-        Guess[E.idx + i] = Log / DeltaT;
-        // Enforce monotonic
-        if( i > 0 && Guess[E.idx + i] < Guess[E.idx + i - 1] )
-          Guess[E.idx + i] = Guess[E.idx + i - 1];
+        ThisEnergy = Log / DeltaT;
       }
       else if( i == 0 )
       {
@@ -105,12 +105,13 @@ std::size_t Model2pt::Guess( Vector &Guess, std::vector<bool> &bKnown,
       else
       {
         // Very crude guess, but assume each energy level is half the previous Delta E
+        ThisEnergy = Guess[E.idx + i - 1];
         if( i == 1 )
-          Guess[E.idx + i] = Guess[E.idx + i - 1] * 1.5;
+          ThisEnergy *= 1.5;
         else
-          Guess[E.idx + i] = Guess[E.idx + i - 1] + 0.5 * ( Guess[E.idx + i - 1] - Guess[E.idx + i - 2] );
+          ThisEnergy += 0.5 * ( Guess[E.idx + i - 1] - Guess[E.idx + i - 2] );
       }
-      bKnown[E.idx + i] = true;
+      mp.GuessEnergy( Guess, bKnown, E.Key, i, ThisEnergy );
     }
     // Do we need to guess overlap coefficients?
     const std::size_t OverlapSize{ OverlapCount( i ) };

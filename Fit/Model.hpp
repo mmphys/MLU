@@ -75,11 +75,13 @@ struct Model
     const Common::CommandLine &cl;
     const int NumExponents; // Default if not specified per model
     const int N; // When non-zero, this is L/a (lattice spatial extent) use dispersion relation
+    const bool bEnablePHat; // true ? use p_hat in dispersion relation (per definition) : just use p
     const bool bOverlapAltNorm;
     // These will change per model
     const Fold *pCorr;
     CreateParams( const std::vector<std::string> &OpNames_, const Common::CommandLine &cl_ );
     std::string GetOpName( int Idx ) const { return OpNames[pCorr->Name_.op[Idx]]; }
+    std::string Description() const;
   };
   std::vector<Params::value_type *> param;
   const int Nt;
@@ -91,7 +93,7 @@ protected:
   /**
    Add energy. If N != 0 then use the lattice dispersion relation for this parameter
    */
-  void AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N );
+  void AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N, bool bEnablePHat );
 public:
   virtual ~Model() {}
   // This is how to make a model
@@ -108,8 +110,9 @@ public:
   virtual void Guessable( ParamsPairs &PP ) const = 0;
   // Guess unknown parameters. LastChance true -> fit about to be abandoned, so guess products of params
   // Return number of unknown parameters remaining. NB: Count excited states - i.e. return sum of param.size
-  virtual std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,
-                       const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const = 0;
+  virtual std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
+                             const VectorView &FitData, std::vector<int> FitTimes,
+                             bool bLastChance ) const = 0;
   // Get model type
   virtual ModelType Type() const = 0;
   /**

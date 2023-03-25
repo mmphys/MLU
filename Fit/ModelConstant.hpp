@@ -38,8 +38,9 @@ struct ModelConstant : Model, Object
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
   void Guessable( ParamsPairs &PP ) const override;
-  std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown,
-               const VectorView &FitData, std::vector<int> FitTimes, bool bLastChance ) const override;
+  std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
+                     const VectorView &FitData, std::vector<int> FitTimes,
+                     bool bLastChance ) const override;
   ModelType Type() const override { return ModelType::Constant; }
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
   double Derivative( int t, int p ) const override;

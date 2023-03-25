@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export Ensemble=C1
+export Ensemble=${Ensemble:-C1}
 . PlotCommon.sh
 
 #set -x
@@ -42,7 +42,7 @@ aMesonFit[h${Heavy}_s,0]=corr_6_27_14_27
 aMesonFileOp[h${Heavy}_s,0]=g5P_g5W
 aMesonFileMom[h${Heavy}_s,0]=_p2_0
 
-for FileSeries in ${series-old disp priorPW priorP}; do
+for FileSeries in ${series-old disp priorPW betterPW priorP betterP}; do
 case $FileSeries in
   old) # Versions using different PP+PW fit on each momentum
   aMesonFit[s_l,0]=corr_6_23_7_23
@@ -59,6 +59,7 @@ case $FileSeries in
   for((i = 0; i < 5; ++i)); do
     aMesonFit[s_l,$i]=corr_6_23_6_23_5_20_5_20_5_18
     aMesonFileOp[s_l,$i]=g5P
+    aMesonFileMom[s_l,$i]=
   done;;
 
   priorPW) # Simultaneous fit to PP & PW at all momenta using dispersion relation
@@ -74,12 +75,38 @@ case $FileSeries in
     aMesonFileMom[s_l,$i]=_p2_$i.${FileSeries}_6_23_7_23
   done;;
 
+  betterPW) # Simultaneous fit to PP & PW at all momenta using dispersion relation
+  aMesonFit[s_l,0]=corr_6_23_7_23
+  aMesonFit[s_l,1]=corr_6_23_7_23
+  aMesonFit[s_l,2]=corr_6_20_5_20
+  aMesonFit[s_l,3]=corr_6_20_6_20
+  aMesonFit[s_l,4]=corr_6_18_6_18
+  aMesonFileOp[s_l,0]=g5P_g5W
+  aMesonFileMom[s_l,0]=_p2_0
+  for((i = 1; i < 5; ++i)); do
+    aMesonFileOp[s_l,$i]=g5P_g5W
+    aMesonFileMom[s_l,$i]=_p2_$i.${FileSeries}_6_23_7_23
+  done;;
+
   priorP) # Simultaneous fit to PP at all momenta using dispersion relation
   aMesonFit[s_l,0]=corr_6_23_7_23
   aMesonFit[s_l,1]=corr_6_23
   aMesonFit[s_l,2]=corr_5_20
   aMesonFit[s_l,3]=corr_5_20
   aMesonFit[s_l,4]=corr_5_18
+  aMesonFileOp[s_l,0]=g5P_g5W
+  aMesonFileMom[s_l,0]=_p2_0
+  for((i = 1; i < 5; ++i)); do
+    aMesonFileOp[s_l,$i]=g5P_g5W
+    aMesonFileMom[s_l,$i]=_p2_$i.${FileSeries}_6_23_7_23
+  done;;
+
+  betterP) # Simultaneous fit to PP at all momenta using dispersion relation
+  aMesonFit[s_l,0]=corr_6_23_7_23
+  aMesonFit[s_l,1]=corr_6_23
+  aMesonFit[s_l,2]=corr_6_20
+  aMesonFit[s_l,3]=corr_6_20
+  aMesonFit[s_l,4]=corr_6_18
   aMesonFileOp[s_l,0]=g5P_g5W
   aMesonFileMom[s_l,0]=_p2_0
   for((i = 1; i < 5; ++i)); do
