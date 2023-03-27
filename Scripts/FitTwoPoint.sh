@@ -91,7 +91,7 @@ then
   if (( LastError != 3 ))
   then
     echo "MultiFit error $LastError"
-    exit 1
+    return 1
   fi
   echo "Warning: Not all fit parameters resolved"
 fi

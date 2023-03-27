@@ -66,7 +66,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--tablen"
+            argument = "--tablen 66"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -86,7 +86,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "$HOME/NoSync/C1/TwoPointScan/s_l/e2_2/*.h5"
+            argument = "$HOME/NoSync/C1/MELFit/2ptp2/s_l/*.h5"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

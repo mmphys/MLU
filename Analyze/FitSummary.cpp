@@ -244,7 +244,10 @@ Summariser::Summariser( const Common::CommandLine &cl )
     // Have we seen this base before?
     BaseList::iterator it{ lBase.find( sOutFile ) };
     if( it == lBase.end() )
-      it = lBase.emplace( sOutFile, BaseInfo( n.GetFirstNonZeroMomentum().second ) ).first;
+    {
+      const Common::Momentum &np{ n.p.empty() ? Common::p0 : n.GetFirstNonZeroMomentum().second };
+      it = lBase.emplace( sOutFile, BaseInfo( np ) ).first;
+    }
     it->second.vFI.emplace_back( ft, sFileName, bIsFit );
   }
 }
@@ -377,7 +380,11 @@ void Summariser::SummaryColumnNames( std::ostream &os, std::size_t NumFitTimes,
 {
   os << "Load " << Model::SummaryColumnPrefix << Common::Space;
   ParamNames.WriteNamesValWithEr( os );
-  os << Common::Space << StatNames;
+  for( const std::string &Name : StatNames )
+  {
+    os << Common::Space;
+    veScalar::Header( Name, os, Common::Space );
+  }
   // Write additional fit time pair names
   for( std::size_t i = 1; i < NumFitTimes; ++i )
     os << Common::Space << "ti" << i << Common::Space << "tf" << i;
