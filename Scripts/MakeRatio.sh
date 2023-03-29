@@ -43,37 +43,37 @@ function DoesFileExist()
 # Walk each of the 3pt directories
 for d in $CorrDirNow/3??_*
 do
-    Dir=${d##*/}
-    Spec=${Dir:4}
-    SpecGrp=$Spec
-    unset PGroup
-    if [ "${Spec: -2}" == "p2" ]
-    then
-	PGroup=${Spec: -2}
-	Spec=${Spec:0:-2}
-    fi
-    # Work out whether we have the energy fits and the ZV Fits
-    bOK=1
-    if [ -v fixe ]
-    then
-	EFit=,${Spec}
-    else
-	EFit="Fit_${SpecGrp}.txt"
-	DoesFileExist $FitDirNow/$EFit
-	EFit=$FitDir/$EFit
-    fi
-    if [ -v fixzv ]
-    then
-	unset ZVFit
-    else
-	ZVFit="ZVFit_${SpecGrp}.txt"
-	DoesFileExist $FitDirZVNow/$ZVFit
-	ZVFit=$FitDirZV/$ZVFit
-    fi
-    if ! [ -v bOK ]
-    then
-	echo "Can't make ratios for $Dir"
-    else
+  Dir=${d##*/}
+  Spec=${Dir:4}
+  SpecGrp=$Spec
+  unset PGroup
+  if [ "${Spec: -2}" == "p2" ]
+  then
+    PGroup=${Spec: -2}
+    Spec=${Spec:0:-2}
+  fi
+  # Work out whether we have the energy fits and the ZV Fits
+  bOK=1
+  if [ -v fixe ]
+  then
+    EFit="''" # ,${Spec}
+  else
+    EFit="Fit_${SpecGrp}.txt"
+    DoesFileExist $FitDirNow/$EFit
+    EFit=$FitDir/$EFit
+  fi
+  if [ -v fixzv ]
+  then
+    unset ZVFit
+  else
+    ZVFit="ZVFit_${SpecGrp}.txt"
+    DoesFileExist $FitDirZVNow/$ZVFit
+    ZVFit=$FitDirZV/$ZVFit
+  fi
+  if ! [ -v bOK ]
+  then
+    echo "Can't make ratios for $Dir"
+  else
 	ZVFit=R${ZVFit:+,$ZVFit}
 	echo "Making ratios for $Dir"
 	# Get a list (associative array) of the work to be done
@@ -106,7 +106,7 @@ do
 		echo "$Cmd '*'_${m}_gXYZ_dt_'*'_p2_0_ps2_'*'_${ss}.'*'.h5" >> $JobFileName
 	    done
 	done
-    fi
+  fi
 done
 
 # Job file needs to be executable
