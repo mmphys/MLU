@@ -55,13 +55,13 @@ local Corr=${Corr:-corr}
 ########################################
 # Derived
 
-local OutSubDir=2ptp2
+local OutSubDir=$Ensemble/MELFit/2ptp2/$Meson
 local Suffix=$Seed.txt
 local Fold=fold.$Suffix
 local CorrPrefix=$Corr/2ptp2/${Meson}_p2_${p}_
 
 local FitType=corr_${TI}_${TF}_${TI2}_${TF2}
-local MesonPrefix=$Meson/${Meson}_p2_${p}.$FitType.g5P_g5W.model
+local MesonPrefix=${Meson}_p2_${p}.$FitType.g5P_g5W.model
 
 local CorrFiles="$PlotData/${CorrPrefix}g5P_g5P.$Fold $PlotData/${CorrPrefix}g5P_g5W.$Fold"
 local ExtraFiles="$PlotData/${CorrPrefix}gT5P_g5P.$Fold $PlotData/${CorrPrefix}gT5P_g5W.$Fold"
@@ -70,6 +70,7 @@ LabelTF="${LabelTF} ${LabelTF}"
 
 local OutFile=$OutSubDir/$MesonPrefix.$Seed
 local LogFile=$OutFile.log
+mkdir -p "$OutSubDir"
 
 ########################################
 # Perform the fit
@@ -77,12 +78,12 @@ local LogFile=$OutFile.log
 local Cmd="MultiFit -e $NumExp --mindp 1"
 [ -v Stat ] && Cmd="$Cmd --Hotelling $Stat"
 Cmd="$Cmd --overwrite"
-#Cmd="$Cmd --debug-signals"
+Cmd="$Cmd --debug-signals"
+Cmd="$Cmd --strict 1"
 [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
-Cmd="$Cmd --summary 2 -i $PlotData/${CorrPrefix} -o $OutSubDir/$Meson/"
+Cmd="$Cmd --summary 2 -i $PlotData/${CorrPrefix} -o $OutSubDir/"
 Cmd="$Cmd g5P_g5P.fold.$Seed.h5,t=${TI}:${TF},e=$NumExp"
 Cmd="$Cmd g5P_g5W.fold.$Seed.h5,t=${TI2}:${TF2},e=$NumExp2"
-mkdir -p "$OutSubDir/$Meson"
 #echo "$Cmd"
 echo "$Cmd"  > $LogFile
 if  ! $Cmd &>> $LogFile
@@ -93,28 +94,14 @@ then
     echo "MultiFit error $LastError"
     return 1
   fi
-  echo "Warning: Not all fit parameters resolved"
+  echo "Warning: Not all fit parameters resolved $Cmd"
 fi
 
 ########################################
 # Plot the fit
 
-# Get the energy difference
+# Get E0 (reference value for plot)
 GetColumnValues $OutFile.h5 "${Meson//_/-} (n^2=$p) E_0=" '' E0
-if ! ColumnValues=$(GetColumn --exact ChiSqPerDof,pValueH --partial E0 $OutFile.h5)
-then
-  LastError=${PIPESTATUS[0]}
-  echo "Error $LastError: $ColumnValues"
-  unset ColumnValues
-else
-  #echo "OK: $ColumnValues"
-  ColumnValues=($ColumnValues)
-  E0="${ColumnValues[@]:16:8}"
-  RefText="${Meson//_/-} (n^2=$p) E_0=${ColumnValues[@]:17:1}, χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})"
-fi
-
-# Plot it
-
 Cmd="title='point-point point-wall' files='$CorrFiles' tf='$LabelTF' save='$OutFile'"
 Cmd="$Cmd yrange='${ayRange[$Meson,$p]}'"
 [ -v RefText ] && Cmd="$Cmd RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"

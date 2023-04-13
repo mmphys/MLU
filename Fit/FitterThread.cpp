@@ -105,7 +105,8 @@ void FitterThread::MakeReplicaCovar( int idx_, bool bFirstTime, bool bShowOutput
         if( !bCorrelated || !parent.cp.OneStep( idx_ ) )
         {
           // Make the variance from the binned data on this replica
-          parent.ds.MakeVariance( idx_, Common::SampleSource::Binned, StdErrorMean );
+          using SS = Common::SampleSource;
+          parent.ds.MakeVariance( idx_, bCorrelated ? SS::Binned : parent.cp.Source, StdErrorMean );
           SaveStdError();
         }
         if( bCorrelated )

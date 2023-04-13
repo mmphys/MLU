@@ -261,9 +261,9 @@ void ZVRCommon::Make( std::string &FileName )
   if( fna.MesonMom.size() < 2 )
     throw std::runtime_error( "Can't extract sink/source mesons/momenta from " + fna.GetBaseShort() );
   const std::string FileNameSuffix{ fna.GetBaseShort( 3 ) };
+  SSInfo Snk( EFit, OpNames[fna.op[1]], MP( fna.Meson[1], fna.MesonP[1] ), fna.BaseShortParts[1] );
+  SSInfo Src( EFit, OpNames[fna.op[0]], MP( fna.Meson[0], fna.MesonP[0] ), fna.BaseShortParts[2] );
   fna.BaseShortParts.resize( 1 );
-  SSInfo Snk( EFit, OpNames[fna.op[1]], MP( fna.Meson[1], fna.MesonP[1] ), fna.BaseShortParts[2] );
-  SSInfo Src( EFit, OpNames[fna.op[0]], MP( fna.Meson[0], fna.MesonP[0] ), fna.BaseShortParts[1] );
   Make( fna, FileNameSuffix, Snk, Src );
 }
 
@@ -840,7 +840,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
       Common::FileNameAtt fna{ vFileGammaT[0], &OpNames };
       std::string sOpNames;
       fna.AppendOps( sOpNames, Common::Period, &OpNames );
-      const Common::NamedMomentum &p{ fna.GetFirstNonZeroMomentum() };
+      const Common::MomentumPair &p{ fna.GetFirstNonZeroMomentum() };
       std::string Description;
       {
         std::ostringstream os;
@@ -849,7 +849,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
       }
       std::cout << Description << Common::NewLine;
       std::array<std::string,2> q{ fna.BaseShortParts[2], fna.BaseShortParts[1] };
-      const int iLight{ fna.MesonP[0] ? 0 : 1 }; // Work out which meson is heavy (ie got momentum)
+      const int iLight{ fna.MesonP[0].p ? 0 : 1 }; // Work out which meson is heavy (ie got momentum)
       const int iHeavy{ 1 - iLight };
       // If non-zero momentum, build a list of corresponding spatial correlators
       std::vector<Model> mGammaXYZ;
@@ -860,7 +860,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
       else
       {
         // Get the zero-momentum version of the light
-        const Common::NamedMomentum p0( p.first, p.second.bp2 );
+        const Common::MomentumPair p0( p.first, p.second.bp2 );
         MP mpMLight( fna.Meson[iLight], p0.second, p0.first );
         pmMLight = &EFit( mpMLight, szReading );
         MLight = EFit.GetVector( mpMLight, mpMLight.PK() );
@@ -1018,7 +1018,7 @@ void FFitConstMaker::Make( std::string &FileName )
   const std::string &MesonHeavy{ fna.Meson[bSnkHeavier ? 1 : 0] };
   const std::string &MesonLight{ fna.Meson[bSnkHeavier ? 0 : 1] };
   {
-    const Common::NamedMomentum &np{ fna.GetFirstNonZeroMomentum() };
+    const Common::MomentumPair &np{ fna.GetFirstNonZeroMomentum() };
     p = np.second;
     pName = np.first;
   }

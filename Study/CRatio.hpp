@@ -58,11 +58,12 @@ struct MP
   MP( const std::string &Meson_, const Common::Momentum &P,
       const std::string &pName_ =  Common::Momentum::DefaultPrefix )
   : Meson{Meson_}, p{P}, pName{pName_} {}
-  std::string Name() const { return Meson + p.FileString( pName ); }
-  Common::Param::Key PK( const std::string &FieldName = Common::ModelBase::EnergyPrefix ) const
-  { return Common::Param::Key( Name(), FieldName ); }
+  MP( const std::string &Meson_, const Common::NamedMomentum &NP ) : MP(Meson_,NP.p,NP.Name) {}
+  MP( const std::string &Meson_, const Common::MomentumPair &NP ) : MP(Meson_,NP.second,NP.first) {}
   /// Get name of two-point correlator
-  std::string C2Name() const { return Meson + p.FileString( pName ); }
+  std::string C2Name() const { return Meson + p.FileString( Common::Momentum::DefaultPrefix ); }
+  Common::Param::Key PK( const std::string &FieldName = Common::ModelBase::EnergyPrefix ) const
+  { return Common::Param::Key( C2Name(), FieldName ); }
 };
 
 std::ostream &operator<<( std::ostream &os, const MP &mp );

@@ -519,7 +519,16 @@ struct MomentumMap : std::map<std::string, Momentum, LessCaseInsensitive>
   MomentumMap() = default;
   MomentumMap( std::string &ExtractFrom ) { Parse( ExtractFrom ); }
 };
-using NamedMomentum = MomentumMap::value_type;
+using MomentumPair = MomentumMap::value_type;
+
+struct NamedMomentum
+{
+  std::string Name;
+  Momentum p;
+  NamedMomentum( const std::string &Name_ = Momentum::DefaultPrefix ) : Name(Name_) {}
+  NamedMomentum( const std::string &Name_, const Momentum &p_ ) : Name{Name_}, p(p_) {}
+  NamedMomentum( const MomentumPair &p ) : NamedMomentum( p.first, p.second ) {}
+};
 
 // Attributes for filenames in form base.type.seed.ext
 struct FileNameAtt
@@ -549,7 +558,7 @@ struct FileNameAtt
   bool bSpectatorGotSuffix = false;
   std::vector<std::string> Meson; // 0 is source, 1 is sink
   std::vector<std::string> MesonMom; // With momenta - if available
-  std::vector<Momentum> MesonP; // The momenta - if available
+  std::vector<NamedMomentum> MesonP; // The momenta - if available
   // reset contents
   void clear()
   {
@@ -629,12 +638,12 @@ struct FileNameAtt
   // Make a new name based on this one, overriding specified elements
   std::string DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
                            const std::string &Ext ) const;
-  const NamedMomentum &GetMomentum( const std::string &Name = Momentum::DefaultPrefix ) const;
+  const MomentumPair &GetMomentum( const std::string &Name = Momentum::DefaultPrefix ) const;
   bool HasNonZeroMomentum() const;
-  const NamedMomentum &GetFirstNonZeroMomentum() const;
+  const MomentumPair &GetFirstNonZeroMomentum() const;
   void AppendMomentum( std::string &s, const Momentum &p, const std::string &Name ) const
   { s.append( p.FileString( Name ) ); }
-  void AppendMomentum( std::string &s, const NamedMomentum &np ) const
+  void AppendMomentum( std::string &s, const MomentumPair &np ) const
   { AppendMomentum( s, np.second, np.first );}
   std::string MakeMesonName( const std::string &Quark ) const
   { return ::Common::MakeMesonName( Quark, Spectator ); }

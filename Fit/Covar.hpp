@@ -40,8 +40,8 @@ struct CovarParams
   // Where am I building the covariance from
   using SS = Common::SampleSource;
   SS Source;
-  // 0 = build correlation from CovarSource, then scale by the variance of the data on each bootstrap replica
-  // else this is the number of bootstrap replicas to use when estimating covariance
+  // 0 = build correlation from CovarSource, scaled by variance of data on each bootstrap replica
+  // else estimate covariance by re-bootstrapping each replica using this # of secondary replicas
   int CovarNumBoot;
   // Random numbers to get the covariance from a bootstrap
   using fint = Common::fint;
@@ -53,7 +53,7 @@ struct CovarParams
   Matrix Covar;
   // Constructor
   CovarParams( const Common::CommandLine &cl, DataSet &ds );
-  // Can we compute (co)variance on non-central replicas - i.e. do we have rebinned data
+  /// Can we compute (co)variance on non-central replicas? Only possible if we have rebinned data
   inline bool SupportsUnfrozen() const { return ds.NumSamplesBinned(); }
   // Source is a bootstrap - only valid to compute variance on central replica
   inline bool SourceIsBootstrap() const
@@ -64,7 +64,10 @@ struct CovarParams
     return SourceIsBootstrap() ? ds.corr[0].SampleSize
                                : ds.corr[0].NumSamples( Source==SS::Raw ? SS::Raw : SS::Binned );
   }
-  // Make correlation matrix, then scale it by variance of data on each replica
+  /**
+   Can I make the covariance matrix in one step for this replica?
+   If false, then I make correlation matrix from source, then scale it by variance of data on this replica
+   */
   inline bool OneStep( int Replica ) const
   {
     // TODO: support covar from replica data

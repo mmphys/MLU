@@ -59,23 +59,31 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--i3 $HOME/NoSync/C1/MELFit/3sm_sp2/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--i3 C1/corr/3sm_sp2/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o ratioE1ZV1/3sm_sp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o FFS/C1/3sm_sp2/"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--efit $HOME/NoSync/C1/MELFit/Fit_sp2.txt"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--efit ,s"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type F,24"
+            argument = "--efit $HOME/NoSync/C1/MELFit/Fit_sp2.txt"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--efit &apos;&apos;"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--type F,24"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--AltOver"
@@ -83,6 +91,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;*.h5&apos;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--type R &apos;*&apos;_l_h6413_gT_dt_&apos;*&apos;_p2_0_ps2_[1234]_g5P_g5P.&apos;*&apos;.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

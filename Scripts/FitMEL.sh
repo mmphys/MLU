@@ -9,7 +9,7 @@
 ############################################################
 
 #Ensemble=${Ensemble:-F1M}
-. PlotCommon.sh
+# . PlotCommon.sh
 
 #set -x
 set -e
@@ -53,6 +53,8 @@ FitOptionsPerFile=($Options)
 
 Plot=${Plot:-Plot}
 PlotDataFrom=${PlotDataFrom:-4} # how far in from source and sink to plot data points
+
+# UnCorr: set to anything to perform uncorrelated fit
 
 ############################################################
 
@@ -109,7 +111,7 @@ case "$FitWhat" in
   *) echo "Error: FitWhat=$FitWhat"; exit 1;;
 esac
 
-FitType=corr
+[ -v UnCorr ] && FitType=uncorr || FitType=corr
 SuffixModel=g5P_g5W.model
 MesonDir=$Ensemble/$MELFit/2ptp2
 InputMesonSnk=$MesonDir/$MesonSnk/${MesonSnk}${FileMomSnk}.$FitSnk.${FileOpSnk}.model.$Seed.h5
@@ -145,8 +147,9 @@ done
 
 BuildModelBase=$OutSubDir/${FitWhat}_${OutLongName}
 
-MultiFit="MultiFit -e $NumExp --Hotelling 0 --mindp 1"
+MultiFit="MultiFit -e $NumExp --Hotelling 0"
 MultiFit="$MultiFit --overwrite"
+[ -v UnCorr ] && MultiFit="$MultiFit --uncorr"
 MultiFit="$MultiFit --debug-signals"
 Cmd="$MultiFit --summary 2 -o $BuildModelBase $InputMesonSnk $InputMesonSrc $FitList"
 BuildModelBase=$BuildModelBase.${FitType}

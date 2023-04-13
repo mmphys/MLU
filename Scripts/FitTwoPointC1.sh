@@ -53,9 +53,6 @@ ayRange[s_l,4]='0.55:0.7'
 #ayRange[s_l,4]='0.48:0.8'
 
 if [ "${DoAll+x}" = x ]; then
-  mkdir -p $Ensemble/MELFit
-  cd $Ensemble/MELFit
-
   # D_s
   (
   export Meson=h6413_s
@@ -76,7 +73,7 @@ if [ "${DoAll+x}" = x ]; then
   )
 
   InDir=$PlotData/corr/2ptp2
-  OutDir=2ptp2/s_l
+  OutDir=$Ensemble/MELFit/2ptp2/s_l
 
   aFitFiles=()
   for((i=0; i < 5; ++i)); do
@@ -87,7 +84,7 @@ if [ "${DoAll+x}" = x ]; then
 
   aTimes=(6:23 6:23 5:20 5:20 5:18)
   aTimesW=(7:23 7:23 5:20 5:20 5:18)
-  PriorFitTimes="6_23_7_23"
+  PriorFitTimes="${aTimes[0]}_${aTimesW[0]}"; PriorFitTimes="${PriorFitTimes//:/_}"
 
   SimulP # Simultaneous fits of point-point data at all momenta
   FitEachMomPW priorPW

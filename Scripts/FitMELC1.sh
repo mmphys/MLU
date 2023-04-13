@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 export Ensemble=${Ensemble:-C1}
+if ! [ -d $Ensemble ]; then
+  echo "Ensemble $Ensemble doesn't exist. Change directory?"
+else
 . PlotCommon.sh
 
 #set -x

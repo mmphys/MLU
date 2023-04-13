@@ -338,14 +338,20 @@ int main(int argc, const char *argv[])
           const auto mS{ std::chrono::duration_cast<std::chrono::milliseconds>( now - then ) };
           std::cout << "Fit duration ";
           if( mS.count() < 1100 )
-            std::cout << mS.count() << " milliseconds.\n";
+            std::cout << mS.count() << " milliseconds";
           else
           {
             const auto S{ std::chrono::duration_cast<std::chrono::duration<double>>( now - then ) };
             std::ostringstream ss;
-            ss << std::fixed << std::setprecision(1) << S.count() << " seconds.\n";
+            ss << std::fixed << std::setprecision(1) << S.count() << " seconds";
             std::cout << ss.str();
           }
+          std::time_t ttNow;
+          std::time( &ttNow );
+          std::string sNow{ std::ctime( &ttNow ) };
+          while( sNow.length() && sNow.back() == '\n' )
+            sNow.resize( sNow.length() - 1 );
+          std::cout << ". " << sNow << Common::NewLine;
         }
       }
       const auto now{ std::chrono::steady_clock::now() };
@@ -413,7 +419,7 @@ int main(int argc, const char *argv[])
     "         Rebin     Rebin the raw data using bin size(s) specified\n"
     "         Bootstrap Use bootstrap replicas (default)\n"
     "         H5,f[,g],d Load INVERSE covariance from .h5 file f, group g, dataset d\n"
-    "--covboot How many bootstrap replicas in covariance (-1=no bootstrap)\n"
+    "--covboot Build covariance using secondary bootstrap & this num replicas, 0=all\n"
     "--guess   List of specific values to use for inital guess\n"
     "--summary 0 no summaries; 1 model_td.seq.txt only; 2 model_td and model.seq.txt\n"
     "-i     Input  filename prefix\n"

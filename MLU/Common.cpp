@@ -366,20 +366,20 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
       if( pps != p.end() )
       {
         // We have two momenta
-        MesonP.emplace_back( pp->second );
-        MesonP.emplace_back( pps->second );
+        MesonP.emplace_back( *pp );
+        MesonP.emplace_back( *pps );
       }
       else
       {
         MesonP.resize( 2 ); // They will both default to zero momentum
         // We only have one momentum - this goes with the lightest meson
         const bool bSourceHeavier{ QuarkWeight(BaseShortParts[2]) >= QuarkWeight(BaseShortParts[1]) };
-        MesonP[bSourceHeavier ? 1 : 0] = pp->second;
-        MesonP[bSourceHeavier ? 0 : 1].bp2 = pp->second.bp2;
+        MesonP[bSourceHeavier ? 1 : 0].p = pp->second;
+        MesonP[bSourceHeavier ? 0 : 1].p.bp2 = pp->second.bp2;
       }
       MesonMom = Meson;
       for( std::size_t i = 0; i < MesonMom.size(); ++i )
-        MesonMom[i].append( MesonP[i].FileString( Momentum::DefaultPrefix ) );
+        MesonMom[i].append( MesonP[i].p.FileString( Momentum::DefaultPrefix ) );
     }
   }
 }
@@ -511,7 +511,7 @@ std::string FileNameAtt::DerivedName( const std::string &Suffix, const std::stri
   return s;
 }
 
-const NamedMomentum &FileNameAtt::GetMomentum( const std::string &Name ) const
+const MomentumPair &FileNameAtt::GetMomentum( const std::string &Name ) const
 {
   auto it = p.find( Name );
   if( it == p.end() )
@@ -529,7 +529,7 @@ bool FileNameAtt::HasNonZeroMomentum() const
   return false;
 }
 
-const NamedMomentum &FileNameAtt::GetFirstNonZeroMomentum() const
+const MomentumPair &FileNameAtt::GetFirstNonZeroMomentum() const
 {
   if( p.empty() )
     throw std::runtime_error( "No momenta available" );
@@ -2241,7 +2241,7 @@ void DataSet<T>::Rebin( const std::vector<int> &NewSize )
     {
       std::ostringstream os;
       os << "Rebinned corr " << i << " has " << corr[i].NumSamplesRaw()
-         << " samples, others have " << corr[i].NumSamplesRaw();
+         << " samples, others have " << corr[0].NumSamplesRaw();
       throw std::runtime_error( os.str().c_str() );
     }
   }

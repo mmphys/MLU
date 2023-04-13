@@ -84,7 +84,7 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
   // Check that all the input files match for raw/rebinned (checked for binned data on load)
   if( Source == SS::Raw || Source == SS::Binned )
   {
-    // Using raw samples - check all files have the same number
+    // Check whether all files have the same number of samples
     for( std::size_t i = 0; i < ds.corr.size(); ++i )
     {
       const int Count{ ds.corr[i].NumSamples( Source ) };
