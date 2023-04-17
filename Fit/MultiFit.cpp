@@ -299,19 +299,13 @@ int main(int argc, const char *argv[])
         // Set fit ranges
         std::vector<std::vector<int>> fitTimes( ds.corr.size() );
         for( int i = 0; i < ds.corr.size(); ++i )
-        {
-          const Common::FitTime &ft{ it[ModelFitRange[i]] };
-          const int Extent{ ft.tf - ft.ti + 1 };
-          fitTimes[i].resize( Extent );
-          for( int j = 0; j < Extent; ++j )
-            fitTimes[i][j] = ft.ti + j;
-        }
+          fitTimes[i] = it[ModelFitRange[i]].GetFitTimes();
         ds.SetFitTimes( fitTimes );
         try
         {
           {
             std::stringstream ss;
-            ss << ( doCorr ? "C" : "Unc" ) << "orrelated " << m->Type() << " fit on timeslices " << it.to_string( "-", ", " );
+            ss << (doCorr ? "C" : "Unc") << "orrelated " << m->Type() << " fit on timeslices " << it;
             Fitter::SayNumThreads( ss );
             const std::string &sMsg{ ss.str() };
             if( !m->bTestRun )
@@ -321,7 +315,7 @@ int main(int argc, const char *argv[])
           double ChiSq;
           int dof;
           outBaseFileName.resize( outBaseFileNameLen );
-          outBaseFileName.append( it.to_string( Common::Underscore ) );
+          outBaseFileName.append( it.AbbrevString() );
           outBaseFileName.append( 1, '.' );
           bAllParamsResolved =
           m->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat, Seed );

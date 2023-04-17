@@ -526,15 +526,14 @@ bool FitRangeTest( int argc, char *argv[] )
         vs.push_back( argv[i] );
       Common::FitRanges fr( vs, 1 );
       // Show FitRanges
-      for( std::size_t i = 0; i < fr.size(); ++i )
-        std::cout << i << ": " << fr[i] << std::endl;
+      std::cout << fr << std::endl;
       // Iterate FitRanges
       std::size_t Count{};
       for( Common::FitRangesIterator it = fr.begin(); !it.PastEnd(); ++it )
       {
-        std::cout << Count++ << ": " << it.to_string()
-                  << " --- " << it.to_string( "-", ", " )
-                  << " --- " << it.to_string( "_" )
+        std::cout << Count++ << ": " << it.AbbrevString( "-", ", " )
+                  << " --- " << it.AbbrevString()
+                  << " --- " << it
                   << std::endl;
       }
     }
@@ -749,8 +748,8 @@ CKelly CompareMikeFit( 104, 128, MikeTable1 );
 
 int main(int argc, char *argv[])
 {
-  if( CK1.Test() && CK2.Test() && CK3.Test() && CK4.Test() && CompareMikeFit.Test() ) return EXIT_SUCCESS;
-  //if( FitRangeTest( argc, argv ) ) return EXIT_SUCCESS;
+  //if( CK1.Test() && CK2.Test() && CK3.Test() && CK4.Test() && CompareMikeFit.Test() ) return EXIT_SUCCESS;
+  if( FitRangeTest( argc, argv ) ) return EXIT_SUCCESS;
   int iReturn = EXIT_SUCCESS;
   try
   {

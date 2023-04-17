@@ -43,147 +43,152 @@
 
 FitRange_hpp
 
-/*
+struct FitRangesIterator;
+struct FitRangesIteratorElement;
+
+/**
+ Abstract base clase for a single range of fit times to scan
  
- FitRange:  A single range of initial and final fit times to scan
-            Can have dependencies on zero or more other FitRange
-            Abstract base clase (see below for specialisations)
-
- FitRanges: A collection of one or more FitRange
-            Can be iterated over, i.e. provides begin() and end()
-            NB: the fit ranges are evaluated (and therefore sorted in memory) so that each
-            FitRange appears before any others it depends on, with vIndex providing a map
-            vIndex[OriginalIndex]=MemoryIndex
-            operator[] is redefined to return const FitRange & in OriginalIndex order
-
- FitTime:   A single start-stop pair
-
- FitRangesIterator:
-            A collection of one or more FitTime, iterating over FitRanges
-            operator[] is redefined to return const FitTime & in OriginalIndex order
-
- FitRange specialisations
+ Can have dependencies on zero or more other FitRange
  
- FitRangeAbsolute:  ti:tf[:dti[:dtf]]
-                    All combinations of Start [ti,ti+dti) ... [tf,tf+dtf)
+ Specialisations:
 
- FitRangeRelative:  Rn:ti:tf[:dti[:dtf]]
-                    All combinations of Range n ti + [ti,ti+dti) ... Range n tf +  [tf,tf+dtf)
+ `FitRangeAbsolute`: scans a range of start stop times (optional thinning)
 
+ `FitRangeRelative`: scans start stop times relative to anither FitRange (optional thinning)
  */
-
-// A single pair of start-stop times
-struct FitTime
+struct FitRange
 {
-  int ti;
-  int tf;
-  inline int Extent() const { return tf - ti + 1; }
+  int MinDP; // Minimum number of data points in this range
+  static FitRange * Deserialise( const std::string &String, std::size_t MyIndex, int MinDP );
+  static std::vector<int> GetColonList( std::istream &is,
+                                        std::size_t MaxLen=std::numeric_limits<std::size_t>::max() );
+  virtual ~FitRange() {}
+  virtual bool Validate( int Nt = std::numeric_limits<int>::max() ) const = 0;
+  virtual FitRangesIteratorElement * GetStart( const FitRangesIterator &Parent ) const = 0;
+  virtual FitRangesIteratorElement * GetEnd( const FitRangesIterator &Parent ) const = 0;
+  virtual const std::vector<std::size_t> &GetDependencies() const { return DependsOn; }
+  virtual void Print( std::ostream &os ) const = 0;
+protected:
+  std::vector<std::size_t> DependsOn;
 };
 
-struct FitRange;
-struct FitRangesIterator;
+inline std::ostream & operator<<( std::ostream &os, const FitRange &fr )
+{
+  fr.Print( os );
+  return os;
+}
 
+/**
+ A collection of one or more FitRange
+
+ Can be iterated over, i.e. provides `begin()` and `end()`.
+
+ NB: the fit ranges are evaluated (and therefore sorted in memory) so that each
+ FitRange appears before any others it depends on.
+ 
+ `operator[]` is redefined to return each FitRange & in OriginalIndex order
+ 
+ `operator()` can be used to return each FitRange & in MemoryIndex order
+ */
 struct FitRanges : public std::vector<std::unique_ptr<FitRange>>
 {
-  std::vector<std::size_t> vIndex;
   using Base = std::vector<std::unique_ptr<FitRange>>;
   using Base::Base; // Import base constructors
   void Deserialise( const std::vector<std::string> &vString, int MinDP );
   FitRanges( std::vector<std::string> vString, int MinDP ) { Deserialise( vString, MinDP ); }
   FitRangesIterator begin() const;
   FitRangesIterator end() const;
-  const FitRange & operator[]( std::size_t Index ) const { return * Base::operator[]( vIndex[Index] ).get(); }
-};
-
-struct FitRange
-{
-  using vDepend = std::vector<std::size_t>;
-  using vFitTime = std::vector<FitTime>;
-  virtual bool Validate( int Nt = std::numeric_limits<int>::max() ) const = 0;
-  virtual void GetStart( FitTime &ft, const FitRangesIterator &it ) const = 0;
-  virtual void GetEnd( FitTime &ft, const FitRangesIterator &it ) const = 0;
-  virtual bool PastEnd( const FitTime &ft, const FitRangesIterator &it ) const = 0;
-  virtual bool Increment( FitTime &ft, const FitRangesIterator &it, bool bWrap ) const = 0;
-  virtual void Print( std::ostream &os ) const = 0;
-  virtual const vDepend &GetDependencies() const { return DependsOn; };
-  virtual ~FitRange() {};
-  static FitRange * Deserialise( const std::string &String, std::size_t MyIndex, int MinDP );
-  inline int GetMinDP() const { return MinDP; }
+  /// Default is to access FitRanges using the original index order
+  inline std::size_t MemIndex( std::size_t OriginalIndex ) const { return vIndex[OriginalIndex]; }
+  inline       FitRange &operator[]( std::size_t OriginalIndex )
+  { return * Base::operator[]( MemIndex( OriginalIndex ) ).get(); }
+  inline const FitRange &operator[]( std::size_t OriginalIndex ) const
+  { return * Base::operator[]( MemIndex( OriginalIndex ) ).get(); }
+  /// FitRanges can also to be accessed using the in-memory (dependency) order
+  inline       FitRange &operator()( std::size_t MemoryIndex )
+  { return * Base::operator[]( MemoryIndex ).get(); }
+  inline const FitRange &operator()( std::size_t MemoryIndex ) const
+  { return * Base::operator[]( MemoryIndex ).get(); }
 protected:
-  vDepend DependsOn;
-  int MinDP; // Minimum number of data points in this range
+  /// This is a map from the original order to the order in memory. I.e. the nth entry of this array contains the in-memory order
+  std::vector<std::size_t> vIndex;
 };
 
-std::ostream & operator<<( std::ostream &os, const FitRange &fr );
-//std::istream & operator>>( std::istream &is, FitRange &fr );
+std::ostream & operator<<( std::ostream &os, const FitRanges &fr );
 
-struct FitRangesIterator : public FitRange::vFitTime
+/**
+ Abstract base class for each element within a FitRangesIterator
+ 
+ Can be queried for the fit range being scanned.
+ */
+struct FitRangesIteratorElement
+{
+  const FitRange &fitRange;
+  const FitRangesIterator &Parent;
+  FitRangesIteratorElement( const FitRange &fitRange_, const FitRangesIterator &parent )
+  : fitRange{fitRange_}, Parent{parent} {}
+  virtual ~FitRangesIteratorElement() {}
+  virtual FitRangesIteratorElement * Clone() const = 0;
+  /// Number of timeslices
+  virtual int Extent() const = 0;
+  virtual int TI() const = 0;
+  virtual int TF() const = 0;
+  virtual void SetStart() = 0;
+  virtual bool PastEnd() const = 0;
+  virtual bool Increment( bool bWrap ) = 0;
+  std::string AbbrevString( const std::string &Sep ) const;
+  virtual void Print( std::ostream &os ) const { os << AbbrevString( "-" ); }
+  const std::vector<int> &GetFitTimes() const { return FitTimes; }
+protected:
+  std::vector<int> FitTimes;
+};
+
+inline std::ostream & operator<<( std::ostream &os, const FitRangesIteratorElement &elem )
+{
+  elem.Print( os );
+  return os;
+}
+
+/**
+ Iterator over `FitRanges`. A collection of one or more `FitRangesIteratorElement`
+
+ Typical iteration loop:
+ 
+ `for(auto it = fr.begin(); !it.PastEnd(); ++it)`
+
+ `operator[]` is redefined to return each Element & in OriginalIndex order
+ 
+ `operator()` can be used to return each Element & in MemoryIndex order
+ */
+struct FitRangesIterator : public std::vector<std::unique_ptr<FitRangesIteratorElement>>
 {
   const FitRanges &Ranges; // This is the FitRange I'm iterating over
-  using Base = FitRange::vFitTime;
+  using Element = FitRangesIteratorElement;
+  using Base = std::vector<std::unique_ptr<Element>>;
   using Base::Base;
   FitRangesIterator( const FitRanges &ranges_, bool bEnd );
-  FitRangesIterator( const FitRangesIterator &it ) : Base( it ), Ranges{ it.Ranges }, RangeMemOrder{Ranges}{}
-  bool PastEnd() const { return Ranges.back()->PastEnd( this->back(), *this ); }
+  FitRangesIterator( const FitRangesIterator &it );
+  bool PastEnd() const;
   FitRangesIterator &operator++(); // Prefix increment
   FitRangesIterator operator++(int) { FitRangesIterator old(*this); this->operator++(); return old; }
-  std::string to_string( const std::string &Sep1, const std::string &Sep2 ) const;
-  std::string to_string( const std::string &Sep ) const { return to_string( Sep, Sep ); }
-  std::string to_string() const;
-  const FitTime &operator[]( std::size_t Index ) const { return Base::operator[]( Ranges.vIndex[Index] ); }
+  std::string AbbrevString( const std::string &Sep1, const std::string &Sep2 ) const;
+  std::string AbbrevString( const std::string &Sep = "_" ) const { return AbbrevString( Sep, Sep ); }
+  /// Default is to access FitRangesIterator using the original index order
+  inline       Element &operator[]( std::size_t OriginalIndex )
+  { return * Base::operator[]( Ranges.MemIndex( OriginalIndex ) ).get(); }
+  inline const Element &operator[]( std::size_t OriginalIndex ) const
+  { return * Base::operator[]( Ranges.MemIndex( OriginalIndex ) ).get(); }
+  /// FitRangesIterator can also to be accessed using the in-memory (dependency) order
+  inline       Element &operator()( std::size_t MemoryIndex )
+  { return * Base::operator[]( MemoryIndex ).get(); }
+  inline const Element &operator()( std::size_t MemoryIndex ) const
+  { return * Base::operator[]( MemoryIndex ).get(); }
 protected:
-  const FitRanges::Base &RangeMemOrder;
-  inline bool GotMinDP() const
-  {
-    bool bMinDPOK = true;
-    for( std::size_t i = 0; bMinDPOK && i < size(); ++i )
-      bMinDPOK = Base::operator[]( i ).Extent() >= RangeMemOrder[i]->GetMinDP();
-    return bMinDPOK;
-  }
+  inline bool GotMinDP() const;
 };
 
-struct FitRangeAbsolute : FitRange
-{
-protected:
-  int ti;
-  int tf;
-  int dti;
-  int dtf;
-public:
-  FitRangeAbsolute( int ti_, int tf_, int dti_, int dtf_ ) : ti{ti_}, tf{tf_}, dti{dti_}, dtf{dtf_} {}
-  FitRangeAbsolute( int ti_, int tf_, int dt ) : FitRangeAbsolute( ti_, tf_, dt, dt ) {}
-  FitRangeAbsolute( int ti_, int tf_ ) : FitRangeAbsolute( ti_, tf_, 1, 1 ) {}
-  FitRangeAbsolute() : FitRangeAbsolute( 0, 0, 1, 1 ) {}
-  bool Validate( int Nt = std::numeric_limits<int>::max() ) const override;
-  void GetStart( FitTime &ft, const FitRangesIterator &it ) const override;
-  void GetEnd( FitTime &ft, const FitRangesIterator &it ) const override;
-  bool PastEnd( const FitTime &ft, const FitRangesIterator &it ) const override;
-  bool Increment( FitTime &ft, const FitRangesIterator &it, bool bWrap ) const override;
-  void Print( std::ostream &os ) const override;
-  static FitRange * Deserialise( std::istringstream &is, std::size_t MyIndex );
-};
-
-struct FitRangeRelative : FitRange
-{
-protected:
-  int ti;
-  int tf;
-  int dti;
-  int dtf;
-public:
-  FitRangeRelative( int Depends, int ti_, int tf_, int dti_, int dtf_ )
-  : ti{ti_}, tf{tf_}, dti{dti_}, dtf{dtf_} { DependsOn.push_back( Depends ); }
-  FitRangeRelative( int Depends, int ti_, int tf_, int dt ) : FitRangeRelative( Depends, ti_, tf_, dt, dt ) {}
-  FitRangeRelative( int Depends, int ti_, int tf_ ) : FitRangeRelative( Depends, ti_, tf_, 1, 1 ) {}
-  FitRangeRelative() : FitRangeRelative( 0, 0, 0, 1, 1 ) {}
-  bool Validate( int Nt = std::numeric_limits<int>::max() ) const override;
-  void GetStart( FitTime &ft, const FitRangesIterator &it ) const override;
-  void GetEnd( FitTime &ft, const FitRangesIterator &it ) const override;
-  bool PastEnd( const FitTime &ft, const FitRangesIterator &it ) const override;
-  bool Increment( FitTime &ft, const FitRangesIterator &it, bool bWrap ) const override;
-  void Print( std::ostream &os ) const override;
-  static FitRange * Deserialise( std::istringstream &is, std::size_t MyIndex );
-};
+std::ostream & operator<<( std::ostream &os, const FitRangesIterator &it );
 
 FitRange_hpp_end
 #endif // FitRange_hpp

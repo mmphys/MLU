@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2723910429115E560045DE24 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2723910329115E560045DE24 /* Accelerate.framework */; };
+		2735220429E9267D00E8720F /* FitRangeImp.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2735220329E9267D00E8720F /* FitRangeImp.hpp */; };
 		277FBE8E290ED83700E82279 /* libMLU.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 682C5C9E28E4F41300C8E004 /* libMLU.dylib */; };
 		278BA037290ED57000960730 /* GetColumn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 278BA02A290ED4AB00960730 /* GetColumn.cpp */; };
 		27953EAD28FB226D00A4CF67 /* DebugInfo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */; };
@@ -276,6 +277,7 @@
 
 /* Begin PBXFileReference section */
 		2723910329115E560045DE24 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		2735220329E9267D00E8720F /* FitRangeImp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitRangeImp.hpp; sourceTree = "<group>"; };
 		278BA02A290ED4AB00960730 /* GetColumn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GetColumn.cpp; sourceTree = "<group>"; };
 		278BA030290ED52400960730 /* GetColumn */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GetColumn; sourceTree = BUILT_PRODUCTS_DIR; };
 		27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DebugInfo.hpp; sourceTree = "<group>"; };
@@ -581,6 +583,7 @@
 				27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */,
 				682C5C5828E4F2C300C8E004 /* FitRange.cpp */,
 				682C5C4E28E4F2C300C8E004 /* FitRange.hpp */,
+				2735220329E9267D00E8720F /* FitRangeImp.hpp */,
 				682C5C4A28E4F2C300C8E004 /* GSLVecMat.cpp */,
 				682C5C5528E4F2C300C8E004 /* GSLVecMat.hpp */,
 				682C5C5C28E4F2C300C8E004 /* GSLVecMatImp.hpp */,
@@ -743,6 +746,7 @@
 			files = (
 				682C5CA628E4F82500C8E004 /* FitRange.hpp in Headers */,
 				682C5CA728E4F82500C8E004 /* GSLVecMat.hpp in Headers */,
+				2735220429E9267D00E8720F /* FitRangeImp.hpp in Headers */,
 				27953EAD28FB226D00A4CF67 /* DebugInfo.hpp in Headers */,
 				682C5CA828E4F82500C8E004 /* GSLVecMatImp.hpp in Headers */,
 				682C5CA928E4F82500C8E004 /* HDF5.hpp in Headers */,

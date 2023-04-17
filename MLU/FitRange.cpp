@@ -25,7 +25,7 @@
  See the full license in the file "LICENSE" in the top level distribution directory
 **/
 
-#include "FitRange.hpp"
+#include "FitRangeImp.hpp"
 #include <list>
 #include <cstdint>
 
@@ -56,7 +56,7 @@ void FitRanges::Deserialise( const std::vector<std::string> &vString, int MinDP 
     {
       std::unique_ptr<FitRange> Me;
       std::size_t Index;
-      FitRange::vDepend DependsOn;
+      std::vector<std::size_t> DependsOn;
       DepTrack( std::unique_ptr<FitRange> &&me, std::size_t index ) : Me{ std::move( me ) }, Index{index}
         { DependsOn = Me->GetDependencies(); }
       DepTrack( DepTrack &&o ) : Me{ std::move( o.Me ) }, Index{o.Index}, DependsOn{std::move(o.DependsOn)} {}
@@ -116,6 +116,27 @@ void FitRanges::Deserialise( const std::vector<std::string> &vString, int MinDP 
   }
 }
 
+FitRangesIterator FitRanges::begin() const
+{
+  return FitRangesIterator( *this, false );
+}
+
+FitRangesIterator FitRanges::end() const
+{
+  return FitRangesIterator( *this, true );
+}
+
+std::ostream & operator<<( std::ostream &os, const FitRanges &fr )
+{
+  for( std::size_t i = 0; i < fr.size(); ++i )
+  {
+    if( i )
+      os << ", ";
+    os << i << " [" << fr[i] << "]";
+  }
+  return os;
+}
+
 /*****************************************************************
 
  FitRange
@@ -157,10 +178,28 @@ FitRange * FitRange::Deserialise( const std::string &String, std::size_t MyIndex
   throw std::runtime_error( "Unrecognised fit range: " + String );
 }
 
-std::ostream & operator<<( std::ostream &os, const FitRange &fr )
+std::vector<int> FitRange::GetColonList( std::istream &is, std::size_t MaxLen )
 {
-  fr.Print( os );
-  return os;
+  std::vector<int> v;
+  while( !is.eof() && ( is >> std::ws && !is.eof() ) && v.size() < MaxLen )
+  {
+    if( !v.empty() )
+    {
+      if( is.peek() != ':' )
+        break;
+      is.get();
+    }
+    int i;
+    if( is >> i )
+      v.push_back( i );
+    else
+    {
+      if( !v.empty() )
+        throw std::runtime_error( "FitRange::GetColonList() colon followed by non-integer" );
+      break;
+    }
+  }
+  return v;
 }
 
 /*****************************************************************
@@ -169,30 +208,34 @@ std::ostream & operator<<( std::ostream &os, const FitRange &fr )
 
 *****************************************************************/
 
-//FitRanges can be iterated by FitRangesIterator
-FitRangesIterator FitRanges::begin() const
+FitRangesIterator::FitRangesIterator( const FitRangesIterator &it ) : Ranges{ it.Ranges }
 {
-  return FitRangesIterator( *this, false );
-}
-
-FitRangesIterator FitRanges::end() const
-{
-  return FitRangesIterator( *this, true );
+  reserve( it.size() );
+  for( const std::unique_ptr<FitRangesIteratorElement> &elem : it )
+    emplace_back( elem->Clone() );
 }
 
 // Construct from FitRange at either start or end
 FitRangesIterator::FitRangesIterator( const FitRanges &ranges_, bool bEnd )
-: Base( ranges_.size() ), Ranges{ ranges_ }, RangeMemOrder{ ranges_ }
+: Base( ranges_.size() ), Ranges{ ranges_ }
 {
+  Base &base{ *this };
   for( std::size_t i = Ranges.size(); i--; )
   {
+    Element * e;
     if( bEnd && i == Ranges.size() - 1 )
-      RangeMemOrder[i]->GetEnd( Base::operator[]( i ), *this );
+      e = Ranges(i).GetEnd( *this );
     else
-      RangeMemOrder[i]->GetStart( Base::operator[]( i ), *this );
+      e = Ranges(i).GetStart( *this );
+    base[i].reset( e );
   }
   if( !bEnd && !GotMinDP() )
     operator++();
+}
+
+bool FitRangesIterator::PastEnd() const
+{
+  return back()->PastEnd();
 }
 
 // Prefix increment
@@ -203,12 +246,12 @@ FitRangesIterator &FitRangesIterator::operator++()
   while( !bMinDPOK && !PastEnd() )
   {
     std::size_t i = 0;
-    while( i < size() && RangeMemOrder[i]->Increment( Base::operator[]( i ), *this, i != size() - 1 ) )
+    while( i < size() && (*this)(i).Increment( i != size() - 1 ) )
       ++i;
     while( i-- )
     {
-      if( !RangeMemOrder[i]->GetDependencies().empty() )
-        RangeMemOrder[i]->GetStart( Base::operator[]( i ), *this );
+      if( !Ranges(i).GetDependencies().empty() )
+        (*this)(i).SetStart();
     }
     // See whether minimum number of data points for each range are satisfied
     bMinDPOK = GotMinDP();
@@ -217,35 +260,121 @@ FitRangesIterator &FitRangesIterator::operator++()
 }
 
 // String representation
-std::string FitRangesIterator::to_string( const std::string &Sep1, const std::string &Sep2 ) const
+std::string FitRangesIterator::AbbrevString( const std::string &Sep1, const std::string &Sep2 ) const
 {
   std::string s;
   for( std::size_t i = 0; i < size(); ++i )
   {
     if( i )
       s.append( Sep2 );
-    s.append( std::to_string( (*this)[i].ti ) );
-    s.append( Sep1 );
-    s.append( std::to_string( (*this)[i].tf ) );
+    s.append( (*this)[i].AbbrevString( Sep1 ) );
   }
   return s;
 }
 
-std::string FitRangesIterator::to_string() const
+inline bool FitRangesIterator::GotMinDP() const
+{
+  bool bMinDPOK = true;
+  for( std::size_t i = 0; bMinDPOK && i < size(); ++i )
+    bMinDPOK = (*this)(i).Extent() >= Ranges(i).MinDP;
+  return bMinDPOK;
+}
+
+std::string FitRangesIteratorElement::AbbrevString( const std::string &Sep ) const
 {
   std::string s;
-  for( std::size_t i = 0; i < size(); ++i )
+  int i_, f_;
+  if( FitTimes.empty() )
+  {
+    i_ = 1;
+    f_ = 0;
+  }
+  else
+  {
+    i_ = FitTimes[0];
+    f_ = FitTimes[0];
+    for( std::size_t j = 1; j < FitTimes.size(); ++j )
+    {
+      if( i_ > FitTimes[j] )
+        i_ = FitTimes[j];
+      if( f_ < FitTimes[j] )
+        f_ = FitTimes[j];
+    }
+  }
+  s.append( std::to_string( i_ ) );
+  s.append( Sep );
+  s.append( std::to_string( f_ ) );
+  return s;
+}
+
+std::ostream & operator<<( std::ostream &os, const FitRangesIterator &it )
+{
+  for( std::size_t i = 0; i < it.size(); ++i )
   {
     if( i )
-      s.append( ", " );
-    s.append( std::to_string( i ) );
-    s.append( " [" );
-    s.append( std::to_string( (*this)[i].ti ) );
-    s.append( ", " );
-    s.append( std::to_string( (*this)[i].tf ) );
-    s.append( "]" );
+      os<< ", ";
+    os << i << " [" << it[i] << "]";
   }
-  return s;
+  return os;
+}
+
+bool FitRangesIteratorBlock::SetFitTimes()
+{
+  bool bSameLastTime{ false };
+  const int Extent{ tf - ti + 1 };
+  const FitRangeBlock &r{ dynamic_cast<const FitRangeBlock &>( fitRange ) };
+  if( tf < ti )
+    FitTimes.clear();
+  else if( r.Thinning.empty() )
+  {
+    FitTimes.resize( Extent );
+    for( int j = 0; j < Extent; ++j )
+      FitTimes[j] = ti + j;
+  }
+  else
+  {
+    // Non-zero extent + thinning
+    std::vector<int> v;
+    int t = ti;
+    for( std::size_t Thindex=0; t <= tf && Thindex < r.Thinning.size(); Thindex += 2 )
+    {
+      const bool bLast{ r.Thinning.size() - Thindex < 2 };
+      const int Step{ r.Thinning[Thindex] };
+      if( Step == 0 )
+        t = bLast ? tf + 1 : t + r.Thinning[Thindex + 1]; // Skip past this number of timeslices
+      else
+      {
+        int Num{ Thindex + 1 < r.Thinning.size() ? r.Thinning[Thindex + 1]
+                                                 : ( tf - t ) / Step + 1 };
+        while( Num-- && t <= tf )
+        {
+          v.push_back( t );
+          t += Step;
+        }
+      }
+    }
+    bSameLastTime = FitTimes == v;
+    if( !bSameLastTime )
+      FitTimes = std::move( v );
+  }
+  return bSameLastTime;
+}
+
+void FitRangesIteratorBlock::Print( std::ostream &os ) const
+{
+  const FitRangeBlock &r{ dynamic_cast<const FitRangeBlock &>( fitRange ) };
+  const bool bPrintThinned{ !r.Thinning.empty() && Extent() != FitTimes.size() };
+  if( bPrintThinned )
+  {
+    for( std::size_t i = 0; i < FitTimes.size(); ++i )
+    {
+      if( i )
+        os << ";";
+      os << FitTimes[i];
+    }
+  }
+  else
+    Base::Print( os );
 }
 
 /*****************************************************************
@@ -261,37 +390,19 @@ bool FitRangeAbsolute::Validate( int Nt ) const
           || ti + dti - 1 >= Nt || tf + dtf - 1 >= Nt );
 }
 
-void FitRangeAbsolute::GetStart( FitTime &ft, const FitRangesIterator &it ) const
+FitRangesIterator::Element * FitRangeAbsolute::GetStart( const FitRangesIterator &Parent ) const
 {
-  ft.ti = ti;
-  ft.tf = tf;
+  FitRangesIteratorAbsolute *it = new FitRangesIteratorAbsolute( *this, Parent );
+  it->SetStart();
+  return it;
 }
 
-void FitRangeAbsolute::GetEnd( FitTime &ft, const FitRangesIterator &it ) const
+FitRangesIterator::Element * FitRangeAbsolute::GetEnd( const FitRangesIterator &Parent ) const
 {
-  ft.ti = ti;
-  ft.tf = tf + dtf;
-}
-
-bool FitRangeAbsolute::PastEnd( const FitTime &ft, const FitRangesIterator &it ) const
-{
-  return ft.tf >= tf + dtf;
-}
-
-bool FitRangeAbsolute::Increment( FitTime &ft, const FitRangesIterator &it, bool bWrap ) const
-{
-  bool bOverflow{ false };
-  if( ++ft.ti >= ti + dti )
-  {
-    ft.ti = ti;
-    if( ++ft.tf >= tf + dtf )
-    {
-      if( bWrap )
-        ft.tf = tf;
-      bOverflow = true;
-    }
-  }
-  return bOverflow;
+  FitRangesIteratorAbsolute *it = new FitRangesIteratorAbsolute( *this, Parent );
+  it->ti = ti;
+  it->tf = tf + dtf;
+  return it;
 }
 
 void FitRangeAbsolute::Print( std::ostream &os ) const
@@ -302,30 +413,104 @@ void FitRangeAbsolute::Print( std::ostream &os ) const
     os << colon << dti << colon << dtf;
   else if( dti != 1 )
     os << colon << dti;
+  ShowThinning( os );
+}
+
+void FitRangeBlock::GetThinning( std::istream &is )
+{
+  if( !is.eof() && is >> std::ws && !is.eof() && std::tolower( is.peek() ) == 't' )
+  {
+    is.get();
+    Thinning = GetColonList( is );
+    if( Thinning.empty() )
+      throw std::runtime_error( "Thinning unrecognised" );
+    for( std::size_t i = 0; i < Thinning.size(); i += 2 )
+    {
+      if( Thinning[i] < 0 || ( i == 0 && Thinning[i] == 0 ) ) // First spec can't be a skip
+        throw std::runtime_error("Thinning separation " + std::to_string( Thinning[i] ) + " invalid");
+      if( i < Thinning.size() - 1 && Thinning[i + 1] <= 0 )
+        throw std::runtime_error("Thinning run " + std::to_string( Thinning[i + 1] ) + " invalid");
+    }
+  }
+}
+
+void FitRangeBlock::ShowThinning( std::ostream &os ) const
+{
+  if( !Thinning.empty() )
+  {
+    os << 't';
+    for( std::size_t i = 0; i < Thinning.size(); ++i )
+    {
+      if( i )
+        os << ':';
+      os << Thinning[i];
+    }
+  }
 }
 
 FitRange * FitRangeAbsolute::Deserialise( std::istringstream &is, std::size_t MyIndex )
 {
-  int Numbers[4];
-  int i{ 0 };
-  for( bool bMore = true; bMore && i < 4 && is >> Numbers[i]; )
+  std::vector<int> Numbers = GetColonList( is, 4 );
+  std::unique_ptr<FitRangeAbsolute> p;
+  if( Numbers.size() >= 2 )
   {
-    if( ++i < 4 && !is.eof() && is.peek() == ':' )
-      is.get();
-    else
-      bMore = false;
-  }
-  FitRangeAbsolute * p = nullptr;
-  if( i >= 2 )
-  {
-    p = new FitRangeAbsolute( Numbers[0], Numbers[1] );
-    if( i >= 3 )
+    p.reset( new FitRangeAbsolute( Numbers[0], Numbers[1] ) );
+    if( Numbers.size() >= 3 )
     {
       p->dti = Numbers[2];
-      p->dtf = ( i == 3 ? Numbers[2] : Numbers[3] );
+      p->dtf = Numbers.back();
     }
+    p->GetThinning( is );
   }
-  return p;
+  return p.release();
+}
+
+/*****************************************************************
+
+ Iterate over FitRangeAbsolute
+
+*****************************************************************/
+
+void FitRangesIteratorAbsolute::SetStart()
+{
+  const FitRangeAbsolute &r{ dynamic_cast<const FitRangeAbsolute &>( fitRange ) };
+  ti = r.ti;
+  tf = r.tf;
+  SetFitTimes();
+}
+
+bool FitRangesIteratorAbsolute::PastEnd() const
+{
+  const FitRangeAbsolute &r{ dynamic_cast<const FitRangeAbsolute &>( fitRange ) };
+  return ti >= r.ti + r.dti;
+}
+
+bool FitRangesIteratorAbsolute::Increment( bool bWrap )
+{
+  const FitRangeAbsolute &r{ dynamic_cast<const FitRangeAbsolute &>( fitRange ) };
+  bool bOverflow{ false };
+  bool bSameAsLastTime;
+  do
+  {
+    if( ++tf >= r.tf + r.dtf )
+    {
+      tf = r.tf;
+      if( ++ti >= r.ti + r.dti )
+      {
+        if( !bWrap )
+        {
+          // I'm at the end
+          FitTimes.clear();
+          return true;
+        }
+        ti = r.ti;
+        bOverflow = true;
+      }
+    }
+    bSameAsLastTime = SetFitTimes();
+  }
+  while( !bOverflow && bSameAsLastTime );
+  return bOverflow;
 }
 
 /*****************************************************************
@@ -340,37 +525,21 @@ bool FitRangeRelative::Validate( int Nt ) const
   return !( std::abs( ti ) >= Nt || std::abs( tf ) >= Nt || dti < 1 || dtf < 1 || dti >= Nt || dtf >= Nt );
 }
 
-void FitRangeRelative::GetStart( FitTime &ft, const FitRangesIterator &it ) const
+FitRangesIterator::Element * FitRangeRelative::GetStart( const FitRangesIterator &Parent ) const
 {
-  ft.ti = it[DependsOn[0]].ti + ti;
-  ft.tf = it[DependsOn[0]].tf + tf;
+  FitRangesIteratorRelative *it = new FitRangesIteratorRelative( *this, Parent );
+  it->SetStart();
+  return it;
 }
 
-void FitRangeRelative::GetEnd( FitTime &ft, const FitRangesIterator &it ) const
+FitRangesIterator::Element * FitRangeRelative::GetEnd( const FitRangesIterator &Parent ) const
 {
-  ft.ti = it[DependsOn[0]].ti + ti;
-  ft.tf = it[DependsOn[0]].tf + tf + dtf;
-}
-
-bool FitRangeRelative::PastEnd( const FitTime &ft, const FitRangesIterator &it ) const
-{
-  return ft.tf >= it[DependsOn[0]].tf + tf + dtf;
-}
-
-bool FitRangeRelative::Increment( FitTime &ft, const FitRangesIterator &it, bool bWrap ) const
-{
-  bool bOverflow{ false };
-  if( ++ft.ti >= it[DependsOn[0]].ti + ti + dti )
-  {
-    ft.ti = it[DependsOn[0]].ti + ti;
-    if( ++ft.tf >= it[DependsOn[0]].tf + tf + dtf )
-    {
-      if( bWrap )
-        ft.tf = it[DependsOn[0]].tf + tf;
-      bOverflow = true;
-    }
-  }
-  return bOverflow;
+  if( DependsOn.size() != 1 )
+    throw std::runtime_error( "FitRangesIteratorRelative::SetStart() Bug DependsOn.size() = " + std::to_string( DependsOn.size() ) );
+  FitRangesIteratorRelative *it = new FitRangesIteratorRelative( *this, Parent );
+  it->ti = Parent[DependsOn[0]].TI() + ti;
+  it->tf = Parent[DependsOn[0]].TF() + tf + dtf;
+  return it;
 }
 
 void FitRangeRelative::Print( std::ostream &os ) const
@@ -381,6 +550,7 @@ void FitRangeRelative::Print( std::ostream &os ) const
     os << colon << dti << colon << dtf;
   else if( dti != 1 )
     os << colon << dti;
+  ShowThinning( os );
 }
 
 FitRange * FitRangeRelative::Deserialise( std::istringstream &is, std::size_t MyIndex )
@@ -390,27 +560,78 @@ FitRange * FitRangeRelative::Deserialise( std::istringstream &is, std::size_t My
   char c = is.get();
   if( c != std::istringstream::traits_type::eof() && std::toupper( c ) == 'R' )
   {
-    static constexpr int Count{ 5 };
-    int Numbers[Count];
-    int i{ 0 };
-    for( bool bMore = true; bMore && i < Count && is >> Numbers[i]; )
+    std::vector<int> Numbers = GetColonList( is, 5 );
+    if( Numbers.size() >= 3 )
     {
-      if( ++i < Count && !is.eof() && is.peek() == ':' )
-        is.get();
-      else
-        bMore = false;
-    }
-    if( i >= 3 )
-    {
-      p = new FitRangeRelative( Numbers[0] + MyIndex, Numbers[1], Numbers[2] );
-      if( i >= 4 )
+      p = new FitRangeRelative( Numbers[1], Numbers[2] );
+      p->DependsOn.push_back( MyIndex + static_cast<std::size_t>( Numbers[0] ) );
+      if( Numbers.size() >= 4 )
       {
         p->dti = Numbers[3];
-        p->dtf = ( i == 4 ? Numbers[3] : Numbers[4] );
+        p->dtf = Numbers.back();
       }
     }
   }
   return p;
+}
+
+/*****************************************************************
+
+ Iterate over FitRangeAbsolute
+
+*****************************************************************/
+
+void FitRangesIteratorRelative::SetStart()
+{
+  const std::vector<std::size_t> &DependsOn{ fitRange.GetDependencies() };
+  if( DependsOn.size() != 1 )
+    throw std::runtime_error( "FitRangesIteratorRelative::SetStart() Bug DependsOn.size() = " + std::to_string( DependsOn.size() ) );
+  const FitRangeRelative &r{ dynamic_cast<const FitRangeRelative &>( fitRange ) };
+  ti = Parent[DependsOn[0]].TI() + r.ti;
+  tf = Parent[DependsOn[0]].TF() + r.tf;
+  SetFitTimes();
+}
+
+bool FitRangesIteratorRelative::PastEnd() const
+{
+  const std::vector<std::size_t> &DependsOn{ fitRange.GetDependencies() };
+  if( DependsOn.size() != 1 )
+    throw std::runtime_error( "FitRangesIteratorRelative::SetStart() Bug DependsOn.size() = " + std::to_string( DependsOn.size() ) );
+  const FitRangeRelative &r{ dynamic_cast<const FitRangeRelative &>( fitRange ) };
+  return ti >= Parent[DependsOn[0]].TI() + r.ti + r.dti;
+}
+
+bool FitRangesIteratorRelative::Increment( bool bWrap )
+{
+  const std::vector<std::size_t> &DependsOn{ fitRange.GetDependencies() };
+  if( DependsOn.size() != 1 )
+    throw std::runtime_error( "FitRangesIteratorRelative::SetStart() Bug DependsOn.size() = " + std::to_string( DependsOn.size() ) );
+  const FitRangeRelative &r{ dynamic_cast<const FitRangeRelative &>( fitRange ) };
+  bool bOverflow{ false };
+  bool bSameAsLastTime;
+  do
+  {
+    const int OtherTF{ Parent[DependsOn[0]].TF() };
+    if( ++tf >= OtherTF + r.tf + r.dtf )
+    {
+      tf = OtherTF + r.tf;
+      const int OtherTI{ Parent[DependsOn[0]].TI() };
+      if( ++ti >= OtherTI + r.ti + r.dti )
+      {
+        if( !bWrap )
+        {
+          // I'm at the end
+          FitTimes.clear();
+          return true;
+        }
+        ti = OtherTI + r.ti;
+        bOverflow = true;
+      }
+    }
+    bSameAsLastTime = SetFitTimes();
+  }
+  while( !bOverflow && bSameAsLastTime );
+  return bOverflow;
 }
 
 FitRange_hpp_end
