@@ -33,7 +33,7 @@
 
 struct ModelConstant : Model, Object
 {
-  ModelConstant( const Model::CreateParams &cp, Model::Args &Args );
+  ModelConstant( const Model::CreateParams &cp, Model::Args &Args, int NumExponents );
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;

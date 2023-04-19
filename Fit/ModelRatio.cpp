@@ -30,18 +30,18 @@
 
 const std::string ModelRatio::sRaw{ "Raw" };
 const std::string ModelRatio::sR3Raw{ "R3Raw" };
+const std::string ModelRatio::sChildModel{ "C2Model" };
 
-ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args,
-                        std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
-                        std::size_t NumOverlapExp )
-: Model3pt( cp, Args, std::vector<std::string>( objectID ), std::vector<std::string>( opNames ), NumOverlapExp )
+ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int NumExp,
+                        std::vector<std::string> &&objectID, std::vector<std::string> &&opNames )
+: Model3pt(cp, Args, NumExp, std::vector<std::string>(objectID), std::vector<std::string>(opNames)),
+  ChildType{ Args.Remove<ModelType>( sChildModel, ModelType::Exp ) }
 {
-  static const std::string ChildModel{ "C2Model" };
-  ModelType ChildType = Args.Remove<ModelType>( ChildModel, ModelType::Exp );
+  const int NumC2Exp{ Args.Remove( "C2e", static_cast<int>( NumOverlapExp ) ) };
   if( ChildType != ModelType::Exp && ChildType != ModelType::Cosh && ChildType != ModelType::Sinh )
   {
     std::ostringstream os;
-    os << ChildModel << Common::Space << ChildType << " invalid for ratio children";
+    os << sChildModel << Common::Space << ChildType << " invalid for ratio children";
     throw std::runtime_error( os.str().c_str() );
   }
   C2.reserve( E.size() );
@@ -52,13 +52,13 @@ ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args,
     switch( ChildType )
     {
       case ModelType::Exp:
-        C2.emplace_back(new ModelExp(cp, Args, std::move(oid), std::move(on), NumOverlapExp));
+        C2.emplace_back(new ModelExp(cp, Args, NumC2Exp, std::move(oid), std::move(on)));
         break;
       case ModelType::Cosh:
-        C2.emplace_back(new ModelCosh(cp, Args, std::move(oid), std::move(on), NumOverlapExp));
+        C2.emplace_back(new ModelCosh(cp, Args, NumC2Exp, std::move(oid), std::move(on)));
         break;
       default:
-        C2.emplace_back(new ModelSinh(cp, Args, std::move(oid), std::move(on), NumOverlapExp));
+        C2.emplace_back(new ModelSinh(cp, Args, NumC2Exp, std::move(oid), std::move(on)));
         break;
     }
   }
@@ -88,13 +88,12 @@ void ModelRatio::SaveParameters( const Params &mp )
 std::string ModelRatio::Description() const
 {
   std::string s{ "R3(" };
-  s.append( ObjectID( idxSrc ) );
-  if( objectID.size() > 1 )
+  s.append( Model3pt::Description() );
+  for( const std::unique_ptr<Model2pt> & p : C2 )
   {
     s.append( 1, ',' );
-    s.append( ObjectID( idxSnk ) );
+    s.append( p->Description() );
   }
-  s.append( ModelOverlap::Description() );
   s.append( 1, ')' );
   return s;
 }

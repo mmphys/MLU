@@ -34,9 +34,8 @@
 struct Model2pt : public ModelOverlap
 {
 protected: // Don't instantiate this directly - make Sinh Cosh or Exp instead
-  Model2pt( const Model::CreateParams &cp, Model::Args &Args,
-            std::vector<std::string> &&ObjectID, std::vector<std::string> &&opNames,
-            std::size_t NumOverlapExp );
+  Model2pt( const Model::CreateParams &cp, Model::Args &Args, int NumExponents,
+            std::vector<std::string> &&ObjectID, std::vector<std::string> &&opNames );
 public:
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
@@ -56,41 +55,38 @@ protected:
 
 struct ModelExp : public Model2pt
 {
-  ModelExp( const Model::CreateParams &cp, Model::Args &Args,
-            std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
-            std::size_t NumOverlapExp )
-  : Model2pt( cp, Args, std::move( objectID ), std::move( opNames ), NumOverlapExp ) {}
-  ModelExp( const Model::CreateParams &cp, Model::Args &Args )
-  : ModelExp( cp, Args, GetObjectNameSingle( cp, Args ), ModelOverlap::GetOpNames( cp, Args ),
-              Args.Remove( "e", cp.NumExponents, true ) ) {}
+  ModelExp( const Model::CreateParams &cp, Model::Args &Args, int NumExponents_,
+            std::vector<std::string> &&objectID, std::vector<std::string> &&opNames )
+  : Model2pt( cp, Args, NumExponents_, std::move( objectID ), std::move( opNames ) ) {}
+  ModelExp( const Model::CreateParams &cp, Model::Args &Args, int NumExp )
+  : ModelExp(cp, Args, NumExp, GetObjectNameSingle(cp, Args), ModelOverlap::GetOpNames(cp, Args)){}
   ModelType Type() const override { return ModelType::Exp; }
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
+  std::string Description() const override;
 };
 
 struct ModelCosh : public Model2pt
 {
-  ModelCosh( const Model::CreateParams &cp, Model::Args &Args,
-             std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
-             std::size_t NumOverlapExp )
-  : Model2pt( cp, Args, std::move( objectID ), std::move( opNames ), NumOverlapExp ) {}
-  ModelCosh( const Model::CreateParams &cp, Model::Args &Args )
-  : ModelCosh( cp, Args, GetObjectNameSingle( cp, Args ), ModelOverlap::GetOpNames( cp, Args ),
-               Args.Remove( "e", cp.NumExponents, true ) ) {}
+  ModelCosh( const Model::CreateParams &cp, Model::Args &Args, int NumExponents_,
+             std::vector<std::string> &&objectID, std::vector<std::string> &&opNames )
+  : Model2pt( cp, Args, NumExponents_, std::move( objectID ), std::move( opNames ) ) {}
+  ModelCosh( const Model::CreateParams &cp, Model::Args &Args, int NumExp )
+  : ModelCosh(cp, Args, NumExp, GetObjectNameSingle(cp, Args), ModelOverlap::GetOpNames(cp, Args)){}
   ModelType Type() const override { return ModelType::Cosh; }
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
+  std::string Description() const override;
 };
 
 struct ModelSinh : public Model2pt
 {
-  ModelSinh( const Model::CreateParams &cp, Model::Args &Args,
-             std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
-             std::size_t NumOverlapExp )
-  : Model2pt( cp, Args, std::move( objectID ), std::move( opNames ), NumOverlapExp ) {}
-  ModelSinh( const Model::CreateParams &cp, Model::Args &Args )
-  : ModelSinh( cp, Args, GetObjectNameSingle( cp, Args ), ModelOverlap::GetOpNames( cp, Args ),
-               Args.Remove( "e", cp.NumExponents, true ) ) {}
+  ModelSinh( const Model::CreateParams &cp, Model::Args &Args, int NumExponents_,
+             std::vector<std::string> &&objectID, std::vector<std::string> &&opNames )
+  : Model2pt( cp, Args, NumExponents_, std::move( objectID ), std::move( opNames ) ) {}
+  ModelSinh( const Model::CreateParams &cp, Model::Args &Args, int NumExp )
+  : ModelSinh(cp, Args, NumExp, GetObjectNameSingle(cp, Args), ModelOverlap::GetOpNames(cp, Args)){}
   ModelType Type() const override { return ModelType::Sinh; }
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
+  std::string Description() const override;
 };
 
 #endif // Model2pt_hpp

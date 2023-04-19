@@ -455,6 +455,7 @@ int main(int argc, const char *argv[])
         << "     Name of derived parameter for energy difference (default: "
         << Common::ModelBase::EDiffPrefix << ")\n"
     "Parameters accepted by R3 model:\n"
+    " C2e       Number of exponents for 2pt (default: Num needed for C3)\n"
     " C2Model   Which model to use for 2pt: Exp (default); Cosh; Sinh\n"
     " Raw       R3 ratio was constructed as a raw ratio - no overlap coefficients\n"
     "Parameters accepted by constant model:\n"

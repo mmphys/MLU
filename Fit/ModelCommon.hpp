@@ -76,8 +76,8 @@ struct ModelOverlap : Model, Object
    */
   static std::vector<std::string> GetOpNames( const Model::CreateParams &cp, Model::Args &Args );
   ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
-                std::vector<std::string> &&ObjectID, std::vector<std::string> &&opNames,
-                std::size_t NumOverlapExp );
+                int NumExponents, std::size_t NumOverlapExp,
+                std::vector<std::string> &&ObjectID, std::vector<std::string> &&opNames );
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;

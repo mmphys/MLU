@@ -28,10 +28,10 @@
 
 #include "Model3pt.hpp"
 
-Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args,
-                    std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
-                    std::size_t NumOverlapExp )
-: ModelOverlap( cp, Args, std::move( objectID ), std::move( opNames ), NumOverlapExp > 1 ? 2 : 1 ),
+Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args, int NumExponents_,
+                    std::vector<std::string> &&objectID, std::vector<std::string> &&opNames )
+: ModelOverlap( cp, Args, NumExponents_, NumExponents_ > 1 ? 2 : 1,
+                std::move( objectID ), std::move( opNames ) ),
   N{ cp.N },
   bEnablePHat{ cp.bEnablePHat }
 {
@@ -86,6 +86,10 @@ void Model3pt::SaveParameters( const Params &mp )
 std::string Model3pt::Description() const
 {
   std::string s{ "C3(" };
+  s.append( std::to_string( NumExponents ) );
+  s.append( "-exp,DeltaT=" );
+  s.append( std::to_string( DeltaT ) );
+  s.append( 1, ',' );
   s.append( ObjectID( idxSrc ) );
   if( objectID.size() > 1 )
   {

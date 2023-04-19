@@ -28,8 +28,8 @@
 
 #include "ModelConstant.hpp"
 
-ModelConstant::ModelConstant( const Model::CreateParams &cp, Model::Args &Args )
-: Model( cp, Args ), Object( GetObjectNameSingle( cp, Args ) )
+ModelConstant::ModelConstant( const Model::CreateParams &cp, Model::Args &Args, int NumExponents )
+: Model( cp, 1 ), Object( GetObjectNameSingle( cp, Args ) ) // Silently ignore NumExponents
 {
   Constant.Key.Object = { ObjectID( idxSrc ) };
   Constant.Key.Name = Args.Remove( "const", Common::ModelBase::ConstantPrefix );

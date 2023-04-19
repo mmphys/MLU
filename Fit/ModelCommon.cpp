@@ -84,9 +84,9 @@ std::vector<std::string> ModelOverlap::GetOpNames( const Model::CreateParams &cp
 
 // 2nd phase of construction (now that virtual functions in place)
 ModelOverlap::ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
-                            std::vector<std::string> &&OID, std::vector<std::string> &&opNames,
-                            std::size_t NumOverlapExp_ )
-: Model( cp, Args ),
+                            int NumExponents_, std::size_t NumOverlapExp_,
+                            std::vector<std::string> &&OID, std::vector<std::string> &&opNames )
+: Model( cp, NumExponents_ ),
   Object( std::move( OID ) ),
   bOverlapAltNorm{ cp.bOverlapAltNorm },
   NumOverlapExp{ NumOverlapExp_ },

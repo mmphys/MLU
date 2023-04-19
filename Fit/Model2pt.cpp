@@ -28,10 +28,10 @@
 
 #include "Model2pt.hpp"
 
-Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args,
-                    std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
-                    std::size_t NumOverlapExp )
-: ModelOverlap( cp, Args, std::move( objectID ), std::move( opNames ), NumOverlapExp ),
+Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args, int NumExp,
+                    std::vector<std::string> &&objectID, std::vector<std::string> &&opNames )
+: ModelOverlap( cp, Args, NumExp, static_cast<std::size_t>( NumExp ),
+                std::move( objectID ), std::move( opNames ) ),
   N{ cp.N },
   bEnablePHat{ cp.bEnablePHat }
 {
@@ -54,7 +54,9 @@ void Model2pt::SaveParameters( const Params &mp )
 // Get a descriptive string for the model
 std::string Model2pt::Description() const
 {
-  std::string s{ "C2(" };
+  std::string s( 1, '(' );
+  s.append( std::to_string( NumExponents ) );
+  s.append( "-exp," );
   s.append( ObjectID( idxSrc ) );
   s.append( ModelOverlap::Description() );
   s.append( 1, ')' );
@@ -274,6 +276,13 @@ scalar ModelExp::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) co
   return z;
 }
 
+std::string ModelExp::Description() const
+{
+  std::string s{ "C2Exp" };
+  s.append( Model2pt::Description() );
+  return s;
+}
+
 scalar ModelCosh::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
   double z = 0;
@@ -289,6 +298,13 @@ scalar ModelCosh::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) c
   return z;
 }
 
+std::string ModelCosh::Description() const
+{
+  std::string s{ "C2Cosh" };
+  s.append( Model2pt::Description() );
+  return s;
+}
+
 scalar ModelSinh::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
   double z = 0;
@@ -302,4 +318,11 @@ scalar ModelSinh::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) c
     z += d;
   }
   return z;
+}
+
+std::string ModelSinh::Description() const
+{
+  std::string s{ "C2Sinh" };
+  s.append( Model2pt::Description() );
+  return s;
 }

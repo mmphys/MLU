@@ -87,7 +87,8 @@ struct Model
   const int Nt;
   const int NumExponents;
 protected:
-  Model( const CreateParams &cp, Args &args );
+  Model( const CreateParams &cp, int NumExponents_ )
+  : Nt{cp.pCorr->NtUnfolded}, NumExponents{NumExponents_} {}
   void AddParam( Params &mp, ModelParam &ModPar, std::size_t NumExp = 1, bool bMonotonic = false,
                  Param::Type Type = Param::Type::Variable );
   /**

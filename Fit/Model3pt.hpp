@@ -33,12 +33,11 @@
 
 struct Model3pt : public ModelOverlap
 {
-  Model3pt( const Model::CreateParams &cp, Model::Args &Args,
-            std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
-            std::size_t NumOverlapExp );
-  Model3pt( const Model::CreateParams &cp, Model::Args &Args )
-  : Model3pt( cp, Args, GetObjectNameSnkSrc( cp, Args ), ModelOverlap::GetOpNames( cp, Args ),
-              Args.Remove( "e", cp.NumExponents, true ) ) {}
+  Model3pt( const Model::CreateParams &cp, Model::Args &Args, int NumExponents,
+            std::vector<std::string> &&objectID, std::vector<std::string> &&opNames );
+  Model3pt( const Model::CreateParams &cp, Model::Args &Args, int NumExponents )
+  : Model3pt( cp, Args, NumExponents, GetObjectNameSnkSrc( cp, Args ),
+              ModelOverlap::GetOpNames( cp, Args ) ) {}
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;

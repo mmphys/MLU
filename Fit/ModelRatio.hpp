@@ -36,12 +36,11 @@ struct ModelRatio : public Model3pt
 {
   static const std::string sRaw;
   static const std::string sR3Raw;
-  ModelRatio( const Model::CreateParams &cp, Model::Args &Args,
-              std::vector<std::string> &&objectID, std::vector<std::string> &&opNames,
-              std::size_t NumOverlapExp );
-  ModelRatio( const Model::CreateParams &cp, Model::Args &Args )
-  : ModelRatio( cp, Args, GetObjectNameSnkSrc( cp, Args ), ModelOverlap::GetOpNames( cp, Args ),
-                Args.Remove( "e", cp.NumExponents, true ) ) {}
+  static const std::string sChildModel;
+  ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int NumExponents,
+              std::vector<std::string> &&objectID, std::vector<std::string> &&opNames );
+  ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int NumExp )
+  : ModelRatio(cp, Args, NumExp, GetObjectNameSnkSrc(cp, Args), ModelOverlap::GetOpNames(cp, Args)){}
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
@@ -51,6 +50,7 @@ struct ModelRatio : public Model3pt
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 
 protected:
+  const ModelType ChildType;
   bool bRaw;
   std::vector<std::unique_ptr<Model2pt>> C2;
   // Derived parameters

@@ -198,12 +198,6 @@ std::string Model::CreateParams::Description() const
   return s;
 }
 
-// Model constructor
-Model::Model( const CreateParams &cp, Model::Args &Args )
-: Nt{cp.pCorr->NtUnfolded}, NumExponents{ Args.Remove( "e", cp.NumExponents ) }
-{
-}
-
 void Model::AddParam( Params &mp, ModelParam &ModPar, std::size_t NumExp, bool bMonotonic, Param::Type Type )
 {
   param.emplace_back( &*mp.Add( ModPar.Key, NumExp, bMonotonic, Type ) );
@@ -264,31 +258,40 @@ ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
     if( !v.second.empty() )
       std::cout << '=' << v.second;
   }
-  std::cout << Common::NewLine;
+  const int nExp{ Args.Remove( "e", cp.NumExponents ) };
   ModelPtr model;
-  switch( modelType )
+  try
   {
-    case ModelType::Exp:
-      model.reset( new ModelExp( cp, Args ) );
-      break;
-    case ModelType::Cosh:
-      model.reset( new ModelCosh( cp, Args ) );
-      break;
-    case ModelType::Sinh:
-      model.reset( new ModelSinh( cp, Args ) );
-      break;
-    case ModelType::ThreePoint:
-      model.reset( new Model3pt( cp, Args ) );
-      break;
-    case ModelType::Constant:
-      model.reset( new ModelConstant( cp, Args ) );
-      break;
-    case ModelType::R3:
-      model.reset( new ModelRatio( cp, Args ) );
-      break;
-    default:
-      throw std::runtime_error( "Unrecognised ModelType for " + cp.pCorr->Name_.Filename );
+    switch( modelType )
+    {
+      case ModelType::Exp:
+        model.reset( new ModelExp( cp, Args, nExp ) );
+        break;
+      case ModelType::Cosh:
+        model.reset( new ModelCosh( cp, Args, nExp ) );
+        break;
+      case ModelType::Sinh:
+        model.reset( new ModelSinh( cp, Args, nExp ) );
+        break;
+      case ModelType::ThreePoint:
+        model.reset( new Model3pt( cp, Args, nExp ) );
+        break;
+      case ModelType::Constant:
+        model.reset( new ModelConstant( cp, Args, nExp ) );
+        break;
+      case ModelType::R3:
+        model.reset( new ModelRatio( cp, Args, nExp ) );
+        break;
+      default:
+        throw std::runtime_error( "Unrecognised ModelType for " + cp.pCorr->Name_.Filename );
+    }
   }
+  catch(...)
+  {
+    std::cout << Common::Space;
+    throw;
+  }
+  std::cout << " => " << model->Description() << Common::NewLine;
   // 2 part construction - now that virtual functions in place
   return model;
 }

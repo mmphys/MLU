@@ -465,6 +465,26 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
         std::cout << "simple";
       std::cout << " guess for each replica.\n";
     }
+    if( mp.NumScalars( Param::Type::Derived ) )
+    {
+      std::cout << " Derived parameters: ";
+      bool bFirst{ true };
+      for( Common::Params::value_type it : mp )
+      {
+        Param &p{ it.second };
+        if( p.type == Param::Type::Derived )
+        {
+          if( bFirst )
+            bFirst = false;
+          else
+            std::cout << ", ";
+          std::cout << it.first;
+          if( p.size != 1 )
+            std::cout << '[' << p.size << ']';
+        }
+      }
+      std::cout << Common::NewLine;
+    }
     if( mp.NumScalars( Param::Type::Fixed ) )
     {
       std::cout << " Fixed parameters:\n";
