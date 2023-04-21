@@ -14,6 +14,7 @@
 
 function DoCmd()
 {
+  if [ "$1" = EraseLog ] && [ -f $LogFile ]; then rm $LogFile; fi
   #echo $Cmd
   echo $Cmd &>> $LogFile
   if ! eval $Cmd &>> $LogFile; then
@@ -44,6 +45,8 @@ local TF2=${TF2:-$TF}
 local MaxTF=$(( TF2 > TF ? TF2 : TF ))
 # Stat - which statistic
 # FitOptions - extra options to MultiFit
+local Thin1=${Thin1+,t$Thin1}
+local Thin2=${Thin2+,t$Thin2}
 
 #LabelTF=${LabelTF:-$((THalf-2))}
 local LabelTF=${LabelTF:-$(( MaxTF + 2 ))}
@@ -82,8 +85,8 @@ Cmd="$Cmd --debug-signals"
 Cmd="$Cmd --strict 1"
 [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
 Cmd="$Cmd --summary 2 -i $PlotData/${CorrPrefix} -o $OutSubDir/"
-Cmd="$Cmd g5P_g5P.fold.$Seed.h5,t=${TI}:${TF},e=$NumExp"
-Cmd="$Cmd g5P_g5W.fold.$Seed.h5,t=${TI2}:${TF2},e=$NumExp2"
+Cmd="$Cmd g5P_g5P.fold.$Seed.h5,t=${TI}:${TF}${Thin1},e=$NumExp"
+Cmd="$Cmd g5P_g5W.fold.$Seed.h5,t=${TI2}:${TF2}${Thin2},e=$NumExp2"
 #echo "$Cmd"
 echo "$Cmd"  > $LogFile
 if  ! $Cmd &>> $LogFile
@@ -167,7 +170,7 @@ function TwoPointScan()
   mkdir -p $OutDir # So I can redirect output here
 
   local Cmd="MultiFit -o \"$OutDir/\" -i \"$InDir/$FileBase\""
-  Cmd="$Cmd --debug-signals --mindp 2 --iter 100000 --strict 3"
+  Cmd="$Cmd --debug-signals --mindp 2 --iter 100000 --strict 3 --covsrc binned"
   [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
   Cmd="$Cmd P.$Suffix,$OptP"
   Cmd="$Cmd W.$Suffix,$OptW"
@@ -194,16 +197,17 @@ function SimulP()
   local sTimes
   local BaseFile
   local LogFile
+  local i EKeys ThisTF tf title files
   sTimes="${aTimes[*]}"
   sTimes=${sTimes// /_}
   sTimes=${sTimes//:/_}
   Cmd="$MultiFit -e 2 -N 24 -o $OutDir/s_l"
   for((i=0; i < ${#aFitFiles[@]}; ++i)); do
-    Cmd="$Cmd ${aFitFiles[i]}.h5,t=${aTimes[i]}"
+    Cmd="$Cmd ${aFitFiles[i]}.h5,t=${aTimes[i]}${aThin[i]:+t${aThin[i]}}"
   done
   BaseFile="$OutDir/s_l.corr_$sTimes.g5P.model"
   LogFile="$BaseFile.$Seed.log"
-  DoCmd
+  DoCmd EraseLog
 
   # Get the energy difference
   for((i=0; i < ${#aFitFiles[@]}; ++i)); do
@@ -231,6 +235,7 @@ function SimulP()
     Cmd="title='$title' files='$files'"
     #Cmd="$Cmd tf='$tf'"
     [ -v RefText ] && Cmd="$Cmd RefText='E_0(n^2=${i})=${ColumnValues[@]:$((17+i*8)):1}, χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})'"
+    Cmd="$Cmd yrange='${ayRange[s_l,$i]}'"
     Cmd="$Cmd save='$OutDir/s_l_p2_${i}.corr_$sTimes.g5P.model.$Seed'"
     Cmd="$Cmd mmin=$i mmax=$i plottd.sh ${BaseFile}_td.$Seed.txt"
     DoCmd

@@ -9,18 +9,27 @@ PCMakeScriptOutDir
 
 #set -x
 
+declare -A aFormFactorMaxX
+declare -A aFormFactorYRange
+declare -A aFormFactorYRangeRaw
+aFormFactorMaxX=(F1M 2.2 C1 2.1 C2 2.1)
+aFormFactorYRange=(F1M 0.6:1.5 C1 0.6:1.3 C2 0.5:1.3)
+aFormFactorYRangeRaw=(F1M 0.4:1.45 C1 0.5:1.5 C2 0.3:1.5)
+
 # Computed from input
 
 # Optional environment variables
+# FitSeries: Which choice of 3pt fits. Nothing is default
 # nodt:  Set to anything to disable plots individual DeltaT all point-wall
 # nopw:  Set to anything to disable plots individual point-wall all DeltaT
+#UnCorr: Set to anything to use uncorrelated fit data
 #DoDeltaT=$((1-0${nodt+1}))
 #DoPW=$((1-0${nopw+1}))
 Old=$((0${dir:+1}))
-series="${series-disp old priorPW betterPW priorP betterP}"
-yRange=${yRange:-0.65:1.3}
-yRangeRaw=${yRangeRaw:-0.5:1.5}
-MaxX=${MaxX:-2.1}
+Fit2ptSeries="${series-disp old priorPW betterPW priorP betterP}"
+yRange=${yRange:-${aFormFactorYRange[$Ensemble]}}
+yRangeRaw=${yRangeRaw:-${aFormFactorYRangeRaw[$Ensemble]}}
+MaxX=${MaxX:-${aFormFactorMaxX[$Ensemble]}}
 
 ###################################################
 # Make a plot of all four form factors - old version - various DeltaT
@@ -60,14 +69,14 @@ set xlabel xAxisLabel
 set ylabel yAxis.yAxisLabel
 set key bottom center maxrows 3
 
-f(dt,p)="F".RatioNum."_".Meson."_dt_".dt."_p2_".p.".corr.g5P_g5P.params.1835672416.txt"
+f(dt,p)="F".RatioNum."_".Meson."_dt_".dt."_p2_".p.".${UnCorr+un}corr.g5P_g5P.params.1835672416.txt"
 #print "f(24,0)=".f(24,0)
 
 DD=0.00025
 DD=0.0025
 
 set term pdfcairo font "Arial,12" size 7 in, 3 in
-set output "F".RatioNum."_".MesonSave."_".yAxis.".corr.g5P_g5P.pdf"
+set output "F".RatioNum."_".MesonSave."_".yAxis.".${UnCorr+un}corr.g5P_g5P.pdf"
 set pointsize 0.5
 
 if( yAxis eq "fPlus" || yAxis eq "fPerp" ) { pMin=1 } else { pMin=0 }
@@ -174,15 +183,16 @@ do
 done
 fi
 
-for OutSub in $series; do
-  mkdir -p $OutSub
-  cd $OutSub
+for Fit2 in $Fit2ptSeries; do
+  OutSub=$Fit2$FitSeries
+  mkdir -p $OutSub${UnCorr+U}
+  cd $OutSub${UnCorr+U}
   i=0
   InPrefix=../.. # $HOME/NoSync/$Ensemble
   MELFit=$InPrefix/MELFit
   SpecDir="3sm_${Spec[i]}"
-  FitFile=$MELFit/Fit_${Spec[i]}_$OutSub.txt
-  Cmd="CRatio --type f,$L --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/ '*.$OutSub.*.h5'"
+  FitFile=$MELFit/Fit_${Spec[i]}_$Fit2.txt
+  Cmd="CRatio --type f,$L --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/ '*.$OutSub.${UnCorr+un}corr*.h5'"
   LogFile="FFS_$SpecDir.log"
   echo "$Cmd"
   echo "$Cmd"   > $LogFile
@@ -192,4 +202,4 @@ for OutSub in $series; do
   cd ..
 done
 
-#series=all yRange=0.65:1.3 yRangeRaw=0.5:1.5 MaxX=2.1 PlotFormFactor.sh
+#Fit2ptSeries=all yRange=0.65:1.3 yRangeRaw=0.5:1.5 MaxX=2.1 PlotFormFactor.sh

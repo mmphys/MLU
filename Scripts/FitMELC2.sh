@@ -37,6 +37,27 @@ function DoFit()
 
 ############################################################
 
+declare -A ayrangeR3
+declare -A ayrangeMEL
+ayrangeR3[gT,0]=0.0016:0.00185
+ayrangeR3[gT,1]=0.0014:0.00165
+ayrangeR3[gT,2]=0.0011:0.0016
+ayrangeR3[gT,3]=0.0010:0.0015
+ayrangeR3[gT,4]=0.0008:0.0013
+ayrangeMEL[gT,0]=0.77:0.785
+ayrangeMEL[gT,1]=0.68:0.71
+ayrangeMEL[gT,2]=0.59:0.65
+ayrangeMEL[gT,3]=0.52:0.58
+ayrangeMEL[gT,4]=0.47:0.55
+ayrangeR3[gXYZ,1]=0.00040:0.0006
+ayrangeR3[gXYZ,2]=0.00030:0.0005
+ayrangeR3[gXYZ,3]=0.00025:0.00045
+ayrangeR3[gXYZ,4]=0.00015:0.00035
+ayrangeMEL[gXYZ,1]='*:*'
+ayrangeMEL[gXYZ,2]='*:*'
+ayrangeMEL[gXYZ,3]='*:*'
+ayrangeMEL[gXYZ,4]='*:*'
+
 declare -A aMesonFit
 declare -A aMesonFileOp
 declare -A aMesonFileMom
@@ -45,15 +66,18 @@ aMesonFit[h${Heavy}_s,0]=corr_8_24_13_24
 aMesonFileOp[h${Heavy}_s,0]=g5P_g5W
 aMesonFileMom[h${Heavy}_s,0]=_p2_0
 
+aKaonTIP=(5 6 5 6 5)
+aKaonTFP=(20 22 20 20 18)
+aKaonTIW=(7 7 7 7 5)
+aKaonTFW=(20 22 20 20 18)
+
 #for FileSeries in ${series-old disp priorPW betterPW priorP betterP}; do
 for FileSeries in ${series-disp}; do
   case $FileSeries in
     old) # Versions using different PP+PW fit on each momentum
-    aMesonFit[s_l,0]=corr_5_20_7_20
-    aMesonFit[s_l,1]=corr_6_22_7_22
-    aMesonFit[s_l,2]=corr_5_20_7_20
-    aMesonFit[s_l,3]=corr_6_20_7_20
-    aMesonFit[s_l,4]=corr_5_18_5_18
+    for((i = 0; i < ${#aKaonTIP[@]}; ++i)); do
+      aMesonFit[s_l,$i]=corr_${aKaonTIP[i]}_${aKaonTFP[i]}_${aKaonTIW[i]}_${aKaonTFW[i]}
+    done
     for((i = 0; i < 5; ++i)); do
       aMesonFileOp[s_l,$i]=g5P_g5W
       aMesonFileMom[s_l,$i]=_p2_$i
@@ -61,7 +85,8 @@ for FileSeries in ${series-disp}; do
 
     disp) # Simultaneous fit to PP at all momenta using dispersion relation
     for((i = 0; i < 5; ++i)); do
-      aMesonFit[s_l,$i]=corr_5_20_6_22_5_20_6_20_5_18
+      # aMesonFit[s_l,$i]=corr_5_20_6_22_5_20_6_20_5_18 # unthinned
+      aMesonFit[s_l,$i]=corr_5_20_6_21_5_20_6_19_5_18 # thinned 1:3:2
       aMesonFileOp[s_l,$i]=g5P
       aMesonFileMom[s_l,$i]=
     done;;
@@ -88,7 +113,28 @@ for FileSeries in ${series-disp}; do
   #NumExp=2 DeltaT="20 24 28" TI='8 8 8' TF='15 19 23' yrangeR3=0.0015:0.0019 yrangeMEL=0.77:0.785 DoFit 0
   #NumExp=2 DeltaT="20 24 28" TI='9 9 9' TF='13 16 20' yrangeR3=0.0014:0.00165 yrangeMEL=0.68:0.71 DoFit 1
 
+  (
+    UnCorr=
+    DeltaT="16 20 24"
+    TI='8 8 8'
+    TF='10 14 18'
+    NumExp=2
+    for (( n=0; n<5; ++n )); do
+      DoFit $n
+      if ((n)); then Gamma=gXYZ DoFit $n; fi
+    done
+  )
 done
 fi
 #
-  NumExp=2 DeltaT="20 24 28" TI='8 8 8' TF='14 18 22' yrangeR3=0.0012:0.0016 yrangeMEL=0.59:0.65 DoFit 2
+  #NumExp=2 DeltaT="20 24" TI='8 8 9' TF='14 17 21' yrangeR3=0.0012:0.0016 yrangeMEL=0.59:0.65 Thinning="2 3 4" DoFit 2 # As at 18 Apr 2023
+
+  #NumExp=2 DeltaT="20 24" TI='8 8 9' TF='14 17 21' yrangeR3=0.0012:0.0016 yrangeMEL=0.59:0.65 Thinning="3 3 4" Thinning_Save="2:1:1:2:2:1:1 3 4"  DoFit 2
+
+  #NumExp=3 DeltaT="16 20 24" TI='8 8 8' TF='10 15 17' yrangeR3=0.0012:0.0016 yrangeMEL=0.59:0.65 Thinning="'' '' 3" DoFit 2 # THIS IS THE BEST FIT p=0.05
+
+  # Kick out DT=16 for Tobi - hmmm ... this looks even better!
+  #NumExp=2 DeltaT="20 24" TI='8 8' TF='15 17' yrangeR3=0.0012:0.0016 yrangeMEL=0.59:0.65 Thinning="'' 3" DoFit 2 # THIS IS THE BEST FIT p=0.05
+
+  # With Peter 19 Apr
+  #NumExp=2 DeltaT="16 20 24" TI='8 8 8' TF='10 14 18' yrangeR3=0.00115:0.0016 yrangeMEL=0.59:0.65 Thinning="" DoFit 2 # THIS IS THE BEST FIT p=0.05

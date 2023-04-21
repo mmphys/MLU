@@ -304,7 +304,9 @@ ValWithEr<T>::qValueHotelling( unsigned int p, unsigned int m ) const
 template <typename T> template <typename U> typename std::enable_if<!is_complex<U>::value>::type
 ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count )
 {
-  assert( Data.size() >= Count && "ValWithErr<T>::Get() data too small" );
+  if( Data.size() < Count )
+    throw std::runtime_error( "ValWithErr<T>::Get() Data.size() " + std::to_string( Data.size() )
+                              + " < Count " + std::to_string( Count ) );
   Central = Central_;
   if( Count == 0 )
   {
@@ -398,7 +400,7 @@ ValWithEr<T>::Get( T Central_, const std::vector<T> &Data, std::size_t Count )
 template <typename T>
 void ValWithEr<T>::Get( T dCentral, const VectorView<T> &Source, std::vector<T> &ScratchBuffer )
 {
-  if( ScratchBuffer.size() < Source.size() )
+  //if( ScratchBuffer.size() < Source.size() )
     ScratchBuffer.resize( Source.size() );
   std::size_t Count{ 0 };
   for( std::size_t i = 0; i < Source.size(); ++i )

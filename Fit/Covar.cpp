@@ -34,8 +34,18 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
   // Are we using a frozen covariance matrix? Or does it vary for each sample?
   bFreeze = SupportsUnfrozen() ? cl.GotSwitch( "freeze" ) : true;
 
-  // Decode the user's choice of covariance source
-  std::string sCovOptions{ cl.SwitchValue<std::string>( "covsrc" ) };
+  const std::string sCovarSourceSwitch{ "covsrc" };
+  if( !cl.GotSwitch( sCovarSourceSwitch ) )
+  {
+    // Covariance source unspecified: Unfrozen - use binned data; Frozen - use bootstrap
+    // TODO: Choose between the following two
+    // Source = SupportsUnfrozen() ? SS::Binned : SS::Bootstrap;
+    Source = SS::Bootstrap;
+  }
+  else
+  {
+    // Decode the user's choice of covariance source
+  std::string sCovOptions{ cl.SwitchValue<std::string>( sCovarSourceSwitch ) };
   std::string sCovSrc{ Common::ExtractToSeparator( sCovOptions ) };
   if( Common::EqualIgnoreCase( sCovSrc, "Rebin" ) )
   {
@@ -80,6 +90,7 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
     if( !sCovOptions.empty() )
       throw std::runtime_error( "Covariance source " + sCovSrc + " unexpected parameters: " + sCovOptions );
   }
+  }
 
   // Check that all the input files match for raw/rebinned (checked for binned data on load)
   if( Source == SS::Raw || Source == SS::Binned )
@@ -88,12 +99,22 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
     for( std::size_t i = 0; i < ds.corr.size(); ++i )
     {
       const int Count{ ds.corr[i].NumSamples( Source ) };
-      if( Count == 0 || Count != ds.corr[0].NumSamples( Source ) )
+      if( Count == 0 )
       {
         std::ostringstream os;
-        os << "Can't use " << Source << " samples for covariance. "
-           << ds.corr[0].Name_.Filename << " has " << ds.corr[0].NumSamples( Source )
-        << " samples but " << ds.corr[i].Name_.Filename << " has " << ds.corr[i].NumSamples( Source );
+        os << Source << " samples not available for covariance matrix";
+        if( i )
+          os << " file " << ds.corr[i].Name_.Filename;
+        throw std::runtime_error( os.str().c_str() );
+      }
+      if( Count != ds.corr[0].NumSamples( Source ) )
+      {
+        std::ostringstream os;
+        os << "Can't use " << Source << " samples for covariance:" << Common::NewLine
+           << Common::Space << ds.corr[0].NumSamples( Source ) << " samples in "
+           << ds.corr[0].Name_.Filename << Common::NewLine
+           << Common::Space << ds.corr[i].NumSamples( Source ) << " samples in "
+           << ds.corr[i].Name_.Filename;
         throw std::runtime_error( os.str().c_str() );
       }
     }

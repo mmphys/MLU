@@ -47,14 +47,16 @@ Seed=${Seed:-1835672416}
 Ratio=${Ratio:-ratioE1ZV1}
 Corr=${Corr:-corr}
 MELFit=${MELFit:-MELFit}
-#yrangeR3=${yrangeR3:-0.00068:0.000782}
-#yrangeMEL=${yrangeMEL:-0.527:0.537}
-FitOptionsPerFile=($Options)
+yrangeR3=${yrangeR3:-${ayrangeR3[$Gamma,$pSnk]}}
+yrangeMEL=${yrangeMEL:-${ayrangeMEL[$Gamma,$pSnk]}}
+eval FitOptionsPerFile=($Options)
+eval ThinningPerFile=($Thinning)
 
 Plot=${Plot:-Plot}
 PlotDataFrom=${PlotDataFrom:-4} # how far in from source and sink to plot data points
 
 # UnCorr: set to anything to perform uncorrelated fit
+# FitOptions: extra options for MultiFit command-line
 
 ############################################################
 
@@ -98,7 +100,7 @@ case "$FitWhat" in
   R3)
         FitName=R_3
         PlotName="C^{(3)}"
-        FitOptions=",raw"
+        FitOptionsModel=",C2e=2,C2Model=cosh,raw"
         PrefixFit=$PrefixR3
         SuffixFit=$SuffixR3
         PrefixPlot=$PrefixCorr
@@ -135,8 +137,10 @@ mkdir -p $OutSubDir
 
 for (( i = 0; i < ${#DeltaT[@]}; ++i ))
 do
-  FitList="$FitList${MySep}${PrefixFit}${DeltaT[i]}${SuffixFit}.h5,t=${TI[i]}:${TF[i]}${FitOptions}"
-  if (( ${#FitOptionsPerFile[i]} )); then FitList="$FitList,${FitOptionsPerFile[i]}"; echo "$i: ${FitOptionsPerFile[i]}"; fi
+  FitList="$FitList${MySep}${PrefixFit}${DeltaT[i]}${SuffixFit}.h5,t=${TI[i]}:${TF[i]}"
+  if (( ${#ThinningPerFile[i]} )); then FitList="${FitList}t${ThinningPerFile[i]}"; fi
+  FitList="${FitList},e=$NumExp$FitOptionsModel"
+  if (( ${#FitOptionsPerFile[i]} )); then FitList="$FitList,${FitOptionsPerFile[i]}"; fi
   DataList="$DataList${DataList:+ }${PrefixFit}${DeltaT[i]}${SuffixFit}.txt"
   Title="$Title${MySep}ΔT=${DeltaT[i]}"
   LabelTI="$LabelTI${MySep}${PlotDataFrom}"
@@ -147,8 +151,9 @@ done
 
 BuildModelBase=$OutSubDir/${FitWhat}_${OutLongName}
 
-MultiFit="MultiFit -e $NumExp --Hotelling 0"
+MultiFit="MultiFit -e 2 --Hotelling 0"
 MultiFit="$MultiFit --overwrite"
+[ -v FitOptions ] && MultiFit="$MultiFit $FitOptions"
 [ -v UnCorr ] && MultiFit="$MultiFit --uncorr"
 MultiFit="$MultiFit --debug-signals"
 Cmd="$MultiFit --summary 2 -o $BuildModelBase $InputMesonSnk $InputMesonSrc $FitList"

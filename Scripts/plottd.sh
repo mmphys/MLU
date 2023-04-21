@@ -158,8 +158,12 @@ if( ThisFile eq '' ) {
   ColumnX="(column('t')+(".sprintf("%g",xOffset)."))"
   #print 'ColumnX='.ColumnX
   ConditionA=ColumnX.ConditionTMin.' && '.ColumnX.'<'.sprintf("%g",FitTMin[model])
+  #ConditionA=ColumnX.ConditionTMin
+  #ConditionA=ColumnX.'<'.sprintf("%g",FitTMin[model])
   #print 'ConditionA='.ConditionA
   ConditionB=ColumnX.ConditionTMax.' && '.ColumnX.'>'.sprintf("%g",FitTMax[model])
+  #ConditionB=ColumnX.ConditionTMax
+  #ConditionB=ColumnX.'>'.sprintf("%g",FitTMax[model])
   #print 'ConditionB='.ConditionB
   Condition='(('.ConditionA.') || ('.ConditionB.'))'
   #print 'Condition='.Condition

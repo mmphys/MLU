@@ -11,7 +11,7 @@ fi
 . PlotCommon.sh
 . FitTwoPoint.sh
 
-#export FitOptions="--nophat" # Enable to use p instead of p_hat
+#export FitOptions="--nophat${FitOptions:+ $FitOptions}" # Enable to use p instead of p_hat
 
 ############################################################
 
@@ -89,12 +89,25 @@ if [ -v DoNext ]; then
   MultiFit="MultiFit --Hotelling 0 --overwrite --debug-signals --strict 3"
   [ -v FitOptions ] && MultiFit="$MultiFit $FitOptions"
 
+  # Compare unthinned with a couple of choices of thinning
+  for (( i=0; i<3; ++i )); do
   aTimes=(5:20 6:22 5:20 6:20 5:18)
   aTimesW=(7:20 7:22 7:20 7:20 5:18)
+  case $i in
+    1) aThin=('' 2 2 2 2); aTimes[2]='5:19'; aTimes[4]='5:17';;
+    2) aThin=('' 1:3:2 1:3:2 1:3:2 1:3:2); aTimes[1]='6:21'; aTimes[3]='6:19';; # Preferred
+    *) unset aThin;;
+  esac
   PriorFitTimes="${aTimes[0]}_${aTimesW[0]}"; PriorFitTimes="${PriorFitTimes//:/_}"
-  echo "PriorFitTimes='$PriorFitTimes'"
-
+  #echo "PriorFitTimes='$PriorFitTimes'"
   SimulP # Simultaneous fits of point-point data at all momenta
+  done
 fi
+
+# testing 20 Apr 2023 (covariance source)
+#  export Meson=s_l
+#  export LabelTF=30
+#  export ti='3 3'
+#p=0 TI=5 TF=20 NumExp=2 TI2=7 NumExp2=1 FitTwoPoint
 
 set +e # Keep last (so we can source this script without failures causing exit)

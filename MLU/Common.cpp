@@ -1414,7 +1414,7 @@ const char ModelBase::SummaryColumnPrefix[] = "ti tf tiLabel tfLabel NumDataPoin
 template <typename T>
 void Model<T>::SummaryColumnNames( std::ostream &os ) const
 {
-  os << SummaryColumnPrefix;
+  os << SummaryColumnPrefix << Common::Space;
   Base::SummaryColumnNames( os );
   for( std::size_t i = 1; i < FitTimes.size(); ++i )
     os << Space << "ti" << i << Space << "tf" << i;
@@ -1511,19 +1511,18 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
   // Write column names
   static constexpr int idxData{ 0 };
   //static constexpr int idxTheory{ 1 };
-  static const char * pFieldNames[] = { "data", "theory" };
   os << "field seq model t ";
-  ValWithEr<T>::Header( pFieldNames[0], os );
+  ValWithEr<T>::Header( "data", os );
   os << Space;
-  ValWithEr<T>::Header( pFieldNames[1], os );
+  ValWithEr<T>::Header( "theory", os );
   os << NewLine;
   // Grab the model data and theory with bootstrapped errors
   const int Extent{ GetExtent() };
   if( !Extent )
     return;
-  std::array<VectorView<T>, 2> vv;
-  std::vector<T> Buffer;
-  std::array<std::vector<ValWithEr<T>>,2> Value;
+  std::array<VectorView<T>, 2> vv; // View into data and theory replica data. Used to populate Value
+  std::vector<T> Buffer; // Scratch buffer for ValWithEr<T>
+  std::array<std::vector<ValWithEr<T>>,2> Value; // Data and theory values with errors
   for( std::size_t i = 0; i < Value.size(); ++i )
   {
     BootRep<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
@@ -1534,7 +1533,7 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
       Value[i][j].Get( ThD.Central[j], vv[0], Buffer );
     }
   }
-  // Write theory and data values
+  // Write theory and data values, with each data point in fit on a separate line
   int idx = 0;
   for( std::size_t m = 0; m < FitTimes.size(); ++m )
     for( const int t : FitTimes[m] )
@@ -1546,7 +1545,6 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
       ++idx;
     }
   // Write effective masses
-  Buffer.resize( FitInput.size() );
   idx = 0;
   ValWithEr<T> v;
   for( std::size_t m = 0; m < FitTimes.size(); ++m )
@@ -1563,6 +1561,7 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
         BootRep<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
         ThD.MapColumn( vv[0], idx - 1 );
         ThD.MapColumn( vv[1], idx );
+        Buffer.resize( ThD.size() );
         int bootCount{ 0 };
         for( int bootrep = 0; bootrep < ThD.size(); ++bootrep )
         {

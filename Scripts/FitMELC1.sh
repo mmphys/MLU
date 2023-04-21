@@ -37,6 +37,27 @@ function DoFit()
 
 ############################################################
 
+declare -A ayrangeR3
+declare -A ayrangeMEL
+ayrangeR3[gT,0]=0.00150:0.00190
+ayrangeR3[gT,1]=0.00140:0.00165
+ayrangeR3[gT,2]=0.00130:0.00160
+ayrangeR3[gT,3]=0.00100:0.00160
+ayrangeR3[gT,4]=0.00100:0.00150
+ayrangeMEL[gT,0]=0.76:0.80
+ayrangeMEL[gT,1]=0.68:0.71
+ayrangeMEL[gT,2]=0.58:0.66
+ayrangeMEL[gT,3]=0.50:0.64
+ayrangeMEL[gT,4]=0.44:0.62
+ayrangeR3[gXYZ,1]=0.00050:0.00065
+ayrangeR3[gXYZ,2]=0.00038:0.00055
+ayrangeR3[gXYZ,3]=0.00032:0.00046
+ayrangeR3[gXYZ,4]=0.00026:0.00046
+ayrangeMEL[gXYZ,1]=0.66:0.74
+ayrangeMEL[gXYZ,2]=0.56:0.70
+ayrangeMEL[gXYZ,3]=0.48:0.65
+ayrangeMEL[gXYZ,4]=0.44:0.65
+
 declare -A aMesonFit
 declare -A aMesonFileOp
 declare -A aMesonFileMom
@@ -45,8 +66,8 @@ aMesonFit[h${Heavy}_s,0]=corr_6_27_14_27
 aMesonFileOp[h${Heavy}_s,0]=g5P_g5W
 aMesonFileMom[h${Heavy}_s,0]=_p2_0
 
-for FileSeries in ${series-old disp priorPW betterPW priorP betterP}; do
-case $FileSeries in
+for Fit2ptSeries in ${series-old disp priorPW betterPW priorP betterP}; do
+case $Fit2ptSeries in
   old) # Versions using different PP+PW fit on each momentum
   aMesonFit[s_l,0]=corr_6_23_7_23
   aMesonFit[s_l,1]=corr_6_23_7_23
@@ -75,7 +96,7 @@ case $FileSeries in
   aMesonFileMom[s_l,0]=_p2_0
   for((i = 1; i < 5; ++i)); do
     aMesonFileOp[s_l,$i]=g5P_g5W
-    aMesonFileMom[s_l,$i]=_p2_$i.${FileSeries}_6_23_7_23
+    aMesonFileMom[s_l,$i]=_p2_$i.${Fit2ptSeries}_6_23_7_23
   done;;
 
   betterPW) # Simultaneous fit to PP & PW at all momenta using dispersion relation
@@ -88,7 +109,7 @@ case $FileSeries in
   aMesonFileMom[s_l,0]=_p2_0
   for((i = 1; i < 5; ++i)); do
     aMesonFileOp[s_l,$i]=g5P_g5W
-    aMesonFileMom[s_l,$i]=_p2_$i.${FileSeries}_6_23_7_23
+    aMesonFileMom[s_l,$i]=_p2_$i.${Fit2ptSeries}_6_23_7_23
   done;;
 
   priorP) # Simultaneous fit to PP at all momenta using dispersion relation
@@ -101,7 +122,7 @@ case $FileSeries in
   aMesonFileMom[s_l,0]=_p2_0
   for((i = 1; i < 5; ++i)); do
     aMesonFileOp[s_l,$i]=g5P_g5W
-    aMesonFileMom[s_l,$i]=_p2_$i.${FileSeries}_6_23_7_23
+    aMesonFileMom[s_l,$i]=_p2_$i.${Fit2ptSeries}_6_23_7_23
   done;;
 
   betterP) # Simultaneous fit to PP at all momenta using dispersion relation
@@ -114,10 +135,10 @@ case $FileSeries in
   aMesonFileMom[s_l,0]=_p2_0
   for((i = 1; i < 5; ++i)); do
     aMesonFileOp[s_l,$i]=g5P_g5W
-    aMesonFileMom[s_l,$i]=_p2_$i.${FileSeries}_6_23_7_23
+    aMesonFileMom[s_l,$i]=_p2_$i.${Fit2ptSeries}_6_23_7_23
   done;;
 
-  *) echo "FileSeries $FileSeries unrecognised"; exit 1;;
+  *) echo "Fit2ptSeries ${Fit2ptSeries} unrecognised"; exit 1;;
 esac
 
 ############################################################
@@ -134,28 +155,50 @@ qSnk=l
 qSpec=s
 Gamma=gT
 
-echo "Performing $FitWhat fits to $Ratio for $FileSeries"
+if [ -v DoBase ]; then
+  FileSeries=${Fit2ptSeries}
+  echo "Performing $FitWhat fits to $Ratio for $FileSeries"
 
-  NumExp=2 DeltaT="20 24 28" TI='9 11 13' TF='14 18 18' yrangeR3=0.0015:0.0019 yrangeMEL=0.76:0.8 DoFit 0 # Preferred
-  NumExp=2 DeltaT="20 24 28" TI='11 14 13' TF='12 15 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.68:0.71 DoFit 1
-  NumExp=2 DeltaT="20 24 28" TI='8 12 16' TF='12 16 19' yrangeR3=0.0013:0.00160 yrangeMEL=0.58:0.66 DoFit 2
-  NumExp=2 DeltaT="20 24 28" TI='8 12 16' TF='14 16 19' yrangeR3=0.0010:0.00160 yrangeMEL=0.50:0.64 DoFit 3
-  NumExp=2 DeltaT="20 24" TI='8 12' TF='14 16' yrangeR3=0.0010:0.00150 yrangeMEL=0.44:0.62 DoFit 4
+  NumExp=2 DeltaT="20 24 28" TI='9 11 13' TF='14 18 18' DoFit 0 # Preferred
+  NumExp=2 DeltaT="20 24 28" TI='11 14 13' TF='12 15 17' DoFit 1
+  NumExp=2 DeltaT="20 24 28" TI='8 12 16' TF='12 16 19' DoFit 2
+  NumExp=2 DeltaT="20 24 28" TI='8 12 16' TF='14 16 19' DoFit 3
+  NumExp=2 DeltaT="20 24" TI='8 12' TF='14 16' DoFit 4
 
   # Gamma spatial
-  NumExp=2 DeltaT="20 24 28" TI='12 15 13' TF='14 17 17' yrangeR3=0.0005:0.00065 yrangeMEL=0.66:0.74 Gamma=gXYZ DoFit 1
-  NumExp=2 DeltaT="16 20 24" TI='8 9 8' TF='11 15 19' Gamma=gXYZ yrangeR3=0.00038:0.00055 yrangeMEL=0.56:0.70 DoFit 2 # My preferred fit
-  NumExp=2 DeltaT="16 20 24" TI='8 9 8' TF='11 15 19' Gamma=gXYZ yrangeR3=0.00032:0.00046 yrangeMEL=0.48:0.65 DoFit 3 # My preferred fit
-  NumExp=2 DeltaT="16 20 24" TI='7 9 8 13' TF='11 15 19 16' Gamma=gXYZ yrangeR3=0.00026:0.00046 yrangeMEL=0.44:0.65 DoFit 4
+  NumExp=2 DeltaT="20 24 28" TI='12 15 13' TF='14 17 17' Gamma=gXYZ DoFit 1
+  NumExp=2 DeltaT="16 20 24" TI='8 9 8' TF='11 15 19' Gamma=gXYZ DoFit 2 # My preferred fit
+  NumExp=2 DeltaT="16 20 24" TI='8 9 8' TF='11 15 19' Gamma=gXYZ DoFit 3 # My preferred fit
+  NumExp=2 DeltaT="16 20 24" TI='7 9 8 13' TF='11 15 19 16' Gamma=gXYZ DoFit 4
+fi
 
-if [ "${DoAlt+x}" = x ]; then
-  NumExp=2 DeltaT="16 20 24 28" TI='8 9 11 13' TF='11 14 18 18' yrangeR3=0.0015:0.0019 yrangeMEL=0.76:0.8 DoFit 0 # Very much the same as prior fit
-  NumExp=1 DeltaT="20 24 28" TI='11 14 13' TF='12 15 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 DoFit 1 # I prefer this one
-  NumExp=2 DeltaT="16 20 24 28" TI='9 11 13 13' TF='10 13 16 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 DoFit 1
-  NumExp=2 DeltaT="16 20 24 28" TI='8 9 8 13' TF='11 15 19 16' Gamma=gXYZ yrangeR3=0.00038:0.00055 yrangeMEL=0.56:0.70 DoFit 2 # Just to see the DT=28 data
-  NumExp=2 DeltaT="16 20 24 28" TI='8 9 8 13' TF='11 15 19 16' Gamma=gXYZ yrangeR3=0.00032:0.00046 yrangeMEL=0.48:0.65 DoFit 3 # Just to see the DT=28 data
+if [ -v DoAlt ]; then
+  FileSeries=${Fit2ptSeries}alt
+  echo "Performing $FitWhat fits to $Ratio for $FileSeries"
+
+  NumExp=2 DeltaT="16 20 24 28" TI='8 9 11 13' TF='11 14 18 18' DoFit 0 # Very much the same as prior
+  NumExp=1 DeltaT="20 24 28" TI='11 14 13' TF='12 15 17' DoFit 1 # I prefer this one
+  NumExp=2 DeltaT="16 20 24 28" TI='9 11 13 13' TF='10 13 16 17' DoFit 1
+  NumExp=2 DeltaT="16 20 24 28" TI='8 9 8 13' TF='11 15 19 16' Gamma=gXYZ DoFit 2 # Just to see DT=28
+  NumExp=2 DeltaT="16 20 24 28" TI='8 9 8 13' TF='11 15 19 16' Gamma=gXYZ DoFit 3 # Just to see DT=28
+fi
+if [ -v DoStd ]; then
+  (
+  FileSeries=${Fit2ptSeries}std
+  echo "Performing $FitWhat fits to $Ratio for $FileSeries"
+  UnCorr=
+  DeltaT="16 20 24"
+  TI='8 8 8'
+  TF='10 14 18'
+  NumExp=2
+  for (( n=0; n<5; ++n )); do
+    DoFit $n
+    if ((n)); then Gamma=gXYZ DoFit $n; fi
+  done
+  )
 fi
 done
+fi
 
 ##NumExp=2 DeltaT="20 24 28" TI='10 10 13' TF='13 18 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 DoFit 1 # I prefer this one
 #NumExp=2 DeltaT="20 24 28" TI='10 14 13' TF='13 15 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 DoFit 1 # I prefer this one

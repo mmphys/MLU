@@ -109,7 +109,7 @@ int main(int argc, const char *argv[])
       {"nophat", CL::SwitchType::Flag, nullptr},
       {Common::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
       // Covariance parameters
-      {"covsrc", CL::SwitchType::Single, "Bootstrap"},
+      {"covsrc", CL::SwitchType::Single, nullptr},
       {"covboot", CL::SwitchType::Single, nullptr},
       {"freeze", CL::SwitchType::Flag, nullptr},
       // Other params
@@ -411,8 +411,9 @@ int main(int argc, const char *argv[])
     "         Binned    Use the already binned data\n"
     "         Raw       Use the raw (unbinned) data\n"
     "         Rebin     Rebin the raw data using bin size(s) specified\n"
-    "         Bootstrap Use bootstrap replicas (default)\n"
+    "         Bootstrap Use bootstrap replicas\n"
     "         H5,f[,g],d Load INVERSE covariance from .h5 file f, group g, dataset d\n"
+    "         Default: Binned if available, otherwise Bootstrap\n"
     "--covboot Build covariance using secondary bootstrap & this num replicas, 0=all\n"
     "--guess   List of specific values to use for inital guess\n"
     "--summary 0 no summaries; 1 model_td.seq.txt only; 2 model_td and model.seq.txt\n"

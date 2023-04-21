@@ -130,6 +130,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--covsrc binned"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--covsrc h5,fit_felix_central.hdf5,covarianceMatrix -o data_comparison2/FitDebugFelix/FelixCov_ -i data_comparison2/unbinned_"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -171,19 +175,35 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$HOME/NoSync/C2/MELFit/2ptp2/s_l/s_l.corr_5_20_6_21_5_20_6_19_5_18.g5P.model.1835672416.h5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "C2/corr/2ptp2/s_l_p2_0_g5P_g5P.fold.1835672416.h5,t=5:20,e=2"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "C2/corr/2ptp2/s_l_p2_2_g5P_g5P.fold.1835672416.h5,t=5:20t3:1:1,e=2"
+            argument = "C2/corr/2ptp2/s_l_p2_0_g5P_g5P.fold.1835672416.h5,t=5:20,e=2"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C2/corr/2ptp2/s_l_p2_0_g5P_g5W.fold.1835672416.h5,t=7:20,e=1"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C2/corr/2ptp2/s_l_p2_1_g5P_g5P.fold.1835672416.h5,t=6:21t1:3:2,e=2"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C2/corr/2ptp2/s_l_p2_2_g5P_g5P.fold.1835672416.h5,t=5:20t1:3:2,e=2"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C2/corr/2ptp2/s_l_p2_3_g5P_g5P.fold.1835672416.h5,t=6:19t1:3:2,e=2"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C2/corr/2ptp2/s_l_p2_4_g5P_g5P.fold.1835672416.h5,t=5:18t1:3:2,e=2"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$HOME/NoSync/C2/MELFit/2ptp2/h6413_s/h6413_s_p2_0.corr_8_24_13_24.g5P_g5W.model.1835672416.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "C2/corr/2ptp2/h6413_s_p2_0_g5P_g5P.fold.1835672416.h5,t=8:24,e=2"
@@ -195,11 +215,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "C2/ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_20_p2_2_g5P_g5P.fold.1835672416.h5,t=8:15,raw,C2Model=coSh,C2e=2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "C2/ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_24_p2_2_g5P_g5P.fold.1835672416.h5,t=8:17t3,raw,C2Model=CoSH,C2e=2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <LocationScenarioReference
