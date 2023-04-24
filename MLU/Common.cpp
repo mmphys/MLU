@@ -1561,7 +1561,8 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
         BootRep<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
         ThD.MapColumn( vv[0], idx - 1 );
         ThD.MapColumn( vv[1], idx );
-        Buffer.resize( ThD.size() );
+        if( Buffer.size() < ThD.size() )
+          Buffer.resize( ThD.size() );
         int bootCount{ 0 };
         for( int bootrep = 0; bootrep < ThD.size(); ++bootrep )
         {

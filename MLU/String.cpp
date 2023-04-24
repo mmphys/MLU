@@ -129,6 +129,31 @@ bool ExtractSuffix( std::string &String, std::string &Suffix, const char * pszDe
   return bFoundDelim;
 }
 
+void ReplaceExtension( std::string &FileName, const std::string &NewExtension )
+{
+  std::size_t pos{ FileName.find_last_of( "/." ) };
+  if( pos != std::string::npos && FileName[pos] == '.' )
+    FileName.resize( pos + 1 );
+  else
+    FileName.append( 1, '.' );
+  FileName.append( NewExtension );
+}
+
+std::string ReplaceExtension( const std::string &FileName, const std::string &NewExtension )
+{
+  std::string NewName;
+  std::size_t pos{ FileName.find_last_of( "/." ) };
+  if( pos != std::string::npos && FileName[pos] == '.' )
+    NewName = FileName.substr( 0, pos + 1 );
+  else
+  {
+    NewName = FileName;
+    NewName.append( 1, '.' );
+  }
+  NewName.append( NewExtension );
+  return NewName;
+}
+
 // Remove the directory from the start of FileName (leave the trailing '/' in place)
 std::string ExtractDirPrefix( std::string &FileName )
 {

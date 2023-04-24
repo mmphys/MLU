@@ -579,7 +579,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       OutputModel.StdErrorMean.Replica.clear();
     OutputModel.Guess = Guess;
     OutputModel.FitInput.Central = ds.vCentral;
-    OutputModel.FitInput.Replica = ds.Cache( cp.Source );
+    OutputModel.FitInput.Replica = ds.Cache( Common::SampleSource::Bootstrap );
     OutputModel.MakeCorrSummary( Common::sParams.c_str() );
     OutputModel.CheckParameters( Strictness, MonotonicUpperLimit );
     {
@@ -622,7 +622,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     if( SummaryLevel >= 1 )
       OutputModel.WriteSummaryTD( Common::MakeFilename( sModelBase, Common::sModel + "_td", Seed, TEXT_EXT ) );
     if( SummaryLevel >= 2 )
-      OutputModel.WriteSummary( Common::MakeFilename( sModelBase, Common::sModel, Seed, TEXT_EXT ) );
+      OutputModel.WriteSummary( Common::ReplaceExtension( ModelFileName, TEXT_EXT ) );
     for( int f = 0; f < NumFiles; f++ )
     {
       const int snk{ ds.corr[f].Name_.op[idxSnk] };

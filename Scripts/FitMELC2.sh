@@ -114,7 +114,8 @@ for FileSeries in ${series-disp}; do
   #NumExp=2 DeltaT="20 24 28" TI='9 9 9' TF='13 16 20' yrangeR3=0.0014:0.00165 yrangeMEL=0.68:0.71 DoFit 1
 
   (
-    UnCorr=
+  #FitOptions='--covsrc bootstrap'
+  for CorrUncorr in 0 1; do
     DeltaT="16 20 24"
     TI='8 8 8'
     TF='10 14 18'
@@ -123,6 +124,8 @@ for FileSeries in ${series-disp}; do
       DoFit $n
       if ((n)); then Gamma=gXYZ DoFit $n; fi
     done
+    UnCorr=
+  done
   )
 done
 fi

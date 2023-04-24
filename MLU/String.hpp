@@ -431,6 +431,10 @@ inline std::string &Append( std::string &Dest, const std::string &Source,
 // Return success / fail
 bool ExtractSuffix( std::string &String, std::string &Suffix, const char * pszDelimeters = nullptr );
 
+/// Replace the extension in FileName with NewExtension (appending if missing)
+std::string ReplaceExtension( const std::string &FileName, const std::string &NewExtension );
+void        ReplaceExtension(       std::string &FileName, const std::string &NewExtension );
+
 // Remove the directory from the start of FileName (leave the trailing '/' in place)
 std::string ExtractDirPrefix( std::string &FileName );
 std::string GetDirPrefix( const std::string &FileName );

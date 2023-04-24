@@ -130,8 +130,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--covsrc binned"
-            isEnabled = "YES">
+            argument = "--covsrc bootstrap"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--covsrc h5,fit_felix_central.hdf5,covarianceMatrix -o data_comparison2/FitDebugFelix/FelixCov_ -i data_comparison2/unbinned_"

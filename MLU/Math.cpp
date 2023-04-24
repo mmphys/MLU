@@ -400,7 +400,7 @@ ValWithEr<T>::Get( T Central_, const std::vector<T> &Data, std::size_t Count )
 template <typename T>
 void ValWithEr<T>::Get( T dCentral, const VectorView<T> &Source, std::vector<T> &ScratchBuffer )
 {
-  //if( ScratchBuffer.size() < Source.size() )
+  if( ScratchBuffer.size() < Source.size() )
     ScratchBuffer.resize( Source.size() );
   std::size_t Count{ 0 };
   for( std::size_t i = 0; i < Source.size(); ++i )
