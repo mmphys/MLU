@@ -34,9 +34,6 @@
 
 #include <type_traits>
 
-// Eigen dense matrices - TODO: Do I really need to support these?
-#include <Grid/Eigen/Dense>
-
 MLU_Math_hpp
 
 extern const double NaN;
@@ -49,16 +46,6 @@ constexpr double OneSigmaFromEnd{ ( 1. - OneSigma ) * 0.5 };
 inline std::size_t OneSigmaIndex( std::size_t Count )
 {
   return static_cast<std::size_t>( OneSigmaFromEnd * Count + 0.5 );
-}
-
-// Are all the floating point numbers in this Eigen::matrix finite
-template <typename T> inline bool IsFinite( const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> & m, bool bDiagonalsOnly = false )
-{
-  for( Eigen::Index row = 0; row < m.rows(); ++row )
-    for( Eigen::Index col = 0; col < m.cols(); ++col )
-      if( ( !bDiagonalsOnly || row == col ) && !IsFinite( m( row, col ) ) )
-        return false;
-  return true;
 }
 
 /**

@@ -54,6 +54,10 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
+            argument = "--overwrite"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-m Tursa -r 1835672416"
             isEnabled = "YES">
          </CommandLineArgument>

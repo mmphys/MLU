@@ -33,6 +33,7 @@
 #include <MLUconfig.h>
 #include <MLU/FitRange.hpp>
 #include <MLU/GSLVecMat.hpp>
+#include <MLU/JackBoot.hpp>
 #include <MLU/Param.hpp>
 
 // std c++
@@ -162,8 +163,6 @@ extern const std::string sPValueH;
 extern const std::string sOverlapAltNorm;
 
 extern const std::vector<std::string> DefaultModelStats;
-
-using SeedType = unsigned int;
 
 template<typename T = int> struct StartStopStepIterator;
 
@@ -1462,7 +1461,7 @@ protected:
   {
     if( is_complex )
       NewSize *= 2;
-    const std::size_t OldSize{ SummaryNames.size() * Nt_ * ( is_complex ? 2 : 1 ) };
+    const std::size_t OldSize{ SummaryNames.size() * Nt_ }; // old has extra rows for imaginary
     if( NewSize != OldSize )
     {
       if( NewSize )
@@ -2216,9 +2215,10 @@ void Sample<T>::MakeCorrSummary( const char * pAvgName )
   const int tMid{ bFolded() ? Nt_ : Nt_ / 2 };
   std::vector<scalar_type> Data( NumSamples_ );
   ValWithEr<scalar_type> * pDest = m_pSummaryData.get();
+  const int NumRealFields{ static_cast<int>( SummaryNames.size() ) / scalar_count };
   for( int i = 0; i < Traits::scalar_count; i++ ) // real or imaginary
   {
-    for(int f = 0; f < SummaryNames.size(); f++) // each field
+    for(int f = 0; f < NumRealFields; f++) // each field
     {
       for(int t = 0; t < Nt_; t++, pDest++ )
       {

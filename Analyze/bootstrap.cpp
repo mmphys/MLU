@@ -29,6 +29,9 @@
 
 #include "bootstrap.hpp"
 
+static const char szError[]{ "Error: " };
+static const char szWarning[]{ "Warning: " };
+
 // Show me the averages for each timeslice
 /*void ShowTimeSliceAvg(const Latan::Dataset<Latan::DMat> &data) {
   const int nFile{static_cast<int>(data.size())};
@@ -98,7 +101,7 @@ void TrajFile::Reverse( Common::CorrelatorFileC &File ) const
 BootstrapParams::BootstrapParams( const Common::CommandLine &cl, const std::string MachineNameActual )
 : b2ptSymOp{ cl.GotSwitch( "symop" ) },
   b2ptSortZeroMom{ !cl.GotSwitch( "nosort" ) },
-  bWarnIfExists{ cl.GotSwitch( "w" ) },
+  bOverwrite{ cl.GotSwitch( "overwrite" ) },
   bVerboseSummaries{ !cl.GotSwitch( "terse" ) },
   TimesliceDetail{ cl.SwitchValue<int>( "t" ) },
   nSample{ cl.SwitchValue<int>( "n" ) },
@@ -284,7 +287,7 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
   if( NumFiles == 0 || ( !bSaveSummaries && !bSaveBootstrap ) )
     return 0;
   if( !binAuto && NumFiles % binSize )
-    std::cout << "Warning: last bin partially filled (" << ( NumFiles % binSize ) << " of " << binSize << ")\n";
+    std::cout << szWarning << "last bin partially filled (" << ( NumFiles % binSize ) << " of " << binSize << ")\n";
   // Sort ... unless we want the old sort order (e.g. to check old results can be replicated)
   if( binOrder == BinOrder::Auto )
   {
@@ -330,17 +333,17 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
       // Skip bootstrap if output exists
       const std::string sOutFile{ Common::MakeFilename( sOutBase, Common::sBootstrap, seed, DEF_FMT ) };
       const std::string sSummary{ Common::MakeFilename( sOutBase, Common::sBootstrap, seed, TEXT_EXT)};
-      const bool bOutFileExists{ Common::FileExists( sOutFile ) };
-      if( bOutFileExists || ( !bSaveBootstrap && Common::FileExists( sSummary ) ) )
-      {
-        std::ostringstream ss;
-        ss << "output " << sOutBase << " already exists";
-        if( !bWarnIfExists && bOutFileExists )
-          throw std::runtime_error( ss.str() );
-        std::cout << sStar << " Warning: " << ss.str() << std::endl;
-      }
+      const bool bExistsFile{ Common::FileExists( sOutFile ) };
+      const bool bExistsSummary{ Common::FileExists( sSummary ) };
+      const bool bOutFileExists{ bExistsFile || ( !bSaveBootstrap && bExistsSummary ) };
+      const std::string &sWarnFile{ bExistsFile ? sOutFile : sSummary };
+      static const char szOver[]{ "overwriting " };
+      if( bOutFileExists && !bOverwrite )
+        std::cout << sStar << szError << szOver << sWarnFile << std::endl;
       else
       {
+        if( bOutFileExists )
+          std::cout << sStar << szWarning << szOver << sWarnFile << std::endl;
         // Count how many files there are for each config - needs to work regardless of sort
         assert( sizeof( int ) == sizeof( Common::SeedType ) );
         if( GatherInput( out, first, last, Traj, SinkAlgebra[Snk], SourceAlgebra[Src], bAlignTimeslices ) )
@@ -352,11 +355,19 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
             out.Bootstrap( seed, &MachineName );
           // Now save the audit data for the bootstrap
           out.MakeCorrSummary( nullptr );
+          try {
           if( bSaveBootstrap )
             out.Write( sOutFile );
           if( bSaveSummaries )
             out.WriteSummary( sSummary, bVerboseSummaries );
           iCount++;
+          }
+          catch(const std::exception &e)
+          {
+            std::cout << szWarning << e.what() << std::endl;
+          } catch( ... ) {
+            std::cout << szError << "Cannot write - unknown exception" << std::endl;
+          }
         }
       }
     }
@@ -789,7 +800,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
     else if( !Common::FileExists(Filename))
     {
       parsed = false;
-      std::cout << "Error: " << Filename << " doesn't exist" << std::endl;
+      std::cout << szError << Filename << " doesn't exist" << std::endl;
     }
     else
     {
@@ -803,9 +814,9 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
       if( b3pt && AlgCurrent.empty() )
         throw std::runtime_error( "3pt functions present, but current insertion not specified" );
       if( !Name_.Gamma.empty() && !Name_.bGotDeltaT )
-        std::cout << "Warning: Gamma insertion without DeltaT. Possible 3pt function treated as 2pt" << std::endl;
+        std::cout << szWarning << "Gamma insertion without DeltaT. Possible 3pt function treated as 2pt" << std::endl;
       if( Name_.Gamma.empty() && Name_.bGotDeltaT )
-        std::cout << "Warning: DeltaT without gamma insertion. Possible 3pt function treated as 2pt" << std::endl;
+        std::cout << szWarning << "DeltaT without gamma insertion. Possible 3pt function treated as 2pt" << std::endl;
       std::string Contraction{ Name_.GetBaseShortExtra() };
       // NB: bRev true means that the gamma in the name belongs with Q1
       bool bRev{ b3pt ? Common::ExtractToken( Contraction, "[Rr][Ee][Vv]" ) : false };
@@ -958,7 +969,7 @@ bool Manifest::RunManifest()
       }
       catch(const std::exception &e)
       {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << szError << e.what() << std::endl;
         bOK = false;
       }
     }
@@ -1005,8 +1016,8 @@ int main(const int argc, const char *argv[])
       {"m", CL::SwitchType::Single, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
       {"symop", CL::SwitchType::Flag, nullptr},
-      {"w", CL::SwitchType::Flag, nullptr},
       {"s", CL::SwitchType::Flag, nullptr},
+      {"overwrite", CL::SwitchType::Flag, nullptr},
       {"p2",CL::SwitchType::Flag, nullptr},
       {"pa",CL::SwitchType::Flag, nullptr},
       {"ignore",CL::SwitchType::Single, DefaultIgnore},
@@ -1042,10 +1053,10 @@ int main(const int argc, const char *argv[])
   }
   catch(const std::exception &e)
   {
-    std::cerr << "Error: " << e.what() << std::endl;
+    std::cerr << szError << e.what() << std::endl;
     iReturn = EXIT_FAILURE;
   } catch( ... ) {
-    std::cerr << "Error: Unknown exception" << std::endl;
+    std::cerr << szError << "Unknown exception" << std::endl;
     iReturn = EXIT_FAILURE;
   }
   if( bShowUsage )
@@ -1069,8 +1080,8 @@ int main(const int argc, const char *argv[])
     "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
-    "-w     Warn only if file exists. Default=error\n"
     "-s     Perform bootstrap for specified study numbers\n"
+    "--overwrite Overwrite existing files (default skip)\n"
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"
     "--pignore List of momenta to ignore (default: " << DefaultIgnoreMomenta << ")\n"

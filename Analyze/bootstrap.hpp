@@ -33,20 +33,11 @@
 using MomentumMap = Common::MomentumMap;
 using MomentumMapValue = typename MomentumMap::value_type;
 using Algebra = Common::Gamma::Algebra;
-//using namespace Common;
-
-//#include "CommonGrid.hpp"
-//#include "CommonLatAn.hpp"
 
 #include <cmath>
 #include <iomanip>
 #include <mutex> // Apparently empty under __INTEL_COMPILER
 #include <set>
-//#include <filesystem> // C++17
-//#include <LatAnalyze/Core/OptParser.hpp>
-//#include <LatAnalyze/Statistics/Dataset.hpp>
-//#include <LatAnalyze/Io/Io.hpp>
-//#include <LatAnalyze/Io/Hdf5File.hpp>
 
 // Default number of bootstrap replicas
 #ifndef DEF_NSAMPLE
@@ -119,7 +110,7 @@ class BootstrapParams
 public:
   const bool b2ptSymOp;
   const bool b2ptSortZeroMom;
-  const bool bWarnIfExists;
+  const bool bOverwrite;
   const bool bVerboseSummaries;
   const int TimesliceDetail;
   const int nSample;

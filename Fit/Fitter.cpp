@@ -31,6 +31,9 @@
 
 // Uncomment this next line to debug without OpenMP
 //#define DEBUG_DISABLE_OMP
+#ifndef DEBUG_DISABLE_OMP
+#include <omp.h>
+#endif
 
 Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
                 std::vector<Model::Args> &&ModelArgs_, const std::vector<std::string> &opNames_,

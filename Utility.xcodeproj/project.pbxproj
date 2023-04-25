@@ -15,6 +15,8 @@
 		27953EAE28FB226D00A4CF67 /* DebugInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27953EAC28FB226D00A4CF67 /* DebugInfo.cpp */; };
 		27D49A4D2910566C003E2146 /* lime_truncate.c in Sources */ = {isa = PBXBuildFile; fileRef = 27D49A4129105615003E2146 /* lime_truncate.c */; };
 		27E8B36128FF2DE80047FEF1 /* ModelRatio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27E8B36028FF2DE80047FEF1 /* ModelRatio.cpp */; };
+		27FACB6829F6D4CA00213B2A /* JackBoot.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27FACB6629F6D4CA00213B2A /* JackBoot.cpp */; };
+		27FACB6929F6D4CA00213B2A /* JackBoot.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27FACB6729F6D4CA00213B2A /* JackBoot.hpp */; };
 		682C5CA228E4F7BF00C8E004 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C4728E4F2C300C8E004 /* Common.cpp */; };
 		682C5CA328E4F7CA00C8E004 /* Common.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682C5C5B28E4F2C300C8E004 /* Common.hpp */; };
 		682C5CA628E4F82500C8E004 /* FitRange.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682C5C4E28E4F2C300C8E004 /* FitRange.hpp */; };
@@ -286,6 +288,8 @@
 		27D49A462910563C003E2146 /* lime_truncate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lime_truncate; sourceTree = BUILT_PRODUCTS_DIR; };
 		27E8B35F28FF2DE80047FEF1 /* ModelRatio.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelRatio.hpp; sourceTree = "<group>"; };
 		27E8B36028FF2DE80047FEF1 /* ModelRatio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelRatio.cpp; sourceTree = "<group>"; };
+		27FACB6629F6D4CA00213B2A /* JackBoot.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JackBoot.cpp; sourceTree = "<group>"; };
+		27FACB6729F6D4CA00213B2A /* JackBoot.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = JackBoot.hpp; sourceTree = "<group>"; };
 		6820525B28E505CA003AD91D /* Xml */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Xml; sourceTree = "<group>"; };
 		6820525C28E505CA003AD91D /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		6820525D28E50661003AD91D /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
@@ -589,6 +593,8 @@
 				682C5C5C28E4F2C300C8E004 /* GSLVecMatImp.hpp */,
 				682C5C4F28E4F2C300C8E004 /* HDF5.cpp */,
 				682C5C5928E4F2C300C8E004 /* HDF5.hpp */,
+				27FACB6629F6D4CA00213B2A /* JackBoot.cpp */,
+				27FACB6729F6D4CA00213B2A /* JackBoot.hpp */,
 				682C5C5128E4F2C300C8E004 /* Makefile.am */,
 				682C5C4828E4F2C300C8E004 /* Math.cpp */,
 				682C5C5228E4F2C300C8E004 /* Math.hpp */,
@@ -751,6 +757,7 @@
 				682C5CA828E4F82500C8E004 /* GSLVecMatImp.hpp in Headers */,
 				682C5CA928E4F82500C8E004 /* HDF5.hpp in Headers */,
 				682C5CAA28E4F82500C8E004 /* Math.hpp in Headers */,
+				27FACB6929F6D4CA00213B2A /* JackBoot.hpp in Headers */,
 				682C5CAB28E4F82500C8E004 /* Param.hpp in Headers */,
 				682C5CAC28E4F82500C8E004 /* Physics.hpp in Headers */,
 				682C5CAD28E4F82500C8E004 /* String.hpp in Headers */,
@@ -1272,6 +1279,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27FACB6829F6D4CA00213B2A /* JackBoot.cpp in Sources */,
 				682C5CAE28E4F86C00C8E004 /* FitRange.cpp in Sources */,
 				682C5CAF28E4F86C00C8E004 /* GSLVecMat.cpp in Sources */,
 				682C5CB028E4F86C00C8E004 /* HDF5.cpp in Sources */,
@@ -1512,6 +1520,7 @@
 		682C5CBE28E4F9D300C8E004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1519,6 +1528,7 @@
 		682C5CBF28E4F9D300C8E004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

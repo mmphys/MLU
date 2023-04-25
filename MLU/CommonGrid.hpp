@@ -31,6 +31,7 @@
 
 #include "Common.hpp"
 #include <Grid/GridCore.h>
+#include <Grid/Eigen/Dense>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 
@@ -40,6 +41,16 @@ BEGIN_COMMON_NAMESPACE
 // If the correlators are empty, resize to fit
 // Otherwise, if the sizes don't match, throw an error
 void ReadComplexArray(std::vector<std::vector<std::complex<double>>> &buffer, const std::vector<Grid::Gamma::Algebra> &alg, const std::string &FileName, unsigned int tOffset);
+
+// Are all the floating point numbers in this Eigen::matrix finite
+template <typename T> inline bool IsFinite( const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> & m, bool bDiagonalsOnly = false )
+{
+  for( Eigen::Index row = 0; row < m.rows(); ++row )
+    for( Eigen::Index col = 0; col < m.cols(); ++col )
+      if( ( !bDiagonalsOnly || row == col ) && !IsFinite( m( row, col ) ) )
+        return false;
+  return true;
+}
 
 END_COMMON_NAMESPACE
 #endif // CommonGrid_hpp
