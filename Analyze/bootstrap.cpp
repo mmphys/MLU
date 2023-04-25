@@ -345,7 +345,6 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
         if( bOutFileExists )
           std::cout << sStar << szWarning << szOver << sWarnFile << std::endl;
         // Count how many files there are for each config - needs to work regardless of sort
-        assert( sizeof( int ) == sizeof( Common::SeedType ) );
         if( GatherInput( out, first, last, Traj, SinkAlgebra[Snk], SourceAlgebra[Src], bAlignTimeslices ) )
         {
           std::cout << sBlanks << nSample << " samples to " << sOutFile << std::endl;
