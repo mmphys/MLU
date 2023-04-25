@@ -415,7 +415,7 @@ void Summariser::WriteSorted( const std::string &sFileName, const std::set<TestS
 void Summariser::WriteUnsorted( const std::string &sFileName ) const
 {
   std::ofstream s;
-  std::size_t t_last = std::numeric_limits<int>::min();
+  std::size_t t_last = std::numeric_limits<std::size_t>::max();
   for( const FitMap::value_type &dt : Fits )
   {
     const FitTimes &ft{ dt.first };

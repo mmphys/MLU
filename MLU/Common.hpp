@@ -2364,9 +2364,9 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       Seed_ = 0;
       try
       {
-        unsigned int tmp;
+        SeedType tmp;
         a = g.openAttribute( sSeed );
-        a.read( ::H5::PredType::NATIVE_UINT, &tmp );
+        a.read( H5::Equiv<SeedType>::Type, &tmp );
         a.close();
         Seed_ = tmp;
       }
@@ -2706,9 +2706,9 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
     int NumAttributes = 2;
     if( Seed_ )
     {
-      const unsigned int tmp{ Seed_ };
-      a = g.createAttribute( sSeed, sizeof( Seed_ ) == 4 ? ::H5::PredType::STD_U32LE : ::H5::PredType::STD_U64LE, ds1 );
-      a.write( ::H5::PredType::NATIVE_UINT, &tmp );
+      const SeedType tmp{ Seed_ };
+      a = g.createAttribute( sSeed, ::H5::PredType::STD_U32LE, ds1 );
+      a.write( H5::Equiv<SeedType>::Type, &tmp );
       a.close();
       NumAttributes++;
     }

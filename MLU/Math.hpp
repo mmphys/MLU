@@ -32,6 +32,8 @@
 
 #include <MLU/GSLVecMat.hpp>
 
+#include <algorithm>
+#include <limits>
 #include <type_traits>
 
 MLU_Math_hpp
