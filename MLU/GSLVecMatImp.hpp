@@ -111,7 +111,6 @@ Vector<COMMON_GSL_TYPE>::Vector( const Vector &o ) : Vector( 0 )
 
 Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( Scalar c )
 {
-  return *this;
   if( size == 0 )
     throw std::runtime_error( "Can't assign scalar to empty vector" );
   Scalar *p{ Data() };
@@ -120,6 +119,7 @@ Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( Scalar c )
   else
     for( std::size_t i = 0; i < size; ++i )
       p[i * stride] = c;
+  return *this;
 }
 
 Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( const Vector &o )
