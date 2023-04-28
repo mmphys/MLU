@@ -46,6 +46,7 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline Vector( const MyVector &o );
   inline Vector( MyVector &&o ) : Vector() { *this = std::move( o ); };
   inline ~Vector();
+  inline MyVector & operator=( Scalar c ); // Set every entry to the same value
   inline MyVector & operator=( const Vector &o );
   inline MyVector & operator=( Vector &&o );
   inline bool operator==( const Vector &o ) const;
@@ -56,18 +57,24 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   template <typename T> inline MyVector &operator/=( T c );
   inline void resize( std::size_t size );
   inline void clear();
+  template<typename T=Scalar> inline typename std::enable_if<!is_complex<T>::value, T *>::type
+    Data() { return data; }
+  template<typename T=Scalar> inline typename std::enable_if< is_complex<T>::value, T *>::type
+    Data() { return reinterpret_cast<T *>( data ); }
   inline void MapView( Scalar * data_, std::size_t size_, std::size_t stride_ = 1 );
   inline void MapView( std::vector<Scalar> &v ) { MapView( v.data(), v.size() ); }
-  inline void MapView( MyVector &v ) { MapView( reinterpret_cast<Scalar *>( v.data ), v.size, v.stride ); }
+  inline void MapView( MyVector &v ) { MapView( v.Data(), v.size, v.stride ); }
   inline void MapRow( MyMatrix &m, std::size_t Row );
   inline void MapColumn( MyMatrix &m, std::size_t Column );
   inline const Scalar & operator[]( std::size_t i ) const;
   inline Scalar & operator[]( std::size_t i );
+#ifdef COMMON_GSL_BLAS
   inline bool IsFinite() const;
   inline Real norm2() const { return COMMON_GSL_BLAS_REAL( nrm2 )( this ); }
   inline Real norm() const { return norm2(); }
   inline Scalar Dot( const MyVector &right ) const;
   inline void blas_trmv( CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag, const GSLMatrix &A );
+#endif
 };
 
 Vector<COMMON_GSL_TYPE>::Vector( std::size_t size_ )
@@ -100,6 +107,19 @@ Vector<COMMON_GSL_TYPE>::Vector( const Vector &o ) : Vector( 0 )
     stride = o.stride;
     data = o.data;
   }
+}
+
+Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( Scalar c )
+{
+  return *this;
+  if( size == 0 )
+    throw std::runtime_error( "Can't assign scalar to empty vector" );
+  Scalar *p{ Data() };
+  if( stride == 0 )
+    * p = c;
+  else
+    for( std::size_t i = 0; i < size; ++i )
+      p[i * stride] = c;
 }
 
 Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( const Vector &o )
@@ -229,6 +249,7 @@ Vector<COMMON_GSL_TYPE>::Scalar & Vector<COMMON_GSL_TYPE>::operator[]( std::size
   return reinterpret_cast<Scalar *>( data )[i*stride];
 }
 
+#ifdef COMMON_GSL_BLAS
 bool Vector<COMMON_GSL_TYPE>::IsFinite() const
 {
   for( std::size_t i = 0; i < size; ++i )
@@ -249,6 +270,7 @@ inline void Vector<COMMON_GSL_TYPE>::blas_trmv( CBLAS_UPLO_t Uplo, CBLAS_TRANSPO
 {
   COMMON_GSL_BLAS( trmv )( Uplo, TransA, Diag, &A, reinterpret_cast<GSLVector *>( this ) );
 }
+#endif
 
 inline std::ostream & operator<<( std::ostream &os, const Vector<COMMON_GSL_TYPE> &v )
 {
@@ -277,7 +299,8 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   using GSLMatrix = Traits::GSLMatrixType;
   using MyVector  = Vector<COMMON_GSL_TYPE>;
   using MyMatrix  = Matrix<COMMON_GSL_TYPE>;
-  inline void NotEmpty() const { if( size1 == 0 || size2 == 0 ) throw std::runtime_error( "Matrix empty" ); }
+  inline bool Empty() const { return size1 == 0 || size2 == 0; }
+  inline void NotEmpty() const { if( Empty() ) throw std::runtime_error( "Matrix empty" ); }
   inline void Square() const { NotEmpty(); if( size1 != size2 ) throw std::runtime_error( "Matrix not square");}
   inline Matrix() : Matrix( 0, 0 ) {};
   inline Matrix( std::size_t size1, std::size_t size2 );
@@ -297,11 +320,22 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline std::size_t cols() const { return size2; }
   inline void resize( std::size_t size1, std::size_t size2 );
   inline void clear();
+  template<typename T=Scalar> inline typename std::enable_if<!is_complex<T>::value, T *>::type
+    Data() { return data; }
+  template<typename T=Scalar> inline typename std::enable_if< is_complex<T>::value, T *>::type
+    Data() { return reinterpret_cast<T *>( data ); }
   inline void MapView( Scalar * data_, std::size_t size1_, std::size_t size2_, std::size_t tda_ );
   inline void MapView( Scalar * data_, std::size_t size1_, std::size_t size2_ )
   { MapView( data_, size1_, size2_, size2_ ); }
+  inline void MapView( MyMatrix &o )
+  { MapView( o.Data(), o.size1, o.size2, o.tda ); };
   inline const Scalar & operator()( std::size_t i, std::size_t j ) const;
   inline Scalar & operator()( std::size_t i, std::size_t j );
+  inline void Row( std::size_t idx, MyVector &v );
+  inline void Column( std::size_t idx, MyVector &v );
+  inline void SetDiagonalOne();
+  inline void ZeroUpperTriangle();
+#ifdef COMMON_GSL_BLAS
   inline bool IsFinite( bool bDiagonalsOnly = false ) const;
   inline Real norm2() const;
   inline Real norm() const { return norm2(); }
@@ -311,10 +345,7 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
                          const MyMatrix &B, Scalar beta );
   inline void blas_trmm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag,
                          Scalar alpha, const MyMatrix &A );
-  inline void Row( std::size_t idx, MyVector &v );
-  inline void Column( std::size_t idx, MyVector &v );
-  inline void SetDiagonalOne();
-  inline void ZeroUpperTriangle();
+#endif
 #ifdef COMMON_GSL_DOUBLE
   inline MyMatrix Cholesky( MyVector &S ) const;
   inline MyVector CholeskySolve( const MyVector &b ) const;
@@ -520,6 +551,36 @@ Matrix<COMMON_GSL_TYPE>::Scalar & Matrix<COMMON_GSL_TYPE>::operator()( std::size
   return reinterpret_cast<Scalar *>( data )[i*tda+j];
 }
 
+void Matrix<COMMON_GSL_TYPE>::Row( std::size_t idx, MyVector &v )
+{
+  if( idx >= size1 )
+    throw std::runtime_error( "Row " + std::to_string( idx ) + " > " + std::to_string( size1 ) );
+  v.MapView( reinterpret_cast<Scalar *>( data ) + tda * idx, size2, 1 );
+}
+
+void Matrix<COMMON_GSL_TYPE>::Column( std::size_t idx, MyVector &v )
+{
+  if( idx >= size2 )
+    throw std::runtime_error( "Column " + std::to_string( idx ) + " > " + std::to_string( size2 ) );
+  v.MapView( reinterpret_cast<Scalar *>( data ) + idx, size1, tda );
+}
+
+inline void Matrix<COMMON_GSL_TYPE>::SetDiagonalOne()
+{
+  Square();
+  for( std::size_t i = 0; i < size1; ++i )
+    ( *this ) ( i, i ) = 1;
+}
+
+inline void Matrix<COMMON_GSL_TYPE>::ZeroUpperTriangle()
+{
+  Square();
+  for( std::size_t i = 0; i < size1; ++i )
+    for( std::size_t j = i + 1; j < size2; ++j )
+      ( *this ) ( i, j ) = 0;
+}
+
+#ifdef COMMON_GSL_BLAS
 bool Matrix<COMMON_GSL_TYPE>::IsFinite( bool bDiagonalsOnly ) const
 {
   for( std::size_t row = 0; row < size1; ++row )
@@ -569,35 +630,7 @@ void Matrix<COMMON_GSL_TYPE>::blas_trmm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, C
   COMMON_GSL_BLAS( trmm )( Side, Uplo, TransA, Diag, * reinterpret_cast<GSLScalar*>( &alpha ),
                            reinterpret_cast<const GSLMatrix *>( &A ), reinterpret_cast<GSLMatrix *>( this ) );
 }
-
-void Matrix<COMMON_GSL_TYPE>::Row( std::size_t idx, MyVector &v )
-{
-  if( idx >= size1 )
-    throw std::runtime_error( "Row " + std::to_string( idx ) + " > " + std::to_string( size1 ) );
-  v.MapView( reinterpret_cast<Scalar *>( data ) + tda * idx, size2, 1 );
-}
-
-void Matrix<COMMON_GSL_TYPE>::Column( std::size_t idx, MyVector &v )
-{
-  if( idx >= size2 )
-    throw std::runtime_error( "Column " + std::to_string( idx ) + " > " + std::to_string( size2 ) );
-  v.MapView( reinterpret_cast<Scalar *>( data ) + idx, size1, tda );
-}
-
-inline void Matrix<COMMON_GSL_TYPE>::SetDiagonalOne()
-{
-  Square();
-  for( std::size_t i = 0; i < size1; ++i )
-    ( *this ) ( i, i ) = 1;
-}
-
-inline void Matrix<COMMON_GSL_TYPE>::ZeroUpperTriangle()
-{
-  Square();
-  for( std::size_t i = 0; i < size1; ++i )
-    for( std::size_t j = i + 1; j < size2; ++j )
-      ( *this ) ( i, j ) = 0;
-}
+#endif
 
 /*
  Calling this matrix "A" and returned matrix "R" ...

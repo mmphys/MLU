@@ -435,9 +435,9 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
   if( bPerformFit )
   {
     // Make somewhere to store the results of the fit for each bootstrap sample
-    OutputModel.StdErrorMean.resize( ds.Extent, ds.NSamples ); // Each thread needs its own replica
-    OutputModel.ModelPrediction.resize( ds.Extent, ds.NSamples );
-    OutputModel.ErrorScaled.resize( ds.Extent, ds.NSamples );
+    OutputModel.StdErrorMean.resize( ds.NSamples, ds.Extent ); // Each thread needs its own replica
+    OutputModel.ModelPrediction.resize( ds.NSamples, ds.Extent );
+    OutputModel.ErrorScaled.resize( ds.NSamples, ds.Extent );
     OutputModel.Name_.Seed = Seed; // TODO: Required?
     OutputModel.FitTimes = ds.FitTimes;
     OutputModel.dof = dof;

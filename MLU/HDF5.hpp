@@ -129,11 +129,8 @@ namespace H5 {
   void ReadStringsHelper( const T &a, const ::H5::StrType &aType, char * * MDString );
 
   template<typename T> inline typename T::value_type * GetDataHelper( T & t ) { return t.data(); }
-  template<typename T> inline typename std::enable_if<!is_complex<T>::value, T *>::type
-    GetDataHelper( Common::Vector<T> & m ) { return m.data; }
-  template<typename T> inline typename std::enable_if< is_complex<T>::value, T *>::type
-    GetDataHelper( Common::Vector<T> & m ) { return reinterpret_cast<T *>( m.data ); }
-  // template<typename T> inline T * GetDataHelper( Common::Matrix<T> & m ) { return m.data; }
+  template<typename T> inline T * GetDataHelper( Common::Vector<T> &v ) { return v.Data(); }
+  //template<typename T> inline T * GetDataHelper( Common::Matrix<T> &m ) { return m.Data(); }
   std::string GetErrorClearStack( const ::H5::Exception &e );
 };
 

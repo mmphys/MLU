@@ -118,7 +118,6 @@ extern const std::string sDoF;
 extern const std::string sNumExponents;
 extern const std::string sNumFiles;
 extern const std::string sCovarFrozen;
-extern const std::string s_C;
 extern const std::string sStdErrorMean;
 extern const std::string sErrorScaled;
 extern const std::string sCovariance;
@@ -466,51 +465,6 @@ std::vector<std::string> glob( const Iter &first, const Iter &last, const char *
 
 // Wrapper for posix gethostname()
 std::string GetHostName();
-
-template<typename T> struct BootRep
-{
-  static constexpr int idxCentral{ -1 };
-  Vector<T> Central;
-  Matrix<T> Replica;
-  int extent() const { return Central.size; }
-  int size() const { return Replica.size1; }
-  void resize( int Extent, int NumBoot ) { Central.resize( Extent ); Replica.resize( NumBoot, Extent ); }
-  BootRep() = default;
-  BootRep( int Extent, int NumBoot ) { resize( Extent, NumBoot ); }
-  void Read( ::H5::Group &g, const std::string &Name );
-  void Write( ::H5::Group &g, const std::string &Name ) const;
-  inline T * operator[]( int idx )
-  {
-    if( Central.size == 0 )
-      throw std::runtime_error( "Can't access empty BootRep" );
-    if( idx == -1 )
-      return Central.data;
-    if( Replica.size2 != Central.size )
-      throw std::runtime_error( "BoootRep extent mismatch" );
-    if( idx >= Replica.size1 )
-      throw std::runtime_error( "BoootRep index " + std::to_string( idx ) + " >= NumBoot "
-                               + std::to_string( Replica.size1 ) );
-    return Replica.data + Replica.tda * idx;
-  }
-  inline void MapView( Vector<T> &v, int idx )
-  {
-    if( idx == idxCentral )
-      v.MapView( Central );
-    else
-      v.MapRow( Replica, idx );
-  }
-  inline void MapView( VectorView<T> &v, int idx ) const
-  {
-    if( idx == idxCentral )
-      v = Central;
-    else
-      v.MapRow( Replica, idx );
-  }
-  inline void MapColumn( VectorView<T> &v, int Column ) const
-  {
-    v.MapColumn( Replica, Column );
-  }
-};
 
 struct MomentumMap : std::map<std::string, Momentum, LessCaseInsensitive>
 {
@@ -1442,7 +1396,7 @@ public:
   using value_type = typename Traits::value_type;
   static constexpr bool is_complex { Traits::is_complex };
   static constexpr int scalar_count { Traits::scalar_count };
-  static constexpr int idxCentral{ BootRep<T>::idxCentral };
+  static constexpr int idxCentral{ JackBoot<T>::idxCentral };
 protected:
   int NumSamples_;
   int Nt_;
@@ -3085,10 +3039,10 @@ struct Model : public Sample<T>, public ModelBase
   Matrix<T> CorrelInv;
   Matrix<T> CorrelInvCholesky;
   Matrix<T> CovarInvCholesky;
-  BootRep<T> StdErrorMean; // From all samples of binned data
-  BootRep<T> FitInput;
-  BootRep<T> ModelPrediction;
-  BootRep<T> ErrorScaled;  // (Theory - Data) * CholeskyScale
+  JackBoot<T> StdErrorMean; // From all samples of binned data
+  JackBoot<T> FitInput;
+  JackBoot<T> ModelPrediction;
+  JackBoot<T> ErrorScaled;  // (Theory - Data) * CholeskyScale
 
   // These variables were added in current format
   Params params;

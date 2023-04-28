@@ -70,7 +70,7 @@ void FitterThread::MakeReplicaCovar( int idx_, bool bFirstTime, bool bShowOutput
   static const char pszCorrelGnuplot[] = "set cbrange[-1:1]";
   if( !bSaveMatrices && pBaseName )
     throw std::runtime_error( "Can only write matrices to file on central replica" );
-  OutputModel.StdErrorMean.MapView( StdErrorMean, idx ); // Each FitterThread needs it's own work area
+  OutputModel.StdErrorMean.MapRow( StdErrorMean, idx ); // Each FitterThread needs it's own work area
       if( parent.cp.Covar.size1 == Extent )
       {
         // I've loaded the inverse covariance matrix already
@@ -294,8 +294,8 @@ void FitterThread::SetReplica( int idx_, bool bShowOutput, bool bSaveMatrices,
     state.bValid = false;
     // Now get the data for this replica
     parent.ds.GetData( idx, Data );
-    OutputModel.ModelPrediction.MapView( Theory, idx );
-    OutputModel.ErrorScaled.MapView( Error, idx );
+    OutputModel.ModelPrediction.MapRow( Theory, idx );
+    OutputModel.ErrorScaled.MapRow( Error, idx );
     // Speed optimisation - only calculate covariance on central replica if we know all parameters
     if( !parent.bAllParamsKnown || idx_ == Fold::idxCentral )
     {

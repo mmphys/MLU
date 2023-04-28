@@ -63,6 +63,18 @@ Squared( T z ) { return z * std::conj( z ); }
 template <typename T> typename std::enable_if<!is_complex<T>::value, T>::type
 Squared( T z ) { return z * z; }
 
+// Allow real and complex numbers to be conjugated
+template <typename T> typename std::enable_if< is_complex<T>::value, T>::type
+Conjugate( T z ) { return std::conj( z ); }
+template <typename T> typename std::enable_if<!is_complex<T>::value, T>::type
+Conjugate( T z ) { return z; }
+
+// Allow real and complex numbers to be squared and square rooted
+template <typename T> typename std::enable_if< is_complex<T>::value, T>::type
+ComponentSquared( T z ) { return { z.real() * z.real(), z.imag() * z.imag() }; }
+template <typename T> typename std::enable_if<!is_complex<T>::value, T>::type
+ComponentSquared( T z ) { return z * z; }
+
 // Component-wise absolute value for complex types
 template<typename T> typename std::enable_if<is_complex<T>::value, T>::type
 ComponentAbs( T c ) { return { std::abs( c.real() ), std::abs( c.imag() ) }; }
@@ -116,6 +128,7 @@ template<> struct is_gsl_scalar<float>                : public std::true_type {}
 template<> struct is_gsl_scalar<double>               : public std::true_type {};
 template<> struct is_gsl_scalar<std::complex<float>>  : public std::true_type {};
 template<> struct is_gsl_scalar<std::complex<double>> : public std::true_type {};
+template<> struct is_gsl_scalar<fint>                 : public std::true_type {};
 
 // My support for vectors and matrices - wrapper for GSL
 template <typename T> struct GSLTraits;
@@ -162,6 +175,48 @@ template<> struct GSLTraits<std::complex<float>>
   using GSLMatrixType = gsl_matrix_complex_float;
 };
 
+struct MLU_block_fint
+{
+  size_t size;
+  fint *data;
+};
+
+struct MLU_vector_fint
+{
+  size_t size;
+  size_t stride;
+  fint *data;
+  MLU_block_fint *block;
+  int owner;
+};
+
+struct MLU_matrix_fint
+{
+  size_t size1;
+  size_t size2;
+  size_t tda;
+  fint * data;
+  MLU_block_fint * block;
+  int owner;
+};
+
+MLU_block_fint *MLU_block_fint_alloc( const std::size_t n );
+void MLU_block_fint_free( MLU_block_fint *b );
+int MLU_vector_fint_memcpy( MLU_vector_fint *dest, const MLU_vector_fint *src );
+int MLU_vector_fint_equal( const MLU_vector_fint *u, const MLU_vector_fint *v );
+int MLU_matrix_fint_memcpy( MLU_matrix_fint *dest, const MLU_matrix_fint *src );
+int MLU_matrix_fint_equal( const MLU_matrix_fint *u, const MLU_matrix_fint *v );
+
+template<> struct GSLTraits<fint>
+{
+  using Scalar     = fint;
+  using Real       = fint;
+  using GSLScalar  = fint;
+  using GSLBlockType  = MLU_block_fint;
+  using GSLVectorType = MLU_vector_fint;
+  using GSLMatrixType = MLU_matrix_fint;
+};
+
 //#define EXPAND(...) __VA_ARGS__
 
 #define COMMON_GSL_TYPE double
@@ -194,10 +249,13 @@ template<> struct GSLTraits<std::complex<float>>
 #define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_c ## x ## c
 #define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _complex_float ## _ ## func
 #include "GSLVecMatImp.hpp"
-#undef COMMON_GSL_TYPE
 #undef COMMON_GSL_BLAS
 #undef COMMON_GSL_BLAS_REAL
 #undef COMMON_GSL_BLAS_CPLX
+#define COMMON_GSL_TYPE fint
+#define COMMON_GSL_FUNC( x, func ) MLU_ ## x ## _fint_ ## func
+#include "GSLVecMatImp.hpp"
+#undef COMMON_GSL_TYPE
 #undef COMMON_GSL_FUNC
 
 // GSL objects don't work well with const objects
@@ -243,6 +301,10 @@ public:
     Map( m.data(), m.size1(), m.size2(), m.tda() );
     return *this;
   }
+  template <typename U=T> typename std::enable_if<is_gsl_scalar<U>::value>::type
+  MapRow( Vector<T> &v, std::size_t Row );
+  template <typename U=T> typename std::enable_if<is_gsl_scalar<U>::value>::type
+  MapColumn( Vector<T> &v, std::size_t Column );
   // Constructors
   MatrixView() { clear(); }
   MatrixView( const Matrix<T> &m ) { *this = m; }

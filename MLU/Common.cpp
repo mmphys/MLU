@@ -74,7 +74,6 @@ const std::string sDoF{ "DoF" };
 const std::string sNumExponents{ "NumExponents" };
 const std::string sNumFiles{ "NumFiles" };
 const std::string sCovarFrozen{ "CovarFrozen" };
-const std::string s_C{ "_C" };
 const std::string sStdErrorMean{ "StdErrorMean" };
 const std::string sErrorScaled{ "ErrorScaled" };
 const std::string sCovariance{ "Covariance" };
@@ -177,22 +176,6 @@ std::string GetHostName()
     throw std::runtime_error( "gethostname() returned error " + std::to_string( errno ) );
   Buffer[BufLen] = 0;
   return std::string( Buffer );
-}
-
-// Read a bootstrap replica from an HDF5 group
-template <typename T>
-void BootRep<T>::Read( ::H5::Group &g, const std::string &Name )
-{
-  H5::ReadVector( g, Name + s_C, Central );
-  H5::ReadMatrix( g, Name, Replica );
-}
-
-// Write a bootstrap replica to an HDF5 group
-template <typename T>
-void BootRep<T>::Write( ::H5::Group &g, const std::string &Name ) const
-{
-  H5::WriteVector( g, Name + s_C, Central );
-  H5::WriteMatrix( g, Name, Replica );
 }
 
 void MomentumMap::Parse( std::string &BaseShort )
@@ -1525,7 +1508,7 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
   std::array<std::vector<ValWithEr<T>>,2> Value; // Data and theory values with errors
   for( std::size_t i = 0; i < Value.size(); ++i )
   {
-    BootRep<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
+    JackBoot<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
     Value[i].resize( Extent );
     for( int j = 0; j < Extent; ++j )
     {
@@ -1558,13 +1541,13 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
       os << "log " << idx << Space << m << Space << t;
       for( std::size_t i = 0; i < Value.size(); ++i )
       {
-        BootRep<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
+        JackBoot<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
         ThD.MapColumn( vv[0], idx - 1 );
         ThD.MapColumn( vv[1], idx );
-        if( Buffer.size() < ThD.size() )
-          Buffer.resize( ThD.size() );
+        if( Buffer.size() < ThD.NumReplicas() )
+          Buffer.resize( ThD.NumReplicas() );
         int bootCount{ 0 };
-        for( int bootrep = 0; bootrep < ThD.size(); ++bootrep )
+        for( int bootrep = 0; bootrep < ThD.NumReplicas(); ++bootrep )
         {
           Buffer[bootCount] = std::log( vv[0][bootrep] / vv[1][bootrep] ) * DeltaTInv;
           if( IsFinite( Buffer[bootCount] ) )

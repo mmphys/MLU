@@ -62,10 +62,116 @@ void GSLLibraryGlobal::Error( const char * reason, const char * file, int line, 
 
 /*****************************************************************************
  
+Support my (cursory) implementation of vectors and matrices of fint
+
+*****************************************************************************/
+
+static constexpr std::size_t MLU_fint_size{ sizeof( fint ) };
+static constexpr std::size_t MLU_block_fint_size{ ( sizeof( MLU_block_fint ) + MLU_fint_size - 1 )
+                                                  & ~( MLU_fint_size - 1 ) };
+
+MLU_block_fint *MLU_block_fint_alloc( const std::size_t n )
+{
+  void * pv = malloc( MLU_block_fint_size + MLU_fint_size * n );
+  MLU_block_fint * p = static_cast<MLU_block_fint *>( pv );
+  if( p )
+  {
+    p->size = n;
+    p->data = reinterpret_cast<fint *>( static_cast<char *>( pv ) + MLU_block_fint_size );
+  }
+  return p;
+}
+
+void MLU_block_fint_free( MLU_block_fint *b )
+{
+  if( b )
+    free( b );
+}
+
+int MLU_vector_fint_memcpy( MLU_vector_fint *dest, const MLU_vector_fint *src )
+{
+  if( !dest || !src )
+    throw std::runtime_error( "MLU_vector_fint_memcpy() null src or dest" );
+  if( dest->size != src->size )
+    throw std::runtime_error( "MLU_vector_fint_memcpy() size mismatch" );
+        Vector<fint> &d{ *reinterpret_cast<      Vector<fint> *>( dest ) };
+  const Vector<fint> &s{ *reinterpret_cast<const Vector<fint> *>( src ) };
+  for( std::size_t i = 0; i < dest->size; ++i )
+    d[i] = s[i];
+  return 0;
+}
+
+int MLU_vector_fint_equal( const MLU_vector_fint *u, const MLU_vector_fint *v )
+{
+  if( !u || !v )
+    throw std::runtime_error( "MLU_vector_fint_equal() null u or v" );
+  if( u->size != v->size )
+    return 0;
+  const Vector<fint> &l{ *reinterpret_cast<const Vector<fint> *>( u ) };
+  const Vector<fint> &r{ *reinterpret_cast<const Vector<fint> *>( v ) };
+  for( std::size_t i = 0; i < u->size; ++i )
+    if( l[i] != r[i] )
+      return 0;
+  return 1;
+}
+
+int MLU_matrix_fint_memcpy( MLU_matrix_fint *dest, const MLU_matrix_fint *src )
+{
+  if( !dest || !src )
+    throw std::runtime_error( "MLU_matrix_fint_memcpy() null src or dest" );
+  if( dest->size1 != src->size1 || dest->size2 != src->size2 )
+    throw std::runtime_error( "MLU_matrix_fint_memcpy() size mismatch" );
+        Matrix<fint> &d{ *reinterpret_cast<      Matrix<fint> *>( dest ) };
+  const Matrix<fint> &s{ *reinterpret_cast<const Matrix<fint> *>( src ) };
+  for( std::size_t i = 0; i < dest->size1; ++i )
+    for( std::size_t j = 0; j < dest->size2; ++j )
+      d(i,j) = s(i,j);
+  return 0;
+}
+
+int MLU_matrix_fint_equal( const MLU_matrix_fint *u, const MLU_matrix_fint *v )
+{
+  if( !u || !v )
+    throw std::runtime_error( "MLU_matrix_fint_equal() null u or v" );
+  if( u->size1 != v->size1 || u->size2 != v->size2 )
+    return 0;
+  const Matrix<fint> &l{ *reinterpret_cast<const Matrix<fint> *>( u ) };
+  const Matrix<fint> &r{ *reinterpret_cast<const Matrix<fint> *>( v ) };
+  for( std::size_t i = 0; i < u->size1; ++i )
+    for( std::size_t j = 0; j < u->size2; ++j )
+      if( l(i,j) != r(i,j) )
+        return 0;
+  return 1;
+}
+
+/*****************************************************************************
+ 
  Views of GSL Matrix and Vector
  ... because GSL doesn't play nicely with const objects
 
 *****************************************************************************/
+
+template <typename T>
+template <typename U> typename std::enable_if<is_gsl_scalar<U>::value>::type
+MatrixView<T>::MapRow( Vector<T> &v, std::size_t Row )
+{
+  if( size1_ == 0 || size2_ == 0 )
+    throw std::runtime_error( "MatrixView::MapRow() empty matrix" );
+  if( Row >= size1_ )
+    throw std::runtime_error( "Row " + std::to_string( Row ) + " >= " + std::to_string( size1_ ) );
+  v.MapView( data_ + tda_ * Row, size2_, 1 );
+}
+
+template <typename T>
+template <typename U> typename std::enable_if<is_gsl_scalar<U>::value>::type
+MatrixView<T>::MapColumn( Vector<T> &v, std::size_t Column )
+{
+  if( size1_ == 0 || size2_ == 0 )
+    throw std::runtime_error( "MatrixView::MapColumn() empty matrix" );
+  if( Column >= size2_ )
+    throw std::runtime_error( "Column " + std::to_string(Column) + " >= " + std::to_string(size2_) );
+  MapView( data_ + Column, size1_, tda_ );
+}
 
 template class MatrixView<fint>;
 template class MatrixView<double>;
