@@ -41,54 +41,69 @@ static const std::string s_S{ "_S" };
 
  *****************************************************************************/
 
+bool        RandomCache::DefaultSeedOK{};
+SeedType    RandomCache::DefaultSeed_{ 1835672416u }; // Mike's default seed
+bool        RandomCache::DefaultNumReplicasOK{};
+std::size_t RandomCache::DefaultNumReplicas_{ 10000u }; // Mike's default number of replicas
+
 RandomCache RandomCache::Global;
 
 /// Get default seed from envionment variable MLUSeed (only once then cache it)
 SeedType RandomCache::DefaultSeed()
 {
-  static bool bOK{};
-  static SeedType DefaultSeed{ 1835672416u }; // Mike's default seed
-  if( !bOK )
+  if( !DefaultSeedOK )
   {
     const char * pDefaultString{ std::getenv( "MLUSeed" ) };
     if( pDefaultString && * pDefaultString )
     {
       if( EqualIgnoreCase( pDefaultString, "Jackknife" ) )
-        DefaultSeed = SeedWildcard;
+        DefaultSeed_ = SeedWildcard;
       else
       {
         try
         {
-          DefaultSeed = FromString<SeedType>( pDefaultString );
+          DefaultSeed_ = FromString<SeedType>( pDefaultString );
         }
         catch(...){}
       }
     }
-    bOK = true;
+    DefaultSeedOK = true;
   }
-  return DefaultSeed;
+  return DefaultSeed_;
+}
+
+SeedType RandomCache::DefaultSeed( SeedType NewDefaultSeed )
+{
+  DefaultSeed_ = NewDefaultSeed;
+  DefaultSeedOK = true;
+  return DefaultSeed_;
 }
 
 std::size_t RandomCache::DefaultNumReplicas()
 {
-  static bool bOK{};
-  static std::size_t NumReplicas{ 10000u }; // Mike's default number of replicas
-  if( !bOK )
+  if( !DefaultNumReplicasOK )
   {
     const char * pDefaultString{ std::getenv( "MLUNumBoot" ) };
     if( pDefaultString && * pDefaultString )
     {
       try
       {
-        NumReplicas = FromString<std::size_t>( pDefaultString );
-        if( NumReplicas < 1 )
-          NumReplicas = 1;
+        DefaultNumReplicas_ = FromString<std::size_t>( pDefaultString );
+        if( DefaultNumReplicas_ < 1 )
+          DefaultNumReplicas_ = 1;
       }
       catch(...){}
     }
-    bOK = true;
+    DefaultNumReplicasOK = true;
   }
-  return NumReplicas;
+  return DefaultNumReplicas_;
+}
+
+std::size_t RandomCache::DefaultNumReplicas( std::size_t NewDefaultNumReplicas )
+{
+  DefaultNumReplicas_ = NewDefaultNumReplicas;
+  DefaultNumReplicasOK = true;
+  return DefaultNumReplicas_;
 }
 
 bool RandomCache::Key::Less::operator()( const Key &lhs, const Key &rhs ) const
@@ -98,8 +113,10 @@ bool RandomCache::Key::Less::operator()( const Key &lhs, const Key &rhs ) const
   return lhs.NumSamples < rhs.NumSamples;
 }
 
-Matrix<fint> RandomCache::Make( fint &Seed, std::size_t NumReplicas, std::size_t NumSamples )
+Matrix<fint> RandomCache::Make( fint &Seed, std::size_t NumSamples, std::size_t NumReplicas )
 {
+  if( Seed == SeedWildcard )
+    throw std::runtime_error( "RandomCache::Make Seed==SeedWildcard (" + std::to_string(Seed) + ")" );
   Matrix<fint> m( NumReplicas, NumSamples );
   std::mt19937                        engine( Seed );
   std::uniform_int_distribution<fint> random( 0, static_cast<fint>( NumSamples - 1 ) );
@@ -118,7 +135,7 @@ Matrix<fint> RandomCache::Get( fint &Seed, std::size_t NumSamples, std::size_t N
   if( m.size1 < NumReplicas )
   {
     // Not enough replicas - make some more
-    Matrix<fint> New{ Make( Seed, NumReplicas, NumSamples ) };
+    Matrix<fint> New{ Make( Seed, NumSamples, NumReplicas ) };
     // Compare
     for( std::size_t i = 0 ; i < m.size1; ++i )
       for( std::size_t j = 0 ; j < NumSamples; ++j )

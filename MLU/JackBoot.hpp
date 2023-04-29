@@ -48,9 +48,15 @@ extern const std::string s_C;
 struct RandomCache
 {
   static SeedType DefaultSeed();
+  static SeedType DefaultSeed( SeedType NewDefaultSeed );
   static std::size_t DefaultNumReplicas();
+  static std::size_t DefaultNumReplicas( std::size_t NewDefaultNumReplicas );
   static RandomCache Global; // This is the global cache random numbers come from
 protected:
+  static bool DefaultSeedOK;
+  static SeedType DefaultSeed_;
+  static bool DefaultNumReplicasOK;
+  static std::size_t DefaultNumReplicas_; // Mike's default number of replicas
   struct Key
   {
     fint  Seed; // bootstrap seed for random numbers
@@ -60,7 +66,9 @@ protected:
   using Value = Matrix<fint>;
   using MapT = std::map<Key, Value, Key::Less>;
   MapT Map;
-  Matrix<fint> Make( fint &Seed, std::size_t NumReplicas, std::size_t NumSamples );
+  /// Make random numbers for a bootstrap sample
+  Matrix<fint> Make( fint &Seed, std::size_t NumSamples, std::size_t NumReplicas
+                                                          = DefaultNumReplicas());
 public:
   /** Get random numbers for the given Seed and NumSamples
    
@@ -69,8 +77,10 @@ public:
    - Warning: If Seed == SeedWildcard, it will be changed to the default value from MLUSeed environment variable,
    or ``std::mt19937::default_seed`` =  5489u if not present
    */
-  Matrix<fint> Get(       fint &Seed, std::size_t NumSamples, std::size_t NumReplicas );
-  Matrix<fint> Get( const fint &Seed, std::size_t NumSamples, std::size_t NumReplicas );
+  Matrix<fint> Get(       fint &Seed, std::size_t NumSamples, std::size_t NumReplicas
+                                                                = DefaultNumReplicas() );
+  Matrix<fint> Get( const fint &Seed, std::size_t NumSamples, std::size_t NumReplicas
+                                                                = DefaultNumReplicas() );
   /// Put random numbers in cache (probably loaded from file). Throw error if incompatible
   void Put( fint &Seed, Matrix<fint> &Random );
 };
