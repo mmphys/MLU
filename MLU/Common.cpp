@@ -67,7 +67,6 @@ const std::string sCormatInvCholesky{ sCormat + "_invchol" };
 const std::string sNtUnfolded{ "NtUnfolded" };
 const std::string st0Negated{ "t0Negated" };
 const std::string sConjugated{ "Conjugated" };
-const std::string sRawBootstrap{ "RawBootstrap" };
 const std::string sTI{ "TI" };
 const std::string sTF{ "TF" };
 const std::string sDoF{ "DoF" };
@@ -87,13 +86,9 @@ const std::string sCorrelationInvCholesky{ sCorrelation + "InvCholesky" };
 const std::string sFitInput{ "FitInput" };
 const std::string sModelPrediction{ "ModelPrediction" };
 const std::string sOperators{ "Operators" };
-const std::string sAuxNames{ "AuxNames" };
 const std::string sSummaryDSName{ "Summary" };
 const std::string sSummaryNames{ "SummaryNames" };
 const std::string sColumnNames{ "ColumnNames" };
-const std::string sSeed{ "Seed" };
-const std::string sSeedMachine{ "SeedMachine" };
-const std::string sRandom{ "Random" };
 const std::string sSampleSize{ "SampleSize" };
 const std::string sConfigCount{ "ConfigCount" };
 const std::string sFileList{ "FileList" };
@@ -117,8 +112,6 @@ const std::string sPValueH{ "pvalueH" };
 // String containing switch name to enable alternate overlap normalisation
 // (see definition of ModelOverlap in Fit/ModelCommon.hpp)
 const std::string sOverlapAltNorm{ "AltOver" };
-
-const double NaN{ std::nan( "" ) };
 
 const std::vector<std::string> DefaultModelStats{ Common::sChiSqPerDof, Common::sPValue, Common::sPValueH };
 
@@ -167,15 +160,27 @@ void MakeAncestorDirs( const std::string& Filename )
   }
 }
 
+static std::string MyHostName;
+
+// Wrapper for posix gethostname()
+void SetHostName( const std::string &NewHostName )
+{
+  MyHostName = NewHostName;
+}
+
 // Wrapper for posix gethostname()
 std::string GetHostName()
 {
-  char Buffer[256];
-  const int BufLen{ sizeof( Buffer ) - 1 };
-  if( gethostname( Buffer, BufLen ) )
-    throw std::runtime_error( "gethostname() returned error " + std::to_string( errno ) );
-  Buffer[BufLen] = 0;
-  return std::string( Buffer );
+  if( MyHostName.empty() )
+  {
+    char Buffer[256];
+    const int BufLen{ sizeof( Buffer ) - 1 };
+    if( gethostname( Buffer, BufLen ) )
+      throw std::runtime_error( "gethostname() returned error " + std::to_string( errno ) );
+    Buffer[BufLen] = 0;
+    MyHostName = std::string( Buffer );
+  }
+  return MyHostName;
 }
 
 void MomentumMap::Parse( std::string &BaseShort )
@@ -271,7 +276,7 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
       case 1:
         SeedString = Base.substr( pos + 1 );
         try {
-          Seed = FromString<unsigned int>( SeedString );
+          Seed = RandomCache::Seed( SeedString );
           bSeedNum = true;
         } catch(...) {
           std::cout << "Ignoring invalid seed in " << Filename << std::endl;
@@ -530,7 +535,7 @@ std::string MakeFilename(const std::string &Base, const std::string &Type, SeedT
   s.append( 1, Sep );
   s.append( Type );
   s.append( 1, Sep );
-  s.append( std::to_string( Seed ) );
+  s.append( RandomCache::SeedString( Seed ) );
   s.append( 1, Sep );
   s.append( Ext );
   return s;
@@ -815,6 +820,11 @@ std::istream& operator>>( std::istream& is, SampleSource &sampleSource )
   }
   throw std::runtime_error( "SampleSource \"" + sEnum + "\" unrecognised" );
 }
+
+/*template class Sample<double>;
+template class Sample<float>;
+template class Sample<std::complex<double>>;
+template class Sample<std::complex<float>>;*/
 
 const std::string ModelBase::EnergyPrefix{ "E" };
 const std::string ModelBase::EDiffPrefix{ "EDiff" };
@@ -1186,9 +1196,10 @@ void Model<T>::ValidateAttributes()
     params.AssignOffsets();
     OldFormatOpNames.clear();
     // If there's more than one exponent, data need reordering
-    ReorderOldFormat( NumOps, OldFormatNumExponents, this->m_pData, this->NumSamples_ + this->NumExtraSamples );
-    ReorderOldFormat( NumOps, OldFormatNumExponents, this->m_pDataRaw, this->NumSamplesRaw_ );
-    ReorderOldFormat( NumOps, OldFormatNumExponents, this->m_pDataBinned, this->NumSamplesBinned_ );
+    ReorderOldFormat( NumOps, OldFormatNumExponents, Base::Data[0].Central );
+    ReorderOldFormat( NumOps, OldFormatNumExponents, Base::Data[0].Replica );
+    ReorderOldFormat( NumOps, OldFormatNumExponents, Base::Binned[0] );
+    ReorderOldFormat( NumOps, OldFormatNumExponents, Base::Raw );
   }
   Base::ValidateAttributes();
   if( Base::Nt_ < NumParams() )
@@ -1293,7 +1304,6 @@ bool Model<T>::CheckParameters( int Strictness, scalar_type MonotonicUpperLimit 
     const bool bVeryStrictNonZero{ ( Strictness & 1 ) != 0 };
     const bool bVeryStrictDifferent{ ( Strictness & 2 ) != 0 };
     using TypeVE = Common::ValWithEr<scalar_type>;
-    TypeVE *VE = this->getSummaryData();
     scalar_type TypeVE::* const pLowZ { bVeryStrictNonZero ? &TypeVE::Min : &TypeVE::Low };
     scalar_type TypeVE::* const pHighZ{ bVeryStrictNonZero ? &TypeVE::Max : &TypeVE::High };
     scalar_type TypeVE::* const pLowD { bVeryStrictDifferent ? &TypeVE::Min : &TypeVE::Low };
@@ -1307,17 +1317,21 @@ bool Model<T>::CheckParameters( int Strictness, scalar_type MonotonicUpperLimit 
         const std::size_t o{ p.GetOffset( 0, Param::Type::All ) };
         for( std::size_t i = 0; i < p.size; ++i )
         {
+          TypeVE &VEoi{ Base::SummaryData( static_cast<int>( o + i ) ) };
           // All elements must be statistically different from zero
-          bool bOK{  ( VE[o+i].*pLowZ > 0 && VE[o+i].*pHighZ > 0 )
-                  || ( VE[o+i].*pLowZ < 0 && VE[o+i].*pHighZ < 0 ) };
+          bool bOK{  ( VEoi.*pLowZ > 0 && VEoi.*pHighZ > 0 )
+                  || ( VEoi.*pLowZ < 0 && VEoi.*pHighZ < 0 ) };
           // Monotonic parameters (energies) must be < limit
-          if( bOK && p.bMonotonic && VE[o+i].Central > MonotonicUpperLimit )
+          if( bOK && p.bMonotonic && VEoi.Central > MonotonicUpperLimit )
             bOK = false;
           // All elements must be different from each other
           for( std::size_t j = 0; bOK && j < i; ++j )
-            bOK = VE[o+i].*pLowD > VE[o+j].*pHighD || VE[o+i].*pHighD < VE[o+j].*pLowD;
+          {
+            TypeVE &VEoj{ Base::SummaryData( static_cast<int>( o + j ) ) };
+            bOK = VEoi.*pLowD > VEoj.*pHighD || VEoi.*pHighD < VEoj.*pLowD;
+          }
           // Save results
-          VE[o+i].Check = bOK ? 1 : 0;
+          VEoi.Check = bOK ? 1 : 0;
           if( !bOK )
             bResult = false;
         }
@@ -1449,7 +1463,6 @@ Model<T>::GetValWithEr( const Params &ParamNames, const UniqueNameSet &StatNames
 {
   using Scalar = typename Model<T>::scalar_type;
   const ValWithEr<Scalar> Zero(0,0,0,0,0,0);
-  const ValWithEr<Scalar> *pData{ Base::getSummaryData() };
   const std::size_t NumScalars{ ParamNames.NumScalars( Param::Type::All ) };
   const std::size_t NumStats{ StatNames.size() };
   std::vector<ValWithEr<Scalar>> v;
@@ -1467,7 +1480,7 @@ Model<T>::GetValWithEr( const Params &ParamNames, const UniqueNameSet &StatNames
       const Param &pMe{ itMe->second };
       std::size_t MyOffset{ pMe.GetOffset( 0, Param::Type::All ) };
       for( std::size_t i = 0; i < std::min( NumHave, NumToWrite ); ++i )
-        v.emplace_back( pData[MyOffset + i] );
+        v.emplace_back( Base::SummaryData( static_cast<int>( MyOffset + i ) ) );
     }
     // Now write out dummy values for those I don't have
     for( std::size_t i = NumHave; i < NumToWrite; ++i )
@@ -1477,7 +1490,7 @@ Model<T>::GetValWithEr( const Params &ParamNames, const UniqueNameSet &StatNames
   for( const std::string &StatName : StatNames )
   {
     const int idx{ Base::GetColumnIndexNoThrow( StatName ) };
-    v.emplace_back( idx < 0 ? Zero : pData[idx] );
+    v.emplace_back( idx < 0 ? Zero : Base::SummaryData( idx ) );
   }
   return v;
 }
@@ -1563,20 +1576,36 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
 }
 
 template <typename T>
-void Model<T>::ReorderOldFormat( int NumOps, int NumExponents, std::unique_ptr<T[]> &pData, int Num )
+void Model<T>::ReorderOldFormat( int NumOps, int NumExponents, Vector<T> &v )
 {
-  T * p{ pData.get() };
-  if( p && NumExponents > 1 && NumOps > 1 )
+  if( NumExponents > 1 && NumOps > 1 )
   {
     std::vector<T> Buffer( NumOps * NumExponents );
-    while( Num-- )
+    if( v.size < Buffer.size() )
+      throw std::runtime_error( "Model<T>::ReorderOldFormat( Vector<T> & )" );
+    for( int e = 0; e < NumExponents; ++e )
+      for( int o = 0; o < NumOps; ++o )
+        Buffer[o * NumExponents + e] = v[e * NumOps + o];
+    for( std::size_t j = 0; j < Buffer.size(); ++j )
+      v[j] = Buffer[j];
+  }
+}
+
+template <typename T>
+void Model<T>::ReorderOldFormat( int NumOps, int NumExponents, Matrix<T> &m )
+{
+  if( NumExponents > 1 && NumOps > 1 )
+  {
+    std::vector<T> Buffer( NumOps * NumExponents );
+    if( m.size2 < Buffer.size() )
+      throw std::runtime_error( "Model<T>::ReorderOldFormat( Matrix<T> & )" );
+    for( std::size_t i = 0; i < m.size1; ++i )
     {
       for( int e = 0; e < NumExponents; ++e )
         for( int o = 0; o < NumOps; ++o )
-          Buffer[o * NumExponents + e] = p[e * NumOps + o];
-      for( int j = 0; j < Buffer.size(); ++j )
-        p[j] = Buffer[j];
-      p += this->Nt();
+          Buffer[o * NumExponents + e] = m(i, e * NumOps + o);
+      for( std::size_t j = 0; j < Buffer.size(); ++j )
+        m(i,j) = Buffer[j];
     }
   }
 }
@@ -1594,27 +1623,6 @@ template class Model<double>;
 template class Model<float>;
 template class Model<std::complex<double>>;
 template class Model<std::complex<float>>;
-
-// Make non-random numbers 0 ... m.size1 - 1 to simplify central replica code
-// If the sample is already bootstrapped, then we won't need these numbers
-template <typename T>
-void DataSet<T>::MakeCentralReplicaNonRandom()
-{
-  for( int i = 0; i < 2; ++i )
-  {
-    std::vector<fint> &c{ RandomCentralBuf[i] };
-    const SS ss{ i == 0 ? SS::Raw : SS::Binned };
-    const int Num{ corr.empty() || ( ss == SS::Raw && corr[0].bRawBootstrap ) ? 0 : corr[0].NumSamples( ss ) };
-    if( !Num )
-      c.clear();
-    else
-    {
-      c.resize( Num );
-      for( fint i = 0; i < c.size(); ++i )
-        c[i] = i;
-    }
-  }
-}
 
 template <typename T>
 void DataSet<T>::clear()
@@ -1676,42 +1684,119 @@ void DataSet<T>::SetValidatedFitTimes( std::vector<std::vector<int>> &&FitTimes_
     throw std::runtime_error( "Fit range stupidly big" );
   Extent = static_cast<int>( Extent_ );
   FitTimes = std::move( FitTimes_ );
-  // Get the central replica
-  vCentral.resize( Extent );
+  CacheRawData();
+}
+
+template <typename T>
+void DataSet<T>::CacheRawData()
+{
+  SampleSource ss{ CovarSource };
+  int idxJackBoot{ idxJackBootCovarSource };
+  bool bFrozen{ bFrozenCovarSource };
+  // How many data rows are available?
+  const int NumJackBoot{ NumSamples( SS::Bootstrap, 0 ) };
+  if( NumJackBoot < 1 )
+    throw std::runtime_error( "DataSet<T>::CacheRawData JackBoot data unavailable" );
+  // Is the requested source available
+  const int NumRequestedSource{ NumSamples( ss, idxJackBoot ) };
+  if( NumRequestedSource < 1 )
+  {
+    std::ostringstream os;
+    os << "DataSet<T>::CacheRawData " << ss << '[' << idxJackBoot << "] unavailable";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  // Binned data must be available if unfrozen
+  const int NumBinned{ NumSamples( SS::Binned, 0 ) };
+  if( !bFrozen && NumBinned < 1 )
+  {
+    std::ostringstream os;
+    os << "DataSet<T>::CacheRawData " << ss << '[' << idxJackBoot << "] unfrozen impossible (no binned data)";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  // Work out what to copy
+  const bool FullyUnfrozen{ idxJackBoot == 0 && ss == SS::Binned && !bFrozen };
+  const bool bCovarSrcData{ idxJackBoot == 0 && ss == SS::Bootstrap };
+  const bool CopyCovarSrc{ !FullyUnfrozen && !bCovarSrcData };
+  mFitData.resize( NumJackBoot, Extent );
+  if( FullyUnfrozen )
+  {
+    mCorrel.clear();
+    mCorrelCentralMean.clear();
+    mCorrelCentralVariance.clear();
+    mCorrelCentralVarInv.clear();
+  }
+  else
+  {
+    mCorrel.resize( Extent, Extent );
+    mCorrelCentralMean.resize( Extent );
+    mCorrelCentralVariance.resize( Extent );
+    mCorrelCentralVarInv.resize( Extent );
+  }
+  if( bFrozen )
+    mBinned.clear();
+  else
+    mBinned.resize( NumBinned, Extent );
+  Matrix<T> CovarBuffer;
+  if( CopyCovarSrc )
+    CovarBuffer.resize( NumRequestedSource, Extent );
+  // Assemble the combined data and covariance source
+  for( int idx = Fold<T>::idxCentral; idx < NumJackBoot; ++idx )
   {
     int dst{ 0 };
     for( int f = 0; f < corr.size(); ++f )
     {
-      const T * pSrc{ corr[f][Fold<T>::idxCentral] };
+      const JackBoot<T> &mSrc{ corr[f].getData() };
       for( int t : FitTimes[f] )
-        vCentral[dst++] = pSrc[t];
+        mFitData( idx, dst++ ) = mSrc( idx, t );
     }
   }
-  // Cache the raw data
-  for( int i = 0; i < 3; ++i )
+  // Copy the binned data
+  if( !bFrozen )
   {
-    SampleSource ss{ i == 0 ? SampleSource::Raw : i == 1 ? SampleSource::Binned : SampleSource::Bootstrap };
-    Matrix<T> &m{ i == 0 ? mRaw : i == 1 ? mBinned : mBoot };
-    const int iCount{ corr[0].NumSamples( ss ) };
-    bool bGotMatchingCount{ iCount != 0 };
-    for( int f = 1; bGotMatchingCount && f < corr.size(); ++f )
-      bGotMatchingCount = ( corr[f].NumSamples( ss ) == iCount );
-    if( !bGotMatchingCount )
-      m.clear();
-    else
+    for( int idx = 0; idx < NumBinned; ++idx )
     {
-      m.resize( iCount, Extent );
-      for( int idx = 0; idx < iCount; ++idx )
+      int dst{ 0 };
+      for( int f = 0; f < corr.size(); ++f )
       {
-        int dst{ 0 };
-        for( int f = 0; f < corr.size(); ++f )
-        {
-          const T * pSrc{ corr[f].get( ss, idx ) };
-          for( int t : FitTimes[f] )
-            m( idx, dst++ ) = pSrc[t];
-        }
+        const Matrix<T> &mSrc{ corr[f].getBinned( 0 ) };
+        for( int t : FitTimes[f] )
+          mBinned( idx, dst++ ) = mSrc( idx, t );
       }
     }
+  }
+  // Copy the covariance source
+  if( CopyCovarSrc )
+  {
+    for( int idx = 0; idx < NumRequestedSource; ++idx )
+    {
+      int dst{ 0 };
+      for( int f = 0; f < corr.size(); ++f )
+      {
+        const Matrix<T> &mSrc{ corr[f].get( ss, idxJackBoot ) };
+        for( int t : FitTimes[f] )
+          CovarBuffer( idx, dst++ ) = mSrc( idx, t );
+      }
+    }
+    // Make correlation matrix from this data
+    JackBoot<T>::MakeMean( mCorrelCentralMean, mCorrel );
+    JackBoot<T>::MakeCovar( mCorrel, CovarBuffer, mCorrelCentralMean, corr[0].Norm( ss ) );
+    CovarBuffer.clear();
+  }
+  else if( bCovarSrcData )
+  {
+    // Make correlation matrix from this data
+    mCorrelCentralMean = mFitData.Central;
+    JackBoot<T>::MakeCovar( mCorrel, mFitData.Replica, mCorrelCentralMean, corr[0].Norm( ss ) );
+  }
+  //
+  if( !FullyUnfrozen )
+  {
+    for( int i = 0; i < Extent; ++i )
+    {
+      mCorrelCentralVariance[i] = std::sqrt( mCorrel( i, i ) );
+      mCorrelCentralVarInv[i] = static_cast<T>( 1. ) / mCorrelCentralVariance[i];
+    }
+    mCorrel.CholeskyScaleApply( mCorrelCentralVarInv, true );
   }
 }
 
@@ -1732,48 +1817,9 @@ void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedP
   }
 }
 
-// Initialise random numbers I will need if I'm to get (co)variance on non-central replicas
-template <typename T>
-bool DataSet<T>::InitRandomNumbers( SS ss )
-{
-  bool bMade{ false };
-  if( ss == SS::Binned || ss == SS::Raw )
-  {
-    const int i{ ss == SS::Raw ? 0 : 1 };
-    MatrixView<fint> &r{ RandomViews[i] };
-    std::vector<fint> &Buffer{ RandomBuffer[i] };
-    const int Count{corr.empty() || ( ss == SS::Raw && corr[0].bRawBootstrap ) ? 0 : corr[0].NumSamples( ss )};
-    if( !Count )
-    {
-      r.clear();
-      Buffer.clear();
-    }
-    else
-    {
-      // Make Random numbers
-      if(   corr[0].RandNum() // Do I have original bootstrap random numbers
-         && corr[0].SampleSize == Count ) // Are the random numbers over same range (0...SampleSize-1)
-      {
-        // Re-use existing random numbers
-        // I assume enough replicas are available because this is checked on creation and load
-        Buffer.clear();
-        r.Map( corr[0].RandNum(), MaxSamples, Count );
-      }
-      else
-      {
-        // Generate random numbers
-        GenerateRandom( Buffer, corr[0].Name_.Seed, MaxSamples, Count );
-        r.Map( Buffer.data(), MaxSamples, Count );
-        bMade = true;
-      }
-    }
-  }
-  return bMade;
-}
-
 // Make a covariance matrix estimate of \Sigma_{\bar{\vb{x}}}, i.e. error of the mean
 // From what is already a bootstrap replica, and therefore only the central replica
-template <typename T>
+/*template <typename T>
 void DataSet<T>::MakeCovarFromBootstrap( SS ss, Matrix<T> &Covar ) const
 {
   Covar.resize( Extent, Extent );
@@ -2001,7 +2047,7 @@ MakeCovariance( int idx, SS ss, Matrix<T> &Covar, const MatrixView<fint> &Random
       if( i != j )
         Covar( j, i ) = z;
     }
-}
+}*/
 
 // Write covariance matrix to file
 template <typename T>
@@ -2101,7 +2147,6 @@ int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int Comp
     if( NSamples == 0 || NSamples > MaxSamples )
       NSamples = MaxSamples;
     OriginalBinSize = corr[i].binSize; // Because this will be overwritten
-    MakeCentralReplicaNonRandom();
   }
   return i;
 }
@@ -2188,12 +2233,12 @@ void DataSet<T>::SortOpNames( std::vector<std::string> &OpNames )
 }
 
 template <typename T>
-int DataSet<T>::NumSamplesBinned() const
+int DataSet<T>::NumSamples( SampleSource ss, int idxJackBoot ) const
 {
-  int NSB{ corr.empty() ? 0 : corr[0].NumSamplesBinned() };
+  int NSB{ corr.empty() ? 0 : corr[0].NumSamples( ss, idxJackBoot ) };
   for( std::size_t i = 1; NSB && i < corr.size(); ++i )
   {
-    const int ThisNSB{ corr[i].NumSamplesBinned() };
+    const int ThisNSB{ corr[i].NumSamples( ss, idxJackBoot ) };
     if( NSB > ThisNSB )
       NSB = ThisNSB;
   }
@@ -2203,6 +2248,7 @@ int DataSet<T>::NumSamplesBinned() const
 template <typename T>
 void DataSet<T>::Rebin( const std::vector<int> &NewSize )
 {
+  constexpr int DestJackBoot{};
   RebinSize.clear();
   RebinSize.reserve( corr.size() );
   for( std::size_t i = 0; i < corr.size(); ++i )
@@ -2217,18 +2263,17 @@ void DataSet<T>::Rebin( const std::vector<int> &NewSize )
     // bin size 0 => auto (i.e. all measurements on same config binned together)
     RebinSize.push_back( NewSize.empty() ? 0 : NewSize[i < NewSize.size() ? i : NewSize.size() - 1] );
     if( RebinSize.back() )
-      corr[i].Bin( RebinSize.back(), SS::Raw );
+      corr[i].BinFixed( RebinSize.back(), DestJackBoot );
     else
-      corr[i].Bin( SS::Raw );
-    if( corr[i].NumSamplesRaw() != corr[0].NumSamplesRaw() )
+      corr[i].BinAuto( DestJackBoot );
+    if( corr[i].NumSamplesBinned( DestJackBoot ) != corr[0].NumSamplesBinned( DestJackBoot ) )
     {
       std::ostringstream os;
-      os << "Rebinned corr " << i << " has " << corr[i].NumSamplesRaw()
-         << " samples, others have " << corr[0].NumSamplesRaw();
+      os << "Rebinned corr " << i << " has " << corr[i].NumSamplesBinned( DestJackBoot )
+         << " samples, others have " << corr[0].NumSamplesBinned( DestJackBoot );
       throw std::runtime_error( os.str().c_str() );
     }
   }
-  MakeCentralReplicaNonRandom();
 }
 
 template class DataSet<double>;

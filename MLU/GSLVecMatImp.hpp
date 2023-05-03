@@ -68,6 +68,7 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline void MapColumn( MyMatrix &m, std::size_t Column );
   inline const Scalar & operator[]( std::size_t i ) const;
   inline Scalar & operator[]( std::size_t i );
+  inline std::size_t MinMax( Scalar &Min, Scalar &Max, bool bIgnoreNaN = false ) const;
 #ifdef COMMON_GSL_BLAS
   inline bool IsFinite() const;
   inline Real norm2() const { return COMMON_GSL_BLAS_REAL( nrm2 )( this ); }
@@ -249,6 +250,35 @@ Vector<COMMON_GSL_TYPE>::Scalar & Vector<COMMON_GSL_TYPE>::operator[]( std::size
   return reinterpret_cast<Scalar *>( data )[i*stride];
 }
 
+std::size_t Vector<COMMON_GSL_TYPE>::MinMax( Scalar &Min, Scalar &Max, bool bIgnoreNaN ) const
+{
+  assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
+  std::size_t Count{};
+  for( std::size_t i = 0; i < size; ++i )
+  {
+    const Scalar &z{ (*this)[i] };
+    if( !bIgnoreNaN || ::Common::IsFinite( z ) )
+    {
+      if( Count++ == 0 )
+      {
+        Min = z;
+        Max = z;
+      }
+      else
+      {
+        Min = ComponentMin( Min, z );
+        Max = ComponentMax( Min, z );
+      }
+    }
+  }
+  if( Count == 0 )
+  {
+    Min = NaN;
+    Max = NaN;
+  }
+  return Count;
+}
+
 #ifdef COMMON_GSL_BLAS
 bool Vector<COMMON_GSL_TYPE>::IsFinite() const
 {
@@ -352,10 +382,10 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline MyVector CholeskySolve( const MyVector &b, const MyVector &S ) const;
   inline Scalar CholeskyRCond() const;
   inline MyVector CholeskyScale() const;
-  inline void CholeskyScaleApply( const MyVector &S, bool bSetDiagonalToOne = false );
   inline MyVector CholeskyExtract( bool bSetDiagonalToOne = true );
   inline MyVector GetEigenValues( MyMatrix *pEigenVectors = nullptr ) const;
 #endif
+  inline void CholeskyScaleApply( const MyVector &S, bool bSetDiagonalToOne = false );
 #ifdef COMMON_GSL_OPTIONAL
   inline MyMatrix Inverse() const;
   inline bool Cholesky( bool bZeroUpperTriangle );
@@ -741,6 +771,11 @@ inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::GetEigenValues( MyMatrix
   if( gsl_e )
     GSLLibraryGlobal::Error( "Unable to GetEigenValues()", __FILE__, __LINE__, gsl_e );
   return EigenValues;
+}
+#else
+inline void Matrix<COMMON_GSL_TYPE>::CholeskyScaleApply( const MyVector &S, bool bSetDiagonalToOne )
+{
+  throw std::runtime_error( "CholeskyScaleApply() undefined except for double" );
 }
 #endif // COMMON_GSL_DOUBLE
 

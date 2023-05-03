@@ -112,6 +112,7 @@ public:
   const bool b2ptSortZeroMom;
   const bool bOverwrite;
   const bool bVerboseSummaries;
+  const bool bFat;
   const int TimesliceDetail;
   const int nSample;
   const int binSize;
@@ -119,13 +120,11 @@ public:
   const BinOrder binOrder;
   const Common::SeedType seed;
   const std::string outStem;
-  const std::string MachineName;
 
   using CorrFile = Common::CorrelatorFileC;
   using vCorrFile = std::vector<CorrFile>;
   using Iter = typename vCorrFile::iterator;
 protected:
-  Common::SampleC RandomSample;
   Common::SeedType GetSeedType( const Common::CommandLine &cl );
   static std::vector<Common::ConfigCount> CountConfigs( const Iter &first, const Iter &last, bool bGammai );
   bool GatherInput( Common::SampleC &out, const Iter &first, const Iter &last, const TrajList &Traj,
@@ -134,7 +133,7 @@ protected:
                         bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries,
                         const std::vector<Algebra> &SinkAlgebra, const std::vector<Algebra> &SourceAlgebra ) const;
 public:
-  BootstrapParams( const Common::CommandLine &cl, const std::string MachineNameActual );
+  BootstrapParams( const Common::CommandLine &cl );
   int PerformBootstrap( vCorrFile &f, const TrajList &Traj, const std::vector<Algebra> &SinkAlgebra,
                         const std::vector<Algebra> &SourceAlgebra ) const;
   void Study1Bootstrap( StudySubject Study, const std::string &StudyPath, const Common::Momentum &mom,

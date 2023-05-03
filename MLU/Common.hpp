@@ -130,13 +130,9 @@ extern const std::string sCorrelationInvCholesky;
 extern const std::string sFitInput;
 extern const std::string sModelPrediction;
 extern const std::string sOperators;
-extern const std::string sAuxNames;
 extern const std::string sSummaryDSName;
 extern const std::string sSummaryNames;
 extern const std::string sColumnNames;
-extern const std::string sSeed;
-extern const std::string sSeedMachine;
-extern const std::string sRandom;
 extern const std::string sSampleSize;
 extern const std::string sConfigCount;
 extern const std::string sFileList;
@@ -463,8 +459,10 @@ std::vector<std::string> glob( const Iter &first, const Iter &last, const char *
   return Filenames;
 }
 
-// Wrapper for posix gethostname()
+/// Wrapper for posix gethostname()
 std::string GetHostName();
+/// When not empty, specifies the value to be returned by GetHostName()
+void SetHostName( const std::string &NewHostName );
 
 struct MomentumMap : std::map<std::string, Momentum, LessCaseInsensitive>
 {
@@ -827,7 +825,8 @@ inline std::ostream & operator<<( std::ostream &os, const FoldProp &f )
 template<typename ST, typename V = void> struct SampleTraits : public std::false_type{};
 
 // Traits for floating point types: float; double
-template<typename ST> struct SampleTraits<ST, typename std::enable_if<std::is_floating_point<ST>::value>::type> : public std::true_type
+template<typename ST> struct SampleTraits<ST, typename std::enable_if<!is_complex<ST>::value
+    && std::is_floating_point<ST>::value>::type> : public std::true_type
 {
   using scalar_type = ST;
   using value_type = ST;
@@ -835,19 +834,38 @@ template<typename ST> struct SampleTraits<ST, typename std::enable_if<std::is_fl
   static constexpr int scalar_count = 1;
   static inline scalar_type * ScalarPtr( ST * p ) { return p; };
   static inline const scalar_type * ScalarPtr( const ST * p ) { return p; };
+  static inline scalar_type Real( const ST &v ) { return v; }
+  static inline scalar_type Imag( const ST &v ) { throw std::runtime_error( "SampleTraits::Imag" ); }
+  static inline scalar_type RealImag( const ST &v, int i )
+  {
+    if( i )
+      throw std::runtime_error( "SampleTraits::Imag" );
+    return v;
+  }
 };
 
 // Traits for std::complex<ST> types
-template<typename ST> struct SampleTraits<std::complex<ST>, typename std::enable_if<SampleTraits<ST>::value>::type> : public std::true_type
+template<typename ST> struct SampleTraits<ST, typename std::enable_if<is_complex<ST>::value
+    && SampleTraits<typename is_complex<ST>::Scalar>::value>::type> : public std::true_type
 {
-  using scalar_type = typename SampleTraits<ST>::scalar_type;
-  using value_type = std::complex<ST>;
+  using scalar_type = typename SampleTraits<typename is_complex<ST>::Scalar>::scalar_type;
+  using value_type = ST;
   static constexpr bool is_complex = true;
   static constexpr int scalar_count = 2;
   static inline scalar_type * ScalarPtr( std::complex<ST> * p )
       { return reinterpret_cast<scalar_type *>( p ); };
   static inline const scalar_type * ScalarPtr( const std::complex<ST> * p )
       { return reinterpret_cast<const scalar_type *>( p ); };
+  static inline scalar_type Real( const ST &v ) { return v.real(); }
+  static inline scalar_type Imag( const ST &v ) { return v.imag(); }
+  static inline scalar_type RealImag( const ST &v, int i )
+  {
+    if( i == 0 )
+      return v.real();
+    if( i == 1 )
+      return v.imag();
+    throw std::runtime_error( "SampleTraits::Imag" );
+  }
 };
 
 /*
@@ -1184,8 +1202,7 @@ void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Alg
     {
       ::H5::DataSet ds = g.openDataSet( ( pDSName && *pDSName ) ? pDSName : "correlator" );
       ::H5::DataSpace dsp = ds.getSpace();
-      int nDims{ dsp.getSimpleExtentNdims() };
-      if( nDims == 1 )
+      if( dsp.getSimpleExtentNdims() == 1 )
       {
         hsize_t Dim[1];
         dsp.getSimpleExtentDims( Dim );
@@ -1237,8 +1254,7 @@ void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Alg
           ::H5::Group gi = g.openGroup( *pGroupName + "_" + std::to_string( i ) );
           ::H5::DataSet ds = gi.openDataSet( "corr" );
           ::H5::DataSpace dsp = ds.getSpace();
-          int nDims{ dsp.getSimpleExtentNdims() };
-          if( nDims == 1 )
+          if( dsp.getSimpleExtentNdims() == 1 )
           {
             hsize_t Dim[1];
             dsp.getSimpleExtentDims( Dim );
@@ -1394,105 +1410,142 @@ public:
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
   using value_type = typename Traits::value_type;
+  using ValEr = ValWithEr<scalar_type>;
   static constexpr bool is_complex { Traits::is_complex };
   static constexpr int scalar_count { Traits::scalar_count };
-  static constexpr int idxCentral{ JackBoot<T>::idxCentral };
+  static constexpr int idxCentral{ -1 };
+  static constexpr int NumJackBoot{ 2 }; // Number of resamples. The first is primary
 protected:
-  int NumSamples_;
-  int Nt_;
-  std::unique_ptr<T[]> m_pData;
-  std::unique_ptr<fint[]> m_pRandNum; // Random numbers used to generate the bootstrap sample
-  std::vector<std::string> AuxNames;
-  int NumSamplesRaw_;
-  int NumSamplesBinned_;
-  std::unique_ptr<T[]> m_pDataRaw;
-  std::unique_ptr<T[]> m_pDataBinned;
-  int NumExtraSamples; // Same length as AuxNames, but minimum of 1 for central replica
+  int Nt_ = 0;
+//public: // Hope I don't regret this - DO NOT RESIZE THESE directly
+  Matrix<T> Raw;
+  std::array<  Matrix<T>, NumJackBoot> Binned;
+  std::array<JackBoot<T>, NumJackBoot> Data;
+protected:
+  static constexpr int NumExtraSamples{ 1 }; // central replica
   std::vector<std::string> SummaryNames;
-  std::unique_ptr<ValWithEr<scalar_type>[]> m_pSummaryData;
+  std::vector<ValEr> m_SummaryData;
+  inline void AllocSummaryBuffer() { m_SummaryData.resize( SummaryNames.size() * Nt_ ); }
   std::vector<std::string> ColumnNames;
-  inline void AllocSummaryBuffer( std::size_t NewSize )
+  inline void ValidateJackBoot( int idxJackBoot ) const
   {
-    if( is_complex )
-      NewSize *= 2;
-    const std::size_t OldSize{ SummaryNames.size() * Nt_ }; // old has extra rows for imaginary
-    if( NewSize != OldSize )
-    {
-      if( NewSize )
-        m_pSummaryData.reset( new ValWithEr<scalar_type>[ NewSize ] );
-      else
-        m_pSummaryData.reset( nullptr );
-    }
+    if( idxJackBoot < 0 || idxJackBoot >= NumJackBoot )
+      throw std::runtime_error( "JackBoot index " + std::to_string( idxJackBoot ) + " invalid" );
   }
-  void Bootstrap();
 public:
   FileNameAtt Name_;
-  SeedType Seed_ = 0; // This is only ever set by the bootstrap code
   std::string SeedMachine_; // name of the machine that ran the bootstrap
   int binSize = 1;
   int SampleSize = 0; // Number of samples (after binning) used to create bootstrap (set during bootstrap)
   std::vector<Common::ConfigCount> ConfigCount; // Info on every config in the bootstrap in order
   std::vector<std::string> FileList; // Info on every config in the bootstrap in order
-  bool bRawBootstrap = false; // Indicates the raw samples are bootstraps
-  inline int NumSamples() const { return NumSamples_; }
-  inline int GetNumExtraSamples() const { return NumExtraSamples; }
-  inline int NumSamplesRaw() const { return NumSamplesRaw_; }
-  inline int NumSamplesBinned() const { return NumSamplesBinned_; }
-  inline int NumSamples( SampleSource ss ) const
+  inline const SeedType Seed( int idxJackBoot = 0 ) const
   {
-    return ss == SampleSource::Binned ? NumSamplesBinned()
-         : ss == SampleSource::Bootstrap ? NumSamples()
-         : NumSamplesRaw();
+    ValidateJackBoot( idxJackBoot );
+    return Data[idxJackBoot].Seed;
+  }
+  inline void SetSeed( SeedType Seed, int idxJackBoot = 0 )
+  {
+    ValidateJackBoot( idxJackBoot );
+    Data[idxJackBoot].Seed = Seed;
+  }
+  inline std::string SeedString( int idxJackBoot = 0 ) const
+  {
+    ValidateJackBoot( idxJackBoot );
+    return Data[idxJackBoot].SeedString();
+  }
+  typename JackBootBase::Norm Norm( SampleSource ss ) const
+  {
+    if( ss == SampleSource::Raw || ss == SampleSource::Binned )
+      return JackBootBase::Norm::RawBinned;
+    if( Seed() == SeedWildcard )
+      return JackBootBase::Norm::Jackknife;
+    return JackBootBase::Norm::Bootstrap;
+  }
+  inline int NumSamples( int idxJackBoot = 0 ) const
+  {
+    ValidateJackBoot( idxJackBoot );
+    if( Data[idxJackBoot].Replica.size1 > std::numeric_limits<int>::max() )
+      throw std::runtime_error( "Too many resampled data rows "
+                               + std::to_string( Data[idxJackBoot].Replica.size1 ) );
+    return static_cast<int>( Data[idxJackBoot].Replica.size1 );
+  }
+  inline int NumSamplesRaw() const
+  {
+    if( Raw.size1 > std::numeric_limits<int>::max() )
+      throw std::runtime_error( "Too many raw data rows " + std::to_string( Raw.size1 ) );
+    return static_cast<int>( Raw.size1 );
+  }
+  inline int NumSamplesBinned( int idxJackBoot = 0 ) const
+  {
+    ValidateJackBoot( idxJackBoot );
+    if( Binned[idxJackBoot].size1 > std::numeric_limits<int>::max() )
+      throw std::runtime_error("Too many raw data rows " + std::to_string(Binned[idxJackBoot].size1));
+    return static_cast<int>( Binned[idxJackBoot].size1 );
+  }
+  inline int NumSamples( SampleSource ss, int idxJackBoot = 0 ) const
+  {
+    if( ss == SampleSource::Bootstrap )
+      return NumSamples( idxJackBoot );
+    if( ss == SampleSource::Binned )
+      return NumSamplesBinned( idxJackBoot );
+    if( idxJackBoot )
+      throw std::runtime_error( "Invalid raw idxJackBoot " + std::to_string( idxJackBoot ) );
+    return NumSamplesRaw();
   }
   inline int Nt() const { return Nt_; }
-  inline const fint * RandNum() const { return m_pRandNum.get(); };
   // Return the summary data for the nth type (0=central, 1=bias, etc)
-  inline ValWithEr<scalar_type> * getSummaryData( int idx = 0 )
+  inline       ValEr &SummaryData( int Row, int Column )
   {
-    const int iSize{ static_cast<int>( SummaryNames.size() ) };
-    if( Nt_ == 0 || idx < 0 || idx >= iSize )
-      throw std::runtime_error( "Summary " + std::to_string(idx) + "/" + std::to_string(iSize)
-                               + " doesn't exist" );
-    return m_pSummaryData.get() + idx * Nt_;
+    if( Row < 0 || Row >= SummaryNames.size() )
+      throw std::runtime_error( "SummaryData row " + std::to_string( Row ) + " of " + std::to_string( SummaryNames.size() ) + " invalid" );
+    if( Column < 0 || Column >= Nt_ )
+      throw std::runtime_error( "SummaryData column " + std::to_string( Column ) + " of " + std::to_string( Nt_ ) + " invalid" );
+    return m_SummaryData[ Row * Nt_ + Column ];
   }
-  inline const ValWithEr<scalar_type> * getSummaryData( int idx = 0 ) const
+  inline const ValEr &SummaryData( int Row, int Column ) const
   {
-    const int iSize{ static_cast<int>( SummaryNames.size() ) };
-    if( Nt_ == 0 || idx < 0 || idx >= iSize )
-      throw std::runtime_error( "Summary " + std::to_string(idx) + "/" + std::to_string(iSize)
-                               + " doesn't exist" );
-    return m_pSummaryData.get() + idx * Nt_;
+    if( Row < 0 || Row >= SummaryNames.size() )
+      throw std::runtime_error( "SummaryData row " + std::to_string( Row ) + " of " + std::to_string( SummaryNames.size() ) + " invalid" );
+    if( Column < 0 || Column >= Nt_ )
+      throw std::runtime_error( "SummaryData column " + std::to_string( Column ) + " of " + std::to_string( Nt_ ) + " invalid" );
+    return m_SummaryData[ Row * Nt_ + Column ];
   }
+  inline       ValEr &SummaryData( int Column = 0 )       { return SummaryData( 0, Column ); }
+  inline const ValEr &SummaryData( int Column = 0 ) const { return SummaryData( 0, Column ); }
   // Return the central replica summary data for the nth column
-  inline ValWithEr<scalar_type> &getSummaryData( const std::string &ColumnName )
+  inline       ValEr &SummaryData( int Row, const std::string &ColumnName )
   {
     int idxField{ IndexIgnoreCase( GetColumnNames(), ColumnName ) };
     if( idxField >= GetColumnNames().size() )
-      throw std::runtime_error( "Column " + ColumnName + " not available" );
-    return getSummaryData()[idxField];
+      throw std::runtime_error( "SummaryData column " + ColumnName + " not available" );
+    return SummaryData( Row, idxField );
   }
-  inline const ValWithEr<scalar_type> &getSummaryData( const std::string &ColumnName ) const
+  inline const ValEr &SummaryData( int Row, const std::string &ColumnName ) const
   {
     int idxField{ IndexIgnoreCase( GetColumnNames(), ColumnName ) };
     if( idxField >= GetColumnNames().size() )
-      throw std::runtime_error( "Column " + ColumnName + " not available" );
-    return getSummaryData()[idxField];
+      throw std::runtime_error( "SummaryData column " + ColumnName + " not available" );
+    return SummaryData( Row, idxField );
   }
+  inline       ValEr &SummaryData( const std::string &ColumnName )
+  { return SummaryData(0, ColumnName ); }
+  inline const ValEr &SummaryData( const std::string &ColumnName ) const
+  { return SummaryData(0, ColumnName ); }
   void WriteSummaryData( std::ostream &s, int idx = 0 ) const
   {
     s << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha;
-    const ValWithEr<scalar_type> * p{ getSummaryData( idx ) };
-    for( int t = 0; t < Nt_; t++ )
-      s << ( t == 0 ? "" : " " ) << *p++;
+    for( int t = 0; t < Nt_; ++t )
+      s << ( t == 0 ? "" : " " ) << SummaryData( idx, t );
   }
   const std::vector<std::string> &GetSummaryNames() const { return SummaryNames; };
   void SetSummaryNames( const std::vector<std::string> &summaryNames_ )
   {
-    AllocSummaryBuffer( summaryNames_.size() * Nt_ );
     SummaryNames = summaryNames_;
     if( is_complex )
       for( const std::string & s : summaryNames_ )
         SummaryNames.push_back( s + "_im" );
+    AllocSummaryBuffer();
   }
   void SetSummaryNames( const std::string &sAvgName )
   {
@@ -1558,77 +1611,115 @@ public:
   {
     return GetColumnIndex( ColumnName + std::to_string( idx ) );
   }
-  void resize( int NumSamples, int Nt, std::vector<std::string> * pAuxNames = nullptr )
+  inline bool CanRehydrate() const { return !Binned[0].Empty(); }
+  [[deprecated("Central replica no longer contiguous with remaining replicas. Use operator()")]]
+  inline       T * operator[]( int Replica )       { return &Data[0](Replica,0); }
+  [[deprecated("Central replica no longer contiguous with remaining replicas. Use operator()")]]
+  inline const T * operator[]( int Replica ) const { return &Data[0](Replica,0); }
+  inline       T & operator()( std::size_t i, std::size_t j )       { return Data[0]( i, j ); }
+  inline const T & operator()( std::size_t i, std::size_t j ) const { return Data[0]( i, j ); }
+  inline const JackBoot<T> &getData( int idxJackBoot = 0 ) const
   {
-    const int NewNumExtraSamples{ static_cast<int>( pAuxNames && pAuxNames->size() ? pAuxNames->size() : 1 ) };
-    if( Nt_ != Nt )
-    {
-      AllocSummaryBuffer( SummaryNames.size() * Nt );
-      ColumnNames.clear();
-      m_pDataRaw.reset( nullptr );
-      NumSamplesRaw_ = 0;
-      m_pDataBinned.reset( nullptr );
-      NumSamplesBinned_ = 0;
-    }
-    if( NumSamples_ != NumSamples || Nt_ != Nt || NumExtraSamples != NewNumExtraSamples )
-    {
-      NumSamples_ = NumSamples;
-      Nt_ = Nt;
-      NumExtraSamples = NewNumExtraSamples;
-      if( Nt == 0 )
-        m_pData.reset( nullptr );
-      else
-        m_pData.reset( new T[ static_cast<std::size_t>( NumSamples + NumExtraSamples ) * Nt ] );
-      m_pRandNum.reset( nullptr );
-    }
-    if( pAuxNames )
-      AuxNames = * pAuxNames;
-    else
-      AuxNames.clear();
+    ValidateJackBoot( idxJackBoot );
+    return Data[idxJackBoot];
   }
-  inline T * getRaw() { return m_pDataRaw.get(); }
-  const inline T * getRaw() const { return m_pDataRaw.get(); }
-  T * resizeRaw( int NumSamplesRaw )
+  inline       JackBoot<T> &getData( int idxJackBoot = 0 )
+  {
+    ValidateJackBoot( idxJackBoot );
+    return Data[idxJackBoot];
+  }
+  void resize( int NumReplicas, int Nt )
+  {
+    const bool NtChanged{ Nt_ != Nt };
+    if( NtChanged || NumSamples() != NumReplicas )
+    {
+      if( NtChanged )
+      {
+        Nt_ = Nt;
+        AllocSummaryBuffer();
+        ColumnNames.clear();
+        Raw.clear();
+        Binned[0].clear();
+        Data[0].clear();
+      }
+      Data[0].resize( NumReplicas, Nt );
+      for( int i = 1; i < NumJackBoot; ++i )
+      {
+        Binned[i].clear();
+        Data[i].clear();
+      }
+    }
+  }
+  inline       Matrix<T> &getRaw()       { return Raw; }
+  inline const Matrix<T> &getRaw() const { return Raw; }
+  inline       Matrix<T> &resizeRaw( int NumSamplesRaw )
   {
     if( !NumSamplesRaw )
-      m_pDataRaw.reset( nullptr );
+      Raw.clear();
     else if( !Nt_ )
       throw std::runtime_error( "Cannot resizeRaw() when Nt==0" );
-    else if( NumSamplesRaw_ != NumSamplesRaw )
-    {
-      m_pDataRaw.reset( new T[ static_cast<std::size_t>( NumSamplesRaw ) * Nt_ ] );
-      NumSamplesRaw_ = NumSamplesRaw;
-    }
-    bRawBootstrap = false;
-    return m_pDataRaw.get();
+    else
+      Raw.resize( NumSamplesRaw, Nt_ );
+    return getRaw();
   }
-  inline T * getBinned() { return m_pDataBinned.get(); }
-  const inline T * getBinned() const { return m_pDataBinned.get(); }
-  inline T * get( SampleSource ss, int idx = 0 ) { return ss == SampleSource::Bootstrap
-    ? (*this)[idx] : ( ss == SampleSource::Raw ? getRaw() : getBinned() ) + Nt() * idx; }
-  const inline T * get( SampleSource ss, int idx = 0 ) const { return ss == SampleSource::Bootstrap
-    ? (*this)[idx] : ( ss == SampleSource::Raw ? getRaw() : getBinned() ) + Nt() * idx; }
-  T * resizeBinned( int NumSamplesBinned )
+  inline       Matrix<T> &getBinned( int idxJackBoot = 0 )
   {
+    ValidateJackBoot( idxJackBoot );
+    return Binned[idxJackBoot];
+  }
+  inline const Matrix<T> &getBinned( int idxJackBoot = 0 ) const
+  {
+    ValidateJackBoot( idxJackBoot );
+    return Binned[idxJackBoot];
+  }
+  inline       Matrix<T> &get( SampleSource ss, int idxJackBoot = 0 )
+  {
+    ValidateJackBoot( idxJackBoot );
+    if( ss == SampleSource::Bootstrap )
+      return Data[idxJackBoot].Replica;
+    if( ss == SampleSource::Binned )
+      return Binned[idxJackBoot];
+    if( idxJackBoot )
+      throw std::runtime_error( "Invalid raw idxJackBoot " + std::to_string( idxJackBoot ) );
+    return Raw;
+  }
+  inline const Matrix<T> &get( SampleSource ss, int idxJackBoot = 0 ) const
+  {
+    ValidateJackBoot( idxJackBoot );
+    if( ss == SampleSource::Bootstrap )
+      return Data[idxJackBoot].Replica;
+    if( ss == SampleSource::Binned )
+      return Binned[idxJackBoot];
+    if( idxJackBoot )
+      throw std::runtime_error( "Invalid raw idxJackBoot " + std::to_string( idxJackBoot ) );
+    return Raw;
+  }
+  inline       Matrix<T> &resizeBinned( int NumSamplesBinned, int idxJackBoot = 0 )
+  {
+    ValidateJackBoot( idxJackBoot );
     if( !NumSamplesBinned )
-      m_pDataBinned.reset( nullptr );
+      Binned[idxJackBoot].clear();
     else if( !Nt_ )
       throw std::runtime_error( "Cannot resizeBinned() when Nt==0" );
-    else if( NumSamplesBinned_ != NumSamplesBinned )
-      m_pDataBinned.reset( new T[ static_cast<std::size_t>( NumSamplesBinned ) * Nt_ ] );
-    NumSamplesBinned_ = NumSamplesBinned;
-    return m_pDataBinned.get();
+    else
+      Binned[idxJackBoot].resize( NumSamplesBinned, Nt_ );
+    return getBinned( idxJackBoot );
   }
-  bool IsFinite() { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
-      static_cast<size_t>( ( NumSamples_ + NumExtraSamples ) * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
+  bool IsFinite( int idxJackBoot = 0 ) const
+  {
+    ValidateJackBoot( idxJackBoot );
+    return ::Common::IsFinite( Data[idxJackBoot] );
+  }
   template <typename U>
   void IsCompatible( const Sample<U> &o, int * pNumSamples = nullptr, unsigned int CompareFlags = COMPAT_DEFAULT, bool bSuffix = true ) const;
   template <typename U> void CopyAttributes( const Sample<U> &o );
-  void Bin( SampleSource ssTo = SampleSource::Binned ); // Auto bin based on config count
-  void Bin( int binSize_, SampleSource ssTo = SampleSource::Binned );
-  void BootstrapBinned( int NumBoot, SampleSource ssFrom );
-  void Bootstrap( SeedType Seed, const std::string * pMachineName = nullptr );
-  template <typename U> void Bootstrap( const Sample<U> &Random );
+  void BinAuto( int JackBootDest = 0 ); // Auto bin based on config count
+  void BinFixed( int binSize_, int JackBootDest = 0 );
+  void Resample( int JackBootDest = 0,
+                  int NumReplicas = static_cast<int>( RandomCache::DefaultNumReplicas() ),
+                  int BinnedSource = 0, SeedType Seed = RandomCache::DefaultSeed() );
+  /// Is it possible to regenerate primary bootstrap replica for any seed?
+  bool CanResample() const { return !Binned[0].Empty(); }
   virtual void SetName( const std::string &FileName, std::vector<std::string> * pOpNames = nullptr )
   {
     Name_.Parse( FileName, pOpNames );
@@ -1641,36 +1732,22 @@ public:
     SetName( FileName, pOpNames );
     Read( PrintPrefix, pGroupName );
   }
-  void Write( const std::string &FileName, const char * pszGroupName = nullptr );
-  void MakeCorrSummary( const char * pAvgName );
+  void Write( const std::string &FileName, bool bFatFile = false, const char * pszGroupName = nullptr );
+  void MakeCorrSummary();
   void WriteSummary( const std::string &sOutFileName, bool bVerboseSummary = false );
-  explicit Sample(int NumSamples = 0, int Nt = 0, std::vector<std::string> * pAuxNames = nullptr,
-                  std::vector<std::string> * pSummaryNames = nullptr)
-    : NumSamples_{0}, Nt_{0}, NumExtraSamples{0}, NumSamplesRaw_{0}, NumSamplesBinned_{0}
+  explicit Sample( const std::vector<std::string> &SummaryNames_, int NumSamples = 0, int Nt = 0 )
   {
-    resize( NumSamples, Nt, pAuxNames );
-    if( pSummaryNames )
-      SetSummaryNames( *pSummaryNames );
+    resize( NumSamples, Nt );
+    SetSummaryNames( SummaryNames_ );
   }
-  Sample(const std::string &FileName, const char *PrintPrefix = nullptr, std::vector<std::string> * pOpNames = nullptr,
-         std::string * pGroupName = nullptr)
-  : NumSamples_{0}, Nt_{0}, NumExtraSamples{0}, NumSamplesRaw_{0}, NumSamplesBinned_{0}
+  explicit Sample( int NumSamples = 0, int Nt = 0 ) : Sample( sCorrSummaryNames, NumSamples, Nt ) {}
+  explicit Sample( const std::string &FileName, const char *PrintPrefix = nullptr,
+          std::vector<std::string> * pOpNames = nullptr, std::string * pGroupName = nullptr )
+  : Sample( 0, 0 )
   {
     Read( FileName, PrintPrefix, pOpNames, pGroupName );
   }
-  inline T * operator[]( int Sample )
-  {
-    if( Sample < -NumExtraSamples || Sample > NumSamples_ )
-      throw std::out_of_range( "Sample " + std::to_string( Sample ) );
-    return & m_pData[static_cast<std::size_t>( Sample + NumExtraSamples ) * Nt_];
-  }
-  inline const T * operator[]( int Sample ) const
-  {
-    if( Sample < -NumExtraSamples || Sample > NumSamples_ )
-      throw std::out_of_range( "Sample " + std::to_string( Sample ) );
-    return & m_pData[static_cast<std::size_t>( Sample + NumExtraSamples ) * Nt_];
-  }
-  inline void ZeroSlot( int idxSlot = idxCentral )
+  /*inline void ZeroSlot( int idxSlot = idxCentral )
   {
     if( Nt_ )
     {
@@ -1682,7 +1759,7 @@ public:
   void MakeMean( int idxSlot = idxCentral, bool bBinned = false )
   {
     ZeroSlot( idxSlot );
-    const int NumRows{ bBinned ? NumSamplesBinned_ : NumSamples_ };
+    const int NumRows{ bBinned ? NumSamplesBinned() : NumSamples() };
     if( NumRows && Nt_ )
     {
       T * const dst{ (*this)[idxSlot] };
@@ -1693,26 +1770,26 @@ public:
       for( int t = 0; t < Nt_; t++ )
         dst[t] /= NumRows;
     }
-  }
+  }*/
 protected:
-  template<typename ST> inline typename std::enable_if<SampleTraits<ST>::is_complex>::type
-  CopyOldFormat( ST * Dest, const std::vector<double> & Src )
+  template<typename ST=T> inline typename std::enable_if<SampleTraits<ST>::is_complex>::type
+  CopyOldFormat( int idx, const std::vector<double> & Src )
   {
     for( int t = 0; t < Nt_; t++ )
     {
-      Dest->real( Src[t] );
-      Dest->imag( Src[t + Nt_] );
-      Dest++;
+      T &Dest{ Data[0]( idx, t ) };
+      Dest.real( Src[t] );
+      Dest.imag( Src[t + Nt_] );
     }
   }
-  template<typename ST> inline typename std::enable_if<!SampleTraits<ST>::is_complex>::type
-  CopyOldFormat( ST * Dest, const std::vector<double> & Src )
+  template<typename ST=T> inline typename std::enable_if<!SampleTraits<ST>::is_complex>::type
+  CopyOldFormat( int idx, const std::vector<double> & Src )
   {
     for( int t = 0; t < Nt_; t++ )
     {
       if( Src[t + Nt_] )
         throw std::runtime_error( "Complex sample has imaginary component" );
-      *Dest++ = Src[t];
+      Data[0]( idx, t ) = Src[t];
     }
   }
 public: // Override these for specialisations
@@ -1721,12 +1798,10 @@ public: // Override these for specialisations
   // Descendants should call base first
   virtual void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const
   {
-    static const char SeedPrefix[] = "# Seed: ";
-    s << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha;
-    if( Seed_ ) s << SeedPrefix << Seed_ << NewLine;
-    else if( !Name_.SeedString.empty() ) s << SeedPrefix << Name_.SeedString << NewLine;
+    s << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha
+      << "# Seed: " << SeedString() << NewLine;
     if( !SeedMachine_.empty() ) s << "# Seed machine: " << SeedMachine_ << NewLine;
-    s << "# Bootstrap: " << NumSamples_ << NewLine << "# SampleSize: " << SampleSize << NewLine;
+    s << "# Bootstrap: " << NumSamples() << NewLine << "# SampleSize: " << SampleSize << NewLine;
     if( binSize != 1 ) s << "# BinSize: " << binSize << NewLine;
     if( !ConfigCount.empty() )
     {
@@ -1794,27 +1869,26 @@ public: // Override these for specialisations
   virtual void SummaryContents( std::ostream &os ) const
   {
     os << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha;
-    const ValWithEr<scalar_type> * p{ m_pSummaryData.get() };
     if( ColumnNames.empty() )
     {
       // One row per timeslice, showing each of the summary values
-      for( int t = 0; t < Nt_; t++, p++ )
+      for( int t = 0; t < Nt_; ++t )
       {
         os << t;
         for( std::size_t f = 0; f < SummaryNames.size(); f++ )
-          os << Space << p[f * Nt_];
+          os << Space << SummaryData( f, t );
         if( t != Nt_ - 1 )
           os << NewLine;
       }
     }
     else
     {
-      // A single row, showing the central value for each column
+      // A single row, showing the first summary field for each column
       for( int t = 0; t < Nt_; t++ )
       {
         if( t )
           os << Space;
-        os << *p++;
+        os << SummaryData( t );
       }
     }
   }
@@ -1841,39 +1915,23 @@ void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, unsigned in
     throw std::runtime_error( sPrefix + "extension " + o.Name_.Ext + sNE + Name_.Ext + sSuffix );
   if( pNumSamples )
   {
-    if( *pNumSamples == 0 || *pNumSamples > NumSamples_)
-      *pNumSamples = NumSamples_;
+    if( *pNumSamples == 0 || *pNumSamples > NumSamples() )
+      *pNumSamples = NumSamples();
     if( *pNumSamples > o.NumSamples() )
       *pNumSamples = o.NumSamples();
   }
-  else if( o.NumSamples() != NumSamples_ )
+  else if( o.NumSamples() != NumSamples() )
     throw std::runtime_error( sPrefix + "NumSamples " + std::to_string(o.NumSamples()) +
-                             sNE + std::to_string(NumSamples_) + sSuffix );
+                             sNE + std::to_string(NumSamples()) + sSuffix );
   if( !( CompareFlags & COMPAT_DISABLE_NT ) && o.Nt() != Nt_ )
     throw std::runtime_error( sPrefix + "Nt " + std::to_string(o.Nt()) +
                              sNE + std::to_string(Nt_) + sSuffix );
   if( o.SampleSize && SampleSize && o.SampleSize != SampleSize )
     throw std::runtime_error( sPrefix + "SampleSize " + std::to_string(o.SampleSize) +
                              sNE + std::to_string(SampleSize) + sSuffix );
-  if( m_pRandNum && o.m_pRandNum )
-  {
-    // Compare the actual random numbers
-    const std::size_t Len{ static_cast<std::size_t>( NumSamples_ ) * SampleSize };
-    const fint * l{ m_pRandNum.get() };
-    const fint * r{ o.m_pRandNum.get() };
-    std::size_t i = 0;
-    while( i < Len && l[i] == r[i] )
-      ++i;
-    if( i != Len )
-      throw std::runtime_error( "Random number seeds don't match" );
-  }
-  else
-  {
-    if( o.Seed_ != Seed_ )
-      throw std::runtime_error( "Seed " + std::to_string( o.Seed_ ) + sNE + std::to_string( Seed_ ) );
-    if( !Common::EqualIgnoreCase( o.SeedMachine_, SeedMachine_ ) )
-      throw std::runtime_error( "Machine " + o.SeedMachine_ + sNE + SeedMachine_ );
-  }
+  // NB: If the random numbers were different, the random number cache would have caught this
+  if( o.Seed() != Seed() )
+    throw std::runtime_error( "Seed " + o.SeedString() + sNE + SeedString() );
   const std::size_t CSize {   ConfigCount.size() };
   const std::size_t CSizeO{ o.ConfigCount.size() };
   if( CSize && CSizeO )
@@ -1906,78 +1964,60 @@ template <typename U> void Sample<T>::CopyAttributes( const Sample<U> &in )
   if( FileList.empty() )
     FileList = in.FileList;
   // Copy the random numbers for this sample
-  Seed_ = in.Seed_;
   SeedMachine_ = in.SeedMachine_;
-  const fint * pSrc{ in.RandNum() };
-  if( pSrc )
-  {
-    if( NumSamples_ > in.NumSamples() )
-      throw std::runtime_error( "Can't copy random numbers from a smaller sample" );
-    const std::size_t Len{ static_cast<std::size_t>( NumSamples_ ) * SampleSize };
-    fint * pDst{ new fint[ Len ] };
-    m_pRandNum.reset( pDst );
-    const fint * pSrc{ in.RandNum() };
-    for( std::size_t i = 0; i < Len; ++i )
-      pDst[i] = pSrc[i];
-  }
-  else
-    m_pRandNum.reset( nullptr );
+  SetSeed( in.Seed() );
 }
 
 // Auto bin: all measurements on each config binned into a single measurement
-template <typename T> void Sample<T>::Bin( SampleSource ssTo )
+template <typename T> void Sample<T>::BinAuto( int JackBootDest )
 {
-  if( !NumSamplesRaw_ )
+  if( !NumSamplesRaw() )
     throw std::runtime_error( "No raw data to bin" );
-  if( bRawBootstrap )
-    throw std::runtime_error( "Can't bin bootstrapped data" );
+  // Work out how many bins there are and whether they are all the same size
   int NumSamplesRaw{ 0 };
   int NewBinSize{ ConfigCount[0].Count };
   for( const Common::ConfigCount &cc : ConfigCount )
   {
+    if( cc.Count < 1 )
+      throw std::runtime_error( "ConfigCount invalid" );
     NumSamplesRaw += cc.Count;
     if( NewBinSize && NewBinSize != cc.Count )
       NewBinSize = 0; // Indicates the bin size varies per ConfigCount
   }
-  if( NumSamplesRaw != NumSamplesRaw_ )
+  if( NumSamplesRaw != this->NumSamplesRaw() )
     throw std::runtime_error( "ConfigCount doesn't match raw data" );
-  const T * pSrc = getRaw();
-  std::unique_ptr<T[]> DeleteWhenOutOfScope;
-  T * pDst;
-  if( ssTo == SampleSource::Binned )
+  // Rebin
+  Matrix<T> &mSrc = getRaw();
+  Matrix<T> &mDst = resizeBinned( static_cast<int>( ConfigCount.size() ), JackBootDest );
+  if( JackBootDest == 0 )
+    binSize = NewBinSize; // File attribute is based on the primary sample
+  Vector<T> vSrc, vDst;
+  std::size_t rowSrc = 0;
+  for( std::size_t Bin = 0; Bin < ConfigCount.size(); ++Bin )
   {
-    pDst = resizeBinned( static_cast<int>( ConfigCount.size() ) );
-    binSize = NewBinSize;
-  }
-  else if( ssTo == SampleSource::Raw )
-  {
-    DeleteWhenOutOfScope = std::move( m_pDataRaw );
-    NumSamplesRaw_ = 0;
-    pDst = resizeRaw( static_cast<int>( ConfigCount.size() ) );
-  }
-  else
-    throw std::runtime_error( "Can only store binned data in Binned or Raw samples" );
-  for( const Common::ConfigCount &cc : ConfigCount )
-  {
-    for( int t = 0; t < Nt_; ++t )
-      pDst[t] = *pSrc++;
-    for( int i = 1; i < cc.Count; ++i )
-      for( int t = 0; t < Nt_; ++t )
-        pDst[t] += *pSrc++;
-    for( int t = 0; t < Nt_; ++t )
-      pDst[t] /= cc.Count;
-    pDst += Nt_;
+    for( std::size_t i = 0; i < ConfigCount[Bin].Count; ++i )
+    {
+      for( std::size_t t = 0; t < Nt_; ++t )
+      {
+        if( i )
+          mDst( Bin, t ) += mSrc( rowSrc, t );
+        else
+          mDst( Bin, t ) = mSrc( rowSrc, t );
+      }
+      ++rowSrc;
+    }
+    for( std::size_t t = 0; t < Nt_; ++t )
+      mDst( Bin, t ) /= ConfigCount[Bin].Count;
   }
 }
 
-template <typename T> void Sample<T>::Bin( int binSize_, SampleSource ssTo )
+template <typename T> void Sample<T>::BinFixed( int binSize_, int JackBootDest )
 {
   if( binSize_ < 1 )
     throw std::runtime_error( "BinSize " + std::to_string( binSize_ ) + " invalid" );
-  if( !NumSamplesRaw_ )
+  if( !NumSamplesRaw() )
     throw std::runtime_error( "No raw data to bin" );
-  if( bRawBootstrap )
-    throw std::runtime_error( "Can't bin bootstrapped data" );
+  // Work out how many samples there are and check they match ConfigCount
   int NumSamplesRaw{ 0 };
   for( const Common::ConfigCount &cc : ConfigCount )
   {
@@ -1985,159 +2025,51 @@ template <typename T> void Sample<T>::Bin( int binSize_, SampleSource ssTo )
       throw std::runtime_error( "Can't manually bin - raw sample counts differ per config" );
     NumSamplesRaw += cc.Count;
   }
-  if( NumSamplesRaw != NumSamplesRaw_ )
+  if( NumSamplesRaw != this->NumSamplesRaw() )
     throw std::runtime_error( "ConfigCount doesn't match raw data" );
   const bool PartialLastBin = NumSamplesRaw % binSize_;
   const int NewNumSamples{ static_cast<int>( NumSamplesRaw / binSize_ + ( PartialLastBin ? 1 : 0 ) ) };
-  const T * pSrc = getRaw();
-  std::unique_ptr<T[]> DeleteWhenOutOfScope;
-  T * pDst;
-  if( ssTo == SampleSource::Binned )
+  // Rebin
+  Matrix<T> &mSrc = getRaw();
+  Matrix<T> &mDst = resizeBinned( NewNumSamples, JackBootDest );
+  if( JackBootDest == 0 )
+    binSize = binSize_; // File attribute is based on the primary sample
+  Vector<T> vSrc, vDst;
+  std::size_t rowSrc = 0;
+  int ThisBinSize{ binSize_ };
+  for( std::size_t Bin = 0; Bin < NewNumSamples; ++Bin )
   {
-    pDst = resizeBinned( NewNumSamples );
-    binSize = binSize_;
-  }
-  else if( ssTo == SampleSource::Raw )
-  {
-    DeleteWhenOutOfScope = std::move( m_pDataRaw );
-    NumSamplesRaw_ = 0;
-    pDst = resizeRaw( NewNumSamples );
-  }
-  else
-    throw std::runtime_error( "Can only store binned data in Binned or Raw samples" );
-  for( int Bin = 0; Bin < NewNumSamples; ++Bin )
-  {
-    for( int t = 0; t < Nt_; ++t )
-      pDst[t] = *pSrc++;
-    const int ThisBinSize{ PartialLastBin && Bin==(NewNumSamples-1) ? NumSamplesRaw % binSize_ : binSize_ };
-    for( int i = 1; i < ThisBinSize; ++i )
-      for( int t = 0; t < Nt_; ++t )
-        pDst[t] += *pSrc++;
-    for( int t = 0; t < Nt_; ++t )
-      pDst[t] /= ThisBinSize;
-    pDst += Nt_;
-  }
-}
-
-/**
- Perform bootstrap
- Compute the mean on this sample, saving this as the central value
- Returned sample has specified extra fields ... but only the central value is copied from original
- */
-template <typename T> void Sample<T>::Bootstrap()
-{
-  if( bRawBootstrap )
-    throw std::runtime_error( "Raw data already bootstrapped" );
-  SampleSize = NumSamplesBinned_;
-  MakeMean( idxCentral, true ); // Compute the mean from the binned data
-  // Master thread can choose random samples while other threads bootstrap
-  const fint * pRandom{ m_pRandNum.get() };
-  T * dst{ (*this)[0] };
-  for( int i = 0; i < NumSamples_; ++i, dst += Nt_ )
-  {
-    for( int s = 0; s < NumSamplesBinned_; ++s )
+    if( PartialLastBin && Bin == NewNumSamples - 1 )
+      ThisBinSize = NumSamplesRaw % binSize_;
+    for( std::size_t i = 0; i < ThisBinSize; ++i )
     {
-      const T * src{ getBinned() + static_cast<std::ptrdiff_t>( *pRandom++ ) * Nt_ };
-      for( int t = 0; t < Nt_; t++ )
+      for( std::size_t t = 0; t < Nt_; ++t )
       {
-        if( !s )
-          dst[t]  = *src++;
+        if( i )
+          mDst( Bin, t ) += mSrc( rowSrc, t );
         else
-          dst[t] += *src++;
+          mDst( Bin, t ) = mSrc( rowSrc, t );
       }
+      ++rowSrc;
     }
-    // Turn the sum into an average
-    if( NumSamplesBinned_ > 1 )
-      for( int t = 0; t < Nt_; ++t)
-        dst[t] /= NumSamplesBinned_;
+    for( std::size_t t = 0; t < Nt_; ++t )
+      mDst( Bin, t ) /= ThisBinSize;
   }
 }
 
-// Bootstrap either the raw or binned data. Always store result in raw, marked as bootstrapped
-template <typename T> void Sample<T>::BootstrapBinned( int NumBoot, SampleSource ssFrom )
+/// Perform bootstrap or jackknife, depending on Seed
+template <typename T>
+void Sample<T>::Resample( int JackBootDest, int NumReplicas, int BinnedSource, SeedType Seed )
 {
-  if( NumBoot < 2 )
-    throw std::invalid_argument( "Bootstrap size " + std::to_string( NumBoot ) + " invalid" );
-  if( ssFrom != SampleSource::Raw && ssFrom != SampleSource::Binned )
-    throw std::runtime_error( "Can only bootstrap from Binned or Raw samples" );
-  if( ssFrom == SampleSource::Raw && bRawBootstrap )
-    throw std::runtime_error( "Raw data already bootstrapped" );
-  const int NumSamplesFrom{ NumSamples( ssFrom ) };
-  const T * src{ get( ssFrom ) };
-  if( !Nt_ || !NumSamplesFrom || !src )
-    throw std::runtime_error( "No data to bootstrap" );
-  std::unique_ptr<T[]> DeleteWhenOutOfScope;
-  if( ssFrom == SampleSource::Raw )
+  ValidateJackBoot( JackBootDest );
+  ValidateJackBoot( BinnedSource );
+  Data[JackBootDest].Seed = Seed;
+  Data[JackBootDest].Resample( Binned[BinnedSource], NumReplicas );
+  if( JackBootDest == 0 )
   {
-    DeleteWhenOutOfScope = std::move( m_pDataRaw );
-    NumSamplesRaw_ = 0;
-  }
-  T * dst{ resizeRaw( static_cast<std::size_t>( NumBoot ) * Nt_ ) };
-  bRawBootstrap = true;
-  std::mt19937                        engine( Seed_ );
-  std::uniform_int_distribution<fint> random( 0, NumSamplesFrom - 1 );
-  const T InvNumBinned{ static_cast<T>( 1 ) / static_cast<T>( NumSamplesFrom ) };
-  for( int b = 0; b < NumBoot; ++b, dst += Nt_ )
-  {
-    for( int s = 0; s < NumSamplesFrom; ++s )
-    {
-      const T * ThisRow{ src + static_cast<std::ptrdiff_t>( random( engine ) ) * Nt_ };
-      for( int t = 0; t < Nt_; t++ )
-      {
-        if( !s )
-          dst[t]  = *ThisRow++;
-        else
-          dst[t] += *ThisRow++;
-      }
-    }
-    // Turn the sum into an average
-    if( NumSamplesFrom > 1 )
-      for( int t = 0; t < Nt_; ++t)
-        dst[t] *= InvNumBinned;
-  }
-}
-
-// Generate a new set of random numbers to use for the seed
-template <typename T> void Sample<T>::Bootstrap( SeedType Seed, const std::string * pMachineName )
-{
-  const std::size_t RandomLen{ static_cast<std::size_t>( NumSamples_ ) * static_cast<std::size_t>( NumSamplesBinned_ ) };
-  assert( RandomLen && "Can't bootstrap nothing" );
-  Seed_ = Seed;
-  if( pMachineName && ! pMachineName->empty() )
-    SeedMachine_ = *pMachineName;
-  else
+    SampleSize = NumSamplesBinned( BinnedSource );
     SeedMachine_ = GetHostName();
-  // Generate the random numbers
-  fint * pRandom{ new fint[ RandomLen ] };
-  m_pRandNum.reset( pRandom );
-  std::mt19937                        engine( Seed );
-  std::uniform_int_distribution<fint> random( 0, NumSamplesBinned_ - 1 );
-  for( std::size_t i = 0; i < RandomLen; i++ )
-    pRandom[i] = random( engine );
-  Bootstrap();
-}
-
-template <typename T> template <typename U> void Sample<T>::Bootstrap( const Sample<U> &Random )
-{
-  const std::size_t RandomLen{ static_cast<std::size_t>( NumSamples_ ) * static_cast<std::size_t>( NumSamplesBinned_ ) };
-  assert( RandomLen && "Can't bootstrap nothing" );
-  const fint * pSrc{ Random.m_pRandNum.get() };
-  if( !pSrc )
-    throw std::runtime_error( "No random numbers in " + Random.Name_.Filename );
-  if( Random.SampleSize != NumSamplesBinned_ )
-    throw std::runtime_error( "Random numbers are for SampleSize " + std::to_string(Random.SampleSize)
-                             + " not " + std::to_string( NumSamplesBinned_ ) );
-  if( Random.NumSamples_ < NumSamples_ )
-    throw std::runtime_error( "Not enough Random numbers for " + std::to_string( NumSamples_ )
-                             + " samples. Only " + std::to_string( Random.NumSamples_ ) + " available" );
-  Seed_ = Random.Seed_;
-  SeedMachine_ = Random.SeedMachine_;
-  // Copy the random numbers
-  fint * pRandom{ new fint[ RandomLen ] };
-  m_pRandNum.reset( pRandom );
-  for( std::size_t i = 0; i < RandomLen; i++ )
-    pRandom[i] = pSrc[i];
-  Bootstrap();
+  }
 }
 
 template <typename T>
@@ -2161,67 +2093,63 @@ void Sample<T>::WriteSummary( const std::string &sOutFileName, bool bVerboseSumm
 // Otherwise, calculate exp and cosh mass as well
 
 template <typename T>
-void Sample<T>::MakeCorrSummary( const char * pAvgName )
+void Sample<T>::MakeCorrSummary()
 {
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
   // Now perform summaries
-  SetSummaryNames( pAvgName );
   const int tMid{ bFolded() ? Nt_ : Nt_ / 2 };
-  std::vector<scalar_type> Data( NumSamples_ );
-  ValWithEr<scalar_type> * pDest = m_pSummaryData.get();
+  JackBoot<scalar_type> Buffer( NumSamples(), Nt_ );
+  std::vector<ValEr> veBuf( Nt_ );
   const int NumRealFields{ static_cast<int>( SummaryNames.size() ) / scalar_count };
   for( int i = 0; i < Traits::scalar_count; i++ ) // real or imaginary
   {
-    for(int f = 0; f < NumRealFields; f++) // each field
+    for( int f = 0; f < std::min( NumRealFields, 4 ); ++f ) // each field
     {
-      for(int t = 0; t < Nt_; t++, pDest++ )
+      const int SummaryRow{ f + i * NumRealFields };
+      // Fill in the JackBoot sample for this field
+      if( f == 1 )
       {
-        if( f != 1 )
+        // Same as previous row - except average is taken from average of all samples
+        JackBoot<scalar_type>::MakeMean( Buffer.Central, Buffer.Replica );
+      }
+      else
+      {
+        for( int n = idxCentral; n < NumSamples(); ++n )
         {
-          // Index of previous and next timeslice relative to current timeslice
-          const int Next{ ( t == Nt_ - 1 ? 1 - Nt_ :  1 ) * scalar_count };
-          const int Prev{ ( t == 0       ? Nt_ - 1 : -1 ) * scalar_count };
-          const scalar_type * p = Traits::ScalarPtr( (*this)[idxCentral] ) + t * scalar_count + i;
-          int Count = 0;
-          for(int n = idxCentral; n < NumSamples_; n++, p += Nt_ * scalar_count )
+          for( int t = 0; t < Nt_; ++t )
           {
+            // Index of previous and next timeslice relative to current timeslice
+            const int tNext{ ( t == Nt_ - 1 ? 0       : t + 1 ) };
+            const int tPrev{ ( t == 0       ? Nt_ - 1 : t - 1 ) };
+            const scalar_type z{ Traits::RealImag( (*this)(n,t), i ) };
+            const scalar_type zNext{ Traits::RealImag( (*this)(n,tNext), i ) };
+            const scalar_type zPrev{ Traits::RealImag( (*this)(n,tPrev), i ) };
             scalar_type d;
             switch( f )
             {
               case 0: // central value
-                d = * p;
+                d = z;
                 break;
               case 2: // exponential mass
                 if( t == 0 )
                   d = NaN;
                 else if( t <= tMid )
-                  d = std::log( p[Prev] / *p );
+                  d = std::log( zPrev / z );
                 else
-                  d = -std::log( *p / p[Next] );
+                  d = std::log( zNext / z );
                 break;
               case 3: // cosh mass
-                d = std::acosh( ( p[Prev] + p[Next] ) / ( *p * 2 ) );
+                d = std::acosh( ( zPrev + zNext ) / ( z * 2 ) );
                 break;
-              default:
-                d = 0;
             }
-            if( n == idxCentral )
-              pDest->Central = d;
-            else if( std::isfinite( d ) )
-              Data[Count++] = d;
-          }
-          pDest->Get( pDest->Central, Data, Count );
-          if( f == 0 )
-          {
-            pDest[Nt_] = *pDest;
-            scalar_type d = 0;
-            for( int i = 0; i < Count; i++ )
-              d += Data[i];
-            d /= Count;
-            pDest[Nt_].Central = d;
+            Buffer(n,t) = d;
           }
         }
       }
+      // Now get the averages
+      Buffer.MakeStatistics( veBuf );
+      for( int t = 0; t < Nt_; ++t )
+        SummaryData( SummaryRow, t ) = veBuf[t];
     }
   }
 }
@@ -2238,13 +2166,14 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
   ::H5::Group  g;
   H5::OpenFileGroup( f, g, Name_.Filename, PrintPrefix, pGroupName );
   bool bOK{ false };
-  bool bFiniteError{ false };
+  bool bNoReturn{ false };
   H5E_auto2_t h5at;
   void      * f5at_p;
   ::H5::Exception::getAutoPrint(h5at, &f5at_p);
   ::H5::Exception::dontPrint();
   try // to load from LatAnalyze format
   {
+    SetSeed( Name_.Seed ); // Seed comes from filename if not loaded from hdf5
     unsigned short att_Type;
     ::H5::Attribute a;
     a = g.openAttribute("type");
@@ -2257,12 +2186,11 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       a.read( ::H5::PredType::NATIVE_ULONG, &att_nSample );
       a.close();
       std::vector<double> buffer;
-      for( int i = idxCentral; i < NumSamples_; i++ )
+      for( int i = idxCentral; i < NumSamples(); i++ )
       {
         ::H5::DataSet ds = g.openDataSet( "data_" + ( i == idxCentral ? "C" : "S_" + std::to_string( i ) ) );
         ::H5::DataSpace dsp = ds.getSpace();
-        int nDims{ dsp.getSimpleExtentNdims() };
-        if( nDims == 2 )
+        if( dsp.getSimpleExtentNdims() == 2 )
         {
           hsize_t Dim[2];
           dsp.getSimpleExtentDims( Dim );
@@ -2277,22 +2205,13 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
             break;
           ds.read( buffer.data(), ::H5::PredType::NATIVE_DOUBLE );
           if( !Common::IsFinite( buffer ) )
-          {
-            bFiniteError = true;
-            break;
-          }
-          T * p { (*this)[i] };
-          CopyOldFormat( p, buffer );
+            throw std::runtime_error( "NANs at row " + std::to_string(i) + "in " + Name_.Filename );
+          CopyOldFormat( i, buffer );
           // Check whether this is the end
-          if( i == NumSamples_ - 1 )
-          {
+          if( i == 0 )
+            bNoReturn = true;
+          if( i == NumSamples() - 1 )
             bOK = true;
-            p = (*this)[-NumExtraSamples];
-            // This format has no auxiliary rows - set them to zero
-            for( int j = -NumExtraSamples; j < idxCentral; j++ )
-              for( int t = 0; t < Nt_ ; t++ )
-                *p++ = 0;
-          }
         }
       }
     }
@@ -2302,27 +2221,38 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
     bOK = false;
     ::H5::Exception::clearErrorStack();
   }
-  if( !bOK && !bFiniteError )
+  catch(...)
+  {
+    ::H5::Exception::setAutoPrint(h5at, f5at_p);
+    throw;
+  }
+  if( !bOK && !bNoReturn )
   {
     try // to load from my format
     {
       unsigned short att_nAux;
       ::H5::Attribute a;
+      // Auxilliary rows removed 30 Apr 2023. Was never used
       a = g.openAttribute("nAux");
       a.read( ::H5::PredType::NATIVE_USHORT, &att_nAux );
       a.close();
+      if( att_nAux )
+        throw std::runtime_error( std::to_string( att_nAux ) + " unexpected auxilliary rows in "
+                                 + Name_.Filename );
       unsigned int att_nSample;
       a = g.openAttribute("nSample");
       a.read( ::H5::PredType::NATIVE_UINT, &att_nSample );
       a.close();
-      Seed_ = 0;
+      if( att_nSample > std::numeric_limits<int>::max() )
+        throw std::runtime_error( "nSample " + std::to_string( att_nSample ) + " invalid" );
+      SetSeed( 0 ); // In this format, not present means 0
       try
       {
         SeedType tmp;
-        a = g.openAttribute( sSeed );
+        a = g.openAttribute( RandomCache::sSeed );
         a.read( H5::Equiv<SeedType>::Type, &tmp );
         a.close();
-        Seed_ = tmp;
+        SetSeed( tmp );
       }
       catch(const ::H5::Exception &)
       {
@@ -2331,21 +2261,8 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       SeedMachine_.clear();
       try
       {
-        // Auxiliary names should match the number of auxiliary records
-        a = g.openAttribute( sSeedMachine );
+        a = g.openAttribute( RandomCache::sSeedMachine );
         a.read( a.getStrType(), SeedMachine_ );
-        a.close();
-      }
-      catch(const ::H5::Exception &)
-      {
-        ::H5::Exception::clearErrorStack();
-      }
-      std::vector<std::string> myAuxNames;
-      try
-      {
-        // Auxiliary names should match the number of auxiliary records
-        a = g.openAttribute(sAuxNames);
-        myAuxNames = H5::ReadStrings( a );
         a.close();
       }
       catch(const ::H5::Exception &)
@@ -2402,17 +2319,6 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       {
         ::H5::Exception::clearErrorStack();
       }
-      std::int8_t i8RawBootstrap{ 0 };
-      try
-      {
-        a = g.openAttribute( sRawBootstrap );
-        a.read( ::H5::PredType::NATIVE_INT8, &i8RawBootstrap );
-        a.close();
-      }
-      catch(const ::H5::Exception &)
-      {
-        ::H5::Exception::clearErrorStack();
-      }
       std::vector<std::string> myFileList;
       // Try to load the FileList from dataSet first, falling back to attribute
       bool bGotFileList{ false };
@@ -2461,116 +2367,136 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       {
         ::H5::Exception::clearErrorStack();
       }
-      const unsigned short ExpectedNAux{ static_cast<unsigned short>( myAuxNames.size() ? myAuxNames.size() - 1 : 0 ) };
-      if( att_nAux == ExpectedNAux )
+      try
       {
-        try
-        {
-          ReadAttributes( g );
-        }
-        catch(const std::exception &e)
-        {
-          throw;
-        }
-        catch(...)
-        {
-          throw std::runtime_error( "Extended attributes for " + DefaultGroupName() + " missing" );
-        }
-        ::H5::DataSet ds = g.openDataSet( "data_C" );
+        ReadAttributes( g );
+      }
+      catch(const std::exception &e)
+      {
+        throw;
+      }
+      catch(...)
+      {
+        throw std::runtime_error( "Extended attributes for " + DefaultGroupName() + " missing" );
+      }
+      // Get data dimensions. OK if missing, but if present it must pass error checks
+      int data_Nt{};
+      try
+      {
+        std::string sData_S{ "data_S" };
+        ::H5::DataSet dsJackBoot = g.openDataSet( sData_S );
+        ::H5::DataSpace dspJackBoot = dsJackBoot.getSpace();
+        int nDims{ dspJackBoot.getSimpleExtentNdims() };
+        if( nDims != 2 )
+          throw std::runtime_error( sData_S + " has " + std::to_string( nDims ) + " dimensions" );
+        hsize_t Dim[2];
+        dspJackBoot.getSimpleExtentDims( Dim );
+        if( Dim[0] != att_nSample )
+          throw std::runtime_error( sData_S + " has " + std::to_string( Dim[0] ) + " replicas but"
+                                   + std::to_string( att_nSample ) + " were expected" );
+        if( Dim[1] < 1 || Dim[1] > std::numeric_limits<int>::max() )
+          throw std::runtime_error( sData_S + " has " + std::to_string( Dim[1] ) + " columns" );
+        data_Nt = static_cast<int>( Dim[1] );
+        if( Dim[1] * att_nSample >= std::numeric_limits<std::size_t>::max() )
+          throw std::runtime_error( sData_S + " " + std::to_string( att_nSample ) + " rows x "
+                                   + std::to_string( data_Nt ) + " columns too large" );
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+      }
+      // Load Binned data
+      Matrix<T> myBinned;
+      try
+      {
+        H5::ReadMatrix( g, "samples_Binned", myBinned );
+        if( myBinned.size1 != SampleSize )
+          throw std::runtime_error( "SampleSize = " + std::to_string( SampleSize ) + " but "
+                      + std::to_string( myBinned.size1 ) + " binned replicas read" );
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+        myBinned.clear();
+      }
+      // Validate resampled / binned data sizes
+      if( !data_Nt && myBinned.Empty() )
+        throw std::runtime_error( "No binned or resampled data available" );
+      if( data_Nt && !myBinned.Empty() )
+      {
+        if( myBinned.size2 != static_cast<unsigned int>( data_Nt ) )
+          throw std::runtime_error( "nT = " + std::to_string( data_Nt ) + " but "
+                      + std::to_string( myBinned.size2 ) + " binned columns read" );
+        if( myBinned.size1 != SampleSize )
+          throw std::runtime_error( "SampleSize = " + std::to_string( SampleSize ) + " but "
+                      + std::to_string( myBinned.size1 ) + " binned rows read" );
+      }
+      // Resize this sample
+      SummaryNames = std::move( mySummaryNames );
+      resize( static_cast<int>( att_nSample ), data_Nt ? data_Nt : static_cast<int>(myBinned.size2));
+      ColumnNames = std::move( myColumnNames );
+      FileList = std::move( myFileList );
+      ConfigCount = std::move( myConfigCount );
+      Binned[0] = std::move( myBinned );
+      // Load raw data
+      try
+      {
+        H5::ReadMatrix( g, "samples_Raw", Raw );
+        if( Raw.size2 != Nt_ )
+          throw std::runtime_error( "nT = " + std::to_string( Nt_ ) + " but "
+                      + std::to_string( Raw.size2 ) + " raw columns read" );
+        if( FileList.size() && Raw.size1 != FileList.size() )
+          std::cout << "* Warning: FileList has " << FileList.size() << " entries but "
+                    << Raw.size1 << " raw replicas read\n";
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+        Raw.clear();
+      }
+      if( CanResample() && ( Seed() != RandomCache::DefaultSeed() || att_nSample < RandomCache::DefaultNumReplicas() ) )
+      {
+        throw std::runtime_error( "Add code to resample and resummarise" );
+      }
+      else
+      {
+        // Load from file
+        Data[0].Read( g, "data" );
+        if( Data[0].Central.size != Nt_ )
+          throw std::runtime_error( "nT = " + std::to_string( Nt_ ) + " but "
+                                   + std::to_string( Data[0].Central.size ) + " columns read" );
+        if( Data[0].Replica.size1 != att_nSample )
+          throw std::runtime_error( "nSample = " + std::to_string( att_nSample ) + " but "
+                                   + std::to_string( Data[0].Replica.size1 ) + " replicas read" );
+        ::H5::DataSet ds = g.openDataSet( "data_S" );
         ::H5::DataSpace dsp = ds.getSpace();
-        int nDims{ dsp.getSimpleExtentNdims() };
-        if( ( att_nAux == 0 && nDims == 1 ) || ( att_nAux != 0 && nDims == 2 ) )
+        if( dsp.getSimpleExtentNdims() == 2 )
         {
           hsize_t Dim[2];
           dsp.getSimpleExtentDims( Dim );
-          if( ( att_nAux == 0 && Dim[0] * ( att_nSample + 1 ) <= std::numeric_limits<int>::max() )
-           || ( att_nAux != 0 && Dim[0] == att_nAux + 1 && Dim[1] * ( att_nAux + 1 + att_nSample ) <= std::numeric_limits<int>::max() ) )
+          if( Dim[0] <= std::numeric_limits<int>::max()
+             && Dim[1] <= std::numeric_limits<int>::max()
+             && Dim[0] * att_nSample <= std::numeric_limits<std::size_t>::max() )
           {
-            SummaryNames = std::move( mySummaryNames );
-            resize( static_cast<int>( att_nSample ), static_cast<int>( Dim[ att_nAux == 0 ? 0 : 1 ] ), &myAuxNames );
-            ColumnNames = std::move( myColumnNames );
-            FileList = std::move( myFileList );
-            ConfigCount = std::move( myConfigCount );
-            ds.read( (*this)[-NumExtraSamples], H5::Equiv<T>::Type );
             dsp.close();
             ds.close();
-            ds = g.openDataSet( "data_S" );
-            dsp = ds.getSpace();
-            nDims = dsp.getSimpleExtentNdims();
-            if( nDims == 2 )
+            try // to read the random numbers
             {
-              dsp.getSimpleExtentDims( Dim );
-              if( Dim[0] == att_nSample && Dim[1] == static_cast<unsigned int>( Nt_ ) )
-              {
-                ds.read( (*this)[0], H5::Equiv<T>::Type );
-                if( !IsFinite() )
-                  bFiniteError = true;
-                else
-                {
-                  try // to read the random numbers
-                  {
-                    dsp.close();
-                    ds.close();
-                    ds = g.openDataSet( sRandom );
-                    dsp = ds.getSpace();
-                    if( dsp.getSimpleExtentNdims() == 2 )
-                    {
-                      dsp.getSimpleExtentDims( Dim );
-                      if( Dim[0] == att_nSample && Dim[1] == SampleSize )
-                      {
-                        fint * rnd{ new fint[ static_cast<std::size_t>( att_nSample ) * SampleSize ] };
-                        m_pRandNum.reset( rnd );
-                        ds.read( m_pRandNum.get(), H5::Equiv<std::uint_fast32_t>::Type );
-                      }
-                    }
-                  }
-                  catch(const ::H5::Exception &)
-                  {
-                    ::H5::Exception::clearErrorStack();
-                    m_pRandNum.reset( nullptr );
-                  }
-                  try // to read the raw data
-                  {
-                    dsp.close();
-                    ds.close();
-                    ds = g.openDataSet( "samples_Raw" );
-                    dsp = ds.getSpace();
-                    if( dsp.getSimpleExtentNdims() == 2 )
-                    {
-                      dsp.getSimpleExtentDims( Dim );
-                      if( Dim[0] < std::numeric_limits<int>::max() && Dim[1] == static_cast<unsigned int>( Nt_ ) )
-                      {
-                        ds.read( resizeRaw( static_cast<int>( Dim[0] ) ), H5::Equiv<T>::Type );
-                      }
-                    }
-                  }
-                  catch(const ::H5::Exception &)
-                  {
-                    ::H5::Exception::clearErrorStack();
-                    resizeRaw( 0 );
-                  }
-                  // resizeRaw() resets this, so had to delay setting bRawBootstrap 'til now
-                  bRawBootstrap = ( i8RawBootstrap != 0 );
-                  try // to read the binned data
-                  {
-                    dsp.close();
-                    ds.close();
-                    ds = g.openDataSet( "samples_Binned" );
-                    dsp = ds.getSpace();
-                    if( dsp.getSimpleExtentNdims() == 2 )
-                    {
-                      dsp.getSimpleExtentDims( Dim );
-                      if( Dim[0] < std::numeric_limits<int>::max() && Dim[1] == static_cast<unsigned int>( Nt_ ) )
-                      {
-                        ds.read( resizeBinned( static_cast<int>( Dim[0] ) ), H5::Equiv<T>::Type );
-                      }
-                    }
-                  }
-                  catch(const ::H5::Exception &)
-                  {
-                    ::H5::Exception::clearErrorStack();
-                    resizeBinned( 0 );
-                  }
+              Matrix<fint> Random;
+              H5::ReadMatrix( g, RandomCache::sRandom, Random );
+              if( Random.size2 != SampleSize )
+                throw std::runtime_error( "SampleSize = " + std::to_string( SampleSize ) + " but "
+                                         + std::to_string( Random.size2 ) + " random columns read" );
+              if( Random.size1 != att_nSample )
+                throw std::runtime_error( "nSample = " + std::to_string( att_nSample ) + " but "
+                                         + std::to_string( Random.size1 ) + " random replicas read" );
+              RandomCache::Global.Put( Seed(), Random );
+            }
+            catch(const ::H5::Exception &)
+            {
+              ::H5::Exception::clearErrorStack();
+              Binned[0].clear();
+            }
                   if( SummaryNames.empty() )
                     bOK = true;
                   else
@@ -2579,8 +2505,7 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
                     ds.close();
                     ds = g.openDataSet( sSummaryDSName );
                     dsp = ds.getSpace();
-                    nDims = dsp.getSimpleExtentNdims();
-                    if( nDims == 2 )
+                    if( dsp.getSimpleExtentNdims() == 2 )
                     {
                       dsp.getSimpleExtentDims( Dim );
                       if( Dim[0] == SummaryNames.size() && Dim[1] == static_cast<unsigned int>(Nt_) )
@@ -2591,29 +2516,25 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
                           const std::size_t Count{ SummaryNames.size() * Nt_ };
                           std::vector<ValWithErOldV1<scalar_type>> tmp( Count );
                           ds.read( &tmp[0], ErrType );
-                          ValWithEr<scalar_type> * dst{ m_pSummaryData.get() };
                           for( std::size_t i = 0; i < Count; ++i )
                           {
-                            dst[i].Central = tmp[i].Central;
-                            dst[i].Low     = tmp[i].Low;
-                            dst[i].High    = tmp[i].High;
-                            dst[i].Check   = tmp[i].Check;
-                            dst[i].Min     = 0;
-                            dst[i].Max     = 0;
+                            m_SummaryData[i].Central = tmp[i].Central;
+                            m_SummaryData[i].Low     = tmp[i].Low;
+                            m_SummaryData[i].High    = tmp[i].High;
+                            m_SummaryData[i].Check   = tmp[i].Check;
+                            m_SummaryData[i].Min     = 0;
+                            m_SummaryData[i].Max     = 0;
                           }
                           bOK = true;
                         }
                         else
                         {
-                          ds.read( m_pSummaryData.get(), H5::Equiv<ValWithEr<scalar_type>>::Type );
+                          ds.read( &m_SummaryData[0], H5::Equiv<ValWithEr<scalar_type>>::Type );
                           bOK = true;
                         }
                       }
                     }
                   }
-                }
-              }
-            }
           }
         }
       }
@@ -2625,20 +2546,23 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       bOK = false;
       ::H5::Exception::clearErrorStack();
     }
+    catch(...)
+    {
+      ::H5::Exception::setAutoPrint(h5at, f5at_p);
+      resize( 0, 0 );
+      throw;
+    }
   }
   ::H5::Exception::setAutoPrint(h5at, f5at_p);
-  if( bFiniteError || !bOK )
+  if( !bOK )
   {
     resize( 0, 0 ); // We can use NumSamples() == 0 or Nt() == 0 to tell whether the file is open
-    if( bFiniteError )
-      throw std::runtime_error( "NANs in " + Name_.Filename );
-    //if( !bOK )
-      throw std::runtime_error( "Unable to read sample from " + Name_.Filename );
+    throw std::runtime_error( "Unable to read sample from " + Name_.Filename );
   }
 }
 
 template <typename T>
-void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
+void Sample<T>::Write( const std::string &FileName, bool bFatFile, const char * pszGroupName )
 {
   SetName( FileName );
   const std::string GroupName{ pszGroupName == nullptr || *pszGroupName == 0 ? DefaultGroupName() : pszGroupName };
@@ -2655,27 +2579,23 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
     a.write( ::H5::PredType::NATIVE_INT, &tmp );
     a.close();
     a = g.createAttribute( "nSample", ::H5::PredType::STD_U32LE, ds1 );
-    a.write( ::H5::PredType::NATIVE_INT, &NumSamples_ );
+    tmp = NumSamples();
+    a.write( ::H5::PredType::NATIVE_INT, &tmp );
     a.close();
     int NumAttributes = 2;
-    if( Seed_ )
+    if( Seed() )
     {
-      const SeedType tmp{ Seed_ };
-      a = g.createAttribute( sSeed, ::H5::PredType::STD_U32LE, ds1 );
+      const SeedType tmp{ Seed() };
+      a = g.createAttribute( RandomCache::sSeed, ::H5::PredType::STD_U32LE, ds1 );
       a.write( H5::Equiv<SeedType>::Type, &tmp );
       a.close();
       NumAttributes++;
     }
     if( !SeedMachine_.empty() )
     {
-      a = g.createAttribute( sSeedMachine, H5::Equiv<std::string>::Type, ds1 );
+      a = g.createAttribute( RandomCache::sSeedMachine, H5::Equiv<std::string>::Type, ds1 );
       a.write( H5::Equiv<std::string>::Type, SeedMachine_ );
       a.close();
-      NumAttributes++;
-    }
-    if( AuxNames.size() )
-    {
-      H5::WriteAttribute( g, sAuxNames, AuxNames );
       NumAttributes++;
     }
     if( SummaryNames.size() )
@@ -2713,79 +2633,40 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
       dsp.close();
       NumAttributes++;
     }
-    const std::int8_t i8{ 1 };
-    if( bRawBootstrap )
-    {
-      a = g.createAttribute( sRawBootstrap, ::H5::PredType::STD_U8LE, ds1 );
-      a.write( ::H5::PredType::NATIVE_INT8, &i8 );
-      a.close();
-      NumAttributes++;
-    }
     NumAttributes += WriteAttributes( g );
     if( FileList.size() )
       H5::WriteStringData( g, sFileList, FileList );
-    if( NumExtraSamples == 1 )
+    // If I don't have binned data, I must save the bootstrap (because it can't be recreated)
+    if( bFatFile || Binned[0].Empty() )
     {
-      Dims[0] = Nt_;
-      dsp = ::H5::DataSpace( 1, Dims );
+      Data[0].Write( g, "data" );
+      if( Seed() != SeedWildcard && SampleSize )
+      {
+        const fint &cSeed{ Seed() };
+        Matrix<fint> mRnd{ RandomCache::Global.Get( cSeed, SampleSize, Data[0].Central.size ) };
+        Dims[0] = mRnd.size1;
+        Dims[1] = mRnd.size2;
+        dsp = ::H5::DataSpace( 2, Dims );
+        // The values in this table go from 0 ... NumSamples_ + 1, so choose a space-minimising size in the file
+        ::H5::DataSet ds = g.createDataSet( RandomCache::sRandom, SampleSize<=static_cast<int>(std::numeric_limits<std::uint8_t>::max())
+          ? ::H5::PredType::STD_U8LE : SampleSize<=static_cast<int>(std::numeric_limits<std::uint16_t>::max())
+          ? ::H5::PredType::STD_U16LE: ::H5::PredType::STD_U32LE, dsp );
+        ds.write( mRnd.Data(), H5::Equiv<std::uint_fast32_t>::Type );
+        ds.close();
+        dsp.close();
+      }
     }
-    else
-    {
-      Dims[0] = NumExtraSamples;
-      Dims[1] = Nt_;
-      dsp = ::H5::DataSpace( 2, Dims );
-    }
-    ::H5::DataSet ds = g.createDataSet( "data_C", H5::Equiv<T>::Type, dsp );
-    ds.write( (*this)[-NumExtraSamples], H5::Equiv<T>::Type );
-    ds.close();
-    dsp.close();
-    Dims[0] = NumSamples_;
-    Dims[1] = Nt_;
-    dsp = ::H5::DataSpace( 2, Dims );
-    ds = g.createDataSet( "data_S", H5::Equiv<T>::Type, dsp );
-    ds.write( (*this)[0], H5::Equiv<T>::Type );
-    ds.close();
-    dsp.close();
-    if( getRaw() )
-    {
-      Dims[0] = NumSamplesRaw_;
-      Dims[1] = Nt_;
-      dsp = ::H5::DataSpace( 2, Dims );
-      ds = g.createDataSet( "samples_Raw", H5::Equiv<T>::Type, dsp );
-      ds.write( getRaw(), H5::Equiv<T>::Type );
-      ds.close();
-      dsp.close();
-    }
-    if( getBinned() )
-    {
-      Dims[0] = NumSamplesBinned_;
-      Dims[1] = Nt_;
-      dsp = ::H5::DataSpace( 2, Dims );
-      ds = g.createDataSet( "samples_Binned", H5::Equiv<T>::Type, dsp );
-      ds.write( getBinned(), H5::Equiv<T>::Type );
-      ds.close();
-      dsp.close();
-    }
+    if( !Raw.Empty() )
+      H5::WriteMatrix( g, "samples_Raw", Raw );
+    if( !Binned[0].Empty() )
+      H5::WriteMatrix( g, "samples_Binned", Binned[0] );
     if( SummaryNames.size() )
     {
       Dims[0] = SummaryNames.size();
       Dims[1] = Nt_;
       dsp = ::H5::DataSpace( 2, Dims );
-      ds = g.createDataSet( sSummaryDSName, H5::Equiv<ValWithEr<scalar_type>>::Type, dsp );
-      ds.write( m_pSummaryData.get(), H5::Equiv<ValWithEr<scalar_type>>::Type );
-      ds.close();
-      dsp.close();
-    }
-    if( m_pRandNum )
-    {
-      Dims[0] = NumSamples_;
-      Dims[1] = SampleSize;
-      dsp = ::H5::DataSpace( 2, Dims );
-      // The values in this table go from 0 ... NumSamples_ + 1, so choose a space-minimising size in the file
-      ds = g.createDataSet( sRandom, SampleSize<=static_cast<int>(std::numeric_limits<std::uint8_t>::max())
-        ? ::H5::PredType::STD_U8LE : SampleSize<=static_cast<int>(std::numeric_limits<std::uint16_t>::max())
-        ? ::H5::PredType::STD_U16LE: ::H5::PredType::STD_U32LE, dsp );
-      ds.write( m_pRandNum.get(), H5::Equiv<std::uint_fast32_t>::Type );
+      ::H5::DataSet ds = g.createDataSet( sSummaryDSName, H5::Equiv<ValWithEr<scalar_type>>::Type, dsp );
+      ds.write( &SummaryData(0,0), H5::Equiv<ValWithEr<scalar_type>>::Type );
       ds.close();
       dsp.close();
     }
@@ -3070,7 +2951,7 @@ struct Model : public Sample<T>, public ModelBase
     // Unfreezing the covariance matrix makes a big difference!
     if( ( CovarFrozen && !covarFrozen_ ) || ( !CovarFrozen && covarFrozen_ ) )
       return CovarFrozen;
-    return NumSamples > Base::NumSamples_;
+    return NumSamples > Base::NumSamples();
   }
   /*void Read( const char *PrintPrefix = nullptr, std::string *pGroupName =nullptr )
   {
@@ -3101,7 +2982,8 @@ struct Model : public Sample<T>, public ModelBase
 protected:
   int OldFormatNumExponents;
   std::vector<std::string> OldFormatOpNames;
-  void ReorderOldFormat( int NumOps, int NumExponents, std::unique_ptr<T[]> &pData, int Num );
+  void ReorderOldFormat( int NumOps, int NumExponents, Vector<T> &m );
+  void ReorderOldFormat( int NumOps, int NumExponents, Matrix<T> &m );
   void CommonConstruct( const std::vector<std::string> &ExtraColumns );
   void SummaryContentsPrefix( std::ostream &os ) const;
   void SummaryContentsSuffix( std::ostream &os ) const;
@@ -3135,11 +3017,27 @@ struct DataSet
   std::vector<int> RebinSize; // Bin sizes if I've rebinned the raw data
   int OriginalBinSize;        // Bin size before any rebinning (to deal with covariance matrices)
   // Cached data for selected FitTimes
-  Vector<T> vCentral;
-  Matrix<T> mRaw;
+  JackBoot<T> mFitData;
+  // This is where the covariance matrix comes from
+  // mBinned  mCorrel Meaning
+  // data     empty   Fully unfrozen. Covariance matrix built from binned data on each replica
+  // data     data    Semi-frozen. mCorrel scaled by variance on each replica
+  // empty    data    Frozen. The same covariance matrix is used on every replica
   Matrix<T> mBinned;
-  Matrix<T> mBoot;
-  const Matrix<T> &Cache( SampleSource ss ) const
+  Matrix<T> mCorrel;
+  Vector<T> mCorrelCentralMean;     // This is the mean on the central replica
+  Vector<T> mCorrelCentralVariance; // This is the variance on the central replica
+  Vector<T> mCorrelCentralVarInv;   // Inverse of previous
+  SampleSource CovarSource = SS::Bootstrap;
+  int idxJackBootCovarSource = 0;
+  bool bFrozenCovarSource = false;
+  void SetCovarSource( SampleSource ss, int idxJackBoot, bool bFrozen )
+  {
+    CovarSource = ss;
+    idxJackBootCovarSource = idxJackBoot;
+    bFrozenCovarSource = bFrozen;
+  }
+  /*const Matrix<T> &Cache( SampleSource ss ) const
   {
     const Matrix<T> &m{ ss == SampleSource::Bootstrap ? mBoot : ss == SampleSource::Binned ? mBinned : mRaw };
     if( m.size1 == 0 || m.size2 == 0 )
@@ -3149,7 +3047,7 @@ struct DataSet
       throw std::runtime_error( s.str().c_str() );
     }
     return m;
-  }
+  }*/
 protected:
   std::array<std::vector<fint>, 2> RandomCentralBuf; // No replacement. Saves having to rebuild continually
   std::array< MatrixView<fint>, 2> RandomViews;
@@ -3157,7 +3055,8 @@ protected:
   std::vector<Model<T>> constFile;// Each of the constant files (i.e. results from previous fits) I've loaded
   void AddConstant( const Param::Key &Key, std::size_t File, const Param &param );
   void SetValidatedFitTimes( std::vector<std::vector<int>> &&FitTimes );
-  void MakeCentralReplicaNonRandom();
+  /// Cache the fit data, i.e. JackBoot[0]. Parameters describe the covariance source
+  void CacheRawData();
 public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
   inline bool empty() const { return corr.empty() && constFile.empty(); }
@@ -3168,20 +3067,15 @@ public:
   std::vector<std::string> GetModelFilenames() const;
   void SortOpNames( std::vector<std::string> &OpNames );
   void Rebin( const std::vector<int> &RebinSize );
-  int NumSamplesBinned() const; // Minimum number of binned samples supported by all correlators
+  /// Minimum number of samples supported by all correlators
+  int NumSamples( SampleSource ss, int idxJackBoot = 0 ) const;
+  inline int NumSamplesBinned() const { return NumSamples( SS::Binned, 0 ); }
   void SetFitTimes( const std::vector<std::vector<int>> &FitTimes ); // A list of all the timeslices to include
   void SetFitTimes( int tMin, int tMax ); // All fit ranges are the same
-  void GetData( int idx, VectorView<T> &vResult, SS ss = SS::Bootstrap ) const
-  {
-    if( idx == Fold<T>::idxCentral )
-      vResult = vCentral;
-    else
-      vResult.MapRow( Cache( ss ), idx );
-  }
+        JackBoot<T> &GetData()       { return mFitData; }
+  const JackBoot<T> &GetData() const { return mFitData; }
   void GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedParam> &Params ) const;
-  bool InitRandomNumbers( SS ss ); // Make sure random numbers needed to build covariances are present
-  void InitRandomNumbers() { InitRandomNumbers( SS::Raw ); InitRandomNumbers( SS::Binned ); }
-  const std::vector<fint> &RandomCentral( SS ss ) const
+  /*const std::vector<fint> &RandomCentral( SS ss ) const
   {
     const std::vector<fint> &r{ RandomCentralBuf[ ss == SS::Raw ? 0 : 1 ] };
     if( !( ss == SS::Binned || ss == SS::Raw ) || r.empty() )
@@ -3215,7 +3109,7 @@ public:
   void MakeVariance( int idx, SS ss, Vector<T> &Covar ) const;
   // Make covariance matrix using a secondary bootstrap - Random numbers must be provided by caller
   // I.e. unfrozen covariance matrix
-  void MakeCovariance( int idx, SS ss, Matrix<T> &Covar, const MatrixView<fint> &Random)const;
+  void MakeCovariance( int idx, SS ss, Matrix<T> &Covar, const MatrixView<fint> &Random)const;*/
   void SaveMatrixFile( const Matrix<T> &m, const std::string &Type, const std::string &FileName,
                        std::vector<std::string> &Abbreviations,
                        const std::vector<std::string> *FileComments = nullptr,

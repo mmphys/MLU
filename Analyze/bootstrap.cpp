@@ -29,6 +29,10 @@
 
 #include "bootstrap.hpp"
 
+using Scalar = Common::SampleC::value_type;
+using Vector = Common::Vector<Scalar>;
+using Matrix = Common::Matrix<Scalar>;
+
 static const char szError[]{ "Error: " };
 static const char szWarning[]{ "Warning: " };
 
@@ -98,19 +102,19 @@ void TrajFile::Reverse( Common::CorrelatorFileC &File ) const
   }
 }
 
-BootstrapParams::BootstrapParams( const Common::CommandLine &cl, const std::string MachineNameActual )
+BootstrapParams::BootstrapParams( const Common::CommandLine &cl )
 : b2ptSymOp{ cl.GotSwitch( "symop" ) },
   b2ptSortZeroMom{ !cl.GotSwitch( "nosort" ) },
   bOverwrite{ cl.GotSwitch( "overwrite" ) },
   bVerboseSummaries{ !cl.GotSwitch( "terse" ) },
+  bFat{ !cl.GotSwitch( "fat" ) },
   TimesliceDetail{ cl.SwitchValue<int>( "t" ) },
   nSample{ cl.SwitchValue<int>( "n" ) },
   binSize{ cl.SwitchValue<int>( "b" ) },
   binAuto{ binSize == 0 },
   binOrder{ cl.SwitchValue<BinOrder>( "border" ) },
   seed{ GetSeedType( cl ) },
-  outStem{ cl.SwitchValue<std::string>( "o" ) },
-  MachineName{ cl.GotSwitch( "m" ) ? cl.SwitchValue<std::string>( "m" ) : MachineNameActual }
+  outStem{ cl.SwitchValue<std::string>( "o" ) }
 {
   if( TimesliceDetail < 0 || TimesliceDetail > 2 )
     throw std::invalid_argument( "Timeslice detail " + std::to_string( TimesliceDetail ) + " invalid" );
@@ -119,39 +123,31 @@ BootstrapParams::BootstrapParams( const Common::CommandLine &cl, const std::stri
     throw std::runtime_error( "Bin size must be positive if specified" );
   if( binAuto && binOrder != BinOrder::Auto )
     throw std::runtime_error( "Auto binning only works with Auto order" );
-  if( MachineName.empty() )
+  if( Common::GetHostName().empty() )
     throw std::invalid_argument( "Machine name can't be empty" );
   Common::MakeAncestorDirs( outStem );
 }
 
 Common::SeedType BootstrapParams::GetSeedType( const Common::CommandLine &cl )
 {
-  Common::SeedType MySeed;
-  if( cl.GotSwitch( "r" ) )
+  // Set machine name first - in case seed loaded from file (which will overwrite machine name)
+  if( cl.GotSwitch( "m" ) )
+    Common::SetHostName( cl.SwitchValue<std::string>( "m" ) );
+  if( cl.GotSwitch( "saveseed" ) )
   {
-    bool bGotSeed{ true };
-    try // to interpret the switch as the random number
-    {
-      MySeed = cl.SwitchValue<Common::SeedType>( "r" );
-    }
-    catch(const std::exception &e)
-    {
-      bGotSeed = false;
-    }
-    if( !bGotSeed ) // Wasn't a random number - see whether it's a file containing random numbers
-    {
-      RandomSample.Read( cl.SwitchValue<std::string>( "r" ) );
-      if( !RandomSample.RandNum() )
-        throw std::runtime_error( "No random numbers in " + cl.SwitchValue<std::string>( "r" ) );
-      MySeed = RandomSample.Seed_;
-    }
+    Common::RandomCache::Global.SaveRandomPrefix = cl.SwitchValue<std::string>( "saveseed" );
+    if( !Common::RandomCache::Global.SaveRandomPrefix.empty() )
+      std::cout << "Saving a copy of random number seeds in "
+                << Common::RandomCache::Global.SaveRandomPrefix << Common::NewLine;
   }
+  if( cl.GotSwitch( "r" ) )
+    Common::RandomCache::DefaultSeed( cl.SwitchValue<std::string>( "r" ) );
   else
   {
     std::random_device rd;
-    MySeed = rd();
+    Common::RandomCache::DefaultSeed( static_cast<Common::SeedType>( rd() ) );
   }
-  return MySeed;
+  return Common::RandomCache::DefaultSeed();
 }
 
 void CopyTimeSlice( std::complex<double> *&pDst, const std::complex<double> *pSrc, int Nt, int TOffset )
@@ -201,7 +197,8 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
   for( auto it = ConfigCount.begin(); it != ConfigCount.end(); ++it )
     out.ConfigCount.emplace_back( it->first, it->second );
   ConfigCount.clear();
-  std::complex<double> * pDst = out.resizeRaw( NumSamplesRaw );
+  std::size_t Row{};
+  Matrix &mDst{ out.resizeRaw( NumSamplesRaw ) };
 
   // Now gather the raw data, aligning timeslices
   const int Nt{ out.Nt() };
@@ -222,7 +219,8 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
         const double Scale{ 1. / p.x };
         const std::complex<double> * const pSrc = (*file)( Algebra::GammaX, Src );
         for( int t = 0; t < Nt; t++ )
-          *pDst++ = pSrc[ ( t + TOffset ) % Nt ] * Scale;
+          mDst(Row,t) = pSrc[ ( t + TOffset ) % Nt ] * Scale;
+        ++Row;
       }
       if( p.y )
       {
@@ -232,7 +230,8 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
         const double Scale{ 1. / p.y };
         const std::complex<double> * const pSrc = (*file)( Algebra::GammaY, Src );
         for( int t = 0; t < Nt; t++ )
-          *pDst++ = pSrc[ ( t + TOffset ) % Nt ] * Scale;
+          mDst(Row,t) = pSrc[ ( t + TOffset ) % Nt ] * Scale;
+        ++Row;
       }
       if( p.z )
       {
@@ -242,7 +241,8 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
         const double Scale{ 1. / p.z };
         const std::complex<double> * const pSrc = (*file)( Algebra::GammaZ, Src );
         for( int t = 0; t < Nt; t++ )
-          *pDst++ = pSrc[ ( t + TOffset ) % Nt ] * Scale;
+          mDst(Row,t) = pSrc[ ( t + TOffset ) % Nt ] * Scale;
+        ++Row;
       }
     }
     else
@@ -260,7 +260,8 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
         out.FileList.emplace_back( Filename );
         const std::complex<double> * const pSrc = (*file)( ThisSnk, ThisSrc );
         for( int t = 0; t < Nt; t++ )
-          *pDst++ = pSrc[ ( t + TOffset ) % Nt ];
+          mDst(Row,t) = pSrc[ ( t + TOffset ) % Nt ];
+        ++Row;
       }
     }
   }
@@ -269,9 +270,9 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
   //if( binAuto && out.ConfigCount.size() > 1 ) out.Bin();
   //else out.Bin( ( binAuto ? 1 : binSize ) * OpFactor );
   if( binAuto )
-    out.Bin();
+    out.BinAuto();
   else
-    out.Bin( binSize * OpFactor );
+    out.BinFixed( binSize * OpFactor );
   return true;
 }
 
@@ -348,15 +349,12 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
         if( GatherInput( out, first, last, Traj, SinkAlgebra[Snk], SourceAlgebra[Src], bAlignTimeslices ) )
         {
           std::cout << sBlanks << nSample << " samples to " << sOutFile << std::endl;
-          if( RandomSample.RandNum() )
-            out.Bootstrap( RandomSample );
-          else
-            out.Bootstrap( seed, &MachineName );
+          out.Resample();
           // Now save the audit data for the bootstrap
-          out.MakeCorrSummary( nullptr );
+          out.MakeCorrSummary();
           try {
           if( bSaveBootstrap )
-            out.Write( sOutFile );
+            out.Write( sOutFile, bFat );
           if( bSaveSummaries )
             out.WriteSummary( sSummary, bVerboseSummaries );
           iCount++;
@@ -992,6 +990,7 @@ int main(const int argc, const char *argv[])
   static const char DefaultERE[]{ R"(^([PWpw])([PWpw])_)" };
   static const char DefaultIgnore[]{ "[hH][iI][tT]_[^_]+" };
   static const char DefaultIgnoreMomenta[]{ "pq2" };
+  static const char DefaultSaveSeed[]{ "Random/" };
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
@@ -1016,6 +1015,8 @@ int main(const int argc, const char *argv[])
       {"x", CL::SwitchType::Multiple, nullptr},
       {"symop", CL::SwitchType::Flag, nullptr},
       {"s", CL::SwitchType::Flag, nullptr},
+      {"fat", CL::SwitchType::Flag, nullptr},
+      {"saveseed",CL::SwitchType::Single, DefaultSaveSeed},
       {"overwrite", CL::SwitchType::Flag, nullptr},
       {"p2",CL::SwitchType::Flag, nullptr},
       {"pa",CL::SwitchType::Flag, nullptr},
@@ -1032,7 +1033,7 @@ int main(const int argc, const char *argv[])
     cl.Parse( argc, argv, list );
     if( !cl.GotSwitch( "help" ) )
     {
-      BootstrapParams par( cl, MachineName );
+      BootstrapParams par( cl );
       Manifest Man{ cl, par };
       // If there are files specified on the command line,
       // parse the input file names, grouping by correlator, indexed by trajectory.
@@ -1067,7 +1068,7 @@ int main(const int argc, const char *argv[])
     "-b     Bin size, or 0 (default)=auto (1 config=no binning, else 1 bin/config)\n"
     "--border Bin Order: `Auto' (default)=config then timeslice then filename\n"
     "        `Old'=timeslice/filename/config, `VeryOld'=timeslice/config/filename\n"
-    "-r     Random number seed (unspecified=random)\n"
+    "-r     Random number seed or text file to load from (default=random)\n"
     "-i     Input  prefix\n"
     "-o     Output prefix\n"
     "-a     list of gamma Algebras we're interested in at source (and sink for 2pt)\n"
@@ -1080,6 +1081,8 @@ int main(const int argc, const char *argv[])
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
     "-s     Perform bootstrap for specified study numbers\n"
+    "--fat  Write bootstrapped replicas and random numbers to file\n"
+    "--saveseed  Prefix for location to save random numbers (default: " << DefaultSaveSeed << ")\n"
     "--overwrite Overwrite existing files (default skip)\n"
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"

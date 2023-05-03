@@ -58,23 +58,47 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-m Tursa -r 1835672416"
+            argument = "-m BTursa"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--saveseed &apos;&apos;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-r 1835672416"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-r JackKnife"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-r /Volumes/QCD/tursa/semilep/data/C1/Test/quark_l_h6413_gT_dt_20_p2_0_ps2_1_g5P_g5W.bootstrap.1835672416.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-ag5 --p2"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-cgT,-gXYZ "
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i /Volumes/QCD/tursa/semilep/data/M1/M1."
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-ag5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o boot/2ptp2/ --p2 2pt/880/2pt/ZFPP/&apos;*&apos;_s_s_p_&apos;*&apos;_t_[0-9]{,[0-9]{,[0-9]}}.&apos;*&apos;.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o boot/3pt_sp2/ --p2 -cgT,-gXYZ cpu/880/3pt_s/ZFPP_quark/&apos;*&apos;.h5"
+            argument = "-o boot/2ptp2/ 2pt/880/2pt/ZFPP/&apos;*&apos;_s_s_p_&apos;*&apos;_t_[0-9]{,[0-9]{,[0-9]}}.&apos;*&apos;.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o boot/3pt_sp2/ cpu/880/3pt_s/ZFPP_quark/&apos;*&apos;.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o boot/test/ -i boot/Test3pt/ &apos;*&apos;.h5"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

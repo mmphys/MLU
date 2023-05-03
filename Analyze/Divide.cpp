@@ -178,16 +178,16 @@ void Params::ReadNumerator( const std::string &FileName )
   if( bFold )
   {
     fNumerator.Read( FileName, sNumerator, &opNames );
-    Normalise( fNumerator[-fNumerator.GetNumExtraSamples()],
-               fNumerator.GetNumExtraSamples() + fNumerator.NumSamples(), fNumerator.Nt(),
+    Normalise( fNumerator[Fold::idxCentral],
+               fNumerator.NumSamples() - Fold::idxCentral, fNumerator.Nt(),
                fNumerator.Name_.op, opNames );
     DivideFold( fNumerator, fDenominator );
   }
   else
   {
     bNumerator.Read( FileName, sNumerator, &opNames );
-    Normalise( bNumerator[-bNumerator.GetNumExtraSamples()],
-               bNumerator.GetNumExtraSamples() + bNumerator.NumSamples(), bNumerator.Nt(),
+    Normalise( bNumerator[Boot::idxCentral],
+               bNumerator.NumSamples() - Boot::idxCentral, bNumerator.Nt(),
                bNumerator.Name_.op, opNames );
     DivideBoot( bNumerator, bDenominator );
   }
@@ -210,8 +210,8 @@ void Params::Run( const Common::CommandLine &cl, bool &bShowUsage )
       try
       {
         fDenominator.Read( Filename[FileNum], nullptr, &opNames, &GroupName );
-        Normalise( fDenominator[-fDenominator.GetNumExtraSamples()],
-                   fDenominator.GetNumExtraSamples() + fDenominator.NumSamples(), fDenominator.Nt(),
+        Normalise( fDenominator[Fold::idxCentral],
+                   fDenominator.NumSamples() - Fold::idxCentral, fDenominator.Nt(),
                    fDenominator.Name_.op, opNames );
         bFold = true;
       } catch (const std::exception &e) {
@@ -221,8 +221,8 @@ void Params::Run( const Common::CommandLine &cl, bool &bShowUsage )
         GroupName.clear();
         opNames.clear();
         bDenominator.Read( Filename[FileNum], nullptr, &opNames, &GroupName );
-        Normalise( bDenominator[-bDenominator.GetNumExtraSamples()],
-                   bDenominator.GetNumExtraSamples() + bDenominator.NumSamples(), bDenominator.Nt(),
+        Normalise( bDenominator[Boot::idxCentral],
+                   bDenominator.NumSamples() - Boot::idxCentral, bDenominator.Nt(),
                    bDenominator.Name_.op, opNames );
       }
       std::cout << "Denominator " << GroupName << Common::Space << Filename[FileNum] << Common::NewLine;

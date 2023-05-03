@@ -34,6 +34,7 @@
 #include <complex>
 #include <cstdint>
 #include <iostream>
+#include <math.h>
 #include <vector>
 
 // GSL
@@ -50,6 +51,8 @@
 #include <gsl/gsl_vector.h>
 
 MLU_GSLVecMat_hpp
+
+extern const double NaN;
 
 using fint = std::uint_fast32_t; // type for random numbers
 
@@ -83,10 +86,28 @@ ComponentAbs( T c ) { return { std::abs( c.real() ), std::abs( c.imag() ) }; }
 template<typename T> typename std::enable_if<!(is_complex<T>::value), T>::type
 ComponentAbs( T r ) { return std::abs( r ); }
 
+// Component-wise minimum for complex types
+template<typename T> typename std::enable_if<is_complex<T>::value, T>::type
+ComponentMin( const T &a, const T &b ) { return T( std::min( a.real(), b.real() ),
+                                                   std::min( a.imag(), b.imag() ) ); }
+
+// Component-wise minimum for scalars
+template<typename T> typename std::enable_if<!(is_complex<T>::value), T>::type
+ComponentMin( const T &a, const T &b ) { return std::min( a, b ); }
+
+// Component-wise minimum for complex types
+template<typename T> typename std::enable_if<is_complex<T>::value, T>::type
+ComponentMax( const T &a, const T &b ) { return T( std::max( a.real(), b.real() ),
+                                                   std::max( a.imag(), b.imag() ) ); }
+
+// Component-wise minimum for scalars
+template<typename T> typename std::enable_if<!(is_complex<T>::value), T>::type
+ComponentMax( const T &a, const T &b ) { return std::max( a, b ); }
+
 // IsFinite() for floats and complex types
 template<typename T> inline typename std::enable_if<is_complex<T>::value, bool>::type
 IsFinite( const T &c ) { return std::isfinite( c.real() ) && std::isfinite( c.imag() ); }
-template<typename T> inline typename std::enable_if<std::is_floating_point<T>::value, bool>::type
+template<typename T> inline typename std::enable_if<!is_complex<T>::value, bool>::type
 IsFinite( const T &c ) { return std::isfinite( c ); }
 
 // Are all the floating point numbers pointed to finite

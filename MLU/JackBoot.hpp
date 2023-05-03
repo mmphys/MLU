@@ -47,11 +47,29 @@ extern const std::string s_C;
  */
 struct RandomCache
 {
+  static const std::string sSeed;
+  static const std::string sSeedMachine;
+  static const std::string sRandom;
+  static std::string SaveRandomPrefix;
   static SeedType DefaultSeed();
   static SeedType DefaultSeed( SeedType NewDefaultSeed );
+  /// Set default seed, eg from command-line switch. NB: Can be a random number file
+  static void     DefaultSeed( const std::string &SeedOrFile );
   static std::size_t DefaultNumReplicas();
   static std::size_t DefaultNumReplicas( std::size_t NewDefaultNumReplicas );
   static RandomCache Global; // This is the global cache random numbers come from
+  inline static SeedType Seed( const std::string &TextSeed )
+  {
+    if( EqualIgnoreCase( TextSeed, "jackknife" ) )
+      return SeedWildcard;
+    return FromString<SeedType>( TextSeed );
+  }
+  inline static std::string SeedString( SeedType Seed )
+  {
+    if( Seed == SeedWildcard )
+      return "jackknife";
+    return std::to_string( Seed );
+  }
 protected:
   static bool DefaultSeedOK;
   static SeedType DefaultSeed_;
@@ -69,6 +87,7 @@ protected:
   /// Make random numbers for a bootstrap sample
   Matrix<fint> Make( fint &Seed, std::size_t NumSamples, std::size_t NumReplicas
                                                           = DefaultNumReplicas());
+  static void SaveRandom( const Key &key, const Matrix<fint> &Random );
 public:
   /** Get random numbers for the given Seed and NumSamples
    
@@ -82,17 +101,19 @@ public:
   Matrix<fint> Get( const fint &Seed, std::size_t NumSamples, std::size_t NumReplicas
                                                                 = DefaultNumReplicas() );
   /// Put random numbers in cache (probably loaded from file). Throw error if incompatible
-  void Put( fint &Seed, Matrix<fint> &Random );
+  void Put( fint Seed, Matrix<fint> &Random );
 };
 
 struct JackBootBase
 {
+  /// Guaranteed that incrementing idxCentral moves to record zero
+  static constexpr std::size_t idxCentral{ std::numeric_limits<std::size_t>::max() };
   enum class Norm{ RawBinned,   // Sample covariance OF MEAN from raw / binned data
                    Bootstrap,   // Sample covariance OF MEAN from bootstraps
                    Jackknife,   // Sample covariance OF MEAN from Jackknife
                    SampleCovar};// Sample covariance from raw / binned data
   static void GetRandom( Vector<fint> &vRandom, fint Seed,
-                         std::size_t NumSamples, std::size_t NumReplicas, int Replica );
+                         std::size_t NumSamples, std::size_t NumReplicas, std::size_t Replica );
 };
 
 std::ostream &operator<<( std::ostream &os, JackBootBase::Norm norm );
@@ -100,20 +121,35 @@ std::ostream &operator<<( std::ostream &os, JackBootBase::Norm norm );
 /// Jackknife or Bootstrap replicas with central value
 template<typename T> struct JackBoot : public JackBootBase
 {
+  static constexpr std::size_t idxCentral{ JackBootBase::idxCentral };
   using Norm = JackBootBase::Norm;
   using Real = typename is_complex<T>::Scalar;
-  static constexpr int idxCentral{ -1 };
   Vector<T> Central;
   Matrix<T> Replica;
   /// bootstrap: random number seed for this sample. SeedWildcard = jackknife
   SeedType Seed = RandomCache::DefaultSeed();
   void clear() { Central.clear(); Replica.clear(); Seed = RandomCache::DefaultSeed(); }
+  inline T &operator()( std::size_t Row, std::size_t Column )
+  {
+    if( Row == idxCentral )
+      return Central[Column];
+    return Replica( Row, Column );
+  }
+  inline const T &operator()( std::size_t Row, std::size_t Column ) const
+  {
+    if( Row == idxCentral )
+      return Central[Column];
+    return Replica( Row, Column );
+  }
+  inline std::string SeedString() const { return RandomCache::SeedString( Seed ); }
   static Real GetNorm( Norm norm, std::size_t NumReplicas );
   /// Make the mean of any matrix
   static void MakeMean( Vector<T> &vCentral, const MatrixView<T> &Source );
   /// Perform jackknife or bootstrap (based on seed) resampling
   /// NumBoot is the number of bootstrap replicas (ignored for jackknife)
   void Resample( const MatrixView<T> &Source, std::size_t NumBoot );
+  /// Make statistics for this sample
+  void MakeStatistics( std::vector<ValWithEr<T>> &vStats ) const;
   /**
    Make covariance matrix or variance vector given any matrix (raw/binned, bootstrap or jackknife) and a vector of central values.
    
@@ -131,50 +167,62 @@ template<typename T> struct JackBoot : public JackBootBase
    Resampling is possible for any replica, with the (co)variance coming from the source data, resampled appropriately.
    Normalisation is always `Norm::RawBinned`, i.e. `\Sigma_{\bar{\vb{x}}}`error of the mean
    */
-  void MakeCovar( Matrix<T> &Covar, const MatrixView<T> &Source, int idx ) const;
-  void MakeVar( Vector<T> &Var, const MatrixView<T> &Source, int idx ) const;
+  void MakeCovar( Matrix<T> &Covar, const MatrixView<T> &Source, std::size_t idx ) const;
+  void MakeVar( Vector<T> &Var, const MatrixView<T> &Source, std::size_t idx ) const;
 
-  inline int extent() const { return static_cast<int>( Central.size ); } // Num samples per replica
-  inline int NumReplicas() const { return static_cast<int>( Replica.size1 ); }
-  inline void resize( int NumReplicas, int Extent )
+  inline std::size_t extent() const { return Central.size; } // Num data points (columns) per replica
+  inline std::size_t NumReplicas() const { return Replica.size1; }
+  inline void resize( std::size_t NumReplicas, std::size_t Extent )
   {
     Central.resize( Extent );
     Replica.resize( NumReplicas, Extent );
   }
   JackBoot() = default;
-  JackBoot( int NumReplicas, int Extent ) { resize( NumReplicas, Extent ); }
+  JackBoot( std::size_t NumReplicas, std::size_t Extent ) { resize( NumReplicas, Extent ); }
   void Read( ::H5::Group &g, const std::string &Name );
   void Write( ::H5::Group &g, const std::string &Name ) const;
-  inline T * operator[]( int idx )
+  inline void ValidateReplica( std::size_t idx ) const
   {
     if( Central.size == 0 )
       throw std::runtime_error( "Can't access empty JackBoot" );
-    if( idx == -1 )
-      return Central.Data();
-    if( Replica.size2 != Central.size )
-      throw std::runtime_error( "BoootRep extent mismatch" );
-    if( idx >= Replica.size1 )
-      throw std::runtime_error( "BoootRep index " + std::to_string( idx ) + " >= NumReplicas "
-                               + std::to_string( NumReplicas() ) );
-    return Replica.Data() + Replica.tda * idx;
+    if( idx != idxCentral )
+    {
+      if( Replica.size2 != Central.size )
+        throw std::runtime_error( "BoootRep extent mismatch" );
+      if( idx >= Replica.size1 )
+        throw std::runtime_error( "BoootRep index " + std::to_string( idx ) + " >= NumReplicas "
+                                 + std::to_string( NumReplicas() ) );
+    }
   }
-  inline void MapRow( Vector<T> &v, int idx )
+  /*inline void MapRow( Vector<T> &v, std::size_t idx )
   {
+    ValidateReplica( idx );
     if( idx == idxCentral )
       v.MapView( Central );
     else
       v.MapRow( Replica, idx );
-  }
-  inline void MapRow( VectorView<T> &v, int idx ) const
+  }*/
+  inline void MapRow( VectorView<T> &v, std::size_t idx ) const
   {
+    ValidateReplica( idx );
     if( idx == idxCentral )
       v = Central;
     else
       v.MapRow( Replica, idx );
   }
-  inline void MapColumn( VectorView<T> &v, int Column ) const
+  inline void MapColumn( VectorView<T> &v, std::size_t Column ) const
   {
+    ValidateReplica( 0 );
+    if( Column >= Replica.size2 )
+      throw std::runtime_error( "BoootRep column " + std::to_string( Column ) + " >= "
+                               + std::to_string( extent() ) );
     v.MapColumn( Replica, Column );
+  }
+  inline VectorView<T> operator[]( std::size_t idx )
+  {
+    VectorView<T> vv;
+    MapRow( vv, idx );
+    return vv;
   }
 protected:
   /// Common validation for (co)variance given any matrix and a vector of central values
@@ -182,13 +230,19 @@ protected:
                              const MatrixView<T> &Source, const VectorView<T> &vCentral );
   /// Common validation for (co)variance given a bootstrap / jackknife and the matrix it was made from
   Real CheckVarCovar( const std::string &sPrefix, VectorView<T> &Mean, Vector<fint> &Random,
-                      const MatrixView<T> &Source, int idx ) const;
+                      const MatrixView<T> &Source, std::size_t idx ) const;
   /// Do the actual work of computing (co)variance. Optionally with replacement
   static void MakeCovarHelper( Matrix<T> &Covar, const MatrixView<T> &Source,
                                const VectorView<T> &Mean, Real norm, Vector<fint> * pRandom=nullptr );
   static void MakeVarHelper( Vector<T> &Var, const MatrixView<T> &Source,
                              const VectorView<T> &Mean, Real norm, Vector<fint> * pRandom = nullptr );
 };
+
+template <typename T>
+bool IsFinite( const JackBoot<T> &jb )
+{
+  return IsFinite( jb.Central ) && IsFinite( jb.Replica );
+}
 
 MLU_JackBoot_hpp_end
 #endif

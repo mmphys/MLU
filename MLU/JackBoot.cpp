@@ -34,6 +34,11 @@ MLU_JackBoot_hpp
 const std::string s_C{ "_C" };
 static const std::string s_S{ "_S" };
 
+// TODO: I need these from Common.hpp
+std::string GetHostName();
+void SetHostName( const std::string &NewHostName );
+void MakeAncestorDirs( const std::string& Filename );
+
 /*****************************************************************************
 
  This is a cache of random numbers used to construct bootstrap samples
@@ -41,6 +46,10 @@ static const std::string s_S{ "_S" };
 
  *****************************************************************************/
 
+const std::string RandomCache::sSeed{ "Seed" };
+const std::string RandomCache::sSeedMachine{ "SeedMachine" };
+const std::string RandomCache::sRandom{ "Random" };
+std::string RandomCache::SaveRandomPrefix;
 bool        RandomCache::DefaultSeedOK{};
 SeedType    RandomCache::DefaultSeed_{ 1835672416u }; // Mike's default seed
 bool        RandomCache::DefaultNumReplicasOK{};
@@ -77,6 +86,61 @@ SeedType RandomCache::DefaultSeed( SeedType NewDefaultSeed )
   DefaultSeed_ = NewDefaultSeed;
   DefaultSeedOK = true;
   return DefaultSeed_;
+}
+
+void RandomCache::DefaultSeed( const std::string &SeedOrFile )
+{
+  bool bGotSeed{ true };
+  SeedType MySeed;
+  try // to interpret the switch as the random number
+  {
+    MySeed = Seed( SeedOrFile );
+  }
+  catch(const std::exception &e)
+  {
+    bGotSeed = false;
+  }
+  if( !bGotSeed )
+  {
+    // Try to get the seed from HDF5 file
+    H5E_auto2_t h5at;
+    void      * f5at_p;
+    ::H5::Exception::getAutoPrint(h5at, &f5at_p);
+    ::H5::Exception::dontPrint();
+    try
+    {
+      ::H5::H5File f;
+      ::H5::Group  g;
+      H5::OpenFileGroup( f, g, SeedOrFile, "Reading seed from: ", nullptr );
+      Matrix<fint> Random;
+      H5::ReadMatrix( g, sRandom, Random );
+      ::H5::Attribute a = g.openAttribute( RandomCache::sSeed );
+      a.read( H5::Equiv<SeedType>::Type, &MySeed );
+      a.close();
+      std::string SeedMachine;
+      a = g.openAttribute( RandomCache::sSeedMachine );
+      a.read( a.getStrType(), SeedMachine );
+      a.close();
+      SetHostName( SeedMachine );
+      bGotSeed = true;
+      Global.Put( MySeed, Random );
+      std::cout << "Seed " << MySeed << " generated on " << SeedMachine << "\n";
+    }
+    catch(const ::H5::Exception &)
+    {
+      bGotSeed = false;
+      ::H5::Exception::clearErrorStack();
+    }
+    catch(...)
+    {
+      ::H5::Exception::setAutoPrint(h5at, f5at_p);
+      throw;
+    }
+    ::H5::Exception::setAutoPrint(h5at, f5at_p);
+  }
+  if( !bGotSeed )
+    throw std::runtime_error( "Seed neither number nor file: " + SeedOrFile );
+  DefaultSeed( MySeed );
 }
 
 std::size_t RandomCache::DefaultNumReplicas()
@@ -126,11 +190,51 @@ Matrix<fint> RandomCache::Make( fint &Seed, std::size_t NumSamples, std::size_t 
   return m;
 }
 
+void RandomCache::SaveRandom( const Key &key, const Matrix<fint> &Random )
+{
+  if( !SaveRandomPrefix.empty() )
+  {
+    const std::string SeedMachine{ GetHostName() };
+    std::string Filename{ SaveRandomPrefix };
+    Filename.append( SeedMachine );
+    Filename.append( 1, '.' );
+    Filename.append( std::to_string( key.NumSamples ) );
+    Filename.append( 1, '.' );
+    Filename.append( sRandom );
+    Filename.append( 1, '.' );
+    Filename.append( SeedString( key.Seed ) );
+    Filename.append( ".h5" );
+    bool bOK{};
+    try // to write in my format
+    {
+      MakeAncestorDirs( Filename );
+      ::H5::H5File f( Filename, H5F_ACC_TRUNC );
+      hsize_t Dims[2];
+      Dims[0] = 1;
+      ::H5::DataSpace ds1( 1, Dims );
+      ::H5::Group g = f.createGroup( sRandom );
+      H5::WriteMatrix( g, RandomCache::sRandom, Random );
+      ::H5::Attribute a = g.createAttribute( RandomCache::sSeed, ::H5::PredType::STD_U32LE, ds1 );
+      a.write( H5::Equiv<SeedType>::Type, &key.Seed );
+      a.close();
+      a = g.createAttribute( RandomCache::sSeedMachine, H5::Equiv<std::string>::Type, ds1 );
+      a.write( H5::Equiv<std::string>::Type, SeedMachine );
+      a.close();
+      bOK = true;
+    }
+    catch(const ::H5::Exception &) {}
+    catch(const std::exception &e) {}
+    if( !bOK )
+      std::cout << "Warning: Unable to write random numbers to " << Filename << "\n";
+  }
+}
+
 Matrix<fint> RandomCache::Get( fint &Seed, std::size_t NumSamples, std::size_t NumReplicas )
 {
   if( Seed == SeedWildcard )
     Seed = DefaultSeed();
-  Matrix<fint> &m{ Map[ Key{ Seed, NumSamples } ] };
+  const Key key{ Seed, NumSamples };
+  Matrix<fint> &m{ Map[key] };
   assert(((m.size1==0 && m.size2==0)||m.size2==NumSamples)&&"RandomCache::Get() NumSamples mismatch");
   if( m.size1 < NumReplicas )
   {
@@ -149,6 +253,7 @@ Matrix<fint> RandomCache::Get( fint &Seed, std::size_t NumSamples, std::size_t N
           throw std::runtime_error( os.str().c_str() );
         }
     m = std::move( New );
+    SaveRandom( key, m );
   }
   Matrix<fint> Copy;
   Copy.MapView( m );
@@ -163,10 +268,10 @@ Matrix<fint> RandomCache::Get( const fint &Seed, std::size_t NumSamples, std::si
   return Get( SeedCopy, NumSamples, NumReplicas );
 }
 
-void RandomCache::Put( fint &Seed, Matrix<fint> &New )
+void RandomCache::Put( fint Seed, Matrix<fint> &New )
 {
   if( Seed == SeedWildcard )
-    throw std::runtime_error( "Invalid Seed " + std::to_string( Seed ) );
+    throw std::runtime_error( "Invalid Seed " + SeedString( Seed ) );
   if( New.Empty() )
     throw std::runtime_error( "Can't put empty random numbers in cache" );
   // Are the random numbers valid?
@@ -176,7 +281,8 @@ void RandomCache::Put( fint &Seed, Matrix<fint> &New )
       if( New(i,j) >= NumSamples )
       {
         std::ostringstream os;
-        os << "NewCache::Put() Seed " << Seed << ", replica " << i << ", sample " << j
+        os << "NewCache::Put() Seed " << SeedString( Seed )
+           << ", replica " << i << ", sample " << j
            << " = " << New(i,j) << " invalid. Should be < " << NumSamples << " samples.";
         throw std::runtime_error( os.str().c_str() );
       }
@@ -191,6 +297,7 @@ void RandomCache::Put( fint &Seed, Matrix<fint> &New )
     // Make the caller's matrix point back to the new entry in the cache
     it = pair.first;
     New.MapView( it->second );
+    SaveRandom( key, New );
   }
   else
   {
@@ -203,13 +310,17 @@ void RandomCache::Put( fint &Seed, Matrix<fint> &New )
         if( New(i,j) != Old(i,j) )
         {
           std::ostringstream os;
-          os << "RandomCache::Put() Seed " << Seed << " samples " << NumSamples
+          os << "RandomCache::Put() Seed " << SeedString( Seed )
+             << " samples " << NumSamples
              << ". New samples incompatible with cache. Old(" << i << ',' << j << ") " << Old(i,j)
              << " != New(" << i << ',' << j << ") " << New(i,j);
           throw std::runtime_error( os.str().c_str() );
         }
     if( New.size1 > Old.size1  )
+    {
       Old = std::move( New ); // New has more replicas - move this into cache
+      SaveRandom( key, Old );
+    }
     New.MapView( Old ); // Make callers matrix point to cache
   }
 }
@@ -222,9 +333,15 @@ void RandomCache::Put( fint &Seed, Matrix<fint> &New )
  *****************************************************************************/
 
 void JackBootBase::GetRandom( Vector<fint> &vRandom, fint Seed,
-                              std::size_t NumSamples, std::size_t NumReplicas, int Replica )
+                              std::size_t NumSamples, std::size_t NumReplicas, std::size_t Replica )
 {
-  assert( Replica >= 0 && Replica < NumReplicas && "Bad Replica in request for random numbers" );
+  if( Replica >= NumReplicas )
+  {
+    std::ostringstream ss;
+    ss << "JackBoot<T>::GetRandom Request for replica " << Replica << " of " << NumReplicas
+       << " replicas";
+    throw std::runtime_error( ss.str().c_str() );
+  }
   // The presence or absence of random numbers tells us whether we are doing bootstrap or jackknife
   if( Seed == SeedWildcard )
   {
@@ -273,7 +390,7 @@ std::ostream &operator<<( std::ostream &os, JackBootBase::Norm norm )
 template <typename T>
 typename JackBoot<T>::Real JackBoot<T>::GetNorm( Norm norm, std::size_t NumReplicas )
 {
-  if( NumReplicas == 0 || ( NumReplicas == 1 && norm != Norm::Bootstrap ) )
+  if( NumReplicas == 0 )
   {
     std::ostringstream ss;
     ss << "JackBoot::GetNorm() Norm undefined for " << norm
@@ -346,16 +463,16 @@ void JackBoot<T>::Resample( const MatrixView<T> &Source, std::size_t NumReplicas
     NumReplicas = NumSamples;
   }
   else if( NumReplicas < 2 )
-    throw std::runtime_error( "JackBoot::Resample Can't bootstrap into fewer than "
-                  + std::to_string( NumReplicas ) + " bootstrap samples" );
+    throw std::runtime_error( "JackBoot::Resample Can't bootstrap into "
+                  + std::to_string( NumReplicas ) + " bootstrap replicas (minimum 2)" );
   MakeMean( Central, Source );
   Replica.resize( NumReplicas, Extent );
   Vector<fint> Random;
   VectorView<T> Sample;
-  for( int idx = 0; idx < NumReplicas; ++idx )
+  for( std::size_t idx = 0; idx < NumReplicas; ++idx )
   {
     GetRandom( Random, Seed, NumSamples, NumReplicas, idx );
-    for( std::size_t Resample = 0; Resample < NumSamples; ++Resample )
+    for( std::size_t Resample = 0; Resample < Random.size; ++Resample )
     {
       Sample.MapRow( Source, Random[Resample] );
       for( std::size_t i = 0; i < Extent; ++i )
@@ -370,6 +487,81 @@ void JackBoot<T>::Resample( const MatrixView<T> &Source, std::size_t NumReplicas
     if( NumSamples > 1 )
       for( std::size_t i = 0; i < Extent; ++i )
         Replica( idx, i ) /= NumSamples;
+  }
+}
+
+/*****************************************************************************
+
+ Make statistics for this sample
+
+ Needs to work even when empty
+ 
+ *****************************************************************************/
+
+template <typename T>
+void JackBoot<T>::MakeStatistics( std::vector<ValWithEr<T>> &vStats ) const
+{
+  vStats.resize( extent() );
+  if( extent() )
+  {
+    // Default to showing the central values
+    for( std::size_t i = 0; i < extent(); ++i )
+    {
+      vStats[i] = Central[i];
+      vStats[i].Check = NumReplicas() ? 1 : 0;
+    }
+    if( NumReplicas() > 1 )
+    {
+      if( Seed == SeedWildcard )
+      {
+        // Jackknife statistics
+        std::vector<std::size_t> Count( extent(), 0 );
+        Vector<T> Var( extent() );
+        Var = static_cast<T>( 0 );
+        // Sum the Variance entries on each replica
+        for( std::size_t replica = 0; replica < NumReplicas(); ++replica )
+        {
+          for( std::size_t j = 0; j < extent(); ++j )
+          {
+            if( IsFinite( Replica( replica, j ) ) )
+            {
+              Var[j] += Squared( Replica( replica, j ) - Central[j] );
+              ++Count[j];
+            }
+          }
+        }
+        // Normalise
+        Vector<T> Column;
+        for( std::size_t j = 0; j < extent(); ++j )
+        {
+          if( Count[j] )
+          {
+            Var[j] *= GetNorm( Norm::Jackknife, Count[j] );
+            Var[j] = std::sqrt( Var[j] );
+            vStats[j].Low -= Var[j];
+            vStats[j].High += Var[j];
+            Column.MapColumn( const_cast<Matrix<T> &>( Replica ), j );
+            Column.MinMax( vStats[j].Min, vStats[j].Max, true );
+          }
+          vStats[j].Check = static_cast<Real>( Count[j] ) / NumReplicas();
+        }
+      }
+      else
+      {
+        // Bootstrap statistics
+        std::vector<T> Buffer( NumReplicas() );
+        for( std::size_t j = 0; j < extent(); ++j )
+        {
+          std::size_t Count{};
+          for( std::size_t replica = 0; replica < NumReplicas(); ++replica )
+          {
+            if( IsFinite( Replica( replica, j ) ) )
+              Buffer[Count++] = Replica( replica, j );
+          }
+          vStats[j].Get( Central[j], Buffer, Count );
+        }
+      }
+    }
   }
 }
 
@@ -409,7 +601,7 @@ void JackBoot<T>::MakeVar( Vector<T> &Var, const MatrixView<T> &Source,
  *****************************************************************************/
 
 template <typename T>
-void JackBoot<T>::MakeCovar( Matrix<T> &Covar, const MatrixView<T> &Source, int idx ) const
+void JackBoot<T>::MakeCovar( Matrix<T> &Covar, const MatrixView<T> &Source, std::size_t idx ) const
 {
   VectorView<T> Mean;
   Vector<fint> Random;
@@ -418,7 +610,7 @@ void JackBoot<T>::MakeCovar( Matrix<T> &Covar, const MatrixView<T> &Source, int 
 }
 
 template <typename T>
-void JackBoot<T>::MakeVar( Vector<T> &Var, const MatrixView<T> &Source, int idx ) const
+void JackBoot<T>::MakeVar( Vector<T> &Var, const MatrixView<T> &Source, std::size_t idx ) const
 {
   VectorView<T> Mean;
   Vector<fint> Random;
@@ -449,7 +641,7 @@ void JackBoot<T>::CheckVarCovar( const std::string &sPrefix,
 /// Common validation for (co)variance given a bootstrap / jackknife and the matrix it was made from
 template <typename T> typename JackBoot<T>::Real
 JackBoot<T>::CheckVarCovar( const std::string &sPrefix, VectorView<T> &Mean, Vector<fint> &vRandom,
-                            const MatrixView<T> &Source, int idx ) const
+                            const MatrixView<T> &Source, std::size_t idx ) const
 {
   // Error check
   CheckVarCovar( sPrefix, Source, Central );
@@ -560,6 +752,17 @@ void JackBoot<T>::Read( ::H5::Group &g, const std::string &Name )
 {
   H5::ReadVector( g, Name + s_C, Central );
   H5::ReadMatrix( g, Name.compare( "data" ) ? Name : Name + s_S, Replica );
+  if( Central.size != Replica.size2 )
+  {
+    std::ostringstream os;
+    os << "JackBoot sample " << Name << ": central extent " << Central.size
+       << " != replica columns " << Replica.size2;
+    throw std::runtime_error( os.str().c_str() );
+  }
+  if( !Central.IsFinite() )
+    throw std::runtime_error( "NaNs reading JackBoot " + Name + " central replica" );
+  if( !Replica.IsFinite() )
+    throw std::runtime_error( "NaNs reading JackBoot " + Name + " replicas" );
 }
 
 /// Write a bootstrap replica to an HDF5 group

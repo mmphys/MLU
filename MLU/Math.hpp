@@ -38,8 +38,6 @@
 
 MLU_Math_hpp
 
-extern const double NaN;
-
 // https://en.wikipedia.org/wiki/68–95–99.7_rule
 constexpr double OneSigma{ 0.682689492137086 };
 // How far from in each end of a sorted bootstrap ensemble we should take 1 sigma errors

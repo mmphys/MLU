@@ -255,7 +255,7 @@ void H5::ReadMatrix( ::H5::Group &g, const std::string &DSName, Common::Matrix<T
     if( Dims[0] > 0 && Dims[0] < std::numeric_limits<int>::max()
      && Dims[1] > 0 && Dims[1] < std::numeric_limits<int>::max() )
     {
-      m.resize( static_cast<int>( Dims[0] ), static_cast<int>( Dims[1] ) );
+      m.resize( static_cast<std::size_t>( Dims[0] ), static_cast<std::size_t>( Dims[1] ) );
       ds.read( m.data, H5::Equiv<T>::Type );
       bError = false;
     }
