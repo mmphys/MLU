@@ -267,7 +267,7 @@ std::size_t Vector<COMMON_GSL_TYPE>::MinMax( Scalar &Min, Scalar &Max, bool bIgn
       else
       {
         Min = ComponentMin( Min, z );
-        Max = ComponentMax( Min, z );
+        Max = ComponentMax( Max, z );
       }
     }
   }

@@ -2061,7 +2061,7 @@ void Sample<T>::MakeCorrSummary()
       if( f == 1 )
       {
         // Same as previous row - except average is taken from average of all samples
-        JackBoot<scalar_type>::MakeMean( Buffer.Central, Buffer.Replica );
+        JackBoot<scalar_type>::MakeMean( Buffer.GetCentral(), Buffer.Replica );
       }
       else
       {
@@ -2413,9 +2413,9 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       {
         // Load from file
         Data[0].Read( g, "data" );
-        if( Data[0].Central.size != Nt_ )
+        if( Data[0].extent() != Nt_ )
           throw std::runtime_error( "nT = " + std::to_string( Nt_ ) + " but "
-                                   + std::to_string( Data[0].Central.size ) + " columns read" );
+                                   + std::to_string( Data[0].extent() ) + " columns read" );
         if( Data[0].Replica.size1 != att_nSample )
           throw std::runtime_error( "nSample = " + std::to_string( att_nSample ) + " but "
                                    + std::to_string( Data[0].Replica.size1 ) + " replicas read" );
@@ -2588,13 +2588,13 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
     if( FileList.size() )
       H5::WriteStringData( g, sFileList, FileList );
     // If I don't have binned data, I must save the bootstrap (because it can't be recreated)
-    if( Binned[0].Empty() || RandomCache::GetCachePrefix().empty() )
+    if( Binned[0].Empty() || RandomCache::SaveFatFiles() )
     {
       Data[0].Write( g, "data" );
       if( Seed() != SeedWildcard && SampleSize )
       {
         const fint &cSeed{ Seed() };
-        Matrix<fint> mRnd{ RandomCache::Global.Get( cSeed, SampleSize, Data[0].Central.size ) };
+        Matrix<fint> mRnd{ RandomCache::Global.Get( cSeed, SampleSize, Data[0].extent() ) };
         Dims[0] = mRnd.size1;
         Dims[1] = mRnd.size2;
         dsp = ::H5::DataSpace( 2, Dims );

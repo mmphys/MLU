@@ -204,6 +204,20 @@ void RandomCache::SetCachePrefix( std::string &NewCachePrefix )
   CacheDirPrefixOK = true;
 }
 
+// True if random numbers should be saved with data files
+bool RandomCache::SaveFatFiles()
+{
+  static bool bInitialised{};
+  static bool bFat{};
+  if( !bInitialised )
+  {
+    bInitialised = true;
+    if( std::getenv( "MLUFat" ) ) // I.e. set to anything (including empty)
+      bFat = true;
+  }
+  return bFat || GetCachePrefix().empty();
+}
+
 const std::string &RandomCache::GetCachePrefix()
 {
   if( !CacheDirPrefixOK )
@@ -455,6 +469,15 @@ std::ostream &operator<<( std::ostream &os, JackBootBase::Norm norm )
 }
 
 template <typename T>
+void JackBoot<T>::clear()
+{
+  Central.clear();
+  Replica.clear();
+  ReplicaMean.clear();
+  Seed = RandomCache::DefaultSeed();
+}
+
+template <typename T>
 typename JackBoot<T>::Real JackBoot<T>::GetNorm( Norm norm, std::size_t NumReplicas )
 {
   if( NumReplicas == 0 )
@@ -494,19 +517,19 @@ typename JackBoot<T>::Real JackBoot<T>::GetNorm( Norm norm, std::size_t NumRepli
  *****************************************************************************/
 
 template <typename T>
-void JackBoot<T>::MakeMean( Vector<T> &vCentral, const MatrixView<T> &Source )
+void JackBoot<T>::MakeMean( Vector<T> &vMean, const MatrixView<T> &Source )
 {
   if( Source.size1() == 0 || Source.size2() == 0 )
     throw std::runtime_error( "JackBoot::MakeMean Source matrix empty" );
   std::size_t NumReplicas{ Source.size1() };
   std::size_t Extent{ Source.size2() };
-  vCentral.resize( Extent );
-  vCentral = static_cast<T>( 0 );
+  vMean.resize( Extent );
+  vMean = static_cast<T>( 0 );
   for( std::size_t i = 0; i < NumReplicas; ++i )
     for( std::size_t j = 0; j < Extent; ++j )
-      vCentral[j] += Source(i,j);
+      vMean[j] += Source(i,j);
   for( std::size_t j = 0; j < Extent; ++j )
-    vCentral[j] /= NumReplicas;
+    vMean[j] /= NumReplicas;
 }
 
 /*****************************************************************************
@@ -518,43 +541,57 @@ void JackBoot<T>::MakeMean( Vector<T> &vCentral, const MatrixView<T> &Source )
 template <typename T>
 void JackBoot<T>::Resample( const MatrixView<T> &Source, std::size_t NumReplicas )
 {
-  if( Source.size1() == 0 || Source.size2() == 0 )
-    throw std::runtime_error( "JackBoot::Resample Source matrix empty" );
   std::size_t Extent{ Source.size2() };
   std::size_t NumSamples{ Source.size1() };
+  if( Extent == 0 || NumSamples == 0 )
+    throw std::runtime_error( "JackBoot::Resample Source matrix empty" );
   if( Seed == SeedWildcard )
   {
     if( NumSamples < 2 )
-      throw std::runtime_error( "JackBoot::Resample Can't jackknife with "
-                    + std::to_string( NumSamples ) + " samples. Minimum of 2 required" );
+      throw std::runtime_error( "JackBoot::Resample Jackknife needs minimum of 2 samples" );
     NumReplicas = NumSamples;
   }
-  else if( NumReplicas < 2 )
-    throw std::runtime_error( "JackBoot::Resample Can't bootstrap into "
-                  + std::to_string( NumReplicas ) + " bootstrap replicas (minimum 2)" );
+  else if( !NumReplicas )
+    throw std::runtime_error( "JackBoot::Resample At least one bootstrap replica required" );
+  // Now compute each replica
   MakeMean( Central, Source );
   Replica.resize( NumReplicas, Extent );
-  Vector<fint> Random;
-  VectorView<T> Sample;
-  for( std::size_t idx = 0; idx < NumReplicas; ++idx )
+  if( Seed == SeedWildcard )
   {
-    GetRandom( Random, Seed, NumSamples, NumReplicas, idx );
-    for( std::size_t Resample = 0; Resample < Random.size; ++Resample )
-    {
-      Sample.MapRow( Source, Random[Resample] );
+    // Jackknife resample
+    const Real AvgNorm{ static_cast<Real>( 1. ) / ( NumSamples - 1u ) };
+    Vector<T> nxBar{ Central };
+    nxBar *= static_cast<Real>( NumSamples );
+    for( std::size_t idx = 0; idx < NumReplicas; ++idx )
       for( std::size_t i = 0; i < Extent; ++i )
-      {
-        if( Resample == 0 )
-          Replica( idx, i ) = Sample[i];
-        else
-          Replica( idx, i ) += Sample[i];
-      }
-    }
-    // Turn the sum into an average
-    if( NumSamples > 1 )
-      for( std::size_t i = 0; i < Extent; ++i )
-        Replica( idx, i ) /= NumSamples;
+        Replica( idx, i ) = ( nxBar[i] - Source( idx, i ) ) * AvgNorm;
   }
+  else
+  {
+    // Bootstrap resample
+    const Real AvgNorm{ static_cast<Real>( 1. ) / NumSamples };
+    VectorView<T> Sample;
+    Matrix<fint> Random{ RandomCache::Global.Get( Seed, NumSamples, NumReplicas ) };
+    for( std::size_t idx = 0; idx < NumReplicas; ++idx )
+    {
+      for( std::size_t Resample = 0; Resample < NumSamples; ++Resample )
+      {
+        Sample.MapRow( Source, Random( idx, Resample ) );
+        for( std::size_t i = 0; i < Extent; ++i )
+        {
+          if( Resample == 0 )
+            Replica( idx, i ) = Sample[i];
+          else
+            Replica( idx, i ) += Sample[i];
+        }
+      }
+      // Turn the sum into an average
+      for( std::size_t i = 0; i < Extent; ++i )
+        Replica( idx, i ) *= AvgNorm;
+    }
+  }
+  // Take mean of replicas. Jacckife should be same as Central, but compute to find errors
+  MakeMean( ReplicaMean, Replica );
 }
 
 /*****************************************************************************
@@ -642,19 +679,19 @@ void JackBoot<T>::MakeStatistics( std::vector<ValWithEr<T>> &vStats ) const
  *****************************************************************************/
 
 template <typename T>
-void JackBoot<T>::MakeCovar( Matrix<T> &Covar, const MatrixView<T> &Source,
-                             const VectorView<T> &Mean, Norm norm )
+void JackBoot<T>::MakeCovar( Matrix<T> &Covar, const VectorView<T> &Mean,
+                             const MatrixView<T> &Source, Norm norm )
 {
-  CheckVarCovar( "static JackBoot::MakeCovar()", Source, Mean );
+  CheckVarCovar( "static JackBoot::MakeCovar()", Mean, Source );
   const Real A{ GetNorm( norm, Source.size1() ) };
   MakeCovarHelper( Covar, Source, Mean, A );
 }
 
 template <typename T>
-void JackBoot<T>::MakeVar( Vector<T> &Var, const MatrixView<T> &Source,
-                           const VectorView<T> &Mean, Norm norm )
+void JackBoot<T>::MakeVar( Vector<T> &Var, const VectorView<T> &Mean,
+                           const MatrixView<T> &Source, Norm norm )
 {
-  CheckVarCovar( "static JackBoot::MakeVar()", Source, Mean );
+  CheckVarCovar( "static JackBoot::MakeVar()", Mean, Source );
   const Real A{ GetNorm( norm, Source.size1() ) };
   MakeVarHelper( Var, Source, Mean, A );
 }
@@ -693,16 +730,16 @@ void JackBoot<T>::MakeVar( Vector<T> &Var, const MatrixView<T> &Source, std::siz
 
 /// Common validation for (co)variance given any matrix and a vector of central values
 template <typename T>
-void JackBoot<T>::CheckVarCovar( const std::string &sPrefix,
-                                 const MatrixView<T> &Source, const VectorView<T> &vCentral )
+void JackBoot<T>::CheckVarCovar( const std::string &sPrefix, const VectorView<T> &vMean,
+                                 const MatrixView<T> &Source )
 {
   // Error check
   const std::size_t Extent{ Source.size2() };
   if( Extent == 0 )
     throw std::runtime_error( sPrefix + " empty extent" );
-  if( vCentral.size() != Extent )
-    throw std::runtime_error( sPrefix + " mismatch: " + std::to_string( vCentral.size() )
-                             + " central values != extent " + std::to_string( vCentral.size() ) );
+  if( vMean.size() != Extent )
+    throw std::runtime_error( sPrefix + " mismatch: " + std::to_string( vMean.size() )
+                             + " central values != extent " + std::to_string( vMean.size() ) );
 }
 
 /// Common validation for (co)variance given a bootstrap / jackknife and the matrix it was made from
@@ -710,8 +747,11 @@ template <typename T> typename JackBoot<T>::Real
 JackBoot<T>::CheckVarCovar( const std::string &sPrefix, VectorView<T> &Mean, Vector<fint> &vRandom,
                             const MatrixView<T> &Source, std::size_t idx ) const
 {
+  // TODO: I think this is the root cause of why my correlated fits go high
+  //const Vector<T> &CovarianceMean{ Central };
+  const Vector<T> &CovarianceMean{ ReplicaMean };
   // Error check
-  CheckVarCovar( sPrefix, Source, Central );
+  CheckVarCovar( sPrefix, CovarianceMean, Source );
   const Norm norm{ Norm::RawBinned };
   const std::size_t Extent{ Source.size2() };
   const std::size_t NumSamples{ Source.size1() };
@@ -719,7 +759,7 @@ JackBoot<T>::CheckVarCovar( const std::string &sPrefix, VectorView<T> &Mean, Vec
   if( idx == idxCentral )
   {
     // I must not modify this mean
-    Mean = Central;
+    Mean = CovarianceMean;
     // Don't do any replacements
     vRandom.resize( Extent );
     for( fint i = 0; i < Extent; ++i )

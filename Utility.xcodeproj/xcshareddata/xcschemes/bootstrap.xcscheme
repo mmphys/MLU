@@ -84,9 +84,14 @@
       </CommandLineArguments>
       <EnvironmentVariables>
          <EnvironmentVariable
-            key = "MLUHost"
-            value = "Tursa"
+            key = "MLUFat"
+            value = ""
             isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "MLUSeed"
+            value = "Jackknife"
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "MLUSeed"
@@ -96,6 +101,11 @@
          <EnvironmentVariable
             key = "MLUSeed"
             value = "Tursa.160.Random.1835672416.h5"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "MLUHost"
+            value = "Tursa"
             isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable

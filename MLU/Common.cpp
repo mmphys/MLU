@@ -1135,7 +1135,8 @@ void Model<T>::ValidateAttributes()
     params.AssignOffsets();
     OldFormatOpNames.clear();
     // If there's more than one exponent, data need reordering
-    ReorderOldFormat( NumOps, OldFormatNumExponents, Base::Data[0].Central );
+    ReorderOldFormat( NumOps, OldFormatNumExponents, Base::Data[0].GetCentral() );
+    ReorderOldFormat( NumOps, OldFormatNumExponents, Base::Data[0].GetReplicaMean() );
     ReorderOldFormat( NumOps, OldFormatNumExponents, Base::Data[0].Replica );
     ReorderOldFormat( NumOps, OldFormatNumExponents, Base::Binned[0] );
     ReorderOldFormat( NumOps, OldFormatNumExponents, Base::Raw );
@@ -1465,7 +1466,7 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
     for( int j = 0; j < Extent; ++j )
     {
       ThD.MapColumn( vv[0], j );
-      Value[i][j].Get( ThD.Central[j], vv[0], Buffer );
+      Value[i][j].Get( ThD(JackBoot<T>::idxCentral,j), vv[0], Buffer );
     }
   }
   // Write theory and data values, with each data point in fit on a separate line
@@ -1505,7 +1506,8 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
           if( IsFinite( Buffer[bootCount] ) )
             ++bootCount;
         }
-        v.Get( std::log( ThD.Central[idx - 1] / ThD.Central[idx] ) * DeltaTInv, Buffer, bootCount );
+        v.Get( std::log( ThD(JackBoot<T>::idxCentral,idx - 1)
+                       / ThD(JackBoot<T>::idxCentral,idx) ) * DeltaTInv, Buffer, bootCount );
         os << Space << v;
       }
       os << NewLine;
@@ -1678,8 +1680,8 @@ void DataSet<T>::CacheRawData()
   Matrix<T> CovarBuffer;
   if( CopyCovarSrc )
     CovarBuffer.resize( NumRequestedSource, Extent );
-  // Assemble the combined data and covariance source
-  for( int idx = Fold<T>::idxCentral; idx < NumJackBoot; ++idx )
+  // Copy the resampled data
+  for( int idx = JackBootBase::idxReplicaMean; idx < NumJackBoot; ++idx )
   {
     int dst{ 0 };
     for( int f = 0; f < corr.size(); ++f )
@@ -1718,14 +1720,14 @@ void DataSet<T>::CacheRawData()
     }
     // Make correlation matrix from this data
     JackBoot<T>::MakeMean( mCorrelCentralMean, mCorrel );
-    JackBoot<T>::MakeCovar( mCorrel, CovarBuffer, mCorrelCentralMean, corr[0].Norm( ss ) );
+    JackBoot<T>::MakeCovar( mCorrel, mCorrelCentralMean, CovarBuffer, corr[0].Norm( ss ) );
     CovarBuffer.clear();
   }
   else if( bCovarSrcData )
   {
     // Make correlation matrix from this data
-    mCorrelCentralMean = mFitData.Central;
-    JackBoot<T>::MakeCovar( mCorrel, mFitData.Replica, mCorrelCentralMean, corr[0].Norm( ss ) );
+    mCorrelCentralMean = mFitData.GetCovarMean();
+    JackBoot<T>::MakeCovar( mCorrel, mCorrelCentralMean, mFitData.Replica, corr[0].Norm( ss ) );
   }
   //
   if( !FullyUnfrozen )
