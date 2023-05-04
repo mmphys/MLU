@@ -107,13 +107,12 @@ BootstrapParams::BootstrapParams( const Common::CommandLine &cl )
   b2ptSortZeroMom{ !cl.GotSwitch( "nosort" ) },
   bOverwrite{ cl.GotSwitch( "overwrite" ) },
   bVerboseSummaries{ !cl.GotSwitch( "terse" ) },
-  bFat{ !cl.GotSwitch( "fat" ) },
   TimesliceDetail{ cl.SwitchValue<int>( "t" ) },
   nSample{ cl.SwitchValue<int>( "n" ) },
   binSize{ cl.SwitchValue<int>( "b" ) },
   binAuto{ binSize == 0 },
   binOrder{ cl.SwitchValue<BinOrder>( "border" ) },
-  seed{ GetSeedType( cl ) },
+  seed{ Common::RandomCache::DefaultSeed() },
   outStem{ cl.SwitchValue<std::string>( "o" ) }
 {
   if( TimesliceDetail < 0 || TimesliceDetail > 2 )
@@ -126,28 +125,6 @@ BootstrapParams::BootstrapParams( const Common::CommandLine &cl )
   if( Common::GetHostName().empty() )
     throw std::invalid_argument( "Machine name can't be empty" );
   Common::MakeAncestorDirs( outStem );
-}
-
-Common::SeedType BootstrapParams::GetSeedType( const Common::CommandLine &cl )
-{
-  // Set machine name first - in case seed loaded from file (which will overwrite machine name)
-  if( cl.GotSwitch( "m" ) )
-    Common::SetHostName( cl.SwitchValue<std::string>( "m" ) );
-  if( cl.GotSwitch( "saveseed" ) )
-  {
-    Common::RandomCache::Global.SaveRandomPrefix = cl.SwitchValue<std::string>( "saveseed" );
-    if( !Common::RandomCache::Global.SaveRandomPrefix.empty() )
-      std::cout << "Saving a copy of random number seeds in "
-                << Common::RandomCache::Global.SaveRandomPrefix << Common::NewLine;
-  }
-  if( cl.GotSwitch( "r" ) )
-    Common::RandomCache::DefaultSeed( cl.SwitchValue<std::string>( "r" ) );
-  else
-  {
-    std::random_device rd;
-    Common::RandomCache::DefaultSeed( static_cast<Common::SeedType>( rd() ) );
-  }
-  return Common::RandomCache::DefaultSeed();
 }
 
 void CopyTimeSlice( std::complex<double> *&pDst, const std::complex<double> *pSrc, int Nt, int TOffset )
@@ -354,7 +331,7 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
           out.MakeCorrSummary();
           try {
           if( bSaveBootstrap )
-            out.Write( sOutFile, bFat );
+            out.Write( sOutFile );
           if( bSaveSummaries )
             out.WriteSummary( sSummary, bVerboseSummaries );
           iCount++;
@@ -990,11 +967,9 @@ int main(const int argc, const char *argv[])
   static const char DefaultERE[]{ R"(^([PWpw])([PWpw])_)" };
   static const char DefaultIgnore[]{ "[hH][iI][tT]_[^_]+" };
   static const char DefaultIgnoreMomenta[]{ "pq2" };
-  static const char DefaultSaveSeed[]{ "Random/" };
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  const std::string MachineName{ Common::GetHostName() };
   using CL = Common::CommandLine;
   CL cl;
   try
@@ -1003,7 +978,6 @@ int main(const int argc, const char *argv[])
       {"n", CL::SwitchType::Single, DEF_NSAMPLE},
       {"b", CL::SwitchType::Single, "0"},
       {"border", CL::SwitchType::Single, "Auto"},
-      {"r", CL::SwitchType::Single, nullptr},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"a", CL::SwitchType::Single, ""},
@@ -1011,12 +985,9 @@ int main(const int argc, const char *argv[])
       {"g", CL::SwitchType::Single, "" },
       {"d", CL::SwitchType::Single, "" },
       {"t", CL::SwitchType::Single, "0"},
-      {"m", CL::SwitchType::Single, nullptr},
       {"x", CL::SwitchType::Multiple, nullptr},
       {"symop", CL::SwitchType::Flag, nullptr},
       {"s", CL::SwitchType::Flag, nullptr},
-      {"fat", CL::SwitchType::Flag, nullptr},
-      {"saveseed",CL::SwitchType::Single, DefaultSaveSeed},
       {"overwrite", CL::SwitchType::Flag, nullptr},
       {"p2",CL::SwitchType::Flag, nullptr},
       {"pa",CL::SwitchType::Flag, nullptr},
@@ -1068,7 +1039,6 @@ int main(const int argc, const char *argv[])
     "-b     Bin size, or 0 (default)=auto (1 config=no binning, else 1 bin/config)\n"
     "--border Bin Order: `Auto' (default)=config then timeslice then filename\n"
     "        `Old'=timeslice/filename/config, `VeryOld'=timeslice/config/filename\n"
-    "-r     Random number seed or text file to load from (default=random)\n"
     "-i     Input  prefix\n"
     "-o     Output prefix\n"
     "-a     list of gamma Algebras we're interested in at source (and sink for 2pt)\n"
@@ -1077,12 +1047,9 @@ int main(const int argc, const char *argv[])
     "-g     Group name to read correlators from\n"
     "-d     DataSet name to read correlators from\n"
     "-t     timeslice detail 0 (none=default), 1 (.txt) or 2 (.txt+.h5)\n"
-    "-m     Machine name (default: " << MachineName << ")\n"
     "-x     eXclude file (may be repeated)\n"
     "Flags:\n"
     "-s     Perform bootstrap for specified study numbers\n"
-    "--fat  Write bootstrapped replicas and random numbers to file\n"
-    "--saveseed  Prefix for location to save random numbers (default: " << DefaultSaveSeed << ")\n"
     "--overwrite Overwrite existing files (default skip)\n"
     "--p2   group momenta by P^2\n"
     "--pa   group momenta by Abs( p )\n"
@@ -1097,7 +1064,12 @@ int main(const int argc, const char *argv[])
     "       http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html\n"
     "--terse Terse summaries (no file list)\n"
     "--symop Symmetric operators e.g. g5-gT5 same as gT5-g5 (2pt only, experimental)\n"
-    "--help This message\n";
+    "--help This message\n"
+    "Environment variables\n"
+    "MLUCache   Prefix for location to save random numbers, or empty for no cache\n"
+    "MLUHost    Host name to use with seed cache\n"
+    "MLUNumBoot Default number of bootstrap replicas\n"
+    "MLUSeed    Random number seed or text file to load from (default=random)\n";
   }
   return iReturn;
 }

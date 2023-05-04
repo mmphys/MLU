@@ -52,10 +52,6 @@
 #include <string>
 #include <vector>
 
-// posix
-#include <glob.h>
-#include <unistd.h>
-
 // Default output file extension for text based summaries of binary data
 #ifndef TEXT_EXT
 #define TEXT_EXT "txt"
@@ -418,51 +414,6 @@ public:
     throw std::runtime_error( os.str().c_str() );
   }
 };
-
-// Make the ancestor directories leading up to last element
-// NB: Don't test whether this worked, so that it if this is done simultaneously
-// by many threads, it will still work
-void MakeAncestorDirs( const std::string& Filename );
-
-// Wrapper for posix glob
-template<typename Iter>
-std::vector<std::string> glob( const Iter &first, const Iter &last, const char * pszPrefix = nullptr )
-{
-  // Perform the glob
-  std::string NameBuffer;
-  if( pszPrefix && *pszPrefix )
-    NameBuffer = pszPrefix;
-  const std::size_t PrefixLen{ NameBuffer.length() };
-  glob_t globBuf;
-  memset( &globBuf, 0, sizeof( globBuf ) );
-  int iFlags = GLOB_BRACE | GLOB_TILDE | GLOB_NOSORT; // | GLOB_NOCHECK | GLOB_NOMAGIC;
-  for( Iter i = first; i != last; i++ )
-  {
-    NameBuffer.resize( PrefixLen );
-    NameBuffer.append( *i );
-    const int globResult{ glob( NameBuffer.c_str(), iFlags, NULL, &globBuf ) };
-    if( !globResult )
-      iFlags |= GLOB_APPEND;
-    else if( globResult != GLOB_NOMATCH )
-    {
-      globfree( &globBuf );
-      throw std::runtime_error( "glob() returned error " + std::to_string( globResult ) );
-    }
-  }
-
-  // collect all the filenames into a std::list<std::string>
-  std::vector<std::string> Filenames;
-  Filenames.reserve( globBuf.gl_pathc );
-  for( size_t i = 0; i < globBuf.gl_pathc; ++i )
-    Filenames.push_back( std::string( globBuf.gl_pathv[i] ) );
-  globfree(&globBuf);
-  return Filenames;
-}
-
-/// Wrapper for posix gethostname()
-std::string GetHostName();
-/// When not empty, specifies the value to be returned by GetHostName()
-void SetHostName( const std::string &NewHostName );
 
 struct MomentumMap : std::map<std::string, Momentum, LessCaseInsensitive>
 {
@@ -1732,7 +1683,7 @@ public:
     SetName( FileName, pOpNames );
     Read( PrintPrefix, pGroupName );
   }
-  void Write( const std::string &FileName, bool bFatFile = false, const char * pszGroupName = nullptr );
+  void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void MakeCorrSummary();
   void WriteSummary( const std::string &sOutFileName, bool bVerboseSummary = false );
   explicit Sample( const std::vector<std::string> &SummaryNames_, int NumSamples = 0, int Nt = 0 )
@@ -2562,7 +2513,7 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
 }
 
 template <typename T>
-void Sample<T>::Write( const std::string &FileName, bool bFatFile, const char * pszGroupName )
+void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
 {
   SetName( FileName );
   const std::string GroupName{ pszGroupName == nullptr || *pszGroupName == 0 ? DefaultGroupName() : pszGroupName };
@@ -2637,7 +2588,7 @@ void Sample<T>::Write( const std::string &FileName, bool bFatFile, const char * 
     if( FileList.size() )
       H5::WriteStringData( g, sFileList, FileList );
     // If I don't have binned data, I must save the bootstrap (because it can't be recreated)
-    if( bFatFile || Binned[0].Empty() )
+    if( Binned[0].Empty() || RandomCache::GetCachePrefix().empty() )
     {
       Data[0].Write( g, "data" );
       if( Seed() != SeedWildcard && SampleSize )

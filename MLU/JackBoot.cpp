@@ -35,8 +35,6 @@ const std::string s_C{ "_C" };
 static const std::string s_S{ "_S" };
 
 // TODO: I need these from Common.hpp
-std::string GetHostName();
-void SetHostName( const std::string &NewHostName );
 void MakeAncestorDirs( const std::string& Filename );
 
 /*****************************************************************************
@@ -49,7 +47,8 @@ void MakeAncestorDirs( const std::string& Filename );
 const std::string RandomCache::sSeed{ "Seed" };
 const std::string RandomCache::sSeedMachine{ "SeedMachine" };
 const std::string RandomCache::sRandom{ "Random" };
-std::string RandomCache::SaveRandomPrefix;
+bool        RandomCache::CacheDirPrefixOK{};
+std::string RandomCache::CacheDirPrefix{ sRandom + "/" };
 bool        RandomCache::DefaultSeedOK{};
 SeedType    RandomCache::DefaultSeed_{ 1835672416u }; // Mike's default seed
 bool        RandomCache::DefaultNumReplicasOK{};
@@ -62,21 +61,10 @@ SeedType RandomCache::DefaultSeed()
 {
   if( !DefaultSeedOK )
   {
+    DefaultSeedOK = true;
     const char * pDefaultString{ std::getenv( "MLUSeed" ) };
     if( pDefaultString && * pDefaultString )
-    {
-      if( EqualIgnoreCase( pDefaultString, "Jackknife" ) )
-        DefaultSeed_ = SeedWildcard;
-      else
-      {
-        try
-        {
-          DefaultSeed_ = FromString<SeedType>( pDefaultString );
-        }
-        catch(...){}
-      }
-    }
-    DefaultSeedOK = true;
+      DefaultSeed( pDefaultString );
   }
   return DefaultSeed_;
 }
@@ -88,8 +76,9 @@ SeedType RandomCache::DefaultSeed( SeedType NewDefaultSeed )
   return DefaultSeed_;
 }
 
-void RandomCache::DefaultSeed( const std::string &SeedOrFile )
+void RandomCache::DefaultSeed( const std::string &SeedOrFile_ )
 {
+  std::string SeedOrFile{ SeedOrFile_ };
   bool bGotSeed{ true };
   SeedType MySeed;
   try // to interpret the switch as the random number
@@ -102,41 +91,16 @@ void RandomCache::DefaultSeed( const std::string &SeedOrFile )
   }
   if( !bGotSeed )
   {
-    // Try to get the seed from HDF5 file
-    H5E_auto2_t h5at;
-    void      * f5at_p;
-    ::H5::Exception::getAutoPrint(h5at, &f5at_p);
-    ::H5::Exception::dontPrint();
-    try
+    Matrix<fint> Random;
+    std::string Machine;
+    SeedOrFile = PrependCachePath( SeedOrFile );
+    bGotSeed = Read( PrependCachePath( SeedOrFile ), Random, MySeed, Machine );
+    if( bGotSeed )
     {
-      ::H5::H5File f;
-      ::H5::Group  g;
-      H5::OpenFileGroup( f, g, SeedOrFile, "Reading seed from: ", nullptr );
-      Matrix<fint> Random;
-      H5::ReadMatrix( g, sRandom, Random );
-      ::H5::Attribute a = g.openAttribute( RandomCache::sSeed );
-      a.read( H5::Equiv<SeedType>::Type, &MySeed );
-      a.close();
-      std::string SeedMachine;
-      a = g.openAttribute( RandomCache::sSeedMachine );
-      a.read( a.getStrType(), SeedMachine );
-      a.close();
-      SetHostName( SeedMachine );
-      bGotSeed = true;
+      SetHostName( Machine );
       Global.Put( MySeed, Random );
-      std::cout << "Seed " << MySeed << " generated on " << SeedMachine << "\n";
+      std::cout << "Seed " << MySeed << " generated on " << Machine << "\n";
     }
-    catch(const ::H5::Exception &)
-    {
-      bGotSeed = false;
-      ::H5::Exception::clearErrorStack();
-    }
-    catch(...)
-    {
-      ::H5::Exception::setAutoPrint(h5at, f5at_p);
-      throw;
-    }
-    ::H5::Exception::setAutoPrint(h5at, f5at_p);
   }
   if( !bGotSeed )
     throw std::runtime_error( "Seed neither number nor file: " + SeedOrFile );
@@ -177,6 +141,119 @@ bool RandomCache::Key::Less::operator()( const Key &lhs, const Key &rhs ) const
   return lhs.NumSamples < rhs.NumSamples;
 }
 
+void RandomCache::Write( ::H5::Group &g, const Matrix<fint> &Random,
+                         SeedType Seed, const std::string &Machine )
+{
+  hsize_t Dim;
+  Dim = 1;
+  ::H5::DataSpace ds1( 1, &Dim );
+  H5::WriteMatrix( g, RandomCache::sRandom, Random );
+  ::H5::Attribute a = g.createAttribute( RandomCache::sSeed, ::H5::PredType::STD_U32LE, ds1 );
+  a.write( H5::Equiv<SeedType>::Type, &Seed );
+  a.close();
+  a = g.createAttribute( RandomCache::sSeedMachine, H5::Equiv<std::string>::Type, ds1 );
+  a.write( H5::Equiv<std::string>::Type, Machine );
+  a.close();
+}
+
+void RandomCache::Read( ::H5::Group &g, Matrix<fint> &Random,
+                        SeedType &Seed, std::string &Machine )
+{
+  ::H5::Attribute a = g.openAttribute( RandomCache::sSeed );
+  a.read( H5::Equiv<SeedType>::Type, &Seed );
+  a.close();
+  a = g.openAttribute( RandomCache::sSeedMachine );
+  a.read( a.getStrType(), Machine );
+  a.close();
+  H5::ReadMatrix( g, sRandom, Random );
+}
+
+bool RandomCache::Read( const std::string &Filename,
+                        Matrix<fint> &Random, SeedType &Seed, std::string &Machine )
+{
+  bool bOK{};
+  // Try to get the seed from HDF5 file
+  H5E_auto2_t h5at;
+  void      * f5at_p;
+  ::H5::Exception::getAutoPrint(h5at, &f5at_p);
+  ::H5::Exception::dontPrint();
+  try
+  {
+    ::H5::H5File f;
+    ::H5::Group  g;
+    H5::OpenFileGroup( f, g, Filename, "Random cache load: ", nullptr );
+    Read( g, Random, Seed, Machine );
+    bOK = true;
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  catch(...)
+  {
+    ::H5::Exception::setAutoPrint(h5at, f5at_p);
+    throw;
+  }
+  ::H5::Exception::setAutoPrint(h5at, f5at_p);
+  return bOK;
+}
+
+void RandomCache::SetCachePrefix( std::string &NewCachePrefix )
+{
+  CacheDirPrefix = NewCachePrefix;
+  CacheDirPrefixOK = true;
+}
+
+const std::string &RandomCache::GetCachePrefix()
+{
+  if( !CacheDirPrefixOK )
+  {
+    CacheDirPrefixOK = true;
+    const char * pDefaultString{ std::getenv( "MLUCache" ) };
+    if( pDefaultString )
+    {
+      CacheDirPrefix = pDefaultString;
+      std::cout << "MLUCache ";
+      if( CacheDirPrefix.empty() )
+        std::cout << "disabled via MLUCache environment variable";
+      else
+      {
+        std::cout << CacheDirPrefix;
+        if( CacheDirPrefix.back() != '/' )
+          std::cout << " Warning: doesn't end with /";
+      }
+      std::cout << "\n";
+    }
+  }
+  return CacheDirPrefix;
+}
+
+std::string RandomCache::PrependCachePath( const std::string &sFilename )
+{
+  std::string s;
+  if( !sFilename.empty() && sFilename[0] != '/' )
+    s.append( GetCachePrefix() );
+  s.append( sFilename );
+  return s;
+}
+
+std::string RandomCache::GetCachePath( const Key &key )
+{
+  std::string Filename{ GetCachePrefix() };
+  if( !Filename.empty() )
+  {
+    Filename.append( GetHostName() );
+    Filename.append( 1, '.' );
+    Filename.append( std::to_string( key.NumSamples ) );
+    Filename.append( 1, '.' );
+    Filename.append( sRandom );
+    Filename.append( 1, '.' );
+    Filename.append( SeedString( key.Seed ) );
+    Filename.append( "." DEF_FMT );
+  }
+  return Filename;
+}
+
 Matrix<fint> RandomCache::Make( fint &Seed, std::size_t NumSamples, std::size_t NumReplicas )
 {
   if( Seed == SeedWildcard )
@@ -192,34 +269,16 @@ Matrix<fint> RandomCache::Make( fint &Seed, std::size_t NumSamples, std::size_t 
 
 void RandomCache::SaveRandom( const Key &key, const Matrix<fint> &Random )
 {
-  if( !SaveRandomPrefix.empty() )
+  std::string Filename{ GetCachePath( key ) };
+  if( !Filename.empty() )
   {
-    const std::string SeedMachine{ GetHostName() };
-    std::string Filename{ SaveRandomPrefix };
-    Filename.append( SeedMachine );
-    Filename.append( 1, '.' );
-    Filename.append( std::to_string( key.NumSamples ) );
-    Filename.append( 1, '.' );
-    Filename.append( sRandom );
-    Filename.append( 1, '.' );
-    Filename.append( SeedString( key.Seed ) );
-    Filename.append( ".h5" );
     bool bOK{};
     try // to write in my format
     {
       MakeAncestorDirs( Filename );
       ::H5::H5File f( Filename, H5F_ACC_TRUNC );
-      hsize_t Dims[2];
-      Dims[0] = 1;
-      ::H5::DataSpace ds1( 1, Dims );
       ::H5::Group g = f.createGroup( sRandom );
-      H5::WriteMatrix( g, RandomCache::sRandom, Random );
-      ::H5::Attribute a = g.createAttribute( RandomCache::sSeed, ::H5::PredType::STD_U32LE, ds1 );
-      a.write( H5::Equiv<SeedType>::Type, &key.Seed );
-      a.close();
-      a = g.createAttribute( RandomCache::sSeedMachine, H5::Equiv<std::string>::Type, ds1 );
-      a.write( H5::Equiv<std::string>::Type, SeedMachine );
-      a.close();
+      Write( g, Random, key.Seed, GetHostName() );
       bOK = true;
     }
     catch(const ::H5::Exception &) {}
@@ -236,6 +295,14 @@ Matrix<fint> RandomCache::Get( fint &Seed, std::size_t NumSamples, std::size_t N
   const Key key{ Seed, NumSamples };
   Matrix<fint> &m{ Map[key] };
   assert(((m.size1==0 && m.size2==0)||m.size2==NumSamples)&&"RandomCache::Get() NumSamples mismatch");
+  if( m.size1 == 0 )
+  {
+    // First time I've seen this key - can I load it from cache
+    std::string Machine;
+    SeedType LoadSeed;
+    const std::string Filename{ GetCachePath( key ) };
+    Read( Filename, m, LoadSeed, Machine );
+  }
   if( m.size1 < NumReplicas )
   {
     // Not enough replicas - make some more

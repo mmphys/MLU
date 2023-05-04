@@ -58,26 +58,6 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-m BTursa"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--saveseed &apos;&apos;"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-r 1835672416"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-r JackKnife"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-r /Volumes/QCD/tursa/semilep/data/C1/Test/quark_l_h6413_gT_dt_20_p2_0_ps2_1_g5P_g5W.bootstrap.1835672416.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-ag5 --p2"
             isEnabled = "YES">
          </CommandLineArgument>
@@ -102,6 +82,28 @@
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "MLUHost"
+            value = "Tursa"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "MLUSeed"
+            value = "/Volumes/QCD/tursa/semilep/data/C1/Test/quark_l_h6413_gT_dt_20_p2_0_ps2_1_g5P_g5W.bootstrap.1835672416.h5"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "MLUSeed"
+            value = "Tursa.160.Random.1835672416.h5"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "MLUCache"
+            value = ""
+            isEnabled = "NO">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

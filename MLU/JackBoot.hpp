@@ -31,6 +31,7 @@
 #define MLU_JackBoot_hpp_end };
 
 #include <MLU/HDF5.hpp>
+#include <MLU/Posix.hpp>
 
 #include <cstdint>
 
@@ -50,7 +51,6 @@ struct RandomCache
   static const std::string sSeed;
   static const std::string sSeedMachine;
   static const std::string sRandom;
-  static std::string SaveRandomPrefix;
   static SeedType DefaultSeed();
   static SeedType DefaultSeed( SeedType NewDefaultSeed );
   /// Set default seed, eg from command-line switch. NB: Can be a random number file
@@ -70,6 +70,13 @@ struct RandomCache
       return "jackknife";
     return std::to_string( Seed );
   }
+  static void Write( ::H5::Group &g, const Matrix<fint> &Random,
+                     SeedType Seed, const std::string &Machine );
+  static void Read( ::H5::Group &g, Matrix<fint> &Random, SeedType &Seed, std::string &Machine );
+  static bool Read( const std::string &Filename, Matrix<fint> &Random,
+                    SeedType &Seed, std::string &Machine );
+  static void SetCachePrefix( std::string &NewCachePrefix );
+  static const std::string &GetCachePrefix();
 protected:
   static bool DefaultSeedOK;
   static SeedType DefaultSeed_;
@@ -84,6 +91,10 @@ protected:
   using Value = Matrix<fint>;
   using MapT = std::map<Key, Value, Key::Less>;
   MapT Map;
+  static bool CacheDirPrefixOK;
+  static std::string CacheDirPrefix;
+  static std::string PrependCachePath( const std::string &sFilename );
+  static std::string GetCachePath( const Key &key );
   /// Make random numbers for a bootstrap sample
   Matrix<fint> Make( fint &Seed, std::size_t NumSamples, std::size_t NumReplicas
                                                           = DefaultNumReplicas());

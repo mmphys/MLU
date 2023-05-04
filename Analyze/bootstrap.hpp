@@ -112,7 +112,6 @@ public:
   const bool b2ptSortZeroMom;
   const bool bOverwrite;
   const bool bVerboseSummaries;
-  const bool bFat;
   const int TimesliceDetail;
   const int nSample;
   const int binSize;
