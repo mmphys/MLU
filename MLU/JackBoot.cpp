@@ -29,6 +29,12 @@
 #include "JackBoot.hpp"
 #include <random>
 
+// Uncomment this next line to debug without OpenMP
+//#define DEBUG_DISABLE_OMP
+#ifndef DEBUG_DISABLE_OMP
+#include <omp.h>
+#endif
+
 MLU_JackBoot_hpp
 
 const std::string s_C{ "_C" };
@@ -586,16 +592,29 @@ void JackBoot<T>::Resample( const MatrixView<T> &Source, std::size_t NumReplicas
     const Real AvgNorm{ static_cast<Real>( 1. ) / ( NumSamples - 1u ) };
     Vector<T> nxBar{ Central };
     nxBar *= static_cast<Real>( NumSamples );
+#ifndef DEBUG_DISABLE_OMP
+    #pragma omp parallel for default(shared) schedule(dynamic)
+#endif
+    {
     for( std::size_t idx = 0; idx < NumReplicas; ++idx )
       for( std::size_t i = 0; i < Extent; ++i )
         Replica( idx, i ) = ( nxBar[i] - Source( idx, i ) ) * AvgNorm;
+    }
   }
   else
   {
     // Bootstrap resample
     const Real AvgNorm{ static_cast<Real>( 1. ) / NumSamples };
-    VectorView<T> Sample;
     Matrix<fint> Random{ RandomCache::Global.Get( Seed, NumSamples, NumReplicas ) };
+#ifndef DEBUG_DISABLE_OMP
+    #pragma omp parallel default(shared)
+#endif
+    {
+      VectorView<T> Sample;
+#ifndef DEBUG_DISABLE_OMP
+    #pragma omp for schedule(dynamic)
+#endif
+    {
     for( std::size_t idx = 0; idx < NumReplicas; ++idx )
     {
       for( std::size_t Resample = 0; Resample < NumSamples; ++Resample )
@@ -612,6 +631,8 @@ void JackBoot<T>::Resample( const MatrixView<T> &Source, std::size_t NumReplicas
       // Turn the sum into an average
       for( std::size_t i = 0; i < Extent; ++i )
         Replica( idx, i ) *= AvgNorm;
+    }
+    }
     }
   }
   // Take mean of replicas. Jaccknife should be same as Central, but compute to find errors

@@ -55,7 +55,7 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-i /Volumes/QCD/tursa/semilep/data/M2/analyse/bootstrap/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o corr_raw/2ptp2/ 2ptp2/&apos;h*_s_p2_[0-2]_g5P_g5P.*.h5&apos;,per"
@@ -63,9 +63,28 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o corr_raw/3pt_sp2/ 3pt_sp2/&apos;*_l_h*_gT_dt_16_*_ps2_[0-2]_g5P_g5P.*&apos;.h5,r"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o test/corr/2ptp2/ test/bootstrap/2ptp2/&apos;*&apos;.h5,per"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o test/corr/3pt_sp2/ -i test/bootstrap/3pt_sp2/&apos;*&apos; _gT_&apos;*&apos;.h5,r _gXYZ_&apos;*&apos;.h5,i"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o test/corr/3sm_sp2/ -i test/bootstrap/3sm_sp2/&apos;*&apos; _gT_&apos;*&apos;.h5,r _gXYZ_&apos;*&apos;.h5,i"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "MLUFat"
+            value = ""
+            isEnabled = "NO">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

@@ -62,7 +62,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-cgT,-gXYZ "
+            argument = "-cgT,gXYZ "
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -75,18 +75,18 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o test/bootstrap/3pt_sp2/ test/data/3pt/ZFPP/&apos;*&apos;.h5"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o test/bootstrap/3sm_sp2/ test/data/3pt/ZFPP/&apos;*&apos;.h5 --timerev"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "MLUFat"
             value = ""
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "MLUSeed"

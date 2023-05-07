@@ -1396,7 +1396,7 @@ public:
   int SampleSize = 0; // Number of samples (after binning) used to create bootstrap (set during bootstrap)
   std::vector<Common::ConfigCount> ConfigCount; // Info on every config in the bootstrap in order
   std::vector<std::string> FileList; // Info on every config in the bootstrap in order
-  virtual void clear();
+  virtual void clear( bool bClearName = true );
   inline const SeedType Seed( int idxJackBoot = 0 ) const
   {
     ValidateJackBoot( idxJackBoot );
@@ -1860,7 +1860,7 @@ using SampleC = Sample<std::complex<double>>;
 using SampleD = Sample<double>;
 
 template <typename T>
-void Sample<T>::clear()
+void Sample<T>::clear( bool bClearName )
 {
   Nt_ = 0;
   Raw.clear();
@@ -1872,12 +1872,13 @@ void Sample<T>::clear()
   SummaryNames.clear();
   m_SummaryData.clear();
   ColumnNames.clear();
-  Name_.clear();
   SeedMachine_.clear();
   binSize = 1;
   SampleSize = 0;
   ConfigCount.clear();
   FileList.clear();
+  if( bClearName )
+    Name_.clear();
 }
 
 // Initialise *pNumSamples either to 0, or to the size of the first Sample before first call
@@ -2152,7 +2153,7 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
   void      * f5at_p;
   ::H5::Exception::getAutoPrint(h5at, &f5at_p);
   ::H5::Exception::dontPrint();
-  clear();
+  clear( false );
   try // to load from LatAnalyze format
   {
     SetSeed( Name_.Seed ); // Seed comes from filename if not loaded from hdf5
@@ -2206,12 +2207,12 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
   catch(...)
   {
     ::H5::Exception::setAutoPrint(h5at, f5at_p);
-    clear();
+    clear( false );
     throw;
   }
   if( !bOK && !bNoReturn )
   {
-    clear();
+    clear( false );
     try // to load from my format
     {
       unsigned short att_nAux;
@@ -2412,7 +2413,7 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       }
       // If I don't need to resample, load optional items
       const bool bNeedResample{ Seed() != RandomCache::DefaultSeed()
-                                || att_nSample < RandomCache::DefaultNumReplicas() };
+                                || Data[0].NumReplicas() < RandomCache::DefaultNumReplicas() };
       if( !bNeedResample || !CanResample() )
       {
         try
@@ -2492,14 +2493,14 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
     catch(...)
     {
       ::H5::Exception::setAutoPrint(h5at, f5at_p);
-      clear();
+      clear( false );
       throw;
     }
   }
   ::H5::Exception::setAutoPrint(h5at, f5at_p);
   if( !bOK )
   {
-    clear();
+    clear( false );
     throw std::runtime_error( "Unable to read sample from " + Name_.Filename );
   }
 }
