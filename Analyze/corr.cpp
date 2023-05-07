@@ -32,45 +32,73 @@
 #include <MLU/Common.hpp>
 
 using scalar = double;
+using Complex = std::complex<scalar>;
 using Fold = Common::Fold<scalar>;
-using SC = Common::Sample<std::complex<scalar>>;
+using SC = Common::Sample<Complex>;
+using VScalar = Common::Vector<scalar>;
+using VComplex = Common::Vector<Complex>;
+using MScalar = Common::Matrix<scalar>;
+using MComplex = Common::Matrix<Complex>;
+using JBScalar = Common::JackBoot<scalar>;
+using JBComplex = Common::JackBoot<Complex>;
+using CTraits = Common::SampleTraits<Complex>;
 
-void CopyFold( scalar * dst, const std::complex<scalar> * pSrc, int NumRows, int Nt, int NtHalf,
-               Common::FoldProp &f, bool bRealImagOnly, bool out_t0Negated )
+/** Copy Src to Dst.
+ 
+ `bRealImagOnly == true` just copy real or imaginary component - but don't fold.
+ `bRealImagOnly == false` fold forward and backward waves as specified
+ */
+void CopyFold( MScalar &dst, const MComplex src, int NtHalf,
+               Common::FoldProp &f, bool bRealImagOnly )
 {
-  const scalar * src{ SC::Traits::ScalarPtr( pSrc )};
-  if( f.rps.reality == Common::Reality::Imag )
-    src++;
+  std::size_t NumRows{ src.size1 };
+  std::size_t Nt{ src.size2 };
+  if( dst.size1 != NumRows )
+    throw std::runtime_error( "CopyFold() bug: NumRows mismatch" );
+  if( dst.size2 != NtHalf )
+    throw std::runtime_error( "CopyFold() bug: NtHalf mismatch" );
+  const int RI{ f.rps.reality == Common::Reality::Imag ? 1 : 0 };
   if( bRealImagOnly )
   {
-    std::size_t Len{ static_cast<std::size_t>( NumRows ) * Nt };
-    for( std::size_t i = 0; i < Len; ++i )
-    {
-      *dst++ = *src;
-      src += SC::scalar_count;
-    }
+    for( std::size_t i = 0; i < NumRows; ++i )
+      for( std::size_t j = 0; j < Nt; ++j )
+        dst(i,j) = CTraits::RealImag( src(i,j), RI );
   }
   else
   {
-    for( int s = 0; s < NumRows; s++ )
-    {
-      // Timeslice 0 is a little special
-      scalar d = *src;
-      if( out_t0Negated )
-        d = std::abs( d );
-      *dst++ = d;
-      // Now do all the other timeslices
-      for( int t = 1; t < NtHalf; t++ )
+    const scalar Norm{ f.rps.sign == Common::Sign::Negative ? -0.5 : 0.5 };
+    for( std::size_t i = 0; i < NumRows; ++i )
+      for( std::size_t t = 0; t < NtHalf; ++t )
       {
-        if( f.rps.parity == Common::Parity::Odd )
-          d = src[t * SC::scalar_count] - src[(Nt - t) * SC::scalar_count];
+        scalar d = CTraits::RealImag( src(i,t), RI );
+        if( t == 0 )
+        {
+          // Timeslice 0 is a little special
+          if( f.t0Abs )
+            d = std::abs( d );
+        }
         else
-          d = src[t * SC::scalar_count] + src[(Nt - t) * SC::scalar_count];
-        *dst++ = d * ( f.rps.sign == Common::Sign::Negative ? -0.5 : 0.5 );
+        {
+          // All the other timeslices
+          if( f.rps.parity == Common::Parity::Odd )
+            d -= CTraits::RealImag( src( i, Nt - t ), RI );
+          else
+            d += CTraits::RealImag( src( i, Nt - t ), RI );
+          d *= Norm;
+        }
+        dst(i,t) = d;
       }
-      src += SC::scalar_count * Nt;
-    }
   }
+}
+
+void CopyFold( VScalar &dst, const VComplex &src, int NtHalf,
+               Common::FoldProp &f, bool bRealImagOnly )
+{
+  MScalar mDst;
+  MComplex mSrc;
+  mDst.MapView( dst );
+  mSrc.MapView( const_cast<VComplex &>( src ) );
+  CopyFold( mDst, mSrc, NtHalf, f, bRealImagOnly );
 }
 
 int main(int argc, const char *argv[])
@@ -113,6 +141,17 @@ int main(int argc, const char *argv[])
           bRealImagOnly = f.Parse( &Arg[pos + 1], Arg.length() - pos - 1 );
           inFileName.append( Arg.c_str(), pos );
         }
+        // I always pick either the real or imaginary component of source
+        if( f.rps.reality != Common::Reality::Imag )
+          f.rps.reality = Common::Reality::Real;
+        if( !bRealImagOnly )
+        {
+          // If I'm folding, then I need to choose odd or even and the sign
+          if( f.rps.parity != Common::Parity::Odd )
+            f.rps.parity = Common::Parity::Even;
+          if( f.rps.sign != Common::Sign::Negative )
+            f.rps.sign = Common::Sign::Positive;
+        }
         std::cout << "FoldProp: " << f << std::endl;
         static const char pIndent[] = "  ";
         std::vector<std::string> FileList{ Common::glob( &inFileName, &inFileName + 1 ) };
@@ -134,6 +173,7 @@ int main(int argc, const char *argv[])
               myFileList = in.FileList;
             else
             {
+              // Try to load the file with source and sink swapped
               if( Common::EqualIgnoreCase( OpNames[0], OpNames[1] ) )
                 throw std::runtime_error( "Folding with conjugate specified, but sink and source are both " + OpNames[0] );
               std::string ConjFileName{ in.Name_.Dir };
@@ -182,11 +222,9 @@ int main(int argc, const char *argv[])
                 myFileList = in.FileList;
                 myFileList.insert( myFileList.end(), in2.FileList.begin(), in2.FileList.end() );
               }
-              std::complex<scalar> * dst{ in[SC::idxCentral] };
-              const std::complex<scalar> * src{ in2[SC::idxCentral] };
               for( int s = SC::idxCentral; s < NumSamples; s++ )
-                for( int t = 0; t < Nt; t++, dst++, src++ )
-                  *dst = ( *dst + *src ) * 0.5;
+                for( int t = 0; t < Nt; ++t )
+                  in(s,t) = ( in(s,t) + in2(s,t) ) * 0.5;
               out.BootstrapList.emplace_back( ConjFileName );
               // Merge the raw data (if present and same size)
               if( in.NumSamplesRaw() )
@@ -195,11 +233,9 @@ int main(int argc, const char *argv[])
                   in.resizeRaw( 0 );
                 else
                 {
-                  src = in2.getRaw();
-                  dst = in.getRaw();
                   for( int s = 0; s < in.NumSamplesRaw(); s++ )
-                    for( int t = 0; t < Nt; t++, dst++, src++ )
-                      *dst = ( *dst + *src ) * 0.5;
+                    for( int t = 0; t < Nt; ++t )
+                      in.getRaw()(s,t) = ( in.getRaw()(s,t) + in2.getRaw()(s,t) ) * 0.5;
                 }
               }
               // Merge the binned data (if present and same size)
@@ -209,11 +245,9 @@ int main(int argc, const char *argv[])
                   in.resizeBinned( 0 );
                 else
                 {
-                  src = in2.getBinned();
-                  dst = in.getBinned();
                   for( int s = 0; s < in.NumSamplesBinned(); s++ )
-                    for( int t = 0; t < Nt; t++, dst++, src++ )
-                      *dst = ( *dst + *src ) * 0.5;
+                    for( int t = 0; t < Nt; ++t )
+                      in.getBinned()(s,t) = ( in.getBinned()(s,t) + in2.getBinned()(s,t) ) * 0.5;
                 }
               }
             }
@@ -225,63 +259,26 @@ int main(int argc, const char *argv[])
             out.NtUnfolded = Nt;
             out.t0Negated = false;
             out.Conjugated = f.Conjugate;
-            scalar * dst{ out[Fold::idxCentral] };
-            const scalar * src{ SC::Traits::ScalarPtr( in[SC::idxCentral] )};
-
-            // This is what CopyFold is based on
-            if( f.rps.reality == Common::Reality::Imag )
-              src++;
-            else
-              f.rps.reality = Common::Reality::Real;
-            if( bRealImagOnly )
-            {
-              std::size_t Len{ ( static_cast<std::size_t>( NumSamples ) + 1 ) * Nt };
-              for( std::size_t i = 0; i < Len; ++i )
-              {
-                *dst++ = *src;
-                src += SC::scalar_count;
-              }
-            }
-            else
-            {
-              out.binSize += BinSize2;
-              if( f.rps.parity != Common::Parity::Odd )
-                f.rps.parity = Common::Parity::Even;
-              if( f.rps.sign != Common::Sign::Negative )
-                f.rps.sign = Common::Sign::Positive;
-              for( int s = SC::idxCentral; s < NumSamples; s++ )
-              {
-                // Timeslice 0 is a little special
-                scalar d = *src;
-                if( s == SC::idxCentral && f.t0Abs && d < 0 )
-                  out.t0Negated = true;
-                if( out.t0Negated )
-                  d = std::abs( d );
-                *dst++ = d;
-                // Now do all the other timeslices
-                for( int t = 1; t < NtHalf; t++ )
-                {
-                  if( f.rps.parity == Common::Parity::Odd )
-                    d = src[t * SC::scalar_count] - src[(Nt - t) * SC::scalar_count];
-                  else
-                    d = src[t * SC::scalar_count] + src[(Nt - t) * SC::scalar_count];
-                  *dst++ = d * ( f.rps.sign == Common::Sign::Negative ? -0.5 : 0.5 );
-                }
-                src += SC::scalar_count * Nt;
-              }
-            }
-
-            if( in.NumSamplesRaw() )
-              CopyFold( out.resizeRaw( in.NumSamplesRaw() ), in.getRaw(), in.NumSamplesRaw(),
-                        Nt, NtHalf, f, bRealImagOnly, out.t0Negated );
-            if( in.NumSamplesBinned() )
-              CopyFold( out.resizeBinned( in.NumSamplesBinned() ), in.getBinned(), in.NumSamplesBinned(),
-                        Nt, NtHalf, f, bRealImagOnly, out.t0Negated );
-
             out.reality = f.rps.reality;
             out.parity = f.rps.parity;
             out.sign = f.rps.sign;
-            out.MakeCorrSummary( nullptr );
+            // Copy the resampled data
+            JBScalar &jbDst{ out.getData() };
+            const JBComplex &jbSrc{ in.getData() };
+            CopyFold( jbDst.GetCentral(), jbSrc.GetCentral(), NtHalf, f, bRealImagOnly );
+            CopyFold( jbDst.GetReplicaMean(), jbSrc.GetReplicaMean(), NtHalf, f, bRealImagOnly );
+            CopyFold( jbDst.Replica, jbSrc.Replica, NtHalf, f, bRealImagOnly );
+            if( in.NumSamplesRaw() )
+            {
+              out.resizeRaw( in.NumSamplesRaw() );
+              CopyFold( out.getRaw(), in.getRaw(), NtHalf, f, bRealImagOnly );
+            }
+            if( in.NumSamplesBinned() )
+            {
+              out.resizeBinned( in.NumSamplesBinned() );
+              CopyFold( out.getBinned(), in.getBinned(), NtHalf, f, bRealImagOnly );
+            }
+            out.MakeCorrSummary();
             // Now save the folded correlator
             std::string OutFileName{ outPrefix };
             OutFileName.append( in.Name_.Base );

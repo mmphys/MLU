@@ -123,7 +123,6 @@ struct DispEntry
 
 /**
  List of parameters
- 
  - Warning: sizes (i.e. protected members) only valid after AssignOffsets()
  */
 struct Params : std::map<Param::Key, Param, Param::Key::Less>

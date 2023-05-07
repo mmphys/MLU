@@ -61,6 +61,10 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
     Data() { return data; }
   template<typename T=Scalar> inline typename std::enable_if< is_complex<T>::value, T *>::type
     Data() { return reinterpret_cast<T *>( data ); }
+  template<typename T=Scalar> inline typename std::enable_if<!is_complex<T>::value, const T *>::type
+    Data() const { return data; }
+  template<typename T=Scalar> inline typename std::enable_if< is_complex<T>::value, const T *>::type
+    Data() const { return reinterpret_cast<T *>( data ); }
   inline void MapView( Scalar * data_, std::size_t size_, std::size_t stride_ = 1 );
   inline void MapView( std::vector<Scalar> &v ) { MapView( v.data(), v.size() ); }
   inline void MapView( MyVector &v ) { MapView( v.Data(), v.size, v.stride ); }
@@ -132,7 +136,7 @@ Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( const Vector &o )
     // Copy vector where all members are the same constant
     clear();
     resize( 1 );
-    * data = * o.data;
+    * Data() = * o.Data();
     size = o.size;
     stride = 0;
   }
@@ -160,28 +164,29 @@ Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator=( Vector &&o )
 template <typename T> Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator+=( T c )
 {
   for( std::size_t i = 0; i < size; ++i )
-    data[i] += c;
+    (*this)[i] += c;
   return *this;
 }
 
 template <typename T> Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator-=( T c )
 {
+  
   for( std::size_t i = 0; i < size; ++i )
-    data[i] -= c;
+    (*this)[i] -= c;
   return *this;
 }
 
 template <typename T> Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator*=( T c )
 {
   for( std::size_t i = 0; i < size; ++i )
-    data[i] *= c;
+    (*this)[i] *= c;
   return *this;
 }
 
 template <typename T> Vector<COMMON_GSL_TYPE>& Vector<COMMON_GSL_TYPE>::operator/=( T c )
 {
   for( std::size_t i = 0; i < size; ++i )
-    data[i] /= c;
+    (*this)[i] /= c;
   return *this;
 }
 
@@ -354,11 +359,24 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
     Data() { return data; }
   template<typename T=Scalar> inline typename std::enable_if< is_complex<T>::value, T *>::type
     Data() { return reinterpret_cast<T *>( data ); }
+  template<typename T=Scalar> inline typename std::enable_if<!is_complex<T>::value, const T *>::type
+    Data() const { return data; }
+  template<typename T=Scalar> inline typename std::enable_if< is_complex<T>::value, const T *>::type
+    Data() const { return reinterpret_cast<T *>( data ); }
   inline void MapView( Scalar * data_, std::size_t size1_, std::size_t size2_, std::size_t tda_ );
   inline void MapView( Scalar * data_, std::size_t size1_, std::size_t size2_ )
   { MapView( data_, size1_, size2_, size2_ ); }
   inline void MapView( MyMatrix &o )
   { MapView( o.Data(), o.size1, o.size2, o.tda ); };
+  inline void MapView( MyVector &o )
+  {
+    if( o.size == 0 )
+      throw std::runtime_error( "Cannot map matrix view of empty vector" );
+    if( o.stride != 1 )
+      throw std::runtime_error( "Cannot map matrix view of vector with stride "
+                               + std::to_string( o.stride ) );
+    MapView( o.Data(), 1, o.size );
+  };
   inline const Scalar & operator()( std::size_t i, std::size_t j ) const;
   inline Scalar & operator()( std::size_t i, std::size_t j );
   inline void Row( std::size_t idx, MyVector &v );

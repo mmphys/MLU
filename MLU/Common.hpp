@@ -708,6 +708,12 @@ struct FoldProp
   RPS rps;
   bool t0Abs = true;
   bool Conjugate = false;
+  /**
+   Parse options describing how to fold
+   - Returns:
+   true if only real or imaginary specified, i.e. no instructions on how to fold.
+   false if any of the other options specified ... which describe how to fold the forward and backward waves.
+   */
   bool Parse( const char * const pc, std::size_t const Len )
   {
     static const std::string sOption{ "RIEOPN0C" };
@@ -799,13 +805,13 @@ template<typename ST> struct SampleTraits<ST, typename std::enable_if<!is_comple
 template<typename ST> struct SampleTraits<ST, typename std::enable_if<is_complex<ST>::value
     && SampleTraits<typename is_complex<ST>::Scalar>::value>::type> : public std::true_type
 {
-  using scalar_type = typename SampleTraits<typename is_complex<ST>::Scalar>::scalar_type;
+  using scalar_type = typename is_complex<ST>::Scalar;
   using value_type = ST;
   static constexpr bool is_complex = true;
   static constexpr int scalar_count = 2;
-  static inline scalar_type * ScalarPtr( std::complex<ST> * p )
+  static inline scalar_type * ScalarPtr( ST * p )
       { return reinterpret_cast<scalar_type *>( p ); };
-  static inline const scalar_type * ScalarPtr( const std::complex<ST> * p )
+  static inline const scalar_type * ScalarPtr( const ST * p )
       { return reinterpret_cast<const scalar_type *>( p ); };
   static inline scalar_type Real( const ST &v ) { return v.real(); }
   static inline scalar_type Imag( const ST &v ) { return v.imag(); }
@@ -1390,6 +1396,7 @@ public:
   int SampleSize = 0; // Number of samples (after binning) used to create bootstrap (set during bootstrap)
   std::vector<Common::ConfigCount> ConfigCount; // Info on every config in the bootstrap in order
   std::vector<std::string> FileList; // Info on every config in the bootstrap in order
+  virtual void clear();
   inline const SeedType Seed( int idxJackBoot = 0 ) const
   {
     ValidateJackBoot( idxJackBoot );
@@ -1686,6 +1693,7 @@ public:
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void MakeCorrSummary();
   void WriteSummary( const std::string &sOutFileName, bool bVerboseSummary = false );
+  virtual ~Sample() {}
   explicit Sample( const std::vector<std::string> &SummaryNames_, int NumSamples = 0, int Nt = 0 )
   {
     resize( NumSamples, Nt );
@@ -1850,6 +1858,27 @@ public: // Override these for specialisations
 
 using SampleC = Sample<std::complex<double>>;
 using SampleD = Sample<double>;
+
+template <typename T>
+void Sample<T>::clear()
+{
+  Nt_ = 0;
+  Raw.clear();
+  for( int i = 0; i < NumJackBoot; ++i )
+  {
+    Binned[i].clear();
+    Data[i].clear();
+  }
+  SummaryNames.clear();
+  m_SummaryData.clear();
+  ColumnNames.clear();
+  Name_.clear();
+  SeedMachine_.clear();
+  binSize = 1;
+  SampleSize = 0;
+  ConfigCount.clear();
+  FileList.clear();
+}
 
 // Initialise *pNumSamples either to 0, or to the size of the first Sample before first call
 template <typename T> template <typename U>
@@ -2048,6 +2077,7 @@ void Sample<T>::MakeCorrSummary()
 {
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
   // Now perform summaries
+  AllocSummaryBuffer();
   const int tMid{ bFolded() ? Nt_ : Nt_ / 2 };
   JackBoot<scalar_type> Buffer( NumSamples(), Nt_ );
   std::vector<ValEr> veBuf( Nt_ );
@@ -2122,6 +2152,7 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
   void      * f5at_p;
   ::H5::Exception::getAutoPrint(h5at, &f5at_p);
   ::H5::Exception::dontPrint();
+  clear();
   try // to load from LatAnalyze format
   {
     SetSeed( Name_.Seed ); // Seed comes from filename if not loaded from hdf5
@@ -2175,10 +2206,12 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
   catch(...)
   {
     ::H5::Exception::setAutoPrint(h5at, f5at_p);
+    clear();
     throw;
   }
   if( !bOK && !bNoReturn )
   {
+    clear();
     try // to load from my format
     {
       unsigned short att_nAux;
@@ -2209,7 +2242,6 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       {
         ::H5::Exception::clearErrorStack();
       }
-      SeedMachine_.clear();
       try
       {
         a = g.openAttribute( RandomCache::sSeedMachine );
@@ -2220,31 +2252,28 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       {
         ::H5::Exception::clearErrorStack();
       }
-      std::vector<std::string> mySummaryNames;
       try
       {
         // Auxiliary names should match the number of auxiliary records
         a = g.openAttribute(sSummaryNames);
-        mySummaryNames = H5::ReadStrings( a );
+        SummaryNames = H5::ReadStrings( a );
         a.close();
       }
       catch(const ::H5::Exception &)
       {
         ::H5::Exception::clearErrorStack();
       }
-      std::vector<std::string> myColumnNames;
       try
       {
         // Auxiliary names should match the number of auxiliary records
         a = g.openAttribute(sColumnNames);
-        myColumnNames = H5::ReadStrings( a );
+        ColumnNames = H5::ReadStrings( a );
         a.close();
       }
       catch(const ::H5::Exception &)
       {
         ::H5::Exception::clearErrorStack();
       }
-      SampleSize = 0;
       try
       {
         int tmp;
@@ -2257,7 +2286,6 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       {
         ::H5::Exception::clearErrorStack();
       }
-      binSize = 1;
       try
       {
         int tmp;
@@ -2270,13 +2298,12 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       {
         ::H5::Exception::clearErrorStack();
       }
-      std::vector<std::string> myFileList;
       // Try to load the FileList from dataSet first, falling back to attribute
       bool bGotFileList{ false };
       try
       {
         ::H5::DataSet ds = g.openDataSet( sFileList );
-        myFileList = H5::ReadStrings( ds );
+        FileList = H5::ReadStrings( ds );
         ds.close();
         bGotFileList = true;
       }
@@ -2289,7 +2316,7 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
         try
         {
           a = g.openAttribute(sFileList);
-          myFileList = H5::ReadStrings( a );
+          FileList = H5::ReadStrings( a );
           a.close();
           bGotFileList = true;
         }
@@ -2298,7 +2325,6 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
           ::H5::Exception::clearErrorStack();
         }
       }
-      std::vector<Common::ConfigCount> myConfigCount;
       try
       {
         a = g.openAttribute(sConfigCount);
@@ -2310,8 +2336,8 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
         dsp.getSimpleExtentDims( &NumConfig );
         if( NumConfig > std::numeric_limits<int>::max() )
           throw std::runtime_error( sConfigCount + " too many items in ConfigCount: " + std::to_string( NumConfig ) );
-        myConfigCount.resize( NumConfig );
-        a.read( H5::Equiv<Common::ConfigCount>::Type, &myConfigCount[0] );
+        ConfigCount.resize( NumConfig );
+        a.read( H5::Equiv<Common::ConfigCount>::Type, &ConfigCount[0] );
         a.close();
       }
       catch(const ::H5::Exception &)
@@ -2330,70 +2356,31 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       {
         throw std::runtime_error( "Extended attributes for " + DefaultGroupName() + " missing" );
       }
-      // Get data dimensions. OK if missing, but if present it must pass error checks
-      int data_Nt{};
-      try
-      {
-        std::string sData_S{ "data_S" };
-        ::H5::DataSet dsJackBoot = g.openDataSet( sData_S );
-        ::H5::DataSpace dspJackBoot = dsJackBoot.getSpace();
-        int nDims{ dspJackBoot.getSimpleExtentNdims() };
-        if( nDims != 2 )
-          throw std::runtime_error( sData_S + " has " + std::to_string( nDims ) + " dimensions" );
-        hsize_t Dim[2];
-        dspJackBoot.getSimpleExtentDims( Dim );
-        if( Dim[0] != att_nSample )
-          throw std::runtime_error( sData_S + " has " + std::to_string( Dim[0] ) + " replicas but"
-                                   + std::to_string( att_nSample ) + " were expected" );
-        if( Dim[1] < 1 || Dim[1] > std::numeric_limits<int>::max() )
-          throw std::runtime_error( sData_S + " has " + std::to_string( Dim[1] ) + " columns" );
-        data_Nt = static_cast<int>( Dim[1] );
-        if( Dim[1] * att_nSample >= std::numeric_limits<std::size_t>::max() )
-          throw std::runtime_error( sData_S + " " + std::to_string( att_nSample ) + " rows x "
-                                   + std::to_string( data_Nt ) + " columns too large" );
-      }
-      catch(const ::H5::Exception &)
-      {
-        ::H5::Exception::clearErrorStack();
-      }
       // Load Binned data
-      Matrix<T> myBinned;
       try
       {
-        H5::ReadMatrix( g, "samples_Binned", myBinned );
-        if( myBinned.size1 != SampleSize )
+        H5::ReadMatrix( g, "samples_Binned", Binned[0] );
+        if( Binned[0].size1 != SampleSize )
           throw std::runtime_error( "SampleSize = " + std::to_string( SampleSize ) + " but "
-                      + std::to_string( myBinned.size1 ) + " binned replicas read" );
+                      + std::to_string( Binned[0].size1 ) + " binned replicas read" );
+        if( Nt_ == 0 )
+          Nt_ = static_cast<int>( Binned[0].size2 );
+        else if( Binned[0].size2 != Nt_ )
+          throw std::runtime_error( "nT = " + std::to_string( Nt_ ) + " but "
+                      + std::to_string( Binned[0].size2 ) + " binned columns read" );
       }
       catch(const ::H5::Exception &)
       {
         ::H5::Exception::clearErrorStack();
-        myBinned.clear();
+        Binned[0].clear();
       }
-      // Validate resampled / binned data sizes
-      if( !data_Nt && myBinned.Empty() )
-        throw std::runtime_error( "No binned or resampled data available" );
-      if( data_Nt && !myBinned.Empty() )
-      {
-        if( myBinned.size2 != static_cast<unsigned int>( data_Nt ) )
-          throw std::runtime_error( "nT = " + std::to_string( data_Nt ) + " but "
-                      + std::to_string( myBinned.size2 ) + " binned columns read" );
-        if( myBinned.size1 != SampleSize )
-          throw std::runtime_error( "SampleSize = " + std::to_string( SampleSize ) + " but "
-                      + std::to_string( myBinned.size1 ) + " binned rows read" );
-      }
-      // Resize this sample
-      SummaryNames = std::move( mySummaryNames );
-      resize( static_cast<int>( att_nSample ), data_Nt ? data_Nt : static_cast<int>(myBinned.size2));
-      ColumnNames = std::move( myColumnNames );
-      FileList = std::move( myFileList );
-      ConfigCount = std::move( myConfigCount );
-      Binned[0] = std::move( myBinned );
       // Load raw data
       try
       {
         H5::ReadMatrix( g, "samples_Raw", Raw );
-        if( Raw.size2 != Nt_ )
+        if( Nt_ == 0 )
+          Nt_ = static_cast<int>( Raw.size2 );
+        else if( Raw.size2 != Nt_ )
           throw std::runtime_error( "nT = " + std::to_string( Nt_ ) + " but "
                       + std::to_string( Raw.size2 ) + " raw columns read" );
         if( FileList.size() && Raw.size1 != FileList.size() )
@@ -2405,92 +2392,97 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
         ::H5::Exception::clearErrorStack();
         Raw.clear();
       }
-      if( CanResample() && ( Seed() != RandomCache::DefaultSeed() || att_nSample < RandomCache::DefaultNumReplicas() ) )
+      // If random numbers present, put them in cache (which checks compatibility)
+      try
       {
-        throw std::runtime_error( "Add code to resample and resummarise" );
-      }
-      else
-      {
-        // Load from file
-        Data[0].Read( g, "data" );
-        if( Data[0].extent() != Nt_ )
-          throw std::runtime_error( "nT = " + std::to_string( Nt_ ) + " but "
-                                   + std::to_string( Data[0].extent() ) + " columns read" );
-        if( Data[0].Replica.size1 != att_nSample )
+        Matrix<fint> Random;
+        H5::ReadMatrix( g, RandomCache::sRandom, Random );
+        if( Random.size2 != SampleSize )
+          throw std::runtime_error( "SampleSize = " + std::to_string( SampleSize ) + " but "
+                                   + std::to_string( Random.size2 ) + " random columns read" );
+        if( Random.size1 != att_nSample )
           throw std::runtime_error( "nSample = " + std::to_string( att_nSample ) + " but "
-                                   + std::to_string( Data[0].Replica.size1 ) + " replicas read" );
-        ::H5::DataSet ds = g.openDataSet( "data_S" );
-        ::H5::DataSpace dsp = ds.getSpace();
-        if( dsp.getSimpleExtentNdims() == 2 )
+                                   + std::to_string( Random.size1 ) + " random replicas read" );
+        // Put random numbers in cache - will throw if they don't match previous entries
+        RandomCache::Global.Put( Seed(), Random );
+      }
+      catch(const ::H5::Exception &)
+      {
+        ::H5::Exception::clearErrorStack();
+      }
+      // If I don't need to resample, load optional items
+      const bool bNeedResample{ Seed() != RandomCache::DefaultSeed()
+                                || att_nSample < RandomCache::DefaultNumReplicas() };
+      if( !bNeedResample || !CanResample() )
+      {
+        try
         {
-          hsize_t Dim[2];
-          dsp.getSimpleExtentDims( Dim );
-          if( Dim[0] <= std::numeric_limits<int>::max()
-             && Dim[1] <= std::numeric_limits<int>::max()
-             && Dim[0] * att_nSample <= std::numeric_limits<std::size_t>::max() )
+          // Load resampled data
+          Data[0].Read( g, "data" );
+          if( Data[0].NumReplicas() != att_nSample )
+            throw std::runtime_error( "nSample = " + std::to_string( att_nSample ) + " but "
+                                     + std::to_string( Data[0].NumReplicas() ) + " replicas read" );
+          if( Nt_ == 0 )
+            Nt_ = static_cast<int>( Data[0].extent() );
+          else if( Data[0].extent() != Nt_ )
+            throw std::runtime_error( "nT = " + std::to_string( Nt_ ) + " but "
+                        + std::to_string( Data[0].extent() ) + " columns read" );
+          if( !SummaryNames.empty() )
           {
-            dsp.close();
-            ds.close();
-            try // to read the random numbers
+            AllocSummaryBuffer();
+            try // to load the summaries
             {
-              Matrix<fint> Random;
-              H5::ReadMatrix( g, RandomCache::sRandom, Random );
-              if( Random.size2 != SampleSize )
-                throw std::runtime_error( "SampleSize = " + std::to_string( SampleSize ) + " but "
-                                         + std::to_string( Random.size2 ) + " random columns read" );
-              if( Random.size1 != att_nSample )
-                throw std::runtime_error( "nSample = " + std::to_string( att_nSample ) + " but "
-                                         + std::to_string( Random.size1 ) + " random replicas read" );
-              RandomCache::Global.Put( Seed(), Random );
+              ::H5::DataSet ds = g.openDataSet( sSummaryDSName );
+              ::H5::DataSpace dsp = ds.getSpace();
+              if( dsp.getSimpleExtentNdims() != 2 )
+                throw std::runtime_error( "Dimension error reading " + sSummaryDSName );
+              hsize_t Dim[2];
+              dsp.getSimpleExtentDims( Dim );
+              if( Dim[0] != SummaryNames.size() || Dim[1] != static_cast<unsigned int>( Nt_ ) )
+                throw std::runtime_error( "Bad size reading " + sSummaryDSName );
+              const ::H5::DataType ErrType{ ds.getDataType() };
+              if( ErrType == H5::Equiv<ValWithErOldV1<scalar_type>>::Type )
+              {
+                const std::size_t Count{ SummaryNames.size() * Nt_ };
+                std::vector<ValWithErOldV1<scalar_type>> tmp( Count );
+                ds.read( &tmp[0], ErrType );
+                for( std::size_t i = 0; i < Count; ++i )
+                {
+                  m_SummaryData[i].Central = tmp[i].Central;
+                  m_SummaryData[i].Low     = tmp[i].Low;
+                  m_SummaryData[i].High    = tmp[i].High;
+                  m_SummaryData[i].Check   = tmp[i].Check;
+                  m_SummaryData[i].Min     = 0;
+                  m_SummaryData[i].Max     = 0;
+                }
+              }
+              else
+                ds.read( &m_SummaryData[0], H5::Equiv<ValWithEr<scalar_type>>::Type );
             }
             catch(const ::H5::Exception &)
             {
               ::H5::Exception::clearErrorStack();
-              Binned[0].clear();
+              MakeCorrSummary(); // Rebuild summaries if I can't load them
             }
-                  if( SummaryNames.empty() )
-                    bOK = true;
-                  else
-                  {
-                    dsp.close();
-                    ds.close();
-                    ds = g.openDataSet( sSummaryDSName );
-                    dsp = ds.getSpace();
-                    if( dsp.getSimpleExtentNdims() == 2 )
-                    {
-                      dsp.getSimpleExtentDims( Dim );
-                      if( Dim[0] == SummaryNames.size() && Dim[1] == static_cast<unsigned int>(Nt_) )
-                      {
-                        const ::H5::DataType ErrType{ ds.getDataType() };
-                        if( ErrType == H5::Equiv<ValWithErOldV1<scalar_type>>::Type )
-                        {
-                          const std::size_t Count{ SummaryNames.size() * Nt_ };
-                          std::vector<ValWithErOldV1<scalar_type>> tmp( Count );
-                          ds.read( &tmp[0], ErrType );
-                          for( std::size_t i = 0; i < Count; ++i )
-                          {
-                            m_SummaryData[i].Central = tmp[i].Central;
-                            m_SummaryData[i].Low     = tmp[i].Low;
-                            m_SummaryData[i].High    = tmp[i].High;
-                            m_SummaryData[i].Check   = tmp[i].Check;
-                            m_SummaryData[i].Min     = 0;
-                            m_SummaryData[i].Max     = 0;
-                          }
-                          bOK = true;
-                        }
-                        else
-                        {
-                          ds.read( &m_SummaryData[0], H5::Equiv<ValWithEr<scalar_type>>::Type );
-                          bOK = true;
-                        }
-                      }
-                    }
-                  }
           }
         }
+        catch(const ::H5::Exception &)
+        {
+          ::H5::Exception::clearErrorStack();
+        }
       }
-      if( bOK )
-        ValidateAttributes();
+      // Either resampled or binned data must be available
+      if( Data[0].NumReplicas() == 0 && Binned[0].Empty() )
+        throw std::runtime_error( "Neither binned nor resampled data available" );
+      if( bNeedResample && CanResample() )
+      {
+        Data[0].Seed = RandomCache::DefaultSeed();
+        Data[0].Resample( Binned[0], RandomCache::DefaultNumReplicas() );
+        MakeCorrSummary();
+      }
+      // If we get here then we've loaded OK
+      ValidateAttributes();
+      bOK = true;
     }
     catch(const ::H5::Exception &)
     {
@@ -2500,14 +2492,14 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
     catch(...)
     {
       ::H5::Exception::setAutoPrint(h5at, f5at_p);
-      resize( 0, 0 );
+      clear();
       throw;
     }
   }
   ::H5::Exception::setAutoPrint(h5at, f5at_p);
   if( !bOK )
   {
-    resize( 0, 0 ); // We can use NumSamples() == 0 or Nt() == 0 to tell whether the file is open
+    clear();
     throw std::runtime_error( "Unable to read sample from " + Name_.Filename );
   }
 }
@@ -2598,7 +2590,7 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
         Dims[0] = mRnd.size1;
         Dims[1] = mRnd.size2;
         dsp = ::H5::DataSpace( 2, Dims );
-        // The values in this table go from 0 ... NumSamples_ + 1, so choose a space-minimising size in the file
+        // The values in this table go from 0 ... NumSamples_ - 1, so choose a space-minimising size in the file
         ::H5::DataSet ds = g.createDataSet( RandomCache::sRandom, SampleSize<=static_cast<int>(std::numeric_limits<std::uint8_t>::max())
           ? ::H5::PredType::STD_U8LE : SampleSize<=static_cast<int>(std::numeric_limits<std::uint16_t>::max())
           ? ::H5::PredType::STD_U16LE: ::H5::PredType::STD_U32LE, dsp );

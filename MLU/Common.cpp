@@ -407,7 +407,7 @@ std::string FileNameAtt::GetBaseShort( int First, int Last ) const
 
 std::string FileNameAtt::GetBaseShortExtra( int First, int Last ) const
 {
-  std::string s{ GetBaseShort() };
+  std::string s{ GetBaseShort( First, Last ) };
   AppendExtra( s );
   return s;
 }

@@ -100,6 +100,7 @@ protected:
   Matrix<fint> Make( fint &Seed, std::size_t NumSamples, std::size_t NumReplicas
                                                           = DefaultNumReplicas());
   static void SaveRandom( const Key &key, const Matrix<fint> &Random );
+  void Put( fint Seed, Matrix<fint> &Random, bool bWrite );
 public:
   /** Get random numbers for the given Seed and NumSamples
    
@@ -113,7 +114,7 @@ public:
   Matrix<fint> Get( const fint &Seed, std::size_t NumSamples, std::size_t NumReplicas
                                                                 = DefaultNumReplicas() );
   /// Put random numbers in cache (probably loaded from file). Throw error if incompatible
-  void Put( fint Seed, Matrix<fint> &Random );
+  void Put( fint Seed, Matrix<fint> &Random ) { Put( Seed, Random, true ); }
 };
 
 struct JackBootBase
@@ -121,6 +122,8 @@ struct JackBootBase
   /// Guaranteed that incrementing idxCentral moves to record zero
   static constexpr std::size_t idxCentral{ std::numeric_limits<std::size_t>::max() };
   static constexpr std::size_t idxReplicaMean{ idxCentral - 1u };
+  static const std::string s_S;
+  static bool UseCentralCovar(); // false unless MLUCovarCentral environment variable set
   enum class Norm{ RawBinned,   // Sample covariance OF MEAN from raw / binned data
                    Bootstrap,   // Sample covariance OF MEAN from bootstraps
                    Jackknife,   // Sample covariance OF MEAN from Jackknife
@@ -150,9 +153,9 @@ public:
   inline       Vector<T> &GetReplicaMean()       { return ReplicaMean; }
   inline const Vector<T> &GetReplicaMean() const { return ReplicaMean; }
   // Use this as the mean when building (co)variance from replicas - TODO: Definitely not central?
-  static constexpr std::size_t idxCovarMean{ idxReplicaMean };
-  inline       Vector<T> &GetCovarMean()       { return ReplicaMean; }
-  inline const Vector<T> &GetCovarMean() const { return ReplicaMean; }
+  static std::size_t getCovarMeanIdx() { return UseCentralCovar() ? idxCentral : idxReplicaMean; }
+  inline       Vector<T> &GetCovarMean()       { return UseCentralCovar() ? Central : ReplicaMean; }
+  inline const Vector<T> &GetCovarMean() const { return UseCentralCovar() ? Central : ReplicaMean; }
   /// bootstrap: random number seed for this sample. SeedWildcard = jackknife
   SeedType Seed = RandomCache::DefaultSeed();
   void clear();

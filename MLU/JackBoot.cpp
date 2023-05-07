@@ -32,7 +32,7 @@
 MLU_JackBoot_hpp
 
 const std::string s_C{ "_C" };
-static const std::string s_S{ "_S" };
+const std::string JackBootBase::s_S{ "_S" };
 
 // TODO: I need these from Common.hpp
 void MakeAncestorDirs( const std::string& Filename );
@@ -93,12 +93,13 @@ void RandomCache::DefaultSeed( const std::string &SeedOrFile_ )
   {
     Matrix<fint> Random;
     std::string Machine;
+    const bool LoadFromOutsideCache{ SeedOrFile[0] == '/' };
     SeedOrFile = PrependCachePath( SeedOrFile );
-    bGotSeed = Read( PrependCachePath( SeedOrFile ), Random, MySeed, Machine );
+    bGotSeed = Read( SeedOrFile, Random, MySeed, Machine );
     if( bGotSeed )
     {
       SetHostName( Machine );
-      Global.Put( MySeed, Random );
+      Global.Put( MySeed, Random, LoadFromOutsideCache ); // Only write if loaded from outside cache
       std::cout << "Seed " << MySeed << " generated on " << Machine << "\n";
     }
   }
@@ -349,7 +350,7 @@ Matrix<fint> RandomCache::Get( const fint &Seed, std::size_t NumSamples, std::si
   return Get( SeedCopy, NumSamples, NumReplicas );
 }
 
-void RandomCache::Put( fint Seed, Matrix<fint> &New )
+void RandomCache::Put( fint Seed, Matrix<fint> &New, bool bWrite )
 {
   if( Seed == SeedWildcard )
     throw std::runtime_error( "Invalid Seed " + SeedString( Seed ) );
@@ -378,7 +379,8 @@ void RandomCache::Put( fint Seed, Matrix<fint> &New )
     // Make the caller's matrix point back to the new entry in the cache
     it = pair.first;
     New.MapView( it->second );
-    SaveRandom( key, New );
+    if( bWrite )
+      SaveRandom( key, New );
   }
   else
   {
@@ -400,10 +402,32 @@ void RandomCache::Put( fint Seed, Matrix<fint> &New )
     if( New.size1 > Old.size1  )
     {
       Old = std::move( New ); // New has more replicas - move this into cache
-      SaveRandom( key, Old );
+      if( bWrite )
+        SaveRandom( key, Old );
     }
     New.MapView( Old ); // Make callers matrix point to cache
   }
+}
+
+/*****************************************************************************
+ 
+ true use the central replica when computing (co)variance
+ false use mean of replicas when computing (co)variance
+
+ false unless MLUCovarCentral environment variable set
+
+ *****************************************************************************/
+
+bool JackBootBase::UseCentralCovar()
+{
+  static bool bUseCentral{};
+  static bool bInitialised{};
+  if( !bInitialised )
+  {
+    bInitialised = true;
+    bUseCentral = std::getenv( "MLUCovarCentral" ); // true if set to anything
+  }
+  return bUseCentral;
 }
 
 /*****************************************************************************
@@ -528,8 +552,8 @@ void JackBoot<T>::MakeMean( Vector<T> &vMean, const MatrixView<T> &Source )
   for( std::size_t i = 0; i < NumReplicas; ++i )
     for( std::size_t j = 0; j < Extent; ++j )
       vMean[j] += Source(i,j);
-  for( std::size_t j = 0; j < Extent; ++j )
-    vMean[j] /= NumReplicas;
+  if( NumReplicas > 1 )
+    vMean *= static_cast<Real>( 1 ) / NumReplicas;
 }
 
 /*****************************************************************************
@@ -590,7 +614,7 @@ void JackBoot<T>::Resample( const MatrixView<T> &Source, std::size_t NumReplicas
         Replica( idx, i ) *= AvgNorm;
     }
   }
-  // Take mean of replicas. Jacckife should be same as Central, but compute to find errors
+  // Take mean of replicas. Jaccknife should be same as Central, but compute to find errors
   MakeMean( ReplicaMean, Replica );
 }
 
@@ -857,19 +881,34 @@ void JackBoot<T>::MakeVarHelper( Vector<T> &Var, const MatrixView<T> &Source,
 template <typename T>
 void JackBoot<T>::Read( ::H5::Group &g, const std::string &Name )
 {
-  H5::ReadVector( g, Name + s_C, Central );
-  H5::ReadMatrix( g, Name.compare( "data" ) ? Name : Name + s_S, Replica );
-  if( Central.size != Replica.size2 )
+  try
   {
-    std::ostringstream os;
-    os << "JackBoot sample " << Name << ": central extent " << Central.size
-       << " != replica columns " << Replica.size2;
-    throw std::runtime_error( os.str().c_str() );
+    // Load the data and make sure they're valid
+    const std::string sReplica{ EqualIgnoreCase( Name, "data" ) ? Name + s_S : Name };
+    H5::ReadMatrix( g, sReplica, Replica );
+    if( Replica.size1 == 0 || Replica.size2 == 0 )
+      throw std::runtime_error( "Central replica empty reading JackBoot " + sReplica );
+    if( !Replica.IsFinite() )
+      throw std::runtime_error( "NaNs reading JackBoot " + sReplica );
+    // Load the central replica and make sure it's valid
+    const std::string sCentral{ Name + s_C };
+    H5::ReadVector( g, sCentral, Central );
+    if( Central.size != Replica.size2 )
+      throw std::runtime_error( "Central replica extent " + std::to_string( Central.size )
+                               + " != data extent " + std::to_string( Replica.size2 )
+                               + " reading JackBoot " + sCentral );
+    if( !Central.IsFinite() )
+      throw std::runtime_error( "NaNs reading JackBoot " + sCentral + " central replica" );
+    // Load (optional) replica mean and make sure it's valid
+    MakeMean( ReplicaMean, Replica );
+    if( !ReplicaMean.IsFinite() )
+      throw std::runtime_error( "NaNs creating replica mean JackBoot " + Name );
   }
-  if( !Central.IsFinite() )
-    throw std::runtime_error( "NaNs reading JackBoot " + Name + " central replica" );
-  if( !Replica.IsFinite() )
-    throw std::runtime_error( "NaNs reading JackBoot " + Name + " replicas" );
+  catch(...)
+  {
+    clear();
+    throw;
+  }
 }
 
 /// Write a bootstrap replica to an HDF5 group

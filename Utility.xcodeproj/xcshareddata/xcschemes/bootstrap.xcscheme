@@ -70,16 +70,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o boot/2ptp2/ 2pt/880/2pt/ZFPP/&apos;*&apos;_s_s_p_&apos;*&apos;_t_[0-9]{,[0-9]{,[0-9]}}.&apos;*&apos;.h5"
+            argument = "-o test/bootstrap/2ptp2/ test/data/2pt/&apos;*&apos;.h5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o boot/3pt_sp2/ cpu/880/3pt_s/ZFPP_quark/&apos;*&apos;.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o boot/test/ -i boot/Test3pt/ &apos;*&apos;.h5"
+            argument = "-o test/bootstrap/3pt_sp2/ test/data/3pt/ZFPP/&apos;*&apos;.h5"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o test/bootstrap/3sm_sp2/ test/data/3pt/ZFPP/&apos;*&apos;.h5 --timerev"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
@@ -95,7 +95,7 @@
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "MLUSeed"
-            value = "/Volumes/QCD/tursa/semilep/data/C1/Test/quark_l_h6413_gT_dt_20_p2_0_ps2_1_g5P_g5W.bootstrap.1835672416.h5"
+            value = "/Users/mike/Source/Utility/run/test/bootstrap.golden/3pt_sp2/quark_l_h6413_gXYZ_dt_20_p2_0_ps2_1_g5P_g5P.bootstrap.1835672416.h5"
             isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
