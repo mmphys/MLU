@@ -29,8 +29,9 @@
 using Scalar = double;
 using Fold = Common::Fold<Scalar>;
 using Model = Common::Model<Scalar>;
-using Vector = Common::Vector<Scalar>;
-using VectorView = Common::VectorView<Scalar>;
+//using Vector = Common::Vector<Scalar>;
+//using VectorView = Common::VectorView<Scalar>;
+using Column = Common::JackBootColumn<Scalar>;
 
 extern Model DummyModel;
 extern const char LoadFilePrefix[];
@@ -119,7 +120,7 @@ template<typename Key, typename LessKey = std::less<Key>, typename KeyRead = Key
 struct KeyFileCache
 {
   using M = Common::Model<Scalar>;
-  using Vector = Common::Vector<Scalar>;
+  using ColumnT = Common::JackBootColumn<Scalar>;
 //  const std::string C2Base;
   Freeze freeze;
 protected:
@@ -149,7 +150,7 @@ public:
   void Read( const std::string &Filename, const char * PrintPrefix );
   M &operator()( const Key &key, const char * PrintPrefix ); // Make sure model loaded and print message
   inline M &operator[]( const Key &key ) { return operator()( key, nullptr ); }
-  Vector GetVector( const Key &key, const Common::Param::Key &pKey, std::size_t Index = 0 );
+  ColumnT GetColumn( const Key &key, const Common::Param::Key &pKey, std::size_t Index = 0 );
 };
 
 using ZVModelMap = KeyFileCache<std::string>;
@@ -199,9 +200,9 @@ protected:
     const MP mp;
     const std::string q;
     Model &EModel;
-    const Vector E;
+    const Column E;
     SSInfo( MPModelMap &efit, const std::string &op_, MP mp_, const std::string &q_ )
-    : op{op_}, mp{mp_}, q{q_}, EModel{efit(mp,LoadFilePrefix)}, E{efit.GetVector(mp, mp.PK())} {}
+    : op{op_}, mp{mp_}, q{q_}, EModel{efit(mp,LoadFilePrefix)}, E{efit.GetColumn(mp, mp.PK())} {}
   };
   inline void AppendOp( std::string &s, const std::string &Op ) { Append( s, Op ); }
   inline void AppendOps( std::string &s, const std::string &Snk, const std::string &Src)
@@ -261,10 +262,10 @@ struct FormFactor
   FormFactor( std::string TypeParams );
   void Write( std::string &OutFileName, const Model &CopyAttributesFrom,
               std::vector<std::string> &&SourceFileNames, int NumSamples,
-              const Vector &MHeavy, const Vector &ELight,
-              const Vector &vT, const Common::Momentum &p,
+              const Column &MHeavy, const Column &ELight,
+              const Column &vT, const Common::Momentum &p,
              // These only required for non-zero momentum
-              const Vector *pMLight, const Vector *pvXYZ );
+              const Column *pMLight, const Column *pvXYZ );
 };
 
 // Make F parralel, F perpendicular, F+ and F0

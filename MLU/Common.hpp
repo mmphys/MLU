@@ -1570,10 +1570,28 @@ public:
     return GetColumnIndex( ColumnName + std::to_string( idx ) );
   }
   inline bool CanRehydrate() const { return !Binned[0].Empty(); }
-  [[deprecated("Central replica no longer contiguous with remaining replicas. Use operator()")]]
+  JackBootColumn<T> Column( std::size_t column, int idxJackBoot = 0 ) const
+  {
+    ValidateJackBoot( idxJackBoot );
+    return Data[idxJackBoot].Column( column );
+  }
+  JackBootColumn<T> Column( int column, int idxJackBoot = 0 ) const
+  {
+    return Column( static_cast<std::size_t>( column ), idxJackBoot );
+  }
+  JackBootColumn<T> ColumnFrozen( std::size_t column, int idxJackBoot = 0 ) const
+  {
+    ValidateJackBoot( idxJackBoot );
+    return JackBootColumn<T>( Data[idxJackBoot]( idxCentral, column ) );
+  }
+  JackBootColumn<T> ColumnFrozen( int column, int idxJackBoot = 0 ) const
+  {
+    return ColumnFrozen( static_cast<std::size_t>( column ), idxJackBoot );
+  }
+  /*[[deprecated("Central replica no longer contiguous with remaining replicas. Use operator()")]]
   inline       T * operator[]( int Replica )       { return &Data[0](Replica,0); }
   [[deprecated("Central replica no longer contiguous with remaining replicas. Use operator()")]]
-  inline const T * operator[]( int Replica ) const { return &Data[0](Replica,0); }
+  inline const T * operator[]( int Replica ) const { return &Data[0](Replica,0); }*/
   inline       T & operator()( std::size_t i, std::size_t j )       { return Data[0]( i, j ); }
   inline const T & operator()( std::size_t i, std::size_t j ) const { return Data[0]( i, j ); }
   inline const JackBoot<T> &getData( int idxJackBoot = 0 ) const
@@ -2879,7 +2897,8 @@ struct Model : public Sample<T>, public ModelBase
   int GetExtent() const { return static_cast<int>( ::Common::GetExtent( FitTimes ) ); };
   int NumFitParams() const { return static_cast<int>( params.NumScalars( Param::Type::Variable ) ); };
   int NumParams() const { return static_cast<int>( params.NumScalars( Param::Type::All ) ); };
-  Vector<T> GetVector( const Param::Key &k, std::size_t Index = 0 );
+  JackBootColumn<T> Column( const Param::Key &k, std::size_t Index = 0 );
+  JackBootColumn<T> ColumnFrozen( const Param::Key &k, std::size_t Index = 0 );
   int NumStatColumns() const { return Base::ColumnNames.size() <= NumParams() ? 0
                                 : static_cast<int>( Base::ColumnNames.size() - NumParams() ); }
   UniqueNameSet GetStatColumnNames() const;

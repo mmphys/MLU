@@ -360,7 +360,7 @@ void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
         const int idxpValue{ m.GetColumnIndexNoThrow( StatisticName ) };
         if( idxpValue < 0 && ThisFile.bIsFit )
           throw std::runtime_error( StatisticName + " unavailable - required for fit" );
-        scalar TestStat = idxpValue < 0 ? 1 : m.getSummaryData()[idxpValue].Central;
+        scalar TestStat = idxpValue < 0 ? 1 : m.SummaryData(idxpValue).Central;
         // save the model in my list
         const int NumDataPoints{ static_cast<int>( Common::GetExtent( m.FitTimes ) ) };
         FitData fd( TestStat, NumDataPoints, m.dof, m.SampleSize, m.CovarSampleSize,

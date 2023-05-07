@@ -192,39 +192,36 @@ void Importer::ReadInput( const std::string &Filename )
 void Importer::SpreadData( std::vector<Fold> &out, const Scalar *pSource, int idx, int NumSamples )
 {
   std::vector<Scalar *> C( out.size() );
-  for( int f = 0; f < out.size(); ++f )
-    C[f] = out[f][idx];
-  for( int s = 0; s < NumSamples; ++s )
+  for( int s = 0; s < NumSamples; ++s, ++idx )
   {
     for( int f = 0; f < out.size(); ++f )
     {
       for( int t = 0; t < out[f].Nt(); ++t )
-        C[f][t] = 0;
+        out[f](idx,t) = 0;
       for( int j = 0; j < vFitRanges[f].size(); ++j )
-        C[f][vFitRanges[f][j]] = *pSource++;
-      C[f] += out[f].Nt();
+        out[f](idx,vFitRanges[f][j]) = *pSource++;
     }
   }
 }
 
 void Importer::SpreadDataRawBoot( std::vector<Fold> &out, const Matrix &BinnedData )
 {
-  const Scalar *pSource{ BinnedData.data };
-  std::vector<Scalar *> C( out.size() );
+  std::vector<Matrix *> C( out.size() );
   const int NumBinnedSamples{ static_cast<int>( BinnedData.size1 ) };
   for( int f = 0; f < out.size(); ++f )
   {
-    C[f] = out[f].resizeRaw( NumBinnedSamples );
-    out[f].bRawBootstrap = true;
+    C[f] = &out[f].resizeRaw( NumBinnedSamples );
+    if( !f )
+      throw std::runtime_error( "raw bootstrap support removed May 2023. Fix next line" );
+    // TODO: out[f].bRawBootstrap = true;
   }
   for( int s = 0; s < NumBinnedSamples; ++s )
     for( int f = 0; f < out.size(); ++f )
     {
       for( int t = 0; t < out[f].Nt(); ++t )
-        C[f][t] = 0;
+        (*C[f])(s,t) = 0;
       for( int j = 0; j < vFitRanges[f].size(); ++j )
-        C[f][vFitRanges[f][j]] = *pSource++;
-       C[f] += out[f].Nt();
+        (*C[f])(s,vFitRanges[f][j]) = BinnedData(s,j);
     }
 }
 
@@ -260,7 +257,7 @@ void Importer::SaveRawData( std::vector<Fold> &out, bool bPreserveSign )
     out[f].SampleSize = NumConfigs;
     out[f].binSize = NumTimeslices;
     out[f].FileList.reserve( NumSamplesRaw );
-    Scalar * pRawData{ out[f].resizeRaw( NumSamplesRaw ) };
+    Matrix &mRawData{ out[f].resizeRaw( NumSamplesRaw ) };
     for( int c = 0; c < NumConfigs; ++c )
     {
       sName.resize( SizeConf );
@@ -286,7 +283,7 @@ void Importer::SaveRawData( std::vector<Fold> &out, bool bPreserveSign )
             z = 0.5 * ( m( tSlice, t ) + Multiplier * m( tSlice, Nt - t ) );
           if( bNegate )
             z = -z;
-          *pRawData++ = z;
+          mRawData(c,t) = z;
         }
       }
     }
@@ -316,8 +313,8 @@ void Importer::Write( const std::string &Base, bool bPreserveSign )
   SaveRawData( out, bPreserveSign );
   for( std::size_t f = 0; f < corrInfo.size(); ++f )
   {
-    out[f].Bin();
-    out[f].MakeCorrSummary( nullptr );
+    out[f].BinAuto();
+    out[f].MakeCorrSummary();
   }
   std::string Filename{ Base };
   const std::size_t BaseLen{ Filename.length() };
@@ -338,7 +335,7 @@ void Importer::Write( const std::string &Base, bool bPreserveSign )
       SaveRawData( out, bPreserveSign );
       for( std::size_t f = 0; f < corrInfo.size(); ++f )
       {
-        out[f].Bin( 1 );
+        out[f].BinFixed( 1 );
         out[f].ConfigCount.resize( out[f].NumSamplesRaw() );
         for( int j = 0; j < out[f].NumSamplesRaw(); ++j )
         {
@@ -346,7 +343,7 @@ void Importer::Write( const std::string &Base, bool bPreserveSign )
           out[f].ConfigCount[j].Count = 1;
         }
         out[f].resizeRaw( 0 );
-        out[f].MakeCorrSummary( nullptr );
+        out[f].MakeCorrSummary();
       }
       Filename.append( "unbinned" );
     }

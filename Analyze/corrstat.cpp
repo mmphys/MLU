@@ -38,10 +38,13 @@ bool debug( int NumSamples, int Nt )
   int z = 0;
   for( int x = -1; x < NumSamples; x++ )
     for( int y = 0; y < Nt; y++ )
-      a[x][y] = z++;
-  C * p = a[0];
-  for( int i = 0; i < ( NumSamples + 1 ) * Nt; i++ )
+      a(x,y) = z++; // x is row and y is column (bad choice of names)
+  const C * p = a.getData().GetCentral().Data();
+  for( int i = 0; i < Nt; i++ )
     std::cout << i << " = " << *p++ << "\n";
+  p = a.getData().Replica.Data();
+  for( int i = 0; i < NumSamples * Nt; i++ )
+    std::cout << (i+Nt) << " = " << *p++ << "\n";
   return true;
 }
 

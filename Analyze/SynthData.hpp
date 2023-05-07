@@ -36,6 +36,7 @@ using Algebra = Common::Gamma::Algebra;
 
 using Scalar = double;
 using Fold = Common::Fold<Scalar>;
+using Matrix = Common::Matrix<Scalar>;
 
 #include <cmath>
 #include <iomanip>

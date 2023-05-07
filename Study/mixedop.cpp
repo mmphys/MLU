@@ -226,7 +226,7 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   m.SetName( std::move( fna ) );
   m.Read( ( "Read model " + idxString + Common::Space ).c_str() );
   if( bFirst )
-    Seed = m.Seed_;
+    Seed = m.Seed();
   else
     MI[0].model.IsCompatible( m, nullptr, Common::COMPAT_DISABLE_BASE );
   // Check that the exponent we want is available
@@ -407,7 +407,7 @@ void MixedOp::DoOneAngle( degrees Phi, degrees Theta, std::string &Out, std::siz
   Out.append( IsSink()   ? MI[ModelSnk].MixedOpName : FileOpNames[CorrIn[0][0].Name_.op[idxSnk]] );
   Out.append( 1, '_' );
   Out.append( IsSource() ? MI[ModelSrc].MixedOpName : FileOpNames[CorrIn[0][0].Name_.op[idxSrc]] );
-  CorrMixed.MakeCorrSummary( nullptr );
+  CorrMixed.MakeCorrSummary();
   if( bSaveCorr )
     CorrMixed.Write( Common::MakeFilename( Out, CorrIn[0][0].Name_.Type, Seed, DEF_FMT ) );
   CorrMixed.WriteSummary( Common::MakeFilename( Out, CorrIn[0][0].Name_.Type, Seed, TEXT_EXT ) );
@@ -657,60 +657,52 @@ void MixedOp_SnkSrc::LoadCorrelators( const std::string &InBase )
 void MixedOp_Src::MixingAngle( degrees phi_, degrees theta_ )
 {
   const SinCos Theta( theta_ );
-  const double * pModelSrc{ MI[ModelSrc].model[Model::idxCentral] };
-  const double * pDataP{ CorrIn[0][idxPoint][Fold::idxCentral] };
-  const double * pDataW{ CorrIn[0][idxWall ][Fold::idxCentral] };
-  scalar * pDst = CorrMixed[Fold::idxCentral];
+  ModelInfo &miSrc{ MI[ModelSrc] };
   double Op_P{ 0 };
   double Op_W{ 0 };
   for( int i = Fold::idxCentral; i < NumSamples; i++ )
   {
     if( Par.bAllReplicas || i == Fold::idxCentral )
     {
-      double A_P { pModelSrc[MI[ModelSrc].OpIdx[idxPoint]] * Par.OpNorm[idxSrc][idxPoint] };
-      double A_W { pModelSrc[MI[ModelSrc].OpIdx[idxWall ]] * Par.OpNorm[idxSrc][idxWall ] };
+      double A_P { miSrc.model(i, miSrc.OpIdx[idxPoint]) * Par.OpNorm[idxSrc][idxPoint] };
+      double A_W { miSrc.model(i, miSrc.OpIdx[idxWall ]) * Par.OpNorm[idxSrc][idxWall ] };
       if( Par.bNormalise )
       {
-        const double Norm_E_Src{ NORMALISE( pModelSrc[MI[ModelSrc].idxNorm] ) };
+        const double Norm_E_Src{ NORMALISE( miSrc.model(i, miSrc.idxNorm) ) };
         A_P   *= Norm_E_Src;
         A_W   *= Norm_E_Src;
       }
       Op_P = Theta.cos / A_P;
       Op_W = Theta.sin / A_W;
-      pModelSrc += MI[ModelSrc].model.Nt();
     }
     for( int t = 0; t < Nt; t++ )
-      *pDst++ = Op_P * *pDataP++ + Op_W * *pDataW++;
+      CorrMixed(i,t) = Op_P * CorrIn[0][idxPoint](i,t) + Op_W * CorrIn[0][idxWall](i,t);
   }
 }
 
 void MixedOp_Snk::MixingAngle( degrees phi_, degrees theta_ )
 {
   const SinCos Phi( phi_ );
-  const double * pModelSnk{ MI[ModelSnk].model[Model::idxCentral] };
-  const double * pDataP{ CorrIn[idxPoint][0][Fold::idxCentral] };
-  const double * pDataW{ CorrIn[idxWall ][0][Fold::idxCentral] };
-  scalar * pDst = CorrMixed[Fold::idxCentral];
+  ModelInfo &miSnk{ MI[ModelSnk] };
   double Op_P{ 0 };
   double Op_W{ 0 };
   for( int i = Fold::idxCentral; i < NumSamples; i++ )
   {
     if( Par.bAllReplicas || i == Fold::idxCentral )
     {
-      double A_P { pModelSnk[MI[ModelSnk].OpIdx[idxPoint]] * Par.OpNorm[idxSnk][idxPoint] };
-      double A_W { pModelSnk[MI[ModelSnk].OpIdx[idxWall ]] * Par.OpNorm[idxSnk][idxWall ] };
+      double A_P { miSnk.model(i,miSnk.OpIdx[idxPoint]) * Par.OpNorm[idxSnk][idxPoint] };
+      double A_W { miSnk.model(i,miSnk.OpIdx[idxWall ]) * Par.OpNorm[idxSnk][idxWall ] };
       if( Par.bNormalise )
       {
-        const double Norm_E_Snk{ NORMALISE( pModelSnk[MI[ModelSnk].idxNorm] ) };
+        const double Norm_E_Snk{ NORMALISE( miSnk.model(i,miSnk.idxNorm) ) };
         A_P   *= Norm_E_Snk;
         A_W   *= Norm_E_Snk;
       }
       Op_P = Phi.cos / A_P;
       Op_W = Phi.sin / A_W;
-      pModelSnk += MI[ModelSnk].model.Nt();
     }
     for( int t = 0; t < Nt; t++ )
-      *pDst++ = Op_P * *pDataP++ + Op_W * *pDataW++;
+      CorrMixed(i,t) = Op_P * CorrIn[idxPoint][0](i,t) + Op_W * CorrIn[idxWall ][0](i,t);
   }
 }
 
@@ -722,13 +714,12 @@ void MixedOp_SnkSrc::MixingAngle( degrees phi_, degrees theta_ )
   const double AnglePW{ Phi.cos * Theta.sin };
   const double AngleWP{ Phi.sin * Theta.cos };
   const double AngleWW{ Phi.sin * Theta.sin };
-  const double * pModelSrc{ MI[ModelSrc].model[Model::idxCentral] };
-  const double * pModelSnk{ MI[ModelSnk].model[Model::idxCentral] };
-  const double * pPP{ CorrIn[idxPoint][idxPoint][Fold::idxCentral] };
-  const double * pPW{ CorrIn[idxPoint][idxWall ][Fold::idxCentral] };
-  const double * pWP{ CorrIn[idxWall ][idxPoint][Fold::idxCentral] };
-  const double * pWW{ CorrIn[idxWall ][idxWall ][Fold::idxCentral] };
-  scalar * pDst = CorrMixed[Fold::idxCentral];
+  ModelInfo &miSrc{ MI[ModelSrc] };
+  ModelInfo &miSnk{ MI[ModelSnk] };
+  const Fold &fPP{ CorrIn[idxPoint][idxPoint] };
+  const Fold &fPW{ CorrIn[idxPoint][idxWall ] };
+  const Fold &fWP{ CorrIn[idxWall ][idxPoint] };
+  const Fold &fWW{ CorrIn[idxWall ][idxWall ] };
   double Op_PP{ 0 };
   double Op_WP{ 0 };
   double Op_PW{ 0 };
@@ -737,14 +728,14 @@ void MixedOp_SnkSrc::MixingAngle( degrees phi_, degrees theta_ )
   {
     if( Par.bAllReplicas || i == Fold::idxCentral )
     {
-      double A_P_snk { pModelSnk[MI[ModelSnk].OpIdx[idxPoint]] * Par.OpNorm[idxSnk][idxPoint] };
-      double A_W_snk { pModelSnk[MI[ModelSnk].OpIdx[idxWall ]] * Par.OpNorm[idxSnk][idxWall ] };
-      double A_P_src { pModelSrc[MI[ModelSrc].OpIdx[idxPoint]] * Par.OpNorm[idxSrc][idxPoint] };
-      double A_W_src { pModelSrc[MI[ModelSrc].OpIdx[idxWall ]] * Par.OpNorm[idxSrc][idxWall ] };
+      double A_P_snk { miSnk.model(i,miSnk.OpIdx[idxPoint]) * Par.OpNorm[idxSnk][idxPoint] };
+      double A_W_snk { miSnk.model(i,miSnk.OpIdx[idxWall ]) * Par.OpNorm[idxSnk][idxWall ] };
+      double A_P_src { miSrc.model(i,miSrc.OpIdx[idxPoint]) * Par.OpNorm[idxSrc][idxPoint] };
+      double A_W_src { miSrc.model(i,miSrc.OpIdx[idxWall ]) * Par.OpNorm[idxSrc][idxWall ] };
       if( Par.bNormalise )
       {
-        const scalar Norm_E_Snk{ NORMALISE( pModelSnk[MI[ModelSnk].idxNorm] ) };
-        const scalar Norm_E_Src{ NORMALISE( pModelSrc[MI[ModelSrc].idxNorm] ) };
+        const scalar Norm_E_Snk{ NORMALISE( miSnk.model(i,miSnk.idxNorm) ) };
+        const scalar Norm_E_Src{ NORMALISE( miSrc.model(i,miSrc.idxNorm) ) };
         A_P_snk *= Norm_E_Snk;
         A_W_snk *= Norm_E_Snk;
         A_P_src *= Norm_E_Src;
@@ -754,15 +745,13 @@ void MixedOp_SnkSrc::MixingAngle( degrees phi_, degrees theta_ )
       Op_PW = AnglePW / ( A_P_snk * A_W_src );
       Op_WP = AngleWP / ( A_W_snk * A_P_src );
       Op_WW = AngleWW / ( A_W_snk * A_W_src );
-      pModelSrc += MI[ModelSrc].model.Nt();
-      pModelSnk += MI[ModelSnk].model.Nt();
       //std::cout << "\nCos theta=" << Theta.cos << ", Sin theta=" << Theta.sin << ", Cos phi=" << Phi.cos << ", Sin phi=" << Phi.sin << Common::NewLine;
       //std::cout << "A_P_src=" << A_P_src << ", A_W_src=" << A_W_src << "A_P_snk=" << A_P_snk << ", A_W_snk=" << A_W_src << Common::NewLine;
-      //std::cout << "PP=" << *pPP << ", PW=" << *pPW << ", WP=" << *pWP << ", WW=" << *pWW << Common::NewLine;
-      //std::cout << "M-M=" << ( Op_PP * *pPP + Op_WW * *pWW + Op_WP * *pWP + Op_PW * *pPW ) << Common::NewLine;
+      //std::cout << "PP=" << fPP(i,0) << ", PW=" << fPW(i,0) << ", WP=" << fWP(i,0) << ", WW=" << fWW(i,0) << Common::NewLine;
+      //std::cout << "M-M=" << ( Op_PP * fPP(i,0) + Op_WW * fWW(i,0) + Op_WP * fWP(i,0) + Op_PW * fPW(i,0) ) << Common::NewLine;
     }
     for( int t = 0; t < Nt; t++ )
-      *pDst++ = Op_PP * *pPP++ + Op_WW * *pWW++ +     Op_WP * *pWP++ + Op_PW * *pPW++;
+      CorrMixed(i,t) = Op_PP * fPP(i,t) + Op_WW * fWW(i,t) + Op_WP * fWP(i,t) + Op_PW * fPW(i,t);
   }
 }
 
@@ -795,26 +784,22 @@ bool Debug()
     fOut.sign = fPW.sign;
     fOut.Conjugated = false;
     fOut.t0Negated = false;
-    const scalar * pPW{ fPW[Fold::idxCentral] };
-    const scalar * pWP{ fWP[Fold::idxCentral] };
-    scalar * pOut{ fOut[Fold::idxCentral] };
     for( int i = Fold::idxCentral; i < NumSamples; ++i )
     {
       for( int t = 0; t < Nt; ++t )
       {
         if( type == 0 )
-          *pOut++ = pWP[t] / pPW[t];
+          fOut(i,t) = fWP(i,t) / fPW(i,t);
         else
-          *pOut++ = pWP[t] / pPW[DeltaT - t];
+          fOut(i,t) = fWP(i,t) / fPW(i,DeltaT - t);
       }
-      pWP += fWP.Nt();
-      pPW += fPW.Nt();
     }
     static const std::array<std::string,2> Sufii{ "_Ratio", "_Ratio_reversed" };
     const std::string Out{ OutDir + fPW.Name_.GetBaseExtra() + Sufii[type] };
     static const Common::SeedType Seed{ fPW.Name_.Seed };
     std::cout << "Writing to " << Out << Common::NewLine;
-    fOut.MakeCorrSummary( "Ratio" );
+    fOut.SetSummaryNames( "Ratio" );
+    fOut.MakeCorrSummary();
     fOut.Write( Common::MakeFilename( Out, Common::sBootstrap, Seed, DEF_FMT ) );
     fOut.WriteSummary( Common::MakeFilename( Out, Common::sBootstrap, Seed, TEXT_EXT ), true );
   }

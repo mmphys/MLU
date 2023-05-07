@@ -134,6 +134,32 @@ struct JackBootBase
 
 std::ostream &operator<<( std::ostream &os, JackBootBase::Norm norm );
 
+template<typename T> struct JackBoot;
+
+/// This is a single column from a JackBoot ... but can be set to a constant instead
+template<typename T> struct JackBootColumn
+{
+protected:
+  union {
+    T Constant;
+    std::size_t Column;
+  };
+  const JackBoot<T> *pJB;
+public:
+  inline const T &operator[]( std::size_t Row ) const { return pJB ? (*pJB)(Row,Column) : Constant; }
+  explicit JackBootColumn( const JackBoot<T> &JB, std::size_t column ) : pJB{&JB}, Column{column} {}
+  explicit JackBootColumn( const T &constant ) : Constant{constant}, pJB{nullptr} {}
+  JackBootColumn() : JackBootColumn{ static_cast<T>( 0 ) } {}
+  JackBootColumn( const JackBootColumn &o )
+  {
+    pJB = o.pJB;
+    if( pJB )
+      Column = o.Column;
+    else
+      Constant = o.Constant;
+  }
+};
+
 /// Jackknife or Bootstrap replicas with central value
 template<typename T> struct JackBoot : public JackBootBase
 {
@@ -146,6 +172,8 @@ protected:
   Vector<T> ReplicaMean;  // Mean of the replicas. Bootstrap/Jackknife differs from/same as Central
 public:
   Matrix<T> Replica;      // Jackknife / bootstrap replicas
+  /// Read-only view of a column
+  JackBootColumn<T> Column( std::size_t column ) const { return JackBootColumn<T>( *this, column ); }
   // This is the average from the original data
   inline       Vector<T> &GetCentral()       { return Central; }
   inline const Vector<T> &GetCentral() const { return Central; }

@@ -222,16 +222,13 @@ Common::Model<S> &KeyFileCache<Key,L,KR,LKR,S>::operator()( const Key &key, cons
 }
 
 template<typename Key, typename L, typename KR, typename LKR, typename S>
-Common::Vector<S> KeyFileCache<Key,L,KR,LKR,S>::GetVector( const Key &key, const Common::Param::Key &pKey, std::size_t Index )
+Common::JackBootColumn<S> KeyFileCache<Key,L,KR,LKR,S>::GetColumn( const Key &key, const Common::Param::Key &pKey, std::size_t Index )
 {
   if( freeze == Freeze::Constant )
   {
     // Freeze to value specified on command line, or 1 if not specified
-    Vector v;
     typename ConstantMapT::iterator it = ConstantMap.find( pKey.FullName( Index ) );
-    v.MapView( it == ConstantMap.end() ? &ConstantOne : &it->second,
-               std::numeric_limits<int>::max(), 0 );
-    return v;
+    return Common::JackBootColumn<S>( it == ConstantMap.end() ? ConstantOne : it->second );
   }
   else
   {
@@ -239,10 +236,9 @@ Common::Vector<S> KeyFileCache<Key,L,KR,LKR,S>::GetVector( const Key &key, const
     // TODO: Reinstate field mapping (not quite sure how to define it?)
     //typename FieldMapT::iterator it = FieldMap.find( Name );
     //Scalar * p{ m[M::idxCentral] + m.GetColumnIndex( it == FieldMap.end() ? Name : it->second ) };
-    Vector v{ m.GetVector( pKey, Index) };
     if( freeze == Freeze::Central )
-      v.MapView( v.data, std::numeric_limits<int>::max(), 0 );
-    return v;
+      return m.ColumnFrozen( pKey, Index );
+    return m.Column( pKey, Index );
   }
 }
 
@@ -332,25 +328,19 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
     out.FileList.push_back( Src.EModel.Name_.Filename );
   out.CopyAttributes( C3 );
   out.NtUnfolded = C3.Nt();
-  Scalar * pDst{ out[Fold::idxCentral] };
-
-  const Scalar * pC2 { C2[Fold::idxCentral] };
-  const Scalar * pSrc{ C3[Fold::idxCentral] };
   for( int idx = Fold::idxCentral; idx < NumSamples; ++idx )
   {
-    const double CTilde{ pC2[fna.DeltaT] - 0.5 * pC2[NTHalf] * std::exp( - Src.E[idx - Fold::idxCentral] * ( NTHalf - fna.DeltaT ) ) };
+    const double CTilde{ C2(idx,fna.DeltaT) - 0.5 * C2(idx,NTHalf) * std::exp( - Src.E[idx] * ( NTHalf - fna.DeltaT ) ) };
     for( int t = 0; t <= fna.DeltaT; ++t )
     {
-      const double z{ CTilde / *pSrc++ };
+      const double z{ CTilde / C3(idx,t) };
       if( !std::isfinite( z ) )
         throw std::runtime_error( "ZV Overflow" );
-      *pDst++ = z;
+      out(idx,t) = z;
     }
-    pSrc += C3.Nt() - ( fna.DeltaT + 1 );
-    pC2 += C2.Nt();
   }
   // Make output file
-  out.MakeCorrSummary( nullptr );
+  out.MakeCorrSummary();
   std::string OutFileName{ outBase };
   OutFileName.append( "ZV_" );
   OutFileName.append( Snk.q );
@@ -381,8 +371,8 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   // Make sure I have the model for Z_V already loaded
   Model &ZVModelSnk{ ZVmi( Snk.q, LoadFilePrefix ) };
   Model &ZVModelSrc{ ZVmi( Src.q, LoadFilePrefix ) };
-  Vector ZVSnk{ZVmi.GetVector( Snk.q, Common::Param::Key( Snk.q, Common::ModelBase::ConstantPrefix))};
-  Vector ZVSrc{ZVmi.GetVector( Src.q, Common::Param::Key( Src.q, Common::ModelBase::ConstantPrefix))};
+  Column ZVSnk{ZVmi.GetColumn( Snk.q, Common::Param::Key( Snk.q, Common::ModelBase::ConstantPrefix))};
+  Column ZVSrc{ZVmi.GetColumn( Src.q, Common::Param::Key( Src.q, Common::ModelBase::ConstantPrefix))};
 
   // Get the names of all 2pt correlators we will need
   std::array<CorrT, 2> Corr2;
@@ -399,7 +389,7 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
     if( Corr2[i].Handle == CorrCache::BadIndex )
       throw std::runtime_error( "2pt functions are required" );
   }
-  const std::array<const Vector *, NumC2> pE{ &Src.E, &Snk.E };
+  const std::array<const Column *, NumC2> pE{ &Src.E, &Snk.E };
 
   // Get the names of all 3pt correlators we will need
   // The first two files are the numerator
@@ -468,18 +458,18 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   // Load 2pt functions
   int NSamples{ MaxSamples };
   const unsigned int CompareFlags{ Common::COMPAT_DISABLE_BASE };
-  const Scalar * pC2[NumC2];
+  const Fold * pC2[NumC2];
   for( int i = 0; i < NumC2; ++i )
   {
     Corr2[i].Corr = &Cache2[Corr2[i].Handle];
     if( i )
       Corr2[0].Corr->IsCompatible( *Corr2[i].Corr, &NSamples, CompareFlags );
-    pC2[i] = (*Corr2[i].Corr)[Fold::idxCentral];
+    pC2[i] = Corr2[i].Corr;
   }
   const int nT2{ Corr2[0].Corr->Nt() };
 
   // Load 3pt functions
-  const Scalar * pSrc[NumC3];
+  const Fold * pSrc[NumC3];
   for( int i = 0; i < NumC3; ++i )
   {
     if( Corr3[i].Handle != CorrCache::BadIndex )
@@ -494,7 +484,7 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
       }
       else
         Corr3[0].Corr->IsCompatible( *Corr3[i].Corr, &NSamples, CompareFlags );
-      pSrc[i] = (*Corr3[i].Corr)[Fold::idxCentral];
+      pSrc[i] = Corr3[i].Corr;
     }
   }
   const int nT3{ Corr3[0].Corr->Nt() };
@@ -509,11 +499,11 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   }
 
   // Get the overlap coefficients we need if we're making R3
-  std::array<Vector, 2> OverlapCoeff;
+  std::array<Column, 2> OverlapCoeff;
   if( !bAltR3 && ( MakeRatio[2] || MakeRatio[3] ) )
   {
-    OverlapCoeff[0] = EFit.GetVector( Src.mp, Src.mp.PK( Src.op ) );
-    OverlapCoeff[1] = EFit.GetVector( Snk.mp, Snk.mp.PK( Snk.op ) );
+    OverlapCoeff[0] = EFit.GetColumn( Src.mp, Src.mp.PK( Src.op ) );
+    OverlapCoeff[1] = EFit.GetColumn( Snk.mp, Snk.mp.PK( Snk.op ) );
   }
 
   // Ensure 3pt correlator includes timeslice DeltaT
@@ -526,7 +516,6 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   static const std::array<std::string, NumRatio> RatioNames{ "R1", "R2", "R3", "R3" }; // R3 isn't symmetric
   static const std::array<bool, NumRatio> NameReverse{ false, false, false, true };
   static const std::array<bool, NumRatio> RatioSymmetric{ true, true, false, false };
-  std::vector<Scalar *> pDst( NumRatio, nullptr );
   for( int i = 0; i < NumRatio; i++ )
   {
     if( MakeRatio[i] )
@@ -558,22 +547,20 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
       // Now copy the rest of the attributes
       out[i].CopyAttributes( *Corr3[0].Corr );
       out[i].NtUnfolded = nT3;
-      pDst[i] = out[i][Fold::idxCentral];
     }
   }
 
   // Now make the ratios
   for( int idx = Fold::idxCentral; idx < NSamples; ++idx )
   {
-    const int idxV{ idx - Fold::idxCentral };
     // Get the energies and compute the Correlator at Delta T with backward propagating wave subtracted
     // Allow energies to be frozen to 1 (which means don't subtract backward propagating wave)
     double  E[NumC2];
     double C2[NumC2];
     for( int i = 0; i < NumC2; ++i )
     {
-      E[i] = (*pE[i])[idxV];
-      C2[i] = pC2[i][fna.DeltaT];
+      E[i] = (*pE[i])[idx];
+      C2[i] = (*pC2[i])(idx,fna.DeltaT);
       if( EFit.freeze == Freeze::Constant )
       {
         // If we're freezing energy to constant, it makes no sense to try to subtract half the midpoint
@@ -582,7 +569,7 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
       }
       else
       {
-        C2[i] -= 0.5 * pC2[i][NTHalf] * std::exp( - E[i] * ( NTHalf - fna.DeltaT ) );
+        C2[i] -= 0.5 * (*pC2[i])(idx,NTHalf) * std::exp( - E[i] * ( NTHalf - fna.DeltaT ) );
       }
     }
     const double EProd = E[0] * E[1];
@@ -592,13 +579,13 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
     {
       if( MakeRatio[0] || MakeRatio[1] )
       {
-        const double n = std::abs( EProd * pSrc[0][t] * pSrc[1][t] ); // fna.DeltaT - t
+        const double n = std::abs( EProd * (*pSrc[0])(idx,t) * (*pSrc[1])(idx,t) ); // fna.DeltaT - t
         if( !std::isfinite( n ) )
           throw std::runtime_error( "Numerator Overflow" );
         if( MakeRatio[0] )
-          pDst[0][t] = 2 * std::sqrt( ( n / C2Prod ) * ZVSrc[idxV] * ZVSnk[idxV] ); // R1
+          out[0](idx,t) = 2 * std::sqrt( ( n / C2Prod ) * ZVSrc[idx] * ZVSnk[idx] ); // R1
         if( MakeRatio[1] )
-          pDst[1][t] = 2 * std::sqrt( n / std::abs( pSrc[2][t] * pSrc[3][t] ) );
+          out[1](idx,t) = 2 * std::sqrt( n / std::abs( (*pSrc[2])(idx,t) * (*pSrc[3])(idx,t) ) );
       }
       if( bAltR3 )
       {
@@ -607,27 +594,27 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
         {
           // R3 - forward  (1st propagator)
           const Scalar R3Exp{ std::exp( ( E[0] - E[1] ) * t + E[1] * fna.DeltaT ) };
-          const Scalar R3SqrtNum{ EProd * R3Exp * ZVSrc[idxV] * ZVSnk[idxV] };
-          pDst[2][t] = 2 * pSrc[0][t] * std::sqrt( R3SqrtNum / ( pC2[0][t] * pC2[1][fna.DeltaT - t] ) );
+          const Scalar R3SqrtNum{ EProd * R3Exp * ZVSrc[idx] * ZVSnk[idx] };
+          out[2](idx,t) = 2 * (*pSrc[0])(idx,t) * std::sqrt( R3SqrtNum / ( (*pC2[0])(idx,t) * (*pC2[1])(idx,fna.DeltaT - t) ) );
         }
         if( MakeRatio[3] )
         {
           // R3 backward (2nd propagator)
           const Scalar R3Exp{ std::exp( ( E[1] - E[0] ) * t + E[0] * fna.DeltaT ) };
-          const Scalar R3SqrtNum{ EProd * R3Exp * ZVSrc[idxV] * ZVSnk[idxV] };
-          pDst[3][t] = 2 * pSrc[1][t] * std::sqrt( R3SqrtNum / ( pC2[1][t] * pC2[0][fna.DeltaT - t] ) );
+          const Scalar R3SqrtNum{ EProd * R3Exp * ZVSrc[idx] * ZVSnk[idx] };
+          out[3](idx,t) = 2 * (*pSrc[1])(idx,t) * std::sqrt( R3SqrtNum / ( (*pC2[1])(idx,t) * (*pC2[0])(idx,fna.DeltaT - t) ) );
         }
       }
       else
       {
         // This is the R3 we expect to use
         const Scalar OverlapNorm{ bOverlapAltNorm ? ( 0.25 / EProd ) : 1 };
-        const Scalar OverProd{ OverlapCoeff[0][idxV] * OverlapCoeff[1][idxV]
-                              * std::sqrt( OverlapNorm * ZVSrc[idxV] * ZVSnk[idxV] ) };
+        const Scalar OverProd{ OverlapCoeff[0][idx] * OverlapCoeff[1][idx]
+                              * std::sqrt( OverlapNorm * ZVSrc[idx] * ZVSnk[idx] ) };
         if( MakeRatio[2] ) // R3 - forward  (1st propagator)
-          pDst[2][t] = OverProd * pSrc[0][t] / ( pC2[0][t] * pC2[1][fna.DeltaT - t] );
+          out[2](idx,t) = OverProd * (*pSrc[0])(idx,t) / ( (*pC2[0])(idx,t) * (*pC2[1])(idx,fna.DeltaT - t) );
         if( MakeRatio[3] ) // R3 backward (2nd propagator)
-          pDst[3][t] = OverProd * pSrc[1][t] / ( pC2[1][t] * pC2[0][fna.DeltaT - t] );
+          out[3](idx,t) = OverProd * (*pSrc[1])(idx,t) / ( (*pC2[1])(idx,t) * (*pC2[0])(idx,fna.DeltaT - t) );
       }
     }
     // Symmetrise the symmetric ratios, i.e. R1 and R2, but not R3
@@ -640,24 +627,18 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
         {
           for( int t = 0; t < fna.DeltaT / 2; ++t )
           {
-            pDst[i][t] = ( pDst[i][t] + pDst[i][fna.DeltaT - t] ) / 2;
-            pDst[i][fna.DeltaT - t] = pDst[i][t];
+            out[i](idx,t) = ( out[i](idx,t) + out[i](idx,fna.DeltaT - t) ) / 2;
+            out[i](idx,fna.DeltaT - t) = out[i](idx,t);
           }
         }
       }
     }
-    for( int i = 0; i < NumRatio; ++i )
-      pDst[i] += out[i].Nt();
-    for( int i = 0; i < NumC3; ++i )
-      pSrc[i] += nT3;
-    pC2[0] += nT2;
-    pC2[1] += nT2;
   }
   for( int i = 0; i < NumRatio ; i++ )
   {
     if( MakeRatio[i] )
     {
-      out[i].MakeCorrSummary( nullptr );
+      out[i].MakeCorrSummary();
       std::string OutFileName{ outBase };
       OutFileName.append( RatioNames[i] );
       OutFileName.append( 1, '_' );
@@ -697,10 +678,10 @@ FormFactor::FormFactor( std::string TypeParams )
 
 void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFrom,
                         std::vector<std::string> &&SourceFileNames, int NumSamples,
-                        const Vector &MHeavy, const Vector &ELight,
-                        const Vector &vT, const Common::Momentum &p,
+                        const Column &MHeavy, const Column &ELight,
+                        const Column &vT, const Common::Momentum &p,
                         // These only required for non-zero momentum
-                        const Vector *pMLight, const Vector *pvXYZ )
+                        const Column *pMLight, const Column *pvXYZ )
 {
   assert( Model::idxCentral == -1 && "Bug: Model::idxCentral != -1" );
   if( p )
@@ -710,57 +691,57 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
     if( !pvXYZ )
       throw std::invalid_argument( "pvXYZ must be specified for non-zero momentum" );
   }
-  const Vector &MLight{ p ? *pMLight : ELight };
+  const Column &MLight{ p ? *pMLight : ELight };
   std::vector<std::size_t> vIdx;
   Model Out( NumSamples, Common::Params( ParamNames, vIdx ), {} );
   Out.FileList = std::move( SourceFileNames );
   Out.CopyAttributes( CopyAttributesFrom );
   Out.Name_.Seed = CopyAttributesFrom.Name_.Seed;
   Out.binSize = CopyAttributesFrom.binSize;
-  for( int idx = 0; idx < NumSamples - Model::idxCentral; ++idx )
+  for( int idx = Model::idxCentral; idx < NumSamples; ++idx )
   {
-    Scalar *O = Out[idx + Model::idxCentral];
-    O[vIdx[qSq]] = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * ELight[idx];
-    O[vIdx[mH]] = MHeavy[idx];
-    O[vIdx[mL]] = MLight[idx];
-    O[vIdx[EL]] = ELight[idx];
-    O[vIdx[ELLat]] = p.LatticeDispersion( MLight[idx], N, bEnablePHat );
-    O[vIdx[qSqLat]] = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * O[vIdx[ELLat]];
-    O[vIdx[melV0]] = vT[idx];
+    Out(idx,vIdx[qSq]) = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * ELight[idx];
+    Out(idx,vIdx[mH]) = MHeavy[idx];
+    Out(idx,vIdx[mL]) = MLight[idx];
+    Out(idx,vIdx[EL]) = ELight[idx];
+    Out(idx,vIdx[ELLat]) = p.LatticeDispersion( MLight[idx], N, bEnablePHat );
+    Out(idx,vIdx[qSqLat]) = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * Out(idx,vIdx[ELLat]);
+    Out(idx,vIdx[melV0]) = vT[idx];
     const Scalar    Root2MH{ std::sqrt( MHeavy[idx] * 2 ) };
     const Scalar InvRoot2MH{ 1. / Root2MH };
-    O[vIdx[fPar]] = vT[idx] * InvRoot2MH;
+    Out(idx,vIdx[fPar]) = vT[idx] * InvRoot2MH;
     if( p )
     {
-      O[vIdx[kMu]] = ap;
-      O[vIdx[melVi]] = (*pvXYZ)[idx];
+      Out(idx,vIdx[kMu]) = ap;
+      Out(idx,vIdx[melVi]) = (*pvXYZ)[idx];
       if( bAdjustGammaSpatial )
       {
         int FirstNonZero{ p.x ? p.x : p.y ? p.y : p.z };
         if( ( p.y && p.y != FirstNonZero ) || ( p.z && p.z != FirstNonZero ) )
           throw std::runtime_error( "Can't adjust gXYZ when momentum components differ" );
-        O[vIdx[melVi]] /= FirstNonZero;
+        Out(idx,vIdx[melVi]) /= FirstNonZero;
       }
-      O[vIdx[fPerp]] = O[vIdx[melVi]] * InvRoot2MH * apInv;
-      O[vIdx[fPlus]] = ( MHeavy[idx] - ELight[idx] ) * O[vIdx[fPerp]];
-      O[vIdx[f0]] = ( ELight[idx] * ELight[idx] - MLight[idx] * MLight[idx] ) * O[vIdx[fPerp]];
+      Out(idx,vIdx[fPerp]) = Out(idx,vIdx[melVi]) * InvRoot2MH * apInv;
+      Out(idx,vIdx[fPlus]) = ( MHeavy[idx] - ELight[idx] ) * Out(idx,vIdx[fPerp]);
+      Out(idx,vIdx[f0]) = ( ELight[idx] * ELight[idx] - MLight[idx] * MLight[idx] ) * Out(idx,vIdx[fPerp]);
     }
     else
     {
-      O[vIdx[kMu]] = 0;
-      O[vIdx[melVi]] = 0;
-      O[vIdx[fPerp]] = 0;
-      O[vIdx[fPlus]] = 0;
-      O[vIdx[f0]] = 0;
+      Out(idx,vIdx[kMu]) = 0;
+      Out(idx,vIdx[melVi]) = 0;
+      Out(idx,vIdx[fPerp]) = 0;
+      Out(idx,vIdx[fPlus]) = 0;
+      Out(idx,vIdx[f0]) = 0;
     }
-    O[vIdx[fPlus]] += O[vIdx[fPar]];
-    O[vIdx[fPlus]] *= InvRoot2MH;
-    O[vIdx[f0]] += ( MHeavy[idx] - ELight[idx] ) * O[vIdx[fPar]];
-    O[vIdx[f0]] *= Root2MH / ( MHeavy[idx] * MHeavy[idx] - MLight[idx] * MLight[idx] );
+    Out(idx,vIdx[fPlus]) += Out(idx,vIdx[fPar]);
+    Out(idx,vIdx[fPlus]) *= InvRoot2MH;
+    Out(idx,vIdx[f0]) += ( MHeavy[idx] - ELight[idx] ) * Out(idx,vIdx[fPar]);
+    Out(idx,vIdx[f0]) *= Root2MH / ( MHeavy[idx] * MHeavy[idx] - MLight[idx] * MLight[idx] );
   }
   // Write output
   std::cout << " Writing " << OutFileName <<Common::NewLine;
-  Out.MakeCorrSummary( Common::sParams.c_str() );
+  Out.SetSummaryNames( Common::sParams );
+  Out.MakeCorrSummary();
   Out.Write( OutFileName );
   OutFileName.resize( OutFileName.length() - Out.Name_.Ext.length() );
   OutFileName.append( TEXT_EXT );
@@ -854,7 +835,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
       // If non-zero momentum, build a list of corresponding spatial correlators
       std::vector<Model> mGammaXYZ;
       Model * pmMLight = nullptr; // Doesn't own what it points to
-      Vector MLight;
+      Column MLight;
       if( !rf.p )
         mGammaXYZ.resize( 1 ); // A single, dummy model so the loop works
       else
@@ -863,7 +844,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
         const Common::MomentumPair p0( p.first, p.second.bp2 );
         MP mpMLight( fna.Meson[iLight], p0.second, p0.first );
         pmMLight = &EFit( mpMLight, szReading );
-        MLight = EFit.GetVector( mpMLight, mpMLight.PK() );
+        MLight = EFit.GetColumn( mpMLight, mpMLight.PK() );
         // Read all the gamma spatial
         typename FileMap::iterator it{ map[1].find( rf ) };
         if( it == map[1].end() )
@@ -906,13 +887,13 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
           mGT.Read( File, " reading temporal model ", &OpNames );
           // Most of the data can come from the temporal file
           Common::Param::Key k( fna.MesonMom[iLight], mGT.EnergyPrefix );
-          Vector ELight = mGT.GetVector( k );
+          Column ELight = mGT.Column( k );
           k.Object[0] = fna.MesonMom[iHeavy];
-          Vector MHeavy = mGT.GetVector( k );
+          Column MHeavy = mGT.Column( k );
           k.Object[0] = fna.MesonMom[0];
           k.Object.emplace_back( fna.MesonMom[1] );
           k.Name = "MEL";
-          Vector vT = mGT.GetVector( k );
+          Column vT = mGT.Column( k );
           // NB: There's a single, dummy spatial model in the list for zero momentum
           for( Model &mSpatial : mGammaXYZ )
           {
@@ -921,7 +902,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
             {
               int NumSamples{ mGT.NumSamples() };
               std::vector<std::string> vSourceFiles{ mGT.Name_.Filename };
-              Vector vXYZ;
+              Column vXYZ;
               if( rf.p )
               {
                 mGT.IsCompatible( mSpatial, &NumSamples,
@@ -930,7 +911,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
                                   Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
                 vSourceFiles.emplace_back( mSpatial.Name_.Filename );
                 vSourceFiles.emplace_back( pmMLight->Name_.Filename );
-                vXYZ = mSpatial.GetVector( k );
+                vXYZ = mSpatial.Column( k );
               }
               OutFileName.resize( OutFileNameLen );
               if( iSeq )
@@ -1085,10 +1066,9 @@ void FFitConstMaker::Make( std::string &FileName )
     //throw std::runtime_error( OutFileName + " exists" );
   // Open files
   Model mT, mXYZ;
-  Vector vT, vXYZ;
+  Column vXYZ;
   mT.Read( FileName, szReading );
   assert( Model::idxCentral == -1 && "Bug: Model::idxCentral != -1" );
-  vT.MapView( mT[Model::idxCentral], mT.NumSamples() - Model::idxCentral, mT.Nt() );
   int NumSamples {};
   std::string FileNameXYZ;
   if( p )
@@ -1106,7 +1086,7 @@ void FFitConstMaker::Make( std::string &FileName )
       std::cout << Common::Space << GlobName << " ambiguous" << Common::NewLine;
     FileNameXYZ = std::move( FileList[0] );
     mXYZ.Read( FileNameXYZ, szReading );
-    vXYZ.MapView( mXYZ[Model::idxCentral], mXYZ.NumSamples() - Model::idxCentral, mXYZ.Nt() );
+    vXYZ = mXYZ.Sample<Scalar>::Column( 0 );
     mT.IsCompatible( mXYZ, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
   }
   // Load energies
@@ -1120,9 +1100,9 @@ void FFitConstMaker::Make( std::string &FileName )
   Model &mELight( p ? EFit( mpELight, szReading ) : mMLight );
   if( p )
     mT.IsCompatible( mELight, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
-  const Vector MHeavy{ EFit.GetVector( mpMHeavy, mpMHeavy.PK() ) };
-  const Vector MLight{ EFit.GetVector( mpMLight, mpMLight.PK() ) };
-  const Vector ELight{ EFit.GetVector( mpELight, mpELight.PK() ) };
+  const Column MHeavy{ EFit.GetColumn( mpMHeavy, mpMHeavy.PK() ) };
+  const Column MLight{ EFit.GetColumn( mpMLight, mpMLight.PK() ) };
+  const Column ELight{ EFit.GetColumn( mpELight, mpELight.PK() ) };
 
   // Make output
   std::vector<std::string> SourceFileNames{ FileName };
@@ -1132,7 +1112,7 @@ void FFitConstMaker::Make( std::string &FileName )
   SourceFileNames.emplace_back( mMLight.Name_.Filename );
   if( p )
     SourceFileNames.emplace_back( mELight.Name_.Filename );
-  Write( OutFileName, mT, std::move( SourceFileNames ), NumSamples, MHeavy, ELight, vT, p, &MLight, &vXYZ );
+  Write( OutFileName, mT, std::move( SourceFileNames ), NumSamples, MHeavy, ELight, mT.Sample<Scalar>::Column(0), p, &MLight, &vXYZ );
 }
 
 Maker::Maker( const Common::CommandLine &cl )

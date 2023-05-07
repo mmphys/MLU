@@ -85,32 +85,27 @@ Params::Params( const Common::CommandLine &cl )
   Common::MakeAncestorDirs( OutBase );
 }
 
-template <typename T> typename std::enable_if<std::is_floating_point<T>::value>::type
-Params::Normalise( T * pData, int NumSamples, int Nt,
-           const std::vector<int> &opNum, const std::vector<std::string> &opNames )
+template <typename T>
+void Params::Normalise( Common::JackBoot<T> &jb, const std::vector<int> &opNum,
+                   const std::vector<std::string> &opNames )
 {
+  using Real = typename Common::JackBoot<T>::Real;
+  static constexpr Real One{ static_cast<Real>( 1 ) };
   // First work out what the volume factor is
-  double dFactor{ 1. };
+  Real dFactor{ One };
   for( int i : opNum )
   {
     VFMap::iterator it{ VolFactor.find( opNames[i] ) };
     if( it != VolFactor.end() )
       dFactor *= it->second;
   }
-  if( dFactor != 1. )
+  if( dFactor != One )
   {
     std::cout << "  Volume factor " << dFactor << Common::NewLine;
-    for( int Sample = 0; Sample < NumSamples; ++Sample )
-      for( int t = 0; t < Nt; ++t )
-        *pData++ *= dFactor;
+    for( std::size_t i = 0; i < jb.NumReplicas(); ++i )
+      for( std::size_t j = 0; j < jb.extent(); ++j )
+        jb(i,j) *= dFactor;
   }
-}
-
-template <typename T> typename std::enable_if<std::is_floating_point<T>::value>::type
-Params::Normalise( std::complex<T> * pData, int NumSamples, int Nt,
-           const std::vector<int> &opNum, const std::vector<std::string> &opNames )
-{
-  Normalise( reinterpret_cast<T *>( pData ), NumSamples, Nt * 2, opNum, opNames );
 }
 
 template <typename FoldBoot>
@@ -178,17 +173,13 @@ void Params::ReadNumerator( const std::string &FileName )
   if( bFold )
   {
     fNumerator.Read( FileName, sNumerator, &opNames );
-    Normalise( fNumerator[Fold::idxCentral],
-               fNumerator.NumSamples() - Fold::idxCentral, fNumerator.Nt(),
-               fNumerator.Name_.op, opNames );
+    Normalise( fNumerator.getData(), fNumerator.Name_.op, opNames );
     DivideFold( fNumerator, fDenominator );
   }
   else
   {
     bNumerator.Read( FileName, sNumerator, &opNames );
-    Normalise( bNumerator[Boot::idxCentral],
-               bNumerator.NumSamples() - Boot::idxCentral, bNumerator.Nt(),
-               bNumerator.Name_.op, opNames );
+    Normalise( bNumerator.getData(), bNumerator.Name_.op, opNames );
     DivideBoot( bNumerator, bDenominator );
   }
 }
@@ -210,9 +201,7 @@ void Params::Run( const Common::CommandLine &cl, bool &bShowUsage )
       try
       {
         fDenominator.Read( Filename[FileNum], nullptr, &opNames, &GroupName );
-        Normalise( fDenominator[Fold::idxCentral],
-                   fDenominator.NumSamples() - Fold::idxCentral, fDenominator.Nt(),
-                   fDenominator.Name_.op, opNames );
+        Normalise( fDenominator.getData(), fDenominator.Name_.op, opNames );
         bFold = true;
       } catch (const std::exception &e) {
       }
@@ -221,9 +210,7 @@ void Params::Run( const Common::CommandLine &cl, bool &bShowUsage )
         GroupName.clear();
         opNames.clear();
         bDenominator.Read( Filename[FileNum], nullptr, &opNames, &GroupName );
-        Normalise( bDenominator[Boot::idxCentral],
-                   bDenominator.NumSamples() - Boot::idxCentral, bDenominator.Nt(),
-                   bDenominator.Name_.op, opNames );
+        Normalise( bDenominator.getData(), bDenominator.Name_.op, opNames );
       }
       std::cout << "Denominator " << GroupName << Common::Space << Filename[FileNum] << Common::NewLine;
     }

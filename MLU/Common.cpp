@@ -770,7 +770,7 @@ const std::string ModelBase::EDiffPrefix{ "EDiff" };
 const std::string ModelBase::ConstantPrefix{ "K" };
 
 template <typename T>
-Vector<T> Model<T>::GetVector( const Param::Key &k, std::size_t Index )
+JackBootColumn<T> Model<T>::Column( const Param::Key &k, std::size_t Index )
 {
   Params::const_iterator it = params.FindPromiscuous( k );
   if( it == params.cend() )
@@ -786,12 +786,27 @@ Vector<T> Model<T>::GetVector( const Param::Key &k, std::size_t Index )
     os << k.FullName( Index, p.size ) << " not found - only " << p.size << " elements";
     throw std::runtime_error( os.str().c_str() );
   }
-  Vector<T> v;
-  assert( Model::idxCentral == -1 && "Bug: Model::idxCentral != -1" );
-  const std::size_t MyOffset{ p.GetOffset( Index, Param::Type::All ) };
-  v.MapView( (*this)[Model::idxCentral] + MyOffset, this->NumSamples() - Model::idxCentral,
-             this->Nt() );
-  return v;
+  return Base::Column( p.GetOffset( Index, Param::Type::All ) );
+}
+
+template <typename T>
+JackBootColumn<T> Model<T>::ColumnFrozen( const Param::Key &k, std::size_t Index )
+{
+  Params::const_iterator it = params.FindPromiscuous( k );
+  if( it == params.cend() )
+  {
+    std::ostringstream os;
+    os << k.FullName( Index, std::numeric_limits<std::size_t>::max() ) << " not found";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  const Param &p{ it->second };
+  if( Index >= p.size )
+  {
+    std::ostringstream os;
+    os << k.FullName( Index, p.size ) << " not found - only " << p.size << " elements";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  return Base::ColumnFrozen( p.GetOffset( Index, Param::Type::All ) );
 }
 
 template <typename T>
@@ -1326,7 +1341,7 @@ void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
   // Chi^2 per dof
   int iCol{ this->GetColumnIndexNoThrow( sChiSqPerDof ) };
   if( iCol >= 0 )
-    s << "# " << sChiSqPerDof << " : " << (*this)[Model<T>::idxCentral][iCol]
+    s << "# " << sChiSqPerDof << " : " << (*this)(Model<T>::idxCentral,iCol)
       << " (dof=" << dof << ")" << NewLine;
   // Hotelling pValue
   s << "# " << sPValueH << " : Hotelling (p=" << dof << ", m-1=" << ( CovarSampleSize - 1 ) << ")";
@@ -1337,13 +1352,13 @@ void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
   {
     iCol = this->GetColumnIndexNoThrow( sPValueH );
     if( iCol >= 0 )
-      s << " = " << (*this)[Model<T>::idxCentral][iCol];
+      s << " = " << (*this)(Model<T>::idxCentral,iCol);
   }
   s << NewLine;
   // Chi^2 pValue
   iCol = this->GetColumnIndexNoThrow( sPValue );
   if( iCol >= 0 )
-    s << "# " << sPValue << " : Chi^2 = " << (*this)[Model<T>::idxCentral][iCol] << NewLine;
+    s << "# " << sPValue << " : Chi^2 = " << (*this)(Model<T>::idxCentral,iCol) << NewLine;
 }
 
 const char ModelBase::SummaryColumnPrefix[] = "ti tf tiLabel tfLabel NumDataPoints dof SampleSize CovarSampleSize";
@@ -1681,7 +1696,7 @@ void DataSet<T>::CacheRawData()
   if( CopyCovarSrc )
     CovarBuffer.resize( NumRequestedSource, Extent );
   // Copy the resampled data
-  for( int idx = JackBootBase::idxReplicaMean; idx < NumJackBoot; ++idx )
+  for( int idx = static_cast<int>( JackBootBase::idxReplicaMean ); idx < NumJackBoot; ++idx )
   {
     int dst{ 0 };
     for( int f = 0; f < corr.size(); ++f )
@@ -1745,16 +1760,12 @@ void DataSet<T>::CacheRawData()
 template <typename T>
 void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedParam> &Params ) const
 {
-  // Get a pointer to the raw data in each model for replica idx
-  std::vector<const T *> Src( constFile.size() );
-  for( int f = 0; f < constFile.size(); ++f )
-    Src[f] = constFile[f][idx];
   // Now copy the data into vResult
   for( const FixedParam &p : Params )
   {
     std::size_t SrcIdx{ p.src.param.GetOffset( 0, Param::Type::All ) };
     for( std::size_t i = 0; i < p.Count; ++i )
-      vResult[p.idx + i] = Src[p.src.File][SrcIdx + i];
+      vResult[p.idx + i] = constFile[p.src.File](idx, SrcIdx + i);
   }
 }
 

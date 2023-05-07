@@ -47,12 +47,9 @@ protected:
 
   void DivideCommon( const Boot &Denominator, Boot &Numerator );
   void ReadNumerator( const std::string &FileName );
-  template <typename T> typename std::enable_if<std::is_floating_point<T>::value>::type
-  Normalise( T * pData, int NumSamples, int Nt,
-             const std::vector<int> &opNum, const std::vector<std::string> &opNames );
-  template <typename T> typename std::enable_if<std::is_floating_point<T>::value>::type
-  Normalise( std::complex<T> * pData, int NumSamples, int Nt,
-             const std::vector<int> &opNum, const std::vector<std::string> &opNames );
+  template <typename T>
+  void Normalise( Common::JackBoot<T> &jb, const std::vector<int> &opNum,
+             const std::vector<std::string> &opNames );
   template <typename FoldBoot>
   void DivideBoot( FoldBoot &Numerator, const FoldBoot &Denominator );
   void DivideFold( Fold &Numerator, const Fold &Denominator );

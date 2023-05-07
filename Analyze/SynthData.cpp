@@ -83,7 +83,7 @@ Synth::Synth( const Common::CommandLine &cl, const std::string MachineNameActual
   nSample{ cl.SwitchValue<int>( "s" ) },
   nBootSample{ cl.SwitchValue<int>( "n" ) },
   outStem{ cl.SwitchValue<std::string>( "o" ) },
-  seed{ GetSeedType( cl ) },
+  seed{ Common::RandomCache::DefaultSeed() },
   bVerbose{ cl.GotSwitch( "v" ) },
   bWarnIfExists{ cl.GotSwitch( "w" ) }
 {
@@ -100,36 +100,6 @@ Synth::Synth( const Common::CommandLine &cl, const std::string MachineNameActual
   for( int e = 0; e < NumExp; ++e )
     for( int p = 0; p < NumParams; ++p )
       ParamMS[e][p] = cl.SwitchValue<MeanSigma>( GetParamName( e, p ) );
-}
-
-Common::SeedType Synth::GetSeedType( const Common::CommandLine &cl )
-{
-  Common::SeedType MySeed;
-  if( cl.GotSwitch( "r" ) )
-  {
-    bool bGotSeed{ true };
-    try // to interpret the switch as the random number
-    {
-      MySeed = cl.SwitchValue<Common::SeedType>( "r" );
-    }
-    catch(const std::exception &e)
-    {
-      bGotSeed = false;
-    }
-    if( !bGotSeed ) // Wasn't a random number - see whether it's a file containing random numbers
-    {
-      RandomSample.Read( cl.SwitchValue<std::string>( "r" ) );
-      if( !RandomSample.RandNum() )
-        throw std::runtime_error( "No random numbers in " + cl.SwitchValue<std::string>( "r" ) );
-      MySeed = RandomSample.Seed_;
-    }
-  }
-  else
-  {
-    std::random_device rd;
-    MySeed = rd();
-  }
-  return MySeed;
 }
 
 void Synth::Make( std::string Basename ) const
@@ -160,8 +130,8 @@ void Synth::Make( std::string Basename ) const
   const int Nt{ 64 };
   const int NtHalf{ Nt / 2 + ( MyParity == Common::Parity::Odd ? 0 : 1 ) };
   std::array<Fold, NumOps> out;
-  std::array<Scalar *, NumOps> CRaw;
-  std::array<Scalar *, NumOps> CBinned;
+  std::array<Matrix *, NumOps> CRaw;
+  std::array<Matrix *, NumOps> CBinned;
   for( std::size_t f = 0; f < aFilename.size(); ++f )
   {
     out[f].resize( nBootSample, NtHalf );
@@ -171,11 +141,11 @@ void Synth::Make( std::string Basename ) const
     out[f].parity = MyParity;
     out[f].reality = Common::Reality::Real;
     out[f].sign = Common::Sign::Positive;
-    out[f].Seed_ = seed;
+    out[f].SetSeed( seed );
     out[f].SeedMachine_ = MachineName;
     out[f].ConfigCount.reserve( nSample );
-    CRaw[f] = out[f].getRaw();
-    CBinned[f] = out[f].getBinned();
+    CRaw[f] = &out[f].getRaw();
+    CBinned[f] = &out[f].getBinned();
   }
   Common::ConfigCount CC( 0, 1 );
   std::array<std::array<Scalar, NumParams>, MaxExp> Values;
@@ -210,19 +180,17 @@ void Synth::Make( std::string Basename ) const
       // Now build our model
       for( int t = 0; t < NtHalf; ++t )
       {
-        CRaw[f][t] = 0;
+        (*CRaw[f])(idx,t) = 0;
         for( int e = 0; e < NumExp; ++e )
         {
           Scalar z = std::exp(-Values[e][ParamE] * t);
           z += std::exp(-Values[e][ParamE] * (Nt - t));
           z *= Values[e][ParamA] * Values[e][ParamA + f];
-          CRaw[f][t] += z;
+          (*CRaw[f])(idx,t) += z;
         }
-        CRaw[f][t] *= random( engine ) * CorrelatorJitter + 1.;
-        CBinned[f][t] = CRaw[f][t];
+        (*CRaw[f])(idx,t) *= random( engine ) * CorrelatorJitter + 1.;
+        (*CBinned[f])(idx,t) = (*CRaw[f])(idx,t);
       }
-      CRaw[f] += NtHalf;
-      CBinned[f] += NtHalf;
       out[f].ConfigCount.push_back( CC );
     }
     CC.Config++;
@@ -230,8 +198,8 @@ void Synth::Make( std::string Basename ) const
   // Now write the files
   for( std::size_t f = 0; f < aFilename.size(); ++f )
   {
-    out[f].Bootstrap( seed, &MachineName );
-    out[f].MakeCorrSummary( nullptr );
+    out[f].Resample();
+    out[f].MakeCorrSummary();
     Common::MakeAncestorDirs( aFilename[f] );
     out[f].Write( aFilename[f], Common::sFold.c_str() );
     std::string SummaryName{ aFilename[f] };
@@ -274,7 +242,6 @@ int main(const int argc, const char *argv[])
       {"s", CL::SwitchType::Single, pszDefaultSamples},
       {"n", CL::SwitchType::Single, DEF_NSAMPLE},
       {"o", CL::SwitchType::Single, "" },
-      {"r", CL::SwitchType::Single, nullptr},
       {"E0", CL::SwitchType::Single, pszDefaultE0},
       {"A0", CL::SwitchType::Single, pszDefaultA0},
       {"B0", CL::SwitchType::Single, pszDefaultB0},
@@ -326,7 +293,6 @@ int main(const int argc, const char *argv[])
     "-s     Number of raw/binned samples (" << pszDefaultSamples << ")\n"
     "-n     Number of bootstrap samples (" DEF_NSAMPLE ")\n"
     "-o     Output prefix\n"
-    "-r     Random number seed (unspecified=random)\n"
     "--E0   Mean, error (sigma) for E0 (default: " << pszDefaultE0 << ")\n"
     "--A0   Mean, error (sigma) for A0 (default: " << pszDefaultA0 << ")\n"
     "--B0   Mean, error (sigma) for B0 (default: " << pszDefaultB0 << ")\n"
