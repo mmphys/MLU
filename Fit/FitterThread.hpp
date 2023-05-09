@@ -77,15 +77,17 @@ protected:
   virtual std::string DescriptionImpl() const = 0;
   // Helper functions
   void SaveStdError();
-  void MakeReplicaCovar( int idx, bool bFirstTime, bool bShowOutput, bool bSaveMatrices,
-                         const std::string *pBaseName );
+  void SetReplicaVars( int idx );
+  // I've just made covariance - propagate it through
+  void InitialiseCovar( const std::string *pBaseName = nullptr );
 public:
   FitterThread( const Fitter &fitter, bool bCorrelated, ModelFile &OutputModel );
   virtual ~FitterThread() {}
   virtual FitterThread * Clone() const = 0; // This is a virtual alias for copy constructor
-  // Switch to this index
-  void SetReplica( int idx, bool bShowOutput = false, bool bSaveMatrices = false,
-                   const std::string *pBaseName = nullptr );
+  /// Set to central replica and prepare (co)variance
+  void Initialise( const std::string *pBaseName = nullptr );
+  // Switch to some other (non-central) index
+  void SwitchReplica( int idx );
   std::string ReplicaString( int iFitNum ) const;
   void ShowReplicaMessage( int iFitNum ) const;
   bool SaveError( Vector &Error, const scalar * FitterParams, std::size_t Size, std::size_t Stride = 1 );

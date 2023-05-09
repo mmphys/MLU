@@ -34,7 +34,9 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
   // Are we using a frozen covariance matrix? Or does it vary for each sample?
   bFreeze = SupportsUnfrozen() ? cl.GotSwitch( "freeze" ) : true;
 
+  idxJackBoot = 0;
   const std::string sCovarSourceSwitch{ "covsrc" };
+  bool bLoaded{};
   if( !cl.GotSwitch( sCovarSourceSwitch ) )
   {
     // Covariance source unspecified: Unfrozen - use binned data; Frozen - use bootstrap
@@ -44,61 +46,85 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
   }
   else
   {
-    // Decode the user's choice of covariance source
-  std::string sCovOptions{ cl.SwitchValue<std::string>( sCovarSourceSwitch ) };
-  std::string sCovSrc{ Common::ExtractToSeparator( sCovOptions ) };
-  if( Common::EqualIgnoreCase( sCovSrc, "Rebin" ) )
-  {
-    // Rebin the raw data. Overwrites the raw data in the correlators
-    dsrw.Rebin( Common::ArrayFromString<int>( sCovOptions ) );
-    RebinSize = ds.RebinSize;
-    std::cout << "Rebinned raw data:";
-    for( int i : RebinSize )
-      std::cout << Common::Space << i;
-    std::cout << Common::NewLine;
-    Source = SS::Raw;
-  }
-  else if( Common::EqualIgnoreCase( sCovSrc, "h5" ) )
-  {
-    // Load inverse covariance matrix from hdf5 - for debugging and comparison with other fit code
-    std::vector<std::string> Opts{ Common::ArrayFromString( sCovOptions ) };
-    if( Opts.size() < 2 || Opts.size() > 3 )
-      throw std::runtime_error( "Options should contain file[,group],dataset. Bad options: " + sCovOptions );
-    std::string sRoot( "/" );
-    const int iHaveGroupName{ Opts.size() == 2 ? 0 : 1 };
-    std::string &GroupName{ iHaveGroupName ? Opts[1] : sRoot };
-    std::string &DataSetName{ Opts[1 + iHaveGroupName] };
-    ::H5::H5File f;
-    ::H5::Group  g;
-    Common::H5::OpenFileGroup( f, g, Opts[0], "Loading covariance matrix from ", &GroupName );
-    try
+    // There could be multiple options separated by '.'
+    const std::string &sCovOptions{ cl.SwitchValue<std::string>( sCovarSourceSwitch ) };
+    std::vector<std::string> vCovarSwitch{ Common::ArrayFromString( sCovOptions, "." ) };
+    static const std::string TooMany{ "Too many " };
+    for( std::size_t optNum = 0; optNum < vCovarSwitch.size(); ++optNum )
     {
-      Common::H5::ReadMatrix( g, DataSetName, Covar );
+      // Decode the user's choice of covariance source
+      const std::string sCovSrc{ Common::ExtractToSeparator( vCovarSwitch[optNum] ) };
+      if( Common::EqualIgnoreCase( sCovSrc, "Reboot" ) )
+      {
+        if( optNum > 1 )
+          throw std::runtime_error( "Too many " + sCovarSourceSwitch + " options " + sCovOptions );
+        const int NumReplicas{ vCovarSwitch[optNum].empty()
+          ? static_cast<int>( Common::RandomCache::DefaultNumReplicas() )
+          : Common::FromString<int>( vCovarSwitch[optNum] ) };
+        std::cout << "Covar Reboot " << NumReplicas << " replicas\n";
+        for( Fold &f : dsrw.corr )
+          f.Resample( 1, NumReplicas, idxJackBoot );
+        Source = SS::Bootstrap;
+        idxJackBoot = 1;
+      }
+      else if( optNum )
+        throw std::runtime_error( "Too many " + sCovarSourceSwitch + " options " + sCovOptions );
+      else if( Common::EqualIgnoreCase( sCovSrc, "Rebin" ) )
+      {
+        // Rebin the raw data. Overwrites the raw data in the correlators
+        dsrw.Rebin( Common::ArrayFromString<int>( vCovarSwitch[optNum] ) );
+        RebinSize = ds.RebinSize;
+        std::cout << "Covar Rebin";
+        for( int i : RebinSize )
+          std::cout << Common::Space << i;
+        std::cout << Common::NewLine;
+        Source = SS::Binned;
+        idxJackBoot = 1;
+      }
+      else if( Common::EqualIgnoreCase( sCovSrc, "h5" ) )
+      {
+        // Load inverse covariance matrix from hdf5 - for debugging and comparison with other fit code
+        std::vector<std::string> Opts{ Common::ArrayFromString( vCovarSwitch[optNum] ) };
+        if( Opts.size() < 2 || Opts.size() > 3 )
+          throw std::runtime_error( "Options should contain file[,group],dataset. Bad options: " + vCovarSwitch[optNum] );
+        std::string sRoot( "/" );
+        const int iHaveGroupName{ Opts.size() == 2 ? 0 : 1 };
+        std::string &GroupName{ iHaveGroupName ? Opts[1] : sRoot };
+        std::string &DataSetName{ Opts[1 + iHaveGroupName] };
+        ::H5::H5File f;
+        ::H5::Group  g;
+        Common::H5::OpenFileGroup( f, g, Opts[0], "Loading covariance matrix from ", &GroupName );
+        try
+        {
+          Common::H5::ReadMatrix( g, DataSetName, Covar );
+        }
+        catch(const ::H5::Exception &)
+        {
+          ::H5::Exception::clearErrorStack();
+          throw std::runtime_error( "Unable to load covariance matrix " + vCovarSwitch[optNum] );
+        }
+        Source = SS::Raw;
+        bFreeze = true; // because we only have inv_cov. TODO: invert inv_cov if unfrozen? (Better to load cov)
+        bLoaded = true;
+      }
+      else
+      {
+        // See what the user has asked for
+        Source = Common::FromString<SS>( sCovSrc );
+        if( !vCovarSwitch[optNum].empty() )
+          throw std::runtime_error( "Covariance source " + sCovSrc + " unexpected parameters: " + vCovarSwitch[optNum] );
+      }
     }
-    catch(const ::H5::Exception &)
-    {
-      ::H5::Exception::clearErrorStack();
-      throw std::runtime_error( "Unable to load covariance matrix " + sCovOptions );
-    }
-    Source = SS::Bootstrap;
-    bFreeze = true; // because we only have inv_cov. TODO: invert inv_cov if unfrozen? (Better to load cov)
   }
-  else
-  {
-    // See what the user has asked for
-    Source = Common::FromString<SS>( sCovSrc );
-    if( !sCovOptions.empty() )
-      throw std::runtime_error( "Covariance source " + sCovSrc + " unexpected parameters: " + sCovOptions );
-  }
-  }
+  dsrw.SetCovarSource( Source, idxJackBoot, bFreeze );
 
   // Check that all the input files match for raw/rebinned (checked for binned data on load)
-  if( Source == SS::Raw || Source == SS::Binned )
+  if( ( Source == SS::Raw || Source == SS::Binned ) && !bLoaded )
   {
     // Check whether all files have the same number of samples
     for( std::size_t i = 0; i < ds.corr.size(); ++i )
     {
-      const int Count{ ds.corr[i].NumSamples( Source ) };
+      const int Count{ ds.corr[i].NumSamples( Source, idxJackBoot ) };
       if( Count == 0 )
       {
         std::ostringstream os;
@@ -121,7 +147,8 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
   }
 
   // Has the user requested we get covariance using a bootstrap
-  if( !cl.GotSwitch( "covboot" ) )
+  // TODO: Reinstate
+  /*if( !cl.GotSwitch( "covboot" ) )
     CovarNumBoot = 0;
   else
   {
@@ -154,22 +181,7 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
       Common::GenerateRandom( vCovarRandom, ds.corr[0].Seed_, CovarNumBoot, CovarCount() );
       CovarRandom.Map( vCovarRandom.data(), CovarNumBoot, CovarCount() );
     }
-  }
-
-  // Make sure the random numbers I'll need are built once and only once
-  for( int i = 0; i < 2; ++i )
-  {
-    const SS ss{ i == 0 ? SS::Raw : SS::Binned };
-    if( Source == ss || ( i == 1 && !bFreeze ) )
-    {
-      if( dsrw.InitRandomNumbers( ss ) )
-      {
-        std::stringstream os;
-        os << "Generated bootstrap random numbers for " << ss << " data using Mersenne Twister (C++ 11 std::mt19937) with seed " << ds.corr[0].Name_.Seed;
-        std::cout << os.str() << Common::NewLine;
-      }
-    }
-  }
+  }*/
 }
 
 std::ostream & operator<<( std::ostream &os, const CovarParams &cp )

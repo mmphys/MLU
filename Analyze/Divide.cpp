@@ -25,18 +25,20 @@
 
 #include "Divide.hpp"
 
-template <typename T> typename std::enable_if<std::is_floating_point<T>::value>::type
-Divide( T * pNum, const T * pDen, int NumSamples, int Nt )
+template <typename T>
+inline void Divide( Common::Matrix<T> &Num, const Common::Matrix<T> Den )
 {
-  for( int Sample = 0; Sample < NumSamples; ++Sample )
-    for( int t = 0; t < Nt; ++t )
-      *pNum++ /= *pDen++;
+  for( std::size_t i = 0; i != Num.size1; ++i )
+    for( std::size_t j = 0; j < Num.size2; ++j )
+      Num(i,j) = Common::ComponentDivide( Num(i,j), Den(i,j) );
 }
 
-template <typename T> typename std::enable_if<std::is_floating_point<T>::value>::type
-Divide( std::complex<T> * pNum, const std::complex<T> * pDen, int NumSamples, int Nt )
+template <typename T>
+inline void Divide( Common::JackBoot<T> &Num, const Common::JackBoot<T> Den )
 {
-  Divide( reinterpret_cast<T *>( pNum ), reinterpret_cast<const T *>( pDen ), NumSamples, Nt * 2 );
+  for( std::size_t i = Num.idxReplicaMean; i != Num.NumReplicas(); ++i )
+    for( std::size_t j = 0; j < Num.extent(); ++j )
+      Num(i,j) = Common::ComponentDivide( Num(i,j), Den(i,j) );
 }
 
 Params::Params( const Common::CommandLine &cl )
@@ -122,13 +124,12 @@ void Params::DivideBoot( FoldBoot &Numerator, const FoldBoot &Denominator )
   else
   {
     // Divide the Numerator by the denominator
-    const int Nt{ Numerator.Nt() };
-    Divide( Numerator[Fold::idxCentral], Denominator[Fold::idxCentral], NumSamples + 1, Nt );
+    Divide( Numerator.getData(), Denominator.getData() );
     // If the binned data match, save the original and ratios
-    if( Numerator.NumSamplesBinned() && Numerator.NumSamplesBinned() == Denominator.NumSamplesBinned() )
+    if(   Numerator.NumSamplesBinned()
+       && Numerator.NumSamplesBinned() == Denominator.NumSamplesBinned() )
     {
-      Divide( Numerator.getBinned(), Denominator.getBinned(),
-             Numerator.NumSamplesBinned(), Nt );
+      Divide( Numerator.getBinned(), Denominator.getBinned() );
       if( Numerator.binSize != Denominator.binSize )
         Numerator.binSize = 1;
     }
@@ -139,10 +140,7 @@ void Params::DivideBoot( FoldBoot &Numerator, const FoldBoot &Denominator )
     }
     // If the raw data match, save the original and ratios
     if( Numerator.NumSamplesRaw() && Numerator.NumSamplesRaw() == Denominator.NumSamplesRaw() )
-    {
-      Divide( Numerator.getRaw(), Denominator.getRaw(),
-             Numerator.NumSamplesRaw(), Nt );
-    }
+      Divide( Numerator.getRaw(), Denominator.getRaw() );
     else
       Numerator.resizeRaw( 0 );
     // Merge the file lists
@@ -150,7 +148,7 @@ void Params::DivideBoot( FoldBoot &Numerator, const FoldBoot &Denominator )
       std::cout << "Warning: sample FileList lengths unequal, appending" << std::endl;
     Numerator.FileList = Common::ZipperMerge( Numerator.FileList, Denominator.FileList );
     // Update the summaries
-    Numerator.MakeCorrSummary( nullptr );
+    Numerator.MakeCorrSummary();
     if( bSaveHdf5 )
       Numerator.Write( OutFileName, Numerator.Name_.Type.c_str() );
     Numerator.WriteSummary( SummaryName );

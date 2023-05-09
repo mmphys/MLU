@@ -115,13 +115,6 @@ const std::string sOverlapAltNorm{ "AltOver" };
 
 const std::vector<std::string> DefaultModelStats{ Common::sChiSqPerDof, Common::sPValue, Common::sPValueH };
 
-// Does the specified file exist?
-bool FileExists( const std::string& Filename )
-{
-  struct stat buf;
-  return stat(Filename.c_str(), &buf) != -1;
-}
-
 void MomentumMap::Parse( std::string &BaseShort )
 {
   // Now get the remaining momenta and save them
@@ -1676,17 +1669,13 @@ void DataSet<T>::CacheRawData()
   mFitData.resize( NumJackBoot, Extent );
   if( FullyUnfrozen )
   {
-    mCorrel.clear();
-    mCorrelCentralMean.clear();
-    mCorrelCentralVariance.clear();
-    mCorrelCentralVarInv.clear();
+    mCovar.clear();
+    mCovarCentralMean.clear();
   }
   else
   {
-    mCorrel.resize( Extent, Extent );
-    mCorrelCentralMean.resize( Extent );
-    mCorrelCentralVariance.resize( Extent );
-    mCorrelCentralVarInv.resize( Extent );
+    mCovar.resize( Extent, Extent );
+    mCovarCentralMean.resize( Extent );
   }
   if( bFrozen )
     mBinned.clear();
@@ -1734,25 +1723,31 @@ void DataSet<T>::CacheRawData()
       }
     }
     // Make correlation matrix from this data
-    JackBoot<T>::MakeMean( mCorrelCentralMean, mCorrel );
-    JackBoot<T>::MakeCovar( mCorrel, mCorrelCentralMean, CovarBuffer, corr[0].Norm( ss ) );
+    if( ss == SampleSource::Bootstrap )
+    {
+      // For Bootstrap, we check environment for whether to use mean of source or mean of resamples
+      const std::size_t idxMean{ JackBootBase::getCovarMeanIdx() };
+      int dst{ 0 };
+      for( int f = 0; f < corr.size(); ++f )
+      {
+        const JackBoot<T> &mSrc{ corr[f].getData( idxJackBoot ) };
+        for( int t : FitTimes[f] )
+          mCovarCentralMean[dst++] = mSrc( idxMean, t );
+      }
+    }
+    else
+    {
+      // For binned/raw data we create the mean from the data
+      JackBoot<T>::MakeMean( mCovarCentralMean, CovarBuffer );
+    }
+    JackBoot<T>::MakeCovar( mCovar, mCovarCentralMean, CovarBuffer, corr[0].Norm( ss ) );
     CovarBuffer.clear();
   }
   else if( bCovarSrcData )
   {
     // Make correlation matrix from this data
-    mCorrelCentralMean = mFitData.GetCovarMean();
-    JackBoot<T>::MakeCovar( mCorrel, mCorrelCentralMean, mFitData.Replica, corr[0].Norm( ss ) );
-  }
-  //
-  if( !FullyUnfrozen )
-  {
-    for( int i = 0; i < Extent; ++i )
-    {
-      mCorrelCentralVariance[i] = std::sqrt( mCorrel( i, i ) );
-      mCorrelCentralVarInv[i] = static_cast<T>( 1. ) / mCorrelCentralVariance[i];
-    }
-    mCorrel.CholeskyScaleApply( mCorrelCentralVarInv, true );
+    mCovarCentralMean = mFitData.GetCovarMean();
+    JackBoot<T>::MakeCovar( mCovar, mCovarCentralMean, mFitData.Replica, corr[0].Norm( ss ) );
   }
 }
 
@@ -2098,7 +2093,6 @@ int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int Comp
     MaxSamples = corr[i].NumSamples();
     if( NSamples == 0 || NSamples > MaxSamples )
       NSamples = MaxSamples;
-    OriginalBinSize = corr[i].binSize; // Because this will be overwritten
   }
   return i;
 }
@@ -2200,7 +2194,7 @@ int DataSet<T>::NumSamples( SampleSource ss, int idxJackBoot ) const
 template <typename T>
 void DataSet<T>::Rebin( const std::vector<int> &NewSize )
 {
-  constexpr int DestJackBoot{};
+  constexpr int DestJackBoot{ 1 };
   RebinSize.clear();
   RebinSize.reserve( corr.size() );
   for( std::size_t i = 0; i < corr.size(); ++i )

@@ -131,7 +131,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--covsrc bootstrap"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--covsrc h5,fit_felix_central.hdf5,covarianceMatrix -o data_comparison2/FitDebugFelix/FelixCov_ -i data_comparison2/unbinned_"
@@ -226,6 +226,11 @@
          <EnvironmentVariable
             key = "MLUSeed"
             value = "JackKNiFE"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "MLUCovarCentral"
+            value = ""
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

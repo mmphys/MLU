@@ -89,7 +89,11 @@ protected:
     std::size_t NumSamples; // how many raw data samples were bootstrapped
     struct Less { bool operator()( const Key &lhs, const Key &rhs ) const; };
   };
-  using Value = Matrix<fint>;
+  struct Value
+  {
+    Matrix<fint> m;
+    bool bOnDisk = false;
+  };
   using MapT = std::map<Key, Value, Key::Less>;
   MapT Map;
   static bool CacheDirPrefixOK;
@@ -99,7 +103,8 @@ protected:
   /// Make random numbers for a bootstrap sample
   Matrix<fint> Make( fint &Seed, std::size_t NumSamples, std::size_t NumReplicas
                                                           = DefaultNumReplicas());
-  static void SaveRandom( const Key &key, const Matrix<fint> &Random );
+  static void Compare( const Matrix<fint> &l, const Matrix<fint> &r );
+  static void SaveRandom( const Key &key, Value &value );
   void Put( fint Seed, Matrix<fint> &Random, bool bWrite );
 public:
   /** Get random numbers for the given Seed and NumSamples
@@ -115,6 +120,7 @@ public:
                                                                 = DefaultNumReplicas() );
   /// Put random numbers in cache (probably loaded from file). Throw error if incompatible
   void Put( fint Seed, Matrix<fint> &Random ) { Put( Seed, Random, true ); }
+  /// Get the random numbers for the specified replica.
 };
 
 struct JackBootBase
@@ -124,6 +130,7 @@ struct JackBootBase
   static constexpr std::size_t idxReplicaMean{ idxCentral - 1u };
   static const std::string s_S;
   static bool UseCentralCovar(); // false unless MLUCovarCentral environment variable set
+  static std::size_t getCovarMeanIdx() { return UseCentralCovar() ? idxCentral : idxReplicaMean; }
   enum class Norm{ RawBinned,   // Sample covariance OF MEAN from raw / binned data
                    Bootstrap,   // Sample covariance OF MEAN from bootstraps
                    Jackknife,   // Sample covariance OF MEAN from Jackknife
@@ -181,7 +188,6 @@ public:
   inline       Vector<T> &GetReplicaMean()       { return ReplicaMean; }
   inline const Vector<T> &GetReplicaMean() const { return ReplicaMean; }
   // Use this as the mean when building (co)variance from replicas - TODO: Definitely not central?
-  static std::size_t getCovarMeanIdx() { return UseCentralCovar() ? idxCentral : idxReplicaMean; }
   inline       Vector<T> &GetCovarMean()       { return UseCentralCovar() ? Central : ReplicaMean; }
   inline const Vector<T> &GetCovarMean() const { return UseCentralCovar() ? Central : ReplicaMean; }
   /// bootstrap: random number seed for this sample. SeedWildcard = jackknife
@@ -207,6 +213,11 @@ public:
   static Real GetNorm( Norm norm, std::size_t NumReplicas );
   /// Make the mean of any matrix
   static void MakeMean( Vector<T> &vMean, const MatrixView<T> &Source );
+  /// Make the mean of a matrix while resampling it - e.g. from raw/binned source data
+  static void MakeMean( Vector<T> &vMean, Vector<fint> &vRandom, const MatrixView<T> &Source,
+                        std::size_t Replica,
+                        std::size_t NumReplicas = RandomCache::DefaultNumReplicas(),
+                        SeedType Seed = RandomCache::DefaultSeed() );
   /// Perform jackknife or bootstrap (based on seed) resampling
   /// NumBoot is the number of bootstrap replicas (ignored for jackknife)
   void Resample( const MatrixView<T> &Source, std::size_t NumBoot );
@@ -223,14 +234,23 @@ public:
                          const MatrixView<T> &Source, Norm norm );
   static void MakeVar( Vector<T> &Var, const VectorView<T> &Mean,
                        const MatrixView<T> &Source, Norm norm );
+  /// Make the (co)variance of a matrix while resampling it - e.g. from raw/binned source data
+  static void MakeCovar( Matrix<T> &Covar,
+                         const MatrixView<T> &Source, std::size_t Replica,
+                         std::size_t NumReplicas = RandomCache::DefaultNumReplicas(),
+                         SeedType Seed = RandomCache::DefaultSeed() );
+  static void MakeVar( Vector<T> &Var,
+                       const MatrixView<T> &Source, std::size_t Replica,
+                       std::size_t NumReplicas = RandomCache::DefaultNumReplicas(),
+                       SeedType Seed = RandomCache::DefaultSeed() );
   /**
    Make covariance matrix or variance vector given a bootstrap or jackknife and the source matrix it was created from.
    
    Resampling is possible for any replica, with the (co)variance coming from the source data, resampled appropriately.
    Normalisation is always `Norm::RawBinned`, i.e. `\Sigma_{\bar{\vb{x}}}`error of the mean
    */
-  void MakeCovar( Matrix<T> &Covar, const MatrixView<T> &Source, std::size_t idx ) const;
-  void MakeVar( Vector<T> &Var, const MatrixView<T> &Source, std::size_t idx ) const;
+  /*void MakeCovar( Matrix<T> &Covar, const MatrixView<T> &Source, std::size_t idx ) const;
+  void MakeVar( Vector<T> &Var, const MatrixView<T> &Source, std::size_t idx ) const;*/
 
   inline std::size_t extent() const { return Central.size; } // Num data points (columns) per replica
   inline std::size_t NumReplicas() const { return Replica.size1; }
@@ -262,7 +282,7 @@ public:
                                  + std::to_string( NumReplicas() ) );
     }
   }
-  /*inline void MapRow( Vector<T> &v, std::size_t idx )
+  inline void MapRow( Vector<T> &v, std::size_t idx )
   {
     ValidateReplica( idx );
     if( idx == idxCentral )
@@ -271,7 +291,7 @@ public:
      v.MapView( ReplicaMean );
     else
       v.MapRow( Replica, idx );
-  }*/
+  }
   inline void MapRow( VectorView<T> &v, std::size_t idx ) const
   {
     ValidateReplica( idx );

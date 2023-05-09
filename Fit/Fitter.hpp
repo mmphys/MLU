@@ -98,7 +98,7 @@ public:
   void SaveMatrixFile( const Matrix &m, const std::string &Type, const std::string &Filename,
                          const char *pGnuplotExtra = nullptr ) const;
   bool PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName,
-              const std::string &ModelSuffix, Common::SeedType Seed );
+              const std::string &ModelSuffix );
   virtual const std::string &Type() const = 0;
   std::vector<std::string> GetModelTypes() const;
   std::vector<std::string> GetModelArgs() const;

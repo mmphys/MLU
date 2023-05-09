@@ -78,6 +78,12 @@ ComponentSquared( T z ) { return { z.real() * z.real(), z.imag() * z.imag() }; }
 template <typename T> typename std::enable_if<!is_complex<T>::value, T>::type
 ComponentSquared( T z ) { return z * z; }
 
+// Allow real and complex numbers to be squared and square rooted
+template <typename T> typename std::enable_if< is_complex<T>::value, T>::type
+ComponentDivide( T Num, T Den ) { return { Num.real() / Den.real(), Num.imag() / Den.imag() }; }
+template <typename T> typename std::enable_if<!is_complex<T>::value, T>::type
+ComponentDivide( T Num, T Den ) { return Num / Den; }
+
 // Component-wise absolute value for complex types
 template<typename T> typename std::enable_if<is_complex<T>::value, T>::type
 ComponentAbs( T c ) { return { std::abs( c.real() ), std::abs( c.imag() ) }; }

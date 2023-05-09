@@ -41,6 +41,9 @@
 
 MLU_Posix_hpp
 
+// Does the specified file exist?
+bool FileExists( const std::string& Filename );
+
 /// Wrapper for posix gethostname()
 const std::string &GetHostName();
 

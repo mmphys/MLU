@@ -283,7 +283,6 @@ int main(int argc, const char *argv[])
       const std::string sSummaryBase{ outBaseFileName + Common::Period + sOpNameConcat };
       outBaseFileName.append( 1, '_' );
       const std::size_t outBaseFileNameLen{ outBaseFileName.size() };
-      const Common::SeedType Seed{ ds.corr[0].Name_.Seed };
 
       // All the models are loaded
       std::unique_ptr<Fitter> m{ MakeFitter( cl, ds, std::move( ModelArgs ), OpName, std::move( cp ) ) };
@@ -318,7 +317,7 @@ int main(int argc, const char *argv[])
           outBaseFileName.append( it.AbbrevString() );
           outBaseFileName.append( 1, '.' );
           bAllParamsResolved =
-          m->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat, Seed );
+          m->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat );
           ++CountOK;
         }
         catch(const std::exception &e)
@@ -409,9 +408,11 @@ int main(int argc, const char *argv[])
     "--errdig Number of significant figures in error (default " << DefaultErrDig << ")\n"
     "--covsrc source[,options[,...]] build (co)variance from source, i.e. one of\n"
     "         Binned    Use the already binned data\n"
-    "         Raw       Use the raw (unbinned) data\n"
-    "         Rebin     Rebin the raw data using bin size(s) specified\n"
     "         Bootstrap Use bootstrap replicas\n"
+    "         Raw       Use the raw (unbinned) data\n"
+    "         Rebin n[,n[...] Rebin raw data using bin size(s) specified, 0=auto\n"
+    "         Reboot[NumBoot] Re-bootstrap binned data, optional NumBoot samples\n"
+    "                         Can be used with rebin\n"
     "         H5,f[,g],d Load INVERSE covariance from .h5 file f, group g, dataset d\n"
     "         Default: Binned if available, otherwise Bootstrap\n"
     "--covboot Build covariance using secondary bootstrap & this num replicas, 0=all\n"

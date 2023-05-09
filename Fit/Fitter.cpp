@@ -103,7 +103,6 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
   for( const std::string &f : ds.GetModelFilenames() )
     OutputModel.FileList.emplace_back( f );
   OutputModel.CopyAttributes( ds.corr[0] );
-  OutputModel.binSize = ds.OriginalBinSize;
   OutputModel.NumExponents = NumExponents;
   OutputModel.ModelType = GetModelTypes();
   OutputModel.ModelArgs = GetModelArgs();
@@ -304,7 +303,7 @@ void Fitter::MakeGuess()
     LastUnknown = NumUnknown;
     NumUnknown = 0;
     NumWithUnknowns = 0;
-    VectorView Data( ds.vCentral );
+    VectorView Data( ds.mFitData.GetCentral() );
     for( std::size_t i = 0; i < model.size(); ++i )
     {
       Data.size( ds.FitTimes[i].size() );
@@ -327,7 +326,7 @@ void Fitter::MakeGuess()
   if( NumUnknown )
   {
     for( std::size_t i = 0; i < model.size(); ++i )
-      model[i]->Guess( Guess, ParamKnown, mp, ds.vCentral, ds.FitTimes[i], true );
+      model[i]->Guess( Guess, ParamKnown, mp, ds.mFitData.GetCentral(), ds.FitTimes[i], true );
     for( bool bKnown : ParamKnown )
       if( !bKnown )
       {
@@ -389,8 +388,9 @@ void Fitter::SaveMatrixFile( const Matrix &m, const std::string &Type, const std
 
 // Perform a fit - assume fit ranges have been set on the DataSet prior to the call
 bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::string &OutBaseName,
-                    const std::string &ModelSuffix, Common::SeedType Seed )
+                    const std::string &ModelSuffix )
 {
+  const Common::SeedType Seed{ ds.Seed() };
   bCorrelated = Bcorrelated;
   dof = ds.Extent - static_cast<int>( mp.NumScalars( Param::Type::Variable ) );
   if( dof < MinDof )
@@ -426,7 +426,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       throw std::runtime_error( "Pre-built fit not compatible with parameters from this run" );
     bPerformFit = PreBuilt.NewParamsMorePrecise( cp.bFreeze, ds.NSamples );
     if( !bPerformFit )
-      ChiSq = dof * PreBuilt.getSummaryData( Common::sChiSqPerDof ).Central;
+      ChiSq = dof * PreBuilt.SummaryData( Common::sChiSqPerDof ).Central;
     else
       std::cout << "Overwriting\n";
   }
@@ -448,7 +448,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
 
     // Fit the central replica, then use this thread as template for all others
     std::unique_ptr<FitterThread> ftC{ MakeThread( bCorrelated, OutputModel ) };
-    ftC->SetReplica( Fold::idxCentral, true, true, bSaveCMat ? &sModelBase : nullptr );
+    ftC->Initialise( bSaveCMat ? &sModelBase : nullptr );
     {
       const std::string sDescription{ ftC->Description() };
       if( !sDescription.empty() )
@@ -540,7 +540,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
                 WasAbort = Abort;
               if( !WasAbort )
               {
-                fitThread.SetReplica( idx );
+                fitThread.SwitchReplica( idx );
                 scalar z{ fitThread.FitOne() };
                 if( idx == Fold::idxCentral )
                   ChiSq = z;
@@ -581,13 +581,14 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     if( cp.bFreeze )
       OutputModel.StdErrorMean.Replica.clear();
     OutputModel.Guess = Guess;
-    OutputModel.FitInput.Central = ds.vCentral;
-    OutputModel.FitInput.Replica = ds.Cache( Common::SampleSource::Bootstrap );
-    OutputModel.MakeCorrSummary( Common::sParams.c_str() );
+    OutputModel.FitInput.GetCentral() = ds.mFitData.GetCentral();
+    OutputModel.FitInput.Replica = ds.mFitData.Replica;
+    OutputModel.SetSummaryNames( Common::sParams );
+    OutputModel.MakeCorrSummary();
     OutputModel.CheckParameters( Strictness, MonotonicUpperLimit );
     {
       // Show parameters - in neat columns
-      const Common::ValWithEr<scalar> * const v{ OutputModel.getSummaryData() };
+      const Common::ValWithEr<scalar> * const v{ &OutputModel.SummaryData() };
       const std::vector<std::string> &Cols{ OutputModel.GetColumnNames() };
       const int maxLen{ static_cast<int>( std::max_element( Cols.begin(), Cols.end(),
                                           [](const std::string &a, const std::string &b)

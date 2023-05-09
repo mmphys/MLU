@@ -288,7 +288,26 @@ Matrix<fint> RandomCache::Make( fint &Seed, std::size_t NumSamples, std::size_t 
   return m;
 }
 
-void RandomCache::SaveRandom( const Key &key, const Matrix<fint> &Random )
+void RandomCache::Compare( const Matrix<fint> &l, const Matrix<fint> &r )
+{
+  if( l.size2 == 0 || l.size2 != r.size2 )
+  {
+    std::ostringstream os;
+    os << "Random mismatch number of samples " << l.size2 << " != " << r.size2;
+    throw std::runtime_error( os.str().c_str() );
+  }
+  const std::size_t CompareReps{ std::min( l.size1, r.size1 ) };
+  for( std::size_t i = 0 ; i < CompareReps; ++i )
+    for( std::size_t j = 0 ; j < l.size2; ++j )
+      if( l(i,j) != r(i,j) )
+      {
+        std::ostringstream os;
+        os << "Seed mismatch (" << i << ',' << j << ") " << l(i,j) << " != " << r(i,j);
+        throw std::runtime_error( os.str().c_str() );
+      }
+}
+
+void RandomCache::SaveRandom( const Key &key, Value &value )
 {
   std::string Filename{ GetCachePath( key ) };
   if( !Filename.empty() )
@@ -296,11 +315,30 @@ void RandomCache::SaveRandom( const Key &key, const Matrix<fint> &Random )
     bool bOK{};
     try // to write in my format
     {
-      MakeAncestorDirs( Filename );
-      ::H5::H5File f( Filename, H5F_ACC_TRUNC );
-      ::H5::Group g = f.createGroup( sRandom );
-      Write( g, Random, key.Seed, GetHostName() );
-      bOK = true;
+      if( Common::FileExists( Filename ) )
+      {
+        // See whether compatible with existing file ... but only do this once
+        if( !value.bOnDisk )
+        {
+          std::string Machine;
+          SeedType LoadSeed;
+          Matrix<fint> m;
+          if( !Read( Filename, m, LoadSeed, Machine ) )
+            throw std::runtime_error( "Random numbers incompatible with cache " + Filename );
+          Compare( m, value.m );
+          value.bOnDisk = true;
+        }
+        bOK = true;
+      }
+      else
+      {
+        // Didn't exist - write it
+        MakeAncestorDirs( Filename );
+        ::H5::H5File f( Filename, H5F_ACC_TRUNC );
+        ::H5::Group g = f.createGroup( sRandom );
+        Write( g, value.m, key.Seed, GetHostName() );
+        bOK = true;
+      }
     }
     catch(const ::H5::Exception &) {}
     catch(const std::exception &e) {}
@@ -314,7 +352,8 @@ Matrix<fint> RandomCache::Get( fint &Seed, std::size_t NumSamples, std::size_t N
   if( Seed == SeedWildcard )
     Seed = DefaultSeed();
   const Key key{ Seed, NumSamples };
-  Matrix<fint> &m{ Map[key] };
+  Value &value{ Map[key] };
+  Matrix<fint> &m{ value.m };
   assert(((m.size1==0 && m.size2==0)||m.size2==NumSamples)&&"RandomCache::Get() NumSamples mismatch");
   if( m.size1 == 0 )
   {
@@ -322,26 +361,15 @@ Matrix<fint> RandomCache::Get( fint &Seed, std::size_t NumSamples, std::size_t N
     std::string Machine;
     SeedType LoadSeed;
     const std::string Filename{ GetCachePath( key ) };
-    Read( Filename, m, LoadSeed, Machine );
+    value.bOnDisk = Read( Filename, m, LoadSeed, Machine );
   }
   if( m.size1 < NumReplicas )
   {
     // Not enough replicas - make some more
     Matrix<fint> New{ Make( Seed, NumSamples, NumReplicas ) };
-    // Compare
-    for( std::size_t i = 0 ; i < m.size1; ++i )
-      for( std::size_t j = 0 ; j < NumSamples; ++j )
-        if( New(i,j) != m(i,j) )
-        {
-          std::ostringstream os;
-          os << "RandomCache::Get() Seed " << Seed << " samples " << NumSamples
-             << ". Error growing from " << m.size1 << " to " << NumReplicas
-             << " replicas. Old(" << i << ',' << j << ") " << m(i,j)
-             << " != New(" << i << ',' << j << ") " << New(i,j);
-          throw std::runtime_error( os.str().c_str() );
-        }
+    Compare( m, New );
     m = std::move( New );
-    SaveRandom( key, m );
+    SaveRandom( key, value );
   }
   Matrix<fint> Copy;
   Copy.MapView( m );
@@ -380,36 +408,28 @@ void RandomCache::Put( fint Seed, Matrix<fint> &New, bool bWrite )
   if( it == Map.end() )
   {
     // Nothing in cache - move the random numbers into the cache
-    auto pair{ Map.emplace( key, std::move( New ) ) };
+    Value InsertVal{ std::move( New ), false };
+    auto pair{ Map.emplace( key, std::move( InsertVal ) ) };
     assert( pair.second && "Bug: I just searched for this, but it wasn't inserted" );
     // Make the caller's matrix point back to the new entry in the cache
     it = pair.first;
-    New.MapView( it->second );
+    Value &value{ it->second };
+    New.MapView( value.m );
     if( bWrite )
-      SaveRandom( key, New );
+      SaveRandom( key, value );
   }
   else
   {
     // Something in cache - are the numbers compatible?
-    Matrix<fint> &Old{ it->second };
+    Value &value{ it->second };
+    Matrix<fint> &Old{ value.m };
     assert( Old.size1 && Old.size2 == NumSamples && "Invalid random numbers in cache" );
-    std::size_t CompareReps{ std::min( New.size1, Old.size1 ) };
-    for( std::size_t i = 0 ; i < CompareReps; ++i )
-      for( std::size_t j = 0 ; j < NumSamples; ++j )
-        if( New(i,j) != Old(i,j) )
-        {
-          std::ostringstream os;
-          os << "RandomCache::Put() Seed " << SeedString( Seed )
-             << " samples " << NumSamples
-             << ". New samples incompatible with cache. Old(" << i << ',' << j << ") " << Old(i,j)
-             << " != New(" << i << ',' << j << ") " << New(i,j);
-          throw std::runtime_error( os.str().c_str() );
-        }
+    Compare( Old, New );
     if( New.size1 > Old.size1  )
     {
       Old = std::move( New ); // New has more replicas - move this into cache
       if( bWrite )
-        SaveRandom( key, Old );
+        SaveRandom( key, value );
     }
     New.MapView( Old ); // Make callers matrix point to cache
   }
@@ -446,7 +466,21 @@ bool JackBootBase::UseCentralCovar()
 void JackBootBase::GetRandom( Vector<fint> &vRandom, fint Seed,
                               std::size_t NumSamples, std::size_t NumReplicas, std::size_t Replica )
 {
-  if( Replica >= NumReplicas )
+  if( NumSamples == 1 || ( NumSamples == 2 && Seed == SeedWildcard ) )
+  {
+    std::ostringstream os;
+    os << "JackBootBase::GetRandom() Cannot resample " << NumSamples << " samples";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  if( Seed == SeedWildcard )
+    NumReplicas = NumSamples;
+  if( Replica == idxCentral || Replica == idxReplicaMean )
+  {
+    vRandom.resize( NumSamples );
+    for( fint i = 0; i < NumSamples; ++i )
+      vRandom[i] = i;
+  }
+  else if( Replica >= NumReplicas )
   {
     std::ostringstream ss;
     ss << "JackBoot<T>::GetRandom Request for replica " << Replica << " of " << NumReplicas
@@ -454,16 +488,8 @@ void JackBootBase::GetRandom( Vector<fint> &vRandom, fint Seed,
     throw std::runtime_error( ss.str().c_str() );
   }
   // The presence or absence of random numbers tells us whether we are doing bootstrap or jackknife
-  if( Seed == SeedWildcard )
+  else if( Seed == SeedWildcard )
   {
-    // Jackknife on non-central replica
-    if( NumReplicas != NumSamples )
-    {
-      std::ostringstream ss;
-      ss << "JackBoot<T>::GetRandom Jackknife NumReplicas " << NumReplicas
-         << " != NumSamples " << NumSamples;
-      throw std::runtime_error( ss.str().c_str() );
-    }
     vRandom.resize( NumSamples - 1 );
     for( fint i = 0, r = 0; r < NumSamples; ++r )
       if( r != Replica )
@@ -560,6 +586,30 @@ void JackBoot<T>::MakeMean( Vector<T> &vMean, const MatrixView<T> &Source )
       vMean[j] += Source(i,j);
   if( NumReplicas > 1 )
     vMean *= static_cast<Real>( 1 ) / NumReplicas;
+}
+
+/*****************************************************************************
+
+ Make the mean of a matrix while resampling it - e.g. from raw/binned source data
+ 
+ *****************************************************************************/
+
+template <typename T>
+void JackBoot<T>::MakeMean( Vector<T> &vMean, Vector<fint> &vRandom, const MatrixView<T> &Source,
+                            std::size_t Replica, std::size_t NumReplicas, SeedType Seed )
+{
+  if( Source.size1() == 0 || Source.size2() == 0 )
+    throw std::runtime_error( "JackBoot::MakeMean Source matrix empty" );
+  std::size_t NumSamples{ Source.size1() };
+  std::size_t Extent{ Source.size2() };
+  GetRandom( vRandom, Seed, NumSamples, NumReplicas, Replica );
+  vMean.resize( Extent );
+  vMean = static_cast<T>( 0 );
+  for( std::size_t i = 0; i < vRandom.size; ++i )
+    for( std::size_t j = 0; j < Extent; ++j )
+      vMean[j] += Source(vRandom[i],j);
+  if( vRandom.size > 1 )
+    vMean *= static_cast<Real>( 1 ) / vRandom.size;
 }
 
 /*****************************************************************************
@@ -743,13 +793,82 @@ void JackBoot<T>::MakeVar( Vector<T> &Var, const VectorView<T> &Mean,
 
 /*****************************************************************************
  
+ Make the (co)variance of a matrix while resampling it - e.g. from raw/binned source data
+
+*****************************************************************************/
+
+template <typename T>
+void JackBoot<T>::MakeCovar( Matrix<T> &Covar, const MatrixView<T> &Source,
+                             std::size_t Replica, std::size_t NumReplicas, SeedType Seed )
+{
+  Vector<T> Mean;
+  Vector<fint> Random;
+  MakeMean( Mean, Random, Source, Replica, NumReplicas, Seed );
+  const std::size_t Extent{ Source.size2() };
+  const std::size_t NumSamples{ Source.size1() };
+  // Clear the covariance matrix
+  Covar.resize( Extent, Extent );
+  Covar = static_cast<T>( 0 );
+  VectorView<T> Data;         // This is a view into each replica
+  Vector<T> Error( Extent );  // This is the error on each replica
+  // Sum the covariance entries on each replica - lower left triangle
+  for( std::size_t replica = 0; replica < Random.size; ++replica )
+  {
+    Data.MapRow( Source, Random[replica] );
+    for( std::size_t i = 0; i < Extent; ++i )
+    {
+      Error[i] = Data[i] - Mean[i];
+      for( std::size_t j = 0; j <= i; ++j )
+        Covar( i, j ) += Conjugate( Error[i] ) * Error[j];
+    }
+  }
+  // Normalise and fill in upper right triangle
+  const Real norm{ GetNorm( Norm::RawBinned, NumSamples ) };
+  for( std::size_t i = 0; i < Extent; ++i )
+    for( std::size_t j = 0; j <= i; ++j )
+    {
+      const T z{ Covar( i, j ) * norm };
+      Covar( i, j ) = z;
+      if( i != j )
+        Covar( j, i ) = z;
+    }
+}
+
+template <typename T>
+void JackBoot<T>::MakeVar( Vector<T> &Var, const MatrixView<T> &Source,
+                           std::size_t Replica, std::size_t NumReplicas, SeedType Seed )
+{
+  Vector<T> Mean;
+  Vector<fint> Random;
+  MakeMean( Mean, Random, Source, Replica, NumReplicas, Seed );
+  const std::size_t Extent{ Source.size2() };
+  const std::size_t NumSamples{ Source.size1() };
+  // Clear the covariance matrix
+  Var.resize( Extent );
+  Var = static_cast<T>( 0 );
+  VectorView<T> Data;         // This is a view into each replica
+  // Sum the covariance entries on each replica - lower left triangle
+  for( std::size_t replica = 0; replica < Random.size; ++replica )
+  {
+    Data.MapRow( Source, Random[replica] );
+    for( std::size_t i = 0; i < Extent; ++i )
+      Var[i] += Squared( Data[i] - Mean[i] );
+  }
+  // Normalise and fill in upper right triangle
+  const Real norm{ GetNorm( Norm::RawBinned, NumSamples ) };
+  for( std::size_t i = 0; i < Extent; ++i )
+    Var[i] *= norm;
+}
+
+/*****************************************************************************
+ 
  Make covariance matrix or variance vector given a bootstrap or jackknife and the source matrix it was created from.
  Resampling is possible for any replica, with the (co)variance coming from the source data, resampled appropriately.
  Normalisation is always `Norm::RawBinned`, i.e. `\Sigma_{\bar{\vb{x}}}`error of the mean
  
  *****************************************************************************/
 
-template <typename T>
+/*template <typename T>
 void JackBoot<T>::MakeCovar( Matrix<T> &Covar, const MatrixView<T> &Source, std::size_t idx ) const
 {
   VectorView<T> Mean;
@@ -765,7 +884,7 @@ void JackBoot<T>::MakeVar( Vector<T> &Var, const MatrixView<T> &Source, std::siz
   Vector<fint> Random;
   const Real A{ CheckVarCovar( "JackBoot::MakeVar()", Mean, Random, Source, idx ) };
   MakeVarHelper( Var, Source, Mean, A, &Random );
-}
+}*/
 
 /*****************************************************************************
  
@@ -792,9 +911,8 @@ template <typename T> typename JackBoot<T>::Real
 JackBoot<T>::CheckVarCovar( const std::string &sPrefix, VectorView<T> &Mean, Vector<fint> &vRandom,
                             const MatrixView<T> &Source, std::size_t idx ) const
 {
-  // TODO: I think this is the root cause of why my correlated fits go high
-  //const Vector<T> &CovarianceMean{ Central };
-  const Vector<T> &CovarianceMean{ ReplicaMean };
+  // TODO: Check whether using bootstrap mean is root cause of why my correlated fits go high
+  const Vector<T> &CovarianceMean{ GetCovarMean() };
   // Error check
   CheckVarCovar( sPrefix, CovarianceMean, Source );
   const Norm norm{ Norm::RawBinned };

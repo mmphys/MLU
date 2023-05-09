@@ -40,13 +40,11 @@ struct CovarParams
   // Where am I building the covariance from
   using SS = Common::SampleSource;
   SS Source;
+  int idxJackBoot;
+
   // 0 = build correlation from CovarSource, scaled by variance of data on each bootstrap replica
   // else estimate covariance by re-bootstrapping each replica using this # of secondary replicas
-  int CovarNumBoot;
-  // Random numbers to get the covariance from a bootstrap
-  using fint = Common::fint;
-  Common::MatrixView<fint> CovarRandom;
-  std::vector<fint> vCovarRandom; // Contains the random numbers iff I generated them
+  int CovarNumBoot = 0;
   // Freeze covariance to the central replica
   bool bFreeze;
   // Manually loaded inverse covariance matrix
@@ -56,8 +54,7 @@ struct CovarParams
   /// Can we compute (co)variance on non-central replicas? Only possible if we have rebinned data
   inline bool SupportsUnfrozen() const { return ds.NumSamplesBinned(); }
   // Source is a bootstrap - only valid to compute variance on central replica
-  inline bool SourceIsBootstrap() const
-  { return Source == SS::Bootstrap || ( Source == SS::Raw && ds.corr[0].bRawBootstrap ); }
+  inline bool SourceIsBootstrap() const { return Source == SS::Bootstrap; }
   // This is the appropriate parameter for m to use in the T^2 distribution
   inline int CovarSampleSize() const
   {
@@ -68,11 +65,11 @@ struct CovarParams
    Can I make the covariance matrix in one step for this replica?
    If false, then I make correlation matrix from source, then scale it by variance of data on this replica
    */
-  inline bool OneStep( int Replica ) const
+  /*inline bool OneStep( int Replica ) const
   {
     // TODO: support covar from replica data
     return CovarNumBoot || (Replica == Fold::idxCentral && (Source == SS::Binned || Source == SS::Bootstrap) );
-  }
+  }*/
   // How many covariance samples are there
   inline int CovarCount() const { return ds.corr[0].NumSamples( Source ); }
 };

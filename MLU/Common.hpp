@@ -309,9 +309,6 @@ template<typename T> StartStopStepIterator<T> StartStopStep<T>::end() const
   return it;
 };
 
-// Does the specified file exist?
-bool FileExists( const std::string& Filename );
-
 // This is a key/value file, and we ignore anything after a comment character
 // Use a std::MultiMap if the keys aren't unique
 template<class Key, class T, class Compare = std::less<Key>, class Map = std::map<Key, T, Compare>>
@@ -403,7 +400,7 @@ public:
   static Map Read( const std::string &Filename, const char *ErrorMsgType = nullptr,
                    const std::string &sComment = Hash )
   {
-    if( FileExists( Filename ) )
+    if( Common::FileExists( Filename ) )
     {
       std::ifstream s( Filename );
       if( !s.bad() )
@@ -1852,7 +1849,7 @@ public: // Override these for specialisations
       for( int t = 0; t < Nt_; ++t )
       {
         os << t;
-        for( std::size_t f = 0; f < SummaryNames.size(); f++ )
+        for( int f = 0; f < SummaryNames.size(); f++ )
           os << Space << SummaryData( f, t );
         if( t != Nt_ - 1 )
           os << NewLine;
@@ -2976,21 +2973,20 @@ struct DataSet
   int Extent = 0; // Number of data points in our fit (i.e. total number of elements in FitTimes)
   std::vector<Fold<T>>          corr;     // Correlator files
   std::vector<std::vector<int>> FitTimes; // The actual timeslices we are fitting to in each correlator
+  inline SeedType Seed() const
+  { return corr.empty() ? RandomCache::DefaultSeed() : corr[0].Seed(); }
   ConstMap constMap;
   std::vector<int> RebinSize; // Bin sizes if I've rebinned the raw data
-  int OriginalBinSize;        // Bin size before any rebinning (to deal with covariance matrices)
   // Cached data for selected FitTimes
   JackBoot<T> mFitData;
   // This is where the covariance matrix comes from
-  // mBinned  mCorrel Meaning
+  // mBinned  mCovar  Meaning
   // data     empty   Fully unfrozen. Covariance matrix built from binned data on each replica
-  // data     data    Semi-frozen. mCorrel scaled by variance on each replica
+  // data     data    Semi-frozen. mCovar scaled by variance on each replica
   // empty    data    Frozen. The same covariance matrix is used on every replica
   Matrix<T> mBinned;
-  Matrix<T> mCorrel;
-  Vector<T> mCorrelCentralMean;     // This is the mean on the central replica
-  Vector<T> mCorrelCentralVariance; // This is the variance on the central replica
-  Vector<T> mCorrelCentralVarInv;   // Inverse of previous
+  Matrix<T> mCovar;
+  Vector<T> mCovarCentralMean;     // This is the mean on the central replica
   SampleSource CovarSource = SS::Bootstrap;
   int idxJackBootCovarSource = 0;
   bool bFrozenCovarSource = false;

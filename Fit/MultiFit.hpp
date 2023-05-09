@@ -46,6 +46,7 @@ using Fold = Common::Fold<scalar>;
 using vCorrelator = std::vector<Fold>;
 using ModelFile = Common::Model<scalar>;
 using DataSet = Common::DataSet<scalar>;
+using JackBoot = Common::JackBoot<scalar>;
 using ConstantSource = Common::ConstantSource;
 using vString = std::vector<std::string>;
 using vInt = std::vector<int>;
