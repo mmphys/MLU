@@ -76,6 +76,7 @@ int main(int argc, const char *argv[])
   static const char DefaultHotelling[] = "0.05";
   static const char DefaultMinDP[] = "1";
   static const char DefaultErrDig[] = "2";
+  static const char szFileWildcard[] = "*?[";
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;
@@ -128,6 +129,7 @@ int main(int argc, const char *argv[])
       if( cl.GotSwitch( "debug-signals" ) )
         Common::Grid_debug_handler_init();
       const std::string inBase{ cl.SwitchValue<std::string>("i") };
+      const bool inBaseWildcard{ inBase.find_first_of( szFileWildcard ) != std::string::npos };
       std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
       Common::MakeAncestorDirs( outBaseFileName );
       const int NSamples{ cl.SwitchValue<int>("n") };
@@ -148,11 +150,16 @@ int main(int argc, const char *argv[])
       {
         // First parameter (up to comma) is the filename we're looking for
         std::string FileToGlob{ Common::ExtractToSeparator( cl.Args[ArgNum] ) };
+        std::vector<std::string> Filenames;
+        if( !inBaseWildcard && FileToGlob.find_first_of( szFileWildcard ) == std::string::npos )
+          Filenames.push_back( Common::ExistingAnySeed( inBase + FileToGlob ) );
+        else
+          Filenames = Common::glob( &FileToGlob, &FileToGlob + 1, inBase.c_str() );
         bool bGlobEmpty{ true };
         // Anything after the comma is a list of arguments
         Model::Args vArgs;
         vArgs.FromString( cl.Args[ArgNum], true );
-        for( const std::string &sFileName : Common::glob( &FileToGlob, &FileToGlob + 1, inBase.c_str() ) )
+        for( const std::string &sFileName : Filenames )
         {
           bGlobEmpty = false;
           Common::FileNameAtt Att( sFileName, &OpName );

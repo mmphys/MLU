@@ -43,8 +43,8 @@ NumExp=${NumExp:-3} # How many exponentials in the 3pt fit
 FileSeries=${FileSeries:-E$NumExp}
 
 PW=${PW:-g5P_g5P}
-Seed=${Seed:-1835672416}
-Ratio=${Ratio:-ratioE1ZV1}
+MLUSeed=${MLUSeed:-1835672416}
+Ratio=${Ratio:-ratioE1ZV1}.$MLUSeed
 Corr=${Corr:-corr}
 MELFit=${MELFit:-MELFit}
 yrangeR3=${yrangeR3:-${ayrangeR3[$Gamma,$pSnk]}}
@@ -79,9 +79,9 @@ GetMesonFile MesonSrc $qSrc $qSpec
 SpecDir=3sm_${qSpec}p2
 
 PrefixR3=$PlotData/$Ratio/$SpecDir/R3_${qSnk}_${qSrc}_${Gamma}_dt_
-SuffixR3=_p2_${pSnk}_${PW}.fold.${Seed}
+SuffixR3=_p2_${pSnk}_${PW}.fold.${MLUSeed}
 PrefixCorr=$PlotData/$Corr/$SpecDir/quark_${qSnk}_${qSrc}_${Gamma}_dt_
-SuffixCorr=_p2_${pSrc}_ps2_${pSnk}_${PW}.fold.${Seed}
+SuffixCorr=_p2_${pSrc}_ps2_${pSnk}_${PW}.fold.${DataSeed}
 
 case "$FitWhat" in
   quark)
@@ -116,8 +116,8 @@ esac
 [ -v UnCorr ] && FitType=uncorr || FitType=corr
 SuffixModel=g5P_g5W.model
 MesonDir=$Ensemble/$MELFit/2ptp2
-InputMesonSnk=$MesonDir/$MesonSnk/${MesonSnk}${FileMomSnk}.$FitSnk.${FileOpSnk}.model.$Seed.h5
-InputMesonSrc=$MesonDir/$MesonSrc/${MesonSrc}${FileMomSrc}.$FitSrc.${FileOpSrc}.model.$Seed.h5
+InputMesonSnk=$MesonDir/$MesonSnk/${MesonSnk}${FileMomSnk}.$FitSnk.${FileOpSnk}.model.$MLUSeed.h5
+InputMesonSrc=$MesonDir/$MesonSrc/${MesonSrc}${FileMomSrc}.$FitSrc.${FileOpSrc}.model.$MLUSeed.h5
 
 OutPart1=${qSnk}_${qSrc}_${Gamma}_p2_$((pSrc > pSnk ? pSrc : pSnk))
 OutPart2=dt_$DeltaTAll
@@ -160,8 +160,8 @@ Cmd="$MultiFit --summary 2 -o $BuildModelBase $InputMesonSnk $InputMesonSrc $Fit
 BuildModelBase=$BuildModelBase.${FitType}
 BuildModel=$BuildModelBase.$SuffixModel
 #echo "A: $Cmd"
-echo "$Cmd"  > $BuildModel.$Seed.log
-if  ! $Cmd &>> $BuildModel.$Seed.log
+echo "$Cmd"  > $BuildModel.$MLUSeed.log
+if  ! $Cmd &>> $BuildModel.$MLUSeed.log
 then
   LastError=${PIPESTATUS[0]}
   if [ "$LastError" = 3 ]; then
@@ -172,7 +172,7 @@ then
 fi
 
 # Get the fit characteristics: energy difference, matrix element, test stat, ...
-ColumnValues=$(GetColumn --exact ChiSqPerDof,pValueH --partial EDiff,MEL0,R3Raw ${BuildModel}.$Seed.h5)
+ColumnValues=$(GetColumn --exact ChiSqPerDof,pValueH --partial EDiff,MEL0,R3Raw ${BuildModel}.$MLUSeed.h5)
 if [ "$?" != 0 ]; then
   echo "Error: $ColumnValues"
   unset ColumnValues
@@ -197,11 +197,12 @@ esac
 
 # Plot it
 
+BuildModelBase=$BuildModelBase.$MLUSeed
 Cmd="files='$DataList' ti='$LabelTI' tf='$LabelTF' save=${BuildModelBase} $ModelMin"
 [ -v yrangeFit ] && Cmd="$Cmd yrange='$yrangeFit'"
 [ -v RefText ] && Cmd="$Cmd RefText='Fit $FitName: $RefText'"
 [ -v RefValFit ] && Cmd="$Cmd RefVal='$RefValFit'"
-Cmd="$Cmd title='$Title' field=$Field plottd.sh ${BuildModel}_td.$Seed.txt"
+Cmd="$Cmd title='$Title' field=$Field plottd.sh ${BuildModel}_td.$MLUSeed.txt"
 #echo "B: $Cmd"
 echo "$Cmd"   > $BuildModelBase.log
 eval  $Cmd  &>> $BuildModelBase.log
@@ -224,12 +225,12 @@ done
 mkdir -p $OutSubDirName
 PlotModelBase=$OutSubDirName/${PlotWhat}_${OutLongName}
 
-Cmd="$MultiFit -o $PlotModelBase ${BuildModel}.$Seed.h5 $FitList"
+Cmd="$MultiFit -o $PlotModelBase ${BuildModel}.$MLUSeed.h5 $FitList"
 PlotModelBase=$PlotModelBase.${FitType}
 PlotModel=$PlotModelBase.$SuffixModel
 #echo "C: $Cmd"
-echo "$Cmd"  > $PlotModel.$Seed.log
-if !  $Cmd &>> $PlotModel.$Seed.log
+echo "$Cmd"  > $PlotModel.$MLUSeed.log
+if !  $Cmd &>> $PlotModel.$MLUSeed.log
 then
   LastError=${PIPESTATUS[0]}
   echo "Warning $LastError: $Cmd"
@@ -241,7 +242,7 @@ Cmd="files='$DataList' ti='$LabelTI' tf='$LabelTF' save=${PlotModelBase}"
 [ -v yrangePlot ] && Cmd="$Cmd yrange='$yrangePlot'"
 [ -v RefText ] && Cmd="$Cmd RefText='Plot $PlotName: $RefText'"
 [ -v RefValPlot ] && Cmd="$Cmd RefVal='$RefValPlot'"
-Cmd="$Cmd title='$Title' field=$PlotField plottd.sh ${PlotModel}_td.$Seed.txt"
+Cmd="$Cmd title='$Title' field=$PlotField plottd.sh ${PlotModel}_td.$MLUSeed.txt"
 #echo "D: $Cmd"
 echo "$Cmd"      > $PlotModelBase.log
 if ! eval $Cmd &>> $PlotModelBase.log

@@ -131,7 +131,7 @@ if [ -v DoStd ]; then
   (
   FileSeries=${Fit2ptSeries}std
   echo "Performing $FitWhat fits to $Ratio for $FileSeries"
-  UnCorr=
+  #UnCorr=
   DeltaT="24 28 32"
   TI='12 12 12'
   TF='14 18 22'

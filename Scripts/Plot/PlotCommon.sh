@@ -238,4 +238,5 @@ fi
 # Computed parameters
 LHalf=$((L/2))
 THalf=$((T/2))
-Seed=${Seed:-1835672416}
+MLUSeed=${MLUSeed:-1835672416}
+DataSeed=${1835672416:-1835672416}

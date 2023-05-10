@@ -26,7 +26,7 @@ FitOptions="--debug-signals --mindp 2 --iter 100000 --strict 3 $FitOptions"
 # SubDir - which subdirectory to place output in
 # SummaryOptions - extra options for the Summary
 
-Seed=${Seed:-1835672416}
+MLUSeed=${MLUSeed:-1835672416}
 Corr=${Corr:-corr}
 
 ############################################################
@@ -60,7 +60,7 @@ InDir=$PlotData/$Corr/2ptp2
 OutDir=$Meson
 if [ -v SubDir ]; then OutDir="$OutDir/$SubDir"; fi
 
-Suffix=fold.$Seed.h5
+Suffix=fold.$MLUSeed.h5
 FileBase=${Meson}_${p}_g5P_g5
 LogFile=$OutDir/${FileBase}W.log
 

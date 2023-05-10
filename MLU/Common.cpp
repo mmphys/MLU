@@ -492,12 +492,43 @@ std::string ExistingFilename( const std::string &Base, const std::string &Type, 
     SearchName.append( ".*." );
     SearchName.append( Ext );
     const std::string *Begin{ &SearchName };
-    const std::string *End{ Begin + 1 };
-    std::vector<std::string> v{ glob( Begin, End ) };
+    std::vector<std::string> v{ glob( Begin, Begin + 1 ) };
     if( !v.empty() )
       Filename = v[0];
   }
   return Filename;
+}
+
+/// Find existing file with specified Seed, but fall back to another seed if missing
+std::string ExistingAnySeed( const std::string &sFilename )
+{
+  if( !FileExists( sFilename ) )
+  {
+    std::string New{ sFilename };
+    bool bBad{};
+    std::array<std::string, 2> Ext;
+    for( std::size_t i = 0; !bBad && i < Ext.size(); ++i )
+    {
+      std::size_t pos{ New.find_last_of( "/." ) };
+      if( pos == std::string::npos || New[pos] != '.' )
+        bBad = true;
+      else
+      {
+        Ext[i] = New.substr( pos + 1 );
+        New.resize( pos );
+      }
+    }
+    if( !bBad )
+    {
+      New.append( ".*." );
+      New.append( Ext[0] );
+      const std::string *Begin{ &New };
+      std::vector<std::string> v{ glob( Begin, Begin + 1 ) };
+      if( !v.empty() )
+        return v[0];
+    }
+  }
+  return sFilename;
 }
 
 // If present, remove Token from a string. Return true if removed
@@ -1497,12 +1528,8 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
   for( std::size_t i = 0; i < Value.size(); ++i )
   {
     JackBoot<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
-    Value[i].resize( Extent );
-    for( int j = 0; j < Extent; ++j )
-    {
-      ThD.MapColumn( vv[0], j );
-      Value[i][j].Get( ThD(JackBoot<T>::idxCentral,j), vv[0], Buffer );
-    }
+    std::cout << "** SEED ** " << ThD.Seed << NewLine;
+    ThD.MakeStatistics( Value[i] );
   }
   // Write theory and data values, with each data point in fit on a separate line
   int idx = 0;
@@ -1542,7 +1569,8 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
             ++bootCount;
         }
         v.Get( std::log( ThD(JackBoot<T>::idxCentral,idx - 1)
-                       / ThD(JackBoot<T>::idxCentral,idx) ) * DeltaTInv, Buffer, bootCount );
+                       / ThD(JackBoot<T>::idxCentral,idx) ) * DeltaTInv, Buffer, bootCount,
+               ThD.Seed == SeedWildcard );
         os << Space << v;
       }
       os << NewLine;

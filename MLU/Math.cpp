@@ -30,6 +30,8 @@
 #include <gsl/gsl_cdf.h>
 #include <iomanip>
 
+#include "JackBoot.hpp"
+
 MLU_Math_hpp
 
 const double NaN{ std::nan( "" ) };
@@ -304,11 +306,11 @@ ValWithEr<T>::qValueHotelling( unsigned int p, unsigned int m ) const
 
 // Sort the list of values, then extract the lower and upper 68th percentile error bars
 template <typename T> template <typename U> typename std::enable_if<!is_complex<U>::value>::type
-ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count )
+ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count, bool bNormJackknife )
 {
   if( Data.size() < Count )
     throw std::runtime_error( "ValWithErr<T>::Get() Data.size() " + std::to_string( Data.size() )
-                              + " < Count " + std::to_string( Count ) );
+                             + " < Count " + std::to_string( Count ) );
   Central = Central_;
   if( Count == 0 )
   {
@@ -332,6 +334,31 @@ ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count )
     }
     return;
   }
+  if( bNormJackknife )
+  {
+    T Mean{};
+    for( std::size_t i = 0; i < Count; ++i )
+      Mean += Data[i];
+    Mean /= Count;
+    T Var{};
+    Min = Data[0];
+    Max = Data[0];
+    for( std::size_t i = 0; i < Count; ++i )
+    {
+      const T z{ Data[i] - Mean };
+      Var += z * z;
+      if( Min > Data[i] )
+        Min = Data[i];
+      if( Max < Data[i] )
+        Min = Data[i];
+    }
+    Var *= JackBoot<T>::GetNorm( JackBoot<T>::Norm::Jackknife, Count );
+    const T Error{ std::sqrt( Var ) };
+    Low  = Mean - Error;
+    High = Mean + Error;
+  }
+  else
+  {
   const typename std::vector<T>::iterator itStart{ Data.begin() };
   const typename std::vector<T>::iterator itEnd  { itStart + Count };
   std::sort( itStart, itEnd );
@@ -340,60 +367,37 @@ ValWithEr<T>::Get( T Central_, std::vector<T> &Data, std::size_t Count )
   Max  = Data[Count - 1];
   Low  = Data[Index];
   High = Data[Count - 1 - Index];
+  }
   Check = static_cast<T>( static_cast<double>( Count ) / Data.size() );
 }
 
 // Sort the list of values, then extract the lower and upper 68th percentile error bars
 // Sort real and imaginary parts separately
 template <typename T> template <typename U> typename std::enable_if<is_complex<U>::value>::type
-ValWithEr<T>::Get( T Central_, const std::vector<T> &Data, std::size_t Count )
+ValWithEr<T>::Get( T Central_, const std::vector<T> &Data, std::size_t Count, bool bNormJackknife )
 {
-  assert( Data.size() >= Count && "ValWithErr<T>::Get() data too small" );
   Central = Central_;
-  if( Count == 0 )
-  {
-    if( Data.size() == 0 )
-    {
-      // I wasn't trying to take an estimate over many samples
-      Min = Central;
-      Max = Central;
-      Low = Central;
-      High  = Central;
-      Check = 1;
-    }
-    else
-    {
-      // Tried to take an estimate over many samples, but all values NaN
-      Min = NaN;
-      Max = NaN;
-      Low = NaN;
-      High  = NaN;
-      Check = 0;
-    }
-    return;
-  }
   using Scalar = typename T::value_type;
-  const std::size_t Index{ OneSigmaIndex( Count ) };
-  std::vector<Scalar> Buffer( Count );
+  ValWithEr<Scalar> ve;
+  std::vector<Scalar> Buffer( Data.size() );
   for( int reim = 0; reim < 2; ++reim )
   {
     for( std::size_t i = 0; i < Count; ++i )
       Buffer[i] = reim ? Data[i].imag() : Data[i].real();
-    const typename std::vector<Scalar>::iterator itStart{ Buffer.begin() };
-    std::sort( itStart, itStart + Count );
+    ve.Get( reim ? Central.imag() : Central.real(), Buffer, Count, bNormJackknife );
     if( reim )
     {
-       Min.imag( Buffer[0] );
-       Max.imag( Buffer[Count - 1] );
-       Low.imag( Buffer[Index] );
-      High.imag( Buffer[Count - 1 - Index] );
+       Min.imag( ve.Min );
+       Max.imag( ve.Max );
+       Low.imag( ve.Low );
+      High.imag( ve.High );
     }
     else
     {
-      Min.real( Buffer[0] );
-      Max.real( Buffer[Count - 1] );
-      Low.real( Buffer[Index] );
-     High.real( Buffer[Count - 1 - Index] );
+      Min.real( ve.Min );
+      Max.real( ve.Max );
+      Low.real( ve.Low );
+     High.real( ve.High );
     }
   }
   Check = static_cast<Scalar>( Count ) / Data.size();
@@ -476,9 +480,9 @@ template typename std::enable_if<!is_complex<double>::value, ValWithEr<double>>:
 ValWithEr<double>::qValueHotelling( unsigned int p, unsigned int m ) const;
 
 template typename std::enable_if<!is_complex<float>::value>::type
-ValWithEr<float>::Get( float Central_, std::vector<float> &Data, std::size_t Count );
+ValWithEr<float>::Get( float Central_, std::vector<float> &Data, std::size_t Count, bool bJackknife );
 template typename std::enable_if<!is_complex<double>::value>::type
-ValWithEr<double>::Get( double Central_, std::vector<double> &Data, std::size_t Count );
+ValWithEr<double>::Get(double Central_,std::vector<double>&Data, std::size_t Count, bool bJackknife );
 
 template typename std::enable_if<!is_complex<float>::value, std::string>::type
 ValWithEr<float>::to_string( unsigned char SigFigError ) const;

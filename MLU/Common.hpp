@@ -557,6 +557,8 @@ std::string MakeFilename( const std::string &Base, const std::string &Type, cons
 /// Find existing file with specified Seed, but fall back to another seed if missing
 std::string ExistingFilename( const std::string &Base, const std::string &Type, SeedType Seed,
                               const std::string &Ext );
+/// Find existing file with specified Seed, but fall back to another seed if missing
+std::string ExistingAnySeed( const std::string &sFilename );
 
 // If present, remove Token from a string. Return true if removed
 bool ExtractToken( std::string &Prefix, const std::string &Token );

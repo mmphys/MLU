@@ -44,8 +44,8 @@ MaxPSq=${MaxPSq:-4}
 q1="${q1}"
 q2="${q2}"
 NumExp=${NumExp:-2}
-#seed="${seed:-4147798751}"
-seed="${seed:-1835672416}"
+#MLUSeed="${MLUSeed:-4147798751}"
+MLUSeed="${MLUSeed:-1835672416}"
 #fit="${fit:-corr.g5_gT5}"
 fit="${fit:-*}"
 do_chi=0${chi+1}
@@ -77,7 +77,7 @@ if( DoOldMomenta ) {
   MomentumSuffix=""
 }
 FilenamePrefix=q1."_".q2."_p".MomentumSuffix."_"
-FilenameSuffix=".".fit.".params_sort.".seed.".txt"
+FilenameSuffix=".".fit.".params_sort.".MLUSeed.".txt"
 filename(n)=system("ls ".FilenamePrefix.word(Momenta,n+1).FilenameSuffix)
 
 SeriesName(n)="ti=".n
@@ -194,7 +194,7 @@ SinhSqE0=sinh(E0/2)
 SinhSqE0=SinhSqE0 * SinhSqE0
 
 set term pdf
-set output OutFileName.".disp_".MyField.".".seed.".pdf"
+set output OutFileName.".disp_".MyField.".".MLUSeed.".pdf"
 
 #set xrange[${xrange:=-0.2:4.2}]
 #MyTitle="a E_{eff} vs n^2 (".q1."-".q2.")"

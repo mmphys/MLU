@@ -148,7 +148,8 @@ template <typename T = double> struct ValWithEr
 
   ValWithEr() = default;
   template <typename U=T>
-  ValWithEr( T dCentral, std::vector<T> &Data, std::size_t Count ) { Get( dCentral, Data, Count ); }
+  ValWithEr( T dCentral, std::vector<T> &Data, std::size_t Count, bool bNormJackknife = false )
+  { Get( dCentral, Data, Count, bNormJackknife ); }
   ValWithEr( T Min, T Low, T Central, T High, T Max, Scalar Check = 1 );
 
   ValWithEr<T>& operator = ( const T Scalar );
@@ -163,9 +164,9 @@ template <typename T = double> struct ValWithEr
   template <typename U=T> typename std::enable_if<!is_complex<U>::value, ValWithEr<T>>::type
   qValueHotelling( unsigned int p, unsigned int m ) const;
   template <typename U=T> typename std::enable_if<!is_complex<U>::value>::type
-  Get( T dCentral, std::vector<T> &Data, std::size_t Count );
+  Get( T dCentral, std::vector<T> &Data, std::size_t Count, bool bNormJackknife = false );
   template <typename U=T> typename std::enable_if< is_complex<U>::value>::type
-  Get( T dCentral, const std::vector<T> &Data, std::size_t Count );
+  Get( T dCentral, const std::vector<T> &Data, std::size_t Count, bool bNormJackknife = false );
   void Get( T dCentral, const VectorView<T> &Source, std::vector<T> &ScratchBuffer = std::vector<T>() );
   template <typename U=T> typename std::enable_if<!is_complex<U>::value, std::string>::type
   to_string( unsigned char SigFigError ) const;
