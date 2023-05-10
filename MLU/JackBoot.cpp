@@ -645,11 +645,9 @@ void JackBoot<T>::Resample( const MatrixView<T> &Source, std::size_t NumReplicas
 #ifndef DEBUG_DISABLE_OMP
     #pragma omp parallel for default(shared) schedule(dynamic)
 #endif
-    {
     for( std::size_t idx = 0; idx < NumReplicas; ++idx )
       for( std::size_t i = 0; i < Extent; ++i )
         Replica( idx, i ) = ( nxBar[i] - Source( idx, i ) ) * AvgNorm;
-    }
   }
   else
   {
@@ -664,7 +662,6 @@ void JackBoot<T>::Resample( const MatrixView<T> &Source, std::size_t NumReplicas
 #ifndef DEBUG_DISABLE_OMP
     #pragma omp for schedule(dynamic)
 #endif
-    {
     for( std::size_t idx = 0; idx < NumReplicas; ++idx )
     {
       for( std::size_t Resample = 0; Resample < NumSamples; ++Resample )
@@ -681,7 +678,6 @@ void JackBoot<T>::Resample( const MatrixView<T> &Source, std::size_t NumReplicas
       // Turn the sum into an average
       for( std::size_t i = 0; i < Extent; ++i )
         Replica( idx, i ) *= AvgNorm;
-    }
     }
     }
   }

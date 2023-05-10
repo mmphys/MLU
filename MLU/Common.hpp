@@ -1399,7 +1399,7 @@ public:
   std::vector<Common::ConfigCount> ConfigCount; // Info on every config in the bootstrap in order
   std::vector<std::string> FileList; // Info on every config in the bootstrap in order
   virtual void clear( bool bClearName = true );
-  inline const SeedType Seed( int idxJackBoot = 0 ) const
+  inline SeedType Seed( int idxJackBoot = 0 ) const
   {
     ValidateJackBoot( idxJackBoot );
     return Data[idxJackBoot].Seed;

@@ -31,6 +31,7 @@
 #define MLU_Posix_hpp_end };
 
 #include <cstring>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
