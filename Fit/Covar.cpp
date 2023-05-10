@@ -41,8 +41,8 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
   {
     // Covariance source unspecified: Unfrozen - use binned data; Frozen - use bootstrap
     // TODO: Choose between the following two
-    Source = SupportsUnfrozen() ? SS::Binned : SS::Bootstrap;
-    // Source = SS::Bootstrap;
+    // Source = SupportsUnfrozen() ? SS::Binned : SS::Bootstrap;
+    Source = SS::Bootstrap;
   }
   else
   {

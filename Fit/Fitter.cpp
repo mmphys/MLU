@@ -206,11 +206,12 @@ Params Fitter::MakeModelParams()
       {
         // This is available as a constant
         const ConstantSource &cs{ cit->second };
-        if( cs.param.size < p.size )
+        const Param &cParam{ ds.GetConstantParam( cs ) };
+        if( cParam.size < p.size )
         {
           std::ostringstream os;
           os << "Fitter::MakeModelParams " << pk << "[" << p.size << "] has only "
-             << cs.param.size << " constants available";
+             << cParam.size << " constants available";
           throw std::runtime_error( os.str().c_str() );
         }
         // Change this parameter to constant

@@ -2428,8 +2428,20 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       }
       // If I don't need to resample, load optional items
       const bool bNeedResample{ Seed() != RandomCache::DefaultSeed()
-                                || Data[0].NumReplicas() < RandomCache::DefaultNumReplicas() };
-      if( !bNeedResample || !CanResample() )
+                                || att_nSample < RandomCache::DefaultNumReplicas() };
+      if( bNeedResample && !CanResample() )
+      {
+        static const char szTo[]{ " -> " };
+        std::ostringstream os;
+        os << "Can't resample";
+        if( att_nSample < RandomCache::DefaultNumReplicas() )
+          os << Space << RandomCache::DefaultNumReplicas() << szTo << att_nSample << " replicas";
+        if( Seed() != RandomCache::DefaultSeed() )
+          os << " seed " << SeedString() << szTo
+             << RandomCache::SeedString( RandomCache::DefaultSeed() );
+        throw std::runtime_error( os.str().c_str() );
+      }
+      if( !bNeedResample )
       {
         try
         {
@@ -2952,8 +2964,8 @@ protected:
 struct ConstantSource
 {
   std::size_t File; // Index of the constant file in the DataSet this comes from
-  const Param &param;
-  ConstantSource( std::size_t File_, const Param &param_ ) : File{File_}, param{param_} {}
+  const Param::Key pKey;
+  ConstantSource( std::size_t File_, const Param::Key &pKey_ ) : File{File_}, pKey{pKey_} {}
 };
 
 template <typename T>
@@ -3012,7 +3024,7 @@ protected:
   std::array< MatrixView<fint>, 2> RandomViews;
   std::array<std::vector<fint>, 2> RandomBuffer;
   std::vector<Model<T>> constFile;// Each of the constant files (i.e. results from previous fits) I've loaded
-  void AddConstant( const Param::Key &Key, std::size_t File, const Param &param );
+  void AddConstant( const Param::Key &Key, std::size_t File );
   void SetValidatedFitTimes( std::vector<std::vector<int>> &&FitTimes );
   /// Cache the fit data, i.e. JackBoot[0]. Parameters describe the covariance source
   void CacheRawData();
@@ -3020,6 +3032,7 @@ public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
   inline bool empty() const { return corr.empty() && constFile.empty(); }
   void clear();
+  const Param &GetConstantParam( const ConstantSource &cs ) const;
   int  LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags = COMPAT_DEFAULT,
                        const char * PrintPrefix = "  " );
   void LoadModel     ( Common::FileNameAtt &&FileAtt, const std::string &Args );

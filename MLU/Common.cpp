@@ -1758,7 +1758,8 @@ void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedP
   // Now copy the data into vResult
   for( const FixedParam &p : Params )
   {
-    std::size_t SrcIdx{ p.src.param.GetOffset( 0, Param::Type::All ) };
+    const Param &param{ GetConstantParam( p.src ) };
+    std::size_t SrcIdx{ param.GetOffset( 0, Param::Type::All ) };
     for( std::size_t i = 0; i < p.Count; ++i )
       vResult[p.idx + i] = constFile[p.src.File](idx, SrcIdx + i);
   }
@@ -2053,7 +2054,7 @@ void DataSet<T>::SaveMatrixFile( const Matrix<T> &m, const std::string &Type, co
 
 // Add a constant to my list of known constants - make sure it isn't already there
 template <typename T>
-void DataSet<T>::AddConstant( const Param::Key &Key, std::size_t File, const Param &param )
+void DataSet<T>::AddConstant( const Param::Key &Key, std::size_t File )
 {
   static const char Invalid[] = " invalid";
   std::ostringstream os;
@@ -2068,7 +2069,20 @@ void DataSet<T>::AddConstant( const Param::Key &Key, std::size_t File, const Par
     os << "file " << File << Invalid;
     throw std::runtime_error( os.str().c_str() );
   }
-  constMap.insert( { Key, ConstantSource( File, param ) } );
+  constMap.insert( { Key, ConstantSource( File, Key ) } );
+}
+
+template <typename T>
+const Param &DataSet<T>::GetConstantParam( const ConstantSource &cs ) const
+{
+  Params::const_iterator it{ constFile[cs.File].params.find( cs.pKey ) };
+  if( it == constFile[cs.File].params.cend() )
+  {
+    std::ostringstream os;
+    os << "Constant not found: File " << cs.File << CommaSpace << cs.pKey;
+    throw std::runtime_error( os.str().c_str() );
+  }
+  return it->second;
 }
 
 template <typename T>
@@ -2116,7 +2130,7 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
   {
     // Load every constant in this file
     for( const Params::value_type &it : constFile[i].params )
-      AddConstant( it.first, i, it.second );
+      AddConstant( it.first, i );
   }
   else
   {
@@ -2135,7 +2149,7 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
         es << "Parameter " << OldKey << " not found";
         throw std::runtime_error( es.str().c_str() );
       }
-      AddConstant( NewKey.empty() ? OldKey : NewKey, i, itP->second );
+      AddConstant( NewKey.empty() ? OldKey : NewKey, i );
     }
   }
 }
