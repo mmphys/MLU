@@ -308,7 +308,7 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
     //AppendOps( C2Name, opSrc, opSnk );
   //else
     AppendOps( C2Name, Snk.op, Src.op );
-  C2Name = Common::MakeFilename( C2Name, Common::sFold, fna.Seed, DEF_FMT );
+  C2Name = Common::ExistingFilename( C2Name, Common::sFold, fna.Seed, DEF_FMT );
   Fold &C2{ Cache2[C2Name] };
   //C2.Read( C2Name, LoadFilePrefix );
   int NumSamples {};
@@ -347,15 +347,10 @@ void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix
   //OutFileName.append( Suffix );
   Common::AppendDeltaT( OutFileName, fna.DeltaT );
   AppendOps( OutFileName, Snk.op, Src.op );
-  OutFileName = Common::MakeFilename( OutFileName, Common::sFold, fna.Seed, DEF_FMT );
+  OutFileName = Common::MakeFilename( OutFileName, Common::sFold, DEF_FMT );
   std::cout << "->" << OutFileName << Common::NewLine;
   out.Write( OutFileName, Common::sFold.c_str() );
-  const std::size_t FileNameLen{ OutFileName.find_last_of( '.' ) };
-  if( FileNameLen == std::string::npos )
-    OutFileName.append( 1, '.' );
-  else
-    OutFileName.resize( FileNameLen + 1 );
-  OutFileName.append( TEXT_EXT );
+  Common::ReplaceExtension( OutFileName, TEXT_EXT );
   out.WriteSummary( OutFileName );
 }
 
@@ -384,7 +379,7 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
   // Must put both in the cache before trying to dereference either
   for( int i = 0; i < NumC2; ++i )
   {
-    Corr2[i].Name = Common::MakeFilename( Corr2[i].Name, Common::sFold, fna.Seed, DEF_FMT );
+    Corr2[i].Name = Common::ExistingFilename( Corr2[i].Name, Common::sFold, fna.Seed, DEF_FMT );
     Corr2[i].Handle = Cache2.GetIndex( Corr2[i].Name );
     if( Corr2[i].Handle == CorrCache::BadIndex )
       throw std::runtime_error( "2pt functions are required" );
@@ -433,7 +428,7 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
     fna.AppendMomentum( Corr3[Snk_Src].Name, iSnk==iInitial ? Src.mp.p : Snk.mp.p, Snk.mp.pName );
     Common::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.op : Snk.op );
     Common::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? Src.op : Snk.op );
-    Corr3[Snk_Src].Name = Common::MakeFilename( Corr3[Snk_Src].Name, fna.Type, fna.Seed, fna.Ext );
+    Corr3[Snk_Src].Name = Common::ExistingFilename(Corr3[Snk_Src].Name, fna.Type, fna.Seed, fna.Ext);
     Corr3[Snk_Src].Handle = Cache3.GetIndex( Corr3[Snk_Src].Name );
     if( Corr3[Snk_Src].Handle == CorrCache::BadIndex )
     {
@@ -649,15 +644,10 @@ void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
       Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT );
       fna.AppendMomentum( OutFileName, Src.mp.p ? Src.mp.p : Snk.mp.p, Src.mp.pName );
       AppendOps( OutFileName, NameReverse[i] ? Src.op : Snk.op, NameReverse[i] ? Snk.op : Src.op );
-      OutFileName = Common::MakeFilename( OutFileName, fna.Type, fna.Seed, fna.Ext );
+      OutFileName = Common::MakeFilename( OutFileName, fna.Type, fna.Ext );
       std::cout << "->" << OutFileName << Common::NewLine;
       out[i].Write( OutFileName, Common::sFold.c_str() );
-      const std::size_t FileNameLen{ OutFileName.find_last_of( '.' ) };
-      if( FileNameLen == std::string::npos )
-        OutFileName.append( 1, '.' );
-      else
-        OutFileName.resize( FileNameLen + 1 );
-      OutFileName.append( TEXT_EXT );
+      Common::ReplaceExtension( OutFileName, TEXT_EXT );
       out[i].WriteSummary( OutFileName );
     }
   }
@@ -920,7 +910,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
                 OutFileName.append( std::to_string( iSeq ) );
               }
               OutFileName.append( sOpNames );
-              OutFileName = Common::MakeFilename( OutFileName, Common::sModel, mGT.Name_.Seed, DEF_FMT );
+              OutFileName = Common::MakeFilename( OutFileName, Common::sModel, DEF_FMT );
               Write( OutFileName, mGT, std::move( vSourceFiles ), NumSamples, MHeavy, ELight,
                      vT, rf.p, &MLight, &vXYZ );
               ++NumOK;

@@ -304,6 +304,8 @@ int main(int argc, const char *argv[])
         {
           {
             std::stringstream ss;
+            if( m->bTestRun )
+              ss << "Test run of ";
             ss << (doCorr ? "C" : "Unc") << "orrelated " << m->Type() << " fit on timeslices " << it;
             Fitter::SayNumThreads( ss );
             const std::string &sMsg{ ss.str() };

@@ -154,7 +154,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o 2ptp2/s_l/"
+            argument = "-o 2ptp2/h6413_s/"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -162,15 +162,11 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "2ptp2/h6413_s/h6413_s_p2_0.corr_8_24_13_24.g5P_g5W.model.1835672416.h5"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-i /Volumes/QCD/tursa/semilep/data/F1M/analyse/corr/"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "2ptp2/s_l/s_l_p2_0.corr_5_20_7_20.g5P_g5W.model.1835672416.h5"
+            argument = "2ptp2/s_l/s_l_p2_0.corr_5_20_7_20.g5P_g5W.model.jackknife.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -202,6 +198,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "2ptp2/h6413_s/h6413_s_p2_0.corr_8_24_13_24.g5P_g5W.model.jackknife.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "$HOME/NoSync/C2/MELFit/2ptp2/h6413_s/h6413_s_p2_0.corr_8_24_13_24.g5P_g5W.model.1835672416.h5"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -214,15 +214,15 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "C2/ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_16_p2_0_g5P_g5P.fold.1835672416.h5,t=8:10,raw,C2Model=coSh,C2e=2"
+            argument = "ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_16_p2_0_g5P_g5P.fold.jackknife.h5,t=8:10,raw,C2Model=coSh,C2e=2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "C2/ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_20_p2_0_g5P_g5P.fold.1835672416.h5,t=8:14,raw,C2Model=coSh,C2e=2"
+            argument = "ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_20_p2_0_g5P_g5P.fold.jackknife.h5,t=8:14,raw,C2Model=coSh,C2e=2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "C2/ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_24_p2_0_g5P_g5P.fold.1835672416.h5,t=8:18t3,raw,C2Model=CoSH,C2e=2"
+            argument = "ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_24_p2_0_g5P_g5P.fold.jackknife.h5,t=8:18t3,raw,C2Model=CoSH,C2e=2"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
@@ -230,7 +230,7 @@
          <EnvironmentVariable
             key = "MLUSeed"
             value = "JackKNiFE"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "MLUCovarCentral"

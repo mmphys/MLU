@@ -473,6 +473,33 @@ std::string MakeFilename(const std::string &Base, const std::string &Type, SeedT
   return s;
 }
 
+std::string MakeFilename( const std::string &Base, const std::string &Type, const std::string &Ext )
+{
+  return MakeFilename( Base, Type, RandomCache::DefaultSeed(), Ext );
+}
+
+std::string ExistingFilename( const std::string &Base, const std::string &Type, SeedType Seed,
+                              const std::string &Ext )
+{
+  // Check the file exists
+  std::string Filename{ MakeFilename( Base, Type, Seed, Ext ) };
+  if( !FileExists( Filename ) )
+  {
+    // If it doesn't, see whether there's another name we can use
+    std::string SearchName{ Base };
+    SearchName.append( 1, '.' );
+    SearchName.append( Type );
+    SearchName.append( ".*." );
+    SearchName.append( Ext );
+    const std::string *Begin{ &SearchName };
+    const std::string *End{ Begin + 1 };
+    std::vector<std::string> v{ glob( Begin, End ) };
+    if( !v.empty() )
+      Filename = v[0];
+  }
+  return Filename;
+}
+
 // If present, remove Token from a string. Return true if removed
 bool ExtractToken( std::string &Prefix, const std::string &Token )
 {

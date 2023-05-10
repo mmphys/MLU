@@ -550,8 +550,13 @@ protected:
   std::vector<std::string> ParseOpNames( int NumOps );
 };
 
-// Make a filename "Base.Type.seed.Ext"
+/// Make a filename "Base.Type.seed.Ext"
 std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext);
+/// Make a filename "Base.Type.seed.Ext" - seed is the default seed (from MLUSeed env var)
+std::string MakeFilename( const std::string &Base, const std::string &Type, const std::string &Ext );
+/// Find existing file with specified Seed, but fall back to another seed if missing
+std::string ExistingFilename( const std::string &Base, const std::string &Type, SeedType Seed,
+                              const std::string &Ext );
 
 // If present, remove Token from a string. Return true if removed
 bool ExtractToken( std::string &Prefix, const std::string &Token );
@@ -2159,6 +2164,7 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
     throw std::runtime_error( "Seed missing from " + Name_.Filename );
   if( Name_.Type.empty() )
     throw std::runtime_error( "Type missing from " + Name_.Filename );
+  const SeedType NewSeed{ RandomCache::DefaultSeed() };
   ::H5::H5File f;
   ::H5::Group  g;
   H5::OpenFileGroup( f, g, Name_.Filename, PrintPrefix, pGroupName );
@@ -2177,7 +2183,7 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
     a = g.openAttribute("type");
     a.read( ::H5::PredType::NATIVE_USHORT, &att_Type );
     a.close();
-    if( att_Type == 2 )
+    if( att_Type == 2 && Name_.Seed == NewSeed )
     {
       unsigned long  att_nSample;
       a = g.openAttribute("nSample");
@@ -2426,19 +2432,20 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       {
         ::H5::Exception::clearErrorStack();
       }
+      const int NewNumReplicas{ NewSeed == SeedWildcard ? SampleSize // Jackknife
+                                      : static_cast<int>( RandomCache::DefaultNumReplicas() ) };
       // If I don't need to resample, load optional items
-      const bool bNeedResample{ Seed() != RandomCache::DefaultSeed()
-                                || att_nSample < RandomCache::DefaultNumReplicas() };
+      const bool bNeedResample{ Seed() != NewSeed || att_nSample < NewNumReplicas };
       if( bNeedResample && !CanResample() )
       {
         static const char szTo[]{ " -> " };
         std::ostringstream os;
         os << "Can't resample";
-        if( att_nSample < RandomCache::DefaultNumReplicas() )
-          os << Space << RandomCache::DefaultNumReplicas() << szTo << att_nSample << " replicas";
-        if( Seed() != RandomCache::DefaultSeed() )
+        if( att_nSample < NewNumReplicas )
+          os << Space << att_nSample << szTo << NewNumReplicas << " replicas";
+        if( Seed() != Name_.Seed)
           os << " seed " << SeedString() << szTo
-             << RandomCache::SeedString( RandomCache::DefaultSeed() );
+             << RandomCache::SeedString( Name_.Seed );
         throw std::runtime_error( os.str().c_str() );
       }
       if( !bNeedResample )
@@ -2504,8 +2511,8 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
         throw std::runtime_error( "Neither binned nor resampled data available" );
       if( bNeedResample && CanResample() )
       {
-        Data[0].Seed = RandomCache::DefaultSeed();
-        Data[0].Resample( Binned[0], RandomCache::DefaultNumReplicas() );
+        Data[0].Seed = NewSeed;
+        Data[0].Resample( Binned[0], NewNumReplicas );
         MakeCorrSummary();
       }
       // If we get here then we've loaded OK
