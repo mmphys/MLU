@@ -3,33 +3,12 @@
 export Ensemble=F1M
 if ! [ -d $Ensemble ]; then
   echo "Ensemble $Ensemble doesn't exist. Change directory?"
-else
-. PlotCommon.sh
+  exit 2
+fi
+. FitMEL.sh
 
 #set -x
 set -e
-
-############################################################
-
-# Perform fit
-
-############################################################
-
-# Parameters:
-#   1: pSnk
-function DoFit()
-{
-  local pSnk=$1
-  local MesonSnk; GetMesonFile MesonSnk $qSnk $qSpec
-  local MesonSrc; GetMesonFile MesonSrc $qSrc $qSpec
-  local FitSnk=${aMesonFit[$MesonSnk,$pSnk]}
-  local FitSrc=${aMesonFit[$MesonSrc,0]}
-  local FileOpSnk=g5P_g5W
-  local FileOpSrc=g5P_g5W
-  local FileMomSnk=_p2_$pSnk
-  local FileMomSrc=_p2_0
-  ( . FitMEL.sh ) #export everything including arrays, but don't upset my environment
-}
 
 ############################################################
 
@@ -67,6 +46,15 @@ ayrangeMEL[gXYZ,5]=0.34:0.4
 ayrangeMEL[gXYZ,6]=0.27:0.37
 
 declare -A aMesonFit
+declare -A aMesonFileOp
+declare -A aMesonFileMom
+
+aMesonFileOp[h${Heavy}_s,0]=g5P_g5W
+aMesonFileMom[h${Heavy}_s,0]=_p2_0
+for((i=0;i<=MaxPSq;++i)); do
+  aMesonFileOp[s_l,$i]=g5P_g5W
+  aMesonFileMom[s_l,$i]=_p2_$i
+done
 
 for Fit2ptSeries in ${series-old}; do
 case $Fit2ptSeries in
@@ -143,4 +131,3 @@ if [ -v DoStd ]; then
   )
 fi
 done
-fi

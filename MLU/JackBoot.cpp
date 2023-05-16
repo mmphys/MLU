@@ -39,6 +39,8 @@ MLU_JackBoot_hpp
 
 const std::string s_C{ "_C" };
 const std::string JackBootBase::s_S{ "_S" };
+const std::string JackBootBase::sBootstrap{ "bootstrap" };
+const std::string JackBootBase::sJackknife{ "jackknife" };
 
 // TODO: I need these from Common.hpp
 void MakeAncestorDirs( const std::string& Filename );

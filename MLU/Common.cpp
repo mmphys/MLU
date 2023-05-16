@@ -531,6 +531,28 @@ std::string ExistingAnySeed( const std::string &sFilename )
   return sFilename;
 }
 
+/// Override Seed in filename to specified seed (if it exists)
+std::string PreferSeed( const std::string &sFilename, SeedType NewSeed )
+{
+  std::string New{ sFilename };
+  std::array<std::string, 2> Ext;
+  for( std::size_t i = 0; i < Ext.size(); ++i )
+  {
+    std::size_t pos{ New.find_last_of( "/." ) };
+    if( pos == std::string::npos || New[pos] != '.' )
+      return sFilename;
+    Ext[i] = New.substr( pos + 1 );
+    New.resize( pos );
+  }
+  New.append( 1, '.' );
+  New.append( RandomCache::SeedString( NewSeed ) );
+  New.append( 1, '.' );
+  New.append( Ext[0] );
+  if( FileExists( New ) )
+    return New;
+  return sFilename;
+}
+
 // If present, remove Token from a string. Return true if removed
 bool ExtractToken( std::string &Prefix, const std::string &Token )
 {
@@ -1502,22 +1524,25 @@ Model<T>::GetValWithEr( const Params &ParamNames, const UniqueNameSet &StatNames
 }
 
 template <typename T>
-void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSummary )
+void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFileName,
+                               bool bVerboseSummary )
 {
+  const ValWithEr<T> veZero( 0, 0, 0, 0, 0, 0 );
   using Scalar = typename is_complex<T>::Scalar;
   using namespace CorrSumm;
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
-  std::ofstream os( sOutFileName );
-  SummaryHeader<T>( os, sOutFileName );
-  SummaryComments( os, bVerboseSummary );
+  std::ofstream ofs( sOutFileName );
+  SummaryHeader<T>( ofs, sOutFileName );
+  SummaryComments( ofs, bVerboseSummary );
   // Write column names
   static constexpr int idxData{ 0 };
   //static constexpr int idxTheory{ 1 };
-  os << "field seq model t ";
-  ValWithEr<T>::Header( "data", os );
-  os << Space;
-  ValWithEr<T>::Header( "theory", os );
-  os << NewLine;
+  ofs << "# Correlator data used in fit\n";
+  ofs << "field seq fitseq model t tfit ";
+  ValWithEr<T>::Header( "data", ofs );
+  ofs << Space;
+  ValWithEr<T>::Header( "theory", ofs );
+  ofs << NewLine;
   // Grab the model data and theory with bootstrapped errors
   const int Extent{ GetExtent() };
   if( !Extent )
@@ -1528,54 +1553,102 @@ void Model<T>::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSum
   for( std::size_t i = 0; i < Value.size(); ++i )
   {
     JackBoot<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
-    std::cout << "** SEED ** " << ThD.Seed << NewLine;
     ThD.MakeStatistics( Value[i] );
   }
-  // Write theory and data values, with each data point in fit on a separate line
-  int idx = 0;
+  // Write theory and data CORRELATOR values, with each data point in fit on a separate line
+  int Seq = 0;
+  int FitSeq = 0;
+  std::vector<std::vector<int>> SortedTimes{ FitTimes };
+  std::ostringstream osBuffer;
+  osBuffer << std::boolalpha << std::setprecision(std::numeric_limits<scalar_type>::digits10+2);
   for( std::size_t m = 0; m < FitTimes.size(); ++m )
-    for( const int t : FitTimes[m] )
+  {
+    std::sort( SortedTimes[m].begin(), SortedTimes[m].end() );
+    for( int t = 0, idxSort = 0; t < ds.corr[m].Nt(); ++t )
     {
-      os << "corr " << idx << Space << m << Space << t;
-      for( std::size_t i = 0; i < Value.size(); ++i )
-        os << Space << Value[i][idx];
+      const bool bInFit{ t == SortedTimes[m][idxSort] };
+      std::ostream &os{ bInFit ? dynamic_cast<std::ostream &>( ofs ) : osBuffer };
+      os << "corr " << Seq << Space << ( bInFit ? FitSeq : -1 ) << Space << m
+         << Space << t << Space << ( bInFit ? t : -1 );
+      if( bInFit )
+      {
+        for( std::size_t i = 0; i < Value.size(); ++i )
+          os << Space << Value[i][FitSeq];
+        ++idxSort;
+        ++FitSeq;
+      }
+      else
+        os << Space << ds.corr[m].SummaryData( t ) << Space << veZero;
       os << NewLine;
-      ++idx;
+      ++Seq;
     }
-  // Write effective masses
-  idx = 0;
+  }
+  if( !osBuffer.str().empty() )
+  {
+    ofs << "\n\n# Correlator data not used in fit\n" << osBuffer.str();
+    osBuffer.str( "" );
+  }
+  // Write theory and data EFFECTIVE MASS, with each data point in fit on a separate line
+  ofs << "\n\n# Effective masses used in fit\n";
+  Seq = 0;
+  FitSeq = 0;
   ValWithEr<T> v;
   for( std::size_t m = 0; m < FitTimes.size(); ++m )
   {
-    ++idx;
-    for( std::size_t tidx = 1; tidx < FitTimes[m].size(); ++tidx )
+    ++Seq;    // Skip past t=0
+    ++FitSeq; // Skip past t=0
+    for( int t = 1, idxSort = 1; t < ds.corr[m].Nt(); ++t )
     {
-      const double t = 0.5 * ( FitTimes[m][tidx] + FitTimes[m][tidx - 1] );
-      const int DeltaT{ FitTimes[m][tidx] - FitTimes[m][tidx - 1] };
-      const Scalar DeltaTInv{ static_cast<Scalar>( DeltaT == 1 ? 1. : ( 1. / DeltaT ) ) };
-      os << "log " << idx << Space << m << Space << t;
-      for( std::size_t i = 0; i < Value.size(); ++i )
+      // Effective masses are for the point half-way between the measurements
+      // Keeping track of 2 * the effective timeslice allows us to use integer arithmetic
+      const int TwoT{ 2 * t - 1 }; // Average of this and previous timeslice
+      const int TwoTFit{ idxSort >= FitTimes[m].size() ? std::numeric_limits<int>::max()
+                                              : FitTimes[m][idxSort] + FitTimes[m][idxSort - 1] };
+      const bool bShowFit{ TwoTFit <= TwoT };
+      if( bShowFit )
       {
-        JackBoot<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
-        ThD.MapColumn( vv[0], idx - 1 );
-        ThD.MapColumn( vv[1], idx );
-        if( Buffer.size() < ThD.NumReplicas() )
-          Buffer.resize( ThD.NumReplicas() );
-        int bootCount{ 0 };
-        for( int bootrep = 0; bootrep < ThD.NumReplicas(); ++bootrep )
+        // Show the fit
+        const double dblT{ 0.5 * TwoTFit };
+        const int DeltaT{ FitTimes[m][idxSort] - FitTimes[m][idxSort - 1] };
+        const Scalar DeltaTInv{ static_cast<Scalar>( DeltaT == 1 ? 1. : ( 1. / DeltaT ) ) };
+        ofs << "log " << Seq << Space << FitSeq << Space << m << Space << dblT << Space << dblT;
+        for( std::size_t i = 0; i < Value.size(); ++i )
         {
-          Buffer[bootCount] = std::log( vv[0][bootrep] / vv[1][bootrep] ) * DeltaTInv;
-          if( IsFinite( Buffer[bootCount] ) )
-            ++bootCount;
+          JackBoot<T> &ThD{ i == idxData ? FitInput : ModelPrediction };
+          Buffer.resize( ThD.NumReplicas() ); // Shouldn't vary, but must be right size for check
+          int bootCount{ 0 };
+          for( int bootrep = 0; bootrep < ThD.NumReplicas(); ++bootrep )
+          {
+            Buffer[bootCount] = std::log( ThD(bootrep,FitSeq-1) / ThD(bootrep,FitSeq) ) * DeltaTInv;
+            if( IsFinite( Buffer[bootCount] ) )
+              ++bootCount;
+          }
+          v.Get( std::log( ThD(JackBoot<T>::idxCentral,FitSeq - 1)
+                          / ThD(JackBoot<T>::idxCentral,FitSeq) ) * DeltaTInv, Buffer, bootCount,
+                ThD.Seed == SeedWildcard );
+          ofs << Space << v;
         }
-        v.Get( std::log( ThD(JackBoot<T>::idxCentral,idx - 1)
-                       / ThD(JackBoot<T>::idxCentral,idx) ) * DeltaTInv, Buffer, bootCount,
-               ThD.Seed == SeedWildcard );
-        os << Space << v;
+        ofs << NewLine;
+        ++idxSort;
+        ++FitSeq;
       }
-      os << NewLine;
-      ++idx;
+      if( TwoT != TwoTFit )
+      {
+        // Show the raw data
+        const double dblT{ 0.5 * TwoT };
+        osBuffer << "log " << Seq;
+        if( bShowFit )
+          osBuffer << ".5"; // Fit and data points out by 0.5 - make sure seq is different
+        osBuffer << Space << -1 << Space << m << Space << dblT << Space << -1
+                 << Space << ds.corr[m].SummaryData( 2, t ) << Space << veZero << NewLine;
+      }
+      ++Seq;
     }
+  }
+  if( !osBuffer.str().empty() )
+  {
+    ofs << "\n\n# Effective masses not used in fit\n" << osBuffer.str();
+    osBuffer.str( "" );
   }
 }
 

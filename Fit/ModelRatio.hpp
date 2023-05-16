@@ -35,7 +35,7 @@
 struct ModelRatio : public Model3pt
 {
   static const std::string sRaw;
-  static const std::string sR3Raw;
+  static const std::string sR3;
   static const std::string sChildModel;
   ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int NumExponents,
               std::vector<std::string> &&objectID, std::vector<std::string> &&opNames );

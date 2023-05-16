@@ -84,7 +84,7 @@ if [ -v DoNext ]; then
 
   aFitFiles=()
   for((i=0; i < 5; ++i)); do
-    aFitFiles+=($InDir/s_l_p2_${i}_g5P_g5P.fold.$Seed)
+    aFitFiles+=($InDir/s_l_p2_${i}_g5P_g5P.fold.$DataSeed)
   done
   MultiFit="MultiFit --Hotelling 0 --overwrite --debug-signals --strict 3"
   [ -v FitOptions ] && MultiFit="$MultiFit $FitOptions"
@@ -100,7 +100,7 @@ if [ -v DoNext ]; then
   esac
   PriorFitTimes="${aTimes[0]}_${aTimesW[0]}"; PriorFitTimes="${PriorFitTimes//:/_}"
   #echo "PriorFitTimes='$PriorFitTimes'"
-  SimulP # Simultaneous fits of point-point data at all momenta
+  yrange=0.3:0.7 SimulP # Simultaneous fits of point-point data at all momenta
   done
 fi
 

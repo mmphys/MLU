@@ -14,12 +14,23 @@
 
 function DoCmd()
 {
+  if [[ $LogFile != ${LogFile%/*} && -n ${LogFile%/*} ]]; then mkdir -p ${LogFile%/*}; fi
   if [ "$1" = EraseLog ] && [ -f $LogFile ]; then rm $LogFile; fi
   #echo $Cmd
   echo $Cmd &>> $LogFile
+  local RetVal=0
   if ! eval $Cmd &>> $LogFile; then
-    echo "Error ${PIPESTATUS[0]} executing $Cmd"
+    RetVal=${PIPESTATUS[0]}
+    # Ignore MultiFit 'Not all params resolved" warning
+    if [[ ${Cmd:0:8} = MultiFit && $RetVal = 3 ]]; then
+      RetVal=0
+      echo "Warning: not all parameters resolved: $Cmd"
+    else
+      echo "Error $RetVal" &>> $LogFile
+      echo "Error $RetVal executing $Cmd"
+    fi
   fi
+  return $RetVal
 }
 
 ############################################################
@@ -65,7 +76,6 @@ local CorrPrefix=$Corr/2ptp2/${Meson}_p2_${p}_
 local FitType=corr_${TI}_${TF}_${TI2}_${TF2}
 local MesonPrefix=${Meson}_p2_${p}.$FitType.g5P_g5W.model
 
-local CorrFiles="$PlotData/${CorrPrefix}g5P_g5P.$Fold.txt $PlotData/${CorrPrefix}g5P_g5W.$Fold.txt"
 local ExtraFiles="$PlotData/${CorrPrefix}gT5P_g5P.$Fold.txt $PlotData/${CorrPrefix}gT5P_g5W.$Fold.txt"
 
 LabelTF="${LabelTF} ${LabelTF}"
@@ -87,25 +97,14 @@ Cmd="$Cmd --summary 2 -i $PlotData/${CorrPrefix} -o $OutSubDir/"
 Cmd="$Cmd g5P_g5P.$Fold.h5,t=${TI}:${TF}${Thin1},e=$NumExp"
 Cmd="$Cmd g5P_g5W.$Fold.h5,t=${TI2}:${TF2}${Thin2},e=$NumExp2"
 #echo "$Cmd"
-echo "$Cmd"  > $LogFile
-if  ! $Cmd &>> $LogFile
-then
-  LastError=${PIPESTATUS[0]}
-  if (( LastError != 3 ))
-  then
-    echo "MultiFit error $LastError"
-    return 1
-  fi
-  echo "Warning: Not all fit parameters resolved $Cmd"
-fi
+DoCmd EraseLog || return 0
 
 ########################################
 # Plot the fit
 
 # Get E0 (reference value for plot)
 GetColumnValues $OutFile.h5 "${Meson//_/-} (n^2=$p) E_0=" '' E0
-Cmd="title='point-point point-wall' files='$CorrFiles' tf='$LabelTF' save='$OutFile'"
-Cmd="$Cmd yrange='${ayRange[$Meson,$p]}'"
+Cmd="title='point-point point-wall' tf='$LabelTF' yrange='${ayRange[$Meson,$p]}'"
 [ -v RefText ] && Cmd="$Cmd RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
 [ -v ExtraFiles ] && Cmd="$Cmd extra='$ExtraFiles'"
 Cmd="$Cmd plottd.sh $OutSubDir/${MesonPrefix}_td.$MLUSeed.txt"
@@ -173,7 +172,7 @@ function TwoPointScan()
   [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
   Cmd="$Cmd P.$DataSeed.txt,$OptP"
   Cmd="$Cmd W.$DataSeed.txt,$OptW"
-  DoCmd
+  DoCmd || return 0
 
   Cmd="FitSummary --all --strict 0 -i \"$OutDir/\" -o \"$OutDir/\"" # --errdig 2 --tablen
   [ -v SummaryOptions ] && Cmd="$Cmd $SummaryOptions"
@@ -196,17 +195,17 @@ function SimulP()
   local sTimes
   local BaseFile
   local LogFile
-  local i EKeys ThisTF tf title files
+  local i EKeys title
   sTimes="${aTimes[*]}"
   sTimes=${sTimes// /_}
   sTimes=${sTimes//:/_}
-  Cmd="$MultiFit -e 2 -N 24 -o $OutDir/s_l"
+  Cmd="$MultiFit -e 2 -N $L -o $OutDir/s_l"
   for((i=0; i < ${#aFitFiles[@]}; ++i)); do
     Cmd="$Cmd ${aFitFiles[i]}.h5,t=${aTimes[i]}${aThin[i]:+t${aThin[i]}}"
   done
   BaseFile="$OutDir/s_l.corr_$sTimes.g5P.model"
   LogFile="$BaseFile.$MLUSeed.log"
-  DoCmd EraseLog
+  DoCmd EraseLog || return 0
 
   # Get the energy difference
   for((i=0; i < ${#aFitFiles[@]}; ++i)); do
@@ -215,24 +214,14 @@ function SimulP()
   GetColumnValues $BaseFile.$MLUSeed.h5 "E_0(n^2=0)=" $EKeys
 
   # Now plot it
-  for((i=0; i < ${#aFitFiles[@]}; ++i))
-  do
-    ThisTF=${aTimes[i]}; ThisTF=${ThisTF##*:}; ThisTF=$((ThisTF+3))
-    tf="$tf${tf:+ }$ThisTF"
-    title="$title${title:+ }n^2=$i"
-    files="$files${files:+ }${aFitFiles[i]}.txt"
-  done
-  Cmd="tf='$tf' title='$title' files='$files'"
+  for((i=0; i < ${#aFitFiles[@]}; ++i)); do title="$title${title:+ }n^2=$i"; done
+  Cmd="title='$title'"
   [ -v RefText ] && Cmd="$Cmd RefText='$RefText'"
-  Cmd="$Cmd save='$BaseFile.$MLUSeed' yrange=0.3:0.7 plottd.sh ${BaseFile}_td.$MLUSeed.txt"
+  Cmd="$Cmd plottd.sh ${BaseFile}_td.$MLUSeed.txt"
   DoCmd
   for((i=0; i < ${#aFitFiles[@]}; ++i))
   do
-    tf=${aTimes[i]}; tf=${tf##*:}; tf=$((tf+3))
-    title="n^2=$i"
-    files="${aFitFiles[i]}.txt"
-    Cmd="title='$title' files='$files'"
-    #Cmd="$Cmd tf='$tf'"
+    Cmd="title='n^2=$i'"
     [ -v RefText ] && Cmd="$Cmd RefText='E_0(n^2=${i})=${ColumnValues[@]:$((17+i*8)):1}, χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})'"
     Cmd="$Cmd yrange='${ayRange[s_l,$i]}'"
     Cmd="$Cmd save='$OutDir/s_l_p2_${i}.corr_$sTimes.g5P.model.$MLUSeed'"
@@ -273,15 +262,13 @@ function FitEachMomPW()
     Cmd="$Cmd ${ThisFile//g5P_g5P/g5P_g5W},t=${aTimesW[i]},e=1"
     BaseFile="$BaseFile.corr_$sTimes.g5P_g5W.model"
     LogFile="$BaseFile.$MLUSeed.log"
-    DoCmd
+    DoCmd || return 0
 
     GetColumnValues $BaseFile.$MLUSeed.h5 "E_0(n^2=$i)=" s_l_p2_${i}-E0
 
-    ThisFile="${aFitFiles[i]}.txt"
-    Cmd="title='point-point point-wall' files='$ThisFile ${ThisFile//g5P_g5P/g5P_g5W}'"
+    Cmd="title='point-point point-wall' "
     [ -v RefText ] && Cmd="$Cmd RefText='$RefText'"
     Cmd="$Cmd yrange='${ayRange[s_l,$i]}'"
-    Cmd="$Cmd save='$BaseFile.$MLUSeed'"
     Cmd="$Cmd plottd.sh ${BaseFile}_td.$MLUSeed.txt"
     DoCmd
   done
@@ -315,14 +302,13 @@ function FitEachMomP()
     Cmd="$Cmd ${aFitFiles[i]}.h5,t=${aTimes[i]}"
     BaseFile="$BaseFile.corr_$sTimes.g5P_g5W.model"
     LogFile="$BaseFile.$MLUSeed.log"
-    DoCmd
+    DoCmd || return 0
 
     GetColumnValues $BaseFile.$MLUSeed.h5 "E_0(n^2=$i)=" s_l_p2_${i}-E0
 
-    Cmd="title='point-point n^2=$i' files='${aFitFiles[i]}.txt'"
+    Cmd="title='point-point n^2=$i'"
     [ -v RefText ] && Cmd="$Cmd RefText='$RefText'"
     Cmd="$Cmd yrange='${ayRange[s_l,$i]}'"
-    Cmd="$Cmd save='$BaseFile.$MLUSeed'"
     Cmd="$Cmd plottd.sh ${BaseFile}_td.$MLUSeed.txt"
     DoCmd
   done

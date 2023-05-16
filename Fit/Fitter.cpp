@@ -595,8 +595,14 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
                                           [](const std::string &a, const std::string &b)
                                           { return a.length() < b.length(); } )->length() ) };
       const int NumWidth{ static_cast<int>( std::cout.precision() ) + 7 };
-      std::cout << OutputModel.GetSummaryNames()[0] << " after " << OutputModel.NumSamples()
-                << " bootstrap replicas" << Common::NewLine;
+      std::string Preamble;
+      {
+        std::ostringstream os;
+        os << OutputModel.GetSummaryNames()[0] << " after " << OutputModel.NumSamples()
+           << Common::Space << OutputModel.getData().SeedTypeString() << " replicas\n";
+        Preamble = os.str();
+      }
+      std::cout << Preamble;
       for( int i = 0; i < OutputModel.Nt(); ++i )
       {
         const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
@@ -609,8 +615,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
                   << Common::NewLine << std::right; // Right-aligned is the default
       }
       // Show parameters again - but this time in simplified format
-      std::cout << OutputModel.GetSummaryNames()[0] << " after " << OutputModel.NumSamples()
-                << " bootstrap replicas" << Common::NewLine;
+      std::cout << Preamble;
       for( int i = 0; i < OutputModel.Nt(); ++i )
       {
         const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
@@ -625,7 +630,8 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     if( !bAllParamsKnown )
       OutputModel.Write( ModelFileName );
     if( SummaryLevel >= 1 )
-      OutputModel.WriteSummaryTD( Common::MakeFilename( sModelBase, Common::sModel + "_td", Seed, TEXT_EXT ) );
+      OutputModel.WriteSummaryTD( ds,
+                  Common::MakeFilename( sModelBase, Common::sModel + "_td", Seed, TEXT_EXT ) );
     if( SummaryLevel >= 2 )
       OutputModel.WriteSummary( Common::ReplaceExtension( ModelFileName, TEXT_EXT ) );
     for( int f = 0; f < NumFiles; f++ )

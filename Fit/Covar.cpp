@@ -193,8 +193,6 @@ std::ostream & operator<<( std::ostream &os, const CovarParams &cp )
   os << "rozen covariance matrix constructed from " << cp.CovarCount() << Common::Space;
   if( cp.CovarCount() != cp.CovarSampleSize() )
     os << "(" << cp.CovarSampleSize() << " independent) ";
-  if( cp.SourceIsBootstrap() )
-    os << "pre-bootstrapped ";
   os << cp.Source << " samples";
   return os;
 }

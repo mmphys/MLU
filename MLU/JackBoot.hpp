@@ -125,6 +125,8 @@ public:
 
 struct JackBootBase
 {
+  static const std::string sBootstrap;
+  static const std::string sJackknife;
   /// Guaranteed that incrementing idxCentral moves to record zero
   static constexpr std::size_t idxCentral{ std::numeric_limits<std::size_t>::max() };
   static constexpr std::size_t idxReplicaMean{ idxCentral - 1u };
@@ -137,6 +139,12 @@ struct JackBootBase
                    SampleCovar};// Sample covariance from raw / binned data
   static void GetRandom( Vector<fint> &vRandom, fint Seed,
                          std::size_t NumSamples, std::size_t NumReplicas, std::size_t Replica );
+  inline static const std::string &SeedTypeString( SeedType Seed )
+  {
+    if( Seed == SeedWildcard )
+      return sJackknife;
+    return sBootstrap;
+  }
 };
 
 std::ostream &operator<<( std::ostream &os, JackBootBase::Norm norm );
@@ -210,6 +218,7 @@ public:
     return Replica( Row, Column );
   }
   inline std::string SeedString() const { return RandomCache::SeedString( Seed ); }
+  inline const std::string &SeedTypeString() const { return JackBootBase::SeedTypeString( Seed ); }
   static Real GetNorm( Norm norm, std::size_t NumReplicas );
   /// Make the mean of any matrix
   static void MakeMean( Vector<T> &vMean, const MatrixView<T> &Source );

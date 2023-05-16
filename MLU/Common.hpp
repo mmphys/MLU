@@ -559,6 +559,8 @@ std::string ExistingFilename( const std::string &Base, const std::string &Type, 
                               const std::string &Ext );
 /// Find existing file with specified Seed, but fall back to another seed if missing
 std::string ExistingAnySeed( const std::string &sFilename );
+/// Override Seed in filename to specified seed (if it exists)
+std::string PreferSeed( const std::string &sFilename, SeedType NewSeed = RandomCache::DefaultSeed() );
 
 // If present, remove Token from a string. Return true if removed
 bool ExtractToken( std::string &Prefix, const std::string &Token );
@@ -2874,6 +2876,8 @@ struct ModelBase
   static const char SummaryColumnPrefix[];
 };
 
+template <typename T> struct DataSet;
+
 template <typename T>
 struct Model : public Sample<T>, public ModelBase
 {
@@ -2959,7 +2963,8 @@ struct Model : public Sample<T>, public ModelBase
   void SummaryContents( std::ostream &os ) const override;
   std::vector<ValWithEr<scalar_type>> GetValWithEr( const Params &ParamNames,
                                                     const UniqueNameSet &StatNames ) const;
-  void WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSummary = false );
+  void WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFileName,
+                       bool bVerboseSummary = false );
 protected:
   int OldFormatNumExponents;
   std::vector<std::string> OldFormatOpNames;

@@ -152,7 +152,7 @@ int main(int argc, const char *argv[])
         std::string FileToGlob{ Common::ExtractToSeparator( cl.Args[ArgNum] ) };
         std::vector<std::string> Filenames;
         if( !inBaseWildcard && FileToGlob.find_first_of( szFileWildcard ) == std::string::npos )
-          Filenames.push_back( Common::ExistingAnySeed( inBase + FileToGlob ) );
+          Filenames.push_back( Common::PreferSeed( inBase + FileToGlob ) );
         else
           Filenames = Common::glob( &FileToGlob, &FileToGlob + 1, inBase.c_str() );
         bool bGlobEmpty{ true };
@@ -247,7 +247,8 @@ int main(int argc, const char *argv[])
         std::cout << "all ";
       else
         std::cout << "first " << ds.NSamples << " of ";
-      std::cout << ds.MaxSamples << " bootstrap replicas";
+      std::cout << ds.MaxSamples << Common::Space << ds.corr[0].getData().SeedTypeString()
+                << " replicas";
       if( ds.NSamples != ds.MaxSamples )
         std::cout << " (all " << ds.MaxSamples << " for var/covar)";
       std::cout << Common::NewLine;

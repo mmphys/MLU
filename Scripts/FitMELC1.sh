@@ -3,33 +3,12 @@
 export Ensemble=${Ensemble:-C1}
 if ! [ -d $Ensemble ]; then
   echo "Ensemble $Ensemble doesn't exist. Change directory?"
-else
-. PlotCommon.sh
+  exit 2
+fi
+. FitMEL.sh
 
 #set -x
 set -e
-
-############################################################
-
-# Perform fit
-
-############################################################
-
-# Parameters:
-#   1: pSnk
-function DoFit()
-{
-  local pSnk=$1
-  local MesonSnk; GetMesonFile MesonSnk $qSnk $qSpec
-  local MesonSrc; GetMesonFile MesonSrc $qSrc $qSpec
-  local FitSnk=${aMesonFit[$MesonSnk,$pSnk]}
-  local FitSrc=${aMesonFit[$MesonSrc,0]}
-  local FileOpSnk=${aMesonFileOp[$MesonSnk,$pSnk]}
-  local FileOpSrc=${aMesonFileOp[$MesonSrc,0]}
-  local FileMomSnk=${aMesonFileMom[$MesonSnk,$pSnk]}
-  local FileMomSrc=${aMesonFileMom[$MesonSrc,0]}
-  ( . FitMEL.sh ) #export everything including arrays, but don't upset my environment
-}
 
 ############################################################
 
@@ -159,28 +138,28 @@ if [ -v DoBase ]; then
   FileSeries=${Fit2ptSeries}
   echo "Performing $FitWhat fits to $Ratio for $FileSeries"
 
-  NumExp=2 DeltaT="20 24 28" TI='9 11 13' TF='14 18 18' DoFit 0 # Preferred
-  NumExp=2 DeltaT="20 24 28" TI='11 14 13' TF='12 15 17' DoFit 1
-  NumExp=2 DeltaT="20 24 28" TI='8 12 16' TF='12 16 19' DoFit 2
-  NumExp=2 DeltaT="20 24 28" TI='8 12 16' TF='14 16 19' DoFit 3
-  NumExp=2 DeltaT="20 24" TI='8 12' TF='14 16' DoFit 4
+  NumExp=2 DeltaT="20 24 28" TI='9 11 13' TF='14 18 18' FitTwoStage 0 # Preferred
+  NumExp=2 DeltaT="20 24 28" TI='11 14 13' TF='12 15 17' FitTwoStage 1
+  NumExp=2 DeltaT="20 24 28" TI='8 12 16' TF='12 16 19' FitTwoStage 2
+  NumExp=2 DeltaT="20 24 28" TI='8 12 16' TF='14 16 19' FitTwoStage 3
+  NumExp=2 DeltaT="20 24" TI='8 12' TF='14 16' FitTwoStage 4
 
   # Gamma spatial
-  NumExp=2 DeltaT="20 24 28" TI='12 15 13' TF='14 17 17' Gamma=gXYZ DoFit 1
-  NumExp=2 DeltaT="16 20 24" TI='8 9 8' TF='11 15 19' Gamma=gXYZ DoFit 2 # My preferred fit
-  NumExp=2 DeltaT="16 20 24" TI='8 9 8' TF='11 15 19' Gamma=gXYZ DoFit 3 # My preferred fit
-  NumExp=2 DeltaT="16 20 24" TI='7 9 8 13' TF='11 15 19 16' Gamma=gXYZ DoFit 4
+  NumExp=2 DeltaT="20 24 28" TI='12 15 13' TF='14 17 17' Gamma=gXYZ FitTwoStage 1
+  NumExp=2 DeltaT="16 20 24" TI='8 9 8' TF='11 15 19' Gamma=gXYZ FitTwoStage 2 # My preferred fit
+  NumExp=2 DeltaT="16 20 24" TI='8 9 8' TF='11 15 19' Gamma=gXYZ FitTwoStage 3 # My preferred fit
+  NumExp=2 DeltaT="16 20 24" TI='7 9 8 13' TF='11 15 19 16' Gamma=gXYZ FitTwoStage 4
 fi
 
 if [ -v DoAlt ]; then
   FileSeries=${Fit2ptSeries}alt
   echo "Performing $FitWhat fits to $Ratio for $FileSeries"
 
-  NumExp=2 DeltaT="16 20 24 28" TI='8 9 11 13' TF='11 14 18 18' DoFit 0 # Very much the same as prior
-  NumExp=1 DeltaT="20 24 28" TI='11 14 13' TF='12 15 17' DoFit 1 # I prefer this one
-  NumExp=2 DeltaT="16 20 24 28" TI='9 11 13 13' TF='10 13 16 17' DoFit 1
-  NumExp=2 DeltaT="16 20 24 28" TI='8 9 8 13' TF='11 15 19 16' Gamma=gXYZ DoFit 2 # Just to see DT=28
-  NumExp=2 DeltaT="16 20 24 28" TI='8 9 8 13' TF='11 15 19 16' Gamma=gXYZ DoFit 3 # Just to see DT=28
+  NumExp=2 DeltaT="16 20 24 28" TI='8 9 11 13' TF='11 14 18 18' FitTwoStage 0 # Very much the same as prior
+  NumExp=1 DeltaT="20 24 28" TI='11 14 13' TF='12 15 17' FitTwoStage 1 # I prefer this one
+  NumExp=2 DeltaT="16 20 24 28" TI='9 11 13 13' TF='10 13 16 17' FitTwoStage 1
+  NumExp=2 DeltaT="16 20 24 28" TI='8 9 8 13' TF='11 15 19 16' Gamma=gXYZ FitTwoStage 2 # Just to see DT=28
+  NumExp=2 DeltaT="16 20 24 28" TI='8 9 8 13' TF='11 15 19 16' Gamma=gXYZ FitTwoStage 3 # Just to see DT=28
 fi
 if [ -v DoStd ]; then
   (
@@ -192,16 +171,15 @@ if [ -v DoStd ]; then
   TF='10 14 18'
   NumExp=2
   for (( n=0; n<5; ++n )); do
-    DoFit $n
-    if ((n)); then Gamma=gXYZ DoFit $n; fi
+    FitTwoStage $n
+    if ((n)); then Gamma=gXYZ FitTwoStage $n; fi
   done
   )
 fi
 done
-fi
 
-##NumExp=2 DeltaT="20 24 28" TI='10 10 13' TF='13 18 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 DoFit 1 # I prefer this one
-#NumExp=2 DeltaT="20 24 28" TI='10 14 13' TF='13 15 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 DoFit 1 # I prefer this one
+##NumExp=2 DeltaT="20 24 28" TI='10 10 13' TF='13 18 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 FitTwoStage 1 # I prefer this one
+#NumExp=2 DeltaT="20 24 28" TI='10 14 13' TF='13 15 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 FitTwoStage 1 # I prefer this one
 # This works
-#NumExp=2 DeltaT="16 20" TI='6 8 12' TF='9 14 16' yrangeR3=0.0008:0.00150 yrangeMEL=0.44:0.62 DoFit 4
+#NumExp=2 DeltaT="16 20" TI='6 8 12' TF='9 14 16' yrangeR3=0.0008:0.00150 yrangeMEL=0.44:0.62 FitTwoStage 4
 # This works - end

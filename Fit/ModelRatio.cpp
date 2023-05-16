@@ -29,7 +29,7 @@
 #include "ModelRatio.hpp"
 
 const std::string ModelRatio::sRaw{ "Raw" };
-const std::string ModelRatio::sR3Raw{ "R3Raw" };
+const std::string ModelRatio::sR3{ "R3" };
 const std::string ModelRatio::sChildModel{ "C2Model" };
 
 ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int NumExp,
@@ -62,8 +62,10 @@ ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int Nu
         break;
     }
   }
+  if( cp.pCorr->Name_.Gamma.size() != 1 )
+    throw std::runtime_error( "More than one gamma unsupported" );
   R3Raw.Key.Object = objectID;
-  R3Raw.Key.Name = sR3Raw;
+  R3Raw.Key.Name = sR3 + Common::Gamma::NameShort( cp.pCorr->Name_.Gamma[0] ) + sRaw;
   // The raw option means the ratio was constructed without the overlap coefficients
   Args.Remove( sRaw, &bRaw );
 }

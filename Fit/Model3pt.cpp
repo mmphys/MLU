@@ -59,7 +59,9 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args, int NumExp
   // Now create the matrix element
   MEL.Key.Object = objectID;
   static const std::string sMEL{ "MEL" };
-  MEL.Key.Name = Args.Remove( sMEL, sMEL );
+  if( cp.pCorr->Name_.Gamma.size() != 1 )
+    throw std::runtime_error( "More than one gamma unsupported" );
+  MEL.Key.Name = Args.Remove( sMEL, sMEL + Common::Gamma::NameShort( cp.pCorr->Name_.Gamma[0] ) );
 }
 
 void Model3pt::AddParameters( Params &mp )
@@ -90,12 +92,14 @@ std::string Model3pt::Description() const
   s.append( "-exp,DeltaT=" );
   s.append( std::to_string( DeltaT ) );
   s.append( 1, ',' );
-  s.append( ObjectID( idxSrc ) );
+  s.append( MEL.Key.Name );
   if( objectID.size() > 1 )
   {
     s.append( 1, ',' );
     s.append( ObjectID( idxSnk ) );
   }
+  s.append( 1, ',' );
+  s.append( ObjectID( idxSrc ) );
   s.append( ModelOverlap::Description() );
   s.append( 1, ')' );
   return s;

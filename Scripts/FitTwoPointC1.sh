@@ -77,7 +77,7 @@ if [ "${DoAll+x}" = x ]; then
 
   aFitFiles=()
   for((i=0; i < 5; ++i)); do
-    aFitFiles+=($InDir/s_l_p2_${i}_g5P_g5P.fold.$Seed)
+    aFitFiles+=($InDir/s_l_p2_${i}_g5P_g5P.fold.$DataSeed)
   done
   MultiFit="MultiFit --Hotelling 0 --overwrite --debug-signals --strict 3"
   [ -v FitOptions ] && MultiFit="$MultiFit $FitOptions"
@@ -86,7 +86,7 @@ if [ "${DoAll+x}" = x ]; then
   aTimesW=(7:23 7:23 5:20 5:20 5:18)
   PriorFitTimes="${aTimes[0]}_${aTimesW[0]}"; PriorFitTimes="${PriorFitTimes//:/_}"
 
-  SimulP # Simultaneous fits of point-point data at all momenta
+  yrange=0.3:0.7 SimulP # Simultaneous fits of point-point data at all momenta
   FitEachMomPW priorPW
   FitEachMomP priorP
   aTimes=(6:23 6:23 6:20 6:20 6:18)
