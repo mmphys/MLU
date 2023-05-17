@@ -40,10 +40,10 @@ ayrangeR3[gXYZ,1]=0.00040:0.0006
 ayrangeR3[gXYZ,2]=0.00030:0.0005
 ayrangeR3[gXYZ,3]=0.00025:0.00045
 ayrangeR3[gXYZ,4]=0.00020:0.00040
-ayrangeMEL[gXYZ,1]='*:*'
-ayrangeMEL[gXYZ,2]='*:*'
-ayrangeMEL[gXYZ,3]='*:*'
-ayrangeMEL[gXYZ,4]='*:*'
+ayrangeMEL[gXYZ,1]=0.6:0.76
+ayrangeMEL[gXYZ,2]=0.48:0.66
+ayrangeMEL[gXYZ,3]=0.46:0.62
+ayrangeMEL[gXYZ,4]=0.42:0.58
 
 declare -A aMesonFit
 declare -A aMesonFileOp
@@ -64,7 +64,16 @@ aKaonTFP=(20 22 19 20 17) # 16 May 2023
 aKaonTIW=( 7  7  7  7  5)
 aKaonTFW=(20 22 20 20 18)
 
+############################################################
+
+# Two step fits - i.e. fit R3 using 2pt fits as input
+
+############################################################
+
 if [ -v Do2Step ]; then
+
+# First choose which 2pt fits to use
+
 #for FileSeries in ${series-old disp priorPW betterPW priorP betterP}; do
 for FileSeries in ${series-disp}; do
   case $FileSeries in
@@ -101,7 +110,6 @@ for FileSeries in ${series-disp}; do
   qSrc=h$Heavy
   qSnk=l
   qSpec=s
-  Gamma=gT
 
   echo "Performing $FitWhat fits to $Ratio for $FileSeries"
 
@@ -111,6 +119,7 @@ for FileSeries in ${series-disp}; do
   (
   #FitOptions='--covsrc bootstrap'
   for CorrUncorr in 0 1; do
+    Gamma=gT
     #Thinning="'' 2 3"
     NumExp=3 DeltaT="16 20 24" TI='9 10 10' TF='10 13 17' FitTwoStage 0
 
@@ -138,6 +147,29 @@ for FileSeries in ${series-disp}; do
     #NumExp=3 DeltaT="16 20" TI='7 8' TF='10 14' FitTwoStage 4 #Bad
     #NumExp=3 DeltaT="16 20" TI='7 8' TF='11 15' FitTwoStage 4 #Bad
     #NumExp=3 DeltaT="12 16 20" TI='6 8 8' TF='7 10 14' FitTwoStage 4 #Bad
+
+    Gamma=gXYZ
+    NumExp=3 DeltaT="16 20 24" TI='9 9 9' TF='11 15 19' FitTwoStage 1 #Good
+    #NumExp=3 DeltaT="16 20 24" TI='8 8 8' TF='10 14 18' FitTwoStage 1 #Good
+    #NumExp=3 DeltaT="16 20 24" TI='9 9 12' TF='11 15 19' FitTwoStage 1 #Good
+    #NumExp=3 DeltaT="16 20 24" TI='9 9 10' TF='11 15 19' FitTwoStage 1 #Good
+
+    NumExp=3 DeltaT="16 20 24" TI='8 9 9' TF='10 14 18' FitTwoStage 2 #Good
+    #NumExp=3 DeltaT="16 20"    TI='8 9'   TF='10 14'    FitTwoStage 2 #Good
+    #NumExp=3 DeltaT="16 20 24" TI='9 9 9' TF='11 15 19' FitTwoStage 2 #Good
+    #NumExp=3 DeltaT="16 20 24" TI='8 9 9' TF='10 15 19' FitTwoStage 2 #Good
+
+    NumExp=3 DeltaT="16 20 24" TI='8 9 9' TF='10 14 18' FitTwoStage 3 #Good
+    #NumExp=3 DeltaT="16 20"    TI='8 9'   TF='10 14'    FitTwoStage 3 #Good
+    #NumExp=3 DeltaT="16 20 24" TI='8 9 12' TF='10 14 18' FitTwoStage 3 #Good
+    #NumExp=3 DeltaT="16 20 24" TI='8 9 14' TF='10 14 18' FitTwoStage 3 #Good
+
+    NumExp=3 DeltaT="16 20" TI='7 9' TF='11 14' FitTwoStage 4 #Good
+    #NumExp=3 DeltaT="12 16 20" TI='6 7 9' TF='7 11 14' FitTwoStage 4 #Interesting - believably higher
+    #NumExp=3 DeltaT="16 20 24" TI='8 9 9' TF='10 14 18' FitTwoStage 4 #Bad
+    #NumExp=3 DeltaT="16 20" TI='8 9' TF='10 14' FitTwoStage 4 #So-So
+    #NumExp=3 DeltaT="16 20" TI='8 9' TF='11 14' FitTwoStage 4 #OK
+
     UnCorr=
   done
   )

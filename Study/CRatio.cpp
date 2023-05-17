@@ -882,8 +882,16 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
           Column MHeavy = mGT.Column( k );
           k.Object[0] = fna.MesonMom[0];
           k.Object.emplace_back( fna.MesonMom[1] );
-          k.Name = "MEL";
-          Column vT = mGT.Column( k );
+          k.Name = "MELgT";
+          Column vT;
+          try
+          {
+            vT = mGT.Column( k );
+          } catch ( const std::runtime_error &e )
+          {
+            k.Name = "MEL"; // Old files just had a matrix element
+            vT = mGT.Column( k );
+          }
           // NB: There's a single, dummy spatial model in the list for zero momentum
           for( Model &mSpatial : mGammaXYZ )
           {
@@ -901,7 +909,15 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
                                   Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
                 vSourceFiles.emplace_back( mSpatial.Name_.Filename );
                 vSourceFiles.emplace_back( pmMLight->Name_.Filename );
-                vXYZ = mSpatial.Column( k );
+                Common::Param::Key kSpatial( k.Object, "MELgXYZ" );
+                try
+                {
+                  vXYZ = mSpatial.Column( kSpatial );
+                } catch ( const std::runtime_error &e )
+                {
+                  kSpatial.Name = "MEL"; // Old files just had a matrix element
+                  vXYZ = mGT.Column( kSpatial );
+                }
               }
               OutFileName.resize( OutFileNameLen );
               if( iSeq )

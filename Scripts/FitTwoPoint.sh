@@ -170,8 +170,8 @@ function TwoPointScan()
   local Cmd="MultiFit -o \"$OutDir/\" -i \"$InDir/$FileBase\""
   Cmd="$Cmd --debug-signals --mindp 2 --iter 100000 --strict 3 --covsrc binned"
   [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
-  Cmd="$Cmd P.$DataSeed.txt,$OptP"
-  Cmd="$Cmd W.$DataSeed.txt,$OptW"
+  Cmd="$Cmd P.fold.$DataSeed.h5,$OptP"
+  Cmd="$Cmd W.fold.$DataSeed.h5,$OptW"
   DoCmd || return 0
 
   Cmd="FitSummary --all --strict 0 -i \"$OutDir/\" -o \"$OutDir/\"" # --errdig 2 --tablen
@@ -224,7 +224,7 @@ function SimulP()
     Cmd="title='n^2=$i'"
     [ -v RefText ] && Cmd="$Cmd RefText='E_0(n^2=${i})=${ColumnValues[@]:$((17+i*8)):1}, χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})'"
     Cmd="$Cmd yrange='${ayRange[s_l,$i]}'"
-    Cmd="$Cmd save='$OutDir/s_l_p2_${i}.corr_$sTimes.g5P.model.$MLUSeed'"
+    Cmd="$Cmd save='$OutDir/s_l_p2_${i}.corr_$sTimes.g5P.model_log.$MLUSeed'"
     Cmd="$Cmd mmin=$i mmax=$i plottd.sh ${BaseFile}_td.$MLUSeed.txt"
     DoCmd
   done
