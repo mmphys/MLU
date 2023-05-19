@@ -94,7 +94,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type R &apos;*&apos;_l_h6413_gT_dt_&apos;*&apos;_p2_0_ps2_[01234]_g5P_g5P.&apos;*&apos;.h5"
+            argument = "--type R &apos;*&apos;_l_h6413_g&apos;*&apos;_dt_&apos;*&apos;_p2_0_ps2_[01234]_g5P_g5P.&apos;*&apos;.h5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -106,7 +106,7 @@
          <EnvironmentVariable
             key = "MLUSeed"
             value = "Jackknife"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
       </EnvironmentVariables>
    </LaunchAction>

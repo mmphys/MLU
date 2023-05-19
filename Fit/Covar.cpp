@@ -190,7 +190,9 @@ std::ostream & operator<<( std::ostream &os, const CovarParams &cp )
     os << "F";
   else
     os << "Unf";
-  os << "rozen covariance matrix constructed from " << cp.CovarCount() << Common::Space;
+  os << "rozen covariance matrix (mean from "
+     << ( Common::JackBootBase::UseCentralCovar() ? "binned" : "resampled" )
+     << " data) constructed from " << cp.CovarCount() << Common::Space;
   if( cp.CovarCount() != cp.CovarSampleSize() )
     os << "(" << cp.CovarSampleSize() << " independent) ";
   os << cp.Source << " samples";

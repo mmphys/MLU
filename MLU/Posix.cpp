@@ -61,17 +61,25 @@ const std::string &GetHostName()
 {
   if( MyHostName.empty() )
   {
+    // Get hostname from environment variable
     const char * pDefaultString{ std::getenv( "MLUHost" ) };
     if( pDefaultString && * pDefaultString )
       MyHostName = pDefaultString;
     else
     {
+      // Otherwise get the real hostname
       char Buffer[256];
       const int BufLen{ sizeof( Buffer ) - 1 };
       if( gethostname( Buffer, BufLen ) )
         throw std::runtime_error( "gethostname() returned error " + std::to_string( errno ) );
       Buffer[BufLen] = 0;
       MyHostName = std::string( Buffer );
+      // Trim the hostname if it ends in ".local" or ".home"
+      std::size_t pos = MyHostName.find_last_of( "." );
+      if( pos != std::string::npos && pos && pos != MyHostName.length() - 1
+         && ( MyHostName.compare( pos + 1, std::string::npos, "local" ) == 0
+             || MyHostName.compare( pos + 1, std::string::npos, "home" ) == 0 ) )
+        MyHostName.resize( pos - 1 );
     }
   }
   return MyHostName;

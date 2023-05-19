@@ -2419,22 +2419,25 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
         Raw.clear();
       }
       // If random numbers present, put them in cache (which checks compatibility)
-      try
+      if( Seed() == NewSeed )
       {
-        Matrix<fint> Random;
-        H5::ReadMatrix( g, RandomCache::sRandom, Random );
-        if( Random.size2 != SampleSize )
-          throw std::runtime_error( "SampleSize = " + std::to_string( SampleSize ) + " but "
-                                   + std::to_string( Random.size2 ) + " random columns read" );
-        if( Random.size1 != att_nSample )
-          throw std::runtime_error( "nSample = " + std::to_string( att_nSample ) + " but "
-                                   + std::to_string( Random.size1 ) + " random replicas read" );
-        // Put random numbers in cache - will throw if they don't match previous entries
-        RandomCache::Global.Put( Seed(), Random );
-      }
-      catch(const ::H5::Exception &)
-      {
-        ::H5::Exception::clearErrorStack();
+        try
+        {
+          Matrix<fint> Random;
+          H5::ReadMatrix( g, RandomCache::sRandom, Random );
+          if( Random.size2 != SampleSize )
+            throw std::runtime_error( "SampleSize = " + std::to_string( SampleSize ) + " but "
+                                     + std::to_string( Random.size2 ) + " random columns read" );
+          if( Random.size1 != att_nSample )
+            throw std::runtime_error( "nSample = " + std::to_string( att_nSample ) + " but "
+                                     + std::to_string( Random.size1 ) + " random replicas read" );
+          // Put random numbers in cache - will throw if they don't match previous entries
+          RandomCache::Global.Put( Seed(), Random );
+        }
+        catch(const ::H5::Exception &)
+        {
+          ::H5::Exception::clearErrorStack();
+        }
       }
       const int NewNumReplicas{ NewSeed == SeedWildcard ? SampleSize // Jackknife
                                       : static_cast<int>( RandomCache::DefaultNumReplicas() ) };
@@ -2620,23 +2623,22 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
       H5::WriteStringData( g, sFileList, FileList );
     // If I don't have binned data, I must save the bootstrap (because it can't be recreated)
     if( Binned[0].Empty() || RandomCache::SaveFatFiles() )
-    {
       Data[0].Write( g, "data" );
-      if( Seed() != SeedWildcard && SampleSize )
-      {
-        const fint &cSeed{ Seed() };
-        Matrix<fint> mRnd{ RandomCache::Global.Get( cSeed, SampleSize, Data[0].extent() ) };
-        Dims[0] = mRnd.size1;
-        Dims[1] = mRnd.size2;
-        dsp = ::H5::DataSpace( 2, Dims );
-        // The values in this table go from 0 ... NumSamples_ - 1, so choose a space-minimising size in the file
-        ::H5::DataSet ds = g.createDataSet( RandomCache::sRandom, SampleSize<=static_cast<int>(std::numeric_limits<std::uint8_t>::max())
-          ? ::H5::PredType::STD_U8LE : SampleSize<=static_cast<int>(std::numeric_limits<std::uint16_t>::max())
-          ? ::H5::PredType::STD_U16LE: ::H5::PredType::STD_U32LE, dsp );
-        ds.write( mRnd.Data(), H5::Equiv<std::uint_fast32_t>::Type );
-        ds.close();
-        dsp.close();
-      }
+    // Only save random numbers if asked, and then only for bootstrap (jackknife don't need random)
+    if( RandomCache::SaveFatFiles() && Seed() != SeedWildcard && SampleSize )
+    {
+      const fint &cSeed{ Seed() };
+      Matrix<fint> mRnd{ RandomCache::Global.Get( cSeed, SampleSize, Data[0].extent() ) };
+      Dims[0] = mRnd.size1;
+      Dims[1] = mRnd.size2;
+      dsp = ::H5::DataSpace( 2, Dims );
+      // The values in this table go from 0 ... NumSamples_ - 1, so choose a space-minimising size in the file
+      ::H5::DataSet ds = g.createDataSet( RandomCache::sRandom, SampleSize<=static_cast<int>(std::numeric_limits<std::uint8_t>::max())
+        ? ::H5::PredType::STD_U8LE : SampleSize<=static_cast<int>(std::numeric_limits<std::uint16_t>::max())
+        ? ::H5::PredType::STD_U16LE: ::H5::PredType::STD_U32LE, dsp );
+      ds.write( mRnd.Data(), H5::Equiv<std::uint_fast32_t>::Type );
+      ds.close();
+      dsp.close();
     }
     if( !Raw.Empty() )
       H5::WriteMatrix( g, "samples_Raw", Raw );

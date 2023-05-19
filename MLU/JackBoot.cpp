@@ -72,7 +72,12 @@ SeedType RandomCache::DefaultSeed()
     DefaultSeedOK = true;
     const char * pDefaultString{ std::getenv( "MLUSeed" ) };
     if( pDefaultString && * pDefaultString )
-      DefaultSeed( pDefaultString );
+    {
+      if( EqualIgnoreCase( sRandom, pDefaultString ) )
+        DefaultSeed_ = std::random_device{}(); // Hardware generated random number
+      else
+        DefaultSeed( pDefaultString );
+    }
   }
   return DefaultSeed_;
 }
@@ -292,7 +297,7 @@ Matrix<fint> RandomCache::Make( fint &Seed, std::size_t NumSamples, std::size_t 
 
 void RandomCache::Compare( const Matrix<fint> &l, const Matrix<fint> &r )
 {
-  if( l.size2 == 0 || l.size2 != r.size2 )
+  if( !l.Empty() && !r.Empty() && l.size2 != r.size2 )
   {
     std::ostringstream os;
     os << "Random mismatch number of samples " << l.size2 << " != " << r.size2;
