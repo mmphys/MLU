@@ -271,6 +271,10 @@ public:
   }
   JackBoot() = default;
   JackBoot( std::size_t NumReplicas, std::size_t Extent ) { resize( NumReplicas, Extent ); }
+  inline bool IsFinite() const
+  {
+    return Central.IsFinite() && ReplicaMean.IsFinite() && Replica.IsFinite();
+  }
   void Read( ::H5::Group &g, const std::string &Name );
   void Write( ::H5::Group &g, const std::string &Name ) const;
   inline void ValidateReplica( std::size_t idx ) const
@@ -340,9 +344,9 @@ protected:
 };
 
 template <typename T>
-bool IsFinite( const JackBoot<T> &jb )
+inline bool IsFinite( const JackBoot<T> &jb )
 {
-  return IsFinite( jb.Central ) && IsFinite( jb.Replica ) && IsFinite( jb.ReplicaMean ) ;
+  return jb.IsFinite();
 }
 
 MLU_JackBoot_hpp_end

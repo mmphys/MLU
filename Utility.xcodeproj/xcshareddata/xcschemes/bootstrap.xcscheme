@@ -58,6 +58,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-e test"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-ag5 --p2"
             isEnabled = "YES">
          </CommandLineArgument>

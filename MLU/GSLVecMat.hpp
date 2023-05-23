@@ -285,6 +285,16 @@ template<> struct GSLTraits<fint>
 #undef COMMON_GSL_TYPE
 #undef COMMON_GSL_FUNC
 
+template <typename T> inline bool IsFinite( const Vector<T> &v )
+{
+  return v.IsFinite();
+}
+
+template <typename T> inline bool IsFinite( const Matrix<T> &m, bool bDiagonalsOnly = false )
+{
+  return m.IsFinite( bDiagonalsOnly );
+}
+
 // GSL objects don't work well with const objects
 
 template <typename T> class MatrixView

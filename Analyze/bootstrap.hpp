@@ -119,6 +119,7 @@ public:
   const BinOrder binOrder;
   const Common::SeedType seed;
   const std::string outStem;
+  const std::string Ensemble;
 
   using CorrFile = Common::CorrelatorFileC;
   using vCorrFile = std::vector<CorrFile>;

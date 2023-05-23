@@ -113,7 +113,8 @@ BootstrapParams::BootstrapParams( const Common::CommandLine &cl )
   binAuto{ binSize == 0 },
   binOrder{ cl.SwitchValue<BinOrder>( "border" ) },
   seed{ Common::RandomCache::DefaultSeed() },
-  outStem{ cl.SwitchValue<std::string>( "o" ) }
+  outStem{ cl.SwitchValue<std::string>( "o" ) },
+  Ensemble{ cl.GotSwitch("e") ? cl.SwitchValue<std::string>("e") : "" }
 {
   if( TimesliceDetail < 0 || TimesliceDetail > 2 )
     throw std::invalid_argument( "Timeslice detail " + std::to_string( TimesliceDetail ) + " invalid" );
@@ -124,6 +125,8 @@ BootstrapParams::BootstrapParams( const Common::CommandLine &cl )
     throw std::runtime_error( "Auto binning only works with Auto order" );
   if( Common::GetHostName().empty() )
     throw std::invalid_argument( "Machine name can't be empty" );
+  if( Ensemble.empty() )
+    throw std::invalid_argument( "Ensemble name can't be empty" );
   Common::MakeAncestorDirs( outStem );
 }
 
@@ -287,6 +290,7 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
   int iCount{ 0 };
   // Make somewhere to put the raw data
   Common::SampleC out( nSample, first->Nt() );
+  out.Ensemble = Ensemble;
   for( int Snk = 0; Snk < SinkAlgebra.size(); Snk++ )
   {
     const int UpperLimit{ !Traj.b3pt && b2ptSymOp && Traj.OpSuffiiSame()
@@ -977,6 +981,7 @@ int main(const int argc, const char *argv[])
     const std::initializer_list<CL::SwitchDef> list = {
       {"n", CL::SwitchType::Single, DEF_NSAMPLE},
       {"b", CL::SwitchType::Single, "0"},
+      {"e", CL::SwitchType::Single, nullptr},
       {"border", CL::SwitchType::Single, "Auto"},
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
@@ -1037,6 +1042,7 @@ int main(const int argc, const char *argv[])
     "Perform a bootstrap of the specified files, where <options> are:\n"
     "-n     Number of samples (" DEF_NSAMPLE ")\n"
     "-b     Bin size, or 0 (default)=auto (1 config=no binning, else 1 bin/config)\n"
+    "-e     Ensemble name\n"
     "--border Bin Order: `Auto' (default)=config then timeslice then filename\n"
     "        `Old'=timeslice/filename/config, `VeryOld'=timeslice/config/filename\n"
     "-i     Input  prefix\n"

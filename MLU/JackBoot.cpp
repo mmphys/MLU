@@ -725,7 +725,7 @@ void JackBoot<T>::MakeStatistics( std::vector<ValWithEr<T>> &vStats ) const
         {
           for( std::size_t j = 0; j < extent(); ++j )
           {
-            if( IsFinite( Replica( replica, j ) ) )
+            if( ::Common::IsFinite( Replica( replica, j ) ) )
             {
               Var[j] += Squared( Replica( replica, j ) - Central[j] );
               ++Count[j];
@@ -757,7 +757,7 @@ void JackBoot<T>::MakeStatistics( std::vector<ValWithEr<T>> &vStats ) const
           std::size_t Count{};
           for( std::size_t replica = 0; replica < NumReplicas(); ++replica )
           {
-            if( IsFinite( Replica( replica, j ) ) )
+            if( ::Common::IsFinite( Replica( replica, j ) ) )
               Buffer[Count++] = Replica( replica, j );
           }
           vStats[j].Get( Central[j], Buffer, Count );
