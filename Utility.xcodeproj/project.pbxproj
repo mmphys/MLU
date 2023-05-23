@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		2723910429115E560045DE24 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2723910329115E560045DE24 /* Accelerate.framework */; };
 		2735220429E9267D00E8720F /* FitRangeImp.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2735220329E9267D00E8720F /* FitRangeImp.hpp */; };
+		2763DE032A1D241500529933 /* Utility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2763DE012A1D241400529933 /* Utility.cpp */; };
+		2763DE042A1D241500529933 /* Utility.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2763DE022A1D241400529933 /* Utility.hpp */; };
+		2763DE072A1D253D00529933 /* CorrFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2763DE052A1D253D00529933 /* CorrFile.cpp */; };
+		2763DE082A1D253D00529933 /* CorrFile.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2763DE062A1D253D00529933 /* CorrFile.hpp */; };
 		277FBE8E290ED83700E82279 /* libMLU.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 682C5C9E28E4F41300C8E004 /* libMLU.dylib */; };
 		278BA037290ED57000960730 /* GetColumn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 278BA02A290ED4AB00960730 /* GetColumn.cpp */; };
 		27953EAD28FB226D00A4CF67 /* DebugInfo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */; };
@@ -19,7 +23,14 @@
 		27E8B36128FF2DE80047FEF1 /* ModelRatio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27E8B36028FF2DE80047FEF1 /* ModelRatio.cpp */; };
 		27FACB6829F6D4CA00213B2A /* JackBoot.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27FACB6629F6D4CA00213B2A /* JackBoot.cpp */; };
 		27FACB6929F6D4CA00213B2A /* JackBoot.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27FACB6729F6D4CA00213B2A /* JackBoot.hpp */; };
-		682C5CA228E4F7BF00C8E004 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C4728E4F2C300C8E004 /* Common.cpp */; };
+		27FE177C2A1D2AF700C271ED /* Sample.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27FE177A2A1D2AF700C271ED /* Sample.cpp */; };
+		27FE177D2A1D2AF700C271ED /* Sample.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27FE177B2A1D2AF700C271ED /* Sample.hpp */; };
+		27FE17802A1D2DA900C271ED /* Fold.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27FE177E2A1D2DA900C271ED /* Fold.cpp */; };
+		27FE17812A1D2DA900C271ED /* Fold.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27FE177F2A1D2DA900C271ED /* Fold.hpp */; };
+		27FE17842A1D2F0100C271ED /* Model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27FE17822A1D2F0100C271ED /* Model.cpp */; };
+		27FE17852A1D2F0100C271ED /* Model.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27FE17832A1D2F0100C271ED /* Model.hpp */; };
+		27FE17882A1D304800C271ED /* DataSet.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27FE17862A1D304800C271ED /* DataSet.hpp */; };
+		27FE17892A1D304800C271ED /* DataSet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27FE17872A1D304800C271ED /* DataSet.cpp */; };
 		682C5CA328E4F7CA00C8E004 /* Common.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682C5C5B28E4F2C300C8E004 /* Common.hpp */; };
 		682C5CA628E4F82500C8E004 /* FitRange.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682C5C4E28E4F2C300C8E004 /* FitRange.hpp */; };
 		682C5CA728E4F82500C8E004 /* GSLVecMat.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 682C5C5528E4F2C300C8E004 /* GSLVecMat.hpp */; };
@@ -282,6 +293,10 @@
 /* Begin PBXFileReference section */
 		2723910329115E560045DE24 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		2735220329E9267D00E8720F /* FitRangeImp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitRangeImp.hpp; sourceTree = "<group>"; };
+		2763DE012A1D241400529933 /* Utility.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Utility.cpp; sourceTree = "<group>"; };
+		2763DE022A1D241400529933 /* Utility.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Utility.hpp; sourceTree = "<group>"; };
+		2763DE052A1D253D00529933 /* CorrFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CorrFile.cpp; sourceTree = "<group>"; };
+		2763DE062A1D253D00529933 /* CorrFile.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CorrFile.hpp; sourceTree = "<group>"; };
 		278BA02A290ED4AB00960730 /* GetColumn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GetColumn.cpp; sourceTree = "<group>"; };
 		278BA030290ED52400960730 /* GetColumn */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GetColumn; sourceTree = BUILT_PRODUCTS_DIR; };
 		27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DebugInfo.hpp; sourceTree = "<group>"; };
@@ -294,6 +309,14 @@
 		27E8B36028FF2DE80047FEF1 /* ModelRatio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelRatio.cpp; sourceTree = "<group>"; };
 		27FACB6629F6D4CA00213B2A /* JackBoot.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JackBoot.cpp; sourceTree = "<group>"; };
 		27FACB6729F6D4CA00213B2A /* JackBoot.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = JackBoot.hpp; sourceTree = "<group>"; };
+		27FE177A2A1D2AF700C271ED /* Sample.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Sample.cpp; sourceTree = "<group>"; };
+		27FE177B2A1D2AF700C271ED /* Sample.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Sample.hpp; sourceTree = "<group>"; };
+		27FE177E2A1D2DA900C271ED /* Fold.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Fold.cpp; sourceTree = "<group>"; };
+		27FE177F2A1D2DA900C271ED /* Fold.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Fold.hpp; sourceTree = "<group>"; };
+		27FE17822A1D2F0100C271ED /* Model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Model.cpp; sourceTree = "<group>"; };
+		27FE17832A1D2F0100C271ED /* Model.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Model.hpp; sourceTree = "<group>"; };
+		27FE17862A1D304800C271ED /* DataSet.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DataSet.hpp; sourceTree = "<group>"; };
+		27FE17872A1D304800C271ED /* DataSet.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DataSet.cpp; sourceTree = "<group>"; };
 		6820525B28E505CA003AD91D /* Xml */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Xml; sourceTree = "<group>"; };
 		6820525C28E505CA003AD91D /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		6820525D28E50661003AD91D /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
@@ -301,7 +324,6 @@
 		6820525F28E50661003AD91D /* .gitignore */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		6820526028E50662003AD91D /* bootstrap.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = bootstrap.sh; sourceTree = "<group>"; };
 		6820526128E50662003AD91D /* readme.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
-		682C5C4728E4F2C300C8E004 /* Common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Common.cpp; sourceTree = "<group>"; };
 		682C5C4828E4F2C300C8E004 /* Math.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Math.cpp; sourceTree = "<group>"; };
 		682C5C4928E4F2C300C8E004 /* CommonLatAn.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommonLatAn.hpp; sourceTree = "<group>"; };
 		682C5C4A28E4F2C300C8E004 /* GSLVecMat.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GSLVecMat.cpp; sourceTree = "<group>"; };
@@ -581,17 +603,22 @@
 		682C5C4628E4F2C300C8E004 /* MLU */ = {
 			isa = PBXGroup;
 			children = (
-				682C5C4728E4F2C300C8E004 /* Common.cpp */,
 				682C5C5B28E4F2C300C8E004 /* Common.hpp */,
 				682C5C5028E4F2C300C8E004 /* CommonGrid.cpp */,
 				682C5C5A28E4F2C300C8E004 /* CommonGrid.hpp */,
 				682C5C5328E4F2C300C8E004 /* CommonLatAn.cpp */,
 				682C5C4928E4F2C300C8E004 /* CommonLatAn.hpp */,
+				2763DE052A1D253D00529933 /* CorrFile.cpp */,
+				2763DE062A1D253D00529933 /* CorrFile.hpp */,
+				27FE17872A1D304800C271ED /* DataSet.cpp */,
+				27FE17862A1D304800C271ED /* DataSet.hpp */,
 				27953EAC28FB226D00A4CF67 /* DebugInfo.cpp */,
 				27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */,
 				682C5C5828E4F2C300C8E004 /* FitRange.cpp */,
 				682C5C4E28E4F2C300C8E004 /* FitRange.hpp */,
 				2735220329E9267D00E8720F /* FitRangeImp.hpp */,
+				27FE177E2A1D2DA900C271ED /* Fold.cpp */,
+				27FE177F2A1D2DA900C271ED /* Fold.hpp */,
 				682C5C4A28E4F2C300C8E004 /* GSLVecMat.cpp */,
 				682C5C5528E4F2C300C8E004 /* GSLVecMat.hpp */,
 				682C5C5C28E4F2C300C8E004 /* GSLVecMatImp.hpp */,
@@ -602,14 +629,20 @@
 				682C5C5128E4F2C300C8E004 /* Makefile.am */,
 				682C5C4828E4F2C300C8E004 /* Math.cpp */,
 				682C5C5228E4F2C300C8E004 /* Math.hpp */,
+				27FE17822A1D2F0100C271ED /* Model.cpp */,
+				27FE17832A1D2F0100C271ED /* Model.hpp */,
 				682C5C5428E4F2C300C8E004 /* Param.cpp */,
 				682C5C4B28E4F2C300C8E004 /* Param.hpp */,
 				682C5C5728E4F2C300C8E004 /* Physics.cpp */,
 				682C5C4D28E4F2C300C8E004 /* Physics.hpp */,
 				27B48A992A039D4C0006EE75 /* Posix.cpp */,
 				27B48A982A039D4C0006EE75 /* Posix.hpp */,
+				27FE177A2A1D2AF700C271ED /* Sample.cpp */,
+				27FE177B2A1D2AF700C271ED /* Sample.hpp */,
 				682C5C4C28E4F2C300C8E004 /* String.cpp */,
 				682C5C5628E4F2C300C8E004 /* String.hpp */,
+				2763DE012A1D241400529933 /* Utility.cpp */,
+				2763DE022A1D241400529933 /* Utility.hpp */,
 			);
 			path = MLU;
 			sourceTree = "<group>";
@@ -756,18 +789,24 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27FE17852A1D2F0100C271ED /* Model.hpp in Headers */,
 				682C5CA628E4F82500C8E004 /* FitRange.hpp in Headers */,
 				682C5CA728E4F82500C8E004 /* GSLVecMat.hpp in Headers */,
+				27FE177D2A1D2AF700C271ED /* Sample.hpp in Headers */,
+				27FE17882A1D304800C271ED /* DataSet.hpp in Headers */,
 				2735220429E9267D00E8720F /* FitRangeImp.hpp in Headers */,
 				27953EAD28FB226D00A4CF67 /* DebugInfo.hpp in Headers */,
+				2763DE082A1D253D00529933 /* CorrFile.hpp in Headers */,
 				682C5CA828E4F82500C8E004 /* GSLVecMatImp.hpp in Headers */,
 				27B48A9A2A039D4C0006EE75 /* Posix.hpp in Headers */,
 				682C5CA928E4F82500C8E004 /* HDF5.hpp in Headers */,
 				682C5CAA28E4F82500C8E004 /* Math.hpp in Headers */,
 				27FACB6929F6D4CA00213B2A /* JackBoot.hpp in Headers */,
+				2763DE042A1D241500529933 /* Utility.hpp in Headers */,
 				682C5CAB28E4F82500C8E004 /* Param.hpp in Headers */,
 				682C5CAC28E4F82500C8E004 /* Physics.hpp in Headers */,
 				682C5CAD28E4F82500C8E004 /* String.hpp in Headers */,
+				27FE17812A1D2DA900C271ED /* Fold.hpp in Headers */,
 				682C5CA328E4F7CA00C8E004 /* Common.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1286,16 +1325,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27FE17802A1D2DA900C271ED /* Fold.cpp in Sources */,
 				27FACB6829F6D4CA00213B2A /* JackBoot.cpp in Sources */,
+				27FE17892A1D304800C271ED /* DataSet.cpp in Sources */,
 				682C5CAE28E4F86C00C8E004 /* FitRange.cpp in Sources */,
 				682C5CAF28E4F86C00C8E004 /* GSLVecMat.cpp in Sources */,
+				27FE177C2A1D2AF700C271ED /* Sample.cpp in Sources */,
+				2763DE072A1D253D00529933 /* CorrFile.cpp in Sources */,
 				682C5CB028E4F86C00C8E004 /* HDF5.cpp in Sources */,
 				682C5CB128E4F86C00C8E004 /* Math.cpp in Sources */,
 				682C5CB228E4F86C00C8E004 /* Param.cpp in Sources */,
 				682C5CB328E4F86C00C8E004 /* Physics.cpp in Sources */,
+				2763DE032A1D241500529933 /* Utility.cpp in Sources */,
 				27953EAE28FB226D00A4CF67 /* DebugInfo.cpp in Sources */,
+				27FE17842A1D2F0100C271ED /* Model.cpp in Sources */,
 				682C5CB428E4F86C00C8E004 /* String.cpp in Sources */,
-				682C5CA228E4F7BF00C8E004 /* Common.cpp in Sources */,
 				27B48A9B2A039D4C0006EE75 /* Posix.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
