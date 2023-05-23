@@ -30,6 +30,12 @@
 BEGIN_COMMON_NAMESPACE
 
 template <typename T>
+bool CorrelatorFile<T>::IsFinite() const
+{
+  return Common::IsFinite( m_pData.get(), static_cast<size_t>( NumSnk_ ) * NumSrc_ * Nt_ );
+}
+
+template <typename T>
 void CorrelatorFile<T>::resize( int NumSnk, int NumSrc, int Nt )
 {
   const std::size_t OldMemSize{ static_cast<std::size_t>( NumSnk_ ) * NumSrc_ * Nt_ };

@@ -134,7 +134,7 @@ public:
 template <typename T = double> struct ValWithEr
 {
   using value_type = T;
-  using Scalar = typename is_complex<T>::Scalar;
+  using Scalar = typename is_complex<T>::Real;
   using ValSigFigT = ValSigFig<T>;
 
   T Min;

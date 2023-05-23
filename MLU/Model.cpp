@@ -720,7 +720,7 @@ void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFile
                                bool bVerboseSummary )
 {
   const ValWithEr<T> veZero( 0, 0, 0, 0, 0, 0 );
-  using Scalar = typename is_complex<T>::Scalar;
+  using Scalar = typename is_complex<T>::Real;
   using namespace CorrSumm;
   assert( std::isnan( NaN ) && "Compiler does not support quiet NaNs" );
   std::ofstream ofs( sOutFileName );

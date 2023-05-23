@@ -181,7 +181,7 @@ template<typename T> struct JackBoot : public JackBootBase
   static constexpr std::size_t idxCentral{ JackBootBase::idxCentral };
   static constexpr std::size_t idxReplicaMean{ JackBootBase::idxReplicaMean };
   using Norm = JackBootBase::Norm;
-  using Real = typename is_complex<T>::Scalar;
+  using Real = typename is_complex<T>::Real;
 protected:
   Vector<T> Central;      // Averages of the source data that were resampled
   Vector<T> ReplicaMean;  // Mean of the replicas. Bootstrap/Jackknife differs from/same as Central

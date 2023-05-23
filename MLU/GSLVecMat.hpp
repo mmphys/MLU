@@ -56,9 +56,9 @@ extern const double NaN;
 
 using fint = std::uint_fast32_t; // type for random numbers
 
-/// Test whether a type is complex. Provide underlying Scalar type
-template<typename T> struct is_complex                  : public std::false_type { using Scalar = T; };
-template<typename T> struct is_complex<std::complex<T>> : public std::true_type { using Scalar = T; };
+/// Test whether a type is complex. Provide underlying Real type
+template<typename T> struct is_complex                     : public std::false_type{ using Real=T; };
+template<typename T> struct is_complex<std::complex<T>>    : public std::true_type { using Real=T; };
 
 // Allow real and complex numbers to be squared and square rooted
 template <typename T> typename std::enable_if< is_complex<T>::value, T>::type
@@ -117,7 +117,7 @@ template<typename T> inline typename std::enable_if<!is_complex<T>::value, bool>
 IsFinite( const T &c ) { return std::isfinite( c ); }
 
 // Are all the floating point numbers pointed to finite
-template <typename T, typename I> inline bool IsFinite( const T * d, I n )
+template <typename T> inline bool IsFinite( const T * d, std::size_t n )
 {
   while( n-- )
     if( !IsFinite( *d++ ) )

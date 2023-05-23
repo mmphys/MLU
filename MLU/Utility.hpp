@@ -786,49 +786,66 @@ inline std::ostream & operator<<( std::ostream &os, const FoldProp &f )
 
 // Traits for samples
 // SampleTraits<ST>::value is true for supported types (floating point and complex)
-template<typename ST, typename V = void> struct SampleTraits : public std::false_type{};
+template<typename T> struct SampleTraits : public std::false_type{};
 
-// Traits for floating point types: float; double
-template<typename ST> struct SampleTraits<ST, typename std::enable_if<!is_complex<ST>::value
-    && std::is_floating_point<ST>::value>::type> : public std::true_type
+// Traits for float
+template<> struct SampleTraits<float> : public std::true_type
 {
-  using scalar_type = ST;
-  using value_type = ST;
+  using scalar_type = float;
+  using value_type = float;
   static constexpr bool is_complex = false;
   static constexpr int scalar_count = 1;
-  static inline scalar_type * ScalarPtr( ST * p ) { return p; };
-  static inline const scalar_type * ScalarPtr( const ST * p ) { return p; };
-  static inline scalar_type Real( const ST &v ) { return v; }
-  static inline scalar_type Imag( const ST &v ) { throw std::runtime_error( "SampleTraits::Imag" ); }
-  static inline scalar_type RealImag( const ST &v, int i )
+  static inline       scalar_type * ScalarPtr(       float * p ) { return p; };
+  static inline const scalar_type * ScalarPtr( const float * p ) { return p; };
+  static inline scalar_type Real( const float &v ) { return v; }
+  static inline scalar_type Imag( const float &v ) {throw std::runtime_error("SampleTraits::Imag");}
+  static inline scalar_type RealImag( const float &v, int i )
   {
     if( i )
-      throw std::runtime_error( "SampleTraits::Imag" );
+      throw std::runtime_error( "SampleTraits<float>::Imag" );
     return v;
   }
 };
 
-// Traits for std::complex<ST> types
-template<typename ST> struct SampleTraits<ST, typename std::enable_if<is_complex<ST>::value
-    && SampleTraits<typename is_complex<ST>::Scalar>::value>::type> : public std::true_type
+// Traits for double
+template<> struct SampleTraits<double> : public std::true_type
 {
-  using scalar_type = typename is_complex<ST>::Scalar;
-  using value_type = ST;
+  using scalar_type = double;
+  using value_type = double;
+  static constexpr bool is_complex = false;
+  static constexpr int scalar_count = 1;
+  static inline       scalar_type * ScalarPtr(       double * p ) { return p; };
+  static inline const scalar_type * ScalarPtr( const double * p ) { return p; };
+  static inline scalar_type Real( const double &v ) { return v; }
+  static inline scalar_type Imag( const double &v ) {throw std::runtime_error("SampleTraits::Imag");}
+  static inline scalar_type RealImag( const double &v, int i )
+  {
+    if( i )
+      throw std::runtime_error( "SampleTraits<double>::Imag" );
+    return v;
+  }
+};
+
+// Traits for std::complex<T> types
+template<typename ST> struct SampleTraits<std::complex<ST>> : public std::true_type
+{
+  using scalar_type = ST;
+  using value_type = std::complex<ST>;
   static constexpr bool is_complex = true;
   static constexpr int scalar_count = 2;
-  static inline scalar_type * ScalarPtr( ST * p )
-      { return reinterpret_cast<scalar_type *>( p ); };
-  static inline const scalar_type * ScalarPtr( const ST * p )
+  static inline       scalar_type * ScalarPtr(       value_type * p )
+      { return reinterpret_cast<      scalar_type *>( p ); };
+  static inline const scalar_type * ScalarPtr( const value_type * p )
       { return reinterpret_cast<const scalar_type *>( p ); };
-  static inline scalar_type Real( const ST &v ) { return v.real(); }
-  static inline scalar_type Imag( const ST &v ) { return v.imag(); }
-  static inline scalar_type RealImag( const ST &v, int i )
+  static inline scalar_type Real( const value_type &v ) { return v.real(); }
+  static inline scalar_type Imag( const value_type &v ) { return v.imag(); }
+  static inline scalar_type RealImag( const value_type &v, int i )
   {
     if( i == 0 )
       return v.real();
     if( i == 1 )
       return v.imag();
-    throw std::runtime_error( "SampleTraits::Imag" );
+    throw std::runtime_error( "SampleTraits<std::complex<T>>::RealImag " + std::to_string( i ) );
   }
 };
 

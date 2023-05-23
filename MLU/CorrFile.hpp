@@ -110,9 +110,7 @@ public:
   inline int Timeslice() const { return bHasTimeslice ? Timeslice_ : 0; }
   inline const std::vector<Gamma::Algebra> &AlgSnk() const { return AlgSnk_; }
   inline const std::vector<Gamma::Algebra> &AlgSrc() const { return AlgSrc_; }
-  inline bool IsFinite() const
-  { return Common::IsFinite( reinterpret_cast<typename SampleTraits<T>::scalar_type *>( m_pData.get() ),
-      static_cast<size_t>( NumSnk_ * NumSrc_ * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
+  bool IsFinite() const;
   void resize( int NumSnk, int NumSrc, int Nt );
   /// Swap function so that this type is sortable
   void swap( CorrelatorFile &o );
