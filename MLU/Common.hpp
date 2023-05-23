@@ -69,7 +69,6 @@ BEGIN_COMMON_NAMESPACE
 static constexpr unsigned int COMPAT_DEFAULT{ 0 };
 static constexpr unsigned int COMPAT_DISABLE_BASE{ 1 };
 static constexpr unsigned int COMPAT_DISABLE_NT{ 2 };
-/*static constexpr unsigned int COMPAT_DISABLE_CONFIG_COUNT{ 4 };*/
 static constexpr unsigned int COMPAT_DISABLE_TYPE{ 8 };
 
 template <typename T> int sgn( T x )
@@ -832,27 +831,6 @@ template<typename ST> struct SampleTraits<ST, typename std::enable_if<is_complex
   }
 };
 
-/*
-template<typename TSrc, typename TDst>
-inline typename std::enable_if<!SampleTraits<TSrc>::is_complex || SampleTraits<TDst>::is_complex>::type
-CopyBuffer( const TSrc * Begin, const TSrc * End, TDst * Dst, Signal s = Signal::Unknown )
-{
-  while( Begin != End )
-    *Dst++ = *Begin++;
-}
-
-template<typename TSrc, typename TDst>
-inline typename std::enable_if<SampleTraits<TSrc>::is_complex && !SampleTraits<TDst>::is_complex>::type
-CopyBuffer( const TSrc * Begin, const TSrc * End, TDst * Dst, Signal s = Signal::Unknown )
-{
-  while( Begin != End )
-  {
-    *Dst++ = s == Signal::Imag ? Begin->Imag() : Begin->Real();
-    Begin++;
-  }
-}
-*/
-
 template <typename T>
 void SummaryHeader(std::ostream &s, const std::string & sOutFileName,
                    const char * pszHeaderComments = nullptr)
@@ -963,22 +941,8 @@ void SummaryHelper( const std::string & sOutFileName, const T * pData, const int
           else if( std::isfinite( d ) )
             Data[Count++] = d;
         }
-        /*if( i==0 && f==1 && t==20 )
-        {
-          std::ofstream o( "BeforeSort.txt" );
-          o << -1 << sep << Central << NewLine;
-          for( int i = 0; i < Count; i++ )
-            o << i << sep << Data[i] << NewLine;
-        }*/
         Common::ValWithEr<scalar_type> v( Central, Data, Count );
         s << sep << v;
-        /*if( i==0 && f==1 && t==20 )
-        {
-          std::ofstream o( "AfterSort.txt" );
-          o << -1 << sep << Central << NewLine;
-          for( int i = 0; i < Count; i++ )
-            o << i << sep << Data[i] << NewLine;
-        }*/
       }
     }
     s << NewLine;
@@ -991,11 +955,11 @@ template <typename T>
 class CorrelatorFile
 {
   // Data members
-public:
+/*public:
   using Traits = SampleTraits<T>;
   using scalar_type = typename Traits::scalar_type;
   using value_type = typename Traits::value_type;
-  static constexpr bool is_complex { Traits::is_complex };
+  static constexpr bool is_complex { Traits::is_complex };*/
 private:
   int NumSnk_ = 0;
   int NumSrc_ = 0;
@@ -1062,7 +1026,7 @@ public:
   inline const std::vector<Gamma::Algebra> &AlgSnk() const { return AlgSnk_; }
   inline const std::vector<Gamma::Algebra> &AlgSrc() const { return AlgSrc_; }
   inline bool IsFinite() const
-  { return Common::IsFinite( reinterpret_cast<scalar_type *>( m_pData.get() ),
+  { return Common::IsFinite( reinterpret_cast<typename SampleTraits<T>::scalar_type *>( m_pData.get() ),
       static_cast<size_t>( NumSnk_ * NumSrc_ * ( SampleTraits<T>::is_complex ? 2 : 1 ) ) * Nt_ ); }
   void resize( int NumSnk, int NumSrc, int Nt );
   /// Swap function so that this type is sortable
@@ -1076,14 +1040,11 @@ public:
                     const std::vector<Gamma::Algebra> &AlgSrc);
 };
 
-template <typename T>
-inline void swap( CorrelatorFile<T> &l, CorrelatorFile<T> &r )
-{
-  l.swap( r );
-}
-
 using CorrelatorFileC = CorrelatorFile<std::complex<double>>;
 using CorrelatorFileD = CorrelatorFile<double>;
+
+template <typename T>
+void swap( CorrelatorFile<T> &l, CorrelatorFile<T> &r );
 
 enum class SampleSource { Binned, Raw, Bootstrap };
 
@@ -1319,10 +1280,6 @@ public:
   {
     return ColumnFrozen( static_cast<std::size_t>( column ), idxJackBoot );
   }
-  /*[[deprecated("Central replica no longer contiguous with remaining replicas. Use operator()")]]
-  inline       T * operator[]( int Replica )       { return &Data[0](Replica,0); }
-  [[deprecated("Central replica no longer contiguous with remaining replicas. Use operator()")]]
-  inline const T * operator[]( int Replica ) const { return &Data[0](Replica,0); }*/
   inline       T & operator()( std::size_t i, std::size_t j )       { return Data[0]( i, j ); }
   inline const T & operator()( std::size_t i, std::size_t j ) const { return Data[0]( i, j ); }
   inline const JackBoot<T> &getData( int idxJackBoot = 0 ) const
@@ -1422,30 +1379,6 @@ public:
   void Write( const std::string &FileName, const char * pszGroupName = nullptr );
   void MakeCorrSummary();
   void WriteSummary( const std::string &sOutFileName, bool bVerboseSummary = false );
-  /*inline void ZeroSlot( int idxSlot = idxCentral )
-  {
-    if( Nt_ )
-    {
-      T * p{ (*this)[idxSlot] };
-      for( int t = 0; t < Nt_; t++ )
-        *p++ = 0;
-    }
-  }
-  void MakeMean( int idxSlot = idxCentral, bool bBinned = false )
-  {
-    ZeroSlot( idxSlot );
-    const int NumRows{ bBinned ? NumSamplesBinned() : NumSamples() };
-    if( NumRows && Nt_ )
-    {
-      T * const dst{ (*this)[idxSlot] };
-      const T * src{ bBinned ? getBinned() : (*this)[0] };
-      for( int i = 0; i < NumRows; i++ )
-        for( int t = 0; t < Nt_; t++ )
-          dst[t] += *src++;
-      for( int t = 0; t < Nt_; t++ )
-        dst[t] /= NumRows;
-    }
-  }*/
 public: // Override these for specialisations
   virtual const std::string & DefaultGroupName() { return sBootstrap; }
   virtual bool bFolded() { return false; }
@@ -1482,10 +1415,6 @@ public:
   std::vector<std::string> BootstrapList;
   using Base = Sample<T>;
   using Base::Base;
-  /*explicit Fold( int NumSamples = 0, int Nt = 0 ) : Base::Sample( NumSamples,  Nt ) {}
-  Fold( const std::string &FileName, std::string &GroupName, const char *PrintPrefix = nullptr,
-        std::vector<std::string> * pOpNames = nullptr )
-  : Base::Sample( FileName, GroupName, PrintPrefix, pOpNames ) {}*/
   const std::string &DefaultGroupName() override;
   bool bFolded() override;
   void SummaryComments( std::ostream &os, bool bVerboseSummary = false ) const override;
@@ -1571,15 +1500,6 @@ struct Model : public Sample<T>, public ModelBase
       return CovarFrozen;
     return NumSamples > Base::NumSamples();
   }
-  /*void Read( const char *PrintPrefix = nullptr, std::string *pGroupName =nullptr )
-  {
-    Base::Read( PrintPrefix, pGroupName );
-  }
-  void Read( const std::string &FileName, const char *PrintPrefix = nullptr, std::string *pGroupName =nullptr )
-  {
-    SetName( FileName );
-    Base::Read( PrintPrefix, pGroupName );
-  }*/
   void ReadAttributes( ::H5::Group &g ) override;
   void ValidateAttributes() override;
   int WriteAttributes( ::H5::Group &g ) const override;
@@ -1655,17 +1575,6 @@ struct DataSet
     idxJackBootCovarSource = idxJackBoot;
     bFrozenCovarSource = bFrozen;
   }
-  /*const Matrix<T> &Cache( SampleSource ss ) const
-  {
-    const Matrix<T> &m{ ss == SampleSource::Bootstrap ? mBoot : ss == SampleSource::Binned ? mBinned : mRaw };
-    if( m.size1 == 0 || m.size2 == 0 )
-    {
-      std::stringstream s;
-      s << "Cached " << ss << " data unavailable";
-      throw std::runtime_error( s.str().c_str() );
-    }
-    return m;
-  }*/
 protected:
   std::array<std::vector<fint>, 2> RandomCentralBuf; // No replacement. Saves having to rebuild continually
   std::array< MatrixView<fint>, 2> RandomViews;
@@ -1694,41 +1603,6 @@ public:
         JackBoot<T> &GetData()       { return mFitData; }
   const JackBoot<T> &GetData() const { return mFitData; }
   void GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedParam> &Params ) const;
-  /*const std::vector<fint> &RandomCentral( SS ss ) const
-  {
-    const std::vector<fint> &r{ RandomCentralBuf[ ss == SS::Raw ? 0 : 1 ] };
-    if( !( ss == SS::Binned || ss == SS::Raw ) || r.empty() )
-    {
-      std::stringstream os;
-      os << "Central replica " << ss << " (non-) random numbers unavailable";
-      throw std::runtime_error( os.str().c_str() );
-    }
-    return r;
-  }
-  const MatrixView<fint> &RandomNumbers( SS ss ) const
-  {
-    const MatrixView<fint> &r{ RandomViews[ ss == SS::Raw ? 0 : 1 ] };
-    if( !( ss == SS::Binned || ss == SS::Raw ) || !r.data() )
-    {
-      std::stringstream os;
-      os << ss << " random numbers unavailable";
-      throw std::runtime_error( os.str().c_str() );
-    }
-    return r;
-  }
-  // All of these functions make a covariance matrix estimate of \Sigma_{\bar{\vb{x}}}, i.e. error of the mean
-  // From what is already a bootstrap replica, and therefore only the central replica
-  void MakeCovarFromBootstrap( SS ss, Matrix<T> &Covar ) const;
-  void MakeVarFromBootstrap( SS ss, Vector<T> &Var ) const;
-  // From the underlying raw/(re)binned data (without bootstrapping)
-  void MakeCovarFromNonBootstrap( int idx, SS ss, Matrix<T> &Covar ) const;
-  void MakeVarFromNonBootstrap( int idx, SS ss, Vector<T> &Var ) const;
-  // Calls the appropriate one of the previous two functions, depending on what the data are
-  void MakeCovariance( int idx, SS ss, Matrix<T> &Covar ) const;
-  void MakeVariance( int idx, SS ss, Vector<T> &Covar ) const;
-  // Make covariance matrix using a secondary bootstrap - Random numbers must be provided by caller
-  // I.e. unfrozen covariance matrix
-  void MakeCovariance( int idx, SS ss, Matrix<T> &Covar, const MatrixView<fint> &Random)const;*/
   void SaveMatrixFile( const Matrix<T> &m, const std::string &Type, const std::string &FileName,
                        std::vector<std::string> &Abbreviations,
                        const std::vector<std::string> *FileComments = nullptr,

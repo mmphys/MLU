@@ -89,7 +89,7 @@ void TrajFile::Reverse( Common::CorrelatorFileC &File ) const
     const int Nt{ File.Nt() };
     const int T0{ File.Timeslice() };
     const int DeltaT{ File.Name_.bGotDeltaT ? File.Name_.DeltaT : 0 };
-    using ValueT = Common::CorrelatorFileC::value_type;
+    using ValueT = typename Common::SampleTraits<std::complex<double>>::value_type;
     std::vector<ValueT> Buffer( Nt );
     for( int row = 0; row < File.NumOps(); ++row )
     {

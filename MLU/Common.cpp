@@ -1078,6 +1078,17 @@ template class CorrelatorFile<float>;
 template class CorrelatorFile<std::complex<double>>;
 template class CorrelatorFile<std::complex<float>>;
 
+template <typename T>
+void swap( CorrelatorFile<T> &l, CorrelatorFile<T> &r )
+{
+  l.swap( r );
+}
+
+template void swap( CorrelatorFileC &l, CorrelatorFileC &r );
+template void swap( CorrelatorFileD &l, CorrelatorFileD &r );
+template void swap( CorrelatorFile<float> &l, CorrelatorFile<float> &r );
+template void swap( CorrelatorFile<std::complex<float>> &l, CorrelatorFile<std::complex<float>> &r );
+
 const std::array<std::string, 3> aSampleSource{ "Binned", "Raw", "Bootstrap" };
 
 std::ostream& operator<<( std::ostream& os, SampleSource sampleSource )
@@ -1101,55 +1112,6 @@ std::istream& operator>>( std::istream& is, SampleSource &sampleSource )
     }
   }
   throw std::runtime_error( "SampleSource \"" + sEnum + "\" unrecognised" );
-}
-
-/*template class Sample<double>;
-template class Sample<float>;
-template class Sample<std::complex<double>>;
-template class Sample<std::complex<float>>;*/
-
-const std::string ModelBase::EnergyPrefix{ "E" };
-const std::string ModelBase::EDiffPrefix{ "EDiff" };
-const std::string ModelBase::ConstantPrefix{ "K" };
-
-template <typename T>
-JackBootColumn<T> Model<T>::Column( const Param::Key &k, std::size_t Index )
-{
-  Params::const_iterator it = params.FindPromiscuous( k );
-  if( it == params.cend() )
-  {
-    std::ostringstream os;
-    os << k.FullName( Index, std::numeric_limits<std::size_t>::max() ) << " not found";
-    throw std::runtime_error( os.str().c_str() );
-  }
-  const Param &p{ it->second };
-  if( Index >= p.size )
-  {
-    std::ostringstream os;
-    os << k.FullName( Index, p.size ) << " not found - only " << p.size << " elements";
-    throw std::runtime_error( os.str().c_str() );
-  }
-  return Base::Column( p.GetOffset( Index, Param::Type::All ) );
-}
-
-template <typename T>
-JackBootColumn<T> Model<T>::ColumnFrozen( const Param::Key &k, std::size_t Index )
-{
-  Params::const_iterator it = params.FindPromiscuous( k );
-  if( it == params.cend() )
-  {
-    std::ostringstream os;
-    os << k.FullName( Index, std::numeric_limits<std::size_t>::max() ) << " not found";
-    throw std::runtime_error( os.str().c_str() );
-  }
-  const Param &p{ it->second };
-  if( Index >= p.size )
-  {
-    std::ostringstream os;
-    os << k.FullName( Index, p.size ) << " not found - only " << p.size << " elements";
-    throw std::runtime_error( os.str().c_str() );
-  }
-  return Base::ColumnFrozen( p.GetOffset( Index, Param::Type::All ) );
 }
 
 template <typename T>
@@ -1268,10 +1230,6 @@ void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, unsigned in
       if( r.Config != l.Config )
         throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
                                  sNE + std::to_string(l.Config) + sSuffix );
-      /*if( !( CompareFlags & COMPAT_DISABLE_CONFIG_COUNT ) && r.Count != l.Count )
-        throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
-                                 ", NumTimeslices " + std::to_string(r.Count) + sNE +
-                                 std::to_string(l.Count) + sSuffix );*/
     }
   }
   if( !Ensemble.empty() && !o.Ensemble.empty() && !EqualIgnoreCase( Ensemble, o.Ensemble ) )
@@ -2337,6 +2295,50 @@ template class Fold<float>;
 template class Fold<std::complex<double>>;
 template class Fold<std::complex<float>>;
 
+const std::string ModelBase::EnergyPrefix{ "E" };
+const std::string ModelBase::EDiffPrefix{ "EDiff" };
+const std::string ModelBase::ConstantPrefix{ "K" };
+
+template <typename T>
+JackBootColumn<T> Model<T>::Column( const Param::Key &k, std::size_t Index )
+{
+  Params::const_iterator it = params.FindPromiscuous( k );
+  if( it == params.cend() )
+  {
+    std::ostringstream os;
+    os << k.FullName( Index, std::numeric_limits<std::size_t>::max() ) << " not found";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  const Param &p{ it->second };
+  if( Index >= p.size )
+  {
+    std::ostringstream os;
+    os << k.FullName( Index, p.size ) << " not found - only " << p.size << " elements";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  return Base::Column( p.GetOffset( Index, Param::Type::All ) );
+}
+
+template <typename T>
+JackBootColumn<T> Model<T>::ColumnFrozen( const Param::Key &k, std::size_t Index )
+{
+  Params::const_iterator it = params.FindPromiscuous( k );
+  if( it == params.cend() )
+  {
+    std::ostringstream os;
+    os << k.FullName( Index, std::numeric_limits<std::size_t>::max() ) << " not found";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  const Param &p{ it->second };
+  if( Index >= p.size )
+  {
+    std::ostringstream os;
+    os << k.FullName( Index, p.size ) << " not found - only " << p.size << " elements";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  return Base::ColumnFrozen( p.GetOffset( Index, Param::Type::All ) );
+}
+
 template <typename T>
 UniqueNameSet Model<T>::GetStatColumnNames() const
 {
@@ -3347,238 +3349,6 @@ void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedP
       vResult[p.idx + i] = constFile[p.src.File](idx, SrcIdx + i);
   }
 }
-
-// Make a covariance matrix estimate of \Sigma_{\bar{\vb{x}}}, i.e. error of the mean
-// From what is already a bootstrap replica, and therefore only the central replica
-/*template <typename T>
-void DataSet<T>::MakeCovarFromBootstrap( SS ss, Matrix<T> &Covar ) const
-{
-  Covar.resize( Extent, Extent );
-  for( int i = 0; i < Extent; ++i )
-    for( int j = 0; j <= i; ++j )
-      Covar( i, j ) = 0;
-  VectorView<T> Data;
-  Vector<T> z( Extent );
-  const Matrix<T> &m{ Cache( ss ) };
-  for( int replica = 0; replica < m.size1; ++replica )
-  {
-    Data.MapRow( m, replica );
-    for( int i = 0; i < Extent; ++i )
-      z[i] = Data[i] - vCentral[i];
-    for( int i = 0; i < Extent; ++i )
-      for( int j = 0; j <= i; ++j )
-        Covar( i, j ) += z[i] * z[j];
-  }
-  const T Norm{ static_cast<T>( 1 ) / static_cast<T>( m.size1 ) };
-  for( int i = 0; i < Extent; ++i )
-    for( int j = 0; j <= i; ++j )
-    {
-      const T z{ Covar( i, j ) * Norm };
-      Covar( i, j ) = z;
-      if( i != j )
-        Covar( j, i ) = z;
-    }
-}
-
-template <typename T>
-void DataSet<T>::MakeVarFromBootstrap( SS ss, Vector<T> &Var ) const
-{
-  Var.resize( Extent );
-  for( int i = 0; i < Extent; ++i )
-    Var[i] = 0;
-  VectorView<T> Data;
-  Vector<T> z( Extent );
-  const Matrix<T> &m{ Cache( ss ) };
-  for( int replica = 0; replica < m.size1; ++replica )
-  {
-    Data.MapRow( m, replica );
-    for( int i = 0; i < Extent; ++i )
-      z[i] = Data[i] - vCentral[i];
-    for( int i = 0; i < Extent; ++i )
-      Var[i] += Squared( z[i] );
-  }
-  const T Norm{ static_cast<T>( 1 ) / static_cast<T>( m.size1 ) };
-  for( int i = 0; i < Extent; ++i )
-    Var[i] *= Norm;
-}
-
-// Make a covariance matrix estimate of \Sigma_{\bar{\vb{x}}}, i.e. error of the mean
-// From the underlying raw/(re)binned data (without bootstrapping)
-template <typename T>
-void DataSet<T>::MakeCovarFromNonBootstrap( int idx, SS ss, Matrix<T> &Covar ) const
-{
-  VectorView<T> Mean;
-  VectorView<fint> Replace;
-  if( idx == Fold<T>::idxCentral )
-  {
-    // Central replica - no replacement
-    Mean = vCentral;
-    Replace = RandomCentral( ss );
-  }
-  else
-  {
-    // bootstrap replica
-    Mean.MapRow( mBoot, idx );
-    Replace.MapRow( RandomNumbers( ss ), idx );
-  }
-
-  Covar.resize( Extent, Extent );
-  for( int i = 0; i < Extent; ++i )
-    for( int j = 0; j <= i; ++j )
-      Covar( i, j ) = 0;
-  VectorView<T> Data;
-  Vector<T> z( Extent );
-  const Matrix<T> &m{ Cache( ss ) };
-  for( int replica = 0; replica < m.size1; ++replica )
-  {
-    Data.MapRow( m, Replace[replica] );
-    for( int i = 0; i < Extent; ++i )
-      z[i] = Data[i] - Mean[i];
-    for( int i = 0; i < Extent; ++i )
-      for( int j = 0; j <= i; ++j )
-        Covar( i, j ) += z[i] * z[j];
-  }
-  const T Norm{ static_cast<T>( 1 ) / ( static_cast<T>( m.size1 - 1 ) * static_cast<T>( m.size1 ) ) };
-  for( int i = 0; i < Extent; ++i )
-    for( int j = 0; j <= i; ++j )
-    {
-      const T z{ Covar( i, j ) * Norm };
-      Covar( i, j ) = z;
-      if( i != j )
-        Covar( j, i ) = z;
-    }
-}
-
-template <typename T>
-void DataSet<T>::MakeVarFromNonBootstrap( int idx, SS ss, Vector<T> &Var ) const
-{
-  VectorView<T> Mean;
-  VectorView<fint> Replace;
-  if( idx == Fold<T>::idxCentral )
-  {
-    // Central replica - no replacement
-    Mean = vCentral;
-    Replace = RandomCentral( ss );
-  }
-  else
-  {
-    // bootstrap replica
-    Mean.MapRow( mBoot, idx );
-    Replace.MapRow( RandomNumbers( ss ), idx );
-  }
-
-  Var.resize( Extent );
-  for( int i = 0; i < Extent; ++i )
-    Var[i] = 0;
-  VectorView<T> Data;
-  Vector<T> z( Extent );
-  const Matrix<T> &m{ Cache( ss ) };
-  for( int replica = 0; replica < m.size1; ++replica )
-  {
-    Data.MapRow( m, Replace[replica] );
-    for( int i = 0; i < Extent; ++i )
-      z[i] = Data[i] - Mean[i];
-    for( int i = 0; i < Extent; ++i )
-      Var[i] += Squared( z[i] );
-  }
-  const T Norm{ static_cast<T>( 1 ) / ( static_cast<T>( m.size1 - 1 ) * static_cast<T>( m.size1 ) ) };
-  for( int i = 0; i < Extent; ++i )
-    Var[i] *= Norm;
-}
-
-// Make a covariance matrix estimate of \Sigma_{\bar{\vb{x}}}, i.e. error of the mean
-// Call the appropriate one of the previous two functions, depending on what the data are
-template <typename T>
-void DataSet<T>::MakeCovariance( int idx, SS ss, Matrix<T> &Covar ) const
-{
-  if( ss == SampleSource::Bootstrap || ( ss == SampleSource::Raw && corr[0].bRawBootstrap ) )
-  {
-    if( idx != Fold<T>::idxCentral )
-      throw std::runtime_error( "Can only make covariance from bootstrap on central replica" );
-    MakeCovarFromBootstrap( ss, Covar );
-  }
-  else
-    MakeCovarFromNonBootstrap( idx, ss, Covar );
-}
-
-template <typename T>
-void DataSet<T>::MakeVariance( int idx, SS ss, Vector<T> &Var ) const
-{
-  if( ss == SampleSource::Bootstrap || ( ss == SampleSource::Raw && corr[0].bRawBootstrap ) )
-  {
-    if( idx != Fold<T>::idxCentral )
-      throw std::runtime_error( "Can only make variance from bootstrap on central replica" );
-    MakeVarFromBootstrap( ss, Var );
-  }
-  else
-    MakeVarFromNonBootstrap( idx, ss, Var );
-}
-
-// Make covariance matrix using a secondary bootstrap - Random numbers must be provided by caller
-// I.e. unfrozen covariance matrix
-template <typename T> void DataSet<T>::
-MakeCovariance( int idx, SS ss, Matrix<T> &Covar, const MatrixView<fint> &Random ) const
-{
-  if( ss == SampleSource::Bootstrap || ( ss == SampleSource::Raw && corr[0].bRawBootstrap ) )
-    throw std::runtime_error( "Can't rebootstrap a bootstrap" );
-  const Matrix<T> &m{ Cache( ss ) };
-  if( m.size1 != Random.size2() )
-  {
-    std::ostringstream os;
-    os << ss << " data have " << m.size1 << " samples, but random numbers expect "
-       << Random.size2() << " samples";
-    throw std::runtime_error( os.str().c_str() );
-  }
-  VectorView<T> Mean;
-  VectorView<fint> Replace;
-  if( idx == Fold<T>::idxCentral )
-  {
-    // Central replica - no replacement
-    Mean = vCentral;
-    Replace = RandomCentral( ss );
-  }
-  else
-  {
-    // bootstrap replica
-    Mean.MapRow( mBoot, idx );
-    Replace.MapRow( RandomNumbers( ss ), idx );
-  }
-
-  Covar.resize( Extent, Extent );
-  for( int i = 0; i < Extent; ++i )
-    for( int j = 0; j <= i; ++j )
-      Covar( i, j ) = 0;
-  VectorView<T> Data;
-  Vector<T> z( Extent );
-  const T InvBootLen{ static_cast<T>( 1 ) / static_cast<T>( m.size1 ) };
-  for( int replica = 0; replica < Random.size1(); ++replica )
-  {
-    // Perform the covariance (inner) bootstrap
-    for( int i = 0; i < Extent; ++i )
-      z[i] = 0;
-    for( int inner = 0; inner < m.size1; ++inner )
-    {
-      Data.MapRow( m, Replace[ Random( replica, inner ) ] );
-      for( int i = 0; i < Extent; ++i )
-        z[i] += 0;
-    }
-    // Now contribute this to the covariance
-    for( int i = 0; i < Extent; ++i )
-      z[i] = z[i] * InvBootLen - Mean[i];
-    for( int i = 0; i < Extent; ++i )
-      for( int j = 0; j <= i; ++j )
-        Covar( i, j ) += z[i] * z[j];
-  }
-  const T Norm{ static_cast<T>( 1 ) / static_cast<T>( Random.size1() ) };
-  for( int i = 0; i < Extent; ++i )
-    for( int j = 0; j <= i; ++j )
-    {
-      const T z{ Covar( i, j ) * Norm };
-      Covar( i, j ) = z;
-      if( i != j )
-        Covar( j, i ) = z;
-    }
-}*/
 
 // Write covariance matrix to file
 template <typename T>
