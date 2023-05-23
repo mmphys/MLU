@@ -546,7 +546,7 @@ bool FitRangeTest( int argc, char *argv[] )
     std::cerr << "Error: Unknown exception" << std::endl;
     bReturn = false;
   }
-  return true;
+  return bReturn;
 }
 
 // Data for reproduction of tables in section 8, pg 12
@@ -749,7 +749,7 @@ CKelly CompareMikeFit( 104, 128, MikeTable1 );
 int main(int argc, char *argv[])
 {
   //if( CK1.Test() && CK2.Test() && CK3.Test() && CK4.Test() && CompareMikeFit.Test() ) return EXIT_SUCCESS;
-  if( FitRangeTest( argc, argv ) ) return EXIT_SUCCESS;
+  //if( FitRangeTest( argc, argv ) ) return EXIT_SUCCESS;
   int iReturn = EXIT_SUCCESS;
   try
   {

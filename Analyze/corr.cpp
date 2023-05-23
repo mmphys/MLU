@@ -168,7 +168,6 @@ int main(int argc, const char *argv[])
             std::vector<std::string> myFileList;
             out.BootstrapList.clear();
             out.BootstrapList.emplace_back( FileName );
-            int BinSize2{ 0 };
             if( !f.Conjugate )
               myFileList = in.FileList;
             else
@@ -189,7 +188,6 @@ int main(int argc, const char *argv[])
               ConjFileName.append( Common::Period );
               ConjFileName.append( in.Name_.Ext );
               SC in2{ ConjFileName, "+ ", &OpNames };
-              BinSize2 = in2.binSize;
               in.IsCompatible( in2 );
               const std::size_t FSize { in .FileList.size() };
               const std::size_t FSize2{ in2.FileList.size() };

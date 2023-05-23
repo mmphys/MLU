@@ -257,7 +257,7 @@ public:
   inline JackBootColumn<T> ColumnFrozen( std::size_t column, int idxJackBoot = 0 ) const
   {
     ValidateJackBoot( idxJackBoot );
-    return JackBootColumn<T>( Data[idxJackBoot]( idxCentral, column ) );
+    return JackBootColumn<T>( Data[idxJackBoot]( JackBoot<T>::idxCentral, column ) );
   }
   inline JackBootColumn<T> ColumnFrozen( int column, int idxJackBoot = 0 ) const
   {
@@ -265,6 +265,14 @@ public:
   }
   inline       T & operator()( std::size_t i, std::size_t j )       { return Data[0]( i, j ); }
   inline const T & operator()( std::size_t i, std::size_t j ) const { return Data[0]( i, j ); }
+  inline       T & operator()(         int i, std::size_t j )
+  { return Data[0]( static_cast<std::size_t>( i ), j ); }
+  inline const T & operator()(         int i, std::size_t j ) const
+  { return Data[0]( static_cast<std::size_t>( i ), j ); }
+  inline       T & operator()(         int i,         int j )
+  { return Data[0]( static_cast<std::size_t>( i ), static_cast<std::size_t>( j ) ); }
+  inline const T & operator()(         int i,         int j ) const
+  { return Data[0]( static_cast<std::size_t>( i ), static_cast<std::size_t>( j ) ); }
   inline const JackBoot<T> &getData( int idxJackBoot = 0 ) const
   {
     ValidateJackBoot( idxJackBoot );

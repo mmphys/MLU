@@ -217,7 +217,7 @@ void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedP
     const Param &param{ GetConstantParam( p.src ) };
     std::size_t SrcIdx{ param.GetOffset( 0, Param::Type::All ) };
     for( std::size_t i = 0; i < p.Count; ++i )
-      vResult[p.idx + i] = constFile[p.src.File](idx, SrcIdx + i);
+      vResult[p.idx + i] = constFile[p.src.File](static_cast<std::size_t>( idx ), SrcIdx + i);
   }
 }
 
