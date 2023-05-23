@@ -260,7 +260,7 @@ void ZVRCommon::Make( std::string &FileName )
   SSInfo Snk( EFit, OpNames[fna.op[1]], MP( fna.Meson[1], fna.MesonP[1] ), fna.BaseShortParts[1] );
   SSInfo Src( EFit, OpNames[fna.op[0]], MP( fna.Meson[0], fna.MesonP[0] ), fna.BaseShortParts[2] );
   fna.BaseShortParts.resize( 1 );
-  Make( fna, FileNameSuffix, Snk, Src );
+  ZVRMake( fna, FileNameSuffix, Snk, Src );
 }
 
 ZVMaker::ZVMaker( const std::string &TypeParams, const Common::CommandLine &cl ) : ZVRCommon( cl )
@@ -269,8 +269,8 @@ ZVMaker::ZVMaker( const std::string &TypeParams, const Common::CommandLine &cl )
     throw std::runtime_error( "ZVMaker does not recognise any parameters: " + TypeParams );
 }
 
-void ZVMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                    const SSInfo &Snk, const SSInfo &Src )
+void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+                       const SSInfo &Snk, const SSInfo &Src )
 {
   // Complain about errors
   {
@@ -360,8 +360,8 @@ RMaker::RMaker( const std::string &TypeParams, const Common::CommandLine &cl )
   ZVmi.Read( TypeParams, LoadFilePrefix );
 }
 
-void RMaker::Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                   const SSInfo &Snk, const SSInfo &Src )
+void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+                      const SSInfo &Snk, const SSInfo &Src )
 {
   // Make sure I have the model for Z_V already loaded
   Model &ZVModelSnk{ ZVmi( Snk.q, LoadFilePrefix ) };

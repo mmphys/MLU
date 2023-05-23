@@ -109,4 +109,5 @@ int main(int argc, char *argv[])
     std::cout << "Compare multiple Grid gauge fields, report norm2(fn - f1)\n"
                  "Arguments are the gauge-field filenames, all of which are compared to first" << std::endl;
   }
+  return iReturn;
 }

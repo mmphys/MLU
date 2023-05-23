@@ -210,8 +210,8 @@ protected:
     AppendOp( s, Snk );
     AppendOp( s, Src );
   }
-  virtual void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-                     const SSInfo &Snk, const SSInfo &Src ) = 0;
+  virtual void ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+                        const SSInfo &Snk, const SSInfo &Src ) = 0;
 public:
   void Make( std::string &sFileName ) override;
   ZVRCommon( const Common::CommandLine &cl ) : Maker( cl ) {}
@@ -221,8 +221,8 @@ public:
 class ZVMaker : public ZVRCommon
 {
 protected:
-  void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
-             const SSInfo &Snk, const SSInfo &Src ) override;
+  void ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+                const SSInfo &Snk, const SSInfo &Src ) override;
 public:
   ZVMaker( const std::string &TypeParams, const Common::CommandLine &cl );
 };
@@ -233,7 +233,7 @@ class RMaker : public ZVRCommon
 protected:
   const bool bAltR3;
   ZVModelMap ZVmi;
-  void Make( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+  void ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
              const SSInfo &Snk, const SSInfo &Src ) override;
 public:
   RMaker( const std::string &TypeParams, const Common::CommandLine &cl );
