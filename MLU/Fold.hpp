@@ -55,4 +55,4 @@ public:
 };
 
 END_COMMON_NAMESPACE
-#endif // MLU_Fold
+#endif // MLU_Fold_hpp

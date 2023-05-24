@@ -37,6 +37,7 @@
 // Any useful values should be exposed as functions
 
 #include <MLUconfig.h>
+#include <MLU/JackBoot.hpp>
 
 extern "C" const char * MLUVersionInfoHuman()
 {
@@ -552,6 +553,11 @@ std::string PreferSeed( const std::string &sFilename, SeedType NewSeed )
   if( FileExists( New ) )
     return New;
   return sFilename;
+}
+
+std::string PreferSeed( const std::string &sFilename )
+{
+  return PreferSeed( sFilename, RandomCache::DefaultSeed() );
 }
 
 // If present, remove Token from a string. Return true if removed

@@ -55,6 +55,7 @@ MLU_GSLVecMat_hpp
 extern const double NaN;
 
 using fint = std::uint_fast32_t; // type for random numbers
+using SeedType = fint; // TODO: Merge all occurences into a single type
 
 /// Test whether a type is complex. Provide underlying Real type
 template<typename T> struct is_complex                     : public std::false_type{ using Real=T; };

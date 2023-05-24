@@ -37,7 +37,6 @@
 
 MLU_JackBoot_hpp
 
-using SeedType = fint; // TODO: Merge all occurences into a single type
 static constexpr SeedType SeedWildcard{};
 
 extern const std::string s_C;

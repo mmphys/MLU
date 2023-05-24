@@ -31,6 +31,7 @@
 #define MLU_Sample_hpp
 
 #include <MLU/Utility.hpp>
+#include <MLU/JackBoot.hpp>
 
 BEGIN_COMMON_NAMESPACE
 
@@ -394,4 +395,4 @@ using SampleC = Sample<std::complex<double>>;
 using SampleD = Sample<double>;
 
 END_COMMON_NAMESPACE
-#endif // MLU_Sample
+#endif // MLU_Sample_hpp

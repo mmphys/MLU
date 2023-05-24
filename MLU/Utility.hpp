@@ -33,8 +33,9 @@
 #include <MLUconfig.h>
 #include <MLU/FitRange.hpp>
 #include <MLU/GSLVecMat.hpp>
-#include <MLU/JackBoot.hpp>
+#include <MLU/HDF5.hpp>
 #include <MLU/Param.hpp>
+#include <MLU/Posix.hpp>
 
 // std c++
 #include <array>
@@ -561,7 +562,8 @@ std::string ExistingFilename( const std::string &Base, const std::string &Type, 
 /// Find existing file with specified Seed, but fall back to another seed if missing
 std::string ExistingAnySeed( const std::string &sFilename );
 /// Override Seed in filename to specified seed (if it exists)
-std::string PreferSeed( const std::string &sFilename, SeedType NewSeed = RandomCache::DefaultSeed() );
+std::string PreferSeed( const std::string &sFilename, SeedType NewSeed );
+std::string PreferSeed( const std::string &sFilename ); // Uses default seed
 
 // If present, remove Token from a string. Return true if removed
 bool ExtractToken( std::string &Prefix, const std::string &Token );
