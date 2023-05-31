@@ -47,6 +47,8 @@ struct DataSet
 {
   using SS = SampleSource;
   using ConstMap = std::map<Param::Key, ConstantSource, Param::Key::Less>;
+  using FoldPtr = std::unique_ptr<Sample<T>>;
+  using ModelPtr = std::unique_ptr<Model<T>>;
   struct FixedParam
   {
     ConstantSource  src;   // Where to get values from
@@ -57,10 +59,11 @@ struct DataSet
   int NSamples;   // Number of samples we are using. These are guaranteed to exist
   int MaxSamples; // Maximum number of samples available. Guaranteed to exist. >= NSamples.
   int Extent = 0; // Number of data points in our fit (i.e. total number of elements in FitTimes)
-  std::vector<Fold<T>>          corr;     // Correlator files
+  std::vector<FoldPtr>  corr;     // Correlator files
+  std::vector<ModelPtr> constFile;// Constant files, i.e. model results from previous fits
   std::vector<std::vector<int>> FitTimes; // The actual timeslices we are fitting to in each correlator
   inline SeedType Seed() const
-  { return corr.empty() ? RandomCache::DefaultSeed() : corr[0].Seed(); }
+  { return corr.empty() ? RandomCache::DefaultSeed() : corr[0]->Seed(); }
   ConstMap constMap;
   std::vector<int> RebinSize; // Bin sizes if I've rebinned the raw data
   // Cached data for selected FitTimes
@@ -86,19 +89,34 @@ protected:
   std::array<std::vector<fint>, 2> RandomCentralBuf; // No replacement. Saves having to rebuild continually
   std::array< MatrixView<fint>, 2> RandomViews;
   std::array<std::vector<fint>, 2> RandomBuffer;
-  std::vector<Model<T>> constFile;// Each of the constant files (i.e. results from previous fits) I've loaded
   void AddConstant( const Param::Key &Key, std::size_t File );
   void SetValidatedFitTimes( std::vector<std::vector<int>> &&FitTimes );
   /// Cache the fit data, i.e. JackBoot[0]. Parameters describe the covariance source
   void CacheRawData();
 public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
+  inline Sample<T> &front()
+  {
+    if( !corr.empty() )
+      return *corr[0];
+    if( !constFile.empty() )
+      return *constFile[0];
+    throw std::runtime_error( "Can't access front() of empty DataSet" );
+  }
+  inline const Sample<T> &front() const { return const_cast<DataSet<T> *>( this )->front(); }
   inline bool empty() const { return corr.empty() && constFile.empty(); }
   void clear();
   const Param &GetConstantParam( const ConstantSource &cs ) const;
   int  LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags = COMPAT_DEFAULT,
                        const char * PrintPrefix = "  " );
-  void LoadModel     ( Common::FileNameAtt &&FileAtt, const std::string &Args );
+  /// Load a model file
+  void LoadModel( Common::FileNameAtt &&FileAtt,
+                  const char *pszPrintPrefix = nullptr,
+                  unsigned int CompareFlags = COMPAT_DISABLE_BASE | COMPAT_DISABLE_NT );
+  /// Load a model and create parameters for selected entries (all if Args empty)
+  void LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Args,
+                  const char *pszPrintPrefix = nullptr,
+                  unsigned int CompareFlags = COMPAT_DISABLE_BASE | COMPAT_DISABLE_NT );
   std::vector<std::string> GetModelFilenames() const;
   void SortOpNames( std::vector<std::string> &OpNames );
   void Rebin( const std::vector<int> &RebinSize );

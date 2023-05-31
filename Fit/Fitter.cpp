@@ -35,6 +35,9 @@
 #include <omp.h>
 #endif
 
+// Uncomment the next line to disable Minuit2 (for testing)
+//#undef HAVE_MINUIT2
+
 Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
                 std::vector<Model::Args> &&ModelArgs_, const std::vector<std::string> &opNames_,
                 CovarParams &&cp_ )
@@ -57,7 +60,8 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     MonotonicUpperLimit{ cl.SwitchValue<scalar>("maxE") },
     ErrorDigits{ cl.SwitchValue<int>("errdig") },
     ds{ std::move( ds_ ) },
-    NumFiles{ static_cast<int>( ds.corr.size() ) },
+    bFitCorr{ ModelArgs_.size() == ds.corr.size() },
+    NumFiles{ static_cast<int>( bFitCorr ? ds.corr.size() : ds.constFile.size() ) },
     OpNames{ opNames_ },
     ModelArgs{ ModelArgs_ }, // Save the original model arguments
     model{ CreateModels( cl, ModelArgs ) }, // Pass in a copy of model arguments
@@ -69,7 +73,6 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
     OutputModel( ds.NSamples, mp, Common::DefaultModelStats,
                  cp.CovarSampleSize(), cp.bFreeze, cp.Source, cp.RebinSize, cp.CovarNumBoot )
 {
-  assert( ds.corr.size() == NumFiles && "Number of files extremely large" );
   /*assert( NumModelParams == NumFixed + NumVariable && "NumModelParams doesn't match fixed and variable" );
   assert( NumModelParams == NumExponents * NumPerExp + NumOneOff && "NumModelParams doesn't match NumPerExp and NumOneOff" );*/
   if( MinDof < 0 )
@@ -98,11 +101,11 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
   // Load the constants into the fixed portion of the guess
   ds.GetFixed( Fold::idxCentral, Guess, ParamFixed );
   //
-  for( const Fold &f : ds.corr )
-    OutputModel.FileList.emplace_back( f.Name_.Filename );
+  for( const std::unique_ptr<Sample> &f : ds.corr )
+    OutputModel.FileList.emplace_back( f->Name_.Filename );
   for( const std::string &f : ds.GetModelFilenames() )
     OutputModel.FileList.emplace_back( f );
-  OutputModel.CopyAttributes( ds.corr[0] );
+  OutputModel.CopyAttributes( FitFile(0) );
   OutputModel.NumExponents = NumExponents;
   OutputModel.ModelType = GetModelTypes();
   OutputModel.ModelArgs = GetModelArgs();
@@ -113,12 +116,13 @@ std::vector<ModelPtr> Fitter::CreateModels( const Common::CommandLine &cl,
                                             std::vector<Model::Args> ModelArgs )
 {
   Model::CreateParams cp( OpNames, cl );
-  const int NumModels{ static_cast<int>( ds.corr.size() ) };
+  const int NumModels{ static_cast<int>( ModelArgs.size() ) };
+  if( NumModels != ds.corr.size() && NumModels != ds.constFile.size() )
+    throw std::runtime_error( "Fitter has " + std::to_string( NumModels ) + " models, but "
+                             + std::to_string( ds.corr.size() ) + " correlators and "
+                             + std::to_string( ds.constFile.size() ) + " models" );
   if( NumModels == 0 )
-    throw std::runtime_error( "Can't construct a ModelSet for an empty data set" );
-  if( NumModels != ModelArgs.size() )
-    throw std::runtime_error( "ModelSet for " + std::to_string( NumModels ) + " correrlators, but "
-                             + std::to_string( ModelArgs.size() ) + " arguments" );
+    throw std::runtime_error( "Can't construct a Fitter for an empty data set" );
   // Create this model
   std::vector<ModelPtr> model;
   model.reserve( ModelArgs.size() );
@@ -129,7 +133,7 @@ std::vector<ModelPtr> Fitter::CreateModels( const Common::CommandLine &cl,
   std::cout << Common::NewLine;
   for( int i = 0; i < ModelArgs.size(); ++i )
   {
-    cp.pCorr = &ds.corr[i];
+    cp.pCorr = bFitCorr ? ds.corr[i].get() : ds.constFile[i].get();
     model.emplace_back( Model::MakeModel( cp, ModelArgs[i] ) );
     if( !ModelArgs[i].empty() )
     {
@@ -335,6 +339,37 @@ void Fitter::MakeGuess()
         throw std::runtime_error( "Bad model: unable to guess all parameters" );
       }
   }
+}
+
+// This should be the only place which knows about different fitters
+
+Fitter * MakeFitterGSL( const std::string &FitterArgs, const Common::CommandLine &cl,
+                        const DataSet &ds, std::vector<Model::Args> &&ModelArgs,
+                        const std::vector<std::string> &opNames, CovarParams &&cp );
+#ifdef HAVE_MINUIT2
+Fitter * MakeFitterMinuit2( const std::string &FitterArgs, const Common::CommandLine &cl,
+                            const DataSet &ds, std::vector<Model::Args> &&ModelArgs,
+                            const std::vector<std::string> &opNames, CovarParams &&cp );
+#endif
+
+Fitter * Fitter::Make( const Common::CommandLine &cl,
+                       const DataSet &ds, std::vector<Model::Args> &&ModelArgs,
+                       const std::vector<std::string> &opNames, CovarParams &&cp )
+{
+  Fitter * f;
+  std::string FitterArgs{ cl.SwitchValue<std::string>( "fitter" ) };
+  std::string FitterType{ Common::ExtractToSeparator( FitterArgs ) };
+  if( Common::EqualIgnoreCase( FitterType, "GSL" ) )
+    f = MakeFitterGSL( FitterArgs, cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) );
+#ifdef HAVE_MINUIT2
+  else if( Common::EqualIgnoreCase( FitterType, "Minuit2" ) )
+    f = MakeFitterMinuit2( FitterArgs, cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) );
+#endif
+  else
+    throw std::runtime_error( "Unrecognised fitter: " + FitterType );
+  if( !f )
+    throw std::runtime_error( "Unrecognised " + FitterType + " fitter options: " + FitterArgs );
+  return f;
 }
 
 void Fitter::SayNumThreads( std::ostream &os )
@@ -634,20 +669,6 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
                   Common::MakeFilename( sModelBase, Common::sModel + "_td", Seed, TEXT_EXT ) );
     if( SummaryLevel >= 2 )
       OutputModel.WriteSummary( Common::ReplaceExtension( ModelFileName, TEXT_EXT ) );
-    for( int f = 0; f < NumFiles; f++ )
-    {
-      const int snk{ ds.corr[f].Name_.op[idxSnk] };
-      const int src{ ds.corr[f].Name_.op[idxSrc] };
-      std::string sSink{ OpNames[snk] };
-      std::size_t pos = sSink.find_last_of( '_' );
-      if( pos != std::string::npos )
-        sSink.resize( pos );
-      std::string sSrc{ OpNames[src] };
-      pos = sSrc.find_last_of( '_' );
-      if( pos != std::string::npos )
-        sSrc.resize( pos );
-      const std::string SummaryBase{ OutBaseName + sSink + '_' + sSrc };
-    }
   }
   return bOK;
 }

@@ -59,6 +59,7 @@ public:
   const int ErrorDigits;
   // More complex command-line options
   const DataSet &ds;
+  const bool bFitCorr; // true if we are fitting correlators, false = fitting models
   const int NumFiles; // Number of correlator files in the dataset
   const std::vector<std::string> &OpNames;
   const std::vector<Model::Args> ModelArgs;
@@ -91,6 +92,13 @@ protected:
   virtual FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel ) = 0;
 
 public:
+  const Sample &FitFile( std::size_t i ) const { return bFitCorr ? *ds.corr[i].get()
+                                                                 : *ds.constFile[i].get(); }
+        Sample &FitFile( std::size_t i )       { return bFitCorr ? *ds.corr[i].get()
+                                                                 : *ds.constFile[i].get(); }
+  static Fitter * Make( const Common::CommandLine &cl, const DataSet &ds,
+                        std::vector<Model::Args> &&ModelArgs, const std::vector<std::string> &opNames,
+                        CovarParams &&cp );
   static void SayNumThreads( std::ostream &os );
   bool Dump( int idx ) const;
   void Dump( int idx, const std::string &Name, const Matrix &m ) const;

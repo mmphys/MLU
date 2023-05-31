@@ -4,7 +4,7 @@
 
  Source file: MultiFit.cpp
  
- Copyright (C) 2019-2022
+ Copyright (C) 2019-2023
  
  Author: Michael Marshall <Mike@lqcd.me>
 
@@ -30,42 +30,8 @@
 #include <MLU/DebugInfo.hpp>
 #include <chrono>
 
-// Uncomment the next line to disable Minuit2 (for testing)
-//#undef HAVE_MINUIT2
-
 // Indices for operators in correlator names
 const char * pSrcSnk[2] = { "src", "snk" };
-
-// This should be the only place which knows about different fitters
-
-Fitter * MakeFitterGSL( const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                        std::vector<Model::Args> &&ModelArgs, const std::vector<std::string> &opNames,
-                        CovarParams &&cp );
-#ifdef HAVE_MINUIT2
-Fitter * MakeFitterMinuit2(const std::string &FitterArgs, const Common::CommandLine &cl, const DataSet &ds,
-                           std::vector<Model::Args> &&ModelArgs, const std::vector<std::string> &opNames,
-                           CovarParams &&cp );
-#endif
-
-Fitter * MakeFitter( const Common::CommandLine &cl, const DataSet &ds,
-                     std::vector<Model::Args> &&ModelArgs, const std::vector<std::string> &opNames,
-                     CovarParams &&cp )
-{
-  Fitter * f;
-  std::string FitterArgs{ cl.SwitchValue<std::string>( "fitter" ) };
-  std::string FitterType{ Common::ExtractToSeparator( FitterArgs ) };
-  if( Common::EqualIgnoreCase( FitterType, "GSL" ) )
-    f = MakeFitterGSL( FitterArgs, cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) );
-#ifdef HAVE_MINUIT2
-  else if( Common::EqualIgnoreCase( FitterType, "Minuit2" ) )
-    f = MakeFitterMinuit2( FitterArgs, cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) );
-#endif
-  else
-    throw std::runtime_error( "Unrecognised fitter: " + FitterType );
-  if( !f )
-    throw std::runtime_error( "Unrecognised " + FitterType + " fitter options: " + FitterArgs );
-  return f;
-}
 
 int main(int argc, const char *argv[])
 {
@@ -232,11 +198,11 @@ int main(int argc, const char *argv[])
       // Check whether each fit range is valid for each model using it
       for( std::size_t i = 0; i < ds.corr.size(); ++i )
       {
-        if( !fitRanges[ModelFitRange[i]].Validate( ds.corr[i].Nt() ) )
+        if( !fitRanges[ModelFitRange[i]].Validate( ds.corr[i]->Nt() ) )
         {
           std::stringstream oss;
           oss << "Fit range " << fitRanges[ModelFitRange[i]]
-              << " not valid for correlator " << ds.corr[i].Name_.Filename;
+              << " not valid for correlator " << ds.corr[i]->Name_.Filename;
           throw std::runtime_error( oss.str().c_str() );
         }
       }
@@ -247,7 +213,7 @@ int main(int argc, const char *argv[])
         std::cout << "all ";
       else
         std::cout << "first " << ds.NSamples << " of ";
-      std::cout << ds.MaxSamples << Common::Space << ds.corr[0].getData().SeedTypeString()
+      std::cout << ds.MaxSamples << Common::Space << ds.corr[0]->getData().SeedTypeString()
                 << " replicas";
       if( ds.NSamples != ds.MaxSamples )
         std::cout << " (all " << ds.MaxSamples << " for var/covar)";
@@ -272,12 +238,12 @@ int main(int argc, const char *argv[])
       {
         for( std::size_t i = 0; i < ds.corr.size(); ++i )
         {
-          const std::size_t ThisSize{ ds.corr[i].Name_.op.size() };
+          const std::size_t ThisSize{ ds.corr[i]->Name_.op.size() };
           for( std::size_t j = ThisSize; j; )
           {
             if( i || j != ThisSize )
               sOpNameConcat.append( Common::Underscore );
-            sOpNameConcat.append( OpName[ds.corr[i].Name_.op[--j]] );
+            sOpNameConcat.append( OpName[ds.corr[i]->Name_.op[--j]] );
           }
         }
       }
@@ -285,7 +251,7 @@ int main(int argc, const char *argv[])
       // Now make base filenames for output
       // If the output base is given, but doesn't end in '/', then it already contains the correct name
       if( outBaseFileName.empty() || outBaseFileName.back() == '/' )
-        outBaseFileName.append( ds.corr[0].Name_.Base ); // Very simplistic, but better is hard to automate
+        outBaseFileName.append( ds.corr[0]->Name_.Base ); // Very simplistic, but better is hard to automate
       outBaseFileName.append( 1, '.' );
       outBaseFileName.append( doCorr ? "corr" : "uncorr" );
       const std::string sSummaryBase{ outBaseFileName + Common::Period + sOpNameConcat };
@@ -293,7 +259,7 @@ int main(int argc, const char *argv[])
       const std::size_t outBaseFileNameLen{ outBaseFileName.size() };
 
       // All the models are loaded
-      std::unique_ptr<Fitter> m{ MakeFitter( cl, ds, std::move( ModelArgs ), OpName, std::move( cp ) ) };
+      std::unique_ptr<Fitter> m{ Fitter::Make( cl, ds, std::move( ModelArgs ), OpName, std::move( cp ) ) };
       std::size_t CountTotal{ 0 };
       std::size_t CountOK{ 0 };
       bool bAllParamsResolved{ true };

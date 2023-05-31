@@ -1,13 +1,13 @@
 /*************************************************************************************
  
- Fit to a constant
+ Chiral continuum fit
  
- Source file: ModelConstant.hpp
+ Source file: Continuum.hpp
  
- Copyright (C) 2019-2022
+ Copyright (C) 2023
  
  Author: Michael Marshall <Mike@lqcd.me>
-
+ 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -26,26 +26,9 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef ModelConstant_hpp
-#define ModelConstant_hpp
+#ifndef Continuum_hpp
+#define Continuum_hpp
 
-#include "ModelCommon.hpp"
+#include "MultiFit.hpp"
 
-struct ModelConstant : Model, Object
-{
-  ModelConstant( const Model::CreateParams &cp, Model::Args &Args, int NumExponents );
-  void AddParameters( Params &mp ) override;
-  void SaveParameters( const Params &mp ) override;
-  std::string Description() const override;
-  void Guessable( ParamsPairs &PP ) const override;
-  std::size_t Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
-                     const VectorView &FitData, std::vector<int> FitTimes,
-                     bool bLastChance ) const override;
-  ModelType Type() const override;
-  scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
-  double Derivative( int t, int p ) const override;
-protected:
-  ModelParam Constant;
-};
-
-#endif // ModelConstant_hpp
+#endif // Continuum_hpp

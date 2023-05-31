@@ -53,7 +53,7 @@ void DataSet<T>::SetFitTimes( const std::vector<std::vector<int>> &fitTimes_ )
     if( !ft[i].empty() )
     {
       std::sort( ft[i].begin(), ft[i].end() );
-      if( ft[i][0] < 0 || ft[i].back() >= corr[i].Nt()
+      if( ft[i][0] < 0 || ft[i].back() >= corr[i]->Nt()
          || std::adjacent_find( ft[i].begin(), ft[i].end() ) != ft[i].end() )
         throw std::runtime_error( "FitTimes[" + std::to_string( i ) + "]=[" + std::to_string( ft[i][0] )
                                  + "..." + std::to_string( ft[i].back() ) + "] invalid" );
@@ -69,7 +69,7 @@ void DataSet<T>::SetFitTimes( int tMin, int tMax )
   std::vector<std::vector<int>> ft{ corr.size() };
   for( int i = 0; i < corr.size(); ++i )
   {
-    if( tMin < 0 || extent_ < 1 || tMax >= corr[i].Nt() )
+    if( tMin < 0 || extent_ < 1 || tMax >= corr[i]->Nt() )
       throw std::runtime_error("Fit range ["+std::to_string(tMin)+", "+std::to_string(tMax)+"] invalid");
     ft[i].reserve( extent_ );
     for( int j = tMin; j <= tMax; ++j )
@@ -146,7 +146,7 @@ void DataSet<T>::CacheRawData()
     int dst{ 0 };
     for( int f = 0; f < corr.size(); ++f )
     {
-      const JackBoot<T> &mSrc{ corr[f].getData() };
+      const JackBoot<T> &mSrc{ corr[f]->getData() };
       for( int t : FitTimes[f] )
         mFitData( idx, dst++ ) = mSrc( idx, t );
     }
@@ -159,7 +159,7 @@ void DataSet<T>::CacheRawData()
       int dst{ 0 };
       for( int f = 0; f < corr.size(); ++f )
       {
-        const Matrix<T> &mSrc{ corr[f].getBinned( 0 ) };
+        const Matrix<T> &mSrc{ corr[f]->getBinned( 0 ) };
         for( int t : FitTimes[f] )
           mBinned( idx, dst++ ) = mSrc( idx, t );
       }
@@ -173,7 +173,7 @@ void DataSet<T>::CacheRawData()
       int dst{ 0 };
       for( int f = 0; f < corr.size(); ++f )
       {
-        const Matrix<T> &mSrc{ corr[f].get( ss, idxJackBoot ) };
+        const Matrix<T> &mSrc{ corr[f]->get( ss, idxJackBoot ) };
         for( int t : FitTimes[f] )
           CovarBuffer( idx, dst++ ) = mSrc( idx, t );
       }
@@ -186,7 +186,7 @@ void DataSet<T>::CacheRawData()
       int dst{ 0 };
       for( int f = 0; f < corr.size(); ++f )
       {
-        const JackBoot<T> &mSrc{ corr[f].getData( idxJackBoot ) };
+        const JackBoot<T> &mSrc{ corr[f]->getData( idxJackBoot ) };
         for( int t : FitTimes[f] )
           mCovarCentralMean[dst++] = mSrc( idxMean, t );
       }
@@ -196,14 +196,14 @@ void DataSet<T>::CacheRawData()
       // For binned/raw data we create the mean from the data
       JackBoot<T>::MakeMean( mCovarCentralMean, CovarBuffer );
     }
-    JackBoot<T>::MakeCovar( mCovar, mCovarCentralMean, CovarBuffer, corr[0].Norm( ss ) );
+    JackBoot<T>::MakeCovar( mCovar, mCovarCentralMean, CovarBuffer, corr[0]->Norm( ss ) );
     CovarBuffer.clear();
   }
   else if( bCovarSrcData )
   {
     // Make correlation matrix from this data
     mCovarCentralMean = mFitData.GetCovarMean();
-    JackBoot<T>::MakeCovar( mCovar, mCovarCentralMean, mFitData.Replica, corr[0].Norm( ss ) );
+    JackBoot<T>::MakeCovar( mCovar, mCovarCentralMean, mFitData.Replica, corr[0]->Norm( ss ) );
   }
 }
 
@@ -217,7 +217,7 @@ void DataSet<T>::GetFixed( int idx, Vector<T> &vResult, const std::vector<FixedP
     const Param &param{ GetConstantParam( p.src ) };
     std::size_t SrcIdx{ param.GetOffset( 0, Param::Type::All ) };
     for( std::size_t i = 0; i < p.Count; ++i )
-      vResult[p.idx + i] = constFile[p.src.File](static_cast<std::size_t>( idx ), SrcIdx + i);
+      vResult[p.idx + i] = (*constFile[p.src.File])(static_cast<std::size_t>( idx ), SrcIdx + i);
   }
 }
 
@@ -236,7 +236,7 @@ void DataSet<T>::SaveMatrixFile( const Matrix<T> &m, const std::string &Type, co
   s << "# Matrix: " << Filename << "\n# Type: " << Type << "\n# Files: " << corr.size() << Common::NewLine;
   for( std::size_t f = 0; f < corr.size(); ++f )
   {
-    s << "# File" << f << ": " << corr[f].Name_.NameNoExt << "\n# Times" << f << ":";
+    s << "# File" << f << ": " << corr[f]->Name_.NameNoExt << "\n# Times" << f << ":";
     for( int t : FitTimes[f] )
       s << Common::Space << t;
     s << Common::NewLine;
@@ -299,8 +299,8 @@ void DataSet<T>::AddConstant( const Param::Key &Key, std::size_t File )
 template <typename T>
 const Param &DataSet<T>::GetConstantParam( const ConstantSource &cs ) const
 {
-  Params::const_iterator it{ constFile[cs.File].params.find( cs.pKey ) };
-  if( it == constFile[cs.File].params.cend() )
+  Params::const_iterator it{ constFile[cs.File]->params.find( cs.pKey ) };
+  if( it == constFile[cs.File]->params.cend() )
   {
     std::ostringstream os;
     os << "Constant not found: File " << cs.File << CommaSpace << cs.pKey;
@@ -317,43 +317,68 @@ int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int Comp
     throw std::runtime_error( "More than an integer's worth of correlators loaded!!??" );
   const int i{ static_cast<int>( corr.size() ) };
   corr.emplace_back();
-  corr[i].SetName( std::move( FileAtt ) );
-  corr[i].Read( PrintPrefix );
-  // See whether this correlator is compatible with prior correlators
-  if( i )
+  if( EqualIgnoreCase( FileAtt.Type, sModel ) )
+    corr[i].reset( new Model<T> );
+  else
+    corr[i].reset( new Fold<T> );
+  corr[i]->SetName( std::move( FileAtt ) );
+  corr[i]->Read( PrintPrefix );
+  // See whether this correlator is compatible with prior correlators / models
+  if( i == 0 && constFile.empty() )
   {
-    corr[0].IsCompatible( corr[i], &NSamples, CompareFlags );
-    if( MaxSamples > corr[i].NumSamples() )
-      MaxSamples = corr[i].NumSamples();
+    NSamples = corr[i]->NumSamples();
+    MaxSamples = NSamples;
   }
   else
   {
-    MaxSamples = corr[i].NumSamples();
-    if( NSamples == 0 || NSamples > MaxSamples )
-      NSamples = MaxSamples;
+    if( i == 0 )
+      CompareFlags |= Common::COMPAT_DISABLE_TYPE;
+    const Sample<T> &o{ i == 0 ? *constFile[0] : *corr[0] };
+    o.IsCompatible( *corr[i], &NSamples, CompareFlags );
+    if( MaxSamples > corr[i]->NumSamples() )
+      MaxSamples = corr[i]->NumSamples();
   }
   return i;
 }
 
 // Load a model file
 template <typename T>
-void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Args )
+void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const char *pszPrintPrefix,
+                            unsigned int CompareFlags )
 {
   // This is a pre-built model (i.e. the result of a previous fit)
   const std::size_t i{ constFile.size() };
-  constFile.emplace_back();
-  constFile[i].SetName( std::move( FileAtt ) );
-  constFile[i].Read( "  " );
-  // Keep track of minimum number of replicas across all files
-  if( NSamples == 0 )
-    NSamples = constFile[i].NumSamples();
-  else if( NSamples > constFile[i].NumSamples() )
-    NSamples = constFile[i].NumSamples();
-  // Now see which parameters we want to read from the model
+  constFile.emplace_back( new Model<T>{} );
+  constFile[i]->SetName( std::move( FileAtt ) );
+  constFile[i]->Read( pszPrintPrefix ? pszPrintPrefix : "  " );
+  // See whether it's compatible with what's gone before
+  if( i == 0 && corr.empty() )
+  {
+    NSamples = constFile[i]->NumSamples();
+    MaxSamples = NSamples;
+  }
+  else
+  {
+    if( i == 0 )
+      CompareFlags |= Common::COMPAT_DISABLE_TYPE;
+    const Sample<T> &o{ i == 0 ? *corr[0] : *constFile[0] };
+    o.IsCompatible( *constFile[i], &NSamples, CompareFlags );
+    if( MaxSamples > constFile[i]->NumSamples() )
+      MaxSamples = constFile[i]->NumSamples();
+  }
+}
+
+// Load a model and create parameters for selected entries (all if Args empty)
+template <typename T>
+void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Args,
+                            const char *pszPrintPrefix, unsigned int CompareFlags )
+{
+  const std::size_t i{ constFile.size() };
+  LoadModel( std::move( FileAtt ), pszPrintPrefix, CompareFlags );
   if( Args.find_first_not_of( Common::WhiteSpace ) == std::string::npos )
   {
     // Load every constant in this file
-    for( const Params::value_type &it : constFile[i].params )
+    for( const Params::value_type &it : constFile[i]->params )
       AddConstant( it.first, i );
   }
   else
@@ -366,8 +391,8 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
     {
       const Param::Key OldKey{ it.first };
       const Param::Key NewKey{ it.second };
-      Params::iterator itP{ constFile[i].params.find( OldKey ) };
-      if( itP == constFile[i].params.end() )
+      Params::iterator itP{ constFile[i]->params.find( OldKey ) };
+      if( itP == constFile[i]->params.end() )
       {
         std::ostringstream es;
         es << "Parameter " << OldKey << " not found";
@@ -382,8 +407,8 @@ template <typename T>
 std::vector<std::string> DataSet<T>::GetModelFilenames() const
 {
   std::vector<std::string> v;
-  for( const Model<T> &m : constFile )
-    v.emplace_back( m.Name_.Filename );
+  for( const ModelPtr &m : constFile )
+    v.emplace_back( m->Name_.Filename );
   return v;
 }
 
@@ -410,8 +435,8 @@ void DataSet<T>::SortOpNames( std::vector<std::string> &OpNames )
     }
     // Renumber the operators and save the sorted operator names
     for( auto &f : corr )
-      for( int i = 0; i < f.Name_.op.size(); ++i )
-        f.Name_.op[i] = SortIndex[f.Name_.op[i]];
+      for( int i = 0; i < f->Name_.op.size(); ++i )
+        f->Name_.op[i] = SortIndex[f->Name_.op[i]];
     OpNames = SortedNames;
   }
 }
@@ -419,10 +444,10 @@ void DataSet<T>::SortOpNames( std::vector<std::string> &OpNames )
 template <typename T>
 int DataSet<T>::NumSamples( SampleSource ss, int idxJackBoot ) const
 {
-  int NSB{ corr.empty() ? 0 : corr[0].NumSamples( ss, idxJackBoot ) };
+  int NSB{ corr.empty() ? 0 : corr[0]->NumSamples( ss, idxJackBoot ) };
   for( std::size_t i = 1; NSB && i < corr.size(); ++i )
   {
-    const int ThisNSB{ corr[i].NumSamples( ss, idxJackBoot ) };
+    const int ThisNSB{ corr[i]->NumSamples( ss, idxJackBoot ) };
     if( NSB > ThisNSB )
       NSB = ThisNSB;
   }
@@ -437,24 +462,24 @@ void DataSet<T>::Rebin( const std::vector<int> &NewSize )
   RebinSize.reserve( corr.size() );
   for( std::size_t i = 0; i < corr.size(); ++i )
   {
-    if( !corr[i].NumSamplesRaw() )
+    if( !corr[i]->NumSamplesRaw() )
     {
       std::ostringstream os;
-      os << "Raw samples unavailable rebinning corr " << i << CommaSpace << corr[i].Name_.Filename;
+      os << "Raw samples unavailable rebinning corr " << i << CommaSpace << corr[i]->Name_.Filename;
       throw std::runtime_error( os.str().c_str() );
     }
     // Rebin to the size specified (last bin size repeats to end).
     // bin size 0 => auto (i.e. all measurements on same config binned together)
     RebinSize.push_back( NewSize.empty() ? 0 : NewSize[i < NewSize.size() ? i : NewSize.size() - 1] );
     if( RebinSize.back() )
-      corr[i].BinFixed( RebinSize.back(), DestJackBoot );
+      corr[i]->BinFixed( RebinSize.back(), DestJackBoot );
     else
-      corr[i].BinAuto( DestJackBoot );
-    if( corr[i].NumSamplesBinned( DestJackBoot ) != corr[0].NumSamplesBinned( DestJackBoot ) )
+      corr[i]->BinAuto( DestJackBoot );
+    if( corr[i]->NumSamplesBinned( DestJackBoot ) != corr[0]->NumSamplesBinned( DestJackBoot ) )
     {
       std::ostringstream os;
-      os << "Rebinned corr " << i << " has " << corr[i].NumSamplesBinned( DestJackBoot )
-         << " samples, others have " << corr[0].NumSamplesBinned( DestJackBoot );
+      os << "Rebinned corr " << i << " has " << corr[i]->NumSamplesBinned( DestJackBoot )
+         << " samples, others have " << corr[0]->NumSamplesBinned( DestJackBoot );
       throw std::runtime_error( os.str().c_str() );
     }
   }

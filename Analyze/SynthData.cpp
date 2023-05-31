@@ -137,7 +137,7 @@ void Synth::Make( std::string Basename ) const
     out[f].resize( nBootSample, NtHalf );
     out[f].resizeRaw( nSample );
     out[f].resizeBinned( nSample );
-    out[f].NtUnfolded = Nt;
+    out[f].NtUnfolded_ = Nt;
     out[f].parity = MyParity;
     out[f].reality = Common::Reality::Real;
     out[f].sign = Common::Sign::Positive;

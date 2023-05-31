@@ -533,7 +533,7 @@ void MixedOp::LoadCorrelator( int idxSnk, int idxSrc, const std::string &InFileN
     Nt = Corr.Nt();
     if( NumSamples == 0 || NumSamples > Corr.NumSamples() )
       NumSamples = Corr.NumSamples();
-    CorrMixed.NtUnfolded = Corr.NtUnfolded;
+    CorrMixed.NtUnfolded_ = Corr.NtUnfolded();
     CorrMixed.parity = Corr.parity;
     CorrMixed.reality = Corr.reality;
     CorrMixed.sign = Corr.sign;
@@ -778,7 +778,7 @@ bool Debug()
     fOut.FileList.push_back( InPW );
     fOut.FileList.push_back( InWP );
     fOut.CopyAttributes( fPW );
-    fOut.NtUnfolded = fPW.NtUnfolded;
+    fOut.NtUnfolded_ = fPW.NtUnfolded();
     fOut.parity = fPW.parity;
     fOut.reality = fPW.reality;
     fOut.sign = fPW.sign;

@@ -46,11 +46,11 @@ struct ModelRatio : public Model3pt
   std::string Description() const override;
   void Guessable( ParamsPairs &PP ) const override;
   double Derivative( int t, int p ) const override;
-  ModelType Type() const override { return ModelType::R3; }
+  ModelType Type() const override;
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 
 protected:
-  const ModelType ChildType;
+  const eModelType ChildType;
   bool bRaw;
   std::vector<std::unique_ptr<Model2pt>> C2;
   // Derived parameters

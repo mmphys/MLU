@@ -10,9 +10,11 @@ PCMakeScriptOutDir
 #set -x
 
 declare -A aFormFactorMaxX
+declare -A aFormFactorMaxXZ
 declare -A aFormFactorYRange
 declare -A aFormFactorYRangeRaw
 aFormFactorMaxX=(F1M 2.2 C1 2.1 C2 2.1)
+aFormFactorMaxXZ=(C1 0.1 C2 0.1)
 aFormFactorYRange=(F1M 0.6:1.5 C1 0.6:1.3 C2 0.5:1.3)
 aFormFactorYRangeRaw=(F1M 0.4:1.45 C1 0.5:1.5 C2 0.3:1.5)
 
@@ -30,6 +32,7 @@ Fit2ptSeries="${series-disp old priorPW betterPW priorP betterP}"
 yRange=${yRange:-${aFormFactorYRange[$Ensemble]}}
 yRangeRaw=${yRangeRaw:-${aFormFactorYRangeRaw[$Ensemble]}}
 MaxX=${MaxX:-${aFormFactorMaxX[$Ensemble]}}
+MaxXZ=${MaxXZ:-${aFormFactorMaxXZ[$Ensemble]}}
 
 ###################################################
 # Make a plot of all four form factors - old version - various DeltaT
@@ -63,8 +66,14 @@ yAxisH=yAxis."_high"
 yAxisL=yAxis."_low"
 
 set title MyTitle.", $Ensemble (R".RatioNum.")"
-if( xAxis eq  "qSq" ) { xAxisLabel="q^2" } else { xAxisLabel=xAxis }
-if( aInv != 1 ) { xAxisLabel=xAxisLabel." / GeV^2" }
+FileNameExtra=""
+if( xAxis eq "qSq" ) {
+  xAxisLabel="q^2"
+  if( aInv != 1 ) { xAxisLabel=xAxisLabel." / GeV^2" }
+} else {
+  if( xAxis eq "z_re" ) { xAxisLabel="z" } else { xAxisLabel=xAxis }
+  FileNameExtra='_'.xAxisLabel
+}
 set xlabel xAxisLabel
 set ylabel yAxis.yAxisLabel
 set key bottom center maxrows 3
@@ -76,7 +85,7 @@ DD=0.00025
 DD=0.0025
 
 set term pdfcairo font "Arial,12" size 7 in, 3 in
-set output "F".RatioNum."_".MesonSave."_".yAxis.".${UnCorr+un}corr.g5P_g5P.pdf"
+set output "F".RatioNum."_".MesonSave."_".yAxis.FileNameExtra.".${UnCorr+un}corr.g5P_g5P.pdf"
 set pointsize 0.5
 
 if( yAxis eq "fPlus" || yAxis eq "fPerp" ) { pMin=1 } else { pMin=0 }
@@ -107,9 +116,9 @@ RatioNum="$5"
 xAxis="${xAxis:-qSq}"
 yAxis="${yAxis:-fPlus}"
 aInv=${EnsembleaInv:-1.}
-xScale=aInv * aInv
 MaxPSq=${MaxPSq:-4}
 MaxX="$MaxX"
+MaxXZ="$MaxXZ"
 yRange="$yRange"
 yRangeRaw="$yRangeRaw"
 
@@ -125,11 +134,18 @@ yAxisH=yAxis."_high"
 yAxisL=yAxis."_low"
 
 set title MyTitle.", $Ensemble (R".RatioNum.")"
-if( xAxis eq  "qSq" ) { xAxisLabel="q^2" } else { xAxisLabel=xAxis }
-if( aInv != 1 ) { xAxisLabel=xAxisLabel." / GeV^2" }
+FileNameExtra=""
+if( xAxis eq "qSq" ) {
+  xAxisLabel="q^2"
+  if( aInv != 1. ) { xAxisLabel=xAxisLabel." / GeV^2" }
+  xScale=aInv * aInv
+} else {
+  if( xAxis eq "z_re" ) { xAxisLabel="z" } else { xAxisLabel=xAxis }
+  FileNameExtra='_'.xAxisLabel
+  xScale=1.
+}
 set xlabel xAxisLabel
 set ylabel yAxis.yAxisLabel
-set key top left maxrows 3
 
 ModelSuffix=".g5P_g5W.model.1835672416"
 f(p)="F".RatioNum."_".Meson."_p2_".p.ModelSuffix.".txt"
@@ -142,12 +158,18 @@ DD=0.0025
 dt=28
 
 set term pdfcairo font "Arial,12" size 7 in, 3 in
-set output "F".RatioNum."_".MesonSave."_".yAxis.ModelSuffix.".pdf"
+set output "F".RatioNum."_".MesonSave."_".yAxis.FileNameExtra.ModelSuffix.".pdf"
 set pointsize 0.5
 
 if( yAxis eq "fPlus" || yAxis eq "fPerp" ) { pMin=1 } else { pMin=0 }
 
-if( MaxX ne "" ) { eval 'set xrange[*:'.MaxX.']' }
+if( substr( xAxis, 1, 1 ) eq "z" ) {
+  set key bottom left maxrows 3
+  if( MaxXZ ne "" ) { eval 'set xrange[-'.MaxXZ.':'.MaxXZ.']' }
+} else {
+  set key top left maxrows 3
+  if( MaxX ne "" ) { eval 'set xrange[*:'.MaxX.']' }
+}
 if(  AdjustYAxis && yRangeRaw ne "" ) { eval 'set yrange['.yRangeRaw.']' }
 if( !AdjustYAxis && yRange    ne "" ) { eval 'set yrange['.yRange.']' }
 
@@ -199,6 +221,7 @@ for Fit2 in $Fit2ptSeries; do
   eval "$Cmd" &>> $LogFile
   echo PlotFuncNew $SpecDir "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 3
        PlotFuncNew $SpecDir "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 3
+       xAxis=z_re PlotFuncNew $SpecDir "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 3
   cd ..
 done
 

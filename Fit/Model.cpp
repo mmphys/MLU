@@ -30,77 +30,6 @@
 
 #include "Model.hpp"
 
-// This is the glue between abstract models and specific implementations
-// Other than here, these must be kept strictly separate
-
-#include "Model2pt.hpp"
-#include "Model3pt.hpp"
-#include "ModelConstant.hpp"
-#include "ModelRatio.hpp"
-
-static const std::string sModelTypeUnknown{ "Unknown" };
-static const std::string sModelTypeExp{ "Exp" };
-static const std::string sModelTypeCosh{ "Cosh" };
-static const std::string sModelTypeSinh{ "Sinh" };
-static const std::string sModelTypeThreePoint{ "3pt" };
-static const std::string sModelTypeConstant{ "Const" };
-static const std::string sModelTypeRatio{ "R3" };
-
-std::ostream & operator<<( std::ostream &os, const ModelType m )
-{
-  switch( m )
-  {
-    case ModelType::Exp:
-      os << sModelTypeExp;
-      break;
-    case ModelType::Cosh:
-      os << sModelTypeCosh;
-      break;
-    case ModelType::Sinh:
-      os << sModelTypeSinh;
-      break;
-    case ModelType::ThreePoint:
-      os << sModelTypeThreePoint;
-      break;
-    case ModelType::Constant:
-      os << sModelTypeConstant;
-      break;
-    case ModelType::R3:
-      os << sModelTypeRatio;
-      break;
-    default:
-      os << sModelTypeUnknown;
-      break;
-  }
-  return os;
-}
-
-std::istream & operator>>( std::istream &is, ModelType &m )
-{
-  std::string s;
-  if( is >> s )
-  {
-    if( Common::EqualIgnoreCase( s, sModelTypeExp ) )
-      m = ModelType::Exp;
-    else if( Common::EqualIgnoreCase( s, sModelTypeCosh ) )
-      m = ModelType::Cosh;
-    else if( Common::EqualIgnoreCase( s, sModelTypeSinh ) )
-      m = ModelType::Sinh;
-    else if( Common::EqualIgnoreCase( s, sModelTypeThreePoint ) )
-      m = ModelType::ThreePoint;
-    else if( Common::EqualIgnoreCase( s, sModelTypeConstant ) )
-      m = ModelType::Constant;
-    else if( Common::EqualIgnoreCase( s, sModelTypeRatio ) )
-      m = ModelType::R3;
-    else
-    {
-      m = ModelType::Unknown;
-      is.setstate( std::ios_base::failbit );
-    }
-  }
-  return is;
-}
-
 std::string Model::Args::Remove( const std::string &key, bool * Removed )
 {
   std::string s;
@@ -210,88 +139,40 @@ void Model::AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N
   ModPar.param = &param.back()->second;
 }
 
-// Create a model of the appropriate type - this is the only place with knowledge of this mapping
-ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
+std::vector<std::string> Object::GetObjectNameSingle( const Model::CreateParams &cp, Model::Args &Args )
 {
-  // Now work out what type of model we are creating
-  ModelType modelType{ ModelType::Unknown };
-  bool bGotModelType{ false };
+  bool bManualObjectID;
+  std::string ObjectID{ Args.Remove( "ObjectID", &bManualObjectID ) };
+  if( !bManualObjectID )
   {
-    std::string s{ Args.Remove( "Model", &bGotModelType ) };
-    if( bGotModelType )
-    {
-      std::istringstream ss( s );
-      if( !( ss >> modelType ) || !Common::StreamEmpty( ss ) )
-        throw std::runtime_error( "Unknown ModelType \"" + s + "\"" );
-    }
+    ObjectID = cp.pCorr->Name_.Base;
+    std::size_t Len{ ObjectID.find( '.' ) };
+    if( Len != std::string::npos )
+      ObjectID.resize( Len );
   }
-  if( !bGotModelType )
+  return { ObjectID };
+}
+
+std::vector<std::string> Object::GetObjectNameSnkSrc( const Model::CreateParams &cp, Model::Args &Args )
+{
+  // Now remove object names
+  bool bManualObjectID[2];
+  std::vector<std::string> ObjectID( 2 );
+  ObjectID[0] = Args.Remove( "Src", &bManualObjectID[0] );
+  ObjectID[1] = Args.Remove( "Snk", &bManualObjectID[1] );
+  if( !bManualObjectID[0] )
   {
-    // We haven't been told which model to use. Choose a suitable default
-    const bool b3pt{ cp.pCorr->Name_.bGotDeltaT && cp.pCorr->Name_.Gamma.size() == 1 };
-    if( b3pt )
-    {
-      if( !cp.pCorr->Name_.BaseShortParts.empty()
-         && Common::EqualIgnoreCase( cp.pCorr->Name_.BaseShortParts[0], "R3" ) )
-        modelType = ModelType::R3;
-      else
-        modelType = ModelType::ThreePoint;
-    }
-    else switch( cp.pCorr->parity )
-    {
-      case Common::Parity::Even:
-        modelType = ModelType::Cosh;
-        break;
-      case Common::Parity::Odd:
-        modelType = ModelType::Sinh;
-        break;
-      default:
-        modelType = ModelType::Exp;
-        break;
-    }
+    if( cp.pCorr->Name_.MesonMom.empty() )
+      throw std::runtime_error( "GetObjectNameSnkSrc(): Src unavailable - specify manually" );
+    ObjectID[0] = cp.pCorr->Name_.MesonMom[0];
   }
-  // Make the model
-  std::cout << "  " << modelType;
-  for( typename Model::Args::value_type v : Args )
+  if( !bManualObjectID[1] )
   {
-    std::cout << Common::CommaSpace << v.first;
-    if( !v.second.empty() )
-      std::cout << '=' << v.second;
+    if( cp.pCorr->Name_.MesonMom.size() < 2 )
+      throw std::runtime_error( "GetObjectNameSnkSrc(): Snk unavailable - specify manually" );
+    ObjectID[1] = cp.pCorr->Name_.MesonMom[1];
   }
-  const int nExp{ Args.Remove( "e", cp.NumExponents ) };
-  ModelPtr model;
-  try
-  {
-    switch( modelType )
-    {
-      case ModelType::Exp:
-        model.reset( new ModelExp( cp, Args, nExp ) );
-        break;
-      case ModelType::Cosh:
-        model.reset( new ModelCosh( cp, Args, nExp ) );
-        break;
-      case ModelType::Sinh:
-        model.reset( new ModelSinh( cp, Args, nExp ) );
-        break;
-      case ModelType::ThreePoint:
-        model.reset( new Model3pt( cp, Args, nExp ) );
-        break;
-      case ModelType::Constant:
-        model.reset( new ModelConstant( cp, Args, nExp ) );
-        break;
-      case ModelType::R3:
-        model.reset( new ModelRatio( cp, Args, nExp ) );
-        break;
-      default:
-        throw std::runtime_error( "Unrecognised ModelType for " + cp.pCorr->Name_.Filename );
-    }
-  }
-  catch(...)
-  {
-    std::cout << Common::Space;
-    throw;
-  }
-  std::cout << " => " << model->Description() << Common::NewLine;
-  // 2 part construction - now that virtual functions in place
-  return model;
+  if( Common::EqualIgnoreCase( ObjectID[0], ObjectID[1] ) )
+    ObjectID.resize( 1 );
+  return { ObjectID };
 }

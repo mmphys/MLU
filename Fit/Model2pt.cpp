@@ -262,6 +262,13 @@ scalar Model2pt::Estimate( Vector &Guess, const VectorView &FitData, std::vector
   return FitData[Timeslice] - Theory;
 }
 
+ModelType ModelExp::Type() const
+{
+  ModelType m;
+  m.t = static_cast<int>( eModelType::Exp );
+  return m;
+}
+
 scalar ModelExp::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
   double z = 0;
@@ -281,6 +288,13 @@ std::string ModelExp::Description() const
   std::string s{ "C2Exp" };
   s.append( Model2pt::Description() );
   return s;
+}
+
+ModelType ModelCosh::Type() const
+{
+  ModelType m;
+  m.t = static_cast<int>( eModelType::Cosh );
+  return m;
 }
 
 scalar ModelCosh::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
@@ -303,6 +317,13 @@ std::string ModelCosh::Description() const
   std::string s{ "C2Cosh" };
   s.append( Model2pt::Description() );
   return s;
+}
+
+ModelType ModelSinh::Type() const
+{
+  ModelType m;
+  m.t = static_cast<int>( eModelType::Sinh );
+  return m;
 }
 
 scalar ModelSinh::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const

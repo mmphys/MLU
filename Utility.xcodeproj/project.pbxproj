@@ -7,8 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		27118C7E2A262134003C50BA /* ModelContinuum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27118C7D2A262134003C50BA /* ModelContinuum.cpp */; };
+		271E1A1D2A1E400A00A60A27 /* Fitter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C7828E4F2C300C8E004 /* Fitter.cpp */; };
+		271E1A1E2A1E401B00A60A27 /* FitterThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C7328E4F2C300C8E004 /* FitterThread.cpp */; };
+		271E1A1F2A1E404400A60A27 /* FitGSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C7A28E4F2C300C8E004 /* FitGSL.cpp */; };
+		271E1A202A1E404A00A60A27 /* FitMinuit2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C6F28E4F2C300C8E004 /* FitMinuit2.cpp */; };
+		271E1A212A1E406F00A60A27 /* Covar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C8528E4F2C300C8E004 /* Covar.cpp */; };
+		271E1A222A1E409700A60A27 /* Model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C7E28E4F2C300C8E004 /* Model.cpp */; };
 		2723910429115E560045DE24 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2723910329115E560045DE24 /* Accelerate.framework */; };
 		2735220429E9267D00E8720F /* FitRangeImp.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2735220329E9267D00E8720F /* FitRangeImp.hpp */; };
+		2748E67E2A1E114300867EF6 /* Continuum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2748E6712A1E0F9E00867EF6 /* Continuum.cpp */; };
+		2748E67F2A1E114A00867EF6 /* libMLU.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 682C5C9E28E4F41300C8E004 /* libMLU.dylib */; };
+		2748E6802A1E115000867EF6 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2723910329115E560045DE24 /* Accelerate.framework */; };
 		2763DE032A1D241500529933 /* Utility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2763DE012A1D241400529933 /* Utility.cpp */; };
 		2763DE042A1D241500529933 /* Utility.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2763DE022A1D241400529933 /* Utility.hpp */; };
 		2763DE072A1D253D00529933 /* CorrFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2763DE052A1D253D00529933 /* CorrFile.cpp */; };
@@ -99,6 +109,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		2748E6752A1E10CF00867EF6 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		278BA02E290ED52400960730 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -291,8 +310,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		27118C7C2A262134003C50BA /* ModelContinuum.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelContinuum.hpp; sourceTree = "<group>"; };
+		27118C7D2A262134003C50BA /* ModelContinuum.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelContinuum.cpp; sourceTree = "<group>"; };
 		2723910329115E560045DE24 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		2735220329E9267D00E8720F /* FitRangeImp.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FitRangeImp.hpp; sourceTree = "<group>"; };
+		2748E6712A1E0F9E00867EF6 /* Continuum.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Continuum.cpp; sourceTree = "<group>"; };
+		2748E6722A1E0F9E00867EF6 /* Continuum.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Continuum.hpp; sourceTree = "<group>"; };
+		2748E6772A1E10CF00867EF6 /* Continuum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Continuum; sourceTree = BUILT_PRODUCTS_DIR; };
 		2763DE012A1D241400529933 /* Utility.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Utility.cpp; sourceTree = "<group>"; };
 		2763DE022A1D241400529933 /* Utility.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Utility.hpp; sourceTree = "<group>"; };
 		2763DE052A1D253D00529933 /* CorrFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CorrFile.cpp; sourceTree = "<group>"; };
@@ -422,6 +446,15 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		2748E6742A1E10CF00867EF6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2748E6802A1E115000867EF6 /* Accelerate.framework in Frameworks */,
+				2748E67F2A1E114A00867EF6 /* libMLU.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		278BA02D290ED52400960730 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -671,6 +704,8 @@
 		682C5C6E28E4F2C300C8E004 /* Fit */ = {
 			isa = PBXGroup;
 			children = (
+				2748E6712A1E0F9E00867EF6 /* Continuum.cpp */,
+				2748E6722A1E0F9E00867EF6 /* Continuum.hpp */,
 				682C5C8528E4F2C300C8E004 /* Covar.cpp */,
 				682C5C7128E4F2C300C8E004 /* Covar.hpp */,
 				682C5C7A28E4F2C300C8E004 /* FitGSL.cpp */,
@@ -692,6 +727,8 @@
 				682C5C7228E4F2C300C8E004 /* ModelCommon.hpp */,
 				682C5C7528E4F2C300C8E004 /* ModelConstant.cpp */,
 				682C5C7C28E4F2C300C8E004 /* ModelConstant.hpp */,
+				27118C7D2A262134003C50BA /* ModelContinuum.cpp */,
+				27118C7C2A262134003C50BA /* ModelContinuum.hpp */,
 				27E8B36028FF2DE80047FEF1 /* ModelRatio.cpp */,
 				27E8B35F28FF2DE80047FEF1 /* ModelRatio.hpp */,
 				682C5C7928E4F2C300C8E004 /* MultiFit.cpp */,
@@ -778,6 +815,7 @@
 				682C5DBA28E5029B00C8E004 /* xmlZ2 */,
 				278BA030290ED52400960730 /* GetColumn */,
 				27D49A462910563C003E2146 /* lime_truncate */,
+				2748E6772A1E10CF00867EF6 /* Continuum */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -814,6 +852,23 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		2748E6762A1E10CF00867EF6 /* Continuum */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2748E67B2A1E10CF00867EF6 /* Build configuration list for PBXNativeTarget "Continuum" */;
+			buildPhases = (
+				2748E6732A1E10CF00867EF6 /* Sources */,
+				2748E6742A1E10CF00867EF6 /* Frameworks */,
+				2748E6752A1E10CF00867EF6 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Continuum;
+			productName = Continuum;
+			productReference = 2748E6772A1E10CF00867EF6 /* Continuum */;
+			productType = "com.apple.product-type.tool";
+		};
 		278BA02F290ED52400960730 /* GetColumn */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 278BA034290ED52500960730 /* Build configuration list for PBXNativeTarget "GetColumn" */;
@@ -1197,6 +1252,9 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastUpgradeCheck = 1400;
 				TargetAttributes = {
+					2748E6762A1E10CF00867EF6 = {
+						CreatedOnToolsVersion = 14.3;
+					};
 					278BA02F290ED52400960730 = {
 						CreatedOnToolsVersion = 14.1;
 					};
@@ -1280,6 +1338,7 @@
 			targets = (
 				682C5C9D28E4F41300C8E004 /* MLU */,
 				682C5CB828E4F9D300C8E004 /* bootstrap */,
+				2748E6762A1E10CF00867EF6 /* Continuum */,
 				682C5CC628E4FB6300C8E004 /* corr */,
 				682C5CD328E4FBC000C8E004 /* corrstat */,
 				682C5CE028E4FC1D00C8E004 /* CRatio */,
@@ -1305,6 +1364,21 @@
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2748E6732A1E10CF00867EF6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2748E67E2A1E114300867EF6 /* Continuum.cpp in Sources */,
+				271E1A212A1E406F00A60A27 /* Covar.cpp in Sources */,
+				271E1A1F2A1E404400A60A27 /* FitGSL.cpp in Sources */,
+				271E1A202A1E404A00A60A27 /* FitMinuit2.cpp in Sources */,
+				271E1A1D2A1E400A00A60A27 /* Fitter.cpp in Sources */,
+				271E1A1E2A1E401B00A60A27 /* FitterThread.cpp in Sources */,
+				271E1A222A1E409700A60A27 /* Model.cpp in Sources */,
+				27118C7E2A262134003C50BA /* ModelContinuum.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		278BA02C290ED52400960730 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1443,10 +1517,10 @@
 				682C5D6028E4FF9400C8E004 /* FitterThread.cpp in Sources */,
 				682C5D6128E4FF9400C8E004 /* Model.cpp in Sources */,
 				682C5D6228E4FF9400C8E004 /* Model2pt.cpp in Sources */,
-				27E8B36128FF2DE80047FEF1 /* ModelRatio.cpp in Sources */,
 				682C5D6328E4FF9400C8E004 /* Model3pt.cpp in Sources */,
 				682C5D6428E4FF9400C8E004 /* ModelCommon.cpp in Sources */,
 				682C5D6528E4FF9400C8E004 /* ModelConstant.cpp in Sources */,
+				27E8B36128FF2DE80047FEF1 /* ModelRatio.cpp in Sources */,
 				682C5D6628E4FF9400C8E004 /* MultiFit.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1511,6 +1585,22 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		2748E67C2A1E10CF00867EF6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEPLOYMENT_LOCATION = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		2748E67D2A1E10CF00867EF6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEPLOYMENT_LOCATION = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		278BA035290ED52500960730 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2222,6 +2312,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		2748E67B2A1E10CF00867EF6 /* Build configuration list for PBXNativeTarget "Continuum" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2748E67C2A1E10CF00867EF6 /* Debug */,
+				2748E67D2A1E10CF00867EF6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		278BA034290ED52500960730 /* Build configuration list for PBXNativeTarget "GetColumn" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

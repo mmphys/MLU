@@ -38,7 +38,7 @@ template <typename T>
 class Fold : public Sample<T>
 {
 public:
-  int NtUnfolded = 0;
+  int NtUnfolded_ = 0;
   Reality reality = Reality::Unknown;
   Parity parity = Parity::Unknown;
   Sign sign = Sign::Unknown;
@@ -47,6 +47,7 @@ public:
   std::vector<std::string> BootstrapList;
   using Base = Sample<T>;
   using Base::Base;
+  int NtUnfolded() const override { return NtUnfolded_; }
   const std::string &DefaultGroupName() override;
   bool bFolded() override;
   void SummaryComments( std::ostream &os, bool bVerboseSummary = false ) const override;

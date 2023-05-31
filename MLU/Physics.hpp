@@ -127,7 +127,10 @@ inline int QuarkWeight( const std::string &Quark )
   return Weight;
 }
 
-std::string MakeMesonName( const std::string &Quark, const std::string &Spec );
+/// Return Quark_Spec or Spec_Quark so that the heavier quark is at the sink (per my current project)
+std::string ConcatHeavyFirst( const std::string &Quark1, const std::string &Quark2 );
+/// Return the standard meson name for the given quarks
+std::string MesonName( const std::string &q1, const std::string &q2 );
 
 // Generic representation of momentum
 struct Momentum
@@ -272,6 +275,12 @@ inline bool operator<( const Momentum &l, const Momentum &r )
     return l.y < r.y;
   return l.z < r.z;
 }
+
+enum class FormFactor{ f0, fplus, fpar, fperp };
+extern const std::array<std::string, 4> FormFactorString; // Guaranteed to be in same order as enum
+
+std::ostream& operator<<( std::ostream& os, const FormFactor &ff );
+std::istream& operator>>( std::istream& is, FormFactor &ff );
 
 MLU_Physics_hpp_end
 #endif

@@ -305,7 +305,7 @@ void Importer::Write( const std::string &Base, bool bPreserveSign )
   for( std::size_t f = 0; f < corrInfo.size(); ++f )
   {
     out[f].resize( NumSamples, NtOut );
-    out[f].NtUnfolded = Nt;
+    out[f].NtUnfolded_ = Nt;
     out[f].parity = corrInfo[f].parity;
   }
   SpreadData( out, vBinnedCentral.data, Fold::idxCentral, 1 );

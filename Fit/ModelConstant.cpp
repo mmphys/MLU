@@ -80,6 +80,13 @@ scalar ModelConstant::operator()( int t, Vector &ScratchPad, Vector &ModelParams
   return ModelParams[Constant.idx];
 }
 
+ModelType ModelConstant::Type() const
+{
+  ModelType m;
+  m.t = static_cast<int>( eModelType::Constant );
+  return m;
+}
+
 double ModelConstant::Derivative( int t, int p ) const
 {
   return p == Constant.idx ? 1 : 0;

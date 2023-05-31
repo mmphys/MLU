@@ -125,30 +125,33 @@ void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, unsigned in
   if( !( CompareFlags & COMPAT_DISABLE_NT ) && o.Nt() != Nt_ )
     throw std::runtime_error( sPrefix + "Nt " + std::to_string(o.Nt()) +
                              sNE + std::to_string(Nt_) + sSuffix );
-  if( o.SampleSize && SampleSize && o.SampleSize != SampleSize )
-    throw std::runtime_error( sPrefix + "SampleSize " + std::to_string(o.SampleSize) +
-                             sNE + std::to_string(SampleSize) + sSuffix );
-  // NB: If the random numbers were different, the random number cache would have caught this
-  if( o.Seed() != Seed() )
-    throw std::runtime_error( "Seed " + o.SeedString() + sNE + SeedString() );
-  const std::size_t CSize {   ConfigCount.size() };
-  const std::size_t CSizeO{ o.ConfigCount.size() };
-  if( CSize && CSizeO )
+  if( ! ( CompareFlags & COMPAT_DISABLE_ENSEMBLE ) )
   {
-    if( CSizeO != CSize )
-      throw std::runtime_error( sPrefix + "Number of configs " +
-                          std::to_string(CSizeO) + sNE + std::to_string(CSize) + sSuffix );
-    for( std::size_t i = 0; i < CSize; i++ )
+    if( o.SampleSize && SampleSize && o.SampleSize != SampleSize )
+      throw std::runtime_error( sPrefix + "SampleSize " + std::to_string(o.SampleSize) +
+                               sNE + std::to_string(SampleSize) + sSuffix );
+    // NB: If the random numbers were different, the random number cache would have caught this
+    if( o.Seed() != Seed() )
+      throw std::runtime_error( "Seed " + o.SeedString() + sNE + SeedString() );
+    const std::size_t CSize {   ConfigCount.size() };
+    const std::size_t CSizeO{ o.ConfigCount.size() };
+    if( CSize && CSizeO )
     {
-      const Common::ConfigCount &l{   ConfigCount[i] };
-      const Common::ConfigCount &r{ o.ConfigCount[i] };
-      if( r.Config != l.Config )
-        throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
-                                 sNE + std::to_string(l.Config) + sSuffix );
+      if( CSizeO != CSize )
+        throw std::runtime_error( sPrefix + "Number of configs " +
+                                 std::to_string(CSizeO) + sNE + std::to_string(CSize) + sSuffix );
+      for( std::size_t i = 0; i < CSize; i++ )
+      {
+        const Common::ConfigCount &l{   ConfigCount[i] };
+        const Common::ConfigCount &r{ o.ConfigCount[i] };
+        if( r.Config != l.Config )
+          throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
+                                   sNE + std::to_string(l.Config) + sSuffix );
+      }
     }
+    if( !Ensemble.empty() && !o.Ensemble.empty() && !EqualIgnoreCase( Ensemble, o.Ensemble ) )
+      throw std::runtime_error( "Ensemble " + Ensemble + " != " + o.Ensemble );
   }
-  if( !Ensemble.empty() && !o.Ensemble.empty() && !EqualIgnoreCase( Ensemble, o.Ensemble ) )
-    throw std::runtime_error( "Ensemble " + Ensemble + " != " + o.Ensemble );
 }
 
 template void Sample<float>::IsCompatible( const Sample<float> &o,

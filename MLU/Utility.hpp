@@ -71,6 +71,7 @@ static constexpr unsigned int COMPAT_DEFAULT{ 0 };
 static constexpr unsigned int COMPAT_DISABLE_BASE{ 1 };
 static constexpr unsigned int COMPAT_DISABLE_NT{ 2 };
 static constexpr unsigned int COMPAT_DISABLE_TYPE{ 8 };
+static constexpr unsigned int COMPAT_DISABLE_ENSEMBLE{ 8 };
 
 template <typename T> int sgn( T x )
 {
@@ -547,7 +548,7 @@ struct FileNameAtt
   void AppendMomentum( std::string &s, const MomentumPair &np ) const
   { AppendMomentum( s, np.second, np.first );}
   std::string MakeMesonName( const std::string &Quark ) const
-  { return ::Common::MakeMesonName( Quark, Spectator ); }
+  { return ::Common::ConcatHeavyFirst( Quark, Spectator ); }
 protected:
   std::vector<std::string> ParseOpNames( int NumOps );
 };

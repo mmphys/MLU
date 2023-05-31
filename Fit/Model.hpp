@@ -31,7 +31,7 @@
 
 #include "MultiFit.hpp"
 
-enum class ModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant, R3 };
+struct ModelType { int t; }; // An opaque type provided by Model Glue
 std::ostream & operator<<( std::ostream &os, const ModelType m );
 std::istream & operator>>( std::istream &is, ModelType &m );
 
@@ -78,7 +78,7 @@ struct Model
     const bool bEnablePHat; // true ? use p_hat in dispersion relation (per definition) : just use p
     const bool bOverlapAltNorm;
     // These will change per model
-    const Fold *pCorr;
+    const Sample *pCorr; // Actually either a Fold or a Model
     CreateParams( const std::vector<std::string> &OpNames_, const Common::CommandLine &cl_ );
     std::string GetOpName( int Idx ) const { return OpNames[pCorr->Name_.op[Idx]]; }
     std::string Description() const;
@@ -88,7 +88,7 @@ struct Model
   const int NumExponents;
 protected:
   Model( const CreateParams &cp, int NumExponents_ )
-  : Nt{cp.pCorr->NtUnfolded}, NumExponents{NumExponents_} {}
+  : Nt{cp.pCorr->NtUnfolded()}, NumExponents{NumExponents_} {}
   void AddParam( Params &mp, ModelParam &ModPar, std::size_t NumExp = 1, bool bMonotonic = false,
                  Param::Type Type = Param::Type::Variable );
   /**
@@ -130,6 +130,20 @@ public:
   virtual int GetScratchPadSize() const { return 0; }
   // Cache values based solely on the model parameters (to speed up computation)
   virtual void ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const {};
+};
+
+// Models which describe a single object. Use with multiple inheritance
+struct Object
+{
+  const std::string &ObjectID( int SnkSrc ) const
+  { return objectID[SnkSrc==idxSrc || objectID.size() < 2 ? 0 : 1]; }
+protected:
+  Object( std::vector<std::string> &&ObjectID ) : objectID{ObjectID} {}
+  std::vector<std::string> objectID; // Name of the object propagating
+  // Use this to initialise where there's only one objectID, e.g. two-point functions
+  static std::vector<std::string> GetObjectNameSingle( const Model::CreateParams &cp, Model::Args &Args );
+  // Use this to initialise where there's a sink and source objectID, e.g. three-point functions
+  static std::vector<std::string> GetObjectNameSnkSrc( const Model::CreateParams &cp, Model::Args &Args );
 };
 
 #endif // Model_hpp

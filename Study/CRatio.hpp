@@ -255,6 +255,11 @@ struct FormFactor
   static constexpr int f0{ 10 };
   static constexpr int ELLat{ 11 };  // EL,  but E_i derived from E_0 and lattice dispersion relation
   static constexpr int qSqLat{ 12 }; // qSq, but E_i derived from E_0 and lattice dispersion relation
+  static constexpr int tPlus{ 13 };
+  static constexpr int tMinus{ 14 }; // aka q^2_{max}
+  static constexpr int t0{ 15 };
+  static constexpr int z_re{ 16 };
+  static constexpr int z_im{ 17 };
   const unsigned int N;
   const Scalar ap;
   const Scalar apInv;

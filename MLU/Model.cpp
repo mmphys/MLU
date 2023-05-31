@@ -756,7 +756,7 @@ void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFile
   for( std::size_t m = 0; m < FitTimes.size(); ++m )
   {
     std::sort( SortedTimes[m].begin(), SortedTimes[m].end() );
-    for( int t = 0, idxSort = 0; t < ds.corr[m].Nt(); ++t )
+    for( int t = 0, idxSort = 0; t < ds.corr[m]->Nt(); ++t )
     {
       const bool bInFit{ t == SortedTimes[m][idxSort] };
       std::ostream &os{ bInFit ? dynamic_cast<std::ostream &>( ofs ) : osBuffer };
@@ -770,7 +770,7 @@ void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFile
         ++FitSeq;
       }
       else
-        os << Space << ds.corr[m].SummaryData( t ) << Space << veZero;
+        os << Space << ds.corr[m]->SummaryData( t ) << Space << veZero;
       os << NewLine;
       ++Seq;
     }
@@ -789,7 +789,7 @@ void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFile
   {
     ++Seq;    // Skip past t=0
     ++FitSeq; // Skip past t=0
-    for( int t = 1, idxSort = 1; t < ds.corr[m].Nt(); ++t )
+    for( int t = 1, idxSort = 1; t < ds.corr[m]->Nt(); ++t )
     {
       // Effective masses are for the point half-way between the measurements
       // Keeping track of 2 * the effective timeslice allows us to use integer arithmetic
@@ -832,7 +832,7 @@ void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFile
         if( bShowFit )
           osBuffer << ".5"; // Fit and data points out by 0.5 - make sure seq is different
         osBuffer << Space << -1 << Space << m << Space << dblT << Space << -1
-                 << Space << ds.corr[m].SummaryData( 2, t ) << Space << veZero << NewLine;
+                 << Space << ds.corr[m]->SummaryData( 2, t ) << Space << veZero << NewLine;
       }
       ++Seq;
     }

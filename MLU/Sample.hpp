@@ -93,6 +93,8 @@ public:
   {
     Read( FileName, PrintPrefix, pOpNames, pGroupName );
   }
+  inline int Nt() const { return Nt_; }
+  virtual int NtUnfolded() const { return Nt_; }
   void resize( int NumReplicas, int Nt );
   virtual void clear( bool bClearName = true );
   inline SeedType Seed( int idxJackBoot = 0 ) const
@@ -149,7 +151,6 @@ public:
       throw std::runtime_error( "Invalid raw idxJackBoot " + std::to_string( idxJackBoot ) );
     return NumSamplesRaw();
   }
-  inline int Nt() const { return Nt_; }
   // Return the summary data for the nth type (0=central, 1=bias, etc)
   inline       ValEr &SummaryData( int Row, int Column )
   {

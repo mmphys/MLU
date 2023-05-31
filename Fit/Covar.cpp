@@ -62,8 +62,8 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
           ? static_cast<int>( Common::RandomCache::DefaultNumReplicas() )
           : Common::FromString<int>( vCovarSwitch[optNum] ) };
         std::cout << "Covar Reboot " << NumReplicas << " replicas\n";
-        for( Fold &f : dsrw.corr )
-          f.Resample( 1, NumReplicas, idxJackBoot );
+        for( std::unique_ptr<Sample> &f : dsrw.corr )
+          f->Resample( 1, NumReplicas, idxJackBoot );
         Source = SS::Bootstrap;
         idxJackBoot = 1;
       }
@@ -124,23 +124,23 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ d
     // Check whether all files have the same number of samples
     for( std::size_t i = 0; i < ds.corr.size(); ++i )
     {
-      const int Count{ ds.corr[i].NumSamples( Source, idxJackBoot ) };
+      const int Count{ ds.corr[i]->NumSamples( Source, idxJackBoot ) };
       if( Count == 0 )
       {
         std::ostringstream os;
         os << Source << " samples not available for covariance matrix";
         if( i )
-          os << " file " << ds.corr[i].Name_.Filename;
+          os << " file " << ds.corr[i]->Name_.Filename;
         throw std::runtime_error( os.str().c_str() );
       }
-      if( Count != ds.corr[0].NumSamples( Source ) )
+      if( Count != ds.corr[0]->NumSamples( Source ) )
       {
         std::ostringstream os;
         os << "Can't use " << Source << " samples for covariance:" << Common::NewLine
-           << Common::Space << ds.corr[0].NumSamples( Source ) << " samples in "
-           << ds.corr[0].Name_.Filename << Common::NewLine
-           << Common::Space << ds.corr[i].NumSamples( Source ) << " samples in "
-           << ds.corr[i].Name_.Filename;
+           << Common::Space << ds.corr[0]->NumSamples( Source ) << " samples in "
+           << ds.corr[0]->Name_.Filename << Common::NewLine
+           << Common::Space << ds.corr[i]->NumSamples( Source ) << " samples in "
+           << ds.corr[i]->Name_.Filename;
         throw std::runtime_error( os.str().c_str() );
       }
     }

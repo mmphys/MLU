@@ -142,6 +142,13 @@ double Model3pt::Derivative( int t, int p ) const
   return 0;
 }
 
+ModelType Model3pt::Type() const
+{
+  ModelType m;
+  m.t = static_cast<int>( eModelType::ThreePoint );
+  return m;
+}
+
 scalar Model3pt::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
   scalar z = 0;

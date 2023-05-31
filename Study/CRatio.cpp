@@ -313,10 +313,10 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
   //C2.Read( C2Name, LoadFilePrefix );
   int NumSamples {};
   C3.IsCompatible( C2, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
-  if( C2.NtUnfolded != C3.Nt() )
+  if( C2.NtUnfolded() != C3.Nt() )
   {
     std::ostringstream os;
-    os << "C2.NtUnfolded " << C2.NtUnfolded << " != C3.Nt() " << C3.Nt();
+    os << "C2.NtUnfolded " << C2.NtUnfolded() << " != C3.Nt() " << C3.Nt();
     throw std::runtime_error( os.str() );
   }
 
@@ -327,7 +327,7 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
   if( EFit.freeze != Freeze::Constant )
     out.FileList.push_back( Src.EModel.Name_.Filename );
   out.CopyAttributes( C3 );
-  out.NtUnfolded = C3.Nt();
+  out.NtUnfolded_ = C3.Nt();
   for( int idx = Fold::idxCentral; idx < NumSamples; ++idx )
   {
     const double CTilde{ C2(idx,fna.DeltaT) - 0.5 * C2(idx,NTHalf) * std::exp( - Src.E[idx] * ( NTHalf - fna.DeltaT ) ) };
@@ -473,9 +473,11 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
       if( i == 0 )
       {
         Corr2[0].Corr->IsCompatible( *Corr3[i].Corr, &NSamples, CompareFlags | Common::COMPAT_DISABLE_NT );
-        if( Corr2[0].Corr->NtUnfolded != Corr3[i].Corr->NtUnfolded )
-          throw std::runtime_error( "2-pt NtUnfolded " + std::to_string( Corr2[0].Corr->NtUnfolded ) +
-                                    " != 3-pt NtUnfolded " + std::to_string( Corr3[i].Corr->NtUnfolded ) );
+        if( Corr2[0].Corr->NtUnfolded() != Corr3[i].Corr->NtUnfolded() )
+          throw std::runtime_error( "2-pt NtUnfolded "
+                                   + std::to_string( Corr2[0].Corr->NtUnfolded() )
+                                   + " != 3-pt NtUnfolded "
+                                   + std::to_string( Corr3[i].Corr->NtUnfolded() ) );
       }
       else
         Corr3[0].Corr->IsCompatible( *Corr3[i].Corr, &NSamples, CompareFlags );
@@ -541,7 +543,7 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
       }
       // Now copy the rest of the attributes
       out[i].CopyAttributes( *Corr3[0].Corr );
-      out[i].NtUnfolded = nT3;
+      out[i].NtUnfolded_ = nT3;
     }
   }
 
@@ -654,7 +656,8 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
 }
 
 const std::vector<std::string> FormFactor::ParamNames{ "EL", "mL", "mH", "qSq", "kMu",
-  "melV0", "melVi", "fPar", "fPerp", "fPlus", "f0", "ELLat", "qSqLat" };
+  "melV0", "melVi", "fPar", "fPerp", "fPlus", "f0", "ELLat", "qSqLat",
+  "tPlus", "tMinus", "t0", "z_re", "z_im" };
 
 FormFactor::FormFactor( std::string TypeParams )
 : N{ Common::FromString<unsigned int>( Common::ExtractToSeparator( TypeParams ) ) },
@@ -696,6 +699,20 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
     Out(idx,vIdx[EL]) = ELight[idx];
     Out(idx,vIdx[ELLat]) = p.LatticeDispersion( MLight[idx], N, bEnablePHat );
     Out(idx,vIdx[qSqLat]) = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * Out(idx,vIdx[ELLat]);
+    // z-expansion (23) pg 8 https://arxiv.org/pdf/2104.09883.pdf
+    Out(idx,vIdx[tPlus ]) = MHeavy[idx] + MLight[idx];
+    Out(idx,vIdx[tMinus]) = MHeavy[idx] - MLight[idx];
+    Out(idx,vIdx[t0    ]) = 0.5 * Out(idx,vIdx[tMinus]);
+    {
+      std::complex<Scalar> Left{ Out(idx,vIdx[tPlus]) - Out(idx,vIdx[qSq]) };
+      Left = std::sqrt( Left );
+      std::complex<Scalar> Right{ Out(idx,vIdx[tPlus]) - Out(idx,vIdx[t0]) };
+      Right = std::sqrt( Right );
+      const std::complex<Scalar> z{ ( Left - Right ) / ( Left + Right ) };
+      Out(idx,vIdx[z_re]) = z.real();
+      Out(idx,vIdx[z_im]) = z.imag();
+    }
+    // Now make form factors
     Out(idx,vIdx[melV0]) = vT[idx];
     const Scalar    Root2MH{ std::sqrt( MHeavy[idx] * 2 ) };
     const Scalar InvRoot2MH{ 1. / Root2MH };
@@ -916,7 +933,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
                 } catch ( const std::runtime_error &e )
                 {
                   kSpatial.Name = "MEL"; // Old files just had a matrix element
-                  vXYZ = mGT.Column( kSpatial );
+                  vXYZ = mSpatial.Column( kSpatial );
                 }
               }
               OutFileName.resize( OutFileNameLen );

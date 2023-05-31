@@ -1,11 +1,11 @@
 /*************************************************************************************
  
- Fit to a constant
+ Chiral continuum fit
+
+ Source file: ModelContinuum.hpp
  
- Source file: ModelConstant.hpp
- 
- Copyright (C) 2019-2022
- 
+ Copyright (C) 2023
+
  Author: Michael Marshall <Mike@lqcd.me>
 
  This program is free software; you can redistribute it and/or modify
@@ -26,14 +26,22 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#ifndef ModelConstant_hpp
-#define ModelConstant_hpp
+#ifndef ModelContinuum_hpp
+#define ModelContinuum_hpp
 
-#include "ModelCommon.hpp"
+#include "Model.hpp"
 
-struct ModelConstant : Model, Object
+extern const std::string sFF;
+
+enum class eModelType{ Unknown, Continuum };
+std::ostream & operator<<( std::ostream &os, const eModelType m );
+std::istream & operator>>( std::istream &is,       eModelType &m );
+
+/// Chiral continuum fit model
+struct ModelContinuum : Model
 {
-  ModelConstant( const Model::CreateParams &cp, Model::Args &Args, int NumExponents );
+  ModelContinuum( const Model::CreateParams &cp, Model::Args &Args, int NumExponents,
+                  Common::FormFactor ff );
   void AddParameters( Params &mp ) override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
@@ -43,9 +51,12 @@ struct ModelConstant : Model, Object
                      bool bLastChance ) const override;
   ModelType Type() const override;
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
-  double Derivative( int t, int p ) const override;
 protected:
-  ModelParam Constant;
+  const ModelFile mf;
+  const Common::FormFactor ff;
+  const Common::Momentum p;
+  std::string Ensemble;
+  std::array<std::string, 2> Meson;
 };
 
-#endif // ModelConstant_hpp
+#endif // ModelContinuum_hpp

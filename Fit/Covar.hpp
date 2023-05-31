@@ -58,8 +58,8 @@ struct CovarParams
   // This is the appropriate parameter for m to use in the T^2 distribution
   inline int CovarSampleSize() const
   {
-    return SourceIsBootstrap() ? ds.corr[0].SampleSize
-                               : ds.corr[0].NumSamples( Source==SS::Raw ? SS::Raw : SS::Binned );
+    return SourceIsBootstrap() ? ds.front().SampleSize
+                               : ds.front().NumSamples( Source==SS::Raw ? SS::Raw : SS::Binned );
   }
   /**
    Can I make the covariance matrix in one step for this replica?
@@ -71,7 +71,7 @@ struct CovarParams
     return CovarNumBoot || (Replica == Fold::idxCentral && (Source == SS::Binned || Source == SS::Bootstrap) );
   }*/
   // How many covariance samples are there
-  inline int CovarCount() const { return ds.corr[0].NumSamples( Source ); }
+  inline int CovarCount() const { return ds.front().NumSamples( Source ); }
 };
 
 std::ostream & operator<<( std::ostream &os, const CovarParams &cp );

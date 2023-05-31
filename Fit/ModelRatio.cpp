@@ -35,10 +35,10 @@ const std::string ModelRatio::sChildModel{ "C2Model" };
 ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int NumExp,
                         std::vector<std::string> &&objectID, std::vector<std::string> &&opNames )
 : Model3pt(cp, Args, NumExp, std::vector<std::string>(objectID), std::vector<std::string>(opNames)),
-  ChildType{ Args.Remove<ModelType>( sChildModel, ModelType::Exp ) }
+  ChildType{ Args.Remove<eModelType>( sChildModel, eModelType::Exp ) }
 {
   const int NumC2Exp{ Args.Remove( "C2e", static_cast<int>( NumOverlapExp ) ) };
-  if( ChildType != ModelType::Exp && ChildType != ModelType::Cosh && ChildType != ModelType::Sinh )
+  if( ChildType != eModelType::Exp && ChildType != eModelType::Cosh && ChildType != eModelType::Sinh )
   {
     std::ostringstream os;
     os << sChildModel << Common::Space << ChildType << " invalid for ratio children";
@@ -51,10 +51,10 @@ ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int Nu
     std::vector<std::string> on{ opNames[i], opNames[i] };
     switch( ChildType )
     {
-      case ModelType::Exp:
+      case eModelType::Exp:
         C2.emplace_back(new ModelExp(cp, Args, NumC2Exp, std::move(oid), std::move(on)));
         break;
-      case ModelType::Cosh:
+      case eModelType::Cosh:
         C2.emplace_back(new ModelCosh(cp, Args, NumC2Exp, std::move(oid), std::move(on)));
         break;
       default:
@@ -107,6 +107,13 @@ void ModelRatio::Guessable( ParamsPairs &PP ) const
   // I can guess the matrix element
   PP.SetState( ParamsPairs::State::Known, R3Raw.Key, R3Raw.param->size );
   // TODO: Implement guessing
+}
+
+ModelType ModelRatio::Type() const
+{
+  ModelType m;
+  m.t = static_cast<int>( eModelType::R3 );
+  return m;
 }
 
 // TODO: Make sure we add partial derivatives for all models

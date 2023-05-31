@@ -45,7 +45,7 @@ template <typename T>
 void Fold<T>::SummaryComments( std::ostream &s, bool bVerboseSummary ) const
 {
   Base::SummaryComments( s, bVerboseSummary );
-  if( NtUnfolded ) s << "# NtUnfolded: " << NtUnfolded << NewLine;
+  if( NtUnfolded() ) s << "# NtUnfolded: " << NtUnfolded() << NewLine;
   if( reality != Reality::Unknown ) s << "# Reality: " << reality << NewLine;
   if( parity != Parity::Unknown ) s << "# Parity: " << parity << NewLine;
   if( sign != Sign::Unknown ) s << "# Sign: " << sign << NewLine;
@@ -58,11 +58,11 @@ void Fold<T>::ReadAttributes( ::H5::Group &g )
 {
   Base::ReadAttributes( g );
   ::H5::Attribute a;
-  NtUnfolded = 0;
+  NtUnfolded_ = 0;
   try
   {
     a = g.openAttribute(sNtUnfolded);
-    a.read( ::H5::PredType::NATIVE_INT, &NtUnfolded );
+    a.read( ::H5::PredType::NATIVE_INT, &NtUnfolded_ );
     a.close();
   }
   catch(const ::H5::Exception &)
@@ -164,10 +164,10 @@ int Fold<T>::WriteAttributes( ::H5::Group &g ) const
   const hsize_t OneDimension{ 1 };
   ::H5::DataSpace ds1( 1, &OneDimension );
   ::H5::Attribute a;
-  if( NtUnfolded )
+  if( NtUnfolded() )
   {
     a = g.createAttribute( sNtUnfolded, ::H5::PredType::STD_U16LE, ds1 );
-    a.write( ::H5::PredType::NATIVE_INT, &NtUnfolded );
+    a.write( ::H5::PredType::NATIVE_INT, &NtUnfolded_ );
     a.close();
     iReturn++;
   }

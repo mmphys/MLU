@@ -254,7 +254,7 @@ int main(int argc, const char *argv[])
             out.resize( NumSamples, NtHalf );
             out.FileList = std::move( myFileList );
             out.CopyAttributes( in );
-            out.NtUnfolded = Nt;
+            out.NtUnfolded_ = Nt;
             out.t0Negated = false;
             out.Conjugated = f.Conjugate;
             out.reality = f.rps.reality;

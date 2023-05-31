@@ -31,19 +31,9 @@
 
 #include "Model.hpp"
 
-// Models which describe a single object. Use with multiple inheritance
-struct Object
-{
-  const std::string &ObjectID( int SnkSrc ) const
-  { return objectID[SnkSrc==idxSrc || objectID.size() < 2 ? 0 : 1]; }
-protected:
-  Object( std::vector<std::string> &&ObjectID ) : objectID{ObjectID} {}
-  std::vector<std::string> objectID; // Name of the object propagating
-  // Use this to initialise where there's only one objectID, e.g. two-point functions
-  static std::vector<std::string> GetObjectNameSingle( const Model::CreateParams &cp, Model::Args &Args );
-  // Use this to initialise where there's a sink and source objectID, e.g. three-point functions
-  static std::vector<std::string> GetObjectNameSnkSrc( const Model::CreateParams &cp, Model::Args &Args );
-};
+enum class eModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant, R3 };
+std::ostream & operator<<( std::ostream &os, const eModelType m );
+std::istream & operator>>( std::istream &is,       eModelType &m );
 
 /**
  A model with two overlap coefficients

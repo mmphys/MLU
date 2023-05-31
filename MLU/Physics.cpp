@@ -153,20 +153,48 @@ std::ostream & operator<<( std::ostream &os, const ConfigCount &cc )
 }
 
 // For my current project, I always have the heavier quark at the sink
-std::string MakeMesonName( const std::string &Quark, const std::string &Spec )
+std::string ConcatHeavyFirst( const std::string &Quark1, const std::string &Quark2 )
 {
   std::string s;
-  if( QuarkWeight( Quark ) < QuarkWeight( Spec ) )
+  if( QuarkWeight( Quark1 ) < QuarkWeight( Quark2 ) )
   {
-    s.append( Spec );
+    s.append( Quark2 );
     s.append( Underscore );
-    s.append( Quark );
+    s.append( Quark1 );
   }
   else
   {
-    s.append( Quark );
+    s.append( Quark1 );
     s.append( Underscore );
-    s.append( Spec );
+    s.append( Quark2 );
+  }
+  return s;
+}
+
+std::string MesonName( const std::string &q1, const std::string &q2 )
+{
+  std::string s;
+  const bool bSwap{ QuarkWeight( q1 ) < QuarkWeight( q2 ) };
+  const std::string &sHeavy{ bSwap ? q2 : q1 };
+  const std::string &sLight{ bSwap ? q1 : q2 };
+  const int Heavy{ std::toupper( sHeavy[0] ) };
+  const int Light{ std::toupper( sLight[0] ) };
+  switch( Heavy )
+  {
+    case 'H':
+      if( Light == 'S' )
+        s = "Ds";
+      else if( Light == 'L' )
+        s = "D";
+      break;
+    case 'S':
+      if( Light == 'L' )
+        s = "K";
+      break;
+    case 'L':
+      if( Light == 'L' )
+        s = "Pi";
+      break;
   }
   return s;
 }
@@ -373,6 +401,34 @@ std::istream& operator>>( std::istream& is, Momentum &p )
   char c = 0;
   if(!(is>>p.x && is.get(c) && c==Underscore[0] && is>>p.y && is.get(c) && c==Underscore[0] && is>>p.z))
     is.setstate( std::ios_base::failbit );
+  return is;
+}
+
+const std::array<std::string, 4> FormFactorString{ "f0", "fplus", "fpar", "fperp" };
+
+std::ostream& operator<<( std::ostream& os, const FormFactor &ff )
+{
+  using T = typename std::underlying_type<FormFactor>::type;
+  T i{ static_cast<T>( ff ) };
+  return os << (i >= 0 && i < FormFactorString.size() ? FormFactorString[i] : sUnknown );
+}
+
+std::istream& operator>>( std::istream& is, FormFactor &ff )
+{
+  std::string s;
+  if( is >> s )
+  {
+    using T = typename std::underlying_type<FormFactor>::type;
+    for( T i = 0; i < FormFactorString.size(); ++i )
+    {
+      if( EqualIgnoreCase( s, FormFactorString[i] ) )
+      {
+        ff = static_cast<FormFactor>( i );
+        return is;
+      }
+    }
+  }
+  is.setstate( std::ios_base::failbit );
   return is;
 }
 

@@ -30,42 +30,174 @@
 
 #include "ModelCommon.hpp"
 
-std::vector<std::string> Object::GetObjectNameSingle( const Model::CreateParams &cp, Model::Args &Args )
+// This is the glue between abstract models and specific implementations
+// Other than here, these must be kept strictly separate
+
+#include "Model2pt.hpp"
+#include "Model3pt.hpp"
+#include "ModelConstant.hpp"
+#include "ModelRatio.hpp"
+
+static const std::string sModelTypeUnknown{ "Unknown" };
+static const std::string sModelTypeExp{ "Exp" };
+static const std::string sModelTypeCosh{ "Cosh" };
+static const std::string sModelTypeSinh{ "Sinh" };
+static const std::string sModelTypeThreePoint{ "3pt" };
+static const std::string sModelTypeConstant{ "Const" };
+static const std::string sModelTypeRatio{ "R3" };
+
+std::ostream & operator<<( std::ostream &os, const eModelType m )
 {
-  bool bManualObjectID;
-  std::string ObjectID{ Args.Remove( "ObjectID", &bManualObjectID ) };
-  if( !bManualObjectID )
+  switch( m )
   {
-    ObjectID = cp.pCorr->Name_.Base;
-    std::size_t Len{ ObjectID.find( '.' ) };
-    if( Len != std::string::npos )
-      ObjectID.resize( Len );
+    case eModelType::Exp:
+      os << sModelTypeExp;
+      break;
+    case eModelType::Cosh:
+      os << sModelTypeCosh;
+      break;
+    case eModelType::Sinh:
+      os << sModelTypeSinh;
+      break;
+    case eModelType::ThreePoint:
+      os << sModelTypeThreePoint;
+      break;
+    case eModelType::Constant:
+      os << sModelTypeConstant;
+      break;
+    case eModelType::R3:
+      os << sModelTypeRatio;
+      break;
+    default:
+      os << sModelTypeUnknown;
+      break;
   }
-  return { ObjectID };
+  return os;
 }
 
-std::vector<std::string> Object::GetObjectNameSnkSrc( const Model::CreateParams &cp, Model::Args &Args )
+std::ostream & operator<<( std::ostream &os, const ModelType m )
 {
-  // Now remove object names
-  bool bManualObjectID[2];
-  std::vector<std::string> ObjectID( 2 );
-  ObjectID[0] = Args.Remove( "Src", &bManualObjectID[0] );
-  ObjectID[1] = Args.Remove( "Snk", &bManualObjectID[1] );
-  if( !bManualObjectID[0] )
+  return os << static_cast<eModelType>( m.t );
+}
+
+std::istream & operator>>( std::istream &is, eModelType &m )
+{
+  std::string s;
+  if( is >> s )
   {
-    if( cp.pCorr->Name_.MesonMom.empty() )
-      throw std::runtime_error( "GetObjectNameSnkSrc(): Src unavailable - specify manually" );
-    ObjectID[0] = cp.pCorr->Name_.MesonMom[0];
+    if( Common::EqualIgnoreCase( s, sModelTypeExp ) )
+      m = eModelType::Exp;
+    else if( Common::EqualIgnoreCase( s, sModelTypeCosh ) )
+      m = eModelType::Cosh;
+    else if( Common::EqualIgnoreCase( s, sModelTypeSinh ) )
+      m = eModelType::Sinh;
+    else if( Common::EqualIgnoreCase( s, sModelTypeThreePoint ) )
+      m = eModelType::ThreePoint;
+    else if( Common::EqualIgnoreCase( s, sModelTypeConstant ) )
+      m = eModelType::Constant;
+    else if( Common::EqualIgnoreCase( s, sModelTypeRatio ) )
+      m = eModelType::R3;
+    else
+    {
+      m = eModelType::Unknown;
+      is.setstate( std::ios_base::failbit );
+    }
   }
-  if( !bManualObjectID[1] )
+  return is;
+}
+
+std::istream & operator>>( std::istream &is, ModelType &m )
+{
+  eModelType t;
+  is >> t;
+  m.t = static_cast<int>( t );
+  return is;
+}
+
+// Create a model of the appropriate type - this is the only place with knowledge of this mapping
+ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
+{
+  // Now work out what type of model we are creating
+  eModelType modelType{ eModelType::Unknown };
+  bool bGotModelType{ false };
   {
-    if( cp.pCorr->Name_.Meson.size() < 2 )
-      throw std::runtime_error( "GetObjectNameSnkSrc(): Snk unavailable - specify manually" );
-    ObjectID[1] = cp.pCorr->Name_.MesonMom[1];
+    std::string s{ Args.Remove( "Model", &bGotModelType ) };
+    if( bGotModelType )
+    {
+      std::istringstream ss( s );
+      if( !( ss >> modelType ) || !Common::StreamEmpty( ss ) )
+        throw std::runtime_error( "Unknown ModelType \"" + s + "\"" );
+    }
   }
-  if( Common::EqualIgnoreCase( ObjectID[0], ObjectID[1] ) )
-    ObjectID.resize( 1 );
-  return { ObjectID };
+  if( !bGotModelType )
+  {
+    // We haven't been told which model to use. Choose a suitable default
+    const bool b3pt{ cp.pCorr->Name_.bGotDeltaT && cp.pCorr->Name_.Gamma.size() == 1 };
+    if( b3pt )
+    {
+      if( !cp.pCorr->Name_.BaseShortParts.empty()
+         && Common::EqualIgnoreCase( cp.pCorr->Name_.BaseShortParts[0], "R3" ) )
+        modelType = eModelType::R3;
+      else
+        modelType = eModelType::ThreePoint;
+    }
+    else switch( dynamic_cast<const Fold *>( cp.pCorr )->parity )
+    {
+      case Common::Parity::Even:
+        modelType = eModelType::Cosh;
+        break;
+      case Common::Parity::Odd:
+        modelType = eModelType::Sinh;
+        break;
+      default:
+        modelType = eModelType::Exp;
+        break;
+    }
+  }
+  // Make the model
+  std::cout << "  " << modelType;
+  for( typename Model::Args::value_type v : Args )
+  {
+    std::cout << Common::CommaSpace << v.first;
+    if( !v.second.empty() )
+      std::cout << '=' << v.second;
+  }
+  const int nExp{ Args.Remove( "e", cp.NumExponents ) };
+  ModelPtr model;
+  try
+  {
+    switch( modelType )
+    {
+      case eModelType::Exp:
+        model.reset( new ModelExp( cp, Args, nExp ) );
+        break;
+      case eModelType::Cosh:
+        model.reset( new ModelCosh( cp, Args, nExp ) );
+        break;
+      case eModelType::Sinh:
+        model.reset( new ModelSinh( cp, Args, nExp ) );
+        break;
+      case eModelType::ThreePoint:
+        model.reset( new Model3pt( cp, Args, nExp ) );
+        break;
+      case eModelType::Constant:
+        model.reset( new ModelConstant( cp, Args, nExp ) );
+        break;
+      case eModelType::R3:
+        model.reset( new ModelRatio( cp, Args, nExp ) );
+        break;
+      default:
+        throw std::runtime_error( "Unrecognised ModelType for " + cp.pCorr->Name_.Filename );
+    }
+  }
+  catch(...)
+  {
+    std::cout << Common::Space;
+    throw;
+  }
+  std::cout << " => " << model->Description() << Common::NewLine;
+  // 2 part construction - now that virtual functions in place
+  return model;
 }
 
 std::vector<std::string> ModelOverlap::GetOpNames( const Model::CreateParams &cp, Model::Args &Args )
