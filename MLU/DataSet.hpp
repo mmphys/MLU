@@ -62,8 +62,18 @@ struct DataSet
   std::vector<FoldPtr>  corr;     // Correlator files
   std::vector<ModelPtr> constFile;// Constant files, i.e. model results from previous fits
   std::vector<std::vector<int>> FitTimes; // The actual timeslices we are fitting to in each correlator
+  inline const Sample<T> &operator()( std::size_t idx, bool bCorr ) const
+  { return bCorr ? *corr[idx].get() : *constFile[idx].get(); }
+  inline       Sample<T> &operator()( std::size_t idx, bool bCorr )
+  { return bCorr ? *corr[idx].get() : *constFile[idx].get(); }
   inline SeedType Seed() const
-  { return corr.empty() ? RandomCache::DefaultSeed() : corr[0]->Seed(); }
+  {
+    if( !corr.empty() )
+      return corr[0]->Seed();
+    if( !constFile.empty() )
+      return constFile[0]->Seed();
+    return RandomCache::DefaultSeed();
+  }
   ConstMap constMap;
   std::vector<int> RebinSize; // Bin sizes if I've rebinned the raw data
   // Cached data for selected FitTimes
@@ -89,10 +99,9 @@ protected:
   std::array<std::vector<fint>, 2> RandomCentralBuf; // No replacement. Saves having to rebuild continually
   std::array< MatrixView<fint>, 2> RandomViews;
   std::array<std::vector<fint>, 2> RandomBuffer;
-  void AddConstant( const Param::Key &Key, std::size_t File );
-  void SetValidatedFitTimes( std::vector<std::vector<int>> &&FitTimes );
+  void SetValidatedFitTimes( std::vector<std::vector<int>> &&FitTimes, bool bCorr );
   /// Cache the fit data, i.e. JackBoot[0]. Parameters describe the covariance source
-  void CacheRawData();
+  void CacheRawData( bool bCorr );
 public:
   explicit DataSet( int nSamples = 0 ) : NSamples{ nSamples } {}
   inline Sample<T> &front()
@@ -104,8 +113,12 @@ public:
     throw std::runtime_error( "Can't access front() of empty DataSet" );
   }
   inline const Sample<T> &front() const { return const_cast<DataSet<T> *>( this )->front(); }
+  inline std::size_t size( bool bCorr ) const { return bCorr ? corr.size()  : constFile.size(); }
+  inline bool       empty( bool bCorr ) const { return bCorr ? corr.empty() : constFile.empty(); }
   inline bool empty() const { return corr.empty() && constFile.empty(); }
   void clear();
+         void AddConstant( const Param::Key &Key, std::size_t File, const Param::Key &FileKey );
+  inline void AddConstant( const Param::Key &Key, std::size_t File ) {AddConstant( Key, File, Key );}
   const Param &GetConstantParam( const ConstantSource &cs ) const;
   int  LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags = COMPAT_DEFAULT,
                        const char * PrintPrefix = "  " );
@@ -117,13 +130,14 @@ public:
   void LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Args,
                   const char *pszPrintPrefix = nullptr,
                   unsigned int CompareFlags = COMPAT_DISABLE_BASE | COMPAT_DISABLE_NT );
-  std::vector<std::string> GetModelFilenames() const;
+  std::vector<std::string> GetModelFilenames( std::size_t Start = 0 ) const;
   void SortOpNames( std::vector<std::string> &OpNames );
   void Rebin( const std::vector<int> &RebinSize );
   /// Minimum number of samples supported by all correlators
-  int NumSamples( SampleSource ss, int idxJackBoot = 0 ) const;
+  int NumSamples( SampleSource ss, int idxJackBoot = 0, bool bCorr = true ) const;
   inline int NumSamplesBinned() const { return NumSamples( SS::Binned, 0 ); }
-  void SetFitTimes( const std::vector<std::vector<int>> &FitTimes ); // A list of all the timeslices to include
+  // A list of all the timeslices to include
+  void SetFitTimes( const std::vector<std::vector<int>> &FitTimes, bool bCorr = true );
   void SetFitTimes( int tMin, int tMax ); // All fit ranges are the same
         JackBoot<T> &GetData()       { return mFitData; }
   const JackBoot<T> &GetData() const { return mFitData; }

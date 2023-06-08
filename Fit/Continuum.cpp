@@ -27,7 +27,6 @@
 /*  END LEGAL */
 
 #include "Continuum.hpp"
-#include "Fitter.hpp"
 #include "ModelContinuum.hpp"
 #include <MLU/DebugInfo.hpp>
 #include <chrono>
@@ -54,12 +53,72 @@ struct EnsembleLess
   }
 };
 
-void SortModels( DataSet &ds, std::vector<Model::Args> &ModelArgs )
+CreateParams::CreateParams( const std::vector<std::string> &O, const Common::CommandLine &C,
+                            DataSet &D )
+: Model::CreateParams( O, C ), ds{D}
+{
+}
+
+ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
+: cl{cl_},
+  NumSamples{cl.SwitchValue<int>("n")},
+  doCorr{ !cl.GotSwitch( "uncorr" ) },
+  CovarBlock{ !cl.GotSwitch( "noblock" ) },
+  sFFValue{ cl.SwitchValue<std::string>("f") },
+  ff{ Common::FromString<Common::FormFactor>( sFFValue ) },
+  inBase{ cl.SwitchValue<std::string>("i") },
+  outBaseFileName{ cl.SwitchValue<std::string>("o") },
+  ds{NumSamples}
+{
+  Common::MakeAncestorDirs( outBaseFileName );
+}
+
+void ContinuumFit::LoadModels()
+{
+  std::cout << std::setprecision( std::numeric_limits<double>::max_digits10+2 )
+            << "Performing chiral continuum fit from ensemble results" << std::endl;
+  // Walk the list of parameters on the command-line, loading correlators and making models
+  for( std::size_t ArgNum = 0; ArgNum < cl.Args.size(); ++ArgNum )
+  {
+    // First parameter is the filename we're looking for, optionally followed by comma and arguments
+    std::string FileToGlob{ Common::ExtractToSeparator( cl.Args[ArgNum] ) };
+    std::vector<std::string> Filenames{ Common::glob( &FileToGlob, &FileToGlob + 1,
+                                                      inBase.c_str() ) };
+    bool bGlobEmpty{ true };
+    // Anything after the comma is a list of arguments
+    Model::Args vArgs;
+    vArgs.FromString( cl.Args[ArgNum], true );
+    std::string Ensemble{ vArgs.Remove( Common::sEnsemble ) };
+    if( vArgs.find( sFF ) == vArgs.end() )
+      vArgs.emplace( sFF, sFFValue );
+    for( const std::string &sFileName : Filenames )
+    {
+      bGlobEmpty = false;
+      // This is a correlator - load it
+      std::string PrintPrefix( 2, ' ' );
+      if( !cl.Args[ArgNum].empty() )
+      {
+        PrintPrefix.append( cl.Args[ArgNum] );
+        PrintPrefix.append( 1, ' ' );
+      }
+      ds.LoadModel( Common::FileNameAtt( sFileName, &OpName ), PrintPrefix.c_str(),
+                    Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
+                    | Common::COMPAT_DISABLE_ENSEMBLE );
+      ModelArgs.emplace_back( vArgs );
+      if( !Ensemble.empty() )
+        ds.constFile.back()->Ensemble = Ensemble;
+    }
+    if( bGlobEmpty )
+      throw std::runtime_error( "No files matched " + FileToGlob );
+  }
+}
+
+void ContinuumFit::SortModels()
 {
   assert( ds.constFile.size() == ModelArgs.size() && "Should be one ModelArgs per ds.constFile" );
   if( ds.constFile.empty() )
     throw std::runtime_error( "Nothing to fit" );
-  // Grab the models and corresponding arguments
+  // Sort the models and corresponding arguments by ensemble
   std::vector<EnsembleInfo> ei( ds.constFile.size() );
   for( std::size_t i = 0; i < ds.constFile.size(); ++i )
   {
@@ -74,9 +133,152 @@ void SortModels( DataSet &ds, std::vector<Model::Args> &ModelArgs )
     ds.constFile[i].reset( ei[i].m.release() );
     ModelArgs[i] = std::move( ei[i].Args );
   }
+
+  // Describe the number of replicas
+  std::cout << "Using ";
+  if( ds.NSamples == ds.MaxSamples )
+    std::cout << "all ";
+  else
+    std::cout << "first " << ds.NSamples << " of ";
+  std::cout << ds.MaxSamples << Common::Space << ds.front().getData().SeedTypeString()
+            << " replicas";
+  if( ds.NSamples != ds.MaxSamples )
+    std::cout << " (all " << ds.MaxSamples << " for var/covar)";
+  std::cout << std::endl;
   // Debug
   //for( const ModelFilePtr &m : ds.constFile )
-    //std::cout << "  " << m->Name_.Filename << Common::NewLine;
+    //std::cout << "  " << m->Name_.Filename << std::endl;
+}
+
+void ContinuumFit::LoadExtra()
+{
+  const std::vector<std::string> &vExtra{ cl.SwitchStrings( "model" ) };
+  const std::string PrintPrefix( 2, ' ' );
+  const unsigned int CompareFlags{ Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
+                                 | Common::COMPAT_DISABLE_ENSEMBLE };
+  for( const std::string &sFileName : vExtra )
+  {
+    Common::FileNameAtt fna;
+    fna.Filename = sFileName;
+    fna.Type = "Model constants";
+    if( ds.empty() )
+    {
+      fna.Ext = "h5";
+      fna.bSeedNum = true;
+      fna.Seed = 0;
+    }
+    else
+    {
+      const Common::FileNameAtt &S{ ds.front().Name_ };
+      fna.Ext = S.Ext;
+      fna.bSeedNum = S.bSeedNum;
+      fna.Seed = S.Seed;
+    }
+    ds.LoadModel( std::move( fna ), "", PrintPrefix.c_str(), CompareFlags );
+  }
+}
+
+void ContinuumFit::MakeOutputFilename()
+{
+  // Sort operator names (also renumbers references to these names)
+  ds.SortOpNames( OpName );
+  // Make sorted, concatenated list of operators in the fit for filenames
+  sOpNameConcat = OpName[0];
+  for( std::size_t i = 1; i < OpName.size(); i++ )
+  {
+    sOpNameConcat.append( 1, '_' );
+    sOpNameConcat.append( OpName[i] );
+  }
+  // Now make base filenames for output
+  // If the output base is given, but doesn't end in '/', then it already contains the correct name
+  if( outBaseFileName.empty() || outBaseFileName.back() == '/' )
+  {
+    // Simplistic, but better is hard to automate
+    const Common::FileNameAtt &fna{ ds.front().Name_ };
+    if( fna.BaseShortParts.size() < 3 || fna.Spectator.empty() )
+      throw std::runtime_error( "Please include output filename in -o" );
+    outBaseFileName.append( fna.BaseShortParts[0] );
+    outBaseFileName.append( 1, '_' );
+    outBaseFileName.append( Common::MesonName( fna.BaseShortParts[1], fna.Spectator ) );
+    outBaseFileName.append( 1, '_' );
+    outBaseFileName.append( Common::MesonName( fna.BaseShortParts[2], fna.Spectator ) );
+    for( std::size_t i = 3; i < fna.BaseShortParts.size(); ++i )
+    {
+      outBaseFileName.append( 1, '_' );
+      outBaseFileName.append( fna.BaseShortParts[i] );
+    }
+  }
+  outBaseFileName.append( 1, '.' );
+  outBaseFileName.append( doCorr ? "corr" : "uncorr" );
+  outBaseFileName.append( 1, '.' );
+}
+
+void ContinuumFit::MakeCovarBlock()
+{
+  for( std::size_t i = 0; i < ds.mCovar.size1; ++i )
+    for( std::size_t j = 0; j < i; ++j )
+      if( i != j && !Common::EqualIgnoreCase( ds.constFile[i]->Ensemble, ds.constFile[j]->Ensemble ) )
+      {
+        ds.mCovar(i,j) = 0;
+        ds.mCovar(j,i) = 0;
+      }
+}
+
+int ContinuumFit::DoFit()
+{
+  int iReturn{ EXIT_SUCCESS };
+
+  // Set fit ranges
+  std::vector<std::vector<int>> fitTimes( ModelArgs.size() );
+  for( int i = 0; i < f->ModelArgs.size(); ++i )
+    fitTimes[i] = { static_cast<int>( f->model[i]->GetFitColumn() ) };
+  ds.SetFitTimes( fitTimes, false );
+  if( CovarBlock )
+    MakeCovarBlock();
+
+  try
+  {
+    {
+      std::stringstream ss;
+      if( f->bTestRun )
+        ss << "Test run of ";
+      ss << (doCorr ? "C" : "Unc") << "orrelated " << f->Type() << " chiral continuum fit";
+      Fitter::SayNumThreads( ss );
+      const std::string &sMsg{ ss.str() };
+      if( !f->bTestRun )
+        std::cout << std::string( sMsg.length(), '=' ) << std::endl;
+      std::cout << sMsg << std::endl;
+    }
+    double ChiSq;
+    int dof;
+    if( !f->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat ) )
+      iReturn = 3; // Not all parameters resolved
+  }
+  catch(const std::exception &e)
+  {
+    iReturn = 2;
+    std::cout << "Fitter error: " << e.what() << std::endl;
+  }
+  return iReturn;
+}
+
+int ContinuumFit::Run()
+{
+  LoadModels();
+  SortModels();
+  MakeOutputFilename();
+  LoadExtra();
+  // Work out how covariance matrix should be constructed and tell user
+  // TODO: No choice - we have to make it from the resampled data, block diagonal per Ensemble
+  CovarParams cp{ cl, ds };
+  std::cout << cp << std::endl;
+  std::cout << "Covariance matrix from resampled data, block diagonal per Ensemble" << std::endl;
+
+  // Make the fitter
+  f.reset( Fitter::Make( Model::CreateParams{ OpName, cl }, ds, std::move( ModelArgs ),
+                         std::move( cp ), false ) );
+  // Now do the fit
+  return DoFit();
 }
 
 int main(int argc, const char *argv[])
@@ -98,6 +300,7 @@ int main(int argc, const char *argv[])
       // Fitter parameters
       {"f", CL::SwitchType::Single, DefaultFormFactor},
       {"overwrite", CL::SwitchType::Flag, nullptr},
+      {"model", CL::SwitchType::Multiple, nullptr},
       {"Hotelling", CL::SwitchType::Single, DefaultHotelling},
       {"chisqdof", CL::SwitchType::Single, "0"},
       {"sep", CL::SwitchType::Single, DefaultEnergySep},
@@ -105,14 +308,12 @@ int main(int argc, const char *argv[])
       {"retry", CL::SwitchType::Single, "0"},
       {"iter", CL::SwitchType::Single, "0"},
       {"tol", CL::SwitchType::Single, "1e-7"},
+      {"noblock", CL::SwitchType::Flag, nullptr},
       {"summary", CL::SwitchType::Single, "1"},
       {"v", CL::SwitchType::Single, "0"},
       {"strict",  CL::SwitchType::Single, "0"},
       {"maxE",  CL::SwitchType::Single, "10"},
       {"errdig", CL::SwitchType::Single, DefaultErrDig},
-      // ModelDefaultParams
-      {"e", CL::SwitchType::Single, "1"},
-      {"N", CL::SwitchType::Single, "0"},
       // Covariance parameters
       {"covsrc", CL::SwitchType::Single, nullptr},
       {"covboot", CL::SwitchType::Single, nullptr},
@@ -129,192 +330,43 @@ int main(int argc, const char *argv[])
     cl.Parse( argc, argv, list );
     if( !cl.GotSwitch( "help" ) && cl.Args.size() )
     {
+      bShowUsage = false;
       if( cl.GotSwitch( "debug-signals" ) )
         Common::Grid_debug_handler_init();
-      const std::string sFFValue{ cl.SwitchValue<std::string>("f") };
-      [[maybe_unused]]
-      const Common::FormFactor ff{ Common::FromString<Common::FormFactor>( sFFValue ) };
-      const std::string inBase{ cl.SwitchValue<std::string>("i") };
-      std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
-      Common::MakeAncestorDirs( outBaseFileName );
-      const int NSamples{ cl.SwitchValue<int>("n") };
-      const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
-
-      // Walk the list of parameters on the command-line, loading correlators and making models
-      bShowUsage = false;
-      std::vector<std::string> OpName;
-      std::cout << std::setprecision( 13 /*std::numeric_limits<double>::max_digits10*/ ) << "Loading folded correlators\n";
-      // Split each argument at the first comma (so the first part can be treated as a filename to glob
-      const std::size_t NumArgs{ cl.Args.size() };
-      DataSet ds( NSamples );
-      std::vector<Model::Args> ModelArgs;
-      for( std::size_t ArgNum = 0; ArgNum < NumArgs; ++ArgNum )
-      {
-        // First parameter (up to comma) is the filename we're looking for
-        std::string FileToGlob{ Common::ExtractToSeparator( cl.Args[ArgNum] ) };
-        std::vector<std::string> Filenames{ Common::glob( &FileToGlob, &FileToGlob + 1,
-                                                          inBase.c_str() ) };
-        bool bGlobEmpty{ true };
-        // Anything after the comma is a list of arguments
-        Model::Args vArgs;
-        vArgs.FromString( cl.Args[ArgNum], true );
-        std::string Ensemble{ vArgs.Remove( Common::sEnsemble ) };
-        if( vArgs.find( sFF ) == vArgs.end() )
-          vArgs.emplace( sFF, sFFValue );
-        for( const std::string &sFileName : Filenames )
-        {
-          bGlobEmpty = false;
-          // This is a correlator - load it
-          std::string PrintPrefix( 2, ' ' );
-          if( !cl.Args[ArgNum].empty() )
-          {
-            PrintPrefix.append( cl.Args[ArgNum] );
-            PrintPrefix.append( 1, ' ' );
-          }
-          ds.LoadModel( Common::FileNameAtt( sFileName, &OpName ), PrintPrefix.c_str(),
-                        Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
-                        | Common::COMPAT_DISABLE_ENSEMBLE );
-          ModelArgs.emplace_back( vArgs );
-          if( !Ensemble.empty() )
-            ds.constFile.back()->Ensemble = Ensemble;
-        }
-        if( bGlobEmpty )
-          throw std::runtime_error( "No files matched " + FileToGlob );
-      }
-      // Sort the models
-      SortModels( ds, ModelArgs );
-      // Describe the number of replicas
-      ds.SortOpNames( OpName );
-      std::cout << "Using ";
-      if( ds.NSamples == ds.MaxSamples )
-        std::cout << "all ";
-      else
-        std::cout << "first " << ds.NSamples << " of ";
-      std::cout << ds.MaxSamples << Common::Space << ds.front().getData().SeedTypeString()
-                << " replicas";
-      if( ds.NSamples != ds.MaxSamples )
-        std::cout << " (all " << ds.MaxSamples << " for var/covar)";
-      std::cout << Common::NewLine;
-
-      // Work out how covariance matrix should be constructed and tell user
-      CovarParams cp{ cl, ds };
-      std::cout << cp << Common::NewLine;
-
-      // I'll need a sorted, concatenated list of the operators in the fit for filenames
-      std::string sOpNameConcat;
-      sOpNameConcat = OpName[0];
-      for( std::size_t i = 1; i < OpName.size(); i++ )
-      {
-        sOpNameConcat.append( 1, '_' );
-        sOpNameConcat.append( OpName[i] );
-      }
-
-      // Now make base filenames for output
-      // If the output base is given, but doesn't end in '/', then it already contains the correct name
-      if( outBaseFileName.empty() || outBaseFileName.back() == '/' )
-      {
-        // Simplistic, but better is hard to automate
-        const Common::FileNameAtt &f{ ds.front().Name_ };
-        if( f.BaseShortParts.size() < 3 || f.Spectator.empty() )
-          throw std::runtime_error( "Please include output filename in -o" );
-        outBaseFileName.append( f.BaseShortParts[0] );
-        outBaseFileName.append( 1, '_' );
-        outBaseFileName.append( Common::MesonName( f.BaseShortParts[1], f.Spectator ) );
-        outBaseFileName.append( 1, '_' );
-        outBaseFileName.append( Common::MesonName( f.BaseShortParts[2], f.Spectator ) );
-        for( std::size_t i = 3; i < f.BaseShortParts.size(); ++i )
-        {
-          outBaseFileName.append( 1, '_' );
-          outBaseFileName.append( f.BaseShortParts[i] );
-        }
-      }
-      outBaseFileName.append( 1, '.' );
-      outBaseFileName.append( doCorr ? "corr" : "uncorr" );
-
-      // All the models are loaded
-      std::unique_ptr<Fitter> f{ Fitter::Make( cl, ds, std::move( ModelArgs ), OpName,
-                                               std::move( cp ) ) };
-      bool bAllParamsResolved{ true };
       const auto Start{ std::chrono::steady_clock::now() };
-      // Log what file we're processing and when we started
-      const auto then{ std::chrono::steady_clock::now() };
-      // Set fit ranges
-      std::vector<std::vector<int>> fitTimes( ds.corr.size() );
-      for( int i = 0; i < ds.corr.size(); ++i )
-        fitTimes[i] = { 0 };
-      ds.SetFitTimes( fitTimes );
-      bool bFitOK{ true };
-      try
+      ContinuumFit cf{ cl };
+      iReturn = cf.Run();
+      const auto Stop{ std::chrono::steady_clock::now() };
+      // Say whether this worked, what the time is and how long it took
+      switch( iReturn )
       {
-        {
-          std::stringstream ss;
-          if( f->bTestRun )
-            ss << "Test run of ";
-          ss << (doCorr ? "C" : "Unc") << "orrelated " << f->Type() << " chiral continuum fit";
-          Fitter::SayNumThreads( ss );
-          const std::string &sMsg{ ss.str() };
-          if( !f->bTestRun )
-            std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine;
-          std::cout << sMsg << Common::NewLine;
-        }
-        double ChiSq;
-        int dof;
-        bAllParamsResolved =
-        f->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat );
+        case 0:
+          std::cout << "OK";
+          break;
+        case 3:
+          std::cout << "Warning: not all parameters resolved";
+          break;
+        default:
+          std::cout << "Error " << iReturn;
+          break;
       }
-      catch(const std::exception &e)
-      {
-        bFitOK = false;
-        std::cout << "Error: " << e.what() << "\n";
-      }
-      // Mention that we're finished, what the time is and how long it took
-      if( !f->bTestRun )
-      {
-        const auto now{ std::chrono::steady_clock::now() };
-        const auto mS{ std::chrono::duration_cast<std::chrono::milliseconds>( now - then ) };
-        std::cout << "Fit duration ";
-        if( mS.count() < 1100 )
-          std::cout << mS.count() << " milliseconds";
-        else
-        {
-          const auto S{ std::chrono::duration_cast<std::chrono::duration<double>>( now - then ) };
-          std::ostringstream ss;
-          ss << std::fixed << std::setprecision(1) << S.count() << " seconds";
-          std::cout << ss.str();
-        }
-        std::time_t ttNow;
-        std::time( &ttNow );
-        std::string sNow{ std::ctime( &ttNow ) };
-        while( sNow.length() && sNow.back() == '\n' )
-          sNow.resize( sNow.length() - 1 );
-        std::cout << ". " << sNow << Common::NewLine;
-      }
-      const auto now{ std::chrono::steady_clock::now() };
-      auto S{ std::chrono::duration_cast<std::chrono::seconds>( now - Start ).count() };
-      std::cout << std::string( 50, '=' ) << "\nFit ";
-      if( bFitOK )
-        std::cout << "succeeded";
+      const auto mS{ std::chrono::duration_cast<std::chrono::milliseconds>( Stop - Start ) };
+      std::cout << ". Fit duration ";
+      if( mS.count() < 1100 )
+        std::cout << mS.count() << " milliseconds";
       else
-        std::cout << "failed";
-      std::cout << ". Total duration ";
-      constexpr unsigned int DaySeconds{ 24 * 60 * 60 };
-      if( S >= DaySeconds )
       {
-        std::cout << S / DaySeconds << '-';
-        S %= DaySeconds;
+        const auto S{ std::chrono::duration_cast<std::chrono::duration<double>>( Stop - Start ) };
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(1) << S.count() << " seconds";
+        std::cout << ss.str();
       }
-      const int Hours{ static_cast<int>( S / 3600 ) };
-      S %= 3600;
-      const int Minutes{ static_cast<int>( S / 60 ) };
-      S %= 60;
-      std::cout << std::setfill( '0' ) << std::setw(2) << Hours
-         << ':' << std::setfill( '0' ) << std::setw(2) << Minutes
-         << ':' << std::setfill( '0' ) << std::setw(2) << S << Common::NewLine;
-      // Error if only one fit requested and it failed ... or all params not resolved
-      if( !bFitOK )
-        iReturn = 2;
-      else if( !bAllParamsResolved )
-        iReturn = 3;
+      std::time_t ttNow;
+      std::time( &ttNow );
+      std::string sNow{ std::ctime( &ttNow ) };
+      while( sNow.length() && sNow.back() == '\n' )
+        sNow.resize( sNow.length() - 1 );
+      std::cout << ". " << sNow << std::endl;
     }
   }
   catch(const std::exception &e)
@@ -332,6 +384,7 @@ int main(int argc, const char *argv[])
     "Perform a chiral continuum fit of the per Ensemble data\n"
     "Options:\n"
     "-f       Form factor: f0, fplus, fpar or fperp (default: " << DefaultFormFactor << ")\n"
+    "--model  An additional model file, e.g. to load lattice spacings\n"
     "--Hotelling Minimum Hotelling Q-value on central replica (default " << DefaultHotelling << ")\n"
     "--chisqdof  Maximum chi^2 / dof on central replica\n"
     "--sep    Minimum relative separation between energies (default " << DefaultEnergySep << ")\n"
@@ -357,12 +410,11 @@ int main(int argc, const char *argv[])
     "         H5,f[,g],d Load INVERSE covariance from .h5 file f, group g, dataset d\n"
     "         Default: Binned if available, otherwise Bootstrap\n"
     "--covboot Build covariance using secondary bootstrap & this num replicas, 0=all\n"
+    "--noblock Use full covariance matrix (rather than block diagonal per ensemble)\n"
     "--summary 0 no summaries; 1 model_td.seq.txt only; 2 model_td and model.seq.txt\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
-    "-e     number of Exponents (default 1)\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
-    "-N     Use lattice dispersion relation for boosted energies with N=L/a\n"
     "-v     Verbosity, 0 (default)=central, 1=detail, 2=all, 3=all detail\n"
     "Flags:\n"
     "--uncorr   Uncorrelated fit (default correlated)\n"

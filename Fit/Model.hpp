@@ -67,21 +67,21 @@ struct Model
     }
   };
 
-  // Default parameters for model creation - these apply to all models
+  // Default parameters for model creation - feel free to pass a derived type to models
   struct CreateParams
   {
     // These apply to all models
+  protected:
     const std::vector<std::string> &OpNames;
+  public:
     const Common::CommandLine &cl;
-    const int NumExponents; // Default if not specified per model
-    const int N; // When non-zero, this is L/a (lattice spatial extent) use dispersion relation
-    const bool bEnablePHat; // true ? use p_hat in dispersion relation (per definition) : just use p
     const bool bOverlapAltNorm;
     // These will change per model
     const Sample *pCorr; // Actually either a Fold or a Model
     CreateParams( const std::vector<std::string> &OpNames_, const Common::CommandLine &cl_ );
+    virtual ~CreateParams(){}
     std::string GetOpName( int Idx ) const { return OpNames[pCorr->Name_.op[Idx]]; }
-    std::string Description() const;
+    virtual std::string Description() const;
   };
   std::vector<Params::value_type *> param;
   const int Nt;
@@ -98,11 +98,15 @@ protected:
 public:
   virtual ~Model() {}
   // This is how to make a model
-  static ModelPtr MakeModel( const CreateParams &cp, Model::Args &Args );
+  static ModelPtr MakeModel( const CreateParams &mcp, Model::Args &Args );
   // These must be implemented by the model
-  // Say which parameters this model wants
+  /// Models which are a function of a vector (eg continuum fit) must define X Vector, i.e. constants used
+  virtual void DefineXVector( DataSet &ds, int i ) {}
+  /// Models are expected to create parameters and constants they use
   virtual void AddParameters( Params &mp ) = 0;
-  // Now that a complete model has been agreed, save the parameters this model will use
+  /// Models which fit to Models (not correlators) must return the column number they are fitting
+  virtual std::size_t GetFitColumn() const;
+  /// A complete model has been agreed, Models must save the parameters (ie offsets) they use
   virtual void SaveParameters( const Params &mp ) = 0;
   // Get a descriptive string for the model
   virtual std::string Description() const = 0;

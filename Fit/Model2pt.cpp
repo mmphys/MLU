@@ -32,8 +32,8 @@ Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args, int NumExp
                     std::vector<std::string> &&objectID, std::vector<std::string> &&opNames )
 : ModelOverlap( cp, Args, NumExp, static_cast<std::size_t>( NumExp ),
                 std::move( objectID ), std::move( opNames ) ),
-  N{ cp.N },
-  bEnablePHat{ cp.bEnablePHat }
+  N{ dynamic_cast<const MultiFitCreateParams &>( cp ).N },
+  bEnablePHat{ dynamic_cast<const MultiFitCreateParams &>( cp ).bEnablePHat }
 {
   E.Key.Object = { ObjectID( idxSrc ) };
   E.Key.Name = Args.Remove( "Energy", Common::ModelBase::EnergyPrefix );

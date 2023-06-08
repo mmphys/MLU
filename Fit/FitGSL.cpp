@@ -238,9 +238,9 @@ const std::string & FitterGSL::Type() const
   return MyType;
 }
 
-FitterGSL * FitterGSL::Make( const std::string &FitterArgs, const Common::CommandLine &cl,
-                             const DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                             const std::vector<std::string> &opNames, CovarParams &&cp )
+FitterGSL * FitterGSL::Make( const std::string &FitterArgs, Model::CreateParams &mcp,
+                             DataSet &ds, std::vector<Model::Args> &&ModelArgs,
+                             CovarParams &&cp, bool bFitCorr )
 {
   TRS trs{ TRS::lm };
   static const std::vector<std::string> Algorithms{ "lm", "lmaccel", "dogleg", "ddogleg", "subspace2d" };
@@ -251,12 +251,12 @@ FitterGSL * FitterGSL::Make( const std::string &FitterArgs, const Common::Comman
       return nullptr;
     trs = static_cast<TRS>( idx );
   }
-  return new FitterGSL( trs, cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) );
+  return new FitterGSL( trs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr );
 }
 
-Fitter * MakeFitterGSL( const std::string &FitterArgs, const Common::CommandLine &cl,
-                        const DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                        const std::vector<std::string> &opNames, CovarParams &&cp )
+Fitter * MakeFitterGSL( const std::string &FitterArgs, Model::CreateParams &mcp,
+                        DataSet &ds, std::vector<Model::Args> &&ModelArgs,
+                        CovarParams &&cp, bool bFitCorr )
 {
-  return FitterGSL::Make( FitterArgs, cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) );
+  return FitterGSL::Make( FitterArgs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr );
 }

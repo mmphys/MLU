@@ -95,11 +95,10 @@ ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
     if( !v.second.empty() )
       std::cout << '=' << v.second;
   }
-  const int nExp{ Args.Remove( "e", cp.NumExponents ) };
   ModelPtr model;
   try
   {
-    model.reset( new ModelContinuum( cp, Args, nExp, ff ) );
+    model.reset( new ModelContinuum( cp, Args, ff ) );
   }
   catch(...)
   {
@@ -112,13 +111,13 @@ ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
 }
 
 ModelContinuum::ModelContinuum( const Model::CreateParams &cp, Model::Args &Args,
-                                int NumExponents_, Common::FormFactor ff_ )
-: Model( cp, NumExponents_ ),
+                                Common::FormFactor ff_ )
+: Model( cp, 1 ),
   mf{ * dynamic_cast<const ModelFile *>( cp.pCorr ) },
   ff{ff_},
-  p{ cp.pCorr->Name_.MesonP[1].p }
+  p{ cp.pCorr->Name_.MesonP[1].p },
+  Ensemble{ Args.Remove( "Ensemble", cp.pCorr->Ensemble ) }
 {
-  Ensemble = Args.Remove( "Ensemble", cp.pCorr->Ensemble );
   if( Ensemble.empty() )
     throw std::runtime_error( "ModelContinuum(): Ensemble unavailable - specify manually" );
   // Now remove source and sink names
@@ -127,15 +126,15 @@ ModelContinuum::ModelContinuum( const Model::CreateParams &cp, Model::Args &Args
   Meson[1] = Args.Remove( "Snk", &bManualObjectID[1] );
   if( !bManualObjectID[0] )
   {
-    if( cp.pCorr->Name_.MesonMom.empty() )
+    if( cp.pCorr->Name_.Meson.empty() )
       throw std::runtime_error( "ModelContinuum(): Src unavailable - specify manually" );
-    Meson[0] = cp.pCorr->Name_.Meson[0];
+    Meson[0] = Common::MesonName( cp.pCorr->Name_.BaseShortParts[2], cp.pCorr->Name_.Spectator );
   }
   if( !bManualObjectID[1] )
   {
-    if( cp.pCorr->Name_.MesonMom.size() < 2 )
+    if( cp.pCorr->Name_.Meson.size() < 2 )
       throw std::runtime_error( "ModelContinuum(): Snk unavailable - specify manually" );
-    Meson[1] = cp.pCorr->Name_.Meson[1];
+    Meson[1] = Common::MesonName( cp.pCorr->Name_.BaseShortParts[1], cp.pCorr->Name_.Spectator );
   }
   if( Common::EqualIgnoreCase( Meson[0], Meson[1] ) )
     throw std::runtime_error( "ModelContinuum(): Snk and Src are both " + Meson[0] );
@@ -147,12 +146,58 @@ ModelContinuum::ModelContinuum( const Model::CreateParams &cp, Model::Args &Args
   }
 }
 
+void ModelContinuum::DefineXVector( DataSet &ds, int i )
+{
+  EL.Key.Object = { Ensemble, std::to_string( p.p2() ) };
+  EL.Key.Name = "EL";
+  ds.AddConstant( EL.Key, i, Param::Key{EL.Key.Name} );
+  kMu.Key.Object = EL.Key.Object;
+  kMu.Key.Name = "kMu";
+  ds.AddConstant( kMu.Key, i, Param::Key{kMu.Key.Name} );
+  mH.Key.Object = { Ensemble };
+  mH.Key.Name = "mH";
+  ds.AddConstant( mH.Key, i, Param::Key{mH.Key.Name} );
+  mL.Key.Object = mH.Key.Object;
+  mL.Key.Name = "mL";
+  ds.AddConstant( mL.Key, i, Param::Key{"mL"} );
+  qSq.Key.Object = kMu.Key.Object;
+  qSq.Key.Name = "qSq";
+  ds.AddConstant( qSq.Key, i, Param::Key{qSq.Key.Name} );
+  // For now I use a per-ensemble linear model
+  Slope.Key.Object = { Ensemble };
+  Slope.Key.Name = "Slope";
+  YIntercept.Key.Object = Slope.Key.Object;
+  YIntercept.Key.Name = "YIntercept";
+}
+
 void ModelContinuum::AddParameters( Params &mp )
 {
+  AddParam( mp, EL );
+  AddParam( mp, kMu );
+  AddParam( mp, mH );
+  AddParam( mp, mL );
+  AddParam( mp, qSq );
+  AddParam( mp, Slope );
+  AddParam( mp, YIntercept );
+}
+
+std::size_t ModelContinuum::GetFitColumn() const
+{
+  Common::Param::Key k;
+  k.Name = Common::GetFormFactorString( ff );
+  Params::const_iterator it{ mf.params.Find( k, "ModelContinuum::GetFitColumn()" ) };
+  return it->second();
 }
 
 void ModelContinuum::SaveParameters( const Params &mp )
 {
+  EL.idx = mp.at( EL.Key )();
+  kMu.idx = mp.at( kMu.Key )();
+  mH.idx = mp.at( mH.Key )();
+  mL.idx = mp.at( mL.Key )();
+  qSq.idx = mp.at( qSq.Key )();
+  Slope.idx = mp.at( Slope.Key )();
+  YIntercept.idx = mp.at( YIntercept.Key )();
 }
 
 // Get a descriptive string for the model
@@ -165,12 +210,24 @@ std::string ModelContinuum::Description() const
 
 void ModelContinuum::Guessable( ParamsPairs &PP ) const
 {
+  PP.SetState( ParamsPairs::State::Known, Slope.Key, Slope.param->size );
+  PP.SetState( ParamsPairs::State::Known, YIntercept.Key, YIntercept.param->size );
 }
 
 std::size_t ModelContinuum::Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
                    const VectorView &FitData, std::vector<int> FitTimes,
                    bool bLastChance ) const
 {
+  if( !bKnown[Slope.idx] )
+  {
+    bKnown[Slope.idx] = true;
+    Guess[Slope.idx] = 7;
+  }
+  if( !bKnown[YIntercept.idx] )
+  {
+    bKnown[YIntercept.idx] = true;
+    Guess[YIntercept.idx] = 0.7;
+  }
   return 0;
 }
 
@@ -183,5 +240,7 @@ ModelType ModelContinuum::Type() const
 
 scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
-  return 0.;
+  if( !p.p2() && ModelParams[mL.idx] != ModelParams[EL.idx] )
+    throw std::runtime_error( "ModelContinuum mL != EL(0) on Ensemble " + Ensemble );
+  return ModelParams[Slope.idx] * ModelParams[qSq.idx] + ModelParams[YIntercept.idx];
 }

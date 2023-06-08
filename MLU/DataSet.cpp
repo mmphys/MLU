@@ -42,24 +42,28 @@ void DataSet<T>::clear()
 
 // Specify which times I'm fitting to, as a list of timeslices for each correlator
 template <typename T>
-void DataSet<T>::SetFitTimes( const std::vector<std::vector<int>> &fitTimes_ )
+void DataSet<T>::SetFitTimes( const std::vector<std::vector<int>> &fitTimes_, bool bCorr )
 {
-  if( fitTimes_.size() != corr.size() )
+  if( bCorr && fitTimes_.size() != corr.size() )
     throw std::runtime_error( std::to_string( fitTimes_.size() ) + " FitTimes but "
                              + std::to_string( corr.size() ) + " correlators" );
+  else if( !bCorr && fitTimes_.size() > constFile.size() )
+    throw std::runtime_error( std::to_string( fitTimes_.size() ) + " FitTimes but "
+                             + std::to_string( corr.size() ) + " models" );
+
   std::vector<std::vector<int>> ft{ fitTimes_ };
   for( int i = 0; i < ft.size(); ++i )
   {
     if( !ft[i].empty() )
     {
       std::sort( ft[i].begin(), ft[i].end() );
-      if( ft[i][0] < 0 || ft[i].back() >= corr[i]->Nt()
+      if( ft[i][0] < 0 || ft[i].back() >= (*this)(i, bCorr).Nt()
          || std::adjacent_find( ft[i].begin(), ft[i].end() ) != ft[i].end() )
         throw std::runtime_error( "FitTimes[" + std::to_string( i ) + "]=[" + std::to_string( ft[i][0] )
                                  + "..." + std::to_string( ft[i].back() ) + "] invalid" );
     }
   }
-  SetValidatedFitTimes( std::move( ft ) );
+  SetValidatedFitTimes( std::move( ft ), bCorr );
 }
 
 template <typename T>
@@ -75,12 +79,12 @@ void DataSet<T>::SetFitTimes( int tMin, int tMax )
     for( int j = tMin; j <= tMax; ++j )
       ft[i].push_back( j );
   }
-  SetValidatedFitTimes( std::move( ft ) );
+  SetValidatedFitTimes( std::move( ft ), true );
 }
 
 // Cache the data for this data set
 template <typename T>
-void DataSet<T>::SetValidatedFitTimes( std::vector<std::vector<int>> &&FitTimes_ )
+void DataSet<T>::SetValidatedFitTimes( std::vector<std::vector<int>> &&FitTimes_, bool bCorr )
 {
   std::size_t Extent_{ GetExtent( FitTimes_ ) };
   if( Extent_ == 0 )
@@ -89,21 +93,21 @@ void DataSet<T>::SetValidatedFitTimes( std::vector<std::vector<int>> &&FitTimes_
     throw std::runtime_error( "Fit range stupidly big" );
   Extent = static_cast<int>( Extent_ );
   FitTimes = std::move( FitTimes_ );
-  CacheRawData();
+  CacheRawData( bCorr );
 }
 
 template <typename T>
-void DataSet<T>::CacheRawData()
+void DataSet<T>::CacheRawData( bool bCorr )
 {
   SampleSource ss{ CovarSource };
   int idxJackBoot{ idxJackBootCovarSource };
   bool bFrozen{ bFrozenCovarSource };
   // How many data rows are available?
-  const int NumJackBoot{ NumSamples( SS::Bootstrap, 0 ) };
+  const int NumJackBoot{ NumSamples( SS::Bootstrap, 0, bCorr ) };
   if( NumJackBoot < 1 )
     throw std::runtime_error( "DataSet<T>::CacheRawData JackBoot data unavailable" );
   // Is the requested source available
-  const int NumRequestedSource{ NumSamples( ss, idxJackBoot ) };
+  const int NumRequestedSource{ NumSamples( ss, idxJackBoot, bCorr ) };
   if( NumRequestedSource < 1 )
   {
     std::ostringstream os;
@@ -111,7 +115,7 @@ void DataSet<T>::CacheRawData()
     throw std::runtime_error( os.str().c_str() );
   }
   // Binned data must be available if unfrozen
-  const int NumBinned{ NumSamples( SS::Binned, 0 ) };
+  const int NumBinned{ NumSamples( SS::Binned, 0, bCorr ) };
   if( !bFrozen && NumBinned < 1 )
   {
     std::ostringstream os;
@@ -144,9 +148,9 @@ void DataSet<T>::CacheRawData()
   for( int idx = static_cast<int>( JackBootBase::idxReplicaMean ); idx < NumJackBoot; ++idx )
   {
     int dst{ 0 };
-    for( int f = 0; f < corr.size(); ++f )
+    for( int f = 0; f < FitTimes.size(); ++f )
     {
-      const JackBoot<T> &mSrc{ corr[f]->getData() };
+      const JackBoot<T> &mSrc{ (*this)(f, bCorr).getData() };
       for( int t : FitTimes[f] )
         mFitData( idx, dst++ ) = mSrc( idx, t );
     }
@@ -157,9 +161,9 @@ void DataSet<T>::CacheRawData()
     for( int idx = 0; idx < NumBinned; ++idx )
     {
       int dst{ 0 };
-      for( int f = 0; f < corr.size(); ++f )
+      for( int f = 0; f < FitTimes.size(); ++f )
       {
-        const Matrix<T> &mSrc{ corr[f]->getBinned( 0 ) };
+        const Matrix<T> &mSrc{ (*this)(f, bCorr).getBinned( 0 ) };
         for( int t : FitTimes[f] )
           mBinned( idx, dst++ ) = mSrc( idx, t );
       }
@@ -171,9 +175,9 @@ void DataSet<T>::CacheRawData()
     for( int idx = 0; idx < NumRequestedSource; ++idx )
     {
       int dst{ 0 };
-      for( int f = 0; f < corr.size(); ++f )
+      for( int f = 0; f < FitTimes.size(); ++f )
       {
-        const Matrix<T> &mSrc{ corr[f]->get( ss, idxJackBoot ) };
+        const Matrix<T> &mSrc{ (*this)(f, bCorr).get( ss, idxJackBoot ) };
         for( int t : FitTimes[f] )
           CovarBuffer( idx, dst++ ) = mSrc( idx, t );
       }
@@ -184,9 +188,9 @@ void DataSet<T>::CacheRawData()
       // For Bootstrap, we check environment for whether to use mean of source or mean of resamples
       const std::size_t idxMean{ JackBootBase::getCovarMeanIdx() };
       int dst{ 0 };
-      for( int f = 0; f < corr.size(); ++f )
+      for( int f = 0; f < FitTimes.size(); ++f )
       {
-        const JackBoot<T> &mSrc{ corr[f]->getData( idxJackBoot ) };
+        const JackBoot<T> &mSrc{ (*this)(f, bCorr).getData( idxJackBoot ) };
         for( int t : FitTimes[f] )
           mCovarCentralMean[dst++] = mSrc( idxMean, t );
       }
@@ -196,14 +200,14 @@ void DataSet<T>::CacheRawData()
       // For binned/raw data we create the mean from the data
       JackBoot<T>::MakeMean( mCovarCentralMean, CovarBuffer );
     }
-    JackBoot<T>::MakeCovar( mCovar, mCovarCentralMean, CovarBuffer, corr[0]->Norm( ss ) );
+    JackBoot<T>::MakeCovar( mCovar, mCovarCentralMean, CovarBuffer, (*this)(0, bCorr).Norm( ss ) );
     CovarBuffer.clear();
   }
   else if( bCovarSrcData )
   {
     // Make correlation matrix from this data
     mCovarCentralMean = mFitData.GetCovarMean();
-    JackBoot<T>::MakeCovar( mCovar, mCovarCentralMean, mFitData.Replica, corr[0]->Norm( ss ) );
+    JackBoot<T>::MakeCovar( mCovar, mCovarCentralMean, mFitData.Replica, (*this)(0, bCorr).Norm(ss) );
   }
 }
 
@@ -278,22 +282,43 @@ void DataSet<T>::SaveMatrixFile( const Matrix<T> &m, const std::string &Type, co
 
 // Add a constant to my list of known constants - make sure it isn't already there
 template <typename T>
-void DataSet<T>::AddConstant( const Param::Key &Key, std::size_t File )
+void DataSet<T>::AddConstant( const Param::Key &Key, std::size_t File, const Param::Key &FileKey )
 {
+  using PIT = typename Params::iterator;
+  using CIT = typename ConstMap::iterator;
   static const char Invalid[] = " invalid";
-  std::ostringstream os;
-  os << "DataSet::AddConstant " << Key << Space;
-  if( constMap.find( Key ) != constMap.end() )
-  {
-    os << "loaded from multiple model files";
-    throw std::runtime_error( os.str().c_str() );
-  }
+  // Make sure the file exists
   if( File >= constFile.size() )
   {
-    os << "file " << File << Invalid;
+    std::ostringstream os;
+    os << "DataSet::AddConstant " << Key << " file " << File << Invalid;
     throw std::runtime_error( os.str().c_str() );
   }
-  constMap.insert( { Key, ConstantSource( File, Key ) } );
+  // Make sure the field exists in the source file
+  PIT itSource{ constFile[File]->params.Find( FileKey, "DataSet::AddConstant current" ) };
+  // See whether the constant has already been loaded from another file
+  CIT it{ constMap.find( Key ) };
+  if( it != constMap.end() )
+  {
+    // This parameter has been loaded already - see whether data are the same
+    ConstantSource &cs{ it->second };
+    Model<T> &mOld{ *constFile[cs.File] };
+    PIT itPrev{ mOld.params.Find( cs.pKey, "DataSet::AddConstant previous" ) };
+    const std::size_t ColOld{ itPrev->second() };
+    Model<T> &mNew{ *constFile[File] };
+    const std::size_t ColNew{ itSource->second() };
+    for( int idx = Model<T>::idxCentral; idx != MaxSamples; ++idx )
+      if( mOld(idx,ColOld) != mNew(idx,ColNew) )
+      {
+        std::ostringstream os;
+        os << "DataSet::AddConstant " << Key << " loaded from "
+           << mOld.Name_.Filename << " (field " << cs.pKey << ", col " << ColOld << ") != "
+           << mNew.Name_.Filename << " (field " << FileKey << ", col " << ColNew
+           << ") at row " << idx << ", i.e. " << mOld(idx,ColOld) << " != " << mNew(idx,ColNew);
+        throw std::runtime_error( os.str().c_str() );
+      }
+  }
+  constMap.insert( { Key, ConstantSource( File, FileKey ) } );
 }
 
 template <typename T>
@@ -404,11 +429,11 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
 }
 
 template <typename T>
-std::vector<std::string> DataSet<T>::GetModelFilenames() const
+std::vector<std::string> DataSet<T>::GetModelFilenames( std::size_t Start ) const
 {
   std::vector<std::string> v;
-  for( const ModelPtr &m : constFile )
-    v.emplace_back( m->Name_.Filename );
+  while( Start < constFile.size() )
+    v.emplace_back( constFile[Start++]->Name_.Filename );
   return v;
 }
 
@@ -424,34 +449,42 @@ void DataSet<T>::SortOpNames( std::vector<std::string> &OpNames )
     for( int i = 0; i < NumOps; ++i )
       OpSorted.emplace( std::move( OpNames[i] ), i );
     // Extract the sorted names and indices (to renumber operators in correlator names)
-    std::vector<std::string> SortedNames;
     std::vector<int> SortIndex( NumOps );
-    SortedNames.reserve( NumOps );
     int idx{ 0 };
     for( UniqueNames::iterator it = OpSorted.begin(); it != OpSorted.end(); ++it )
     {
-      SortedNames.emplace_back( it->first );
-      SortIndex[it->second] = idx++;
+      OpNames[idx] = it->first;
+      SortIndex[it->second] = idx++; // Map from old to new index
     }
-    // Renumber the operators and save the sorted operator names
+    // Renumber the correlator operators
     for( auto &f : corr )
       for( int i = 0; i < f->Name_.op.size(); ++i )
         f->Name_.op[i] = SortIndex[f->Name_.op[i]];
-    OpNames = SortedNames;
+    // Renumber the constant file (model) operators
+    for( auto &f : constFile )
+      for( int i = 0; i < f->Name_.op.size(); ++i )
+        f->Name_.op[i] = SortIndex[f->Name_.op[i]];
   }
 }
 
 template <typename T>
-int DataSet<T>::NumSamples( SampleSource ss, int idxJackBoot ) const
+int DataSet<T>::NumSamples( SampleSource ss, int idxJackBoot, bool bCorr ) const
 {
-  int NSB{ corr.empty() ? 0 : corr[0]->NumSamples( ss, idxJackBoot ) };
-  for( std::size_t i = 1; NSB && i < corr.size(); ++i )
+  int NS;
+  if( empty( bCorr ) )
+    NS = 0;
+  else
   {
-    const int ThisNSB{ corr[i]->NumSamples( ss, idxJackBoot ) };
-    if( NSB > ThisNSB )
-      NSB = ThisNSB;
+    const std::size_t NumFiles{ size( bCorr ) };
+    NS = (*this)(0, bCorr).NumSamples( ss, idxJackBoot );
+    for( std::size_t i = 1; NS && i < NumFiles; ++i )
+    {
+      const int ThisNS{ (*this)(i, bCorr).NumSamples( ss, idxJackBoot ) };
+      if( NS > ThisNS )
+        NS = ThisNS;
+    }
   }
-  return NSB;
+  return NS;
 }
 
 template <typename T>

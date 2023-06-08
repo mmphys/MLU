@@ -123,11 +123,11 @@ const std::string & FitterMinuit2::Type() const
   return MyType;
 }
 
-Fitter * MakeFitterMinuit2( const std::string &FitterArgs, const Common::CommandLine &cl,
-                            const DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                            const std::vector<std::string> &opNames, CovarParams &&cp )
+Fitter * MakeFitterMinuit2( const std::string &FitterArgs, Model::CreateParams &mcp,
+                            DataSet &ds, std::vector<Model::Args> &&ModelArgs,
+                            CovarParams &&cp, bool bFitCorr )
 {
   if( !FitterArgs.empty() )
     return nullptr;
-  return new FitterMinuit2( cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) );
+  return new FitterMinuit2( mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr );
 }

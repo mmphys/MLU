@@ -196,6 +196,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "271DB9DD2A2A256C00AF0501"
+               BuildableName = "MakeEnsembleInfo"
+               BlueprintName = "MakeEnsembleInfo"
+               ReferencedContainer = "container:Utility.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "682C5D4628E4FF2600C8E004"
                BuildableName = "mixedop"
                BlueprintName = "mixedop"

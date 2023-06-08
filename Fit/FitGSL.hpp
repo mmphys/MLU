@@ -72,13 +72,12 @@ struct FitterGSL : public Fitter
 {
   enum class TRS{ lm, lmaccel, dogleg, ddogleg, subspace2D };
   const TRS trs;
-  explicit FitterGSL( TRS trs_, const Common::CommandLine &cl, const DataSet &ds,
-                      std::vector<Model::Args> &&ModelArgs, const std::vector<std::string> &opNames,
-                      CovarParams &&cp )
-  : Fitter( cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) ), trs{trs_} {}
-  static FitterGSL * Make( const std::string &FitterArgs, const Common::CommandLine &cl,
-                           const DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                           const std::vector<std::string> &opNames, CovarParams &&cp );
+  explicit FitterGSL( TRS trs_, Model::CreateParams &mcp, DataSet &ds,
+                      std::vector<Model::Args> &&ModelArgs, CovarParams &&cp, bool bFitCorr )
+  : Fitter( mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr ), trs{trs_} {}
+  static FitterGSL * Make( const std::string &FitterArgs, Model::CreateParams &mcp,
+                           DataSet &ds, std::vector<Model::Args> &&ModelArgs,
+                           CovarParams &&cp, bool bFitCorr );
 protected:
   const std::string &Type() const override;
   FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel ) override

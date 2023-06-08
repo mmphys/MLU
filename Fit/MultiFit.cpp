@@ -27,6 +27,7 @@
 /*  END LEGAL */
 
 #include "Fitter.hpp"
+#include "ModelCommon.hpp"
 #include <MLU/DebugInfo.hpp>
 #include <chrono>
 
@@ -259,7 +260,8 @@ int main(int argc, const char *argv[])
       const std::size_t outBaseFileNameLen{ outBaseFileName.size() };
 
       // All the models are loaded
-      std::unique_ptr<Fitter> m{ Fitter::Make( cl, ds, std::move( ModelArgs ), OpName, std::move( cp ) ) };
+      std::unique_ptr<Fitter> m{ Fitter::Make( MultiFitCreateParams{ OpName, cl }, ds,
+                                               std::move( ModelArgs ), std::move( cp ), true ) };
       std::size_t CountTotal{ 0 };
       std::size_t CountOK{ 0 };
       bool bAllParamsResolved{ true };

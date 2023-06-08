@@ -40,9 +40,10 @@ std::istream & operator>>( std::istream &is,       eModelType &m );
 /// Chiral continuum fit model
 struct ModelContinuum : Model
 {
-  ModelContinuum( const Model::CreateParams &cp, Model::Args &Args, int NumExponents,
-                  Common::FormFactor ff );
+  ModelContinuum( const Model::CreateParams &cp, Model::Args &Args, Common::FormFactor ff );
+  void DefineXVector( DataSet &ds, int i ) override;
   void AddParameters( Params &mp ) override;
+  std::size_t GetFitColumn() const override;
   void SaveParameters( const Params &mp ) override;
   std::string Description() const override;
   void Guessable( ParamsPairs &PP ) const override;
@@ -52,11 +53,13 @@ struct ModelContinuum : Model
   ModelType Type() const override;
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 protected:
-  const ModelFile mf;
+  const ModelFile &mf;
   const Common::FormFactor ff;
   const Common::Momentum p;
-  std::string Ensemble;
+  const std::string Ensemble;
   std::array<std::string, 2> Meson;
+  ModelParam EL, kMu, mH, mL, qSq;
+  ModelParam Slope, YIntercept;
 };
 
 #endif // ModelContinuum_hpp

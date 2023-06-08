@@ -279,7 +279,8 @@ inline bool operator<( const Momentum &l, const Momentum &r )
 enum class FormFactor{ f0, fplus, fpar, fperp };
 extern const std::array<std::string, 4> FormFactorString; // Guaranteed to be in same order as enum
 
-std::ostream& operator<<( std::ostream& os, const FormFactor &ff );
+const std::string &GetFormFactorString( FormFactor ff );
+std::ostream& operator<<( std::ostream& os, FormFactor  ff );
 std::istream& operator>>( std::istream& is, FormFactor &ff );
 
 MLU_Physics_hpp_end

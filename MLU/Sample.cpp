@@ -742,7 +742,8 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
 template <typename T>
 void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
 {
-  SetName( FileName );
+  // Assume the caller knows what they're doing if the name is not in my format
+  try { SetName( FileName ); } catch ( const std::runtime_error &e ) {}
   const std::string GroupName{ pszGroupName == nullptr || *pszGroupName == 0 ? DefaultGroupName() : pszGroupName };
   bool bOK = false;
   try // to write in my format

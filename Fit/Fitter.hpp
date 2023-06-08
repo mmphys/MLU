@@ -37,7 +37,6 @@ struct FitterThread;       // OpenMP thread that will perform fit on each replic
 
 struct Fitter
 {
-public:
   // Simple command-line options
   const bool bAnalyticDerivatives;
   const bool bTestRun;
@@ -58,10 +57,10 @@ public:
   const scalar MonotonicUpperLimit;
   const int ErrorDigits;
   // More complex command-line options
-  const DataSet &ds;
+  DataSet &ds;
   const bool bFitCorr; // true if we are fitting correlators, false = fitting models
   const int NumFiles; // Number of correlator files in the dataset
-  const std::vector<std::string> &OpNames;
+  //const std::vector<std::string> &OpNames;
   const std::vector<Model::Args> ModelArgs;
   //const int NumOps;
   std::vector<ModelPtr> model;      // Model for each correlator
@@ -77,28 +76,21 @@ public:
   int dof;
   bool bCorrelated;
 
-  explicit Fitter( const Common::CommandLine &cl, const DataSet &ds_,
-                   std::vector<Model::Args> &&ModelArgs, const std::vector<std::string> &opNames_,
-                   CovarParams &&cp );
+  explicit Fitter( Model::CreateParams &mcp, DataSet &ds_,
+                   std::vector<Model::Args> &&ModelArgs, CovarParams &&cp, bool bFitCorr );
   virtual ~Fitter() {}
 
 protected:
   // Used during construction (so that we can make the results const)
-  std::vector<ModelPtr> CreateModels( const Common::CommandLine &cl,
-                                      std::vector<Model::Args> ModelArgs );
+  std::vector<ModelPtr> CreateModels( Model::CreateParams &mcp, std::vector<Model::Args> ModelArgs );
   int GetNumExponents();
   Params MakeModelParams();
   void MakeGuess();
   virtual FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel ) = 0;
 
 public:
-  const Sample &FitFile( std::size_t i ) const { return bFitCorr ? *ds.corr[i].get()
-                                                                 : *ds.constFile[i].get(); }
-        Sample &FitFile( std::size_t i )       { return bFitCorr ? *ds.corr[i].get()
-                                                                 : *ds.constFile[i].get(); }
-  static Fitter * Make( const Common::CommandLine &cl, const DataSet &ds,
-                        std::vector<Model::Args> &&ModelArgs, const std::vector<std::string> &opNames,
-                        CovarParams &&cp );
+  static Fitter * Make( Model::CreateParams &&mcp, DataSet &ds,
+                        std::vector<Model::Args> &&ModelArgs, CovarParams &&cp, bool bFitCorr );
   static void SayNumThreads( std::ostream &os );
   bool Dump( int idx ) const;
   void Dump( int idx, const std::string &Name, const Matrix &m ) const;

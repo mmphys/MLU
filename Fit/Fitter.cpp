@@ -38,33 +38,31 @@
 // Uncomment the next line to disable Minuit2 (for testing)
 //#undef HAVE_MINUIT2
 
-Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
-                std::vector<Model::Args> &&ModelArgs_, const std::vector<std::string> &opNames_,
-                CovarParams &&cp_ )
-  : bAnalyticDerivatives{ cl.GotSwitch("analytic") },
-    bTestRun{ cl.GotSwitch("testrun") },
-    bCentralGuess{ !cl.GotSwitch("central") },
-    bOverwrite{ cl.GotSwitch("overwrite") },
-    HotellingCutoff{ cl.SwitchValue<double>( "Hotelling" ) },
-    ChiSqDofCutoff{ cl.SwitchValue<double>( "chisqdof" ) },
-    RelEnergySep{ cl.SwitchValue<double>("sep") },
-    MinDof{ cl.SwitchValue<int>("mindof") },
-    Retry{ cl.SwitchValue<int>("retry") },
-    MaxIt{ cl.SwitchValue<int>("iter") },
-    Tolerance{ cl.SwitchValue<double>("tol") },
-    SummaryLevel{ cl.SwitchValue<int>("summary") },
-    bSaveCMat{ cl.GotSwitch("savecmat") },
-    Verbosity{ cl.SwitchValue<int>("v") },
-    UserGuess{ cl.GotSwitch( "guess" ) },
-    Strictness{ cl.SwitchValue<int>("strict") },
-    MonotonicUpperLimit{ cl.SwitchValue<scalar>("maxE") },
-    ErrorDigits{ cl.SwitchValue<int>("errdig") },
-    ds{ std::move( ds_ ) },
-    bFitCorr{ ModelArgs_.size() == ds.corr.size() },
-    NumFiles{ static_cast<int>( bFitCorr ? ds.corr.size() : ds.constFile.size() ) },
-    OpNames{ opNames_ },
+Fitter::Fitter( Model::CreateParams &mcp, DataSet &ds_,
+                std::vector<Model::Args> &&ModelArgs_, CovarParams &&cp_, bool bFitCorr_ )
+  : bAnalyticDerivatives{ mcp.cl.GotSwitch("analytic") },
+    bTestRun{ mcp.cl.GotSwitch("testrun") },
+    bCentralGuess{ !mcp.cl.GotSwitch("central") },
+    bOverwrite{ mcp.cl.GotSwitch("overwrite") },
+    HotellingCutoff{ mcp.cl.SwitchValue<double>( "Hotelling" ) },
+    ChiSqDofCutoff{ mcp.cl.SwitchValue<double>( "chisqdof" ) },
+    RelEnergySep{ mcp.cl.SwitchValue<double>("sep") },
+    MinDof{ mcp.cl.SwitchValue<int>("mindof") },
+    Retry{ mcp.cl.SwitchValue<int>("retry") },
+    MaxIt{ mcp.cl.SwitchValue<int>("iter") },
+    Tolerance{ mcp.cl.SwitchValue<double>("tol") },
+    SummaryLevel{ mcp.cl.SwitchValue<int>("summary") },
+    bSaveCMat{ mcp.cl.GotSwitch("savecmat") },
+    Verbosity{ mcp.cl.SwitchValue<int>("v") },
+    UserGuess{ mcp.cl.GotSwitch( "guess" ) },
+    Strictness{ mcp.cl.SwitchValue<int>("strict") },
+    MonotonicUpperLimit{ mcp.cl.SwitchValue<scalar>("maxE") },
+    ErrorDigits{ mcp.cl.SwitchValue<int>("errdig") },
+    ds{ ds_ },
+    bFitCorr{ bFitCorr_ },
+    NumFiles{ static_cast<int>( ModelArgs_.size() ) },
     ModelArgs{ ModelArgs_ }, // Save the original model arguments
-    model{ CreateModels( cl, ModelArgs ) }, // Pass in a copy of model arguments
+    model{ CreateModels( mcp, ModelArgs ) }, // Pass in a copy of model arguments
     NumExponents{ GetNumExponents() },
     mp{ MakeModelParams() },
     bAllParamsKnown{ mp.NumScalars( Param::Type::Variable ) == 0 },
@@ -90,7 +88,7 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
   // If we've been given a guess, initialise variable parameters with the user-supplied guess
   if( UserGuess )
   {
-    const std::vector<scalar> vGuess{Common::ArrayFromString<scalar>(cl.SwitchValue<std::string>("guess"))};
+    const std::vector<scalar> vGuess{Common::ArrayFromString<scalar>(mcp.cl.SwitchValue<std::string>("guess"))};
     if( vGuess.size() != mp.NumScalars( Param::Type::Variable ) )
       throw std::invalid_argument( "Guess contains " + std::to_string( vGuess.size() )
                                  + " parameters, but there are "
@@ -100,41 +98,46 @@ Fitter::Fitter( const Common::CommandLine &cl, const DataSet &ds_,
   }
   // Load the constants into the fixed portion of the guess
   ds.GetFixed( Fold::idxCentral, Guess, ParamFixed );
-  //
-  for( const std::unique_ptr<Sample> &f : ds.corr )
-    OutputModel.FileList.emplace_back( f->Name_.Filename );
-  for( const std::string &f : ds.GetModelFilenames() )
+  // Save file attributes
+  for( std::size_t i = 0; i < model.size(); ++i )
+    OutputModel.FileList.emplace_back( ds(i,bFitCorr).Name_.Filename );
+  for( const std::string &f : ds.GetModelFilenames( bFitCorr ? 0 : model.size() ) )
     OutputModel.FileList.emplace_back( f );
-  OutputModel.CopyAttributes( FitFile(0) );
+  OutputModel.CopyAttributes( ds(0, bFitCorr) );
   OutputModel.NumExponents = NumExponents;
   OutputModel.ModelType = GetModelTypes();
   OutputModel.ModelArgs = GetModelArgs();
 }
 
 // Create all the models and return the number of exponents in the fit
-std::vector<ModelPtr> Fitter::CreateModels( const Common::CommandLine &cl,
+std::vector<ModelPtr> Fitter::CreateModels( Model::CreateParams &mcp,
                                             std::vector<Model::Args> ModelArgs )
 {
-  Model::CreateParams cp( OpNames, cl );
+  // Say what we're doing
+  {
+    std::cout << "Making models";
+    const std::string sDescription{ mcp.Description() };
+    if( !sDescription.empty() )
+      std::cout << " (" << sDescription << ")";
+    std::cout << Common::NewLine;
+  }
+  // Error check
   const int NumModels{ static_cast<int>( ModelArgs.size() ) };
-  if( NumModels != ds.corr.size() && NumModels != ds.constFile.size() )
-    throw std::runtime_error( "Fitter has " + std::to_string( NumModels ) + " models, but "
-                             + std::to_string( ds.corr.size() ) + " correlators and "
-                             + std::to_string( ds.constFile.size() ) + " models" );
   if( NumModels == 0 )
-    throw std::runtime_error( "Can't construct a Fitter for an empty data set" );
-  // Create this model
+    throw std::runtime_error( "Fitter::CreateModels() No model arguments" );
+  if( bFitCorr && NumModels != ds.corr.size() )
+    throw std::runtime_error( "Fitter::CreateModels() " + std::to_string( NumModels )
+                             + " models, but " + std::to_string( ds.corr.size() ) + " correlators" );
+  else if( !bFitCorr && NumModels > ds.constFile.size() )
+    throw std::runtime_error( "Fitter::CreateModels() " + std::to_string( NumModels )
+                  + " models, but " + std::to_string( ds.constFile.size() ) + " model files" );
+  // Create the models
   std::vector<ModelPtr> model;
-  model.reserve( ModelArgs.size() );
-  std::cout << "Making models";
-  std::string sDescription{ cp.Description() };
-  if( !sDescription.empty() )
-    std::cout << " (" << sDescription << ")";
-  std::cout << Common::NewLine;
+  model.reserve( NumModels );
   for( int i = 0; i < ModelArgs.size(); ++i )
   {
-    cp.pCorr = bFitCorr ? ds.corr[i].get() : ds.constFile[i].get();
-    model.emplace_back( Model::MakeModel( cp, ModelArgs[i] ) );
+    mcp.pCorr = &ds(i, bFitCorr);
+    model.emplace_back( Model::MakeModel( mcp, ModelArgs[i] ) );
     if( !ModelArgs[i].empty() )
     {
       std::ostringstream os;
@@ -152,6 +155,8 @@ std::vector<ModelPtr> Fitter::CreateModels( const Common::CommandLine &cl,
       }
       throw std::runtime_error( os.str().c_str() );
     }
+    if( !bFitCorr )
+      model[i]->DefineXVector( ds, i );
   }
   return model;
 }
@@ -343,27 +348,26 @@ void Fitter::MakeGuess()
 
 // This should be the only place which knows about different fitters
 
-Fitter * MakeFitterGSL( const std::string &FitterArgs, const Common::CommandLine &cl,
-                        const DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                        const std::vector<std::string> &opNames, CovarParams &&cp );
+Fitter * MakeFitterGSL( const std::string &FitterArgs, Model::CreateParams &mcp,
+                        DataSet &ds, std::vector<Model::Args> &&ModelArgs,
+                        CovarParams &&cp, bool bFitCorr );
 #ifdef HAVE_MINUIT2
-Fitter * MakeFitterMinuit2( const std::string &FitterArgs, const Common::CommandLine &cl,
-                            const DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                            const std::vector<std::string> &opNames, CovarParams &&cp );
+Fitter * MakeFitterMinuit2( const std::string &FitterArgs, Model::CreateParams &mcp,
+                            DataSet &ds, std::vector<Model::Args> &&ModelArgs,
+                            CovarParams &&cp, bool bFitCorr );
 #endif
 
-Fitter * Fitter::Make( const Common::CommandLine &cl,
-                       const DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                       const std::vector<std::string> &opNames, CovarParams &&cp )
+Fitter * Fitter::Make( Model::CreateParams &&mcp, DataSet &ds,
+                       std::vector<Model::Args> &&ModelArgs, CovarParams &&cp, bool bFitCorr )
 {
   Fitter * f;
-  std::string FitterArgs{ cl.SwitchValue<std::string>( "fitter" ) };
+  std::string FitterArgs{ mcp.cl.SwitchValue<std::string>( "fitter" ) };
   std::string FitterType{ Common::ExtractToSeparator( FitterArgs ) };
   if( Common::EqualIgnoreCase( FitterType, "GSL" ) )
-    f = MakeFitterGSL( FitterArgs, cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) );
+    f = MakeFitterGSL( FitterArgs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr );
 #ifdef HAVE_MINUIT2
   else if( Common::EqualIgnoreCase( FitterType, "Minuit2" ) )
-    f = MakeFitterMinuit2( FitterArgs, cl, ds, std::move( ModelArgs ), opNames, std::move( cp ) );
+    f = MakeFitterMinuit2(FitterArgs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr);
 #endif
   else
     throw std::runtime_error( "Unrecognised fitter: " + FitterType );
@@ -666,7 +670,8 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       OutputModel.Write( ModelFileName );
     if( SummaryLevel >= 1 )
       OutputModel.WriteSummaryTD( ds,
-                  Common::MakeFilename( sModelBase, Common::sModel + "_td", Seed, TEXT_EXT ) );
+                  Common::MakeFilename( sModelBase, Common::sModel + "_td", Seed, TEXT_EXT ),
+                  true, false );
     if( SummaryLevel >= 2 )
       OutputModel.WriteSummary( Common::ReplaceExtension( ModelFileName, TEXT_EXT ) );
   }

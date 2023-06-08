@@ -30,5 +30,43 @@
 #define Continuum_hpp
 
 #include "MultiFit.hpp"
+#include "Fitter.hpp"
+#include "Model.hpp"
+
+
+struct CreateParams : public Model::CreateParams
+{
+  DataSet &ds;
+  int FileNum; // Current model file number
+  CreateParams( const std::vector<std::string> &OpNames, const Common::CommandLine &cl, DataSet &ds );
+};
+
+struct ContinuumFit
+{
+protected:
+  Common::CommandLine &cl;
+public:
+  const int NumSamples;
+  const bool doCorr;
+  const bool CovarBlock;
+  const std::string sFFValue;
+  const Common::FormFactor ff;
+  const std::string inBase;
+  std::string outBaseFileName;
+  DataSet ds;
+  std::vector<std::string> OpName;
+  std::vector<Model::Args> ModelArgs;
+  std::unique_ptr<Fitter> f;
+  explicit ContinuumFit( Common::CommandLine &cl );
+  int Run();
+protected:
+  std::string sOpNameConcat; // Sorted, concatenated list of operators in the fit for filenames
+  void LoadModels();
+  void SortModels();
+  void LoadExtra();
+  void MakeOutputFilename();
+  void MakeCovarBlock();
+  int DoFit();
+};
 
 #endif // Continuum_hpp

@@ -67,6 +67,8 @@ struct Param
     bool operator!=( const Key &rhs ) const { return !operator==( rhs ); }
     struct Less { bool operator()( const Key &lhs, const Key &rhs ) const; };
     // Constructors
+    Key( const std::string  &name )
+    : Name{name} { ValidateKey(); }
     Key( const std::string  &object, const std::string  &name )
     : Object{{object}}, Name{name} { ValidateKey(); }
     Key( const std::string  &object,       std::string &&name )

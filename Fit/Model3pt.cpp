@@ -32,8 +32,8 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args, int NumExp
                     std::vector<std::string> &&objectID, std::vector<std::string> &&opNames )
 : ModelOverlap( cp, Args, NumExponents_, NumExponents_ > 1 ? 2 : 1,
                 std::move( objectID ), std::move( opNames ) ),
-  N{ cp.N },
-  bEnablePHat{ cp.bEnablePHat }
+N{ dynamic_cast<const MultiFitCreateParams &>( cp ).N },
+bEnablePHat{ dynamic_cast<const MultiFitCreateParams &>( cp ).bEnablePHat }
 {
   if( !cp.pCorr->Name_.bGotDeltaT )
     throw std::runtime_error( "DeltaT not available in " + cp.pCorr->Name_.Filename );

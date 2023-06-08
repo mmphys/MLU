@@ -717,7 +717,7 @@ Model<T>::GetValWithEr( const Params &ParamNames, const UniqueNameSet &StatNames
 
 template <typename T>
 void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFileName,
-                               bool bVerboseSummary )
+                               bool bVerboseSummary, bool bCorr )
 {
   const ValWithEr<T> veZero( 0, 0, 0, 0, 0, 0 );
   using Scalar = typename is_complex<T>::Real;
@@ -756,12 +756,12 @@ void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFile
   for( std::size_t m = 0; m < FitTimes.size(); ++m )
   {
     std::sort( SortedTimes[m].begin(), SortedTimes[m].end() );
-    for( int t = 0, idxSort = 0; t < ds.corr[m]->Nt(); ++t )
+    for( int t = 0, idxSort = 0; t < ds(m, bCorr).Nt(); ++t )
     {
       const bool bInFit{ t == SortedTimes[m][idxSort] };
       std::ostream &os{ bInFit ? dynamic_cast<std::ostream &>( ofs ) : osBuffer };
       os << "corr " << Seq << Space << ( bInFit ? FitSeq : -1 ) << Space << m
-         << Space << t << Space << ( bInFit ? t : -1 );
+      << Space << t << Space << ( bInFit ? t : -1 );
       if( bInFit )
       {
         for( std::size_t i = 0; i < Value.size(); ++i )
@@ -770,7 +770,7 @@ void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFile
         ++FitSeq;
       }
       else
-        os << Space << ds.corr[m]->SummaryData( t ) << Space << veZero;
+        os << Space << ds(m, bCorr).SummaryData( t ) << Space << veZero;
       os << NewLine;
       ++Seq;
     }
@@ -781,6 +781,8 @@ void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFile
     osBuffer.str( "" );
   }
   // Write theory and data EFFECTIVE MASS, with each data point in fit on a separate line
+  if( bCorr )
+  {
   ofs << "\n\n# Effective masses used in fit\n";
   Seq = 0;
   FitSeq = 0;
@@ -789,13 +791,13 @@ void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFile
   {
     ++Seq;    // Skip past t=0
     ++FitSeq; // Skip past t=0
-    for( int t = 1, idxSort = 1; t < ds.corr[m]->Nt(); ++t )
+    for( int t = 1, idxSort = 1; t < ds(m, bCorr).Nt(); ++t )
     {
       // Effective masses are for the point half-way between the measurements
       // Keeping track of 2 * the effective timeslice allows us to use integer arithmetic
       const int TwoT{ 2 * t - 1 }; // Average of this and previous timeslice
       const int TwoTFit{ idxSort >= FitTimes[m].size() ? std::numeric_limits<int>::max()
-                                              : FitTimes[m][idxSort] + FitTimes[m][idxSort - 1] };
+        : FitTimes[m][idxSort] + FitTimes[m][idxSort - 1] };
       const bool bShowFit{ TwoTFit <= TwoT };
       if( bShowFit )
       {
@@ -841,6 +843,7 @@ void Model<T>::WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFile
   {
     ofs << "\n\n# Effective masses not used in fit\n" << osBuffer.str();
     osBuffer.str( "" );
+  }
   }
 }
 

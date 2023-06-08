@@ -121,7 +121,7 @@ struct Model : public Sample<T>, public ModelBase
   std::vector<ValWithEr<scalar_type>> GetValWithEr( const Params &ParamNames,
                                                     const UniqueNameSet &StatNames ) const;
   void WriteSummaryTD( const DataSet<T> &ds, const std::string &sOutFileName,
-                       bool bVerboseSummary = false );
+                       bool bVerboseSummary = false, bool bCorr = true );
 protected:
   int OldFormatNumExponents;
   std::vector<std::string> OldFormatOpNames;

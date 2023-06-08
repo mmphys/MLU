@@ -114,9 +114,36 @@ std::istream & operator>>( std::istream &is, ModelType &m )
   return is;
 }
 
-// Create a model of the appropriate type - this is the only place with knowledge of this mapping
-ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
+MultiFitCreateParams::MultiFitCreateParams( const std::vector<std::string> &OpNames_,
+                                            const Common::CommandLine &cl_ )
+: CreateParams( OpNames_, cl_),
+  NumExponents{ cl.SwitchValue<int>( "e" ) },
+  N{ cl.SwitchValue<int>( "N" ) },
+  bEnablePHat{ !cl.GotSwitch( "nophat" ) }
 {
+  if( N < 0 )
+    throw std::runtime_error( "L/a " + std::to_string( N ) + " < 0");
+}
+
+std::string MultiFitCreateParams::Description() const
+{
+  std::string s{ Model::CreateParams::Description() };
+  if( N )
+  {
+    if( !s.empty() )
+      s.append( Common::CommaSpace );
+    s.append( "using dispersion relation N=" );
+    s.append( std::to_string( N ) );
+    s.append( " with " );
+    s.append( bEnablePHat ? "p_hat" : "p" );
+  }
+  return s;
+}
+
+// Create a model of the appropriate type - this is the only place with knowledge of this mapping
+ModelPtr Model::MakeModel( const Model::CreateParams &mcp, Model::Args &Args )
+{
+  const MultiFitCreateParams &cp{ dynamic_cast<const MultiFitCreateParams &>( mcp ) };
   // Now work out what type of model we are creating
   eModelType modelType{ eModelType::Unknown };
   bool bGotModelType{ false };

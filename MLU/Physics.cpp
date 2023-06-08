@@ -406,11 +406,16 @@ std::istream& operator>>( std::istream& is, Momentum &p )
 
 const std::array<std::string, 4> FormFactorString{ "f0", "fplus", "fpar", "fperp" };
 
-std::ostream& operator<<( std::ostream& os, const FormFactor &ff )
+const std::string &GetFormFactorString( FormFactor ff )
 {
   using T = typename std::underlying_type<FormFactor>::type;
   T i{ static_cast<T>( ff ) };
-  return os << (i >= 0 && i < FormFactorString.size() ? FormFactorString[i] : sUnknown );
+  return i >= 0 && i < FormFactorString.size() ? FormFactorString[i] : sUnknown;
+}
+
+std::ostream& operator<<( std::ostream& os, FormFactor ff )
+{
+  return os << GetFormFactorString( ff );
 }
 
 std::istream& operator>>( std::istream& is, FormFactor &ff )
