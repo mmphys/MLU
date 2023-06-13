@@ -16,6 +16,16 @@ set -e
 
 ############################################################
 
+declare -A ayRange
+ayRange[h385_s,0]='0.72:0.735'
+ayRange[s_l,0]='0.187:0.197'
+ayRange[s_l,1]='0.225:0.245'
+ayRange[s_l,2]='0.25:0.28'
+ayRange[s_l,3]='0.28:0.32'
+ayRange[s_l,4]='0.3:0.37'
+ayRange[s_l,5]='0.32:0.38'
+ayRange[s_l,6]='0.2:0.42'
+
 declare -A ayrangeR3
 declare -A ayrangeMEL
 ayrangeR3[gT,0]=0.00068:0.000782
@@ -89,31 +99,31 @@ if [ -v DoAll ]; then
   FileSeries=${Fit2ptSeries}
   echo "Performing $FitWhat fits to $Ratio for $FileSeries"
 
-  NumExp=2 DeltaT="24 28 32" TI='13 14 14' TF='16 20 24' DoFit 0
+  NumExp=2 DeltaT="24 28 32" TI='13 14 14' TF='16 20 24' FitTwoStage 0
 
-  NumExp=2 DeltaT="24 28 32" TI='13 13 13' TF='16 19 23' DoFit 1 #Alternate
-  NumExp=2 DeltaT="24 28 32" TI='14 15 15' TF='17 20 24' Gamma=gXYZ DoFit 1
+  NumExp=2 DeltaT="24 28 32" TI='13 13 13' TF='16 19 23' FitTwoStage 1 #Alternate
+  NumExp=2 DeltaT="24 28 32" TI='14 15 15' TF='17 20 24' Gamma=gXYZ FitTwoStage 1
 
-  NumExp=2 DeltaT="24 28 32" TI='12 13 13' TF='15 19 23' DoFit 2
-  NumExp=2 DeltaT="24 28 32" TI='13 13 14' TF='16 20 24' Gamma=gXYZ DoFit 2
+  NumExp=2 DeltaT="24 28 32" TI='12 13 13' TF='15 19 23' FitTwoStage 2
+  NumExp=2 DeltaT="24 28 32" TI='13 13 14' TF='16 20 24' Gamma=gXYZ FitTwoStage 2
 
-  NumExp=3 DeltaT="24 28 32" TI='11 12 13' TF='14 18 22' DoFit 3
-  NumExp=2 DeltaT="24 28 32" TI='12 13 14' TF='16 20 24' Gamma=gXYZ DoFit 3
+  NumExp=3 DeltaT="24 28 32" TI='11 12 13' TF='14 18 22' FitTwoStage 3
+  NumExp=2 DeltaT="24 28 32" TI='12 13 14' TF='16 20 24' Gamma=gXYZ FitTwoStage 3
 
-  NumExp=2 DeltaT="24 28 32" TI='11 12 13' TF='14 18 22' DoFit 4
-  NumExp=2 DeltaT="24 28" TI='12 13 14' TF='16 20 24' Gamma=gXYZ DoFit 4
+  NumExp=2 DeltaT="24 28 32" TI='11 12 13' TF='14 18 22' FitTwoStage 4
+  NumExp=2 DeltaT="24 28" TI='12 13 14' TF='16 20 24' Gamma=gXYZ FitTwoStage 4
 
-  NumExp=3 DeltaT="24 28 32" TI='11 12 13' TF='14 18 22' DoFit 5
-  NumExp=2 DeltaT="24 28" TI='12 14 14' TF='16 20 24' Gamma=gXYZ DoFit 5
+  NumExp=3 DeltaT="24 28 32" TI='11 12 13' TF='14 18 22' FitTwoStage 5
+  NumExp=2 DeltaT="24 28" TI='12 14 14' TF='16 20 24' Gamma=gXYZ FitTwoStage 5
 
-  NumExp=2 DeltaT="24 28 32" TI='12 15 18' TF='15 19 22' DoFit 6
-  NumExp=2 DeltaT="24 28 32" TI='10 12 16' TF='16 20 24' Gamma=gXYZ DoFit 6
+  NumExp=2 DeltaT="24 28 32" TI='12 15 18' TF='15 19 22' FitTwoStage 6
+  NumExp=2 DeltaT="24 28 32" TI='10 12 16' TF='16 20 24' Gamma=gXYZ FitTwoStage 6
 fi
 if [ -v DoAlt ]; then
   FileSeries=${Fit2ptSeries}alt
   echo "Performing $FitWhat fits to $Ratio for $FileSeries"
 
-  NumExp=2 DeltaT="28 32" TI='12 12' TF='20 24' DoFit 1 # Preferred
+  NumExp=2 DeltaT="28 32" TI='12 12' TF='20 24' FitTwoStage 1 # Preferred
 fi
 if [ -v DoStd ]; then
   (
@@ -125,8 +135,8 @@ if [ -v DoStd ]; then
   TF='14 18 22'
   NumExp=2
   for (( n=0; n<7; ++n )); do
-    DoFit $n
-    if ((n)); then Gamma=gXYZ DoFit $n; fi
+        FitTwoStage $n
+    if ((n)); then Gamma=gXYZ FitTwoStage $n; fi
   done
   )
 fi

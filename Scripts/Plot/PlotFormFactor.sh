@@ -214,7 +214,7 @@ for Fit2 in $Fit2ptSeries; do
   MELFit=$InPrefix/MELFit
   SpecDir="3sm_${Spec[i]}"
   FitFile=$MELFit/Fit_${Spec[i]}_$Fit2.txt
-  Cmd="CRatio --type f,$L --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/ '*.$OutSub.${UnCorr+un}corr*.h5'"
+  Cmd="CRatio --type f,$L --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/ '*.$OutSub.${UnCorr+un}corr*.$MLUSeed.h5'"
   LogFile="FFS_$SpecDir.log"
   echo "$Cmd"
   echo "$Cmd"   > $LogFile

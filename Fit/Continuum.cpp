@@ -93,7 +93,6 @@ void ContinuumFit::LoadModels()
       vArgs.emplace( sFF, sFFValue );
     for( const std::string &sFileName : Filenames )
     {
-      bGlobEmpty = false;
       // This is a correlator - load it
       std::string PrintPrefix( 2, ' ' );
       if( !cl.Args[ArgNum].empty() )
@@ -101,12 +100,20 @@ void ContinuumFit::LoadModels()
         PrintPrefix.append( cl.Args[ArgNum] );
         PrintPrefix.append( 1, ' ' );
       }
-      ds.LoadModel( Common::FileNameAtt( sFileName, &OpName ), PrintPrefix.c_str(),
-                    Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
-                    | Common::COMPAT_DISABLE_ENSEMBLE );
-      ModelArgs.emplace_back( vArgs );
-      if( !Ensemble.empty() )
-        ds.constFile.back()->Ensemble = Ensemble;
+      Common::FileNameAtt fna{ sFileName, &OpName };
+      if( ( ff == Common::FormFactor::fplus || ff == Common::FormFactor::fperp )
+         && !fna.HasNonZeroMomentum() )
+        std::cout << PrintPrefix << "Ignoring zero momentum file " << sFileName << Common::NewLine;
+      else
+      {
+        bGlobEmpty = false;
+        ds.LoadModel( std::move( fna ), PrintPrefix.c_str(),
+                     Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
+                     | Common::COMPAT_DISABLE_ENSEMBLE );
+        ModelArgs.emplace_back( vArgs );
+        if( !Ensemble.empty() )
+          ds.constFile.back()->Ensemble = Ensemble;
+      }
     }
     if( bGlobEmpty )
       throw std::runtime_error( "No files matched " + FileToGlob );
@@ -210,6 +217,8 @@ void ContinuumFit::MakeOutputFilename()
   }
   outBaseFileName.append( 1, '.' );
   outBaseFileName.append( doCorr ? "corr" : "uncorr" );
+  outBaseFileName.append( 1, '_' );
+  outBaseFileName.append( sFFValue );
   outBaseFileName.append( 1, '.' );
 }
 

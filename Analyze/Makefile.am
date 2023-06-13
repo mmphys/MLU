@@ -15,6 +15,6 @@ GetColumn_SOURCES = GetColumn.cpp
 hlxml_SOURCES = hlxml.cpp
 ImportCorr_SOURCES = hlxml.cpp
 lime_truncate = lime_truncate.c
-MakeEnsembleInfo = MakeEnsembleInfo.cpp
+MakeEnsembleInfo_SOURCES = MakeEnsembleInfo.cpp
 repair_SOURCES = repair.cpp
 SynthData_SOURCES = SynthData.cpp

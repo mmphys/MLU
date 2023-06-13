@@ -42,6 +42,9 @@ struct ModelContinuum : Model
 {
   ModelContinuum( const Model::CreateParams &cp, Model::Args &Args, Common::FormFactor ff );
   void DefineXVector( DataSet &ds, int i ) override;
+  const std::string &XVectorKeyName() const override;
+  std::string XVectorKey() const override;
+  std::vector<Param::Key> XVectorKeyNames() const override;
   void AddParameters( Params &mp ) override;
   std::size_t GetFitColumn() const override;
   void SaveParameters( const Params &mp ) override;
@@ -58,7 +61,9 @@ protected:
   const Common::Momentum p;
   const std::string Ensemble;
   std::array<std::string, 2> Meson;
+  ModelParam aInv;
   ModelParam EL, kMu, mH, mL, qSq;
+  ModelParam aEL, akMu, amH, amL, aqSq;
   ModelParam Slope, YIntercept;
 };
 

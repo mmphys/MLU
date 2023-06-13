@@ -123,6 +123,21 @@ void Model::AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N
   ModPar.param = &param.back()->second;
 }
 
+const std::string &Model::XVectorKeyName() const
+{
+  throw std::runtime_error( "Model " + Description() + " supports correlator fits only" );
+}
+
+std::string Model::XVectorKey() const
+{
+  throw std::runtime_error( "Model " + Description() + " supports correlator fits only" );
+}
+
+std::vector<Param::Key> Model::XVectorKeyNames() const
+{
+  throw std::runtime_error( "Model " + Description() + " supports correlator fits only" );
+}
+
 std::size_t Model::GetFitColumn() const
 {
   throw std::runtime_error( "Model " + Description() + " supports correlator fits only" );

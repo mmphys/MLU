@@ -669,9 +669,15 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     if( !bAllParamsKnown )
       OutputModel.Write( ModelFileName );
     if( SummaryLevel >= 1 )
-      OutputModel.WriteSummaryTD( ds,
-                  Common::MakeFilename( sModelBase, Common::sModel + "_td", Seed, TEXT_EXT ),
-                  true, false );
+    {
+      const bool bVerbose{ true };
+      if( bFitCorr )
+        OutputModel.WriteSummaryTD( ds,
+                    Common::MakeFilename( sModelBase, Common::sModel + "_td", Seed, TEXT_EXT ),
+                    bVerbose );
+      else
+        WriteSummaryTD( Common::ReplaceExtension( ModelFileName, DAT_EXT ), bVerbose );
+    }
     if( SummaryLevel >= 2 )
       OutputModel.WriteSummary( Common::ReplaceExtension( ModelFileName, TEXT_EXT ) );
   }
@@ -699,3 +705,77 @@ std::vector<std::string> Fitter::GetModelArgs() const
     vs.resize( vs.size() - 1 );
   return vs;
 }
+
+void Fitter::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSummary )
+{
+  const ValWithEr veZero( 0, 0, 0, 0, 0, 0 );
+  //using namespace Common::CorrSumm;
+  assert( std::isnan( Common::NaN ) && "Compiler does not support quiet NaNs" );
+  std::ofstream ofs( sOutFileName );
+  Common::SummaryHeader<scalar>( ofs, sOutFileName );
+  OutputModel.SummaryComments( ofs, bVerboseSummary );
+  // Write the list of ensembles
+  {
+    std::string *pLast{ nullptr };
+    ofs << "# Ensembles:";
+    for( std::size_t i = 0; i < model.size(); ++i )
+      if( i == 0 || Common::CompareIgnoreCase( ds.constFile[i]->Ensemble, *pLast ) )
+      {
+        pLast = &ds.constFile[i]->Ensemble;
+        ofs << Common::Space << *pLast;
+      }
+    ofs << "\n# Primary key: ensemble " << model[0]->XVectorKeyName() << Common::NewLine;
+  }
+  // Write column names
+  static constexpr int idxData{ 0 };
+  //static constexpr int idxTheory{ 1 };
+  ofs << "# Global fit results\n";
+  ofs << "model ensemble " << model[0]->XVectorKeyName() << Common::Space;
+  ValWithEr::Header( "theory", ofs );
+  ofs << Common::Space;
+  ValWithEr::Header( "data", ofs );
+  for( const Param::Key &k : model[0]->XVectorKeyNames() )
+  {
+    const Param &p{ mp.Find( k, "WriteSummaryTD()" )->second };
+    const std::size_t idx{ p() };
+    for( std::size_t i = 0; i < p.size; ++i )
+    {
+      ofs << Common::Space;
+      ValWithEr::Header( k.ShortName( i, p.size ), ofs );
+    }
+  }
+  ofs << Common::NewLine;
+  // Grab the model data and theory with bootstrapped errors
+  const int Extent{ OutputModel.GetExtent() };
+  if( !Extent )
+    return;
+  std::array<VectorView, 2> vv; // View into data and theory replica data. Used to populate Value
+  std::vector<scalar> Buffer; // Scratch buffer for ValWithEr<T>
+  std::array<std::vector<ValWithEr>,2> Value; // Data and theory values with errors
+  for( std::size_t i = 0; i < Value.size(); ++i )
+  {
+    JackBoot &ThD{ i == idxData ? OutputModel.FitInput : OutputModel.ModelPrediction };
+    ThD.MakeStatistics( Value[i] );
+  }
+  // Write theory and data CORRELATOR values, with each data point in fit on a separate line
+  for( std::size_t i = 0; i < OutputModel.FitTimes.size(); ++i )
+  {
+    if( OutputModel.FitTimes[i].size() != 1 )
+      throw std::runtime_error( "Fitter::WriteSummaryTD fit times "
+                               + std::to_string( OutputModel.FitTimes[i].size() ) + " != 1" );
+    ModelFile &mf{ *ds.constFile[i] };
+    Model &m{ *model[i] };
+    ofs << i << Common::Space << mf.Ensemble << Common::Space << m.XVectorKey();
+    for( std::size_t j = Value.size(); j-- != 0; )
+      ofs << Common::Space << Value[j][i];
+    for( const Param::Key &k : m.XVectorKeyNames() )
+    {
+      const Param &p{ mp.Find( k, "WriteSummaryTD()" )->second };
+      const std::size_t idx{ p() };
+      for( std::size_t j = 0; j < p.size; ++j )
+        ofs << Common::Space << OutputModel.SummaryData( 0, idx + j );
+    }
+    ofs << Common::NewLine;
+  }
+}
+

@@ -102,6 +102,9 @@ public:
   // These must be implemented by the model
   /// Models which are a function of a vector (eg continuum fit) must define X Vector, i.e. constants used
   virtual void DefineXVector( DataSet &ds, int i ) {}
+  virtual const std::string &XVectorKeyName() const;
+  virtual std::string XVectorKey() const;
+  virtual std::vector<Param::Key> XVectorKeyNames() const;
   /// Models are expected to create parameters and constants they use
   virtual void AddParameters( Params &mp ) = 0;
   /// Models which fit to Models (not correlators) must return the column number they are fitting

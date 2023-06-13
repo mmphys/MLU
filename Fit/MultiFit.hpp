@@ -51,6 +51,7 @@ using ModelFile = Common::Model<scalar>;
 using ModelFilePtr = std::unique_ptr<ModelFile>;
 using DataSet = Common::DataSet<scalar>;
 using JackBoot = Common::JackBoot<scalar>;
+using ValWithEr = Common::ValWithEr<scalar>;
 using ConstantSource = Common::ConstantSource;
 using vString = std::vector<std::string>;
 using vInt = std::vector<int>;

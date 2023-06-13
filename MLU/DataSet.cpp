@@ -295,7 +295,7 @@ void DataSet<T>::AddConstant( const Param::Key &Key, std::size_t File, const Par
     throw std::runtime_error( os.str().c_str() );
   }
   // Make sure the field exists in the source file
-  PIT itSource{ constFile[File]->params.Find( FileKey, "DataSet::AddConstant current" ) };
+  PIT itSource{ constFile[File]->params.Find( FileKey, "DataSet::AddConstant FileKey" ) };
   // See whether the constant has already been loaded from another file
   CIT it{ constMap.find( Key ) };
   if( it != constMap.end() )

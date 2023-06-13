@@ -102,6 +102,7 @@ public:
   virtual const std::string &Type() const = 0;
   std::vector<std::string> GetModelTypes() const;
   std::vector<std::string> GetModelArgs() const;
+  void WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSummary );
 };
 
 #endif // Fitter_hpp

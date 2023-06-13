@@ -40,7 +40,76 @@ struct ValStddev
 {
   Scalar Value;
   Scalar Stddev;
+  ValStddev Average( const ValStddev &o ) const;
+  ValStddev AddQuadrature( unsigned int lMul, const ValStddev &r, unsigned int rMul ) const;
 };
+
+ValStddev ValStddev::Average( const ValStddev &o ) const
+{
+  ValStddev Avg;
+  Avg.Value = 0.5 * ( Value + o.Value );
+  if( Stddev == o.Stddev )
+    Avg.Stddev = Stddev;
+  else
+  {
+    // Add in quadrature
+    const Scalar A{   Stddev /   Value };
+    const Scalar B{ o.Stddev / o.Value };
+    Avg.Stddev = std::sqrt( A*A + B*B ) * Avg.Value;
+  }
+  return Avg;
+}
+
+ValStddev ValStddev::AddQuadrature( unsigned int lMul, const ValStddev &r, unsigned int rMul ) const
+{
+  if( lMul == rMul && Stddev == r.Stddev )
+    return Average( r );
+  const Scalar Norm{ static_cast<Scalar>( 1. / ( lMul + rMul ) ) };
+  ValStddev v;
+  v.Value = Norm * ( lMul * Value + rMul * r.Value );
+  // Add errors in quadrature
+  const Scalar L{   Stddev /   Value };
+  const Scalar R{ r.Stddev / r.Value };
+  v.Stddev = std::sqrt( Norm * ( lMul * L * L + rMul * R * R ) ) * v.Value;
+  return v;
+}
+
+std::ostream &operator<<( std::ostream &os, const ValStddev &v )
+{
+  return os << v.Value << "\t[" << ( v.Value - v.Stddev ) << ",\t" << ( v.Value + v.Stddev ) << "]";
+}
+
+struct GlobalInfo
+{
+  std::string Name;
+  SeedType  Seed;
+  ValStddev Value;
+};
+
+// PDG meson masses from https://pdglive.lbl.gov Units eV
+const ValStddev DStar2010{ 2.01026e9, 0.05e6 }; // D^*(2010)^\pm
+const ValStddev DStar2007{ 2.00685e9, 0.05e6 }; // D^*(2007)^0
+const ValStddev PDGDPM{ 1.86966e9, 0.05e6 }; // D^\pm
+const ValStddev PDGD0{ 1.86484e9, 0.05e6 }; // D^0
+const ValStddev PDGKPM{ 493.677e6, 0.016e6 }; // K^\pm
+const ValStddev PDGK0{ 497.611e6, 0.013e6 }; // K^0
+const ValStddev PDGPIPM{ 139.57039e6, 0.00018e6 }; // \pi^\pm
+const ValStddev PDGPI0{ 134.9768e6, 0.0005e6 }; // \pi^0
+
+const std::array<GlobalInfo, 9> globalInfo{{
+  // Gradient flow scale
+  // Data from https://arxiv.org/pdf/1411.7017.pdf \cite{Blum:2016} table 1, page 6
+  { "w0", 4195934094, { 0.8742e-9, 4.6e-12 } }, // Units eV^{-1}
+  { "fPI", 2055826088, {130.19e6, 0.89e6} }, // Units eV
+  { "fK", 528365601, {155.51e6, 0.83e6} }, // Units eV
+  // PDG meson masses from https://pdglive.lbl.gov Units eV
+  { "PDGD0*", 1270112283, { 2.343e9, 10e6 } },
+  { "PDGD*", 1358725311, DStar2010.Average( DStar2007 ) },
+  { "PDGD", 1081938155, PDGDPM.Average( PDGD0 ) },
+  { "PDGDs", 1794043036, { 1.96835e9, 0.07e6 } }, // PDG D_s^\pm
+  { "PDGK", 3899441903, PDGKPM.Average( PDGK0 ) },
+  { "PDGPI", 4013980664, PDGPIPM.AddQuadrature( 2, PDGPI0, 1 ) },
+}};
 
 struct EnsembleInfo
 {
@@ -54,7 +123,7 @@ struct EnsembleInfo
 static constexpr int NumEnsembles{ 6 };
 
 // Data from https://arxiv.org/pdf/1812.08791.pdf \cite{Boyle:2018knm}
-// Inverse lattice spacings in GeV
+// Inverse lattice spacings in eV
 static const std::array<EnsembleInfo, NumEnsembles> EnsembleArray{{
   { "C1",  2124653957, 24, 64, { 1.7848e9, 5e6 } },
   { "C2",  2924767711, 24, 64, { 1.7848e9, 5e6 } },
@@ -68,21 +137,40 @@ static constexpr int NumParams{ 1 };
 
 static const std::array<std::string, NumParams> ParamNames{{ "aInv" }};
 
-static std::array<std::array<std::size_t, NumParams>, NumEnsembles> ParamIndex;
+inline SeedType RandomNumber()
+{
+  return std::random_device{}(); // Hardware generated
+}
 
 void MakeSeeds()
 {
   std::random_device rd; // Hardware generated
   for( const EnsembleInfo &ei : EnsembleArray )
-  {
-    std::cout << ei.Ensemble << Common::Space << rd() << Common::NewLine;
-  }
+    std::cout << ei.Ensemble << '\t' << rd() << Common::NewLine;
+  std::cout << "w0" << '\t' << rd() << Common::NewLine;
 }
 
-Common::Params MakeParams()
+class Maker
+{
+protected:
+  const Common::Params params;
+  Common::Params MakeParams();
+  void MakeGaussian( Model &m, Common::Param::Key k, const ValStddev &v, SeedType Seed ) const;
+  void MakeEnsembleInfo( std::string sFileName ) const;
+public:
+  Maker() : params{ MakeParams() } {}
+  void Run( std::string sFileName ) const;
+};
+
+Common::Params Maker::MakeParams()
 {
   Common::Params params;
   Common::Param::Key k;
+  for( const GlobalInfo & gi : globalInfo )
+  {
+    k.Name = gi.Name;
+    params.Add( k );
+  }
   k.Object.resize( 1 );
   for( const EnsembleInfo &ei : EnsembleArray )
   {
@@ -94,41 +182,39 @@ Common::Params MakeParams()
     }
   }
   params.AssignOffsets();
-  for( std::size_t i = 0; i < EnsembleArray.size(); ++i )
-  {
-    k.Object[0] = EnsembleArray[i].Ensemble;
-    for( std::size_t j = 0; j < ParamNames.size(); ++j )
-    {
-      k.Name = ParamNames[j];
-      Common::Params::iterator it{  };
-      ParamIndex[i][j] = params.Find( k, "Bug looking for key I just inserted" )->second();
-    }
-  }
   return params;
 }
 
-void MakeGaussianAInv( Model &m, std::size_t idxEnsemble )
+void Maker::MakeGaussian( Model &m, Common::Param::Key k, const ValStddev &v, SeedType Seed ) const
 {
-  std::size_t Column{ ParamIndex[idxEnsemble][0] };
-  const EnsembleInfo &ei{ EnsembleArray[idxEnsemble] };
-  std::cout << ei.Ensemble << '\t'
-            << ei.aInv.Value << "\t["
-            << ( ei.aInv.Value - ei.aInv.Stddev ) << ",\t"
-            << ( ei.aInv.Value + ei.aInv.Stddev ) << "]\n";
-  std::mt19937                     engine( ei.Seed );
-  std::normal_distribution<Scalar> random( ei.aInv.Value, ei.aInv.Stddev );
-  m( Model::idxCentral, Column ) = ei.aInv.Value;
+  if( Seed == 0 )
+    Seed = RandomNumber();
+  const std::size_t Column{ params.Find( k, "MakeGaussian() Bug" )->second() };
+  std::cout << k << '\t' << v << '\t' << Seed << Common::NewLine;
+  std::mt19937                     engine( Seed );
+  std::normal_distribution<Scalar> random( v.Value, v.Stddev );
+  m( Model::idxCentral, Column ) = v.Value;
   for( std::size_t i = 0; i < m.NumSamples(); ++i )
     m( i, Column ) = random( engine );
 }
 
-void MakeEnsembleInfo( std::string sFileName )
+void Maker::Run( std::string sFileName ) const
 {
   std::cout << "Making " << sFileName << Common::NewLine;
-  Common::Params params{ MakeParams() };
   Model m{ static_cast<int>( Common::RandomCache::DefaultNumReplicas() ), params, {} };
-  for( std::size_t i = 0; i < EnsembleArray.size(); ++i )
-    MakeGaussianAInv( m, i );
+  Common::Param::Key k;
+  for( const GlobalInfo & gi : globalInfo )
+  {
+    k.Name = gi.Name;
+    MakeGaussian( m, k, gi.Value, gi.Seed );
+  }
+  k.Name = ParamNames[0];
+  k.Object.resize( 1 );
+  for( const EnsembleInfo &ei : EnsembleArray )
+  {
+    k.Object[0] = ei.Ensemble;
+    MakeGaussian( m, k, ei.aInv, ei.Seed );
+  }
   m.SetSummaryNames( "Central" );
   m.MakeCorrSummary();
   Common::MakeAncestorDirs( sFileName );
@@ -145,7 +231,7 @@ int main(int argc, char *argv[])
   {
     if( Common::FileExists( sFileName ) )
       throw std::runtime_error( sFileName + " exists" );
-    MakeEnsembleInfo( sFileName );
+    Maker{}.Run( sFileName );
   }
   catch(const std::exception &e)
   {

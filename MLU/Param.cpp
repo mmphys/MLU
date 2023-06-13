@@ -51,11 +51,10 @@ std::string Param::Key::FullName( std::size_t idx, std::size_t Size ) const
 
 std::string Param::Key::ShortName( std::size_t idx, std::size_t Size ) const
 {
-  std::ostringstream os;
-  os << Name;
+  std::string s{ Name };
   if( Size > 1 )
-    os << idx;
-  return os.str();
+    s.append( std::to_string( idx ) );
+  return s;
 }
 
 void Param::Key::ValidateKey()

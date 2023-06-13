@@ -57,6 +57,9 @@
 #ifndef TEXT_EXT
 #define TEXT_EXT "txt"
 #endif
+#ifndef DAT_EXT
+#define DAT_EXT "dat"
+#endif
 
 #define BEGIN_COMMON_NAMESPACE namespace Common {
 #define END_COMMON_NAMESPACE   };

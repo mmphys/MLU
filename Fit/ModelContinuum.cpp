@@ -144,25 +144,18 @@ ModelContinuum::ModelContinuum( const Model::CreateParams &cp, Model::Args &Args
     os << "ModelContinuum(): Src momentum " << cp.pCorr->Name_.MesonP[0].p << " != 0";
     throw std::runtime_error( os.str().c_str() );
   }
-}
-
-void ModelContinuum::DefineXVector( DataSet &ds, int i )
-{
+  aInv.Key.Object = { Ensemble };
+  aInv.Key.Name = "aInv";
   EL.Key.Object = { Ensemble, std::to_string( p.p2() ) };
   EL.Key.Name = "EL";
-  ds.AddConstant( EL.Key, i, Param::Key{EL.Key.Name} );
   kMu.Key.Object = EL.Key.Object;
   kMu.Key.Name = "kMu";
-  ds.AddConstant( kMu.Key, i, Param::Key{kMu.Key.Name} );
   mH.Key.Object = { Ensemble };
   mH.Key.Name = "mH";
-  ds.AddConstant( mH.Key, i, Param::Key{mH.Key.Name} );
   mL.Key.Object = mH.Key.Object;
   mL.Key.Name = "mL";
-  ds.AddConstant( mL.Key, i, Param::Key{"mL"} );
   qSq.Key.Object = kMu.Key.Object;
   qSq.Key.Name = "qSq";
-  ds.AddConstant( qSq.Key, i, Param::Key{qSq.Key.Name} );
   // For now I use a per-ensemble linear model
   Slope.Key.Object = { Ensemble };
   Slope.Key.Name = "Slope";
@@ -170,13 +163,67 @@ void ModelContinuum::DefineXVector( DataSet &ds, int i )
   YIntercept.Key.Name = "YIntercept";
 }
 
+void ModelContinuum::DefineXVector( DataSet &ds, int i )
+{
+  aEL.Key.Object = { Ensemble, std::to_string( p.p2() ) };
+  aEL.Key.Name = "aEL";
+  ds.AddConstant( aEL.Key, i, Param::Key{EL.Key.Name} );
+  akMu.Key.Object = aEL.Key.Object;
+  akMu.Key.Name = "akMu";
+  ds.AddConstant( akMu.Key, i, Param::Key{kMu.Key.Name} );
+  amH.Key.Object = { Ensemble };
+  amH.Key.Name = "amH";
+  ds.AddConstant( amH.Key, i, Param::Key{mH.Key.Name} );
+  amL.Key.Object = mH.Key.Object;
+  amL.Key.Name = "amL";
+  ds.AddConstant( amL.Key, i, Param::Key{mL.Key.Name} );
+  aqSq.Key.Object = kMu.Key.Object;
+  aqSq.Key.Name = "aqSq";
+  ds.AddConstant( aqSq.Key, i, Param::Key{qSq.Key.Name} );
+}
+
+const std::string &ModelContinuum::XVectorKeyName() const
+{
+  static const std::string MyKey{ "nSq" };
+  return MyKey;
+}
+
+std::string ModelContinuum::XVectorKey() const
+{
+  return std::to_string( p.p2() );
+}
+
+std::vector<Param::Key> ModelContinuum::XVectorKeyNames() const
+{
+  std::vector<Param::Key> vk;
+  vk.reserve( 11 );
+  vk.push_back( aInv.Key );
+  vk.push_back( aEL.Key );
+  vk.push_back( akMu.Key );
+  vk.push_back( amH.Key );
+  vk.push_back( amL.Key );
+  vk.push_back( aqSq.Key );
+  vk.push_back( EL.Key );
+  vk.push_back( kMu.Key );
+  vk.push_back( mH.Key );
+  vk.push_back( mL.Key );
+  vk.push_back( qSq.Key );
+  return vk;
+}
+
 void ModelContinuum::AddParameters( Params &mp )
 {
-  AddParam( mp, EL );
-  AddParam( mp, kMu );
-  AddParam( mp, mH );
-  AddParam( mp, mL );
-  AddParam( mp, qSq );
+  AddParam( mp, aInv );
+  AddParam( mp, aEL );
+  AddParam( mp, akMu );
+  AddParam( mp, amH );
+  AddParam( mp, amL );
+  AddParam( mp, aqSq );
+  AddParam( mp, EL, 1, false, Common::Param::Type::Derived );
+  AddParam( mp, kMu, 1, false, Common::Param::Type::Derived );
+  AddParam( mp, mH, 1, false, Common::Param::Type::Derived );
+  AddParam( mp, mL, 1, false, Common::Param::Type::Derived );
+  AddParam( mp, qSq, 1, false, Common::Param::Type::Derived );
   AddParam( mp, Slope );
   AddParam( mp, YIntercept );
 }
@@ -191,6 +238,12 @@ std::size_t ModelContinuum::GetFitColumn() const
 
 void ModelContinuum::SaveParameters( const Params &mp )
 {
+  aInv.idx = mp.at( aInv.Key )();
+  aEL.idx = mp.at( aEL.Key )();
+  akMu.idx = mp.at( akMu.Key )();
+  amH.idx = mp.at( amH.Key )();
+  amL.idx = mp.at( amL.Key )();
+  aqSq.idx = mp.at( aqSq.Key )();
   EL.idx = mp.at( EL.Key )();
   kMu.idx = mp.at( kMu.Key )();
   mH.idx = mp.at( mH.Key )();
@@ -242,5 +295,11 @@ scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParam
 {
   if( !p.p2() && ModelParams[mL.idx] != ModelParams[EL.idx] )
     throw std::runtime_error( "ModelContinuum mL != EL(0) on Ensemble " + Ensemble );
+  const scalar &_aInv{ ModelParams[aInv.idx] };
+  ModelParams[EL.idx] = ModelParams[aEL.idx] * _aInv;
+  ModelParams[kMu.idx] = ModelParams[akMu.idx] * _aInv;
+  ModelParams[mH.idx] = ModelParams[amH.idx] * _aInv;
+  ModelParams[mL.idx] = ModelParams[amL.idx] * _aInv;
+  ModelParams[qSq.idx] = ModelParams[aqSq.idx] * _aInv * _aInv;
   return ModelParams[Slope.idx] * ModelParams[qSq.idx] + ModelParams[YIntercept.idx];
 }
