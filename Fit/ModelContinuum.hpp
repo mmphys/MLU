@@ -56,15 +56,19 @@ struct ModelContinuum : Model
   ModelType Type() const override;
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
 protected:
+  static constexpr scalar Lambda{ 1e9 }; // Units GeV (for now this is hardwired)
+  static constexpr scalar LambdaInv{ 1. / Lambda }; // For now this is hardwired
   const ModelFile &mf;
   const Common::FormFactor ff;
   const Common::Momentum p;
   const std::string Ensemble;
+  unsigned int aInv_L;
   std::array<std::string, 2> Meson;
-  ModelParam aInv;
+  ModelParam aInv, fPi, mPi, mPDGPi, mPDGDStar, mPDGH, mPDGL, Delta;
   ModelParam EL, kMu, mH, mL, qSq;
   ModelParam aEL, akMu, amH, amL, aqSq;
-  ModelParam Slope, YIntercept;
+  ModelParam c0, c1, c2, c3, c4;
+  scalar DeltaF( scalar M ) const;
 };
 
 #endif // ModelContinuum_hpp

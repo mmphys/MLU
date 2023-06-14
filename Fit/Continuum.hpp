@@ -33,12 +33,17 @@
 #include "Fitter.hpp"
 #include "Model.hpp"
 
+struct EnsembleInfo
+{
+  unsigned int aInv_L;
+  unsigned int aInv_T;
+};
+using EnsembleMapT = std::map<std::string, EnsembleInfo>;
 
 struct CreateParams : public Model::CreateParams
 {
-  DataSet &ds;
-  int FileNum; // Current model file number
-  CreateParams( const std::vector<std::string> &OpNames, const Common::CommandLine &cl, DataSet &ds );
+ const EnsembleMapT EnsembleMap;
+  CreateParams( const std::vector<std::string> &OpNames, const Common::CommandLine &cl );
 };
 
 struct ContinuumFit

@@ -461,6 +461,7 @@ struct FileNameAtt
   std::string SpecDir;
   std::string Spectator;
   bool bSpectatorGotSuffix = false;
+  std::vector<std::string> Quark; // 0 is source, 1 is sink
   std::vector<std::string> Meson; // 0 is source, 1 is sink
   std::vector<std::string> MesonMom; // With momenta - if available
   std::vector<NamedMomentum> MesonP; // The momenta - if available
@@ -487,6 +488,7 @@ struct FileNameAtt
     SpecDir.clear();
     Spectator.clear();
     bSpectatorGotSuffix = false;
+    Quark.clear();
     Meson.clear();
     MesonMom.clear();
   }
@@ -514,6 +516,7 @@ struct FileNameAtt
     std::swap( SpecDir, o.SpecDir );
     std::swap( Spectator, o.Spectator );
     std::swap( bSpectatorGotSuffix, o.bSpectatorGotSuffix );
+    std::swap( Quark, o.Quark );
     std::swap( Meson, o.Meson );
     std::swap( MesonMom, o.MesonMom );
   }

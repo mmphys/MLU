@@ -96,46 +96,51 @@ const ValStddev PDGK0{ 497.611e6, 0.013e6 }; // K^0
 const ValStddev PDGPIPM{ 139.57039e6, 0.00018e6 }; // \pi^\pm
 const ValStddev PDGPI0{ 134.9768e6, 0.0005e6 }; // \pi^0
 
-const std::array<GlobalInfo, 9> globalInfo{{
+const std::array<GlobalInfo, 11> globalInfo{{
   // Gradient flow scale
   // Data from https://arxiv.org/pdf/1411.7017.pdf \cite{Blum:2016} table 1, page 6
   { "w0", 4195934094, { 0.8742e-9, 4.6e-12 } }, // Units eV^{-1}
-  { "fPI", 2055826088, {130.19e6, 0.89e6} }, // Units eV
+  { "fPi", 2055826088, {130.19e6, 0.89e6} }, // Units eV
   { "fK", 528365601, {155.51e6, 0.83e6} }, // Units eV
   // PDG meson masses from https://pdglive.lbl.gov Units eV
-  { "PDGD0*", 1270112283, { 2.343e9, 10e6 } },
-  { "PDGD*", 1358725311, DStar2010.Average( DStar2007 ) },
+  { "PDGD0Star", 1270112283, { 2.343e9, 10e6 } },
+  { "PDGDStar", 1358725311, DStar2010.Average( DStar2007 ) },
   { "PDGD", 1081938155, PDGDPM.Average( PDGD0 ) },
   { "PDGDs", 1794043036, { 1.96835e9, 0.07e6 } }, // PDG D_s^\pm
+  { "PDGDsStar", 1247053099, { 2.1122e9, 0.4e6 } }, // PDG D_s^{*\pm}
+  { "PDGDs0Star", 4246507467, { 2.3178e9, 0.5e6 } }, // PDG D_{s0}^*(2317)^\pm
   { "PDGK", 3899441903, PDGKPM.Average( PDGK0 ) },
-  { "PDGPI", 4013980664, PDGPIPM.AddQuadrature( 2, PDGPI0, 1 ) },
+  { "PDGPi", 4013980664, PDGPIPM.AddQuadrature( 2, PDGPI0, 1 ) },
 }};
+
+static constexpr int NumParams{ 2 };
+static const std::array<std::string, NumParams> ParamNames{{ "aInv", "mPi" }};
 
 struct EnsembleInfo
 {
+  struct ValT : public ValStddev
+  {
+    SeedType Seed;
+    ValT( Scalar value, Scalar stddev, SeedType seed ) : ValStddev{value, stddev}, Seed{seed} {}
+  };
   std::string Ensemble;
-  SeedType    Seed;
   int         L;
   int         T;
-  ValStddev   aInv;
+  std::array<ValT, NumParams> Value;
 };
 
 static constexpr int NumEnsembles{ 6 };
 
-// Data from https://arxiv.org/pdf/1812.08791.pdf \cite{Boyle:2018knm}
+// Data from https://arxiv.org/pdf/1812.08791.pdf \cite{Boyle:2018knm}, Table 1, pg 6
 // Inverse lattice spacings in eV
 static const std::array<EnsembleInfo, NumEnsembles> EnsembleArray{{
-  { "C1",  2124653957, 24, 64, { 1.7848e9, 5e6 } },
-  { "C2",  2924767711, 24, 64, { 1.7848e9, 5e6 } },
-  { "F1M", 3490653410, 48, 96, { 2.7080e9, 1e7 } },
-  { "M1",  3144081093, 32, 64, { 2.3833e9, 8.6e6 } },
-  { "M2",   277434998, 32, 64, { 2.3833e9, 8.6e6 } },
-  { "M3",   492385535, 32, 64, { 2.3833e9, 8.6e6 } }
+  { "C1",  24, 64, {{ { 1.7848e9, 5e6,  2124653957 }, { 339.76e6, 1.22e6, 3524755446 } }} },
+  { "C2",  24, 64, {{ { 1.7848e9, 5e6,  2924767711 }, { 430.63e6, 1.38e6, 2427481952 } }} },
+  { "F1M", 48, 96, {{ { 2.7080e9, 1e7,  3490653410 }, { 232.01e6, 1.01e6, 1818009048 } }} },
+  { "M1",  32, 64, {{ { 2.3833e9, 8.6e6,3144081093 }, { 303.56e6, 1.38e6,  233350358 } }} },
+  { "M2",  32, 64, {{ { 2.3833e9, 8.6e6, 277434998 }, { 360.71e6, 1.58e6,  184399682 } }} },
+  { "M3",  32, 64, {{ { 2.3833e9, 8.6e6, 492385535 }, { 410.76e6, 1.74e6,  585791459 } }} },
 }};
-
-static constexpr int NumParams{ 1 };
-
-static const std::array<std::string, NumParams> ParamNames{{ "aInv" }};
 
 inline SeedType RandomNumber()
 {
@@ -208,12 +213,15 @@ void Maker::Run( std::string sFileName ) const
     k.Name = gi.Name;
     MakeGaussian( m, k, gi.Value, gi.Seed );
   }
-  k.Name = ParamNames[0];
   k.Object.resize( 1 );
   for( const EnsembleInfo &ei : EnsembleArray )
   {
     k.Object[0] = ei.Ensemble;
-    MakeGaussian( m, k, ei.aInv, ei.Seed );
+    for( int i = 0; i < NumParams; ++i )
+    {
+      k.Name = ParamNames[i];
+      MakeGaussian( m, k, ei.Value[i], ei.Value[i].Seed );
+    }
   }
   m.SetSummaryNames( "Central" );
   m.MakeCorrSummary();

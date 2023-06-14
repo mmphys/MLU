@@ -34,15 +34,15 @@
 // Indices for operators in correlator names
 const char * pSrcSnk[2] = { "src", "snk" };
 
-struct EnsembleInfo
+struct ModelWithArgs
 {
   ModelFilePtr m;
   Model::Args Args;
 };
 
-struct EnsembleLess
+struct ModelWithArgsLess
 {
-  bool operator()( const EnsembleInfo &lhs, const EnsembleInfo &rhs )
+  bool operator()( const ModelWithArgs &lhs, const ModelWithArgs &rhs )
   {
     int i{ Common::CompareIgnoreCase( lhs.m->Ensemble, rhs.m->Ensemble ) };
     if( i )
@@ -53,9 +53,15 @@ struct EnsembleLess
   }
 };
 
-CreateParams::CreateParams( const std::vector<std::string> &O, const Common::CommandLine &C,
-                            DataSet &D )
-: Model::CreateParams( O, C ), ds{D}
+CreateParams::CreateParams( const std::vector<std::string> &O, const Common::CommandLine &C )
+: Model::CreateParams( O, C ),
+  EnsembleMap{
+    {"C1",  {24, 64}},
+    {"C2",  {24, 64}},
+    {"F1M", {48, 96}},
+    {"M1",  {32, 64}},
+    {"M2",  {32, 64}},
+    {"M3",  {32, 64}} }
 {
 }
 
@@ -126,14 +132,14 @@ void ContinuumFit::SortModels()
   if( ds.constFile.empty() )
     throw std::runtime_error( "Nothing to fit" );
   // Sort the models and corresponding arguments by ensemble
-  std::vector<EnsembleInfo> ei( ds.constFile.size() );
+  std::vector<ModelWithArgs> ei( ds.constFile.size() );
   for( std::size_t i = 0; i < ds.constFile.size(); ++i )
   {
     ei[i].m.reset( ds.constFile[i].release() );
     ei[i].Args = std::move( ModelArgs[i] );
   }
   // Sort
-  std::sort( ei.begin(), ei.end(), EnsembleLess() );
+  std::sort( ei.begin(), ei.end(), ModelWithArgsLess() );
   // Put them back
   for( std::size_t i = 0; i < ds.constFile.size(); ++i )
   {
@@ -284,8 +290,7 @@ int ContinuumFit::Run()
   std::cout << "Covariance matrix from resampled data, block diagonal per Ensemble" << std::endl;
 
   // Make the fitter
-  f.reset( Fitter::Make( Model::CreateParams{ OpName, cl }, ds, std::move( ModelArgs ),
-                         std::move( cp ), false ) );
+  f.reset( Fitter::Make( CreateParams{OpName,cl}, ds, std::move(ModelArgs), std::move(cp), false ) );
   // Now do the fit
   return DoFit();
 }

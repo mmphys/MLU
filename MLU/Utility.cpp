@@ -279,8 +279,11 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   BaseShortParts = ArrayFromString( BaseShort, Underscore );
   if( !Spectator.empty() && BaseShortParts.size() >= 3 )
   {
-    Meson.emplace_back( MakeMesonName( BaseShortParts[2] ) );
-    Meson.emplace_back( MakeMesonName( BaseShortParts[1] ) );
+    Quark.reserve( 2 );
+    Quark.push_back( BaseShortParts[2] );
+    Quark.push_back( BaseShortParts[1] );
+    Meson.emplace_back( MakeMesonName( Quark[0] ) );
+    Meson.emplace_back( MakeMesonName( Quark[1] ) );
     auto pp = p.find( Momentum::DefaultPrefix );
     if( pp != p.end() )
     {
@@ -303,6 +306,12 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
       for( std::size_t i = 0; i < MesonMom.size(); ++i )
         MesonMom[i].append( MesonP[i].p.FileString( Momentum::DefaultPrefix ) );
     }
+  }
+  else if( Spectator.empty() && BaseShortParts.size() >= 2 )
+  {
+    Quark.reserve( 2 );
+    Quark.push_back( BaseShortParts[1] );
+    Quark.push_back( BaseShortParts[0] );
   }
 }
 

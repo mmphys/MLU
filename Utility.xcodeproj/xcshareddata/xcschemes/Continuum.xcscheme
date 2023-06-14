@@ -70,18 +70,18 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f fplus"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C1/FormFactor/betterP/3sm_sp2/&apos;*_p2_[0-3].*&apos;.h5,Ensemble=C1"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "C1/FormFactor/betterP/3sm_sp2/&apos;*.h5,Ensemble=C1"
+            argument = "C2/FormFactor/disp/3sm_sp2/&apos;*_p2_[0-3].*&apos;.h5,Ensemble=C2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "C2/FormFactor/disp/3sm_sp2/&apos;*.h5,Ensemble=C2"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "F1M/FormFactor/old/3sm_sp2/&apos;*.h5,Ensemble=F1M"
+            argument = "F1M/FormFactor/old/3sm_sp2/&apos;*_p2_[0-5].*&apos;.h5,Ensemble=F1M"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
