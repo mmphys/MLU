@@ -16,6 +16,7 @@ gnuplot <<-EOFMark
 PlotFile="$PlotFile"
 my_xrange="${xrange:-*:*}"
 my_yrange="${yrange:-*:*}"
+my_ylabel="$YLabel"
 yformat="$yformat"
 FieldName="${field:-log}"
 FieldNameText="${fieldtext:-effective mass}"
@@ -31,6 +32,18 @@ OriginalTF="${tf}"
 ExtraFiles="${extra}"
 RefVal="$RefVal"
 RefText="$RefText"
+FitDelta=$FitDelta
+FitmH=$FitmH
+FitmL=$FitmL
+FitC0=$FitC0
+FitC2=$FitC2
+FitC3=$FitC3
+
+EOfQSqConst=FitmH * FitmH + FitmL * FitmL
+EOfQSq(qSq)=( EOfQSqConst - qSq ) / ( 2 * FitmH )
+Lambda=1e9
+Contin(qSq)=Lambda/(EOfQSq(qSq) + FitDelta) * \
+  ( FitC0 + FitC2 * EOfQSq(qSq) / Lambda + FitC3 * EOfQSq(qSq) / Lambda * EOfQSq(qSq) / Lambda )
 
 if( Save ne "" ) {
   if( PDFSize ne "" ) { PDFSize='size '.PDFSize }
@@ -38,12 +51,17 @@ if( Save ne "" ) {
   set output Save.".pdf"
 }
 
+if( RefText ne '' ) { RefText=RefText.', ' }
+RefText=RefText.my_ylabel.'(0)='.sprintf('%0.3g',Contin(0))
+set label 2 RefText at screen 0, screen 0 font ",10" front textcolor "blue" \
+  offset character 0.5, 0.5
+
 set xrange[@my_xrange]
 set yrange[@my_yrange]
 set pointintervalbox 0 # disables the white space around points in gnuplot 5.4.6 onwards
 set key bottom right
 set xlabel "q^2 / GeV^2"
-set ylabel "$FormFactor"
+set ylabel my_ylabel
 
 # Styles I first used at Lattice 2022
 #Ensembles="C1 C2 F1M M1 M2 M3"
@@ -63,7 +81,8 @@ set linetype 8 ps 0.66 pt 7 lc rgb 0xC00000 #red
 plot for [i=1:3] PlotFile \
         using (stringcolumn("ensemble") eq word(Ensembles,i) ? column(xAxis) * 1e-18 : NaN) \
         :(column("data")):(column("data_low")):(column("data_high")) \
-        with yerrorbars title word(Ensembles,i) ls i
+        with yerrorbars title word(Ensembles,i) ls i, \
+    Contin(x*Lambda*Lambda) title "Continuum" ls 8
 
 EOFMark
 }
@@ -132,20 +151,34 @@ function GetSaveName()
   fi
 }
 
+function GetFitData()
+{
+  local InPath=${PlotFile%.*}.h5
+  ColumnValues=($(GetColumn --exact ChiSqPerDof,pValue,Delta,PDGDs,PDGK,${ff}-c0,${ff}-c2,${ff}-c3 $InPath))
+  RefText="χ²/dof=${ColumnValues[4]} (p=${ColumnValues[12]})"
+  FitDelta=${ColumnValues[2*8+4]}
+  FitmH=${ColumnValues[3*8+4]}
+  FitmL=${ColumnValues[4*8+4]}
+  FitC0=${ColumnValues[5*8+4]}
+  FitC2=${ColumnValues[6*8+4]}
+  FitC3=${ColumnValues[7*8+4]}
+}
+
 for PlotFile in "$@"
 do
   if [[ -z $PlotFile || ! -a $PlotFile ]]; then
     echo "Doesn't exist $PlotFile"
   else (
     if ! [ -v save ]; then GetSaveName "$PlotFile"; fi
-    FormFactor=${PlotFile##*/}
-    FormFactor=${FormFactor#*.}
-    FormFactor=${FormFactor%%.*}
-    FormFactor=${FormFactor#*_}
-    case $FormFactor in
-      fplus) FormFactor="f_+";;
-      f0) FormFactor="f_0";;
+    ff=${PlotFile##*/}
+    ff=${ff#*.}
+    ff=${ff%%.*}
+    ff=${ff#*_}
+    case $ff in
+      fplus) YLabel="f_+";;
+      f0) YLabel="f_0";;
     esac
+    GetFitData
     PlotFunction
   ) fi
 done
