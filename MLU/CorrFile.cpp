@@ -86,15 +86,8 @@ void CorrelatorFile<T>::Read(const std::string &FileName, std::vector<Gamma::Alg
     assert( pAlgSnkNeg->size() && "Algebras unknown. Negating makes no sense" );
     assert( !bSameAlgebras && "Work out whether two negatives make a positive, then implement" );
   }
-  // Parse the name. Not expecting a type, so if present, put it back on the end of Base
-  Name_.Parse( FileName );
-  if( !Name_.Type.empty() )
-  {
-    // Not sure whether I should bother doing this?
-    Name_.Base.append( 1, '.' );
-    Name_.Base.append( Name_.Type );
-    Name_.Type.clear();
-  }
+  // Parse the name. This is PreBootstrap, i.e. no type and not my naming convention
+  Name_.Parse( FileName, nullptr, nullptr, nullptr, true );
   if( !Name_.bSeedNum )
     throw std::runtime_error( "Configuration number missing from " + FileName );
   // Strip out timeslice info if present
