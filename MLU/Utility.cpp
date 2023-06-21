@@ -277,7 +277,7 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   Gamma.clear();
   Gamma = ExtractGamma( BaseShort );
   BaseShortParts = ArrayFromString( BaseShort, Underscore );
-  if( !Spectator.empty() && BaseShortParts.size() >= 3 )
+  if( !bPreBootstrap && !Spectator.empty() && BaseShortParts.size() >= 3 )
   {
     Quark.reserve( 2 );
     Quark.push_back( BaseShortParts[2] );
@@ -304,7 +304,7 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
       }
     }
   }
-  else if( Spectator.empty() && BaseShortParts.size() >= 2 )
+  else if( !bPreBootstrap && Spectator.empty() && BaseShortParts.size() >= 2 )
   {
     Quark.reserve( 2 );
     Quark.push_back( BaseShortParts[1] ); // Source
