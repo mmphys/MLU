@@ -256,6 +256,11 @@ ModelOverlap::ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
   {
     vOverlap[i].Key.Object.push_back( ObjectID( i ) );
     vOverlap[i].Key.Name = opNames[i];
+    if( cp.OpMomIndependent( i ) )
+    {
+      Common::Momentum pIgnore;
+      pIgnore.Extract( vOverlap[i].Key.Object.back(), Common::Momentum::DefaultPrefix );
+    }
   }
   if( vOverlap[0].Key == vOverlap[1].Key )
   {

@@ -65,6 +65,7 @@ int main(int argc, const char *argv[])
       {"iter", CL::SwitchType::Single, "0"},
       {"tol", CL::SwitchType::Single, "1e-7"},
       {"summary", CL::SwitchType::Single, "1"},
+      {"nopolap", CL::SwitchType::Single, ""},
       {"savecmat", CL::SwitchType::Flag, nullptr},
       {"v", CL::SwitchType::Single, "0"},
       {"guess", CL::SwitchType::Single, nullptr},
@@ -396,6 +397,7 @@ int main(int argc, const char *argv[])
     "--covboot Build covariance using secondary bootstrap & this num replicas, 0=all\n"
     "--guess   List of specific values to use for inital guess\n"
     "--summary 0 no summaries; 1 model_td.seq.txt only; 2 model_td and model.seq.txt\n"
+    "--nopolap List of overlap coefficients which don't depend on momenta\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
     "-e     number of Exponents (default 1)\n"

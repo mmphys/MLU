@@ -74,8 +74,8 @@ if [ -v Do2Step ]; then
 
 # First choose which 2pt fits to use
 
-#for FileSeries in ${series-old disp priorPW betterPW priorP betterP}; do
-for FileSeries in ${series-disp}; do
+unset FitOptions
+for FileSeries in ${series-old disp dispind}; do
   case $FileSeries in
     old) # Versions using different PP+PW fit on each momentum
     for((i = 0; i < ${#aKaonTIP[@]}; ++i)); do
@@ -91,6 +91,15 @@ for FileSeries in ${series-disp}; do
       # aMesonFit[s_l,$i]=corr_5_20_6_22_5_20_6_20_5_18 # unthinned
       # aMesonFit[s_l,$i]=corr_5_20_6_21_5_20_6_19_5_18 # thinned 1:3:2
       aMesonFit[s_l,$i]=corr_5_20_6_22_5_19_6_20_5_17 # thinned 2
+      aMesonFileOp[s_l,$i]=g5P
+      aMesonFileMom[s_l,$i]=
+    done;;
+
+    dispind) # Simultaneous fit to PP at all momenta using dispersion relation
+    FitOptions='--nopolap g5P'
+    aMesonFit[h${Heavy}_s,0]=$FileSeries.corr_${aDsTIP}_${aDsTFP}_${aDsTIW}_${aDsTFW}
+    for((i = 0; i < 5; ++i)); do
+      aMesonFit[s_l,$i]=$FileSeries.corr_5_20_6_22_5_19_6_20_5_17 # thinned 2
       aMesonFileOp[s_l,$i]=g5P
       aMesonFileMom[s_l,$i]=
     done;;

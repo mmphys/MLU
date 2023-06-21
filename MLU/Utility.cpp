@@ -302,17 +302,21 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
         MesonP[bSourceHeavier ? 1 : 0].p = pp->second;
         MesonP[bSourceHeavier ? 0 : 1].p.bp2 = pp->second.bp2;
       }
-      MesonMom = Meson;
-      for( std::size_t i = 0; i < MesonMom.size(); ++i )
-        MesonMom[i].append( MesonP[i].p.FileString( Momentum::DefaultPrefix ) );
     }
   }
   else if( Spectator.empty() && BaseShortParts.size() >= 2 )
   {
     Quark.reserve( 2 );
-    Quark.push_back( BaseShortParts[1] );
-    Quark.push_back( BaseShortParts[0] );
+    Quark.push_back( BaseShortParts[1] ); // Source
+    Quark.push_back( BaseShortParts[0] ); // Sink
+    Meson.emplace_back( ::Common::ConcatHeavyFirst( Quark[1], Quark[0] ) );
+    typename MomentumMap::iterator it{ p.find( Momentum::DefaultPrefix ) };
+    if( it != p.end() )
+      MesonP.emplace_back( *it );
   }
+  // If we know momenta, create a version of the meson names with momenta and DefaultPrefix
+  for( std::size_t i = 0; i < MesonP.size(); ++i )
+    MesonMom.push_back( Meson[i] + MesonP[i].p.FileString( Momentum::DefaultPrefix ) );
 }
 
 // Parse operator names from the end of Base, building up a list of all the operator names

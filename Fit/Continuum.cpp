@@ -324,6 +324,7 @@ int main(int argc, const char *argv[])
       {"tol", CL::SwitchType::Single, "1e-7"},
       {"noblock", CL::SwitchType::Flag, nullptr},
       {"summary", CL::SwitchType::Single, "1"},
+      {"nopolap", CL::SwitchType::Single, ""},
       {"v", CL::SwitchType::Single, "0"},
       {"strict",  CL::SwitchType::Single, "0"},
       {"maxE",  CL::SwitchType::Single, "10"},
@@ -426,6 +427,8 @@ int main(int argc, const char *argv[])
     "--covboot Build covariance using secondary bootstrap & this num replicas, 0=all\n"
     "--noblock Use full covariance matrix (rather than block diagonal per ensemble)\n"
     "--summary 0 no summaries; 1 model_td.seq.txt only; 2 model_td and model.seq.txt\n"
+    "--nopolap List of overlap coefficients which don't depend on momenta\n"
+    "          TODO: This is ignored for now. Should be moved into MultiFit only\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"

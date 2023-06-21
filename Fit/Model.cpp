@@ -95,8 +95,24 @@ std::string Model::Args::ToString() const
   return s;
 }
 
+std::vector<bool> Model::CreateParams::CreateMomList( const std::string &MomIndependentOpList )
+{
+  std::vector<bool> v( OpNames.size(), false );
+  for( const std::string &s : Common::ArrayFromString( MomIndependentOpList ) )
+  {
+    int i{ Common::IndexIgnoreCase( OpNames, s ) };
+    if( i < 0 || i >= OpNames.size() )
+      std::cout << "WARNING: Operator " << s << " not referred to in input files.\n";
+    else
+      v[i] = true;
+  }
+  return v;
+}
+
 Model::CreateParams::CreateParams( const std::vector<std::string> &o, const Common::CommandLine &c )
-: OpNames{ o }, cl{ c },
+: OpNames{ o },
+  bOpMomIndependent( CreateMomList( c.SwitchValue<std::string>( "nopolap" ) ) ),
+  cl{ c },
   bOverlapAltNorm{ cl.GotSwitch( Common::sOverlapAltNorm.c_str() ) }
 {
   if( bOverlapAltNorm )
@@ -149,10 +165,15 @@ std::vector<std::string> Object::GetObjectNameSingle( const Model::CreateParams 
   std::string ObjectID{ Args.Remove( "ObjectID", &bManualObjectID ) };
   if( !bManualObjectID )
   {
-    ObjectID = cp.pCorr->Name_.Base;
-    std::size_t Len{ ObjectID.find( '.' ) };
-    if( Len != std::string::npos )
-      ObjectID.resize( Len );
+    if( !cp.pCorr->Name_.MesonMom.empty() )
+      ObjectID = cp.pCorr->Name_.MesonMom[0];
+    else
+    {
+      ObjectID = cp.pCorr->Name_.Base;
+      std::size_t Len{ ObjectID.find( '.' ) };
+      if( Len != std::string::npos )
+        ObjectID.resize( Len );
+    }
   }
   return { ObjectID };
 }

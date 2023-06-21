@@ -123,11 +123,15 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-N=24"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--nophat"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--nopolap g5P"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--covsrc bootstrap"
@@ -154,12 +158,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o 2ptp2/h6413_s/"
-            isEnabled = "NO">
+            argument = "-o 2ptp2/s_l/"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o MELFit/3sm_sp2/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i /Volumes/QCD/tursa/semilep/data/F1M/analyse/corr/"
@@ -179,23 +183,23 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "C2/corr/2ptp2/s_l_p2_0_g5P_g5W.fold.1835672416.h5,t=7:20,e=1"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "C2/corr/2ptp2/s_l_p2_1_g5P_g5P.fold.1835672416.h5,t=6:22t1:3:2,e=2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "C2/corr/2ptp2/s_l_p2_1_g5P_g5P.fold.1835672416.h5,t=6:21t1:3:2,e=2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "C2/corr/2ptp2/s_l_p2_2_g5P_g5P.fold.1835672416.h5,t=5:20t1:3:2,e=2"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "C2/corr/2ptp2/s_l_p2_3_g5P_g5P.fold.1835672416.h5,t=6:19t1:3:2,e=2"
-            isEnabled = "NO">
+            argument = "C2/corr/2ptp2/s_l_p2_3_g5P_g5P.fold.1835672416.h5,t=6:20t1:3:2,e=2"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "C2/corr/2ptp2/s_l_p2_4_g5P_g5P.fold.1835672416.h5,t=5:18t1:3:2,e=2"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "2ptp2/h6413_s/h6413_s_p2_0.corr_8_24_13_24.g5P_g5W.model.jackknife.h5"
@@ -207,23 +211,23 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "C2/corr/2ptp2/h6413_s_p2_0_g5P_g5P.fold.1835672416.h5,t=8:24,e=2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "C2/corr/2ptp2/h6413_s_p2_0_g5P_g5W.fold.1835672416.h5,t=13:24,e=1"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_16_p2_0_g5P_g5P.fold.1835672416.h5,t=8:10,raw,C2Model=coSh,C2e=2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_20_p2_0_g5P_g5P.fold.1835672416.h5,t=8:14,raw,C2Model=coSh,C2e=2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_24_p2_0_g5P_g5P.fold.1835672416.h5,t=8:17t3,raw,C2Model=CoSH,C2e=2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

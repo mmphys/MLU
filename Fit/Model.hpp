@@ -73,6 +73,8 @@ struct Model
     // These apply to all models
   protected:
     const std::vector<std::string> &OpNames;
+    const std::vector<bool> bOpMomIndependent;
+    std::vector<bool> CreateMomList( const std::string &MomIndependentOpList );
   public:
     const Common::CommandLine &cl;
     const bool bOverlapAltNorm;
@@ -81,6 +83,7 @@ struct Model
     CreateParams( const std::vector<std::string> &OpNames_, const Common::CommandLine &cl_ );
     virtual ~CreateParams(){}
     std::string GetOpName( int Idx ) const { return OpNames[pCorr->Name_.op[Idx]]; }
+    bool OpMomIndependent( int Idx ) const { return bOpMomIndependent[pCorr->Name_.op[Idx]]; }
     virtual std::string Description() const;
   };
   std::vector<Params::value_type *> param;

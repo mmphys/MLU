@@ -63,7 +63,7 @@ local Thin2=${Thin2+,t$Thin2}
 local LabelTF=${LabelTF:-$(( MaxTF + 2 ))}
 
 local Corr=${Corr:-corr}
-
+# ExtraName
 #Stat=${Stat:-0.05} # Doesn't need a default, but used if present
 
 ########################################
@@ -74,7 +74,8 @@ local Fold=fold.$DataSeed
 local CorrPrefix=$Corr/2ptp2/${Meson}_p2_${p}_
 
 local FitType=corr_${TI}_${TF}_${TI2}_${TF2}
-local MesonPrefix=${Meson}_p2_${p}.$FitType.g5P_g5W.model
+local MesonPrefixBase=${Meson}_p2_${p}${ExtraName+.$ExtraName}
+local MesonPrefix=$MesonPrefixBase.$FitType.g5P_g5W.model
 
 local ExtraFiles="$PlotData/${CorrPrefix}gT5P_g5P.$Fold.txt $PlotData/${CorrPrefix}gT5P_g5W.$Fold.txt"
 
@@ -93,7 +94,7 @@ Cmd="$Cmd --overwrite"
 Cmd="$Cmd --debug-signals"
 Cmd="$Cmd --strict 1"
 [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
-Cmd="$Cmd --summary 2 -i $PlotData/${CorrPrefix} -o $OutSubDir/"
+Cmd="$Cmd --summary 2 -i $PlotData/${CorrPrefix} -o $OutSubDir/$MesonPrefixBase"
 Cmd="$Cmd g5P_g5P.$Fold.h5,t=${TI}:${TF}${Thin1},e=$NumExp"
 Cmd="$Cmd g5P_g5W.$Fold.h5,t=${TI2}:${TF2}${Thin2},e=$NumExp2"
 #echo "$Cmd"
@@ -191,25 +192,28 @@ function TwoPointScan()
 
 function SimulP()
 {
+  local Meson=${1:-s_l}
+  local ExtraName=$2
   local Cmd
   local sTimes
   local BaseFile
   local LogFile
   local i EKeys title
+  [ -n "$ExtraName" ] && ExtraName=".$ExtraName"
   sTimes="${aTimes[*]}"
   sTimes=${sTimes// /_}
   sTimes=${sTimes//:/_}
-  Cmd="$MultiFit -e 2 -N $L -o $OutDir/s_l"
+  Cmd="$MultiFit -e 2 -N $L -o $OutDir/$Meson$ExtraName"
   for((i=0; i < ${#aFitFiles[@]}; ++i)); do
     Cmd="$Cmd ${aFitFiles[i]}.h5,t=${aTimes[i]}${aThin[i]:+t${aThin[i]}}"
   done
-  BaseFile="$OutDir/s_l.corr_$sTimes.g5P.model"
+  BaseFile="$OutDir/$Meson$ExtraName.corr_$sTimes.g5P.model"
   LogFile="$BaseFile.$MLUSeed.log"
   DoCmd EraseLog || return 0
 
   # Get the energy difference
   for((i=0; i < ${#aFitFiles[@]}; ++i)); do
-    EKeys=$EKeys${EKeys:+,}s_l_p2_${i}-E0
+    EKeys=$EKeys${EKeys:+,}${Meson}_p2_${i}-E0
   done
   GetColumnValues $BaseFile.$MLUSeed.h5 "E_0(n^2=0)=" $EKeys
 
@@ -224,7 +228,7 @@ function SimulP()
     Cmd="title='n^2=$i'"
     [ -v RefText ] && Cmd="$Cmd RefText='E_0(n^2=${i})=${ColumnValues[@]:$((17+i*8)):1}, χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})'"
     Cmd="$Cmd yrange='${ayRange[s_l,$i]}'"
-    Cmd="$Cmd save='$OutDir/s_l_p2_${i}.corr_$sTimes.g5P.model_log.$MLUSeed'"
+    Cmd="$Cmd save='$OutDir/${Meson}_p2_${i}$ExtraName.corr_$sTimes.g5P.model_log.$MLUSeed'"
     Cmd="$Cmd mmin=$i mmax=$i plottd.sh ${BaseFile}_td.$MLUSeed.txt"
     DoCmd
   done

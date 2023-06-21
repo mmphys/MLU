@@ -56,6 +56,10 @@ if [ "${DoAll+x}" = x ]; then
   export ti='8 8'
   p=0 TI=8 TF=24 NumExp=2 TI2=13 NumExp2=1 FitTwoPoint # Preferred 27 Mar 23
   p=0 TI=8 TF=24 NumExp=2 FitTwoPoint
+  FitOptions='--nopolap g5P'
+  ExtraName=dispind
+  p=0 TI=8 TF=24 NumExp=2 TI2=13 NumExp2=1 FitTwoPoint # Preferred 27 Mar 23
+  p=0 TI=8 TF=24 NumExp=2 FitTwoPoint
   )
   # Kaon
   (
@@ -100,7 +104,11 @@ if [ -v DoNext ]; then
   esac
   PriorFitTimes="${aTimes[0]}_${aTimesW[0]}"; PriorFitTimes="${PriorFitTimes//:/_}"
   #echo "PriorFitTimes='$PriorFitTimes'"
-  yrange=0.3:0.7 SimulP # Simultaneous fits of point-point data at all momenta
+  yrange=0.3:0.7 SimulP s_l # Simultaneous fits of point-point data at all momenta
+  (
+    MultiFit="$MultiFit --nopolap g5P"
+    yrange=0.3:0.7 SimulP s_l dispind
+  )
   done
 fi
 
