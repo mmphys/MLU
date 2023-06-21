@@ -491,6 +491,7 @@ struct FileNameAtt
     Quark.clear();
     Meson.clear();
     MesonMom.clear();
+    MesonP.clear();
   }
   void swap( FileNameAtt &o )
   {
