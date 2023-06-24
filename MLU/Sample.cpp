@@ -635,19 +635,7 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
       const int NewNumReplicas{ NewSeed == SeedWildcard ? SampleSize // Jackknife
                                       : static_cast<int>( RandomCache::DefaultNumReplicas() ) };
       // If I don't need to resample, load optional items
-      const bool bNeedResample{ Seed() != NewSeed || att_nSample < NewNumReplicas };
-      if( bNeedResample && !CanResample() )
-      {
-        static const char szTo[]{ " -> " };
-        std::ostringstream os;
-        os << "Can't resample";
-        if( att_nSample < NewNumReplicas )
-          os << Space << att_nSample << szTo << NewNumReplicas << " replicas";
-        if( Seed() != Name_.Seed)
-          os << " seed " << SeedString() << szTo
-             << RandomCache::SeedString( Name_.Seed );
-        throw std::runtime_error( os.str().c_str() );
-      }
+      bool bNeedResample{ Seed() != NewSeed || att_nSample < NewNumReplicas };
       if( !bNeedResample )
       {
         try
@@ -703,14 +691,28 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
         }
         catch(const ::H5::Exception &)
         {
+          // I couldn't load the data
           ::H5::Exception::clearErrorStack();
+          bNeedResample = true;
         }
       }
       // Either resampled or binned data must be available
       if( Data[0].NumReplicas() == 0 && Binned[0].Empty() )
         throw std::runtime_error( "Neither binned nor resampled data available" );
-      if( bNeedResample && CanResample() )
+      if( bNeedResample )
       {
+        if( !CanResample() )
+        {
+          static const char szTo[]{ " -> " };
+          std::ostringstream os;
+          os << "Can't resample";
+          if( att_nSample < NewNumReplicas )
+            os << Space << att_nSample << szTo << NewNumReplicas << " replicas";
+          if( Seed() != Name_.Seed)
+            os << " seed " << SeedString() << szTo
+            << RandomCache::SeedString( Name_.Seed );
+          throw std::runtime_error( os.str().c_str() );
+        }
         Data[0].Seed = NewSeed;
         Data[0].Resample( Binned[0], NewNumReplicas );
         MakeCorrSummary();
@@ -957,8 +959,10 @@ void Sample<T>::WriteSummary( const std::string &sOutFileName, bool bVerboseSumm
 template <typename T>
 void Sample<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
 {
-  s << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha
-    << "# Seed: " << SeedString() << NewLine;
+  s << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha;
+  if( !Ensemble.empty() )
+    s << "# Ensemble: " << Ensemble << NewLine;
+  s << "# Seed: " << SeedString() << NewLine;
   if( !SeedMachine_.empty() ) s << "# Seed machine: " << SeedMachine_ << NewLine;
   s << "# Bootstrap: " << NumSamples() << NewLine << "# SampleSize: " << SampleSize << NewLine;
   if( binSize != 1 ) s << "# BinSize: " << binSize << NewLine;

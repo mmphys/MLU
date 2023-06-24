@@ -296,11 +296,18 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
       }
       else
       {
-        MesonP.resize( 2 ); // They will both default to zero momentum
         // We only have one momentum - this goes with the lightest meson
-        const bool bSourceHeavier{ QuarkWeight(BaseShortParts[2]) >= QuarkWeight(BaseShortParts[1]) };
-        MesonP[bSourceHeavier ? 1 : 0].p = pp->second;
-        MesonP[bSourceHeavier ? 0 : 1].p.bp2 = pp->second.bp2;
+        try
+        {
+          const bool bSourceHeavier{ QuarkWeight( Quark[0] ) >= QuarkWeight( Quark[1] ) };
+          MesonP.resize( 2 ); // They will both default to zero momentum
+          MesonP[bSourceHeavier ? 1 : 0].p = pp->second;
+          MesonP[bSourceHeavier ? 0 : 1].p.bp2 = pp->second.bp2;
+        }
+        catch( const std::runtime_error &e )
+        {
+          // If I don't know the relative weights, then I don't know which meson to assign p to
+        }
       }
     }
   }
@@ -309,7 +316,7 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
     Quark.reserve( 2 );
     Quark.push_back( BaseShortParts[1] ); // Source
     Quark.push_back( BaseShortParts[0] ); // Sink
-    Meson.emplace_back( ::Common::ConcatHeavyFirst( Quark[1], Quark[0] ) );
+    Meson.emplace_back( ::Common::ConcatHeavyFirstNoExcept( Quark[1], Quark[0] ) );
     typename MomentumMap::iterator it{ p.find( Momentum::DefaultPrefix ) };
     if( it != p.end() )
       MesonP.emplace_back( *it );

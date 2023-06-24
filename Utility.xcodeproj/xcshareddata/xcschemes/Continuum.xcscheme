@@ -57,6 +57,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--uncorr"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--Hotelling 0 --summary 2"
             isEnabled = "YES">
          </CommandLineArgument>
@@ -65,7 +69,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o Cont/"
+            argument = "-o Cont/Renorm/disp_all/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

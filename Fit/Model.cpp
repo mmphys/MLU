@@ -167,6 +167,8 @@ std::vector<std::string> Object::GetObjectNameSingle( const Model::CreateParams 
   {
     if( !cp.pCorr->Name_.MesonMom.empty() )
       ObjectID = cp.pCorr->Name_.MesonMom[0];
+    else if( !cp.pCorr->Name_.Meson.empty() )
+      ObjectID = cp.pCorr->Name_.Meson[0];
     else
     {
       ObjectID = cp.pCorr->Name_.Base;

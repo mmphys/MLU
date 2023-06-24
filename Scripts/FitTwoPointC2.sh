@@ -7,6 +7,7 @@ set -e
 export Ensemble=${Ensemble:-C2}
 if ! [ -d $Ensemble ]; then
   echo "Ensemble $Ensemble doesn't exist. Change directory?"
+  exit
 fi
 . PlotCommon.sh
 . FitTwoPoint.sh

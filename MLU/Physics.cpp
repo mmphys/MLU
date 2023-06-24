@@ -153,10 +153,10 @@ std::ostream & operator<<( std::ostream &os, const ConfigCount &cc )
 }
 
 // For my current project, I always have the heavier quark at the sink
-std::string ConcatHeavyFirst( const std::string &Quark1, const std::string &Quark2 )
+std::string ConcatHeavyFirstNoExcept( const std::string &Quark1, const std::string &Quark2 )
 {
   std::string s;
-  if( QuarkWeight( Quark1 ) < QuarkWeight( Quark2 ) )
+  if( QuarkWeightNoExcept( Quark1 ) < QuarkWeightNoExcept( Quark2 ) )
   {
     s.append( Quark2 );
     s.append( Underscore );

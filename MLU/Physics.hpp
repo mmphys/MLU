@@ -104,7 +104,7 @@ std::ostream & operator<<( std::ostream &os, const ConfigCount &cc );
  
  The absolute weights are meaningless. Relative masses are important.
  */
-inline int QuarkWeight( const std::string &Quark )
+inline int QuarkWeightNoExcept( const std::string &Quark )
 {
   if( Quark.empty() )
     throw std::runtime_error( "QuarkWeight() called for empty Quark name" );
@@ -112,23 +112,37 @@ inline int QuarkWeight( const std::string &Quark )
   switch( std::toupper( Quark[0] ) )
   {
     case 'H':
-      Weight = 1;
+      Weight = Quark.size() > 1 && std::isdigit( Quark[1] ) ? std::atoi( &Quark[1] ) : 0;
       break;
     case 'S':
-      Weight = 0;
-      break;
-    case 'L':
       Weight = -1;
       break;
+    case 'L':
+      Weight = -2;
+      break;
     default:
-      throw std::runtime_error( "Relative weight of " + Quark + " quark unknown" );
+      Weight = std::numeric_limits<int>::max();
       break;
   }
   return Weight;
 }
 
+inline int QuarkWeight( const std::string &Quark )
+{
+  const int qw{ QuarkWeightNoExcept( Quark ) };
+  if( qw == std::numeric_limits<int>::max() )
+    throw std::runtime_error( "Relative weight of " + Quark + " quark unknown" );
+  return qw;
+}
+
 /// Return Quark_Spec or Spec_Quark so that the heavier quark is at the sink (per my current project)
-std::string ConcatHeavyFirst( const std::string &Quark1, const std::string &Quark2 );
+std::string ConcatHeavyFirstNoExcept( const std::string &Quark1, const std::string &Quark2 );
+inline std::string ConcatHeavyFirst( const std::string &Quark1, const std::string &Quark2 )
+{
+  QuarkWeight( Quark1 );
+  QuarkWeight( Quark2 );
+  return ConcatHeavyFirstNoExcept( Quark1, Quark2 );
+}
 /// Return the standard meson name for the given quarks
 std::string MesonName( const std::string &q1, const std::string &q2 );
 
