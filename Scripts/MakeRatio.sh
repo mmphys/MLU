@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
 # Make an analysis job which will perform fits
 # Optional environment variables:
@@ -56,7 +56,7 @@ do
   bOK=1
   if [ -v fixe ]
   then
-    EFit="''" # ,${Spec}
+    unset EFit
   else
     EFit="Fit_${SpecGrp}.txt"
     DoesFileExist $FitDirNow/$EFit
@@ -74,7 +74,6 @@ do
   then
     echo "Can't make ratios for $Dir"
   else
-	ZVFit=R${ZVFit:+,$ZVFit}
 	echo "Making ratios for $Dir"
 	# Get a list (associative array) of the work to be done
 	unset Meson
@@ -96,7 +95,9 @@ do
 	done
 	# Now make a job for each Quark
 	Cmd="CRatio --i3 $CorrDir/$Dir/ --i2 $CorrDir/2pt${PGroup}/ -o $Dir/"
-	Cmd="$Cmd --efit $EFit --type $ZVFit"
+	[ -v EFit ] && Cmd="$Cmd --efit $EFit"
+    Cmd="$Cmd --type R"
+    [ -v ZVFit ] && Cmd="${Cmd},$ZVFit"
 	unset f
 	for m in ${!Meson[@]}
 	do
