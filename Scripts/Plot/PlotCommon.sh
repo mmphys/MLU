@@ -238,5 +238,5 @@ fi
 # Computed parameters
 LHalf=$((L/2))
 THalf=$((T/2))
-MLUSeed=${MLUSeed:-1835672416}
-DataSeed=${1835672416:-1835672416}
+export MLUSeed=${MLUSeed:-1835672416} # Seed to process data
+DataSeed=${DataSeed:-$MLUSeed} # Seed in data filenames

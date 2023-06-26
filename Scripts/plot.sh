@@ -17,7 +17,7 @@ my_x_axis="${x:-column(1)}"
 xargs="${xargs}"
 FileDT="${FileDT}"
 my_xrange="${ti:-*}:${tf:-*}"
-my_yrange="${yrange:-*:*}"
+my_yrange="${yrange}"
 my_cbrange="${cbrange:--1:1}"
 my_ylabel="${ylabel}"
 my_xlabel="${xlabel}"
@@ -127,8 +127,12 @@ if( SaveFile ) {
 }
 
 set key @my_key noenhanced
+#print "my_xrange=".my_xrange
 set xrange[@my_xrange]
-set yrange[@my_yrange]
+if( my_yrange ne "" ) {
+  #print "my_yrange=".my_yrange
+  set yrange[@my_yrange]
+}
 if( do_title ) {
   # This title might be set to empty string, meaning - no title
   if( my_title ne "" ) { set title my_title font ', 18' }
@@ -235,10 +239,10 @@ if( NumFiles==1 && FileType eq "cormat" ) {
     }
 #  }
   #print 'PlotUsing="'.PlotUsing.'"'
-  PlotCmd="plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] word(PlotFile,File) using ((("
-  PlotCmd=PlotCmd.my_x_axis.") == 0 ? (f==0 ? 0 : 1/0) : f==0 ? ("
-  PlotCmd=PlotCmd.my_x_axis.") : nt - ("
-  PlotCmd=PlotCmd.my_x_axis."))+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : "
+  PlotCmd="plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] word(PlotFile,File) using (("
+  PlotCmd=PlotCmd.my_x_axis." == 0 ? (f==0 ? 0 : 1/0) : f==0 ? "
+  PlotCmd=PlotCmd.my_x_axis." : nt - "
+  PlotCmd=PlotCmd.my_x_axis.")+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : "
   PlotCmd=PlotCmd.PlotUsing.' '.PlotWith
   PlotCmd=PlotCmd.' title '
   if( SaveFile == 2 || got_legend ) {

@@ -164,7 +164,7 @@ function TwoPointScan()
   ########################################
   # Perform the fit
 
-  echo "$Ensemble: Scan two point ${Meson}_${p}, Point $OptP, Wall $OptW"
+  echo "$Ensemble: Scan two point ${Meson}_${p} $SubDir, Point $OptP, Wall $OptW"
 
   mkdir -p $OutDir # So I can redirect output here
 

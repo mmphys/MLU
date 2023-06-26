@@ -21,14 +21,14 @@ domass=("$masslog" "$masscosh")
 InDir=$PlotData/corr/2ptp2
 
 PlotFields=(exp cosh)
-PlotFieldTitle=('log ' 'cosh ')
+PlotFieldTitle=('(2-pt)' '(3-pt)')
 
 OutSubDirs=(All Zoom)
 OutTI=(4.5 7.5)
 #OutTI=(4.5 4.5)
 OutTIRelErr=(0.5 4.5)
-OutTF=($((THalf-1)).5 $((THalf*6/10-1)).5)
-#OutTF=($((THalf-1)).5 23.5)
+#OutTF=($((THalf-1)).5 $((THalf*6/10-1)).5)
+OutTF=($((THalf-1)).5 $((THalf-6)).5)
 WhichSinks=('g5P g5W' g5P)
 
 for Dir in {0..1}
@@ -66,7 +66,7 @@ do (
             [ $snk == $src ] && key='top right' || key='bottom right'
             for field in {0..1}; do
               if (( domass[field] )); then
-                [ -v OptionSimpleTitle ] && ylabel="a E_{eff}" || ylabel="${PlotFieldTitle[field]}effective mass"
+                [ -v OptionSimpleTitle ] && ylabel="a E_{eff}" || ylabel="${PlotFieldTitle[field]} effective mass"
                 save=${meson}_${snk}_${src}_${PlotFields[field]} \
                   fields=${PlotFields[field]} ti=${OutTI[Dir]} tf=${OutTF[Dir]} key="$key" legend="$Legend" \
                   savelabel= title="$title" \
@@ -106,7 +106,7 @@ do (
               save=${meson}_p2_${pSq}_${PlotFields[field]} \
                 fields=${PlotFields[field]} ti=${OutTI[Dir]} tf=${OutTF[Dir]} key="$key" legend="$Legend" \
                 savelabel= title="$title" \
-                xlabel='t/a' ylabel="${PlotFieldTitle[field]}effective mass" \
+                xlabel='t/a' ylabel="${PlotFieldTitle[field]} effective mass" \
                 plot.sh $FileNames
             fi
           done

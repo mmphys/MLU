@@ -14,3 +14,5 @@ MaxPSq=4
 
 EnsembleDeltaT=(16 20 24 28 32)
 Heavy=447
+
+export MLUSeed=3301941204

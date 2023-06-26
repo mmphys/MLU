@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <ostream>
+#include <random>
 #include <MLU/Common.hpp>
 #include <omp.h>
 #include <Grid/Grid.h>
@@ -748,6 +749,7 @@ CKelly CompareMikeFit( 104, 128, MikeTable1 );
 
 int main(int argc, char *argv[])
 {
+  std::cout << "Your random number is " << std::random_device()() << std::endl;
   //if( CK1.Test() && CK2.Test() && CK3.Test() && CK4.Test() && CompareMikeFit.Test() ) return EXIT_SUCCESS;
   //if( FitRangeTest( argc, argv ) ) return EXIT_SUCCESS;
   int iReturn = EXIT_SUCCESS;
