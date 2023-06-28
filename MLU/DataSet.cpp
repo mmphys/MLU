@@ -423,7 +423,13 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
         es << "Parameter " << OldKey << " not found";
         throw std::runtime_error( es.str().c_str() );
       }
-      AddConstant( NewKey.empty() ? OldKey : NewKey, i );
+      if( NewKey.empty() )
+        AddConstant( OldKey, i );
+      else
+      {
+        std::cout << "    Renaming FileKey " << OldKey << " --> NewKey " << NewKey << std::endl;
+        AddConstant( NewKey, i, OldKey );
+      }
     }
   }
 }

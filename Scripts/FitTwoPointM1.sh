@@ -68,19 +68,23 @@ if [ "${DoAll+x}" = x ]; then
   #p=0 NumExp=3 TI=6 TF=28 TI2=10 NumExp2=2 FitTwoPoint
   FitOptions='--nopolap g5P'
   ExtraName=dispind
-  p=0 TI=10 TF=28 TI2=15 NumExp=2 NumExp2=1 FitTwoPoint
+  p=0 NumExp=2 TI=10 TF=28 TI2=15 NumExp2=1 FitTwoPoint
+  p=0 NumExp=2 TI=10 TF=28 TI2=10 FitTwoPoint
   )
   # Kaon
   (
   export Meson=s_l
   export LabelTF=30
   export ti='3 3'
-  p=0 NumExp=2 TI=6 TF=18 TI2=11 NumExp2=1 FitTwoPoint
+  p=0 NumExp=2 TI=6 TF=18 TI2=11 NumExp2=1 FitTwoPoint # Preferred
+  p=0 NumExp=2 TI=7 TF=18 TI2=11 NumExp2=1 FitTwoPoint # After discussion with Tobi
   p=0 NumExp=2 TI=6 TF=18 TI2=13 NumExp2=1 FitTwoPoint
   p=0 NumExp=2 TI=6 TF=18 TI2=8 NumExp2=1 FitTwoPoint
   p=0 NumExp=2 TI=6 TF=18 FitTwoPoint
   p=1 NumExp=2 TI=6 TF=19 TI2=8 NumExp2=1 FitTwoPoint
+  p=1 NumExp=2 TI=7 TF=19 TI2=8 NumExp2=1 FitTwoPoint # After discussion with Tobi
   p=2 NumExp=2 TI=6 TF=19 TI2=9 NumExp2=1 FitTwoPoint
+  p=2 NumExp=2 TI=7 TF=19 TI2=9 NumExp2=1 FitTwoPoint # After discussion with Tobi
   p=3 NumExp=2 TI=6 TF=16 TI2=8 TF2=21 NumExp2=1 FitTwoPoint
   p=4 NumExp=2 TI=7 TF=19 TI2=10 TF2=21 NumExp2=1 FitTwoPoint
   )

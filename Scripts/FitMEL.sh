@@ -66,7 +66,6 @@ NumExp=${NumExp:-3} # How many exponentials in the 3pt fit
 FileSeries=${FileSeries:-E$NumExp}
 
 PW=${PW:-g5P_g5P}
-MLUSeed=${MLUSeed:-1835672416}
 Ratio=${Ratio:-ratioE1ZV1}
 Corr=${Corr:-corr}
 MELFit=${MELFit:-MELFit}
@@ -288,6 +287,8 @@ fi
 # IncludeSpatial
 # UnCorr: set to anything to perform uncorrelated fit
 # FitOptions: extra options for MultiFit command-line
+# SourcePriorFit: set to prior Source fit
+# SinkPriorDisp: set to anything to use the dispersion relation for sink
 function DoSimulFit()
 (
   local pSnk=$1
@@ -295,20 +296,38 @@ function DoSimulFit()
   local MesonSnk; GetMesonFile MesonSnk $qSnk $qSpec
   local MesonSrc; GetMesonFile MesonSrc $qSrc $qSpec
   local i Title
-  local FitBase="$Ensemble/MELFit/3sm_sp2/R3_${qSnk}_${qSrc}_${Gamma}_p2_${pSnk}.dt"
+  local FitBaseDir="$Ensemble/MELFit/3sm_sp2"
+  local FitBase="$FitBaseDir/R3_${qSnk}_${qSrc}_${Gamma}_p2_${pSnk}.dt"
   if [[ $pSnk = 0 || $Gamma != gT ]]; then unset IncludeSpatial; fi
   local NumDeltaT=${#DeltaT[@]}
-  mkdir -p "${FitBase%/*}"
+  if [ -v SinkPriorDisp ] && ! [ -v SourcePriorFit ]; then
+    echo "Can't use dispersion for sink without a prior fit"
+    return 1
+  fi
+  mkdir -p "$FitBaseDir"
   for(( i=0;i<NumDeltaT;++i)); do
     FitBase="${FitBase}_${DeltaT[i]}"
     Title="$Title${Title+ }'R3 ΔT=${DeltaT[i]}'"
   done
   FitBase="${FitBase}.Simul"
-  local FitSuffix="${UnCorr+un}corr_${aKaonTIP[pSnk]}_${aKaonTFP[pSnk]}_${aKaonTIW[pSnk]}_${aKaonTFW[pSnk]}_${aDsTIP[pSrc]}_${aDsTFP[pSrc]}_${aDsTIW[pSrc]}_${aDsTFW[pSrc]}"
-  local Files="$PlotData/corr/2ptp2/${MesonSnk}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${aKaonTIP[pSnk]}:${aKaonTFP[pSnk]},e=2"
+  local FitSuffix="${UnCorr+un}corr"
+  local Files
+  if ! [ -v SinkPriorDisp ]; then
+    FitSuffix="${FitSuffix}_${aKaonTIP[pSnk]}_${aKaonTFP[pSnk]}_${aKaonTIW[pSnk]}_${aKaonTFW[pSnk]}"
+    Files="${Files} $PlotData/corr/2ptp2/${MesonSnk}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${aKaonTIP[pSnk]}:${aKaonTFP[pSnk]},e=2"
     Files="${Files} $PlotData/corr/2ptp2/${MesonSnk}_p2_${pSnk}_g5P_g5W.fold.$MLUSeed.h5,t=${aKaonTIW[pSnk]}:${aKaonTFW[pSnk]},e=1"
+  fi
+  if [ -v SourcePriorFit ]; then
+    Files="${Files} $FitBaseDir/$SourcePriorFit,${MesonSrc}_p2_0-E,${MesonSrc}_p2_0-g5P"
+    if [ -v SinkPriorDisp ]; then
+      # TODO: This next only works for Z2 overlap coeffficients which are momentum independent
+      Files="${Files},${MesonSnk}_p2_0-E,${MesonSnk}_p2_0-g5P=${MesonSnk}_p2_${pSnk}-g5P"
+    fi
+  else
+  local FitSuffix="${FitSuffix}_${aDsTIP[pSrc]}_${aDsTFP[pSrc]}_${aDsTIW[pSrc]}_${aDsTFW[pSrc]}"
     Files="${Files} $PlotData/corr/2ptp2/${MesonSrc}_p2_${pSrc}_g5P_g5P.fold.$MLUSeed.h5,t=${aDsTIP[pSrc]}:${aDsTFP[pSrc]},e=2"
     Files="${Files} $PlotData/corr/2ptp2/${MesonSrc}_p2_${pSrc}_g5P_g5W.fold.$MLUSeed.h5,t=${aDsTIW[pSrc]}:${aDsTFW[pSrc]},e=1"
+  fi
   for(( i=0;i<NumDeltaT;++i)); do
     Files="${Files} $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]},C2e=2,C2Model=cosh,raw"
     FitSuffix="${FitSuffix}_${TI[i]}_${TF[i]}"
@@ -322,6 +341,7 @@ function DoSimulFit()
   local OutBase="$FitBase.$FitSuffix.g5P_g5W.model"
   local LogFile="$OutBase.$MLUSeed.log"
   local Cmd="MultiFit -e $NumExp --Hotelling 0 --overwrite --debug-signals --summary 2"
+  [ -v SinkPriorDisp ] && Cmd="$Cmd -N $L"
   [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
   [ -v UnCorr ] && Cmd="$Cmd --uncorr"
   Cmd="$Cmd -o $FitBase $Files"
@@ -348,10 +368,17 @@ function DoSimulFit()
   fi
 
   local PlotFile="${OutBase}_td.$MLUSeed.txt"
-  RefText="Fit R_3: K m_{eff}(${pSnk})=${ColumnValues[17]} $Stats" RefVal="${ColumnValues[@]:16:8}" title="'K p-p' 'K p-w'" yrange=${ayRange[$MesonSnk,$pSnk]} mmax=1 plottd.sh $PlotFile &>> $LogFile
-  RefText="Fit R_3: D_s m_{eff}(${pSnk})=${ColumnValues[25]} $Stats" RefVal="${ColumnValues[@]:24:8}" title="'D_s p-p' 'D_s p-w'" yrange=${ayRange[$MesonSrc,$pSrc]} mmin=2 mmax=3 plottd.sh $PlotFile &>> $LogFile
-  RefText="Fit R_3: MEL${Gamma}0(${pSnk})=${ColumnValues[49]} $Stats" RefVal="${ColumnValues[@]:40:8}" title="$Title" field=corr yrange=${ayrangeR3[$Gamma,$pSnk]} mmin=4 mmax=$((3+NumDeltaT)) plottd.sh $PlotFile &>> $LogFile
+  ModelDTStart=0
+  if ! [ -v SinkPriorDisp ]; then
+    RefText="Fit R_3: K m_{eff}(${pSnk})=${ColumnValues[17]} $Stats" RefVal="${ColumnValues[@]:16:8}" title="'K p-p' 'K p-w'" yrange=${ayRange[$MesonSnk,$pSnk]} mmax=1 plottd.sh $PlotFile &>> $LogFile
+    ModelDTStart=$((ModelDTStart+2))
+  fi
+  if ! [ -v SourcePriorFit ]; then
+    RefText="Fit R_3: D_s m_{eff}(${pSnk})=${ColumnValues[25]} $Stats" RefVal="${ColumnValues[@]:24:8}" title="'D_s p-p' 'D_s p-w'" yrange=${ayRange[$MesonSrc,$pSrc]} mmin=$ModelDTStart mmax=$((ModelDTStart+1)) plottd.sh $PlotFile &>> $LogFile
+    ModelDTStart=$((ModelDTStart+2))
+  fi
+  RefText="Fit R_3: MEL${Gamma}0(${pSnk})=${ColumnValues[49]} $Stats" RefVal="${ColumnValues[@]:40:8}" title="$Title" field=corr yrange=${ayrangeR3[$Gamma,$pSnk]} mmin=$ModelDTStart mmax=$((ModelDTStart+NumDeltaT-1)) plottd.sh $PlotFile &>> $LogFile
   if [ -v IncludeSpatial ]; then
-    RefText="Fit R_3: MELgXYZ0(${pSnk})=${ColumnValues[65]} $Stats" RefVal="${ColumnValues[@]:56:8}" title="$Title" field=corr yrange=${ayrangeR3[gXYZ,$pSnk]} mmin=$((4+NumDeltaT)) mmax=$((3+2*NumDeltaT)) plottd.sh $PlotFile &>> $LogFile
+    RefText="Fit R_3: MELgXYZ0(${pSnk})=${ColumnValues[65]} $Stats" RefVal="${ColumnValues[@]:56:8}" title="$Title" field=corr yrange=${ayrangeR3[gXYZ,$pSnk]} mmin=$((ModelDTStart+NumDeltaT)) mmax=$((ModelDTStart+2*NumDeltaT-1)) plottd.sh $PlotFile &>> $LogFile
   fi
 )
