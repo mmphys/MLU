@@ -202,9 +202,14 @@ Summariser::Summariser( const Common::CommandLine &cl )
   bAll{ cl.GotSwitch( "all" ) },
   bFast{ cl.GotSwitch( "fast" ) },
   bTableN{ cl.GotSwitch( "tabn" ) },
+  ErrorDigits{ static_cast<unsigned char>( cl.SwitchValue<unsigned int>( "errdig" ) ) },
   TableRowsPerPage{ cl.SwitchValue<std::size_t>( "tablen" ) },
-  ErrorDigits{ static_cast<unsigned char>( cl.SwitchValue<unsigned int>( "errdig" ) ) }
+  vIgnoreMomenta{ Common::ArrayFromString( cl.SwitchValue<std::string>("pignore") ) },
+  ParamSubset{ Common::ArrayFromString( cl.SwitchValue<std::string>("params") ) }
 {
+  if( !ParamSubset.empty() && bAll )
+    throw std::runtime_error( "--all and --params can't be used together" );
+  Common::NoDuplicates( vIgnoreMomenta, "Ignored momenta", 0 );
   if( Strictness < -1 || Strictness > 3 )
     throw std::runtime_error( "--strict " + std::to_string( Strictness ) + " invalid" );
   if( bAll && bFast )
@@ -214,7 +219,7 @@ Summariser::Summariser( const Common::CommandLine &cl )
   int SeqNum{ 0 };
   for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
   {
-    Common::FileNameAtt n{ sFileName, };
+    Common::FileNameAtt n{ sFileName, nullptr, &vIgnoreMomenta };
     if( !Common::FileExists( sFileName ) )
       throw std::runtime_error( sFileName + " doesn't exist" );
     FitTimes ft;
@@ -255,7 +260,7 @@ Summariser::Summariser( const Common::CommandLine &cl )
 bool Summariser::ReadModel( Model &m, FileInfoIterator &it, std::vector<FileInfo> &Files,
                             std::vector<std::string> &FileNameOps, bool bShow )
 {
-  m.SetName( it->FileName, &FileNameOps );
+  m.SetName( Common::FileNameAtt{ it->FileName, &FileNameOps, &vIgnoreMomenta } );
   try
   {
     m.Read( bShow ? " " : nullptr );
@@ -263,7 +268,8 @@ bool Summariser::ReadModel( Model &m, FileInfoIterator &it, std::vector<FileInfo
     if( m.dof < 0 )
       throw std::runtime_error("dof=" + std::to_string( m.dof ) + " (<0 invalid)");
     if( !m.CheckParameters( Strictness, MonotonicUpperLimit ) )
-      throw std::runtime_error("Parameter(s) compatible with 0 and/or not unique");
+      throw std::runtime_error( "Parameter(s) compatible with 0 and/or not unique (strictness "
+                               + std::to_string( Strictness ) + ")");
   }
   catch( const std::exception &e )
   {
@@ -538,7 +544,13 @@ void Summariser::Run()
         continue;
     }
     MaxFitTimes = Models[0].FitTimes.size(); // Maximum number of TI-TF pairs
-    Params = Models[0].params;
+    if( ParamSubset.empty() )
+      Params = Models[0].params;
+    else
+    {
+      std::vector<std::size_t> vIdx;
+      Params = Common::Params( ParamSubset, vIdx );
+    }
     StatColumnNames = Models[0].GetStatColumnNames();
     // Optional first pass - build a list of common parameters and statistics columns
     bDoPassOne = !bFast && Files.size() > 1;
@@ -571,6 +583,7 @@ int main(int argc, const char *argv[])
   std::ios_base::sync_with_stdio( false );
   static const char DefaultErrDig[] = "2";
   static const char DefaultTableLen[] = "66";
+  static const char DefaultIgnoreMomenta[]{ "" };
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
   using CL = Common::CommandLine;
@@ -589,6 +602,8 @@ int main(int argc, const char *argv[])
       {"errdig", CL::SwitchType::Single, DefaultErrDig},
       {"tabn", CL::SwitchType::Flag, nullptr},
       {"tablen", CL::SwitchType::Single, DefaultTableLen},
+      {"pignore",CL::SwitchType::Single, DefaultIgnoreMomenta},
+      {"params",CL::SwitchType::Single, ""},
       {"help", CL::SwitchType::Flag, nullptr},
     };
     cl.Parse( argc, argv, list );
@@ -628,6 +643,8 @@ int main(int argc, const char *argv[])
     "--fast   Skip first pass reading models to find common parameters\n"
     "--all    Save all parameters. Default: only save common parameters\n"
     "--tabn   Include n^2 in the parameters table\n"
+    "--pignore List of momenta to ignore (default: '" << DefaultIgnoreMomenta << "')\n"
+    "--params Subset of parameters to save\n"
     "--help   This message\n";
   }
   return iReturn;

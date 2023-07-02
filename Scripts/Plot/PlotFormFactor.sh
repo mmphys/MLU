@@ -13,10 +13,10 @@ declare -A aFormFactorMaxX
 declare -A aFormFactorMaxXZ
 declare -A aFormFactorYRange
 declare -A aFormFactorYRangeRaw
-aFormFactorMaxX=(F1M 2.2 C1 2.1 C2 2.1)
-aFormFactorMaxXZ=(C1 0.1 C2 0.1)
-aFormFactorYRange=(F1M 0.6:1.5 C1 0.6:1.3 C2 0.5:1.3)
-aFormFactorYRangeRaw=(F1M 0.4:1.45 C1 0.5:1.5 C2 0.3:1.5)
+aFormFactorMaxX=(F1M 2.2 C1 2.1 C2 2.1 M1 2.1)
+aFormFactorMaxXZ=(C1 0.1 C2 0.1 M1 0.1)
+aFormFactorYRange=(F1M 0.6:1.5 C1 0.6:1.3 C2 0.5:1.3 M1 0.6:1.15)
+aFormFactorYRangeRaw=(F1M 0.4:1.45 C1 0.5:1.5 C2 0.3:1.5 M1 0.45:1.3)
 
 # Computed from input
 
@@ -71,7 +71,7 @@ if( xAxis eq "qSq" ) {
   xAxisLabel="q^2"
   if( aInv != 1 ) { xAxisLabel=xAxisLabel." / GeV^2" }
 } else {
-  if( xAxis eq "z_re" ) { xAxisLabel="z" } else { xAxisLabel=xAxis }
+  if( xAxis eq "zre" ) { xAxisLabel="z" } else { xAxisLabel=xAxis }
   FileNameExtra='_'.xAxisLabel
 }
 set xlabel xAxisLabel
@@ -140,7 +140,7 @@ if( xAxis eq "qSq" ) {
   if( aInv != 1. ) { xAxisLabel=xAxisLabel." / GeV^2" }
   xScale=aInv * aInv
 } else {
-  if( xAxis eq "z_re" ) { xAxisLabel="z" } else { xAxisLabel=xAxis }
+  if( xAxis eq "zre" ) { xAxisLabel="z" } else { xAxisLabel=xAxis }
   FileNameExtra='_'.xAxisLabel
   xScale=1.
 }
@@ -212,16 +212,30 @@ for Fit2 in $Fit2ptSeries; do
   i=0
   InPrefix=../.. # $HOME/NoSync/$Ensemble
   MELFit=$InPrefix/MELFit
+  Renorm=$InPrefix/Renorm/ZV.txt
   SpecDir="3sm_${Spec[i]}"
   FitFile=$MELFit/Fit_${Spec[i]}_$Fit2.txt
-  Cmd="CRatio --type f,$L --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/ '*corr_*corr_*.$OutSub.${UnCorr+un}corr*.$MLUSeed.h5'"
+  Cmd="CRatio --type f,$L"
+  if [ -n "$ZV" ]; then
+    Cmd="${Cmd},,$ZV"
+  elif [ -r $Renorm ]; then
+    Cmd="${Cmd},,$Renorm"
+  fi
+  Cmd="$Cmd --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/"
+  Cmd="$Cmd '*corr_*corr_*.$OutSub.${UnCorr+un}corr*.$MLUSeed.h5'"
   LogFile="FFS_$SpecDir.log"
   echo "$Cmd"
   echo "$Cmd"   > $LogFile
   eval "$Cmd" &>> $LogFile
   echo PlotFuncNew $SpecDir "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 3
        PlotFuncNew $SpecDir "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 3
-       xAxis=z_re PlotFuncNew $SpecDir "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 3
+       xAxis=zre PlotFuncNew $SpecDir "${Meson[i]}" "${MesonSave[i]}" "${Title[i]}" 3
+  # Now get a table summarising the data
+  Cmd="FitSummary --strict=-1 --pignore p --params qSq,mH,mL,EL,f0,fPlus,fPar,fPerp,melV0,melVi,ZV"
+  Cmd="$Cmd $SpecDir/*_p2_?.g*.h5"
+  echo "$Cmd"  >> $LogFile
+  eval "$Cmd" &>> $LogFile
+  rm *.params{,_sort}.$MLUSeed.txt
   cd ..
 done
 

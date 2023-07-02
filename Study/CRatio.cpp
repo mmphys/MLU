@@ -242,6 +242,27 @@ Common::JackBootColumn<S> KeyFileCache<Key,L,KR,LKR,S>::GetColumn( const Key &ke
   }
 }
 
+void Maker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::string> &FileList )
+{
+  Total += FileList.size();
+  for( std::string &sFile : FileList )
+  {
+    try
+    {
+      Make( sFile );
+      ++NumOK;
+    }
+    catch(const std::exception &e)
+    {
+      std::cerr << "Error: " << e.what() << std::endl;
+    }
+    catch( ... )
+    {
+      std::cerr << "Error: Unknown exception" << std::endl;
+    }
+  }
+}
+
 // Incoming file should be a three-point function with a heavy sink and light(er) source
 void ZVRCommon::Make( std::string &FileName )
 {
@@ -298,6 +319,7 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
   const int NTHalf{ C3.Nt() / 2 };
   if( fna.DeltaT > NTHalf )
     throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
+  const bool bMidpoint{ fna.DeltaT == NTHalf };
 
   // Now read the two-point function corresponding to the model (Src and Snk are the same)
   std::string C2Name{ Src.mp.C2Name() }; // Src and Snk same, so we can choose either
@@ -330,7 +352,11 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
   out.NtUnfolded_ = C3.Nt();
   for( int idx = Fold::idxCentral; idx < NumSamples; ++idx )
   {
-    const double CTilde{ C2(idx,fna.DeltaT) - 0.5 * C2(idx,NTHalf) * std::exp( - Src.E[idx] * ( NTHalf - fna.DeltaT ) ) };
+    double CTilde{ C2(idx,fna.DeltaT) };
+    if( bMidpoint )
+      CTilde *= 0.5;
+    else
+      CTilde -= 0.5 * C2(idx,NTHalf) * std::exp( - Src.E[idx] * ( NTHalf - fna.DeltaT ) );
     for( int t = 0; t <= fna.DeltaT; ++t )
     {
       const double z{ CTilde / C3(idx,t) };
@@ -366,8 +392,8 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
   // Make sure I have the model for Z_V already loaded
   Model &ZVModelSnk{ ZVmi( Snk.q, LoadFilePrefix ) };
   Model &ZVModelSrc{ ZVmi( Src.q, LoadFilePrefix ) };
-  Column ZVSnk{ZVmi.GetColumn( Snk.q, Common::Param::Key( Snk.q, Common::ModelBase::ConstantPrefix))};
-  Column ZVSrc{ZVmi.GetColumn( Src.q, Common::Param::Key( Src.q, Common::ModelBase::ConstantPrefix))};
+  Column ZVSnk{ZVmi.GetColumn( Snk.q, Common::Param::Key( Snk.q, "ZV" ))};
+  Column ZVSrc{ZVmi.GetColumn( Src.q, Common::Param::Key( Src.q, "ZV" ))};
 
   // Get the names of all 2pt correlators we will need
   std::array<CorrT, 2> Corr2;
@@ -657,15 +683,36 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
 
 const std::vector<std::string> FormFactor::ParamNames{ "EL", "mL", "mH", "qSq", "kMu",
   "melV0", "melVi", "fPar", "fPerp", "fPlus", "f0", "ELLat", "qSqLat",
-  "tPlus", "tMinus", "t0", "z_re", "z_im" };
+  "tPlus", "tMinus", "t0", "zre", "zim", "ZV" };
 
 FormFactor::FormFactor( std::string TypeParams )
 : N{ Common::FromString<unsigned int>( Common::ExtractToSeparator( TypeParams ) ) },
   ap{ 2 * M_PI / N },
   apInv{ 1. / ap },
-  bAdjustGammaSpatial{ Common::EqualIgnoreCase( TypeParams, "spatial" ) }
+  bAdjustGammaSpatial{ Common::EqualIgnoreCase( Common::ExtractToSeparator(TypeParams), "spatial" ) }
 {
-  if( !bAdjustGammaSpatial && !TypeParams.empty() )
+  // optional ZV: Can be constant (number), or cache of ZV files
+  std::string sZV;
+  if( !TypeParams.empty() )
+    sZV = Common::ExtractToSeparator( TypeParams );
+  if( sZV.empty() )
+  {
+    ZV[0] = 1.;
+    ZV[1] = 1.;
+  }
+  else if( Common::FileExists( sZV ) )
+  {
+    ZVmi.Read( sZV, LoadFilePrefix );
+    if( ZVmi.empty() )
+      throw std::runtime_error( "No ZV fits in " + sZV );
+  }
+  else
+  {
+    const Scalar s{ Common::FromString<Scalar>( sZV ) };
+    ZV[0] = s;
+    ZV[1] = s;
+  }
+  if( !TypeParams.empty() )
     throw std::runtime_error( "Unrecognised form factor option: " + TypeParams );
 }
 
@@ -712,15 +759,18 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
       Out(idx,vIdx[z_re]) = z.real();
       Out(idx,vIdx[z_im]) = z.imag();
     }
+    // Renormalisation
+    const Scalar ThisZV{ ZV[0][idx] == ZV[1][idx] ? ZV[0][idx] : std::sqrt(ZV[0][idx]*ZV[1][idx]) };
+    Out(idx,vIdx[idxZV]) = ThisZV;
+    Out(idx,vIdx[melV0]) = vT[idx] * ThisZV;
+    Out(idx,vIdx[melVi]) = p ? (*pvXYZ)[idx] * ThisZV : 0;
     // Now make form factors
-    Out(idx,vIdx[melV0]) = vT[idx];
     const Scalar    Root2MH{ std::sqrt( MHeavy[idx] * 2 ) };
     const Scalar InvRoot2MH{ 1. / Root2MH };
-    Out(idx,vIdx[fPar]) = vT[idx] * InvRoot2MH;
+    Out(idx,vIdx[fPar]) = Out(idx,vIdx[melV0]) * InvRoot2MH;
     if( p )
     {
       Out(idx,vIdx[kMu]) = ap;
-      Out(idx,vIdx[melVi]) = (*pvXYZ)[idx];
       if( bAdjustGammaSpatial )
       {
         int FirstNonZero{ p.x ? p.x : p.y ? p.y : p.z };
@@ -836,9 +886,15 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
         Description = os.str();
       }
       std::cout << Description << Common::NewLine;
-      std::array<std::string,2> q{ fna.BaseShortParts[2], fna.BaseShortParts[1] };
-      const int iLight{ fna.MesonP[0].p ? 0 : 1 }; // Work out which meson is heavy (ie got momentum)
+      const std::vector<std::string> &Quark{ fna.Quark };
+      const int iLight{ Common::QuarkWeight( Quark[0] ) <= Common::QuarkWeight( Quark[1] ) ? 0 : 1 };
       const int iHeavy{ 1 - iLight };
+      // Get ZV
+      if( !ZVmi.empty() )
+      {
+        ZV[0] = ZVmi.GetColumn( Quark[0], Common::Param::Key( Quark[0], "ZV" ) );
+        ZV[1] = ZVmi.GetColumn( Quark[1], Common::Param::Key( Quark[1], "ZV" ) );
+      }
       // If non-zero momentum, build a list of corresponding spatial correlators
       std::vector<Model> mGammaXYZ;
       Model * pmMLight = nullptr; // Doesn't own what it points to
@@ -1205,40 +1261,17 @@ int main(int argc, const char *argv[])
                                                        Prefix3pt.c_str() ) };
       std::size_t Count{ 0 };
       std::size_t Done{ 0 };
-      if( m->CanRun() )
+      try
       {
-        try
-        {
-          m->Run( Done, Count, FileList );
-        }
-        catch(const std::exception &e)
-        {
-          std::cerr << "Error: " << e.what() << std::endl;
-        }
-        catch( ... )
-        {
-          std::cerr << "Error: Unknown exception" << std::endl;
-        }
+        m->Run( Done, Count, FileList );
       }
-      else
+      catch(const std::exception &e)
       {
-        for( std::string &sFile : FileList )
-        {
-          try
-          {
-            ++Count;
-            m->Make( sFile );
-            ++Done;
-          }
-          catch(const std::exception &e)
-          {
-            std::cerr << "Error: " << e.what() << std::endl;
-          }
-          catch( ... )
-          {
-            std::cerr << "Error: Unknown exception" << std::endl;
-          }
-        }
+        std::cerr << "Error: " << e.what() << std::endl;
+      }
+      catch( ... )
+      {
+        std::cerr << "Error: Unknown exception" << std::endl;
       }
       std::cout << Done << " of " << Count << Common::Space << Type << " ratios created\n";
     }

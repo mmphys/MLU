@@ -111,6 +111,8 @@ struct Summariser
   const bool bTableN;
   const unsigned char ErrorDigits;
   const std::size_t TableRowsPerPage;
+  const std::vector<std::string> vIgnoreMomenta;
+  const std::vector<std::string> ParamSubset;
   using FitMap = std::map<FitTimes, FitData>;
   using BaseList = std::map<std::string, BaseInfo>;
   BaseList lBase;

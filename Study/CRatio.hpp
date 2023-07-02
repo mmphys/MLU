@@ -105,6 +105,7 @@ public:
   std::vector<std::string> opNames; // These are operator names referred to by Files
   FileCache( const char * Prefix = nullptr ) : PrintPrefix{Prefix} {}
   void clear();
+  bool empty() const { return NameMap.empty(); }
   // Add file to cache if not present - delay loading until accessed
   int GetIndex( const std::string &Filename, const char * printPrefix = nullptr );
   FileT &operator()( int iIndex, const char * printPrefix ); // This is what loads the file
@@ -144,6 +145,7 @@ protected:
 public:
   static constexpr int BadIndex{ FileCacheT::BadIndex };
   virtual void clear();
+  bool empty() const { return model.empty(); }
   KeyFileCache() { clear(); }
   virtual ~KeyFileCache() {}
   // Use this to load a list of fit files
@@ -187,8 +189,7 @@ public:
   Maker( const Common::CommandLine &cl );
   virtual ~Maker() {}
   virtual void Make( std::string &sFileName ) = 0;
-  virtual bool CanRun() const { return false; }
-  virtual void Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::string> &FileList ) {}
+  virtual void Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::string> &FileList );
 };
 
 class ZVRCommon : public Maker
@@ -260,6 +261,7 @@ struct FormFactor
   static constexpr int t0{ 15 };
   static constexpr int z_re{ 16 };
   static constexpr int z_im{ 17 };
+  static constexpr int idxZV{ 18 };
   const unsigned int N;
   const Scalar ap;
   const Scalar apInv;
@@ -271,6 +273,9 @@ struct FormFactor
               const Column &vT, const Common::Momentum &p,
              // These only required for non-zero momentum
               const Column *pMLight, const Column *pvXYZ );
+protected:
+  ZVModelMap ZVmi;
+  std::array<Column, 2> ZV;
 };
 
 // Make F parralel, F perpendicular, F+ and F0
@@ -296,7 +301,6 @@ public:
   FMaker( std::string TypeParams, const Common::CommandLine &cl )
   : Maker( cl ), FormFactor{TypeParams}, i3Base{ cl.SwitchValue<std::string>("i3") } {}
   void Make( std::string &sFileName ) override;
-  bool CanRun() const override { return true; }
   void Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::string> &FileList ) override;
 };
 

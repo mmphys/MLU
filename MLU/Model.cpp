@@ -518,8 +518,10 @@ int Model<T>::WriteAttributes( ::H5::Group &g ) const
 template <typename T>
 bool Model<T>::CheckParameters( int Strictness, scalar_type MonotonicUpperLimit )
 {
+  if( Strictness < 0 )
+    return true;
   bool bResult{ !this->SummaryNames.empty() };
-  if( bResult && ( Strictness >= 0 || MonotonicUpperLimit < std::numeric_limits<scalar_type>::max() ) )
+  if( bResult && MonotonicUpperLimit < std::numeric_limits<scalar_type>::max() )
   {
     const bool bVeryStrictNonZero{ ( Strictness & 1 ) != 0 };
     const bool bVeryStrictDifferent{ ( Strictness & 2 ) != 0 };

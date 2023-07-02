@@ -1,0 +1,269 @@
+#!/usr/bin/env bash
+
+############################################################
+
+# Functions for performing various versions of matrix element fits
+
+############################################################
+
+. PlotCommon.sh
+
+#set -x
+set -e
+
+############################################################
+
+# Initialise variables from user
+
+############################################################
+
+if ! [ -d $Ensemble ]; then
+  echo "Ensemble $Ensemble doesn't exist. Change directory?"
+  exit 2
+fi
+OutDir=$Ensemble/${OutDir:-Renorm}
+ZVDir=${ZVDir:-ZV}
+ZVPlotDir=${ZVPlotDir:-${ZVDir}Plot}
+ZVEFit=E_For_ZV.txt
+ZVFit=ZV.txt
+
+if [ -v DoAll ]; then
+  DoEFit=
+  DoZV=
+  DoPlot=
+  DoFit=
+fi
+
+############################################################
+
+# Derived variables
+
+############################################################
+
+eval Actions=(h$Heavy s l)
+eval Spectators=(l s h${Heavy}) # The heavy is a bit sh#t as a spectator
+
+# y range for ZV for each action,spectator combination
+declare -A aYRange
+
+MultiFit="MultiFit --Hotelling 0.0001 --overwrite --debug-signals --strict 3"
+
+############################################################
+
+# Initialisation
+
+############################################################
+
+mkdir -p $OutDir
+cd $OutDir
+
+############################################################
+
+# Perform ZV Energy fit
+
+# Optional
+# UnCorr:   uncorrelated fit
+
+############################################################
+
+function FitZVEnergy()
+{
+local Q1=$1
+local Q2=$2
+local yrange=$3
+local ti=${ti:-6}
+local tf=${tf:-28}
+local ti2=${ti2:-$ti}
+local tf2=${tf2:-$tf}
+local e=${e:-2}
+local e2=${e2:-$e}
+
+# Derived
+local Meson; GetMeson Meson ${Q1} ${Q2}
+local Base=${Q1}_${Q2}_p2_0
+local InDir=$PlotData/corr/2ptp2/${Base}_g5P_g5
+local InSuffix=.fold.$DataSeed.h5
+local OutDir=Fit/ZVEnergy
+local ModelBase=$OutDir/$Base.${UnCorr+un}corr_${ti}_${tf}_${ti2}_${tf2}.g5P_g5W.model
+local LogFile=$ModelBase.$MLUSeed.log
+local FitFile=$ModelBase.$MLUSeed.h5
+local TDFile=${ModelBase}_td.$MLUSeed.txt
+
+mkdir -p $OutDir
+
+local Cmd="$MultiFit --summary 2"
+[ -v FitOptions ] && Cmd="$Cmd $FitOptions"
+[ -v UnCorr ] && Cmd="$Cmd --uncorr"
+Cmd="$Cmd -o $OutDir/ -i $InDir P$InSuffix,t=${ti}:${tf},e=$e W$InSuffix,t=${ti2}:${tf2},e=${e2}"
+#echo "A: $Cmd"
+echo "$Cmd"  > $LogFile
+if  ! $Cmd &>> $LogFile
+then
+  LastError=${PIPESTATUS[0]}
+  if [ "$LastError" = 3 ]; then
+    echo "Warning: Not all parameters resolved"
+  else
+    echo "Warning $LastError: $Cmd"
+  fi
+fi
+
+# Add this to my fit list
+[ -v ZVEFit ] && echo "${Q1}_${Q2}_p2_0 $FitFile" >> $ZVEFit
+
+# Get the fit characteristics: energy difference, matrix element, test stat, ...
+GetColumnValues $FitFile "$Meson m_{eff}=" '' E
+
+# Plot it
+
+Cmd="title=\"'$Meson p-p' '$Meson p-w'\" yrange='$yrange'"
+if [ -v RefText ]; then
+  Cmd="$Cmd RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
+fi
+Cmd="$Cmd ti='$PlotTI' tf='$PlotTF'"
+Cmd="$Cmd plottd.sh $TDFile"
+#echo "B: $Cmd"
+echo "$Cmd"  >> $LogFile
+eval  $Cmd  &>> $LogFile
+}
+
+############################################################
+
+# Perform ZV Energy fit
+
+# Optional
+# UnCorr:   uncorrelated fit
+
+############################################################
+
+function MakeZV()
+{
+local CRatio="CRatio --i2 $PlotData/corr/2ptp2/ --efit E_For_ZV.txt"
+local Spectator Action InDir Cmd FileSpec
+local LogFile=$ZVDir/MakeZV.log
+mkdir -p $ZVDir
+[ -e $LogFile ] && rm $LogFile
+for Spectator in ${Spectators[@]}; do
+  InDir=$PlotData/corr/3pt_${Spectator}p2
+  Cmd="$CRatio --i3 $InDir/ -o $ZVDir/${Spectator}p2/"
+  for Action in ${Actions[@]}; do
+    FileSpec=*_${Action}_${Action}_gT_dt_*_p2_0_ps2_0_*.$DataSeed.h5
+    if ls $InDir/$FileSpec &> /dev/null
+    then
+      echo "$Cmd $FileSpec" >> $LogFile
+      eval  $Cmd $FileSpec &>> $LogFile
+    fi
+  done
+done
+}
+
+############################################################
+
+# Main loop
+
+# Preferred ZV_strange uses light spectator, otherwise strange spectator
+
+############################################################
+
+function PlotZV()
+{
+local x='((column(1)<2 || column(1)>word(FileDT,File)-2) ? NaN : column(1)-0.5*word(FileDT,File)+(word(FileDT,File)-24)*.025)'
+local fields=corr
+local key='bottom center maxrows 2'
+local yrange SpecDir SaveDir dT legend FileName FileNames
+export x fields key legend
+
+for Action in ${Actions[@]}; do
+  for Spectator in ${Spectators[@]}; do
+    SpecDir=${Spectator}p2
+    SaveDir=$ZVPlotDir/$SpecDir
+    mkdir -p $SaveDir
+    Combo=$Action,$Spectator
+    [ -n "${aYRange[$Combo]}" ] && export yrange=${aYRange[$Combo]} || unset yrange
+    for PW in g5{P,W}_g5{P,W}; do
+      legend=
+      FileNames=
+      for dT in ${EnsembleDeltaT[@]}; do
+        FileName=$ZVDir/$SpecDir/ZV_${Action}_dt_${dT}_${PW}.fold.$MLUSeed.txt
+        if ls $FileName &> /dev/null; then
+          legend="$legend${legend+ }ΔT=$dT"
+          FileNames="$FileNames${FileNames+ }$FileName"
+        fi
+      done
+      if [ -n "$FileNames" ]
+      then
+        save=$SaveDir/ZV_${Action}_spec_${Spectator}_${PW} plot.sh $FileNames
+      fi
+    done
+  done
+done
+}
+
+############################################################
+
+# Perform ZV fit
+
+# Optional
+# UnCorr:   uncorrelated fit
+
+############################################################
+
+function FitZV()
+{
+local Q=$1
+local dT=${2:-${EnsembleDeltaT[0]}}
+local Spec=${3:-s}
+local yrange=$4
+local Snk=${5:-g5P}
+local Src=${6:-g5P}
+local ti=${ti:-$((dT/2-1))}
+local tf=${tf:-$((dT/2+1))}
+
+# Derived
+local PW=${Snk}; [ "$Snk" != "$Src" ] && PW=${PW}_${Src}
+local SpecDir=${Spec}p2
+local InDir=$ZVDir/$SpecDir
+local OutDir=Fit/$ZVDir/$SpecDir
+local InFile=ZV_${Q}_dt_${dT}
+local ModelBase=$OutDir/$InFile.${UnCorr+un}corr_${ti}_${tf}.$PW.model
+InFile=${InFile}_${Snk}_${Src}.fold.$MLUSeed.h5
+local LogFile=$ModelBase.$MLUSeed.log
+local FitFile=$ModelBase.$MLUSeed.h5
+local TDFile=${ModelBase}_td.$MLUSeed.txt
+local ZVName="$Q-ZV"
+
+mkdir -p $OutDir
+
+local Cmd="$MultiFit --summary 2"
+[ -v FitOptions ] && Cmd="$Cmd $FitOptions"
+[ -v UnCorr ] && Cmd="$Cmd --uncorr"
+Cmd="$Cmd -o $OutDir/ -i $InDir/ $InFile,t=${ti}:${tf},model=const,const=$ZVName"
+#echo "A: $Cmd"
+echo "$Cmd"  > $LogFile
+if  ! $Cmd &>> $LogFile
+then
+  LastError=${PIPESTATUS[0]}
+  if [ "$LastError" = 3 ]; then
+    echo "Warning: Not all parameters resolved"
+  else
+    echo "Warning $LastError: $Cmd"
+  fi
+fi
+
+# Add this to my fit list
+[ -v ZVFit ] && echo "${Q} $FitFile" >> $ZVFit
+
+# Get the fit characteristics: energy difference, matrix element, test stat, ...
+GetColumnValues $FitFile "ZV($Q)=" '' ${ZVName##*-}
+
+# Plot it
+
+Cmd="title=\"'ZV $Q spec $Spec ΔT=$dT $PW'\" yrange='$yrange' field=corr"
+if [ -v RefText ]; then
+  Cmd="$Cmd RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
+fi
+Cmd="$Cmd ti=2 tf=$((dT-2))"
+Cmd="$Cmd plottd.sh $TDFile"
+#echo "B: $Cmd"
+echo "$Cmd"  >> $LogFile
+eval  $Cmd  &>> $LogFile
+}

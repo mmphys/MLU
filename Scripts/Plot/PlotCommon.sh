@@ -178,9 +178,9 @@ function GetMeson()
     h_l | l_h) NameHuman="D";;
     l_l)       [ -v OptionASCII ] && NameHuman="pi" || NameHuman="π";;
     l_s | s_l) NameHuman="K";;
-            *) NameHuman="${q}${Spec}";;
+            *) NameHuman="${q}-${Spec}";;
   esac
-  if ! [ -v OptionASCII ] && ! [ -z "$qNum" ]; then NameHuman="$NameHuman (m=0.$qNum)"; fi
+  if ! [ -v OptionASCII ] && ! [ -z "$qNum" ]; then NameHuman="$NameHuman ($qNum)"; fi
 }
 
 # 1: 3pt filename to split

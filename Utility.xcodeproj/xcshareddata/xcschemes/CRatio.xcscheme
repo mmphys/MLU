@@ -54,61 +54,54 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--i2 C2/corr/2ptp2/"
+            argument = "--debug-signals"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--i3 $HOME/NoSync/C1/MELFit/3sm_sp2/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--i3 C2/corr/3sm_sp2/"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o ratioE1ZV1/3sm_sp2/"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o FFS/C1/3sm_sp2/"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--efit $HOME/NoSync/C1/MELFit/Fit_sp2.txt"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--efit &apos;&apos;"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--type F,24"
-            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--AltOver"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;*.h5&apos;"
+            argument = "--i2 M1/corr/2ptp2/"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type R &apos;*&apos;_l_h6413_g&apos;*&apos;_dt_&apos;*&apos;_p2_0_ps2_[01234]_g5P_g5P.&apos;*&apos;.h5"
+            argument = "--i3 M1/corr/3sm_sp2/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o ratioE1ZV1/3sm_sp2/"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--efit $HOME/NoSync/M1/Renorm/E_For_ZV.txt"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--type R &apos;*_l_h*_g*_dt_*_p2_0_ps2_[034]_g5P_g5P.*.h5&apos;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--i3 $HOME/NoSync/M1/MELFit/3sm_sp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--debug-signals"
+            argument = "-o FFS/M1/3sm_sp2/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--efit $HOME/NoSync/M1/MELFit/Fit_sp2_disp.txt"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--type F,32,,$HOME/NoSync/M1/Renorm/ZV.txt"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;*corr_*corr_*.disp.corr*.h5&apos;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "MLUSeed"
-            value = "Jackknife"
-            isEnabled = "NO">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

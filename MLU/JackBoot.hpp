@@ -162,7 +162,8 @@ protected:
 public:
   inline const T &operator[]( std::size_t Row ) const { return pJB ? (*pJB)(Row,Column) : Constant; }
   explicit JackBootColumn( const JackBoot<T> &JB, std::size_t column ) : pJB{&JB}, Column{column} {}
-  explicit JackBootColumn( const T &constant ) : Constant{constant}, pJB{nullptr} {}
+  explicit JackBootColumn( T constant ) : Constant{constant}, pJB{nullptr} {}
+  void operator=( T constant ) { Constant = constant; pJB = nullptr; }
   JackBootColumn() : JackBootColumn{ static_cast<T>( 0 ) } {}
   JackBootColumn( const JackBootColumn &o )
   {
