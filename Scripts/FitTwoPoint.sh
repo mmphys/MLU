@@ -61,6 +61,7 @@ local Thin2=${Thin2+,t$Thin2}
 
 #LabelTF=${LabelTF:-$((THalf-2))}
 local LabelTF=${LabelTF:-$(( MaxTF + 2 ))}
+# LabelTI also used (optional)
 
 local Corr=${Corr:-corr}
 # ExtraName
@@ -106,6 +107,7 @@ DoCmd EraseLog || return 0
 # Get E0 (reference value for plot)
 GetColumnValues $OutFile.h5 "${Meson//_/-} (n^2=$p) E_0=" '' E0
 Cmd="title='point-point point-wall' tf='$LabelTF' yrange='${ayRange[$Meson,$p]}'"
+[ -v LabelTI ] && Cmd="$Cmd ti='$LabelTI $LabelTI'"
 [ -v RefText ] && Cmd="$Cmd RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
 [ -v ExtraFiles ] && Cmd="$Cmd extra='$ExtraFiles'"
 Cmd="$Cmd plottd.sh $OutSubDir/${MesonPrefix}_td.$MLUSeed.txt"

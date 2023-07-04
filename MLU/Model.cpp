@@ -104,6 +104,13 @@ Model<T>::Model( int NumSamples, Params Params_, const std::vector<std::string> 
 }
 
 template <typename T>
+void Model<T>::Read( const char *PrintPrefix, std::string *pGroupName )
+{
+  // Just read the data using the Seed from the file 
+  Base::Read( false, Common::SeedWildcard, PrintPrefix, pGroupName );
+}
+
+template <typename T>
 void Model<T>::ReadAttributes( ::H5::Group &g )
 {
   Base::ReadAttributes( g );

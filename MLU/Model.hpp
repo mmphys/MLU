@@ -104,6 +104,8 @@ struct Model : public Sample<T>, public ModelBase
       return CovarFrozen;
     return NumSamples > Base::NumSamples();
   }
+  using Base::Read;
+  void Read( const char *PrintPrefix = nullptr, std::string * pGroupName = nullptr ) override;
   void ReadAttributes( ::H5::Group &g ) override;
   void ValidateAttributes() override;
   int WriteAttributes( ::H5::Group &g ) const override;

@@ -54,15 +54,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-e 2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-v 1"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--guess 0.19174,0.642,1.458,29.55,70,2786,41797,-18615"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -91,10 +83,6 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--fitter Minuit2 --retry 150"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--guess 0.1911397674824,0.5716129766181,29.29446137724,53.37054251962,41668.2668095,-25952.32560434"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -138,103 +126,23 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--covsrc h5,fit_felix_central.hdf5,covarianceMatrix -o data_comparison2/FitDebugFelix/FelixCov_ -i data_comparison2/unbinned_"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--covsrc binned -o data_comparison2/FitDebugFelix/ -i data_comparison2/unbinned_"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--covsrc raw -o data_comparison2/FitDebugTobi/raw_ -i data_comparison2/binned_"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o Simul/MEL_l_h447_p2_0_dt_16"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-o Simul/Ds_K_p2_0_E3_R3_Raw"
-            isEnabled = "NO">
+            argument = "-e 2"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o 2ptp2/s_l/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o MELFit/3sm_sp2/"
-            isEnabled = "NO">
+            argument = "-i F1M/corr/2ptp2/s_l_p2_0_g5P_g5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-i /Volumes/QCD/tursa/semilep/data/F1M/analyse/corr/"
-            isEnabled = "NO">
+            argument = "P.fold.&apos;*&apos;.h5,t=10:26"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "2ptp2/s_l/s_l_p2_0.corr_5_20_7_20.g5P_g5W.model.jackknife.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "$HOME/NoSync/C2/MELFit/2ptp2/s_l/s_l.corr_5_20_6_21_5_20_6_19_5_18.g5P.model.1835672416.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "C2/corr/2ptp2/s_l_p2_0_g5P_g5P.fold.1835672416.h5,t=5:20,e=2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "C2/corr/2ptp2/s_l_p2_0_g5P_g5W.fold.1835672416.h5,t=7:20,e=1"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "C2/corr/2ptp2/s_l_p2_1_g5P_g5P.fold.1835672416.h5,t=6:22t1:3:2,e=2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "C2/corr/2ptp2/s_l_p2_2_g5P_g5P.fold.1835672416.h5,t=5:20t1:3:2,e=2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "C2/corr/2ptp2/s_l_p2_3_g5P_g5P.fold.1835672416.h5,t=6:20t1:3:2,e=2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "C2/corr/2ptp2/s_l_p2_4_g5P_g5P.fold.1835672416.h5,t=5:18t1:3:2,e=2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "2ptp2/h6413_s/h6413_s_p2_0.corr_8_24_13_24.g5P_g5W.model.jackknife.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "$HOME/NoSync/C2/MELFit/2ptp2/h6413_s/h6413_s_p2_0.corr_8_24_13_24.g5P_g5W.model.1835672416.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "C2/corr/2ptp2/h6413_s_p2_0_g5P_g5P.fold.1835672416.h5,t=8:24,e=2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "C2/corr/2ptp2/h6413_s_p2_0_g5P_g5W.fold.1835672416.h5,t=13:24,e=1"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_16_p2_0_g5P_g5P.fold.1835672416.h5,t=8:10,raw,C2Model=coSh,C2e=2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_20_p2_0_g5P_g5P.fold.1835672416.h5,t=8:14,raw,C2Model=coSh,C2e=2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "ratioE1ZV1/3sm_sp2/R3_l_h6413_gT_dt_24_p2_0_g5P_g5P.fold.1835672416.h5,t=8:17t3,raw,C2Model=CoSH,C2e=2"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "/Volumes/QCD/tursa/semilep/data/C1/analyse.20221201/ZV/sp2/ZV_l_dt_20_g5P_g5P.fold.1835672416.h5,t=3:17,model=const"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "/Volumes/QCD/tursa/semilep/data/C1/analyse.20221201/ZV/lp2/ZV_s_dt_20_g5P_g5P.fold.1835672416.h5,t=3:17,model=const"
+            argument = "W.fold.&apos;*&apos;.h5,t=7:26"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

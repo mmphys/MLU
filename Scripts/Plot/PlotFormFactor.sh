@@ -15,8 +15,8 @@ declare -A aFormFactorYRange
 declare -A aFormFactorYRangeRaw
 aFormFactorMaxX=(F1M 2.2 C1 2.1 C2 2.1 M1 2.1)
 aFormFactorMaxXZ=(C1 0.1 C2 0.1 M1 0.1)
-aFormFactorYRange=(F1M 0.6:1.5 C1 0.6:1.3 C2 0.5:1.3 M1 0.6:1.15)
-aFormFactorYRangeRaw=(F1M 0.4:1.45 C1 0.5:1.5 C2 0.3:1.5 M1 0.45:1.3)
+aFormFactorYRange=(F1M 0.6:1.3 C1 0.6:1.3 C2 0.5:1.3 M1 0.6:1.15)
+aFormFactorYRangeRaw=(F1M 0.5:1.25 C1 0.5:1.5 C2 0.3:1.5 M1 0.45:1.3)
 
 # Computed from input
 
@@ -78,7 +78,7 @@ set xlabel xAxisLabel
 set ylabel yAxis.yAxisLabel
 set key bottom center maxrows 3
 
-f(dt,p)="F".RatioNum."_".Meson."_dt_".dt."_p2_".p.".${UnCorr+un}corr.g5P_g5P.params.1835672416.txt"
+f(dt,p)="F".RatioNum."_".Meson."_dt_".dt."_p2_".p.".${UnCorr+un}corr.g5P_g5P.params.$MLUSeed.txt"
 #print "f(24,0)=".f(24,0)
 
 DD=0.00025
@@ -147,7 +147,7 @@ if( xAxis eq "qSq" ) {
 set xlabel xAxisLabel
 set ylabel yAxis.yAxisLabel
 
-ModelSuffix=".g5P_g5W.model.1835672416"
+ModelSuffix=".g5P_g5W.model.$MLUSeed"
 f(p)="F".RatioNum."_".Meson."_p2_".p.ModelSuffix.".txt"
 #print "f(0)=".f(0)
 

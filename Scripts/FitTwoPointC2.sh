@@ -68,7 +68,7 @@ if [ "${DoAll+x}" = x ]; then
   export LabelTF=30
   export ti='3 3'
   p=0 TI=5 TF=20 NumExp=2 FitTwoPoint
-  p=0 TI=5 TF=20 NumExp=2 TI2=6 FitTwoPoint
+  p=0 TI=5 TF=20 NumExp=2 TI2=6 FitOptions='--Hotelling 0' FitTwoPoint
   p=0 TI=5 TF=20 NumExp=2 TI2=7 NumExp2=1 FitTwoPoint # Preferred
   p=0 TI=5 TF=18 NumExp=2 TI2=6 NumExp2=1 TF2=18 FitOptions='--Hotelling 0' FitTwoPoint
   p=0 TI=6 TF=18 NumExp=2 TI2=6 NumExp2=1 TF2=18 FitOptions='--Hotelling 0' FitTwoPoint

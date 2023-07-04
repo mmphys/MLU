@@ -19,6 +19,7 @@ set -e
 
 # Parameters:
 #   1: pSnk
+# FitOptionsRatio (optional) extra fit options for ratios, e.g. C2eSrc=3
 function FitTwoStage()
 (
   local pSnk=$1
@@ -122,7 +123,7 @@ case "$FitWhat" in
   R3)
         FitName=R_3
         PlotName="C^{(3)}"
-        FitOptionsModel=",C2e=2,C2Model=cosh,raw"
+        FitOptionsModel=",C2e=2,C2Model=cosh,raw${FitOptionsRatio+,$FitOptionsRatio}"
         PrefixFit=$PrefixR3
         SuffixFit=$SuffixR3
         PrefixPlot=$PrefixCorr
@@ -329,12 +330,12 @@ function DoSimulFit()
     Files="${Files} $PlotData/corr/2ptp2/${MesonSrc}_p2_${pSrc}_g5P_g5W.fold.$MLUSeed.h5,t=${aDsTIW[pSrc]}:${aDsTFW[pSrc]},e=1"
   fi
   for(( i=0;i<NumDeltaT;++i)); do
-    Files="${Files} $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]},C2e=2,C2Model=cosh,raw"
+    Files="${Files} $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]},C2e=2,C2Model=cosh,raw${FitOptionsRatio+,$FitOptionsRatio}"
     FitSuffix="${FitSuffix}_${TI[i]}_${TF[i]}"
   done
   if [ -v IncludeSpatial ]; then
     for(( i=0;i<NumDeltaT;++i)); do
-      Files="${Files} $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_gXYZ_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]},C2e=2,C2Model=cosh,raw"
+      Files="${Files} $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_gXYZ_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]},C2e=2,C2Model=cosh,raw${FitOptionsRatio+,$FitOptionsRatio}"
       FitSuffix="${FitSuffix}_${TI[i]}_${TF[i]}"
     done
   fi

@@ -357,12 +357,14 @@ public:
                   int BinnedSource = 0, SeedType Seed = RandomCache::DefaultSeed() );
   /// Is it possible to regenerate primary bootstrap replica for any seed?
   inline bool CanResample() const { return !Binned[0].Empty(); }
-  virtual void SetName( const std::string &FileName, std::vector<std::string> * pOpNames = nullptr )
+  inline void SetName( const std::string &FileName, std::vector<std::string> * pOpNames = nullptr )
   {
     Name_.Parse( FileName, pOpNames );
   }
   inline void SetName( FileNameAtt &&FileName ) { Name_ = std::move( FileName ); }
-  void Read( const char *PrintPrefix = nullptr, std::string * pGroupName = nullptr );
+  void Read( bool bSetSeed, SeedType NewSeed,
+             const char *PrintPrefix = nullptr, std::string * pGroupName = nullptr );
+  virtual void Read( const char *PrintPrefix = nullptr, std::string * pGroupName = nullptr );
   inline void Read( const std::string &FileName, const char *PrintPrefix = nullptr,
                     std::vector<std::string> * pOpNames=nullptr, std::string * pGroupName=nullptr )
   {

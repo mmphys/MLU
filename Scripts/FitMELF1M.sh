@@ -67,19 +67,27 @@ for((i=0;i<=MaxPSq;++i)); do
 done
 
 for Fit2ptSeries in ${series-old}; do
-case $Fit2ptSeries in
-  old)
-  aMesonFit[h385_s,0]=corr_6_29_5_29
-  aMesonFit[s_l,0]=corr_10_26_7_26 # Original with Peter
+
   aMesonFit[s_l,1]=corr_8_28_9_28
   aMesonFit[s_l,2]=corr_8_26_8_28
   aMesonFit[s_l,3]=corr_8_28_8_28
   aMesonFit[s_l,4]=corr_10_28_8_28
   aMesonFit[s_l,5]=corr_10_28_12_28
-  aMesonFit[s_l,6]=corr_10_28_12_28;;
+  aMesonFit[s_l,6]=corr_10_28_12_28
 
-  *) echo "Fit2ptSeries ${Fit2ptSeries} unrecognised"; exit 1;;
-esac
+  unset FitOptionsRatio
+  case $Fit2ptSeries in
+    old)
+      FitOptionsRatio='C2eSrc=3'
+      aMesonFit[h385_s,0]=corr_6_29_5_29
+      aMesonFit[s_l,0]=corr_10_26_7_26;; # Original with Peter
+
+    better)
+      aMesonFit[h385_s,0]=corr_16_40_16_29
+      aMesonFit[s_l,0]=corr_8_31_8_20;;
+
+    *) echo "Fit2ptSeries ${Fit2ptSeries} unrecognised"; exit 1;;
+  esac
 
 ############################################################
 
@@ -129,7 +137,7 @@ if [ -v DoStd ]; then
   (
   FileSeries=${Fit2ptSeries}std
   echo "Performing $FitWhat fits to $Ratio for $FileSeries"
-  #UnCorr=
+  UnCorr=
   DeltaT="24 28 32"
   TI='12 12 12'
   TF='14 18 22'

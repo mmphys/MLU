@@ -37,7 +37,31 @@ ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int Nu
 : Model3pt(cp, Args, NumExp, std::vector<std::string>(objectID), std::vector<std::string>(opNames)),
   ChildType{ Args.Remove<eModelType>( sChildModel, eModelType::Exp ) }
 {
-  const int NumC2Exp{ Args.Remove( "C2e", static_cast<int>( NumOverlapExp ) ) };
+  // Number of 2-pt exponentials defaults to same as 3-pt
+  std::vector<int> NumC2Exp( E.size(), static_cast<int>( NumOverlapExp ) );
+  {
+    bool b[3];
+    std::array<std::string, 3> s;
+    // "C2e" argument specifies number of exponentials at source and sink
+    s[2] = Args.Remove( "C2e", &b[2] );
+    if( b[2] )
+    {
+      const int nE{ Common::FromString<int>( s[2] ) };
+      for( std::size_t i = 0; i < NumC2Exp.size(); ++i )
+        NumC2Exp[i] = nE;
+    }
+    if( NumC2Exp.size() > 1 )
+    {
+      // If source and sink are different, num exponents can (optionally) be specified individually
+      s[idxSrc] = Args.Remove( "C2eSrc", &b[idxSrc] );
+      s[idxSnk] = Args.Remove( "C2eSnk", &b[idxSnk] );
+      if( b[2] && b[idxSrc] && b[idxSnk] )
+        throw std::runtime_error( "C2e, C2eSrc and C2eSnk cannot all be specified" );
+      for( int i = 0; i < 2; ++i )
+        if( b[i] )
+          NumC2Exp[i] = Common::FromString<int>( s[i] );
+    }
+  }
   if( ChildType != eModelType::Exp && ChildType != eModelType::Cosh && ChildType != eModelType::Sinh )
   {
     std::ostringstream os;
@@ -52,13 +76,13 @@ ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int Nu
     switch( ChildType )
     {
       case eModelType::Exp:
-        C2.emplace_back(new ModelExp(cp, Args, NumC2Exp, std::move(oid), std::move(on)));
+        C2.emplace_back(new ModelExp(cp, Args, NumC2Exp[i], std::move(oid), std::move(on)));
         break;
       case eModelType::Cosh:
-        C2.emplace_back(new ModelCosh(cp, Args, NumC2Exp, std::move(oid), std::move(on)));
+        C2.emplace_back(new ModelCosh(cp, Args, NumC2Exp[i], std::move(oid), std::move(on)));
         break;
       default:
-        C2.emplace_back(new ModelSinh(cp, Args, NumC2Exp, std::move(oid), std::move(on)));
+        C2.emplace_back(new ModelSinh(cp, Args, NumC2Exp[i], std::move(oid), std::move(on)));
         break;
     }
   }

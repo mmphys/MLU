@@ -342,13 +342,13 @@ CopyOldFormat( T &Dest, const double &Real, const double &Imag )
 
 // Read from file. If GroupName empty, read from first group and return name in GroupName
 template <typename T>
-void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
+void Sample<T>::Read( bool bSetSeed, SeedType NewSeed,
+                      const char *PrintPrefix, std::string *pGroupName )
 {
   if( !Name_.bSeedNum )
     throw std::runtime_error( "Seed missing from " + Name_.Filename );
   if( Name_.Type.empty() )
     throw std::runtime_error( "Type missing from " + Name_.Filename );
-  const SeedType NewSeed{ RandomCache::DefaultSeed() };
   ::H5::H5File f;
   ::H5::Group  g;
   H5::OpenFileGroup( f, g, Name_.Filename, PrintPrefix, pGroupName );
@@ -367,7 +367,7 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
     a = g.openAttribute("type");
     a.read( ::H5::PredType::NATIVE_USHORT, &att_Type );
     a.close();
-    if( att_Type == 2 && Name_.Seed == NewSeed )
+    if( att_Type == 2 && ( !bSetSeed || Name_.Seed == NewSeed ) )
     {
       unsigned long  att_nSample;
       a = g.openAttribute("nSample");
@@ -449,6 +449,9 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
         ::H5::Exception::clearErrorStack();
         SetSeed( 0 ); // In this format, not present means 0
       }
+      // If I'm not trying to load a specific seed, just use the one from the file
+      if( !bSetSeed )
+        NewSeed = Seed();
       try
       {
         a = g.openAttribute( sEnsemble );
@@ -739,6 +742,12 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
     clear( false );
     throw std::runtime_error( "Unable to read sample from " + Name_.Filename );
   }
+}
+
+template <typename T>
+void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
+{
+  Read( true, RandomCache::DefaultSeed(), PrintPrefix, pGroupName );
 }
 
 template <typename T>
