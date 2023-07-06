@@ -36,18 +36,20 @@ if [ -v DoZV ]; then MakeZV; fi
 if [ -v DoPlot ]; then PlotZV; fi
 
 if [ -v DoFit ]; then
+(
   [ -e $ZVFit ] && unset ZVFit #Don't overwrite fit selection if it already exists
-  ti=7 tf=9 FitZV h${Heavy} 16 s
-  ti=8 tf=12 FitZV h${Heavy} 20 s
-  ti=8 tf=16 FitZV h${Heavy} 24 s # Preferred
-  ti=8 tf=20 FitZV h${Heavy} 28 s
+  export UnCorr=
+  ti=10 tf=14 FitZV h${Heavy} 24 s # Preferred
+  ti=10 tf=18 FitZV h${Heavy} 28 s
+  ti=10 tf=22 FitZV h${Heavy} 32 s
 
-  ti=7 tf=9 FitZV l 16 s
-  ti=8 tf=12 FitZV l 20 s
-  ti=8 tf=16 FitZV l 24 s
-  ti=8 tf=20 FitZV l 28 s
-  ti=7 tf=9 FitZV l 16 l
-  ti=8 tf=12 FitZV l 20 l
-  ti=8 tf=16 FitZV l 24 l # Preferred
-  ti=8 tf=20 FitZV l 28 l
+  ti=4 tf=16 FitZV l 20 s # Preferred
+  ti=4 tf=20 FitZV l 24 s
+  ti=4 tf=24 FitZV l 28 s
+  ti=4 tf=28 FitZV l 32 s
+  ti=4 tf=16 FitZV l 20 l
+  ti=4 tf=20 FitZV l 24 l
+  ti=4 tf=24 FitZV l 28 l
+  ti=4 tf=28 FitZV l 32 l
+)
 fi

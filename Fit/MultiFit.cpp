@@ -86,6 +86,8 @@ int main(int argc, const char *argv[])
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
       {"n", CL::SwitchType::Single, "0"},
+      {"extra", CL::SwitchType::Single, ""},
+      {"showname", CL::SwitchType::Flag, nullptr},
       {"uncorr", CL::SwitchType::Flag, nullptr},
       {"opnames", CL::SwitchType::Flag, nullptr},
       {"debug-signals", CL::SwitchType::Flag, nullptr},
@@ -99,21 +101,33 @@ int main(int argc, const char *argv[])
       const std::string inBase{ cl.SwitchValue<std::string>("i") };
       const bool inBaseWildcard{ inBase.find_first_of( szFileWildcard ) != std::string::npos };
       std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
+      // If output base is given, but doesn't end in '/', then it already contains the correct name
+      bool bAppendCorr0Name{ outBaseFileName.empty() || outBaseFileName.back() == '/' };
       Common::MakeAncestorDirs( outBaseFileName );
       const int NSamples{ cl.SwitchValue<int>("n") };
+      const std::string NameExtra{ cl.SwitchValue<std::string>("extra") };
+      const bool bShowName{ cl.GotSwitch("showname") }; // Show base output name - don't run
+      const bool bTestRun{ cl.GotSwitch("testrun") }; // Load files and say which fits attempted
       const bool doCorr{ !cl.GotSwitch( "uncorr" ) };
       const bool bOpSort{ !cl.GotSwitch("opnames") };
 
+      if( bShowName && !bOpSort )
+        throw std::runtime_error( "--showname is incompatible with --opnames" );
+      if( bShowName && bTestRun )
+        throw std::runtime_error( "--showname is incompatible with --testrun" );
       // Walk the list of parameters on the command-line, loading correlators and making models
       bShowUsage = false;
       std::vector<std::string> OpName;
-      std::cout << std::setprecision( 13 /*std::numeric_limits<double>::max_digits10*/ ) << "Loading folded correlators\n";
+      if( !bShowName )
+        std::cout << std::setprecision( 13 /*std::numeric_limits<double>::max_digits10*/ )
+                  << "Loading folded correlators\n";
       // Split each argument at the first comma (so the first part can be treated as a filename to glob
       const std::size_t NumArgs{ cl.Args.size() };
       DataSet ds( NSamples );
       std::vector<Model::Args> ModelArgs;
       std::vector<int> ModelFitRange;
       std::vector<std::string> FitRangeSpec;
+      bool bGotCorrelator{ false };
       for( std::size_t ArgNum = 0; ArgNum < NumArgs; ++ArgNum )
       {
         // First parameter (up to comma) is the filename we're looking for
@@ -134,6 +148,14 @@ int main(int argc, const char *argv[])
           const bool bIsCorr{ Common::EqualIgnoreCase( Att.Type, Common::sFold ) };
           if( bIsCorr )
           {
+            bGotCorrelator = true;
+            if( bAppendCorr0Name )
+            {
+              bAppendCorr0Name = false;
+              outBaseFileName.append( Att.GetBaseExtra() ); // Simplistic - better hard to automate
+            }
+            if( !bShowName ) // No need to load if all I need is output name
+            {
             // This is a correlator - load it
             std::string PrintPrefix( 2, ' ' );
             if( !cl.Args[ArgNum].empty() )
@@ -142,7 +164,8 @@ int main(int argc, const char *argv[])
               PrintPrefix.append( 1, ' ' );
             }
             ds.LoadCorrelator( std::move( Att ), Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT,
-                               PrintPrefix.c_str() );
+                              PrintPrefix.c_str() );
+            }
             // Get the fit range (if present)
             int FitRange;
             bool bGotFitRange;
@@ -168,7 +191,7 @@ int main(int argc, const char *argv[])
             ModelFitRange.push_back( FitRange );
             ModelArgs.emplace_back( vArgs );
           }
-          else
+          else if( !bShowName ) // No need to load if all I need is output name
           {
             ds.LoadModel( std::move( Att ), cl.Args[ArgNum] );
           }
@@ -176,14 +199,14 @@ int main(int argc, const char *argv[])
         if( bGlobEmpty )
           throw std::runtime_error( "No files matched " + FileToGlob );
       }
-      if( ds.corr.empty() )
+      if( !bGotCorrelator )
         throw std::runtime_error( "At least one correlator must be loaded to perform a fit" );
       // Make sure models refer to all fit ranges
       const int MinDP{ cl.SwitchValue<int>( "mindp" ) };
       Common::FitRanges fitRanges( FitRangeSpec, MinDP );
       {
         std::vector<bool> ModelFitRangeUsed( fitRanges.size(), false );
-        for( std::size_t i = 0; i < ds.corr.size(); ++i )
+        for( std::size_t i = 0; i < ModelFitRange.size(); ++i )
         {
           if( ModelFitRange[i] < 0 || ModelFitRange[i] >= ModelFitRangeUsed.size() )
           {
@@ -198,6 +221,7 @@ int main(int argc, const char *argv[])
             throw std::runtime_error( "Fit range " + std::to_string( i ) + " not referred to by any model" );
       }
       // Check whether each fit range is valid for each model using it
+      // DataSet will be empty if we're just getting output name - so won't trigger checks/errors
       for( std::size_t i = 0; i < ds.corr.size(); ++i )
       {
         if( !fitRanges[ModelFitRange[i]].Validate( ds.corr[i]->Nt() ) )
@@ -208,6 +232,12 @@ int main(int argc, const char *argv[])
           throw std::runtime_error( oss.str().c_str() );
         }
       }
+      if( bShowName )
+      {
+        std::sort( OpName.begin(), OpName.end(), Common::LessThanIgnoreCase );
+      }
+      else
+      {
       // Describe the number of replicas
       ds.SortOpNames( OpName );
       std::cout << "Using ";
@@ -220,10 +250,12 @@ int main(int argc, const char *argv[])
       if( ds.NSamples != ds.MaxSamples )
         std::cout << " (all " << ds.MaxSamples << " for var/covar)";
       std::cout << Common::NewLine;
+      }
 
       // Work out how covariance matrix should be constructed and tell user
-      CovarParams cp{ cl, ds };
-      std::cout << cp << Common::NewLine;
+      CovarParams cp{ cl, ds, bShowName };
+      if( !bShowName )
+        std::cout << cp << Common::NewLine;
 
       // I'll need a sorted, concatenated list of the operators in the fit for filenames
       std::string sOpNameConcat;
@@ -251,15 +283,31 @@ int main(int argc, const char *argv[])
       }
 
       // Now make base filenames for output
-      // If the output base is given, but doesn't end in '/', then it already contains the correct name
-      if( outBaseFileName.empty() || outBaseFileName.back() == '/' )
-        outBaseFileName.append( ds.corr[0]->Name_.Base ); // Very simplistic, but better is hard to automate
+      if( !NameExtra.empty() )
+      {
+        outBaseFileName.append( 1, '.' );
+        outBaseFileName.append( NameExtra );
+      }
       outBaseFileName.append( 1, '.' );
       outBaseFileName.append( doCorr ? "corr" : "uncorr" );
-      const std::string sSummaryBase{ outBaseFileName + Common::Period + sOpNameConcat };
       outBaseFileName.append( 1, '_' );
       const std::size_t outBaseFileNameLen{ outBaseFileName.size() };
-
+      if( bShowName )
+      {
+        // Just show the resulting filenames
+        sOpNameConcat.append( 1, '.' );
+        sOpNameConcat.append( Common::sModel );
+        for( Common::FitRangesIterator it = fitRanges.begin(); !it.PastEnd(); ++it )
+        {
+          outBaseFileName.resize( outBaseFileNameLen );
+          outBaseFileName.append( it.AbbrevString() );
+          outBaseFileName.append( 1, '.' );
+          outBaseFileName.append( sOpNameConcat );
+          std::cout << outBaseFileName << Common::NewLine;
+        }
+      }
+      else
+      {
       // All the models are loaded
       std::unique_ptr<Fitter> m{ Fitter::Make( MultiFitCreateParams{ OpName, cl }, ds,
                                                std::move( ModelArgs ), std::move( cp ), true ) };
@@ -352,6 +400,7 @@ int main(int argc, const char *argv[])
         else if( !bAllParamsResolved )
           iReturn = 3;
       }
+      }
     }
   }
   catch(const std::exception &e)
@@ -400,6 +449,7 @@ int main(int argc, const char *argv[])
     "--nopolap List of overlap coefficients which don't depend on momenta\n"
     "-i     Input  filename prefix\n"
     "-o     Output filename prefix\n"
+    "--extra Extra text to include after the base output name\n"
     "-e     number of Exponents (default 1)\n"
     "-n     Number of samples to fit, 0 = all available from bootstrap (default)\n"
     "-N     Use lattice dispersion relation for boosted energies with N=L/a\n"
@@ -410,7 +460,8 @@ int main(int argc, const char *argv[])
     "--savecmat Save correlation matrix\n"
     "--analytic Analytic derivatives for GSL (default: numeric)\n"
     "--opnames  Disable sorting and deduplicating operator name list\n"
-    "--testrun  Don't perform fits - just say which fits would be attempted\n"
+    "--testrun  Don't perform fits - load files, say which fits would be attempted\n"
+    "--showname Don't perform fits - get the output file base name up to '.model'\n"
     "--nophat   Just use p in dispersion relation (default: p_hat)\n"
     "--central  Don't use the central replica as guess for each replica\n"
     "--overwrite Overwite always. Default: only overwrite smaller Nboot\n"

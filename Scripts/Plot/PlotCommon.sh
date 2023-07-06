@@ -100,6 +100,8 @@ function PCPointWall()
 #   2: Prefix for RefText
 #   3: Comma separated list of exact field names
 #   4: Comma separated list of partial field names
+# Optional:
+#   UnCorr: Set to anything to indicate uncorrelated fit
 # Returns:
 #   ColumnValues: Array of column values in following order:
 #                 1) ChiSqPerDof 2) pValueH 3) Exact parameters 4) Partial parameters
@@ -116,7 +118,9 @@ function GetColumnValues()
   then
     #echo "OK: $ColumnValues"
     ColumnValues=($ColumnValues)
-    RefText="$RefText${ColumnValues[@]:17:1}, χ²/dof=${ColumnValues[@]:4:1}, pH=${ColumnValues[@]:12:1}"
+    RefText="$RefText${ColumnValues[@]:17:1},"
+    [ -v UnCorr ] && RefText="$RefText uncorrelated"
+    RefText="$RefText χ²/dof=${ColumnValues[@]:4:1}, pH=${ColumnValues[@]:12:1}"
   else
     LastError=${PIPESTATUS[0]}
     #echo "Error $LastError: $ColumnValues" # GetColumn shows its own error messages
@@ -215,6 +219,21 @@ function Split3ptFile()
   pMax=$p2
   if (( pMax < ps2 )); then pMax=$ps2; fi
 }
+
+# Return the longer of two strings
+function PCGetLonger()
+{
+  local A="$1"
+  local B="$2"
+  declare -n RetVal=${3:-Longer}
+  if (( ${#B} > ${#A} )); then
+    RetVal="$B"
+  else
+    RetVal="$A"
+  fi
+}
+
+############################################################
 
 # Get the full path to this script
 PCGetFullPath "${BASH_SOURCE[0]}" PlotCommonRoot

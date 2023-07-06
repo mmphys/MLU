@@ -67,7 +67,7 @@ std::size_t ModelConstant::Guess( Vector &Guess, std::vector<bool> &bKnown, cons
   if( !bKnown[Constant.idx] )
   {
     scalar Sum{ 0 };
-    for( scalar z : FitTimes )
+    for( scalar z : FitData )
       Sum += z;
     Guess[Constant.idx] = Sum / FitTimes.size();
     bKnown[Constant.idx] = true;

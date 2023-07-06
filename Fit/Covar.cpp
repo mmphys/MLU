@@ -29,8 +29,10 @@
 #include "Covar.hpp"
 
 // Work out where the covariance matrix comes from
-CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw ) : ds{ dsrw }
+CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw, bool bNoInit ) : ds{ dsrw }
 {
+  if( bNoInit )
+    return;
   // Are we using a frozen covariance matrix? Or does it vary for each sample?
   bFreeze = SupportsUnfrozen() ? cl.GotSwitch( "freeze" ) : true;
 

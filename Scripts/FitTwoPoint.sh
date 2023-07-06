@@ -14,7 +14,7 @@
 
 function DoCmd()
 {
-  if [[ $LogFile != ${LogFile%/*} && -n ${LogFile%/*} ]]; then mkdir -p ${LogFile%/*}; fi
+  if [[ "$LogFile" != "${LogFile%/*}" && -n "${LogFile%/*}" ]]; then mkdir -p "${LogFile%/*}"; fi
   if [ "$1" = EraseLog ] && [ -f $LogFile ]; then rm $LogFile; fi
   #echo $Cmd
   echo $Cmd &>> $LogFile
@@ -36,6 +36,10 @@ function DoCmd()
 ############################################################
 
 # Perform a simple, two-point fit of point-point and point-wall
+
+# Optional:
+#   ExtraName: Series name added to end of fit base name
+#   Stat:      Minimum acceptable pvalueH
 
 ############################################################
 
@@ -64,53 +68,50 @@ local LabelTF=${LabelTF:-$(( MaxTF + 2 ))}
 # LabelTI also used (optional)
 
 local Corr=${Corr:-corr}
-# ExtraName
-#Stat=${Stat:-0.05} # Doesn't need a default, but used if present
 
 ########################################
 # Derived
 
 local OutSubDir=$Ensemble/MELFit/2ptp2/$Meson
-local Fold=fold.$DataSeed
-local CorrPrefix=$Corr/2ptp2/${Meson}_p2_${p}_
+local CorrPrefix=$Corr/2ptp2/${Meson}_p2_${p}_g5P_g5
+local Suffix=fold.$DataSeed.h5
 
-local FitType=corr_${TI}_${TF}_${TI2}_${TF2}
-local MesonPrefixBase=${Meson}_p2_${p}${ExtraName+.$ExtraName}
-local MesonPrefix=$MesonPrefixBase.$FitType.g5P_g5W.model
-
-local ExtraFiles="$PlotData/${CorrPrefix}gT5P_g5P.$Fold.txt $PlotData/${CorrPrefix}gT5P_g5W.$Fold.txt"
-
-LabelTF="${LabelTF} ${LabelTF}"
-
-local OutFile=$OutSubDir/$MesonPrefix.$MLUSeed
-local LogFile=$OutFile.log
 mkdir -p "$OutSubDir"
 
 ########################################
 # Perform the fit
 
-local Cmd="MultiFit -e $NumExp --mindp 1"
-[ -v Stat ] && Cmd="$Cmd --Hotelling $Stat"
-Cmd="$Cmd --overwrite"
-Cmd="$Cmd --debug-signals"
-Cmd="$Cmd --strict 1"
-[ -v FitOptions ] && Cmd="$Cmd $FitOptions"
-Cmd="$Cmd --summary 2 -i $PlotData/${CorrPrefix} -o $OutSubDir/$MesonPrefixBase"
-Cmd="$Cmd g5P_g5P.$Fold.h5,t=${TI}:${TF}${Thin1},e=$NumExp"
-Cmd="$Cmd g5P_g5W.$Fold.h5,t=${TI2}:${TF2}${Thin2},e=$NumExp2"
+local Cmd="MultiFit -e $NumExp --summary 2"
+[ -v Stat ] && Cmd+=" --Hotelling $Stat"
+[ -v ExtraName ] && Cmd+=" --extra '$ExtraName'"
+Cmd+=" --overwrite"
+Cmd+=" --debug-signals"
+Cmd+=" --strict 1"
+[ -v FitOptions ] && Cmd+=" $FitOptions"
+Cmd+=" -i $PlotData/${CorrPrefix} -o $OutSubDir/"
+Cmd+=" P.$Suffix,t=${TI}:${TF}${Thin1},e=$NumExp"
+if (( TF2 >= TI2 )); then
+  Cmd+=" W.$Suffix,t=${TI2}:${TF2}${Thin2},e=$NumExp2"
+fi
+
 #echo "$Cmd"
+local ModelBase="$(eval $Cmd --showname)"
+local LogFile=$ModelBase.$MLUSeed.log
+local FitFile=$ModelBase.$MLUSeed.h5
+local TDFile=${ModelBase}_td.$MLUSeed.txt
+#echo "--showname=$ModelBase"
+
 DoCmd EraseLog || return 0
 
 ########################################
 # Plot the fit
 
 # Get E0 (reference value for plot)
-GetColumnValues $OutFile.h5 "${Meson//_/-} (n^2=$p) E_0=" '' E0
-Cmd="title='point-point point-wall' tf='$LabelTF' yrange='${ayRange[$Meson,$p]}'"
+GetColumnValues $FitFile "${Meson//_/-} (n^2=$p) E_0=" '' E0
+Cmd="title='point-point point-wall' tf='$LabelTF $LabelTF' yrange='${ayRange[$Meson,$p]}'"
 [ -v LabelTI ] && Cmd="$Cmd ti='$LabelTI $LabelTI'"
 [ -v RefText ] && Cmd="$Cmd RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
-[ -v ExtraFiles ] && Cmd="$Cmd extra='$ExtraFiles'"
-Cmd="$Cmd plottd.sh $OutSubDir/${MesonPrefix}_td.$MLUSeed.txt"
+Cmd="$Cmd plottd.sh $TDFile"
 DoCmd
 }
 
@@ -159,7 +160,7 @@ function TwoPointScan()
   local OutDir=$Ensemble/TwoPointScan/$Meson
   if [ -v SubDir ]; then OutDir="$OutDir/$SubDir"; fi
 
-  local Suffix=fold.$MLUSeed.h5
+  local Suffix=fold.$DataSeed.h5
   local FileBase=${Meson}_${p}_g5P_g5
   local LogFile=$OutDir/${FileBase}W.log
 
@@ -173,8 +174,8 @@ function TwoPointScan()
   local Cmd="MultiFit -o \"$OutDir/\" -i \"$InDir/$FileBase\""
   Cmd="$Cmd --debug-signals --mindp 2 --iter 100000 --strict 3 --covsrc binned"
   [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
-  Cmd="$Cmd P.fold.$DataSeed.h5,$OptP"
-  Cmd="$Cmd W.fold.$DataSeed.h5,$OptW"
+  Cmd="$Cmd P.$Suffix,$OptP"
+  Cmd="$Cmd W.$Suffix,$OptW"
   DoCmd || return 0
 
   Cmd="FitSummary --all --strict 0 -i \"$OutDir/\" -o \"$OutDir/\"" # --errdig 2 --tablen
@@ -201,37 +202,46 @@ function SimulP()
   local BaseFile
   local LogFile
   local i EKeys title
-  [ -n "$ExtraName" ] && ExtraName=".$ExtraName"
   sTimes="${aTimes[*]}"
   sTimes=${sTimes// /_}
   sTimes=${sTimes//:/_}
-  Cmd="$MultiFit -e 2 -N $L -o $OutDir/$Meson$ExtraName"
+  Cmd="$MultiFit -e 2 -N $L -o $OutDir/$Meson"
+  [ -n "$ExtraName" ] && Cmd +=" --extra '$ExtraName'"
   for((i=0; i < ${#aFitFiles[@]}; ++i)); do
-    Cmd="$Cmd ${aFitFiles[i]}.h5,t=${aTimes[i]}${aThin[i]:+t${aThin[i]}}"
+    Cmd+=" ${aFitFiles[i]}.h5,t=${aTimes[i]}${aThin[i]:+t${aThin[i]}}"
   done
-  BaseFile="$OutDir/$Meson$ExtraName.corr_$sTimes.g5P.model"
-  LogFile="$BaseFile.$MLUSeed.log"
+  
+  #echo "$Cmd"
+  local ModelBase="$(eval $Cmd --showname)"
+  local LogFile=$ModelBase.$MLUSeed.log
+  local FitFile=$ModelBase.$MLUSeed.h5
+  local TDFile=${ModelBase}_td.$MLUSeed.txt
+  #echo "--showname=$ModelBase"
+
   DoCmd EraseLog || return 0
 
   # Get the energy difference
   for((i=0; i < ${#aFitFiles[@]}; ++i)); do
-    EKeys=$EKeys${EKeys:+,}${Meson}_p2_${i}-E0
+    EKeys+=${EKeys:+,}${Meson}_p2_${i}-E0
   done
-  GetColumnValues $BaseFile.$MLUSeed.h5 "E_0(n^2=0)=" $EKeys
+  GetColumnValues $FitFile "E_0(n^2=0)=" $EKeys
 
   # Now plot it
-  for((i=0; i < ${#aFitFiles[@]}; ++i)); do title="$title${title:+ }n^2=$i"; done
+  for((i=0; i < ${#aFitFiles[@]}; ++i)); do title+="${title:+ }n^2=$i"; done
   Cmd="title='$title'"
-  [ -v RefText ] && Cmd="$Cmd RefText='$RefText'"
-  Cmd="$Cmd plottd.sh ${BaseFile}_td.$MLUSeed.txt"
+  [ -v RefText ] && Cmd+=" RefText='$RefText'"
+  Cmd+=" plottd.sh $TDFile"
   DoCmd
+
+  local ModelBaseName=${ModelBase##*/}
+  ModelBaseName=${ModelBaseName#*.}
   for((i=0; i < ${#aFitFiles[@]}; ++i))
   do
     Cmd="title='n^2=$i'"
-    [ -v RefText ] && Cmd="$Cmd RefText='E_0(n^2=${i})=${ColumnValues[@]:$((17+i*8)):1}, χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})'"
-    Cmd="$Cmd yrange='${ayRange[s_l,$i]}'"
-    Cmd="$Cmd save='$OutDir/${Meson}_p2_${i}$ExtraName.corr_$sTimes.g5P.model_log.$MLUSeed'"
-    Cmd="$Cmd mmin=$i mmax=$i plottd.sh ${BaseFile}_td.$MLUSeed.txt"
+    [ -v RefText ] && Cmd+=" RefText='E_0(n^2=${i})=${ColumnValues[@]:$((17+i*8)):1}, χ²/dof=${ColumnValues[@]:4:1} (pH=${ColumnValues[@]:12:1})'"
+    Cmd+=" yrange='${ayRange[s_l,$i]}'"
+    Cmd+=" save='$OutDir/${Meson}_p2_$i.${ModelBaseName}_log.$MLUSeed'"
+    Cmd+=" mmin=$i mmax=$i plottd.sh $TDFile"
     DoCmd
   done
 }

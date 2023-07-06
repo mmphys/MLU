@@ -163,6 +163,11 @@ template <typename T> void NoDuplicates( const std::vector<T> &v, const std::str
   }
 }
 
+inline bool LessThanIgnoreCase( const std::string &lhs, const std::string &rhs )
+{
+  return CompareIgnoreCase( lhs, rhs ) < 0;
+}
+
 struct LessCaseInsensitive
 {
   bool operator()( const std::string &lhs, const std::string &rhs ) const { return CompareIgnoreCase( lhs, rhs ) < 0;}

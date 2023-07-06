@@ -46,7 +46,7 @@ eval Spectators=(l s h${Heavy}) # The heavy is a bit sh#t as a spectator
 # y range for ZV for each action,spectator combination
 declare -A aYRange
 
-MultiFit="MultiFit --Hotelling 0.0001 --overwrite --debug-signals --strict 3"
+MultiFit="MultiFit --overwrite --debug-signals --strict 3 --summary 2"
 
 ############################################################
 
@@ -63,6 +63,8 @@ cd $OutDir
 
 # Optional
 # UnCorr:   uncorrelated fit
+# Stat:     Hotelling p-value
+# FitOptions: extra fit options
 
 ############################################################
 
@@ -80,22 +82,27 @@ local e2=${e2:-$e}
 
 # Derived
 local Meson; GetMeson Meson ${Q1} ${Q2}
-local Base=${Q1}_${Q2}_p2_0
-local InDir=$PlotData/corr/2ptp2/${Base}_g5P_g5
+local InDir=$PlotData/corr/2ptp2/${Q1}_${Q2}_p2_0_g5P_g5
 local InSuffix=.fold.$DataSeed.h5
 local OutDir=Fit/ZVEnergy
-local ModelBase=$OutDir/$Base.${UnCorr+un}corr_${ti}_${tf}_${ti2}_${tf2}.g5P_g5W.model
-local LogFile=$ModelBase.$MLUSeed.log
-local FitFile=$ModelBase.$MLUSeed.h5
-local TDFile=${ModelBase}_td.$MLUSeed.txt
 
 mkdir -p $OutDir
 
-local Cmd="$MultiFit --summary 2"
+# Make Fit command
+local Cmd="$MultiFit${Stat:+ --Hotelling $Stat}"
+[ -v ExtraName ] && Cmd="$Cmd --extra '$ExtraName'"
 [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
 [ -v UnCorr ] && Cmd="$Cmd --uncorr"
 Cmd="$Cmd -o $OutDir/ -i $InDir P$InSuffix,t=${ti}:${tf},e=$e W$InSuffix,t=${ti2}:${tf2},e=${e2}"
+
 #echo "A: $Cmd"
+local ModelBase="$(eval $Cmd --showname)"
+local LogFile=$ModelBase.$MLUSeed.log
+local FitFile=$ModelBase.$MLUSeed.h5
+local TDFile=${ModelBase}_td.$MLUSeed.txt
+#echo "--showname=$ModelBase"
+
+# Execute Fit command
 echo "$Cmd"  > $LogFile
 if  ! $Cmd &>> $LogFile
 then
@@ -169,14 +176,13 @@ function PlotZV()
 local x='((column(1)<2 || column(1)>word(FileDT,File)-2) ? NaN : column(1)-0.5*word(FileDT,File)+(word(FileDT,File)-24)*.025)'
 local fields=corr
 local key='bottom center maxrows 2'
-local yrange SpecDir SaveDir dT legend FileName FileNames
+local yrange SpecDir dT legend FileName FileNames
 export x fields key legend
 
+mkdir -p $ZVPlotDir
 for Action in ${Actions[@]}; do
   for Spectator in ${Spectators[@]}; do
     SpecDir=${Spectator}p2
-    SaveDir=$ZVPlotDir/$SpecDir
-    mkdir -p $SaveDir
     Combo=$Action,$Spectator
     [ -n "${aYRange[$Combo]}" ] && export yrange=${aYRange[$Combo]} || unset yrange
     for PW in g5{P,W}_g5{P,W}; do
@@ -191,7 +197,7 @@ for Action in ${Actions[@]}; do
       done
       if [ -n "$FileNames" ]
       then
-        save=$SaveDir/ZV_${Action}_spec_${Spectator}_${PW} plot.sh $FileNames
+        save=$ZVPlotDir/ZV_${Action}_spec_${Spectator}_${PW} plot.sh $FileNames
       fi
     done
   done
@@ -204,6 +210,8 @@ done
 
 # Optional
 # UnCorr:   uncorrelated fit
+# Stat:     Hotelling p-value
+# FitOptions: extra fit options
 
 ############################################################
 
@@ -224,22 +232,30 @@ local SpecDir=${Spec}p2
 local InDir=$ZVDir/$SpecDir
 local OutDir=Fit/$ZVDir/$SpecDir
 local InFile=ZV_${Q}_dt_${dT}
-local ModelBase=$OutDir/$InFile.${UnCorr+un}corr_${ti}_${tf}.$PW.model
 InFile=${InFile}_${Snk}_${Src}.fold.$MLUSeed.h5
-local LogFile=$ModelBase.$MLUSeed.log
-local FitFile=$ModelBase.$MLUSeed.h5
-local TDFile=${ModelBase}_td.$MLUSeed.txt
 local ZVName="$Q-ZV"
 
 mkdir -p $OutDir
 
-local Cmd="$MultiFit --summary 2"
+# Make Fit command
+local Cmd="$MultiFit${Stat:+ --Hotelling $Stat}"
+[ -v ExtraName ] && Cmd="$Cmd --extra '$ExtraName'"
 [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
 [ -v UnCorr ] && Cmd="$Cmd --uncorr"
-Cmd="$Cmd -o $OutDir/ -i $InDir/ $InFile,t=${ti}:${tf},model=const,const=$ZVName"
+Cmd="$Cmd -o $OutDir/ -i $InDir/ $InFile,t=${ti}:${tf}"
+[ -v Thin ] && Cmd="${Cmd}t$Thin"
+Cmd="${Cmd},model=const,const=$ZVName"
+
 #echo "A: $Cmd"
-echo "$Cmd"  > $LogFile
-if  ! $Cmd &>> $LogFile
+local ModelBase="$(eval $Cmd --showname)"
+local LogFile=$ModelBase.$MLUSeed.log
+local FitFile=$ModelBase.$MLUSeed.h5
+local TDFile=${ModelBase}_td.$MLUSeed.txt
+#echo "--showname=$ModelBase"
+
+# Execute Fit command
+     echo "$Cmd"  > $LogFile
+if ! eval  $Cmd &>> $LogFile
 then
   LastError=${PIPESTATUS[0]}
   if [ "$LastError" = 3 ]; then
@@ -250,7 +266,7 @@ then
 fi
 
 # Add this to my fit list
-[ -v ZVFit ] && echo "${Q} $FitFile" >> $ZVFit
+[ -v ZVFit ] && echo "${Q}"$'\t'"$FitFile" >> $ZVFit
 
 # Get the fit characteristics: energy difference, matrix element, test stat, ...
 GetColumnValues $FitFile "ZV($Q)=" '' ${ZVName##*-}

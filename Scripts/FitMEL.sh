@@ -20,6 +20,7 @@ set -e
 # Parameters:
 #   1: pSnk
 # FitOptionsRatio (optional) extra fit options for ratios, e.g. C2eSrc=3
+# FileSeries
 function FitTwoStage()
 (
   local pSnk=$1
@@ -45,14 +46,6 @@ qSpec=${qSpec:-s}
 pSnk=${pSnk:-0}
 pSrc=0
 Gamma=${Gamma:-gT}
-
-# Ranges for 2pt fits
-FitSnk=${FitSnk:-corr_10_26_7_26}
-FitSrc=${FitSrc:-corr_6_29_5_29}
-FileOpSnk=${FileOpSnk:-g5P_g5W}
-FileOpSrc=${FileOpSrc:-g5P_g5W}
-FileMomSnk=${FileMomSnk-_p2_$pSnk}
-FileMomSrc=${FileMomSrc-_p2_$pSrc}
 
 DeltaT=(${DeltaT:-24 28 32})
 TI=(${TI:-13 14 14})
@@ -106,6 +99,8 @@ SuffixR3=_p2_${pSnk}_${PW}.fold.${MLUSeed}
 PrefixCorr=$PlotData/$Corr/$SpecDir/quark_${qSnk}_${qSrc}_${Gamma}_dt_
 SuffixCorr=_p2_${pSrc}_ps2_${pSnk}_${PW}.fold.${DataSeed}
 
+local PlotOptions FitOptionsModel
+
 case "$FitWhat" in
   quark)
         FitName="C^{(3)}"
@@ -123,7 +118,7 @@ case "$FitWhat" in
   R3)
         FitName=R_3
         PlotName="C^{(3)}"
-        FitOptionsModel=",C2e=2,C2Model=cosh,raw${FitOptionsRatio+,$FitOptionsRatio}"
+        FitOptionsModel=",C2e=2,C2Model=cosh,raw"
         PrefixFit=$PrefixR3
         SuffixFit=$SuffixR3
         PrefixPlot=$PrefixCorr
@@ -136,17 +131,15 @@ case "$FitWhat" in
   *) echo "Error: FitWhat=$FitWhat"; exit 1;;
 esac
 
-[ -v UnCorr ] && FitType=uncorr || FitType=corr
-SuffixModel=g5P_g5W.model
+local FileOpModel; PCGetLonger $FileOpSnk $FileOpSrc FileOpModel
+SuffixModel=$FileOpModel.model
 MesonDir=$Ensemble/$MELFit/2ptp2
 InputMesonSnk=$MesonDir/$MesonSnk/${MesonSnk}${FileMomSnk}.$FitSnk.${FileOpSnk}.model.$MLUSeed.h5
 InputMesonSrc=$MesonDir/$MesonSrc/${MesonSrc}${FileMomSrc}.$FitSrc.${FileOpSrc}.model.$MLUSeed.h5
 
-OutPart1=${qSnk}_${qSrc}_${Gamma}_p2_$((pSrc > pSnk ? pSrc : pSnk))
-OutPart2=dt_$DeltaTAll
-OutPart3=$FitSnk.$FitSrc.$FileSeries
-OutSubDir=$Ensemble/$MELFit/$SpecDir
-OutLongName=${OutPart1}.${OutPart2}.${OutPart3}
+local OutBaseName=${qSnk}_${qSrc}_${Gamma}_p2_$((pSrc > pSnk ? pSrc : pSnk))
+local ExtraName=dt_$DeltaTAll.$FitSnk.$FitSrc${FileSeries+.$FileSeries}
+local OutSubDir=$Ensemble/$MELFit/$SpecDir
 
 ############################################################
 
@@ -158,31 +151,32 @@ OutLongName=${OutPart1}.${OutPart2}.${OutPart3}
 
 mkdir -p $OutSubDir
 
+local MySep
 for (( i = 0; i < ${#DeltaT[@]}; ++i ))
 do
-  FitList="$FitList${MySep}${PrefixFit}${DeltaT[i]}${SuffixFit}.h5,t=${TI[i]}:${TF[i]}"
-  if (( ${#ThinningPerFile[i]} )); then FitList="${FitList}t${ThinningPerFile[i]}"; fi
-  FitList="${FitList},e=$NumExp$FitOptionsModel"
-  if (( ${#FitOptionsPerFile[i]} )); then FitList="$FitList,${FitOptionsPerFile[i]}"; fi
-  Title="$Title${MySep}ΔT=${DeltaT[i]}"
-  LabelTI="$LabelTI${MySep}${PlotDataFrom}"
-  LabelTF="$LabelTF${MySep}$(( ${DeltaT[i]} - PlotDataFrom ))"
-  FitType=${FitType}_${TI[i]}_${TF[i]}
+  FitList+="$MySep$PrefixFit${DeltaT[i]}$SuffixFit.h5,e=$NumExp$FitOptionsModel,t=${TI[i]}:${TF[i]}"
+  [ -n "${ThinningPerFile[i]}" ] && FitList+="t${ThinningPerFile[i]}"
+  [ -n "${FitOptionsPerFile[i]}" ] && FitList+=",${FitOptionsPerFile[i]}"
+  [ -n "$FitOptionsRatio" ] && FitList+=",$FitOptionsRatio"
+  Title+="${MySep}ΔT=${DeltaT[i]}"
+  LabelTI+="$MySep${PlotDataFrom}"
+  LabelTF+="$MySep$(( ${DeltaT[i]} - PlotDataFrom ))"
   MySep=" "
 done
 
-BuildModel=$OutSubDir/${FitWhat}_${OutLongName}
+MultiFit="MultiFit -e 2 --Hotelling 0 --overwrite --debug-signals --summary 2 --extra '$ExtraName'"
+[ -v UnCorr ] && MultiFit+=" --uncorr"
+[ -v FitOptions ] && MultiFit+=" $FitOptions"
+Cmd="$MultiFit -o $OutSubDir/${FitWhat}_$OutBaseName $InputMesonSnk $InputMesonSrc $FitList"
 
-MultiFit="MultiFit -e 2 --Hotelling 0"
-MultiFit="$MultiFit --overwrite"
-[ -v FitOptions ] && MultiFit="$MultiFit $FitOptions"
-[ -v UnCorr ] && MultiFit="$MultiFit --uncorr"
-MultiFit="$MultiFit --debug-signals"
-Cmd="$MultiFit --summary 2 -o $BuildModel $InputMesonSnk $InputMesonSrc $FitList"
-BuildModel=$BuildModel.$FitType.$SuffixModel
 #echo "A: $Cmd"
-echo "$Cmd"  > $BuildModel.$MLUSeed.log
-if  ! $Cmd &>> $BuildModel.$MLUSeed.log
+local ModelBase="$(eval $Cmd --showname)"
+local LogFile=$ModelBase.$MLUSeed.log
+local FitFile=$ModelBase.$MLUSeed.h5
+local TDFile=${ModelBase}_td.$MLUSeed.txt
+
+     echo "$Cmd"  > $LogFile
+if ! eval  $Cmd &>> $LogFile
 then
   LastError=${PIPESTATUS[0]}
   if [ "$LastError" = 3 ]; then
@@ -193,9 +187,10 @@ then
 fi
 
 # Get the fit characteristics: energy difference, matrix element, test stat, ...
+local RefValFit RefValPlot
 Partial=EDiff,MEL${Gamma}0
 [[ $FitWhat = R3 ]] && Partial=$Partial,R3${Gamma}Raw
-ColumnValues=$(GetColumn --exact ChiSqPerDof,pValueH --partial $Partial ${BuildModel}.$MLUSeed.h5)
+ColumnValues=$(GetColumn --exact ChiSqPerDof,pValueH --partial $Partial $FitFile)
 if [ "$?" != 0 ]; then
   echo "Error: $ColumnValues"
   unset ColumnValues
@@ -207,50 +202,49 @@ else
   MEL="${ColumnValues[@]:24:8}"
   [[ $FitWhat = R3 ]] && R3Raw="${ColumnValues[@]:32:8}"
   RefText="MEL${Gamma}0=${ColumnValues[25]} ${UnCorr+uncorrelated }χ²/dof=${ColumnValues[4]} (pH=${ColumnValues[12]})"
+  case "$FitWhat" in
+    quark)
+          RefValFit="$EDiff";;
+    R3)
+          RefValFit="$R3Raw"
+          RefValPlot="$EDiff";;
+  esac
 fi
 
-case "$FitWhat" in
-  quark)
-        [ -v EDiff ] && RefValFit="$EDiff"
-        [ -v R3Raw ] && RefValPlot="$R3Raw";;
-  R3)
-        [ -v R3Raw ] && RefValFit="$R3Raw"
-        [ -v EDiff ] && RefValPlot="$EDiff";;
-esac
-
 # Plot it
-
 Cmd="ti='$LabelTI' tf='$LabelTF'"
-[ -v yrangeFit ] && Cmd="$Cmd yrange='$yrangeFit'"
-[ -v RefText ] && Cmd="$Cmd RefText='Fit $FitName: $RefText'"
-[ -v RefValFit ] && Cmd="$Cmd RefVal='$RefValFit'"
-Cmd="$Cmd title='$Title' field=$Field plottd.sh ${BuildModel}_td.$MLUSeed.txt"
+[ -v yrangeFit ] && Cmd+=" yrange='$yrangeFit'"
+[ -v RefText ] && Cmd+=" RefText='Fit $FitName: $RefText'"
+[ -v RefValFit ] && Cmd+=" RefVal='$RefValFit'"
+Cmd+=" title='$Title' field=$Field plottd.sh $TDFile"
 #echo "B: $Cmd"
-echo "$Cmd"  >> $BuildModel.$MLUSeed.log
-eval  $Cmd  &>> $BuildModel.$MLUSeed.log
+echo "$Cmd"  >> $LogFile
+eval  $Cmd  &>> $LogFile
 
 # Use the model to create the alternate
-
-OutSubDirName=$OutSubDir/2Plot
 
 unset MySep
 unset FitList
 for (( i = 0; i < ${#DeltaT[@]}; ++i ))
 do
-  ThisFile=${PrefixPlot}${DeltaT[i]}${SuffixPlot}
-  FitList="$FitList${MySep}${ThisFile}.h5,t=${TI[i]}:${TF[i]}${PlotOptions}"
+  FitList+="$MySep$PrefixPlot${DeltaT[i]}$SuffixPlot.h5,e=$NumExp$PlotOptions,t=${TI[i]}:${TF[i]}"
+  [ -n "${ThinningPerFile[i]}" ] && FitList+="t${ThinningPerFile[i]}"
   MySep=" "
 done
 
-mkdir -p $OutSubDirName
-PlotModelBase=$OutSubDirName/${PlotWhat}_${OutLongName}
+OutSubDirPlot=$OutSubDir/2Plot
+mkdir -p $OutSubDirPlot
 
-Cmd="$MultiFit -o $PlotModelBase ${BuildModel}.$MLUSeed.h5 $FitList"
-PlotModelBase=$PlotModelBase.${FitType}
+Cmd="$MultiFit -o $OutSubDirPlot/${PlotWhat}_$OutBaseName $FitFile $FitList"
 PlotModel=$PlotModelBase.$SuffixModel
+
 #echo "C: $Cmd"
-echo "$Cmd"  > $PlotModel.$MLUSeed.log
-if !  $Cmd &>> $PlotModel.$MLUSeed.log
+local PlotBase="$(eval $Cmd --showname)"
+      LogFile=$PlotBase.$MLUSeed.log
+local PlotTDFile=${PlotBase}_td.$MLUSeed.txt
+
+     echo "$Cmd"  > $LogFile
+if ! eval  $Cmd &>> $LogFile
 then
   LastError=${PIPESTATUS[0]}
   echo "Warning $LastError: $Cmd"
@@ -259,13 +253,13 @@ fi
 # Plot it
 
 Cmd="ti='$LabelTI' tf='$LabelTF'"
-[ -v yrangePlot ] && Cmd="$Cmd yrange='$yrangePlot'"
-[ -v RefText ] && Cmd="$Cmd RefText='Plot $PlotName: $RefText'"
-[ -v RefValPlot ] && Cmd="$Cmd RefVal='$RefValPlot'"
-Cmd="$Cmd title='$Title' field=$PlotField plottd.sh ${PlotModel}_td.$MLUSeed.txt"
+[ -v yrangePlot ] && Cmd+=" yrange='$yrangePlot'"
+[ -v RefText ] && Cmd+=" RefText='Plot $PlotName: $RefText'"
+[ -v RefValPlot ] && Cmd+=" RefVal='$RefValPlot'"
+Cmd+=" title='$Title' field=$PlotField plottd.sh $PlotTDFile"
 #echo "D: $Cmd"
-echo "$Cmd"      > $PlotModelBase.log
-if ! eval $Cmd &>> $PlotModelBase.log
+echo "$Cmd"     >> $LogFile
+if ! eval $Cmd &>> $LogFile
 then
   LastError=${PIPESTATUS[0]}
   echo "Error $LastError: $Cmd"
@@ -298,7 +292,7 @@ function DoSimulFit()
   local MesonSrc; GetMesonFile MesonSrc $qSrc $qSpec
   local i Title
   local FitBaseDir="$Ensemble/MELFit/3sm_sp2"
-  local FitBase="$FitBaseDir/R3_${qSnk}_${qSrc}_${Gamma}_p2_${pSnk}.dt"
+  local FitBase="$FitBaseDir/R3_${qSnk}_${qSrc}_${Gamma}_p2_${pSnk}"
   if [[ $pSnk = 0 || $Gamma != gT ]]; then unset IncludeSpatial; fi
   local NumDeltaT=${#DeltaT[@]}
   if [ -v SinkPriorDisp ] && ! [ -v SourcePriorFit ]; then
@@ -306,46 +300,47 @@ function DoSimulFit()
     return 1
   fi
   mkdir -p "$FitBaseDir"
+  local ExtraName=dt
   for(( i=0;i<NumDeltaT;++i)); do
-    FitBase="${FitBase}_${DeltaT[i]}"
-    Title="$Title${Title+ }'R3 ΔT=${DeltaT[i]}'"
+    ExtraName+="_${DeltaT[i]}"
+    Title+="${Title+ }'R3 ΔT=${DeltaT[i]}'"
   done
-  FitBase="${FitBase}.Simul"
-  local FitSuffix="${UnCorr+un}corr"
+  ExtraName+=".Simul"
   local Files
   if ! [ -v SinkPriorDisp ]; then
-    FitSuffix="${FitSuffix}_${aKaonTIP[pSnk]}_${aKaonTFP[pSnk]}_${aKaonTIW[pSnk]}_${aKaonTFW[pSnk]}"
-    Files="${Files} $PlotData/corr/2ptp2/${MesonSnk}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${aKaonTIP[pSnk]}:${aKaonTFP[pSnk]},e=2"
-    Files="${Files} $PlotData/corr/2ptp2/${MesonSnk}_p2_${pSnk}_g5P_g5W.fold.$MLUSeed.h5,t=${aKaonTIW[pSnk]}:${aKaonTFW[pSnk]},e=1"
+    Files+=" $PlotData/corr/2ptp2/${MesonSnk}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${aKaonTIP[pSnk]}:${aKaonTFP[pSnk]},e=2"
+    Files+=" $PlotData/corr/2ptp2/${MesonSnk}_p2_${pSnk}_g5P_g5W.fold.$MLUSeed.h5,t=${aKaonTIW[pSnk]}:${aKaonTFW[pSnk]},e=1"
   fi
   if [ -v SourcePriorFit ]; then
-    Files="${Files} $FitBaseDir/$SourcePriorFit,${MesonSrc}_p2_0-E,${MesonSrc}_p2_0-g5P"
+    Files+=" $FitBaseDir/$SourcePriorFit,${MesonSrc}_p2_0-E,${MesonSrc}_p2_0-g5P"
     if [ -v SinkPriorDisp ]; then
       # TODO: This next only works for Z2 overlap coeffficients which are momentum independent
-      Files="${Files},${MesonSnk}_p2_0-E,${MesonSnk}_p2_0-g5P=${MesonSnk}_p2_${pSnk}-g5P"
+      Files+=",${MesonSnk}_p2_0-E,${MesonSnk}_p2_0-g5P=${MesonSnk}_p2_${pSnk}-g5P"
     fi
   else
-  local FitSuffix="${FitSuffix}_${aDsTIP[pSrc]}_${aDsTFP[pSrc]}_${aDsTIW[pSrc]}_${aDsTFW[pSrc]}"
-    Files="${Files} $PlotData/corr/2ptp2/${MesonSrc}_p2_${pSrc}_g5P_g5P.fold.$MLUSeed.h5,t=${aDsTIP[pSrc]}:${aDsTFP[pSrc]},e=2"
-    Files="${Files} $PlotData/corr/2ptp2/${MesonSrc}_p2_${pSrc}_g5P_g5W.fold.$MLUSeed.h5,t=${aDsTIW[pSrc]}:${aDsTFW[pSrc]},e=1"
+    Files+=" $PlotData/corr/2ptp2/${MesonSrc}_p2_${pSrc}_g5P_g5P.fold.$MLUSeed.h5,t=${aDsTIP[pSrc]}:${aDsTFP[pSrc]},e=2"
+    Files+=" $PlotData/corr/2ptp2/${MesonSrc}_p2_${pSrc}_g5P_g5W.fold.$MLUSeed.h5,t=${aDsTIW[pSrc]}:${aDsTFW[pSrc]},e=1"
   fi
   for(( i=0;i<NumDeltaT;++i)); do
-    Files="${Files} $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]},C2e=2,C2Model=cosh,raw${FitOptionsRatio+,$FitOptionsRatio}"
-    FitSuffix="${FitSuffix}_${TI[i]}_${TF[i]}"
+    Files+=" $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]},C2e=2,C2Model=cosh,raw${FitOptionsRatio+,$FitOptionsRatio}"
   done
   if [ -v IncludeSpatial ]; then
     for(( i=0;i<NumDeltaT;++i)); do
-      Files="${Files} $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_gXYZ_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]},C2e=2,C2Model=cosh,raw${FitOptionsRatio+,$FitOptionsRatio}"
-      FitSuffix="${FitSuffix}_${TI[i]}_${TF[i]}"
+      Files+=" $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_gXYZ_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]},C2e=2,C2Model=cosh,raw${FitOptionsRatio+,$FitOptionsRatio}"
     done
   fi
-  local OutBase="$FitBase.$FitSuffix.g5P_g5W.model"
-  local LogFile="$OutBase.$MLUSeed.log"
   local Cmd="MultiFit -e $NumExp --Hotelling 0 --overwrite --debug-signals --summary 2"
-  [ -v SinkPriorDisp ] && Cmd="$Cmd -N $L"
-  [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
-  [ -v UnCorr ] && Cmd="$Cmd --uncorr"
-  Cmd="$Cmd -o $FitBase $Files"
+  [ -v SinkPriorDisp ] && Cmd+=" -N $L"
+  [ -v FitOptions ] && Cmd+=" $FitOptions"
+  [ -v UnCorr ] && Cmd+=" --uncorr"
+  Cmd+=" -o $FitBase --extra '$ExtraName' $Files"
+
+  #echo $Cmd
+  local ModelBase="$(eval $Cmd --showname)"
+  local LogFile=$ModelBase.$MLUSeed.log
+  local FitFile=$ModelBase.$MLUSeed.h5
+  local TDFile=${ModelBase}_td.$MLUSeed.txt
+
   echo $Cmd &>  $LogFile
   if ! eval $Cmd &>> $LogFile; then echo "Returned ${PIPESTATUS[0]}" &>> $LogFile; fi
 
@@ -353,7 +348,7 @@ function DoSimulFit()
   Exact=ChiSqPerDof,pValueH,${MesonSnk}_p2_${pSnk}-E0,${MesonSrc}_p2_${pSrc}-E0
   Partial=EDiff,R3${Gamma}Raw,MEL${Gamma}0
   if [ -v IncludeSpatial ]; then Partial=$Partial,R3gXYZRaw,MELgXYZ0; fi
-  ColumnValues=$(GetColumn --exact $Exact --partial $Partial ${OutBase}.$MLUSeed.h5)
+  ColumnValues=$(GetColumn --exact $Exact --partial $Partial $FitFile)
   if [ "$?" != 0 ]; then
     echo "Error: $ColumnValues"
     unset ColumnValues
@@ -368,18 +363,17 @@ function DoSimulFit()
     #RefText="MEL${Gamma}0=${ColumnValues[25]} $Stats"
   fi
 
-  local PlotFile="${OutBase}_td.$MLUSeed.txt"
   ModelDTStart=0
   if ! [ -v SinkPriorDisp ]; then
-    RefText="Fit R_3: K m_{eff}(${pSnk})=${ColumnValues[17]} $Stats" RefVal="${ColumnValues[@]:16:8}" title="'K p-p' 'K p-w'" yrange=${ayRange[$MesonSnk,$pSnk]} mmax=1 plottd.sh $PlotFile &>> $LogFile
+    RefText="Fit R_3: K m_{eff}(${pSnk})=${ColumnValues[17]} $Stats" RefVal="${ColumnValues[@]:16:8}" title="'K p-p' 'K p-w'" yrange=${ayRange[$MesonSnk,$pSnk]} mmax=1 plottd.sh $TDFile &>> $LogFile
     ModelDTStart=$((ModelDTStart+2))
   fi
   if ! [ -v SourcePriorFit ]; then
-    RefText="Fit R_3: D_s m_{eff}(${pSnk})=${ColumnValues[25]} $Stats" RefVal="${ColumnValues[@]:24:8}" title="'D_s p-p' 'D_s p-w'" yrange=${ayRange[$MesonSrc,$pSrc]} mmin=$ModelDTStart mmax=$((ModelDTStart+1)) plottd.sh $PlotFile &>> $LogFile
+    RefText="Fit R_3: D_s m_{eff}(${pSnk})=${ColumnValues[25]} $Stats" RefVal="${ColumnValues[@]:24:8}" title="'D_s p-p' 'D_s p-w'" yrange=${ayRange[$MesonSrc,$pSrc]} mmin=$ModelDTStart mmax=$((ModelDTStart+1)) plottd.sh $TDFile &>> $LogFile
     ModelDTStart=$((ModelDTStart+2))
   fi
-  RefText="Fit R_3: MEL${Gamma}0(${pSnk})=${ColumnValues[49]} $Stats" RefVal="${ColumnValues[@]:40:8}" title="$Title" field=corr yrange=${ayrangeR3[$Gamma,$pSnk]} mmin=$ModelDTStart mmax=$((ModelDTStart+NumDeltaT-1)) plottd.sh $PlotFile &>> $LogFile
+  RefText="Fit R_3: MEL${Gamma}0(${pSnk})=${ColumnValues[49]} $Stats" RefVal="${ColumnValues[@]:40:8}" title="$Title" field=corr yrange=${ayrangeR3[$Gamma,$pSnk]} mmin=$ModelDTStart mmax=$((ModelDTStart+NumDeltaT-1)) plottd.sh $TDFile &>> $LogFile
   if [ -v IncludeSpatial ]; then
-    RefText="Fit R_3: MELgXYZ0(${pSnk})=${ColumnValues[65]} $Stats" RefVal="${ColumnValues[@]:56:8}" title="$Title" field=corr yrange=${ayrangeR3[gXYZ,$pSnk]} mmin=$((ModelDTStart+NumDeltaT)) mmax=$((ModelDTStart+2*NumDeltaT-1)) plottd.sh $PlotFile &>> $LogFile
+    RefText="Fit R_3: MELgXYZ0(${pSnk})=${ColumnValues[65]} $Stats" RefVal="${ColumnValues[@]:56:8}" title="$Title" field=corr yrange=${ayrangeR3[gXYZ,$pSnk]} mmin=$((ModelDTStart+NumDeltaT)) mmax=$((ModelDTStart+2*NumDeltaT-1)) plottd.sh $TDFile &>> $LogFile
   fi
 )

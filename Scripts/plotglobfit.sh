@@ -78,7 +78,7 @@ set linetype 8 ps 0.66 pt 7 lc rgb 0xC00000 #red
 #print "word(Ensembles,1)=".word(Ensembles,1)
 #print "word(Ensembles,2)=".word(Ensembles,2)
 #print "word(Ensembles,3)=".word(Ensembles,3)
-plot for [i=1:4] PlotFile \
+plot for [i=1:5] PlotFile \
         using (stringcolumn("ensemble") eq word(Ensembles,i) ? column(xAxis) * 1e-18 : NaN) \
         :(column("data")):(column("data_low")):(column("data_high")) \
         with yerrorbars title word(Ensembles,i) ls i, \

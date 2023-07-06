@@ -173,7 +173,7 @@ void FitterThreadGSL::Minimise( int )
     if( gsl_e )
       GSLLG::Error( "FitterThreadGSL::Minimise() unable to compute starting residual using gsl_blas_ddot()",
                    __FILE__, __LINE__, gsl_e );
-    std::cout << (state.bValid ? "Intermediate" : "Guess") << " chi^2=" << TestStat << Common::NewLine;
+    std::cout << (state.bValid ? "Intermediate" : "Guess") << " uncorrelated chi^2=" << TestStat << Common::NewLine;
   }
 
   // solve the system with a maximum of parent.MaxIt iterations

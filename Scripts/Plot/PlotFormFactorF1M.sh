@@ -61,6 +61,6 @@ EndFitChoices
 
 ############################################################
 
-#series='old' PlotFormFactor.sh
-#series='old' FitSeries='std' UnCorr= PlotFormFactor.sh
+series='old' PlotFormFactor.sh
+series='old' FitSeries='std' UnCorr= PlotFormFactor.sh
 series='better' PlotFormFactor.sh

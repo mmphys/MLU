@@ -127,30 +127,30 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-e 2"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o Fit/ZV/sp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o 2ptp2/s_l/"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-i F1M/corr/2ptp2/s_l_p2_0_g5P_g5"
+            argument = "$HOME/NoSync/M2/Renorm/ZV/sp2/ZV_l_dt_28_g5P_g5P.fold.&apos;*&apos;.h5,model=const,const=l-zv,t=8:20"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "P.fold.&apos;*&apos;.h5,t=10:26"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "W.fold.&apos;*&apos;.h5,t=7:26"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "MLUSeed"
-            value = "JackKNiFE"
-            isEnabled = "NO">
+            value = "2475361470"
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "MLUCovarCentral"
