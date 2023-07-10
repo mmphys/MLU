@@ -95,10 +95,12 @@ template <typename T> int ValSigFig<T>::GetExponent() const
     throw std::invalid_argument( "SigFig " + std::to_string( SigFig ) + " invalid" );
   int iExp;
   const int iClass{ Class() };
-  if( iClass == FP_INFINITE || iClass == FP_NAN || Zero() )
+  if( iClass == FP_INFINITE || iClass == FP_NAN )
   {
     iExp = std::numeric_limits<int>::min();
   }
+  else if( Zero() )
+    iExp = 0;
   else
   {
     // Save the exponent of the leading digit
@@ -194,7 +196,7 @@ template <typename T> ValSigFig<T>::operator std::string() const
     else
       ss << "NaN";
   }
-  else if( Zero() && Exponent == std::numeric_limits<T>::min() )
+  else if( Zero() )
   {
     ss << std::fixed << std::setprecision( SigFig - 1 ) << Value;
   }

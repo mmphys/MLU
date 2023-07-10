@@ -57,7 +57,7 @@ case "$FitWhat" in
            *) echo "FitWhat=$FitWhat unrecognised"; exit 1;;
 esac
 NumExp=${NumExp:-3} # How many exponentials in the 3pt fit
-FileSeries=${FileSeries:-E$NumExp}
+FileSeries=${Alt+alt_}${FileSeries:-E$NumExp}
 
 PW=${PW:-g5P_g5P}
 Ratio=${Ratio:-ratioE1ZV1}

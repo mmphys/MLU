@@ -9,8 +9,9 @@ FitSeries=disp #${series:-disp}
 MLUSeed=2263212701
 
 Continuum="Continuum --debug-signals --Hotelling 0 --summary 2"
-Continuum="$Continuum --model ${MLUCache}EnsembleInfo.h5"
-Continuum="$Continuum -i $HOME/NoSync/"
+Continuum+=" --overwrite"
+Continuum+=" --model ${MLUCache}EnsembleInfo.h5"
+Continuum+=" -i $HOME/NoSync/"
 
 pMax=4
 pMaxF1M=6
