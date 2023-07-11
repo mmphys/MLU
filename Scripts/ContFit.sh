@@ -3,7 +3,7 @@
 #set -x
 set -e
 
-Renorm=${Renorm:-C1C2F1MM1M2}
+Renorm=${Renorm:-C1C2F1MM1M2M3}
 OutDir=Cont/$Renorm
 FitSeries=disp #${series:-disp}
 MLUSeed=2263212701
@@ -25,6 +25,7 @@ do
   Files="$Files F1M/FormFactor/old/$pStringF1M"
   Files="$Files M1/FormFactor/disp/$pString"
   Files="$Files M2/FormFactor/disp/$pString"
+  Files="$Files M3/FormFactor/disp/$pString"
   OutSubDir="$OutDir/${FitSeries}_"
   ((Some)) && OutSubDir="${OutSubDir}some" || OutSubDir="${OutSubDir}all"
   mkdir -p $OutSubDir

@@ -206,7 +206,7 @@ function SimulP()
   sTimes=${sTimes// /_}
   sTimes=${sTimes//:/_}
   Cmd="$MultiFit -e 2 -N $L -o $OutDir/$Meson"
-  [ -n "$ExtraName" ] && Cmd +=" --extra '$ExtraName'"
+  [ -n "$ExtraName" ] && Cmd+=" --extra '$ExtraName'"
   for((i=0; i < ${#aFitFiles[@]}; ++i)); do
     Cmd+=" ${aFitFiles[i]}.h5,t=${aTimes[i]}${aThin[i]:+t${aThin[i]}}"
   done
