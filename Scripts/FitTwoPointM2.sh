@@ -21,27 +21,26 @@ if [ -v DoScan ]; then
   DoScanW=
 fi
 
-# Scan ranges haven't been updated from  M1
 if [ -v DoScanP ]; then
-  Meson=h${Heavy}_s SubDir=e2_1a TwoPointScan t=5:28:11:1,e=2 t=15:28,e=1
-  Meson=h${Heavy}_s SubDir=P2W2a TwoPointScan t=5:28:11:1,e=2 t=9:28,e=2
-  p=0 Meson=s_l SubDir=e2_1a TwoPointScan t=3:18:8:1,e=2 t=11:18,e=1
-  p=0 Meson=s_l SubDir=P2W2a TwoPointScan t=3:18:8:1,e=2 t=6:18,e=2
-  p=1 Meson=s_l SubDir=e2_1a TwoPointScan t=3:19:8:1,e=2 t=8:19,e=1
-  p=2 Meson=s_l SubDir=e2_1a TwoPointScan t=3:19:8:1,e=2 t=9:19,e=1
-  p=3 Meson=s_l SubDir=e2_1a TwoPointScan t=3:16:8:1,e=2 t=8:21,e=1
-  p=4 Meson=s_l SubDir=e2_1a TwoPointScan t=4:19:7:1,e=2 t=10:21,e=1
+  Meson=h${Heavy}_s SubDir=e2_1a TwoPointScan t=8:25:6:3,e=2 t=19:26,e=1
+  Meson=h${Heavy}_s SubDir=P2W2a TwoPointScan t=8:25:6:3,e=2 t=12:26,e=2
+  p=0 Meson=s_l SubDir=e2_1a TwoPointScan t=4:19:6:3,e=2 t=8:20,e=1
+  p=1 Meson=s_l SubDir=e2_1a TwoPointScan t=4:19:6:3,e=2 t=7:20,e=1
+  p=2 Meson=s_l SubDir=e2_1a TwoPointScan t=4:19:6:3,e=2 t=6:20,e=1
+  p=3 Meson=s_l SubDir=e2_1a TwoPointScan t=4:18:6:3,e=2 t=6:19,e=1
+  p=4 Meson=s_l SubDir=e2_1a TwoPointScan t=4:15:6:3,e=2 t=13:16,e=1
+  p=4 Meson=s_l SubDir=P2W2a TwoPointScan t=4:15:6:3,e=2 t=8:12,e=1
 fi
 
 if [ -v DoScanW ]; then
-  Meson=h${Heavy}_s SubDir=e2_1b TwoPointScan t=10:28,e=2 t=11:28:9:1,e=1
-  Meson=h${Heavy}_s SubDir=P2W2b TwoPointScan t=10:28,e=2 t=5:28:9:1,e=2
-  p=0 Meson=s_l SubDir=e2_1b TwoPointScan t=6:18,e=2 t=6:18:11:1,e=1
-  p=0 Meson=s_l SubDir=P2W2b TwoPointScan t=6:18,e=2 t=3:18:8:1,e=2
-  p=1 Meson=s_l SubDir=e2_1b TwoPointScan t=6:19,e=2 t=5:18:8:1,e=1
-  p=2 Meson=s_l SubDir=e2_1b TwoPointScan t=6:19,e=2 t=5:18:8:1,e=1
-  p=3 Meson=s_l SubDir=e2_1b TwoPointScan t=6:16,e=2 t=5:21:8:1,e=1
-  p=4 Meson=s_l SubDir=e2_1b TwoPointScan t=7:19,e=2 t=6:21:10:1,e=1
+  Meson=h${Heavy}_s SubDir=e2_1b TwoPointScan t=10:26,e=2 t=18:25:3:3,e=1
+  Meson=h${Heavy}_s SubDir=P2W2b TwoPointScan t=10:26,e=2 t=11:25:3:3,e=2
+  p=0 Meson=s_l SubDir=e2_1b TwoPointScan t=6:20,e=2 t=7:19:3:3,e=1
+  p=1 Meson=s_l SubDir=e2_1b TwoPointScan t=6:20,e=2 t=6:19:3:3,e=1
+  p=2 Meson=s_l SubDir=e2_1b TwoPointScan t=7:20,e=2 t=5:19:3:3,e=1
+  p=3 Meson=s_l SubDir=e2_1b TwoPointScan t=7:19,e=2 t=5:18:3:3,e=1
+  p=4 Meson=s_l SubDir=e2_1b TwoPointScan t=6:16,e=2 t=12:15:3:3,e=1
+  p=4 Meson=s_l SubDir=P2W2b TwoPointScan t=6:16,e=2 t=7:11:3:3,e=1
 fi
 
 ############################################################
@@ -73,11 +72,22 @@ if [ "${DoOld+x}" = x ]; then
   export ti='3 3'
   p=0 TI=6 TF=20 TI2=8 NumExp2=1 FitTwoPoint # Preferred
   p=1 TI=6 TF=20 TI2=7 NumExp2=1 FitTwoPoint
-  p=2 TI=6 TF=20 TI2=6 NumExp2=1 FitTwoPoint
-  p=3 TI=6 TF=19 TI2=6 NumExp2=1 FitTwoPoint
-  p=4 TI=6 TF=16 TI2=13 NumExp2=1 Stat=0 FitTwoPoint
+  p=2 TI=7 TF=20 TI2=6 NumExp2=1 FitTwoPoint # Preferred
+  p=2 TI=6 TF=20 TI2=6 NumExp2=1 FitTwoPoint # First attempt - dispersion relation not good
+  p=3 TI=7 TF=19 TI2=6 NumExp2=1 FitTwoPoint # Preferred
+  p=3 TI=6 TF=19 TI2=6 NumExp2=1 FitTwoPoint # First attempt - dispersion relation not good
+  p=4 TI=6 TF=16 TI2=13 NumExp2=1 FitTwoPoint
+  p=4 TI=6 TF=16 TI2=8 TF2=12 NumExp2=1 FitTwoPoint
   )
 fi
+
+  (
+  export Meson=s_l
+  export NumExp=2
+  export LabelTF=30
+  export ti='3 3'
+  p=3 TI=7 TF=19 TI2=9 NumExp2=1 FitTwoPoint # Preferred
+  )
 
 # Simultaneous Kaon fits, multiple momenta
 if [ -v DoDisp ]; then
@@ -92,16 +102,18 @@ if [ -v DoDisp ]; then
   [ -v FitOptions ] && MultiFit="$MultiFit $FitOptions"
 
   # Compare unthinned with a couple of choices of thinning
+  aTimes=(6:20 6:20 7:20 7:19 6:16)
   for (( i=0; i<3; ++i )); do
-    aTimes=(6:20 6:20 6:20 6:19 6:16)
+  (
     case $i in
       # Preferred thinning: 1:3:2 on non-zero momenta
-      2) aThin=('' 1:3:2 1:3:2 1:3:2 1:3:2);; # aTimes=(6:20 6:19 6:19 6:19 6:15);;
+      2) aThin=('' 1:3:2 1:3:2 1:3:2 1:3:2);; # aTimes=(6:20 6:19 7:20 7:18 6:15);;
       # Others
       1) aThin=('' 2 2 2 2);; # aTimes[3]='6:18';;
       *) unset aThin;;
     esac
     yrange=0.21:0.62 SimulP s_l # Simultaneous fits of point-point data at all momenta
+  )
   done
 fi
 

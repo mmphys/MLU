@@ -21,27 +21,26 @@ if [ -v DoScan ]; then
   DoScanW=
 fi
 
-# Scan ranges haven't been updated from  M1
 if [ -v DoScanP ]; then
-  Meson=h${Heavy}_s SubDir=e2_1a TwoPointScan t=5:28:11:1,e=2 t=15:28,e=1
-  Meson=h${Heavy}_s SubDir=P2W2a TwoPointScan t=5:28:11:1,e=2 t=9:28,e=2
-  p=0 Meson=s_l SubDir=e2_1a TwoPointScan t=3:18:8:1,e=2 t=11:18,e=1
-  p=0 Meson=s_l SubDir=P2W2a TwoPointScan t=3:18:8:1,e=2 t=6:18,e=2
-  p=1 Meson=s_l SubDir=e2_1a TwoPointScan t=3:19:8:1,e=2 t=8:19,e=1
-  p=2 Meson=s_l SubDir=e2_1a TwoPointScan t=3:19:8:1,e=2 t=9:19,e=1
-  p=3 Meson=s_l SubDir=e2_1a TwoPointScan t=3:16:8:1,e=2 t=8:21,e=1
-  p=4 Meson=s_l SubDir=e2_1a TwoPointScan t=4:19:7:1,e=2 t=10:21,e=1
+  Meson=h${Heavy}_s SubDir=e2_1a TwoPointScan t=8:23:6:3,e=2 t=18:24,e=1
+  Meson=h${Heavy}_s SubDir=P2W2a TwoPointScan t=8:23:6:3,e=2 t=11:24,e=2
+  p=0 Meson=s_l SubDir=e2_1a TwoPointScan t=5:20:6:3,e=2 t=13:21,e=1
+  p=0 Meson=s_l SubDir=P2W2a TwoPointScan t=5:20:6:3,e=2 t=7:21,e=2
+  p=1 Meson=s_l SubDir=e2_1a TwoPointScan t=4:19:6:3,e=2 t=7:20,e=1
+  p=2 Meson=s_l SubDir=e2_1a TwoPointScan t=4:17:6:3,e=2 t=7:18,e=1
+  p=3 Meson=s_l SubDir=e2_1a TwoPointScan t=4:17:6:3,e=2 t=8:18,e=1
+  p=4 Meson=s_l SubDir=e2_1a TwoPointScan t=4:15:6:3,e=2 t=6:16,e=1
 fi
 
 if [ -v DoScanW ]; then
-  Meson=h${Heavy}_s SubDir=e2_1b TwoPointScan t=10:28,e=2 t=11:28:9:1,e=1
-  Meson=h${Heavy}_s SubDir=P2W2b TwoPointScan t=10:28,e=2 t=5:28:9:1,e=2
-  p=0 Meson=s_l SubDir=e2_1b TwoPointScan t=6:18,e=2 t=6:18:11:1,e=1
-  p=0 Meson=s_l SubDir=P2W2b TwoPointScan t=6:18,e=2 t=3:18:8:1,e=2
-  p=1 Meson=s_l SubDir=e2_1b TwoPointScan t=6:19,e=2 t=5:18:8:1,e=1
-  p=2 Meson=s_l SubDir=e2_1b TwoPointScan t=6:19,e=2 t=5:18:8:1,e=1
-  p=3 Meson=s_l SubDir=e2_1b TwoPointScan t=6:16,e=2 t=5:21:8:1,e=1
-  p=4 Meson=s_l SubDir=e2_1b TwoPointScan t=7:19,e=2 t=6:21:10:1,e=1
+  Meson=h${Heavy}_s SubDir=e2_1b TwoPointScan t=10:24,e=2 t=17:23:3:3,e=1
+  Meson=h${Heavy}_s SubDir=P2W2b TwoPointScan t=10:24,e=2 t=10:23:3:3,e=2
+  p=0 Meson=s_l SubDir=e2_1b TwoPointScan t=6:21,e=2 t=12:20:3:3,e=1
+  p=0 Meson=s_l SubDir=P2W2b TwoPointScan t=7:21,e=2 t=6:20:3:3,e=2
+  p=1 Meson=s_l SubDir=e2_1b TwoPointScan t=6:20,e=2 t=6:19:3:3,e=1
+  p=2 Meson=s_l SubDir=e2_1b TwoPointScan t=6:18,e=2 t=6:17:3:3,e=1
+  p=3 Meson=s_l SubDir=e2_1b TwoPointScan t=7:18,e=2 t=7:17:3:3,e=1
+  p=4 Meson=s_l SubDir=e2_1b TwoPointScan t=7:16,e=2 t=5:15:3:3,e=1
 fi
 
 ############################################################
@@ -71,13 +70,16 @@ if [ "${DoOld+x}" = x ]; then
   export NumExp=2
   export LabelTF=30
   export ti='3 3'
-  p=0 TI=7 TF=21 TI2=13 NumExp2=1 FitTwoPoint # Preferred
+  p=0 TI=6 TF=21 TI2=13 NumExp2=1 FitTwoPoint # Preferred
+  p=0 TI=7 TF=21 TI2=13 NumExp2=1 FitTwoPoint
   p=0 TI=7 TF=21 FitTwoPoint
   p=0 TI=7 TF=18 TI2=13 NumExp2=1 FitTwoPoint
   p=0 TI=7 TF=18 TI2=10 NumExp2=1 FitTwoPoint
   p=1 TI=6 TF=20 TI2=7 NumExp2=1 FitTwoPoint
   p=2 TI=6 TF=18 TI2=7 NumExp2=1 FitTwoPoint
+  p=3 TI=7 TF=18 TI2=8 NumExp2=1 FitTwoPoint # Preferred
   p=3 TI=6 TF=18 TI2=8 NumExp2=1 FitTwoPoint
+  p=4 TI=7 TF=16 TI2=6 NumExp2=1 FitTwoPoint # Preferred
   p=4 TI=6 TF=16 NumExp2=1 FitTwoPoint
   )
 fi
@@ -95,7 +97,7 @@ if [ -v DoDisp ]; then
   [ -v FitOptions ] && MultiFit="$MultiFit $FitOptions"
 
   # Compare unthinned with a couple of choices of thinning
-  aTimes=(7:21 6:20 6:18 6:18 6:16)
+  aTimes=(6:21 6:20 6:18 7:18 7:16)
   for (( i=0; i<3; ++i )); do
   (
     case $i in
@@ -103,9 +105,9 @@ if [ -v DoDisp ]; then
       2) aThin=('' 1:3:2 1:3:2 1:3:2 1:3:2);;
       # Others
       1) aThin=('' 2 2 2 2);;
-      *) ExtraName=NoThin;;
+      *) : ;;
     esac
-    yrange=0.21:0.62 SimulP s_l $ExtraName # Simultaneous fits of point-point data at all momenta
+    yrange=0.21:0.62 SimulP s_l # Simultaneous fits of point-point data at all momenta
   )
   done
 fi

@@ -668,18 +668,21 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     // Save the file
     if( !bAllParamsKnown )
       OutputModel.Write( ModelFileName );
-    if( SummaryLevel >= 1 )
+    constexpr bool bVerbose{ true };
+    if( bFitCorr )
     {
-      const bool bVerbose{ true };
-      if( bFitCorr )
-        OutputModel.WriteSummaryTD( ds,
-                    Common::MakeFilename( sModelBase, Common::sModel + "_td", Seed, TEXT_EXT ),
-                    bVerbose );
-      else
-        WriteSummaryTD( Common::ReplaceExtension( ModelFileName, DAT_EXT ), bVerbose );
+      // We're fitting correlators
+      if( SummaryLevel >= 1 )
+      {
+        const std::string FileName{ Common::MakeFilename( sModelBase, Common::sModel + "_td",
+                                                          Seed, TEXT_EXT ) };
+        OutputModel.WriteSummaryTD( ds, FileName, bVerbose );
+        if( SummaryLevel >= 2 )
+          OutputModel.WriteSummary( Common::ReplaceExtension( ModelFileName, TEXT_EXT ) );
+      }
     }
-    if( SummaryLevel >= 2 )
-      OutputModel.WriteSummary( Common::ReplaceExtension( ModelFileName, TEXT_EXT ) );
+    else
+      WriteSummaryTD( Common::ReplaceExtension( ModelFileName, DAT_EXT ), bVerbose );
   }
   return bOK;
 }

@@ -172,7 +172,7 @@ function TwoPointScan()
   mkdir -p $OutDir # So I can redirect output here
 
   local Cmd="MultiFit -o \"$OutDir/\" -i \"$InDir/$FileBase\""
-  Cmd="$Cmd --debug-signals --mindp 2 --iter 100000 --strict 3 --covsrc binned"
+  Cmd="$Cmd --debug-signals --mindp 2 --iter 100000 --strict 3"
   [ -v FitOptions ] && Cmd="$Cmd $FitOptions"
   Cmd="$Cmd P.$Suffix,$OptP"
   Cmd="$Cmd W.$Suffix,$OptW"
@@ -196,7 +196,6 @@ function TwoPointScan()
 function SimulP()
 {
   local Meson=${1:-s_l}
-  local ExtraName=$2
   local Cmd
   local sTimes
   local BaseFile

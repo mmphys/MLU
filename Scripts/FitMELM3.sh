@@ -40,20 +40,20 @@ ayRange[s_l,4]='0.37:0.62'
 declare -A ayrangeR3
 declare -A ayrangeMEL
 ayrangeR3[gT,0]=0.0014:0.0019
-ayrangeMEL[gT,0]=0.58:0.61
+ayrangeMEL[gT,0]=0.57:0.60
 ayrangeR3[gT,1]=0.0012:0.0018
-ayrangeMEL[gT,1]=0.51:0.54
+ayrangeMEL[gT,1]=0.50:0.53
 ayrangeR3[gT,2]=0.0010:0.0016
-ayrangeMEL[gT,2]=0.45:0.50
+ayrangeMEL[gT,2]=0.44:0.49
 ayrangeR3[gT,3]=0.0009:0.0015
-ayrangeMEL[gT,3]=0.34:0.45
+ayrangeMEL[gT,3]=0.36:0.47
 ayrangeR3[gT,4]=0.0008:0.0016
 ayrangeMEL[gT,4]=0.30:0.46
-ayrangeR3[gXYZ,1]=0.00040:0.00065
+ayrangeR3[gXYZ,1]=0.00035:0.00060
 ayrangeMEL[gXYZ,1]=0.46:0.56
 ayrangeR3[gXYZ,2]=0.00030:0.00055
 ayrangeMEL[gXYZ,2]=0.42:0.50
-ayrangeR3[gXYZ,3]=0.00025:0.00055
+ayrangeR3[gXYZ,3]=0.00020:0.00050
 ayrangeMEL[gXYZ,3]=0.36:0.48
 ayrangeR3[gXYZ,4]=0.00020:0.00050
 ayrangeMEL[gXYZ,4]=0.30:0.48
@@ -79,7 +79,7 @@ else
 fi
 aMesonFileMom[h${Heavy}_s,0]=_p2_0
 
-aKaonTIP=( 7  6  6  6  6)
+aKaonTIP=( 6  6  6  7  7)
 aKaonTFP=(21 20 18 18 16)
 aKaonTIW=(13  7  7  8  6)
 aKaonTFW=(21 20 18 18 16)
@@ -104,9 +104,9 @@ function ChooseTwoPtFits()
 
     disp) # Simultaneous fit to PP at all momenta using dispersion relation
     for((i = 0; i < 5; ++i)); do
-      #aMesonFit[s_l,$i]=corr_7_21_6_19_6_17_6_17_6_15 # thinned 1:3:2
-      aMesonFit[s_l,$i]=corr_7_21_6_20_6_18_6_18_6_16 # thinned 2 # Preferred
-      #aMesonFit[s_l,$i]=NoThin.corr_7_21_6_20_6_18_6_18_6_16 # unthinned
+      #aMesonFit[s_l,$i]=corr_6_21_6_19_6_17_7_18_7_16 # thinned 1:3:2
+      aMesonFit[s_l,$i]=corr_6_21_6_20_6_18_7_17_7_15 # thinned 2 # Preferred
+      #aMesonFit[s_l,$i]=NoThin.corr_6_21_6_20_6_18_7_18_7_16 # unthinned
       aMesonFileOp[s_l,$i]=g5P
       aMesonFileMom[s_l,$i]=
     done;;
@@ -135,61 +135,69 @@ do
   for CorrUncorr in 0 1
   do
     # For now, these are borrowed directly from M1
+    NumExp=2
     Gamma=gT
-    NumExp=2 DeltaT="24 28 32" TI='11 11 11' TF='18 22 26' FitTwoStage 0
-    Alt= NumExp=2 DeltaT="28 32" TI='11 11' TF='22 26' FitTwoStage 0
-    Alt= NumExp=2 DeltaT="20 24 28 32" TI='10 11 11 11' TF='14 18 22 26' FitTwoStage 0
-    Alt= NumExp=2 DeltaT="20 24 28   " TI='10 11 11'    TF='14 18 22' FitTwoStage 0
-    Alt= NumExp=2 DeltaT="20 24      " TI='10 11'       TF='14 18' FitTwoStage 0
+    DeltaT="20 24 28" TI='10 11 11' TF='14 18 22' Thinning='1 2:3:1 2:5:1' FitTwoStage 0
+    Alt= DeltaT="24 28 32" TI='11 11 11' TF='18 22 26' Thinning='2:3:1 2:5:1 2:7:1' FitTwoStage 0
+    Alt= DeltaT="28 32" TI='11 11' TF='22 26' Thinning='2:5:1 2:7:1' FitTwoStage 0
+    Alt= DeltaT="20 24" TI='10 11' TF='14 18' Thinning='1 2:3:1' FitTwoStage 0
+    Alt= DeltaT="20 24 28 32" TI='10 11 11 11' TF='14 18 22 26' Thinning='1 2:3:1 2:5:1 2:7:1' FitTwoStage 0
 
-    NumExp=2 DeltaT="24 28" TI='8 8' TF='18 22' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28 32" TI='8 8 16' TF='18 22 18' FitTwoStage 1 # Just to see Delta T=32
-    Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 16' TF='17 21 18' FitTwoStage 1 # Just to see Delta T=32
+    DeltaT="24 28" TI='10 10' TF='17 21' Thinning='2:3:1 2:5:1' FitTwoStage 1
+    Alt= DeltaT="24 28 32" TI='10 10 12' TF='17 21 23' Thinning='2:3:1 2:5:1 2:5:1' FitTwoStage 1
+    Alt= DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' Thinning='1 2:3:1 2:5:1' FitTwoStage 1
+    Alt= DeltaT="16 20 24 28" TI='9 10 10 10' TF='10 13 17 21' Thinning='1 1 2:3:1 2:5:1' FitTwoStage 1
 
-    NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 15' TF='17 21 17' FitTwoStage 2 # Just to see Delta T=32
+    # Thinning makes no appreciable difference from here on
+    DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' FitTwoStage 2
+    Alt= DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 2
+    Alt= DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 2
+    Alt= DeltaT="24 28 32" TI='10 10 12' TF='17 21 23' FitTwoStage 2
+    Alt= DeltaT="16 20 24 28" TI='9 10 10 10' TF='10 13 17 21' FitTwoStage 2
+    #DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' Thinning='1 2:3:1 2:5:1' FitTwoStage 2
+    #Alt= DeltaT="20 24" TI='10 10' TF='13 17' Thinning='1 2:3:1' FitTwoStage 2
+    #Alt= DeltaT="24 28" TI='10 10' TF='17 21' Thinning='2:3:1 2:5:1' FitTwoStage 2
+    #Alt= DeltaT="24 28 32" TI='10 10 12' TF='17 21 23' Thinning='1 2:3:1 2:5:1 2:5:1' FitTwoStage 2
+    #Alt= DeltaT="16 20 24 28" TI='9 10 10 10' TF='10 13 17 21' Thinning='1 1 2:3:1 2:5:1' FitTwoStage 2
 
-    NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 3 # Preferred
-    Alt= NumExp=2 DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' FitTwoStage 3
-    Alt= NumExp=2 DeltaT="16 20" TI='10 10' TF='10 13' FitTwoStage 3
-    Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 3
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 20' TF='17 21 21' FitTwoStage 3 # Just to see Delta T=32
+    DeltaT="16 20 24" TI='9 10 10' TF='10 13 17' FitTwoStage 3
+    Alt= DeltaT="16 20" TI='9 10' TF='10 13' FitTwoStage 3
+    Alt= DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 3
+    Alt= DeltaT="24 28 32" TI='10 17 21' TF='17 18 22' FitTwoStage 3 # See Delta T=28,32
 
-    NumExp=2 DeltaT="16 20" TI='7 8' TF='10 11' FitTwoStage 4
-    Alt= NumExp=2 DeltaT="16 20 24" TI='7 8 10' TF='10 11 15' FitTwoStage 4
-    Alt= NumExp=2 DeltaT="20 24" TI='8 10' TF='11 15' FitTwoStage 4
-    Alt= NumExp=2 DeltaT="20 24 28" TI='8 10 12' TF='11 15 18' FitTwoStage 4
-    Alt= NumExp=2 DeltaT="20 24 28 32" TI='8 10 12 20' TF='11 15 18 21' FitTwoStage 4
-    #NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 4
-    #Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 4
-    #Alt= NumExp=2 DeltaT="20 24 28 32" TI='10 10 14 20' TF='13 17 15 21' FitTwoStage 4 # See DT 28,32
+    DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 4
+    Alt= DeltaT="16 20 24" TI='9 10 10' TF='10 13 17' FitTwoStage 4
+    Alt= DeltaT="16 20" TI='9 10' TF='10 13' FitTwoStage 4
+    Alt= DeltaT="24 28 32" TI='10 17 21' TF='17 18 22' FitTwoStage 4 # See Delta T=28,32
 
     Gamma=gXYZ
-    NumExp=2 DeltaT="20 24 28" TI='10 10 10' TF='14 18 22' FitTwoStage 1 # Preferred
-    Alt= NumExp=2 DeltaT="20 24" TI='10 10' TF='14 18' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 15' TF='17 21 23' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 10' TF='17 21 25' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 16' TF='17 21 18' FitTwoStage 1 # Just to see Delta T=32
+    DeltaT="16 20 24" TI='9 10 10' TF='10 14 18' FitTwoStage 1
+    Alt= DeltaT="16 20" TI='9 10' TF='10 14' FitTwoStage 1
+    Alt= DeltaT="20 24" TI='10 10' TF='14 18' FitTwoStage 1
+    Alt= DeltaT="20 24 28" TI='10 10 10' TF='14 18 22' FitTwoStage 1
+    Alt= DeltaT="24 28" TI='10 10' TF='18 22' FitTwoStage 1
+    Alt= DeltaT="24 28 32" TI='10 10 10' TF='18 22 25' FitTwoStage 1 # See Delta T=32
 
-    NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' FitTwoStage 2 # Preferred
-    Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 15' TF='17 21 23' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 10' TF='17 21 25' FitTwoStage 2 # Just to see Delta T=32
+    DeltaT="16 20 24" TI='9 10 10' TF='10 14 18' FitTwoStage 2
+    Alt= DeltaT="16 20" TI='9 10' TF='10 14' FitTwoStage 2
+    Alt= DeltaT="20 24" TI='10 10' TF='14 18' FitTwoStage 2
+    Alt= DeltaT="20 24 28" TI='10 10 10' TF='14 18 22' FitTwoStage 2
+    Alt= DeltaT="24 28" TI='10 10' TF='18 22' FitTwoStage 2
+    Alt= DeltaT="24 28 32" TI='10 10 10' TF='18 22 25' FitTwoStage 2 # See Delta T=32
 
-    NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 3 # Preferred
-    Alt= NumExp=2 DeltaT="20 24 28" TI='10 10 13' TF='13 17 21' FitTwoStage 3
-    Alt= NumExp=2 DeltaT="24 28" TI='10 13' TF='17 21' FitTwoStage 3
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 13 10' TF='17 21 25' FitTwoStage 3 # Just to see Delta T=32
+    DeltaT="16 20 24" TI='9 10 10' TF='10 14 18' FitTwoStage 3
+    Alt= DeltaT="16 20" TI='9 10' TF='10 14' FitTwoStage 3
+    Alt= DeltaT="20 24" TI='10 10' TF='14 18' FitTwoStage 3
+    Alt= DeltaT="20 24 28" TI='10 10 10' TF='14 18 22' FitTwoStage 3
+    Alt= DeltaT="24 28" TI='10 10' TF='18 22' FitTwoStage 3
+    Alt= DeltaT="24 28 32" TI='10 10 10' TF='18 22 25' FitTwoStage 3 # See Delta T=32
 
-    NumExp=2 DeltaT="20 24" TI='10 12' TF='13 17' FitTwoStage 4 # Preferred
-    Alt= NumExp=2 DeltaT="20 24 28" TI='10 12 17' TF='13 17 21' FitTwoStage 4 # Preferred
-    Alt= NumExp=2 DeltaT="24 28" TI='12 17' TF='17 21' FitTwoStage 4
-    Alt= NumExp=2 DeltaT="24 28 32" TI='12 17 21' TF='17 21 25' FitTwoStage 4 # Just to see Delta T=32
+    DeltaT="16 20 24" TI='9 10 10' TF='10 14 18' FitTwoStage 4
+    Alt= DeltaT="16 20" TI='9 10' TF='10 14' FitTwoStage 4
+    Alt= DeltaT="20 24" TI='10 10' TF='14 18' FitTwoStage 4
+    Alt= DeltaT="20 24 28" TI='10 10 10' TF='14 18 22' FitTwoStage 4
+    Alt= DeltaT="24 28" TI='10 10' TF='18 22' FitTwoStage 4
+    Alt= DeltaT="24 28 32" TI='10 10 10' TF='18 22 25' FitTwoStage 4 # See Delta T=32
 
     UnCorr=
   done
@@ -198,18 +206,31 @@ done
 fi
 
 if [ -v DoIdea ]; then # Give me an idea of what the ratios look like
+(
   FileSeries=disp; ChooseTwoPtFits; FileSeries=idea; Gamma=gXYZ
-  NumExp=2 DeltaT="16 20 24 28 32" TI='9 11 11 11 11' TF='10 13 18 22 26' FitTwoStage 0
-  NumExp=2 DeltaT="16 20 24 28 32" TI='8 10  9  8  9' TF='10 13 18 22 25' FitTwoStage 1
-  NumExp=2 DeltaT="16 20 24 28 32" TI='7  8  7  8  8' TF='10 13 18 22 26' FitTwoStage 2
-  NumExp=2 DeltaT="16 20 24 28 32" TI='7  7  7  8 14' TF='10 14 18 22 25' FitTwoStage 3
-  NumExp=2 DeltaT="16 20 24 28 32" TI='7  7  8  7 17' TF='10 13 18 22 26' FitTwoStage 4
+  NumExp=2
+  DeltaT="16 20 24 28 32" TI='9 11 11 11 11' TF='10 13 18 22 26' FitTwoStage 0
+  DeltaT="16 20 24 28 32" TI='8 10  9  8  9' TF='10 13 18 22 25' FitTwoStage 1
+  DeltaT="16 20 24 28 32" TI='7  8  7  8  8' TF='10 13 18 22 26' FitTwoStage 2
+  DeltaT="16 20 24 28 32" TI='7  7  7  8 14' TF='10 14 18 22 25' FitTwoStage 3
+  DeltaT="16 20 24 28 32" TI='7  7  8  7 17' TF='10 13 18 22 26' FitTwoStage 4
+)
 fi
 
 if [ -v DoTest ]; then # Do manual tests here
   (
   FileSeries=disp; ChooseTwoPtFits; Gamma=gT
-    UnCorr= Alt= NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 4
+  NumExp=2
+  DisableThinning=
+  for CorrUncorr in 0 #1
+  do
+    DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' Thinning='1 2:3:1 2:5:1' FitTwoStage 2
+    Alt= DeltaT="20 24" TI='10 10' TF='13 17' Thinning='1 2:3:1' FitTwoStage 2
+    Alt= DeltaT="24 28" TI='10 10' TF='17 21' Thinning='2:3:1 2:5:1' FitTwoStage 2
+    Alt= DeltaT="24 28 32" TI='10 10 12' TF='17 21 23' Thinning='1 2:3:1 2:5:1 2:5:1' FitTwoStage 2
+    Alt= DeltaT="16 20 24 28" TI='9 10 10 10' TF='10 13 17 21' Thinning='1 1 2:3:1 2:5:1' FitTwoStage 2
+    UnCorr=
+  done
   )
 fi
 

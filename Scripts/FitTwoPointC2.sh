@@ -108,7 +108,7 @@ if [ -v DoNext ]; then
   yrange=0.3:0.7 SimulP s_l # Simultaneous fits of point-point data at all momenta
   (
     MultiFit="$MultiFit --nopolap g5P"
-    yrange=0.3:0.7 SimulP s_l dispind
+    ExtraName=dispind yrange=0.3:0.7 SimulP s_l
   )
   done
 fi

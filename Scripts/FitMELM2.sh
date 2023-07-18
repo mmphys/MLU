@@ -79,7 +79,7 @@ else
 fi
 aMesonFileMom[h${Heavy}_s,0]=_p2_0
 
-aKaonTIP=( 6  6  6  6  6)
+aKaonTIP=( 6  6  7  7  6)
 aKaonTFP=(20 20 20 19 16)
 aKaonTIW=( 8  7  6  6 13)
 aKaonTFW=(20 20 20 19 16)
@@ -104,9 +104,9 @@ function ChooseTwoPtFits()
 
     disp) # Simultaneous fit to PP at all momenta using dispersion relation
     for((i = 0; i < 5; ++i)); do
-      aMesonFit[s_l,$i]=corr_6_20_6_19_6_19_6_19_6_15 # thinned 1:3:2 # Preferred
-      #aMesonFit[s_l,$i]=corr_6_20_6_20_6_20_6_18_6_16 # thinned 2
-      #aMesonFit[s_l,$i]=corr_6_20_6_20_6_20_6_19_6_16 # unthinned
+      aMesonFit[s_l,$i]=corr_6_20_6_19_7_20_7_18_6_15 # thinned 1:3:2 # Preferred
+      #aMesonFit[s_l,$i]=corr_6_20_6_20_7_19_7_19_6_16 # thinned 2
+      #aMesonFit[s_l,$i]=corr_6_20_6_20_7_20_7_19_6_16 # unthinned
       aMesonFileOp[s_l,$i]=g5P
       aMesonFileMom[s_l,$i]=
     done;;

@@ -117,7 +117,7 @@ if [ -v DoNext ]; then
     export yrange=0.21:0.62
     SimulP s_l # Simultaneous fits of point-point data at all momenta
     MultiFit="$MultiFit --nopolap g5P"
-    SimulP s_l dispind
+    ExtraName=dispind SimulP s_l
   )
   done
 fi

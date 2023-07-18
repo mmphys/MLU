@@ -21,6 +21,7 @@ set -e
 #   1: pSnk
 # FitOptionsRatio (optional) extra fit options for ratios, e.g. C2eSrc=3
 # FileSeries
+# DisableThinning
 function FitTwoStage()
 (
   local pSnk=$1
@@ -66,7 +67,7 @@ MELFit=${MELFit:-MELFit}
 yrangeR3=${yrangeR3:-${ayrangeR3[$Gamma,$pSnk]}}
 yrangeMEL=${yrangeMEL:-${ayrangeMEL[$Gamma,$pSnk]}}
 eval FitOptionsPerFile=($Options)
-eval ThinningPerFile=($Thinning)
+[ -v DisableThinning ] && unset ThinningPerFile || eval ThinningPerFile=($Thinning)
 
 Plot=${Plot:-Plot}
 PlotDataFrom=${PlotDataFrom:-4} # how far in from source and sink to plot data points
