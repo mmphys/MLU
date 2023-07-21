@@ -250,6 +250,16 @@ std::ostream &operator<<( std::ostream &os, const Params::DispMap &dm );
 struct ParamsPairs
 {
   enum class State{ Unknown, Known, AmbiguousSign, ProductOnly };
+  static inline State MaxState( State A, State B )
+  {
+    if( A == State::Known || B == State::Known )
+      return State::Known;
+    if( A == State::AmbiguousSign || B == State::AmbiguousSign )
+      return State::AmbiguousSign;
+    if( A == State::ProductOnly || B == State::ProductOnly )
+      return State::ProductOnly;
+    return State::Unknown;
+  }
 
   struct Key : public Param::Key
   {
@@ -291,20 +301,22 @@ struct ParamsPairs
   StateSize GetStateSize() const;
   /// Reset: Fixed parameters are known; Variable parameters Unknown; Ambiguous and pairs empty
   void clear();
-  void SetState( State NewState, const Key &key ) { SetState( NewState, key, 1, key.Index ); }
   void SetState( State NewState, const Param::Key &key, std::size_t Size, std::size_t Index = 0 );
   /// Only the product of these keys is known
-  void KnowProduct( const Key &key0, const Key &key1 );
   void KnowProduct( const Param::Key &key0, const Param::Key &key1, std::size_t Size );
   /// true iff there are product pairs where both members are unknown (unguessable)
   bool HasUnknownProducts() const;
   /// For the given key, how many known products are there
   std::size_t NumKnownProducts( const Param::Key &k0, const Param::Key &k1, std::size_t Size ) const;
 protected:
+  void SetState( State NewState, const Key &key ) { SetState( NewState, key, 1, key.Index ); }
+  void KnowProduct( const Key &key0, const Key &key1 );
   void GetPairState( std::array<Params::const_iterator, Pair::size> &it,
                      const Pair &pair, bool bUnknownOk = false ) const;
   std::array<const State *, Pair::size> GetPairState(const Pair &pair, bool bUnknownOk = false)const;
   std::array<State *, Pair::size> GetPairState( const Pair &pair, bool bUnknownOk = false );
+  bool PromoteState( std::array<State *, Pair::size> &aState );
+  bool PromoteState( const Pair &pair );
   void SetState( State NewState, Params::const_iterator &it, std::size_t Size, std::size_t Index );
   /// Keep walking the list of product pairs, propagating anything new we know
   void PropagateKnown();

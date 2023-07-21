@@ -20,12 +20,12 @@ for Some in 0 1
 do
   pString="3sm_sp2/'*_p2_[0-$((pMax-Some))].g*'.h5"
   pStringF1M="3sm_sp2/'*_p2_[0-$((pMaxF1M-Some))].g*'.h5"
-  Files="C1/FormFactor/betterP/$pString"
+  Files="C1/FormFactor/$FitSeries/$pString"
   Files="$Files C2/FormFactor/$FitSeries/$pString"
-  Files="$Files F1M/FormFactor/old/$pStringF1M"
-  Files="$Files M1/FormFactor/disp/$pString"
-  Files="$Files M2/FormFactor/disp/$pString"
-  Files="$Files M3/FormFactor/disp/$pString"
+  Files="$Files F1M/FormFactor/$FitSeries/$pStringF1M"
+  Files="$Files M1/FormFactor/$FitSeries/$pString"
+  Files="$Files M2/FormFactor/$FitSeries/$pString"
+  Files="$Files M3/FormFactor/$FitSeries/$pString"
   OutSubDir="$OutDir/${FitSeries}_"
   ((Some)) && OutSubDir="${OutSubDir}some" || OutSubDir="${OutSubDir}all"
   mkdir -p $OutSubDir

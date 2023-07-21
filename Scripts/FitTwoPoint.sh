@@ -19,7 +19,7 @@ function DoCmd()
   #echo $Cmd
   echo $Cmd &>> $LogFile
   local RetVal=0
-  if ! eval $Cmd &>> $LogFile; then
+  if ! ( eval $Cmd ) &>> $LogFile; then
     RetVal=${PIPESTATUS[0]}
     # Ignore MultiFit 'Not all params resolved" warning
     if [[ ${Cmd:0:8} = MultiFit && $RetVal = 3 ]]; then
@@ -73,8 +73,8 @@ local Corr=${Corr:-corr}
 # Derived
 
 local OutSubDir=$Ensemble/MELFit/2ptp2/$Meson
-local CorrPrefix=$Corr/2ptp2/${Meson}_p2_${p}_g5P_g5
-local Suffix=fold.$DataSeed.h5
+local CorrPrefix=$Corr/2ptp2/${Meson}_p2_${p}_
+local Suffix=fold.$DataSeed
 
 mkdir -p "$OutSubDir"
 
@@ -89,9 +89,9 @@ Cmd+=" --debug-signals"
 Cmd+=" --strict 1"
 [ -v FitOptions ] && Cmd+=" $FitOptions"
 Cmd+=" -i $PlotData/${CorrPrefix} -o $OutSubDir/"
-Cmd+=" P.$Suffix,t=${TI}:${TF}${Thin1},e=$NumExp"
+Cmd+=" g5P_g5P.$Suffix.h5,t=${TI}:${TF}${Thin1},e=$NumExp"
 if (( TF2 >= TI2 )); then
-  Cmd+=" W.$Suffix,t=${TI2}:${TF2}${Thin2},e=$NumExp2"
+  Cmd+=" g5P_g5W.$Suffix.h5,t=${TI2}:${TF2}${Thin2},e=$NumExp2"
 fi
 
 #echo "$Cmd"
@@ -109,9 +109,97 @@ DoCmd EraseLog || return 0
 # Get E0 (reference value for plot)
 GetColumnValues $FitFile "${Meson//_/-} (n^2=$p) E_0=" '' E0
 Cmd="title='point-point point-wall' tf='$LabelTF $LabelTF' yrange='${ayRange[$Meson,$p]}'"
-[ -v LabelTI ] && Cmd="$Cmd ti='$LabelTI $LabelTI'"
-[ -v RefText ] && Cmd="$Cmd RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
-Cmd="$Cmd plottd.sh $TDFile"
+[ -v LabelTI ] && Cmd+=" ti='$LabelTI $LabelTI'"
+[ -v RefText ] && Cmd+=" RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
+local ExtraFiles="$PlotData/${CorrPrefix}gT5P_g5P.$Suffix.txt"
+ExtraFiles+=" $PlotData/${CorrPrefix}gT5P_g5W.$Suffix.txt"
+Cmd+=" extra='$ExtraFiles'"
+Cmd+=" plottd.sh $TDFile"
+DoCmd
+}
+
+############################################################
+
+# Perform a fit of multiple correlators
+# Parameters
+#   FileList: Array of files to fit
+#   FileArgs: Array of fit arguments for each file
+#      See GetColumnValues for more detail on params 1, 2 & 3
+
+# Optional:
+#   *:         See plottd.sh for all variables it supports
+#   FileTitle: Array of titles for each file
+#   ExtraName: Series name added to end of fit base name
+#   Stat:      Minimum acceptable pvalueH
+#   NumExp:    Default number of exponentials
+#   FitOptions: Extra options for MultiFit
+#   RefText:   Prefix text for reference value (default E_0=)
+#   RefField:  Which field to return as reference (default E0)
+
+# Returns:
+#   ColumnValues: Array of reference value fields
+
+############################################################
+
+function FitMulti()
+{
+########################################
+# Input parameters
+local RefText="${RefText-E_0=}"
+local InPrefix="${InPrefix-$PlotData/corr/}"
+local OutPrefix="$Ensemble/$OutPrefix"
+local Suffix="${Suffix-.fold.$DataSeed}"
+local RefField="${RefField:-E0}"
+
+if ! (( ${#FileList[@]} )); then echo "FitMulti() FileList empty"; return; fi
+
+########################################
+# Derived
+
+#mkdir -p "$OutPrefix"
+
+########################################
+# Generic fit command
+local Cmd="MultiFit"
+Cmd+=" --summary 2"
+Cmd+=" --overwrite"
+Cmd+=" --debug-signals"
+Cmd+=" --strict 1"
+[ -v Stat ] && Cmd+=" --Hotelling $Stat"
+[ -v ExtraName ] && Cmd+=" --extra '$ExtraName'"
+[ -v NumExp ] && Cmd+=" -e $NumExp"
+[ -v FitOptions ] && Cmd+=" $FitOptions"
+[ -n "$InPrefix" ] && Cmd+=" -i '$InPrefix'"
+[ -n "$OutPrefix" ] && Cmd+=" -o '$OutPrefix'"
+
+# Build list of files to fit
+local title
+for((i=0; i<${#FileList[@]}; ++i))
+do
+  Cmd+=" '${FileList[i]}$Suffix.h5'"
+  (( ${#FileArgs[i]} )) && Cmd+=",${FileArgs[i]}"
+  # Plot title for this file
+  (( ${#title} )) && title+=' '
+  (( ${#FileTitle[i]} )) && title+="'${FileTitle[i]}'" || title+="'${FileList[i]}'"
+done
+
+# Get the name of the resulting fit file
+#echo "$Cmd"
+local ModelBase="$(eval $Cmd --showname)"
+local LogFile=$ModelBase.$MLUSeed.log
+local FitFile=$ModelBase.$MLUSeed.h5
+local TDFile=${ModelBase}_td.$MLUSeed.txt
+#echo "--showname=$ModelBase"
+
+# Perform the fit
+DoCmd EraseLog || return 0
+
+########################################
+# Plot the fit
+
+# Get reference value for plot
+GetColumnValues $FitFile "$RefText" '' "$RefField"
+Cmd=". plottd.sh $TDFile"
 DoCmd
 }
 
@@ -186,6 +274,25 @@ function TwoPointScan()
   Cmd="rm '$OutDir/${Meson}_${p}.corr_'*"
   DoCmd
 }
+
+############################################################
+
+# Scan standard ranges around start and stop times for point and wall
+
+############################################################
+
+function StdTwoPointScan()
+{
+  local TIP=$1
+  local TFP=$2
+  local TIW=$3
+  local TFW=$4
+  local NumExp=${NumExp:-2}
+  local NumExp2=${NumExp2:-1}
+  SubDir=${SubDir}a TwoPointScan t=$((TIP-2)):$((TFP-1)):6:3,e=${NumExp} t=${TIW}:${TFW},e=${NumExp2}
+  SubDir=${SubDir}b TwoPointScan t=${TIP}:${TFP},e=${NumExp} t=$((TIW-2)):$((TFW-1)):6:3,e=${NumExp2}
+}
+
 
 ############################################################
 

@@ -1211,37 +1211,15 @@ void ParamsPairs::KnowProduct( const Key &key0, const Key &key1 )
   bool bChanged{ false };
   Pair pProd( key0, key1 );
   std::array<State *, Pair::size> aState{ GetPairState( pProd, true ) };
-  const bool bDefinite{ *aState[0] == State::Known || *aState[1] == State::Known };
-  if( bDefinite )
+  pairs.insert( std::move( pProd ) ); // It's ok if they are in the pair list already
+  const State newState{ MaxState( *aState[0], State::ProductOnly ) };
+  if( *aState[0] != newState )
   {
-    // I know at least one for sure - I know them both for sure
-    for( std::size_t i = 0; i < aState.size(); ++i )
-    {
-      if( *aState[i] != State::Known )
-      {
-        bChanged = true;
-        *aState[i] = State::Known;
-      }
-    }
-    // Since I know both for sure, I don't need to track them as a pair
-    PairSet::iterator it = pairs.find( pProd );
-    if( it != pairs.end() )
-      it = pairs.erase( it );
+    *aState[0] = newState;
+    bChanged = true;
   }
-  else
-  {
-    // I don't know either for sure - add them to list of pairs
-    pairs.insert( std::move( pProd ) ); // It's ok if they are in the pair list already
-    // At least one is either Known or AmbiguousSign - I can determine both
-    for( std::size_t i = 0; i < aState.size(); ++i )
-    {
-      if( *aState[i] != State::AmbiguousSign && *aState[i] != State::ProductOnly )
-      {
-        *aState[i] = State::ProductOnly;
-        bChanged = true;
-      }
-    }
-  }
+  if( PromoteState( aState ) )
+    bChanged = true;
   if( bChanged )
     PropagateKnown();
 }
@@ -1327,6 +1305,26 @@ ParamsPairs::GetPairState( const Pair &pair, bool bUnknownOk )
   return aState;
 }
 
+// Promote other member of the pair to the highest state. Return true if something changed
+bool ParamsPairs::PromoteState( std::array<State *, Pair::size> &aState )
+{
+  bool bChanged{ *aState[0] != *aState[1] };
+  if( bChanged )
+  {
+    const State maxState{ MaxState( *aState[0], *aState[1] ) };
+    *aState[0] = maxState;
+    *aState[1] = maxState;
+  }
+  return bChanged;
+}
+
+// Promote other member of the pair to the highest state. Return true if something changed
+bool ParamsPairs::PromoteState( const Pair &pair )
+{
+  std::array<State *, Pair::size> aState{ GetPairState( pair, true ) };
+  return PromoteState( aState );
+}
+
 void ParamsPairs::SetState( State NewState, Params::const_iterator &it, std::size_t Size,
                             std::size_t Index )
 {
@@ -1350,22 +1348,8 @@ void ParamsPairs::SetState( State NewState, Params::const_iterator &it, std::siz
     else
     {
       // Transition to the new state
-      const State PriorState{ state };
       state = NewState;
-      if( NewState == State::AmbiguousSign )
-      {
-        // Unknown -> AmbiguousSign - nothing to do
-      }
-      else if( PriorState == State::Unknown )
-      {
-        // Unknown -> Known - nothing to do
-      }
-      else
-      {
-        // AmbiguousSign -> Known
-        // If we appeared in any products, those products are no longer ambiguous
-        bNeedPropagate = true;
-      }
+      bNeedPropagate = true;
     }
   }
   if( bNeedPropagate )
@@ -1379,23 +1363,10 @@ void ParamsPairs::PropagateKnown()
   do
   {
     bChanged = false;
-    for( PairSet::iterator it = pairs.begin(); !bChanged && it != pairs.end(); )
+    for( const Pair &pair : pairs )
     {
-      // Find each key's state
-      const Pair &pair{ *it };
-      std::array<State *, Pair::size> aState{ GetPairState( pair ) };
-      // If we know at least one of this pair, we actually know both of them
-      bChanged = *aState[0] == State::Known || *aState[1] == State::Known;
-      if( bChanged )
-      {
-        // Mark both as known
-        for( std::size_t i = 0; i < aState.size(); ++i )
-          *aState[i] = State::Known;
-        // Remove pair from list
-        it = pairs.erase( it );
-      }
-      else
-        ++it;
+      if( PromoteState( pair ) )
+        bChanged = true;
     }
   }
   while( bChanged );

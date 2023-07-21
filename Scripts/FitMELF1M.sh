@@ -35,7 +35,7 @@ ayrangeR3[gT,3]=0.00054:0.000625
 ayrangeR3[gT,4]=0.00050:0.00057
 ayrangeR3[gT,5]=0.00045:0.0006
 ayrangeR3[gT,6]=0.00044:0.00052
-ayrangeMEL[gT,0]=0.527:0.537
+ayrangeMEL[gT,0]=0.527:0.538
 ayrangeMEL[gT,1]=0.486:0.496
 ayrangeMEL[gT,2]=0.452:0.462
 ayrangeMEL[gT,3]=0.42:0.44
@@ -61,52 +61,67 @@ declare -A aMesonFileMom
 
 aMesonFileOp[h${Heavy}_s,0]=g5P_g5W
 aMesonFileMom[h${Heavy}_s,0]=_p2_0
-for((i=0;i<=MaxPSq;++i)); do
-  aMesonFileOp[s_l,$i]=g5P_g5W
-  aMesonFileMom[s_l,$i]=_p2_$i
-done
 
-for Fit2ptSeries in ${series-old}; do
+############################################################
 
-  aMesonFit[s_l,1]=corr_8_28_9_28
-  aMesonFit[s_l,2]=corr_8_26_8_28
-  aMesonFit[s_l,3]=corr_8_28_8_28
-  aMesonFit[s_l,4]=corr_10_28_8_28
-  aMesonFit[s_l,5]=corr_10_28_12_28
-  aMesonFit[s_l,6]=corr_10_28_12_28
+# Choose two step fits - i.e. fit R3 using 2pt fits as input
 
+############################################################
+
+function ChooseTwoPtFits()
+{
   unset FitOptionsRatio
-  case $Fit2ptSeries in
-    old)
+  case "$1" in
+    old) # Original fit selections
       FitOptionsRatio='C2eSrc=3'
-      aMesonFit[h385_s,0]=corr_6_29_5_29
-      aMesonFit[s_l,0]=corr_10_26_7_26;; # Original with Peter
+      aMesonFit[h${Heavy}_s,0]=corr_6_29_5_29
+      aMesonFit[s_l,0]=corr_10_26_7_26
+      aMesonFit[s_l,1]=corr_8_28_9_28
+      aMesonFit[s_l,2]=corr_8_26_8_28
+      aMesonFit[s_l,3]=corr_8_28_8_28
+      aMesonFit[s_l,4]=corr_10_28_8_28
+      aMesonFit[s_l,5]=corr_10_28_12_28
+      aMesonFit[s_l,6]=corr_10_28_12_28
+      for((i=0;i<=MaxPSq;++i)); do
+        aMesonFileOp[s_l,$i]=g5P_g5W
+        aMesonFileMom[s_l,$i]=_p2_$i
+      done;;
 
-    better)
-      aMesonFit[h385_s,0]=corr_16_40_16_29
-      aMesonFit[s_l,0]=corr_8_31_8_20;;
+    better) # July '23 fit selections
+      aMesonFit[h${Heavy}_s,0]=corr_13_28_13_29
+      aMesonFit[s_l,0]=corr_7_31_8_20
+      aMesonFit[s_l,1]=corr_10_26_9_21
+      aMesonFit[s_l,2]=corr_9_21_8_21
+      aMesonFit[s_l,3]=corr_9_21_8_21
+      aMesonFit[s_l,4]=corr_9_19_10_17
+      aMesonFit[s_l,5]=corr_7_28_12_28
+      aMesonFit[s_l,6]=corr_7_23_12_20
+      for((i=0;i<=MaxPSq;++i)); do
+        aMesonFileOp[s_l,$i]=g5P_g5W
+        aMesonFileMom[s_l,$i]=_p2_$i
+      done;;
 
-    *) echo "Fit2ptSeries ${Fit2ptSeries} unrecognised"; exit 1;;
+    disp) # Simultaneous fit to PP at all momenta using dispersion relation
+      aMesonFit[h${Heavy}_s,0]=corr_13_28_13_29
+      for((i=0;i<=MaxPSq;++i)); do
+        aMesonFit[s_l,$i]=corr_7_30_10_26_9_19_9_19_9_19_7_26_7_23
+        aMesonFileOp[s_l,$i]=g5P
+        aMesonFileMom[s_l,$i]=
+      done;;
+
+    *) echo "Two-point fits $1 unrecognised"; exit 1;;
   esac
+}
 
 ############################################################
 
-# Now make three-point fits
+# These were my original ratio fit ranges
 
 ############################################################
 
-FitWhat="R3"
-Ratio=ratioE1ZV1
-
-qSrc=h385
-qSnk=l
-qSpec=s
-Gamma=gT
-
-if [ -v DoAll ]; then
-  FileSeries=${Fit2ptSeries}
-  echo "Performing $FitWhat fits to $Ratio for $FileSeries"
-
+function RatioFitsOld()
+{
+  Gamma=gT
   NumExp=2 DeltaT="24 28 32" TI='13 14 14' TF='16 20 24' FitTwoStage 0
 
   NumExp=2 DeltaT="24 28 32" TI='13 13 13' TF='16 19 23' FitTwoStage 1 #Alternate
@@ -126,26 +141,94 @@ if [ -v DoAll ]; then
 
   NumExp=2 DeltaT="24 28 32" TI='12 15 18' TF='15 19 22' FitTwoStage 6
   NumExp=2 DeltaT="24 28 32" TI='10 12 16' TF='16 20 24' Gamma=gXYZ FitTwoStage 6
-fi
-if [ -v DoAlt ]; then
-  FileSeries=${Fit2ptSeries}alt
-  echo "Performing $FitWhat fits to $Ratio for $FileSeries"
+}
 
-  NumExp=2 DeltaT="28 32" TI='12 12' TF='20 24' FitTwoStage 1 # Preferred
-fi
-if [ -v DoStd ]; then
-  (
-  FileSeries=${Fit2ptSeries}std
-  echo "Performing $FitWhat fits to $Ratio for $FileSeries"
+############################################################
+
+# These were my original ratio fit ranges for uncorrelated
+
+############################################################
+
+function RatioFitsOldStd()
+{
   UnCorr=
   DeltaT="24 28 32"
   TI='12 12 12'
   TF='14 18 22'
   NumExp=2
-  for (( n=0; n<7; ++n )); do
-        FitTwoStage $n
-    if ((n)); then Gamma=gXYZ FitTwoStage $n; fi
+  for (( n=0; n<=MaxPSq; ++n )); do
+    Gamma=gT FitTwoStage $n
+    ((n)) && Gamma=gXYZ FitTwoStage $n
   done
-  )
-fi
+}
+
+############################################################
+
+# These were my original ratio fit ranges
+
+############################################################
+
+function RatioFitsDisp()
+{
+  Gamma=gT
+  NumExp=2
+  DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' FitTwoStage 0
+  Alt= DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 0
+  Alt= DeltaT="28 32" TI='13 13' TF='20 24' FitTwoStage 0
+}
+
+function RatioFitsTest()
+{
+(
+  for (( i=0; i<2; ++i )); do
+  Gamma=gT
+  NumExp=2
+  #DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' Thinning='1 2:3:1 2:5:1' FitTwoStage 1
+  DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' Thinning='2 2 5' FitTwoStage 1
+  #DeltaT="28 32" TI='13 13' TF='20 24' Thinning='2 2:1:3' FitTwoStage 1
+  #DeltaT="28" TI='13' TF='20' Thinning='2' FitTwoStage 1
+  DeltaT="32" TI='13' TF='24' Thinning='5' FitTwoStage 1
+  #DeltaT="24" TI='13' TF='16' FitTwoStage 1
+  UnCorr=
+  done
+)
+}
+
+############################################################
+
+# Now make three-point fits
+
+############################################################
+
+FitWhat="R3"
+Ratio=ratioE1ZV1
+
+qSrc=h385
+qSnk=l
+qSpec=s
+
+for FileSeries in ${series-old oldstd better disp}
+do
+(
+  echo "Performing $FitWhat fits to $Ratio for $FileSeries"
+  case $FileSeries in
+    old)
+      ChooseTwoPtFits old
+      RatioFitsOld;;
+ 
+    oldstd)
+      ChooseTwoPtFits old
+      RatioFitsOldStd;;
+ 
+    better | disp)
+      ChooseTwoPtFits "$FileSeries"
+      RatioFitsDisp;;
+
+    "test")
+      ChooseTwoPtFits disp
+      RatioFitsTest;;
+
+    *) echo "FileSeries $FileSeries unrecognised"; exit 1;;
+  esac
+)
 done

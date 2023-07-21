@@ -32,6 +32,7 @@ ExtraFiles="${extra}"
 DoLog=0${log+1}
 RefVal="$RefVal"
 RefText="$RefText"
+Enhanced=1-0${NoEnh+1}
 
 xOffset=FieldName eq "log" ? -0.5 : 0.0
 NumTI=words( OriginalTI )
@@ -160,7 +161,13 @@ if( RefVal ne '' ) {
 
 do for [model=1:NumModels] {
 
-if( MyTitle ne "" ) { set title word(MyTitle,model) }
+if( MyTitle ne "" ) {
+  if( Enhanced ) {
+    set title word(MyTitle,model)
+  } else {
+    set title word(MyTitle,model) noenhanced
+  }
+}
 
 set lmargin at screen SubPlotLeft[model]
 set rmargin at screen SubPlotRight[model]
@@ -236,7 +243,8 @@ then
   echo "log       Set to anything to make y-axis a log scale"
   echo "field     Name of field to display (default: log)"
   #echo "fieldtext Name of field for legend (not used)"
-  echo "title     Title for the plot"
+  echo "title     Title for each plot"
+  echo "NoEnh     Set to anything to disable enhanced mode in titles"
   echo "size      of .pdf (default: 6in,3in)"
   echo "save      Filename to save (default: derived from PlotFile)"
   echo "SaveDir   Directory to save files to (default: cwd)"

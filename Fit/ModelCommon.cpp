@@ -304,15 +304,7 @@ void ModelOverlap::Guessable( ParamsPairs &PP ) const
 {
   // Dual overlap factors are products
   if( NumOverlapExpDual )
-  {
-    ParamsPairs::Key key0{ vOverlap[0].Key, 0 };
-    ParamsPairs::Key key1{ vOverlap[1].Key, 0 };
-    for( key0.Index = 0; key0.Index < NumOverlapExpDual; ++key0.Index )
-    {
-      key1.Index = key0.Index;
-      PP.KnowProduct( key0, key1 );
-    }
-  }
+    PP.KnowProduct( vOverlap[0].Key, vOverlap[1].Key, NumOverlapExpDual );
   // If I only have one overlap factor, I can guess it from the data (but not its sign)
   if( NumOverlapExp - NumOverlapExpDual )
     PP.SetState( ParamsPairs::State::AmbiguousSign, vOverlap[NumOverlapExpDual ? 2 : 0].Key,
