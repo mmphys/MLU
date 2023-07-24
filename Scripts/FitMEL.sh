@@ -22,6 +22,7 @@ set -e
 # FitOptionsRatio (optional) extra fit options for ratios, e.g. C2eSrc=3
 # FileSeries
 # DisableThinning
+# Renorm: Set to anything to indicate ratios already renormalised
 function FitTwoStage()
 (
   local pSnk=$1
@@ -65,6 +66,7 @@ Ratio=${Ratio:-ratioE1ZV1}
 Corr=${Corr:-corr}
 MELFit=${MELFit:-MELFit}
 yrangeR3=${yrangeR3:-${ayrangeR3[$Gamma,$pSnk]}}
+yrangeR3R=${yrangeR3R:-${ayrangeR3R[$Gamma,$pSnk]}}
 yrangeMEL=${yrangeMEL:-${ayrangeMEL[$Gamma,$pSnk]}}
 eval FitOptionsPerFile=($Options)
 [ -v DisableThinning ] && unset ThinningPerFile || eval ThinningPerFile=($Thinning)
@@ -106,7 +108,7 @@ case "$FitWhat" in
   quark)
         FitName="C^{(3)}"
         PlotName=R_3
-        PlotOptions=",raw"
+        [ -v Renorm ] || PlotOptions=",raw"
         PrefixFit=$PrefixCorr
         SuffixFit=$SuffixCorr
         PrefixPlot=$PrefixR3
@@ -119,7 +121,8 @@ case "$FitWhat" in
   R3)
         FitName=R_3
         PlotName="C^{(3)}"
-        FitOptionsModel=",C2e=2,C2Model=cosh,raw"
+        FitOptionsModel=",C2e=2,C2Model=cosh"
+        [ -v Renorm ] || FitOptionsModel+=",raw"
         PrefixFit=$PrefixR3
         SuffixFit=$SuffixR3
         PrefixPlot=$PrefixCorr
@@ -127,7 +130,8 @@ case "$FitWhat" in
         PlotWhat=quark
         Field=corr
         PlotField=log
-        [ -v yrangeR3 ] && yrangeFit="$yrangeR3"
+        if [ -v yrangeR3 ] && ! [ -v Renorm ]; then yrangeFit="$yrangeR3"; fi
+        if [ -v yrangeR3R ] && [ -v Renorm ]; then yrangeFit="$yrangeR3R"; fi
         [ -v yrangeMEL ] && yrangePlot="$yrangeMEL";;
   *) echo "Error: FitWhat=$FitWhat"; exit 1;;
 esac
@@ -207,7 +211,7 @@ else
     quark)
           RefValFit="$EDiff";;
     R3)
-          RefValFit="$R3Raw"
+          [ -v Renorm ] && RefValFit="$MEL" || RefValFit="$R3Raw"
           RefValPlot="$EDiff";;
   esac
 fi

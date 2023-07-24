@@ -55,6 +55,16 @@ ayrangeMEL[gXYZ,4]=0.38:0.41
 ayrangeMEL[gXYZ,5]=0.34:0.4
 ayrangeMEL[gXYZ,6]=0.27:0.37
 
+# y-ranges for renormalised R3 ratios
+declare -A ayrangeR3R
+ayrangeR3R[gT,0]=0.78:0.93
+ayrangeR3R[gT,1]=0.65:0.85
+ayrangeR3R[gT,2]=0.60:0.8
+ayrangeR3R[gT,3]=0.55:0.75
+ayrangeR3R[gT,4]=0.50:0.7
+ayrangeR3R[gT,5]=0.48:0.68
+ayrangeR3R[gT,6]=0.45:0.65
+
 declare -A aMesonFit
 declare -A aMesonFileOp
 declare -A aMesonFileMom
@@ -171,10 +181,42 @@ function RatioFitsOldStd()
 function RatioFitsDisp()
 {
   Gamma=gT
-  NumExp=2
-  DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' FitTwoStage 0
-  Alt= DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 0
-  Alt= DeltaT="28 32" TI='13 13' TF='20 24' FitTwoStage 0
+  NumExp=3
+  Ratio=ratio
+  Renorm=
+  DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 0
+  Alt= DeltaT="20 24 28" TI='12 13 13' TF='13 16 20' FitTwoStage 0
+  Alt= DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 0
+
+  DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' FitTwoStage 1
+  Alt= DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 1
+  Alt= DeltaT="28 32" TI='13 13' TF='20 24' FitTwoStage 1
+  Alt= DeltaT=24 TI=13 TF=16 FitTwoStage 1
+  Alt= DeltaT=28 TI=13 TF=20 FitTwoStage 1
+  Alt= DeltaT=32 TI=13 TF=24 FitTwoStage 1
+
+  DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 2
+  Alt= DeltaT="20 24 28" TI='12 13 13' TF='13 16 20' FitTwoStage 2
+  Alt= DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 2
+
+  DeltaT="20 24 28" TI='12 13 13' TF='13 16 20' FitTwoStage 3
+  Alt= DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 3
+  Alt= DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 3
+  Alt= DeltaT="28 32" TI='13 13' TF='20 24' FitTwoStage 3
+
+  DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 4
+  Alt= DeltaT="28 32" TI='13 13' TF='20 24' FitTwoStage 4
+  Alt= DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' FitTwoStage 4
+  Alt= DeltaT="20 24 28 32" TI='12 13 13 13' TF='13 16 20 24' FitTwoStage 4
+
+  DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 5
+  Alt= DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' FitTwoStage 5
+  Alt= DeltaT="20 24 28" TI='12 13 13' TF='13 16 20' FitTwoStage 5
+  Alt= DeltaT="20 24 28 32" TI='12 13 13 13' TF='13 16 20 24' FitTwoStage 5
+
+  DeltaT="28 32" TI='16 20' TF='20 24' FitTwoStage 6
+  Alt= DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 6
+  Alt= DeltaT="24 28 32" TI='13 16 20' TF='16 20 24' FitTwoStage 6
 }
 
 function RatioFitsTest()
@@ -182,13 +224,19 @@ function RatioFitsTest()
 (
   for (( i=0; i<2; ++i )); do
   Gamma=gT
-  NumExp=2
-  #DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' Thinning='1 2:3:1 2:5:1' FitTwoStage 1
-  DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' Thinning='2 2 5' FitTwoStage 1
-  #DeltaT="28 32" TI='13 13' TF='20 24' Thinning='2 2:1:3' FitTwoStage 1
-  #DeltaT="28" TI='13' TF='20' Thinning='2' FitTwoStage 1
-  DeltaT="32" TI='13' TF='24' Thinning='5' FitTwoStage 1
-  #DeltaT="24" TI='13' TF='16' FitTwoStage 1
+  NumExp=3
+  Ratio=ratio
+  Renorm=
+  #DeltaT=20 TI=10 TF=14 FitTwoStage 6
+  #DeltaT=24 TI=12 TF=16 FitTwoStage 6
+  #DeltaT=28 TI=13 TF=20 FitTwoStage 6
+  #DeltaT=32 TI=13 TF=24 FitTwoStage 6
+  DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 6
+  DeltaT="20 24 28" TI='12 13 16' TF='13 16 20' FitTwoStage 6
+  DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 6
+  DeltaT="24 28 32" TI='13 16 20' TF='16 20 24' FitTwoStage 6
+  DeltaT="24 28" TI='13 16' TF='16 20' FitTwoStage 6
+  DeltaT="28 32" TI='16 20' TF='20 24' FitTwoStage 6
   UnCorr=
   done
 )

@@ -62,46 +62,57 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--i2 M1/corr/2ptp2/"
-            isEnabled = "NO">
+            argument = "--i2 F1M/corr/2ptp2/"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--i3 M1/corr/3sm_sp2/"
-            isEnabled = "NO">
+            argument = "--i3 F1M/corr/3sm_sp2/"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o ratioE1ZV1/3sm_sp2/"
-            isEnabled = "NO">
+            argument = "-o ratio/3sm_sp2/"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--efit $HOME/NoSync/M1/Renorm/E_For_ZV.txt"
-            isEnabled = "NO">
+            argument = "--efit $HOME/NoSync/F1M/MELFit/Fit_sp2_disp.txt"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type R &apos;*_l_h*_g*_dt_*_p2_0_ps2_[034]_g5P_g5P.*.h5&apos;"
-            isEnabled = "NO">
+            argument = "--type R,$HOME/NoSync/F1M/Renorm/ZV.txt"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;*_l_h*_g*_dt_*_p2_0_ps2_[0-6]_g5P_g5P.*.h5&apos;"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--i3 $HOME/NoSync/M1/MELFit/3sm_sp2/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o FFS/M1/3sm_sp2/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--efit $HOME/NoSync/M1/MELFit/Fit_sp2_disp.txt"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--type F,32,,$HOME/NoSync/M1/Renorm/ZV.txt"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;*corr_*corr_*.disp.corr*.h5&apos;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "MLUSeed"
+            value = "3285139232"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
