@@ -216,10 +216,10 @@ for Fit2 in $Fit2ptSeries; do
   SpecDir="3sm_${Spec[i]}"
   FitFile=$MELFit/Fit_${Spec[i]}_$Fit2.txt
   Cmd="CRatio --type f,$L"
-  if [ -n "$ZV" ]; then
-    Cmd="${Cmd},,$ZV"
+  if [ -v ZV ]; then
+    [ -n "$ZV" ] && Cmd+=",,'$ZV'"
   elif [ -r $Renorm ]; then
-    Cmd="${Cmd},,$Renorm"
+    Cmd+=",,$Renorm"
   fi
   Cmd="$Cmd --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/"
   Cmd="$Cmd '*corr_*corr_*.$OutSub.${UnCorr+un}corr*.$MLUSeed.h5'"

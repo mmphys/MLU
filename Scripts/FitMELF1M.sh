@@ -64,6 +64,12 @@ ayrangeR3R[gT,3]=0.55:0.75
 ayrangeR3R[gT,4]=0.50:0.7
 ayrangeR3R[gT,5]=0.48:0.68
 ayrangeR3R[gT,6]=0.45:0.65
+ayrangeR3R[gXYZ,1]=0.20:0.27
+ayrangeR3R[gXYZ,2]=0.16:0.23
+ayrangeR3R[gXYZ,3]=0.14:0.21
+ayrangeR3R[gXYZ,4]=0.12:0.18
+ayrangeR3R[gXYZ,5]=0.10:0.18
+ayrangeR3R[gXYZ,6]=0.09:0.16
 
 declare -A aMesonFit
 declare -A aMesonFileOp
@@ -174,7 +180,9 @@ function RatioFitsOldStd()
 
 ############################################################
 
-# These were my original ratio fit ranges
+# These are my latest ratio fit ranges
+# These were chosen assuming we're fitting to the renormalised ratios, i.e.
+#   Ratio=ratio; Renorm=
 
 ############################################################
 
@@ -182,8 +190,6 @@ function RatioFitsDisp()
 {
   Gamma=gT
   NumExp=3
-  Ratio=ratio
-  Renorm=
   DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 0
   Alt= DeltaT="20 24 28" TI='12 13 13' TF='13 16 20' FitTwoStage 0
   Alt= DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 0
@@ -191,9 +197,6 @@ function RatioFitsDisp()
   DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' FitTwoStage 1
   Alt= DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 1
   Alt= DeltaT="28 32" TI='13 13' TF='20 24' FitTwoStage 1
-  Alt= DeltaT=24 TI=13 TF=16 FitTwoStage 1
-  Alt= DeltaT=28 TI=13 TF=20 FitTwoStage 1
-  Alt= DeltaT=32 TI=13 TF=24 FitTwoStage 1
 
   DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 2
   Alt= DeltaT="20 24 28" TI='12 13 13' TF='13 16 20' FitTwoStage 2
@@ -217,20 +220,58 @@ function RatioFitsDisp()
   DeltaT="28 32" TI='16 20' TF='20 24' FitTwoStage 6
   Alt= DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 6
   Alt= DeltaT="24 28 32" TI='13 16 20' TF='16 20 24' FitTwoStage 6
+
+  Gamma=gXYZ
+  DeltaT="20 24 28" TI='12 13 16' TF='13 16 20' FitTwoStage 1
+  Alt= DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 1
+  Alt= DeltaT="24 28 32" TI='13 16 20' TF='16 20 24' FitTwoStage 1
+  Alt= DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 1
+  Alt= DeltaT="24 28" TI='13 16' TF='16 20' FitTwoStage 1
+  Alt= DeltaT="28 32" TI='16 20' TF='20 24' FitTwoStage 1
+
+  DeltaT="20 24 28" TI='12 13 16' TF='13 16 20' FitTwoStage 2
+  Alt= DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 2
+  Alt= DeltaT="24 28" TI='13 16' TF='16 20' FitTwoStage 2
+  Alt= DeltaT="28 32" TI='16 20' TF='20 24' FitTwoStage 2
+
+  DeltaT="20 24 28" TI='12 13 16' TF='13 16 20' FitTwoStage 3
+  Alt= DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 3
+  Alt= DeltaT="24 28" TI='13 16' TF='16 20' FitTwoStage 3
+  Alt= DeltaT="24 28 32" TI='13 16 20' TF='16 20 24' FitTwoStage 3
+  Alt= DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 3
+  Alt= DeltaT="28 32" TI='16 20' TF='20 24' FitTwoStage 3
+
+  DeltaT="20 24 28" TI='12 13 16' TF='13 16 20' FitTwoStage 4
+  Alt= DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 4
+  Alt= DeltaT="24 28" TI='13 16' TF='16 20' FitTwoStage 4
+  Alt= DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 4
+  Alt= DeltaT="24 28 32" TI='13 16 20' TF='16 20 24' FitTwoStage 4
+  Alt= DeltaT="28 32" TI='16 20' TF='20 24' FitTwoStage 4
+
+  DeltaT="20 24 28" TI='12 13 16' TF='13 16 20' FitTwoStage 5
+  Alt= DeltaT="24 28" TI='13 16' TF='16 20' FitTwoStage 5
+  Alt= DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 5
+  Alt= DeltaT="24 28 32" TI='13 16 20' TF='16 20 24' FitTwoStage 5
+  Alt= DeltaT="28 32" TI='16 20' TF='20 24' FitTwoStage 5
+
+  DeltaT="24 28" TI='13 16' TF='16 20' FitTwoStage 6
+  Alt= DeltaT="20 24 28" TI='12 13 16' TF='13 16 20' FitTwoStage 6
+  Alt= DeltaT="24 28 32" TI='13 16 20' TF='16 20 24' FitTwoStage 6
+  Alt= DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 6
 }
 
 function RatioFitsTest()
 {
 (
   for (( i=0; i<2; ++i )); do
-  Gamma=gT
+  Gamma=gXYZ
   NumExp=3
   Ratio=ratio
   Renorm=
-  #DeltaT=20 TI=10 TF=14 FitTwoStage 6
-  #DeltaT=24 TI=12 TF=16 FitTwoStage 6
-  #DeltaT=28 TI=13 TF=20 FitTwoStage 6
-  #DeltaT=32 TI=13 TF=24 FitTwoStage 6
+  #DeltaT=20 TI=10 TF=14 FitTwoStage 1
+  #DeltaT=24 TI=12 TF=16 FitTwoStage 1
+  #DeltaT=28 TI=13 TF=20 FitTwoStage 1
+  #DeltaT=32 TI=13 TF=24 FitTwoStage 1
   DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 6
   DeltaT="20 24 28" TI='12 13 16' TF='13 16 20' FitTwoStage 6
   DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 6
@@ -255,7 +296,7 @@ qSrc=h385
 qSnk=l
 qSpec=s
 
-for FileSeries in ${series-old oldstd better disp}
+for FileSeries in ${series-old oldstd renorm}
 do
 (
   echo "Performing $FitWhat fits to $Ratio for $FileSeries"
@@ -268,9 +309,14 @@ do
       ChooseTwoPtFits old
       RatioFitsOldStd;;
  
+    # Not sure either of better/disp are any good
     better | disp)
       ChooseTwoPtFits "$FileSeries"
       RatioFitsDisp;;
+
+    renorm)
+      ChooseTwoPtFits disp
+      Ratio=ratio Renorm= RatioFitsDisp;;
 
     "test")
       ChooseTwoPtFits disp

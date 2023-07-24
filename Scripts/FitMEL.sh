@@ -22,7 +22,8 @@ set -e
 # FitOptionsRatio (optional) extra fit options for ratios, e.g. C2eSrc=3
 # FileSeries
 # DisableThinning
-# Renorm: Set to anything to indicate ratios already renormalised
+# Renorm:   Set to anything to indicate ratios already renormalised
+# PlotOnly: Set to anything to skip the fits and just perform plotting
 function FitTwoStage()
 (
   local pSnk=$1
@@ -180,6 +181,7 @@ local LogFile=$ModelBase.$MLUSeed.log
 local FitFile=$ModelBase.$MLUSeed.h5
 local TDFile=${ModelBase}_td.$MLUSeed.txt
 
+if ! [ -v PlotOnly ]; then
      echo "$Cmd"  > $LogFile
 if ! eval  $Cmd &>> $LogFile
 then
@@ -189,6 +191,7 @@ then
   else
     echo "Warning $LastError: $Cmd"
   fi
+fi
 fi
 
 # Get the fit characteristics: energy difference, matrix element, test stat, ...
@@ -248,11 +251,13 @@ local PlotBase="$(eval $Cmd --showname)"
       LogFile=$PlotBase.$MLUSeed.log
 local PlotTDFile=${PlotBase}_td.$MLUSeed.txt
 
+if ! [ -v PlotOnly ]; then
      echo "$Cmd"  > $LogFile
 if ! eval  $Cmd &>> $LogFile
 then
   LastError=${PIPESTATUS[0]}
   echo "Warning $LastError: $Cmd"
+fi
 fi
 
 # Plot it
