@@ -70,7 +70,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o ratio/3sm_sp2/"
+            argument = "-o ratioZV1/3sm_sp2/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -78,8 +78,12 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--type R,$HOME/NoSync/F1M/Renorm/ZV.txt"
+            argument = "--type R"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--type R,$HOME/NoSync/F1M/Renorm/ZV.txt"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;*_l_h*_g*_dt_*_p2_0_ps2_[0-6]_g5P_g5P.*.h5&apos;"

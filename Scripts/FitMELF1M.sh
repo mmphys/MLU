@@ -27,7 +27,7 @@ ayRange[s_l,5]='0.32:0.38'
 ayRange[s_l,6]='0.2:0.42'
 
 declare -A ayrangeR3
-declare -A ayrangeMEL
+declare -A ayrangeMEL # Poor name. This is for the 3pt correlators - not matrix elements
 ayrangeR3[gT,0]=0.00068:0.000782
 ayrangeR3[gT,1]=0.00060:0.00070
 ayrangeR3[gT,2]=0.00056:0.00066
@@ -264,20 +264,21 @@ function RatioFitsTest()
 {
 (
   for (( i=0; i<2; ++i )); do
-  Gamma=gXYZ
+  Gamma=gT
   NumExp=3
-  Ratio=ratio
-  Renorm=
+  Ratio=ratio; Renorm=; NotRaw=
+  #Ratio=ratioZV1; NotRaw=; yrangeR3='0.85:0.95'
+  #Ratio=ratioE1; yrangeR3='0.00055:0.00061'
   #DeltaT=20 TI=10 TF=14 FitTwoStage 1
   #DeltaT=24 TI=12 TF=16 FitTwoStage 1
   #DeltaT=28 TI=13 TF=20 FitTwoStage 1
   #DeltaT=32 TI=13 TF=24 FitTwoStage 1
-  DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 6
-  DeltaT="20 24 28" TI='12 13 16' TF='13 16 20' FitTwoStage 6
-  DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 6
-  DeltaT="24 28 32" TI='13 16 20' TF='16 20 24' FitTwoStage 6
-  DeltaT="24 28" TI='13 16' TF='16 20' FitTwoStage 6
-  DeltaT="28 32" TI='16 20' TF='20 24' FitTwoStage 6
+  #DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 1
+  #DeltaT="20 24 28" TI='12 13 16' TF='13 16 20' FitTwoStage 1
+  #DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 1
+  DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' FitTwoStage 1
+  #DeltaT="24 28" TI='13 16' TF='16 20' FitTwoStage 1
+  #DeltaT="28 32" TI='16 20' TF='20 24' FitTwoStage 1
   UnCorr=
   done
 )
@@ -316,7 +317,7 @@ do
 
     renorm)
       ChooseTwoPtFits disp
-      Ratio=ratio Renorm= RatioFitsDisp;;
+      Ratio=ratio Renorm= NotRaw= RatioFitsDisp;;
 
     "test")
       ChooseTwoPtFits disp

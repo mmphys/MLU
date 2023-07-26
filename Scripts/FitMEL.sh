@@ -23,7 +23,9 @@ set -e
 # FileSeries
 # DisableThinning
 # Renorm:   Set to anything to indicate ratios already renormalised
+# NotRaw:   Set to anything to disable raw ratio fitting
 # PlotOnly: Set to anything to skip the fits and just perform plotting
+# yrangeR3: Y-scale for the R-ratio
 function FitTwoStage()
 (
   local pSnk=$1
@@ -35,6 +37,7 @@ function FitTwoStage()
   local FileOpSrc=${aMesonFileOp[$MesonSrc,0]}
   local FileMomSnk=${aMesonFileMom[$MesonSnk,$pSnk]}
   local FileMomSrc=${aMesonFileMom[$MesonSrc,0]}
+  local Raw=$((1-0${NotRaw+1}))
 
 ############################################################
 
@@ -66,8 +69,12 @@ PW=${PW:-g5P_g5P}
 Ratio=${Ratio:-ratioE1ZV1}
 Corr=${Corr:-corr}
 MELFit=${MELFit:-MELFit}
-yrangeR3=${yrangeR3:-${ayrangeR3[$Gamma,$pSnk]}}
-yrangeR3R=${yrangeR3R:-${ayrangeR3R[$Gamma,$pSnk]}}
+local R3yrange
+if [ -n "$yrangeR3" ]; then
+  R3yrange="$yrangeR3"
+elif [ -v Renorm ] && (( Raw == 0 )) && [ -n "${ayrangeR3R[$Gamma,$pSnk]}" ]; then
+  R3yrange="${ayrangeR3R[$Gamma,$pSnk]}"
+fi
 yrangeMEL=${yrangeMEL:-${ayrangeMEL[$Gamma,$pSnk]}}
 eval FitOptionsPerFile=($Options)
 [ -v DisableThinning ] && unset ThinningPerFile || eval ThinningPerFile=($Thinning)
@@ -109,7 +116,7 @@ case "$FitWhat" in
   quark)
         FitName="C^{(3)}"
         PlotName=R_3
-        [ -v Renorm ] || PlotOptions=",raw"
+        (( Raw )) && PlotOptions=",raw"
         PrefixFit=$PrefixCorr
         SuffixFit=$SuffixCorr
         PrefixPlot=$PrefixR3
@@ -118,12 +125,12 @@ case "$FitWhat" in
         Field=log
         PlotField=corr
         [ -v yrangeMEL ] && yrangeFit="$yrangeMEL"
-        [ -v yrangeR3 ] && yrangePlot="$yrangeR3";;
+        [ -v R3yrange ] && yrangePlot="$R3yrange";;
   R3)
         FitName=R_3
         PlotName="C^{(3)}"
         FitOptionsModel=",C2e=2,C2Model=cosh"
-        [ -v Renorm ] || FitOptionsModel+=",raw"
+        (( Raw )) && FitOptionsModel+=",raw"
         PrefixFit=$PrefixR3
         SuffixFit=$SuffixR3
         PrefixPlot=$PrefixCorr
@@ -131,8 +138,7 @@ case "$FitWhat" in
         PlotWhat=quark
         Field=corr
         PlotField=log
-        if [ -v yrangeR3 ] && ! [ -v Renorm ]; then yrangeFit="$yrangeR3"; fi
-        if [ -v yrangeR3R ] && [ -v Renorm ]; then yrangeFit="$yrangeR3R"; fi
+        [ -v R3yrange ] && yrangeFit="$R3yrange"
         [ -v yrangeMEL ] && yrangePlot="$yrangeMEL";;
   *) echo "Error: FitWhat=$FitWhat"; exit 1;;
 esac
