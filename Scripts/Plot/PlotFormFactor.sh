@@ -14,7 +14,7 @@ declare -A aFormFactorMaxXZ
 declare -A aFormFactorYRange
 declare -A aFormFactorYRangeRaw
 aFormFactorMaxX=(F1M 2.2 C1 2.1 C2 2.1 M1 2.1 M2 2.1)
-aFormFactorMaxXZ=(C1 0.1 C2 0.1 M1 0.1 M2 0.1)
+aFormFactorMaxXZ=(F1M 0.1 C1 0.1 C2 0.1 M1 0.1 M2 0.1)
 aFormFactorYRange=(F1M 0.6:1.3 C1 0.6:1.3 C2 0.5:1.3 M1 0.6:1.15 M2 0.65:1.15)
 aFormFactorYRangeRaw=(F1M 0.5:1.25 C1 0.5:1.5 C2 0.3:1.5 M1 0.45:1.3 M2 0.45:1.3)
 

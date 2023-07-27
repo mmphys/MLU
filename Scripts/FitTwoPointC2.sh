@@ -41,6 +41,7 @@ fi
 
 ############################################################
 
+# y axis ranges for 2pt fit plots
 declare -A ayRange
 ayRange[h6413_s,0]='1.095:1.135'
 ayRange[s_l,0]='0.315:0.365'

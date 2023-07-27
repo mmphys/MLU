@@ -88,4 +88,4 @@ series='old' PlotFormFactor.sh
 series='old' FitSeries='std' UnCorr= PlotFormFactor.sh
 series='better' PlotFormFactor.sh
 #series='disp' PlotFormFactor.sh
-ZV= series='renorm' PlotFormFactor.sh
+series='renorm' ZV= PlotFormFactor.sh

@@ -15,7 +15,7 @@ Continuum+=" -i $HOME/NoSync/"
 
 pMax=4
 pMaxF1M=6
-xrange='-0.1:2.2'
+xRangeMin='-0.1'
 for Some in 0 1
 do
   pString="3sm_sp2/'*_p2_[0-$((pMax-Some))].g*'.h5"
@@ -36,8 +36,10 @@ do
     if ((fplus)); then
       Cmd="$Cmd -f fplus"
       LogBase="${LogPrefix}fplus"
+      xRangeMax='1.75'
     else
       LogBase="${LogPrefix}f0"
+      xRangeMax='2.2'
     fi
     LogBase="$LogBase.g5P_g5W.model"
     Cmd="$Cmd $Files"
@@ -45,9 +47,9 @@ do
     echo $Cmd &>  $LogBase.log
     if ! eval $Cmd &>> $LogBase.log; then echo "Returned ${PIPESTATUS[0]}" &>> $LogBase.log; fi
     # Now plot it
-    Cmd="xrange='$xrange' plotglobfit.sh '$LogBase.$MLUSeed.dat'"
+    Cmd="xrange='$xRangeMin:$xRangeMax' plotglobfit.sh '$LogBase.$MLUSeed.dat'"
     echo $Cmd &>> $LogBase.log
     eval $Cmd &>> $LogBase.log
   done
-  xrange='*:2.2'
+  xRangeMin='*'
 done

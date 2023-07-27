@@ -12,23 +12,11 @@ set -e
 
 ############################################################
 
-# Input
-
-############################################################
-
-FitWhat="${FitWhat-R3}"
-Ratio=ratioE1ZV1
-
-qSrc=h$Heavy
-qSnk=l
-qSpec=s
-
-############################################################
-
 # Two point fit choices
 
 ############################################################
 
+# y axis ranges for 2pt fit plots
 declare -A ayRange
 ayRange[h${Heavy}_s,0]='0.815:0.845'
 ayRange[s_l,0]='0.22:0.28'
@@ -58,17 +46,27 @@ ayrangeMEL[gXYZ,3]=0.36:0.48
 ayrangeR3[gXYZ,4]=0.00020:0.00050
 ayrangeMEL[gXYZ,4]=0.30:0.48
 
+# y-ranges for renormalised R3 ratios
+declare -A ayrangeR3R
+
 declare -A aMesonFit
 declare -A aMesonFileOp
 declare -A aMesonFileMom
 
-aDsTIP=10
-aDsTFP=26
-aDsTIW=19
-aDsTFW=26
+############################################################
 
-UseDsWall=1
-if (( UseDsWall )); then
+# Choose heavy two point fits
+
+############################################################
+
+function ChooseHeavyFits()
+{
+  local aDsTIP=10
+  local aDsTFP=26
+  local aDsTIW=19
+  local aDsTFW=26
+
+if ! [ -v DisableDsWall ]; then
   # Ds point-point and point-wall (though they have some tension)
   aMesonFit[h${Heavy}_s,0]=corr_${aDsTIP}_${aDsTFP}_${aDsTIW}_${aDsTFW}
   aMesonFileOp[h${Heavy}_s,0]=g5P_g5W
@@ -78,11 +76,7 @@ else
   aMesonFileOp[h${Heavy}_s,0]=g5P
 fi
 aMesonFileMom[h${Heavy}_s,0]=_p2_0
-
-aKaonTIP=( 6  6  7  7  6)
-aKaonTFP=(20 20 20 19 16)
-aKaonTIW=( 8  7  6  6 13)
-aKaonTFW=(20 20 20 19 16)
+}
 
 ############################################################
 
@@ -92,8 +86,12 @@ aKaonTFW=(20 20 20 19 16)
 
 function ChooseTwoPtFits()
 {
-  case $FileSeries in
+  case "$1" in
     old) # Versions using different PP+PW fit on each momentum
+    local aKaonTIP=( 6  6  7  7  6)
+    local aKaonTFP=(20 20 20 19 16)
+    local aKaonTIW=( 8  7  6  6 13)
+    local aKaonTFW=(20 20 20 19 16)
     for((i = 0; i < ${#aKaonTIP[@]}; ++i)); do
       aMesonFit[s_l,$i]=corr_${aKaonTIP[i]}_${aKaonTFP[i]}_${aKaonTIW[i]}_${aKaonTFW[i]}
     done
@@ -111,111 +109,115 @@ function ChooseTwoPtFits()
       aMesonFileMom[s_l,$i]=
     done;;
 
-    *) echo "FileSeries $FileSeries unrecognised"; exit 1;;
+    *) echo "Two-point fits $1 unrecognised"; exit 1;;
   esac
+  echo "Performing $FitWhat fits to $Ratio for $FileSeries with 2pt $1"
 }
 
 ############################################################
 
-# Two step fits - i.e. fit R3 using 2pt fits as input
+# These were my original ratio fit ranges
 
 ############################################################
 
-if [ -v Do2Step ]; then
+function RatioFitsBase()
+{
+  # For now, these are borrowed directly from M1
+  Gamma=gT
+  NumExp=${NumExp:-2}
+  DeltaT="24 28 32" TI='11 11 11' TF='18 22 26' FitTwoStage 0
+  Alt= DeltaT="28 32" TI='11 11' TF='22 26' FitTwoStage 0
+  Alt= DeltaT="20 24 28 32" TI='10 11 11 11' TF='14 18 22 26' FitTwoStage 0
+  Alt= DeltaT="20 24 28   " TI='10 11 11'    TF='14 18 22' FitTwoStage 0
+  Alt= DeltaT="20 24      " TI='10 11'       TF='14 18' FitTwoStage 0
 
-# First choose which 2pt fits to use
+  DeltaT="24 28" TI='8 8' TF='18 22' FitTwoStage 1
+  Alt= DeltaT="24 28 32" TI='8 8 16' TF='18 22 18' FitTwoStage 1 # Just to see Delta T=32
+  Alt= DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 1
+  Alt= DeltaT="24 28 32" TI='10 10 16' TF='17 21 18' FitTwoStage 1 # Just to see Delta T=32
 
-unset FitOptions
-for FileSeries in ${series-disp}
-do
-  echo "Performing $FitWhat fits to $Ratio for $FileSeries"
-  ChooseTwoPtFits
-  (
-  #FitOptions='--covsrc bootstrap'
-  for CorrUncorr in 0 1
-  do
-    # For now, these are borrowed directly from M1
-    Gamma=gT
-    NumExp=2 DeltaT="24 28 32" TI='11 11 11' TF='18 22 26' FitTwoStage 0
-    Alt= NumExp=2 DeltaT="28 32" TI='11 11' TF='22 26' FitTwoStage 0
-    Alt= NumExp=2 DeltaT="20 24 28 32" TI='10 11 11 11' TF='14 18 22 26' FitTwoStage 0
-    Alt= NumExp=2 DeltaT="20 24 28   " TI='10 11 11'    TF='14 18 22' FitTwoStage 0
-    Alt= NumExp=2 DeltaT="20 24      " TI='10 11'       TF='14 18' FitTwoStage 0
+  DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 2
+  Alt= DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' FitTwoStage 2
+  Alt= DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 2
+  Alt= DeltaT="24 28 32" TI='10 10 15' TF='17 21 17' FitTwoStage 2 # Just to see Delta T=32
 
-    NumExp=2 DeltaT="24 28" TI='8 8' TF='18 22' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28 32" TI='8 8 16' TF='18 22 18' FitTwoStage 1 # Just to see Delta T=32
-    Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 16' TF='17 21 18' FitTwoStage 1 # Just to see Delta T=32
+  DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 3 # Preferred
+  Alt= DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' FitTwoStage 3
+  Alt= DeltaT="16 20" TI='10 10' TF='10 13' FitTwoStage 3
+  Alt= DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 3
+  Alt= DeltaT="24 28 32" TI='10 10 20' TF='17 21 21' FitTwoStage 3 # Just to see Delta T=32
 
-    NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 15' TF='17 21 17' FitTwoStage 2 # Just to see Delta T=32
+  DeltaT="16 20" TI='7 8' TF='10 11' FitTwoStage 4
+  Alt= DeltaT="16 20 24" TI='7 8 10' TF='10 11 15' FitTwoStage 4
+  Alt= DeltaT="20 24" TI='8 10' TF='11 15' FitTwoStage 4
+  Alt= DeltaT="20 24 28" TI='8 10 12' TF='11 15 18' FitTwoStage 4
+  Alt= DeltaT="20 24 28 32" TI='8 10 12 20' TF='11 15 18 21' FitTwoStage 4
+  #DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 4
+  #Alt= DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 4
+  #Alt= DeltaT="20 24 28 32" TI='10 10 14 20' TF='13 17 15 21' FitTwoStage 4 # See DT 28,32
 
-    NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 3 # Preferred
-    Alt= NumExp=2 DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' FitTwoStage 3
-    Alt= NumExp=2 DeltaT="16 20" TI='10 10' TF='10 13' FitTwoStage 3
-    Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 3
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 20' TF='17 21 21' FitTwoStage 3 # Just to see Delta T=32
+  Gamma=gXYZ
+  DeltaT="20 24 28" TI='10 10 10' TF='14 18 22' FitTwoStage 1 # Preferred
+  Alt= DeltaT="20 24" TI='10 10' TF='14 18' FitTwoStage 1
+  Alt= DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 1
+  Alt= DeltaT="24 28 32" TI='10 10 15' TF='17 21 23' FitTwoStage 1
+  Alt= DeltaT="24 28 32" TI='10 10 10' TF='17 21 25' FitTwoStage 1
+  Alt= DeltaT="24 28 32" TI='10 10 16' TF='17 21 18' FitTwoStage 1 # Just to see Delta T=32
 
-    NumExp=2 DeltaT="16 20" TI='7 8' TF='10 11' FitTwoStage 4
-    Alt= NumExp=2 DeltaT="16 20 24" TI='7 8 10' TF='10 11 15' FitTwoStage 4
-    Alt= NumExp=2 DeltaT="20 24" TI='8 10' TF='11 15' FitTwoStage 4
-    Alt= NumExp=2 DeltaT="20 24 28" TI='8 10 12' TF='11 15 18' FitTwoStage 4
-    Alt= NumExp=2 DeltaT="20 24 28 32" TI='8 10 12 20' TF='11 15 18 21' FitTwoStage 4
-    #NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 4
-    #Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 4
-    #Alt= NumExp=2 DeltaT="20 24 28 32" TI='10 10 14 20' TF='13 17 15 21' FitTwoStage 4 # See DT 28,32
+  DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 2
+  Alt= DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' FitTwoStage 2 # Preferred
+  Alt= DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 2
+  Alt= DeltaT="24 28 32" TI='10 10 15' TF='17 21 23' FitTwoStage 2
+  Alt= DeltaT="24 28 32" TI='10 10 10' TF='17 21 25' FitTwoStage 2 # Just to see Delta T=32
 
-    Gamma=gXYZ
-    NumExp=2 DeltaT="20 24 28" TI='10 10 10' TF='14 18 22' FitTwoStage 1 # Preferred
-    Alt= NumExp=2 DeltaT="20 24" TI='10 10' TF='14 18' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 15' TF='17 21 23' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 10' TF='17 21 25' FitTwoStage 1
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 16' TF='17 21 18' FitTwoStage 1 # Just to see Delta T=32
+  DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 3 # Preferred
+  Alt= DeltaT="20 24 28" TI='10 10 13' TF='13 17 21' FitTwoStage 3
+  Alt= DeltaT="24 28" TI='10 13' TF='17 21' FitTwoStage 3
+  Alt= DeltaT="24 28 32" TI='10 13 10' TF='17 21 25' FitTwoStage 3 # Just to see Delta T=32
 
-    NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' FitTwoStage 2 # Preferred
-    Alt= NumExp=2 DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 15' TF='17 21 23' FitTwoStage 2
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 10 10' TF='17 21 25' FitTwoStage 2 # Just to see Delta T=32
+  DeltaT="20 24" TI='10 12' TF='13 17' FitTwoStage 4 # Preferred
+  Alt= DeltaT="20 24 28" TI='10 12 17' TF='13 17 21' FitTwoStage 4 # Preferred
+  Alt= DeltaT="24 28" TI='12 17' TF='17 21' FitTwoStage 4
+  Alt= DeltaT="24 28 32" TI='12 17 21' TF='17 21 25' FitTwoStage 4 # Just to see Delta T=32
+}
 
-    NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 3 # Preferred
-    Alt= NumExp=2 DeltaT="20 24 28" TI='10 10 13' TF='13 17 21' FitTwoStage 3
-    Alt= NumExp=2 DeltaT="24 28" TI='10 13' TF='17 21' FitTwoStage 3
-    Alt= NumExp=2 DeltaT="24 28 32" TI='10 13 10' TF='17 21 25' FitTwoStage 3 # Just to see Delta T=32
+############################################################
 
-    NumExp=2 DeltaT="20 24" TI='10 12' TF='13 17' FitTwoStage 4 # Preferred
-    Alt= NumExp=2 DeltaT="20 24 28" TI='10 12 17' TF='13 17 21' FitTwoStage 4 # Preferred
-    Alt= NumExp=2 DeltaT="24 28" TI='12 17' TF='17 21' FitTwoStage 4
-    Alt= NumExp=2 DeltaT="24 28 32" TI='12 17 21' TF='17 21 25' FitTwoStage 4 # Just to see Delta T=32
+# Give me an idea of what the ratios look like
 
-    UnCorr=
-  done
-  )
-done
-fi
+############################################################
 
-if [ -v DoIdea ]; then # Give me an idea of what the ratios look like
-  FileSeries=disp; ChooseTwoPtFits; FileSeries=idea; Gamma=gXYZ
+function RatioFitsIdea()
+{
   NumExp=2 DeltaT="16 20 24 28 32" TI='9 11 11 11 11' TF='10 13 18 22 26' FitTwoStage 0
+  for Gamma in gT gXYZ; do
   NumExp=2 DeltaT="16 20 24 28 32" TI='8 10  9  8  9' TF='10 13 18 22 25' FitTwoStage 1
   NumExp=2 DeltaT="16 20 24 28 32" TI='7  8  7  8  8' TF='10 13 18 22 26' FitTwoStage 2
   NumExp=2 DeltaT="16 20 24 28 32" TI='7  7  7  8 14' TF='10 14 18 22 25' FitTwoStage 3
   NumExp=2 DeltaT="16 20 24 28 32" TI='7  7  8  7 17' TF='10 13 18 22 26' FitTwoStage 4
-fi
+  done
+}
 
-if [ -v DoTest ]; then # Do manual tests here
-  (
-  FileSeries=disp; ChooseTwoPtFits; Gamma=gT
-    UnCorr= Alt= NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 4
-  )
-fi
+############################################################
 
-if [ -v DoSimul ]; then
-  (
-  echo "Performing Simultaneous $FitWhat fits to $Ratio"
+# Ratio fit ranges being tested
+
+############################################################
+
+function RatioFitsTest()
+{
+  Gamma=gT
+  UnCorr= Alt= NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 4
+}
+
+############################################################
+
+# Simultaneously fit two-pt functions and ratios
+
+############################################################
+
+function RatioFitsSimul()
+{
   Gamma=gT
   Thin=('' '' t3)
   NumExp=3
@@ -224,5 +226,49 @@ if [ -v DoSimul ]; then
   NumExp=2
   #DeltaT=(24 28 32); TI=(9 9 9); TF=(17 22 26); DoSimulFit 1
   #DeltaT=(28 32); TI=(9 9); TF=(22 26); DoSimulFit 1
-  )
-fi
+}
+
+############################################################
+
+# Input
+
+############################################################
+
+FitWhat="${FitWhat-R3}"
+Ratio=ratioE1ZV1
+
+qSrc=h$Heavy
+qSnk=l
+qSpec=s
+
+ChooseHeavyFits
+
+for FileSeries in ${series-disp renorm}
+do
+(
+  case $FileSeries in
+    disp)
+      ChooseTwoPtFits $FileSeries
+      RatioFitsBase
+      [ -v UnCorr ] || UnCorr= RatioFitsBase;;
+
+    renorm)
+      ChooseTwoPtFits disp
+      #NumExp=3
+      Ratio=ratio Renorm= NotRaw= RatioFitsBase;;
+
+    simul)
+      RatioFitsSimul;;
+
+    idea)
+      ChooseTwoPtFits disp
+      RatioFitsIdea;;
+
+    "test")
+      ChooseTwoPtFits disp
+      RatioFitsTest;;
+
+    *) echo "FileSeries $FileSeries unrecognised"; exit 1;;
+  esac
+)
+done

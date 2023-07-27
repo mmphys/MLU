@@ -15,13 +15,18 @@ MELFit=${MELFit:-MELFit}
 
 # Derived variables
 
-OutBase=$Ensemble/$MELFit/Fit_sp2_
+OutDir=$Ensemble/$MELFit
+OutBase=Fit_sp2_
 
 ############################################################
 
 # Make the fit selection files I use
 
 ############################################################
+
+(
+mkdir -p $OutDir
+cd $OutDir
 
 [ -e ${OutBase}disp.txt ] || cat > ${OutBase}disp.txt <<- EndFitChoices
 	# Ensemble: $Ensemble
@@ -107,6 +112,9 @@ EndFitChoices
 	s_l_p2_4  2ptp2/s_l/s_l_p2_4.betterPW_6_23_7_23.corr_6_18_6_18.g5P_g5W.model.2263212701.h5
 EndFitChoices
 
+[ -e ${OutBase}renorm.txt ] || ln -s ${OutBase}disp.txt ${OutBase}renorm.txt
+)
+
 ############################################################
 
 # Make the form factors
@@ -115,3 +123,4 @@ EndFitChoices
 
 series='disp old priorP priorPW betterP betterPW' PlotFormFactor.sh
 series=disp FitSeries=std UnCorr= PlotFormFactor.sh
+series=renorm ZV= PlotFormFactor.sh

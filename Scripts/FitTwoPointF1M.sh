@@ -42,6 +42,7 @@ fi
 
 ############################################################
 
+# y axis ranges for 2pt fit plots
 declare -A ayRange
 ayRange[h385_s,0]='0.72:0.739'
 #ayRange[s_l,0]='0.187:0.197' # Zoom in

@@ -16,16 +16,6 @@ set -e
 
 ############################################################
 
-declare -A ayRange
-ayRange[h385_s,0]='0.72:0.735'
-ayRange[s_l,0]='0.187:0.197'
-ayRange[s_l,1]='0.225:0.245'
-ayRange[s_l,2]='0.25:0.28'
-ayRange[s_l,3]='0.28:0.32'
-ayRange[s_l,4]='0.3:0.37'
-ayRange[s_l,5]='0.32:0.38'
-ayRange[s_l,6]='0.2:0.42'
-
 declare -A ayrangeR3
 declare -A ayrangeMEL # Poor name. This is for the 3pt correlators - not matrix elements
 ayrangeR3[gT,0]=0.00068:0.000782
@@ -58,7 +48,7 @@ ayrangeMEL[gXYZ,6]=0.27:0.37
 # y-ranges for renormalised R3 ratios
 declare -A ayrangeR3R
 ayrangeR3R[gT,0]=0.78:0.93
-ayrangeR3R[gT,1]=0.65:0.85
+ayrangeR3R[gT,1]=0.705:0.83 #0.65:0.85
 ayrangeR3R[gT,2]=0.60:0.8
 ayrangeR3R[gT,3]=0.55:0.75
 ayrangeR3R[gT,4]=0.50:0.7
@@ -165,7 +155,7 @@ function RatioFitsOld()
 
 ############################################################
 
-function RatioFitsOldStd()
+function RatioFitsStd()
 {
   UnCorr=
   DeltaT="24 28 32"
@@ -260,13 +250,17 @@ function RatioFitsDisp()
   Alt= DeltaT="20 24 28 32" TI='12 13 16 20' TF='13 16 20 24' FitTwoStage 6
 }
 
+############################################################
+
+# Ratio fit ranges being tested
+
+############################################################
+
 function RatioFitsTest()
 {
-(
-  for (( i=0; i<2; ++i )); do
   Gamma=gT
   NumExp=3
-  Ratio=ratio; Renorm=; NotRaw=
+  #Ratio=ratio; Renorm=; NotRaw=
   #Ratio=ratioZV1; NotRaw=; yrangeR3='0.85:0.95'
   #Ratio=ratioE1; yrangeR3='0.00055:0.00061'
   #DeltaT=20 TI=10 TF=14 FitTwoStage 1
@@ -279,9 +273,6 @@ function RatioFitsTest()
   DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' FitTwoStage 1
   #DeltaT="24 28" TI='13 16' TF='16 20' FitTwoStage 1
   #DeltaT="28 32" TI='16 20' TF='20 24' FitTwoStage 1
-  UnCorr=
-  done
-)
 }
 
 ############################################################
@@ -308,7 +299,7 @@ do
  
     oldstd)
       ChooseTwoPtFits old
-      RatioFitsOldStd;;
+      RatioFitsStd;;
  
     # Not sure either of better/disp are any good
     better | disp)

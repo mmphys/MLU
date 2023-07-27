@@ -72,8 +72,10 @@ MELFit=${MELFit:-MELFit}
 local R3yrange
 if [ -n "$yrangeR3" ]; then
   R3yrange="$yrangeR3"
-elif [ -v Renorm ] && (( Raw == 0 )) && [ -n "${ayrangeR3R[$Gamma,$pSnk]}" ]; then
-  R3yrange="${ayrangeR3R[$Gamma,$pSnk]}"
+elif [ -v Renorm ] && (( Raw == 0 )); then
+  [ -n "${ayrangeR3R[$Gamma,$pSnk]}" ] && R3yrange="${ayrangeR3R[$Gamma,$pSnk]}"
+elif [ -n "${ayrangeR3[$Gamma,$pSnk]}" ]; then
+  R3yrange="${ayrangeR3[$Gamma,$pSnk]}"
 fi
 yrangeMEL=${yrangeMEL:-${ayrangeMEL[$Gamma,$pSnk]}}
 eval FitOptionsPerFile=($Options)
