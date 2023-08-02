@@ -74,6 +74,8 @@ struct DataSet
       return constFile[0]->Seed();
     return RandomCache::DefaultSeed();
   }
+  /// True if every member of the data set has same seed
+  bool HasSameSeed() const;
   ConstMap constMap;
   std::vector<int> RebinSize; // Bin sizes if I've rebinned the raw data
   // Cached data for selected FitTimes

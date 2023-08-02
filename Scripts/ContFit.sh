@@ -47,7 +47,7 @@ do
     echo $Cmd &>  $LogBase.log
     if ! eval $Cmd &>> $LogBase.log; then echo "Returned ${PIPESTATUS[0]}" &>> $LogBase.log; fi
     # Now plot it
-    Cmd="xrange='$xRangeMin:$xRangeMax' plotglobfit.sh '$LogBase.$MLUSeed.dat'"
+    Cmd="xrange='$xRangeMin:$xRangeMax' plotglobfit.sh '$LogBase'"
     echo $Cmd &>> $LogBase.log
     eval $Cmd &>> $LogBase.log
   done

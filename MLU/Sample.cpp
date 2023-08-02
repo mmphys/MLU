@@ -345,10 +345,10 @@ template <typename T>
 void Sample<T>::Read( bool bSetSeed, SeedType NewSeed,
                       const char *PrintPrefix, std::string *pGroupName )
 {
-  if( !Name_.bSeedNum )
+  /*if( !Name_.bSeedNum )
     throw std::runtime_error( "Seed missing from " + Name_.Filename );
   if( Name_.Type.empty() )
-    throw std::runtime_error( "Type missing from " + Name_.Filename );
+    throw std::runtime_error( "Type missing from " + Name_.Filename );*/
   ::H5::H5File f;
   ::H5::Group  g;
   H5::OpenFileGroup( f, g, Name_.Filename, PrintPrefix, pGroupName );
@@ -751,15 +751,13 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
 }
 
 template <typename T>
-void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
+void Sample<T>::Write( const char * pszGroupName )
 {
-  // Assume the caller knows what they're doing if the name is not in my format
-  try { SetName( FileName ); } catch ( const std::runtime_error &e ) {}
   const std::string GroupName{ pszGroupName == nullptr || *pszGroupName == 0 ? DefaultGroupName() : pszGroupName };
   bool bOK = false;
   try // to write in my format
   {
-    ::H5::H5File f( FileName, H5F_ACC_TRUNC );
+    ::H5::H5File f( Name_.Filename, H5F_ACC_TRUNC );
     hsize_t Dims[2];
     Dims[0] = 1;
     ::H5::DataSpace ds1( 1, Dims );
@@ -879,7 +877,7 @@ void Sample<T>::Write( const std::string &FileName, const char * pszGroupName )
     bOK = false;
   }
   if( !bOK )
-    throw std::runtime_error( "Unable to write sample to " + FileName + ", group " + GroupName );
+    throw std::runtime_error( "Unable to write sample to "+Name_.Filename+", group "+GroupName );
 }
 
 // Make a summary of the data

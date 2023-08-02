@@ -439,7 +439,7 @@ struct NamedMomentum
 struct FileNameAtt
 {
   std::string Filename; // Full (and unadulterated) original filename
-  std::string NameNoExt;// Original filename, without path and without extension
+  std::string NameNoExt;// Original filename, with path but without extension
   std::string Dir;      // Directory part of the filename (with trailing '/')
   std::string Base;     // Base of the filename (containing momentum, current, delta T and timeslice)
   std::vector<std::string> BaseShortParts;// BaseShort split into parts at separator '_'
@@ -525,10 +525,36 @@ struct FileNameAtt
   {
     l.swap( r );
   }
+  void Parse( const std::string &DirBase, const std::string &Type, bool bHasSeed, SeedType Seed,              const std::string &Ext, std::vector<std::string> * pOpNames = nullptr,
+              const std::vector<std::string> * pIgnoreMomenta = nullptr,
+              const std::vector<std::string> * pIgnoreRegEx = nullptr,
+              bool bPreBootstrap = false );
+  void Parse( const std::string &DirBase, const std::string &Type, SeedType Seed,
+              const std::string &Ext, std::vector<std::string> * pOpNames = nullptr,
+              const std::vector<std::string> * pIgnoreMomenta = nullptr,
+              const std::vector<std::string> * pIgnoreRegEx = nullptr,
+              bool bPreBootstrap = false )
+  {
+    Parse( DirBase, Type, true, Seed, Ext, pOpNames, pIgnoreMomenta, pIgnoreRegEx, bPreBootstrap );
+  }
+  void Parse( const std::string &DirBase, const std::string &Type,
+              const std::string &Ext, std::vector<std::string> * pOpNames = nullptr,
+              const std::vector<std::string> * pIgnoreMomenta = nullptr,
+              const std::vector<std::string> * pIgnoreRegEx = nullptr,
+              bool bPreBootstrap = false )
+  {
+    Parse( DirBase, Type, false, 0, Ext, pOpNames, pIgnoreMomenta, pIgnoreRegEx, bPreBootstrap );
+  }
   void Parse( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr,
               const std::vector<std::string> * pIgnoreMomenta = nullptr,
               const std::vector<std::string> * pIgnoreRegEx = nullptr,
               bool bPreBootstrap = false );
+protected:
+  void Parse( std::vector<std::string> * pOpNames,
+              const std::vector<std::string> * pIgnoreMomenta,
+              const std::vector<std::string> * pIgnoreRegEx,
+              bool bPreBootstrap );
+public:
   FileNameAtt() = default;
   explicit FileNameAtt( const std::string &Filename, std::vector<std::string> * pOpNames = nullptr,
                         const std::vector<std::string> * pIgnoreMomenta = nullptr,
@@ -544,6 +570,7 @@ struct FileNameAtt
   std::string GetBaseShort( int First = 0, int Last = UINT_MAX ) const;
   std::string GetBaseShortExtra( int First = 0, int Last = UINT_MAX ) const;
   std::string GetBaseExtra( int Last = 0, int First = -1 ) const;
+  std::string GetBaseExtraOps() const;
   // Make a new name based on this one, overriding specified elements
   std::string DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
                            const std::string &Ext ) const;
@@ -560,10 +587,21 @@ protected:
   std::vector<std::string> ParseOpNames( int NumOps );
 };
 
-/// Make a filename "Base.Type.seed.Ext"
-std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext);
-/// Make a filename "Base.Type.seed.Ext" - seed is the default seed (from MLUSeed env var)
-std::string MakeFilename( const std::string &Base, const std::string &Type, const std::string &Ext );
+/// Make a filename "Base(.* optional * Type)(.* optional * seed)(.* optional * Ext)"
+std::string MakeFilename( const std::string &Base, const std::string &Type,
+                          bool bHasSeed, SeedType Seed, const std::string &Ext );
+/// Make a filename "Base(.* optional * Type).seed(.* optional * Ext)"
+inline std::string MakeFilename( const std::string &Base, const std::string &Type,
+                                 SeedType Seed, const std::string &Ext )
+{
+  return MakeFilename( Base, Type, true, Seed, Ext );
+}
+/// Make a filename "Base(.* optional * Type)(.* optional * Ext)" (no seed)
+inline std::string MakeFilename( const std::string &Base, const std::string &Type,
+                                 const std::string &Ext )
+{
+  return MakeFilename( Base, Type, false, 0, Ext );
+}
 /// Find existing file with specified Seed, but fall back to another seed if missing
 std::string ExistingFilename( const std::string &Base, const std::string &Type, SeedType Seed,
                               const std::string &Ext );

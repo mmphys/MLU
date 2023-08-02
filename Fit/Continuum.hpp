@@ -49,6 +49,13 @@ struct CreateParams : public Model::CreateParams
 struct ContinuumFit
 {
 protected:
+  static constexpr scalar InvGeV{ 1e-9 };
+  static constexpr scalar InvGeVSq{ InvGeV * InvGeV };
+  static constexpr scalar Lambda{ 1e9 };
+  static constexpr scalar InvLambda{ 1. / Lambda };
+  static const std::string sFindError;
+  static const std::string sPDG;
+  static const std::string sQSqFileType;
   Common::CommandLine &cl;
 public:
   const int NumSamples;
@@ -65,12 +72,22 @@ public:
   explicit ContinuumFit( Common::CommandLine &cl );
   int Run();
 protected:
+  // Parameters from the model just created. Set by GetIndixes()
+  std::array<std::size_t, 5> idxC;
+  std::size_t idxPDGH;
+  std::size_t idxPDGL;
+  std::size_t idxDelta;
+  scalar Min, Max;
+  // Get the indices of parameters from the model just created
+  void GetIndices();
   std::string sOpNameConcat; // Sorted, concatenated list of operators in the fit for filenames
+  std::array<std::string, 2> Meson;
   void LoadModels();
   void SortModels();
   void LoadExtra();
   void MakeOutputFilename();
   void MakeCovarBlock();
+  void WriteSynthetic() const;
   int DoFit();
 };
 

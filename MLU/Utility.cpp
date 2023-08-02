@@ -151,7 +151,37 @@ void MomentumMap::Parse( std::string &BaseShort )
   }
 }
 
+void FileNameAtt::Parse( const std::string &DirBase, const std::string &Type,
+                         bool bHasSeed, SeedType Seed, const std::string &Ext,
+                         std::vector<std::string> * pOpNames,
+                         const std::vector<std::string> * pIgnoreMomenta,
+                         const std::vector<std::string> * pIgnoreRegEx,
+                         bool bPreBootstrap )
+{
+  clear();
+  Filename = MakeFilename( DirBase, Type, bHasSeed, Seed, Ext );
+  Base = DirBase;
+  std::size_t pos = Base.find_last_of( '/' );
+  if( pos == std::string::npos )
+    pos = 0;
+  else
+  {
+    Dir = Base.substr( 0, ++pos );
+    Base.erase( 0, pos );
+  }
+  this->Type = Type;
+  if( bHasSeed )
+  {
+    bSeedNum = bHasSeed;
+    this->Seed = Seed;
+    this->SeedString = RandomCache::SeedString( Seed );
+  }
+  this->Ext = Ext;
+  Parse( pOpNames, pIgnoreMomenta, pIgnoreRegEx, bPreBootstrap );
+}
+
 // These are the attributes I like to use in my filenames
+// Sets: Filename; Dir; Base; Ext; Type; SeedString; bSeedNum; Seed
 void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> * pOpNames,
                          const std::vector<std::string> * pIgnoreMomenta,
                          const std::vector<std::string> * pIgnoreRegEx,
@@ -163,25 +193,74 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
   if( pos == std::string::npos )
     pos = 0;
   else
+    Dir = Filename.substr( 0, ++pos );
+  Base = Filename.substr( pos );
+  // Now break the filename apart into pieces
+  int i = 0;
+  while( i < ( bPreBootstrap ? 2 : 3 ) && ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
   {
-    // Work out whether the last subdirectory is a Spectator directory
-    if( pos )
+    std::string Hunk{ Base.substr( pos + 1 ) };
+    Base.resize( pos );
+    if( i == 0 )
     {
-      std::size_t Prev = Filename.find_last_of( '/', pos - 1 );
+      Ext = std::move( Hunk );
+    }
+    if( i == 1 )
+    {
+      try
+      {
+        Seed = RandomCache::Seed( Hunk );
+        bSeedNum = true;
+        SeedString = std::move( Hunk );
+      }
+      catch(...)
+      {
+        std::cout << "Ignoring invalid seed in " << Filename << std::endl;
+        if( bPreBootstrap )
+          SeedString = std::move( Hunk );
+        else
+          ++i;
+      }
+    }
+    if( i == 2 )
+    {
+      Type = std::move( Hunk );
+    }
+    ++i;
+  }
+  Parse( pOpNames, pIgnoreMomenta, pIgnoreRegEx, bPreBootstrap );
+}
+
+// Parse Base
+void FileNameAtt::Parse( std::vector<std::string> * pOpNames,
+                         const std::vector<std::string> * pIgnoreMomenta,
+                         const std::vector<std::string> * pIgnoreRegEx,
+                         bool bPreBootstrap )
+{
+  NameNoExt = Filename;
+  if( Ext.size() )
+    NameNoExt.resize( NameNoExt.size() - ( Ext.size() + 1 ) );
+  std::size_t pos;
+    // Work out whether the last subdirectory is a Spectator directory
+    // Parse the end of Dir looking for: Spectator; bSpectatorGotSuffix
+    if( Dir.size() > 1 )
+    {
+      pos = Dir.size() - 1;
+      std::size_t Prev = Dir.find_last_of( '/', pos - 1 );
       if( Prev == std::string::npos )
         Prev = 0;
       else
         ++Prev;
       // Spectator directories look like "3*_{spec}[p2]" ... with only one underscore
-      if( Filename[Prev] == '3' )
+      if( Dir[Prev] == '3' )
       {
-        std::string SpecDir{ Filename.substr( Prev, pos - Prev ) };
+        std::string SpecDir{ Dir.substr( Prev, pos - Prev ) };
         Prev = SpecDir.find_first_of( '_', 1 );
         if( Prev != std::string::npos && Prev < SpecDir.length() - 1
            && SpecDir.find_first_of( '_', Prev + 1 ) == std::string::npos )
         {
-          this->SpecDir = SpecDir;
           Spectator = SpecDir.substr( Prev + 1 );
+          this->SpecDir = std::move( SpecDir );
           std::size_t SpecLen{ Spectator.length() };
           std::size_t SuffixLen{ Common::Momentum::DefaultPrefixSquared.length() };
           if( SpecLen > SuffixLen
@@ -194,38 +273,7 @@ void FileNameAtt::Parse( const std::string &Filename_, std::vector<std::string> 
         }
       }
     }
-    // Save the directory
-    Dir = Filename.substr( 0, ++pos );
-  }
-  Base = Filename.substr( pos );
-  NameNoExt = Base;
-  int i = 0;
-  while( i < ( bPreBootstrap ? 2 : 3 ) && ( pos = Base.find_last_of( '.' ) ) != std::string::npos )
-  {
-    switch( i )
-    {
-      case 0:
-        Ext = Base.substr( pos + 1 );
-        break;
-      case 1:
-        SeedString = Base.substr( pos + 1 );
-        try {
-          Seed = RandomCache::Seed( SeedString );
-          bSeedNum = true;
-        } catch(...) {
-          std::cout << "Ignoring invalid seed in " << Filename << std::endl;
-        }
-        break;
-      case 2:
-        Type = Base.substr( pos + 1 );
-        break;
-    }
-    Base.resize(pos);
-    if( i == 0 )
-      NameNoExt = Base;
-    i++;
-  }
-  // If there are extra segments, the last contains operator names. Otherwise extract 2 op names
+  // If Base has extra segments, the last contains operator names. Otherwise extract 2 op names
   if( !bPreBootstrap )
   {
     pos = Base.find_last_of( '.' );
@@ -434,6 +482,13 @@ std::string FileNameAtt::GetBaseExtra( int Last, int First ) const
   return s;
 }
 
+std::string FileNameAtt::GetBaseExtraOps() const
+{
+  std::string s{ GetBaseExtra() };
+  AppendOps( s );
+  return s;
+}
+
 // Make a new name based on this one, overriding specified elements
 std::string FileNameAtt::DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
                                       const std::string &Ext ) const
@@ -482,22 +537,27 @@ const MomentumPair &FileNameAtt::GetFirstNonZeroMomentum() const
 }
 
 // Make a filename "Base.Type.seed.Ext"
-std::string MakeFilename(const std::string &Base, const std::string &Type, SeedType Seed, const std::string &Ext)
+std::string MakeFilename( const std::string &Base, const std::string &Type,
+                          bool bHasSeed, SeedType Seed, const std::string &Ext )
 {
   const char Sep = '.';
   std::string s{ Base };
+  if( !Type.empty() )
+  {
   s.append( 1, Sep );
   s.append( Type );
+  }
+  if( bHasSeed )
+  {
   s.append( 1, Sep );
   s.append( RandomCache::SeedString( Seed ) );
+  }
+  if( !Ext.empty() )
+  {
   s.append( 1, Sep );
   s.append( Ext );
+  }
   return s;
-}
-
-std::string MakeFilename( const std::string &Base, const std::string &Type, const std::string &Ext )
-{
-  return MakeFilename( Base, Type, RandomCache::DefaultSeed(), Ext );
 }
 
 std::string ExistingFilename( const std::string &Base, const std::string &Type, SeedType Seed,

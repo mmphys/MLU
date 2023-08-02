@@ -42,6 +42,7 @@ FitC3=$FitC3
 EOfQSqConst=FitmH * FitmH + FitmL * FitmL
 EOfQSq(qSq)=( EOfQSqConst - qSq ) / ( 2 * FitmH )
 Lambda=1e9
+InvLambda=1e0 / Lambda; InvLambdaSq=InvLambda * InvLambda
 Contin(qSq)=Lambda/(EOfQSq(qSq) + FitDelta) * \
   ( FitC0 + FitC2 * EOfQSq(qSq) / Lambda + FitC3 * EOfQSq(qSq) / Lambda * EOfQSq(qSq) / Lambda )
 
@@ -78,11 +79,15 @@ set linetype 8 ps 0.66 pt 7 lc rgb 0xC00000 #red
 #print "word(Ensembles,1)=".word(Ensembles,1)
 #print "word(Ensembles,2)=".word(Ensembles,2)
 #print "word(Ensembles,3)=".word(Ensembles,3)
-plot for [i=1:6] PlotFile \
+plot PlotFile."_qsq.txt" using (column('x')*InvLambdaSq):(column('y_low')):(column('y_high')) \
+        with filledcurves notitle fc "skyblue" fs transparent solid 0.5, \
+    for [i=1:6] PlotFile.".dat" \
         using (stringcolumn("ensemble") eq word(Ensembles,i) ? column(xAxis) * 1e-18 : NaN) \
         :(column("data")):(column("data_low")):(column("data_high")) \
         with yerrorbars title word(Ensembles,i) ls i, \
-    Contin(x*Lambda*Lambda) title "Continuum" ls 8
+    Contin(x*Lambda*Lambda) title "Continuum" ls 8, \
+    NaN with filledcurves title "Error" fc "skyblue" fs transparent solid 0.5
+#    NaN with lines title 'Banana' lc rgb 0xC00000 bgnd "skyblue"
 
 EOFMark
 }
@@ -129,20 +134,23 @@ fi
 # Save in specified directory, otherwise in same directory as source
 # Input:  $1 filename to plot
 # Output: save    Path to save to, without seed or extension (ie ending in .model)
-#         MLUSeed Seed from input filename (if present)
 function GetSaveName()
 {
-  local InPath="$1"
+  local -n InPath=$1
   local Filename="${InPath##*/}"
   local IFS=.
   local -a NameParts
   read -ra NameParts <<< "$Filename"
-  if (( ${#NameParts[@]} > 2 )); then MLUSeed="${NameParts[-2]}"; fi
-  if (( ${#NameParts[@]} > 3 )); then
-    if [[ ${NameParts[-3]: -3} = "_td" ]]; then NameParts[-3]=${NameParts[-3]:0:-3}; fi
-    save="${NameParts[*]:0:${#NameParts[@]}-2}"
+  if (( ${#NameParts[@]} > 2 )); then
+    NameParts[-2]=${NameParts[-2]%%_*}
+    save="${NameParts[*]:0:${#NameParts[@]}-1}"
   else
-    save="${NameParts[*]:0:1}.model"
+    save="${NameParts[*]:0:0}.model"
+  fi
+  if [[ $Filename = $InPath ]]; then
+    InPath="$save"
+  else
+    InPath="${InPath%/*}/$save"
   fi
   if [[ -v SaveDir || $Filename = $InPath ]]; then
     save="${SaveDir}$save"
@@ -153,7 +161,7 @@ function GetSaveName()
 
 function GetFitData()
 {
-  local InPath=${PlotFile%.*}.h5
+  local InPath=${PlotFile}.h5
   ColumnValues=($(GetColumn --exact ChiSqPerDof,pValue,Delta,PDGDs,PDGK,${ff}-c0,${ff}-c2,${ff}-c3 $InPath))
   RefText="χ²/dof=${ColumnValues[4]} (p=${ColumnValues[12]})"
   FitDelta=${ColumnValues[2*8+4]}
@@ -166,10 +174,15 @@ function GetFitData()
 
 for PlotFile in "$@"
 do
-  if [[ -z $PlotFile || ! -a $PlotFile ]]; then
-    echo "Doesn't exist $PlotFile"
-  else (
-    if ! [ -v save ]; then GetSaveName "$PlotFile"; fi
+  if [[ -z "$PlotFile" ]]; then
+    echo "Skipping empty filename"
+  else
+    if [[ ! -a "$PlotFile" && -a "$PlotFile.dat" ]]; then PlotFile+=.dat; fi
+    if [ -v save ]; then PlotFile="${PlotFile%.*}"; else GetSaveName PlotFile; fi
+    if [[ ! -a "$PlotFile.dat" ]]; then
+      echo "Doesn't exist $PlotFile.dat"
+    else
+  (
     ff=${PlotFile##*/}
     ff=${ff#*.}
     ff=${ff%%.*}
@@ -181,4 +194,5 @@ do
     GetFitData
     PlotFunction
   ) fi
+  fi
 done

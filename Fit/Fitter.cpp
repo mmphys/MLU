@@ -430,6 +430,7 @@ void Fitter::SaveMatrixFile( const Matrix &m, const std::string &Type, const std
 bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::string &OutBaseName,
                     const std::string &ModelSuffix )
 {
+  const bool HasSeed{ ds.HasSameSeed() };
   const Common::SeedType Seed{ ds.Seed() };
   bCorrelated = Bcorrelated;
   dof = ds.Extent - static_cast<int>( mp.NumScalars( Param::Type::Variable ) );
@@ -452,11 +453,12 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
   // See whether this fit already exists
   bool bPerformFit{ true };
   const std::string sModelBase{ OutBaseName + ModelSuffix };
-  const std::string ModelFileName{ Common::MakeFilename( sModelBase, Common::sModel, Seed, DEF_FMT ) };
-  if( !bOverwrite && Common::FileExists( ModelFileName ) )
+  OutputModel.Name_.Parse( sModelBase, Common::sModel, HasSeed, Seed, DEF_FMT );
+  if( !bOverwrite && Common::FileExists( OutputModel.Name_.Filename ) )
   {
     ModelFile PreBuilt;
-    PreBuilt.Read( ModelFileName, "Pre-built: " );
+    PreBuilt.Name_ = OutputModel.Name_;
+    PreBuilt.Read( "Pre-built: " );
     // TODO: This comparison is incomplete ... but matches previous version
     bool bOK{ dof == PreBuilt.dof };
     bOK = bOK && ds.Extent == PreBuilt.GetExtent();
@@ -478,7 +480,6 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     OutputModel.StdErrorMean.resize( ds.NSamples, ds.Extent ); // Each thread needs its own replica
     OutputModel.ModelPrediction.resize( ds.NSamples, ds.Extent );
     OutputModel.ErrorScaled.resize( ds.NSamples, ds.Extent );
-    OutputModel.Name_.Seed = Seed; // TODO: Required?
     OutputModel.FitTimes = ds.FitTimes;
     OutputModel.dof = dof;
 
@@ -667,7 +668,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     }
     // Save the file
     if( !bAllParamsKnown )
-      OutputModel.Write( ModelFileName );
+      OutputModel.Write();
     constexpr bool bVerbose{ true };
     if( bFitCorr )
     {
@@ -675,14 +676,14 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       if( SummaryLevel >= 1 )
       {
         const std::string FileName{ Common::MakeFilename( sModelBase, Common::sModel + "_td",
-                                                          Seed, TEXT_EXT ) };
+                                                          HasSeed, Seed, TEXT_EXT ) };
         OutputModel.WriteSummaryTD( ds, FileName, bVerbose );
         if( SummaryLevel >= 2 )
-          OutputModel.WriteSummary( Common::ReplaceExtension( ModelFileName, TEXT_EXT ) );
+          OutputModel.WriteSummary( OutputModel.Name_.NameNoExt + '.' + TEXT_EXT );
       }
     }
     else
-      WriteSummaryTD( Common::ReplaceExtension( ModelFileName, DAT_EXT ), bVerbose );
+      WriteSummaryTD( OutputModel.Name_.NameNoExt + '.' + DAT_EXT, bVerbose );
   }
   return bOK;
 }

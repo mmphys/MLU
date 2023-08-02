@@ -30,6 +30,34 @@
 BEGIN_COMMON_NAMESPACE
 
 template <typename T>
+bool DataSet<T>::HasSameSeed() const
+{
+  SeedType Seed{};
+  bool bHasSeed{ false };
+  for( const FoldPtr &p : corr )
+  {
+    if( !bHasSeed )
+    {
+      bHasSeed = true;
+      Seed = p->Seed();
+    }
+    else if( p->Seed() != Seed )
+      return false;
+  }
+  for( const ModelPtr &p : constFile )
+  {
+    if( !bHasSeed )
+    {
+      bHasSeed = true;
+      Seed = p->Seed();
+    }
+    else if( p->Seed() != Seed)
+      return false;
+  }
+  return true;
+}
+
+template <typename T>
 void DataSet<T>::clear()
 {
   NSamples = 0;

@@ -371,7 +371,13 @@ public:
     SetName( FileName, pOpNames );
     Read( PrintPrefix, pGroupName );
   }
-  void Write( const std::string &FileName, const char * pszGroupName = nullptr );
+  void Write( const char * pszGroupName = nullptr );
+  inline void Write( const std::string &FileName, const char * pszGroupName = nullptr )
+  {
+    // Assume the caller knows what they're doing if the name is not in my format
+    try { SetName( FileName ); } catch ( const std::runtime_error &e ) {}
+    Write( pszGroupName );
+  }
   void MakeCorrSummary();
   void WriteSummary( const std::string &sOutFileName, bool bVerboseSummary = false );
 public: // Override these for specialisations

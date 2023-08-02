@@ -373,7 +373,7 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
   //OutFileName.append( Suffix );
   Common::AppendDeltaT( OutFileName, fna.DeltaT );
   AppendOps( OutFileName, Snk.op, Src.op );
-  OutFileName = Common::MakeFilename( OutFileName, Common::sFold, DEF_FMT );
+  OutFileName = Common::MakeFilename( OutFileName, Common::sFold, C3.Seed(), DEF_FMT );
   std::cout << "->" << OutFileName << Common::NewLine;
   out.Write( OutFileName, Common::sFold.c_str() );
   Common::ReplaceExtension( OutFileName, TEXT_EXT );
@@ -672,7 +672,7 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
       Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT );
       fna.AppendMomentum( OutFileName, Src.mp.p ? Src.mp.p : Snk.mp.p, Src.mp.pName );
       AppendOps( OutFileName, NameReverse[i] ? Src.op : Snk.op, NameReverse[i] ? Snk.op : Src.op );
-      OutFileName = Common::MakeFilename( OutFileName, fna.Type, fna.Ext );
+      OutFileName = Common::MakeFilename( OutFileName, fna.Type, Corr2[0].Corr->Seed(), fna.Ext );
       std::cout << "->" << OutFileName << Common::NewLine;
       out[i].Write( OutFileName, Common::sFold.c_str() );
       Common::ReplaceExtension( OutFileName, TEXT_EXT );
@@ -999,7 +999,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
                 OutFileName.append( std::to_string( iSeq ) );
               }
               OutFileName.append( sOpNames );
-              OutFileName = Common::MakeFilename( OutFileName, Common::sModel, DEF_FMT );
+              OutFileName = Common::MakeFilename( OutFileName, Common::sModel, mGT.Seed(), DEF_FMT );
               Write( OutFileName, mGT, std::move( vSourceFiles ), NumSamples, MHeavy, ELight,
                      vT, rf.p, &MLight, &vXYZ );
               ++NumOK;

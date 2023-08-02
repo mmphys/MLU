@@ -65,6 +65,10 @@ CreateParams::CreateParams( const std::vector<std::string> &O, const Common::Com
 {
 }
 
+const std::string ContinuumFit::sFindError{ "ContinuumFit::WriteSynthetic finding model constants" };
+const std::string ContinuumFit::sPDG{ "PDG" };
+const std::string ContinuumFit::sQSqFileType{ "qsq" };
+
 ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
 : cl{cl_},
   NumSamples{cl.SwitchValue<int>("n")},
@@ -210,11 +214,13 @@ void ContinuumFit::MakeOutputFilename()
     const Common::FileNameAtt &fna{ ds.front().Name_ };
     if( fna.BaseShortParts.size() < 3 || fna.Spectator.empty() )
       throw std::runtime_error( "Please include output filename in -o" );
+    Meson[idxSnk] = Common::MesonName( fna.BaseShortParts[1], fna.Spectator );
+    Meson[idxSrc] = Common::MesonName( fna.BaseShortParts[2], fna.Spectator );
     outBaseFileName.append( fna.BaseShortParts[0] );
     outBaseFileName.append( 1, '_' );
-    outBaseFileName.append( Common::MesonName( fna.BaseShortParts[1], fna.Spectator ) );
+    outBaseFileName.append( Meson[idxSnk] );
     outBaseFileName.append( 1, '_' );
-    outBaseFileName.append( Common::MesonName( fna.BaseShortParts[2], fna.Spectator ) );
+    outBaseFileName.append( Meson[idxSrc] );
     for( std::size_t i = 3; i < fna.BaseShortParts.size(); ++i )
     {
       outBaseFileName.append( 1, '_' );
@@ -237,6 +243,127 @@ void ContinuumFit::MakeCovarBlock()
         ds.mCovar(i,j) = 0;
         ds.mCovar(j,i) = 0;
       }
+}
+
+void ContinuumFit::GetIndices()
+{
+  // Get the main constants used in the model
+  const ModelFile &om{ f->OutputModel };
+  const Common::Params &mp{ f->mp };
+  {
+    Common::Param::Key k( Common::GetFormFactorString( ff ), "" );
+    for( int i = 0; i < idxC.size(); ++i )
+    {
+      k.Name = "c" + std::to_string( i );
+      idxC[i] = mp.Find( k, sFindError )->second();
+    }
+  }
+
+  // PDG masses for heavy and light, plus the Delta in this case
+  idxPDGH = mp.Find( Common::Param::Key( sPDG + Meson[idxSrc] ), sFindError )->second();
+  idxPDGL = mp.Find( Common::Param::Key( sPDG + Meson[idxSnk] ), sFindError )->second();
+  idxDelta = mp.Find( Common::Param::Key( "Delta" ), sFindError )->second();
+
+  // Now get the min / max q^2 range
+  bool bFirst{ true };
+  for( const Common::Params::value_type &v : mp )
+  {
+    // Look through every parameter for the qSq values
+    if( Common::EqualIgnoreCase( v.first.Name, "qSq" ) )
+    {
+      const int Col{ static_cast<int>( v.second() ) };
+      const ValWithEr &ve{ om.SummaryData( Col ) };
+      if( bFirst )
+      {
+        bFirst = false;
+        if( !ve.Check )
+        {
+          std::ostringstream os;
+          os << sFindError << " ValWithEr Check 0 for " << v.first;
+          throw std::runtime_error( os.str().c_str() );
+        }
+        Min = ve.Central;
+        Max = ve.Central;
+      }
+      else
+      {
+        if( Min > ve.Central )
+          Min = ve.Central;
+        if( Max < ve.Central )
+          Max = ve.Central;
+      }
+    }
+  }
+  if( f->Verbosity )
+  {
+    std::ostringstream os;
+    os << std::fixed << std::setprecision(3) << ( Min * InvGeVSq ) << " <= q^2 <= "
+       << ( Max * InvGeVSq ) << " [GeV^2]" << Common::NewLine;
+    std::cout << os.str();
+  }
+}
+
+void ContinuumFit::WriteSynthetic() const
+{
+  const ModelFile &om{ f->OutputModel };
+  const Common::FileNameAtt &fna{ om.Name_ };
+  Common::FileNameAtt fnaNew;
+  fnaNew.Parse( fna.Dir + fna.GetBaseExtraOps(), fna.Type + '_' + sQSqFileType,
+                fna.bSeedNum, fna.Seed, TEXT_EXT );
+  std::cout << "Make " << sQSqFileType << Common::Space << fnaNew.Filename << Common::NewLine;
+  std::ofstream os( fnaNew.Filename );
+  Common::SummaryHeader<scalar>( os, fnaNew.Filename );
+  om.SummaryComments( os, true );
+
+  // Write header row - i.e. column names
+  os << "Field x ";
+  ValWithEr::Header( "y", os, Common::Space );
+  os << " y_witherr\n";
+
+  // Now write each data row
+  ValWithEr ve;
+  Common::Vector<scalar> Buffer( om.NumSamples() );
+  std::vector<scalar> ScratchBuffer( om.NumSamples() );
+  static constexpr int NumTicks{ 200 };
+  const scalar Tick{ ( Max - Min ) / NumTicks };
+  double x{ Min - 2 * Tick };
+  // Compute q^2
+  const scalar PDGHCentral{ om(ModelFile::idxCentral,idxPDGH) };
+  const scalar PDGLCentral{ om(ModelFile::idxCentral,idxPDGL) };
+  scalar qSqMaxCentral{ PDGHCentral - PDGLCentral };
+  qSqMaxCentral *= qSqMaxCentral;
+  scalar Central = 0;
+  for( int nTick = -2; nTick <= NumTicks; ++nTick, x += Tick )
+  {
+    if( nTick == -2 )
+      x = 0;
+    else if( nTick == -1 )
+      x = qSqMaxCentral;
+    if( nTick == 0 )
+      x = Min;
+    for( int rep = ModelFile::idxCentral; rep < om.NumSamples(); ++rep )
+    {
+      const scalar PDGH{ om(rep,idxPDGH) };
+      const scalar PDGL{ om(rep,idxPDGL) };
+      const scalar Delta{ om(rep,idxDelta) };
+      const scalar E{ ( PDGH * PDGH + PDGL * PDGL - x ) / ( 2 * PDGH ) };
+      const scalar EOnLambda{ E * InvLambda };
+      const scalar z{ Lambda / ( E + Delta )
+         * ( om(rep,idxC[0])
+           + om(rep,idxC[2]) * EOnLambda
+           + om(rep,idxC[3]) * EOnLambda * EOnLambda ) };
+      if( rep == ModelFile::idxCentral )
+        Central = z;
+      else
+        Buffer[rep] = z;
+    }
+    ve.Get( Central, Buffer, ScratchBuffer );
+    if( nTick < 0 )
+      os << "# ";
+    os << sQSqFileType << Common::Space << x << Common::Space << ve
+       << Common::Space << ve.to_string( f->ErrorDigits )
+       << Common::NewLine;
+  }
 }
 
 int ContinuumFit::DoFit()
@@ -268,6 +395,8 @@ int ContinuumFit::DoFit()
     int dof;
     if( !f->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat ) )
       iReturn = 3; // Not all parameters resolved
+    GetIndices();
+    WriteSynthetic();
   }
   catch(const std::exception &e)
   {
