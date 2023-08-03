@@ -33,6 +33,15 @@
 #include "Fitter.hpp"
 #include "Model.hpp"
 
+// Stats on the ensembles we loaded from files
+struct EnsembleStat
+{
+  int Num;
+  Common::SeedType Seed;
+};
+using EnsembleStatMap = std::map<std::string, EnsembleStat, Common::LessCaseInsensitive>;
+using ESPair = std::pair<typename EnsembleStatMap::iterator, bool>;
+
 struct EnsembleInfo
 {
   unsigned int aInv_L;
@@ -72,21 +81,25 @@ public:
   explicit ContinuumFit( Common::CommandLine &cl );
   int Run();
 protected:
-  // Parameters from the model just created. Set by GetIndixes()
+  EnsembleStatMap EnsembleStats;
+  // Parameters from the model just created. Set by GetIndices()
   std::array<std::size_t, 5> idxC;
   std::size_t idxPDGH;
   std::size_t idxPDGL;
   std::size_t idxDelta;
   scalar Min, Max;
-  // Get the indices of parameters from the model just created
-  void GetIndices();
   std::string sOpNameConcat; // Sorted, concatenated list of operators in the fit for filenames
   std::array<std::string, 2> Meson;
   void LoadModels();
+  void GetEnsembleStats();
+  void SetEnsembleStats();
+  void SetEnsembleStatSeed();
   void SortModels();
   void LoadExtra();
   void MakeOutputFilename();
   void MakeCovarBlock();
+  // Get the indices of parameters from the model just created
+  void GetIndices();
   void WriteSynthetic() const;
   int DoFit();
 };

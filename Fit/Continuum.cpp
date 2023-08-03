@@ -130,6 +130,66 @@ void ContinuumFit::LoadModels()
   }
 }
 
+void ContinuumFit::GetEnsembleStats()
+{
+  for( const ModelFilePtr &mp : ds.constFile )
+  {
+    typename EnsembleStatMap::iterator it{ EnsembleStats.find( mp->Ensemble ) };
+    if( it == EnsembleStats.end() )
+    {
+      EnsembleStats.emplace( std::make_pair( mp->Ensemble, EnsembleStat{ 1, mp->Seed() } ) );
+      std::cout << "SampleSize[" << mp->Ensemble << "] = " << mp->SampleSize << Common::NewLine;
+    }
+    else
+      ++it->second.Num;
+  }
+}
+
+void ContinuumFit::SetEnsembleStats()
+{
+  if( EnsembleStats.size() > 1 )
+  {
+    std::string &Ens{ f->OutputModel.Ensemble };
+    std::vector<Common::ConfigCount> &vcc{ f->OutputModel.ConfigCount };
+    vcc.resize( EnsembleStats.size() );
+    f->OutputModel.SampleSize = static_cast<int>( EnsembleStats.size() );
+    Ens.clear();
+    int i = 0;
+    for( EnsembleStatMap::value_type v : EnsembleStats )
+    {
+      // Make sure binSize is correct
+      if( i == 0 )
+        f->OutputModel.binSize = v.second.Num;
+      else
+      {
+        if( v.second.Num != f->OutputModel.binSize )
+          f->OutputModel.binSize = 0;
+      }
+      // Add this ensemble name
+      if( !Ens.empty() )
+        Ens.append( 1, ' ' );
+      Ens.append( v.first );
+      // Update corresponding config count
+      vcc[i].Config = i;
+      vcc[i].Count = v.second.Num;
+      ++i;
+    }
+  }
+}
+
+void ContinuumFit::SetEnsembleStatSeed()
+{
+  // Clear seed unless they all match
+  for( EnsembleStatMap::value_type v : EnsembleStats )
+  {
+    if( v.second.Seed != f->OutputModel.Seed() )
+    {
+      f->OutputModel.SetSeed( 0 );
+      break;
+    }
+  }
+}
+
 void ContinuumFit::SortModels()
 {
   assert( ds.constFile.size() == ModelArgs.size() && "Should be one ModelArgs per ds.constFile" );
@@ -308,8 +368,7 @@ void ContinuumFit::WriteSynthetic() const
   const ModelFile &om{ f->OutputModel };
   const Common::FileNameAtt &fna{ om.Name_ };
   Common::FileNameAtt fnaNew;
-  fnaNew.Parse( fna.Dir + fna.GetBaseExtraOps(), fna.Type + '_' + sQSqFileType,
-                fna.bSeedNum, fna.Seed, TEXT_EXT );
+  fnaNew.Parse( fna.GetBasePath(), fna.Type + '_' + sQSqFileType, fna.bSeedNum, fna.Seed, TEXT_EXT );
   std::cout << "Make " << sQSqFileType << Common::Space << fnaNew.Filename << Common::NewLine;
   std::ofstream os( fnaNew.Filename );
   Common::SummaryHeader<scalar>( os, fnaNew.Filename );
@@ -395,6 +454,7 @@ int ContinuumFit::DoFit()
     int dof;
     if( !f->PerformFit( doCorr, ChiSq, dof, outBaseFileName, sOpNameConcat ) )
       iReturn = 3; // Not all parameters resolved
+    SetEnsembleStatSeed();
     GetIndices();
     WriteSynthetic();
   }
@@ -409,6 +469,7 @@ int ContinuumFit::DoFit()
 int ContinuumFit::Run()
 {
   LoadModels();
+  GetEnsembleStats();
   SortModels();
   MakeOutputFilename();
   LoadExtra();
@@ -420,6 +481,7 @@ int ContinuumFit::Run()
 
   // Make the fitter
   f.reset( Fitter::Make( CreateParams{OpName,cl}, ds, std::move(ModelArgs), std::move(cp), false ) );
+  SetEnsembleStats();
   // Now do the fit
   return DoFit();
 }

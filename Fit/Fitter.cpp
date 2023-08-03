@@ -632,38 +632,58 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       const Common::ValWithEr<scalar> * const v{ &OutputModel.SummaryData() };
       const std::vector<std::string> &Cols{ OutputModel.GetColumnNames() };
       const int maxLen{ static_cast<int>( std::max_element( Cols.begin(), Cols.end(),
-                                          [](const std::string &a, const std::string &b)
-                                          { return a.length() < b.length(); } )->length() ) };
+                                                           [](const std::string &a, const std::string &b)
+                                                           { return a.length() < b.length(); } )->length() ) };
       const int NumWidth{ static_cast<int>( std::cout.precision() ) + 7 };
       std::string Preamble;
       {
         std::ostringstream os;
         os << OutputModel.GetSummaryNames()[0] << " after " << OutputModel.NumSamples()
-           << Common::Space << OutputModel.getData().SeedTypeString() << " replicas\n";
+        << Common::Space << OutputModel.getData().SeedTypeString() << " replicas\n";
         Preamble = os.str();
       }
-      std::cout << Preamble;
-      for( int i = 0; i < OutputModel.Nt(); ++i )
+      for( int iType=0; iType < 2; ++iType )
       {
-        const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
-        std::cout << cOK << std::setw(maxLen) << Cols[i] << std::left
-                  << Common::Space << std::setw(NumWidth) << v[i].Central
-                  << " +"    << std::setw(NumWidth) << (v[i].High - v[i].Central)
-                  << " -"    << std::setw(NumWidth) << (v[i].Central - v[i].Low)
-                  << " Max " << std::setw(NumWidth) << v[i].Max
-                  << " Min "                        << v[i].Min
-                  << Common::NewLine << std::right; // Right-aligned is the default
-      }
-      // Show parameters again - but this time in simplified format
-      std::cout << Preamble;
-      for( int i = 0; i < OutputModel.Nt(); ++i )
-      {
-        const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
-        if( v[i].Check == 0 )
-          bOK = false;
-        std::cout << cOK << std::setw(maxLen) << Cols[i] << std::left
-                  << Common::Space << v[i].to_string( ErrorDigits )
-                  << Common::NewLine << std::right; // Right-aligned is the default
+        const Param::Type type{ iType == 0 ? Param::Type::Variable : Param::Type::Derived };
+        std::cout << type << Common::Space << Preamble;
+        for( const Params::value_type &it : mp )
+        {
+          const Param &p{ it.second };
+          if( p.type == type )
+          {
+            for( int j = 0; j < p.size; ++j )
+            {
+              const std::size_t i{ p(j) };
+              const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
+              std::cout << cOK << std::setw(maxLen) << Cols[i] << std::left
+              << Common::Space << std::setw(NumWidth) << v[i].Central
+              << " +"    << std::setw(NumWidth) << (v[i].High - v[i].Central)
+              << " -"    << std::setw(NumWidth) << (v[i].Central - v[i].Low)
+              << " Max " << std::setw(NumWidth) << v[i].Max
+              << " Min "                        << v[i].Min
+              << Common::NewLine << std::right; // Right-aligned is the default
+            }
+          }
+        }
+        // Show parameters again - but this time in simplified format
+        std::cout << type << Common::Space << Preamble;
+        for( const Params::value_type &it : mp )
+        {
+          const Param &p{ it.second };
+          if( p.type == type )
+          {
+            for( int j = 0; j < p.size; ++j )
+            {
+              const std::size_t i{ p(j) };
+              const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
+              if( v[i].Check == 0 )
+                bOK = false;
+              std::cout << cOK << std::setw(maxLen) << Cols[i] << std::left
+              << Common::Space << v[i].to_string( ErrorDigits )
+              << Common::NewLine << std::right; // Right-aligned is the default
+            }
+          }
+        }
       }
     }
     // Save the file
@@ -672,12 +692,10 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     constexpr bool bVerbose{ true };
     if( bFitCorr )
     {
-      // We're fitting correlators
+      const Common::FileNameAtt &fna{ OutputModel.Name_ };
       if( SummaryLevel >= 1 )
       {
-        const std::string FileName{ Common::MakeFilename( sModelBase, Common::sModel + "_td",
-                                                          HasSeed, Seed, TEXT_EXT ) };
-        OutputModel.WriteSummaryTD( ds, FileName, bVerbose );
+        OutputModel.WriteSummaryTD( ds, fna.GetAltPath( fna.Type + "_td", TEXT_EXT ), bVerbose );
         if( SummaryLevel >= 2 )
           OutputModel.WriteSummary( OutputModel.Name_.NameNoExt + '.' + TEXT_EXT );
       }

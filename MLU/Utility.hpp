@@ -435,7 +435,12 @@ struct NamedMomentum
   NamedMomentum( const MomentumPair &p ) : NamedMomentum( p.first, p.second ) {}
 };
 
-// Attributes for filenames in form base.type.seed.ext
+/*
+ Attributes for filenames in form
+    [Dir/]base1[_base2[...]][[...].extra1].extra0.[[...]op1_]op0.type[.seed].ext
+ or
+    [Dir/]base1[_base2[...]]_op1_op0.type[.seed].ext
+ */
 struct FileNameAtt
 {
   std::string Filename; // Full (and unadulterated) original filename
@@ -567,10 +572,22 @@ public:
                   std::vector<std::string> * pOpNames = nullptr ) const;
   void AppendOps( std::string &s, std::vector<std::string> * pOpNames = nullptr ) const
   { AppendOps( s, Extra.size() ? Period : Underscore, pOpNames ); }
+  /// Get the specified parts of the base, i.e. from first to last. Negative counts are relative to the end (-1=last, etc)
   std::string GetBaseShort( int First = 0, int Last = UINT_MAX ) const;
+  /// As per GetBaseShort() but append all of the extra segments as well
   std::string GetBaseShortExtra( int First = 0, int Last = UINT_MAX ) const;
+  /// Get all of the base, then append specified parts of Extra. Negative counts are relative to the end (-1=last, etc)
   std::string GetBaseExtra( int Last = 0, int First = -1 ) const;
-  std::string GetBaseExtraOps() const;
+  /** Get complete base name of the file (i.e. everything before the type)
+   without path, but with optional prefix (eg some other path) **/
+  std::string GetBase( const std::string &Prefix = "" ) const;
+  /// Get complete base name of the file (i.e. everything before the type) with path
+  std::string GetBasePath() const { return GetBase( Dir ); }
+  /// Get an alternate version of this name without path, but with optional prefix (eg some other path)
+  std::string GetAlt( const std::string &Type, const std::string &Ext,
+                      const std::string &Prefix = "" ) const;
+  std::string GetAltPath( const std::string &Type, const std::string &Ext ) const
+  { return GetAlt( Type, Ext, Dir ); }
   // Make a new name based on this one, overriding specified elements
   std::string DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
                            const std::string &Ext ) const;

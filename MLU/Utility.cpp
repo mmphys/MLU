@@ -482,13 +482,20 @@ std::string FileNameAtt::GetBaseExtra( int Last, int First ) const
   return s;
 }
 
-std::string FileNameAtt::GetBaseExtraOps() const
+std::string FileNameAtt::GetBase( const std::string &Prefix ) const
 {
-  std::string s{ GetBaseExtra() };
+  std::string s{ Prefix };
+  s.append( GetBaseExtra() );
   AppendOps( s );
   return s;
 }
 
+std::string FileNameAtt::GetAlt( const std::string &Type, const std::string &Ext,
+                                 const std::string &Prefix ) const
+{
+  std::string s{ GetBase( Prefix ) };
+  return Common::MakeFilename( s, Type, bSeedNum, Seed, Ext );
+}
 // Make a new name based on this one, overriding specified elements
 std::string FileNameAtt::DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
                                       const std::string &Ext ) const

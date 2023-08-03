@@ -61,6 +61,7 @@ template <typename T>
 void DataSet<T>::clear()
 {
   NSamples = 0;
+  MinSampleSize = 0;
   Extent = 0;
   corr.clear();
   FitTimes.clear();
@@ -376,6 +377,9 @@ int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int Comp
     corr[i].reset( new Fold<T> );
   corr[i]->SetName( std::move( FileAtt ) );
   corr[i]->Read( PrintPrefix );
+  // Keep track of the smalles sample size
+  if( corr[i]->SampleSize && ( MinSampleSize == 0 || MinSampleSize > corr[i]->SampleSize ) )
+    MinSampleSize = corr[i]->SampleSize;
   // See whether this correlator is compatible with prior correlators / models
   if( i == 0 && constFile.empty() )
   {
@@ -404,6 +408,9 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const char *pszPrintP
   constFile.emplace_back( new Model<T>{} );
   constFile[i]->SetName( std::move( FileAtt ) );
   constFile[i]->Read( pszPrintPrefix ? pszPrintPrefix : "  " );
+  // Keep track of the smalles sample size
+  if( constFile[i]->SampleSize && ( MinSampleSize == 0 || MinSampleSize > constFile[i]->SampleSize ) )
+    MinSampleSize = constFile[i]->SampleSize;
   // See whether it's compatible with what's gone before
   if( i == 0 && corr.empty() )
   {

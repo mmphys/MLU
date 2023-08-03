@@ -58,7 +58,7 @@ struct CovarParams
   // This is the appropriate parameter for m to use in the T^2 distribution
   inline int CovarSampleSize() const
   {
-    return SourceIsBootstrap() ? ds.front().SampleSize
+    return SourceIsBootstrap() ? ds.MinSampleSize
                                : ds.front().NumSamples( Source==SS::Raw ? SS::Raw : SS::Binned );
   }
   /**
