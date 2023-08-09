@@ -111,6 +111,9 @@ ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
   return model;
 }
 
+const std::string ModelContinuum::FieldQSq{ "qSq" };
+const std::string ModelContinuum::FieldEL{ "EL" };
+
 ModelContinuum::ModelContinuum( const Model::CreateParams &mcp, Model::Args &Args,
                                 Common::FormFactor ff_ )
 : Model( mcp, 1 ),
@@ -169,7 +172,7 @@ ModelContinuum::ModelContinuum( const Model::CreateParams &mcp, Model::Args &Arg
   Delta.Key.Name = "Delta";
   // X Vector
   EL.Key.Object = { Ensemble, std::to_string( p.p2() ) };
-  EL.Key.Name = "EL";
+  EL.Key.Name = FieldEL;
   kMu.Key.Object = EL.Key.Object;
   kMu.Key.Name = "kMu";
   mH.Key.Object = { Ensemble };
@@ -177,24 +180,20 @@ ModelContinuum::ModelContinuum( const Model::CreateParams &mcp, Model::Args &Arg
   mL.Key.Object = mH.Key.Object;
   mL.Key.Name = "mL";
   qSq.Key.Object = kMu.Key.Object;
-  qSq.Key.Name = "qSq";
+  qSq.Key.Name = FieldQSq;
   // This is my model
-  c0.Key.Object = { GetFormFactorString( ff ) };
-  c0.Key.Name = "c0";
-  c1.Key.Object = c0.Key.Object;
-  c1.Key.Name = "c1";
-  c2.Key.Object = c0.Key.Object;
-  c2.Key.Name = "c2";
-  c3.Key.Object = c0.Key.Object;
-  c3.Key.Name = "c3";
-  c4.Key.Object = c0.Key.Object;
-  c4.Key.Name = "c4";
+  for( int i = 0; i < NumConst; ++i )
+  {
+    c[i].Key.Object = { GetFormFactorString( ff ) };
+    c[i].Key.Name = "c" + std::to_string( i );
+    cEnabled[i] = Args.Remove( "Enable" + c[i].Key.Name, true );
+  }
 }
 
 void ModelContinuum::DefineXVector( DataSet &ds, int i )
 {
   aEL.Key.Object = { Ensemble, std::to_string( p.p2() ) };
-  aEL.Key.Name = "aEL";
+  aEL.Key.Name = "a" + FieldEL;
   ds.AddConstant( aEL.Key, i, Param::Key{EL.Key.Name} );
   akMu.Key.Object = aEL.Key.Object;
   akMu.Key.Name = "akMu";
@@ -206,7 +205,7 @@ void ModelContinuum::DefineXVector( DataSet &ds, int i )
   amL.Key.Name = "amL";
   ds.AddConstant( amL.Key, i, Param::Key{mL.Key.Name} );
   aqSq.Key.Object = kMu.Key.Object;
-  aqSq.Key.Name = "aqSq";
+  aqSq.Key.Name = "a" + FieldQSq;
   ds.AddConstant( aqSq.Key, i, Param::Key{qSq.Key.Name} );
 }
 
@@ -266,11 +265,9 @@ void ModelContinuum::AddParameters( Params &mp )
   AddParam( mp, mH, 1, false, Common::Param::Type::Derived );
   AddParam( mp, mL, 1, false, Common::Param::Type::Derived );
   AddParam( mp, qSq, 1, false, Common::Param::Type::Derived );
-  AddParam( mp, c0 );
-  AddParam( mp, c1 );
-  AddParam( mp, c2 );
-  AddParam( mp, c3 );
-  AddParam( mp, c4 );
+  for( int i = 0; i < NumConst; ++i )
+    if( cNeeded( i ) )
+      AddParam( mp, c[i] );
 }
 
 std::size_t ModelContinuum::GetFitColumn() const
@@ -301,11 +298,9 @@ void ModelContinuum::SaveParameters( const Params &mp )
   mH.idx = mp.at( mH.Key )();
   mL.idx = mp.at( mL.Key )();
   qSq.idx = mp.at( qSq.Key )();
-  c0.idx = mp.at( c0.Key )();
-  c1.idx = mp.at( c1.Key )();
-  c2.idx = mp.at( c2.Key )();
-  c3.idx = mp.at( c3.Key )();
-  c4.idx = mp.at( c4.Key )();
+  for( int i = 0; i < NumConst; ++i )
+    if( cNeeded( i ) )
+      c[i].idx = mp.at( c[i].Key )();
 }
 
 // Get a descriptive string for the model
@@ -318,42 +313,21 @@ std::string ModelContinuum::Description() const
 
 void ModelContinuum::Guessable( ParamsPairs &PP ) const
 {
-  PP.SetState( ParamsPairs::State::Known, c0.Key, c0.param->size );
-  PP.SetState( ParamsPairs::State::Known, c1.Key, c1.param->size );
-  PP.SetState( ParamsPairs::State::Known, c2.Key, c2.param->size );
-  PP.SetState( ParamsPairs::State::Known, c3.Key, c3.param->size );
-  PP.SetState( ParamsPairs::State::Known, c4.Key, c4.param->size );
+  for( int i = 0; i < NumConst; ++i )
+    if( cNeeded( i ) )
+      PP.SetState( ParamsPairs::State::Known, c[i].Key, c[i].param->size );
 }
 
 std::size_t ModelContinuum::Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
                    const VectorView &FitData, std::vector<int> FitTimes,
                    bool bLastChance ) const
 {
-  if( !bKnown[c0.idx] )
-  {
-    bKnown[c0.idx] = true;
-    Guess[c0.idx] = 1;
-  }
-  if( !bKnown[c1.idx] )
-  {
-    bKnown[c1.idx] = true;
-    Guess[c1.idx] = 1;
-  }
-  if( !bKnown[c2.idx] )
-  {
-    bKnown[c2.idx] = true;
-    Guess[c2.idx] = 1;
-  }
-  if( !bKnown[c3.idx] )
-  {
-    bKnown[c3.idx] = true;
-    Guess[c3.idx] = 1;
-  }
-  if( !bKnown[c4.idx] )
-  {
-    bKnown[c4.idx] = true;
-    Guess[c4.idx] = 1;
-  }
+  for( int i = 0; i < NumConst; ++i )
+    if( cNeeded( i ) )
+    {
+      bKnown[c[i].idx] = true;
+      Guess[c[i].idx] = 1;
+    }
   return 0;
 }
 
@@ -383,25 +357,41 @@ scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParam
                                   / ModelParams[mPDGH.idx] - ModelParams[mPDGH.idx] );
   const scalar PoleTerm{ Lambda / ( ModelParams[EL.idx] + ModelParams[Delta.idx] ) };
   // Compute the c0 term
-  scalar c0Num = DeltaF( ModelParams[mPi.idx] ) - DeltaF( ModelParams[mPDGPi.idx] );
-  scalar c0Denom = FourPi * ModelParams[fPi.idx];
-  c0Denom *= c0Denom;
-  scalar c0Term = ModelParams[c0.idx] * ( 1. + c0Num / c0Denom );
+  scalar c0Term = ModelParams[c[0].idx];
+  if( cEnabled[0] )
+  {
+    // Chiral log term
+    const scalar c0Num = DeltaF( ModelParams[mPi.idx] ) - DeltaF( ModelParams[mPDGPi.idx] );
+    const scalar c0Denom = FourPi * ModelParams[fPi.idx];
+    c0Term *= 1. + c0Num / ( c0Denom * c0Denom );
+  }
   // Compute the c1 term
-  scalar DeltaMPiSq = ModelParams[mPi.idx] * ModelParams[mPi.idx];
-  DeltaMPiSq -= ModelParams[mPDGPi.idx] * ModelParams[mPDGPi.idx];
-  scalar c1Term = ModelParams[c1.idx] * DeltaMPiSq * LambdaInv * LambdaInv;
+  scalar c1Term = 0;
+  if( cEnabled[1] )
+  {
+    scalar DeltaMPiSq = ModelParams[mPi.idx] * ModelParams[mPi.idx];
+    DeltaMPiSq -= ModelParams[mPDGPi.idx] * ModelParams[mPDGPi.idx];
+    c1Term = ModelParams[c[1].idx] * DeltaMPiSq * LambdaInv * LambdaInv;
+  }
   // Compute E_L / Lambda
-  scalar ELOnLambda = ModelParams[EL.idx] * LambdaInv;
+  const scalar ELOnLambda{ ModelParams[EL.idx] * LambdaInv };
   // Compute the c2 term
-  scalar c2Term = ModelParams[c2.idx] * ELOnLambda;
+  scalar c2Term = 0;
+  if( cEnabled[2] )
+    c2Term = ModelParams[c[2].idx] * ELOnLambda;
   // Compute the c3 term
-  scalar c3Term = ModelParams[c3.idx] * ELOnLambda * ELOnLambda;
+  scalar c3Term = 0;
+  if( cEnabled[3] )
+    c3Term = ModelParams[c[3].idx] * ELOnLambda * ELOnLambda;
   // Compute the c4 term
-  scalar aLambda = Lambda / _aInv;
-  scalar c4Term = ModelParams[c4.idx] * aLambda * aLambda;
+  scalar c4Term = 0;
+  if( cEnabled[4] )
+  {
+    const scalar aLambda{ Lambda / _aInv };
+    c4Term = ModelParams[c[4].idx] * aLambda * aLambda;
+  }
   // Return model result
-  scalar Result = PoleTerm * ( c0Term + c1Term + c2Term + c3Term + c4Term );
+  const scalar Result = PoleTerm * ( c0Term + c1Term + c2Term + c3Term + c4Term );
   return Result;
 }
 

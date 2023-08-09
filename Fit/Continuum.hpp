@@ -57,14 +57,15 @@ struct CreateParams : public Model::CreateParams
 
 struct ContinuumFit
 {
+  static const std::string &FieldQSq;
+  static const std::string &FieldEL;
 protected:
   static constexpr scalar InvGeV{ 1e-9 };
   static constexpr scalar InvGeVSq{ InvGeV * InvGeV };
   static constexpr scalar Lambda{ 1e9 };
   static constexpr scalar InvLambda{ 1. / Lambda };
-  static const std::string sFindError;
+  static constexpr int NumTicks{ 200 };
   static const std::string sPDG;
-  static const std::string sQSqFileType;
   Common::CommandLine &cl;
 public:
   const int NumSamples;
@@ -83,11 +84,19 @@ public:
 protected:
   EnsembleStatMap EnsembleStats;
   // Parameters from the model just created. Set by GetIndices()
-  std::array<std::size_t, 5> idxC;
+  static constexpr int NumConst{ 5 };
+  static constexpr std::size_t idxCUnused{ std::numeric_limits<std::size_t>::max() };
+  std::array<std::size_t, NumConst> idxC;
   std::size_t idxPDGH;
   std::size_t idxPDGL;
+  inline scalar EOfQSq( int rep, scalar qSq ) const
+  {
+    const scalar PDGH{ f->OutputModel(rep,idxPDGH) };
+    const scalar PDGL{ f->OutputModel(rep,idxPDGL) };
+    const scalar E{ ( PDGH * PDGH + PDGL * PDGL - qSq ) / ( 2 * PDGH ) };
+    return E;
+  }
   std::size_t idxDelta;
-  scalar Min, Max;
   std::string sOpNameConcat; // Sorted, concatenated list of operators in the fit for filenames
   std::array<std::string, 2> Meson;
   void LoadModels();
@@ -100,6 +109,11 @@ protected:
   void MakeCovarBlock();
   // Get the indices of parameters from the model just created
   void GetIndices();
+  void GetMinMax( scalar &Min, scalar &Max, const std::string &Field ) const;
+  std::ofstream WriteHeader( const std::string &FileType ) const;
+  void WriteFieldName( std::ofstream &os, const std::string &FieldName ) const;
+  void WriteFitQSq() const;
+  void WriteAdjustedQSq() const;
   void WriteSynthetic() const;
   int DoFit();
 };

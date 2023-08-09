@@ -40,6 +40,10 @@ std::istream & operator>>( std::istream &is,       eModelType &m );
 /// Chiral continuum fit model
 struct ModelContinuum : Model
 {
+  static constexpr scalar FourPi{ 4. * M_PI };
+  friend class ContinuumFit;
+  static const std::string FieldQSq;
+  static const std::string FieldEL;
   ModelContinuum( const Model::CreateParams &cp, Model::Args &Args, Common::FormFactor ff );
   void DefineXVector( DataSet &ds, int i ) override;
   const std::string &XVectorKeyName() const override;
@@ -67,7 +71,12 @@ protected:
   ModelParam aInv, fPi, mPi, mPDGPi, mPDGDStar, mPDGH, mPDGL, Delta;
   ModelParam EL, kMu, mH, mL, qSq;
   ModelParam aEL, akMu, amH, amL, aqSq;
-  ModelParam c0, c1, c2, c3, c4;
+  static constexpr int NumConst{ 5 };
+public: // TODO: Hack
+  std::array<bool, NumConst> cEnabled;
+protected:
+  std::array<ModelParam, NumConst> c;
+  inline bool cNeeded( int i ) const { return i == 0 || cEnabled[i]; }
   scalar DeltaF( scalar M ) const;
 };
 

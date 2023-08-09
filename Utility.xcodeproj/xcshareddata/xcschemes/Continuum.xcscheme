@@ -74,7 +74,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-v 1"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i $HOME/NoSync/"
@@ -93,11 +93,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;[CM]?/FormFactor/renorm/3sm_sp2/*_p2_[0-4].*.h5&apos;"
+            argument = "&apos;[CM]?/FormFactor/renorm/3sm_sp2/*_p2_[0-4].*.h5&apos;,EnableC3=false"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;F1M/FormFactor/renorm/3sm_sp2/*_p2_[0-6].*.h5&apos;"
+            argument = "&apos;F1M/FormFactor/renorm/3sm_sp2/*_p2_[0-6].*.h5&apos;,EnableC3=false"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

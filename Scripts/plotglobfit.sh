@@ -38,6 +38,7 @@ FitmL=$FitmL
 FitC0=$FitC0
 FitC2=$FitC2
 FitC3=$FitC3
+PlotField="${PlotField:-data}"
 
 EOfQSqConst=FitmH * FitmH + FitmL * FitmL
 EOfQSq(qSq)=( EOfQSqConst - qSq ) / ( 2 * FitmH )
@@ -49,19 +50,35 @@ Contin(qSq)=Lambda/(EOfQSq(qSq) + FitDelta) * \
 if( Save ne "" ) {
   if( PDFSize ne "" ) { PDFSize='size '.PDFSize }
   eval "set term pdfcairo dashed ".PDFSize
-  set output Save.".pdf"
+  OutFileName=Save.'_'.xAxis
+  if( PlotField ne 'data' ) { OutFileName=OutFileName.'_'.PlotField }
+  set output OutFileName.'.pdf'
 }
 
 if( RefText ne '' ) { RefText=RefText.', ' }
 RefText=RefText.my_ylabel.'(0)='.sprintf('%0.3g',Contin(0))
+if( PlotField ne 'data' ) { RefText=RefText.' ('.PlotField.')' }
 set label 2 RefText at screen 0, screen 0 font ",10" front textcolor "blue" \
   offset character 0.5, 0.5
+
+if( xAxis eq "qSq" ) {
+  xAxisName="q^2 / GeV^2"
+  xScale=InvLambdaSq
+} else {
+  if( xAxis eq "EL" ) {
+    xAxisName="E_{light} / GeV"
+    xScale=InvLambda
+  } else {
+    xAxisName=xAxis
+    xScale=1
+  }
+}
 
 set xrange[@my_xrange]
 set yrange[@my_yrange]
 set pointintervalbox 0 # disables the white space around points in gnuplot 5.4.6 onwards
-set key bottom right
-set xlabel "q^2 / GeV^2"
+if( xAxis eq "EL" ) { set key top right } else { set key bottom right }
+set xlabel xAxisName
 set ylabel my_ylabel
 
 # Styles I first used at Lattice 2022
@@ -79,13 +96,15 @@ set linetype 8 ps 0.66 pt 7 lc rgb 0xC00000 #red
 #print "word(Ensembles,1)=".word(Ensembles,1)
 #print "word(Ensembles,2)=".word(Ensembles,2)
 #print "word(Ensembles,3)=".word(Ensembles,3)
-plot PlotFile."_qsq.txt" using (column('x')*InvLambdaSq):(column('y_low')):(column('y_high')) \
+plot PlotFile."_fit.txt" using (stringcolumn("field") eq xAxis ? column('x')*xScale : NaN) \
+        :(column('y_low')):(column('y_high')) \
         with filledcurves notitle fc "skyblue" fs transparent solid 0.5, \
-    for [i=1:6] PlotFile.".dat" \
-        using (stringcolumn("ensemble") eq word(Ensembles,i) ? column(xAxis) * 1e-18 : NaN) \
-        :(column("data")):(column("data_low")):(column("data_high")) \
+    for [i=1:6] PlotFile.".txt" \
+        using (stringcolumn("ensemble") eq word(Ensembles,i) ? column(xAxis) * xScale : NaN) \
+        :(column(PlotField)):(column(PlotField."_low")):(column(PlotField."_high")) \
         with yerrorbars title word(Ensembles,i) ls i, \
-    Contin(x*Lambda*Lambda) title "Continuum" ls 8, \
+    PlotFile."_fit.txt" using (stringcolumn("field") eq xAxis ? column('x')*xScale : NaN) \
+        :(column('y')) with lines title "Continuum" ls 8, \
     NaN with filledcurves title "Error" fc "skyblue" fs transparent solid 0.5
 #    NaN with lines title 'Banana' lc rgb 0xC00000 bgnd "skyblue"
 

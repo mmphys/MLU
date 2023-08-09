@@ -42,9 +42,9 @@ bool Fold<T>::bFolded()
 }
 
 template <typename T>
-void Fold<T>::SummaryComments( std::ostream &s, bool bVerboseSummary ) const
+void Fold<T>::SummaryComments( std::ostream &s, bool bVerboseSummary, bool bShowColumnNames ) const
 {
-  Base::SummaryComments( s, bVerboseSummary );
+  Base::SummaryComments( s, bVerboseSummary, bShowColumnNames );
   if( NtUnfolded() ) s << "# NtUnfolded: " << NtUnfolded() << NewLine;
   if( reality != Reality::Unknown ) s << "# Reality: " << reality << NewLine;
   if( parity != Parity::Unknown ) s << "# Parity: " << parity << NewLine;

@@ -384,7 +384,8 @@ public: // Override these for specialisations
   virtual const std::string & DefaultGroupName() { return sBootstrap; }
   virtual bool bFolded() { return false; }
   // Descendants should call base first
-  virtual void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const;
+  virtual void SummaryComments( std::ostream & s, bool bVerboseSummary = false,
+                                bool bShowColumnNames = true ) const;
   virtual void SummaryColumnNames( std::ostream &os ) const;
   /**
    Write a summary of this sample, showing central value, +/- errors and abs min/max

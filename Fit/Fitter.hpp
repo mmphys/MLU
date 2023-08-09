@@ -99,6 +99,7 @@ public:
                          const char *pGnuplotExtra = nullptr ) const;
   bool PerformFit( bool bCorrelated, double &ChiSq, int &dof, const std::string &OutBaseName,
               const std::string &ModelSuffix );
+  void Show( Param::Type type ) const;
   virtual const std::string &Type() const = 0;
   std::vector<std::string> GetModelTypes() const;
   std::vector<std::string> GetModelArgs() const;

@@ -530,10 +530,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       std::cout << Common::NewLine;
     }
     if( mp.NumScalars( Param::Type::Fixed ) )
-    {
-      std::cout << " Fixed parameters:\n";
-      mp.Dump( std::cout, Guess, Param::Type::Fixed );
-    }
+      Show( Param::Type::Fixed );
     if( !bAllParamsKnown )
     {
       std::cout << Common::Space << ( UserGuess ? "User supplied" : "Initial" ) << " guess:\n";
@@ -627,65 +624,9 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     OutputModel.SetSummaryNames( Common::sParams );
     OutputModel.MakeCorrSummary();
     OutputModel.CheckParameters( Strictness, MonotonicUpperLimit );
-    {
-      // Show parameters - in neat columns
-      const Common::ValWithEr<scalar> * const v{ &OutputModel.SummaryData() };
-      const std::vector<std::string> &Cols{ OutputModel.GetColumnNames() };
-      const int maxLen{ static_cast<int>( std::max_element( Cols.begin(), Cols.end(),
-                                                           [](const std::string &a, const std::string &b)
-                                                           { return a.length() < b.length(); } )->length() ) };
-      const int NumWidth{ static_cast<int>( std::cout.precision() ) + 7 };
-      std::string Preamble;
-      {
-        std::ostringstream os;
-        os << OutputModel.GetSummaryNames()[0] << " after " << OutputModel.NumSamples()
-        << Common::Space << OutputModel.getData().SeedTypeString() << " replicas\n";
-        Preamble = os.str();
-      }
-      for( int iType=0; iType < 2; ++iType )
-      {
-        const Param::Type type{ iType == 0 ? Param::Type::Variable : Param::Type::Derived };
-        std::cout << type << Common::Space << Preamble;
-        for( const Params::value_type &it : mp )
-        {
-          const Param &p{ it.second };
-          if( p.type == type )
-          {
-            for( int j = 0; j < p.size; ++j )
-            {
-              const std::size_t i{ p(j) };
-              const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
-              std::cout << cOK << std::setw(maxLen) << Cols[i] << std::left
-              << Common::Space << std::setw(NumWidth) << v[i].Central
-              << " +"    << std::setw(NumWidth) << (v[i].High - v[i].Central)
-              << " -"    << std::setw(NumWidth) << (v[i].Central - v[i].Low)
-              << " Max " << std::setw(NumWidth) << v[i].Max
-              << " Min "                        << v[i].Min
-              << Common::NewLine << std::right; // Right-aligned is the default
-            }
-          }
-        }
-        // Show parameters again - but this time in simplified format
-        std::cout << type << Common::Space << Preamble;
-        for( const Params::value_type &it : mp )
-        {
-          const Param &p{ it.second };
-          if( p.type == type )
-          {
-            for( int j = 0; j < p.size; ++j )
-            {
-              const std::size_t i{ p(j) };
-              const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
-              if( v[i].Check == 0 )
-                bOK = false;
-              std::cout << cOK << std::setw(maxLen) << Cols[i] << std::left
-              << Common::Space << v[i].to_string( ErrorDigits )
-              << Common::NewLine << std::right; // Right-aligned is the default
-            }
-          }
-        }
-      }
-    }
+    // Show output
+    Show( Param::Type::Variable );
+    Show( Param::Type::Derived );
     // Save the file
     if( !bAllParamsKnown )
       OutputModel.Write();
@@ -704,6 +645,76 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       WriteSummaryTD( OutputModel.Name_.NameNoExt + '.' + DAT_EXT, bVerbose );
   }
   return bOK;
+}
+
+void Fitter::Show( Param::Type type ) const
+{
+  // Show parameters - in neat columns
+  const std::vector<std::string> &Cols{ OutputModel.GetColumnNames() };
+  const int maxLen{ static_cast<int>( std::max_element( Cols.begin(), Cols.end(),
+                                                       [](const std::string &a, const std::string &b)
+                                                       { return a.length() < b.length(); } )->length() ) };
+  const int NumWidth{ static_cast<int>( std::cout.precision() ) + 7 };
+  const int WithErrWidth{ 13 + 2 * ErrorDigits };
+  std::cout << type << " params " << OutputModel.NumSamples()
+       << Common::Space << OutputModel.getData().SeedTypeString() << " replicas\n"
+       << "Ok" << std::setw(maxLen - 1) << "Field" << std::left
+       << Common::Space << std::setw(WithErrWidth) << "Cent(Err)"
+       << Common::Space << std::setw(NumWidth) << "Central"
+       << Common::Space << std::setw(NumWidth) << "+ 1 sigma"
+       << Common::Space << std::setw(NumWidth) << "- 1 sigma"
+       << Common::Space << std::setw(NumWidth) << "Max"
+       << Common::Space << std::setw(NumWidth) << "Min"
+       << std::right << Common::NewLine;
+  std::size_t i;
+  const Common::ValWithEr<scalar> * v;
+  for( const Params::value_type &it : mp )
+  {
+    const Param &p{ it.second };
+    if( p.type == type )
+    {
+      const std::size_t ColNum{ p() };
+      if( p.type == Param::Type::Fixed )
+      {
+        using M = DataSet::ConstMap;
+        M::const_iterator cit = ds.constMap.find( it.first );
+        if( cit == ds.constMap.cend() )
+        {
+          std::ostringstream os;
+          os << "Fitter::Show constant " << it.first << " missing from ds.constMap";
+          throw std::runtime_error( os.str().c_str() );
+        }
+        const ModelFile &mFile{ *ds.constFile[cit->second.File].get() };
+        Common::Params::const_iterator pit{ mFile.params.find( cit->second.pKey ) };
+        if( pit == mFile.params.cend() )
+        {
+          std::ostringstream os;
+          os << "Fitter::Show key " << cit->second.pKey << " missing from ds.constMap["
+             << cit->second.File << "] " << mFile.Name_.Filename;
+          throw std::runtime_error( os.str().c_str() );
+        }
+        i = pit->second();
+        v = &mFile.SummaryData();
+      }
+      else
+      {
+        i = ColNum;
+        v = &OutputModel.SummaryData();
+      }
+      for( int j = 0; j < p.size; ++j, ++i )
+      {
+        const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
+        std::cout << cOK << std::setw(maxLen) << Cols[ColNum + j] << std::left
+        << Common::Space << std::setw(WithErrWidth) << v[i].to_string( ErrorDigits )
+        << Common::Space << std::setw(NumWidth) << v[i].Central
+        << Common::Space << std::setw(NumWidth) << (v[i].High - v[i].Central)
+        << Common::Space << std::setw(NumWidth) << (v[i].Central - v[i].Low)
+        << Common::Space << std::setw(NumWidth) << v[i].Max
+        << Common::Space                        << v[i].Min
+        << Common::NewLine << std::right; // Right-aligned is the default
+      }
+    }
+  }
 }
 
 std::vector<std::string> Fitter::GetModelTypes() const

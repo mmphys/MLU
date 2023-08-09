@@ -571,9 +571,10 @@ bool Model<T>::CheckParameters( int Strictness, scalar_type MonotonicUpperLimit 
 }
 
 template <typename T>
-void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
+void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary,
+                               bool bShowColumnNames ) const
 {
-  Base::SummaryComments( s, true );
+  Base::SummaryComments( s, true, bShowColumnNames );
   for( std::size_t i = 0; i < FitTimes.size(); ++i )
   {
     s << "# Fit Times " << i << Colon;

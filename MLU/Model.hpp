@@ -117,7 +117,8 @@ struct Model : public Sample<T>, public ModelBase
    */
   bool CheckParameters( int Strictness = -1,
                         scalar_type MonotonicUpperLimit = std::numeric_limits<scalar_type>::max() );
-  void SummaryComments( std::ostream & s, bool bVerboseSummary = false ) const override;
+  void SummaryComments( std::ostream & s, bool bVerboseSummary = false,
+                        bool bShowColumnNames = true ) const override;
   void SummaryColumnNames( std::ostream &os ) const override;
   void SummaryContents( std::ostream &os ) const override;
   std::vector<ValWithEr<scalar_type>> GetValWithEr( const Params &ParamNames,

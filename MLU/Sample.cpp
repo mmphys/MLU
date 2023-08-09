@@ -964,7 +964,8 @@ void Sample<T>::WriteSummary( const std::string &sOutFileName, bool bVerboseSumm
 }
 
 template <typename T>
-void Sample<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
+void Sample<T>::SummaryComments( std::ostream & s, bool bVerboseSummary,
+                                 bool bShowColumnNames ) const
 {
   s << std::setprecision(std::numeric_limits<scalar_type>::digits10+2) << std::boolalpha;
   if( !Ensemble.empty() )
@@ -980,10 +981,10 @@ void Sample<T>::SummaryComments( std::ostream & s, bool bVerboseSummary ) const
       s << CommaSpace << cc;
     s << NewLine;
   }
-  s << "# NumColumns: " << Nt();
+  s << "# NumColumns: " << ( ColumnNames.size() ? ColumnNames.size() : Nt() );
   if( ColumnNames.empty() )
     s << " (rows t0 ... t" << ( Nt() - 1 ) << ")";
-  else
+  else if( bShowColumnNames )
   {
     s << NewLine << "# " << sColumnNames << ": ";
     for( std::size_t i = 0; i < ColumnNames.size(); ++i )

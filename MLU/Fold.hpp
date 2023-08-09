@@ -50,7 +50,8 @@ public:
   int NtUnfolded() const override { return NtUnfolded_; }
   const std::string &DefaultGroupName() override;
   bool bFolded() override;
-  void SummaryComments( std::ostream &os, bool bVerboseSummary = false ) const override;
+  void SummaryComments( std::ostream &os, bool bVerboseSummary = false,
+                        bool bShowColumnNames = true ) const override;
   void ReadAttributes( ::H5::Group &g ) override;
   int WriteAttributes( ::H5::Group &g ) const override;
 };

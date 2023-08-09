@@ -65,9 +65,9 @@ CreateParams::CreateParams( const std::vector<std::string> &O, const Common::Com
 {
 }
 
-const std::string ContinuumFit::sFindError{ "ContinuumFit::WriteSynthetic finding model constants" };
 const std::string ContinuumFit::sPDG{ "PDG" };
-const std::string ContinuumFit::sQSqFileType{ "qsq" };
+const std::string &ContinuumFit::FieldQSq{ ModelContinuum::FieldQSq };
+const std::string &ContinuumFit::FieldEL{ ModelContinuum::FieldEL };
 
 ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
 : cl{cl_},
@@ -305,31 +305,43 @@ void ContinuumFit::MakeCovarBlock()
       }
 }
 
+// TODO: Not great code. Should be split between this controller and the actual model
+
 void ContinuumFit::GetIndices()
 {
+  static const std::string sFindError{ "ContinuumFit::GetIndices finding model constants" };
   // Get the main constants used in the model
   const ModelFile &om{ f->OutputModel };
-  const Common::Params &mp{ f->mp };
+  const std::array<bool, NumConst> &cEnabled{ dynamic_cast<const ModelContinuum *>( f->model[0].get() )->cEnabled };
   {
     Common::Param::Key k( Common::GetFormFactorString( ff ), "" );
     for( int i = 0; i < idxC.size(); ++i )
     {
-      k.Name = "c" + std::to_string( i );
-      idxC[i] = mp.Find( k, sFindError )->second();
+      if( !cEnabled[i] )
+        idxC[i] = idxCUnused;
+      else
+      {
+        k.Name = "c" + std::to_string( i );
+        idxC[i] = f->mp.Find( k, sFindError )->second();
+      }
     }
   }
-
+  
   // PDG masses for heavy and light, plus the Delta in this case
-  idxPDGH = mp.Find( Common::Param::Key( sPDG + Meson[idxSrc] ), sFindError )->second();
-  idxPDGL = mp.Find( Common::Param::Key( sPDG + Meson[idxSnk] ), sFindError )->second();
-  idxDelta = mp.Find( Common::Param::Key( "Delta" ), sFindError )->second();
+  idxPDGH = f->mp.Find( Common::Param::Key( sPDG + Meson[idxSrc] ), sFindError )->second();
+  idxPDGL = f->mp.Find( Common::Param::Key( sPDG + Meson[idxSnk] ), sFindError )->second();
+  idxDelta = f->mp.Find( Common::Param::Key( "Delta" ), sFindError )->second();
+}
 
-  // Now get the min / max q^2 range
+// Now get the min / max of the specified field
+void ContinuumFit::GetMinMax( scalar &Min, scalar &Max, const std::string &Field ) const
+{
+  const ModelFile &om{ f->OutputModel };
   bool bFirst{ true };
-  for( const Common::Params::value_type &v : mp )
+  for( const Common::Params::value_type &v : f->mp )
   {
     // Look through every parameter for the qSq values
-    if( Common::EqualIgnoreCase( v.first.Name, "qSq" ) )
+    if( Common::EqualIgnoreCase( v.first.Name, Field ) )
     {
       const int Col{ static_cast<int>( v.second() ) };
       const ValWithEr &ve{ om.SummaryData( Col ) };
@@ -339,7 +351,7 @@ void ContinuumFit::GetIndices()
         if( !ve.Check )
         {
           std::ostringstream os;
-          os << sFindError << " ValWithEr Check 0 for " << v.first;
+          os << "ContinuumFit::GetMinMax() ValWithEr Check 0 for " << v.first;
           throw std::runtime_error( os.str().c_str() );
         }
         Min = ve.Central;
@@ -357,60 +369,90 @@ void ContinuumFit::GetIndices()
   if( f->Verbosity )
   {
     std::ostringstream os;
-    os << std::fixed << std::setprecision(3) << ( Min * InvGeVSq ) << " <= q^2 <= "
-       << ( Max * InvGeVSq ) << " [GeV^2]" << Common::NewLine;
+    os << std::scientific << std::setprecision(6) << Min << " <= " << Field << " <= "
+       << Max << Common::NewLine;
     std::cout << os.str();
   }
 }
 
-void ContinuumFit::WriteSynthetic() const
+std::ofstream ContinuumFit::WriteHeader( const std::string &FileType ) const
 {
-  const ModelFile &om{ f->OutputModel };
-  const Common::FileNameAtt &fna{ om.Name_ };
+  const Common::FileNameAtt &fna{ f->OutputModel.Name_ };
+  std::string NewType{ fna.Type };
+  if( !FileType.empty() )
+  {
+    NewType.append( 1, '_' );
+    NewType.append( FileType );
+  }
   Common::FileNameAtt fnaNew;
-  fnaNew.Parse( fna.GetBasePath(), fna.Type + '_' + sQSqFileType, fna.bSeedNum, fna.Seed, TEXT_EXT );
-  std::cout << "Make " << sQSqFileType << Common::Space << fnaNew.Filename << Common::NewLine;
+  fnaNew.Parse( fna.GetBasePath(), NewType, fna.bSeedNum, fna.Seed, TEXT_EXT );
+  std::cout << "Make " << FileType << Common::Space << fnaNew.Filename << Common::NewLine;
   std::ofstream os( fnaNew.Filename );
   Common::SummaryHeader<scalar>( os, fnaNew.Filename );
-  om.SummaryComments( os, true );
+  f->OutputModel.Sample::SummaryComments( os, true, false );
+  os << "# Primary key: ensemble " << f->model[0]->XVectorKeyName() << Common::NewLine;
+  os << "# x-units: eV\n";
+  return os;
+}
 
-  // Write header row - i.e. column names
-  os << "Field x ";
-  ValWithEr::Header( "y", os, Common::Space );
-  os << " y_witherr\n";
+void ContinuumFit::WriteFieldName( std::ofstream &os, const std::string &FieldName ) const
+{
+  os << Common::Space << FieldName << "_witherr ";
+  ValWithEr::Header( FieldName, os, Common::Space );
+}
+
+void ContinuumFit::WriteFitQSq() const
+{
+  // Make output file
+  const ModelFile &om{ f->OutputModel };
+  std::ofstream os{ WriteHeader( "fit") };
+  
+  // I'll need the central value of q^2_max
+  const scalar PDGHCentral{ om(ModelFile::idxCentral,idxPDGH) };
+  const scalar PDGLCentral{ om(ModelFile::idxCentral,idxPDGL) };
+  scalar qSqMaxCentral{ PDGHCentral - PDGLCentral };
+  qSqMaxCentral *= qSqMaxCentral;
 
   // Now write each data row
   ValWithEr ve;
   Common::Vector<scalar> Buffer( om.NumSamples() );
   std::vector<scalar> ScratchBuffer( om.NumSamples() );
-  static constexpr int NumTicks{ 200 };
-  const scalar Tick{ ( Max - Min ) / NumTicks };
-  double x{ Min - 2 * Tick };
-  // Compute q^2
-  const scalar PDGHCentral{ om(ModelFile::idxCentral,idxPDGH) };
-  const scalar PDGLCentral{ om(ModelFile::idxCentral,idxPDGL) };
-  scalar qSqMaxCentral{ PDGHCentral - PDGLCentral };
-  qSqMaxCentral *= qSqMaxCentral;
-  scalar Central = 0;
+
+  scalar x = -999.999;
+  for( int Loop = 0; Loop < 2; ++Loop )
+  {
+    const std::string &FieldName{ Loop == 0 ? FieldQSq : FieldEL };
+    if( Loop )
+      os << "\n\n";
+
+    // Write header row - i.e. column names
+    os << "field x";
+    WriteFieldName( os, "y" );
+    os << Common::NewLine;
+
+    scalar Min, Max;
+    GetMinMax( Min, Max, FieldName );
+    const scalar Tick{ ( Max - Min ) / NumTicks };
+    scalar Central = -999.999; // value unused
   for( int nTick = -2; nTick <= NumTicks; ++nTick, x += Tick )
   {
     if( nTick == -2 )
-      x = 0;
+      x = ( Loop == 0 ) ? 0 : EOfQSq(ModelFile::idxCentral, 0);
     else if( nTick == -1 )
-      x = qSqMaxCentral;
+      x = ( Loop == 0 ) ? qSqMaxCentral : PDGLCentral;
     if( nTick == 0 )
       x = Min;
     for( int rep = ModelFile::idxCentral; rep < om.NumSamples(); ++rep )
     {
-      const scalar PDGH{ om(rep,idxPDGH) };
-      const scalar PDGL{ om(rep,idxPDGL) };
       const scalar Delta{ om(rep,idxDelta) };
-      const scalar E{ ( PDGH * PDGH + PDGL * PDGL - x ) / ( 2 * PDGH ) };
+      const scalar E{ Loop == 0 ? EOfQSq(rep, x) : x };
       const scalar EOnLambda{ E * InvLambda };
-      const scalar z{ Lambda / ( E + Delta )
-         * ( om(rep,idxC[0])
-           + om(rep,idxC[2]) * EOnLambda
-           + om(rep,idxC[3]) * EOnLambda * EOnLambda ) };
+      scalar z = om(rep,idxC[0]); // Always used ("unused" means it's not chiral log adjusted)
+      if( idxC[2] != idxCUnused )
+        z += om(rep,idxC[2]) * EOnLambda;
+      if( idxC[3] != idxCUnused )
+        z += om(rep,idxC[3]) * EOnLambda * EOnLambda;
+      z *= Lambda / ( E + Delta );
       if( rep == ModelFile::idxCentral )
         Central = z;
       else
@@ -419,10 +461,93 @@ void ContinuumFit::WriteSynthetic() const
     ve.Get( Central, Buffer, ScratchBuffer );
     if( nTick < 0 )
       os << "# ";
-    os << sQSqFileType << Common::Space << x << Common::Space << ve
-       << Common::Space << ve.to_string( f->ErrorDigits )
+    os << FieldName << Common::Space << x << Common::Space
+       << ve.to_string( f->ErrorDigits ) << Common::Space << ve;
+    if( nTick == -2 )
+      os << " # q_0";
+    else if( nTick == -1 )
+      os << " # q^2_max";
+    os << Common::NewLine;
+  }
+  }
+}
+
+void ContinuumFit::WriteAdjustedQSq() const
+{
+  const ModelFile &om{ f->OutputModel };
+  std::ofstream os{ WriteHeader( "" ) };
+  // Write header row - i.e. column names
+  os << "model ensemble nSq";
+  WriteFieldName( os, FieldQSq );
+  WriteFieldName( os, FieldEL );
+  WriteFieldName( os, "data" );
+  WriteFieldName( os, "adjusted" );
+  os << Common::NewLine;
+
+  std::vector<ValWithEr> F; // form factor data values with errors
+  om.FitInput.MakeStatistics( F );
+
+  // Now write each data row
+  scalar Central = 0;
+  ValWithEr ve;
+  Common::Vector<scalar> Buffer( om.NumSamples() );
+  std::vector<scalar> ScratchBuffer( om.NumSamples() );
+  for( std::size_t i = 0; i < om.FitTimes.size(); ++i )
+  {
+    ModelFile &mf{ *ds.constFile[i] };
+    const ModelContinuum &m{ * dynamic_cast<const ModelContinuum *>( f->model[i].get() ) };
+    // Adjust the q^2 value on each replica
+    for( int rep = ModelFile::idxCentral; rep < om.NumSamples(); ++rep )
+    {
+      const scalar PoleTerm{ Lambda / ( om(rep,m.EL.idx) + om(rep,m.Delta.idx) ) };
+      // Compute the c0 term
+      scalar c0Term = 0;
+      if( m.cEnabled[0] )
+      {
+        // Chiral log term
+        const scalar c0Num = m.DeltaF( om(rep,m.mPi.idx) ) - m.DeltaF( om(rep,m.mPDGPi.idx) );
+        const scalar c0Denom = ModelContinuum::FourPi * om(rep,m.fPi.idx);
+        c0Term = om(rep,m.c[0].idx) * c0Num / ( c0Denom * c0Denom );
+      }
+      // Compute the c1 term
+      scalar c1Term = 0;
+      if( m.cEnabled[1] )
+      {
+        scalar DeltaMPiSq = om(rep,m.mPi.idx) * om(rep,m.mPi.idx);
+        DeltaMPiSq -= om(rep,m.mPDGPi.idx) * om(rep,m.mPDGPi.idx);
+        c1Term = om(rep,m.c[1].idx) * DeltaMPiSq * m.LambdaInv * m.LambdaInv;
+      }
+      // Compute the c4 term
+      scalar c4Term = 0;
+      if( m.cEnabled[4] )
+      {
+        const scalar aLambda{ m.Lambda / om(rep,m.aInv.idx) };
+        c4Term = om(rep,m.c[4].idx) * aLambda * aLambda;
+      }
+      // Get adjusted form factor
+      const scalar Adjust = PoleTerm * ( c0Term + c1Term + c4Term );
+      const scalar FFAdjust = om.FitInput(rep,i) - Adjust;
+      if( rep == ModelFile::idxCentral )
+        Central = FFAdjust;
+      else
+        Buffer[rep] = FFAdjust;
+    }
+    ve.Get( Central, Buffer, ScratchBuffer );
+    const ValWithEr &veQ{ om.SummaryData( static_cast<int>( m.qSq.idx ) ) };
+    const ValWithEr &veEL{ om.SummaryData( static_cast<int>( m.EL.idx ) ) };
+    os << i << Common::Space << mf.Ensemble << Common::Space << m.XVectorKey()
+       << Common::Space << veQ .to_string( f->ErrorDigits ) << Common::Space << veQ
+       << Common::Space << veEL.to_string( f->ErrorDigits ) << Common::Space << veEL
+       << Common::Space << F[i].to_string( f->ErrorDigits ) << Common::Space << F[i]
+       << Common::Space << ve  .to_string( f->ErrorDigits ) << Common::Space << ve
        << Common::NewLine;
   }
+}
+
+void ContinuumFit::WriteSynthetic() const
+{
+  WriteFitQSq();
+  WriteAdjustedQSq();
 }
 
 int ContinuumFit::DoFit()

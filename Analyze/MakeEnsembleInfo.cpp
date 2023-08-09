@@ -114,6 +114,8 @@ const std::array<GlobalInfo, 11> globalInfo{{
 }};
 
 static constexpr int NumParams{ 2 };
+static constexpr int idxaInv{ 0 };
+static constexpr int idxmPi{ 1 };
 static const std::array<std::string, NumParams> ParamNames{{ "aInv", "mPi" }};
 
 struct EnsembleInfo
@@ -158,14 +160,30 @@ void MakeSeeds()
 class Maker
 {
 protected:
+  using EnsMPiMapT = std::map<std::string, std::string, Common::LessCaseInsensitive>;
+  using EnsMPiReaderT = Common::KeyValReader<std::string, std::string, Common::LessCaseInsensitive>;
   const Common::Params params;
+  const EnsMPiMapT MPiMap;
   Common::Params MakeParams();
+  EnsMPiMapT MakeMPiMap( const char *mPiList );
   void MakeGaussian( Model &m, Common::Param::Key k, const ValStddev &v, SeedType Seed ) const;
   void MakeEnsembleInfo( std::string sFileName ) const;
 public:
-  Maker() : params{ MakeParams() } {}
+  Maker( const char *mPiList ) : params{MakeParams()}, MPiMap{MakeMPiMap( mPiList )} {}
   void Run( std::string sFileName ) const;
 };
+
+Maker::EnsMPiMapT Maker::MakeMPiMap( const char *mPiList )
+{
+  EnsMPiMapT MPiMap;
+  if( !mPiList || !*mPiList )
+    return EnsMPiMapT();
+
+  std::ifstream s( mPiList );
+  if( !Common::FileExists( mPiList ) || s.bad() )
+    throw std::runtime_error( std::string( "Error reading m_pi list \"" ) + mPiList + "\"" );
+  return EnsMPiReaderT::Read( s );
+}
 
 Common::Params Maker::MakeParams()
 {
@@ -220,7 +238,35 @@ void Maker::Run( std::string sFileName ) const
     for( int i = 0; i < NumParams; ++i )
     {
       k.Name = ParamNames[i];
-      MakeGaussian( m, k, ei.Value[i], ei.Value[i].Seed );
+      if( MPiMap.empty() || i != idxmPi )
+        MakeGaussian( m, k, ei.Value[i], ei.Value[i].Seed );
+      else
+      {
+        static const std::string sErrorMsg{ "Loading m_pi" };
+        // Get my offset and aInv
+        const std::size_t cDst{ params.Find( k, sErrorMsg )->second() };
+        k.Name = ParamNames[idxaInv];
+        const std::size_t caInv{ params.Find( k, sErrorMsg )->second() };
+        // Load a mPi from a file
+        EnsMPiMapT::const_iterator it = MPiMap.find( ei.Ensemble );
+        if( it == MPiMap.cend() )
+          throw std::runtime_error( "No m_pi model file for ensemble " + ei.Ensemble );
+        Model mPi;
+        mPi.Read( it->second, "  " );
+        m.FileList.push_back( it->second );
+        Common::Param::Key eKey( "l_l_p2_0", Common::ModelBase::EnergyPrefix );
+        Common::Params::const_iterator pit{ mPi.params.FindPromiscuous( eKey ) };
+        if( pit == mPi.params.cend() )
+        {
+          std::ostringstream os;
+          os << "Ensemble " << ei.Ensemble << " key " << eKey << " not found in " << it->second;
+          throw std::runtime_error( os.str().c_str() );
+        }
+        const std::size_t cE{ pit->second() };
+        // save a mPi * a^{-1} = mPi
+        for( int i = Model::idxCentral; i < m.NumSamples(); ++i )
+          m( i, cDst ) = mPi( i, cE ) * m( i, caInv );
+      }
     }
   }
   m.SetSummaryNames( "Central" );
@@ -239,7 +285,7 @@ int main(int argc, char *argv[])
   {
     if( Common::FileExists( sFileName ) )
       throw std::runtime_error( sFileName + " exists" );
-    Maker{}.Run( sFileName );
+    Maker( argc < 3 ? nullptr : argv[2] ).Run( sFileName );
   }
   catch(const std::exception &e)
   {

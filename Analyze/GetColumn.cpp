@@ -32,6 +32,7 @@ struct Extractor
 {
   using Scalar = double;
   using ValErType = Common::ValWithEr<Scalar>;
+  static const ValErType veUnknown;
 
   struct NameValue
   {
@@ -47,9 +48,11 @@ struct Extractor
   bool Run( const std::vector<std::string> &Args );
 protected:
   NameValue ReadFile( const std::string &Filename );
-  void Show( const NameValue &NV, const std::vector<std::string> Selection, bool bExact ) const;
-  void ShowOne( const NameValue &NV, std::size_t i ) const;
+  bool Show( const NameValue &NV, const std::vector<std::string> Selection, bool bExact ) const;
+  void ShowOne( const std::string &Name, const ValErType &Value ) const;
 };
+
+const Extractor::ValErType Extractor::veUnknown( 0, 0, 0, 0, 0, 0 );
 
 Extractor::Extractor( Common::CommandLine &cl )
 : inBase{ cl.SwitchValue<std::string>("i") },
@@ -70,13 +73,13 @@ bool Extractor::Run( const std::vector<std::string> &Args )
       NameValue NV{ ReadFile( s ) };
       if( ExactNames.empty() && PartialNames.empty() )
         for( std::size_t i = 0; i < NV.Name.size(); ++i )
-          ShowOne( NV, i );
+          ShowOne( NV.Name[i], NV.Value[i] );
       else
       {
-        if( !ExactNames.empty() )
-          Show( NV, ExactNames, true );
-        if( !PartialNames.empty() )
-          Show( NV, PartialNames, false );
+        if( !ExactNames.empty() && !Show( NV, ExactNames, true ) )
+          bOK = false;
+        if( !PartialNames.empty() && !Show( NV, PartialNames, false ) )
+          bOK = false;
       }
     }
     catch(const std::exception &e)
@@ -88,9 +91,10 @@ bool Extractor::Run( const std::vector<std::string> &Args )
   return bOK;
 }
 
-void Extractor::Show( const NameValue &NV, const std::vector<std::string> Selection,
+bool Extractor::Show( const NameValue &NV, const std::vector<std::string> Selection,
                       bool bExact ) const
 {
+  bool bOK{ true };
   for( const std::string &s : Selection )
   {
     const bool bLookingForZero{ !s.empty() && s.back() == '0' };
@@ -119,15 +123,21 @@ void Extractor::Show( const NameValue &NV, const std::vector<std::string> Select
         ++i;
     }
     if( !bFound )
-      throw std::runtime_error( "Unknown column " + s );
-    ShowOne( NV, i );
+    {
+      //throw std::runtime_error( "Unknown column " + s );
+      bOK = false;
+      ShowOne( s, veUnknown );
+    }
+    else
+      ShowOne( NV.Name[i], NV.Value[i] );
   }
+  return bOK;
 }
 
-void Extractor::ShowOne( const NameValue &NV, std::size_t i ) const
+void Extractor::ShowOne( const std::string &Name, const ValErType &Value ) const
 {
-  std::cout << NV.Name[i] << Common::Space << NV.Value[i].to_string( ErrDig ) << Common::Space
-            << NV.Value[i] << Common::NewLine;
+  std::cout << Name << Common::Space << Value.to_string( ErrDig ) << Common::Space
+            << Value << Common::NewLine;
 }
 
 Extractor::NameValue Extractor::ReadFile( const std::string &Filename )
