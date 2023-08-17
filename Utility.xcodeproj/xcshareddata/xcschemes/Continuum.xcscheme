@@ -81,7 +81,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o Cont/Renorm/disp_all/"
+            argument = "-o Cont/Renorm/all/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -89,23 +89,23 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "C1/FormFactor/betterP/3sm_sp2/&apos;*_p2_[0-4].*&apos;.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "&apos;[CM]?/FormFactor/renorm/3sm_sp2/*_p2_[0-4].*.h5&apos;,EnableC3=false"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "&apos;F1M/FormFactor/renorm/3sm_sp2/*_p2_[0-6].*.h5&apos;,EnableC3=false"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "M1/FormFactor/disp/3sm_sp2/&apos;*_p2_[0-4].g*&apos;.h5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "--model ${MLUCache}EnsembleInfo.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;[CM]?/FormFactor/renorm/3sm_sp2/*_p2_[0-4].*.h5&apos;,EnableC3=false,ff=f0"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;F1M/FormFactor/renorm/3sm_sp2/*_p2_[0-6].*.h5&apos;,EnableC3=false,ff=f0"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;[CM]?/FormFactor/renorm/3sm_sp2/*_p2_[0-4].*.h5&apos;,EnableC3=false,ff=fplus"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;F1M/FormFactor/renorm/3sm_sp2/*_p2_[0-6].*.h5&apos;,EnableC3=false,ff=fplus"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

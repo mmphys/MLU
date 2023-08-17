@@ -161,15 +161,10 @@ ModelContinuum::ModelContinuum( const Model::CreateParams &mcp, Model::Args &Arg
   mPi.Key.Object = aInv.Key.Object;
   mPi.Key.Name = "mPi"; // Simulated pion mass on each ensemble
   mPDGPi.Key.Name = "PDGPi";
-  // The excited meson in the pole depends on the charm decay final quark
-  const bool bVector{ ff == Common::FormFactor::fplus || ff == Common::FormFactor::fperp };
-  if( std::toupper( cp.pCorr->Name_.Quark[1][0] ) == 'L' )
-    mPDGDStar.Key.Name = bVector ? "PDGDStar" : "PDGD0Star";
-  else
-    mPDGDStar.Key.Name = bVector ? "PDGDsStar" : "PDGDs0Star";
   mPDGH.Key.Name = std::toupper( cp.pCorr->Name_.Spectator[0] ) == 'S' ? "PDGDs" : "PDGD";
   mPDGL.Key.Name = std::toupper( Meson[1][0] ) == 'K' ? "PDGK" : "PDGP";
   Delta.Key.Name = "Delta";
+  Delta.Key.Object = { GetFormFactorString( ff ) };
   // X Vector
   EL.Key.Object = { Ensemble, std::to_string( p.p2() ) };
   EL.Key.Name = FieldEL;
@@ -184,7 +179,7 @@ ModelContinuum::ModelContinuum( const Model::CreateParams &mcp, Model::Args &Arg
   // This is my model
   for( int i = 0; i < NumConst; ++i )
   {
-    c[i].Key.Object = { GetFormFactorString( ff ) };
+    c[i].Key.Object = Delta.Key.Object;
     c[i].Key.Name = "c" + std::to_string( i );
     cEnabled[i] = Args.Remove( "Enable" + c[i].Key.Name, true );
   }
@@ -238,7 +233,6 @@ std::vector<Param::Key> ModelContinuum::XVectorKeyNames() const
   vk.push_back( mH.Key );
   vk.push_back( mL.Key );
   vk.push_back( qSq.Key );
-  vk.push_back( mPDGDStar.Key );
   vk.push_back( mPDGH.Key );
   vk.push_back( mPDGL.Key );
   vk.push_back( Delta.Key );
@@ -251,7 +245,6 @@ void ModelContinuum::AddParameters( Params &mp )
   AddParam( mp, fPi );
   AddParam( mp, mPi );
   AddParam( mp, mPDGPi );
-  AddParam( mp, mPDGDStar );
   AddParam( mp, mPDGH );
   AddParam( mp, mPDGL );
   AddParam( mp, Delta, 1, false, Common::Param::Type::Derived );
@@ -284,7 +277,6 @@ void ModelContinuum::SaveParameters( const Params &mp )
   fPi.idx = mp.at( fPi.Key )();
   mPi.idx = mp.at( mPi.Key )();
   mPDGPi.idx = mp.at( mPDGPi.Key )();
-  mPDGDStar.idx = mp.at( mPDGDStar.Key )();
   mPDGH.idx = mp.at( mPDGH.Key )();
   mPDGL.idx = mp.at( mPDGL.Key )();
   Delta.idx = mp.at( Delta.Key )();
@@ -351,10 +343,7 @@ scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParam
   ModelParams[mH.idx] = ModelParams[amH.idx] * _aInv;
   ModelParams[mL.idx] = ModelParams[amL.idx] * _aInv;
   ModelParams[qSq.idx] = ModelParams[aqSq.idx] * _aInv * _aInv;
-  // Compute the pole location and pole term
-  ModelParams[Delta.idx] = 0.5 * ( ( ModelParams[mPDGDStar.idx] * ModelParams[mPDGDStar.idx]
-                                    - ModelParams[mPDGL.idx] * ModelParams[mPDGL.idx] )
-                                  / ModelParams[mPDGH.idx] - ModelParams[mPDGH.idx] );
+  // Compute the pole term
   const scalar PoleTerm{ Lambda / ( ModelParams[EL.idx] + ModelParams[Delta.idx] ) };
   // Compute the c0 term
   scalar c0Term = ModelParams[c[0].idx];

@@ -38,8 +38,11 @@
 // Uncomment the next line to disable Minuit2 (for testing)
 //#undef HAVE_MINUIT2
 
+FitController FitController::None;
+
 Fitter::Fitter( Model::CreateParams &mcp, DataSet &ds_,
-                std::vector<Model::Args> &&ModelArgs_, CovarParams &&cp_, bool bFitCorr_ )
+                std::vector<Model::Args> &&ModelArgs_, CovarParams &&cp_, bool bFitCorr_,
+                FitController &fitController_ )
   : bAnalyticDerivatives{ mcp.cl.GotSwitch("analytic") },
     bTestRun{ mcp.cl.GotSwitch("testrun") },
     bCentralGuess{ !mcp.cl.GotSwitch("central") },
@@ -60,6 +63,7 @@ Fitter::Fitter( Model::CreateParams &mcp, DataSet &ds_,
     ErrorDigits{ mcp.cl.SwitchValue<int>("errdig") },
     ds{ ds_ },
     bFitCorr{ bFitCorr_ },
+    fitController{ fitController_ },
     NumFiles{ static_cast<int>( ModelArgs_.size() ) },
     ModelArgs{ ModelArgs_ }, // Save the original model arguments
     model{ CreateModels( mcp, ModelArgs ) }, // Pass in a copy of model arguments
@@ -224,13 +228,15 @@ Params Fitter::MakeModelParams()
           throw std::runtime_error( os.str().c_str() );
         }
         // Change this parameter to constant
-        mp.MakeFixed( pk, bSwapSourceSink );
+        mp.SetType( pk, Param::Type::Fixed, bSwapSourceSink );
       }
     }
     // At this point we have a definitive list of parameters - models can save offsets
+    fitController.ParamsAgreed( mp, *this ); // Give the controller the option to adjust params
     mp.AssignOffsets();
     for( ModelPtr &m : model )
       m->SaveParameters( mp );
+    fitController.SaveParameters( mp, *this );
     // Make list of constants - need to wait until after AssignOffsets()
     for( const Params::value_type &it : mp )
     {
@@ -350,24 +356,27 @@ void Fitter::MakeGuess()
 
 Fitter * MakeFitterGSL( const std::string &FitterArgs, Model::CreateParams &mcp,
                         DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                        CovarParams &&cp, bool bFitCorr );
+                        CovarParams &&cp, bool bFitCorr, FitController &fitController );
 #ifdef HAVE_MINUIT2
 Fitter * MakeFitterMinuit2( const std::string &FitterArgs, Model::CreateParams &mcp,
                             DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                            CovarParams &&cp, bool bFitCorr );
+                            CovarParams &&cp, bool bFitCorr, FitController &fitController );
 #endif
 
 Fitter * Fitter::Make( Model::CreateParams &&mcp, DataSet &ds,
-                       std::vector<Model::Args> &&ModelArgs, CovarParams &&cp, bool bFitCorr )
+                       std::vector<Model::Args> &&ModelArgs, CovarParams &&cp, bool bFitCorr,
+                       FitController &fitController )
 {
   Fitter * f;
   std::string FitterArgs{ mcp.cl.SwitchValue<std::string>( "fitter" ) };
   std::string FitterType{ Common::ExtractToSeparator( FitterArgs ) };
   if( Common::EqualIgnoreCase( FitterType, "GSL" ) )
-    f = MakeFitterGSL( FitterArgs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr );
+    f = MakeFitterGSL( FitterArgs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr,
+                       fitController );
 #ifdef HAVE_MINUIT2
   else if( Common::EqualIgnoreCase( FitterType, "Minuit2" ) )
-    f = MakeFitterMinuit2(FitterArgs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr);
+    f = MakeFitterMinuit2( FitterArgs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr,
+                          fitController );
 #endif
   else
     throw std::runtime_error( "Unrecognised fitter: " + FitterType );

@@ -34,6 +34,17 @@
 
 // Forward declarations to minimise coupling
 struct FitterThread;       // OpenMP thread that will perform fit on each replica
+struct Fitter;
+
+// Callbacks to the Fit Controller
+struct FitController
+{
+  virtual ~FitController() {}
+  virtual void ParamsAgreed( Common::Params &mp, const Fitter &f ) const {}
+  virtual void SaveParameters( Common::Params &mp, const Fitter &f ) {}
+  virtual void ComputeDerived( Vector &ModelParams ) const {}
+  static FitController None;
+};
 
 struct Fitter
 {
@@ -59,6 +70,7 @@ struct Fitter
   // More complex command-line options
   DataSet &ds;
   const bool bFitCorr; // true if we are fitting correlators, false = fitting models
+  FitController &fitController;
   const int NumFiles; // Number of correlator files in the dataset
   //const std::vector<std::string> &OpNames;
   const std::vector<Model::Args> ModelArgs;
@@ -76,8 +88,8 @@ struct Fitter
   int dof;
   bool bCorrelated;
 
-  explicit Fitter( Model::CreateParams &mcp, DataSet &ds_,
-                   std::vector<Model::Args> &&ModelArgs, CovarParams &&cp, bool bFitCorr );
+  explicit Fitter( Model::CreateParams &mcp, DataSet &ds_, std::vector<Model::Args> &&ModelArgs,
+                   CovarParams &&cp, bool bFitCorr, FitController &fitController );
   virtual ~Fitter() {}
 
 protected:
@@ -90,7 +102,8 @@ protected:
 
 public:
   static Fitter * Make( Model::CreateParams &&mcp, DataSet &ds,
-                        std::vector<Model::Args> &&ModelArgs, CovarParams &&cp, bool bFitCorr );
+                        std::vector<Model::Args> &&ModelArgs, CovarParams &&cp, bool bFitCorr,
+                        FitController &fitController = FitController::None );
   static void SayNumThreads( std::ostream &os );
   bool Dump( int idx ) const;
   void Dump( int idx, const std::string &Name, const Matrix &m ) const;

@@ -6,6 +6,7 @@
 //  Copyright © 2020 sopa. All rights reserved.
 //
 
+#include <functional>
 #include <stdio.h>
 #include <ostream>
 #include <random>
@@ -747,9 +748,48 @@ const CKelly::Table MikeTable1{
 
 CKelly CompareMikeFit( 104, 128, MikeTable1 );
 
+class Callable
+{
+protected:
+  int Magic;
+public:
+  Callable( int Magic_ ) : Magic{Magic_} {}
+  void DoMagic( int Plus );
+};
+
+void Callable::DoMagic( int Plus )
+{
+  std::cout << "Magic " << Magic << " + " << Plus << " = ";
+  Magic += Plus;
+  std::cout << Magic << std::endl;
+}
+
+static const std::function<void(int)> NullFunction;
+
+void DoCaller( int i, const std::function<void(int)> &f = NullFunction )
+{
+  for( int j = 0; j < i; ++j )
+  {
+    std::cout << j << ": ";
+    if( f )
+      f( j );
+  }
+  std::cout << "Done\n";
+}
+
+bool TryCallback()
+{
+  Callable mA( 7 ), mB( 42 );
+  std::function<void(int)> CallBack{ std::bind( &Callable::DoMagic, mB, std::placeholders::_1 ) };
+  DoCaller( 3, CallBack );
+  DoCaller( 4 );
+  return false;
+}
+
 int main(int argc, char *argv[])
 {
   std::cout << "Your random number is " << std::random_device()() << std::endl;
+  //if( !TryCallback() ) return EXIT_SUCCESS;
   //if( CK1.Test() && CK2.Test() && CK3.Test() && CK4.Test() && CompareMikeFit.Test() ) return EXIT_SUCCESS;
   //if( FitRangeTest( argc, argv ) ) return EXIT_SUCCESS;
   int iReturn = EXIT_SUCCESS;

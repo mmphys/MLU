@@ -240,7 +240,7 @@ const std::string & FitterGSL::Type() const
 
 FitterGSL * FitterGSL::Make( const std::string &FitterArgs, Model::CreateParams &mcp,
                              DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                             CovarParams &&cp, bool bFitCorr )
+                             CovarParams &&cp, bool bFitCorr, FitController &fitController )
 {
   TRS trs{ TRS::lm };
   static const std::vector<std::string> Algorithms{ "lm", "lmaccel", "dogleg", "ddogleg", "subspace2d" };
@@ -251,12 +251,14 @@ FitterGSL * FitterGSL::Make( const std::string &FitterArgs, Model::CreateParams 
       return nullptr;
     trs = static_cast<TRS>( idx );
   }
-  return new FitterGSL( trs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr );
+  return new FitterGSL( trs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr,
+                        fitController );
 }
 
 Fitter * MakeFitterGSL( const std::string &FitterArgs, Model::CreateParams &mcp,
                         DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                        CovarParams &&cp, bool bFitCorr )
+                        CovarParams &&cp, bool bFitCorr, FitController &fitController )
 {
-  return FitterGSL::Make( FitterArgs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr );
+  return FitterGSL::Make( FitterArgs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr,
+                          fitController );
 }

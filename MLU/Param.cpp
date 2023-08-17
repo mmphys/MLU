@@ -550,15 +550,29 @@ template void Params::PropagateEnergy<float>( Vector<float> &Guess, std::vector<
 template void Params::PropagateEnergy<double>(Vector<double> &Guess, std::vector<bool> *bKnown) const;
 
 // Make a parameter fixed. Must exist
-Params::iterator Params::MakeFixed( const Param::Key &key, bool bSwapSourceSink )
+Param &Params::SetType( const Param::Key &key, Param::Type type )
 {
-  iterator it{ Find( key, "Params::MakeFixed()" ) };
+  static const std::string sErrPrefix{ "Params::SetType()" };
+  if( type == Param::Type::All || type == Param::Type::Variable )
+  {
+    std::ostringstream os;
+    os << sErrPrefix << " can't set type to " << type;
+    throw os.str().c_str();
+  }
+  iterator it{ Find( key, sErrPrefix ) };
   Param &p{ it->second };
-  p.type = Param::Type::Fixed;
+  p.type = type;
   p.bMonotonic = false;
-  p.bSwapSourceSink = bSwapSourceSink;
   dispMap.erase( key ); // Also remove it from dispersion list (if present)
-  return it;
+  return p;
+}
+
+// Make a parameter fixed. Must exist
+Param &Params::SetType( const Param::Key &key, Param::Type type, bool bSwapSourceSink )
+{
+  Param &p{ SetType( key, type ) };
+  p.bSwapSourceSink = bSwapSourceSink;
+  return p;
 }
 
 Params::const_iterator Params::FindPromiscuous( const Param::Key &key ) const

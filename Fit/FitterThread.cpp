@@ -389,6 +389,8 @@ bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::s
                       Param::Type::Variable, true );
   }
   parent.mp.PropagateEnergy( ModelParams );
+  // Give the controller the option to manipulate parameters
+  parent.fitController.ComputeDerived( ModelParams );
   // Compute theory - error for each timeslice
   int i{0};
   bool bOK{ true };

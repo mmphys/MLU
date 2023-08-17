@@ -32,6 +32,7 @@
 #include "MultiFit.hpp"
 #include "Fitter.hpp"
 #include "Model.hpp"
+#include "ModelContinuum.hpp"
 
 // Stats on the ensembles we loaded from files
 struct EnsembleStat
@@ -55,7 +56,7 @@ struct CreateParams : public Model::CreateParams
   CreateParams( const std::vector<std::string> &OpNames, const Common::CommandLine &cl );
 };
 
-struct ContinuumFit
+struct ContinuumFit : public FitController
 {
   static const std::string &FieldQSq;
   static const std::string &FieldEL;
@@ -71,34 +72,73 @@ public:
   const int NumSamples;
   const bool doCorr;
   const bool CovarBlock;
-  const std::string sFFValue;
-  const Common::FormFactor ff;
+  const std::string sFFDefault;
+  const Common::FormFactor ffDefault;
   const std::string inBase;
-  std::string outBaseFileName;
+  const std::string outBaseFileName;
   DataSet ds;
   std::vector<std::string> OpName;
   std::vector<Model::Args> ModelArgs;
   std::unique_ptr<Fitter> f;
   explicit ContinuumFit( Common::CommandLine &cl );
+  virtual ~ContinuumFit() {}
+  void ParamsAgreed( Common::Params &mp, const Fitter &f ) const override;
+  void SaveParameters( Common::Params &mp, const Fitter &f ) override;
+  void ComputeDerived( Vector &ModelParams ) const override;
   int Run();
 protected:
   EnsembleStatMap EnsembleStats;
-  // Parameters from the model just created. Set by GetIndices()
+  // Which form factor am I fitting
+  static constexpr unsigned int uiFF0 = 1;
+  static constexpr unsigned int uiFFPlus = 2;
+  unsigned int uiFF;
+  inline unsigned int ffMaskFromIndex( int idx ) const { return idx ? uiFFPlus : uiFF0; }
+  inline unsigned int ffMask( Common::FormFactor ff ) const
+  {
+    if( ff == Common::FormFactor::f0 )
+      return uiFF0;
+    if( ff == Common::FormFactor::fplus )
+      return uiFFPlus;
+    std::ostringstream os;
+    os << "ContinuumFit::ffMask() " << ff << " invalid";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  // Parameters from the model just created
+  static constexpr int idxFF0 = 0;
+  static constexpr int idxFFPlus = 1;
+  inline Common::FormFactor ffIndexReverse( int idx ) const
+  { return idx ? Common::FormFactor::fplus : Common::FormFactor::f0; }
+  inline int ffIndex( Common::FormFactor ff ) const
+  {
+    if( ff == Common::FormFactor::f0 )
+      return idxFF0;
+    if( ff == Common::FormFactor::fplus )
+      return idxFFPlus;
+    std::ostringstream os;
+    os << "ContinuumFit::ffIndex() " << ff << " invalid";
+    throw std::runtime_error( os.str().c_str() );
+  }
+  static constexpr int NumFF{ 2 };
   static constexpr int NumConst{ 5 };
   static constexpr std::size_t idxCUnused{ std::numeric_limits<std::size_t>::max() };
-  std::array<std::size_t, NumConst> idxC;
+  std::array<std::array<std::size_t, NumConst>, NumFF> idxC;
+  std::array<std::size_t, NumFF> idxDelta;
+  std::array<std::size_t, NumFF> idxPDGDStar;
   std::size_t idxPDGH;
   std::size_t idxPDGL;
-  inline scalar EOfQSq( int rep, scalar qSq ) const
+  inline static scalar EOfQSq( scalar PDGH, scalar PDGL, scalar qSq )
   {
-    const scalar PDGH{ f->OutputModel(rep,idxPDGH) };
-    const scalar PDGL{ f->OutputModel(rep,idxPDGL) };
     const scalar E{ ( PDGH * PDGH + PDGL * PDGL - qSq ) / ( 2 * PDGH ) };
     return E;
   }
-  std::size_t idxDelta;
+  inline scalar EOfQSq( int rep, scalar qSq ) const
+  {
+    return EOfQSq( f->OutputModel(rep,idxPDGH), f->OutputModel(rep,idxPDGL), qSq );
+  }
   std::string sOpNameConcat; // Sorted, concatenated list of operators in the fit for filenames
   std::array<std::string, 2> Meson;
+  static const std::string &GetPoleMassName( Common::FormFactor ff, const Common::FileNameAtt &fna );
+  static Common::FormFactor ValidateFF( Common::FormFactor ff );
   void LoadModels();
   void GetEnsembleStats();
   void SetEnsembleStats();
@@ -106,15 +146,15 @@ protected:
   void SortModels();
   void LoadExtra();
   void MakeOutputFilename();
+  std::string GetOutputFilename( unsigned int uiFF );
   void MakeCovarBlock();
-  // Get the indices of parameters from the model just created
-  void GetIndices();
-  void GetMinMax( scalar &Min, scalar &Max, const std::string &Field ) const;
-  std::ofstream WriteHeader( const std::string &FileType ) const;
+  void GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max,
+                  ModelParam ModelContinuum::* mp, const std::string &Field ) const;
+  std::ofstream WriteHeader( const std::string &sPrefix, const std::string &FileType ) const;
   void WriteFieldName( std::ofstream &os, const std::string &FieldName ) const;
-  void WriteFitQSq() const;
-  void WriteAdjustedQSq() const;
-  void WriteSynthetic() const;
+  void WriteFitQSq( Common::FormFactor ff, const std::string &sPrefix ) const;
+  void WriteAdjustedQSq( Common::FormFactor ff, const std::string &sPrefix ) const;
+  void WriteSynthetic();
   int DoFit();
 };
 

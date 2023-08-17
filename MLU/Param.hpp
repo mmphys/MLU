@@ -160,7 +160,9 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   template <typename T>
   /// If bKnown not passed, assume all values known and walk the list once
   void PropagateEnergy( Vector<T> &Guess, std::vector<bool> *bKnown = nullptr ) const;
-  Params::iterator MakeFixed( const Param::Key &key, bool bSwapSourceSink );
+  /// Set parameter to type (not variable)
+  Param &SetType( const Param::Key &key, Param::Type type );
+  Param &SetType( const Param::Key &key, Param::Type type, bool bSwapSourceSink );
   /// Find the key. If Params have only one objectID, match anything
   Params::const_iterator FindPromiscuous( const Param::Key &key ) const;
   /// Once the list of parameters is finalised, call this to assign each parameter a fixed offset

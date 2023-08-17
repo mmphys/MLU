@@ -68,7 +68,7 @@ protected:
   const std::string Ensemble;
   unsigned int aInv_L;
   std::array<std::string, 2> Meson;
-  ModelParam aInv, fPi, mPi, mPDGPi, mPDGDStar, mPDGH, mPDGL, Delta;
+  ModelParam aInv, fPi, mPi, mPDGPi, mPDGH, mPDGL, Delta;
   ModelParam EL, kMu, mH, mL, qSq;
   ModelParam aEL, akMu, amH, amL, aqSq;
   static constexpr int NumConst{ 5 };

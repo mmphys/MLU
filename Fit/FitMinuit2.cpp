@@ -125,9 +125,9 @@ const std::string & FitterMinuit2::Type() const
 
 Fitter * MakeFitterMinuit2( const std::string &FitterArgs, Model::CreateParams &mcp,
                             DataSet &ds, std::vector<Model::Args> &&ModelArgs,
-                            CovarParams &&cp, bool bFitCorr )
+                            CovarParams &&cp, bool bFitCorr, FitController &fitController )
 {
   if( !FitterArgs.empty() )
     return nullptr;
-  return new FitterMinuit2( mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr );
+  return new FitterMinuit2(mcp, ds, std::move(ModelArgs), std::move(cp), bFitCorr, fitController);
 }

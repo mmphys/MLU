@@ -10,6 +10,9 @@
 
 PlotFunction()
 {
+local xAxis MyPlotField
+for xAxis in ${x:-qSq EL}; do
+for MyPlotField in ${PlotField:-data adjusted}; do
 gnuplot <<-EOFMark
 
 #Command-line options
@@ -23,7 +26,7 @@ FieldNameText="${fieldtext:-effective mass}"
 MyTitle="${title}"
 PDFSize="${size:-6in,3in}"
 Save="${save}"
-xAxis="${x:-qSq}"
+xAxis="$xAxis"
 ModelMin=${mmin:-0}
 ModelMax=${mmax:--1}
 tExtra=${tExtra:-2}
@@ -32,20 +35,10 @@ OriginalTF="${tf}"
 ExtraFiles="${extra}"
 RefVal="$RefVal"
 RefText="$RefText"
-FitDelta=$FitDelta
-FitmH=$FitmH
-FitmL=$FitmL
-FitC0=$FitC0
-FitC2=$FitC2
-FitC3=$FitC3
-PlotField="${PlotField:-data}"
+PlotField="$MyPlotField"
 
-EOfQSqConst=FitmH * FitmH + FitmL * FitmL
-EOfQSq(qSq)=( EOfQSqConst - qSq ) / ( 2 * FitmH )
 Lambda=1e9
 InvLambda=1e0 / Lambda; InvLambdaSq=InvLambda * InvLambda
-Contin(qSq)=Lambda/(EOfQSq(qSq) + FitDelta) * \
-  ( FitC0 + FitC2 * EOfQSq(qSq) / Lambda + FitC3 * EOfQSq(qSq) / Lambda * EOfQSq(qSq) / Lambda )
 
 if( Save ne "" ) {
   if( PDFSize ne "" ) { PDFSize='size '.PDFSize }
@@ -56,7 +49,7 @@ if( Save ne "" ) {
 }
 
 if( RefText ne '' ) { RefText=RefText.', ' }
-RefText=RefText.my_ylabel.'(0)='.sprintf('%0.3g',Contin(0))
+RefText=RefText.my_ylabel."(0)=$QSqZero"
 if( PlotField ne 'data' ) { RefText=RefText.' ('.PlotField.')' }
 set label 2 RefText at screen 0, screen 0 font ",10" front textcolor "blue" \
   offset character 0.5, 0.5
@@ -109,6 +102,8 @@ plot PlotFile."_fit.txt" using (stringcolumn("field") eq xAxis ? column('x')*xSc
 #    NaN with lines title 'Banana' lc rgb 0xC00000 bgnd "skyblue"
 
 EOFMark
+done
+done
 }
 
 unset bError
@@ -181,14 +176,21 @@ function GetSaveName()
 function GetFitData()
 {
   local InPath=${PlotFile}.h5
-  ColumnValues=($(GetColumn --exact ChiSqPerDof,pValue,Delta,PDGDs,PDGK,${ff}-c0,${ff}-c2,${ff}-c3 $InPath))
-  RefText="χ²/dof=${ColumnValues[4]} (p=${ColumnValues[12]})"
-  FitDelta=${ColumnValues[2*8+4]}
-  FitmH=${ColumnValues[3*8+4]}
-  FitmL=${ColumnValues[4*8+4]}
-  FitC0=${ColumnValues[5*8+4]}
-  FitC2=${ColumnValues[6*8+4]}
-  FitC3=${ColumnValues[7*8+4]}
+  if ! [ -e $InPath ]; then
+    InPath=${PlotFile/_f0/_f0_fplus}.h5
+    if ! [ -e $InPath ]; then
+      InPath=${PlotFile/_fplus/_f0_fplus}.h5
+    fi
+  fi
+  if [ -e $InPath ]; then
+    ColumnValues=($(GetColumn --exact ChiSqPerDof,pValue $InPath))
+    RefText="χ²/dof=${ColumnValues[0*8+4]} (p=${ColumnValues[1*8+4]})"
+  else
+    unset ColumnValues
+    unset RefText
+  fi
+  QSqZero="$(gawk -e '/# qSq 0 / {print $4; exit}' ${PlotFile}_fit.txt)"
+  #echo $QSqZero
 }
 
 for PlotFile in "$@"
@@ -196,10 +198,10 @@ do
   if [[ -z "$PlotFile" ]]; then
     echo "Skipping empty filename"
   else
-    if [[ ! -a "$PlotFile" && -a "$PlotFile.dat" ]]; then PlotFile+=.dat; fi
+    if [[ ! -e "$PlotFile" && -e "$PlotFile.txt" ]]; then PlotFile+=.txt; fi
     if [ -v save ]; then PlotFile="${PlotFile%.*}"; else GetSaveName PlotFile; fi
-    if [[ ! -a "$PlotFile.dat" ]]; then
-      echo "Doesn't exist $PlotFile.dat"
+    if [[ ! -e "$PlotFile.txt" ]]; then
+      echo "Doesn't exist $PlotFile.txt"
     else
   (
     ff=${PlotFile##*/}
@@ -214,4 +216,5 @@ do
     PlotFunction
   ) fi
   fi
+  unset save
 done
