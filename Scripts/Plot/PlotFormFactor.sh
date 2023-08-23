@@ -216,7 +216,9 @@ for Fit2 in $Fit2ptSeries; do
   SpecDir="3sm_${Spec[i]}"
   FitFile=$MELFit/Fit_${Spec[i]}_$Fit2.txt
   Cmd="CRatio --type f,$L"
-  if [ -v ZV ]; then
+  if [ -v FullyNP ]; then
+    Cmd+=",,,'${MLUCache}EnsembleInfo.h5'"
+  elif [ -v ZV ]; then
     [ -n "$ZV" ] && Cmd+=",,'$ZV'"
   elif [ -r $Renorm ]; then
     Cmd+=",,$Renorm"

@@ -751,13 +751,13 @@ void Sample<T>::Read( const char *PrintPrefix, std::string *pGroupName )
 }
 
 template <typename T>
-void Sample<T>::Write( const char * pszGroupName )
+void Sample<T>::Write( const char * pszGroupName, unsigned int Flags )
 {
   const std::string GroupName{ pszGroupName == nullptr || *pszGroupName == 0 ? DefaultGroupName() : pszGroupName };
   bool bOK = false;
   try // to write in my format
   {
-    ::H5::H5File f( Name_.Filename, H5F_ACC_TRUNC );
+    ::H5::H5File f( Name_.Filename, Flags );
     hsize_t Dims[2];
     Dims[0] = 1;
     ::H5::DataSpace ds1( 1, Dims );
@@ -865,8 +865,20 @@ void Sample<T>::Write( const char * pszGroupName )
       dsp.close();
     }
     g = f.openGroup( "/" );
-    a = g.createAttribute( "_Grid_dataset_threshold", ::H5::PredType::STD_U32LE, ds1);
-    a.write( ::H5::PredType::NATIVE_INT, &NumAttributes );
+    static const std::string sGridDatasetThreshold{ "_Grid_dataset_threshold" };
+    if( H5::ExistsAttribute( g, sGridDatasetThreshold ) )
+    {
+      int PrevNumAttributes;
+      a = g.openAttribute( sGridDatasetThreshold );
+      a.read( ::H5::PredType::NATIVE_INT, &PrevNumAttributes );
+      if( NumAttributes > PrevNumAttributes )
+        a.write( ::H5::PredType::NATIVE_INT, &NumAttributes );
+    }
+    else
+    {
+      a = g.createAttribute( sGridDatasetThreshold, ::H5::PredType::STD_U32LE, ds1);
+      a.write( ::H5::PredType::NATIVE_INT, &NumAttributes );
+    }
     a.close();
     ds1.close();
     g.close();

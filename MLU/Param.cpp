@@ -268,6 +268,13 @@ Params::Params( const std::vector<std::string> &ParamNames, std::vector<std::siz
   }
 }
 
+Params::Params( const std::vector<Param::Key> &Keys )
+{
+  for( const Param::Key &k : Keys )
+    Add( k );
+  AssignOffsets();
+}
+
 Params::iterator Params::Find( const Param::Key &key, const std::string &ErrorPrefix )
 {
   iterator it{ find( key ) };

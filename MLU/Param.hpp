@@ -139,6 +139,7 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   Params( const std::vector<std::string> &ParamNames );
   /// Create list of single, variable parameters and get their indices
   Params( const std::vector<std::string> &ParamNames, std::vector<std::size_t> &vIdx );
+  Params( const std::vector<Param::Key> &Keys );
   Params::iterator       Find( const Param::Key &key, const std::string &ErrorPrefix );
   Params::const_iterator Find( const Param::Key &key, const std::string &ErrorPrefix ) const;
   /// For now, comparison operators ignore parameter type

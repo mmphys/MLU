@@ -392,8 +392,12 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
   // Make sure I have the model for Z_V already loaded
   Model &ZVModelSnk{ ZVmi( Snk.q, LoadFilePrefix ) };
   Model &ZVModelSrc{ ZVmi( Src.q, LoadFilePrefix ) };
-  Column ZVSnk{ZVmi.GetColumn( Snk.q, Common::Param::Key( Snk.q, "ZV" ))};
-  Column ZVSrc{ZVmi.GetColumn( Src.q, Common::Param::Key( Src.q, "ZV" ))};
+  const std::vector<Common::Param::Key> vZVKeys{ Common::Param::Key( Src.q, "ZV" ),
+                                                 Common::Param::Key( Snk.q, "ZV" ) };
+  const Common::Param::Key &kZVSrc( vZVKeys[0] );
+  const Common::Param::Key &kZVSnk{ vZVKeys[1] };
+  Column ZVSnk{ ZVmi.GetColumn( Snk.q, kZVSnk ) };
+  Column ZVSrc{ ZVmi.GetColumn( Src.q, kZVSrc ) };
 
   // Get the names of all 2pt correlators we will need
   std::array<CorrT, 2> Corr2;
@@ -675,6 +679,23 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
       OutFileName = Common::MakeFilename( OutFileName, fna.Type, Corr2[0].Corr->Seed(), fna.Ext );
       std::cout << "->" << OutFileName << Common::NewLine;
       out[i].Write( OutFileName, Common::sFold.c_str() );
+      // Now save ZV together with the ratio
+      if( !ZVSrc.IsIdentity() || !ZVSnk.IsIdentity() )
+      {
+        static const std::string sError{ "RMaker::ZVRMake() writing ZV" };
+        Model m( NSamples, Common::Params( vZVKeys ), {} );
+        m.FileList.push_back( ZVModelSrc.Name_.Filename );
+        m.FileList.push_back( ZVModelSnk.Name_.Filename );
+        m.CopyAttributes( *Corr3[0].Corr );
+        std::size_t iZVSrc{ m.params.Find( kZVSrc, sError )->second() };
+        std::size_t iZVSnk{ m.params.Find( kZVSnk, sError )->second() };
+        for( int rep = Model::idxCentral; rep < NSamples; ++rep )
+        {
+          m(rep,iZVSrc) = ZVSrc[rep];
+          m(rep,iZVSnk) = ZVSnk[rep];
+        }
+        m.Write( OutFileName, Common::sModel.c_str(), H5F_ACC_RDWR );
+      }
       Common::ReplaceExtension( OutFileName, TEXT_EXT );
       out[i].WriteSummary( OutFileName );
     }
@@ -712,6 +733,23 @@ FormFactor::FormFactor( std::string TypeParams )
     ZV[0] = s;
     ZV[1] = s;
   }
+  // optional: Filename for Fully non-perturbative ZV correction Z_{V,mixed}
+  if( !TypeParams.empty() )
+  {
+    const std::string sEnsembleInfo{ Common::ExtractToSeparator( TypeParams ) };
+    if( !Common::FileExists( sEnsembleInfo ) )
+      throw std::runtime_error( "Ensemble info file doesn't exist " + sEnsembleInfo );
+    try { mEnsembleInfo.SetName( sEnsembleInfo ); } catch ( const std::runtime_error &e ) {}
+    try
+    {
+      mEnsembleInfo.Read( "Z_{V,mixed} from " );
+    }
+    catch( const ::H5::Exception &e )
+    {
+      throw std::runtime_error( "HDF5 error reading ensemble info file " + sEnsembleInfo );
+    }
+  }
+  std::cout << ( mEnsembleInfo.Nt() ? "Ful" : "Most" ) << "ly non-perturbative results.\n";
   if( !TypeParams.empty() )
     throw std::runtime_error( "Unrecognised form factor option: " + TypeParams );
 }
@@ -720,6 +758,7 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
                         std::vector<std::string> &&SourceFileNames, int NumSamples,
                         const Column &MHeavy, const Column &ELight,
                         const Column &vT, const Common::Momentum &p,
+                        const Column &ZVPrevSrc, const Column &ZVPrevSnk, const Column &ZVMixed,
                         // These only required for non-zero momentum
                         const Column *pMLight, const Column *pvXYZ )
 {
@@ -760,8 +799,9 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
       Out(idx,vIdx[z_im]) = z.imag();
     }
     // Renormalisation
-    const Scalar ThisZV{ ZV[0][idx] == ZV[1][idx] ? ZV[0][idx] : std::sqrt(ZV[0][idx]*ZV[1][idx]) };
-    Out(idx,vIdx[idxZV]) = ThisZV;
+    const Scalar ThisZV{ ( ZV[0][idx] == ZV[1][idx] ? ZV[0][idx] : std::sqrt(ZV[0][idx]*ZV[1][idx]) )
+                         * ZVMixed[idx] };
+    Out(idx,vIdx[idxZV]) = ThisZV * ZVPrevSrc[idx] * ZVPrevSnk[idx];
     Out(idx,vIdx[melV0]) = vT[idx] * ThisZV;
     Out(idx,vIdx[melVi]) = p ? (*pvXYZ)[idx] * ThisZV : 0;
     // Now make form factors
@@ -965,6 +1005,50 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
             k.Name = "MEL"; // Old files just had a matrix element
             vT = mGT.Column( k );
           }
+          // Get the renormalisation from the file if present
+          Model mRenorm;
+          Column ZVPrevSrc, ZVPrevSnk, ZVMixed;
+          ZVMixed = 1;
+          if( mEnsembleInfo.Nt() )
+          {
+            Common::Param::Key k( "ZVmixed" );
+            if( !mGT.Ensemble.empty() )
+              k.Object.push_back( mGT.Ensemble );
+            try
+            {
+              ZVMixed = mEnsembleInfo.Column( k );
+            }
+            catch(...)
+            {
+            }
+          }
+          bool bGotZVPrev{};
+          std::string sPrevZVFilename;
+          try
+          {
+            if( !mGT.FileList.empty() )
+            {
+              sPrevZVFilename = mGT.FileList[0];
+              if( Common::FileExists( sPrevZVFilename ) )
+              {
+                std::string GroupName{ Common::sModel };
+                mRenorm.Read( sPrevZVFilename, " Prior renormalisation ", &OpNames, &GroupName );
+                Common::Param::Key k( fna.Quark[0], "ZV" );
+                ZVPrevSrc = mRenorm.Column( k );
+                k.Object[0] = fna.Quark[1];
+                ZVPrevSnk = mRenorm.Column( k );
+                bGotZVPrev = true;
+              }
+            }
+          }
+          catch( const std::runtime_error &e ) {}
+          catch( const ::H5::Exception &e ) {}
+          if( !bGotZVPrev )
+          {
+            ZVPrevSrc = 1.;
+            ZVPrevSnk = 1.;
+            std::cout << " Previous ZV unavailable " << sPrevZVFilename << Common::NewLine;
+          }
           // NB: There's a single, dummy spatial model in the list for zero momentum
           for( Model &mSpatial : mGammaXYZ )
           {
@@ -1001,7 +1085,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
               OutFileName.append( sOpNames );
               OutFileName = Common::MakeFilename( OutFileName, Common::sModel, mGT.Seed(), DEF_FMT );
               Write( OutFileName, mGT, std::move( vSourceFiles ), NumSamples, MHeavy, ELight,
-                     vT, rf.p, &MLight, &vXYZ );
+                     vT, rf.p, ZVPrevSrc, ZVPrevSnk, ZVMixed, &MLight, &vXYZ );
               ++NumOK;
               ++iSeq;
             }
@@ -1191,7 +1275,8 @@ void FFitConstMaker::Make( std::string &FileName )
   SourceFileNames.emplace_back( mMLight.Name_.Filename );
   if( p )
     SourceFileNames.emplace_back( mELight.Name_.Filename );
-  Write( OutFileName, mT, std::move( SourceFileNames ), NumSamples, MHeavy, ELight, mT.Sample<Scalar>::Column(0), p, &MLight, &vXYZ );
+  Column PrevOne{ 1. };
+  Write( OutFileName, mT, std::move( SourceFileNames ), NumSamples, MHeavy, ELight, mT.Sample<Scalar>::Column(0), p, PrevOne, PrevOne, PrevOne, &MLight, &vXYZ );
 }
 
 Maker::Maker( const Common::CommandLine &cl )

@@ -97,7 +97,9 @@ protected:
   MapT Map;
   static bool CacheDirPrefixOK;
   static std::string CacheDirPrefix;
+public:
   static std::string PrependCachePath( const std::string &sFilename );
+protected:
   static std::string GetCachePath( const Key &key );
   /// Make random numbers for a bootstrap sample
   Matrix<fint> Make( fint &Seed, std::size_t NumSamples, std::size_t NumReplicas
@@ -160,6 +162,8 @@ protected:
   };
   const JackBoot<T> *pJB;
 public:
+  inline bool IsConstant() const { return pJB == nullptr; }
+  inline bool IsIdentity() const { return IsConstant() && Constant == static_cast<T>( 1 ); }
   inline const T &operator[]( std::size_t Row ) const { return pJB ? (*pJB)(Row,Column) : Constant; }
   explicit JackBootColumn( const JackBoot<T> &JB, std::size_t column ) : pJB{&JB}, Column{column} {}
   explicit JackBootColumn( T constant ) : Constant{constant}, pJB{nullptr} {}

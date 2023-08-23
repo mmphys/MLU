@@ -123,6 +123,7 @@ public:
          void AddConstant( const Param::Key &Key, std::size_t File, const Param::Key &FileKey );
   inline void AddConstant( const Param::Key &Key, std::size_t File ) {AddConstant( Key, File, Key );}
   const Param &GetConstantParam( const ConstantSource &cs ) const;
+  JackBootColumn<T> GetConstant( const Param::Key &Key );
   int  LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags = COMPAT_DEFAULT,
                        const char * PrintPrefix = "  " );
   /// Load a model file

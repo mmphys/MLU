@@ -155,7 +155,7 @@ public:
   ColumnT GetColumn( const Key &key, const Common::Param::Key &pKey, std::size_t Index = 0 );
 };
 
-using ZVModelMap = KeyFileCache<std::string>;
+using ZVModelMap = KeyFileCache<std::string, Common::LessCaseInsensitive>;
 
 using MPModelMap = KeyFileCache<MP, LessMP, MPReader, Common::LessCaseInsensitive>;
 
@@ -271,11 +271,13 @@ struct FormFactor
               std::vector<std::string> &&SourceFileNames, int NumSamples,
               const Column &MHeavy, const Column &ELight,
               const Column &vT, const Common::Momentum &p,
+              const Column &ZVPrevSrc, const Column &ZVPrevSnk, const Column &ZVMixed,
              // These only required for non-zero momentum
               const Column *pMLight, const Column *pvXYZ );
 protected:
   ZVModelMap ZVmi;
   std::array<Column, 2> ZV;
+  Model mEnsembleInfo;
 };
 
 // Make F parralel, F perpendicular, F+ and F0

@@ -371,12 +371,13 @@ public:
     SetName( FileName, pOpNames );
     Read( PrintPrefix, pGroupName );
   }
-  void Write( const char * pszGroupName = nullptr );
-  inline void Write( const std::string &FileName, const char * pszGroupName = nullptr )
+  void Write( const char * pszGroupName = nullptr, unsigned int Flags = H5F_ACC_TRUNC );
+  inline void Write( const std::string &FileName, const char * pszGroupName = nullptr,
+                     unsigned int Flags = H5F_ACC_TRUNC )
   {
     // Assume the caller knows what they're doing if the name is not in my format
     try { SetName( FileName ); } catch ( const std::runtime_error &e ) {}
-    Write( pszGroupName );
+    Write( pszGroupName, Flags );
   }
   void MakeCorrSummary();
   void WriteSummary( const std::string &sOutFileName, bool bVerboseSummary = false );

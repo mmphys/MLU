@@ -419,13 +419,26 @@ std::string ContinuumFit::GetOutputFilename( unsigned int uiFF )
 
 void ContinuumFit::MakeCovarBlock()
 {
+  std::cout << "Block Covariance\n";
   for( std::size_t i = 0; i < ds.mCovar.size1; ++i )
-    for( std::size_t j = 0; j < i; ++j )
-      if( i != j && !Common::EqualIgnoreCase( ds.constFile[i]->Ensemble, ds.constFile[j]->Ensemble ) )
+  {
+    std::cout << Common::Space;
+    const ModelContinuum &Mi{ * dynamic_cast<const ModelContinuum *>( f->model[i].get() ) };
+    for( std::size_t j = 0; j <= i; ++j )
+    {
+      const ModelContinuum &Mj{ * dynamic_cast<const ModelContinuum *>( f->model[j].get() ) };
+      const bool bZero{ i != j &&
+        ( !Common::EqualIgnoreCase( ds.constFile[i]->Ensemble, ds.constFile[j]->Ensemble )
+         || Mi.ff != Mj.ff ) };
+      if( bZero )
       {
         ds.mCovar(i,j) = 0;
         ds.mCovar(j,i) = 0;
       }
+      std::cout << ( bZero ? '0' : '1' );
+    }
+    std::cout << Common::NewLine;
+  }
 }
 
 // TODO: Not great code. Should be split between this controller and the actual model

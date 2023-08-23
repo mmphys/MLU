@@ -364,6 +364,20 @@ const Param &DataSet<T>::GetConstantParam( const ConstantSource &cs ) const
 }
 
 template <typename T>
+JackBootColumn<T> DataSet<T>::GetConstant( const Param::Key &Key )
+{
+  ConstMap::const_iterator cit{ constMap.find( Key ) };
+  if( cit == constMap.cend() )
+  {
+    std::ostringstream os;
+    os << "Constant not found: " << Key;
+    throw std::runtime_error( os.str().c_str() );
+  }
+  const ConstantSource &cs{ cit->second };
+  return constFile[cs.File]->Column( cs.pKey );
+}
+
+template <typename T>
 int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags,
                                 const char * PrintPrefix )
 {

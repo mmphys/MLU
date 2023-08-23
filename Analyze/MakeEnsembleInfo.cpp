@@ -113,10 +113,11 @@ const std::array<GlobalInfo, 11> globalInfo{{
   { "PDGPi", 4013980664, PDGPIPM.AddQuadrature( 2, PDGPI0, 1 ) },
 }};
 
-static constexpr int NumParams{ 2 };
+static constexpr int MaxNumParams{ 3 };
 static constexpr int idxaInv{ 0 };
 static constexpr int idxmPi{ 1 };
-static const std::array<std::string, NumParams> ParamNames{{ "aInv", "mPi" }};
+static constexpr int idxZV{ 2 };
+static const std::array<std::string, MaxNumParams> ParamNames{{ "aInv", "mPi", "ZVmixed" }};
 
 struct EnsembleInfo
 {
@@ -128,20 +129,20 @@ struct EnsembleInfo
   std::string Ensemble;
   int         L;
   int         T;
-  std::array<ValT, NumParams> Value;
+  std::array<ValT, MaxNumParams> Value;
 };
 
 static constexpr int NumEnsembles{ 6 };
 
 // Data from https://arxiv.org/pdf/1812.08791.pdf \cite{Boyle:2018knm}, Table 1, pg 6
 // Inverse lattice spacings in eV
-static const std::array<EnsembleInfo, NumEnsembles> EnsembleArray{{
-  { "C1",  24, 64, {{ { 1.7848e9, 5e6,  2124653957 }, { 339.76e6, 1.22e6, 3524755446 } }} },
-  { "C2",  24, 64, {{ { 1.7848e9, 5e6,  2924767711 }, { 430.63e6, 1.38e6, 2427481952 } }} },
-  { "F1M", 48, 96, {{ { 2.7080e9, 1e7,  3490653410 }, { 232.01e6, 1.01e6, 1818009048 } }} },
-  { "M1",  32, 64, {{ { 2.3833e9, 8.6e6,3144081093 }, { 303.56e6, 1.38e6,  233350358 } }} },
-  { "M2",  32, 64, {{ { 2.3833e9, 8.6e6, 277434998 }, { 360.71e6, 1.58e6,  184399682 } }} },
-  { "M3",  32, 64, {{ { 2.3833e9, 8.6e6, 492385535 }, { 410.76e6, 1.74e6,  585791459 } }} },
+static std::array<EnsembleInfo, NumEnsembles> EnsembleArray{{
+  { "C1",  24, 64, {{ { 1.7848e9, 5e6,  2124653957 }, { 339.76e6, 1.22e6, 3524755446 }, {0,0,3357189455} }} },
+  { "C2",  24, 64, {{ { 1.7848e9, 5e6,  2924767711 }, { 430.63e6, 1.38e6, 2427481952 }, {0,0,611116833} }} },
+  { "F1M", 48, 96, {{ { 2.7080e9, 1e7,  3490653410 }, { 232.01e6, 1.01e6, 1818009048 }, {0,0,2544255737} }} },
+  { "M1",  32, 64, {{ { 2.3833e9, 8.6e6,3144081093 }, { 303.56e6, 1.38e6,  233350358 }, {0,0,1192572521} }} },
+  { "M2",  32, 64, {{ { 2.3833e9, 8.6e6, 277434998 }, { 360.71e6, 1.58e6,  184399682 }, {0,0,1154878755} }} },
+  { "M3",  32, 64, {{ { 2.3833e9, 8.6e6, 492385535 }, { 410.76e6, 1.74e6,  585791459 }, {0,0,2185158874} }} },
 }};
 
 inline SeedType RandomNumber()
@@ -167,10 +168,14 @@ protected:
   Common::Params MakeParams();
   EnsMPiMapT MakeMPiMap( const char *mPiList );
   void MakeGaussian( Model &m, Common::Param::Key k, const ValStddev &v, SeedType Seed ) const;
-  void MakeEnsembleInfo( std::string sFileName ) const;
+  //void MakeEnsembleInfo( std::string sFileName ) const;
+  // Read Raj's Z_{V,mixed} data
+  void ReadZV();
 public:
-  Maker( const char *mPiList ) : params{MakeParams()}, MPiMap{MakeMPiMap( mPiList )} {}
+  Maker( const char *mPiList ) : params{MakeParams()}, MPiMap{MakeMPiMap( mPiList )} { ReadZV(); }
   void Run( std::string sFileName ) const;
+protected:
+  int NumParams;
 };
 
 Maker::EnsMPiMapT Maker::MakeMPiMap( const char *mPiList )
@@ -219,6 +224,83 @@ void Maker::MakeGaussian( Model &m, Common::Param::Key k, const ValStddev &v, Se
   m( Model::idxCentral, Column ) = v.Value;
   for( std::size_t i = 0; i < m.NumSamples(); ++i )
     m( i, Column ) = random( engine );
+}
+
+struct ZVInfo
+{
+  std::vector<Scalar> ZV;
+  std::vector<Scalar> Err;
+  std::vector<Scalar> Mu;
+  void Hydrate( ::H5::Group &g );
+protected:
+  void Hydrate( ::H5::Group &g, std::vector<Scalar> &v, const std::string &sName );
+};
+
+void ZVInfo::Hydrate( ::H5::Group &g, std::vector<Scalar> &v, const std::string &sName )
+{
+  ::H5::DataSet ds = g.openDataSet( sName );
+  ::H5::DataSpace dsp = ds.getSpace();
+  if( dsp.getSimpleExtentNdims() == 1 )
+  {
+    hsize_t hDim;
+    dsp.getSimpleExtentDims( &hDim );
+    if( hDim <= std::numeric_limits<std::size_t>::max() )
+    {
+      const std::size_t Dim{ static_cast<std::size_t>( hDim ) };
+      v.resize( Dim );
+      ds.read( v.data(), ::H5::PredType::NATIVE_DOUBLE );
+      return;
+    }
+  }
+  throw std::runtime_error( "ZVInfo::Hydrate() can't read " + sName );
+}
+
+void ZVInfo::Hydrate( ::H5::Group &g )
+{
+  Hydrate( g, ZV, "Z_V" );
+  Hydrate( g, Err, "Z_V_err" );
+  Hydrate( g, Mu, "mu" );
+  if( ZV.empty() || ZV.size() != Err.size() || ZV.size() != Mu.size() )
+    throw std::runtime_error( "ZVInfo::Hydrate() size mismatch" );
+}
+
+void Maker::ReadZV()
+{
+  NumParams = MaxNumParams - 1;
+  static const std::string sFilename{
+    "/Volumes/Mike/Uni/PhD/People/RajMukherjee/michael_sl_Z_V_Z_q.h5" };
+  std::cout << "Making ZV_mixed from " << sFilename << std::endl;
+  try
+  {
+    ::H5::H5File f( sFilename, H5F_ACC_RDONLY );
+    static constexpr int Idx{ 0 };
+    std::array<ZVInfo, 3> zvi;
+    std::array<Scalar, 3> Rel;
+    for( EnsembleInfo &ei : EnsembleArray )
+    {
+      static const std::array<std::string, 3> RajActions{ "(0, 0)", "(1, 1)", "(0, 1)" };
+      for( std::size_t i = 0; i < RajActions.size(); ++i )
+      {
+        ::H5::Group gAction = f.openGroup( RajActions[i] );
+        ::H5::Group g = gAction.openGroup( ei.Ensemble );
+        zvi[i].Hydrate( g );
+        if( zvi[i].ZV.size() != zvi[0].ZV.size() )
+          throw std::runtime_error( "ZVInfo::Hydrate() size mismatch action " + RajActions[i] );
+        Rel[i] = zvi[i].Err[Idx] / zvi[i].ZV[Idx];
+        Rel[i] *= Rel[i];
+      }
+      // Now update the ZVmixed for this ensemble
+      ei.Value[idxZV].Value = zvi[2].ZV[Idx] / std::sqrt( zvi[0].ZV[Idx] * zvi[1].ZV[Idx] );
+      ei.Value[idxZV].Stddev = ei.Value[idxZV].Value * std::sqrt( Rel[2] + 0.25 * (Rel[0] + Rel[1]) );
+      std::cout << ei.Ensemble << "\tZV_mixed " << ei.Value[idxZV].Value
+                << " +/- " << ei.Value[idxZV].Stddev << std::endl;
+    }
+    NumParams++;
+  }
+  catch( ::H5::Exception &e )
+  {
+    std::cout << "Can't load ZVmixed from " << sFilename << std::endl;
+  }
 }
 
 void Maker::Run( std::string sFileName ) const
