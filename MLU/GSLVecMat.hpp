@@ -50,6 +50,8 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
 
+#include <gsl/gsl_sf_bessel.h>
+
 MLU_GSLVecMat_hpp
 
 extern const double NaN;
@@ -402,6 +404,17 @@ public:
   VectorView( const VectorView<T> &m ) { *this = m; }
   VectorView( const std::vector<T> &m ) { *this = m; }
 };
+
+inline double BesselK1( double x, double * pError = nullptr )
+{
+  gsl_sf_result gsfRes;
+  int gsl_e{ gsl_sf_bessel_K1_e( x, &gsfRes ) };
+  if( gsl_e )
+    GSLLibraryGlobal::Error( "gsl_sf_bessel_K1_e()", __FILE__, __LINE__, gsl_e );
+  if( pError )
+    *pError = gsfRes.err;
+  return gsfRes.val;
+}
 
 MLU_GSLVecMat_hpp_end
 #endif

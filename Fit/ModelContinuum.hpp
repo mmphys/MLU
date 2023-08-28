@@ -37,6 +37,8 @@ enum class eModelType{ Unknown, Continuum };
 std::ostream & operator<<( std::ostream &os, const eModelType m );
 std::istream & operator>>( std::istream &is,       eModelType &m );
 
+struct ContinuumFit;
+
 /// Chiral continuum fit model
 struct ModelContinuum : Model
 {
@@ -59,25 +61,30 @@ struct ModelContinuum : Model
                      bool bLastChance ) const override;
   ModelType Type() const override;
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
+  // Cache values based solely on the model parameters (to speed up computation)
+  int GetScratchPadSize() const override { return 1; }
+  void ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const override;
 protected:
   static constexpr scalar Lambda{ 1e9 }; // Units GeV (for now this is hardwired)
   static constexpr scalar LambdaInv{ 1. / Lambda }; // For now this is hardwired
+  const ContinuumFit &Parent;
   const ModelFile &mf;
   const Common::FormFactor ff;
+  const int idxFF;
   const Common::Momentum p;
   const std::string Ensemble;
   unsigned int aInv_L;
   std::array<std::string, 2> Meson;
-  ModelParam aInv, fPi, mPi, mPDGPi, mPDGH, mPDGL, Delta;
+  ModelParam aInv, fPi, mPi, mPDGPi, FVSim, FVPhys, mPDGH, mPDGL, Delta;
   ModelParam EL, kMu, mH, mL, qSq;
   ModelParam aEL, akMu, amH, amL, aqSq;
   static constexpr int NumConst{ 5 };
-public: // TODO: Hack
-  std::array<bool, NumConst> cEnabled;
-protected:
   std::array<ModelParam, NumConst> c;
-  inline bool cNeeded( int i ) const { return i == 0 || cEnabled[i]; }
-  scalar DeltaF( scalar M ) const;
+  inline scalar DeltaF( scalar M, scalar FV ) const
+  {
+    const scalar ChiralLog{ 2. * M * M * std::log( std::abs( M * LambdaInv ) ) };
+    return -0.75 * ( ChiralLog + FV );
+  }
 };
 
 #endif // ModelContinuum_hpp

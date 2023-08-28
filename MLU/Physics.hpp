@@ -297,5 +297,45 @@ const std::string &GetFormFactorString( FormFactor ff );
 std::ostream& operator<<( std::ostream& os, FormFactor  ff );
 std::istream& operator>>( std::istream& is, FormFactor &ff );
 
+// These are the terms used in my continuum fit
+struct DeltaF
+{
+  inline static double FiniteVol( const double M, const double L, const unsigned int aInv_L )
+  {
+              double FV{};
+    const     double ML{ M * L };
+    const     unsigned int iMax{ aInv_L / 2 };
+    constexpr unsigned int iMin{ 0 };
+    // To speed this up, I explot:
+    // 1: cubic symmetry: x <-> -x; y <-> -y; z <-> -z; ... except on edges (Min and Max)
+    // 2: x-y symmetry in each z-plane
+    for( unsigned int z = iMin; z <= iMax; ++z )
+    {
+      const unsigned int zSq{ z * z };
+      const unsigned int zCubicSym{ z == iMin || z == iMax ? 1u : 2u };
+      for( unsigned int x = iMin; x <= iMax; ++x )
+      {
+        const unsigned int xzSq{ x * x + zSq };
+        const unsigned int xzCubicSym{ zCubicSym * ( x == iMin || x == iMax ? 1u : 2u ) };
+        for( unsigned int y = iMin; y <= x; ++y )  // Loop over symmetric points in each z-plane
+        {
+          if( x || y || z )
+          {
+            const unsigned int xyzSq{ y * y + xzSq };
+            const unsigned int xyzCubicSym{ xzCubicSym * ( y == iMin || y == iMax ? 1u : 2u ) };
+            const double n{ std::sqrt( xyzSq ) };
+            const double ThisFV{ BesselK1( n * ML ) / n * xyzCubicSym };
+            FV += ThisFV;
+            if( x != y )
+              FV += ThisFV; // x <-> y symmetry
+          }
+        }
+      }
+    }
+    FV *= 4. * M / L;
+    return FV;
+  }
+};
+
 MLU_Physics_hpp_end
 #endif

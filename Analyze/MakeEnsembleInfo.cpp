@@ -25,24 +25,8 @@
  See the full license in the file "LICENSE" in the top level distribution directory
  *************************************************************************************/
 /*  END LEGAL */
-#include <MLU/Common.hpp>
 
-#include <stdio.h>
-#include <ostream>
-
-using SeedType = std::uint_fast32_t;
-
-using Scalar = double;
-using Model = Common::Model<Scalar>;
-
-// A value with a standard deviation
-struct ValStddev
-{
-  Scalar Value;
-  Scalar Stddev;
-  ValStddev Average( const ValStddev &o ) const;
-  ValStddev AddQuadrature( unsigned int lMul, const ValStddev &r, unsigned int rMul ) const;
-};
+#include "MakeEnsembleInfo.hpp"
 
 ValStddev ValStddev::Average( const ValStddev &o ) const
 {
@@ -79,13 +63,6 @@ std::ostream &operator<<( std::ostream &os, const ValStddev &v )
   return os << v.Value << "\t[" << ( v.Value - v.Stddev ) << ",\t" << ( v.Value + v.Stddev ) << "]";
 }
 
-struct GlobalInfo
-{
-  std::string Name;
-  SeedType  Seed;
-  ValStddev Value;
-};
-
 // PDG meson masses from https://pdglive.lbl.gov Units eV
 const ValStddev DStar2010{ 2.01026e9, 0.05e6 }; // D^*(2010)^\pm
 const ValStddev DStar2007{ 2.00685e9, 0.05e6 }; // D^*(2007)^0
@@ -113,26 +90,7 @@ const std::array<GlobalInfo, 11> globalInfo{{
   { "PDGPi", 4013980664, PDGPIPM.AddQuadrature( 2, PDGPI0, 1 ) },
 }};
 
-static constexpr int MaxNumParams{ 3 };
-static constexpr int idxaInv{ 0 };
-static constexpr int idxmPi{ 1 };
-static constexpr int idxZV{ 2 };
 static const std::array<std::string, MaxNumParams> ParamNames{{ "aInv", "mPi", "ZVmixed" }};
-
-struct EnsembleInfo
-{
-  struct ValT : public ValStddev
-  {
-    SeedType Seed;
-    ValT( Scalar value, Scalar stddev, SeedType seed ) : ValStddev{value, stddev}, Seed{seed} {}
-  };
-  std::string Ensemble;
-  int         L;
-  int         T;
-  std::array<ValT, MaxNumParams> Value;
-};
-
-static constexpr int NumEnsembles{ 6 };
 
 // Data from https://arxiv.org/pdf/1812.08791.pdf \cite{Boyle:2018knm}, Table 1, pg 6
 // Inverse lattice spacings in eV
@@ -145,11 +103,6 @@ static std::array<EnsembleInfo, NumEnsembles> EnsembleArray{{
   { "M3",  32, 64, {{ { 2.3833e9, 8.6e6, 492385535 }, { 410.76e6, 1.74e6,  585791459 }, {0,0,2185158874} }} },
 }};
 
-inline SeedType RandomNumber()
-{
-  return std::random_device{}(); // Hardware generated
-}
-
 void MakeSeeds()
 {
   std::random_device rd; // Hardware generated
@@ -157,26 +110,6 @@ void MakeSeeds()
     std::cout << ei.Ensemble << '\t' << rd() << Common::NewLine;
   std::cout << "w0" << '\t' << rd() << Common::NewLine;
 }
-
-class Maker
-{
-protected:
-  using EnsMPiMapT = std::map<std::string, std::string, Common::LessCaseInsensitive>;
-  using EnsMPiReaderT = Common::KeyValReader<std::string, std::string, Common::LessCaseInsensitive>;
-  const Common::Params params;
-  const EnsMPiMapT MPiMap;
-  Common::Params MakeParams();
-  EnsMPiMapT MakeMPiMap( const char *mPiList );
-  void MakeGaussian( Model &m, Common::Param::Key k, const ValStddev &v, SeedType Seed ) const;
-  //void MakeEnsembleInfo( std::string sFileName ) const;
-  // Read Raj's Z_{V,mixed} data
-  void ReadZV();
-public:
-  Maker( const char *mPiList ) : params{MakeParams()}, MPiMap{MakeMPiMap( mPiList )} { ReadZV(); }
-  void Run( std::string sFileName ) const;
-protected:
-  int NumParams;
-};
 
 Maker::EnsMPiMapT Maker::MakeMPiMap( const char *mPiList )
 {
@@ -225,16 +158,6 @@ void Maker::MakeGaussian( Model &m, Common::Param::Key k, const ValStddev &v, Se
   for( std::size_t i = 0; i < m.NumSamples(); ++i )
     m( i, Column ) = random( engine );
 }
-
-struct ZVInfo
-{
-  std::vector<Scalar> ZV;
-  std::vector<Scalar> Err;
-  std::vector<Scalar> Mu;
-  void Hydrate( ::H5::Group &g );
-protected:
-  void Hydrate( ::H5::Group &g, std::vector<Scalar> &v, const std::string &sName );
-};
 
 void ZVInfo::Hydrate( ::H5::Group &g, std::vector<Scalar> &v, const std::string &sName )
 {

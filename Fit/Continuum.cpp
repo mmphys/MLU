@@ -56,15 +56,9 @@ struct ModelWithArgsLess
   }
 };
 
-CreateParams::CreateParams( const std::vector<std::string> &O, const Common::CommandLine &C )
-: Model::CreateParams( O, C ),
-  EnsembleMap{
-    {"C1",  {24, 64}},
-    {"C2",  {24, 64}},
-    {"F1M", {48, 96}},
-    {"M1",  {32, 64}},
-    {"M2",  {32, 64}},
-    {"M3",  {32, 64}} }
+CreateParams::CreateParams( const std::vector<std::string> &O, const Common::CommandLine &C,
+                            const ContinuumFit &parent )
+: Model::CreateParams( O, C ), Parent{ parent }
 {
 }
 
@@ -77,8 +71,8 @@ ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
   NumSamples{cl.SwitchValue<int>("n")},
   doCorr{ !cl.GotSwitch( "uncorr" ) },
   CovarBlock{ !cl.GotSwitch( "noblock" ) },
-  sFFDefault{ cl.SwitchValue<std::string>("f") },
-  ffDefault{ ValidateFF( Common::FromString<Common::FormFactor>( sFFDefault ) ) },
+  ffDefault{ ValidateFF( Common::FromString<Common::FormFactor>( Common::TrimAt( cl.SwitchValue<std::string>("f") ) ) ) },
+  cEnabled{ GetEnabled( cl.SwitchValue<std::string>("f") ) },
   inBase{ cl.SwitchValue<std::string>("i") },
   outBaseFileName{ cl.SwitchValue<std::string>("o") },
   ds{NumSamples},
@@ -89,7 +83,7 @@ ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
 
 //#define DEBUG_NO_SHARE_PARAM
 
-void ContinuumFit::ParamsAgreed( Common::Params &mp, const Fitter &f ) const
+void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f ) const
 {
   // Add pole mass terms
   for( int idxFF = 0; idxFF < idxC.size(); ++idxFF )
@@ -111,7 +105,7 @@ void ContinuumFit::ParamsAgreed( Common::Params &mp, const Fitter &f ) const
 #endif
 }
 
-void ContinuumFit::ComputeDerived( Vector &ModelParams ) const
+void ContinuumFit::SetReplica( Vector &ModelParams ) const
 {
   const scalar mPDGL{ ModelParams[idxPDGL] };
   const scalar mPDGH{ ModelParams[idxPDGH] };
@@ -124,6 +118,25 @@ void ContinuumFit::ComputeDerived( Vector &ModelParams ) const
       ModelParams[idxDelta[idxFF]] = 0.5 * ( ( PoleMass*PoleMass - mPDGL*mPDGL ) / mPDGH - mPDGH );
     }
   }
+  // Compute finite volume corrections for each ensemble
+  if( !FVSim.empty() )
+  {
+    std::size_t i{};
+    for( const typename EnsembleMapT::value_type &ei : EnsembleMap )
+    {
+      const unsigned int aInv_L{ ei.second.aInv_L };
+      const scalar L{ aInv_L / ModelParams[aInv[i]] };
+      ModelParams[FVSim[i]] = Common::DeltaF::FiniteVol( ModelParams[mPi[i]], L, aInv_L );
+      ModelParams[FVPhys[i]] = Common::DeltaF::FiniteVol( ModelParams[idxmPDGPi], L, aInv_L );
+      ++i;
+    }
+  }
+}
+
+void ContinuumFit::ComputeDerived( Vector &ModelParams ) const
+{
+  const scalar mPDGL{ ModelParams[idxPDGL] };
+  const scalar mPDGH{ ModelParams[idxPDGH] };
 #ifndef DEBUG_NO_SHARE_PARAM
   if( ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
   {
@@ -172,6 +185,79 @@ Common::FormFactor ContinuumFit::ValidateFF( Common::FormFactor ff )
   return ff;
 }
 
+void ContinuumFit::AddEnsemble( const std::string &Ensemble, Common::FormFactor thisFF )
+{
+  if( Ensemble.empty() )
+    throw( std::runtime_error( "AddEnsemble() Ensemble empty" ) );
+  EnsembleMapT::iterator it{ EnsembleMap.find( Ensemble ) };
+  if( it == EnsembleMap.end() )
+  {
+    EnsembleInfo ei;
+    const int Prefix{ std::toupper( Ensemble[0] ) };
+    switch( Prefix )
+    {
+      case 'C':
+        ei.aInv_L = 24;
+        ei.aInv_T = 64;
+        break;
+      case 'M':
+        ei.aInv_L = 32;
+        ei.aInv_T = 64;
+        break;
+      case 'F':
+        ei.aInv_L = 48;
+        ei.aInv_T = 96;
+        break;
+      default:
+        throw( std::runtime_error( "AddEnsemble() Unrecognised ensemble " + Ensemble ) );
+    }
+    EnsembleMap.insert( typename EnsembleMapT::value_type( Ensemble, std::move( ei ) ) );
+  }
+  EnsembleFFs.insert( EnsembleFF( Ensemble, thisFF ) );
+}
+
+std::array<std::array<bool, ContinuumFit::NumConst>, ContinuumFit::NumFF>
+ContinuumFit::GetEnabled( std::string sOptions )
+{
+  std::array<std::array<bool, NumConst>, NumFF> cEnabled;
+  // By default, everything is enabled unless mentioned
+  for( std::size_t i = 0; i < NumFF; ++i )
+    for( std::size_t j = 0; j < NumConst; ++j )
+      cEnabled[i][j] = true;
+  while( Common::Trim( sOptions ) )
+  {
+    const std::string sThisFF{ Common::ExtractToSeparator( sOptions ) };
+    Common::FormFactor ThisFF{ ValidateFF( Common::FromString<Common::FormFactor>( sThisFF ) ) };
+    const int idxFF{ ffIndex( ThisFF ) };
+    for( std::size_t j = 0; j < NumConst; ++j )
+      if( !cEnabled[idxFF][j] )
+      {
+        std::ostringstream os;
+        os << "ContinuumFit::GetEnabled() form factor " << sThisFF << " repeated";
+        throw std::runtime_error( os.str().c_str() );
+      }
+    const std::string sDisabled{ Common::ExtractToSeparator( sOptions ) };
+    for( std::size_t i = 0; i < sDisabled.length(); ++i )
+    {
+      const int Num{ sDisabled[i] - '0' };
+      if( Num < 0 || Num >= NumConst )
+      {
+        std::ostringstream os;
+        os << "ContinuumFit::GetEnabled() form factor " << sThisFF << " can't disable C" << Num;
+        throw std::runtime_error( os.str().c_str() );
+      }
+      if( !cEnabled[idxFF][Num] )
+      {
+        std::ostringstream os;
+        os << "ContinuumFit::GetEnabled() form factor " << sThisFF << " repeat disable C" << Num;
+        throw std::runtime_error( os.str().c_str() );
+      }
+      cEnabled[idxFF][Num] = false;
+    }
+  }
+  return cEnabled;
+}
+
 void ContinuumFit::LoadModels()
 {
   std::cout << std::setprecision( std::numeric_limits<double>::max_digits10+2 )
@@ -188,21 +274,24 @@ void ContinuumFit::LoadModels()
     // Anything after the comma is a list of arguments
     Model::Args vArgs;
     vArgs.FromString( cl.Args[ArgNum], true );
+    // If Ensemble is specified, I will override what I loaded in the file
     std::string Ensemble{ vArgs.Remove( Common::sEnsemble ) };
+    // Make sure the default form factor is included as an argument to model (if not user-specified)
     Common::FormFactor thisFF;
     typename Model::Args::iterator itFF{ vArgs.find( sFF ) };
     if( itFF == vArgs.end() )
     {
       thisFF = ffDefault;
-      vArgs.emplace( sFF, sFFDefault );
+      vArgs.emplace( sFF, Common::GetFormFactorString( ffDefault ) );
     }
     else
     {
       thisFF = ValidateFF( Common::FromString<Common::FormFactor>( itFF->second ) );
     }
+    // Load this batch of files
     for( const std::string &sFileName : Filenames )
     {
-      // This is a correlator - load it
+      // If there are any arguments, show them as I load each file
       std::string PrintPrefix( 2, ' ' );
       if( !cl.Args[ArgNum].empty() )
       {
@@ -215,6 +304,7 @@ void ContinuumFit::LoadModels()
         std::cout << PrintPrefix << "Ignoring zero momentum file " << sFileName << Common::NewLine;
       else
       {
+        // Output meson name comes from the first file I load
         if( bFirst )
         {
           bFirst = false;
@@ -233,7 +323,8 @@ void ContinuumFit::LoadModels()
                      | Common::COMPAT_DISABLE_ENSEMBLE );
         ModelArgs.emplace_back( vArgs );
         if( !Ensemble.empty() )
-          ds.constFile.back()->Ensemble = Ensemble;
+          ds.constFile.back()->Ensemble = std::move( Ensemble );
+        AddEnsemble( ds.constFile.back()->Ensemble, thisFF );
       }
     }
     if( bGlobEmpty )
@@ -450,9 +541,8 @@ void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
   static const std::string sFindError{ "ContinuumFit::SaveParameters() finding model constants" };
   idxPDGH = mp.Find( Key( sPDG + Meson[idxSrc] ), sFindError )->second();
   idxPDGL = mp.Find( Key( sPDG + Meson[idxSnk] ), sFindError )->second();
-
+  
   // Get the main constants used in the model
-  const ModelContinuum &M0{ * dynamic_cast<const ModelContinuum *>( f.model[0].get() ) };
   for( int idxFF = 0; idxFF < idxC.size(); ++idxFF )
   {
     idxDelta[idxFF] = idxCUnused;
@@ -463,17 +553,43 @@ void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
     {
       const Common::FormFactor ff{ ffIndexReverse( idxFF ) };
       idxPDGDStar[idxFF] = mp.Find( Key( GetPoleMassName( ff, f.ds.constFile[0]->Name_ ) ),
-                                    sFindError )->second();
-      Common::Param::Key k( Common::GetFormFactorString( ff ), "Delta" );
+                                   sFindError )->second();
+      Key k( Common::GetFormFactorString( ff ), "Delta" );
       idxDelta[idxFF] = mp.Find( k, sFindError )->second();
       for( int i = 0; i < idxC[idxFF].size(); ++i )
       {
-        if( M0.cEnabled[i] )
+        if( CNeeded( idxFF, i ) )
         {
           k.Name = "c" + std::to_string( i );
           idxC[idxFF][i] = mp.Find( k, sFindError )->second();
         }
       }
+    }
+  }
+  
+  // Add parameters for finite volume adjustments
+  if( ( uiFF & uiFF0 && CEnabled( idxFF0, 0 ) ) || ( uiFF & uiFFPlus && CEnabled( idxFFPlus, 0 ) ) )
+  {
+    idxmPDGPi = mp.at( Key( "PDGPi" ) )();
+    aInv.resize( EnsembleMap.size() );
+    mPi.resize( EnsembleMap.size() );
+    FVSim.resize( EnsembleMap.size() );
+    FVPhys.resize( EnsembleMap.size() );
+    Key k;
+    k.Object.resize( 1 );
+    std::size_t i{};
+    for( const typename EnsembleMapT::value_type &it : EnsembleMap )
+    {
+      k.Object[0] = it.first;
+      k.Name = "aInv";
+      aInv[i] = mp.at( k )();
+      k.Name = "mPi";
+      mPi[i] = mp.at( k )();
+      k.Name = "FVSim";
+      FVSim[i] = mp.at( k )();
+      k.Name = "FVPhys";
+      FVPhys[i] = mp.at( k )();
+      ++i;
     }
   }
 }
@@ -647,22 +763,21 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
     const ModelContinuum &m{ * dynamic_cast<const ModelContinuum *>( f->model[i].get() ) };
     if( m.ff == ff )
     {
+      const int idxFF{ ffIndex( ff ) };
     // Adjust the q^2 value on each replica
     for( int rep = ModelFile::idxCentral; rep < om.NumSamples(); ++rep )
     {
       const scalar PoleTerm{ Lambda / ( om(rep,m.EL.idx) + om(rep,m.Delta.idx) ) };
       // Compute the c0 term
-      scalar c0Term = 0;
-      if( m.cEnabled[0] )
-      {
-        // Chiral log term
-        const scalar c0Num = m.DeltaF( om(rep,m.mPi.idx) ) - m.DeltaF( om(rep,m.mPDGPi.idx) );
-        const scalar c0Denom = ModelContinuum::FourPi * om(rep,m.fPi.idx);
-        c0Term = om(rep,m.c[0].idx) * c0Num / ( c0Denom * c0Denom );
-      }
+      const scalar sFVSim{ CEnabled( idxFF, 0 ) ? om(rep,m.FVSim.idx) : 0 };
+      const scalar sFVPhys{ CEnabled( idxFF, 0 ) ? om(rep,m.FVPhys.idx) : 0 };
+      const scalar c0Num = m.DeltaF( om(rep,m.mPi.idx), sFVSim )
+                         - m.DeltaF( om(rep,m.mPDGPi.idx), sFVPhys );
+      const scalar c0Denom = ModelContinuum::FourPi * om(rep,m.fPi.idx);
+      const scalar c0Term = om(rep,m.c[0].idx) * ( c0Num / ( c0Denom * c0Denom ) );
       // Compute the c1 term
       scalar c1Term = 0;
-      if( m.cEnabled[1] )
+      if( CEnabled( idxFF, 1 ) )
       {
         scalar DeltaMPiSq = om(rep,m.mPi.idx) * om(rep,m.mPi.idx);
         DeltaMPiSq -= om(rep,m.mPDGPi.idx) * om(rep,m.mPDGPi.idx);
@@ -670,7 +785,7 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
       }
       // Compute the c4 term
       scalar c4Term = 0;
-      if( m.cEnabled[4] )
+      if( CEnabled( idxFF, 4 ) )
       {
         const scalar aLambda{ m.Lambda / om(rep,m.aInv.idx) };
         c4Term = om(rep,m.c[4].idx) * aLambda * aLambda;
@@ -765,8 +880,8 @@ int ContinuumFit::Run()
   std::cout << "Covariance matrix from resampled data, block diagonal per Ensemble" << std::endl;
 
   // Make the fitter
-  f.reset( Fitter::Make( CreateParams{OpName,cl}, ds, std::move(ModelArgs), std::move(cp), false,
-                         *this ) );
+  f.reset( Fitter::Make( CreateParams{ OpName, cl, *this },
+                         ds, std::move(ModelArgs), std::move(cp), false, *this ) );
   SetEnsembleStats();
   // Now do the fit
   return DoFit();
@@ -876,6 +991,7 @@ int main(int argc, const char *argv[])
     "Perform a chiral continuum fit of the per Ensemble data\n"
     "Options:\n"
     "-f       Form factor: f0, fplus, fpar or fperp (default: " << DefaultFormFactor << ")\n"
+    "--disable ff,integers[,ff,integers] (eg f0,3,fplus,03)\n"
     "--model  An additional model file, e.g. to load lattice spacings\n"
     "--Hotelling Minimum Hotelling Q-value on central replica (default " << DefaultHotelling << ")\n"
     "--chisqdof  Maximum chi^2 / dof on central replica\n"

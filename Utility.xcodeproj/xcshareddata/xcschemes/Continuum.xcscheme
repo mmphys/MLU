@@ -85,7 +85,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-f fplus"
+            argument = "-f f0,03"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -93,20 +93,20 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;[CM]?/FormFactor/renorm/3sm_sp2/*_p2_[0-4].*.h5&apos;,EnableC3=false,ff=f0"
+            argument = "&apos;[CM]?/FormFactor/renorm/3sm_sp2/*_p2_[0-4].*.h5&apos;,ff=f0"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;F1M/FormFactor/renorm/3sm_sp2/*_p2_[0-6].*.h5&apos;,EnableC3=false,ff=f0"
+            argument = "&apos;F1M/FormFactor/renorm/3sm_sp2/*_p2_[0-6].*.h5&apos;,ff=f0"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;[CM]?/FormFactor/renorm/3sm_sp2/*_p2_[0-4].*.h5&apos;,EnableC3=false,ff=fplus"
-            isEnabled = "YES">
+            argument = "&apos;[CM]?/FormFactor/renorm/3sm_sp2/*_p2_[0-4].*.h5&apos;,ff=fplus"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;F1M/FormFactor/renorm/3sm_sp2/*_p2_[0-6].*.h5&apos;,EnableC3=false,ff=fplus"
-            isEnabled = "YES">
+            argument = "&apos;F1M/FormFactor/renorm/3sm_sp2/*_p2_[0-6].*.h5&apos;,ff=fplus"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>

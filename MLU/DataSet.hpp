@@ -59,6 +59,7 @@ struct DataSet
   int NSamples;   // Number of samples we are using. These are guaranteed to exist
   int MaxSamples; // Maximum number of samples available. Guaranteed to exist. >= NSamples.
   int MinSampleSize = 0; // Minimum of the SampleSize from loaded files
+  int MaxSampleSize = 0; // Maximum of the SampleSize from loaded files
   int Extent = 0; // Number of data points in our fit (i.e. total number of elements in FitTimes)
   std::vector<FoldPtr>  corr;     // Correlator files
   std::vector<ModelPtr> constFile;// Constant files, i.e. model results from previous fits

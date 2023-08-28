@@ -8,14 +8,16 @@ set -e
 # User input
 
 # Optional
-#  Simul:     Set to anything to perform simultaneous fit of f0 and fplus
+#  Simul:     Set to anything to disable simultaneous fit of f0 and fplus
 #  FitSeries: Name of series to fit
-#  Disable:   Space separated list of constants to disable (each between 0 and 4)
+#  Disable:   List of constants to disable (each between 0 and 4) both form factors
+#  DisableZ:  List of constants to disable (each between 0 and 4) f0 only
+#  DisableP:  List of constants to disable (each between 0 and 4) f+ only
 #  OutDir:    Where to put the output
 
 ###################################################
 
-Simul=0${Simul+1}
+Simul=$((1-0${Simul+1}))
 FitSeries=${FitSeries:-renorm}
 #OutDir=${OutDir:-C1C2F1MM1M2M3}
 if ! [ -v OutDir ]; then
@@ -28,15 +30,16 @@ fi
 
 ###################################################
 
-Enable=(1 1 1 1 1)
-unset ModelArgs
 unset Disabled
-for MyDisable in $Disable; do
-  Enable[$MyDisable]=0
-  ModelArgs=${ModelArgs},EnableC${MyDisable}=false
-  Disabled+=$MyDisable
-done
-OutDir=Cont/$OutDir/${FitSeries}${Disabled:+-C${Disabled}}_
+if [ "$Disable" != '' ] || [ "$DisableZ" != '' ] || [ "$DisableP" != '' ]
+then
+  Disabled="-C$Disable"
+  [ "$DisableZ" != '' ] && Disabled+="Z$DisableZ"
+  [ "$DisableP" != '' ] && Disabled+="P$DisableP"
+  DisableZ="$Disable$DisableZ"
+  DisableP="$Disable$DisableP"
+fi
+OutDir=Cont/$OutDir/${FitSeries}${Disabled}_
 
 OutPrefix="F3_K_Ds.corr_"
 OutModel=".g5P_g5W.model"
@@ -98,15 +101,17 @@ function DoFit()
   local FFS="$1"
   local Cmd="$Continuum -o $OutSubDir/"
   local LogBase="$OutSubDir/$OutPrefix$FFS$OutModel"
-  local ff File
+  local ff File FFSwitch Args
   mkdir -p $OutSubDir
+  KillLogBase
   for ff in ${FFS//_/ }; do
+    FFSwitch+=${FFSwitch:+,}$ff,
+    [ "$ff" = "f0" ] && FFSwitch+=$DisableZ || FFSwitch+=$DisableP
     for File in $Files; do
-      Cmd+=" $File${ModelArgs},ff=$ff"
+      Args+="${Args:+ }$File,ff=$ff"
     done
   done
-  KillLogBase
-  DoCmd "$Cmd"
+  DoCmd "$Cmd -f $FFSwitch $Args"
 }
 
 ###################################################

@@ -27,6 +27,7 @@
 		2763DE082A1D253D00529933 /* CorrFile.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2763DE062A1D253D00529933 /* CorrFile.hpp */; };
 		277FBE8E290ED83700E82279 /* libMLU.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 682C5C9E28E4F41300C8E004 /* libMLU.dylib */; };
 		278BA037290ED57000960730 /* GetColumn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 278BA02A290ED4AB00960730 /* GetColumn.cpp */; };
+		278D748E2A97756200651141 /* MakeEnsembleInfo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 278D748D2A97756200651141 /* MakeEnsembleInfo.hpp */; };
 		27953EAD28FB226D00A4CF67 /* DebugInfo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */; };
 		27953EAE28FB226D00A4CF67 /* DebugInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27953EAC28FB226D00A4CF67 /* DebugInfo.cpp */; };
 		27B48A9A2A039D4C0006EE75 /* Posix.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 27B48A982A039D4C0006EE75 /* Posix.hpp */; };
@@ -336,6 +337,7 @@
 		2763DE062A1D253D00529933 /* CorrFile.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CorrFile.hpp; sourceTree = "<group>"; };
 		278BA02A290ED4AB00960730 /* GetColumn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GetColumn.cpp; sourceTree = "<group>"; };
 		278BA030290ED52400960730 /* GetColumn */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GetColumn; sourceTree = BUILT_PRODUCTS_DIR; };
+		278D748D2A97756200651141 /* MakeEnsembleInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MakeEnsembleInfo.hpp; sourceTree = "<group>"; };
 		27953EAB28FB226D00A4CF67 /* DebugInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DebugInfo.hpp; sourceTree = "<group>"; };
 		27953EAC28FB226D00A4CF67 /* DebugInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DebugInfo.cpp; sourceTree = "<group>"; };
 		27B48A982A039D4C0006EE75 /* Posix.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Posix.hpp; sourceTree = "<group>"; };
@@ -777,6 +779,7 @@
 				682C5C9628E4F2C300C8E004 /* ImportCorr.hpp */,
 				27D49A4129105615003E2146 /* lime_truncate.c */,
 				271DB9D92A2A24E900AF0501 /* MakeEnsembleInfo.cpp */,
+				278D748D2A97756200651141 /* MakeEnsembleInfo.hpp */,
 				682C5C9128E4F2C300C8E004 /* Makefile.am */,
 				682C5C8C28E4F2C300C8E004 /* repair.cpp */,
 				682C5C8A28E4F2C300C8E004 /* SynthData.cpp */,
@@ -853,6 +856,7 @@
 				27FE17852A1D2F0100C271ED /* Model.hpp in Headers */,
 				682C5CA628E4F82500C8E004 /* FitRange.hpp in Headers */,
 				682C5CA728E4F82500C8E004 /* GSLVecMat.hpp in Headers */,
+				278D748E2A97756200651141 /* MakeEnsembleInfo.hpp in Headers */,
 				27FE177D2A1D2AF700C271ED /* Sample.hpp in Headers */,
 				27FE17882A1D304800C271ED /* DataSet.hpp in Headers */,
 				2735220429E9267D00E8720F /* FitRangeImp.hpp in Headers */,

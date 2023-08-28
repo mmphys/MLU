@@ -98,7 +98,7 @@ void Param::Validate( Param::Type ListType ) const
   if( i >= ParamTypeHuman.size() )
   {
     std::ostringstream s;
-    s << "Params::Type " << i << " invalid";
+    s << "Param::Type " << i << " invalid";
     if( pKey )
       s << ", Key=" << *pKey;
     throw std::runtime_error( s.str().c_str() );
@@ -107,7 +107,7 @@ void Param::Validate( Param::Type ListType ) const
   if( j >= ParamTypeHuman.size() || type == Type::All )
   {
     std::ostringstream s;
-    s << "Params::Type " << type << " invalid";
+    s << "Param::Type " << type << " invalid";
     if( pKey )
       s << ", Key=" << *pKey;
     throw std::runtime_error( s.str().c_str() );

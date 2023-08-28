@@ -55,10 +55,10 @@ struct CovarParams
   inline bool SupportsUnfrozen() const { return ds.NumSamplesBinned(); }
   // Source is a bootstrap - only valid to compute variance on central replica
   inline bool SourceIsBootstrap() const { return Source == SS::Bootstrap; }
-  // This is the appropriate parameter for m to use in the T^2 distribution
+  // This is the appropriate parameter for me to use in the T^2 distribution
   inline int CovarSampleSize() const
   {
-    return SourceIsBootstrap() ? ds.MinSampleSize
+    return SourceIsBootstrap() ? ds.MaxSampleSize
                                : ds.front().NumSamples( Source==SS::Raw ? SS::Raw : SS::Binned );
   }
   /**

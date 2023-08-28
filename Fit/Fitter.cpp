@@ -231,8 +231,9 @@ Params Fitter::MakeModelParams()
         mp.SetType( pk, Param::Type::Fixed, bSwapSourceSink );
       }
     }
+    // Give the controller the option to adjust params
+    fitController.ParamsAdjust( mp, *this );
     // At this point we have a definitive list of parameters - models can save offsets
-    fitController.ParamsAgreed( mp, *this ); // Give the controller the option to adjust params
     mp.AssignOffsets();
     for( ModelPtr &m : model )
       m->SaveParameters( mp );

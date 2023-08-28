@@ -233,6 +233,13 @@ inline bool Trim( std::string &s )
   return bHasString;
 }
 
+inline std::string TrimAt( const std::string &String, const std::string &Chars = Common::Comma )
+{
+  std::string s{ String.substr( 0, String.find_first_of( Chars ) ) };
+  Trim( s );
+  return s;
+}
+
 // Generic conversion from a string to any type
 template<typename T> inline T FromString( const std::string &String )
 {

@@ -117,16 +117,18 @@ const std::string ModelContinuum::FieldEL{ "EL" };
 ModelContinuum::ModelContinuum( const Model::CreateParams &mcp, Model::Args &Args,
                                 Common::FormFactor ff_ )
 : Model( mcp, 1 ),
+  Parent{ dynamic_cast<const ::CreateParams &>( mcp ).Parent },
   mf{ * dynamic_cast<const ModelFile *>( mcp.pCorr ) },
   ff{ff_},
+  idxFF{ Parent.ffIndex( ff ) },
   p{ mcp.pCorr->Name_.MesonP[1].p },
   Ensemble{ Args.Remove( "Ensemble", mcp.pCorr->Ensemble ) }
 {
   const ::CreateParams &cp{ dynamic_cast<const ::CreateParams &>( mcp ) };
   if( Ensemble.empty() )
     throw std::runtime_error( "ModelContinuum(): Ensemble unavailable - specify manually" );
-  typename EnsembleMapT::const_iterator cit{ cp.EnsembleMap.find( Ensemble ) };
-  if( cit == cp.EnsembleMap.cend() )
+  typename EnsembleMapT::const_iterator cit{ Parent.EnsembleMap.find( Ensemble ) };
+  if( cit == Parent.EnsembleMap.cend() )
     throw std::runtime_error( "ModelContinuum() Ensemble not supported " + Ensemble );
   const EnsembleInfo &ei{ cit->second };
   aInv_L = ei.aInv_L;
@@ -181,7 +183,13 @@ ModelContinuum::ModelContinuum( const Model::CreateParams &mcp, Model::Args &Arg
   {
     c[i].Key.Object = Delta.Key.Object;
     c[i].Key.Name = "c" + std::to_string( i );
-    cEnabled[i] = Args.Remove( "Enable" + c[i].Key.Name, true );
+  }
+  if( Parent.CEnabled( idxFF, 0 ) )
+  {
+    FVSim.Key.Name = "FVSim";
+    FVSim.Key.Object = aInv.Key.Object;
+    FVPhys.Key.Name = "FVPhys";
+    FVPhys.Key.Object = aInv.Key.Object;
   }
 }
 
@@ -223,6 +231,11 @@ std::vector<Param::Key> ModelContinuum::XVectorKeyNames() const
   vk.push_back( fPi.Key );
   vk.push_back( mPi.Key );
   vk.push_back( mPDGPi.Key );
+  if( Parent.CEnabled( idxFF, 0 ) )
+  {
+    vk.push_back( FVSim.Key );
+    vk.push_back( FVPhys.Key );
+  }
   vk.push_back( aEL.Key );
   vk.push_back( akMu.Key );
   vk.push_back( amH.Key );
@@ -245,6 +258,11 @@ void ModelContinuum::AddParameters( Params &mp )
   AddParam( mp, fPi );
   AddParam( mp, mPi );
   AddParam( mp, mPDGPi );
+  if( Parent.CEnabled( idxFF, 0 ) )
+  {
+    AddParam( mp, FVSim, 1, false, Common::Param::Type::Derived );
+    AddParam( mp, FVPhys, 1, false, Common::Param::Type::Derived );
+  }
   AddParam( mp, mPDGH );
   AddParam( mp, mPDGL );
   AddParam( mp, Delta, 1, false, Common::Param::Type::Derived );
@@ -259,7 +277,7 @@ void ModelContinuum::AddParameters( Params &mp )
   AddParam( mp, mL, 1, false, Common::Param::Type::Derived );
   AddParam( mp, qSq, 1, false, Common::Param::Type::Derived );
   for( int i = 0; i < NumConst; ++i )
-    if( cNeeded( i ) )
+    if( Parent.CNeeded( idxFF, i ) )
       AddParam( mp, c[i] );
 }
 
@@ -277,6 +295,11 @@ void ModelContinuum::SaveParameters( const Params &mp )
   fPi.idx = mp.at( fPi.Key )();
   mPi.idx = mp.at( mPi.Key )();
   mPDGPi.idx = mp.at( mPDGPi.Key )();
+  if( Parent.CEnabled( idxFF, 0 ) )
+  {
+    FVSim.idx = mp.at( FVSim.Key )();
+    FVPhys.idx = mp.at( FVPhys.Key )();
+  }
   mPDGH.idx = mp.at( mPDGH.Key )();
   mPDGL.idx = mp.at( mPDGL.Key )();
   Delta.idx = mp.at( Delta.Key )();
@@ -291,7 +314,7 @@ void ModelContinuum::SaveParameters( const Params &mp )
   mL.idx = mp.at( mL.Key )();
   qSq.idx = mp.at( qSq.Key )();
   for( int i = 0; i < NumConst; ++i )
-    if( cNeeded( i ) )
+    if( Parent.CNeeded( idxFF, i ) )
       c[i].idx = mp.at( c[i].Key )();
 }
 
@@ -306,7 +329,7 @@ std::string ModelContinuum::Description() const
 void ModelContinuum::Guessable( ParamsPairs &PP ) const
 {
   for( int i = 0; i < NumConst; ++i )
-    if( cNeeded( i ) )
+    if( Parent.CNeeded( idxFF, i ) )
       PP.SetState( ParamsPairs::State::Known, c[i].Key, c[i].param->size );
 }
 
@@ -315,7 +338,7 @@ std::size_t ModelContinuum::Guess( Vector &Guess, std::vector<bool> &bKnown, con
                    bool bLastChance ) const
 {
   for( int i = 0; i < NumConst; ++i )
-    if( cNeeded( i ) )
+    if( Parent.CNeeded( idxFF, i ) )
     {
       bKnown[c[i].idx] = true;
       Guess[c[i].idx] = 1;
@@ -346,17 +369,10 @@ scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParam
   // Compute the pole term
   const scalar PoleTerm{ Lambda / ( ModelParams[EL.idx] + ModelParams[Delta.idx] ) };
   // Compute the c0 term
-  scalar c0Term = ModelParams[c[0].idx];
-  if( cEnabled[0] )
-  {
-    // Chiral log term
-    const scalar c0Num = DeltaF( ModelParams[mPi.idx] ) - DeltaF( ModelParams[mPDGPi.idx] );
-    const scalar c0Denom = FourPi * ModelParams[fPi.idx];
-    c0Term *= 1. + c0Num / ( c0Denom * c0Denom );
-  }
+  const scalar c0Term = ModelParams[c[0].idx] * ScratchPad[0]; // Chiral log term
   // Compute the c1 term
   scalar c1Term = 0;
-  if( cEnabled[1] )
+  if( Parent.CEnabled( idxFF, 1 ) )
   {
     scalar DeltaMPiSq = ModelParams[mPi.idx] * ModelParams[mPi.idx];
     DeltaMPiSq -= ModelParams[mPDGPi.idx] * ModelParams[mPDGPi.idx];
@@ -366,15 +382,15 @@ scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParam
   const scalar ELOnLambda{ ModelParams[EL.idx] * LambdaInv };
   // Compute the c2 term
   scalar c2Term = 0;
-  if( cEnabled[2] )
+  if( Parent.CEnabled( idxFF, 2 ) )
     c2Term = ModelParams[c[2].idx] * ELOnLambda;
   // Compute the c3 term
   scalar c3Term = 0;
-  if( cEnabled[3] )
+  if( Parent.CEnabled( idxFF, 3 ) )
     c3Term = ModelParams[c[3].idx] * ELOnLambda * ELOnLambda;
   // Compute the c4 term
   scalar c4Term = 0;
-  if( cEnabled[4] )
+  if( Parent.CEnabled( idxFF, 4 ) )
   {
     const scalar aLambda{ Lambda / _aInv };
     c4Term = ModelParams[c[4].idx] * aLambda * aLambda;
@@ -384,8 +400,14 @@ scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParam
   return Result;
 }
 
-scalar ModelContinuum::DeltaF( scalar M ) const
+// Cache values based solely on the model parameters (to speed up computation)
+void ModelContinuum::ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const
 {
-  const scalar MOnLambda{ M * LambdaInv };
-  return -0.75 * M * M * std::log( MOnLambda * MOnLambda );
+  const scalar sFVSim{ Parent.CEnabled( idxFF, 0 ) ? ModelParams[FVSim.idx] : 0 };
+  const scalar sFVPhys{ Parent.CEnabled( idxFF, 0 ) ? ModelParams[FVPhys.idx] : 0 };
+  // Chiral log term
+  const scalar c0Num = DeltaF( ModelParams[mPi.idx], sFVSim )
+                     - DeltaF( ModelParams[mPDGPi.idx], sFVPhys );
+  const scalar c0Denom = FourPi * ModelParams[fPi.idx];
+  ScratchPad[0] = 1 + c0Num / ( c0Denom * c0Denom );
 }

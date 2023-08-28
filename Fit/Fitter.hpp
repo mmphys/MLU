@@ -40,8 +40,13 @@ struct Fitter;
 struct FitController
 {
   virtual ~FitController() {}
-  virtual void ParamsAgreed( Common::Params &mp, const Fitter &f ) const {}
+  /// Models have agreed parameters - controller can adjust the parameters before offsets assigned
+  virtual void ParamsAdjust( Common::Params &mp, const Fitter &f ) const {}
+  /// Offsets have been assigned - controller can save indices
   virtual void SaveParameters( Common::Params &mp, const Fitter &f ) {}
+  /// Called once at the start of each replica, immediately after constants loaded. Compute per-replica derived values
+  virtual void SetReplica( Vector &ModelParams ) const {}
+  /// Called every time the fitter makes a new guess on each replica - allow controller to compute derived properties
   virtual void ComputeDerived( Vector &ModelParams ) const {}
   static FitController None;
 };

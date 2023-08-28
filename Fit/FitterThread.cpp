@@ -243,6 +243,8 @@ void FitterThread::SetReplicaVars( int idx_ )
   ModelParams = parent.Guess;
   // Load the constants for this replica into the fixed portion of the guess
   parent.ds.GetFixed( idx, ModelParams, parent.ParamFixed );
+  // Give the controller the chance to initialise on each replica
+  parent.fitController.SetReplica( ModelParams );
   // Export variable parameters from the guess for the fitter to start with
   parent.mp.Export( FitterParams, ModelParams, Param::Type::Variable );
 }
@@ -320,7 +322,7 @@ void FitterThread::Initialise( const std::string *pBaseName )
 void FitterThread::SwitchReplica( int idx_ )
 {
   if( idx_ == Fold::idxCentral )
-    throw std::runtime_error( "FitterThread::SetReplicaVars() called on central replica" );
+    throw std::runtime_error( "FitterThread::SwitchReplica() called on central replica" );
   // Don't make the same covariance matrix twice in a row
   if( idx_ != idx )
   {
@@ -563,21 +565,26 @@ scalar FitterThread::FitOne()
     }
     std::cout << ss.str();
     ss.str(std::string());
-    ss << "p=" << FDist_p << ", m=" << FDist_m << ", ";
+    ss << "chi^2/dof " << ChiSqPerDof << ", dof " << parent.dof << Common::CommaSpace;
     if( parent.dof == 0 )
-      ss << "Extrapolation";
-    else if( Common::HotellingDist::Usable( FDist_p, FDist_m ) )
-      ss << "Hotelling";
+      ss << "Extrapolation => qValue 1";
     else
-      ss << "m <= p, Chi^2";
-    ss << " qValue " << qValueH;
+      ss << "Chi^2 qValue " << qValue;
+    ss << ", p=" << FDist_p << ", m=" << FDist_m;
+    if( parent.dof )
+    {
+      ss << ", Hotelling qValue ";
+      if( Common::HotellingDist::Usable( FDist_p, FDist_m ) )
+        ss << qValueH;
+      else
+        ss << "invalid (m <= p)";
+    }
     bool bOK{ true };
     if( parent.HotellingCutoff )
     {
       bOK = qValueH >= parent.HotellingCutoff;
       ss << ( bOK ? " >=" : " <" ) << " cutoff " << parent.HotellingCutoff;
     }
-    ss << ", chi^2/dof " << ChiSqPerDof;
     if( parent.ChiSqDofCutoff )
     {
       const bool bOKC{ ChiSqPerDof <= parent.ChiSqDofCutoff };
