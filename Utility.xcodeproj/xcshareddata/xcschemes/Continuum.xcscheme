@@ -85,12 +85,12 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-f f0,3,fplus,31"
+            argument = "-f f0,35,fplus,"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--noblock"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--model ${MLUCache}EnsembleInfo.h5"

@@ -127,7 +127,7 @@ then
   echo "size      of .pdf (default: 6in,3in)"
   echo "save      Filename to save (default: derived from PlotFile)"
   echo "SaveDir   Directory to save files to (default: cwd)"
-  echo "xAxis     Which field to show (default: qSq)"
+  echo "x         Which fields to show (default: qSq EL)"
   echo "mmin      Minimum model to show (default: 0)"
   echo "mmax      Maximum model to show (default: #last file)"
   echo "tExtra    Number of extra data points to plot before and after fit (default 2)"
@@ -183,8 +183,8 @@ function GetFitData()
     fi
   fi
   if [ -e $InPath ]; then
-    ColumnValues=($(GetColumn --exact ChiSqPerDof,pValue $InPath))
-    RefText="χ²/dof=${ColumnValues[0*8+4]} (p=${ColumnValues[1*8+4]})"
+    ColumnValues=($(GetColumn --exact ChiSqPerDof,pValue,pValueH $InPath))
+    RefText="χ²/dof=${ColumnValues[0*8+4]} (p-H=${ColumnValues[2*8+4]}, p-χ²=${ColumnValues[1*8+4]})"
   else
     unset ColumnValues
     unset RefText

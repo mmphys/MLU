@@ -70,7 +70,13 @@ protected:
   static constexpr scalar InvLambda{ 1. / Lambda };
   static constexpr int NumTicks{ 200 };
   static constexpr int NumFF{ 2 };
-  static constexpr int NumConst{ 5 };
+  static constexpr int NumConst{ ModelContinuum::NumConst };
+  static constexpr int CChiral{ ModelContinuum::CChiral };
+  static constexpr int CMPi{ ModelContinuum::CMPi };
+  static constexpr int CDiscret{ ModelContinuum::CDiscret };
+  static constexpr int CEOnL{ ModelContinuum::CEOnL };
+  static constexpr int CEOnL2{ ModelContinuum::CEOnL2 };
+  static constexpr int CEOnL3{ ModelContinuum::CEOnL3 };
   static const std::string sPDG;
   Common::CommandLine &cl;
 public:
@@ -116,7 +122,7 @@ public:
   int Run();
   inline bool CEnabled( int idxFF, int C ) const { return cEnabled[ idxFF ][C]; }
   inline bool CEnabled( Common::FormFactor ff, int C ) const { return CEnabled( ffIndex( ff ), C ); }
-  inline bool CNeeded( int idxFF, int C ) const { return C == 0 || CEnabled( idxFF, C ); }
+  inline bool CNeeded( int idxFF, int C ) const { return C == CChiral || CEnabled( idxFF, C ); }
   inline bool CNeeded( Common::FormFactor ff, int C ) const { return CNeeded( ffIndex( ff ), C ); }
 protected:
   EnsembleStatMap EnsembleStats;

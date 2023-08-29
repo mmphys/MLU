@@ -42,6 +42,13 @@ struct ContinuumFit;
 /// Chiral continuum fit model
 struct ModelContinuum : Model
 {
+  static constexpr int NumConst{ 6 };
+  static constexpr int CChiral{ 0 };
+  static constexpr int CMPi{ 1 };
+  static constexpr int CDiscret{ 4 };
+  static constexpr int CEOnL{ 2 };
+  static constexpr int CEOnL2{ 3 };
+  static constexpr int CEOnL3{ 5 };
   static constexpr scalar FourPi{ 4. * M_PI };
   friend class ContinuumFit;
   static const std::string FieldQSq;
@@ -78,7 +85,6 @@ protected:
   ModelParam aInv, fPi, mPi, mPDGPi, FVSim, FVPhys, mPDGH, mPDGL, Delta;
   ModelParam EL, kMu, mH, mL, qSq;
   ModelParam aEL, akMu, amH, amL, aqSq;
-  static constexpr int NumConst{ 5 };
   std::array<ModelParam, NumConst> c;
   inline scalar DeltaF( scalar M, scalar FV ) const
   {

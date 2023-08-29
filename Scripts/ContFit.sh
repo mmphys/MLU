@@ -124,6 +124,7 @@ Continuum="Continuum --debug-signals --Hotelling 0 --summary 2"
 Continuum+=" --overwrite"
 Continuum+=" --model ${MLUCache}EnsembleInfo.h5"
 Continuum+=" -i $HOME/NoSync/"
+[ -v FitOptions ] && Continuum+=" $FitOptions"
 
 for Some in 0 1
 do

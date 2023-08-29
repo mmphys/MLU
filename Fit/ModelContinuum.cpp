@@ -368,46 +368,43 @@ scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParam
   ModelParams[qSq.idx] = ModelParams[aqSq.idx] * _aInv * _aInv;
   // Compute the pole term
   const scalar PoleTerm{ Lambda / ( ModelParams[EL.idx] + ModelParams[Delta.idx] ) };
-  // Compute the c0 term
-  const scalar c0Term = ModelParams[c[0].idx] * ScratchPad[0]; // Chiral log term
-  // Compute the c1 term
-  scalar c1Term = 0;
-  if( Parent.CEnabled( idxFF, 1 ) )
+  // Compute the chiral term
+  const scalar TermChiral = ModelParams[c[CChiral].idx] * ScratchPad[0]; // Chiral log term
+  // Compute the MPi term
+  scalar TermMPi = 0;
+  if( Parent.CEnabled( idxFF, CMPi ) )
   {
     scalar DeltaMPiSq = ModelParams[mPi.idx] * ModelParams[mPi.idx];
     DeltaMPiSq -= ModelParams[mPDGPi.idx] * ModelParams[mPDGPi.idx];
-    c1Term = ModelParams[c[1].idx] * DeltaMPiSq * LambdaInv * LambdaInv;
+    TermMPi = ModelParams[c[CMPi].idx] * DeltaMPiSq * LambdaInv * LambdaInv;
   }
   // Compute E_L / Lambda
   const scalar ELOnLambda{ ModelParams[EL.idx] * LambdaInv };
-  // Compute the c2 term
-  scalar c2Term = 0;
-  if( Parent.CEnabled( idxFF, 2 ) )
-    c2Term = ModelParams[c[2].idx] * ELOnLambda;
-  // Compute the c3 term
-  scalar c3Term = 0;
-  if( Parent.CEnabled( idxFF, 3 ) )
-    c3Term = ModelParams[c[3].idx] * ELOnLambda * ELOnLambda;
+  const scalar TermEL{ Parent.CEnabled( idxFF, CEOnL ) ? ModelParams[c[CEOnL].idx] * ELOnLambda : 0 };
+  scalar Power = ELOnLambda * ELOnLambda;
+  const scalar TermEL2{ Parent.CEnabled( idxFF, CEOnL2 ) ? ModelParams[c[CEOnL2].idx] * Power : 0 };
+  Power *= ELOnLambda;
+  const scalar TermEL3{ Parent.CEnabled( idxFF, CEOnL3 ) ? ModelParams[c[CEOnL3].idx] * Power : 0 };
   // Compute the c4 term
-  scalar c4Term = 0;
-  if( Parent.CEnabled( idxFF, 4 ) )
+  scalar TermDiscret = 0;
+  if( Parent.CEnabled( idxFF, CDiscret ) )
   {
     const scalar aLambda{ Lambda / _aInv };
-    c4Term = ModelParams[c[4].idx] * aLambda * aLambda;
+    TermDiscret = ModelParams[c[CDiscret].idx] * aLambda * aLambda;
   }
   // Return model result
-  const scalar Result = PoleTerm * ( c0Term + c1Term + c2Term + c3Term + c4Term );
+  const scalar Result = PoleTerm * (TermChiral + TermMPi + TermEL + TermEL2 + TermEL3 + TermDiscret);
   return Result;
 }
 
 // Cache values based solely on the model parameters (to speed up computation)
 void ModelContinuum::ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const
 {
-  const scalar sFVSim{ Parent.CEnabled( idxFF, 0 ) ? ModelParams[FVSim.idx] : 0 };
-  const scalar sFVPhys{ Parent.CEnabled( idxFF, 0 ) ? ModelParams[FVPhys.idx] : 0 };
+  const scalar sFVSim{ Parent.CEnabled( idxFF, CChiral ) ? ModelParams[FVSim.idx] : 0 };
+  const scalar sFVPhys{ Parent.CEnabled( idxFF, CChiral ) ? ModelParams[FVPhys.idx] : 0 };
   // Chiral log term
-  const scalar c0Num = DeltaF( ModelParams[mPi.idx], sFVSim )
-                     - DeltaF( ModelParams[mPDGPi.idx], sFVPhys );
-  const scalar c0Denom = FourPi * ModelParams[fPi.idx];
-  ScratchPad[0] = 1 + c0Num / ( c0Denom * c0Denom );
+  const scalar Num = DeltaF( ModelParams[mPi.idx], sFVSim )
+                   - DeltaF( ModelParams[mPDGPi.idx], sFVPhys );
+  const scalar Denom = FourPi * ModelParams[fPi.idx];
+  ScratchPad[0] = 1 + Num / ( Denom * Denom );
 }

@@ -122,17 +122,21 @@ void ContinuumFit::ComputeDerived( Vector &ModelParams ) const
     const scalar EOnLambda{ E0 * InvLambda };
     const scalar Prefactor{ ( E0 + ModelParams[idxDelta[idxFFPlus]] )
                           / ( E0 + ModelParams[idxDelta[idxFF0]] ) };
-    scalar z = ModelParams[idxC[idxFF0][0]];
-    if( idxC[idxFF0][2] != idxCUnused )
-      z += ModelParams[idxC[idxFF0][2]] * EOnLambda;
-    if( idxC[idxFF0][3] != idxCUnused )
-      z += ModelParams[idxC[idxFF0][3]] * EOnLambda * EOnLambda;
+    scalar z = ModelParams[idxC[idxFF0][CChiral]];
+    if( idxC[idxFF0][CEOnL] != idxCUnused )
+      z += ModelParams[idxC[idxFF0][CEOnL]] * EOnLambda;
+    if( idxC[idxFF0][CEOnL2] != idxCUnused )
+      z += ModelParams[idxC[idxFF0][CEOnL2]] * EOnLambda * EOnLambda;
+    if( idxC[idxFF0][CEOnL3] != idxCUnused )
+      z += ModelParams[idxC[idxFF0][CEOnL3]] * EOnLambda * EOnLambda * EOnLambda;
     z *= Prefactor;
-    if( idxC[idxFFPlus][2] != idxCUnused )
-      z -= ModelParams[idxC[idxFFPlus][2]] * EOnLambda;
-    if( idxC[idxFFPlus][3] != idxCUnused )
-      z -= ModelParams[idxC[idxFFPlus][3]] * EOnLambda * EOnLambda;
-    ModelParams[idxC[idxFFPlus][0]] = z;
+    if( idxC[idxFFPlus][CEOnL] != idxCUnused )
+      z -= ModelParams[idxC[idxFFPlus][CEOnL]] * EOnLambda;
+    if( idxC[idxFFPlus][CEOnL2] != idxCUnused )
+      z -= ModelParams[idxC[idxFFPlus][CEOnL2]] * EOnLambda * EOnLambda;
+    if( idxC[idxFFPlus][CEOnL3] != idxCUnused )
+      z -= ModelParams[idxC[idxFFPlus][CEOnL3]] * EOnLambda * EOnLambda * EOnLambda;
+    ModelParams[idxC[idxFFPlus][CChiral]] = z;
   }
 #endif
 }
@@ -391,11 +395,12 @@ void ContinuumFit::SortModels()
       int i{ Common::CompareIgnoreCase( lhs.m->Ensemble, rhs.m->Ensemble ) };
       if( i )
         return i < 0;
-      if( lhs.ff != rhs.ff )
+      const int lp2{ lhs.m->Name_.GetFirstNonZeroMomentum().second.p2() };
+      const int rp2{ rhs.m->Name_.GetFirstNonZeroMomentum().second.p2() };
+      if( lp2 != rp2 )
+        return lp2 < rp2;
+      //if( lhs.ff != rhs.ff )
         return lhs.ff < rhs.ff;
-      const Common::Momentum &lp{ lhs.m->Name_.GetFirstNonZeroMomentum().second };
-      const Common::Momentum &rp{ rhs.m->Name_.GetFirstNonZeroMomentum().second };
-      return lp < rp;
     }
   };
 
@@ -550,7 +555,7 @@ void ContinuumFit::MakeCovarBlock()
                                                         ds.constFile[j]->Ensemble ) };
       const bool bZero{ i != j && !(
         SameEnsemble
-        // && SameFF
+         && SameFF
       ) };
       if( bZero )
       {
@@ -599,7 +604,8 @@ void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
   }
   
   // Add parameters for finite volume adjustments
-  if( ( uiFF & uiFF0 && CEnabled( idxFF0, 0 ) ) || ( uiFF & uiFFPlus && CEnabled( idxFFPlus, 0 ) ) )
+  if( ( uiFF & uiFF0 && CEnabled( idxFF0, CChiral ) )
+   || ( uiFF & uiFFPlus && CEnabled( idxFFPlus, CChiral ) ) )
   {
     idxmPDGPi = mp.at( Key( "PDGPi" ) )();
     aInv.resize( EnsembleMap.size() );
@@ -742,11 +748,13 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
       const scalar Delta{ om(rep,idxDelta[idxff]) };
       const scalar E{ Loop == 0 ? EOfQSq(rep, x) : x };
       const scalar EOnLambda{ E * InvLambda };
-      scalar z = om(rep,idxC[idxff][0]); // Always used ("unused" means it's not chiral log adjusted)
-      if( idxC[idxff][2] != idxCUnused )
-        z += om(rep,idxC[idxff][2]) * EOnLambda;
-      if( idxC[idxff][3] != idxCUnused )
-        z += om(rep,idxC[idxff][3]) * EOnLambda * EOnLambda;
+      scalar z = om(rep,idxC[idxff][CChiral]); // "unused" means it's not chiral log adjusted
+      if( idxC[idxff][CEOnL] != idxCUnused )
+        z += om(rep,idxC[idxff][CEOnL]) * EOnLambda;
+      if( idxC[idxff][CEOnL2] != idxCUnused )
+        z += om(rep,idxC[idxff][CEOnL2]) * EOnLambda * EOnLambda;
+      if( idxC[idxff][CEOnL3] != idxCUnused )
+        z += om(rep,idxC[idxff][CEOnL3]) * EOnLambda * EOnLambda * EOnLambda;
       z *= Lambda / ( E + Delta );
       if( rep == ModelFile::idxCentral )
         Central = z;
@@ -799,30 +807,30 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
     for( int rep = ModelFile::idxCentral; rep < om.NumSamples(); ++rep )
     {
       const scalar PoleTerm{ Lambda / ( om(rep,m.EL.idx) + om(rep,m.Delta.idx) ) };
-      // Compute the c0 term
-      const scalar sFVSim{ CEnabled( idxFF, 0 ) ? om(rep,m.FVSim.idx) : 0 };
-      const scalar sFVPhys{ CEnabled( idxFF, 0 ) ? om(rep,m.FVPhys.idx) : 0 };
-      const scalar c0Num = m.DeltaF( om(rep,m.mPi.idx), sFVSim )
-                         - m.DeltaF( om(rep,m.mPDGPi.idx), sFVPhys );
-      const scalar c0Denom = ModelContinuum::FourPi * om(rep,m.fPi.idx);
-      const scalar c0Term = om(rep,m.c[0].idx) * ( c0Num / ( c0Denom * c0Denom ) );
-      // Compute the c1 term
-      scalar c1Term = 0;
-      if( CEnabled( idxFF, 1 ) )
+      // Compute the Chiral term
+      const scalar sFVSim{ CEnabled( idxFF, CChiral ) ? om(rep,m.FVSim.idx) : 0 };
+      const scalar sFVPhys{ CEnabled( idxFF, CChiral ) ? om(rep,m.FVPhys.idx) : 0 };
+      const scalar Num = m.DeltaF( om(rep,m.mPi.idx), sFVSim )
+                       - m.DeltaF( om(rep,m.mPDGPi.idx), sFVPhys );
+      const scalar Denom = ModelContinuum::FourPi * om(rep,m.fPi.idx);
+      const scalar TermChiral = om(rep,m.c[CChiral].idx) * ( Num / ( Denom * Denom ) );
+      // Compute the MPi term
+      scalar TermMPi = 0;
+      if( CEnabled( idxFF, CMPi ) )
       {
-        scalar DeltaMPiSq = om(rep,m.mPi.idx) * om(rep,m.mPi.idx);
-        DeltaMPiSq -= om(rep,m.mPDGPi.idx) * om(rep,m.mPDGPi.idx);
-        c1Term = om(rep,m.c[1].idx) * DeltaMPiSq * m.LambdaInv * m.LambdaInv;
+        const scalar A{ om(rep,m.mPi.idx) };
+        const scalar B{ om(rep,m.mPDGPi.idx) };
+        TermMPi = om(rep,m.c[CMPi].idx) * ( A * A - B * B ) * m.LambdaInv * m.LambdaInv;
       }
       // Compute the c4 term
-      scalar c4Term = 0;
-      if( CEnabled( idxFF, 4 ) )
+      scalar TermDiscret = 0;
+      if( CEnabled( idxFF, CDiscret ) )
       {
         const scalar aLambda{ m.Lambda / om(rep,m.aInv.idx) };
-        c4Term = om(rep,m.c[4].idx) * aLambda * aLambda;
+        TermDiscret = om(rep,m.c[CDiscret].idx) * aLambda * aLambda;
       }
       // Get adjusted form factor
-      const scalar Adjust = PoleTerm * ( c0Term + c1Term + c4Term );
+      const scalar Adjust = PoleTerm * ( TermChiral + TermMPi + TermDiscret );
       const scalar FFAdjust = om.FitInput(rep,i) - Adjust;
       if( rep == ModelFile::idxCentral )
         Central = FFAdjust;
