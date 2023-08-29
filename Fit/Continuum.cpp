@@ -33,29 +33,6 @@
 // Indices for operators in correlator names
 const char * pSrcSnk[2] = { "src", "snk" };
 
-struct ModelWithArgs
-{
-  ModelFilePtr m;
-  Model::Args Args;
-};
-
-struct ModelWithArgsLess
-{
-  bool operator()( const ModelWithArgs &lhs, const ModelWithArgs &rhs )
-  {
-    Common::FormFactor ffL{ Common::FromString<Common::FormFactor>( lhs.Args.find( sFF )->second ) };
-    Common::FormFactor ffR{ Common::FromString<Common::FormFactor>( rhs.Args.find( sFF )->second ) };
-    if( ffL != ffR )
-      return ffL < ffR;
-    int i{ Common::CompareIgnoreCase( lhs.m->Ensemble, rhs.m->Ensemble ) };
-    if( i )
-      return i < 0;
-    const Common::Momentum &lp{ lhs.m->Name_.GetFirstNonZeroMomentum().second };
-    const Common::Momentum &rp{ rhs.m->Name_.GetFirstNonZeroMomentum().second };
-    return lp < rp;
-  }
-};
-
 CreateParams::CreateParams( const std::vector<std::string> &O, const Common::CommandLine &C,
                             const ContinuumFit &parent )
 : Model::CreateParams( O, C ), Parent{ parent }
@@ -397,14 +374,40 @@ void ContinuumFit::SortModels()
   assert( ds.constFile.size() == ModelArgs.size() && "Should be one ModelArgs per ds.constFile" );
   if( ds.constFile.empty() )
     throw std::runtime_error( "Nothing to fit" );
-  // Sort the models and corresponding arguments by ensemble
+
+  using FF = Common::FormFactor;
+
+  struct ModelWithArgs
+  {
+    ModelFilePtr m;
+    Model::Args Args;
+    FF ff;
+  };
+
+  struct ModelWithArgsLess
+  {
+    bool operator()( const ModelWithArgs &lhs, const ModelWithArgs &rhs )
+    {
+      int i{ Common::CompareIgnoreCase( lhs.m->Ensemble, rhs.m->Ensemble ) };
+      if( i )
+        return i < 0;
+      if( lhs.ff != rhs.ff )
+        return lhs.ff < rhs.ff;
+      const Common::Momentum &lp{ lhs.m->Name_.GetFirstNonZeroMomentum().second };
+      const Common::Momentum &rp{ rhs.m->Name_.GetFirstNonZeroMomentum().second };
+      return lp < rp;
+    }
+  };
+
+  // Take the models and corresponding arguments out of the data set and put in my list
   std::vector<ModelWithArgs> ei( ds.constFile.size() );
   for( std::size_t i = 0; i < ds.constFile.size(); ++i )
   {
     ei[i].m.reset( ds.constFile[i].release() );
     ei[i].Args = std::move( ModelArgs[i] );
+    ei[i].ff = Common::FromString<FF>( ei[i].Args.find( sFF )->second );
   }
-  // Sort
+  // Sort the models and corresponding arguments by ensemble
   std::sort( ei.begin(), ei.end(), ModelWithArgsLess() );
   // Put them back
   for( std::size_t i = 0; i < ds.constFile.size(); ++i )
@@ -508,6 +511,30 @@ std::string ContinuumFit::GetOutputFilename( unsigned int uiFF )
   return s;
 }
 
+void ContinuumFit::ShowCovar()
+{
+  std::cout << "Ensemble    i    j rows cols Condition number\n";
+  for( std::size_t i = 0; i < ds.mCovar.size1; )
+  {
+    // Find the width of this sub-matrix on the same Ensemble
+    std::size_t width = 1;
+    while( i + width < ds.mCovar.size1
+          && Common::EqualIgnoreCase( ds.constFile[i]->Ensemble, ds.constFile[i+width]->Ensemble ) )
+      ++width;
+    // Show the condition number
+    Vector S;
+    const scalar Cond{ ds.mCovar.SubMatrix( i, i, width, width ).Cholesky( S ).CholeskyRCond() };
+    std::cout << std::setw(8) << ds.constFile[i]->Ensemble
+              << std::setw(5) << i
+              << std::setw(5) << i
+              << std::setw(5) << width
+              << std::setw(5) << width
+              << Common::Space << Cond
+              << Common::NewLine;
+    i += width;
+  }
+}
+
 void ContinuumFit::MakeCovarBlock()
 {
   std::cout << "Block Covariance\n";
@@ -518,9 +545,13 @@ void ContinuumFit::MakeCovarBlock()
     for( std::size_t j = 0; j <= i; ++j )
     {
       const ModelContinuum &Mj{ * dynamic_cast<const ModelContinuum *>( f->model[j].get() ) };
-      const bool bZero{ i != j &&
-        ( !Common::EqualIgnoreCase( ds.constFile[i]->Ensemble, ds.constFile[j]->Ensemble )
-         || Mi.ff != Mj.ff ) };
+      const bool SameFF{ Mi.ff == Mj.ff };
+      const bool SameEnsemble{ Common::EqualIgnoreCase( ds.constFile[i]->Ensemble,
+                                                        ds.constFile[j]->Ensemble ) };
+      const bool bZero{ i != j && !(
+        SameEnsemble
+        // && SameFF
+      ) };
       if( bZero )
       {
         ds.mCovar(i,j) = 0;
@@ -835,6 +866,7 @@ int ContinuumFit::DoFit()
   for( int i = 0; i < f->ModelArgs.size(); ++i )
     fitTimes[i] = { static_cast<int>( f->model[i]->GetFitColumn() ) };
   ds.SetFitTimes( fitTimes, false );
+  ShowCovar();
   if( CovarBlock )
     MakeCovarBlock();
 
@@ -990,8 +1022,9 @@ int main(int argc, const char *argv[])
     " [Options] Model[,params]...\n"
     "Perform a chiral continuum fit of the per Ensemble data\n"
     "Options:\n"
-    "-f       Form factor: f0, fplus, fpar or fperp (default: " << DefaultFormFactor << ")\n"
-    "--disable ff,integers[,ff,integers] (eg f0,3,fplus,03)\n"
+    "-f       ff,constants[,ff,constants] (eg f0,3,fplus,31)\n"
+    "         Disable constants (0-4, 0=FV corrections) for each form factor\n"
+    "         1st form factor becomes default (default: " << DefaultFormFactor << ")\n"
     "--model  An additional model file, e.g. to load lattice spacings\n"
     "--Hotelling Minimum Hotelling Q-value on central replica (default " << DefaultHotelling << ")\n"
     "--chisqdof  Maximum chi^2 / dof on central replica\n"
@@ -1017,8 +1050,9 @@ int main(int argc, const char *argv[])
     "                         Can be used with rebin\n"
     "         H5,f[,g],d Load INVERSE covariance from .h5 file f, group g, dataset d\n"
     "         Default: Binned if available, otherwise Bootstrap\n"
-    "--covboot Build covariance using secondary bootstrap & this num replicas, 0=all\n"
+    "Flags:\n"
     "--noblock Use full covariance matrix (rather than block diagonal per ensemble)\n"
+    "--covboot Build covariance using secondary bootstrap & this num replicas, 0=all\n"
     "--summary 0 no summaries; 1 model_td.seq.txt only; 2 model_td and model.seq.txt\n"
     "--nopolap List of overlap coefficients which don't depend on momenta\n"
     "          TODO: This is ignored for now. Should be moved into MultiFit only\n"

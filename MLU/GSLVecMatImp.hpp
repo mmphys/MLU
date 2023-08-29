@@ -377,6 +377,7 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
                                + std::to_string( o.stride ) );
     MapView( o.Data(), 1, o.size );
   };
+  inline MyMatrix SubMatrix( std::size_t i, std::size_t j, std::size_t rows, std::size_t cols );
   inline const Scalar & operator()( std::size_t i, std::size_t j ) const;
   inline Scalar & operator()( std::size_t i, std::size_t j );
   inline void Row( std::size_t idx, MyVector &v );
@@ -587,6 +588,22 @@ void Matrix<COMMON_GSL_TYPE>::resize( std::size_t size1_, std::size_t size2_ )
   }
 }
 
+Matrix<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::SubMatrix( std::size_t i, std::size_t j,
+                                                            std::size_t rows, std::size_t cols )
+{
+  if( i >= size1 )
+    throw std::runtime_error( "Row " + std::to_string( i ) + " >= " + std::to_string( size1 ) );
+  if( j >= size2 )
+    throw std::runtime_error( "Column " + std::to_string( j ) + " >= " + std::to_string( size2 ) );
+  if( i + rows > size1 )
+    throw std::runtime_error( "Rows " + std::to_string( rows ) + " too high" );
+  if( j + cols > size2 )
+    throw std::runtime_error( "Columns " + std::to_string( cols ) + " too wide" );
+  MyMatrix o;
+  o.MapView( Data() + i * tda + j, rows, cols, tda );
+  return o;
+}
+
 const Matrix<COMMON_GSL_TYPE>::Scalar & Matrix<COMMON_GSL_TYPE>::operator()( std::size_t i, std::size_t j ) const
 {
   assert( data && i < size1 && j < size2 && "Error accessing matrix" );
@@ -602,7 +619,7 @@ Matrix<COMMON_GSL_TYPE>::Scalar & Matrix<COMMON_GSL_TYPE>::operator()( std::size
 void Matrix<COMMON_GSL_TYPE>::Row( std::size_t idx, MyVector &v )
 {
   if( idx >= size1 )
-    throw std::runtime_error( "Row " + std::to_string( idx ) + " > " + std::to_string( size1 ) );
+    throw std::runtime_error( "Row " + std::to_string( idx ) + " >= " + std::to_string( size1 ) );
   v.MapView( reinterpret_cast<Scalar *>( data ) + tda * idx, size2, 1 );
 }
 
@@ -695,7 +712,8 @@ void Matrix<COMMON_GSL_TYPE>::blas_trmm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, C
 inline Matrix<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::Cholesky( MyVector &S ) const
 {
   Square();
-  MyMatrix a( *this );
+  MyMatrix a;
+  a = *this; // TODO: If I do this in the constructor and I'm a view, a won't be a copy
   S.resize( size1 );
   int gsl_e{ COMMON_GSL_FUNC( linalg, cholesky_decomp2 )( &a, &S ) };
   if( gsl_e )
@@ -723,6 +741,7 @@ inline Vector<COMMON_GSL_TYPE> Matrix<COMMON_GSL_TYPE>::CholeskySolve( const MyV
 
 inline COMMON_GSL_TYPE Matrix<COMMON_GSL_TYPE>::CholeskyRCond() const
 {
+  Square();
   MyVector v( size1 * 3 );
   double rcond;
   int gsl_e{ COMMON_GSL_FUNC( linalg, cholesky_rcond )( this, &rcond, &v ) };

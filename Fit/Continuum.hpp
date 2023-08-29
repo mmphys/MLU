@@ -184,6 +184,7 @@ protected:
   void LoadExtra();
   void MakeOutputFilename();
   std::string GetOutputFilename( unsigned int uiFF );
+  void ShowCovar();
   void MakeCovarBlock();
   void GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max,
                   ModelParam ModelContinuum::* mp, const std::string &Field ) const;
