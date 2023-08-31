@@ -49,7 +49,7 @@ if( Save ne "" ) {
 }
 
 if( RefText ne '' ) { RefText=RefText.', ' }
-RefText=RefText.my_ylabel."(0)=$QSqZero, ".my_ylabel."(q^2_{max})=$QSqMax
+RefText=RefText.my_ylabel."(0)=$QSqZero, ".my_ylabel."(q^2_{max})=$QSqMax"
 if( PlotField ne 'data' ) { RefText=RefText.' ('.PlotField.')' }
 set label 2 RefText at screen 0, screen 0 font ",10" front textcolor "blue" \
   offset character 0.5, 0.5

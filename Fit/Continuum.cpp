@@ -639,6 +639,39 @@ void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
 void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max,
                               ModelParam ModelContinuum::* mp, const std::string &Field ) const
 {
+  // See whether Min / Max specified in the environment
+  const std::string sEnvPrefix{ "MLU" + Common::GetFormFactorString( ff ) + Field };
+  const std::string sEnvMin{ sEnvPrefix + "Min" };
+  const std::string sEnvMax{ sEnvPrefix + "Max" };
+  const char *pMin{ std::getenv( sEnvMin.c_str() ) };
+  const char *pMax{ std::getenv( sEnvMax.c_str() ) };
+  if( pMin || pMax )
+  {
+    static const char szEnv[] = "Environment variable ";
+    static const char szMissing[] = " missing / empty";
+    static const char szInvalid[] = " invalid: ";
+    if( !pMin || !*pMin )
+      throw std::runtime_error( szEnv + sEnvMin + szMissing );
+    if( !pMax || !*pMax )
+      throw std::runtime_error( szEnv + sEnvMax + szMissing );
+    try
+    {
+      Min = Common::FromString<scalar>( pMin );
+    }
+    catch( const std::runtime_error &e )
+    {
+      throw std::runtime_error( szEnv + sEnvMin + szInvalid + e.what() );
+    }
+    try
+    {
+      Max = Common::FromString<scalar>( pMax );
+    }
+    catch( const std::runtime_error &e )
+    {
+      throw std::runtime_error( szEnv + sEnvMax + szInvalid + e.what() );
+    }
+    return;
+  }
   const ModelFile &om{ f->OutputModel };
   bool bFirst{ true };
   for( std::size_t i = 0; i < f->model.size(); ++i )
@@ -668,11 +701,11 @@ void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max,
       }
     }
   }
-  if( f->Verbosity )
+  //if( f->Verbosity )
   {
     std::ostringstream os;
-    os << std::scientific << std::setprecision(6) << Min << " <= " << Field << " <= "
-       << Max << Common::NewLine;
+    os << std::scientific << std::setprecision( std::numeric_limits<scalar>::max_digits10 + 2 )
+       << Min << " <= " << ff << '-' << Field << " <= " << Max << Common::NewLine;
     std::cout << os.str();
   }
 }

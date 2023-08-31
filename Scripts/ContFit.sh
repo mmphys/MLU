@@ -14,14 +14,33 @@ set -e
 #  DisableZ:  List of constants to disable (each between 0 and 4) f0 only
 #  DisableP:  List of constants to disable (each between 0 and 4) f+ only
 #  OutDir:    Where to put the output
+#  EnsOpt:    Ensemble options
 
 ###################################################
 
 Simul=$((1-0${Simul+1}))
 FitSeries=${FitSeries:-renorm}
 #OutDir=${OutDir:-C1C2F1MM1M2M3}
-if ! [ -v OutDir ]; then
-  ((Simul)) && OutDir=Simul || OutDir=Separate
+
+if ! [ -v EnsOpt ]; then
+  EnsembleList="C1 C2 F1M M1 M2 M3"
+else
+  case "$EnsOpt" in
+    C2 ) EnsembleList="C1 F1M M1 M2 M3";;
+    M3 ) EnsembleList="C1 C2 F1M M1 M2";;
+    CM ) EnsembleList="C1 C2 M1 M2 M3";;
+    MF ) EnsembleList="M1 M2 M3 F1M";;
+    CF ) EnsembleList="C1 C2 F1M";;
+    *) "Unrecognised EnsOpt \"$EnsOpt\""; exit 1;;
+  esac
+  [ -v OutDir ] && OutDir+=_
+  OutDir+=$EnsOpt
+fi
+
+if [ -v OutDir ]; then
+    ((Simul)) || OutDir+=_Sep
+  else
+    ((Simul)) && OutDir=Simul || OutDir=Separate
 fi
 
 ###################################################
@@ -44,6 +63,9 @@ OutDir=Cont/$OutDir/${FitSeries}${Disabled}_
 OutPrefix="F3_K_Ds.corr_"
 OutModel=".g5P_g5W.model"
 
+declare -A EnsemblePMax
+EnsemblePMax=(C1 4 C2 4 F1M 6 M1 4 M2 4 M3 4)
+
 ###################################################
 
 #  Set the list of Files
@@ -52,17 +74,16 @@ OutModel=".g5P_g5W.model"
 
 function GetFiles()
 {
+  unset Files # Returned
   local Some=$1
-  local pMax=4
-  local pMaxF1M=6
-  local pString="3sm_sp2/'*_p2_[0-$((pMax-Some))].g*'.h5"
-  local pStringF1M="3sm_sp2/'*_p2_[0-$((pMaxF1M-Some))].g*'.h5"
-  Files="C1/FormFactor/$FitSeries/$pString"
-  Files+=" C2/FormFactor/$FitSeries/$pString"
-  Files+=" F1M/FormFactor/$FitSeries/$pStringF1M"
-  Files+=" M1/FormFactor/$FitSeries/$pString"
-  Files+=" M2/FormFactor/$FitSeries/$pString"
-  Files+=" M3/FormFactor/$FitSeries/$pString"
+  local pMax Ens i
+  for Ens in $EnsembleList
+  do
+    pMax=${EnsemblePMax[$Ens]}
+    if [ "${Ens:0:1}" == C ]; then pMax=$((pMax-Some)); fi
+    [ -v Files ] && Files+=' '
+    Files+="$Ens/FormFactor/$FitSeries/3sm_sp2/'*_p2_[0-$pMax].g*'.h5"
+  done
 }
 
 ###################################################
