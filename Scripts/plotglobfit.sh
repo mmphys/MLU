@@ -49,7 +49,7 @@ if( Save ne "" ) {
 }
 
 if( RefText ne '' ) { RefText=RefText.', ' }
-RefText=RefText.my_ylabel."(0)=$QSqZero"
+RefText=RefText.my_ylabel."(0)=$QSqZero, ".my_ylabel."(q^2_{max})=$QSqMax
 if( PlotField ne 'data' ) { RefText=RefText.' ('.PlotField.')' }
 set label 2 RefText at screen 0, screen 0 font ",10" front textcolor "blue" \
   offset character 0.5, 0.5
@@ -189,7 +189,10 @@ function GetFitData()
     unset ColumnValues
     unset RefText
   fi
-  QSqZero="$(gawk -e '/# qSq 0 / {print $4; exit}' ${PlotFile}_fit.txt)"
+  local -a A
+  A=($(gawk -e '/# qSq 0 / {print $4; next}; /# qSq / {print $4; exit}' ${PlotFile}_fit.txt))
+  QSqZero="${A[0]}"
+  QSqMax="${A[1]}"
   #echo $QSqZero
 }
 

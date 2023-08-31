@@ -390,6 +390,8 @@ void ContinuumFit::SortModels()
 
   struct ModelWithArgsLess
   {
+    const bool CovarBlock;
+    ModelWithArgsLess( bool covarBlock ) : CovarBlock{covarBlock} {}
     bool operator()( const ModelWithArgs &lhs, const ModelWithArgs &rhs )
     {
       int i{ Common::CompareIgnoreCase( lhs.m->Ensemble, rhs.m->Ensemble ) };
@@ -397,10 +399,15 @@ void ContinuumFit::SortModels()
         return i < 0;
       const int lp2{ lhs.m->Name_.GetFirstNonZeroMomentum().second.p2() };
       const int rp2{ rhs.m->Name_.GetFirstNonZeroMomentum().second.p2() };
-      if( lp2 != rp2 )
-        return lp2 < rp2;
-      //if( lhs.ff != rhs.ff )
+      /*if( !CovarBlock )
+      {
+        if( lp2 != rp2 )
+          return lp2 < rp2;
         return lhs.ff < rhs.ff;
+      }*/
+      if( lhs.ff != rhs.ff )
+        return lhs.ff < rhs.ff;
+      return lp2 < rp2;
     }
   };
 
@@ -413,7 +420,7 @@ void ContinuumFit::SortModels()
     ei[i].ff = Common::FromString<FF>( ei[i].Args.find( sFF )->second );
   }
   // Sort the models and corresponding arguments by ensemble
-  std::sort( ei.begin(), ei.end(), ModelWithArgsLess() );
+  std::sort( ei.begin(), ei.end(), ModelWithArgsLess( CovarBlock ) );
   // Put them back
   for( std::size_t i = 0; i < ds.constFile.size(); ++i )
   {
@@ -550,13 +557,10 @@ void ContinuumFit::MakeCovarBlock()
     for( std::size_t j = 0; j <= i; ++j )
     {
       const ModelContinuum &Mj{ * dynamic_cast<const ModelContinuum *>( f->model[j].get() ) };
-      const bool SameFF{ Mi.ff == Mj.ff };
+      const bool SameFF{ CovarBlock ? ( Mi.ff == Mj.ff ) : true };
       const bool SameEnsemble{ Common::EqualIgnoreCase( ds.constFile[i]->Ensemble,
                                                         ds.constFile[j]->Ensemble ) };
-      const bool bZero{ i != j && !(
-        SameEnsemble
-         && SameFF
-      ) };
+      const bool bZero{ i != j && !( SameEnsemble && SameFF ) };
       if( bZero )
       {
         ds.mCovar(i,j) = 0;
@@ -875,8 +879,7 @@ int ContinuumFit::DoFit()
     fitTimes[i] = { static_cast<int>( f->model[i]->GetFitColumn() ) };
   ds.SetFitTimes( fitTimes, false );
   ShowCovar();
-  if( CovarBlock )
-    MakeCovarBlock();
+  MakeCovarBlock();
 
   try
   {
