@@ -8,7 +8,7 @@ set -e
 # User input
 
 # Optional
-#  Simul:     Set to anything to disable simultaneous fit of f0 and fplus
+#  Separate:  Set to anything to perform separate fits for f0 and fplus
 #  FitSeries: Name of series to fit
 #  Disable:   List of constants to disable (each between 0 and 4) both form factors
 #  DisableZ:  List of constants to disable (each between 0 and 4) f0 only
@@ -18,7 +18,7 @@ set -e
 
 ###################################################
 
-Simul=$((1-0${Simul+1}))
+Separate=$((0${Separate+1}))
 FitSeries=${FitSeries:-renorm}
 #OutDir=${OutDir:-C1C2F1MM1M2M3}
 
@@ -38,9 +38,9 @@ else
 fi
 
 if [ -v OutDir ]; then
-    ((Simul)) || OutDir+=_Sep
+    ((Separate)) && OutDir+=_Sep
   else
-    ((Simul)) && OutDir=Simul || OutDir=Separate
+    ((Separate)) && OutDir=Separate || OutDir=Simul
 fi
 
 ###################################################
@@ -152,18 +152,18 @@ do
   GetFiles $Some
   ((Some)) && OutSubDir="${OutDir}some" || OutSubDir="${OutDir}all"
   ((Some)) && qSqRangeMin='*' || qSqRangeMin='-0.1'
-  if (( Simul )); then
-    DoFit f0_fplus
-  else
+  if (( Separate )); then
     DoFit f0
     DoFit fplus
+  else
+    DoFit f0_fplus
   fi
   # Now plot it
   for ff in f0 fplus
   do
     [ $ff == fplus ] && qSqRangeMax='1.75' || qSqRangeMax='2.2'
     LogBase="$OutSubDir/$OutPrefix$ff$OutModel"
-    (( Simul )) && KillLogBase
+    (( Separate )) || KillLogBase
     DoCmd "x=EL plotglobfit.sh '$LogBase.txt'"
     DoCmd "x=qSq xrange='$qSqRangeMin:$qSqRangeMax' plotglobfit.sh '$LogBase.txt'"
   done

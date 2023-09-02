@@ -29,7 +29,7 @@
 #ifndef ModelContinuum_hpp
 #define ModelContinuum_hpp
 
-#include "Model.hpp"
+#include "Continuum.hpp"
 
 extern const std::string sFF;
 
@@ -42,17 +42,35 @@ struct ContinuumFit;
 /// Chiral continuum fit model
 struct ModelContinuum : Model
 {
-  static constexpr int NumConst{ 6 };
-  static constexpr int CChiral{ 0 };
-  static constexpr int CMPi{ 1 };
-  static constexpr int CDiscret{ 4 };
-  static constexpr int CEOnL{ 2 };
-  static constexpr int CEOnL2{ 3 };
-  static constexpr int CEOnL3{ 5 };
-  static constexpr scalar FourPi{ 4. * M_PI };
-  friend class ContinuumFit;
+  //friend class ContinuumFit;
+  static constexpr int CChiral{ ContinuumFit::CChiral };
+  static constexpr int CMPi{ ContinuumFit::CMPi };
+  static constexpr int CDiscret{ ContinuumFit::CDiscret };
+  static constexpr int CEOnL{ ContinuumFit::CEOnL };
+  static constexpr int CEOnL2{ ContinuumFit::CEOnL2 };
+  static constexpr int CEOnL3{ ContinuumFit::CEOnL3 };
+  static constexpr scalar Lambda{ ContinuumFit::Lambda }; // Units GeV (for now this is hardwired)
+  static constexpr scalar LambdaInv{ ContinuumFit::LambdaInv };
+  static constexpr scalar LambdaInvSq{ ContinuumFit::LambdaInvSq };
   static const std::string FieldQSq;
   static const std::string FieldEL;
+  const Common::FormFactor ff;
+  const ContinuumFit &Parent;
+  const ModelFile &mf;
+  const int idxFF;
+  const Common::Momentum p;
+  const std::string Ensemble;
+  const EnsembleInfo &ei;
+  ModelParam EL, mH, mL, qSq;
+protected:
+  ModelParam aEL, amH, amL, aqSq;
+  const EnsembleInfo &GetEnsembleInfo() const;
+public:
+  inline scalar DeltaF( scalar M, scalar FV ) const
+  {
+    const scalar ChiralLog{ 2. * M * M * std::log( std::abs( M * LambdaInv ) ) };
+    return -0.75 * ( ChiralLog + FV );
+  }
   ModelContinuum( const Model::CreateParams &cp, Model::Args &Args, Common::FormFactor ff );
   void DefineXVector( DataSet &ds, int i ) override;
   const std::string &XVectorKeyName() const override;
@@ -70,27 +88,8 @@ struct ModelContinuum : Model
   scalar operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const override;
   // Cache values based solely on the model parameters (to speed up computation)
   int GetScratchPadSize() const override { return 1; }
-  void ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const override;
-protected:
-  static constexpr scalar Lambda{ 1e9 }; // Units GeV (for now this is hardwired)
-  static constexpr scalar LambdaInv{ 1. / Lambda }; // For now this is hardwired
-  const ContinuumFit &Parent;
-  const ModelFile &mf;
-  const Common::FormFactor ff;
-  const int idxFF;
-  const Common::Momentum p;
-  const std::string Ensemble;
-  unsigned int aInv_L;
-  std::array<std::string, 2> Meson;
-  ModelParam aInv, fPi, mPi, mPDGPi, FVSim, FVPhys, mPDGH, mPDGL, Delta;
-  ModelParam EL, kMu, mH, mL, qSq;
-  ModelParam aEL, akMu, amH, amL, aqSq;
-  std::array<ModelParam, NumConst> c;
-  inline scalar DeltaF( scalar M, scalar FV ) const
-  {
-    const scalar ChiralLog{ 2. * M * M * std::log( std::abs( M * LambdaInv ) ) };
-    return -0.75 * ( ChiralLog + FV );
-  }
+  /// This is called once at the start of each replica
+  void SetReplica( Vector &ScratchPad, Vector &ModelParams ) const override;
 };
 
 #endif // ModelContinuum_hpp

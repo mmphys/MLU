@@ -245,8 +245,12 @@ void FitterThread::SetReplicaVars( int idx_ )
   parent.ds.GetFixed( idx, ModelParams, parent.ParamFixed );
   // Give the controller the chance to initialise on each replica
   parent.fitController.SetReplica( ModelParams );
+  // Allow each model to initialise on each replica
+  for( int f = 0; f < parent.NumFiles; ++f )
+    if( ModelBuffer[f].size )
+      parent.model[f]->SetReplica( ModelBuffer[f], ModelParams );
   // Export variable parameters from the guess for the fitter to start with
-  parent.mp.Export( FitterParams, ModelParams, Param::Type::Variable );
+  parent.mp.AllToType( FitterParams, ModelParams, Param::Type::Variable );
 }
 
 void FitterThread::Initialise( const std::string *pBaseName )
@@ -387,8 +391,8 @@ bool FitterThread::SaveError( Vector &Error, const scalar * FitterParams, std::s
   {
     if( Size != parent.mp.NumScalars( Param::Type::Variable ) )
       throw std::runtime_error( "Fitter parameters don't match our variable parameters" );
-    parent.mp.Import( ModelParams, VectorView( FitterParams, Size, Stride ),
-                      Param::Type::Variable, true );
+    parent.mp.TypeToAll( ModelParams, VectorView( FitterParams, Size, Stride ),
+                         Param::Type::Variable, true );
   }
   parent.mp.PropagateEnergy( ModelParams );
   // Give the controller the option to manipulate parameters
@@ -491,8 +495,8 @@ scalar FitterThread::RepeatFit( int MaxGuesses )
   {
     if( !SaveError( Error, FitterParams.data, FitterParams.size, FitterParams.stride ) )
       throw std::runtime_error( "NaN values on replica " + std::to_string( idx ) );
-    parent.mp.Import<scalar>( state.ModelErrors, state.FitterErrors, Param::Type::Variable,
-                              true, &ModelParams );
+    parent.mp.TypeToAll<scalar>( state.ModelErrors, state.FitterErrors, Param::Type::Variable,
+                                 true, &ModelParams );
   }
   if( idx == Fold::idxCentral || parent.Verbosity >= 2 )
     ShowReplicaMessage( iNumGuesses );

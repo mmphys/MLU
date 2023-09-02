@@ -41,7 +41,7 @@ struct FitController
 {
   virtual ~FitController() {}
   /// Models have agreed parameters - controller can adjust the parameters before offsets assigned
-  virtual void ParamsAdjust( Common::Params &mp, const Fitter &f ) const {}
+  virtual void ParamsAdjust( Common::Params &mp, const Fitter &f ) {}
   /// Offsets have been assigned - controller can save indices
   virtual void SaveParameters( Common::Params &mp, const Fitter &f ) {}
   /// Called once at the start of each replica, immediately after constants loaded. Compute per-replica derived values

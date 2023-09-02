@@ -49,7 +49,7 @@ set ylabel '$\delta f_{'.FLabel.'}^{D_s \rightarrow K}$ / \%'
 
 FieldFile(Field,Seq,FF)=CompareDir.'/'.Field.'_'.sprintf("%c",Seq+64).'_'.FF.'.txt'
 
-array PlotTitles[9]
+array PlotTitles[10]
 PlotTitles[1]='$\delta^{\left(\textrm{FV}\right)}$'
 PlotTitles[2]='$\left(a \Lambda\right)^2$'
 PlotTitles[3]='$\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
@@ -59,6 +59,7 @@ PlotTitles[6]='M3'
 PlotTitles[7]='F1M'
 PlotTitles[8]='M1M2M3'
 PlotTitles[9]='C1C2 and '.PlotTitles[2]
+PlotTitles[10]='\$n^2_{\textrm{max}}$ C1C2'
 
 PlotPrefix="'$Ref/$Prefix'.FF.'$Suffix' using "
 PlotPrefix=PlotPrefix."(stringcolumn('field') eq Field ? column('x')*XScale : NaN)"
@@ -70,9 +71,9 @@ do for [Loop=1:2] {
 if( Loop == 2 ) {
   PlotTitles[2]=''
   PlotTitles[9]=''
-  set key top left Left reverse maxrows 5
+  set key top left Left reverse maxrows 6
 } else {
-  set key center left Left reverse maxrows 5
+  set key center left Left reverse maxrows 6
 }
 
 Cmd=''
@@ -167,6 +168,7 @@ EOFMARK
   MakeOne G CM/renorm-CZ35_$Which # Omit F1M
   MakeOne H CF/renorm-CZ35_$Which # Omit M1, M2, M3
   MakeOne I MF/renorm-C4Z35_$Which # Omit C1, C2
+  MakeOne J Simul/renorm-CZ35_some # Omit n^2_max from C1 C2
 
   cat >> "$SummaryFile" <<-"EOFMARK"
 	\hline

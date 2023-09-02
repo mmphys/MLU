@@ -27,11 +27,20 @@
 /*  END LEGAL */
 
 #include "Continuum.hpp"
+#include "ModelContinuum.hpp"
 #include <MLU/DebugInfo.hpp>
 #include <chrono>
 
 // Indices for operators in correlator names
 const char * pSrcSnk[2] = { "src", "snk" };
+
+void EnsembleMapT::Loaded()
+{
+  // Assign an index for each Ensemble
+  unsigned int idx{};
+  for( value_type &it : *this )
+    it.second.idx = idx++;
+}
 
 CreateParams::CreateParams( const std::vector<std::string> &O, const Common::CommandLine &C,
                             const ContinuumFit &parent )
@@ -47,7 +56,7 @@ ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
 : cl{cl_},
   NumSamples{cl.SwitchValue<int>("n")},
   doCorr{ !cl.GotSwitch( "uncorr" ) },
-  CovarBlock{ !cl.GotSwitch( "noblock" ) },
+  CovarBlock{ cl.GotSwitch( "block" ) },
   ffDefault{ ValidateFF( Common::FromString<Common::FormFactor>( Common::TrimAt( cl.SwitchValue<std::string>("f") ) ) ) },
   cEnabled{ GetEnabled( cl.SwitchValue<std::string>("f") ) },
   inBase{ cl.SwitchValue<std::string>("i") },
@@ -58,28 +67,122 @@ ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
   Common::MakeAncestorDirs( outBaseFileName );
 }
 
-//#define DEBUG_NO_SHARE_PARAM
-
-void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f ) const
+void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f )
 {
-  // Add pole mass terms
+  // Global parameters
+  kfPi.Name = "fPi";
+  mp.Add( kfPi );
+  kmPDGPi.Name = "PDGPi";
+  mp.Add( kmPDGPi );
+  kPDGH.Name = sPDG + Meson[idxSrc];
+  mp.Add( kPDGH );
+  kPDGL.Name = sPDG + Meson[idxSnk];
+  mp.Add( kPDGL );
+
+  // Per form factor parameters
   for( int idxFF = 0; idxFF < idxC.size(); ++idxFF )
   {
     if( uiFF & ffMaskFromIndex( idxFF ) )
     {
       const Common::FormFactor ff{ ffIndexReverse( idxFF ) };
-      const Common::Param::Key k( GetPoleMassName( ff, f.ds.constFile[0]->Name_ ) );
-      mp.Add( k, 1, false, Param::Type::Fixed );
+      kPDGDStar[idxFF].Name = GetPoleMassName( ff, f.ds.constFile[0]->Name_ );
+      mp.Add( kPDGDStar[idxFF], 1 );
+      kDelta[idxFF].Object.push_back( GetFormFactorString( ff ) );
+      kDelta[idxFF].Name = "Delta";
+      mp.Add( kDelta[idxFF], 1, false, Param::Type::Derived );
+      // Add constants
+      for( int i = 0; i < idxC[idxFF].size(); ++i )
+      {
+        if( CNeeded( idxFF, i ) )
+        {
+          kC[idxFF][i].Object.push_back( GetFormFactorString( ff ) );
+          kC[idxFF][i].Name = "c" + std::to_string( i );
+          mp.Add( kC[idxFF][i] );
+        }
+      }
     }
   }
-#ifndef DEBUG_NO_SHARE_PARAM
   if( ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
   {
     // If I'm fitting both form factors, I can impose a constraint on fplus-c0
-    Param::Key k( Common::GetFormFactorString( Common::FormFactor::fplus ), "c0" );
-    mp.SetType( k, Param::Type::Derived );
+    mp.SetType( kC[idxFFPlus][CChiral], Param::Type::Derived );
   }
-#endif
+
+  // Per ensemble parameters
+  const bool bChiral{ ( uiFF & uiFF0 && CEnabled( idxFF0, CChiral ) )
+                   || ( uiFF & uiFFPlus && CEnabled( idxFFPlus, CChiral ) ) };
+  aInv.resize( EnsembleMap.size() );
+  mPi.resize( EnsembleMap.size() );
+  kaInv.resize( EnsembleMap.size() );
+  kmPi.resize( EnsembleMap.size() );
+  if( bChiral )
+  {
+    FVSim.resize( EnsembleMap.size() );
+    FVPhys.resize( EnsembleMap.size() );
+    kFVSim.resize( EnsembleMap.size() );
+    kFVPhys.resize( EnsembleMap.size() );
+  }
+  for( const typename EnsembleMapT::value_type &it : EnsembleMap )
+  {
+    const std::string &sEnsemble{ it.first };
+    const std::size_t i{ it.second.idx };
+    kaInv[i].Object.push_back( sEnsemble );
+    kaInv[i].Name = "aInv";
+    mp.Add( kaInv[i] );
+    kmPi[i].Object.push_back( sEnsemble );
+    kmPi[i].Name = "mPi";
+    mp.Add( kmPi[i] );
+    if( bChiral )
+    {
+      kFVSim[i].Object.push_back( sEnsemble );
+      kFVSim[i].Name = "FVSim";
+      mp.Add( kFVSim[i], 1, false, Param::Type::Derived );
+      kFVPhys[i].Object.push_back( sEnsemble );
+      kFVPhys[i].Name = "FVPhys";
+      mp.Add( kFVPhys[i], 1, false, Param::Type::Derived );
+    }
+  }
+}
+
+void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
+{
+  // PDG masses for heavy and light, plus the Delta in this case
+  static const std::string sFindError{ "ContinuumFit::SaveParameters() finding model constants" };
+  idxfPi = mp.at( kfPi )();
+  idxmPDGPi = mp.at( kmPDGPi )();
+  idxPDGH = mp.at( kPDGH )();
+  idxPDGL = mp.at( kPDGL )();
+
+  // Per form factor parameter offsets
+  for( int idxFF = 0; idxFF < idxC.size(); ++idxFF )
+  {
+    idxDelta[idxFF] = idxCUnused;
+    idxPDGDStar[idxFF] = idxCUnused;
+    for( int i = 0; i < idxC[idxFF].size(); ++i )
+      idxC[idxFF][i] = idxCUnused;
+    if( uiFF & ffMaskFromIndex( idxFF ) )
+    {
+      idxPDGDStar[idxFF] = mp.at( kPDGDStar[idxFF] )();
+      idxDelta[idxFF] = mp.at( kDelta[idxFF] )();
+      for( int i = 0; i < idxC[idxFF].size(); ++i )
+        if( CNeeded( idxFF, i ) )
+          idxC[idxFF][i] = mp.at( kC[idxFF][i] )();
+    }
+  }
+
+  // Per ensemble parameter offsets
+  const bool bChiral{ ( uiFF & uiFF0 && CEnabled( idxFF0, CChiral ) )
+                   || ( uiFF & uiFFPlus && CEnabled( idxFFPlus, CChiral ) ) };
+  for( std::size_t i = 0; i < kaInv.size(); ++i )
+  {
+    aInv[i] = mp.at( kaInv[i] )();
+    mPi[i] = mp.at( kmPi[i] )();
+    if( bChiral )
+    {
+      FVSim[i] = mp.at( kFVSim[i] )();
+      FVPhys[i] = mp.at( kFVPhys[i] )();
+    }
+  }
 }
 
 void ContinuumFit::SetReplica( Vector &ModelParams ) const
@@ -98,14 +201,13 @@ void ContinuumFit::SetReplica( Vector &ModelParams ) const
   // Compute finite volume corrections for each ensemble
   if( !FVSim.empty() )
   {
-    std::size_t i{};
     for( const typename EnsembleMapT::value_type &ei : EnsembleMap )
     {
+      const std::size_t i{ ei.second.idx };
       const unsigned int aInv_L{ ei.second.aInv_L };
       const scalar L{ aInv_L / ModelParams[aInv[i]] };
       ModelParams[FVSim[i]] = Common::DeltaF::FiniteVol( ModelParams[mPi[i]], L, aInv_L );
       ModelParams[FVPhys[i]] = Common::DeltaF::FiniteVol( ModelParams[idxmPDGPi], L, aInv_L );
-      ++i;
     }
   }
 }
@@ -114,12 +216,11 @@ void ContinuumFit::ComputeDerived( Vector &ModelParams ) const
 {
   const scalar mPDGL{ ModelParams[idxPDGL] };
   const scalar mPDGH{ ModelParams[idxPDGH] };
-#ifndef DEBUG_NO_SHARE_PARAM
   if( ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
   {
     // If I'm fitting both form factors, I can impose a constraint on fplus-c0
     const scalar E0{ EOfQSq( mPDGH, mPDGL, 0 ) };
-    const scalar EOnLambda{ E0 * InvLambda };
+    const scalar EOnLambda{ E0 * LambdaInv };
     const scalar Prefactor{ ( E0 + ModelParams[idxDelta[idxFFPlus]] )
                           / ( E0 + ModelParams[idxDelta[idxFF0]] ) };
     scalar z = ModelParams[idxC[idxFF0][CChiral]];
@@ -138,7 +239,6 @@ void ContinuumFit::ComputeDerived( Vector &ModelParams ) const
       z -= ModelParams[idxC[idxFFPlus][CEOnL3]] * EOnLambda * EOnLambda * EOnLambda;
     ModelParams[idxC[idxFFPlus][CChiral]] = z;
   }
-#endif
 }
 
 const std::string &ContinuumFit::GetPoleMassName( Common::FormFactor ff,
@@ -290,9 +390,11 @@ void ContinuumFit::LoadModels()
         {
           bFirst = false;
           if( fna.BaseShortParts.size() < 3 || fna.Spectator.empty() )
-            throw std::runtime_error( "Please include output filename in -o" );
+            throw std::runtime_error( "Meson names not included in filename " + sFileName );
           Meson[idxSnk] = Common::MesonName( fna.BaseShortParts[1], fna.Spectator );
           Meson[idxSrc] = Common::MesonName( fna.BaseShortParts[2], fna.Spectator );
+          if( Common::EqualIgnoreCase( Meson[idxSnk], Meson[idxSrc] ) )
+            throw std::runtime_error( "Snk and Src are both " + Meson[idxSnk] );
         }
         if( thisFF == Common::FormFactor::f0 )
           uiFF |= uiFF0;
@@ -310,6 +412,7 @@ void ContinuumFit::LoadModels()
     }
     if( bGlobEmpty )
       throw std::runtime_error( "No files matched " + FileToGlob );
+    EnsembleMap.Loaded();
   }
 }
 
@@ -572,72 +675,9 @@ void ContinuumFit::MakeCovarBlock()
   }
 }
 
-// TODO: Not great code. Should be split between this controller and the actual model
-
-void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
-{
-  using Key = Common::Param::Key;
-  // PDG masses for heavy and light, plus the Delta in this case
-  static const std::string sFindError{ "ContinuumFit::SaveParameters() finding model constants" };
-  idxPDGH = mp.Find( Key( sPDG + Meson[idxSrc] ), sFindError )->second();
-  idxPDGL = mp.Find( Key( sPDG + Meson[idxSnk] ), sFindError )->second();
-  
-  // Get the main constants used in the model
-  for( int idxFF = 0; idxFF < idxC.size(); ++idxFF )
-  {
-    idxDelta[idxFF] = idxCUnused;
-    idxPDGDStar[idxFF] = idxCUnused;
-    for( int i = 0; i < idxC[idxFF].size(); ++i )
-      idxC[idxFF][i] = idxCUnused;
-    if( uiFF & ffMaskFromIndex( idxFF ) )
-    {
-      const Common::FormFactor ff{ ffIndexReverse( idxFF ) };
-      idxPDGDStar[idxFF] = mp.Find( Key( GetPoleMassName( ff, f.ds.constFile[0]->Name_ ) ),
-                                   sFindError )->second();
-      Key k( Common::GetFormFactorString( ff ), "Delta" );
-      idxDelta[idxFF] = mp.Find( k, sFindError )->second();
-      for( int i = 0; i < idxC[idxFF].size(); ++i )
-      {
-        if( CNeeded( idxFF, i ) )
-        {
-          k.Name = "c" + std::to_string( i );
-          idxC[idxFF][i] = mp.Find( k, sFindError )->second();
-        }
-      }
-    }
-  }
-  
-  // Add parameters for finite volume adjustments
-  if( ( uiFF & uiFF0 && CEnabled( idxFF0, CChiral ) )
-   || ( uiFF & uiFFPlus && CEnabled( idxFFPlus, CChiral ) ) )
-  {
-    idxmPDGPi = mp.at( Key( "PDGPi" ) )();
-    aInv.resize( EnsembleMap.size() );
-    mPi.resize( EnsembleMap.size() );
-    FVSim.resize( EnsembleMap.size() );
-    FVPhys.resize( EnsembleMap.size() );
-    Key k;
-    k.Object.resize( 1 );
-    std::size_t i{};
-    for( const typename EnsembleMapT::value_type &it : EnsembleMap )
-    {
-      k.Object[0] = it.first;
-      k.Name = "aInv";
-      aInv[i] = mp.at( k )();
-      k.Name = "mPi";
-      mPi[i] = mp.at( k )();
-      k.Name = "FVSim";
-      FVSim[i] = mp.at( k )();
-      k.Name = "FVPhys";
-      FVPhys[i] = mp.at( k )();
-      ++i;
-    }
-  }
-}
-
 // Now get the min / max of the specified field
-void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max,
-                              ModelParam ModelContinuum::* mp, const std::string &Field ) const
+void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max, int Loop,
+                              const std::string &Field ) const
 {
   // See whether Min / Max specified in the environment
   const std::string sEnvPrefix{ "MLU" + Common::GetFormFactorString( ff ) + Field };
@@ -679,7 +719,7 @@ void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max,
     const ModelContinuum &m{ * dynamic_cast<const ModelContinuum *>( f->model[i].get() ) };
     if( m.ff == ff )
     {
-      const ValWithEr &ve{ om.SummaryData( static_cast<int>( (m.*mp).idx ) ) };
+      const ValWithEr &ve{ om.SummaryData( static_cast<int>( ( Loop == 0 ? m.qSq : m.EL ).idx ) ) };
       if( bFirst )
       {
         bFirst = false;
@@ -759,7 +799,6 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
   for( int Loop = 0; Loop < 2; ++Loop )
   {
     const std::string &FieldName{ Loop == 0 ? FieldQSq : FieldEL };
-    ModelParam ModelContinuum::* mp{ Loop == 0 ? &ModelContinuum::qSq : &ModelContinuum::EL };
     if( Loop )
       os << "\n\n";
 
@@ -769,7 +808,7 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
     os << Common::NewLine;
 
     scalar Min, Max;
-    GetMinMax( ff, Min, Max, mp, FieldName );
+    GetMinMax( ff, Min, Max, Loop, FieldName );
     const scalar Tick{ ( Max - Min ) / NumTicks };
     scalar Central = -999.999; // value unused
   for( int nTick = -2; nTick <= NumTicks; ++nTick, x += Tick )
@@ -784,7 +823,7 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
     {
       const scalar Delta{ om(rep,idxDelta[idxff]) };
       const scalar E{ Loop == 0 ? EOfQSq(rep, x) : x };
-      const scalar EOnLambda{ E * InvLambda };
+      const scalar EOnLambda{ E * LambdaInv };
       scalar z = om(rep,idxC[idxff][CChiral]); // "unused" means it's not chiral log adjusted
       if( idxC[idxff][CEOnL] != idxCUnused )
         z += om(rep,idxC[idxff][CEOnL]) * EOnLambda;
@@ -843,30 +882,27 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
     // Adjust the q^2 value on each replica
     for( int rep = ModelFile::idxCentral; rep < om.NumSamples(); ++rep )
     {
-      const scalar PoleTerm{ Lambda / ( om(rep,m.EL.idx) + om(rep,m.Delta.idx) ) };
+      const scalar rmPi{ om(rep,mPi[m.ei.idx]) };
+      const scalar rmPDGPi{ om(rep,idxmPDGPi) };
       // Compute the Chiral term
-      const scalar sFVSim{ CEnabled( idxFF, CChiral ) ? om(rep,m.FVSim.idx) : 0 };
-      const scalar sFVPhys{ CEnabled( idxFF, CChiral ) ? om(rep,m.FVPhys.idx) : 0 };
-      const scalar Num = m.DeltaF( om(rep,m.mPi.idx), sFVSim )
-                       - m.DeltaF( om(rep,m.mPDGPi.idx), sFVPhys );
-      const scalar Denom = ModelContinuum::FourPi * om(rep,m.fPi.idx);
-      const scalar TermChiral = om(rep,m.c[CChiral].idx) * ( Num / ( Denom * Denom ) );
+      const scalar sFVSim{ CEnabled( idxFF, CChiral ) ? om(rep,FVSim[idxFF]) : 0 };
+      const scalar sFVPhys{ CEnabled( idxFF, CChiral ) ? om(rep,FVPhys[idxFF]) : 0 };
+      const scalar Num = m.DeltaF( rmPi, sFVSim ) - m.DeltaF( rmPDGPi, sFVPhys );
+      const scalar Denom = FourPi * om(rep,idxfPi);
+      const scalar TermChiral = om(rep,idxC[idxFF][CChiral]) * ( Num / ( Denom * Denom ) );
       // Compute the MPi term
       scalar TermMPi = 0;
       if( CEnabled( idxFF, CMPi ) )
-      {
-        const scalar A{ om(rep,m.mPi.idx) };
-        const scalar B{ om(rep,m.mPDGPi.idx) };
-        TermMPi = om(rep,m.c[CMPi].idx) * ( A * A - B * B ) * m.LambdaInv * m.LambdaInv;
-      }
+        TermMPi = om(rep,idxC[idxFF][CMPi]) * ( rmPi * rmPi - rmPDGPi * rmPDGPi ) * LambdaInvSq;
       // Compute the c4 term
       scalar TermDiscret = 0;
       if( CEnabled( idxFF, CDiscret ) )
       {
-        const scalar aLambda{ m.Lambda / om(rep,m.aInv.idx) };
-        TermDiscret = om(rep,m.c[CDiscret].idx) * aLambda * aLambda;
+        const scalar aLambda{ Lambda / om(rep,aInv[m.ei.idx]) };
+        TermDiscret = om(rep,idxC[idxFF][CDiscret]) * aLambda * aLambda;
       }
       // Get adjusted form factor
+      const scalar PoleTerm{ Lambda / ( om(rep,m.EL.idx) + om(rep,idxDelta[idxFF]) ) };
       const scalar Adjust = PoleTerm * ( TermChiral + TermMPi + TermDiscret );
       const scalar FFAdjust = om.FitInput(rep,i) - Adjust;
       if( rep == ModelFile::idxCentral )
@@ -949,11 +985,10 @@ int ContinuumFit::Run()
   SortModels();
   MakeOutputFilename();
   LoadExtra();
-  // Work out how covariance matrix should be constructed and tell user
-  // TODO: No choice - we have to make it from the resampled data, block diagonal per Ensemble
   CovarParams cp{ cl, ds };
   std::cout << cp << std::endl;
-  std::cout << "Covariance matrix from resampled data, block diagonal per Ensemble" << std::endl;
+  std::cout << "Covariance matrix entries across form factor (same ensemble) "
+            << ( CovarBlock ? "retained" : "set to zero" ) << std::endl;
 
   // Make the fitter
   f.reset( Fitter::Make( CreateParams{ OpName, cl, *this },
@@ -990,7 +1025,7 @@ int main(int argc, const char *argv[])
       {"retry", CL::SwitchType::Single, "0"},
       {"iter", CL::SwitchType::Single, "0"},
       {"tol", CL::SwitchType::Single, "1e-7"},
-      {"noblock", CL::SwitchType::Flag, nullptr},
+      {"block", CL::SwitchType::Flag, nullptr},
       {"summary", CL::SwitchType::Single, "1"},
       {"nopolap", CL::SwitchType::Single, ""},
       {"v", CL::SwitchType::Single, "0"},
@@ -1095,7 +1130,7 @@ int main(int argc, const char *argv[])
     "         H5,f[,g],d Load INVERSE covariance from .h5 file f, group g, dataset d\n"
     "         Default: Binned if available, otherwise Bootstrap\n"
     "Flags:\n"
-    "--noblock Use full covariance matrix (rather than block diagonal per ensemble)\n"
+    "--block   Zero covariance entries for different form factors on each ensemble\n"
     "--covboot Build covariance using secondary bootstrap & this num replicas, 0=all\n"
     "--summary 0 no summaries; 1 model_td.seq.txt only; 2 model_td and model.seq.txt\n"
     "--nopolap List of overlap coefficients which don't depend on momenta\n"

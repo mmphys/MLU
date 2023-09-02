@@ -185,15 +185,15 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   }
   std::size_t MaxExponents() const;
   /// Given vector of All parameters, export those of Type into vector vType
-  template <typename T> void Export( Vector<T> &vType, const Vector<T> &All,
-                                     Param::Type type = Param::Type::Variable ) const;
+  template <typename T> void AllToType( Vector<T> &vType, const Vector<T> &All,
+                                        Param::Type type = Param::Type::Variable ) const;
   /**
    Given a vector Source of type SourceType, import these data into a vector containing All parameters
    - Parameter bSourceMonotonic: true if Source contains monotonic variables expressed as deltas
    */
-  template <typename T> void Import( Vector<T> &All, const VectorView<T> &Source,
-                                     Param::Type SourceType, bool bSourceMonotonic,
-                                     const Vector<T> * pRef = nullptr ) const;
+  template <typename T> void TypeToAll( Vector<T> &All, const VectorView<T> &Source,
+                                        Param::Type SourceType, bool bSourceMonotonic,
+                                        const Vector<T> * pRef = nullptr ) const;
   template <typename T>
   void Dump( std::ostream &os, const Vector<T> &Values, Param::Type type = Param::Type::Variable,
              const Vector<T> *pErrors = nullptr, const std::vector<bool> *pbKnown = nullptr ) const;

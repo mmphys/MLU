@@ -29,7 +29,6 @@
 // Keep my models separate from my fitting code
 
 #include "ModelContinuum.hpp"
-#include "Continuum.hpp"
 
 const std::string sFF{ "ff" };
 
@@ -111,45 +110,43 @@ ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
   return model;
 }
 
+const EnsembleInfo &ModelContinuum::GetEnsembleInfo() const
+{
+  if( Ensemble.empty() )
+    throw std::runtime_error( "ModelContinuum(): Ensemble unavailable - specify manually" );
+  typename EnsembleMapT::const_iterator cit{ Parent.EnsembleMap.find( Ensemble ) };
+  if( cit == Parent.EnsembleMap.cend() )
+    throw std::runtime_error( "ModelContinuum() Ensemble not supported " + Ensemble );
+  return cit->second;
+}
+
 const std::string ModelContinuum::FieldQSq{ "qSq" };
 const std::string ModelContinuum::FieldEL{ "EL" };
 
 ModelContinuum::ModelContinuum( const Model::CreateParams &mcp, Model::Args &Args,
                                 Common::FormFactor ff_ )
 : Model( mcp, 1 ),
+  ff{ff_},
+  Ensemble{ Args.Remove( "Ensemble", mcp.pCorr->Ensemble ) },
+  ei{ GetEnsembleInfo() },
   Parent{ dynamic_cast<const ::CreateParams &>( mcp ).Parent },
   mf{ * dynamic_cast<const ModelFile *>( mcp.pCorr ) },
-  ff{ff_},
   idxFF{ Parent.ffIndex( ff ) },
-  p{ mcp.pCorr->Name_.MesonP[1].p },
-  Ensemble{ Args.Remove( "Ensemble", mcp.pCorr->Ensemble ) }
+  p{ mcp.pCorr->Name_.MesonP[1].p }
 {
+  // Check source and sink names match the parent
+  const Common::FileNameAtt &fna{ mcp.pCorr->Name_ };
+  if( fna.BaseShortParts.size() < 3 || fna.Spectator.empty() )
+    throw std::runtime_error( "Meson names not included in model filename " + fna.Filename );
+  std::string MesonSnk{ Common::MesonName( fna.BaseShortParts[1], fna.Spectator ) };
+  std::string MesonSrc{ Common::MesonName( fna.BaseShortParts[2], fna.Spectator ) };;
+  if( !Common::EqualIgnoreCase( MesonSnk, Parent.Meson[idxSnk] ) )
+    throw std::runtime_error( "ModelContinuum(): Snk " + MesonSnk
+                             + " doesn't match parent " + Parent.Meson[idxSnk] );
+  if( !Common::EqualIgnoreCase( MesonSrc, Parent.Meson[idxSrc] ) )
+    throw std::runtime_error( "ModelContinuum(): Src " + MesonSrc
+                             + " doesn't match parent " + Parent.Meson[idxSrc] );
   const ::CreateParams &cp{ dynamic_cast<const ::CreateParams &>( mcp ) };
-  if( Ensemble.empty() )
-    throw std::runtime_error( "ModelContinuum(): Ensemble unavailable - specify manually" );
-  typename EnsembleMapT::const_iterator cit{ Parent.EnsembleMap.find( Ensemble ) };
-  if( cit == Parent.EnsembleMap.cend() )
-    throw std::runtime_error( "ModelContinuum() Ensemble not supported " + Ensemble );
-  const EnsembleInfo &ei{ cit->second };
-  aInv_L = ei.aInv_L;
-  // Now remove source and sink names
-  bool bManualObjectID[2];
-  Meson[0] = Args.Remove( "Src", &bManualObjectID[0] );
-  Meson[1] = Args.Remove( "Snk", &bManualObjectID[1] );
-  if( !bManualObjectID[0] )
-  {
-    if( cp.pCorr->Name_.Quark.empty() )
-      throw std::runtime_error( "ModelContinuum(): Src unavailable - specify manually" );
-    Meson[0] = Common::MesonName( cp.pCorr->Name_.Quark[0], cp.pCorr->Name_.Spectator );
-  }
-  if( !bManualObjectID[1] )
-  {
-    if( cp.pCorr->Name_.Quark.size() < 2 )
-      throw std::runtime_error( "ModelContinuum(): Snk unavailable - specify manually" );
-    Meson[1] = Common::MesonName( cp.pCorr->Name_.Quark[1], cp.pCorr->Name_.Spectator );
-  }
-  if( Common::EqualIgnoreCase( Meson[0], Meson[1] ) )
-    throw std::runtime_error( "ModelContinuum(): Snk and Src are both " + Meson[0] );
   if( cp.pCorr->Name_.MesonP[0].p )
   {
     std::ostringstream os;
@@ -157,40 +154,15 @@ ModelContinuum::ModelContinuum( const Model::CreateParams &mcp, Model::Args &Arg
     throw std::runtime_error( os.str().c_str() );
   }
   // General parameters
-  aInv.Key.Object = { Ensemble };
-  aInv.Key.Name = "aInv";
-  fPi.Key.Name = "fPi";
-  mPi.Key.Object = aInv.Key.Object;
-  mPi.Key.Name = "mPi"; // Simulated pion mass on each ensemble
-  mPDGPi.Key.Name = "PDGPi";
-  mPDGH.Key.Name = std::toupper( cp.pCorr->Name_.Spectator[0] ) == 'S' ? "PDGDs" : "PDGD";
-  mPDGL.Key.Name = std::toupper( Meson[1][0] ) == 'K' ? "PDGK" : "PDGP";
-  Delta.Key.Name = "Delta";
-  Delta.Key.Object = { GetFormFactorString( ff ) };
   // X Vector
   EL.Key.Object = { Ensemble, std::to_string( p.p2() ) };
   EL.Key.Name = FieldEL;
-  kMu.Key.Object = EL.Key.Object;
-  kMu.Key.Name = "kMu";
   mH.Key.Object = { Ensemble };
   mH.Key.Name = "mH";
   mL.Key.Object = mH.Key.Object;
   mL.Key.Name = "mL";
-  qSq.Key.Object = kMu.Key.Object;
+  qSq.Key.Object = EL.Key.Object;
   qSq.Key.Name = FieldQSq;
-  // This is my model
-  for( int i = 0; i < NumConst; ++i )
-  {
-    c[i].Key.Object = Delta.Key.Object;
-    c[i].Key.Name = "c" + std::to_string( i );
-  }
-  if( Parent.CEnabled( idxFF, 0 ) )
-  {
-    FVSim.Key.Name = "FVSim";
-    FVSim.Key.Object = aInv.Key.Object;
-    FVPhys.Key.Name = "FVPhys";
-    FVPhys.Key.Object = aInv.Key.Object;
-  }
 }
 
 void ModelContinuum::DefineXVector( DataSet &ds, int i )
@@ -198,16 +170,13 @@ void ModelContinuum::DefineXVector( DataSet &ds, int i )
   aEL.Key.Object = { Ensemble, std::to_string( p.p2() ) };
   aEL.Key.Name = "a" + FieldEL;
   ds.AddConstant( aEL.Key, i, Param::Key{EL.Key.Name} );
-  akMu.Key.Object = aEL.Key.Object;
-  akMu.Key.Name = "akMu";
-  ds.AddConstant( akMu.Key, i, Param::Key{kMu.Key.Name} );
   amH.Key.Object = { Ensemble };
   amH.Key.Name = "amH";
   ds.AddConstant( amH.Key, i, Param::Key{mH.Key.Name} );
   amL.Key.Object = mH.Key.Object;
   amL.Key.Name = "amL";
   ds.AddConstant( amL.Key, i, Param::Key{mL.Key.Name} );
-  aqSq.Key.Object = kMu.Key.Object;
+  aqSq.Key.Object = aEL.Key.Object;
   aqSq.Key.Name = "a" + FieldQSq;
   ds.AddConstant( aqSq.Key, i, Param::Key{qSq.Key.Name} );
 }
@@ -226,59 +195,41 @@ std::string ModelContinuum::XVectorKey() const
 std::vector<Param::Key> ModelContinuum::XVectorKeyNames() const
 {
   std::vector<Param::Key> vk;
-  vk.reserve( 18 );
-  vk.push_back( aInv.Key );
-  vk.push_back( fPi.Key );
-  vk.push_back( mPi.Key );
-  vk.push_back( mPDGPi.Key );
-  if( Parent.CEnabled( idxFF, 0 ) )
-  {
-    vk.push_back( FVSim.Key );
-    vk.push_back( FVPhys.Key );
-  }
+  vk.reserve( 17 );
   vk.push_back( aEL.Key );
-  vk.push_back( akMu.Key );
   vk.push_back( amH.Key );
   vk.push_back( amL.Key );
   vk.push_back( aqSq.Key );
   vk.push_back( EL.Key );
-  vk.push_back( kMu.Key );
   vk.push_back( mH.Key );
   vk.push_back( mL.Key );
   vk.push_back( qSq.Key );
-  vk.push_back( mPDGH.Key );
-  vk.push_back( mPDGL.Key );
-  vk.push_back( Delta.Key );
+  // Do I need these? practical effect is to write these fields to the summary
+  vk.push_back( Parent.kaInv[ei.idx] );
+  vk.push_back( Parent.kPDGH );
+  vk.push_back( Parent.kPDGL );
+  vk.push_back( Parent.kfPi );
+  vk.push_back( Parent.kmPDGPi );
+  vk.push_back( Parent.kmPi[ei.idx] );
+  vk.push_back( Parent.kDelta[idxFF] );
+  if( Parent.CEnabled( idxFF, CChiral ) )
+  {
+    vk.push_back( Parent.kFVSim[ei.idx] );
+    vk.push_back( Parent.kFVPhys[ei.idx] );
+  }
   return vk;
 }
 
 void ModelContinuum::AddParameters( Params &mp )
 {
-  AddParam( mp, aInv );
-  AddParam( mp, fPi );
-  AddParam( mp, mPi );
-  AddParam( mp, mPDGPi );
-  if( Parent.CEnabled( idxFF, 0 ) )
-  {
-    AddParam( mp, FVSim, 1, false, Common::Param::Type::Derived );
-    AddParam( mp, FVPhys, 1, false, Common::Param::Type::Derived );
-  }
-  AddParam( mp, mPDGH );
-  AddParam( mp, mPDGL );
-  AddParam( mp, Delta, 1, false, Common::Param::Type::Derived );
   AddParam( mp, aEL );
-  AddParam( mp, akMu );
   AddParam( mp, amH );
   AddParam( mp, amL );
   AddParam( mp, aqSq );
   AddParam( mp, EL, 1, false, Common::Param::Type::Derived );
-  AddParam( mp, kMu, 1, false, Common::Param::Type::Derived );
   AddParam( mp, mH, 1, false, Common::Param::Type::Derived );
   AddParam( mp, mL, 1, false, Common::Param::Type::Derived );
   AddParam( mp, qSq, 1, false, Common::Param::Type::Derived );
-  for( int i = 0; i < NumConst; ++i )
-    if( Parent.CNeeded( idxFF, i ) )
-      AddParam( mp, c[i] );
 }
 
 std::size_t ModelContinuum::GetFitColumn() const
@@ -291,57 +242,45 @@ std::size_t ModelContinuum::GetFitColumn() const
 
 void ModelContinuum::SaveParameters( const Params &mp )
 {
-  aInv.idx = mp.at( aInv.Key )();
-  fPi.idx = mp.at( fPi.Key )();
-  mPi.idx = mp.at( mPi.Key )();
-  mPDGPi.idx = mp.at( mPDGPi.Key )();
-  if( Parent.CEnabled( idxFF, 0 ) )
-  {
-    FVSim.idx = mp.at( FVSim.Key )();
-    FVPhys.idx = mp.at( FVPhys.Key )();
-  }
-  mPDGH.idx = mp.at( mPDGH.Key )();
-  mPDGL.idx = mp.at( mPDGL.Key )();
-  Delta.idx = mp.at( Delta.Key )();
   aEL.idx = mp.at( aEL.Key )();
-  akMu.idx = mp.at( akMu.Key )();
   amH.idx = mp.at( amH.Key )();
   amL.idx = mp.at( amL.Key )();
   aqSq.idx = mp.at( aqSq.Key )();
   EL.idx = mp.at( EL.Key )();
-  kMu.idx = mp.at( kMu.Key )();
   mH.idx = mp.at( mH.Key )();
   mL.idx = mp.at( mL.Key )();
   qSq.idx = mp.at( qSq.Key )();
-  for( int i = 0; i < NumConst; ++i )
-    if( Parent.CNeeded( idxFF, i ) )
-      c[i].idx = mp.at( c[i].Key )();
 }
 
 // Get a descriptive string for the model
 std::string ModelContinuum::Description() const
 {
   std::ostringstream ss;
-  ss << sModelTypeContinuum << '(' << ff << ',' << Ensemble << ',' << p << ',' << aInv_L << ')';
+  ss << sModelTypeContinuum << '(' << ff << ',' << Ensemble << ',' << p << ',' << ei.aInv_L << ')';
   return ss.str().c_str();
 }
 
 void ModelContinuum::Guessable( ParamsPairs &PP ) const
 {
-  for( int i = 0; i < NumConst; ++i )
+  Common::Param::Key k;
+  k.Object.push_back( Common::GetFormFactorString( ff ) );
+  for( int i = 0; i < Parent.idxC[idxFF].size(); ++i )
     if( Parent.CNeeded( idxFF, i ) )
-      PP.SetState( ParamsPairs::State::Known, c[i].Key, c[i].param->size );
+    {
+      k.Name = "c" + std::to_string( i );
+      PP.SetState( ParamsPairs::State::Known, k, 1 );
+    }
 }
 
 std::size_t ModelContinuum::Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
                    const VectorView &FitData, std::vector<int> FitTimes,
                    bool bLastChance ) const
 {
-  for( int i = 0; i < NumConst; ++i )
+  for( int i = 0; i < Parent.idxC[idxFF].size(); ++i )
     if( Parent.CNeeded( idxFF, i ) )
     {
-      bKnown[c[i].idx] = true;
-      Guess[c[i].idx] = 1;
+      bKnown[Parent.idxC[idxFF][i]] = true;
+      Guess[Parent.idxC[idxFF][i]] = 1;
     }
   return 0;
 }
@@ -355,56 +294,54 @@ ModelType ModelContinuum::Type() const
 
 scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
-  static constexpr scalar FourPi{ 4. * M_PI };
-  // At zero momentum, check that the energy is the mass
-  if( !p.p2() && ModelParams[amL.idx] != ModelParams[aEL.idx] )
-    throw std::runtime_error( "ModelContinuum amL != aEL(0) on Ensemble " + Ensemble );
-  // Scale the data in lattice units by a
-  const scalar &_aInv{ ModelParams[aInv.idx] };
-  ModelParams[EL.idx] = ModelParams[aEL.idx] * _aInv;
-  ModelParams[kMu.idx] = ModelParams[akMu.idx] * _aInv;
-  ModelParams[mH.idx] = ModelParams[amH.idx] * _aInv;
-  ModelParams[mL.idx] = ModelParams[amL.idx] * _aInv;
-  ModelParams[qSq.idx] = ModelParams[aqSq.idx] * _aInv * _aInv;
-  // Compute the pole term
-  const scalar PoleTerm{ Lambda / ( ModelParams[EL.idx] + ModelParams[Delta.idx] ) };
+  const ContinuumFit::idxCT &idxC{ Parent.idxC[idxFF] };
   // Compute the chiral term
-  const scalar TermChiral = ModelParams[c[CChiral].idx] * ScratchPad[0]; // Chiral log term
+  // Chiral log term
+  const scalar mPi{ ModelParams[Parent.mPi[ei.idx]] };
+  const scalar mPDGPi{ ModelParams[Parent.idxmPDGPi] };
+  const scalar sFVSim{ Parent.CEnabled( idxFF, CChiral ) ? ModelParams[Parent.FVSim[ei.idx]] : 0 };
+  const scalar sFVPhys{ Parent.CEnabled( idxFF, CChiral ) ? ModelParams[Parent.FVPhys[ei.idx]] : 0 };
+  const scalar Num = DeltaF( mPi, sFVSim ) - DeltaF( mPDGPi, sFVPhys );
+  const scalar Denom = ContinuumFit::FourPi * ModelParams[Parent.idxfPi];
+  const scalar TermChiral = ModelParams[idxC[CChiral]] * ( 1 + Num / ( Denom * Denom ) );
   // Compute the MPi term
   scalar TermMPi = 0;
   if( Parent.CEnabled( idxFF, CMPi ) )
   {
-    scalar DeltaMPiSq = ModelParams[mPi.idx] * ModelParams[mPi.idx];
-    DeltaMPiSq -= ModelParams[mPDGPi.idx] * ModelParams[mPDGPi.idx];
-    TermMPi = ModelParams[c[CMPi].idx] * DeltaMPiSq * LambdaInv * LambdaInv;
+    const scalar DeltaMPiSq{ mPi * mPi - mPDGPi * mPDGPi };
+    TermMPi = ModelParams[idxC[CMPi]] * DeltaMPiSq * LambdaInvSq;
   }
   // Compute E_L / Lambda
   const scalar ELOnLambda{ ModelParams[EL.idx] * LambdaInv };
-  const scalar TermEL{ Parent.CEnabled( idxFF, CEOnL ) ? ModelParams[c[CEOnL].idx] * ELOnLambda : 0 };
+  const scalar TermEL{ Parent.CEnabled( idxFF, CEOnL ) ? ModelParams[idxC[CEOnL]] * ELOnLambda : 0 };
   scalar Power = ELOnLambda * ELOnLambda;
-  const scalar TermEL2{ Parent.CEnabled( idxFF, CEOnL2 ) ? ModelParams[c[CEOnL2].idx] * Power : 0 };
+  const scalar TermEL2{ Parent.CEnabled( idxFF, CEOnL2 ) ? ModelParams[idxC[CEOnL2]] * Power : 0 };
   Power *= ELOnLambda;
-  const scalar TermEL3{ Parent.CEnabled( idxFF, CEOnL3 ) ? ModelParams[c[CEOnL3].idx] * Power : 0 };
-  // Compute the c4 term
+  const scalar TermEL3{ Parent.CEnabled( idxFF, CEOnL3 ) ? ModelParams[idxC[CEOnL3]] * Power : 0 };
+  // Compute the Discretisation term
   scalar TermDiscret = 0;
   if( Parent.CEnabled( idxFF, CDiscret ) )
   {
-    const scalar aLambda{ Lambda / _aInv };
-    TermDiscret = ModelParams[c[CDiscret].idx] * aLambda * aLambda;
+    const scalar aInv{ ModelParams[Parent.aInv[ei.idx]] };
+    const scalar aLambda{ Lambda / aInv };
+    TermDiscret = ModelParams[idxC[CDiscret]] * aLambda * aLambda;
   }
   // Return model result
+  const scalar PoleTerm{ Lambda / ( ModelParams[EL.idx] + ModelParams[Parent.idxDelta[idxFF]] ) };
   const scalar Result = PoleTerm * (TermChiral + TermMPi + TermEL + TermEL2 + TermEL3 + TermDiscret);
   return Result;
 }
 
 // Cache values based solely on the model parameters (to speed up computation)
-void ModelContinuum::ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const
+void ModelContinuum::SetReplica( Vector &ScratchPad, Vector &ModelParams ) const
 {
-  const scalar sFVSim{ Parent.CEnabled( idxFF, CChiral ) ? ModelParams[FVSim.idx] : 0 };
-  const scalar sFVPhys{ Parent.CEnabled( idxFF, CChiral ) ? ModelParams[FVPhys.idx] : 0 };
-  // Chiral log term
-  const scalar Num = DeltaF( ModelParams[mPi.idx], sFVSim )
-                   - DeltaF( ModelParams[mPDGPi.idx], sFVPhys );
-  const scalar Denom = FourPi * ModelParams[fPi.idx];
-  ScratchPad[0] = 1 + Num / ( Denom * Denom );
+  // At zero momentum, check that the energy is the mass
+  if( !p.p2() && ModelParams[amL.idx] != ModelParams[aEL.idx] )
+    throw std::runtime_error( "ModelContinuum amL != aEL(0) on Ensemble " + Ensemble );
+  // Scale the data in lattice units by a
+  const scalar aInv{ ModelParams[Parent.aInv[ei.idx]] };
+  ModelParams[EL.idx] = ModelParams[aEL.idx] * aInv;
+  ModelParams[mH.idx] = ModelParams[amH.idx] * aInv;
+  ModelParams[mL.idx] = ModelParams[amL.idx] * aInv;
+  ModelParams[qSq.idx] = ModelParams[aqSq.idx] * aInv * aInv;
 }

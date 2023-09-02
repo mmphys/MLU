@@ -648,7 +648,7 @@ std::size_t Params::MaxExponents() const
 }
 
 template <typename T>
-void Params::Export( Vector<T> &vType, const Vector<T> &All, Param::Type type ) const
+void Params::AllToType( Vector<T> &vType, const Vector<T> &All, Param::Type type ) const
 {
   if( All.size != NumScalars( Param::Type::All ) )
   {
@@ -693,16 +693,16 @@ void Params::Export( Vector<T> &vType, const Vector<T> &All, Param::Type type ) 
   }
 }
 
-template void Params::Export<float>( Vector<float> &vType,
+template void Params::AllToType<float>( Vector<float> &vType,
                 const Vector<float> &All, Param::Type type ) const;
-template void Params::Export<double>( Vector<double> &vType,
+template void Params::AllToType<double>( Vector<double> &vType,
                 const Vector<double> &All, Param::Type type ) const;
 
 // Import values
 // If Ref is given, then we are importing errors, which we add in quadrature
 template <typename T>
-void Params::Import( Vector<T> &All, const VectorView<T> &Source, Param::Type SourceType,
-                     bool bSourceMonotonic, const Vector<T> * pRef ) const
+void Params::TypeToAll( Vector<T> &All, const VectorView<T> &Source, Param::Type SourceType,
+                        bool bSourceMonotonic, const Vector<T> * pRef ) const
 {
   if( All.size < NumScalars( Param::Type::All ) )
     throw( "Params::Import() All is too short" );
@@ -743,9 +743,9 @@ void Params::Import( Vector<T> &All, const VectorView<T> &Source, Param::Type So
   }
 }
 
-template void Params::Import<float>( Vector<float> &All, const VectorView<float> &vType,
+template void Params::TypeToAll<float>( Vector<float> &All, const VectorView<float> &vType,
               Param::Type type, bool bSourceMonotonic, const Vector<float> * pRef ) const;
-template void Params::Import<double>( Vector<double> &All, const VectorView<double> &vType,
+template void Params::TypeToAll<double>( Vector<double> &All, const VectorView<double> &vType,
               Param::Type type, bool bSourceMonotonic, const Vector<double> * pRef ) const;
 
 template <typename T>

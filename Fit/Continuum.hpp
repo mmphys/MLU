@@ -32,23 +32,17 @@
 #include "MultiFit.hpp"
 #include "Fitter.hpp"
 #include "Model.hpp"
-#include "ModelContinuum.hpp"
-
-// Stats on the ensembles we loaded from files
-struct EnsembleStat
-{
-  int Num;
-  Common::SeedType Seed;
-};
-using EnsembleStatMap = std::map<std::string, EnsembleStat, Common::LessCaseInsensitive>;
-using ESPair = std::pair<typename EnsembleStatMap::iterator, bool>;
 
 struct EnsembleInfo
 {
+  unsigned int idx;
   unsigned int aInv_L;
   unsigned int aInv_T;
 };
-using EnsembleMapT = std::map<std::string, EnsembleInfo>;
+struct EnsembleMapT : public std::map<std::string, EnsembleInfo, Common::LessCaseInsensitive>
+{
+  void Loaded(); // Call this once all ensembles loaded
+};
 
 struct ContinuumFit;
 
@@ -63,26 +57,65 @@ struct ContinuumFit : public FitController
 {
   static const std::string &FieldQSq;
   static const std::string &FieldEL;
-protected:
+  static constexpr scalar FourPi{ 4. * M_PI };
   static constexpr scalar InvGeV{ 1e-9 };
   static constexpr scalar InvGeVSq{ InvGeV * InvGeV };
   static constexpr scalar Lambda{ 1e9 };
-  static constexpr scalar InvLambda{ 1. / Lambda };
+  static constexpr scalar LambdaInv{ 1. / Lambda };
+  static constexpr scalar LambdaInvSq{ LambdaInv * LambdaInv };
   static constexpr int NumTicks{ 200 };
   static constexpr int NumFF{ 2 };
-  static constexpr int NumConst{ ModelContinuum::NumConst };
-  static constexpr int CChiral{ ModelContinuum::CChiral };
-  static constexpr int CMPi{ ModelContinuum::CMPi };
-  static constexpr int CDiscret{ ModelContinuum::CDiscret };
-  static constexpr int CEOnL{ ModelContinuum::CEOnL };
-  static constexpr int CEOnL2{ ModelContinuum::CEOnL2 };
-  static constexpr int CEOnL3{ ModelContinuum::CEOnL3 };
+  static constexpr int NumConst{ 6 };
+  static constexpr int CChiral{ 0 };
+  static constexpr int CMPi{ 1 };
+  static constexpr int CDiscret{ 4 };
+  static constexpr int CEOnL{ 2 };
+  static constexpr int CEOnL2{ 3 };
+  static constexpr int CEOnL3{ 5 };
+  static constexpr std::size_t idxCUnused{ std::numeric_limits<std::size_t>::max() };
   static const std::string sPDG;
-  Common::CommandLine &cl;
-public:
-  EnsembleMapT EnsembleMap;
-protected:
 
+  Common::CommandLine &cl;
+  const int NumSamples;
+  const bool doCorr;
+  const bool CovarBlock;
+  const Common::FormFactor ffDefault;
+  const std::array<std::array<bool, NumConst>, NumFF> cEnabled;
+  const std::string inBase;
+  const std::string outBaseFileName;
+  DataSet ds;
+  std::vector<std::string> OpName;
+  std::vector<Model::Args> ModelArgs;
+  std::unique_ptr<Fitter> f;
+  EnsembleMapT EnsembleMap;
+
+  std::array<std::string, 2> Meson;
+  // Global parameters
+  std::size_t idxfPi;
+  std::size_t idxmPDGPi;
+  std::size_t idxPDGH;
+  std::size_t idxPDGL;
+  // Per form factor parameters
+  using idxCT = std::array<std::size_t, NumConst>;
+  std::array<idxCT, NumFF> idxC;
+  std::array<std::size_t, NumFF> idxDelta;
+  std::array<std::size_t, NumFF> idxPDGDStar;
+  // Per ensemble parameters
+  std::vector<std::size_t> aInv, mPi, FVSim, FVPhys;
+
+  // Global keys
+  Common::Param::Key kfPi;
+  Common::Param::Key kmPDGPi;
+  Common::Param::Key kPDGH;
+  Common::Param::Key kPDGL;
+  // Per form factor keys
+  std::array<std::array<Common::Param::Key, NumConst>, NumFF> kC;
+  std::array<Common::Param::Key, NumFF> kDelta;
+  std::array<Common::Param::Key, NumFF> kPDGDStar;
+  // Per ensemble keys
+  std::vector<Common::Param::Key> kaInv, kmPi, kFVSim, kFVPhys;
+
+protected:
   struct EnsembleFF
   {
     std::string Ensemble;
@@ -100,33 +133,18 @@ protected:
     }
   };
   using EnsembleFFSetT = std::set<EnsembleFF, EnsembleFFLess>;
-
-public:
-  const int NumSamples;
-  const bool doCorr;
-  const bool CovarBlock;
-  const Common::FormFactor ffDefault;
-  const std::array<std::array<bool, NumConst>, NumFF> cEnabled;
-  const std::string inBase;
-  const std::string outBaseFileName;
-  DataSet ds;
-  std::vector<std::string> OpName;
-  std::vector<Model::Args> ModelArgs;
-  std::unique_ptr<Fitter> f;
-  explicit ContinuumFit( Common::CommandLine &cl );
-  virtual ~ContinuumFit() {}
-  void ParamsAdjust( Common::Params &mp, const Fitter &f ) const override;
-  void SaveParameters( Common::Params &mp, const Fitter &f ) override;
-  void SetReplica( Vector &ModelParams ) const override;
-  void ComputeDerived( Vector &ModelParams ) const override;
-  int Run();
-  inline bool CEnabled( int idxFF, int C ) const { return cEnabled[ idxFF ][C]; }
-  inline bool CEnabled( Common::FormFactor ff, int C ) const { return CEnabled( ffIndex( ff ), C ); }
-  inline bool CNeeded( int idxFF, int C ) const { return C == CChiral || CEnabled( idxFF, C ); }
-  inline bool CNeeded( Common::FormFactor ff, int C ) const { return CNeeded( ffIndex( ff ), C ); }
-protected:
-  EnsembleStatMap EnsembleStats;
   EnsembleFFSetT  EnsembleFFs;
+
+  // Stats on the ensembles we loaded from files
+  struct EnsembleStat
+  {
+    int Num;
+    Common::SeedType Seed;
+  };
+  using EnsembleStatMap = std::map<std::string, EnsembleStat, Common::LessCaseInsensitive>;
+  EnsembleStatMap EnsembleStats;
+  //using ESPair = std::pair<typename EnsembleStatMap::iterator, bool>;
+
   // Which form factor am I fitting
   static constexpr unsigned int uiFF0 = 1;
   static constexpr unsigned int uiFFPlus = 2;
@@ -158,15 +176,19 @@ public:
     os << "ContinuumFit::ffIndex() " << ff << " invalid";
     throw std::runtime_error( os.str().c_str() );
   }
+
+  explicit ContinuumFit( Common::CommandLine &cl );
+  virtual ~ContinuumFit() {}
+  void ParamsAdjust( Common::Params &mp, const Fitter &f ) override;
+  void SaveParameters( Common::Params &mp, const Fitter &f ) override;
+  void SetReplica( Vector &ModelParams ) const override;
+  void ComputeDerived( Vector &ModelParams ) const override;
+  int Run();
+  inline bool CEnabled( int idxFF, int C ) const { return cEnabled[ idxFF ][C]; }
+  inline bool CEnabled( Common::FormFactor ff, int C ) const { return CEnabled( ffIndex( ff ), C ); }
+  inline bool CNeeded( int idxFF, int C ) const { return C == CChiral || CEnabled( idxFF, C ); }
+  inline bool CNeeded( Common::FormFactor ff, int C ) const { return CNeeded( ffIndex( ff ), C ); }
 protected:
-  static constexpr std::size_t idxCUnused{ std::numeric_limits<std::size_t>::max() };
-  std::array<std::array<std::size_t, NumConst>, NumFF> idxC;
-  std::array<std::size_t, NumFF> idxDelta;
-  std::array<std::size_t, NumFF> idxPDGDStar;
-  std::size_t idxPDGH;
-  std::size_t idxPDGL;
-  std::size_t idxmPDGPi;
-  std::vector<std::size_t> aInv, mPi, FVSim, FVPhys;
   inline static scalar EOfQSq( scalar PDGH, scalar PDGL, scalar qSq )
   {
     const scalar E{ ( PDGH * PDGH + PDGL * PDGL - qSq ) / ( 2 * PDGH ) };
@@ -177,7 +199,6 @@ protected:
     return EOfQSq( f->OutputModel(rep,idxPDGH), f->OutputModel(rep,idxPDGL), qSq );
   }
   std::string sOpNameConcat; // Sorted, concatenated list of operators in the fit for filenames
-  std::array<std::string, 2> Meson;
   static const std::string &GetPoleMassName( Common::FormFactor ff, const Common::FileNameAtt &fna );
   static Common::FormFactor ValidateFF( Common::FormFactor ff );
   void AddEnsemble( const std::string &Ensemble, Common::FormFactor thisFF );
@@ -192,8 +213,8 @@ protected:
   std::string GetOutputFilename( unsigned int uiFF );
   void ShowCovar();
   void MakeCovarBlock();
-  void GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max,
-                  ModelParam ModelContinuum::* mp, const std::string &Field ) const;
+  void GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max, int Loop,
+                  const std::string &Field ) const;
   std::ofstream WriteHeader( const std::string &sPrefix, const std::string &FileType ) const;
   void WriteFieldName( std::ofstream &os, const std::string &FieldName ) const;
   void WriteFitQSq( Common::FormFactor ff, const std::string &sPrefix ) const;

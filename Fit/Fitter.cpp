@@ -98,7 +98,7 @@ Fitter::Fitter( Model::CreateParams &mcp, DataSet &ds_,
                                  + " parameters, but there are "
                                  + std::to_string( mp.NumScalars( Param::Type::Variable ) )
                                  + " variable parameters" );
-    mp.Import<scalar>( Guess, vGuess, Param::Type::Variable, false );
+    mp.TypeToAll<scalar>( Guess, vGuess, Param::Type::Variable, false );
   }
   // Load the constants into the fixed portion of the guess
   ds.GetFixed( Fold::idxCentral, Guess, ParamFixed );
@@ -199,6 +199,8 @@ Params Fitter::MakeModelParams()
       m->param.clear();
       m->AddParameters( mp );
     }
+    // Give the controller the option to adjust params
+    fitController.ParamsAdjust( mp, *this );
     // Loop through parameters - see if they are available as constants
     for( const Params::value_type &it : mp )
     {
@@ -231,8 +233,6 @@ Params Fitter::MakeModelParams()
         mp.SetType( pk, Param::Type::Fixed, bSwapSourceSink );
       }
     }
-    // Give the controller the option to adjust params
-    fitController.ParamsAdjust( mp, *this );
     // At this point we have a definitive list of parameters - models can save offsets
     mp.AssignOffsets();
     for( ModelPtr &m : model )
@@ -246,7 +246,12 @@ Params Fitter::MakeModelParams()
       if( p.type == Param::Type::Fixed )
       {
         DataSet::ConstMap::const_iterator cit{ ds.constMap.find( pk ) };
-        assert( cit != ds.constMap.cend() && "Constant unavailable (bug)" );
+        if( cit == ds.constMap.cend() )
+        {
+          std::ostringstream os;
+          os << "Fitter::MakeModelParams() Constant unavailable " << pk;
+          throw std::runtime_error( os.str().c_str() );
+        }
         ParamFixed.emplace_back( cit->second, p.size, static_cast<int>( p() ) );
       }
     }

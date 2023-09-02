@@ -138,8 +138,13 @@ public:
   virtual void ReduceUnknown( const ParamsPairs &PP ) {} // Most models won't be able to do this
   // How big a scratchpad is required for each model?
   virtual int GetScratchPadSize() const { return 0; }
-  // Cache values based solely on the model parameters (to speed up computation)
-  virtual void ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const {};
+  /// This is called once at the start of each replica
+  virtual void SetReplica( Vector &ScratchPad, Vector &ModelParams ) const {}
+  /**
+   Cache values based solely on the model parameters (to speed up computation)
+   Called once per guess (not every timeslice)
+   **/
+  virtual void ModelParamsChanged( Vector &ScratchPad, const Vector &ModelParams ) const {}
 };
 
 // Models which describe a single object. Use with multiple inheritance
