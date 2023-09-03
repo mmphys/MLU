@@ -195,7 +195,7 @@ std::string ModelContinuum::XVectorKey() const
 std::vector<Param::Key> ModelContinuum::XVectorKeyNames() const
 {
   std::vector<Param::Key> vk;
-  vk.reserve( 17 );
+  vk.reserve( 20 );
   vk.push_back( aEL.Key );
   vk.push_back( amH.Key );
   vk.push_back( amL.Key );
@@ -212,11 +212,18 @@ std::vector<Param::Key> ModelContinuum::XVectorKeyNames() const
   vk.push_back( Parent.kmPDGPi );
   vk.push_back( Parent.kmPi[ei.idx] );
   vk.push_back( Parent.kDelta[idxFF] );
-  if( Parent.CEnabled( idxFF, CChiral ) )
+  if( Parent.FVEnabled[idxFF] )
   {
     vk.push_back( Parent.kFVSim[ei.idx] );
     vk.push_back( Parent.kFVPhys[ei.idx] );
   }
+  if( Parent.ChiEnabled[idxFF] )
+  {
+    vk.push_back( Parent.kChiSim[ei.idx] );
+    vk.push_back( Parent.kChiPhys );
+  }
+  if( Parent.FVEnabled[idxFF] || Parent.ChiEnabled[idxFF] )
+    vk.push_back( Parent.kChiFV[ei.idx] );
   return vk;
 }
 
@@ -262,25 +269,43 @@ std::string ModelContinuum::Description() const
 
 void ModelContinuum::Guessable( ParamsPairs &PP ) const
 {
-  Common::Param::Key k;
-  k.Object.push_back( Common::GetFormFactorString( ff ) );
-  for( int i = 0; i < Parent.idxC[idxFF].size(); ++i )
-    if( Parent.CNeeded( idxFF, i ) )
-    {
-      k.Name = "c" + std::to_string( i );
-      PP.SetState( ParamsPairs::State::Known, k, 1 );
-    }
+  if( Parent.c0Enabled[idxFF] )
+    PP.SetState( ParamsPairs::State::Known, Parent.kC0[idxFF], 1 );
+  if( Parent.c1Enabled[idxFF] )
+    PP.SetState( ParamsPairs::State::Known, Parent.kC1[idxFF], 1 );
+  for( unsigned int i = 0; i < Parent.dEnabled[idxFF].size(); ++i )
+    if( Parent.dEnabled[idxFF][i] )
+      PP.SetState( ParamsPairs::State::Known, Parent.kD[idxFF][i], 1 );
+  for( unsigned int i = 0; i < Parent.eEnabled[idxFF].size(); ++i )
+    if( Parent.eEnabled[idxFF][i] )
+      PP.SetState( ParamsPairs::State::Known, Parent.kE[idxFF][i], 1 );
 }
 
 std::size_t ModelContinuum::Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
                    const VectorView &FitData, std::vector<int> FitTimes,
                    bool bLastChance ) const
 {
-  for( int i = 0; i < Parent.idxC[idxFF].size(); ++i )
-    if( Parent.CNeeded( idxFF, i ) )
+  if( Parent.c0Enabled[idxFF] && !bKnown[Parent.idxC0[idxFF]] )
+  {
+    Guess[Parent.idxC0[idxFF]] = 1;
+    bKnown[Parent.idxC0[idxFF]] = true;
+  }
+  if( Parent.c1Enabled[idxFF] && !bKnown[Parent.idxC1[idxFF]] )
+  {
+    Guess[Parent.idxC1[idxFF]] = 1;
+    bKnown[Parent.idxC1[idxFF]] = true;
+  }
+  for( unsigned int i = 0; i < Parent.dEnabled[idxFF].size(); ++i )
+    if( Parent.dEnabled[idxFF][i] && !bKnown[Parent.idxD[idxFF][i]] )
     {
-      bKnown[Parent.idxC[idxFF][i]] = true;
-      Guess[Parent.idxC[idxFF][i]] = 1;
+      Guess[Parent.idxD[idxFF][i]] = 1;
+      bKnown[Parent.idxD[idxFF][i]] = true;
+    }
+  for( unsigned int i = 0; i < Parent.eEnabled[idxFF].size(); ++i )
+    if( Parent.eEnabled[idxFF][i] && !bKnown[Parent.idxE[idxFF][i]] )
+    {
+      Guess[Parent.idxE[idxFF][i]] = 1;
+      bKnown[Parent.idxE[idxFF][i]] = true;
     }
   return 0;
 }
@@ -294,41 +319,46 @@ ModelType ModelContinuum::Type() const
 
 scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParams ) const
 {
-  const ContinuumFit::idxCT &idxC{ Parent.idxC[idxFF] };
   // Compute the chiral term
   // Chiral log term
-  const scalar mPi{ ModelParams[Parent.mPi[ei.idx]] };
+  const scalar mPi{ ModelParams[Parent.idxmPi[ei.idx]] };
   const scalar mPDGPi{ ModelParams[Parent.idxmPDGPi] };
-  const scalar sFVSim{ Parent.CEnabled( idxFF, CChiral ) ? ModelParams[Parent.FVSim[ei.idx]] : 0 };
-  const scalar sFVPhys{ Parent.CEnabled( idxFF, CChiral ) ? ModelParams[Parent.FVPhys[ei.idx]] : 0 };
-  const scalar Num = DeltaF( mPi, sFVSim ) - DeltaF( mPDGPi, sFVPhys );
-  const scalar Denom = ContinuumFit::FourPi * ModelParams[Parent.idxfPi];
-  const scalar TermChiral = ModelParams[idxC[CChiral]] * ( 1 + Num / ( Denom * Denom ) );
+  const scalar sChiFV{ Parent.ChiEnabled[idxFF] || Parent.FVEnabled[idxFF]
+                       ? ModelParams[Parent.idxChiFV[ei.idx]] : 0 };
+  const scalar TermChiral = Parent.c0Enabled[idxFF]
+                            ? ModelParams[Parent.idxC0[idxFF]] * ( 1 + sChiFV ) : 0;
   // Compute the MPi term
   scalar TermMPi = 0;
-  if( Parent.CEnabled( idxFF, CMPi ) )
+  if( Parent.c1Enabled[idxFF] )
   {
     const scalar DeltaMPiSq{ mPi * mPi - mPDGPi * mPDGPi };
-    TermMPi = ModelParams[idxC[CMPi]] * DeltaMPiSq * LambdaInvSq;
+    TermMPi = ModelParams[Parent.idxC1[idxFF]] * DeltaMPiSq * LambdaInvSq;
   }
   // Compute E_L / Lambda
   const scalar ELOnLambda{ ModelParams[EL.idx] * LambdaInv };
-  const scalar TermEL{ Parent.CEnabled( idxFF, CEOnL ) ? ModelParams[idxC[CEOnL]] * ELOnLambda : 0 };
-  scalar Power = ELOnLambda * ELOnLambda;
-  const scalar TermEL2{ Parent.CEnabled( idxFF, CEOnL2 ) ? ModelParams[idxC[CEOnL2]] * Power : 0 };
-  Power *= ELOnLambda;
-  const scalar TermEL3{ Parent.CEnabled( idxFF, CEOnL3 ) ? ModelParams[idxC[CEOnL3]] * Power : 0 };
-  // Compute the Discretisation term
-  scalar TermDiscret = 0;
-  if( Parent.CEnabled( idxFF, CDiscret ) )
+  scalar Factor = ELOnLambda;
+  scalar TermEL = 0;
+  for( unsigned int i = 0; i < Parent.eEnabled[idxFF].size(); ++i )
   {
-    const scalar aInv{ ModelParams[Parent.aInv[ei.idx]] };
-    const scalar aLambda{ Lambda / aInv };
-    TermDiscret = ModelParams[idxC[CDiscret]] * aLambda * aLambda;
+    if( Parent.eEnabled[idxFF][i] )
+      TermEL += ModelParams[Parent.idxE[idxFF][i]] * Factor;
+    Factor *= ELOnLambda;
+  }
+  // Compute the Discretisation term
+  const scalar aInv{ ModelParams[Parent.idxaInv[ei.idx]] };
+  const scalar aLambda{ Lambda / aInv };
+  const scalar aLambdaSq{ aLambda * aLambda };
+  Factor = aLambdaSq;
+  scalar TermDisc = 0;
+  for( unsigned int i = 0; i < Parent.dEnabled[idxFF].size(); ++i )
+  {
+    if( Parent.dEnabled[idxFF][i] )
+      TermDisc += ModelParams[Parent.idxD[idxFF][i]] * Factor;
+    Factor *= aLambdaSq;
   }
   // Return model result
   const scalar PoleTerm{ Lambda / ( ModelParams[EL.idx] + ModelParams[Parent.idxDelta[idxFF]] ) };
-  const scalar Result = PoleTerm * (TermChiral + TermMPi + TermEL + TermEL2 + TermEL3 + TermDiscret);
+  const scalar Result = PoleTerm * ( TermChiral + TermMPi + TermEL + TermDisc );
   return Result;
 }
 
@@ -339,7 +369,7 @@ void ModelContinuum::SetReplica( Vector &ScratchPad, Vector &ModelParams ) const
   if( !p.p2() && ModelParams[amL.idx] != ModelParams[aEL.idx] )
     throw std::runtime_error( "ModelContinuum amL != aEL(0) on Ensemble " + Ensemble );
   // Scale the data in lattice units by a
-  const scalar aInv{ ModelParams[Parent.aInv[ei.idx]] };
+  const scalar aInv{ ModelParams[Parent.idxaInv[ei.idx]] };
   ModelParams[EL.idx] = ModelParams[aEL.idx] * aInv;
   ModelParams[mH.idx] = ModelParams[amH.idx] * aInv;
   ModelParams[mL.idx] = ModelParams[amL.idx] * aInv;

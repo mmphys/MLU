@@ -8,6 +8,8 @@ set -e
 # User input
 
 # Optional
+#  D:         Number of discretisation constants (default: 1)
+#  E:         Number of energy constants (default: 3)
 #  Separate:  Set to anything to perform separate fits for f0 and fplus
 #  FitSeries: Name of series to fit
 #  Disable:   List of constants to disable (each between 0 and 4) both form factors
@@ -50,9 +52,11 @@ fi
 ###################################################
 
 unset Disabled
+[ -v D ] && Disabled+="D$D"
+[ -v E ] && Disabled+="E$E"
 if [ "$Disable" != '' ] || [ "$DisableZ" != '' ] || [ "$DisableP" != '' ]
 then
-  Disabled="-C$Disable"
+  Disabled+="-C$Disable"
   [ "$DisableZ" != '' ] && Disabled+="Z$DisableZ"
   [ "$DisableP" != '' ] && Disabled+="P$DisableP"
   DisableZ="$Disable$DisableZ"
@@ -142,6 +146,8 @@ function DoFit()
 ###################################################
 
 Continuum="Continuum --debug-signals --Hotelling 0 --summary 2"
+[ -v D ] && Continuum+=" -d $D"
+[ -v E ] && Continuum+=" -e $E"
 Continuum+=" --overwrite"
 Continuum+=" --model ${MLUCache}EnsembleInfo.h5"
 Continuum+=" -i $HOME/NoSync/"

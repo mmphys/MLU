@@ -300,6 +300,11 @@ std::istream& operator>>( std::istream& is, FormFactor &ff );
 // These are the terms used in my continuum fit
 struct DeltaF
 {
+  inline static double ChiralLog( const double M, const double LambdaInv )
+  {
+    const double lnMOnLambda{ std::log( std::abs( M * LambdaInv ) ) };
+    return 2. * M * M * lnMOnLambda;
+  }
   inline static double FiniteVol( const double M, const double L, const unsigned int aInv_L )
   {
               double FV{};

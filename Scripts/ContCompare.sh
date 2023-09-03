@@ -13,7 +13,7 @@ Which=${Which:-all} # all / some
 Base=Cont
 CompareDir=Var
 PlotDir=Plot
-Ref=Simul/renorm-CZ35_all # This is the reference fit
+Ref=Simul/renorm-CZ34_all # This is the reference fit
 
 Prefix=F3_K_Ds.corr_
 Suffix=.g5P_g5W.model_fit.txt
@@ -49,17 +49,19 @@ set ylabel '$\delta f_{'.FLabel.'}^{D_s \rightarrow K}$ / \%'
 
 FieldFile(Field,Seq,FF)=CompareDir.'/'.Field.'_'.sprintf("%c",Seq+64).'_'.FF.'.txt'
 
-array PlotTitles[10]
+array PlotTitles[12]
 PlotTitles[1]='$\delta^{\left(\textrm{FV}\right)}$'
-PlotTitles[2]='$\left(a \Lambda\right)^2$'
-PlotTitles[3]='$\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
-PlotTitles[4]='$\left(\flatfrac{E_L}{\Lambda}\right)^3$'
-PlotTitles[5]='C2'
-PlotTitles[6]='M3'
-PlotTitles[7]='F1M'
-PlotTitles[8]='M1M2M3'
-PlotTitles[9]='C1C2 and '.PlotTitles[2]
-PlotTitles[10]='\$n^2_{\textrm{max}}$ C1C2'
+PlotTitles[2]='$\delta^{\left(\textrm{chiral}\right)}$'
+PlotTitles[3]=PlotTitles[1].' and '.PlotTitles[2]
+PlotTitles[4]='$\left(a \Lambda\right)^2$'
+PlotTitles[5]='$\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
+PlotTitles[6]='$\left(\flatfrac{E_L}{\Lambda}\right)^3$'
+PlotTitles[7]='C2'
+PlotTitles[8]='M3'
+PlotTitles[9]='F1M'
+PlotTitles[10]='M1M2M3'
+PlotTitles[11]='C1C2 and '.PlotTitles[4]
+PlotTitles[12]='\$n^2_{\textrm{max}}$ C1C2'
 
 PlotPrefix="'$Ref/$Prefix'.FF.'$Suffix' using "
 PlotPrefix=PlotPrefix."(stringcolumn('field') eq Field ? column('x')*XScale : NaN)"
@@ -69,11 +71,11 @@ PlotPrefix=PlotPrefix."with filledcurves title 'Error' fc 'gray05' fs transparen
 do for [Loop=1:2] {
 
 if( Loop == 2 ) {
-  PlotTitles[2]=''
-  PlotTitles[9]=''
+  PlotTitles[4]=''
+  PlotTitles[11]=''
   set key top left Left reverse maxrows 6
 } else {
-  set key center left Left reverse maxrows 6
+  set key center left Left reverse maxrows 7
 }
 
 Cmd=''
@@ -158,17 +160,18 @@ function MakeAll()
 	\hline
 EOFMARK
 
-  MakeOne A Omit/renorm-C0Z35_$Which # Omit FV
-  MakeOne B Omit/renorm-C4Z35_$Which # Omit FV
-  MakeOne C Omit/renorm-C1Z35_$Which # Omit FV
-  #MakeOne D Simul/renorm-C35P1_$Which # Omit (E/Lambda)^3
-  MakeOne D Omit/renorm-C5Z3_$Which # Omit (E/Lambda)^3
-  MakeOne E C2/renorm-CZ35_$Which # Omit C2
-  MakeOne F M3/renorm-CZ35_$Which # Omit M3
-  MakeOne G CM/renorm-CZ35_$Which # Omit F1M
-  MakeOne H CF/renorm-CZ35_$Which # Omit M1, M2, M3
-  MakeOne I MF/renorm-C4Z35_$Which # Omit C1, C2
-  MakeOne J Simul/renorm-CZ35_some # Omit n^2_max from C1 C2
+  MakeOne a Omit/renorm-CVZ34_$Which # Omit FV
+  MakeOne b Omit/renorm-CXZ34_all # Omit Chiral
+  MakeOne c Omit/renormE2-CVXZ3_all # Omit FV and Chiral
+  MakeOne d Omit/renormD0-CZ34_$Which # Omit a Lambda
+  MakeOne e Omit/renorm-C1Z34_$Which # Omit Delta Mpi / Lambda
+  MakeOne f Omit/renormE2-CZ3_$Which # Omit (E/Lambda)^3
+  MakeOne g C2/renorm-CZ34_$Which # Omit C2
+  MakeOne h M3/renorm-CZ34_$Which # Omit M3
+  MakeOne i CM/renorm-CZ34_$Which # Omit F1M
+  MakeOne j CF/renorm-CZ34_$Which # Omit M1, M2, M3
+  MakeOne k MF/renormD0-CZ34_$Which # Omit C1, C2
+  MakeOne l Simul/renorm-CZ34_some # Omit n^2_max from C1 C2
 
   cat >> "$SummaryFile" <<-"EOFMARK"
 	\hline

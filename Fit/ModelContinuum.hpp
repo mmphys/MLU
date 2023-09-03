@@ -43,12 +43,6 @@ struct ContinuumFit;
 struct ModelContinuum : Model
 {
   //friend class ContinuumFit;
-  static constexpr int CChiral{ ContinuumFit::CChiral };
-  static constexpr int CMPi{ ContinuumFit::CMPi };
-  static constexpr int CDiscret{ ContinuumFit::CDiscret };
-  static constexpr int CEOnL{ ContinuumFit::CEOnL };
-  static constexpr int CEOnL2{ ContinuumFit::CEOnL2 };
-  static constexpr int CEOnL3{ ContinuumFit::CEOnL3 };
   static constexpr scalar Lambda{ ContinuumFit::Lambda }; // Units GeV (for now this is hardwired)
   static constexpr scalar LambdaInv{ ContinuumFit::LambdaInv };
   static constexpr scalar LambdaInvSq{ ContinuumFit::LambdaInvSq };
@@ -66,11 +60,6 @@ protected:
   ModelParam aEL, amH, amL, aqSq;
   const EnsembleInfo &GetEnsembleInfo() const;
 public:
-  inline scalar DeltaF( scalar M, scalar FV ) const
-  {
-    const scalar ChiralLog{ 2. * M * M * std::log( std::abs( M * LambdaInv ) ) };
-    return -0.75 * ( ChiralLog + FV );
-  }
   ModelContinuum( const Model::CreateParams &cp, Model::Args &Args, Common::FormFactor ff );
   void DefineXVector( DataSet &ds, int i ) override;
   const std::string &XVectorKeyName() const override;

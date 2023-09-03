@@ -55,6 +55,7 @@ struct CreateParams : public Model::CreateParams
 
 struct ContinuumFit : public FitController
 {
+  static const std::string sPDG;
   static const std::string &FieldQSq;
   static const std::string &FieldEL;
   static constexpr scalar FourPi{ 4. * M_PI };
@@ -65,57 +66,77 @@ struct ContinuumFit : public FitController
   static constexpr scalar LambdaInvSq{ LambdaInv * LambdaInv };
   static constexpr int NumTicks{ 200 };
   static constexpr int NumFF{ 2 };
-  static constexpr int NumConst{ 6 };
-  static constexpr int CChiral{ 0 };
-  static constexpr int CMPi{ 1 };
-  static constexpr int CDiscret{ 4 };
-  static constexpr int CEOnL{ 2 };
-  static constexpr int CEOnL2{ 3 };
-  static constexpr int CEOnL3{ 5 };
-  static constexpr std::size_t idxCUnused{ std::numeric_limits<std::size_t>::max() };
-  static const std::string sPDG;
+  static constexpr const std::size_t idxUnused{ std::numeric_limits<std::size_t>::max() };
 
   Common::CommandLine &cl;
+  const unsigned int NumD, NumE;
   const int NumSamples;
   const bool doCorr;
   const bool CovarBlock;
   const Common::FormFactor ffDefault;
-  const std::array<std::array<bool, NumConst>, NumFF> cEnabled;
   const std::string inBase;
   const std::string outBaseFileName;
   DataSet ds;
+  std::array<std::string, 2> Meson;
   std::vector<std::string> OpName;
   std::vector<Model::Args> ModelArgs;
   std::unique_ptr<Fitter> f;
   EnsembleMapT EnsembleMap;
 
-  std::array<std::string, 2> Meson;
+  std::array<bool, NumFF> c0Enabled, c1Enabled, ChiEnabled, FVEnabled;
+  std::array<std::vector<bool>, NumFF> dEnabled, eEnabled;
+
   // Global parameters
   std::size_t idxfPi;
   std::size_t idxmPDGPi;
   std::size_t idxPDGH;
   std::size_t idxPDGL;
+  std::size_t idxChiralPhys;
   // Per form factor parameters
-  using idxCT = std::array<std::size_t, NumConst>;
-  std::array<idxCT, NumFF> idxC;
+  std::array<std::size_t, NumFF> idxC0, idxC1;
+  std::array<std::vector<std::size_t>, NumFF> idxD, idxE; // Discretisation / energy
   std::array<std::size_t, NumFF> idxDelta;
   std::array<std::size_t, NumFF> idxPDGDStar;
   // Per ensemble parameters
-  std::vector<std::size_t> aInv, mPi, FVSim, FVPhys;
+  std::vector<std::size_t> idxaInv, idxmPi, idxFVSim, idxFVPhys, idxChiSim, idxChiFV;
 
   // Global keys
   Common::Param::Key kfPi;
   Common::Param::Key kmPDGPi;
   Common::Param::Key kPDGH;
   Common::Param::Key kPDGL;
+  Common::Param::Key kChiPhys;
   // Per form factor keys
-  std::array<std::array<Common::Param::Key, NumConst>, NumFF> kC;
+  std::array<Common::Param::Key, NumFF> kC0, kC1;
+  std::array<std::vector<Common::Param::Key>, NumFF> kD, kE;
   std::array<Common::Param::Key, NumFF> kDelta;
   std::array<Common::Param::Key, NumFF> kPDGDStar;
   // Per ensemble keys
-  std::vector<Common::Param::Key> kaInv, kmPi, kFVSim, kFVPhys;
+  std::vector<Common::Param::Key> kaInv, kmPi, kFVSim, kFVPhys, kChiSim, kChiFV;
 
 protected:
+  // The global constraint
+  std::size_t idxConstraint;
+  unsigned int WhichConstraint;
+  inline const Common::Param::Key &ConstraintKey() const
+  {
+    if( WhichConstraint < eEnabled[idxFFPlus].size() )
+      return kE[idxFFPlus][WhichConstraint];
+    return kC0[idxFFPlus];
+  }
+
+  /// Do I need to compute Finite Volume corrections on each ensemble
+  inline bool NeedFV() const { return ( uiFF & uiFF0 && FVEnabled[idxFF0] )
+                                   || ( uiFF & uiFFPlus && FVEnabled[idxFFPlus] ); }
+  /// Do I need to compute chiral corrections on each ensemble
+  inline bool NeedChiral() const { return ( uiFF & uiFF0 && ChiEnabled[idxFF0] )
+                                       || ( uiFF & uiFFPlus && ChiEnabled[idxFFPlus] ); }
+
+  inline scalar DeltaF( scalar Chiral, scalar FV ) const
+  {
+    return -0.75 * ( Chiral + FV );
+  }
+
   struct EnsembleFF
   {
     std::string Ensemble;
@@ -184,10 +205,6 @@ public:
   void SetReplica( Vector &ModelParams ) const override;
   void ComputeDerived( Vector &ModelParams ) const override;
   int Run();
-  inline bool CEnabled( int idxFF, int C ) const { return cEnabled[ idxFF ][C]; }
-  inline bool CEnabled( Common::FormFactor ff, int C ) const { return CEnabled( ffIndex( ff ), C ); }
-  inline bool CNeeded( int idxFF, int C ) const { return C == CChiral || CEnabled( idxFF, C ); }
-  inline bool CNeeded( Common::FormFactor ff, int C ) const { return CNeeded( ffIndex( ff ), C ); }
 protected:
   inline static scalar EOfQSq( scalar PDGH, scalar PDGL, scalar qSq )
   {
@@ -202,7 +219,7 @@ protected:
   static const std::string &GetPoleMassName( Common::FormFactor ff, const Common::FileNameAtt &fna );
   static Common::FormFactor ValidateFF( Common::FormFactor ff );
   void AddEnsemble( const std::string &Ensemble, Common::FormFactor thisFF );
-  std::array<std::array<bool, NumConst>, NumFF> GetEnabled( std::string sOptions );
+  void GetEnabled( std::string sOptions );
   void LoadModels();
   void GetEnsembleStats();
   void SetEnsembleStats();
