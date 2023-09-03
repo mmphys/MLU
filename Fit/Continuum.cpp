@@ -926,8 +926,10 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
   qSqMaxCentral *= qSqMaxCentral;
 
   // Now write each data row
-  ValWithEr ve;
+  ValWithEr ve[3];
   Common::Vector<scalar> Buffer( om.NumSamples() );
+  Common::Vector<scalar> PoleBuffer( om.NumSamples() );
+  Common::Vector<scalar> yNoPoleBuffer( om.NumSamples() );
   std::vector<scalar> ScratchBuffer( om.NumSamples() );
 
   scalar x = -999.999;
@@ -940,12 +942,15 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
     // Write header row - i.e. column names
     os << "field x";
     WriteFieldName( os, "y" );
+    WriteFieldName( os, "Pole" );
+    WriteFieldName( os, "yNoPole" );
     os << Common::NewLine;
 
     scalar Min, Max;
     GetMinMax( ff, Min, Max, Loop, FieldName );
     const scalar Tick{ ( Max - Min ) / NumTicks };
     scalar Central = -999.999; // value unused
+    scalar CentPole = 0, CentYNoPole = 0; // value unused
   for( int nTick = -2; nTick <= NumTicks; ++nTick, x += Tick )
   {
     if( nTick == -2 )
@@ -959,25 +964,37 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
       const scalar Delta{ om(rep,idxDelta[idxff]) };
       const scalar E{ Loop == 0 ? EOfQSq(rep, x) : x };
       const scalar EOnLambda{ E * LambdaInv };
-      scalar z = c0Enabled[idxff] ? om(rep,idxC0[idxff]) : 0;
+      scalar yNoPole = c0Enabled[idxff] ? om(rep,idxC0[idxff]) : 0;
       scalar Factor = EOnLambda;
       for( unsigned int i = 0; i < NumE; ++i )
       {
         if( eEnabled[idxff][i] )
-          z += om(rep,idxE[idxff][i]) * Factor;
+          yNoPole += om(rep,idxE[idxff][i]) * Factor;
         Factor *= EOnLambda;
       }
-      z *= Lambda / ( E + Delta );
+      const scalar Pole{ Lambda / ( E + Delta ) };
+      const scalar Y{ yNoPole * Pole };
       if( rep == ModelFile::idxCentral )
-        Central = z;
+      {
+        Central = Y;
+        CentYNoPole = yNoPole;
+        CentPole = Pole;
+      }
       else
-        Buffer[rep] = z;
+      {
+        Buffer[rep] = Y;
+        yNoPoleBuffer[rep] = yNoPole;
+        PoleBuffer[rep] = Pole;
+      }
     }
-    ve.Get( Central, Buffer, ScratchBuffer );
+    ve[0].Get( Central, Buffer, ScratchBuffer );
+    ve[1].Get( CentPole, PoleBuffer, ScratchBuffer );
+    ve[2].Get( CentYNoPole, yNoPoleBuffer, ScratchBuffer );
     if( nTick < 0 )
       os << "# ";
-    os << FieldName << Common::Space << x << Common::Space
-       << ve.to_string( f->ErrorDigits ) << Common::Space << ve;
+    os << FieldName << Common::Space << x;
+    for( int i = 0; i < sizeof(ve) / sizeof(ve[0]); ++i )
+      os << Common::Space << ve[i].to_string( f->ErrorDigits ) << Common::Space << ve[i];
     if( nTick == -2 )
       os << " # q_0";
     else if( nTick == -1 )
