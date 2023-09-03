@@ -11,6 +11,7 @@
 PlotFunction()
 {
 local xAxis MyPlotField
+for RemovePole in 0 1; do
 for xAxis in ${x:-qSq EL}; do
 for MyPlotField in ${PlotField:-data adjusted}; do
 gnuplot <<-EOFMark
@@ -36,6 +37,10 @@ ExtraFiles="${extra}"
 RefVal="$RefVal"
 RefText="$RefText"
 PlotField="$MyPlotField"
+RemovePole=$RemovePole
+
+YField='y'
+if( RemovePole ) { PlotField=PlotField.'NoPole'; YField=YField.'NoPole' }
 
 Lambda=1e9
 InvLambda=1e0 / Lambda; InvLambdaSq=InvLambda * InvLambda
@@ -67,10 +72,15 @@ if( xAxis eq "qSq" ) {
   }
 }
 
+if( RemovePole ) {
+  if( xAxis eq "EL" ) { set key top left maxrows 4 } else { set key top right }
+} else {
+  if( xAxis eq "EL" ) { set key top right } else { set key bottom right }
+}
+
 set xrange[@my_xrange]
 set yrange[@my_yrange]
 set pointintervalbox 0 # disables the white space around points in gnuplot 5.4.6 onwards
-if( xAxis eq "EL" ) { set key top right } else { set key bottom right }
 set xlabel xAxisName
 set ylabel my_ylabel
 
@@ -90,18 +100,19 @@ set linetype 8 ps 0.66 pt 7 lc rgb 0xC00000 #red
 #print "word(Ensembles,2)=".word(Ensembles,2)
 #print "word(Ensembles,3)=".word(Ensembles,3)
 plot PlotFile."_fit.txt" using (stringcolumn("field") eq xAxis ? column('x')*xScale : NaN) \
-        :(column('y_low')):(column('y_high')) \
+        :(column(YField.'_low')):(column(YField.'_high')) \
         with filledcurves notitle fc "skyblue" fs transparent solid 0.5, \
     for [i=1:6] PlotFile.".txt" \
         using (stringcolumn("ensemble") eq word(Ensembles,i) ? column(xAxis) * xScale : NaN) \
         :(column(PlotField)):(column(PlotField."_low")):(column(PlotField."_high")) \
         with yerrorbars title word(Ensembles,i) ls i, \
     PlotFile."_fit.txt" using (stringcolumn("field") eq xAxis ? column('x')*xScale : NaN) \
-        :(column('y')) with lines title "Continuum" ls 8, \
+        :(column(YField)) with lines title "Continuum" ls 8, \
     NaN with filledcurves title "Error" fc "skyblue" fs transparent solid 0.5
 #    NaN with lines title 'Banana' lc rgb 0xC00000 bgnd "skyblue"
 
 EOFMark
+done
 done
 done
 }

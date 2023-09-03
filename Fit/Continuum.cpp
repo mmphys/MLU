@@ -911,6 +911,31 @@ void ContinuumFit::WriteFieldName( std::ofstream &os, const std::string &FieldNa
   ValWithEr::Header( FieldName, os, Common::Space );
 }
 
+struct BootDat
+{
+  const int ErrorDigits;
+  scalar Central;
+  Common::Vector<scalar> Buffer;
+  ValWithEr ve;
+  BootDat( int errorDigits, int Size ) : ErrorDigits{errorDigits}, Buffer( Size ) {}
+  inline scalar &operator[]( int idx )
+  {
+    if( idx == ModelFile::idxCentral )
+      return Central;
+    return Buffer[idx];
+  }
+  ValWithEr &Get( std::vector<scalar> &ScratchBuffer )
+  {
+    ve.Get( Central, Buffer, ScratchBuffer );
+    return ve;
+  }
+};
+
+std::ostream & operator<<( std::ostream &os, BootDat &bd )
+{
+  return os << Common::Space << bd.ve.to_string( bd.ErrorDigits ) << Common::Space << bd.ve;
+}
+
 void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefix ) const
 {
   const int idxff{ ffIndex( ff ) };
@@ -1014,16 +1039,20 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
   WriteFieldName( os, FieldEL );
   WriteFieldName( os, "data" );
   WriteFieldName( os, "adjusted" );
+  WriteFieldName( os, "dataNoPole" );
+  WriteFieldName( os, "adjustedNoPole" );
+  WriteFieldName( os, "Pole" );
   os << Common::NewLine;
 
   std::vector<ValWithEr> F; // form factor data values with errors
   om.FitInput.MakeStatistics( F );
 
   // Now write each data row
-  scalar Central = 0;
-  ValWithEr ve;
-  Common::Vector<scalar> Buffer( om.NumSamples() );
   std::vector<scalar> ScratchBuffer( om.NumSamples() );
+  BootDat Adjusted( f->ErrorDigits, om.NumSamples() );
+  BootDat DataNoPole( f->ErrorDigits, om.NumSamples() );
+  BootDat AdjNoPole( f->ErrorDigits, om.NumSamples() );
+  BootDat Pole( f->ErrorDigits, om.NumSamples() );
   std::size_t RowNum{};
   for( std::size_t i = 0; i < om.FitTimes.size(); ++i )
   {
@@ -1058,19 +1087,23 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
       const scalar PoleTerm{ Lambda / ( om(rep,m.EL.idx) + om(rep,idxDelta[idxFF]) ) };
       const scalar Adjust = PoleTerm * ( TermChiral + TermMPi + TermDisc );
       const scalar FFAdjust = om.FitInput(rep,i) - Adjust;
-      if( rep == ModelFile::idxCentral )
-        Central = FFAdjust;
-      else
-        Buffer[rep] = FFAdjust;
+      const scalar InvPoleTerm{ 1. / PoleTerm };
+      Adjusted[rep] = FFAdjust;
+      Pole[rep] = PoleTerm;
+      DataNoPole[rep] = om.FitInput(rep,i) * InvPoleTerm;
+      AdjNoPole[rep] = Adjusted[rep] * InvPoleTerm;
     }
-    ve.Get( Central, Buffer, ScratchBuffer );
+    Adjusted.Get( ScratchBuffer );
+    DataNoPole.Get( ScratchBuffer );
+    AdjNoPole.Get( ScratchBuffer );
+    Pole.Get( ScratchBuffer );
     const ValWithEr &veQ{ om.SummaryData( static_cast<int>( m.qSq.idx ) ) };
     const ValWithEr &veEL{ om.SummaryData( static_cast<int>( m.EL.idx ) ) };
     os << RowNum++ << Common::Space << mf.Ensemble << Common::Space << m.XVectorKey()
        << Common::Space << veQ .to_string( f->ErrorDigits ) << Common::Space << veQ
        << Common::Space << veEL.to_string( f->ErrorDigits ) << Common::Space << veEL
        << Common::Space << F[i].to_string( f->ErrorDigits ) << Common::Space << F[i]
-       << Common::Space << ve  .to_string( f->ErrorDigits ) << Common::Space << ve
+       << Adjusted << DataNoPole << AdjNoPole << Pole
        << Common::NewLine;
   }
   }
