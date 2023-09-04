@@ -48,6 +48,8 @@ struct FitController
   virtual void SetReplica( Vector &ModelParams ) const {}
   /// Called every time the fitter makes a new guess on each replica - allow controller to compute derived properties
   virtual void ComputeDerived( Vector &ModelParams ) const {}
+  /// Allow the fit controller to adjust the list of parameters in the parameter covariance matrix
+  virtual void ParamCovarList( Common::Params &paramsCovar ) const {}
   static FitController None;
 };
 
@@ -103,6 +105,8 @@ protected:
   int GetNumExponents();
   Params MakeModelParams();
   void MakeGuess();
+  /// Save the parameter correlation matrix (at the end of the fit)
+  void SaveParamCorrel( const std::string &sFileName );
   virtual FitterThread * MakeThread( bool bCorrelated, ModelFile &OutputModel ) = 0;
 
 public:

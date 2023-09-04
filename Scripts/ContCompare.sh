@@ -17,7 +17,7 @@ Ref=Simul/renorm-CZ34_all # This is the reference fit
 
 Prefix=F3_K_Ds.corr_
 Suffix=.g5P_g5W.model_fit.txt
-HName=${Prefix}f0_fplus.g5P_g5W.model.h5
+HName=${Prefix}f0_fplus.g5P_g5W.model
 
 ###################################################
 
@@ -107,6 +107,36 @@ pdflatex "${save}_${ff}_zoom"
 
 ###################################################
 
+# Make statistics for a single fit
+
+###################################################
+
+function MakeStats()
+{
+  local Label="$1"
+  local Dir=$2
+  local File ff QSqZero QSqMax DoF ChiSq
+  local -a ColumnValues QSq
+  for ff in f0 fplus
+  do
+    File=$Dir/$Prefix$ff$Suffix
+    # Now get stats
+    QSq=($(gawk -e '/# qSq 0 / {print $4; next}; /# qSq / {print $4; exit}' $File))
+    if [ "$ff" == "f0" ]; then
+      QSqZero="${QSq[0]}"
+      QSqMax="${QSq[1]}"
+    fi
+  done
+  ColumnValues=($(GetColumn --exact ChiSqPerDof,pValueH,pValue $Dir/$HName.h5))
+  DoF=($(h5dump -a model/DoF $Dir/$HName.h5 | gawk -e '/:/ {print $2; exit}'))
+  ChiSq=$(bc <<< "scale=3;${ColumnValues[0*8+4]}*$DoF/1") # /1 to make sure scale works
+  echo "$Label & $ChiSq & $DoF & ${ColumnValues[0*8+4]} & ${ColumnValues[1*8+4]} & ${ColumnValues[2*8+4]}" \
+       "& $QSqZero & $QSqMax & ${QSq[0]} & ${QSq[1]} \\\\" \
+    >> "$SummaryFile"
+}
+
+###################################################
+
 # Make a single comparison between one fit and the reference file
 
 ###################################################
@@ -116,8 +146,7 @@ function MakeOne()
   local Label="$1"
   local Dir=$2
   local GCmd="\$1==\"$Field\""
-  local File FileRef ff QSqZero QSqMax
-  local -a ColumnValues QSq
+  local File FileRef ff
   for ff in f0 fplus
   do
     File=$Dir/$Prefix$ff$Suffix
@@ -126,18 +155,8 @@ function MakeOne()
       echo "x y Ref"
       join -j 2 -o 1.2,1.6,2.6 <(gawk -e "$GCmd" $File) <(gawk -e "$GCmd" $FileRef)
     } > "$CompareDir/${Field}_${Label}_${ff}.txt"
-    # Now get stats
-    QSq=($(gawk -e '/# qSq 0 / {print $4; next}; /# qSq / {print $4; exit}' $File))
-    if [ "$ff" == "f0" ]; then
-      QSqZero="${QSq[0]}"
-      QSqMax="${QSq[1]}"
-    else
-      ColumnValues=($(GetColumn --exact ChiSqPerDof,pValueH,pValue $Dir/$HName))
-      echo "$Label & ${ColumnValues[0*8+4]} & ${ColumnValues[1*8+4]} & ${ColumnValues[2*8+4]}" \
-           "& $QSqZero & $QSqMax & ${QSq[0]} & ${QSq[1]} \\\\" \
-        >> "$SummaryFile"
-    fi
   done
+  MakeStats "$Label" "$Dir"
 }
 
 ###################################################
@@ -150,16 +169,14 @@ function MakeAll()
 {
   mkdir -p "$CompareDir"
   local SummaryFile="$CompareDir/${Field}_Summary.txt"
-  echo "Label χ²/dof p-H p-χ² f_0(0) f_0(q²Max) f_+(0) f_+(q²Max)" > "$SummaryFile"
   cat > "$SummaryFile" <<-"EOFMARK"
-	\begin{table}[H]
-	\begin{center}
-	\begin{tabular}{|c|l|l|l|l|l|l|l|}
+	\begin{tabular}{|c|r|c|l|l|l|l|l|l|l|}
 	\hline
-	Label & $\chi^2$/dof & p-H & p-$\chi^2$ & $f_0 \lr{0}$ & $f_0 \lr{q^2_{\textrm{max}}}$ & $f_+ \lr{0}$ & $f_+ \lr{q^2_{\textrm{max}}}$ \\
+	& $\chi^2$ & DoF & $\chi^2$/dof & p-H & p-$\chi^2$ & $f_0 \lr{0}$ & $f_0 \lr{q^2_{\textrm{max}}}$ & $f_+ \lr{0}$ & $f_+ \lr{q^2_{\textrm{max}}}$ \\
 	\hline
 EOFMARK
 
+  MakeStats Ref "$Ref" # Reference value
   MakeOne a Omit/renorm-CVZ34_$Which # Omit FV
   MakeOne b Omit/renorm-CXZ34_all # Omit Chiral
   MakeOne c Omit/renormE2-CVXZ3_all # Omit FV and Chiral
@@ -176,9 +193,6 @@ EOFMARK
   cat >> "$SummaryFile" <<-"EOFMARK"
 	\hline
 	\end{tabular}
-	\end{center}
-	\caption{Alternate fit parameters}
-	\end{table}
 EOFMARK
 }
 
@@ -191,6 +205,8 @@ EOFMARK
 if ! [ -d "$Base" ]; then echo "$Base doesn't exist"; exit 1; fi
 cd "$Base"
 if ! [ -d "$Ref" ]; then echo "Reference $Base/$Ref doesn't exist"; exit 1; fi
+
+PlotMatrix.sh $Ref/${HName}_pcorrel.txt
 
 for Field in EL
 do

@@ -411,6 +411,8 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline void CholeskyInvert();
   //inline void TriangularInvert( CBLAS_UPLO_t Uplo, CBLAS_DIAG_t Diag );
 #endif
+  inline void SaveSquare( const std::string &Filename, const std::string &Type,
+                 std::vector<std::string> &ColNames, const char *pGnuplotExtra = nullptr ) const;
 };
 
 void Vector<COMMON_GSL_TYPE>::MapRow( MyMatrix &m, std::size_t Row )
@@ -850,6 +852,49 @@ void Matrix<COMMON_GSL_TYPE>::CholeskyInvert()
   }*/
 
 #endif // COMMON_GSL_OPTIONAL
+
+// Write square matrix to file
+void Matrix<COMMON_GSL_TYPE>::SaveSquare( const std::string &Filename, const std::string &Type,
+                                          std::vector<std::string> &ColNames,
+                                          const char *pGnuplotExtra ) const
+{
+  if( size1 == 0 )
+    throw std::runtime_error( "SaveSquare() empty " + Type + " matrix " + Filename );
+  if( size1 != size2 )
+    throw std::runtime_error( "SaveSquare() Non-square " + Type + " matrix " + Filename );
+  // Header describing what the covariance matrix is for and how to plot it with gnuplot
+  std::ofstream s{ Filename };
+  s << "# Matrix: " << Filename << "\n# Type: " << Type << "\n";
+  // Save a command which can be used to plot this file
+  s << "# gnuplot: set xtics rotate noenhanced font 'Arial,4'; set ytics noenhanced font 'Arial,4';"
+  << " set title noenhanced '" << Filename << "'; unset key; ";
+  if( pGnuplotExtra && *pGnuplotExtra )
+    s << pGnuplotExtra << "; ";
+  s << "plot '" << Filename << "' matrix columnheaders rowheaders with image pixels\n";
+  // Now save the column names. First column is matrix extent
+  s << "# The next row contains column headers, starting with matrix dimension\n";
+  s << size1;
+  for( std::size_t i = 0; i < size1; ++i )
+  {
+    s << " ";
+    if( i < ColNames.size() )
+      s << ColNames[i];
+    else
+      s << "c" << i;
+  }
+  s << "\n" << std::setprecision( std::numeric_limits<Scalar>::max_digits10 );
+  // Now print the actual covariance matrix
+  for( std::size_t i = 0; i < size1; ++i )
+  {
+    if( i < ColNames.size() )
+      s << ColNames[i];
+    else
+      s << "c" << i;
+    for( int j = 0; j < size2; ++j )
+      s << " " << (*this)( i, j );
+    s << "\n";
+  }
+}
 
 inline std::ostream & operator<<( std::ostream &os, const Matrix<COMMON_GSL_TYPE> &m )
 {

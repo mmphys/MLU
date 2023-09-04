@@ -39,10 +39,14 @@ RefText="$RefText"
 PlotField="$MyPlotField"
 RemovePole=$RemovePole
 
+MaxAdj=6
+if( PlotField eq 'adjusted' ) { MaxAdj=0 }
+
 YField='y'
 if( RemovePole ) { PlotField=PlotField.'NoPole'; YField=YField.'NoPole' }
 
 Lambda=1e9
+LambdaSq=Lambda * Lambda
 InvLambda=1e0 / Lambda; InvLambdaSq=InvLambda * InvLambda
 
 if( Save ne "" ) {
@@ -96,12 +100,55 @@ set linetype 6 ps 0.66 pt 8 lc rgb 0x003860 #dark navy
 set linetype 7 ps 0.66 pt 7 lc rgb 0xFFC000 #yellow
 set linetype 8 ps 0.66 pt 7 lc rgb 0xC00000 #red
 
+if( "$ff" eq "f0" ) {
+  CZero=${ColumnValues[3*8+4]}
+  COne=${ColumnValues[4*8+4]}
+  DZero=${ColumnValues[5*8+4]}
+} else {
+  CZero=${ColumnValues[6*8+4]}
+  COne=${ColumnValues[7*8+4]}
+  DZero=${ColumnValues[8*8+4]}
+}
+#print "$ff COne=".sprintf("%g",COne).', DZero='.sprintf("%g",DZero)
+
+array DeltaMPi[6]
+DeltaMPi[1]=${ColumnValues[9*8+4]}
+DeltaMPi[2]=${ColumnValues[10*8+4]}
+DeltaMPi[3]=${ColumnValues[11*8+4]}
+DeltaMPi[4]=${ColumnValues[12*8+4]}
+DeltaMPi[5]=${ColumnValues[13*8+4]}
+DeltaMPi[6]=${ColumnValues[14*8+4]}
+
+array aInv[6]
+aInv[1]=${ColumnValues[15*8+4]}
+aInv[2]=${ColumnValues[16*8+4]}
+aInv[3]=${ColumnValues[17*8+4]}
+aInv[4]=${ColumnValues[18*8+4]}
+aInv[5]=${ColumnValues[19*8+4]}
+aInv[6]=${ColumnValues[20*8+4]}
+
+array DeltaFV[6]
+DeltaFV[1]=${ColumnValues[21*8+4]}
+DeltaFV[2]=${ColumnValues[22*8+4]}
+DeltaFV[3]=${ColumnValues[23*8+4]}
+DeltaFV[4]=${ColumnValues[24*8+4]}
+DeltaFV[5]=${ColumnValues[25*8+4]}
+DeltaFV[6]=${ColumnValues[26*8+4]}
+
+#do for [i=1:|aInv|] {
+#  print "$ff aInv[".i.']='.sprintf("%g",aInv[i]).', DeltaMPi='.sprintf("%g",DeltaMPi[i]) }
+
 #print "word(Ensembles,1)=".word(Ensembles,1)
 #print "word(Ensembles,2)=".word(Ensembles,2)
 #print "word(Ensembles,3)=".word(Ensembles,3)
 plot PlotFile."_fit.txt" using (stringcolumn("field") eq xAxis ? column('x')*xScale : NaN) \
         :(column(YField.'_low')):(column(YField.'_high')) \
         with filledcurves notitle fc "skyblue" fs transparent solid 0.5, \
+    for [i=1:MaxAdj] '' using (stringcolumn("field") eq xAxis ? column('x')*xScale : NaN) \
+        :(column(YField) \
+          + (CZero*DeltaFV[i]+COne*DeltaMPi[i]+DZero*LambdaSq/(aInv[i]*aInv[i])) \
+            * ( RemovePole ? 1 : column('Pole') ) ) \
+        with lines notitle ls i dashtype 2, \
     for [i=1:6] PlotFile.".txt" \
         using (stringcolumn("ensemble") eq word(Ensembles,i) ? column(xAxis) * xScale : NaN) \
         :(column(PlotField)):(column(PlotField."_low")):(column(PlotField."_high")) \
@@ -194,7 +241,7 @@ function GetFitData()
     fi
   fi
   if [ -e $InPath ]; then
-    ColumnValues=($(GetColumn --exact ChiSqPerDof,pValue,pValueH $InPath))
+    ColumnValues=($(GetColumn --exact ChiSqPerDof,pValue,pValueH,f0-c0,f0-c1,f0-d0,fplus-c0,fplus-c1,fplus-d0,C1-DeltaMPi,C2-DeltaMPi,F1M-DeltaMPi,M1-DeltaMPi,M2-DeltaMPi,M3-DeltaMPi,C1-aInv,C2-aInv,F1M-aInv,M1-aInv,M2-aInv,M3-aInv,C1-ChiFV,C2-ChiFV,F1M-ChiFV,M1-ChiFV,M2-ChiFV,M3-ChiFV $InPath))
     RefText="χ²/dof=${ColumnValues[0*8+4]} (p-H=${ColumnValues[2*8+4]}, p-χ²=${ColumnValues[1*8+4]})"
   else
     unset ColumnValues

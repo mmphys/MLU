@@ -70,6 +70,8 @@ struct Model : public Sample<T>, public ModelBase
   Matrix<T> CorrelInv;
   Matrix<T> CorrelInvCholesky;
   Matrix<T> CovarInvCholesky;
+  Matrix<T> CorrelParam;    // Correlation matrix of the fit parameters
+  std::vector<std::string> CorrelParamNames;
   JackBoot<T> StdErrorMean; // From all samples of binned data
   JackBoot<T> FitInput;
   JackBoot<T> ModelPrediction;

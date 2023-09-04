@@ -328,12 +328,8 @@ scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParam
   const scalar TermChiral = Parent.c0Enabled[idxFF]
                             ? ModelParams[Parent.idxC0[idxFF]] * ( 1 + sChiFV ) : 0;
   // Compute the MPi term
-  scalar TermMPi = 0;
-  if( Parent.c1Enabled[idxFF] )
-  {
-    const scalar DeltaMPiSq{ mPi * mPi - mPDGPi * mPDGPi };
-    TermMPi = ModelParams[Parent.idxC1[idxFF]] * DeltaMPiSq * LambdaInvSq;
-  }
+  const scalar TermMPi{ Parent.c1Enabled[idxFF]
+    ? ModelParams[Parent.idxC1[idxFF]] * ModelParams[Parent.idxDeltaMPi[ei.idx]] : 0 };
   // Compute E_L / Lambda
   const scalar ELOnLambda{ ModelParams[EL.idx] * LambdaInv };
   scalar Factor = ELOnLambda;

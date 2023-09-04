@@ -54,6 +54,8 @@ namespace CorrSumm {
   const char * FieldNames[NumFields] = { "corr", "exp", "cosh" };
 };
 
+const char pszCorrelGnuplot[] = "set cbrange[-1:1]";
+
 const std::string sBootstrap{ "bootstrap" };
 const std::string sFold{ "fold" };
 const std::string sModel{ "model" };
@@ -84,6 +86,8 @@ const std::string sCorrelation{ "Correlation" };
 const std::string sCorrelationInv{ sCorrelation + "Inv" };
 const std::string sCorrelationCholesky{ sCorrelation + "Cholesky" };
 const std::string sCorrelationInvCholesky{ sCorrelation + "InvCholesky" };
+const std::string sCorrelationParam{ sCorrelation + "Param" };
+const std::string sCorrelationParamNames{ sCorrelationParam + "Names" };
 const std::string sFitInput{ "FitInput" };
 const std::string sModelPrediction{ "ModelPrediction" };
 const std::string sOperators{ "Operators" };

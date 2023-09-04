@@ -97,6 +97,8 @@ namespace CorrSumm {
   extern const char * FieldNames[NumFields];
 };
 
+extern const char pszCorrelGnuplot[];
+
 extern const std::string sBootstrap;
 extern const std::string sFold;
 extern const std::string sModel;
@@ -128,6 +130,8 @@ extern const std::string sCorrelation;
 extern const std::string sCorrelationInv;
 extern const std::string sCorrelationCholesky;
 extern const std::string sCorrelationInvCholesky;
+extern const std::string sCorrelationParam;
+extern const std::string sCorrelationParamNames;
 extern const std::string sFitInput;
 extern const std::string sModelPrediction;
 extern const std::string sOperators;

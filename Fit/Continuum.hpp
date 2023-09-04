@@ -98,7 +98,7 @@ struct ContinuumFit : public FitController
   std::array<std::size_t, NumFF> idxDelta;
   std::array<std::size_t, NumFF> idxPDGDStar;
   // Per ensemble parameters
-  std::vector<std::size_t> idxaInv, idxmPi, idxFVSim, idxFVPhys, idxChiSim, idxChiFV;
+  std::vector<std::size_t> idxaInv, idxmPi, idxFVSim, idxFVPhys, idxChiSim, idxChiFV, idxDeltaMPi;
 
   // Global keys
   Common::Param::Key kfPi;
@@ -112,7 +112,7 @@ struct ContinuumFit : public FitController
   std::array<Common::Param::Key, NumFF> kDelta;
   std::array<Common::Param::Key, NumFF> kPDGDStar;
   // Per ensemble keys
-  std::vector<Common::Param::Key> kaInv, kmPi, kFVSim, kFVPhys, kChiSim, kChiFV;
+  std::vector<Common::Param::Key> kaInv, kmPi, kFVSim, kFVPhys, kChiSim, kChiFV, kDeltaMPi;
 
 protected:
   // The global constraint
@@ -204,6 +204,7 @@ public:
   void SaveParameters( Common::Params &mp, const Fitter &f ) override;
   void SetReplica( Vector &ModelParams ) const override;
   void ComputeDerived( Vector &ModelParams ) const override;
+  void ParamCovarList( Common::Params &paramsCovar ) const override;
   int Run();
 protected:
   inline static scalar EOfQSq( scalar PDGH, scalar PDGL, scalar qSq )

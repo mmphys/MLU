@@ -34,6 +34,14 @@ fi
 PCGetFullPath PlotCommonRoot "${BASH_SOURCE[0]}"
 EnsembleBase=Ensemble
 
+if (($#>1)); then
+  echo "Only 1 parameter expected - ensemble name"
+  $RetExit 1;
+elif (($#==0)); then
+  ls -laF "$PlotCommonRoot/$EnsembleBase.sh" "$PlotDocDir/$EnsembleBase.tex"
+  $RetExit 0;
+fi
+
 if ! [ -f "$PlotCommonRoot/$EnsembleBase$Ensemble.sh" ]; then
   Echo "$PlotCommonRoot/$EnsembleBase$Ensemble.sh missing"
   $RetExit 1

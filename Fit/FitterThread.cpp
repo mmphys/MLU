@@ -76,7 +76,6 @@ void FitterThread::InitialiseCovar( const std::string *pBaseName )
 {
   if( pBaseName && pBaseName->empty() )
     pBaseName = nullptr;
-  static const char pszCorrelGnuplot[] = "set cbrange[-1:1]";
   const Common::SeedType Seed{ OutputModel.Name_.Seed };
   // Extract StdErrorMean = sqrt(diagonals) and CholeskyDiag = 1/StdErrorMean
   for( std::size_t i = 0; i < Extent; ++i )
@@ -96,7 +95,8 @@ void FitterThread::InitialiseCovar( const std::string *pBaseName )
       parent.SaveMatrixFile( Covar, Common::sCovariance,
             Common::MakeFilename( *pBaseName, Common::sCovmat, Seed, TEXT_EXT ) );
       parent.SaveMatrixFile( Correl, Common::sCorrelation,
-            Common::MakeFilename( *pBaseName, Common::sCormat, Seed, TEXT_EXT ), pszCorrelGnuplot );
+            Common::MakeFilename( *pBaseName, Common::sCormat, Seed, TEXT_EXT ),
+                                  Common::pszCorrelGnuplot );
     }
   }
   // Cholesky decompose the correlation matrix

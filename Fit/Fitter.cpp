@@ -358,6 +358,74 @@ void Fitter::MakeGuess()
   }
 }
 
+void Fitter::SaveParamCorrel( const std::string &sFileName )
+{
+  try
+  {
+    OutputModel.CorrelParam.clear();
+    OutputModel.CorrelParamNames.clear();
+    Params paramsCovar;
+    // Put all the variable parameters in a list
+    for( const Params::value_type &pv : mp )
+    {
+      const Param::Key &k{ pv.first };
+      const Param &p{ pv.second };
+      if( pv.second.type == Param::Type::Variable )
+        paramsCovar.Add( k, p.size, p.bMonotonic, p.type );
+    }
+    // Let the fit controller adjust it
+    fitController.ParamCovarList( paramsCovar );
+    paramsCovar.AssignOffsets();
+    const std::size_t NumCols{ paramsCovar.NumScalars( Param::Type::All ) };
+    if( NumCols )
+    {
+      
+      // Make a map from old to new data
+      struct OldNewT {
+        std::size_t Old, New;
+        OldNewT( std::size_t old, std::size_t New_ )
+        : Old{old}, New{New_} {}
+      };
+      std::vector<OldNewT> OldNew;
+      OldNew.reserve( NumCols );
+      OutputModel.CorrelParamNames.reserve( NumCols );
+      for( const Params::value_type &pv : paramsCovar )
+      {
+        const Param::Key &k{ pv.first };
+        const std::string sKey{ k.FullName( 0, 0 ) };
+        const Param &pNew{ pv.second };
+        Params::const_iterator it = mp.Find( k, "SaveParamCorrel() : param " + sKey + " not found" );
+        const Param &pOld{ it->second };
+        if( pNew.size == 0 || pNew.size > pOld.size )
+          throw std::runtime_error( "SaveParamCorrel() : param " + sKey + " bad size "
+                                   + std::to_string( pNew.size ) );
+        for( std::size_t i = 0; i < pNew.size; ++i )
+        {
+          OldNew.push_back( OldNewT( pOld(i), pNew(i) ) );
+          OutputModel.CorrelParamNames.push_back( k.FullName( i, pNew.size ) );
+        }
+      }
+      
+      // Now put all the parameter data in a new bootstrap
+      JackBoot jb( ds.NSamples, NumCols );
+      for( std::size_t i = Common::JackBootBase::idxCentral; i != jb.NumReplicas(); ++i )
+        for( std::size_t col = 0; col < NumCols; ++col )
+          jb(i,OldNew[col].New) = OutputModel(i,OldNew[col].Old);
+      jb.MakeMean();
+      jb.MakeCovar( OutputModel.CorrelParam );
+      OutputModel.CorrelParam.CholeskyExtract();
+      OutputModel.CorrelParam.SaveSquare( sFileName, "Parameter correlation",
+                                          OutputModel.CorrelParamNames, Common::pszCorrelGnuplot );
+    }
+  }
+  catch( const std::exception &e )
+  {
+    OutputModel.CorrelParam.clear();
+    OutputModel.CorrelParamNames.clear();
+    std::cerr << "Error saving parameter correlation: " << e.what() << std::endl;
+  }
+}
+
 // This should be the only place which knows about different fitters
 
 Fitter * MakeFitterGSL( const std::string &FitterArgs, Model::CreateParams &mcp,
@@ -642,13 +710,14 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     // Show output
     Show( Param::Type::Variable );
     Show( Param::Type::Derived );
+    const Common::FileNameAtt &fna{ OutputModel.Name_ };
+    SaveParamCorrel( fna.GetAltPath( fna.Type + "_pcorrel", TEXT_EXT ) );
     // Save the file
     if( !bAllParamsKnown )
       OutputModel.Write();
     constexpr bool bVerbose{ true };
     if( bFitCorr )
     {
-      const Common::FileNameAtt &fna{ OutputModel.Name_ };
       if( SummaryLevel >= 1 )
       {
         OutputModel.WriteSummaryTD( ds, fna.GetAltPath( fna.Type + "_td", TEXT_EXT ), bVerbose );

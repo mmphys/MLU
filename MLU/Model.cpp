@@ -207,6 +207,24 @@ void Model<T>::ReadAttributes( ::H5::Group &g )
   }
   try
   {
+    H5::ReadMatrix( g, sCorrelationParam+s_C, CorrelParam );
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  try
+  {
+    a = g.openAttribute( sCorrelationParamNames );
+    CorrelParamNames = H5::ReadStrings( a );
+    a.close();
+  }
+  catch(const ::H5::Exception &)
+  {
+    ::H5::Exception::clearErrorStack();
+  }
+  try
+  {
     StdErrorMean.Read( g, sStdErrorMean );
   }
   catch(const ::H5::Exception &)
@@ -463,6 +481,12 @@ int Model<T>::WriteAttributes( ::H5::Group &g ) const
   H5::WriteMatrix( g, sCorrelationInv+s_C, CorrelInv );
   H5::WriteMatrix( g, sCorrelationInvCholesky+s_C, CorrelInvCholesky );
   H5::WriteMatrix( g, sCovarianceInvCholesky+s_C, CovarInvCholesky );
+  H5::WriteMatrix( g, sCorrelationParam, CorrelParam );
+  if( CorrelParamNames.size() )
+  {
+    H5::WriteAttribute( g, sCorrelationParamNames, CorrelParamNames );
+    iReturn++;
+  }
   StdErrorMean.Write( g, sStdErrorMean );
   FitInput.Write( g, sFitInput );
   ModelPrediction.Write( g, sModelPrediction );

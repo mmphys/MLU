@@ -224,6 +224,7 @@ public:
   inline std::string SeedString() const { return RandomCache::SeedString( Seed ); }
   inline const std::string &SeedTypeString() const { return JackBootBase::SeedTypeString( Seed ); }
   static Real GetNorm( Norm norm, std::size_t NumReplicas );
+  Norm MyNorm() const { return Seed == SeedWildcard ? Norm::Jackknife : Norm::Bootstrap; }
   /// Make the mean of any matrix
   static void MakeMean( Vector<T> &vMean, const MatrixView<T> &Source );
   /// Make the mean of a matrix while resampling it - e.g. from raw/binned source data
@@ -231,6 +232,8 @@ public:
                         std::size_t Replica,
                         std::size_t NumReplicas = RandomCache::DefaultNumReplicas(),
                         SeedType Seed = RandomCache::DefaultSeed() );
+  /// Make the mean of my samples
+  void MakeMean() { MakeMean( ReplicaMean, Replica ); }
   /// Perform jackknife or bootstrap (based on seed) resampling
   /// NumBoot is the number of bootstrap replicas (ignored for jackknife)
   void Resample( const MatrixView<T> &Source, std::size_t NumBoot );
@@ -256,6 +259,9 @@ public:
                        const MatrixView<T> &Source, std::size_t Replica,
                        std::size_t NumReplicas = RandomCache::DefaultNumReplicas(),
                        SeedType Seed = RandomCache::DefaultSeed() );
+  /// Make covariance matrix or variance vector from this JackBoot
+  void MakeCovar( Matrix<T> &Covar ) const { MakeCovar( Covar, GetCovarMean(), Replica, MyNorm() ); }
+  void MakeVar( Vector<T> &Var ) const { MakeVar( Var, GetCovarMean(), Replica, MyNorm() ); }
   /**
    Make covariance matrix or variance vector given a bootstrap or jackknife and the source matrix it was created from.
    

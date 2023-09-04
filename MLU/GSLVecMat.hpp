@@ -33,6 +33,7 @@
 #include <cassert>
 #include <complex>
 #include <cstdint>
+#include <fstream>
 #include <iostream>
 #include <math.h>
 #include <vector>

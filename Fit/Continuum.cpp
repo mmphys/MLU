@@ -165,6 +165,11 @@ void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f )
     idxChiFV.resize( EnsembleMap.size() );
     kChiFV.resize( EnsembleMap.size() );
   }
+  if( c1Enabled[idxFF0] || c1Enabled[idxFFPlus] )
+  {
+    idxDeltaMPi.resize( EnsembleMap.size() );
+    kDeltaMPi.resize( EnsembleMap.size() );
+  }
   for( const typename EnsembleMapT::value_type &it : EnsembleMap )
   {
     const std::string &sEnsemble{ it.first };
@@ -195,6 +200,12 @@ void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f )
       kChiFV[i].Object.push_back( sEnsemble );
       kChiFV[i].Name = "ChiFV";
       mp.Add( kChiFV[i], 1, false, Param::Type::Derived );
+    }
+    if( c1Enabled[idxFF0] || c1Enabled[idxFFPlus] )
+    {
+      kDeltaMPi[i].Object.push_back( sEnsemble );
+      kDeltaMPi[i].Name = "DeltaMPi";
+      mp.Add( kDeltaMPi[i], 1, false, Param::Type::Derived );
     }
   }
 }
@@ -244,6 +255,8 @@ void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
       idxChiSim[i] = mp.at( kChiSim[i] )();
     if( NeedFV() || NeedChiral() )
       idxChiFV[i] = mp.at( kChiFV[i] )();
+    if( c1Enabled[idxFF0] || c1Enabled[idxFFPlus] )
+      idxDeltaMPi[i] = mp.at( kDeltaMPi[i] )();
   }
 
   if( ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
@@ -298,6 +311,17 @@ void ContinuumFit::SetReplica( Vector &ModelParams ) const
       ModelParams[idxChiFV[i]] = ( DeltaF(sChiSim,sFVSim ) - DeltaF(sChiPhys,sFVPhys) ) * Denom;
     }
   }
+  if( c1Enabled[idxFF0] || c1Enabled[idxFFPlus] )
+  {
+    const scalar mPDGPi{ ModelParams[idxmPDGPi] };
+    const scalar mPDGPiSq{ mPDGPi * mPDGPi };
+    for( const typename EnsembleMapT::value_type &ei : EnsembleMap )
+    {
+      const std::size_t i{ ei.second.idx };
+      const scalar mPi{ ModelParams[idxmPi[i]] };
+      ModelParams[idxDeltaMPi[i]] = ( mPi * mPi - mPDGPiSq ) * LambdaInvSq;
+    }
+  }
 }
 
 void ContinuumFit::ComputeDerived( Vector &ModelParams ) const
@@ -331,6 +355,15 @@ void ContinuumFit::ComputeDerived( Vector &ModelParams ) const
         Constraint *= LambdaOnE;
     }
     ModelParams[idxConstraint] = Constraint;
+  }
+}
+
+void ContinuumFit::ParamCovarList( Common::Params &paramsCovar ) const
+{
+  if( ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
+  {
+    const Common::Param::Key &k{ ConstraintKey() };
+    paramsCovar.Add( k, 1, false, Common::Param::Type::Derived );
   }
 }
 
