@@ -11,11 +11,20 @@ set -e
 
 if [ -v Plot ]
 then
-  shopt -s globstar
+  (
+  shopt -s globstar nullglob
   Dir=/Users/mike/NoSync/Cont
-  x=EL plotglobfit.sh $Dir/**/renorm**/*.model_fit.txt
-  x=qSq xrange=-0.1:1.75 plotglobfit.sh $Dir/**/renorm**/*_fplus.*.model_fit.txt
-  x=qSq xrange=-0.1:2.2 plotglobfit.sh $Dir/**/renorm**/*_f0.*.model_fit.txt
+  for f in $Dir/**/renorm**/*.model_fit.txt; do
+    x=EL plotglobfit.sh "$f" &
+  done
+  for f in $Dir/**/renorm**/*_fplus.*.model_fit.txt; do
+    x=qSq xrange=-0.1:1.75 plotglobfit.sh "$f" &
+  done
+  for f in $Dir/**/renorm**/*_f0.*.model_fit.txt; do
+    x=qSq xrange=-0.1:2.2 plotglobfit.sh "$f" &
+  done
+  wait
+  )
 else
   export MLUf0ELMin=5.1679096878011405468e+08
   export MLUf0ELMax=1.0829813964236147404e+09

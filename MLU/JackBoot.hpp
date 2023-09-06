@@ -237,8 +237,22 @@ public:
   /// Perform jackknife or bootstrap (based on seed) resampling
   /// NumBoot is the number of bootstrap replicas (ignored for jackknife)
   void Resample( const MatrixView<T> &Source, std::size_t NumBoot );
+protected:
   /// Make statistics for this sample
-  void MakeStatistics( std::vector<ValWithEr<T>> &vStats ) const;
+  void MakeStatistics( ValWithEr<T> *vStats, std::size_t StartCol, std::size_t NumCols ) const;
+public:
+  /// Make statistics for one column
+  inline void MakeStatistics( ValWithEr<T> &ve, std::size_t Column ) const
+  {
+    MakeStatistics( &ve, Column, 1 );
+  }
+  /// Make statistics for this sample
+  inline void MakeStatistics( std::vector<ValWithEr<T>> &vStats ) const
+  {
+    vStats.resize( extent() );
+    if( extent() )
+      MakeStatistics( &vStats[0], 0, extent() );
+  }
   /**
    Make covariance matrix or variance vector given any matrix (raw/binned, bootstrap or jackknife) and a vector of central values.
    

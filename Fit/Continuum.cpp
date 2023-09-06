@@ -60,7 +60,7 @@ ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
   NumSamples{cl.SwitchValue<int>("n")},
   doCorr{ !cl.GotSwitch( "uncorr" ) },
   CovarBlock{ cl.GotSwitch( "block" ) },
-  ffDefault{ ValidateFF( Common::FromString<Common::FormFactor>( Common::TrimAt( cl.SwitchValue<std::string>("f") ) ) ) },
+  ffDefault{Common::FromString<Common::FormFactor>(Common::TrimAt(cl.SwitchValue<std::string>("f")))},
   inBase{ cl.SwitchValue<std::string>("i") },
   outBaseFileName{ cl.SwitchValue<std::string>("o") },
   ds{NumSamples},
@@ -124,7 +124,7 @@ void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f )
     }
   }
   // If I'm fitting both form factors, I need to impose a constraint
-  if( ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
+  if( bDoConstraint && ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
   {
     // Impose the constraint on a fit constant that is enabled
     if( c0Enabled[idxFFPlus] )
@@ -259,9 +259,9 @@ void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
       idxDeltaMPi[i] = mp.at( kDeltaMPi[i] )();
   }
 
-  if( ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
+  // If I'm imposing a constraint, remember what on!
+  if( bDoConstraint && ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
   {
-    // I'm fitting both form factors - I will impose a constraint
     idxConstraint = mp.at( ConstraintKey() )();
   }
 }
@@ -326,7 +326,7 @@ void ContinuumFit::SetReplica( Vector &ModelParams ) const
 
 void ContinuumFit::ComputeDerived( Vector &ModelParams ) const
 {
-  if( ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
+  if( bDoConstraint && ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
   {
     // I'm fitting both form factors - impose a constraint on fplus-c0
     const scalar mPDGL{ ModelParams[idxPDGL] };
@@ -381,18 +381,7 @@ const std::string &ContinuumFit::GetPoleMassName( Common::FormFactor ff,
   return bVector ? PDGDsStar : PDGDs0Star;
 }
 
-Common::FormFactor ContinuumFit::ValidateFF( Common::FormFactor ff )
-{
-  if( ff != Common::FormFactor::fplus && ff != Common::FormFactor::f0 )
-  {
-    std::ostringstream os;
-    os << "Unsupported form factor " << ff;
-    throw std::runtime_error( os.str().c_str() );
-  }
-  return ff;
-}
-
-void ContinuumFit::AddEnsemble( const std::string &Ensemble, Common::FormFactor thisFF )
+void ContinuumFit::AddEnsemble( const std::string &Ensemble )
 {
   if( Ensemble.empty() )
     throw( std::runtime_error( "AddEnsemble() Ensemble empty" ) );
@@ -420,7 +409,6 @@ void ContinuumFit::AddEnsemble( const std::string &Ensemble, Common::FormFactor 
     }
     EnsembleMap.insert( typename EnsembleMapT::value_type( Ensemble, std::move( ei ) ) );
   }
-  EnsembleFFs.insert( EnsembleFF( Ensemble, thisFF ) );
 }
 
 void ContinuumFit::GetEnabled( std::string sOptions )
@@ -531,11 +519,11 @@ void ContinuumFit::LoadModels()
     if( itFF == vArgs.end() )
     {
       thisFF = ffDefault;
-      vArgs.emplace( sFF, Common::GetFormFactorString( ffDefault ) );
+      vArgs.emplace( sFF, Common::GetFormFactorString( thisFF ) );
     }
     else
     {
-      thisFF = ValidateFF( Common::FromString<Common::FormFactor>( itFF->second ) );
+      thisFF = Common::FromString<Common::FormFactor>( itFF->second );
     }
     // Load this batch of files
     for( const std::string &sFileName : Filenames )
@@ -563,8 +551,9 @@ void ContinuumFit::LoadModels()
           Meson[idxSrc] = Common::MesonName( fna.BaseShortParts[2], fna.Spectator );
           if( Common::EqualIgnoreCase( Meson[idxSnk], Meson[idxSrc] ) )
             throw std::runtime_error( "Snk and Src are both " + Meson[idxSnk] );
+          bDoConstraint = thisFF == Common::FormFactor::f0 || thisFF == Common::FormFactor::fplus;
         }
-        if( thisFF == Common::FormFactor::f0 )
+        if( thisFF == Common::FormFactor::f0 || thisFF == Common::FormFactor::fpar )
           uiFF |= uiFF0;
         else
           uiFF |= uiFFPlus;
@@ -575,7 +564,7 @@ void ContinuumFit::LoadModels()
         ModelArgs.emplace_back( vArgs );
         if( !Ensemble.empty() )
           ds.constFile.back()->Ensemble = std::move( Ensemble );
-        AddEnsemble( ds.constFile.back()->Ensemble, thisFF );
+        AddEnsemble( ds.constFile.back()->Ensemble );
       }
     }
     if( bGlobEmpty )
@@ -595,7 +584,14 @@ void ContinuumFit::GetEnsembleStats()
       std::cout << "SampleSize[" << mp->Ensemble << "] = " << mp->SampleSize << Common::NewLine;
     }
     else
-      ++it->second.Num;
+    {
+      EnsembleStat &es{ it->second };
+      if( mp->Seed() != es.Seed )
+        throw std::runtime_error( "GetEnsembleStats() seeds don't match on ensemble "
+                                 + mp->Ensemble + " file " + std::to_string( es.Num )
+                                 + Common::Space + mp->Name_.Filename );
+      ++es.Num;
+    }
   }
 }
 
@@ -743,6 +739,39 @@ void ContinuumFit::LoadExtra()
   }
 }
 
+void ContinuumFit::NormaliseData()
+{
+  static int NumCalled{};
+  if( NumCalled++ )
+    throw std::runtime_error( "NormaliseData() repeated" );
+  using FF = Common::FormFactor;
+  for( std::size_t i = 0; i < ModelArgs.size(); ++i )
+  {
+    const FF ff{ Common::FromString<FF>( ModelArgs[i].find( sFF )->second ) };
+    if( ff == FF::fpar || ff ==FF::fperp )
+    {
+      static const std::string sErrorMsg{ "NormaliseData() find column" };
+      // Remove scale in fpar and fperp
+      ModelFile &mf{ *ds.constFile[i] };
+      const Common::Param::Key kFF{ Common::GetFormFactorString( ff ) };
+      const std::size_t idx{ mf.params.Find( kFF, sErrorMsg )->second() };
+      const Common::Param::Key kaInv{ Common::Param::Key( mf.Ensemble, "aInv" ) };
+      const JackBootColumn aInv{ ds.GetConstant( kaInv ) };
+      for( std::size_t rep = JackBoot::idxCentral; rep != mf.NumSamples(); ++rep )
+      {
+        // For some reason there's a scale of GeV in my data ...
+        scalar Factor = std::sqrt( aInv[rep] * 1e-9 );
+        if( ff == FF::fperp )
+          Factor = 1. / Factor;
+        mf(rep,idx) *= Factor;
+      }
+      // Now update the stats
+      ValWithEr &ve{ mf.SummaryData( static_cast<int>( idx ) ) };
+      mf.getData().MakeStatistics( ve, idx );
+    }
+  }
+}
+
 void ContinuumFit::MakeOutputFilename()
 {
   // Sort operator names (also renumbers references to these names)
@@ -878,6 +907,10 @@ void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max, i
     {
       throw std::runtime_error( szEnv + sEnvMax + szInvalid + e.what() );
     }
+    std::cout << Field
+              << Common::CommaSpace << sEnvMin << "=" << pMin
+              << Common::CommaSpace << sEnvMax << "=" << pMax
+              << Common::NewLine;
     return;
   }
   const ModelFile &om{ f->OutputModel };
@@ -885,7 +918,7 @@ void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max, i
   for( std::size_t i = 0; i < f->model.size(); ++i )
   {
     const ModelContinuum &m{ * dynamic_cast<const ModelContinuum *>( f->model[i].get() ) };
-    if( m.ff == ff )
+    if( ValidateFF( m.ff ) == ff )
     {
       const ValWithEr &ve{ om.SummaryData( static_cast<int>( ( Loop == 0 ? m.qSq : m.EL ).idx ) ) };
       if( bFirst )
@@ -1077,9 +1110,6 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
   WriteFieldName( os, "Pole" );
   os << Common::NewLine;
 
-  std::vector<ValWithEr> F; // form factor data values with errors
-  om.FitInput.MakeStatistics( F );
-
   // Now write each data row
   std::vector<scalar> ScratchBuffer( om.NumSamples() );
   BootDat Adjusted( f->ErrorDigits, om.NumSamples() );
@@ -1091,7 +1121,7 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
   {
     ModelFile &mf{ *ds.constFile[i] };
     const ModelContinuum &m{ * dynamic_cast<const ModelContinuum *>( f->model[i].get() ) };
-    if( m.ff == ff )
+    if( ValidateFF( m.ff ) == ff )
     {
       const int idxFF{ ffIndex( ff ) };
     // Adjust the q^2 value on each replica
@@ -1099,6 +1129,7 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
     {
       const scalar rmPi{ om(rep,idxmPi[m.ei.idx]) };
       const scalar rmPDGPi{ om(rep,idxmPDGPi) };
+      const scalar aInv{ om(rep,idxaInv[m.ei.idx]) };
       // Compute the Chiral term
       const scalar TermChiral = ( c0Enabled[idxFF] && ( NeedFV() || NeedChiral() ) )
                                 ? om(rep,idxC0[idxFF]) * om(rep,idxChiFV[m.ei.idx]) : 0;
@@ -1107,7 +1138,7 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
               ? om(rep,idxC1[idxFF]) * ( rmPi * rmPi - rmPDGPi * rmPDGPi ) * LambdaInvSq : 0;
       // Compute the Discretisation term
       scalar TermDisc = 0;
-      const scalar aLambda{ Lambda / om(rep,idxaInv[m.ei.idx]) };
+      const scalar aLambda{ Lambda / aInv };
       const scalar aLambdaSq{ aLambda * aLambda };
       scalar Factor = aLambdaSq;
       for( unsigned int i = 0; i < NumD; ++i )
@@ -1132,10 +1163,11 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
     Pole.Get( ScratchBuffer );
     const ValWithEr &veQ{ om.SummaryData( static_cast<int>( m.qSq.idx ) ) };
     const ValWithEr &veEL{ om.SummaryData( static_cast<int>( m.EL.idx ) ) };
+    const ValWithEr &F{ mf.SummaryData( static_cast<int>( m.idxFitColumn ) ) };
     os << RowNum++ << Common::Space << mf.Ensemble << Common::Space << m.XVectorKey()
        << Common::Space << veQ .to_string( f->ErrorDigits ) << Common::Space << veQ
        << Common::Space << veEL.to_string( f->ErrorDigits ) << Common::Space << veEL
-       << Common::Space << F[i].to_string( f->ErrorDigits ) << Common::Space << F[i]
+       << Common::Space << F.to_string( f->ErrorDigits ) << Common::Space << F
        << Adjusted << DataNoPole << AdjNoPole << Pole
        << Common::NewLine;
   }
@@ -1204,6 +1236,7 @@ int ContinuumFit::Run()
   SortModels();
   MakeOutputFilename();
   LoadExtra();
+  NormaliseData();
   CovarParams cp{ cl, ds };
   std::cout << cp << std::endl;
   std::cout << "Covariance matrix entries across form factor (same ensemble) "

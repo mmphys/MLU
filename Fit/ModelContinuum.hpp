@@ -51,6 +51,7 @@ struct ModelContinuum : Model
   const Common::FormFactor ff;
   const ContinuumFit &Parent;
   const ModelFile &mf;
+  const std::size_t idxFitColumn;
   const int idxFF;
   const Common::Momentum p;
   const std::string Ensemble;

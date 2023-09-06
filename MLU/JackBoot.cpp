@@ -701,15 +701,23 @@ void JackBoot<T>::Resample( const MatrixView<T> &Source, std::size_t NumReplicas
  *****************************************************************************/
 
 template <typename T>
-void JackBoot<T>::MakeStatistics( std::vector<ValWithEr<T>> &vStats ) const
+void JackBoot<T>::MakeStatistics( ValWithEr<T> *vStats, std::size_t StartCol,
+                                  std::size_t NumCols ) const
 {
-  vStats.resize( extent() );
-  if( extent() )
+  if( NumCols )
   {
-    // Default to showing the central values
-    for( std::size_t i = 0; i < extent(); ++i )
+    if( StartCol + NumCols > extent() )
     {
-      vStats[i] = Central[i];
+      std::ostringstream os;
+      os << "JackBoot<T>::MakeStatistics() StartCol " << StartCol << " + NumCols " << NumCols
+         << " > extent " << extent();
+      throw std::runtime_error( os.str().c_str() );
+    }
+
+    // Default to showing the central values
+    for( std::size_t i = 0; i < NumCols; ++i )
+    {
+      vStats[i] = Central[i + StartCol];
       vStats[i].Check = NumReplicas() ? 1 : 0;
     }
     if( NumReplicas() > 1 )
@@ -717,24 +725,24 @@ void JackBoot<T>::MakeStatistics( std::vector<ValWithEr<T>> &vStats ) const
       if( Seed == SeedWildcard )
       {
         // Jackknife statistics
-        std::vector<std::size_t> Count( extent(), 0 );
-        Vector<T> Var( extent() );
+        std::vector<std::size_t> Count( NumCols, 0 );
+        Vector<T> Var( NumCols );
         Var = static_cast<T>( 0 );
         // Sum the Variance entries on each replica
         for( std::size_t replica = 0; replica < NumReplicas(); ++replica )
         {
-          for( std::size_t j = 0; j < extent(); ++j )
+          for( std::size_t j = 0; j < NumCols; ++j )
           {
-            if( ::Common::IsFinite( Replica( replica, j ) ) )
+            if( ::Common::IsFinite( Replica( replica, j + StartCol ) ) )
             {
-              Var[j] += Squared( Replica( replica, j ) - Central[j] );
+              Var[j] += Squared( Replica( replica, j + StartCol ) - Central[j + StartCol] );
               ++Count[j];
             }
           }
         }
         // Normalise
         Vector<T> Column;
-        for( std::size_t j = 0; j < extent(); ++j )
+        for( std::size_t j = 0; j < NumCols; ++j )
         {
           if( Count[j] )
           {
@@ -742,7 +750,7 @@ void JackBoot<T>::MakeStatistics( std::vector<ValWithEr<T>> &vStats ) const
             Var[j] = std::sqrt( Var[j] );
             vStats[j].Low -= Var[j];
             vStats[j].High += Var[j];
-            Column.MapColumn( const_cast<Matrix<T> &>( Replica ), j );
+            Column.MapColumn( const_cast<Matrix<T> &>( Replica ), j + StartCol );
             Column.MinMax( vStats[j].Min, vStats[j].Max, true );
           }
           vStats[j].Check = static_cast<Real>( Count[j] ) / NumReplicas();
@@ -752,15 +760,15 @@ void JackBoot<T>::MakeStatistics( std::vector<ValWithEr<T>> &vStats ) const
       {
         // Bootstrap statistics
         std::vector<T> Buffer( NumReplicas() );
-        for( std::size_t j = 0; j < extent(); ++j )
+        for( std::size_t j = 0; j < NumCols; ++j )
         {
           std::size_t Count{};
           for( std::size_t replica = 0; replica < NumReplicas(); ++replica )
           {
-            if( ::Common::IsFinite( Replica( replica, j ) ) )
-              Buffer[Count++] = Replica( replica, j );
+            if( ::Common::IsFinite( Replica( replica, j + StartCol ) ) )
+              Buffer[Count++] = Replica( replica, j + StartCol );
           }
-          vStats[j].Get( Central[j], Buffer, Count );
+          vStats[j].Get( Central[j + StartCol], Buffer, Count );
         }
       }
     }

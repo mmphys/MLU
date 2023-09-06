@@ -131,6 +131,8 @@ ModelContinuum::ModelContinuum( const Model::CreateParams &mcp, Model::Args &Arg
   ei{ GetEnsembleInfo() },
   Parent{ dynamic_cast<const ::CreateParams &>( mcp ).Parent },
   mf{ * dynamic_cast<const ModelFile *>( mcp.pCorr ) },
+  idxFitColumn{ mf.params.Find( Common::Param::Key( Common::GetFormFactorString( ff ) ),
+                                "ModelContinuum::GetFitColumn()" )->second() },
   idxFF{ Parent.ffIndex( ff ) },
   p{ mcp.pCorr->Name_.MesonP[1].p }
 {
@@ -241,10 +243,7 @@ void ModelContinuum::AddParameters( Params &mp )
 
 std::size_t ModelContinuum::GetFitColumn() const
 {
-  Common::Param::Key k;
-  k.Name = Common::GetFormFactorString( ff );
-  Params::const_iterator it{ mf.params.Find( k, "ModelContinuum::GetFitColumn()" ) };
-  return it->second();
+  return idxFitColumn;
 }
 
 void ModelContinuum::SaveParameters( const Params &mp )
@@ -321,8 +320,6 @@ scalar ModelContinuum::operator()( int t, Vector &ScratchPad, Vector &ModelParam
 {
   // Compute the chiral term
   // Chiral log term
-  const scalar mPi{ ModelParams[Parent.idxmPi[ei.idx]] };
-  const scalar mPDGPi{ ModelParams[Parent.idxmPDGPi] };
   const scalar sChiFV{ Parent.ChiEnabled[idxFF] || Parent.FVEnabled[idxFF]
                        ? ModelParams[Parent.idxChiFV[ei.idx]] : 0 };
   const scalar TermChiral = Parent.c0Enabled[idxFF]

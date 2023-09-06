@@ -116,6 +116,7 @@ struct ContinuumFit : public FitController
 
 protected:
   // The global constraint
+  bool bDoConstraint;
   std::size_t idxConstraint;
   unsigned int WhichConstraint;
   inline const Common::Param::Key &ConstraintKey() const
@@ -137,25 +138,6 @@ protected:
     return -0.75 * ( Chiral + FV );
   }
 
-  struct EnsembleFF
-  {
-    std::string Ensemble;
-    Common::FormFactor ff;
-    EnsembleFF( const std::string &ensemble, Common::FormFactor FF ) : Ensemble{ensemble}, ff{FF} {}
-  };
-  struct EnsembleFFLess
-  {
-    bool operator()( const EnsembleFF &lhs, const EnsembleFF &rhs ) const
-    {
-      int i = Common::CompareIgnoreCase( lhs.Ensemble, rhs.Ensemble );
-      if( i )
-        return i < 0;
-      return lhs.ff < rhs.ff;
-    }
-  };
-  using EnsembleFFSetT = std::set<EnsembleFF, EnsembleFFLess>;
-  EnsembleFFSetT  EnsembleFFs;
-
   // Stats on the ensembles we loaded from files
   struct EnsembleStat
   {
@@ -173,9 +155,9 @@ protected:
   inline unsigned int ffMaskFromIndex( int idx ) const { return idx ? uiFFPlus : uiFF0; }
   inline unsigned int ffMask( Common::FormFactor ff ) const
   {
-    if( ff == Common::FormFactor::f0 )
+    if( ff == Common::FormFactor::f0 || ff == Common::FormFactor::fpar )
       return uiFF0;
-    if( ff == Common::FormFactor::fplus )
+    if( ff == Common::FormFactor::fplus || ff == Common::FormFactor::fperp )
       return uiFFPlus;
     std::ostringstream os;
     os << "ContinuumFit::ffMask() " << ff << " invalid";
@@ -189,13 +171,27 @@ protected:
 public:
   inline int ffIndex( Common::FormFactor ff ) const
   {
-    if( ff == Common::FormFactor::f0 )
+    if( ff == Common::FormFactor::f0 || ff == Common::FormFactor::fpar )
       return idxFF0;
-    if( ff == Common::FormFactor::fplus )
+    if( ff == Common::FormFactor::fplus || ff == Common::FormFactor::fperp )
       return idxFFPlus;
     std::ostringstream os;
     os << "ContinuumFit::ffIndex() " << ff << " invalid";
     throw std::runtime_error( os.str().c_str() );
+  }
+  static inline Common::FormFactor ValidateFF( Common::FormFactor ff )
+  {
+    if( ff == Common::FormFactor::fpar )
+      ff = Common::FormFactor::f0;
+    else if( ff == Common::FormFactor::fperp )
+      ff = Common::FormFactor::fplus;
+    else if( ff != Common::FormFactor::fplus && ff != Common::FormFactor::f0 )
+    {
+      std::ostringstream os;
+      os << "Unsupported form factor " << ff;
+      throw std::runtime_error( os.str().c_str() );
+    }
+    return ff;
   }
 
   explicit ContinuumFit( Common::CommandLine &cl );
@@ -218,8 +214,7 @@ protected:
   }
   std::string sOpNameConcat; // Sorted, concatenated list of operators in the fit for filenames
   static const std::string &GetPoleMassName( Common::FormFactor ff, const Common::FileNameAtt &fna );
-  static Common::FormFactor ValidateFF( Common::FormFactor ff );
-  void AddEnsemble( const std::string &Ensemble, Common::FormFactor thisFF );
+  void AddEnsemble( const std::string &Ensemble );
   void GetEnabled( std::string sOptions );
   void LoadModels();
   void GetEnsembleStats();
@@ -227,6 +222,7 @@ protected:
   void SetEnsembleStatSeed();
   void SortModels();
   void LoadExtra();
+  void NormaliseData();
   void MakeOutputFilename();
   std::string GetOutputFilename( unsigned int uiFF );
   void ShowCovar();
