@@ -451,9 +451,9 @@ void MixedOp::Make( const std::string &FileName )
   //Input base is everything except the operator names
   std::string InBase{ fnaName.Dir };
   //Common::AppendSlash( InBase );
-  InBase.append( fnaName.GetBaseExtra() );
+  InBase.append( fnaName.GetBaseExtra( 0, -1 ) ); // TODO: 7-Sep-2023 Should this be GetBaseExtra()?
   // Output base name for the output files is the input + fit times + theta
-  std::string OutBase{ fnaName.GetBaseExtra() };
+  std::string OutBase{ fnaName.GetBaseExtra( 0, -1 ) }; // TODO: 7-Sep-2023 just GetBaseExtra()?
   if( IsSink() )
     MI[ModelSnk].model.Name_.AppendExtra( OutBase );
   if( IsSource() )
@@ -795,7 +795,7 @@ bool Debug()
       }
     }
     static const std::array<std::string,2> Sufii{ "_Ratio", "_Ratio_reversed" };
-    const std::string Out{ OutDir + fPW.Name_.GetBaseExtra() + Sufii[type] };
+    const std::string Out{ OutDir + fPW.Name_.GetBaseExtra( 0, -1 ) + Sufii[type] }; // TODO: 7-Sep-2023 Should this be GetBaseExtra()?
     static const Common::SeedType Seed{ fPW.Name_.Seed };
     std::cout << "Writing to " << Out << Common::NewLine;
     fOut.SetSummaryNames( "Ratio" );

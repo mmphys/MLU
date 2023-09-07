@@ -581,7 +581,7 @@ public:
   /// As per GetBaseShort() but append all of the extra segments as well
   std::string GetBaseShortExtra( int First = 0, int Last = UINT_MAX ) const;
   /// Get all of the base, then append specified parts of Extra. Negative counts are relative to the end (-1=last, etc)
-  std::string GetBaseExtra( int Last = 0, int First = -1 ) const;
+  std::string GetBaseExtra( int Last = 0, int First = INT_MAX ) const;
   /** Get complete base name of the file (i.e. everything before the type)
    without path, but with optional prefix (eg some other path) **/
   std::string GetBase( const std::string &Prefix = "" ) const;

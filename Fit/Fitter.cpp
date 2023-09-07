@@ -722,11 +722,11 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       {
         OutputModel.WriteSummaryTD( ds, fna.GetAltPath( fna.Type + "_td", TEXT_EXT ), bVerbose );
         if( SummaryLevel >= 2 )
-          OutputModel.WriteSummary( OutputModel.Name_.NameNoExt + '.' + TEXT_EXT );
+          OutputModel.WriteSummary( fna.NameNoExt + '.' + TEXT_EXT );
       }
     }
     else
-      WriteSummaryTD( OutputModel.Name_.NameNoExt + '.' + DAT_EXT, bVerbose );
+      WriteSummaryTD( fna.NameNoExt + '.' + DAT_EXT, bVerbose );
   }
   return bOK;
 }
