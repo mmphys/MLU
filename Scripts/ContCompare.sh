@@ -49,19 +49,25 @@ set ylabel '$\delta f_{'.FLabel.'}^{D_s \rightarrow K}$ / \%'
 
 FieldFile(Field,Seq,FF)=CompareDir.'/'.Field.'_'.sprintf("%c",Seq+64).'_'.FF.'.txt'
 
-array PlotTitles[12]
-PlotTitles[1]='$\delta^{\left(\textrm{FV}\right)}$'
-PlotTitles[2]='$\delta^{\left(\textrm{chiral}\right)}$'
-PlotTitles[3]=PlotTitles[1].' and '.PlotTitles[2]
-PlotTitles[4]='$\left(a \Lambda\right)^2$'
-PlotTitles[5]='$\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
-PlotTitles[6]='$\left(\flatfrac{E_L}{\Lambda}\right)^3$'
-PlotTitles[7]='C2'
-PlotTitles[8]='M3'
-PlotTitles[9]='F1M'
-PlotTitles[10]='M1M2M3'
-PlotTitles[11]='C1C2 and '.PlotTitles[4]
-PlotTitles[12]='\$n^2_{\textrm{max}}$ C1C2'
+array PlotTitles[16]
+PlotTitles[1]='omit $\delta^{\left(\textrm{FV}\right)}$'
+PlotTitles[2]='omit C1'
+PlotTitles[3]='omit C2'
+PlotTitles[4]='omit M1'
+PlotTitles[5]='omit M2'
+PlotTitles[6]='omit M3'
+PlotTitles[7]='omit M1M2M3'
+PlotTitles[8]='omit \$n^2_{\textrm{max}}$ C1C2'
+PlotTitles[9]='\$\Delta_0=300$ MeV $\Delta_+=-22$ MeV'
+
+# These are destructive tests - not part of my error budget
+PlotTitles[10]='omit F1M'
+PlotTitles[11]='omit C1C2 and $\left(a \Lambda\right)^2$'
+PlotTitles[12]='omit $\delta^{\left(\textrm{chiral}\right)}$'
+PlotTitles[13]=PlotTitles[1].' and $\delta^{\left(\textrm{chiral}\right)}$'
+PlotTitles[14]='omit $\left(a \Lambda\right)^2$'
+PlotTitles[15]='omit $\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
+PlotTitles[16]='omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
 
 PlotPrefix="'$Ref/$Prefix'.FF.'$Suffix' using "
 PlotPrefix=PlotPrefix."(stringcolumn('field') eq Field ? column('x')*XScale : NaN)"
@@ -71,11 +77,10 @@ PlotPrefix=PlotPrefix."with filledcurves title 'Error' fc 'gray05' fs transparen
 do for [Loop=1:2] {
 
 if( Loop == 2 ) {
-  PlotTitles[4]=''
-  PlotTitles[11]=''
-  set key top left Left reverse maxrows 6
+  do for [i=10:|PlotTitles|] { PlotTitles[i]='' }
+  set key top left Left reverse maxrows 5
 } else {
-  set key center left Left reverse maxrows 7
+  set key center left Left reverse maxrows 9
 }
 
 Cmd=''
@@ -83,7 +88,7 @@ do for [i=1:|PlotTitles|] {
   if( PlotTitles[i] ne '' ) {
   Cmd=Cmd.', "'.FieldFile(Field,i,FF).'"'
   Cmd=Cmd." using (column('x')*XScale):(abs(column('y')/column('Ref')-1)*100)"
-  Cmd=Cmd." with lines title '".sprintf("%c",i+96).') omit '.PlotTitles[i]."'"
+  Cmd=Cmd." with lines title '".sprintf("%c",i+96).') '.PlotTitles[i]."'"
   Cmd=Cmd.' linestyle '.i
   if( i > 8 ) { Cmd=Cmd.' dashtype 2' }
   }
@@ -178,17 +183,23 @@ EOFMARK
 
   MakeStats Ref "$Ref" # Reference value
   MakeOne a Omit/renorm-CVZ34_$Which # Omit FV
-  MakeOne b Omit/renorm-CXZ34_all # Omit Chiral
-  MakeOne c Omit/renormE2-CVXZ3_all # Omit FV and Chiral
-  MakeOne d Omit/renormD0-CZ34_$Which # Omit a Lambda
-  MakeOne e Omit/renorm-C1Z34_$Which # Omit Delta Mpi / Lambda
-  MakeOne f Omit/renormE2-CZ3_$Which # Omit (E/Lambda)^3
-  MakeOne g C2/renorm-CZ34_$Which # Omit C2
-  MakeOne h M3/renorm-CZ34_$Which # Omit M3
-  MakeOne i CM/renorm-CZ34_$Which # Omit F1M
-  MakeOne j CF/renorm-CZ34_$Which # Omit M1, M2, M3
+  MakeOne b C1/renorm-CZ34_$Which # Omit C1
+  MakeOne c C2/renorm-CZ34_$Which # Omit C2
+  MakeOne d M1/renorm-CZ34_$Which # Omit M1
+  MakeOne e M2/renorm-CZ34_$Which # Omit M2
+  MakeOne f M3/renorm-CZ34_$Which # Omit M3
+  MakeOne g CF/renorm-CZ34_$Which # Omit M1, M2, M3
+  MakeOne h Simul/renorm-CZ34_some # Omit n^2_max from C1 C2
+  MakeOne i Pole300-22/renorm-CZ34_$Which # Delta_+=-25MeV, Delta_0=300MeV
+
+  # These are destructive tests - not part of my error budget
+  MakeOne j F1M/renorm-CZ34_$Which # Omit F1M
   MakeOne k MF/renormD0-CZ34_$Which # Omit C1, C2
-  MakeOne l Simul/renorm-CZ34_some # Omit n^2_max from C1 C2
+  MakeOne l Omit/renorm-CXZ34_$Which # Omit Chiral
+  MakeOne m Omit/renormE2-CVXZ3_$Which # Omit FV and Chiral
+  MakeOne n Omit/renormD0-CZ34_$Which # Omit a Lambda
+  MakeOne o Omit/renorm-C1Z34_$Which # Omit Delta Mpi / Lambda
+  MakeOne p Omit/renormE2-CZ3_$Which # Omit (E/Lambda)^3
 
   cat >> "$SummaryFile" <<-"EOFMARK"
 	\hline

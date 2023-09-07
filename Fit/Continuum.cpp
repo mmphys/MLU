@@ -68,6 +68,8 @@ ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
 {
   GetEnabled( cl.SwitchValue<std::string>("f") );
   Common::MakeAncestorDirs( outBaseFileName );
+  PoleMass[idxFF0] = cl.GotSwitch( "poles" ) ? cl.SwitchValue<scalar>("poles") : 0;
+  PoleMass[idxFFPlus] = cl.GotSwitch( "polev" ) ? cl.SwitchValue<scalar>("polev") : 0;
 }
 
 void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f )
@@ -89,8 +91,11 @@ void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f )
     {
       const Common::FormFactor ff{ ffIndexReverse( idxFF ) };
       const std::string &sFF{ GetFormFactorString( ff ) };
-      kPDGDStar[idxFF].Name = GetPoleMassName( ff, f.ds.constFile[0]->Name_ );
-      mp.Add( kPDGDStar[idxFF], 1 );
+      if( PoleMass[idxFF] == 0 )
+      {
+        kPDGDStar[idxFF].Name = GetPoleMassName( ff, f.ds.constFile[0]->Name_ );
+        mp.Add( kPDGDStar[idxFF], 1 );
+      }
       kDelta[idxFF].Object.push_back( sFF );
       kDelta[idxFF].Name = "Delta";
       mp.Add( kDelta[idxFF], 1, false, Param::Type::Derived );
@@ -226,7 +231,8 @@ void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
   {
     if( uiFF & ffMaskFromIndex( idxFF ) )
     {
-      idxPDGDStar[idxFF] = mp.at( kPDGDStar[idxFF] )();
+      if( PoleMass[idxFF] == 0 )
+        idxPDGDStar[idxFF] = mp.at( kPDGDStar[idxFF] )();
       idxDelta[idxFF] = mp.at( kDelta[idxFF] )();
       if( c0Enabled[idxFF] )
         idxC0[idxFF] = mp.at( kC0[idxFF] )();
@@ -275,8 +281,13 @@ void ContinuumFit::SetReplica( Vector &ModelParams ) const
   {
     if( uiFF & ffMaskFromIndex( idxFF ) )
     {
-      const scalar PoleMass{ ModelParams[idxPDGDStar[idxFF]] };
-      ModelParams[idxDelta[idxFF]] = 0.5 * ( ( PoleMass*PoleMass - mPDGL*mPDGL ) / mPDGH - mPDGH );
+      if( PoleMass[idxFF] == 0 )
+      {
+        const scalar PoleMass{ ModelParams[idxPDGDStar[idxFF]] };
+        ModelParams[idxDelta[idxFF]] = 0.5 * ( ( PoleMass*PoleMass - mPDGL*mPDGL ) / mPDGH - mPDGH );
+      }
+      else
+        ModelParams[idxDelta[idxFF]] = PoleMass[idxFF];
     }
   }
   // Compute chiral and finite volume corrections for each ensemble
@@ -376,7 +387,7 @@ const std::string &ContinuumFit::GetPoleMassName( Common::FormFactor ff,
   static const std::string PDGDs0Star{ "PDGDs0Star" };
   const bool bVector{ ff == Common::FormFactor::fplus || ff == Common::FormFactor::fperp };
   // Pole-mass determined by final-state quark (not spectator)
-  if( std::toupper( fna.Quark[1][0] ) == 'L' )
+  if( std::toupper( fna.Quark[idxSnk][0] ) == 'L' )
     return bVector ? PDGDStar : PDGD0Star;
   return bVector ? PDGDsStar : PDGDs0Star;
 }
@@ -1273,6 +1284,8 @@ int main(int argc, const char *argv[])
       {"e", CL::SwitchType::Single, DefaultNumEnergies},
       {"f", CL::SwitchType::Single, DefaultFormFactor},
       {"overwrite", CL::SwitchType::Flag, nullptr},
+      {"poles", CL::SwitchType::Multiple, nullptr},
+      {"polev", CL::SwitchType::Multiple, nullptr},
       {"model", CL::SwitchType::Multiple, nullptr},
       {"Hotelling", CL::SwitchType::Single, DefaultHotelling},
       {"chisqdof", CL::SwitchType::Single, "0"},
@@ -1363,6 +1376,8 @@ int main(int argc, const char *argv[])
     "         Disable constants: 0=c0; 1=c1; 2,3,...=e0,e1,...; a,b,...=d0,d1,...;\n"
     "                            X=chiral correction; V=finite volume correction\n"
     "         1st form factor becomes default (default: " << DefaultFormFactor << ")\n"
+    "--poles  Scalar pole mass [eV]\n"
+    "--polev  Vector pole mass [eV]\n"
     "--model  An additional model file, e.g. to load lattice spacings\n"
     "--Hotelling Minimum Hotelling Q-value on central replica (default " << DefaultHotelling << ")\n"
     "--chisqdof  Maximum chi^2 / dof on central replica\n"

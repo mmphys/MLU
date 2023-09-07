@@ -28,9 +28,12 @@ if ! [ -v EnsOpt ]; then
   EnsembleList="C1 C2 F1M M1 M2 M3"
 else
   case "$EnsOpt" in
+    C1 ) EnsembleList="C2 F1M M1 M2 M3";;
     C2 ) EnsembleList="C1 F1M M1 M2 M3";;
+    M1 ) EnsembleList="C1 C2 F1M M2 M3";;
+    M2 ) EnsembleList="C1 C2 F1M M1 M3";;
     M3 ) EnsembleList="C1 C2 F1M M1 M2";;
-    CM ) EnsembleList="C1 C2 M1 M2 M3";;
+    F1M ) EnsembleList="C1 C2 M1 M2 M3";;
     MF ) EnsembleList="M1 M2 M3 F1M";;
     CF ) EnsembleList="C1 C2 F1M";;
     *) "Unrecognised EnsOpt \"$EnsOpt\""; exit 1;;

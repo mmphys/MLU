@@ -45,20 +45,25 @@ else
   #DisableZ=4 ContFit.sh&
   #DisableZ=23 ContFit.sh&
   #DisableZ=24 ContFit.sh&
-  DisableZ=34 ContFit.sh& # Ch 9 This is my reference fit. # L) _some=Omit n^2_max from C1 C2
+  DisableZ=34 ContFit.sh& # Ch 9 This is my reference fit. # h) _some=Omit n^2_max from C1 C2
 
   # These are other variations
-  OutDir=Omit Disable=V DisableZ=34 ContFit.sh& # A) Omit FV
-  OutDir=Omit Disable=X DisableZ=34 ContFit.sh& # B) Omit Chiral
-  OutDir=Omit Disable=VX E=2 DisableZ=3 ContFit.sh& # C) Omit FV and Chiral
-  OutDir=Omit D=0       DisableZ=34 ContFit.sh& # D) Omit a Lambda
-  OutDir=Omit Disable=1 DisableZ=34 ContFit.sh& # E) Omit Delta Mpi / Lambda
-  OutDir=Omit E=2 DisableZ=3 ContFit.sh& # F ) Omit (E/Lambda)^3
-  EnsOpt=C2 DisableZ=34 ContFit.sh& # G) Omit Ensemble C2
-  EnsOpt=M3 DisableZ=34 ContFit.sh& # H) Omit Ensemble M3
-  EnsOpt=CM DisableZ=34 ContFit.sh& # I) Omit Ensemble F1M
-  EnsOpt=CF DisableZ=34 ContFit.sh& # J) Omit Ensemble M1, M2, M3
-  EnsOpt=MF DisableZ=34 D=0 ContFit.sh& # K) Omit Ensemble C1, C2
+  OutDir=Omit Disable=V DisableZ=34 ContFit.sh& # a) Omit FV
+  EnsOpt=C1 DisableZ=34 ContFit.sh& # b) Omit Ensemble C1
+  EnsOpt=C2 DisableZ=34 ContFit.sh& # c) Omit Ensemble C2
+  EnsOpt=M1 DisableZ=34 ContFit.sh& # d) Omit Ensemble M1
+  EnsOpt=M2 DisableZ=34 ContFit.sh& # e) Omit Ensemble M2
+  EnsOpt=M3 DisableZ=34 ContFit.sh& # f) Omit Ensemble M3
+  EnsOpt=CF DisableZ=34 ContFit.sh& # g) Omit Ensemble M1, M2, M3
+  OutDir=Pole300-22 DisableZ=34 FitOptions='--poles=3e8 --polev=-2.2e7' ContFit.sh& # i) Manual pole
 
+  # These are destructive tests - not part of my error budget
+  EnsOpt=F1M DisableZ=34 ContFit.sh& # j) Omit Ensemble F1M
+  EnsOpt=MF DisableZ=34 D=0 ContFit.sh& # k) Omit Ensemble C1, C2
+  OutDir=Omit Disable=X DisableZ=34 ContFit.sh& # l) Omit Chiral
+  OutDir=Omit Disable=VX E=2 DisableZ=3 ContFit.sh& # m) Omit FV and Chiral
+  OutDir=Omit D=0       DisableZ=34 ContFit.sh& # n) Omit a Lambda
+  OutDir=Omit Disable=1 DisableZ=34 ContFit.sh& # o) Omit Delta Mpi / Lambda
+  OutDir=Omit E=2 DisableZ=3 ContFit.sh& # p) Omit (E/Lambda)^3
   wait
 fi

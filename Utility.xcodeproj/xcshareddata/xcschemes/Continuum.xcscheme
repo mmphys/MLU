@@ -73,6 +73,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--polev=-2.2e7 --poles=3e8"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-v 1"
             isEnabled = "NO">
          </CommandLineArgument>

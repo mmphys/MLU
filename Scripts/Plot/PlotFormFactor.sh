@@ -22,6 +22,11 @@ aFormFactorYRangeRaw=(F1M 0.5:1.25 C1 0.5:1.5 C2 0.3:1.5 M1 0.45:1.3 M2 0.45:1.3
 
 # Optional environment variables
 # FitSeries: Which choice of 3pt fits. Nothing is default
+# Suffix:    Suffix for output directory name (e.g. for different choices of ZV)
+# FullyNP:   Set to true if the data are already (mostly NPR) renormalised and you want Fully NPR.
+#            Overrides (ignores) ZV.
+# ZV:    Parameter to pass to CRatio for ZV (file or constant)
+#        Defaults to ../Renorm/ZV.txt, so explicitly set 'ZV=' to disable renormalisation
 # nodt:  Set to anything to disable plots individual DeltaT all point-wall
 # nopw:  Set to anything to disable plots individual point-wall all DeltaT
 #UnCorr: Set to anything to use uncorrelated fit data
@@ -33,6 +38,8 @@ yRange=${yRange:-${aFormFactorYRange[$Ensemble]}}
 yRangeRaw=${yRangeRaw:-${aFormFactorYRangeRaw[$Ensemble]}}
 MaxX=${MaxX:-${aFormFactorMaxX[$Ensemble]}}
 MaxXZ=${MaxXZ:-${aFormFactorMaxXZ[$Ensemble]}}
+
+if [[ ! -v ZV && -r ../Renorm/ZV.txt ]]; then ZV=../../Renorm/ZV.txt; fi
 
 ###################################################
 # Make a plot of all four form factors - old version - various DeltaT
@@ -206,25 +213,23 @@ done
 fi
 
 for Fit2 in $Fit2ptSeries; do
-  OutSub=$Fit2$FitSeries
-  mkdir -p $OutSub${UnCorr+U}
-  cd $OutSub${UnCorr+U}
+  Series3pt=$Fit2$FitSeries
+  OutSub=${Series3pt}${UnCorr+U}$Suffix
+  mkdir -p $OutSub
+  cd $OutSub
   i=0
   InPrefix=../.. # $HOME/NoSync/$Ensemble
   MELFit=$InPrefix/MELFit
-  Renorm=$InPrefix/Renorm/ZV.txt
   SpecDir="3sm_${Spec[i]}"
   FitFile=$MELFit/Fit_${Spec[i]}_$Fit2.txt
   Cmd="CRatio --type f,$L"
   if [ -v FullyNP ]; then
     Cmd+=",,,'${MLUCache}EnsembleInfo.h5'"
-  elif [ -v ZV ]; then
-    [ -n "$ZV" ] && Cmd+=",,'$ZV'"
-  elif [ -r $Renorm ]; then
-    Cmd+=",,$Renorm"
+  elif [ -n "$ZV" ]; then
+    Cmd+=",,'$ZV'"
   fi
   Cmd="$Cmd --efit $FitFile --i3 $MELFit/$SpecDir/ -o $SpecDir/"
-  Cmd="$Cmd '*corr_*corr_*.$OutSub.${UnCorr+un}corr*.$MLUSeed.h5'"
+  Cmd="$Cmd '*corr_*corr_*.${Series3pt}.${UnCorr+un}corr*.$MLUSeed.h5'"
   LogFile="FFS_$SpecDir.log"
   echo "$Cmd"
   echo "$Cmd"   > $LogFile

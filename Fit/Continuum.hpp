@@ -115,6 +115,7 @@ struct ContinuumFit : public FitController
   std::vector<Common::Param::Key> kaInv, kmPi, kFVSim, kFVPhys, kChiSim, kChiFV, kDeltaMPi;
 
 protected:
+  std::array<scalar, NumFF> PoleMass;
   // The global constraint
   bool bDoConstraint;
   std::size_t idxConstraint;
