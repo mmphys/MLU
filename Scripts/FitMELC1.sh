@@ -170,8 +170,7 @@ function RatioFitsBase()
 ############################################################
 
 # Fits to renormalised data
-# Based on RatioFitsBase
-# Started 7 Sep 2023
+# This became my base renormalised fit Fri 8 Sep 2023
 
 ############################################################
 
@@ -304,7 +303,7 @@ qSrc=h$Heavy
 qSnk=l
 qSpec=s
 
-for FileSeries in ${series-old disp priorPW betterPW priorP betterP dispstd renorm renormnew}
+for FileSeries in ${series-old disp priorPW betterPW priorP betterP dispstd renormold renorm}
 do
 (
   case $FileSeries in
@@ -317,11 +316,11 @@ do
       ChooseTwoPtFits disp
       RatioFitsStd;;
 
-    renorm)
+    renormold)
       ChooseTwoPtFits disp
       Ratio=ratio Renorm= NotRaw= RatioFitsBase;;
 
-    renormnew)
+    renorm)
       ChooseTwoPtFits disp
       Ratio=ratio Renorm= NotRaw= RatioFitsRenorm;;
 

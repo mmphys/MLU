@@ -62,7 +62,7 @@ PlotTitles[8]='omit \$n^2_{\textrm{max}}$ C1C2'
 PlotTitles[9]='\$\Delta_0$ 300 MeV, $\Delta_+$ -25 MeV'
 PlotTitles[10]='\$\Delta_+$ -100 MeV, omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
 PlotTitles[11]='\$\Delta_0$ 250 MeV'
-PlotTitles[12]='Alternate C1'
+PlotTitles[12]='Alternate C1 fits'
 
 # These are destructive tests - not part of my error budget
 PlotTitles[13]='omit F1M'
@@ -73,10 +73,11 @@ PlotTitles[17]='omit $\left(a \Lambda\right)^2$'
 PlotTitles[18]='omit $\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
 PlotTitles[19]='omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
 
+PlotErrorBar="abs((column('y_high')-column('y_low'))/(2*column('y')))*100"
 PlotPrefix="'$Ref/$Prefix'.FF.'$Suffix' using "
-PlotPrefix=PlotPrefix."(stringcolumn('field') eq Field ? column('x')*XScale : NaN)"
-PlotPrefix=PlotPrefix.":(0):(abs((column('y_high')-column('y_low'))/(2*column('y')))*100)"
-PlotPrefix=PlotPrefix."with filledcurves title 'Error' fc 'gray05' fs transparent solid 0.5"
+PlotPrefix=PlotPrefix."(stringcolumn('field') eq Field ? column('x')*XScale : NaN):("
+PlotPrefixB="):("
+PlotPrefixC=") with filledcurves title 'Error' fc 'gray05' fs transparent solid 0.5"
 
 do for [Loop=1:2] {
 
@@ -87,11 +88,17 @@ if( Loop == 2 ) {
   set key center left Left reverse maxrows 10
 }
 
+AbsFunc='abs'
+do for [AbsLoop=1:2] {
+
+PlotPrefixA='0'
+if( AbsLoop == 2 ) { PlotPrefixA='-'.PlotErrorBar }
+
 Cmd=''
 do for [i=1:|PlotTitles|] {
   if( PlotTitles[i] ne '' ) {
   Cmd=Cmd.', "'.FieldFile(Field,i,FF).'"'
-  Cmd=Cmd." using (column('x')*XScale):(abs(column('y')/column('Ref')-1)*100)"
+  Cmd=Cmd." using (column('x')*XScale):(".AbsFunc."(column('y')/column('Ref')-1)*100)"
   Cmd=Cmd." with lines title '".sprintf("%c",i+96).') '.PlotTitles[i]."'"
   Cmd=Cmd.' linestyle '.i
   if( i > 16 ) { Cmd=Cmd.' dashtype 4' } else {
@@ -101,17 +108,22 @@ do for [i=1:|PlotTitles|] {
 
 OutName=Save.'_'.FF
 if( Loop == 2 ) { OutName=OutName.'_zoom' }
-set output PlotDir.'/'.OutName.'.tex'
+set output PlotDir.'/'.OutName.AbsFunc.'.tex'
 
-eval "plot ".PlotPrefix.Cmd
+eval "plot ".PlotPrefix.PlotPrefixA.PlotPrefixB.PlotErrorBar.PlotPrefixC.Cmd
 set output
+AbsFunc=''
+}
 }
 EOFMark
 
 (
 cd $PlotDir
-pdflatex "${save}_${ff}"
-pdflatex "${save}_${ff}_zoom"
+for Zoom in '' _zoom; do
+  for AbsFunc in '' abs; do
+    pdflatex "${save}_${ff}${Zoom}$AbsFunc"
+  done
+done
 )
 }
 

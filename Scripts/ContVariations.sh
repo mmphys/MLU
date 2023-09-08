@@ -55,11 +55,11 @@ else
   EnsOpt=M2 DisableZ=34 ContFit.sh& # e) Omit Ensemble M2
   EnsOpt=M3 DisableZ=34 ContFit.sh& # f) Omit Ensemble M3
   EnsOpt=CF DisableZ=34 ContFit.sh& # g) Omit Ensemble M1, M2, M3
-  Some= DisableZ=34 ContFit.sh& # h) _some=Omit n^2_max from C1 C2
+  Some= DisableZ=34 ContFit.sh& # h) Omit n^2_max from C1 C2
   OutDir=Pole300-25 DisableZ=34 FitOptions='--poles=3e8 --polev=-2.5e7' ContFit.sh& # i) Manual pole
   OutDir=PoleV-100 E=2 DisableZ=3 FitOptions='--polev=-1e8' ContFit.sh& # j) Manual pole
   OutDir=PoleS250 DisableZ=34 FitOptions='--poles=25e7' ContFit.sh& # k) Manual pole
-  OutDir=AltC1 Series='C1 renormnew' DisableZ=34 ContFit.sh& # l) _some=Omit n^2_max from C1 C2
+  OutDir=AltC1 Series='C1 renormold' DisableZ=34 ContFit.sh& # l) Alternate C1 fits
 
   # These are destructive tests - not part of my error budget
   EnsOpt=F1M DisableZ=34 ContFit.sh& # m) Omit Ensemble F1M
