@@ -45,7 +45,7 @@ else
   #DisableZ=4 ContFit.sh&
   #DisableZ=23 ContFit.sh&
   #DisableZ=24 ContFit.sh&
-  DisableZ=34 ContFit.sh& # Ch 9 This is my reference fit. # h) _some=Omit n^2_max from C1 C2
+  DisableZ=34 ContFit.sh& # Ch 9 This is my reference fit
 
   # These are other variations
   OutDir=Omit Disable=V DisableZ=34 ContFit.sh& # a) Omit FV
@@ -55,17 +55,19 @@ else
   EnsOpt=M2 DisableZ=34 ContFit.sh& # e) Omit Ensemble M2
   EnsOpt=M3 DisableZ=34 ContFit.sh& # f) Omit Ensemble M3
   EnsOpt=CF DisableZ=34 ContFit.sh& # g) Omit Ensemble M1, M2, M3
+  Some= DisableZ=34 ContFit.sh& # h) _some=Omit n^2_max from C1 C2
   OutDir=Pole300-25 DisableZ=34 FitOptions='--poles=3e8 --polev=-2.5e7' ContFit.sh& # i) Manual pole
   OutDir=PoleV-100 E=2 DisableZ=3 FitOptions='--polev=-1e8' ContFit.sh& # j) Manual pole
   OutDir=PoleS250 DisableZ=34 FitOptions='--poles=25e7' ContFit.sh& # k) Manual pole
+  OutDir=AltC1 Series='C1 renormnew' DisableZ=34 ContFit.sh& # l) _some=Omit n^2_max from C1 C2
 
   # These are destructive tests - not part of my error budget
-  EnsOpt=F1M DisableZ=34 ContFit.sh& # l) Omit Ensemble F1M
-  EnsOpt=MF DisableZ=34 D=0 ContFit.sh& # m) Omit Ensemble C1, C2
-  OutDir=Omit Disable=X DisableZ=34 ContFit.sh& # n) Omit Chiral
-  OutDir=Omit Disable=VX E=2 DisableZ=3 ContFit.sh& # o) Omit FV and Chiral
-  OutDir=Omit D=0       DisableZ=34 ContFit.sh& # p) Omit a Lambda
-  OutDir=Omit Disable=1 DisableZ=34 ContFit.sh& # q) Omit Delta Mpi / Lambda
-  OutDir=Omit E=2 DisableZ=3 ContFit.sh& # r) Omit (E/Lambda)^3
+  EnsOpt=F1M DisableZ=34 ContFit.sh& # m) Omit Ensemble F1M
+  EnsOpt=MF DisableZ=34 D=0 ContFit.sh& # n) Omit Ensemble C1, C2
+  OutDir=Omit Disable=X DisableZ=34 ContFit.sh& # o) Omit Chiral
+  OutDir=Omit Disable=VX E=2 DisableZ=3 ContFit.sh& # p) Omit FV and Chiral
+  OutDir=Omit D=0       DisableZ=34 ContFit.sh& # q) Omit a Lambda
+  OutDir=Omit Disable=1 DisableZ=34 ContFit.sh& # r) Omit Delta Mpi / Lambda
+  OutDir=Omit E=2 DisableZ=3 ContFit.sh& # s) Omit (E/Lambda)^3
   wait
 fi

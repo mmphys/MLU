@@ -37,6 +37,18 @@ ayrangeMEL[gXYZ,2]=0.56:0.70
 ayrangeMEL[gXYZ,3]=0.48:0.65
 ayrangeMEL[gXYZ,4]=0.44:0.65
 
+# y-ranges for renormalised R3 ratios
+declare -A ayrangeR3R
+ayrangeR3R[gT,0]=1.2:1.4
+ayrangeR3R[gT,1]=1.:1.2
+ayrangeR3R[gT,2]=0.95:1.15
+ayrangeR3R[gT,3]=0.7:1.05
+ayrangeR3R[gT,4]=0.75:1.1
+ayrangeR3R[gXYZ,1]=0.28:0.44
+ayrangeR3R[gXYZ,2]=0.22:0.37
+ayrangeR3R[gXYZ,3]=0.18:0.32
+ayrangeR3R[gXYZ,4]=0.15:0.3
+
 declare -A aMesonFit
 declare -A aMesonFileOp
 declare -A aMesonFileMom
@@ -53,7 +65,8 @@ aMesonFileMom[h${Heavy}_s,0]=_p2_0
 
 function ChooseTwoPtFits()
 {
-  case "$1" in
+  local Fit2ptSeries="$1"
+  case "${Fit2ptSeries}" in
   old) # Versions using different PP+PW fit on each momentum
   aMesonFit[s_l,0]=corr_6_23_7_23
   aMesonFit[s_l,1]=corr_6_23_7_23
@@ -136,6 +149,8 @@ esac
 
 function RatioFitsBase()
 {
+  echo "Performing Base $FitWhat fits to $Ratio for $FileSeries"
+
   NumExp=2
   Gamma=gT
   DeltaT="20 24 28" TI='9 11 13' TF='14 18 18' FitTwoStage 0 # Preferred
@@ -154,6 +169,65 @@ function RatioFitsBase()
 
 ############################################################
 
+# Fits to renormalised data
+# Based on RatioFitsBase
+# Started 7 Sep 2023
+
+############################################################
+
+function RatioFitsRenorm()
+{
+  echo "Performing Renorm $FitWhat fits to $Ratio for $FileSeries"
+
+  NumExp=2
+  Gamma=gT
+  DeltaT="20 24 28" TI='9 11 11' TF='14 18 18' FitTwoStage 0
+  Alt= DeltaT="20 24 28" TI='9 11 11' TF='14 18 22' FitTwoStage 0
+  Alt= DeltaT="20 24 28" TI='9 11 13' TF='14 18 18' FitTwoStage 0
+  Alt= DeltaT="20 24 28" TI='9 11 13' TF='14 18 22' FitTwoStage 0
+  Alt= DeltaT="16 20" TI='8 9' TF='11 14' FitTwoStage 0 # Preferred
+
+  DeltaT="16 20 24" TI='8 9 10' TF='10 14 18' FitTwoStage 1
+  Alt= DeltaT="20 24" TI='9 10' TF='14 18' FitTwoStage 1
+  Alt= DeltaT="16 20" TI='8 9' TF='10 14' FitTwoStage 1
+  Alt= DeltaT="20 24 28" TI='9 12 10' TF='13 17 17' FitTwoStage 1
+
+  DeltaT="16 20 24" TI='8 8 12' TF='10 13 17' FitTwoStage 2
+  Alt= DeltaT="20 24 28" TI='8 12 16' TF='12 16 19' FitTwoStage 2
+  Alt= DeltaT="16 20" TI='8 8' TF='10 13' FitTwoStage 2
+
+  DeltaT="20 24" TI='8 12' TF='14 16' FitTwoStage 3
+  Alt= DeltaT="20 24 28" TI='8 12 16' TF='14 16 19' FitTwoStage 3
+  Alt= DeltaT="16 20" TI='8 8' TF='9 14' FitTwoStage 3
+  Alt= DeltaT="12 16 20" TI='6 7 7' TF='7 10 15' FitTwoStage 3
+
+  DeltaT="16 20" TI='6 8' TF='9 13' FitTwoStage 4
+  Alt= DeltaT="16 20 24" TI='6 8 12' TF='9 13 16' FitTwoStage 4
+  Alt= DeltaT="20 24" TI='8 12' TF='13 16' FitTwoStage 4
+
+  # Gamma spatial
+  Gamma=gXYZ
+  DeltaT="16 20 24" TI='9 9 9' TF='11 15 19' FitTwoStage 1
+  Alt= DeltaT="20 24" TI='9 9' TF='15 19' FitTwoStage 1
+  Alt= DeltaT="16 20" TI='9 9' TF='11 15' FitTwoStage 1
+
+  DeltaT="16 20" TI='8 9' TF='11 15' FitTwoStage 2
+  Alt= DeltaT="16 20 24" TI='8 9 8' TF='11 15 19' FitTwoStage 2
+  Alt= DeltaT="20 24" TI='9 8' TF='15 19' FitTwoStage 2
+  Alt= DeltaT="12 16 20" TI='6 8 9' TF='7 11 15' FitTwoStage 2
+
+  DeltaT="16 20" TI='8 9' TF='11 15' FitTwoStage 3 # My preferred fit
+  Alt= DeltaT="12 16 20" TI='6 8 9' TF='7 11 15' FitTwoStage 3 # My preferred fit
+  Alt= DeltaT="16 20 24" TI='8 9 8' TF='11 15 19' FitTwoStage 3 # My preferred fit
+  Alt= DeltaT="20 24" TI='9 8' TF='15 19' FitTwoStage 3 # My preferred fit
+
+  DeltaT="16 20" TI='7 9' TF='11 15' FitTwoStage 4
+  Alt= DeltaT="16 20 24" TI='7 9 8' TF='11 15 19' FitTwoStage 4
+  Alt= DeltaT="12 16 20" TI='6 7 9' TF='7 11 15' FitTwoStage 4
+}
+
+############################################################
+
 # An alternate set of ratio fit ranges ... which I never finished/used
 # Seems from the following line of code I originally intended 'alt' versions of Base fit ranges?
 #   FileSeries=${Fit2ptSeries}alt
@@ -162,6 +236,8 @@ function RatioFitsBase()
 
 function RatioFitsAlt()
 {
+  echo "Performing Alt $FitWhat fits to $Ratio for $FileSeries"
+
   Gamma=gT
   NumExp=2 DeltaT="16 20 24 28" TI='8 9 11 13' TF='11 14 18 18' FitTwoStage 0 # Very much the same as prior
   NumExp=1 DeltaT="20 24 28" TI='11 14 13' TF='12 15 17' FitTwoStage 1 # I prefer this one
@@ -181,6 +257,8 @@ function RatioFitsAlt()
 
 function RatioFitsStd()
 {
+  echo "Performing Std $FitWhat fits to $Ratio for $FileSeries"
+
   DeltaT="16 20 24"
   TI='8 8 8'
   TF='10 14 18'
@@ -199,6 +277,8 @@ function RatioFitsStd()
 
 function RatioFitsTest()
 {
+  echo "Performing Test $FitWhat fits to $Ratio for $FileSeries"
+
   Gamma=gT
 ##NumExp=2 DeltaT="20 24 28" TI='10 10 13' TF='13 18 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 FitTwoStage 1 # I prefer this one
 #NumExp=2 DeltaT="20 24 28" TI='10 14 13' TF='13 15 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 FitTwoStage 1 # I prefer this one
@@ -220,10 +300,9 @@ qSrc=h$Heavy
 qSnk=l
 qSpec=s
 
-for FileSeries in ${series-old disp priorPW betterPW priorP betterP dispstd renorm}
+for FileSeries in ${series-old disp priorPW betterPW priorP betterP dispstd renorm renormnew}
 do
 (
-  echo "Performing $FitWhat fits to $Ratio for $FileSeries"
   case $FileSeries in
     old | disp | priorPW | betterPW | priorP | betterP)
       ChooseTwoPtFits $FileSeries
@@ -237,6 +316,10 @@ do
     renorm)
       ChooseTwoPtFits disp
       Ratio=ratio Renorm= NotRaw= RatioFitsBase;;
+
+    renormnew)
+      ChooseTwoPtFits disp
+      Ratio=ratio Renorm= NotRaw= RatioFitsRenorm;;
 
     "test")
       ChooseTwoPtFits disp

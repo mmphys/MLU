@@ -112,6 +112,7 @@ EndFitChoices
 	s_l_p2_4  2ptp2/s_l/s_l_p2_4.betterPW_6_23_7_23.corr_6_18_6_18.g5P_g5W.model.2263212701.h5
 EndFitChoices
 
+[ -e ${OutBase}renormnew.txt ] || ln -s ${OutBase}disp.txt ${OutBase}renormnew.txt
 [ -e ${OutBase}renorm.txt ] || ln -s ${OutBase}disp.txt ${OutBase}renorm.txt
 )
 
@@ -123,5 +124,7 @@ EndFitChoices
 
 series='disp old priorP priorPW betterP betterPW' PlotFormFactor.sh
 series=disp FitSeries=std UnCorr= PlotFormFactor.sh
-series=renorm Suffix=_mostly ZV= PlotFormFactor.sh # renorm=(mostly NPR) renormalised. No need for ZV
-series=renorm FullyNP= PlotFormFactor.sh # renorm=(mostly NPR) renormalised. Apply Fully NPR correct.
+# renorm=(mostly NPR) renormalised. No need for ZV
+series='renorm renormnew' Suffix=_mostly ZV= PlotFormFactor.sh
+# renorm=(mostly NPR) renormalised. Apply Fully NPR correct.
+series='renorm renormnew' FullyNP= PlotFormFactor.sh
