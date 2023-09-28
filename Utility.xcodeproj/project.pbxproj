@@ -1658,7 +1658,6 @@
 		2748E67C2A1E10CF00867EF6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1666,7 +1665,6 @@
 		2748E67D2A1E10CF00867EF6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1674,7 +1672,6 @@
 		278BA035290ED52500960730 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1682,7 +1679,6 @@
 		278BA036290ED52500960730 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1690,7 +1686,6 @@
 		27D49A4B2910563C003E2146 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1698,7 +1693,6 @@
 		27D49A4C2910563C003E2146 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1707,11 +1701,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEPLOYMENT_LOCATION = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				EXECUTABLE_PREFIX = lib;
-				INSTALL_PATH = $HOME/.localRelease/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1720,11 +1712,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEPLOYMENT_LOCATION = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				EXECUTABLE_PREFIX = lib;
-				INSTALL_PATH = $HOME/.localRelease/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1732,7 +1722,6 @@
 		682C5CBE28E4F9D300C8E004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1740,7 +1729,6 @@
 		682C5CBF28E4F9D300C8E004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1776,7 +1764,6 @@
 		682C5CE628E4FC1D00C8E004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1784,7 +1771,6 @@
 		682C5CE728E4FC1D00C8E004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1820,7 +1806,6 @@
 		682C5D1828E4FE0600C8E004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1828,7 +1813,6 @@
 		682C5D1928E4FE0600C8E004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1892,7 +1876,6 @@
 		682C5D5928E4FF5F00C8E004 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1900,7 +1883,6 @@
 		682C5D5A28E4FF5F00C8E004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEPLOYMENT_LOCATION = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -2197,6 +2179,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
@@ -2227,7 +2210,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DSTROOT = /;
+				DYLIB_INSTALL_NAME_BASE = "$HOME/.local$(CONFIGURATION)/lib";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -2247,19 +2230,18 @@
 				HEADER_SEARCH_PATHS = (
 					$GridPkg/include,
 					$GridPkg/include/libomp,
-					"$(GridPre)Release/include",
+					"$(GridPre)$(CONFIGURATION)/include",
 					$GridPre/include,
 					$PROJECT_DIR,
-					$PROJECT_DIR/buildRelease,
+					"$PROJECT_DIR/build$(CONFIGURATION)",
 				);
-				INSTALL_PATH = $HOME/.localRelease/bin;
 				LIBRARY_SEARCH_PATHS = (
 					$GridPkg/lib,
 					$GridPkg/lib/libomp,
-					"$(GridPre)Release/lib",
+					"$(GridPre)$(CONFIGURATION)/lib",
 					$GridPre/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -2284,6 +2266,7 @@
 					"-lz",
 					"-lgsl",
 					"-lMinuit2",
+					"-lcrypto",
 				);
 				SDKROOT = macosx;
 			};
@@ -2293,6 +2276,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
@@ -2323,7 +2307,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DSTROOT = /;
+				DYLIB_INSTALL_NAME_BASE = "$HOME/.local$(CONFIGURATION)/lib";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -2337,19 +2321,18 @@
 				HEADER_SEARCH_PATHS = (
 					$GridPkg/include,
 					$GridPkg/include/libomp,
-					"$(GridPre)Release/include",
+					"$(GridPre)$(CONFIGURATION)/include",
 					$GridPre/include,
 					$PROJECT_DIR,
-					$PROJECT_DIR/buildRelease,
+					"$PROJECT_DIR/build$(CONFIGURATION)",
 				);
-				INSTALL_PATH = $HOME/.localRelease/bin;
 				LIBRARY_SEARCH_PATHS = (
 					$GridPkg/lib,
 					$GridPkg/lib/libomp,
-					"$(GridPre)Release/lib",
+					"$(GridPre)$(CONFIGURATION)/lib",
 					$GridPre/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -2374,6 +2357,7 @@
 					"-lz",
 					"-lgsl",
 					"-lMinuit2",
+					"-lcrypto",
 				);
 				SDKROOT = macosx;
 			};
@@ -2389,7 +2373,7 @@
 				271DB9E42A2A256C00AF0501 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		2748E67B2A1E10CF00867EF6 /* Build configuration list for PBXNativeTarget "Continuum" */ = {
 			isa = XCConfigurationList;
@@ -2398,7 +2382,7 @@
 				2748E67D2A1E10CF00867EF6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		278BA034290ED52500960730 /* Build configuration list for PBXNativeTarget "GetColumn" */ = {
 			isa = XCConfigurationList;
@@ -2407,7 +2391,7 @@
 				278BA036290ED52500960730 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		27D49A4A2910563C003E2146 /* Build configuration list for PBXNativeTarget "lime_truncate" */ = {
 			isa = XCConfigurationList;
@@ -2416,7 +2400,7 @@
 				27D49A4C2910563C003E2146 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5C9F28E4F41300C8E004 /* Build configuration list for PBXNativeTarget "MLU" */ = {
 			isa = XCConfigurationList;
@@ -2425,7 +2409,7 @@
 				682C5CA128E4F41300C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5CBD28E4F9D300C8E004 /* Build configuration list for PBXNativeTarget "bootstrap" */ = {
 			isa = XCConfigurationList;
@@ -2434,7 +2418,7 @@
 				682C5CBF28E4F9D300C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5CCB28E4FB6400C8E004 /* Build configuration list for PBXNativeTarget "corr" */ = {
 			isa = XCConfigurationList;
@@ -2443,7 +2427,7 @@
 				682C5CCD28E4FB6400C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5CD828E4FBC000C8E004 /* Build configuration list for PBXNativeTarget "corrstat" */ = {
 			isa = XCConfigurationList;
@@ -2452,7 +2436,7 @@
 				682C5CDA28E4FBC000C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5CE528E4FC1D00C8E004 /* Build configuration list for PBXNativeTarget "CRatio" */ = {
 			isa = XCConfigurationList;
@@ -2461,7 +2445,7 @@
 				682C5CE728E4FC1D00C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5CF228E4FC5800C8E004 /* Build configuration list for PBXNativeTarget "Debug" */ = {
 			isa = XCConfigurationList;
@@ -2470,7 +2454,7 @@
 				682C5CF428E4FC5800C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5D0A28E4FD6800C8E004 /* Build configuration list for PBXNativeTarget "Divide" */ = {
 			isa = XCConfigurationList;
@@ -2479,7 +2463,7 @@
 				682C5D0C28E4FD6800C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5D1728E4FE0600C8E004 /* Build configuration list for PBXNativeTarget "FitSummary" */ = {
 			isa = XCConfigurationList;
@@ -2488,7 +2472,7 @@
 				682C5D1928E4FE0600C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5D2428E4FE4E00C8E004 /* Build configuration list for PBXNativeTarget "GaugeCmp" */ = {
 			isa = XCConfigurationList;
@@ -2497,7 +2481,7 @@
 				682C5D2628E4FE4E00C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5D3128E4FEA300C8E004 /* Build configuration list for PBXNativeTarget "hlxml" */ = {
 			isa = XCConfigurationList;
@@ -2506,7 +2490,7 @@
 				682C5D3328E4FEA300C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5D3E28E4FEF800C8E004 /* Build configuration list for PBXNativeTarget "ImportCorr" */ = {
 			isa = XCConfigurationList;
@@ -2515,7 +2499,7 @@
 				682C5D4028E4FEF800C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5D4B28E4FF2600C8E004 /* Build configuration list for PBXNativeTarget "mixedop" */ = {
 			isa = XCConfigurationList;
@@ -2524,7 +2508,7 @@
 				682C5D4D28E4FF2600C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5D5828E4FF5F00C8E004 /* Build configuration list for PBXNativeTarget "MultiFit" */ = {
 			isa = XCConfigurationList;
@@ -2533,7 +2517,7 @@
 				682C5D5A28E4FF5F00C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5D6F28E5000300C8E004 /* Build configuration list for PBXNativeTarget "peramb-compare" */ = {
 			isa = XCConfigurationList;
@@ -2542,7 +2526,7 @@
 				682C5D7128E5000300C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5D7C28E5006200C8E004 /* Build configuration list for PBXNativeTarget "repair" */ = {
 			isa = XCConfigurationList;
@@ -2551,7 +2535,7 @@
 				682C5D7E28E5006200C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5D8928E500A500C8E004 /* Build configuration list for PBXNativeTarget "SynthData" */ = {
 			isa = XCConfigurationList;
@@ -2560,7 +2544,7 @@
 				682C5D8B28E500A500C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5D9628E500DA00C8E004 /* Build configuration list for PBXNativeTarget "xml3pt" */ = {
 			isa = XCConfigurationList;
@@ -2569,7 +2553,7 @@
 				682C5D9828E500DA00C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5DA428E501D300C8E004 /* Build configuration list for PBXNativeTarget "xmlGFWall" */ = {
 			isa = XCConfigurationList;
@@ -2578,7 +2562,7 @@
 				682C5DA628E501D300C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5DB128E5023700C8E004 /* Build configuration list for PBXNativeTarget "xmlPeramb" */ = {
 			isa = XCConfigurationList;
@@ -2587,7 +2571,7 @@
 				682C5DB328E5023700C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		682C5DBE28E5029B00C8E004 /* Build configuration list for PBXNativeTarget "xmlZ2" */ = {
 			isa = XCConfigurationList;
@@ -2596,7 +2580,7 @@
 				682C5DC028E5029B00C8E004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		68C5945A28E4F20200FA1835 /* Build configuration list for PBXProject "Utility" */ = {
 			isa = XCConfigurationList;
@@ -2605,7 +2589,7 @@
 				68C5946528E4F20200FA1835 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
