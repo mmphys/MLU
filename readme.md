@@ -7,7 +7,7 @@ aka
 Item | Description
 | --- | ---
 `libMLU.a` | Library containing helper functions (HDF5 wrappers, I/O, filename globbing, ...) 
-`bootstrap`, `MultiFit`, ... | Generic analysis code  
+`bootstrap`, `MultiFit`, `Continuum` ... | Generic analysis code  
 `xml3pt` | Production job for generating semilep dataset on Tesseract and Tursa
 `Scripts` | All analysis jobs to turn correlators into form factors
 
@@ -36,7 +36,7 @@ Item | Description
 
 Choose one of the following options:
 
-### 1. Shared GSL and optional Minuit2
+### 2.1. Shared GSL and optional Minuit2
 
     autoreconf -fvi
 
@@ -47,7 +47,7 @@ Do this if you:
   
 ** NB: This is the only way to build without Minuit2 **
 
-### 2. Use `bootstrap.sh` to download GSL and Minuit2
+### 2.2. Use `bootstrap.sh` to download GSL and Minuit2
 
     ./bootstrap.sh
 
