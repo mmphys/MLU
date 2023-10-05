@@ -36,7 +36,13 @@ Item | Description
 
 Choose one of the following options:
 
-### 2.1. Shared GSL and optional Minuit2
+### Either 2a) Use `bootstrap.sh` to download GSL and Minuit2
+
+    ./bootstrap.sh
+
+`bootstrap.sh` will download its own version of GSL and Minuit2 into `.Package` subdirectory, then run `autoreconf -fvi`
+
+### Or 2b) Shared GSL and optional Minuit2
 
     autoreconf -fvi
 
@@ -46,12 +52,6 @@ Do this if you:
 2. do not wish to use Minuit2.
   
 ** NB: This is the only way to build without Minuit2 **
-
-### 2.2. Use `bootstrap.sh` to download GSL and Minuit2
-
-    ./bootstrap.sh
-
-`bootstrap.sh` will download its own version of GSL and Minuit2 into `.Package` subdirectory, then run `autoreconf -fvi`
 
 ## 3. Configure
 
