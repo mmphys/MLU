@@ -1,72 +1,66 @@
 #!/usr/bin/env bash
 
-if [[ "$Grid"    == "" ]] ; then echo '$Grid not set'   ; exit 1; fi
-if [[ "$Hadrons" == "" ]] ; then echo '$Hadrons not set'; exit 1; fi
-if [[ "$GridPre" == "" ]] ; then echo '$GridPre not set'; exit 1; fi
+# User input
+# Grid:        Path to Grid
+# Hadrons:     Path to Hadrons
+# GridPre:     Install prefix
+# Headers:     Set to anything to install links to headers only
+
+if [ -z "$GridPre" ]; then echo '$GridPre not set'; exit 1; fi
 
 # Make wildcard failures return empty strings (not the unmodified wildcard string)
 shopt -s nullglob
 
-# Grid
-echo 'Grid source located in '$Grid
-for MyEnv in $Grid/build${GridSelect}*
-do
-  ShortEnv=${MyEnv#${Grid}/build}
-  Dest=$GridPre$ShortEnv
-  echo "${ShortEnv}: $Dest --> $MyEnv"
-  # bin
-  mkdir -p $Dest/bin
-  cd       $Dest/bin
-  rm -f grid-config
-  ln -s $MyEnv/grid-config
-  # lib
-  mkdir -p $Dest/lib
-  cd       $Dest/lib
-  rm -f libGrid.a
-  ln -s $MyEnv/Grid/libGrid.a
-  #ln -s $MyEnv/Hadrons/libHadrons.a
-  # include
-  for sub in Grid #Hadrons
+function LinkFiles()
+{
+  local Src Dst
+  local Dir="$1"; shift
+  mkdir -p "$Dir"
+  cd "$Dir"
+  for Src in "$@"
   do
-    mkdir -p $Dest/include/$sub
-    cd       $Dest/include/$sub
-    for f in $Grid/$sub/*; do if [[ -d $f ]] ; then rm -rf ${f##*/}; ln -s $f; fi; done
-    for f in $Grid/$sub/*.{h,hpp}; do if [[ -f $f ]] ; then rm -f ${f##*/}; ln -s $f; fi; done
-    if [[ $sub == "Grid" ]]
-    then
-      rm -f Config.h
-      ln -s $MyEnv/$sub/Config.h
-      rm -f Version.h
-      ln -s $MyEnv/$sub/Version.h
-    fi
+    Dst="${Src##*/}"
+    rm -f "$Dst"
+    ln -s "$MyEnv/$Src"
   done
-done
+}
 
-# Hadrons
-echo 'Hadrons source located in '$Hadrons
-for MyEnv in $Hadrons/build${GridSelect}*
-do
-  ShortEnv=${MyEnv#${Hadrons}/build}
-  Dest=$GridPre$ShortEnv
-  echo "${ShortEnv}: $Dest --> $MyEnv"
-  # bin
-  mkdir -p $Dest/bin
-  cd       $Dest/bin
-  rm -f hadrons-config
-  ln -s $MyEnv/hadrons-config
-  for f in $MyEnv/utilities/Hadrons{Contractor,XmlRun,XmlValidate}
+if [ -z "$Grid" ]; then
+  echo '$Grid not set'
+else
+  echo 'Grid source located in '$Grid
+  for MyEnv in $Grid/build${GridSelect}*
   do
-    rm -f ${f##*/}
-    ln -s $f
+    ShortEnv=${MyEnv#${Grid}/build}
+    Dest=$GridPre$ShortEnv
+    echo "  ${ShortEnv}: $Dest --> $MyEnv"
+    if ! [ -v Headers ]; then
+      LinkFiles "$Dest/bin" grid-config
+      LinkFiles "$Dest/lib" "$MyEnv/Grid/libGrid.a"
+    fi
+    # Make Grid subdirectory with all required headers
+    LinkFiles "$Dest/include/Grid" Grid/Config.h Grid/Version.h
+    for f in $Grid/Grid/*; do if [[ -d $f ]] ; then rm -rf ${f##*/}; ln -s $f; fi; done
+    for f in $Grid/Grid/*.{h,hpp}; do if [[ -f $f ]] ; then rm -f ${f##*/}; ln -s $f; fi; done
   done
-  # lib
-  mkdir -p $Dest/lib
-  cd       $Dest/lib
-  rm -f libHadrons.a
-  ln -s $MyEnv/Hadrons/libHadrons.a
-  # include
-  mkdir -p $Dest/include
-  cd       $Dest/include
-  rm -rf Hadrons
-  ln -s $Hadrons/Hadrons
-done
+fi
+
+if [ -z "$Hadrons" ]; then
+  echo '$Hadrons not set'
+else
+  echo 'Hadrons source located in '$Hadrons
+  for MyEnv in $Hadrons/build${GridSelect}*
+  do
+    ShortEnv=${MyEnv#${Hadrons}/build}
+    Dest=$GridPre$ShortEnv
+    echo "  ${ShortEnv}: $Dest --> $MyEnv"
+    # bin
+    if ! [ -v Headers ]; then
+      LinkFiles "$Dest/bin" hadrons-config utilities/Hadrons{Contractor,XmlRun,XmlValidate}
+      LinkFiles "$Dest/lib" Hadrons/libHadrons.a
+    fi
+    LinkFiles "$Dest/include"
+    rm -rf Hadrons
+    ln -s $Hadrons/Hadrons
+  done
+fi
