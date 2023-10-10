@@ -69,3 +69,20 @@ Use the usual incantation:
 
     make -j 20
     make install
+
+## 5. Copy Mike's data
+
+*OPTIONAL* -- if you wish to compare against Mike's data
+
+### 5.1 Download
+
+1. [Mike's full dataset][dataset] 11GB
+2. [Random number cache][cache] 15MB
+
+[dataset]: https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/marshall/NoSync.tar.gz
+[cache]: https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/marshall/MLUCache.tgz 
+
+### 5.2 Extract
+
+1. The full dataset to $HOME/NoSync, i.e `cd; tar -xf NoSync.tar.gz`
+2. You can extract MLUCache.tgz anywhere you like. `export MLUCache=`*path_to_cache* in .profile
