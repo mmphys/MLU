@@ -85,4 +85,8 @@ Use the usual incantation:
 ### 5.2 Extract
 
 1. The full dataset to $HOME/NoSync, i.e `cd; tar -xf NoSync.tar.gz`
-2. You can extract MLUCache.tgz anywhere you like. `export MLUCache=`*path_to_cache* in .profile
+2. You can extract MLUCache.tgz anywhere you like.
+3. `export MLUCache=`*path_to_cache* in .profile. **INCLUDE A TRAILING** `/`
+4. Edit the paths in MLUCache/mPi.txt, changing `/Users/mike` to your *home* directory
+
+Apologies in advance for the hardcoded paths.

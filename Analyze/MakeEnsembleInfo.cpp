@@ -190,8 +190,7 @@ void ZVInfo::Hydrate( ::H5::Group &g )
 void Maker::ReadZV()
 {
   NumParams = MaxNumParams - 1;
-  static const std::string sFilename{
-    "/Volumes/Mike/Uni/PhD/People/RajMukherjee/michael_sl_Z_V_Z_q.h5" };
+  const std::string sFilename{ Common::RandomCache::PrependCachePath( "michael_sl_Z_V_Z_q.h5" ) };
   std::cout << "Making ZV_mixed from " << sFilename << std::endl;
   try
   {
@@ -243,7 +242,7 @@ void Maker::Run( std::string sFileName ) const
     for( int i = 0; i < NumParams; ++i )
     {
       k.Name = ParamNames[i];
-      if( MPiMap.empty() || i != idxmPi )
+      if( i != idxmPi || MPiMap.empty() )
         MakeGaussian( m, k, ei.Value[i], ei.Value[i].Seed );
       else
       {
@@ -285,12 +284,14 @@ int main(int argc, char *argv[])
   std::ios_base::sync_with_stdio( false );
   //MakeSeeds();
   int iReturn = EXIT_SUCCESS;
-  std::string sFileName{ argc < 2 ? "EnsembleInfo.h5" : argv[1] };
+  const std::string sFileName{ argc < 2 || !argv[1][0]
+    ? Common::RandomCache::PrependCachePath( "EnsembleInfo.h5" ) : argv[1] };
+  const std::string mPiFile{ argc < 3 ? Common::RandomCache::PrependCachePath( "mPi.txt" ) : argv[2]};
   try
   {
     if( Common::FileExists( sFileName ) )
       throw std::runtime_error( sFileName + " exists" );
-    Maker( argc < 3 ? nullptr : argv[2] ).Run( sFileName );
+    Maker( mPiFile.empty() ? nullptr : mPiFile.c_str() ).Run( sFileName );
   }
   catch(const std::exception &e)
   {
@@ -300,5 +301,12 @@ int main(int argc, char *argv[])
     std::cerr << "Error: Unknown exception" << std::endl;
     iReturn = EXIT_FAILURE;
   }
+  if( iReturn == EXIT_FAILURE )
+    std::cerr << "MakeEnsembleInfo [ei.h5 [mPi.txt]]\n"
+    "where:\n"
+    "ei.h5:   Output HDF5 file (default/empty: EnsembleInfo.h5)\n"
+    "mPi.txt: Text file mapping ensemble to pion_mass_fit.h5\n"
+    "         '' Use published RBC/UKQCD masses (default: mPi.txt)"
+    << std::endl;
   return iReturn;
 }
