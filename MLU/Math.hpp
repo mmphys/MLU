@@ -121,6 +121,7 @@ public:
   void AdjustExp( int Adjust );
   void Truncate();
   operator std::string() const;
+  static std::string Show( T Value, T Error, unsigned char SigFig, bool ErrorNonCentral = false );
 };
 
 /**
@@ -151,6 +152,7 @@ template <typename T = double> struct ValWithEr
   ValWithEr( T dCentral, std::vector<T> &Data, std::size_t Count, bool bNormJackknife = false )
   { Get( dCentral, Data, Count, bNormJackknife ); }
   ValWithEr( T Min, T Low, T Central, T High, T Max, Scalar Check = 1 );
+  ValWithEr( T Central, T StdDev, Scalar Check = 1 );
 
   ValWithEr<T>& operator = ( const T Scalar );
   ValWithEr<T>& operator = ( const ValWithEr<T> &Other );

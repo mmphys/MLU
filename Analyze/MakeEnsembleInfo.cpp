@@ -28,6 +28,8 @@
 
 #include "MakeEnsembleInfo.hpp"
 
+#include <iomanip>
+
 ValStddev ValStddev::Average( const ValStddev &o ) const
 {
   ValStddev Avg;
@@ -189,17 +191,23 @@ void ZVInfo::Hydrate( ::H5::Group &g )
 
 void Maker::ReadZV()
 {
+  using VSF = Common::ValSigFig<Scalar>;
+  static constexpr int NumSigFig{ 2 };
   NumParams = MaxNumParams - 1;
   const std::string sFilename{ Common::RandomCache::PrependCachePath( "michael_sl_Z_V_Z_q.h5" ) };
   std::cout << "Making ZV_mixed from " << sFilename << std::endl;
   try
   {
+    static const char Sep[] = " & ";
     ::H5::H5File f( sFilename, H5F_ACC_RDONLY );
     static constexpr int Idx{ 0 };
     std::array<ZVInfo, 3> zvi;
     std::array<Scalar, 3> Rel;
+    std::cout << R"(Ensemble & $\frac{Z_{V, \ell}}{Z_{q, \ell}}$ & $\frac{Z_{V, \textrm{h}}}{Z_{q, \textrm{h}}}$ & $\frac{Z_{V, \textrm{m}}}{Z_{q, \textrm{m}}}$ & $\mu$/GeV & $\rho = \frac{Z_{V, \textrm{m}}}{\sqrt{Z_{V, \ell} Z_{V, \textrm{h}}}}$ \\)"
+    << std::endl;
     for( EnsembleInfo &ei : EnsembleArray )
     {
+      std::cout << ei.Ensemble;
       static const std::array<std::string, 3> RajActions{ "(0, 0)", "(1, 1)", "(0, 1)" };
       for( std::size_t i = 0; i < RajActions.size(); ++i )
       {
@@ -208,14 +216,17 @@ void Maker::ReadZV()
         zvi[i].Hydrate( g );
         if( zvi[i].ZV.size() != zvi[0].ZV.size() )
           throw std::runtime_error( "ZVInfo::Hydrate() size mismatch action " + RajActions[i] );
+        if( zvi[i].Mu != zvi[0].Mu )
+          throw std::runtime_error( "ZVInfo::Hydrate() Mu mismatch action " + RajActions[i] );
         Rel[i] = zvi[i].Err[Idx] / zvi[i].ZV[Idx];
         Rel[i] *= Rel[i];
+        std::cout << Sep << VSF::Show( zvi[i].ZV[Idx], zvi[i].Err[Idx], NumSigFig );
       }
       // Now update the ZVmixed for this ensemble
       ei.Value[idxZV].Value = zvi[2].ZV[Idx] / std::sqrt( zvi[0].ZV[Idx] * zvi[1].ZV[Idx] );
       ei.Value[idxZV].Stddev = ei.Value[idxZV].Value * std::sqrt( Rel[2] + 0.25 * (Rel[0] + Rel[1]) );
-      std::cout << ei.Ensemble << "\tZV_mixed " << ei.Value[idxZV].Value
-                << " +/- " << ei.Value[idxZV].Stddev << std::endl;
+      std::cout << Sep << std::setprecision(4) << zvi[0].Mu[Idx]
+      << Sep << ei.Value[idxZV].to_string( NumSigFig ) << R"(\\)" << std::endl;
     }
     NumParams++;
   }
@@ -284,13 +295,16 @@ int main(int argc, char *argv[])
   std::ios_base::sync_with_stdio( false );
   //MakeSeeds();
   int iReturn = EXIT_SUCCESS;
+  // Decode command-line
   const std::string sFileName{ argc < 2 || !argv[1][0]
     ? Common::RandomCache::PrependCachePath( "EnsembleInfo.h5" ) : argv[1] };
   const std::string mPiFile{ argc < 3 ? Common::RandomCache::PrependCachePath( "mPi.txt" ) : argv[2]};
   try
   {
+    // Abort if output file exists
     if( Common::FileExists( sFileName ) )
       throw std::runtime_error( sFileName + " exists" );
+    // Run
     Maker( mPiFile.empty() ? nullptr : mPiFile.c_str() ).Run( sFileName );
   }
   catch(const std::exception &e)

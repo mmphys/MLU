@@ -214,6 +214,50 @@ template <typename T> ValSigFig<T>::operator std::string() const
   return ss.str();
 }
 
+template <typename T>
+std::string ValSigFig<T>::Show( T Value, T Error_, unsigned char SigFigError, bool ErrorNonCentral )
+{
+  if( SigFigError <= 0 )
+    throw std::invalid_argument( "SigFigError " + std::to_string( SigFigError ) + " invalid" );
+  switch( std::fpclassify( Value ) )
+  {
+    case FP_INFINITE:
+      return "INF";
+    case FP_NAN:
+      return "NAN";
+  }
+  // Get central value and error as a value with specified number of significant figures
+  ValSigFig<T> Error( std::abs( Error_ ), SigFigError );
+  ValSigFig<T> Number( Value, Error );
+  const bool bScientific{ Number.Scientific() };
+  const int ScientificExponent{ Number.Exponent };
+  if( bScientific )
+  {
+    Number.AdjustExp( -ScientificExponent );
+    Error.AdjustExp( -ScientificExponent );
+  }
+  const bool bErrorStraddlesZero{ Error.Exponent >= 0 && Error.Exponent + 1 < Error.SigFig };
+  if( !bErrorStraddlesZero )
+  {
+    if( Error.Exponent < 0 )
+      Error.AdjustExp( Error.SigFig - 1 - Error.Exponent );
+    else if( Error.Exponent > Error.SigFig - 1 )
+      Error.Truncate();
+  }
+  std::string s{ static_cast<std::string>( Number ) };
+  s.append( 1, '(' );
+  if( ErrorNonCentral )
+    s.append( 1, '-' );
+  s.append( static_cast<std::string>( Error ) );
+  s.append( 1, ')' );
+  if( bScientific )
+  {
+    s.append( 1, 'E' );
+    s.append( std::to_string( ScientificExponent ) );
+  }
+  return s;
+}
+
 /*****************************************************************************
  
  A value with error bars
@@ -229,6 +273,11 @@ template <typename T> void ValWithEr<T>::Header( const std::string &FieldName, s
 template <typename T>
 ValWithEr<T>::ValWithEr( T min_, T low_, T central_, T high_, T max_, ValWithEr<T>::Scalar check_ )
 : Min{min_}, Low{low_}, Central{central_}, High{high_}, Max{max_}, Check{check_} {}
+
+template <typename T>
+ValWithEr<T>::ValWithEr( T central_, T stddev_, ValWithEr<T>::Scalar check_ )
+: Min{central_ - stddev_}, Low{central_ - stddev_}, Central{central_},
+  High{central_ + stddev_}, Max{central_ + stddev_}, Check{check_} {}
 
 template <typename T> ValWithEr<T>& ValWithEr<T>::operator=( const T Scalar )
 {
@@ -423,47 +472,9 @@ template <typename T>
 template <typename U> typename std::enable_if<!is_complex<U>::value, std::string>::type
 ValWithEr<T>::to_string( unsigned char SigFigError ) const
 {
-  if( SigFigError <= 0 )
-    throw std::invalid_argument( "SigFigError " + std::to_string( SigFigError ) + " invalid" );
-  switch( std::fpclassify( Central ) )
-  {
-    case FP_INFINITE:
-      return "INF";
-    case FP_NAN:
-      return "NAN";
-  }
-  // Get central value and error as a value with specified number of significant figures
-  ValSigFigT Error( std::abs( ( High - Low ) * 0.5 ), SigFigError );
-  ValSigFigT Number( Central, Error );
-  //std::cout << "<" << static_cast<std::string>( Number ) << " +/- " << static_cast<std::string>( Error ) << "> ";
+  const Scalar scEr{ std::abs( ( High - Low ) * static_cast<Scalar>( 0.5 ) ) };
   const bool ErrorNonCentral{ Central < Low || Central > High };
-  const bool bScientific{ Number.Scientific() };
-  const int ScientificExponent{ Number.Exponent };
-  if( bScientific )
-  {
-    Number.AdjustExp( -ScientificExponent );
-    Error.AdjustExp( -ScientificExponent );
-  }
-  const bool bErrorStraddlesZero{ Error.Exponent >= 0 && Error.Exponent + 1 < Error.SigFig };
-  if( !bErrorStraddlesZero )
-  {
-    if( Error.Exponent < 0 )
-      Error.AdjustExp( Error.SigFig - 1 - Error.Exponent );
-    else if( Error.Exponent > Error.SigFig - 1 )
-      Error.Truncate();
-  }
-  std::string s{ static_cast<std::string>( Number ) };
-  s.append( 1, '(' );
-  if( ErrorNonCentral )
-    s.append( 1, '-' );
-  s.append( static_cast<std::string>( Error ) );
-  s.append( 1, ')' );
-  if( bScientific )
-  {
-    s.append( 1, 'E' );
-    s.append( std::to_string( ScientificExponent ) );
-  }
-  return s;
+  return ValSigFig<T>::Show( Central, scEr, SigFigError, ErrorNonCentral );
 }
 
 template class ValWithEr<float>;

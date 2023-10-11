@@ -43,6 +43,10 @@ struct ValStddev
   Scalar Stddev;
   ValStddev Average( const ValStddev &o ) const;
   ValStddev AddQuadrature( unsigned int lMul, const ValStddev &r, unsigned int rMul ) const;
+  inline std::string to_string( unsigned char SigFigError ) const
+  {
+    return Common::ValSigFig<Scalar>::Show( Value, Stddev, SigFigError );
+  }
 };
 
 std::ostream &operator<<( std::ostream &os, const ValStddev &v );
