@@ -70,6 +70,20 @@ Use the usual incantation:
     make -j 20
     make install
 
+Update your path to include Script subdirectories:
+
+    Utility=*path_to_Utility*
+    PATH="$PATH:$Utility/Scripts:$Utility/Scripts/Plot:$Utility/Scripts/Study1Plateau"`
+
+These scripts require `gnuplot`
+
+    sudo port install gnuplot
+
+The continuum comparison plot scripts use `pdflatex`.
+This can be installed on a Mac using [MacTeX][mactex].
+
+[mactex]: https://tug.org/mactex/
+
 ## 5. Copy Mike's data
 
 *OPTIONAL* -- if you wish to compare against Mike's data
@@ -90,3 +104,45 @@ Use the usual incantation:
 4. Edit the paths in MLUCache/mPi.txt, changing `/Users/mike` to your *home* directory
 
 Apologies in advance for the hardcoded paths.
+
+### 5.3 Test -- continuum fit
+
+#### 5.3 a) See whether executables built ok and libraries load:
+
+    Continuum
+
+Success: Dumps instructions on how to use the continuum fitter.
+
+#### 5.3 b) All the scripts assume NoSync is the current directory:
+
+    cd ~/NoSync
+
+Backup my version of continuum fits so you can compare against them:
+
+    mv Cont Cont.golden
+
+#### 5.3 c) Perform my continuum fit:
+
+    DisableZ=34 ContFit.sh
+
+Success: `Cont/Simul/renorm-CZ34` should contain fit results (e.g. pdfs).
+
+Compare the fit results against `Ch 10 Reference fit – alternate fit choices for C1` [My continuum fit results][ContFit]
+
+[ContFit]: https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/marshall/SemiLep/Continuum.pdf
+
+#### 5.3 d) Perform all fit variations:
+
+    ContVariations.sh
+
+Success: Cont directory now has many more subdirectories containing alternate fits.
+
+#### 5.3 e) Plot the fit comparisons
+
+    Make= ContCompare.sh
+
+Success: `Cont` subdirectory contains `Plot` and `Var` subdirectories.
+ 
+Compare the plots against `11 Fit sensitivity / systematic uncertainties` [My continuum fit results][ContFit]
+
+NB: The continuum comparison plot scripts use `pdflatex`. This can be installed on a Mac using [MacTeX][mactex].

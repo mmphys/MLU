@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <ostream>
 #include <random>
+#include <thread>
 #include <MLU/Common.hpp>
 #include <omp.h>
 #include <Grid/Grid.h>
@@ -789,6 +790,9 @@ bool TryCallback()
 int main(int argc, char *argv[])
 {
   std::cout << "Your random number is " << std::random_device()() << std::endl;
+  std::cout << "C++17 std library reports std::thread::hardware_concurrency()="
+  << std::thread::hardware_concurrency() << std::endl;
+  std::cout << "Open MP reports omp_get_max_threads()=" << omp_get_max_threads() << std::endl;
   //if( !TryCallback() ) return EXIT_SUCCESS;
   //if( CK1.Test() && CK2.Test() && CK3.Test() && CK4.Test() && CompareMikeFit.Test() ) return EXIT_SUCCESS;
   //if( FitRangeTest( argc, argv ) ) return EXIT_SUCCESS;
