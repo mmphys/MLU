@@ -107,13 +107,7 @@ Apologies in advance for the hardcoded paths.
 
 ### 5.3 Test -- continuum fit
 
-#### 5.3 a) See whether executables built ok and libraries load:
-
-    Continuum
-
-Success: Dumps instructions on how to use the continuum fitter.
-
-#### 5.3 b) All the scripts assume NoSync is the current directory:
+Scripts assume NoSync is current directory
 
     cd ~/NoSync
 
@@ -121,7 +115,13 @@ Backup my version of continuum fits so you can compare against them:
 
     mv Cont Cont.golden
 
-#### 5.3 c) Perform my continuum fit:
+#### a) Check executables run
+
+    Continuum
+
+Success: Dumps instructions on how to use the continuum fitter.
+
+#### b) Recreate reference continuum fit
 
     DisableZ=34 ContFit.sh
 
@@ -131,13 +131,13 @@ Compare the fit results against `Ch 10 Reference fit – alternate fit choices f
 
 [ContFit]: https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/marshall/SemiLep/Continuum.pdf
 
-#### 5.3 d) Perform all fit variations:
+#### c) Perform all fit variations
 
     ContVariations.sh
 
 Success: Cont directory now has many more subdirectories containing alternate fits.
 
-#### 5.3 e) Plot the fit comparisons
+#### d) Plot fit sensitivities
 
     Make= ContCompare.sh
 
