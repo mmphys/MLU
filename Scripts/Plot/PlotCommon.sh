@@ -102,6 +102,7 @@ function PCPointWall()
 #   4: Comma separated list of partial field names
 # Optional:
 #   UnCorr: Set to anything to indicate uncorrelated fit
+#   Latex: Set to anything to use Latex markup
 # Returns:
 #   ColumnValues: Array of column values in following order:
 #                 1) ChiSqPerDof 2) pValueH 3) Exact parameters 4) Partial parameters
@@ -118,9 +119,18 @@ function GetColumnValues()
   then
     #echo "OK: $ColumnValues"
     ColumnValues=($ColumnValues)
-    RefText="$RefText${ColumnValues[@]:17:1},"
-    [ -v UnCorr ] && RefText="$RefText uncorrelated"
-    RefText="$RefText χ²/dof=${ColumnValues[@]:4:1}, pH=${ColumnValues[@]:12:1}"
+    RefText+="${ColumnValues[@]:17:1}, "
+    if [ -v Latex ]; then
+      RefText+='$\\chi_{\\nu'
+      [ -v UnCorr ] && RefText+=',\\overline{\\textrm{corr}}'
+      RefText+='}^2$'
+    else
+      [ -v UnCorr ] && RefText+='uncorr '
+      RefText+="χ²/dof"
+    fi
+    RefText+="=${ColumnValues[@]:4:1}, "
+    if [ -v Latex ]; then RefText+="\$p_H\$"; else  RefText+="pH"; fi
+    RefText+="=${ColumnValues[@]:12:1}"
   else
     LastError=${PIPESTATUS[0]}
     #echo "Error $LastError: $ColumnValues" # GetColumn shows its own error messages
@@ -187,12 +197,45 @@ function GetMeson()
   if ! [ -v OptionASCII ] && ! [ -z "$qNum" ]; then NameHuman="$NameHuman ($qNum)"; fi
 }
 
+# Get spectator from filename
+# 1: Path
+function GetSpectator()
+{
+  unset Spec
+  unset PGroup
+  local InPath="$1"
+  local Dir DirParts
+  Dir="${InPath%/*}"
+  if [ "$Dir" != "$InPath" ]; then
+    Dir="${Dir##*/}"
+    if [ -n "$Dir" ]; then
+      DirParts=(${Dir//_/ })
+      if (( ${#DirParts[@]} )); then
+        Spec=${DirParts[-1]}
+        if [ "${Spec: -2}" == p2 ]; then
+          PGroup="${Spec: -2}"
+          Spec=${Spec:0:-2}
+        fi
+      fi
+    fi
+  fi
+}
+
 # 1: 3pt filename to split
-# 2: Spectator
+# Spec: Spectator
+#       If empty, will come from directory path, with suffix stripped into PGroup ("p2" or empty)
 function Split3ptFile()
 {
-  local f="${1##*/}"
-  local Spec="$2"
+  local InPath="$1"
+  local f="${InPath##*/}"
+  # Get spectator from filename if not caller provided
+  if [ -z "$Spec" ]; then
+    GetSpectator "$InPath"
+    if [ -z "$Spec" ]; then
+      echo "Unknown spectator $InPath"
+      return 1
+    fi
+  fi
   Ext=${f#*.}
   Prefix=${f%%.*}
   PrefixParts=(${Prefix//_/ })
@@ -238,6 +281,10 @@ function PCGetLonger()
 # Get the full path to this script
 PCGetFullPath "${BASH_SOURCE[0]}" PlotCommonRoot
 
+. "$PlotCommonRoot/PlotFuncs.sh"
+
+if [ "$1" != NoPreamble ]; then
+
 # Load parameters
 PlotEnsemble="$PlotCommonRoot/Ensemble${Ensemble}.sh"
 if ! [ -e "$PlotEnsemble" ]; then
@@ -259,3 +306,5 @@ LHalf=$((L/2))
 THalf=$((T/2))
 export MLUSeed=${MLUSeed:-1835672416} # Seed to process data
 DataSeed=${DataSeed:-$MLUSeed} # Seed in data filenames
+
+fi

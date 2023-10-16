@@ -14,7 +14,7 @@ do
     InDir=$PlotData/corr/3pt_$Dir
     mkdir -p $Dir; cd $Dir
     for f in $InDir/quark_{l,s}_h*_g*_dt_*_p2_0_ps2_*_g*_g*.fold.*.txt; do
-      if Split3ptFile $f $Spec; then
+      if Split3ptFile $f; then
         [ $Gamma = "gXYZ" ] && Negate="y" || unset Negate
         Save=trev_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT}_p2_${pMax}_${opSnk}_${opSrc}
         if ! [ -f $Save.pdf ]

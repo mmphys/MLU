@@ -29,7 +29,7 @@ do
       # Walk file list
       for f in $d/R*.fold.*.txt
       do
-        if Split3ptFile $f $Spec
+        if Split3ptFile $f
         then
           SaveName=${f##*/}
           SaveName=${SaveName/.fold./.errmax.}

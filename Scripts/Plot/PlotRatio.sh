@@ -48,7 +48,7 @@ do
       if (( DoDeltaT ))
       then
       for f in $InDir/R${RatioNum}_*_g*P_g*P.fold.*.txt; do
-        if Split3ptFile $f $Spec; then
+        if Split3ptFile $f; then
           FilePrefix=${Ratio}_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT}_p2_${p2}
           unset FileNames
           unset Legend
@@ -75,7 +75,7 @@ do
         #for f in $InDir/R${RatioNum}_l_h*_g*_dt_${EnsembleDeltaT[0]}_p2_[2-4]_g5P_g5P.fold.*.txt; do
           #echo ${f##*/}
           #OptionNoMass= # Comment this out for more info in title
-          if Split3ptFile $f $Spec; then
+          if Split3ptFile $f; then
             FilePrefix=${Ratio}_${qSnk}_${qSrc}_${Gamma}
             FileSuffix=p2_${p2}_${opSnk}_${opSrc}
             PCPointWall $opSnk $opSrc opHuman

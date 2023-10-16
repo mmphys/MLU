@@ -19,6 +19,8 @@ yformat="$yformat"
 FieldName="${field:-log}"
 FieldNameText="${fieldtext:-effective mass}"
 MyTitle="${title}"
+my_ylabel="${ylabel}"
+my_xlabel="${xlabel}"
 PDFSize="${size:-6in,3in}"
 Save="${save}"
 NameAdorn=${NameAdorn:-1}
@@ -33,6 +35,12 @@ DoLog=0${log+1}
 RefVal="$RefVal"
 RefText="$RefText"
 Enhanced=1-0${NoEnh+1}
+Latex=0${Latex+1}
+LatexFont="${Latex:-phv}" # Helvetica
+LMar=6+${LMar:-0}
+RMar=1+${RMar:-0}
+BMar=1.5+${BMar:-0}
+TMar=0.5+${TMar:-0}
 
 xOffset=FieldName eq "log" ? -0.5 : 0.0
 NumTI=words( OriginalTI )
@@ -53,9 +61,18 @@ if( Save ne "" ) {
     if( ModelMin || ModelMax!=MaxFileModel ) { Save=Save."_".ModelMin."_".ModelMax }
     Save=Save.".$MLUSeed"
   }
-  if( PDFSize ne "" ) { PDFSize='size '.PDFSize }
-  eval "set term pdfcairo dashed ".PDFSize
-  set output Save.".pdf"
+  if( Latex ) {
+    #sTerm="tikz"
+    sTerm="cairolatex pdf colortext font '".LatexFont."'"
+    sTerm=sTerm." standalone header '\\\\usepackage{physics}'"
+    sExt="tex"
+  } else {
+    sTerm="pdfcairo dashed"
+    sExt="pdf"
+  }
+  if( PDFSize ne "" ) { sTerm=sTerm.' size '.PDFSize }
+  eval "set term ".sTerm
+  set output Save.'.'.sExt
 }
 
 set pointintervalbox 0 # disables the white space around points in gnuplot 5.4.6 onwards
@@ -103,6 +120,16 @@ do for [model=1:NumModels] {
   TotalPlotTWidth=TotalPlotTWidth+PlotTWidth[model]
 }
 #print "TotalPlotTWidth=".sprintf("%g",TotalPlotTWidth)
+
+# Plot nothing so GPVAL_ variables defined
+set multiplot layout 1, 1
+set key off
+set yrange [@my_yrange]
+plot 2 with lines
+unset multiplot
+unset output
+if( Save ne "" ) { set output Save.'.'.sExt }
+
 set yrange [@my_yrange]
 #set ytics font ', 8'
 #set format y "%.6f"
@@ -112,8 +139,27 @@ if( yformat ne "" ) { set format y yformat }
 if( DoLog ) { set logscale y }
 
 # Work out layout
-LMar=0.090
-RMar=0.015
+if( MyTitle ne '' ) { TMar=TMar+1.66 }
+if( RefText ne '' ) { BMar=BMar+1.9 }
+if( my_xlabel ne "" ) {
+  BMar=BMar+1.8;
+  set xlabel my_xlabel
+} else {
+  set label 3 't' at graph 0, 0 textcolor "red" offset character 0, -1
+}
+if( my_ylabel ne "" ) { LMar=LMar + 4; set ylabel my_ylabel }
+
+# Now convert LMar and RMar to proportion of screen width
+#print 'GPVAL_TERM_HCHAR='.GPVAL_TERM_HCHAR
+#print 'GPVAL_TERM_XSIZE='.GPVAL_TERM_XSIZE
+ScreenHChar=real(GPVAL_TERM_HCHAR)/GPVAL_TERM_XSIZE
+ScreenVChar=real(GPVAL_TERM_VCHAR)/GPVAL_TERM_YSIZE
+#print 'ScreenHChar='.sprintf('%g',ScreenHChar)
+#show variables all
+LMar=LMar*ScreenHChar
+RMar=RMar*ScreenHChar
+BMar=BMar*ScreenVChar
+TMar=TMar*ScreenVChar
 PlotWidth=1-LMar-RMar
 
 array SubPlotWidth[NumModels]
@@ -144,11 +190,8 @@ PlotSuffix=PlotSuffix.':'.GetUsing('"data_high"',1,"")
 PlotSuffix=PlotSuffix.' with yerrorbars notitle lc "red" pt 13 ps '.PointSizeData
 
 if( RefText ne '' ) {
-  set label 2 RefText at screen 0, screen 1 font ",10" front textcolor "blue" \
-    offset character 0.5, -0.5
+  set label 2 RefText at screen 0.5,0 center front textcolor "blue" offset character 0,0.9
 }
-
-set multiplot layout 1, NumModels
 
 if( RefVal ne '' ) {
   set object 1 rect from graph 0, first word(RefVal,4) to graph 1, first word(RefVal,6) \
@@ -157,12 +200,14 @@ if( RefVal ne '' ) {
       nohead front lc rgb "gray40" lw 0.25 dashtype "-"
 }
 
-#print "TotalPlotTWidth=".sprintf("%g",TotalPlotTWidth)
+set multiplot layout 1, NumModels
 
 do for [model=1:NumModels] {
 
+set margins 0,0,0,0
+
 if( MyTitle ne "" ) {
-  if( Enhanced ) {
+  if( Latex || Enhanced ) {
     set title word(MyTitle,model)
   } else {
     set title word(MyTitle,model) noenhanced
@@ -171,6 +216,8 @@ if( MyTitle ne "" ) {
 
 set lmargin at screen SubPlotLeft[model]
 set rmargin at screen SubPlotRight[model]
+set tmargin at screen 1-TMar
+set bmargin at screen BMar
 
 set xrange [PlotTMin[model]:PlotTMax[model]]
 set xtics ceil(PlotTMin[model]) + 1, 2, floor(PlotTMax[model])
@@ -178,7 +225,11 @@ if( TotalPlotTWidth >= 120 ) { set xtics font ", 7" }
 else { if( TotalPlotTWidth >= 75 ) { set xtics font ", 9" } }
 
 # Turn off y-axis and labels on second and subsequent models
-if( model == 2 ) { set format y ''; unset ylabel }
+if( model == 2 ) {
+  set format y ''
+  unset ylabel
+  unset label 3
+}
 
 OtherFieldName=(FieldName eq "log") ? "exp" : FieldName
 ConditionTMin='>=PlotTMin[model]'
@@ -220,6 +271,26 @@ eval PlotPrefix.ExtraPlot.OriginalPlot.PlotSuffix
 }
 
 unset multiplot
+if( Save ne "" ) {
+  # Close the file we just created
+  unset output
+  # Process Latex files
+  if( Latex ) {
+    #show variables all
+    Cmd='File="'.Save.'"'
+    Cmd=Cmd.'; Dir="\${File%/*}"'
+    Cmd=Cmd.'; if [ "\$Dir" == "\$File" ]; then unset Dir; else'
+    Cmd=Cmd.' if [ -z "\$Dir" ]; then Dir=/; fi'
+    #Cmd=Cmd.'; cd "\$Dir"'
+    Cmd=Cmd.'; File="\${File##*/}"; fi'
+    #Cmd=Cmd.'; pdflatex'
+    Cmd=Cmd.'; if lualatex -output-directory="\$Dir" "\$File.tex"; then '
+    Cmd=Cmd.'rm "\${Dir+\$Dir/}\$File"{.{aux,log,tex},-inc.pdf}'
+    Cmd=Cmd.'; fi'
+    #print Cmd
+    system Cmd
+  }
+}
 EOFMark
 }
 
@@ -242,13 +313,15 @@ then
   echo "yformat   Vertical axis format, e.g. %.5f for 5 decimal places"
   echo "log       Set to anything to make y-axis a log scale"
   echo "field     Name of field to display (default: log)"
-  #echo "fieldtext Name of field for legend (not used)"
   echo "title     Title for each plot"
+  echo "Latex     Set to anything to use latex in text (Overrides NoEnh)"
   echo "NoEnh     Set to anything to disable enhanced mode in titles"
   echo "size      of .pdf (default: 6in,3in)"
   echo "save      Filename to save (default: derived from PlotFile)"
   echo "SaveDir   Directory to save files to (default: cwd)"
   echo "xAxis     Which field to show (default: t)"
+  echo "xlabel    Label to show on x-axis"
+  echo "ylabel    Label to show on y-axis"
   echo "mmin      Minimum model to show (default: 0)"
   echo "mmax      Maximum model to show (default: #last file)"
   echo "tExtra    Number of extra data points to plot before and after fit (default 2)"

@@ -28,7 +28,7 @@ do
       echo Dir="\"$Dir\""
       mkdir -p $Dir; cd $Dir
       for f in $InDir/quark_{l,s}_h*_g*_dt_*_p2_0_ps2_*_g*_g*.fold.*.txt; do
-        if Split3ptFile $f $Spec; then
+        if Split3ptFile $f; then
           save=${Ratio}_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT}_p2_${p2}_ps2_${ps2}_${opSnk}_${opSrc}_${PlotFieldTitle[field]} \
             legend="'${MSrcHuman}⟶${MSnkHuman}' '${negate}${MSrcHuman}⟵${MSnkHuman}'" \
             fields=${PlotFields[field]} ti=1.5 tf=$((DeltaT-2)).5 savelabel= \

@@ -81,7 +81,7 @@ local e=${e:-2}
 local e2=${e2:-$e}
 
 # Derived
-local Meson; GetMeson Meson ${Q1} ${Q2}
+local Meson; OptionNoMass= GetMeson Meson ${Q1} ${Q2}
 local InDir=$PlotData/corr/2ptp2/${Q1}_${Q2}_p2_0_g5P_g5
 local InSuffix=.fold.$DataSeed.h5
 local OutDir=Fit/ZVEnergy
@@ -90,10 +90,10 @@ mkdir -p $OutDir
 
 # Make Fit command
 local Cmd="$MultiFit${Stat:+ --Hotelling $Stat}"
-[ -v ExtraName ] && Cmd="$Cmd --extra '$ExtraName'"
-[ -v FitOptions ] && Cmd="$Cmd $FitOptions"
-[ -v UnCorr ] && Cmd="$Cmd --uncorr"
-Cmd="$Cmd -o $OutDir/ -i $InDir P$InSuffix,t=${ti}:${tf},e=$e W$InSuffix,t=${ti2}:${tf2},e=${e2}"
+[ -v ExtraName ] && Cmd+=" --extra '$ExtraName'"
+[ -v FitOptions ] && Cmd+=" $FitOptions"
+[ -v UnCorr ] && Cmd+=" --uncorr"
+Cmd+=" -o $OutDir/ -i $InDir P$InSuffix,t=${ti}:${tf},e=$e W$InSuffix,t=${ti2}:${tf2},e=${e2}"
 
 #echo "A: $Cmd"
 local ModelBase="$(eval $Cmd --showname)"
@@ -118,16 +118,19 @@ fi
 [ -v ZVEFit ] && echo "${Q1}_${Q2}_p2_0 $FitFile" >> $ZVEFit
 
 # Get the fit characteristics: energy difference, matrix element, test stat, ...
-GetColumnValues $FitFile "$Meson m_{eff}=" '' E
+Latex= GetColumnValues $FitFile "\\\$$Meson\\\$"' \$m_{\\textrm{eff}}=\$' '' E
 
 # Plot it
 
-Cmd="title=\"'$Meson p-p' '$Meson p-w'\" yrange='$yrange'"
+Cmd="title=\"'\\\$$Meson\\\$ p-p' '\\\$$Meson\\\$ p-w'\""
+Cmd+=" yrange='$yrange'"
 if [ -v RefText ]; then
-  Cmd="$Cmd RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
+  Cmd+=" RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
 fi
-Cmd="$Cmd ti='$PlotTI' tf='$PlotTF'"
-Cmd="$Cmd plottd.sh $TDFile"
+Cmd+=" ti='$PlotTI' tf='$PlotTF'"
+Cmd+=" ylabel='"'\$a E_{\\textrm{eff}} = \\ln\\left[ \\flatfrac{C(t-\\frac{1}{2})}{C(t+\\frac{1}{2})} \\right]\$'"'"
+Cmd+=" Latex="
+Cmd+=" plottd.sh $TDFile"
 #echo "B: $Cmd"
 echo "$Cmd"  >> $LogFile
 eval  $Cmd  &>> $LogFile
@@ -227,6 +230,7 @@ local ti=${ti:-$((dT/2-1))}
 local tf=${tf:-$((dT/2+1))}
 
 # Derived
+local Meson; OptionNoMass= GetMeson Meson $Q $Spec
 local PW=${Snk}; [ "$Snk" != "$Src" ] && PW=${PW}_${Src}
 local SpecDir=${Spec}p2
 local InDir=$ZVDir/$SpecDir
@@ -268,18 +272,6 @@ fi
 # Add this to my fit list
 [ -v ZVFit ] && echo "${Q}"$'\t'"$FitFile" >> $ZVFit
 
-# Get the fit characteristics: energy difference, matrix element, test stat, ...
-GetColumnValues $FitFile "ZV($Q)=" '' ${ZVName##*-}
-
-# Plot it
-
-Cmd="title=\"'ZV $Q spec $Spec ΔT=$dT $PW'\" yrange='$yrange' field=corr"
-if [ -v RefText ]; then
-  Cmd="$Cmd RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
-fi
-Cmd="$Cmd ti=2 tf=$((dT-2))"
-Cmd="$Cmd plottd.sh $TDFile"
 #echo "B: $Cmd"
-echo "$Cmd"  >> $LogFile
-eval  $Cmd  &>> $LogFile
+PlotZVFit "$FitFile" &>> $LogFile
 }
