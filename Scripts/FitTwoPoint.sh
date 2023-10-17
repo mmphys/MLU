@@ -107,13 +107,16 @@ DoCmd EraseLog || return 0
 # Plot the fit
 
 # Get E0 (reference value for plot)
-GetColumnValues $FitFile "${Meson//_/-} (n^2=$p) E_0=" '' E0
+local MesonHuman
+OptionNoMass= GetMeson MesonHuman ${Meson//_/ }
+Latex= GetColumnValues $FitFile '$'"$MesonHuman"'(n^2='"$p"'), \\, E_0=$' '' E0
 Cmd="title='point-point point-wall' tf='$LabelTF $LabelTF' yrange='${ayRange[$Meson,$p]}'"
 [ -v LabelTI ] && Cmd+=" ti='$LabelTI $LabelTI'"
 [ -v RefText ] && Cmd+=" RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
 local ExtraFiles="$PlotData/${CorrPrefix}gT5P_g5P.$Suffix.txt"
 ExtraFiles+=" $PlotData/${CorrPrefix}gT5P_g5W.$Suffix.txt"
 Cmd+=" extra='$ExtraFiles'"
+Cmd+=' Latex= ylabel='"'"'$a E_\\textrm{eff}$'"'"
 Cmd+=" plottd.sh $TDFile"
 DoCmd
 }
@@ -330,12 +333,16 @@ function SimulP()
   for((i=0; i < ${#aFitFiles[@]}; ++i)); do
     EKeys+=${EKeys:+,}${Meson}_p2_${i}-E0
   done
-  GetColumnValues $FitFile "E_0(n^2=0)=" $EKeys
+  local MesonHuman
+  OptionNoMass= GetMeson MesonHuman ${Meson//_/ }
+  Latex= GetColumnValues $FitFile '$'"$MesonHuman"'(n^2=0), \\, E_0=$' $EKeys
 
   # Now plot it
-  for((i=0; i < ${#aFitFiles[@]}; ++i)); do title+="${title:+ }n^2=$i"; done
+  for((i=0; i < ${#aFitFiles[@]}; ++i)); do title+="${title:+ }"'$n^2='"$i"'$'; done
   Cmd="title='$title'"
   [ -v RefText ] && Cmd+=" RefText='$RefText'"
+  [ -v sizeSimulP ] && Cmd+=" size='$sizeSimulP'"
+  Cmd+=' Latex= ylabel='"'"'$a E_\\textrm{eff}$'"'"
   Cmd+=" plottd.sh $TDFile"
   DoCmd
 

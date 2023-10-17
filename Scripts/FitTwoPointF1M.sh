@@ -58,7 +58,7 @@ LabelTF=40
 LabelTI=5
 NumExp=2
 
-if [ -v DoAll ]; then
+if [ -v DoOld ]; then
   DoAxial=
   # My original (not so good) fit choices
   # D_s
@@ -77,9 +77,8 @@ if [ -v DoAll ]; then
   p=6 TI=10 TF=28 TI2=12 TF2=28 NumExp2=1 Meson=s_l FitTwoPoint
 
   ###############################
-  # Better fit choices, July 2023
+  # Better fit choices, July 2023 - these are not as good as the one below
   # D_s
-  p=0 TI=13 TF=28 TF2=29 Meson=h385_s FitTwoPoint
   #p=0 TI=14 TF=28 TF2=29 Meson=h385_s FitTwoPoint # Also good
   #p=0 TI=16 TF=40 TF2=29 Meson=h385_s FitTwoPoint #Shite
 
@@ -103,11 +102,20 @@ if [ -v DoAll ]; then
 fi
 
 # Testing
+if [ -v DoTest ]; then
 (
   Meson=s_l
   NumExp2=1
   LabelTI=6
 )
+fi
+
+if [ -v DoAll ]; then
+  ###############################
+  # Better fit choices, July 2023
+  # D_s
+  LabelTI= LabelTF=35 p=0 TI=13 TF=28 TF2=29 Meson=h385_s FitTwoPoint
+fi
 
 # Simultaneous Kaon fits, multiple momenta
 if [ -v DoDisp ]; then

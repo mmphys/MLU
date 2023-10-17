@@ -61,7 +61,6 @@ if [ "${DoOld+x}" = x ]; then
   export NumExp=2
   export LabelTF=30
   export ti='8 8'
-  p=0 TI=10 TF=24 TI2=18 NumExp2=1 FitTwoPoint # Best 1-exp wall fit. Preferred
   p=0 TI=10 TF=24 TI2=11 FitTwoPoint # Best 2-exp wall fit - but still a bit sh*t
   p=0 TI=10 TF=24 TF2=0 FitTwoPoint # Point-point only
   )
@@ -82,6 +81,17 @@ if [ "${DoOld+x}" = x ]; then
   p=3 TI=6 TF=18 TI2=8 NumExp2=1 FitTwoPoint
   p=4 TI=7 TF=16 TI2=6 NumExp2=1 FitTwoPoint # Preferred
   p=4 TI=6 TF=16 NumExp2=1 FitTwoPoint
+  )
+fi
+
+if [ -v DoAll ]; then
+  # D_s
+  (
+  export Meson=h${Heavy}_s
+  export NumExp=2
+  export LabelTF=30
+  export ti='8 8'
+  p=0 TI=10 TF=24 TI2=18 NumExp2=1 FitTwoPoint # Best 1-exp wall fit. Preferred
   )
 fi
 
@@ -108,7 +118,7 @@ if [ -v DoDisp ]; then
       1) aThin=('' 2 2 2 2);;
       *) : ;;
     esac
-    yrange=0.21:0.62 SimulP s_l # Simultaneous fits of point-point data at all momenta
+    yrange=0.23:0.53 SimulP s_l # Simultaneous fits of point-point data at all momenta
   )
   done
 fi

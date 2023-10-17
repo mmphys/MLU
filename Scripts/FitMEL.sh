@@ -25,6 +25,7 @@ set -e
 # Renorm:   Set to anything to indicate ratios already renormalised
 # NotRaw:   Set to anything to disable raw ratio fitting
 # PlotOnly: Set to anything to skip the fits and just perform plotting
+#           Set to 'NoAlt' to skip alt plots as well
 # yrangeR3: Y-scale for the R-ratio
 function FitTwoStage()
 (
@@ -44,6 +45,9 @@ function FitTwoStage()
 # Inputs
 
 ############################################################
+
+# Don't bother replotting alt series
+if [ "$PlotOnly" == NoAlt ] && [ -v Alt ]; then return; fi
 
 qSrc=${qSrc:-h$Heavy}
 qSnk=${qSnk:-l}
@@ -104,6 +108,8 @@ DeltaTAll=${DeltaTAll// /_}
 
 GetMesonFile MesonSnk $qSnk $qSpec
 GetMesonFile MesonSrc $qSrc $qSpec
+OptionNoMass= GetMeson MSnkHuman $qSnk $qSpec
+OptionNoMass= GetMeson MSrcHuman $qSrc $qSpec
 
 SpecDir=3sm_${qSpec}p2
 
@@ -189,17 +195,19 @@ local LogFile=$ModelBase.$MLUSeed.log
 local FitFile=$ModelBase.$MLUSeed.h5
 local TDFile=${ModelBase}_td.$MLUSeed.txt
 
-if ! [ -v PlotOnly ]; then
-     echo "$Cmd"  > $LogFile
-if ! eval  $Cmd &>> $LogFile
-then
-  LastError=${PIPESTATUS[0]}
-  if [ "$LastError" = 3 ]; then
-    echo "Warning: Not all parameters resolved"
-  else
-    echo "Warning $LastError: $Cmd"
+if [ -v PlotOnly ]; then
+  echo 'PlotOnly' > $LogFile
+else
+       echo "$Cmd"  > $LogFile
+  if ! eval  $Cmd &>> $LogFile
+  then
+    LastError=${PIPESTATUS[0]}
+    if [ "$LastError" = 3 ]; then
+      echo "Warning: Not all parameters resolved"
+    else
+      echo "Warning $LastError: $Cmd"
+    fi
   fi
-fi
 fi
 
 # Get the fit characteristics: energy difference, matrix element, test stat, ...
@@ -217,7 +225,11 @@ else
   EDiff="${ColumnValues[@]:16:8}"
   MEL="${ColumnValues[@]:24:8}"
   [[ $FitWhat = R3 ]] && R3Raw="${ColumnValues[@]:32:8}"
-  RefText="MEL${Gamma}0=${ColumnValues[25]} ${UnCorr+uncorrelated }χ²/dof=${ColumnValues[4]} (pH=${ColumnValues[12]})"
+  RefText='Fit $\\mel{'"$MSnkHuman"'}{\\gamma_'
+  [ "$Gamma" == gT ] && RefText+='4' || RefText+='i'
+  RefText+='\\left(n^2='"$pSnk"'\\right)}{'"$MSrcHuman"'}='"${ColumnValues[25]}"'$ $t_{\\nu'
+  [ -v UnCorr ] && RefText+=',\\overline{\\textrm{corr}}'
+  RefText+='}^2='"${ColumnValues[4]}"'$, $p_H='"${ColumnValues[12]}"'$'
   case "$FitWhat" in
     quark)
           RefValFit="$EDiff";;
@@ -230,8 +242,9 @@ fi
 # Plot it
 Cmd="ti='$LabelTI' tf='$LabelTF'"
 [ -v yrangeFit ] && Cmd+=" yrange='$yrangeFit'"
-[ -v RefText ] && Cmd+=" RefText='Fit $FitName: $RefText'"
+[ -v RefText ] && Cmd+=" RefText='$RefText'"
 [ -v RefValFit ] && Cmd+=" RefVal='$RefValFit'"
+Cmd+=' Latex= ylabel='"'"'$R_3$'"'"
 Cmd+=" title='$Title' field=$Field plottd.sh $TDFile"
 #echo "B: $Cmd"
 echo "$Cmd"  >> $LogFile
@@ -239,6 +252,7 @@ eval  $Cmd  &>> $LogFile
 
 # Use the model to create the alternate
 
+if ! [ -v PlotOnly ]; then
 unset MySep
 unset FitList
 for (( i = 0; i < ${#DeltaT[@]}; ++i ))
@@ -281,6 +295,7 @@ if ! eval $Cmd &>> $LogFile
 then
   LastError=${PIPESTATUS[0]}
   echo "Error $LastError: $Cmd"
+fi
 fi
 )
 

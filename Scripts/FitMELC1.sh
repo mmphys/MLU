@@ -40,14 +40,14 @@ ayrangeMEL[gXYZ,4]=0.44:0.65
 # y-ranges for renormalised R3 ratios
 declare -A ayrangeR3R
 ayrangeR3R[gT,0]=1.05:1.4
-ayrangeR3R[gT,1]=1.:1.2
-ayrangeR3R[gT,2]=0.9:1.12
+ayrangeR3R[gT,1]=0.9:1.25
+ayrangeR3R[gT,2]=0.8:1.15
 ayrangeR3R[gT,3]=0.7:1.05
-ayrangeR3R[gT,4]=0.75:1.1
-ayrangeR3R[gXYZ,1]=0.28:0.44
-ayrangeR3R[gXYZ,2]=0.22:0.37
-ayrangeR3R[gXYZ,3]=0.18:0.32
-ayrangeR3R[gXYZ,4]=0.15:0.3
+ayrangeR3R[gT,4]=0.7:1.05
+ayrangeR3R[gXYZ,1]=0.34:0.46
+ayrangeR3R[gXYZ,2]=0.25:0.37
+ayrangeR3R[gXYZ,3]=0.2:0.32
+ayrangeR3R[gXYZ,4]=0.18:0.3
 
 declare -A aMesonFit
 declare -A aMesonFileOp
@@ -149,7 +149,7 @@ esac
 
 function RatioFitsBase()
 {
-  echo "Performing Base $FitWhat fits to $Ratio for $FileSeries"
+  echo "C1 performing Base $FitWhat fits to $Ratio for $FileSeries"
 
   NumExp=2
   Gamma=gT
@@ -176,7 +176,7 @@ function RatioFitsBase()
 
 function RatioFitsRenorm()
 {
-  echo "Performing Renorm $FitWhat fits to $Ratio for $FileSeries"
+  echo "C1 performing Renorm $FitWhat fits to $Ratio for $FileSeries"
 
   NumExp=2
   Gamma=gT
@@ -239,7 +239,7 @@ function RatioFitsRenorm()
 
 function RatioFitsAlt()
 {
-  echo "Performing Alt $FitWhat fits to $Ratio for $FileSeries"
+  echo "C1 performing Alt $FitWhat fits to $Ratio for $FileSeries"
 
   Gamma=gT
   NumExp=2 DeltaT="16 20 24 28" TI='8 9 11 13' TF='11 14 18 18' FitTwoStage 0 # Very much the same as prior
@@ -260,7 +260,7 @@ function RatioFitsAlt()
 
 function RatioFitsStd()
 {
-  echo "Performing Std $FitWhat fits to $Ratio for $FileSeries"
+  echo "C1 performing Std $FitWhat fits to $Ratio for $FileSeries"
 
   DeltaT="16 20 24"
   TI='8 8 8'
@@ -280,7 +280,7 @@ function RatioFitsStd()
 
 function RatioFitsTest()
 {
-  echo "Performing Test $FitWhat fits to $Ratio for $FileSeries"
+  echo "C1 performing Test $FitWhat fits to $Ratio for $FileSeries"
 
   Gamma=gT
 ##NumExp=2 DeltaT="20 24 28" TI='10 10 13' TF='13 18 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 FitTwoStage 1 # I prefer this one

@@ -51,16 +51,14 @@ ayRange[s_l,3]='0.51:0.64'
 ayRange[s_l,4]='0.57:0.75'
 #ayRange[s_l,4]='0.48:0.8'
 
-if [ "${DoAll+x}" = x ]; then
+if [ -v DoOld ]; then
   # D_s
   (
   export Meson=h6413_s
   export ti='8 8'
-  p=0 TI=8 TF=24 NumExp=2 TI2=13 NumExp2=1 FitTwoPoint # Preferred 27 Mar 23
   p=0 TI=8 TF=24 NumExp=2 FitTwoPoint
   FitOptions='--nopolap g5P'
   ExtraName=dispind
-  p=0 TI=8 TF=24 NumExp=2 TI2=13 NumExp2=1 FitTwoPoint # Preferred 27 Mar 23
   p=0 TI=8 TF=24 NumExp=2 FitTwoPoint
   )
   # Kaon
@@ -84,7 +82,19 @@ if [ "${DoAll+x}" = x ]; then
   )
 fi
 
-if [ -v DoNext ]; then
+if [ -v DoAll ]; then
+  # D_s
+  (
+  export Meson=h6413_s
+  export ti='8 8'
+  p=0 TI=8 TF=24 NumExp=2 TI2=13 NumExp2=1 FitTwoPoint # Preferred 27 Mar 23
+  FitOptions='--nopolap g5P'
+  ExtraName=dispind
+  p=0 TI=8 TF=24 NumExp=2 TI2=13 NumExp2=1 FitTwoPoint # Preferred 27 Mar 23
+  )
+fi
+
+if [ -v DoDisp ]; then
   InDir=$PlotData/corr/2ptp2
   OutDir=$Ensemble/MELFit/2ptp2/s_l
 

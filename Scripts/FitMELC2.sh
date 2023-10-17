@@ -46,6 +46,18 @@ ayrangeMEL[gXYZ,2]=0.48:0.66
 ayrangeMEL[gXYZ,3]=0.46:0.62
 ayrangeMEL[gXYZ,4]=0.42:0.58
 
+# y-ranges for renormalised R3 ratios
+declare -A ayrangeR3R
+ayrangeR3R[gT,0]=1.1:1.45
+ayrangeR3R[gT,1]=0.9:1.25
+ayrangeR3R[gT,2]=0.8:1.15
+ayrangeR3R[gT,3]=0.75:1.1
+ayrangeR3R[gT,4]=0.7:1.05
+ayrangeR3R[gXYZ,1]=0.34:0.46
+ayrangeR3R[gXYZ,2]=0.26:0.38
+ayrangeR3R[gXYZ,3]=0.2:0.32
+ayrangeR3R[gXYZ,4]=0.16:0.28
+
 declare -A aMesonFit
 declare -A aMesonFileOp
 declare -A aMesonFileMom
@@ -92,7 +104,7 @@ function ChooseTwoPtFits()
       aMesonFileMom[s_l,$i]=
     done;;
 
-    dispind) # Simultaneous fit to PP at all momenta using dispersion relation
+    dispind) # Same as 'disp' but fit same point overlap coefficient for all momenta
     FitOptions='--nopolap g5P'
     aMesonFit[h${Heavy}_s,0]=$FileSeries.corr_${DsTIP}_${DsTFP}_${DsTIW}_${DsTFW}
     for((i = 0; i < 5; ++i)); do
@@ -233,7 +245,7 @@ qSpec=s
 
 for FileSeries in ${series-disp dispind renorm}; do
 (
-  echo "Performing $FitWhat fits to $Ratio for $FileSeries"
+  echo "C2 performing $FitWhat fits to $Ratio for $FileSeries"
   case $FileSeries in
     old)
       ChooseTwoPtFits $FileSeries

@@ -54,13 +54,12 @@ ayRange[s_l,2]='0.32:0.43'
 ayRange[s_l,3]='0.35:0.55'
 ayRange[s_l,4]='0.37:0.62'
 
-if [ "${DoAll+x}" = x ]; then
+if [ -v DoOld ]; then
   # D_s
   (
   export Meson=h${Heavy}_s
   export ti='8 8'
   export LabelTF=30
-  p=0 NumExp=2 TI=10 TF=28 TI2=15 NumExp2=1 FitTwoPoint # Best 1-exp wall fit. Preferred
   p=0 NumExp=2 TI=10 TF=28 TI2=9 FitTwoPoint # Best 2-exp wall fit
   p=0 NumExp=2 TI=10 TF=28 TI2=10 FitTwoPoint
   p=0 NumExp=2 TI=12 TF=28 TI2=10 FitTwoPoint
@@ -91,8 +90,18 @@ if [ "${DoAll+x}" = x ]; then
   )
 fi
 
+if [ -v DoAll ]; then
+  # D_s
+  (
+  export Meson=h${Heavy}_s
+  export ti='8 8'
+  export LabelTF=30
+  p=0 NumExp=2 TI=10 TF=28 TI2=15 NumExp2=1 FitTwoPoint # Best 1-exp wall fit. Preferred
+  )
+fi
+
 # Simultaneous Kaon fits, multiple momenta
-if [ -v DoNext ]; then
+if [ -v DoDisp ]; then
   InDir=$PlotData/corr/2ptp2
   OutDir=$Ensemble/MELFit/2ptp2/s_l
 
@@ -115,7 +124,7 @@ if [ -v DoNext ]; then
   PriorFitTimes="${aTimes[0]}_${aTimesW[0]}"; PriorFitTimes="${PriorFitTimes//:/_}"
   #echo "PriorFitTimes='$PriorFitTimes'"
   (
-    export yrange=0.21:0.62
+    export yrange=0.21:0.53
     SimulP s_l # Simultaneous fits of point-point data at all momenta
     MultiFit="$MultiFit --nopolap g5P"
     ExtraName=dispind SimulP s_l

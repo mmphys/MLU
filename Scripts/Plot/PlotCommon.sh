@@ -119,7 +119,7 @@ function GetColumnValues()
   then
     #echo "OK: $ColumnValues"
     ColumnValues=($ColumnValues)
-    RefText+="${ColumnValues[@]:17:1}, "
+    RefText+="${ColumnValues[17]}, "
     if [ -v Latex ]; then
       RefText+='$\\chi_{\\nu'
       [ -v UnCorr ] && RefText+=',\\overline{\\textrm{corr}}'
@@ -128,9 +128,9 @@ function GetColumnValues()
       [ -v UnCorr ] && RefText+='uncorr '
       RefText+="χ²/dof"
     fi
-    RefText+="=${ColumnValues[@]:4:1}, "
+    RefText+="=${ColumnValues[4]}, "
     if [ -v Latex ]; then RefText+="\$p_H\$"; else  RefText+="pH"; fi
-    RefText+="=${ColumnValues[@]:12:1}"
+    RefText+="=${ColumnValues[12]}"
   else
     LastError=${PIPESTATUS[0]}
     #echo "Error $LastError: $ColumnValues" # GetColumn shows its own error messages

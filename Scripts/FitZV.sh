@@ -273,5 +273,5 @@ fi
 [ -v ZVFit ] && echo "${Q}"$'\t'"$FitFile" >> $ZVFit
 
 #echo "B: $Cmd"
-PlotZVFit "$FitFile" &>> $LogFile
+PlotZVFit "$FitFile" "$Spec" &>> $LogFile
 }

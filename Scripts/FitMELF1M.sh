@@ -47,19 +47,19 @@ ayrangeMEL[gXYZ,6]=0.27:0.37
 
 # y-ranges for renormalised R3 ratios
 declare -A ayrangeR3R
-ayrangeR3R[gT,0]=0.78:0.93
-ayrangeR3R[gT,1]=0.705:0.83 #0.65:0.85
-ayrangeR3R[gT,2]=0.60:0.8
-ayrangeR3R[gT,3]=0.55:0.75
-ayrangeR3R[gT,4]=0.50:0.7
-ayrangeR3R[gT,5]=0.48:0.68
-ayrangeR3R[gT,6]=0.45:0.65
+ayrangeR3R[gT,0]=0.78:0.92
+ayrangeR3R[gT,1]=0.68:0.82
+ayrangeR3R[gT,2]=0.64:0.78
+ayrangeR3R[gT,3]=0.58:0.72
+ayrangeR3R[gT,4]=0.54:0.68
+ayrangeR3R[gT,5]=0.52:0.66
+ayrangeR3R[gT,6]=0.51:0.65
 ayrangeR3R[gXYZ,1]=0.20:0.27
 ayrangeR3R[gXYZ,2]=0.16:0.23
-ayrangeR3R[gXYZ,3]=0.14:0.21
-ayrangeR3R[gXYZ,4]=0.12:0.18
-ayrangeR3R[gXYZ,5]=0.10:0.18
-ayrangeR3R[gXYZ,6]=0.09:0.16
+ayrangeR3R[gXYZ,3]=0.13:0.20
+ayrangeR3R[gXYZ,4]=0.11:0.18
+ayrangeR3R[gXYZ,5]=0.10:0.17
+ayrangeR3R[gXYZ,6]=0.08:0.15
 
 declare -A aMesonFit
 declare -A aMesonFileOp
@@ -291,7 +291,7 @@ qSpec=s
 for FileSeries in ${series-old oldstd renorm}
 do
 (
-  echo "Performing $FitWhat fits to $Ratio for $FileSeries"
+  echo "F1M performing $FitWhat fits to $Ratio for $FileSeries"
   case $FileSeries in
     old)
       ChooseTwoPtFits old

@@ -61,7 +61,6 @@ if [ "${DoOld+x}" = x ]; then
   export NumExp=2
   export LabelTF=30
   export ti='8 8'
-  p=0 TI=10 TF=26 TI2=19 NumExp2=1 FitTwoPoint # Best 1-exp wall fit. Preferred
   p=0 TI=10 TF=26 TI2=12 FitTwoPoint # Best 2-exp wall fit - but still a bit sh*t
   p=0 TI=10 TF=26 TF2=0 FitTwoPoint # Point-point only
   )
@@ -82,6 +81,7 @@ if [ "${DoOld+x}" = x ]; then
   )
 fi
 
+if [ -v DoTest ]; then
   (
   export Meson=s_l
   export NumExp=2
@@ -89,6 +89,18 @@ fi
   export ti='3 3'
   p=3 TI=7 TF=19 TI2=9 NumExp2=1 FitTwoPoint # Preferred
   )
+fi
+
+if [ -v DoAll ]; then
+  # D_s
+  (
+  export Meson=h${Heavy}_s
+  export NumExp=2
+  export LabelTF=30
+  export ti='8 8'
+  p=0 TI=10 TF=26 TI2=19 NumExp2=1 FitTwoPoint # Best 1-exp wall fit. Preferred
+  )
+fi
 
 # Simultaneous Kaon fits, multiple momenta
 if [ -v DoDisp ]; then
@@ -113,7 +125,7 @@ if [ -v DoDisp ]; then
       1) aThin=('' 2 2 2 2);; # aTimes[3]='6:18';;
       *) unset aThin;;
     esac
-    yrange=0.21:0.62 SimulP s_l # Simultaneous fits of point-point data at all momenta
+    yrange=0.22:0.55 SimulP s_l # Simultaneous fits of point-point data at all momenta
   )
   done
 fi

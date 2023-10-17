@@ -48,15 +48,15 @@ ayrangeMEL[gXYZ,4]=0.30:0.48
 
 # y-ranges for renormalised R3 ratios
 declare -A ayrangeR3R
-ayrangeR3R[gT,0]=0.9:1.07
-ayrangeR3R[gT,1]=0.72:0.95
-ayrangeR3R[gT,2]=0.70:0.86
-ayrangeR3R[gT,3]=0.6:0.8
-ayrangeR3R[gT,4]=0.55:0.75
-ayrangeR3R[gXYZ,1]=0.26:0.35
-ayrangeR3R[gXYZ,2]=0.21:0.29
-ayrangeR3R[gXYZ,3]=0.18:0.25
-ayrangeR3R[gXYZ,4]=0.14:0.21
+ayrangeR3R[gT,0]=0.86:1.1
+ayrangeR3R[gT,1]=0.70:0.94
+ayrangeR3R[gT,2]=0.62:0.86
+ayrangeR3R[gT,3]=0.58:0.82
+ayrangeR3R[gT,4]=0.56:0.8
+ayrangeR3R[gXYZ,1]=0.25:0.35
+ayrangeR3R[gXYZ,2]=0.20:0.30
+ayrangeR3R[gXYZ,3]=0.15:0.25
+ayrangeR3R[gXYZ,4]=0.12:0.22
 
 declare -A aMesonFit
 declare -A aMesonFileOp
@@ -114,7 +114,7 @@ function ChooseTwoPtFits()
 
     *) echo "Two-point fits $1 unrecognised"; exit 1;;
   esac
-  echo "Performing $FitWhat fits to $Ratio for $FileSeries with 2pt $1"
+  echo "M1 performing $FitWhat fits to $Ratio for $FileSeries with 2pt $1"
 }
 
 ############################################################

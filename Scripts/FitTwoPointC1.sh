@@ -44,7 +44,7 @@ fi
 ############################################################
 
 declare -A ayRange
-ayRange[h6413_s,0]='1.08:1.12'
+ayRange[h6413_s,0]='1.09:1.12'
 ayRange[s_l,0]='0.28:0.33'
 ayRange[s_l,1]='0.37:0.44'
 ayRange[s_l,2]='0.42:0.52'
@@ -52,12 +52,11 @@ ayRange[s_l,3]='0.48:0.6'
 ayRange[s_l,4]='0.55:0.7'
 #ayRange[s_l,4]='0.48:0.8'
 
-if [ "${DoAll+x}" = x ]; then
+if [ -v DoOld ]; then
   # D_s
   (
   export Meson=h6413_s
   export ti='8 8'
-  p=0 TI=6 TF=27 NumExp=2 TI2=14 TF2=27 NumExp2=1 FitTwoPoint # Preferred 1 Mar 23
   p=0 TI=6 TF=27 NumExp=2 TI2=17 TF2=27 NumExp2=1 FitTwoPoint
   )
   # Kaon
@@ -71,7 +70,18 @@ if [ "${DoAll+x}" = x ]; then
   p=3 TI=5 TF=20 NumExp=2 TI2=5 TF2=20 NumExp2=1 FitTwoPoint
   p=4 TI=5 TF=18 NumExp=2 TI2=5 TF2=18 NumExp2=1 FitTwoPoint
   )
+fi
 
+if [ -v DoAll ]; then
+  # D_s
+  (
+  export Meson=h6413_s
+  export ti='8 8'
+  p=0 TI=6 TF=27 NumExp=2 TI2=14 TF2=27 NumExp2=1 FitTwoPoint # Preferred 1 Mar 23
+  )
+fi
+
+if [ -v DoDisp ]; then
   InDir=$PlotData/corr/2ptp2
   OutDir=$Ensemble/MELFit/2ptp2/s_l
 
@@ -86,12 +96,11 @@ if [ "${DoAll+x}" = x ]; then
   aTimesW=(7:23 7:23 5:20 5:20 5:18)
   PriorFitTimes="${aTimes[0]}_${aTimesW[0]}"; PriorFitTimes="${PriorFitTimes//:/_}"
 
-  yrange=0.3:0.7 SimulP # Simultaneous fits of point-point data at all momenta
+  yrange=0.29:0.7 SimulP # Simultaneous fits of point-point data at all momenta
   FitEachMomPW priorPW
   FitEachMomP priorP
   aTimes=(6:23 6:23 6:20 6:20 6:18)
   aTimesW=(7:23 7:23 5:20 6:20 6:18)
   FitEachMomPW betterPW
   FitEachMomP betterP
-
 fi

@@ -17,7 +17,7 @@ aYRange[s,l]=0.75:0.78
 
 if [ -v DoEFit ]; then
   [ -e $ZVEFit ] && rm $ZVEFit
-  PlotTF='46 46'
+  #PlotTF='46 46'
   #ti=6 tf=29 ti2=5 e=3 PlotTI='5 5' FitZVEnergy h${Heavy} s 0.68:0.83 # Old (bad) choice
   ti=16 tf=40 tf2=29 FitZVEnergy h${Heavy} s 0.723:0.736
   #ti=10 tf=26 ti2=7 PlotTI='7 5' FitZVEnergy s l 0.18:0.22 # Old (bad) choice

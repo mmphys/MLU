@@ -18,10 +18,10 @@
 function PlotZVFit()
 {
   local FitFile="$1"
+  local Spec="$2"
 
   # Get spectator from filename if not caller provided
   local PGroup
-  local Spec="$Spec"
   if [ -z "$Spec" ]; then
     GetSpectator "$FitFile"
     if [ -z "$Spec" ]; then
@@ -42,6 +42,7 @@ function PlotZVFit()
   local dT=${BaseParts[3]}
   local Meson
   OptionNoMass= GetMeson Meson $Q $Spec
+  [ "$Meson" == π ] && Meson='\\pi'
 
   # Get the fit characteristics: energy difference, matrix element, test stat, ...
   local Latex=
@@ -49,7 +50,9 @@ function PlotZVFit()
 
   # Plot it
   #Cmd='title="'"'"'\$Z_V($Q)\$ spec $Spec \$\\\\Delta T=${dT}\$ $PW'"'"'"'
-  Cmd='title="'"'"'\$Z_V \\\\left[ $Meson, \\\\, \\\\Delta T=${dT}, \\\\, \\\\textrm{$PW} \\\\right]\$'"'"'"'
+  Cmd='title="'"'"'\$Z_V \\\\left[ $Meson, '
+  [ "$Meson" == K ] && Cmd+='\\\\textrm{ spec=}$Spec, '
+  Cmd+='\\\\, \\\\Delta T=$dT, \\\\, \\\\textrm{$PW} \\\\right]\$'"'"'"'
   Cmd+=" yrange='$yrange' field=corr"
   if [ -v RefText ]; then
     Cmd+=" RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"

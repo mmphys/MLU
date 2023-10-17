@@ -221,8 +221,15 @@ set bmargin at screen BMar
 
 set xrange [PlotTMin[model]:PlotTMax[model]]
 set xtics ceil(PlotTMin[model]) + 1, 2, floor(PlotTMax[model])
+if( Latex ) {
+  if( TotalPlotTWidth >= 75 ) {
+    set format x '\tiny %g'
+    set xtics ceil(PlotTMin[model]) + 1, 4, floor(PlotTMax[model])
+  }
+} else {
 if( TotalPlotTWidth >= 120 ) { set xtics font ", 7" }
 else { if( TotalPlotTWidth >= 75 ) { set xtics font ", 9" } }
+}
 
 # Turn off y-axis and labels on second and subsequent models
 if( model == 2 ) {
