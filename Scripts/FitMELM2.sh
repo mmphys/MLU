@@ -152,7 +152,7 @@ function RatioFitsBase()
 
   DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 3 # Preferred
   Alt= DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' FitTwoStage 3
-  Alt= DeltaT="16 20" TI='10 10' TF='10 13' FitTwoStage 3
+  Alt= DeltaT="16 20" TI='10 10' TF='10 13' FitTwoStage 3; echo "Ignore previous error (affects raw correlator plot only)"
   Alt= DeltaT="24 28" TI='10 10' TF='17 21' FitTwoStage 3
   Alt= DeltaT="24 28 32" TI='10 10 20' TF='17 21 21' FitTwoStage 3 # Just to see Delta T=32
 
