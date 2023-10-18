@@ -127,6 +127,7 @@ function ChooseTwoPtFits()
 
 function RatioFitsOld()
 {
+  echo "F1M performing Old ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
   NumExp=2 DeltaT="24 28 32" TI='13 14 14' TF='16 20 24' FitTwoStage 0
 
@@ -158,6 +159,7 @@ function RatioFitsOld()
 function RatioFitsStd()
 {
   UnCorr=
+  echo "F1M performing Std ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   DeltaT="24 28 32"
   TI='12 12 12'
   TF='14 18 22'
@@ -178,6 +180,7 @@ function RatioFitsStd()
 
 function RatioFitsDisp()
 {
+  echo "F1M performing Disp ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
   NumExp=3
   DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 0
@@ -258,6 +261,7 @@ function RatioFitsDisp()
 
 function RatioFitsTest()
 {
+  echo "F1M performing Test ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
   NumExp=3
   #Ratio=ratio; Renorm=; NotRaw=
@@ -288,10 +292,9 @@ qSrc=h385
 qSnk=l
 qSpec=s
 
-for FileSeries in ${series-old oldstd renorm}
+for FileSeries in ${series-old better oldstd renorm}
 do
 (
-  echo "F1M performing $FitWhat fits to $Ratio for $FileSeries"
   case $FileSeries in
     old)
       ChooseTwoPtFits old

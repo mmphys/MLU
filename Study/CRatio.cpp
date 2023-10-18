@@ -801,7 +801,7 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
     // Renormalisation
     const Scalar ThisZV{ ( ZV[0][idx] == ZV[1][idx] ? ZV[0][idx] : std::sqrt(ZV[0][idx]*ZV[1][idx]) )
                          * ZVMixed[idx] };
-    Out(idx,vIdx[idxZV]) = ThisZV * ZVPrevSrc[idx] * ZVPrevSnk[idx];
+    Out(idx,vIdx[idxZV]) = ThisZV * std::sqrt( ZVPrevSrc[idx] * ZVPrevSnk[idx] );
     Out(idx,vIdx[melV0]) = vT[idx] * ThisZV;
     Out(idx,vIdx[melVi]) = p ? (*pvXYZ)[idx] * ThisZV : 0;
     // Now make form factors

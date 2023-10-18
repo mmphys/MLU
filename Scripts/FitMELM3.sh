@@ -120,7 +120,6 @@ function ChooseTwoPtFits()
 
     *) echo "Two-point fits $1 unrecognised"; exit 1;;
   esac
-  echo "M3 performing $FitWhat fits to $Ratio for $FileSeries with 2pt $1"
 }
 
 ############################################################
@@ -131,6 +130,7 @@ function ChooseTwoPtFits()
 
 function RatioFitsBase()
 {
+  echo "M3 performing Base ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
     # For now, these are borrowed directly from M1
     NumExp=${NumExp:-2}
     Gamma=gT
@@ -205,6 +205,7 @@ function RatioFitsBase()
 
 function RatioFitsIdea()
 {
+  echo "M3 performing Idea ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   NumExp=2
   DeltaT="16 20 24 28 32" TI='9 11 11 11 11' TF='10 13 18 22 26' FitTwoStage 0
   for Gamma in gT gXYZ; do
@@ -228,6 +229,7 @@ function RatioFitsTest()
   DisableThinning=
   for CorrUncorr in 0 #1
   do
+    echo "M3 performing Test ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
     DeltaT="20 24 28" TI='10 10 10' TF='13 17 21' Thinning='1 2:3:1 2:5:1' FitTwoStage 2
     Alt= DeltaT="20 24" TI='10 10' TF='13 17' Thinning='1 2:3:1' FitTwoStage 2
     Alt= DeltaT="24 28" TI='10 10' TF='17 21' Thinning='2:3:1 2:5:1' FitTwoStage 2
@@ -245,7 +247,7 @@ function RatioFitsTest()
 
 function RatioFitsSimul()
 {
-  echo "M3 performing Simultaneous $FitWhat fits to $Ratio"
+  echo "M3 performing Simul ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
   Thin=('' '' t3)
   NumExp=3
@@ -271,7 +273,7 @@ qSpec=s
 
 ChooseHeavyFits
 
-for FileSeries in ${series-disp}
+for FileSeries in ${series-disp renorm}
 do
 (
   case $FileSeries in

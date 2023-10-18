@@ -196,7 +196,8 @@ local FitFile=$ModelBase.$MLUSeed.h5
 local TDFile=${ModelBase}_td.$MLUSeed.txt
 
 if [ -v PlotOnly ]; then
-  echo 'PlotOnly' > $LogFile
+  LogFile=${LogFile%.log}.plot.log
+  echo "Skipping fit: $Cmd" > $LogFile
 else
        echo "$Cmd"  > $LogFile
   if ! eval  $Cmd &>> $LogFile

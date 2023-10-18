@@ -149,7 +149,7 @@ esac
 
 function RatioFitsBase()
 {
-  echo "C1 performing Base $FitWhat fits to $Ratio for $FileSeries"
+  echo "C1 performing Base ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
 
   NumExp=2
   Gamma=gT
@@ -176,7 +176,7 @@ function RatioFitsBase()
 
 function RatioFitsRenorm()
 {
-  echo "C1 performing Renorm $FitWhat fits to $Ratio for $FileSeries"
+  echo "C1 performing Renorm ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
 
   NumExp=2
   Gamma=gT
@@ -239,7 +239,7 @@ function RatioFitsRenorm()
 
 function RatioFitsAlt()
 {
-  echo "C1 performing Alt $FitWhat fits to $Ratio for $FileSeries"
+  echo "C1 performing Alt ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
 
   Gamma=gT
   NumExp=2 DeltaT="16 20 24 28" TI='8 9 11 13' TF='11 14 18 18' FitTwoStage 0 # Very much the same as prior
@@ -260,7 +260,7 @@ function RatioFitsAlt()
 
 function RatioFitsStd()
 {
-  echo "C1 performing Std $FitWhat fits to $Ratio for $FileSeries"
+  echo "C1 performing Std ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
 
   DeltaT="16 20 24"
   TI='8 8 8'
@@ -280,7 +280,7 @@ function RatioFitsStd()
 
 function RatioFitsTest()
 {
-  echo "C1 performing Test $FitWhat fits to $Ratio for $FileSeries"
+  echo "C1 performing Test ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
 
   Gamma=gT
 ##NumExp=2 DeltaT="20 24 28" TI='10 10 13' TF='13 18 17' yrangeR3=0.0014:0.00165 yrangeMEL=0.69:0.705 FitTwoStage 1 # I prefer this one

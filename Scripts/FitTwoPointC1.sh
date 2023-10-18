@@ -81,7 +81,8 @@ if [ -v DoAll ]; then
   )
 fi
 
-if [ -v DoDisp ]; then
+# Simultaneous fits follow
+(
   InDir=$PlotData/corr/2ptp2
   OutDir=$Ensemble/MELFit/2ptp2/s_l
 
@@ -96,7 +97,10 @@ if [ -v DoDisp ]; then
   aTimesW=(7:23 7:23 5:20 5:20 5:18)
   PriorFitTimes="${aTimes[0]}_${aTimesW[0]}"; PriorFitTimes="${PriorFitTimes//:/_}"
 
+if [ -v DoDisp ]; then
   yrange=0.29:0.7 SimulP # Simultaneous fits of point-point data at all momenta
+fi
+if [ -v DoOld ]; then
   FitEachMomPW priorPW
   FitEachMomP priorP
   aTimes=(6:23 6:23 6:20 6:20 6:18)
@@ -104,3 +108,4 @@ if [ -v DoDisp ]; then
   FitEachMomPW betterPW
   FitEachMomP betterP
 fi
+)

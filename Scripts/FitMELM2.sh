@@ -120,7 +120,6 @@ function ChooseTwoPtFits()
 
     *) echo "Two-point fits $1 unrecognised"; exit 1;;
   esac
-  echo "M2 performing $FitWhat fits to $Ratio for $FileSeries with 2pt $1"
 }
 
 ############################################################
@@ -131,6 +130,7 @@ function ChooseTwoPtFits()
 
 function RatioFitsBase()
 {
+  echo "M2 performing Base ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   # For now, these are borrowed directly from M1
   Gamma=gT
   NumExp=${NumExp:-2}
@@ -198,6 +198,7 @@ function RatioFitsBase()
 
 function RatioFitsIdea()
 {
+  echo "M2 performing Idea ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   NumExp=2 DeltaT="16 20 24 28 32" TI='9 11 11 11 11' TF='10 13 18 22 26' FitTwoStage 0
   for Gamma in gT gXYZ; do
   NumExp=2 DeltaT="16 20 24 28 32" TI='8 10  9  8  9' TF='10 13 18 22 25' FitTwoStage 1
@@ -215,6 +216,7 @@ function RatioFitsIdea()
 
 function RatioFitsTest()
 {
+  echo "M2 performing Test ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
   UnCorr= Alt= NumExp=2 DeltaT="20 24" TI='10 10' TF='13 17' FitTwoStage 4
 }
@@ -227,6 +229,7 @@ function RatioFitsTest()
 
 function RatioFitsSimul()
 {
+  echo "M2 performing Simul ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
   Thin=('' '' t3)
   NumExp=3

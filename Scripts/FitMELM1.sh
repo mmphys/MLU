@@ -114,7 +114,6 @@ function ChooseTwoPtFits()
 
     *) echo "Two-point fits $1 unrecognised"; exit 1;;
   esac
-  echo "M1 performing $FitWhat fits to $Ratio for $FileSeries with 2pt $1"
 }
 
 ############################################################
@@ -125,6 +124,7 @@ function ChooseTwoPtFits()
 
 function RatioFitsBase()
 {
+  echo "M1 performing Base ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
   NumExp=${NumExp:-2}
   DeltaT="24 28 32" TI='11 11 11' TF='18 22 26' FitTwoStage 0
@@ -179,6 +179,7 @@ function RatioFitsBase()
 
 function RatioFitsSimulOld()
 {
+  echo "M1 performing SimulOld ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
   DeltaT=(24 28 32)
   TI=(10 10 10)
@@ -205,6 +206,7 @@ function RatioFitsSimulOld()
 
 function RatioFitsSimul()
 {
+  echo "M1 performing Simul ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
   #Thin=('' '' t3)
   Thin=('' '' '')
@@ -224,6 +226,7 @@ function RatioFitsSimul()
 
 function RatioFitsIdea()
 {
+  echo "M1 performing Idea ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
   NumExp=2 DeltaT="16 20 24 28 32" TI='9 11 11 11 11' TF='10 13 18 22 26' FitTwoStage 0
   NumExp=2 DeltaT="16 20 24 28 32" TI='8 10  9  8  9' TF='10 13 18 22 25' FitTwoStage 1
@@ -240,6 +243,7 @@ function RatioFitsIdea()
 
 function RatioFitsTest()
 {
+  echo "M1 performing Test ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
 }
 
@@ -256,7 +260,7 @@ qSrc=h$Heavy
 qSnk=l
 qSpec=s
 
-for FileSeries in ${series-old disp dispind renorm}
+for FileSeries in ${series-disp renorm}
 do
 (
   case $FileSeries in

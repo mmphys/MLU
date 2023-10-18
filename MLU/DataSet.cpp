@@ -339,12 +339,17 @@ void DataSet<T>::AddConstant( const Param::Key &Key, std::size_t File, const Par
     const std::size_t ColNew{ itSource->second() };
     for( int idx = Model<T>::idxCentral; idx != MaxSamples; ++idx )
       if( mOld(idx,ColOld) != mNew(idx,ColNew) )
+      //if( Common::ComponentRelDif( mOld(idx,ColOld), mNew(idx,ColNew) ) > 1e-6 )
       {
         std::ostringstream os;
         os << "DataSet::AddConstant " << Key << " loaded from "
            << mOld.Name_.Filename << " (field " << cs.pKey << ", col " << ColOld << ") != "
            << mNew.Name_.Filename << " (field " << FileKey << ", col " << ColNew
-           << ") at row " << idx << ", i.e. " << mOld(idx,ColOld) << " != " << mNew(idx,ColNew);
+           << ") at row " << idx << ", i.e. "
+           << std::setprecision( std::numeric_limits<T>::max_digits10 + 2 )
+           << mOld(idx,ColOld) << " != " << mNew(idx,ColNew)
+           << ". Did you run the two- and three-point fits at the same time?"
+           << " Then remake form factors?";
         throw std::runtime_error( os.str().c_str() );
       }
   }

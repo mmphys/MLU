@@ -125,6 +125,7 @@ function ChooseTwoPtFits()
 
 function RatioFitsBase()
 {
+  echo "C2 performing Base ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
     Gamma=gT
     #Thinning="'' 2 3"
     NumExp=3 DeltaT="16 20 24" TI='9 10 10' TF='10 13 17' FitTwoStage 0
@@ -185,6 +186,7 @@ function RatioFitsBase()
 
 function RatioFitsSimul()
 {
+  echo "C2 performing Simul ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   Gamma=gT
   DeltaT=(16 20 24)
   TI=(8 8 8)
@@ -213,6 +215,7 @@ function RatioFitsTest()
   Gamma=gT
   NumExp=2
   Ratio=ratio; Renorm=; NotRaw=
+  echo "C2 performing Test ${UnCorr+un}corr $FitWhat fits to $Ratio for $FileSeries"
   #DeltaT="20 24 28" TI='8 8 8' TF='15 19 23' yrangeR3=0.0015:0.0019 yrangeMEL=0.77:0.785 FitTwoStage 0
   #DeltaT="20 24 28" TI='9 9 9' TF='13 16 20' yrangeR3=0.0014:0.00165 yrangeMEL=0.68:0.71 FitTwoStage 1
   #NumExp=2 DeltaT="20 24" TI='8 8 9' TF='14 17 21' yrangeR3=0.0012:0.0016 yrangeMEL=0.59:0.65 Thinning="2 3 4" FitTwoStage 2 # As at 18 Apr 2023
@@ -245,7 +248,6 @@ qSpec=s
 
 for FileSeries in ${series-disp dispind renorm}; do
 (
-  echo "C2 performing $FitWhat fits to $Ratio for $FileSeries"
   case $FileSeries in
     old)
       ChooseTwoPtFits $FileSeries

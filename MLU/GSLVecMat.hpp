@@ -105,14 +105,30 @@ ComponentMin( const T &a, const T &b ) { return T( std::min( a.real(), b.real() 
 template<typename T> typename std::enable_if<!(is_complex<T>::value), T>::type
 ComponentMin( const T &a, const T &b ) { return std::min( a, b ); }
 
-// Component-wise minimum for complex types
+// Component-wise maximum for complex types
 template<typename T> typename std::enable_if<is_complex<T>::value, T>::type
 ComponentMax( const T &a, const T &b ) { return T( std::max( a.real(), b.real() ),
                                                    std::max( a.imag(), b.imag() ) ); }
 
-// Component-wise minimum for scalars
+// Component-wise maximum for scalars
 template<typename T> typename std::enable_if<!(is_complex<T>::value), T>::type
 ComponentMax( const T &a, const T &b ) { return std::max( a, b ); }
+
+// Component-wise relative difference for complex types
+template<typename T> typename std::enable_if<is_complex<T>::value, typename is_complex<T>::Real>::type
+ComponentRelDif( const T &a, const T &b )
+{
+  const typename is_complex<T>::Real re{ std::abs( a.real() - b.real() ) / a.real() };
+  const typename is_complex<T>::Real im{ std::abs( a.imag() - b.imag() ) / a.imag() };
+  return std::max( re, im );
+}
+
+// Component-wise relative difference for scalars
+template<typename T> typename std::enable_if<!is_complex<T>::value, typename is_complex<T>::Real>::type
+ComponentRelDif( const T &a, const T &b )
+{
+  return std::abs( a - b ) / a;
+}
 
 // IsFinite() for floats and complex types
 template<typename T> inline typename std::enable_if<is_complex<T>::value, bool>::type
