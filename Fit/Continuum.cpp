@@ -1152,10 +1152,10 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
       const scalar aLambda{ Lambda / aInv };
       const scalar aLambdaSq{ aLambda * aLambda };
       scalar Factor = aLambdaSq;
-      for( unsigned int i = 0; i < NumD; ++i )
+      for( unsigned int j = 0; j < NumD; ++j )
       {
-        if( dEnabled[idxFF][i] )
-          TermDisc += om(rep,idxD[idxFF][i]) * Factor;
+        if( dEnabled[idxFF][j] )
+          TermDisc += om(rep,idxD[idxFF][j]) * Factor;
         Factor *= aLambdaSq;
       }
       // Get adjusted form factor
