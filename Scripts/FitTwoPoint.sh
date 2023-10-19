@@ -2,6 +2,8 @@
 
 # Functions for different types of two-point fits (source me)
 
+export size="${size:-5.8in,2in}"
+
 ############################################################
 
 # Execute command

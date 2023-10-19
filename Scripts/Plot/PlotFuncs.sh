@@ -58,6 +58,7 @@ function PlotZVFit()
     Cmd+=" RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
   fi
   Cmd+=" ti=2 tf=$((dT-2))"
+  Cmd+=" size='${size:-5in,1.8in}'"
   Cmd+=" Latex="
   Cmd+=" ylabel='\$Z_V = \\\\flatfrac{\\\\tilde{C}^{(2)}\\\\left(\\\\Delta T\\\\right)}{C^{(3)}\\\\left(t\\\\right)}\$'"
   Cmd+=" plottd.sh $TDFile"
