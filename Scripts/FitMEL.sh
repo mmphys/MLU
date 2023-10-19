@@ -12,7 +12,6 @@
 set -e
 
 export size="${size:-5.8in,2in}"
-export sizeSimulP="${sizeSimulP:-5.8in,4in}"
 
 ############################################################
 

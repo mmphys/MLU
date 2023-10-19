@@ -3,6 +3,7 @@
 # Functions for different types of two-point fits (source me)
 
 export size="${size:-5.8in,2in}"
+export sizeSimulP="${sizeSimulP:-5.8in,4in}"
 
 ############################################################
 
@@ -103,7 +104,12 @@ local FitFile=$ModelBase.$MLUSeed.h5
 local TDFile=${ModelBase}_td.$MLUSeed.txt
 #echo "--showname=$ModelBase"
 
+if [ -v PlotOnly ]; then
+  LogFile=${LogFile%.log}.plot.log
+  echo "Skipping fit: $Cmd" > $LogFile
+else
 DoCmd EraseLog || return 0
+fi
 
 ########################################
 # Plot the fit
@@ -197,7 +203,12 @@ local TDFile=${ModelBase}_td.$MLUSeed.txt
 #echo "--showname=$ModelBase"
 
 # Perform the fit
+if [ -v PlotOnly ]; then
+  LogFile=${LogFile%.log}.plot.log
+  echo "Skipping fit: $Cmd" > $LogFile
+else
 DoCmd EraseLog || return 0
+fi
 
 ########################################
 # Plot the fit
@@ -329,7 +340,12 @@ function SimulP()
   local TDFile=${ModelBase}_td.$MLUSeed.txt
   #echo "--showname=$ModelBase"
 
+  if [ -v PlotOnly ]; then
+    LogFile=${LogFile%.log}.plot.log
+    echo "Skipping fit: $Cmd" > $LogFile
+  else
   DoCmd EraseLog || return 0
+  fi
 
   # Get the energy difference
   for((i=0; i < ${#aFitFiles[@]}; ++i)); do
@@ -393,7 +409,12 @@ function FitEachMomPW()
     Cmd="$Cmd ${ThisFile//g5P_g5P/g5P_g5W},t=${aTimesW[i]},e=1"
     BaseFile="$BaseFile.corr_$sTimes.g5P_g5W.model"
     LogFile="$BaseFile.$MLUSeed.log"
+    if [ -v PlotOnly ]; then
+      LogFile=${LogFile%.log}.plot.log
+      echo "Skipping fit: $Cmd" > $LogFile
+    else
     DoCmd || return 0
+    fi
 
     GetColumnValues $BaseFile.$MLUSeed.h5 "E_0(n^2=$i)=" s_l_p2_${i}-E0
 
@@ -433,7 +454,12 @@ function FitEachMomP()
     Cmd="$Cmd ${aFitFiles[i]}.h5,t=${aTimes[i]}"
     BaseFile="$BaseFile.corr_$sTimes.g5P_g5W.model"
     LogFile="$BaseFile.$MLUSeed.log"
+    if [ -v PlotOnly ]; then
+      LogFile=${LogFile%.log}.plot.log
+      echo "Skipping fit: $Cmd" > $LogFile
+    else
     DoCmd || return 0
+    fi
 
     GetColumnValues $BaseFile.$MLUSeed.h5 "E_0(n^2=$i)=" s_l_p2_${i}-E0
 
