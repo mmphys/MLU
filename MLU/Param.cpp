@@ -164,6 +164,7 @@ std::size_t Param::operator()( std::size_t idxSnk, std::size_t idxSrc, Type List
     throw std::runtime_error( "Model3pt::ParamIndex index out of bounds" );
   if( bSwapSourceSink )
     std::swap( idxSnk, idxSrc );
+  // for <A|Gamma|B>, A == B => <A|Gamma|B> = <B|Gamma|A>
   std::size_t idx{ idxSnk + idxSrc };
   if( idxSnk && pKey->Object.size() > 1 )
     idx++;

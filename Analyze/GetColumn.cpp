@@ -91,45 +91,54 @@ bool Extractor::Run( const std::vector<std::string> &Args )
   return bOK;
 }
 
+// Show exact or partial matches
 bool Extractor::Show( const NameValue &NV, const std::vector<std::string> Selection,
                       bool bExact ) const
 {
-  bool bOK{ true };
+  bool bOK{ Selection.empty() };
   for( const std::string &s : Selection )
   {
+    std::size_t Count{};
+    const bool bLookingForDigit{ !s.empty() && std::isdigit( s.back() ) };
+    // If I ask for xxx0, also show xxx
     const bool bLookingForZero{ !s.empty() && s.back() == '0' };
     const std::string sWithoutZero{ bLookingForZero ? s.substr( 0, s.size() - 1 ) : "" };
-    bool bFound{ false };
-    std::size_t i = 0;
-    while( !bFound && i < NV.Name.size() )
+    for( std::size_t i = 0; i < NV.Name.size(); ++i )
     {
+      const std::string &ni{ NV.Name[i] };
+      const std::string NameWildcard{ !bLookingForDigit && std::isdigit( ni.back() )
+                                      ? ni.substr( 0, ni.size() - 1 ) : "" };
+      bool bFound{ false };
       if( bExact )
       {
         // The whole string must match - with or without trailing zero
-        bFound = Common::EqualIgnoreCase( s, NV.Name[i] );
+        bFound = Common::EqualIgnoreCase( s, ni );
         if( !bFound )
-          bFound = Common::EqualIgnoreCase( sWithoutZero, NV.Name[i] );
+        {
+          if( !sWithoutZero.empty() )
+            bFound = Common::EqualIgnoreCase( sWithoutZero, ni );
+          else if( !NameWildcard.empty() )
+            bFound = Common::EqualIgnoreCase( s, NameWildcard );
+        }
       }
       else
       {
         // Either I find what I'm looking for anywhere in the string
-        bFound = NV.Name[i].find( s ) != std::string::npos;
+        bFound = ni.find( s ) != std::string::npos;
         // ... or the end matches without the trailing zero
-        if( !bFound && bLookingForZero && NV.Name[i].size() >= sWithoutZero.size() )
-          bFound = Common::EqualIgnoreCase( sWithoutZero, NV.Name[i].substr( NV.Name[i].size()
-                                                                          - sWithoutZero.size() ) );
+        if( !bFound && bLookingForZero && ni.size() >= sWithoutZero.size() )
+          bFound = Common::EqualIgnoreCase( sWithoutZero,
+                                            ni.substr( ni.size() - sWithoutZero.size() ) );
       }
-      if( !bFound )
-        ++i;
+      if( bFound )
+      {
+        ShowOne( ni, NV.Value[i] );
+        ++Count;
+        bOK = true;
+      }
     }
-    if( !bFound )
-    {
-      //throw std::runtime_error( "Unknown column " + s );
-      bOK = false;
+    if( !Count )
       ShowOne( s, veUnknown );
-    }
-    else
-      ShowOne( NV.Name[i], NV.Value[i] );
   }
   return bOK;
 }

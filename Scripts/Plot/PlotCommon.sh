@@ -140,6 +140,48 @@ function GetColumnValues()
   fi
 }
 
+# Get abbreviated lists of fit times from HDF5 fit file
+# 1: Path to .h5 file containing fit
+# 2: Name of variable to receive fit times
+function GetFitTimes()
+{
+  local FitFile="$1"
+  local -n Return="${2:-FitTimes}"
+  local i Args PassOne One Two State Last This Thin
+  # Read the list of fit times
+  for((i=0;i<10;++i)); do Args+=" -a model/FitTime$i"; done
+  while read One Two; do
+    #echo "$One $Two"
+    State=0
+    This=
+    for i in ${Two//,}
+    do
+      if [[ $i =~ - ]]; then
+        case $State in
+          2) This+=,$Last;;
+          3) This+=${Last}; ((Thin!=1)) && This+=:$Thin;;
+        esac
+        This+=${This:+,}$i
+        State=0;
+      else
+        case $State in
+          0) This+=${This:+,}$i; State=1;;
+          1) Thin=$((i - Last)); State=2;;
+          2) if ((i==Last+Thin)); then State=3; This+=-
+             else This+=,$Last; Thin=$((i - Last)); fi;;
+          3) if ((i!=Last+Thin)); then This+=${Last}; ((Thin!=1)) && This+=:$Thin; This+=,$i; State=1; fi;;
+        esac
+      fi
+      Last=$i
+    done
+    case $State in
+      2) This+=,$Last;;
+      3) This+=${Last}; ((Thin!=1)) && This+=:$Thin;;
+    esac
+    Return+="${Return:+ }$This"
+  done < <(h5dump -w 0$Args $FitFile 2> /dev/null | grep :)
+}
+
 # Get script name without path prefix or extension
 function PCMakeScriptOutDir()
 {
