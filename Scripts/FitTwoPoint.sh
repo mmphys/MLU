@@ -2,7 +2,7 @@
 
 # Functions for different types of two-point fits (source me)
 
-export size="${size:-5.8in,2in}"
+export size="${size:-5.8in,3in}"
 export sizeSimulP="${sizeSimulP:-5.8in,4in}"
 
 ############################################################
