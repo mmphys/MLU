@@ -148,7 +148,9 @@ function GetFitTimes()
   local FitFile="$1"
   local -n Return="${2:-FitTimes}"
   local i Args PassOne One Two State Last This Thin
+  local Sep=';'
   # Read the list of fit times
+  Return=
   for((i=0;i<10;++i)); do Args+=" -a model/FitTime$i"; done
   while read One Two; do
     #echo "$One $Two"
@@ -158,24 +160,24 @@ function GetFitTimes()
     do
       if [[ $i =~ - ]]; then
         case $State in
-          2) This+=,$Last;;
+          2) This+="${Sep}$Last";;
           3) This+=${Last}; ((Thin!=1)) && This+=:$Thin;;
         esac
-        This+=${This:+,}$i
+        This+="${This:+${Sep}}$i"
         State=0;
       else
         case $State in
-          0) This+=${This:+,}$i; State=1;;
+          0) This+="${This:+${Sep}}$i"; State=1;;
           1) Thin=$((i - Last)); State=2;;
           2) if ((i==Last+Thin)); then State=3; This+=-
-             else This+=,$Last; Thin=$((i - Last)); fi;;
-          3) if ((i!=Last+Thin)); then This+=${Last}; ((Thin!=1)) && This+=:$Thin; This+=,$i; State=1; fi;;
+             else This+="${Sep}$Last"; Thin=$((i - Last)); fi;;
+          3) if ((i!=Last+Thin)); then This+=${Last}; ((Thin!=1)) && This+=:$Thin; This+="${Sep}$i"; State=1; fi;;
         esac
       fi
       Last=$i
     done
     case $State in
-      2) This+=,$Last;;
+      2) This+="${Sep}$Last";;
       3) This+=${Last}; ((Thin!=1)) && This+=:$Thin;;
     esac
     Return+="${Return:+ }$This"
