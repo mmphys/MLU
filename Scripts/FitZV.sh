@@ -102,6 +102,10 @@ local FitFile=$ModelBase.$MLUSeed.h5
 local TDFile=${ModelBase}_td.$MLUSeed.txt
 #echo "--showname=$ModelBase"
 
+if [ -v PlotOnly ]; then
+  LogFile=${LogFile%.log}.plot.log
+  echo "Skipping fit: $Cmd" > $LogFile
+else
 # Execute Fit command
 echo "$Cmd"  > $LogFile
 if  ! $Cmd &>> $LogFile
@@ -116,6 +120,7 @@ fi
 
 # Add this to my fit list
 [ -v ZVEFit ] && echo "${Q1}_${Q2}_p2_0 $FitFile" >> $ZVEFit
+fi
 
 # Get the fit characteristics: energy difference, matrix element, test stat, ...
 Latex= GetColumnValues $FitFile "\\\$$Meson\\\$"' \$m_{\\textrm{eff}}=\$' '' E
@@ -128,7 +133,14 @@ if [ -v RefText ]; then
   Cmd+=" RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
 fi
 Cmd+=" ti='$PlotTI' tf='$PlotTF'"
-Cmd+=" ylabel='"'\$a E_{\\textrm{eff}} = \\ln\\left[ \\flatfrac{C(t-\\frac{1}{2})}{C(t+\\frac{1}{2})} \\right]\$'"'"
+Cmd+=" size='${size:-5in,2in}'"
+# ylabel start
+Cmd+=" ylabel='"'\$a E_{\\textrm{eff}}'
+if ! [ -v MikeThesis ]; then
+  Cmd+=' = \\ln\\left[ \\flatfrac{C(t-\\frac{1}{2})}{C(t+\\frac{1}{2})} \\right]'
+fi
+# ylabel end
+Cmd+=' \$'"'"
 Cmd+=" Latex="
 Cmd+=" plottd.sh $TDFile"
 #echo "B: $Cmd"
@@ -257,6 +269,10 @@ local FitFile=$ModelBase.$MLUSeed.h5
 local TDFile=${ModelBase}_td.$MLUSeed.txt
 #echo "--showname=$ModelBase"
 
+if [ -v PlotOnly ]; then
+  LogFile=${LogFile%.log}.plot.log
+  echo "Skipping fit: $Cmd" > $LogFile
+else
 # Execute Fit command
      echo "$Cmd"  > $LogFile
 if ! eval  $Cmd &>> $LogFile
@@ -267,6 +283,7 @@ then
   else
     echo "Warning $LastError: $Cmd"
   fi
+fi
 fi
 
 # Add this to my fit list

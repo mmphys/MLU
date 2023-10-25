@@ -320,6 +320,34 @@ function PCGetLonger()
   fi
 }
 
+# Convert all the digits in a string to words
+# Mainly for ensembles, e.g. C1 -> COne, F1M -> FOneM, etc
+# 1: String to convert
+# 2: Destination variable name
+function ConvertDigits()
+{
+  local Input="$1"
+  local -n Return="${2:-EnsCode}"
+  local i
+  Return=
+  for ((i=0;i<${#Input};++i))
+  do
+    case "${Input:i:1}" in
+      0) Return+="Zero";;
+      1) Return+="One";;
+      2) Return+="Two";;
+      3) Return+="Three";;
+      4) Return+="Four";;
+      5) Return+="Five";;
+      6) Return+="Six";;
+      7) Return+="Seven";;
+      8) Return+="Eight";;
+      9) Return+="Nine";;
+      *) Return+="${Input:i:1}";;
+    esac
+  done
+}
+
 ############################################################
 
 # Get the full path to this script

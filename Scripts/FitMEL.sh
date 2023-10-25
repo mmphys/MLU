@@ -12,6 +12,7 @@
 set -e
 
 export size="${size:-5.8in,3in}"
+FitOptionsR3="${FitOptionsR3:-C2e=2,C2Model=exp}"
 
 ############################################################
 
@@ -139,7 +140,7 @@ case "$FitWhat" in
   R3)
         FitName=R_3
         PlotName="C^{(3)}"
-        FitOptionsModel=",C2e=2,C2Model=cosh"
+        FitOptionsModel="${FitOptionsR3:+,$FitOptionsR3}"
         (( Raw )) && FitOptionsModel+=",raw"
         PrefixFit=$PrefixR3
         SuffixFit=$SuffixR3
@@ -358,11 +359,11 @@ function DoSimulFit()
     Files+=" $PlotData/corr/2ptp2/${MesonSrc}_p2_${pSrc}_g5P_g5W.fold.$MLUSeed.h5,t=${aDsTIW[pSrc]}:${aDsTFW[pSrc]},e=1"
   fi
   for(( i=0;i<NumDeltaT;++i)); do
-    Files+=" $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]},C2e=2,C2Model=cosh,raw${FitOptionsRatio+,$FitOptionsRatio}"
+    Files+=" $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_${Gamma}_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]}${FitOptionsR3:+,$FitOptionsR3},raw${FitOptionsRatio+,$FitOptionsRatio}"
   done
   if [ -v IncludeSpatial ]; then
     for(( i=0;i<NumDeltaT;++i)); do
-      Files+=" $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_gXYZ_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]},C2e=2,C2Model=cosh,raw${FitOptionsRatio+,$FitOptionsRatio}"
+      Files+=" $PlotData/ratioE1ZV1/3sm_sp2/R3_${qSnk}_${qSrc}_gXYZ_dt_${DeltaT[i]}_p2_${pSnk}_g5P_g5P.fold.$MLUSeed.h5,t=${TI[i]}:${TF[i]}${Thin[i]}${FitOptionsR3:+,$FitOptionsR3},raw${FitOptionsRatio+,$FitOptionsRatio}"
     done
   fi
   local Cmd="MultiFit -e $NumExp --Hotelling 0 --overwrite --debug-signals --summary 2"

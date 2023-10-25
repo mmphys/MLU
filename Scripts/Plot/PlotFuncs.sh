@@ -49,18 +49,24 @@ function PlotZVFit()
   GetColumnValues "$FitFile" "\$Z_V($Meson)=\$" '' ZV
 
   # Plot it
-  #Cmd='title="'"'"'\$Z_V($Q)\$ spec $Spec \$\\\\Delta T=${dT}\$ $PW'"'"'"'
-  Cmd='title="'"'"'\$Z_V \\\\left[ $Meson, '
-  [ "$Meson" == K ] && Cmd+='\\\\textrm{ spec=}$Spec, '
-  Cmd+='\\\\, \\\\Delta T=$dT, \\\\, \\\\textrm{$PW} \\\\right]\$'"'"'"'
-  Cmd+=" yrange='$yrange' field=corr"
+  
+  Cmd="yrange='$yrange' field=corr"
+  if ! [ -v MikeThesis ]; then
+    Cmd+=' title="'"'"'\$Z_V \\\\left[ $Meson, '
+    [ "$Meson" == K ] && Cmd+='\\\\textrm{ spec=}$Spec, '
+    Cmd+='\\\\, \\\\Delta T=$dT, \\\\, \\\\textrm{$PW} \\\\right]\$'"'"'"'
+  fi
   if [ -v RefText ]; then
     Cmd+=" RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
   fi
   Cmd+=" ti=2 tf=$((dT-2))"
   Cmd+=" size='${size:-5in,1.8in}'"
   Cmd+=" Latex="
-  Cmd+=" ylabel='\$Z_V = \\\\flatfrac{\\\\tilde{C}^{(2)}\\\\left(\\\\Delta T\\\\right)}{C^{(3)}\\\\left(t\\\\right)}\$'"
+  if [ -v MikeThesis ]; then
+    Cmd+=" ylabel='\$Z_V\$'"
+  else
+    Cmd+=" ylabel='\$Z_V = \\\\flatfrac{\\\\tilde{C}^{(2)}\\\\left(\\\\Delta T\\\\right)}{C^{(3)}\\\\left(t\\\\right)}\$'"
+  fi
   Cmd+=" plottd.sh $TDFile"
 
   echo "$Cmd"
