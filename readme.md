@@ -55,11 +55,21 @@ Do this if you:
 
 ## 3. Configure
 
-Use the usual incantation (the arguments are *optional*):
+If you have built Grid with OpenMP, HDF5 and lime, then use the usual incantation (the arguments are *optional*):
 
     mkdir build
     cd build
     ../configure --with-grid=*path* --with-hadrons=*path* --with-gsl=*path* --with-minuit2=*path* --prefix=*InstallPath*
+
+If you need to specify additional paths, use `CXXFLAGS`, `LDFLAGS`, etc.
+E.g. to pick up prerequisites installed in a location specified by environment variable `GridPre`: 
+
+    ../configure CXXFLAGS=-I$GridPre/include LDFLAGS=-L$GridPre/lib --with-grid=*path* --with-hadrons=*path* --with-gsl=*path* --with-minuit2=*path* --prefix=*InstallPath*
+
+E.g. if you also wish to use Xcode clang and tell it to use OpenMP (download the OpenMP library separately, e.g. with MacPorts):
+
+    ../configure CXX=clang++ CC=clang CXXFLAGS="-I$GridPre/include -I$GridPre/include/libomp -Xpreprocessor -fopenmp" LDFLAGS="-L$GridPre/lib -L$GridPre/lib/libomp" LIBS=-lomp --with-grid=*path* --with-hadrons=*path* --with-gsl=*path* --with-minuit2=*path* --prefix=*InstallPath*
+ 
 
 ** Naughty: If either GSL or Minuit2 are not in the path *and* they exist in ../.Package, they will be built and installed by `configure`**
 
@@ -74,6 +84,9 @@ Update your path to include Script subdirectories:
 
     Utility=*path_to_Utility*
     PATH="$PATH:$Utility/Scripts:$Utility/Scripts/Plot:$Utility/Scripts/Study1Plateau"`
+
+The scripts require a recent version of Bash that supports associative arrays.
+** Mac users in particular take note**, make sure the version of Bash you wish to use is earliest in your path.
 
 These scripts require `gnuplot`
 

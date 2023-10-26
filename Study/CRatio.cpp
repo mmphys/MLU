@@ -704,7 +704,7 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
 
 const std::vector<std::string> FormFactor::ParamNames{ "EL", "mL", "mH", "qSq", "kMu",
   "melV0", "melVi", "fPar", "fPerp", "fPlus", "f0", "ELLat", "qSqLat",
-  "tPlus", "tMinus", "t0", "zre", "zim", "ZV" };
+  "tPlus", "tMinus", "t0", "zre", "zim", "ZV", "melV0Raw", "melViRaw" };
 
 FormFactor::FormFactor( std::string TypeParams )
 : N{ Common::FromString<unsigned int>( Common::ExtractToSeparator( TypeParams ) ) },
@@ -802,7 +802,9 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
     const Scalar ThisZV{ ( ZV[0][idx] == ZV[1][idx] ? ZV[0][idx] : std::sqrt(ZV[0][idx]*ZV[1][idx]) )
                          * ZVMixed[idx] };
     Out(idx,vIdx[idxZV]) = ThisZV * std::sqrt( ZVPrevSrc[idx] * ZVPrevSnk[idx] );
+    Out(idx,vIdx[melV0Raw]) = vT[idx];
     Out(idx,vIdx[melV0]) = vT[idx] * ThisZV;
+    Out(idx,vIdx[melViRaw]) = p ? (*pvXYZ)[idx] : 0;
     Out(idx,vIdx[melVi]) = p ? (*pvXYZ)[idx] * ThisZV : 0;
     // Now make form factors
     const Scalar    Root2MH{ std::sqrt( MHeavy[idx] * 2 ) };

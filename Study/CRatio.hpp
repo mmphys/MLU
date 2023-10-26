@@ -262,6 +262,8 @@ struct FormFactor
   static constexpr int z_re{ 16 };
   static constexpr int z_im{ 17 };
   static constexpr int idxZV{ 18 };
+  static constexpr int melV0Raw{ 19 };
+  static constexpr int melViRaw{ 20 };
   const unsigned int N;
   const Scalar ap;
   const Scalar apInv;
