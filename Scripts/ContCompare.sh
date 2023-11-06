@@ -19,6 +19,7 @@ Prefix=F3_K_Ds.corr_
 SuffixShort=.g5P_g5W.model
 Suffix=${SuffixShort}_fit.txt
 HName=${Prefix}f0_fplus.g5P_g5W.model
+Narrow=0${Narrow+1}
 
 ###################################################
 
@@ -46,7 +47,7 @@ if( PDFSize ne "" ) { PDFSize='size '.PDFSize }
 eval "set term tikz standalone ".PDFSize." font '\\\\small' header '\\\\usepackage{physics}'"
 
 set xlabel '\$E_K$ / GeV'
-set ylabel '$\delta f_{'.FLabel.'}^{D_s \rightarrow K}$ / \%'
+set ylabel '$\delta f_{'.FLabel.'}$ / \%' #^{D_s \rightarrow K}
 
 FieldFile(Field,Seq,FF)=CompareDir.'/'.Field.'_'.sprintf("%c",Seq+64).'_'.FF.'.txt'
 
@@ -137,7 +138,7 @@ function MakeStats()
 {
   local Label="$1"
   local Dir=$2
-  local File ff QSqZero QSqMax DoF ChiSq
+  local Out File ff QSqZero QSqMax DoF ChiSq
   local -a ColumnValues QSq
   for ff in f0 fplus
   do
@@ -152,9 +153,24 @@ function MakeStats()
   ColumnValues=($(GetColumn --exact ChiSqPerDof,pValueH,pValue $Dir/$HName.h5))
   DoF=($(h5dump -a model/DoF $Dir/$HName.h5 | gawk -e '/:/ {print $2; exit}'))
   ChiSq=$(bc <<< "scale=3;${ColumnValues[0*8+4]}*$DoF/1") # /1 to make sure scale works
-  echo "$Label & $ChiSq & $DoF & ${ColumnValues[0*8+4]} & ${ColumnValues[1*8+4]} & ${ColumnValues[2*8+4]}" \
-       "& $QSqZero & $QSqMax & ${QSq[0]} & ${QSq[1]} \\\\" \
-    >> "$SummaryFile"
+  Out="$Label & $ChiSq & $DoF & ${ColumnValues[0*8+4]} & ${ColumnValues[1*8+4]}"
+  if ((!Narrow)); then Out+=" & ${ColumnValues[2*8+4]}"; fi
+  Out+=" & $QSqZero & $QSqMax"
+  if ((!Narrow)); then Out+=" & ${QSq[0]}"; fi
+  Out+=" & ${QSq[1]}"
+  echo "$Out"' \\' >> "$SummaryFile"
+  local DefPrefix='\def\ContFit'"$Label"
+  {
+    echo "${DefPrefix}ChiSq{$ChiSq}"
+    echo "${DefPrefix}DoF{$DoF}"
+    echo "${DefPrefix}ChiDoF{${ColumnValues[0*8+1]%(*}}"
+    echo "${DefPrefix}PValH{${ColumnValues[1*8+1]%(*}}"
+    echo "${DefPrefix}PVal{$(bc <<< "scale=4;(${ColumnValues[2*8+4]}+0.00005)/1")}"
+    echo "${DefPrefix}FZQZ{$QSqZero}"
+    echo "${DefPrefix}FZQMax{$QSqMax}"
+    echo "${DefPrefix}FPQZ{${QSq[0]}}"
+    echo "${DefPrefix}FPQMax{${QSq[1]}}"
+  } >> "$SummaryTex"
 }
 
 ###################################################
@@ -174,8 +190,8 @@ function MakeOne()
     File=$Dir/$Prefix$ff$Suffix
     FileRef=$Ref/$Prefix$ff$Suffix
     {
-      echo "x y Ref"
-      join -j 2 -o 1.2,1.6,2.6 <(gawk -e "$GCmd" $File) <(gawk -e "$GCmd" $FileRef)
+      echo "x y Ref_low Ref Ref_high"
+      join -j 2 -o 1.2,1.6,2.5,2.6,2.7 <(gawk -e "$GCmd" $File) <(gawk -e "$GCmd" $FileRef)
     } > "$CompareDir/${Field}_${Label}_${ff}.txt"
   done
   MakeStats "$Label" "$Dir"
@@ -197,13 +213,26 @@ function MakeOne()
 function MakeAll()
 {
   mkdir -p "$CompareDir"
-  local SummaryFile="$CompareDir/${Field}_Summary.txt"
-  cat > "$SummaryFile" <<-"EOFMARK"
-	\begin{tabular}{|c|r|c|l|l|l|l|l|l|l|}
-	\hline
-	& $\chi^2$ & DoF & $\chi^2$/dof & p-H & p-$\chi^2$ & $f_0 \lr{0}$ & $f_0 \lr{q^2_{\textrm{max}}}$ & $f_+ \lr{0}$ & $f_+ \lr{q^2_{\textrm{max}}}$ \\
-	\hline
+  local BaseName="$CompareDir/${Field}_Summary"
+  local SummaryFile="$BaseName.txt"
+  local SummaryTex="$BaseName.tex"
+  if [ -e "$SummaryTex" ]; then rm "$SummaryTex"; fi
+  if ((Narrow))
+  then
+    cat > "$SummaryFile" <<-"EOFMARK"
+    \begin{tabular}{|c|r|c|l|l|l|l|l|}
+    \hline
+    & $t^2$ & $\nu$ & $t^2_\nu$ & p-H & $f_0 \lr{0}$ & $f_0 \lr{q^2_{\textrm{max}}}$ & $f_+ \lr{q^2_{\textrm{max}}}$ \\
+    \hline
 EOFMARK
+  else
+    cat > "$SummaryFile" <<-"EOFMARK"
+    \begin{tabular}{|c|r|c|l|l|l|l|l|l|l|}
+    \hline
+    & $t^2$ & $\nu$ & $t^2_\nu$ & p-H & p-$\chi^2$ & $f_0 \lr{0}$ & $f_0 \lr{q^2_{\textrm{max}}}$ & $f_+ \lr{0}$ & $f_+ \lr{q^2_{\textrm{max}}}$ \\
+    \hline
+EOFMARK
+  fi
 
   MakeStats Ref "$Ref" # Reference value
   MakeOne a Omit/renorm-CVZ34 # Omit FV
@@ -236,6 +265,82 @@ EOFMARK
 
 ###################################################
 
+# Plot all the continuum fit variation comparisons
+
+###################################################
+
+function PlotMax()
+{
+mkdir -p $PlotDir
+gnuplot <<-EOFMark
+
+PDFSize="${size:-6in,2in}"
+Field="$Field"
+FF="$ff"
+CompareDir="$CompareDir"
+InFile=CompareDir."/$FileData.txt"
+OutFile="$PlotDir/$FileData.tex"
+
+XScale=1e-9
+if( Field eq "qSq" ) { XScale=XScale*XScale }
+if( FF eq 'f0' ) { FLabel='0' } else { FLabel='+' }
+
+if( PDFSize ne "" ) { PDFSize='size '.PDFSize }
+eval "set term tikz standalone ".PDFSize." font '\\\\small' header '\\\\usepackage{physics}'"
+
+set xlabel '\$E_K$ / GeV'
+set ylabel '$\delta f_{'.FLabel.'}$ / \%' #^{D_s \rightarrow K}
+
+set key top center Left reverse maxrows 1
+set output OutFile
+
+plot InFile using (column('x')*XScale):(0):(column('stat')*100) with filledcurves lc "skyblue" fs transparent solid 0.5 title 'Stat', \
+  '' using (column('x')*XScale):(column('stat')*100):(column('total')*100) with filledcurves lc "red" fs transparent solid 0.5 title 'Sys'
+
+set output
+EOFMark
+
+(
+  cd $PlotDir
+  pdflatex "$FileData"
+)
+}
+
+###################################################
+
+# Make the maximum of statistical error
+# This is all manual
+
+###################################################
+
+function MakeMax()
+{
+  local LabelA="$1"
+  local LabelB="$2"
+  local FileA FileB FileData ff
+  for ff in f0 fplus
+  do
+    FileA="$CompareDir/${Field}_${LabelA}_${ff}.txt"
+    FileB="$CompareDir/${Field}_${LabelB}_${ff}.txt"
+    FileData="${Field}_Max_${LabelA}_${LabelB}_${ff}"
+    #echo "x y Ref_low Ref Ref_high"
+    join -j 1 -o 1.1,1.2,1.3,1.4,1.5,2.2 "$FileA" "$FileB" \
+    | awk -f <(cat - <<-'ENDGAWK'
+		#{ print }
+		$1=="x" { print "x y stat sys total"; next }
+		{ Stat=($5-$3)/(2*$4) }
+  		{ RelA=($2>$4 ? $2-$4 : $4-$2) / $4 }
+		{ RelB=($6>$4 ? $6-$4 : $4-$6) / $4 }
+		{ Sys=RelA > RelB ? RelA : RelB }
+		{ print $1, $4, Stat, Sys, Stat+Sys }
+ENDGAWK
+    ) > "$CompareDir/$FileData.txt"
+    PlotMax
+  done
+}
+
+###################################################
+
 # Main loop
 
 ###################################################
@@ -249,6 +354,9 @@ PlotMatrix.sh $Ref/${HName}_pcorrel.txt
 for Field in EL
 do
   if [ -v Make ]; then MakeAll; fi
+  MakeMax b l
+  if [ -v Make ] || [ -v DoPlot ]; then
   save=Var ff=f0 DoPlot
   save=Var ff=fplus DoPlot
+  fi
 done

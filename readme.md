@@ -103,7 +103,7 @@ This can be installed on a Mac using [MacTeX][mactex].
 
 ### 5.1 Download
 
-1. [Mike's full dataset][dataset] 13GB
+1. [Mike's desktop analysis dataset][dataset] 9.1GB
 2. [Random number cache][cache] 15MB
 
 [dataset]: https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/marshall/NoSync.tar.gz

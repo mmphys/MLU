@@ -79,10 +79,11 @@ local ti2=${ti2:-$ti}
 local tf2=${tf2:-$tf}
 local e=${e:-2}
 local e2=${e2:-$e}
+local p2=0
 
 # Derived
 local Meson; OptionNoMass= GetMeson Meson ${Q1} ${Q2}
-local InDir=$PlotData/corr/2ptp2/${Q1}_${Q2}_p2_0_g5P_g5
+local InDir=$PlotData/corr/2ptp2/${Q1}_${Q2}_p2_${p2}_g5P_g5
 local InSuffix=.fold.$DataSeed.h5
 local OutDir=Fit/ZVEnergy
 
@@ -119,7 +120,7 @@ then
 fi
 
 # Add this to my fit list
-[ -v ZVEFit ] && echo "${Q1}_${Q2}_p2_0 $FitFile" >> $ZVEFit
+[ -v ZVEFit ] && echo "${Q1}_${Q2}_p2_${p2} $FitFile" >> $ZVEFit
 fi
 
 # Get the fit characteristics: energy difference, matrix element, test stat, ...
@@ -135,7 +136,9 @@ fi
 Cmd+=" ti='$PlotTI' tf='$PlotTF'"
 Cmd+=" size='${size:-5in,2in}'"
 # ylabel start
-Cmd+=" ylabel='"'\$a E_{\\textrm{eff}}'
+Cmd+=" ylabel='"'\$a '
+((p2)) && Cmd+='E' || Cmd+='m'
+Cmd+='_{\\textrm{eff}}'
 if ! [ -v MikeThesis ]; then
   Cmd+=' = \\ln\\left[ \\flatfrac{C(t-\\frac{1}{2})}{C(t+\\frac{1}{2})} \\right]'
 fi

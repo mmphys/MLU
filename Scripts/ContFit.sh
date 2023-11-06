@@ -169,11 +169,13 @@ Continuum+=" -i $HOME/NoSync/"
   else
     qSqRangeMin='-0.1'
   fi
+  if ! [ -v PlotOnly ]; then
   if (( Separate )); then
     DoFit f0
     DoFit fplus
   else
     DoFit f0_fplus
+  fi
   fi
   # Now plot it
   for ff in f0 fplus

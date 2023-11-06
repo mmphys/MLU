@@ -26,10 +26,10 @@ then
   wait
   )
 else
-  export MLUf0ELMin=5.1679096878011405468e+08
-  export MLUf0ELMax=1.0829813964236147404e+09
-  export MLUfplusELMin=6.2578971496614301205e+08
-  export MLUfplusELMax=1.0829813964236147404e+09
+  export MLUf0ELMin=5.1679097012296748161e+08
+  export MLUf0ELMax=1.0829813959019107819e+09
+  export MLUfplusELMin=6.2578971607197594643e+08
+  export MLUfplusELMax=1.0829813959019107819e+09
 
   # Historic fits documented in Continuum.tex
   FitOptions=--block Separate= E=1 Disable=V FitSeries=renorm_mostly ContFit.sh& # Ch 2

@@ -38,6 +38,7 @@ RefVal="$RefVal"
 RefText="$RefText"
 PlotField="$MyPlotField"
 RemovePole=$RemovePole
+MesonDest="${MesonDest:-light}"
 
 MaxAdj=6
 if( PlotField eq 'adjusted' ) { MaxAdj=0 }
@@ -68,7 +69,7 @@ if( xAxis eq "qSq" ) {
   xScale=InvLambdaSq
 } else {
   if( xAxis eq "EL" ) {
-    xAxisName="E_{light} / GeV"
+    xAxisName="E_{".MesonDest."} / GeV"
     xScale=InvLambda
   } else {
     xAxisName=xAxis
@@ -76,17 +77,50 @@ if( xAxis eq "qSq" ) {
   }
 }
 
-if( RemovePole ) {
-  if( xAxis eq "EL" ) { set key top left maxrows 4 } else { set key top right }
-} else {
-  if( xAxis eq "EL" ) { set key top right } else { set key bottom right }
+# Arrow 1: maximum recoil (min q^2) of physical final-state meson
+# Arrow 2: maximum q^2 (min recoil) of physical final-state meson
+
+if( xAxis eq "EL" ) {
+  if( RemovePole ) {
+    if( my_ylabel eq 'f_0' ) {
+      set key top left
+    } else {
+      set key bottom left
+    }
+  } else {
+    set key bottom left
+  }
+  set arrow 1 from first 1.046578, graph 0 to first 1.046578, graph 1 \
+    nohead front lc rgb "gray40" lw 0.25 dashtype "."
+  # set arrow 2 from first 0.495644, graph 0 to first 0.495644, graph 1 \
+    nohead front lc rgb "gray40" lw 0.25 dashtype "-"
+} else { # q^2
+  if( RemovePole ) {
+    if( my_ylabel eq 'f_0' ) {
+      set key top right
+    } else {
+      set key bottom right
+    }
+  } else {
+    set key bottom right
+  }
+  set arrow 1 from first 0, graph 0 to first 0, graph 1 \
+    nohead front lc rgb "gray20" lw 0.25 dashtype "."
+  #if( my_ylabel eq 'f_0' ) {
+    set arrow 2 from first 2.16886, graph 0 to first 2.16886, graph 1 \
+      nohead front lc rgb "gray40" lw 0.25 dashtype "-"
+  #}
 }
 
 set xrange[@my_xrange]
 set yrange[@my_yrange]
 set pointintervalbox 0 # disables the white space around points in gnuplot 5.4.6 onwards
 set xlabel xAxisName
-set ylabel my_ylabel
+if( RemovePole || MaxAdj == 0 ) {
+  set ylabel my_ylabel."'"
+} else {
+  set ylabel my_ylabel
+}
 
 # Styles I first used at Lattice 2022
 #Ensembles="C1 C2 F1M M1 M2 M3"
@@ -242,7 +276,8 @@ function GetFitData()
   fi
   if [ -e $InPath ]; then
     ColumnValues=($(GetColumn --exact ChiSqPerDof,pValue,pValueH,f0-c0,f0-c1,f0-d0,fplus-c0,fplus-c1,fplus-d0,C1-DeltaMPi,C2-DeltaMPi,F1M-DeltaMPi,M1-DeltaMPi,M2-DeltaMPi,M3-DeltaMPi,C1-aInv,C2-aInv,F1M-aInv,M1-aInv,M2-aInv,M3-aInv,C1-ChiFV,C2-ChiFV,F1M-ChiFV,M1-ChiFV,M2-ChiFV,M3-ChiFV $InPath))
-    RefText="χ²/dof=${ColumnValues[0*8+4]} (p-H=${ColumnValues[2*8+4]}, p-χ²=${ColumnValues[1*8+4]})"
+    #RefText="χ²/dof=${ColumnValues[0*8+4]} (p-H=${ColumnValues[2*8+4]}, p-χ²=${ColumnValues[1*8+4]})"
+    RefText="t_ν^2=${ColumnValues[0*8+4]} (p_H=${ColumnValues[2*8+4]})"
   else
     unset ColumnValues
     unset RefText
@@ -266,6 +301,9 @@ do
     else
   (
     ff=${PlotFile##*/}
+    Base=${ff%%.*}
+    BaseParts=(${Base//_/ })
+    MesonDest=${BaseParts[1]}
     ff=${ff#*.}
     ff=${ff%%.*}
     ff=${ff#*_}
