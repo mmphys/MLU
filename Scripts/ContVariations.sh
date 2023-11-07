@@ -15,7 +15,7 @@ then
   shopt -s globstar nullglob
   Dir=/Users/mike/NoSync/Cont
   for f in $Dir/**/renorm**/*.model_fit.txt; do
-    x=EL plotglobfit.sh "$f" &
+    x=EL xrange='0.48:*' KeyOffset='char 2,0' plotglobfit.sh "$f" &
   done
   for f in $Dir/**/renorm**/*_fplus.*.model_fit.txt; do
     x=qSq xrange=-0.1:1.75 plotglobfit.sh "$f" &
@@ -26,10 +26,18 @@ then
   wait
   )
 else
-  export MLUf0ELMin=5.1679097012296748161e+08
-  export MLUf0ELMax=1.0829813959019107819e+09
-  export MLUfplusELMin=6.2578971607197594643e+08
-  export MLUfplusELMax=1.0829813959019107819e+09
+  if [ -v DataRange ]; then
+    # Range covered by the data points
+    export MLUf0ELMin=5.1679097012296748161e+08
+    export MLUf0ELMax=1.0829813959019107819e+09
+    export MLUfplusELMin=6.2578971607197594643e+08
+  else
+    # Physical range
+    export MLUf0ELMin=4.95644e+08
+    export MLUf0ELMax=1.0829813959019107819e+09
+    export MLUfplusELMin=$MLUf0ELMin
+  fi
+  export MLUfplusELMax=$MLUf0ELMax
 
   # Historic fits documented in Continuum.tex
   FitOptions=--block Separate= E=1 Disable=V FitSeries=renorm_mostly ContFit.sh& # Ch 2

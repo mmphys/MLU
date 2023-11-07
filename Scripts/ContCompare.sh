@@ -48,6 +48,7 @@ eval "set term tikz standalone ".PDFSize." font '\\\\small' header '\\\\usepacka
 
 set xlabel '\$E_K$ / GeV'
 set ylabel '$\delta f_{'.FLabel.'}$ / \%' #^{D_s \rightarrow K}
+set xrange[${xrange:-*:*}]
 
 FieldFile(Field,Seq,FF)=CompareDir.'/'.Field.'_'.sprintf("%c",Seq+64).'_'.FF.'.txt'
 
@@ -290,6 +291,11 @@ eval "set term tikz standalone ".PDFSize." font '\\\\small' header '\\\\usepacka
 
 set xlabel '\$E_K$ / GeV'
 set ylabel '$\delta f_{'.FLabel.'}$ / \%' #^{D_s \rightarrow K}
+set xrange[${xrange:-*:*}]
+set arrow 1 from first 1.046578, graph 0 to first 1.046578, graph 1 \
+  nohead front lc rgb "gray40" lw 0.25 dashtype ".  "
+set arrow 2 from first 0.495644, graph 0 to first 0.495644, graph 1 \
+  nohead front lc rgb "gray40" lw 0.25 dashtype "-  "
 
 set key top center Left reverse maxrows 1
 set output OutFile
@@ -351,6 +357,7 @@ if ! [ -d "$Ref" ]; then echo "Reference $Base/$Ref doesn't exist"; exit 1; fi
 
 PlotMatrix.sh $Ref/${HName}_pcorrel.txt
 
+export xrange='0.48:*'
 for Field in EL
 do
   if [ -v Make ]; then MakeAll; fi

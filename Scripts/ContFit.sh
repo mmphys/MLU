@@ -183,6 +183,6 @@ Continuum+=" -i $HOME/NoSync/"
     [ $ff == fplus ] && qSqRangeMax='1.75' || qSqRangeMax='2.2'
     LogBase="$OutDir/$OutPrefix$ff$OutModel"
     (( Separate )) || KillLogBase
-    DoCmd "x=EL plotglobfit.sh '$LogBase.txt'"
+    DoCmd "x=EL xrange='0.48:*' KeyOffset='char 2,0' plotglobfit.sh '$LogBase.txt'"
     DoCmd "x=qSq xrange='$qSqRangeMin:$qSqRangeMax' plotglobfit.sh '$LogBase.txt'"
   done

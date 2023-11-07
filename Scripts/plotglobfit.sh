@@ -39,6 +39,7 @@ RefText="$RefText"
 PlotField="$MyPlotField"
 RemovePole=$RemovePole
 MesonDest="${MesonDest:-light}"
+KeyOffset="${KeyOffset:+offset $KeyOffset}"
 
 MaxAdj=6
 if( PlotField eq 'adjusted' ) { MaxAdj=0 }
@@ -83,26 +84,26 @@ if( xAxis eq "qSq" ) {
 if( xAxis eq "EL" ) {
   if( RemovePole ) {
     if( my_ylabel eq 'f_0' ) {
-      set key top left
+      set key top left @KeyOffset
     } else {
-      set key bottom left
+      set key bottom left @KeyOffset
     }
   } else {
-    set key bottom left
+    set key bottom left @KeyOffset
   }
   set arrow 1 from first 1.046578, graph 0 to first 1.046578, graph 1 \
     nohead front lc rgb "gray40" lw 0.25 dashtype "."
-  # set arrow 2 from first 0.495644, graph 0 to first 0.495644, graph 1 \
+  set arrow 2 from first 0.495644, graph 0 to first 0.495644, graph 1 \
     nohead front lc rgb "gray40" lw 0.25 dashtype "-"
 } else { # q^2
   if( RemovePole ) {
     if( my_ylabel eq 'f_0' ) {
-      set key top right
+      set key top right @KeyOffset
     } else {
-      set key bottom right
+      set key bottom right @KeyOffset
     }
   } else {
-    set key bottom right
+    set key bottom right @KeyOffset
   }
   set arrow 1 from first 0, graph 0 to first 0, graph 1 \
     nohead front lc rgb "gray20" lw 0.25 dashtype "."
