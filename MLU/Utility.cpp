@@ -281,6 +281,15 @@ void FileNameAtt::Parse( std::vector<std::string> * pOpNames,
   if( !bPreBootstrap )
   {
     pos = Base.find_last_of( '.' );
+    std::size_t NumUnderScore{};
+    if( pos == std::string::npos )
+    {
+      for( std::size_t i = 0; i < Base.length(); ++i )
+        if( Base[i] == '_' )
+          ++NumUnderScore;
+    }
+    if( pos != std::string::npos || NumUnderScore > 1 )
+    {
     opNames = ParseOpNames( pos == std::string::npos ? 2 : INT_MAX );
     op.resize( opNames.size() );
     std::vector<std::string> &OpNames{ pOpNames ? * pOpNames : opNames };
@@ -293,6 +302,7 @@ void FileNameAtt::Parse( std::vector<std::string> * pOpNames,
         op[i]++;
       if( op[i] == OpNames.size() )
         OpNames.emplace_back( opNames[i] );
+    }
     }
   }
   // Save any extra segments after '.'. I parse backward, so [0] is last, [1] is second last, etc

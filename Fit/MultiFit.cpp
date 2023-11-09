@@ -261,10 +261,10 @@ int main(int argc, const char *argv[])
       std::string sOpNameConcat;
       if( bOpSort )
       {
-        sOpNameConcat = OpName[0];
-        for( std::size_t i = 1; i < OpName.size(); i++ )
+        for( std::size_t i = 0; i < OpName.size(); i++ )
         {
-          sOpNameConcat.append( 1, '_' );
+          if( i )
+            sOpNameConcat.append( 1, '_' );
           sOpNameConcat.append( OpName[i] );
         }
       }

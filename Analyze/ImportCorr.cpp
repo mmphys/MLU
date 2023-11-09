@@ -46,7 +46,7 @@ const std::vector<CorrInfo> Importer::corrInfo{
 *****************************************************************/
 
 Importer::Importer( const Common::CommandLine &cl )
-: Seed{ cl.SwitchValue<Common::SeedType>( "r" ) },
+: Seed{ Common::RandomCache::DefaultSeed() },
   outStem{ cl.SwitchValue<std::string>( "o" ) },
   bDebug{ cl.GotSwitch( "debug" ) },
   GroupName{ cl.SwitchValue<std::string>( "g" ) }
@@ -388,6 +388,63 @@ void Importer::Import( const std::string &Filename, bool bPreserveSign )
 
 /*****************************************************************
 
+ Import the specified group
+ 
+*****************************************************************/
+
+void Importer::Import( const std::string &Filename, const std::string &Group, const std::string &DS )
+{
+  // Read source data
+  {
+    ::H5::H5File f;
+    ::H5::Group g;
+    std::string gName{ Group };
+    Common::H5::OpenFileGroup( f, g, Filename, "Importing ", &gName );
+    Common::H5::ReadMatrix( g, DS, mBinnedData );
+    g.close();
+    std::cout << Filename << " " << mBinnedData.size1 << " x " << mBinnedData.size2 << "\n";
+  }
+  // Make out name
+  std::string OutBase{ outStem };
+  {
+    std::string InFile{ Filename };
+    Common::ExtractDirPrefix( InFile );
+    OutBase.append( InFile );
+    const std::size_t LastSlash{ OutBase.find_last_of( '/' ) };
+    std::size_t pos{ OutBase.find_last_of( '.' ) };
+    if( pos != std::string::npos && ( LastSlash == std::string::npos || pos > LastSlash) )
+      OutBase.resize( pos );
+  }
+
+  // Now write it
+  std::cout << "Writing " << OutBase << Common::NewLine;
+  Common::MakeAncestorDirs( OutBase );
+  const int NumSamples{ static_cast<int>( mBinnedData.size1 ) };
+  const int Nt{ static_cast<int>( mBinnedData.size2 ) };
+  Fold out( NumSamples, Nt );
+  out.NtUnfolded_ = Nt;
+  out.SampleSize = NumSamples;
+  for( int t = 0; t < Nt; ++t )
+    out(Fold::idxCentral,t) = 0;
+  for( int i = 0; i < NumSamples; ++i )
+    for( int t = 0; t < Nt; ++t )
+    {
+      double z = mBinnedData(i,t);
+      if( std::isnan( z ) )
+        z = 0;
+      out(i,t) = z;
+      out(Fold::idxCentral,t) += z;
+    }
+  for( int t = 0; t < Nt; ++t )
+    out(Fold::idxCentral,t) /= NumSamples;
+  out.MakeCorrSummary();
+  std::string FullName{ Common::MakeFilename( OutBase, Common::sFold, Seed, DEF_FMT ) };
+  out.Write( FullName );
+  out.WriteSummary( Common::MakeFilename( OutBase, Common::sFold, Seed, TEXT_EXT ) );
+}
+
+/*****************************************************************
+
  Import correlators
 
 *****************************************************************/
@@ -395,7 +452,6 @@ void Importer::Import( const std::string &Filename, bool bPreserveSign )
 int main(const int argc, const char *argv[])
 {
   const char pszDefaultGroupName[] = "/C0/sh/0.51";
-  const char pszDefaultSeed[] = "1";
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
@@ -407,7 +463,6 @@ int main(const int argc, const char *argv[])
       {"g", CL::SwitchType::Single, pszDefaultGroupName},
       {"i", CL::SwitchType::Single, ""},
       {"o", CL::SwitchType::Single, ""},
-      {"r", CL::SwitchType::Single, pszDefaultSeed},
       {"debug", CL::SwitchType::Flag, nullptr},
       {"help", CL::SwitchType::Flag, nullptr},
     };
@@ -415,11 +470,13 @@ int main(const int argc, const char *argv[])
     if( !cl.GotSwitch( "help" ) && cl.Args.size() )
     {
       bShowUsage = false;
+      const std::string InBase{ cl.SwitchValue<std::string>( "i" ) };
       Importer I( cl );
       std::size_t Count{ 0 };
       for( std::string &Args : cl.Args )
       {
-        bool bOK{ true };
+        std::string sGroupName;
+        std::string sDSName;
         bool bPreserveSign{ false };
         std::string Files{ Common::ExtractToSeparator( Args ) };
         if( Args.length() )
@@ -428,18 +485,22 @@ int main(const int argc, const char *argv[])
             bPreserveSign = true;
           else
           {
-            iReturn = EXIT_FAILURE;
-            std::cerr << "Error: Bad argument \"" << Args << "\". Ignoring " << Files << Common::NewLine;
-            bOK = false;
+            sDSName = Args;
+            sGroupName = Common::ExtractDirPrefix( sDSName );
+            if( sGroupName.empty() )
+              sGroupName = "/";
+            else if( sGroupName.length() > 1 && sGroupName.back() == '/' )
+              sGroupName.resize( sGroupName.size() - 1 );
           }
         }
-        if( bOK )
-        {
-          for( auto &File : Common::glob( &Files, &Files + 1, cl.SwitchValue<std::string>("i").c_str() ) )
+          for( auto &File : Common::glob( &Files, &Files + 1, InBase.c_str() ) )
           {
             try
             {
-              I.Import( File, bPreserveSign );
+              if( sGroupName.empty() )
+                I.Import( File, bPreserveSign );
+              else
+                I.Import( File, sGroupName, sDSName );
               Count++;
             }
             catch(const std::exception &e)
@@ -448,7 +509,6 @@ int main(const int argc, const char *argv[])
               iReturn = EXIT_FAILURE;
             }
           }
-        }
       }
       std::cout << Count << " files imported.\n";
     }
@@ -467,12 +527,12 @@ int main(const int argc, const char *argv[])
     "Import correlators.\n"
     "usage: " << cl.Name << " <options> File[,Arg]...\n"
     "Args:\n"
-    "s       Preserve the sign of sinh correlators"
+    "s       Preserve the sign of sinh correlators\n"
+    "t       Taku format\n"
     "Options:\n"
     "-g      Group name, default " << pszDefaultGroupName << "\n"
     "-i      Input file base\n"
     "-o      Output file base\n"
-    "-r      Random number seed, default " << pszDefaultSeed << "\n"
     "Flags:\n"
     "--debug Dump a portion of the raw data\n";
     "--help  This message\n";

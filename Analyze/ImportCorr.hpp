@@ -79,7 +79,8 @@ protected:
   void Write( const std::string &Base, bool bPreserveSign );
 public:
   Importer( const Common::CommandLine &cl );
-  void Import( const std::string &Filename, bool bPreserveSign );
+  void Import( const std::string &Filename, bool bPreserveSign ); // Tobi format
+  void Import( const std::string &Filename, const std::string &Group, const std::string &DS );
 };
 
 #endif // ImportCorr_hpp

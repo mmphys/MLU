@@ -31,7 +31,7 @@
 
 #include "Model.hpp"
 
-enum class eModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant, R3 };
+enum class eModelType{ Unknown, Exp, Cosh, Sinh, ThreePoint, Constant, R3, Misc };
 std::ostream & operator<<( std::ostream &os, const eModelType m );
 std::istream & operator>>( std::istream &is,       eModelType &m );
 

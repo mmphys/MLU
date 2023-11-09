@@ -25,6 +25,7 @@
 		2763DE042A1D241500529933 /* Utility.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2763DE022A1D241400529933 /* Utility.hpp */; };
 		2763DE072A1D253D00529933 /* CorrFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2763DE052A1D253D00529933 /* CorrFile.cpp */; };
 		2763DE082A1D253D00529933 /* CorrFile.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2763DE062A1D253D00529933 /* CorrFile.hpp */; };
+		277DF9D32AFCE24E00AC9260 /* ModelMisc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 277DF9D12AFCE24E00AC9260 /* ModelMisc.cpp */; };
 		277FBE8E290ED83700E82279 /* libMLU.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 682C5C9E28E4F41300C8E004 /* libMLU.dylib */; };
 		278BA037290ED57000960730 /* GetColumn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 278BA02A290ED4AB00960730 /* GetColumn.cpp */; };
 		278D748E2A97756200651141 /* MakeEnsembleInfo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 278D748D2A97756200651141 /* MakeEnsembleInfo.hpp */; };
@@ -335,6 +336,8 @@
 		2763DE022A1D241400529933 /* Utility.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Utility.hpp; sourceTree = "<group>"; };
 		2763DE052A1D253D00529933 /* CorrFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CorrFile.cpp; sourceTree = "<group>"; };
 		2763DE062A1D253D00529933 /* CorrFile.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CorrFile.hpp; sourceTree = "<group>"; };
+		277DF9D12AFCE24E00AC9260 /* ModelMisc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelMisc.cpp; sourceTree = "<group>"; };
+		277DF9D22AFCE24E00AC9260 /* ModelMisc.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelMisc.hpp; sourceTree = "<group>"; };
 		278BA02A290ED4AB00960730 /* GetColumn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GetColumn.cpp; sourceTree = "<group>"; };
 		278BA030290ED52400960730 /* GetColumn */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GetColumn; sourceTree = BUILT_PRODUCTS_DIR; };
 		278D748D2A97756200651141 /* MakeEnsembleInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MakeEnsembleInfo.hpp; sourceTree = "<group>"; };
@@ -752,6 +755,8 @@
 				682C5C7C28E4F2C300C8E004 /* ModelConstant.hpp */,
 				27118C7D2A262134003C50BA /* ModelContinuum.cpp */,
 				27118C7C2A262134003C50BA /* ModelContinuum.hpp */,
+				277DF9D12AFCE24E00AC9260 /* ModelMisc.cpp */,
+				277DF9D22AFCE24E00AC9260 /* ModelMisc.hpp */,
 				27E8B36028FF2DE80047FEF1 /* ModelRatio.cpp */,
 				27E8B35F28FF2DE80047FEF1 /* ModelRatio.hpp */,
 				682C5C7928E4F2C300C8E004 /* MultiFit.cpp */,
@@ -1573,6 +1578,7 @@
 				682C5D6028E4FF9400C8E004 /* FitterThread.cpp in Sources */,
 				682C5D6128E4FF9400C8E004 /* Model.cpp in Sources */,
 				682C5D6228E4FF9400C8E004 /* Model2pt.cpp in Sources */,
+				277DF9D32AFCE24E00AC9260 /* ModelMisc.cpp in Sources */,
 				682C5D6328E4FF9400C8E004 /* Model3pt.cpp in Sources */,
 				682C5D6428E4FF9400C8E004 /* ModelCommon.cpp in Sources */,
 				682C5D6528E4FF9400C8E004 /* ModelConstant.cpp in Sources */,

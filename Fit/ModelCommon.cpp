@@ -37,6 +37,7 @@
 #include "Model3pt.hpp"
 #include "ModelConstant.hpp"
 #include "ModelRatio.hpp"
+#include "ModelMisc.hpp"
 
 static const std::string sModelTypeUnknown{ "Unknown" };
 static const std::string sModelTypeExp{ "Exp" };
@@ -45,6 +46,7 @@ static const std::string sModelTypeSinh{ "Sinh" };
 static const std::string sModelTypeThreePoint{ "3pt" };
 static const std::string sModelTypeConstant{ "Const" };
 static const std::string sModelTypeRatio{ "R3" };
+static const std::string sModelTypeMisc{ "Misc" };
 
 std::ostream & operator<<( std::ostream &os, const eModelType m )
 {
@@ -67,6 +69,9 @@ std::ostream & operator<<( std::ostream &os, const eModelType m )
       break;
     case eModelType::R3:
       os << sModelTypeRatio;
+      break;
+    case eModelType::Misc:
+      os << sModelTypeMisc;
       break;
     default:
       os << sModelTypeUnknown;
@@ -97,6 +102,8 @@ std::istream & operator>>( std::istream &is, eModelType &m )
       m = eModelType::Constant;
     else if( Common::EqualIgnoreCase( s, sModelTypeRatio ) )
       m = eModelType::R3;
+    else if( Common::EqualIgnoreCase( s, sModelTypeMisc ) )
+      m = eModelType::Misc;
     else
     {
       m = eModelType::Unknown;
@@ -181,7 +188,7 @@ ModelPtr Model::MakeModel( const Model::CreateParams &mcp, Model::Args &Args )
         break;
     }
   }
-  // Make the model
+  // Say which model we're making and what the parameters are
   std::cout << "  " << modelType;
   for( typename Model::Args::value_type v : Args )
   {
@@ -189,6 +196,7 @@ ModelPtr Model::MakeModel( const Model::CreateParams &mcp, Model::Args &Args )
     if( !v.second.empty() )
       std::cout << '=' << v.second;
   }
+  // Make the model
   const int nExp{ Args.Remove( "e", cp.NumExponents ) };
   ModelPtr model;
   try
@@ -212,6 +220,9 @@ ModelPtr Model::MakeModel( const Model::CreateParams &mcp, Model::Args &Args )
         break;
       case eModelType::R3:
         model.reset( new ModelRatio( cp, Args, nExp ) );
+        break;
+      case eModelType::Misc:
+        model.reset( new ModelMisc( cp, Args, nExp ) );
         break;
       default:
         throw std::runtime_error( "Unrecognised ModelType for " + cp.pCorr->Name_.Filename );
