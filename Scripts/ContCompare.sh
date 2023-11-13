@@ -62,7 +62,8 @@ PlotTitles[6]='omit M3'
 PlotTitles[7]='omit M1M2M3'
 PlotTitles[8]='omit \$n^2_{\textrm{max}}$ C1C2'
 PlotTitles[9]='\$\Delta_0$ 300 MeV, $\Delta_+$ -25 MeV'
-PlotTitles[10]='\$\Delta_+$ -100 MeV, omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
+#PlotTitles[10]='\$\Delta_+$ -100 MeV, omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
+PlotTitles[10]='\$\Delta_+$ -50 MeV'
 PlotTitles[11]='\$\Delta_0$ 250 MeV'
 PlotTitles[12]='Alternate C1 fits'
 
@@ -245,7 +246,8 @@ EOFMARK
   MakeOne g CF/renorm-CZ34 # Omit M1, M2, M3
   MakeOne h Simul/renorm-CZ34_some # Omit n^2_max from C1 C2
   MakeOne i Pole300-25/renorm-CZ34 # Delta_+=-25MeV, Delta_0=300MeV
-  MakeOne j PoleV-100/renormE2-CZ3 # Delta_+=-100MeV, Omit (E/Lambda)^3
+  # MakeOne j PoleV-100/renormE2-CZ3 # Delta_+=-100MeV, Omit (E/Lambda)^3
+  MakeOne j Simul/renorm-CZ34_PoleV # Delta_+=-50MeV
   MakeOne k PoleS250/renorm-CZ34 # Delta_0=250MeV
   MakeOne l AltC1/renorm-CZ34 # Alternate C1
 
@@ -278,9 +280,8 @@ gnuplot <<-EOFMark
 PDFSize="${size:-6in,2in}"
 Field="$Field"
 FF="$ff"
-CompareDir="$CompareDir"
-InFile=CompareDir."/$FileData.txt"
-OutFile="$PlotDir/$FileData.tex"
+InFile="$FileData"
+OutFile="$PlotDir/$FileBase.tex"
 
 XScale=1e-9
 if( Field eq "qSq" ) { XScale=XScale*XScale }
@@ -308,39 +309,51 @@ EOFMark
 
 (
   cd $PlotDir
-  pdflatex "$FileData"
+  pdflatex "$FileBase"
 )
 }
 
 ###################################################
 
-# Make the maximum of statistical error
-# This is all manual
+# Parameters: list of labels a, b, c, etc
+# where each file has: x y Ref_low Ref Ref_high
+# make the maximum of the y-column as statistical error
+# NB: The ref values are the same in every file
 
 ###################################################
 
 function MakeMax()
 {
-  local LabelA="$1"
-  local LabelB="$2"
-  local FileA FileB FileData ff
+  local Label=($*)
+  local i FileA FileB FileBase FileData ff
   for ff in f0 fplus
   do
-    FileA="$CompareDir/${Field}_${LabelA}_${ff}.txt"
-    FileB="$CompareDir/${Field}_${LabelB}_${ff}.txt"
-    FileData="${Field}_Max_${LabelA}_${LabelB}_${ff}"
-    #echo "x y Ref_low Ref Ref_high"
-    join -j 1 -o 1.1,1.2,1.3,1.4,1.5,2.2 "$FileA" "$FileB" \
-    | awk -f <(cat - <<-'ENDGAWK'
+    FileA="$CompareDir/${Field}_${Label[0]}_${ff}.txt"
+    FileBase="${Field}_Max_${ff}"
+    FileData="$CompareDir/$FileBase.txt"
+    i=0
+    (( ${#Label[@]} > 1 )) && i=1
+    for (( ; i < ${#Label[@]}; ++i ))
+    do
+      if (( i > 1 )); then
+        FileA="$FileData.tmp"
+        mv "$FileData" "$FileA"
+      fi
+      FileB="$CompareDir/${Field}_${Label[i]}_${ff}.txt"
+      join -j 1 -o 1.1,1.2,1.3,1.4,1.5,2.2 "$FileA" "$FileB" \
+      | awk -f <(cat - <<-'ENDGAWK'
 		#{ print }
-		$1=="x" { print "x y stat sys total"; next }
+		$1=="x" { print "x y Ref_low Ref Ref_high stat sys total"; next }
 		{ Stat=($5-$3)/(2*$4) }
   		{ RelA=($2>$4 ? $2-$4 : $4-$2) / $4 }
 		{ RelB=($6>$4 ? $6-$4 : $4-$6) / $4 }
+		{ Max=RelA > RelB ? $2 : $6 }
 		{ Sys=RelA > RelB ? RelA : RelB }
-		{ print $1, $4, Stat, Sys, Stat+Sys }
+		{ print $1, Max, $3, $4, $5, Stat, Sys, Stat+Sys }
 ENDGAWK
-    ) > "$CompareDir/$FileData.txt"
+      ) > "$FileData"
+      (( i > 1 )) && rm "$FileA"
+    done
     PlotMax
   done
 }
@@ -361,7 +374,7 @@ export xrange='0.48:*'
 for Field in EL
 do
   if [ -v Make ]; then MakeAll; fi
-  MakeMax b l
+  MakeMax b l j
   if [ -v Make ] || [ -v DoPlot ]; then
   save=Var ff=f0 DoPlot
   save=Var ff=fplus DoPlot

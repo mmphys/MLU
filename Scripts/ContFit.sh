@@ -71,6 +71,7 @@ then
   DisableP="$Disable$DisableP"
 fi
 OutDir=Cont/$OutDir/${FitSeries}${Disabled}
+[ -v NameExtra ] && OutDir+=_$NameExtra
 
 OutPrefix="F3_K_Ds.corr_"
 OutModel=".g5P_g5W.model"
