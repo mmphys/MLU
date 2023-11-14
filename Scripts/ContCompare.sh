@@ -9,17 +9,17 @@ set -e
 
 ###################################################
 
+Do=${Do-original}
 Which=${Which:-all} # all / some
-Base=Cont
+Cont=Cont
 CompareDir=Var
 PlotDir=Plot
-Ref=Simul/renorm-CZ34 # This is the reference fit
 
 Prefix=F3_K_Ds.corr_
 SuffixShort=.g5P_g5W.model
 Suffix=${SuffixShort}_fit.txt
 HName=${Prefix}f0_fplus.g5P_g5W.model
-Narrow=0${Narrow+1}
+Narrow=$((1-0${Narrow+1})) # Narrow is the default (wasn't originally)
 
 ###################################################
 
@@ -38,6 +38,7 @@ PlotDir="$PlotDir"
 Save="$save"
 FF="$ff"
 CompareDir="$CompareDir"
+NumCompare=$NumCompare
 
 XScale=1e-9
 if( Field eq "qSq" ) { XScale=XScale*XScale }
@@ -82,13 +83,21 @@ PlotPrefix=PlotPrefix."(stringcolumn('field') eq Field ? column('x')*XScale : Na
 PlotPrefixB="):("
 PlotPrefixC=") with filledcurves title 'Error' fc 'gray05' fs transparent solid 0.5"
 
-do for [Loop=1:2] {
+OutName=Save.'_'.FF
+NumLoop=NumCompare > 12 ? 2 : 1
+
+do for [Loop=1:NumLoop] {
 
 if( Loop == 2 ) {
-  do for [i=13:|PlotTitles|] { PlotTitles[i]='' }
-  set key top left Left reverse maxrows 7
+  NumCompare=12
+  OutName=OutName.'_zoom'
+}
+
+if( NumCompare > 12 ) {
+  #set key center left Left reverse maxrows 10
+  set key top left Left reverse maxrows 10
 } else {
-  set key center left Left reverse maxrows 10
+  set key top left Left reverse maxrows 7
 }
 
 AbsFunc='abs'
@@ -98,7 +107,7 @@ PlotPrefixA='0'
 if( AbsLoop == 2 ) { PlotPrefixA='-'.PlotErrorBar }
 
 Cmd=''
-do for [i=1:|PlotTitles|] {
+do for [i=1:NumCompare] {
   if( PlotTitles[i] ne '' ) {
   Cmd=Cmd.', "'.FieldFile(Field,i,FF).'"'
   Cmd=Cmd." using (column('x')*XScale):(".AbsFunc."(column('y')/column('Ref')-1)*100)"
@@ -109,8 +118,6 @@ do for [i=1:|PlotTitles|] {
   }
 }
 
-OutName=Save.'_'.FF
-if( Loop == 2 ) { OutName=OutName.'_zoom' }
 set output PlotDir.'/'.OutName.AbsFunc.'.tex'
 
 eval "plot ".PlotPrefix.PlotPrefixA.PlotPrefixB.PlotErrorBar.PlotPrefixC.Cmd
@@ -122,7 +129,8 @@ EOFMark
 
 (
 cd $PlotDir
-for Zoom in '' _zoom; do
+unset DoZoom; (( NumCompare > 12 )) && DoZoom=_zoom
+for Zoom in '' $DoZoom; do
   for AbsFunc in '' abs; do
     pdflatex "${save}_${ff}${Zoom}$AbsFunc"
   done
@@ -208,6 +216,56 @@ function MakeOne()
 
 ###################################################
 
+# Original and modified comparisons
+
+###################################################
+
+function MakeRef()
+{
+  RefBase=$2 # This is the reference fit base name
+  Ref=${1:+$1/}$RefBase # This is the path to the reference fit
+  MakeStats Ref "$Ref" # Reference value
+}
+
+function MakeCommon()
+{
+  MakeOne b Omit/${RefBase}-EnsC1 # Omit C1
+  MakeOne c Omit/${RefBase}-EnsC2 # Omit C2
+  MakeOne d Omit/${RefBase}-EnsM1 # Omit M1
+  MakeOne e Omit/${RefBase}-EnsM2 # Omit M2
+  MakeOne f Omit/${RefBase}-EnsM3 # Omit M3
+  MakeOne g Omit/${RefBase}-EnsM # Omit M1, M2, M3
+  MakeOne h Simul/${RefBase}_some # Omit n^2_max from C1 C2
+  MakeOne i Simul/${RefBase}_PoleSV # Move scalar and vector poles
+  MakeOne j Simul/${RefBase}_PoleV # Move vector pole
+  MakeOne k Simul/${RefBase}_PoleS # Move scalar pole
+  MakeOne l Simul/${RefBase}_AltC1 # Alternate C1
+}
+
+function MakeOriginal()
+{
+  MakeRef Simul renorm-CZ34
+  MakeOne a Omit/renorm-CVZ34 # Omit FV
+  MakeCommon
+  # These are destructive tests - not part of my error budget
+  MakeOne m Omit/${RefBase}-EnsF1M # Omit F1M
+  MakeOne n Omit/renormD0-CZ34-EnsC # Omit C1, C2
+  MakeOne o Omit/renorm-CXZ34 # Omit Chiral
+  MakeOne p Omit/renormE2-CVXZ3 # Omit FV and Chiral
+  MakeOne q Omit/renormD0-CZ34 # Omit a Lambda
+  MakeOne r Omit/renorm-C1Z34 # Omit Delta Mpi / Lambda
+  MakeOne s Omit/renormE2-CZ3 # Omit (E/Lambda)^3
+}
+
+function MakeShrink()
+{
+  MakeRef Simul renormE1
+  MakeOne a Omit/${RefBase}-CV # Omit FV
+  MakeCommon
+}
+
+###################################################
+
 # Perform all the continuum fit variation comparisons
 
 ###################################################
@@ -218,17 +276,18 @@ function MakeAll()
   local BaseName="$CompareDir/${Field}_Summary"
   local SummaryFile="$BaseName.txt"
   local SummaryTex="$BaseName.tex"
-  if [ -e "$SummaryTex" ]; then rm "$SummaryTex"; fi
+  echo "% Comparison: $Do" > "$SummaryTex"
+  echo "% Comparison: $Do" > "$SummaryFile"
   if ((Narrow))
   then
-    cat > "$SummaryFile" <<-"EOFMARK"
+    cat >> "$SummaryFile" <<-"EOFMARK"
     \begin{tabular}{|c|r|c|l|l|l|l|l|}
     \hline
     & $t^2$ & $\nu$ & $t^2_\nu$ & p-H & $f_0 \lr{0}$ & $f_0 \lr{q^2_{\textrm{max}}}$ & $f_+ \lr{q^2_{\textrm{max}}}$ \\
     \hline
 EOFMARK
   else
-    cat > "$SummaryFile" <<-"EOFMARK"
+    cat >> "$SummaryFile" <<-"EOFMARK"
     \begin{tabular}{|c|r|c|l|l|l|l|l|l|l|}
     \hline
     & $t^2$ & $\nu$ & $t^2_\nu$ & p-H & p-$\chi^2$ & $f_0 \lr{0}$ & $f_0 \lr{q^2_{\textrm{max}}}$ & $f_+ \lr{0}$ & $f_+ \lr{q^2_{\textrm{max}}}$ \\
@@ -236,29 +295,10 @@ EOFMARK
 EOFMARK
   fi
 
-  MakeStats Ref "$Ref" # Reference value
-  MakeOne a Omit/renorm-CVZ34 # Omit FV
-  MakeOne b C1/renorm-CZ34 # Omit C1
-  MakeOne c C2/renorm-CZ34 # Omit C2
-  MakeOne d M1/renorm-CZ34 # Omit M1
-  MakeOne e M2/renorm-CZ34 # Omit M2
-  MakeOne f M3/renorm-CZ34 # Omit M3
-  MakeOne g CF/renorm-CZ34 # Omit M1, M2, M3
-  MakeOne h Simul/renorm-CZ34_some # Omit n^2_max from C1 C2
-  MakeOne i Pole300-25/renorm-CZ34 # Delta_+=-25MeV, Delta_0=300MeV
-  # MakeOne j PoleV-100/renormE2-CZ3 # Delta_+=-100MeV, Omit (E/Lambda)^3
-  MakeOne j Simul/renorm-CZ34_PoleV # Delta_+=-50MeV
-  MakeOne k PoleS250/renorm-CZ34 # Delta_0=250MeV
-  MakeOne l AltC1/renorm-CZ34 # Alternate C1
-
-  # These are destructive tests - not part of my error budget
-  MakeOne m F1M/renorm-CZ34 # Omit F1M
-  MakeOne n MF/renormD0-CZ34 # Omit C1, C2
-  MakeOne o Omit/renorm-CXZ34 # Omit Chiral
-  MakeOne p Omit/renormE2-CVXZ3 # Omit FV and Chiral
-  MakeOne q Omit/renormD0-CZ34 # Omit a Lambda
-  MakeOne r Omit/renorm-C1Z34 # Omit Delta Mpi / Lambda
-  MakeOne s Omit/renormE2-CZ3 # Omit (E/Lambda)^3
+  case ${Do,,} in
+    original) MakeOriginal;;
+    shrink)   MakeShrink;;
+  esac
 
   cat >> "$SummaryFile" <<-"EOFMARK"
 	\hline
@@ -364,19 +404,30 @@ ENDGAWK
 
 ###################################################
 
-if ! [ -d "$Base" ]; then echo "$Base doesn't exist"; exit 1; fi
-cd "$Base"
-if ! [ -d "$Ref" ]; then echo "Reference $Base/$Ref doesn't exist"; exit 1; fi
-
-PlotMatrix.sh $Ref/${HName}_pcorrel.txt
-
-export xrange='0.48:*'
-for Field in EL
+for Do in ${Do,,}
 do
-  if [ -v Make ]; then MakeAll; fi
-  MakeMax b l j
-  if [ -v Make ] || [ -v DoPlot ]; then
-  save=Var ff=f0 DoPlot
-  save=Var ff=fplus DoPlot
+  if ! [ -d "$Cont/$Do" ]; then
+    echo "Reference $Cont/$Do doesn't exist"
+  else
+  (
+    cd "$Cont/$Do"
+    case "$Do" in
+      original) NumCompare=19;;
+      *)        NumCompare=12;;
+    esac
+    export xrange='0.48:*'
+    for Field in EL
+    do
+      if [ -v Make ]; then MakeAll; fi
+      case "$Do" in
+        original) MakeMax b l j;;
+        shrink)   MakeMax b l e j;;
+      esac
+      if [ -v Make ] || [ -v DoPlot ]; then
+        save=Var ff=f0 DoPlot
+        save=Var ff=fplus DoPlot
+      fi
+    done
+  )
   fi
 done

@@ -148,7 +148,7 @@ std::string MultiFitCreateParams::Description() const
 }
 
 // Create a model of the appropriate type - this is the only place with knowledge of this mapping
-ModelPtr Model::MakeModel( const Model::CreateParams &mcp, Model::Args &Args )
+ModelPtr Model::MakeModel( int ModelNum, const Model::CreateParams &mcp, Model::Args &Args )
 {
   const MultiFitCreateParams &cp{ dynamic_cast<const MultiFitCreateParams &>( mcp ) };
   // Now work out what type of model we are creating
@@ -189,7 +189,7 @@ ModelPtr Model::MakeModel( const Model::CreateParams &mcp, Model::Args &Args )
     }
   }
   // Say which model we're making and what the parameters are
-  std::cout << "  " << modelType;
+  std::cout << std::setw( 5 ) << ModelNum << Common::Space << modelType;
   for( typename Model::Args::value_type v : Args )
   {
     std::cout << Common::CommaSpace << v.first;

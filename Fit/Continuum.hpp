@@ -114,8 +114,14 @@ struct ContinuumFit : public FitController
   // Per ensemble keys
   std::vector<Common::Param::Key> kaInv, kmPi, kFVSim, kFVPhys, kChiSim, kChiFV, kDeltaMPi;
 
+  struct ScalarType
+  {
+    scalar Value;
+    Param::Type Type;
+  };
 protected:
-  std::array<scalar, NumFF> PoleMass;
+  std::array<ScalarType, NumFF> PoleMass;
+  ScalarType InitPoleMass( const std::string &Switch );
   // The global constraint
   bool bDoConstraint;
   std::size_t idxConstraint;
@@ -199,6 +205,8 @@ public:
   virtual ~ContinuumFit() {}
   void ParamsAdjust( Common::Params &mp, const Fitter &f ) override;
   void SaveParameters( Common::Params &mp, const Fitter &f ) override;
+  void Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
+              const VectorView &FitData, bool bLastChance ) const override;
   void SetReplica( Vector &ModelParams ) const override;
   void ComputeDerived( Vector &ModelParams ) const override;
   void ParamCovarList( Common::Params &paramsCovar ) const override;

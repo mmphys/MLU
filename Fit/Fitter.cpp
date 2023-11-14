@@ -50,6 +50,7 @@ Fitter::Fitter( Model::CreateParams &mcp, DataSet &ds_,
     HotellingCutoff{ mcp.cl.SwitchValue<double>( "Hotelling" ) },
     ChiSqDofCutoff{ mcp.cl.SwitchValue<double>( "chisqdof" ) },
     RelEnergySep{ mcp.cl.SwitchValue<double>("sep") },
+    ShrinkFactor{ mcp.cl.SwitchValue<double>("shrink") },
     MinDof{ mcp.cl.SwitchValue<int>("mindof") },
     Retry{ mcp.cl.SwitchValue<int>("retry") },
     MaxIt{ mcp.cl.SwitchValue<int>("iter") },
@@ -141,7 +142,7 @@ std::vector<ModelPtr> Fitter::CreateModels( Model::CreateParams &mcp,
   for( int i = 0; i < ModelArgs.size(); ++i )
   {
     mcp.pCorr = &ds(i, bFitCorr);
-    model.emplace_back( Model::MakeModel( mcp, ModelArgs[i] ) );
+    model.emplace_back( Model::MakeModel( i, mcp, ModelArgs[i] ) );
     if( !ModelArgs[i].empty() )
     {
       std::ostringstream os;
@@ -326,6 +327,7 @@ void Fitter::MakeGuess()
     NumUnknown = 0;
     NumWithUnknowns = 0;
     VectorView Data( ds.mFitData.GetCentral() );
+    fitController.Guess( Guess, ParamKnown, mp, Data, false );
     for( std::size_t i = 0; i < model.size(); ++i )
     {
       Data.size( ds.FitTimes[i].size() );
@@ -347,8 +349,10 @@ void Fitter::MakeGuess()
   // Since the model is soluble, but we've not guessed all parameters, give the models one last chance
   if( NumUnknown )
   {
+    VectorView Data( ds.mFitData.GetCentral() );
+    fitController.Guess( Guess, ParamKnown, mp, Data, true );
     for( std::size_t i = 0; i < model.size(); ++i )
-      model[i]->Guess( Guess, ParamKnown, mp, ds.mFitData.GetCentral(), ds.FitTimes[i], true );
+      model[i]->Guess( Guess, ParamKnown, mp, Data, ds.FitTimes[i], true );
     for( bool bKnown : ParamKnown )
       if( !bKnown )
       {
@@ -591,6 +595,8 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       else
         std::cout << "simple";
       std::cout << " guess for each replica.\n";
+      if( ShrinkFactor )
+        std::cout << "Ledoit and Wolf shrinkage factor " << ShrinkFactor << "\n";
     }
     if( mp.NumScalars( Param::Type::Derived ) )
     {

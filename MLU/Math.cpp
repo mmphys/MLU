@@ -514,4 +514,29 @@ template std::ostream & operator<<( std::ostream &os, const ValWithEr<double> &v
 template std::ostream & operator<<( std::ostream &os, const ValWithEr<std::complex<float>> &v );
 template std::ostream & operator<<( std::ostream &os, const ValWithEr<std::complex<double>> &v );
 
+// Ledoit and Wolf shrinkage https://arxiv.org/abs/1207.5322
+// M = ( 1 - Rho ) * M + Rho I, where I is M-dimensional identity
+template <typename T>
+void LedoitWolfShrink( Matrix<T> &M, typename GSLTraits<T>::Real Rho )
+{
+  // Rho equal to zero is just the original matrix
+  if( Rho )
+  {
+    using Real = typename GSLTraits<T>::Real;
+    const Real RhoAlt{ static_cast<Real>( 1 ) - Rho };
+    for( std::size_t i = 0; i < M.size1; ++i )
+      for( std::size_t j = 0; j < M.size2; ++j )
+      {
+        M(i,j) *= RhoAlt;
+        if( i == j )
+          M(i,j) += Rho;
+      }
+  }
+}
+
+template void LedoitWolfShrink( Matrix<float> &M, float Rho );
+template void LedoitWolfShrink( Matrix<double> &M, double Rho );
+template void LedoitWolfShrink( Matrix<std::complex<float>> &M, float Rho );
+template void LedoitWolfShrink( Matrix<std::complex<double>> &M, double Rho );
+
 MLU_Math_hpp_end

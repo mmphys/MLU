@@ -39,12 +39,11 @@ else
     M2 ) EnsembleList="C1 C2 F1M M1 M3";;
     M3 ) EnsembleList="C1 C2 F1M M1 M2";;
     F1M ) EnsembleList="C1 C2 M1 M2 M3";;
-    MF ) EnsembleList="M1 M2 M3 F1M";;
-    CF ) EnsembleList="C1 C2 F1M";;
+    C ) EnsembleList="M1 M2 M3 F1M";;
+    M ) EnsembleList="C1 C2 F1M";;
     *) "Unrecognised EnsOpt \"$EnsOpt\""; exit 1;;
   esac
-  [ -v OutDir ] && OutDir+=_
-  OutDir+=$EnsOpt
+  NameExtra+="-Ens$EnsOpt"
 fi
 
 if [ -v OutDir ]; then
@@ -70,10 +69,16 @@ then
   DisableZ="$Disable$DisableZ"
   DisableP="$Disable$DisableP"
 fi
-OutDir=Cont/$OutDir/${FitSeries}${Disabled}
-[ -v NameExtra ] && OutDir+=_$NameExtra
+OutDir=Cont/$Do/$OutDir/${FitSeries}${Disabled}
+if [ -v NameExtra ]; then
+  [ "${NameExtra:0:1}" != '-' ] && OutDir+=_
+  OutDir+=$NameExtra
+fi
+[ -v UnCorr ] && OutDir+=U
 
-OutPrefix="F3_K_Ds.corr_"
+OutPrefix="F3_K_Ds."
+[ -v UnCorr ] && OutPrefix+="un"
+OutPrefix+="corr_"
 OutModel=".g5P_g5W.model"
 
 declare -A EnsemblePMax
@@ -158,6 +163,8 @@ function DoFit()
 Continuum="Continuum --debug-signals --Hotelling 0 --summary 2"
 [ -v D ] && Continuum+=" -d $D"
 [ -v E ] && Continuum+=" -e $E"
+[ -v UnCorr ] && Continuum+=" --uncorr"
+[ -v Shrink ] && Continuum+=" --shrink '$Shrink'"
 Continuum+=" --overwrite"
 Continuum+=" --model ${MLUCache}EnsembleInfo.h5"
 Continuum+=" -i $HOME/NoSync/"
@@ -171,14 +178,15 @@ Continuum+=" -i $HOME/NoSync/"
     qSqRangeMin='-0.1'
   fi
   if ! [ -v PlotOnly ]; then
-  if (( Separate )); then
-    DoFit f0
-    DoFit fplus
-  else
-    DoFit f0_fplus
-  fi
+    if (( Separate )); then
+      DoFit f0
+      DoFit fplus
+    else
+      DoFit f0_fplus
+    fi
   fi
   # Now plot it
+  DoCmd "PlotMatrix.sh $OutDir/*.model_pcorrel.txt"
   for ff in f0 fplus
   do
     [ $ff == fplus ] && qSqRangeMax='1.75' || qSqRangeMax='2.2'

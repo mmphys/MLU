@@ -44,6 +44,9 @@ struct FitController
   virtual void ParamsAdjust( Common::Params &mp, const Fitter &f ) {}
   /// Offsets have been assigned - controller can save indices
   virtual void SaveParameters( Common::Params &mp, const Fitter &f ) {}
+  /// FitController gets to participate in guesses
+  virtual void Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
+                      const VectorView &FitData, bool bLastChance ) const {};
   /// Called once at the start of each replica, immediately after constants loaded. Compute per-replica derived values
   virtual void SetReplica( Vector &ModelParams ) const {}
   /// Called every time the fitter makes a new guess on each replica - allow controller to compute derived properties
@@ -63,6 +66,7 @@ struct Fitter
   const double HotellingCutoff;
   const double ChiSqDofCutoff;
   const double RelEnergySep;
+  const double ShrinkFactor;
   const int MinDof;
   const int Retry;
   const int MaxIt;

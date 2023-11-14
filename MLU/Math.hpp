@@ -179,5 +179,9 @@ template <typename T = double> struct ValWithEr
 template <typename T>
 std::ostream & operator<<( std::ostream &os, const ValWithEr<T> &v );
 
+// Ledoit and Wolf shrinkage https://arxiv.org/abs/1207.5322
+template <typename T>
+void LedoitWolfShrink( Matrix<T> &M, typename GSLTraits<T>::Real Rho );
+
 MLU_Math_hpp_end
 #endif

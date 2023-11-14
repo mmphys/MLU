@@ -84,6 +84,7 @@ void FitterThread::InitialiseCovar( const std::string *pBaseName )
   // Create Correl = Covar with CholeskyDiag applied
   Correl = Covar;
   Correl.CholeskyScaleApply( CholeskyDiag, true );
+  LedoitWolfShrink( Correl, parent.ShrinkFactor );
   parent.Dump( idx, "Covariance", Covar );
   parent.Dump( idx, "Correlation", Correl );
   if( idx == Fold::idxCentral )
@@ -558,7 +559,7 @@ scalar FitterThread::FitOne()
     std::size_t idxError = 0;
     for( std::size_t Corr = 0; Corr < parent.ds.FitTimes.size(); Corr++ )
     {
-      ss << "C(" << Corr << "): ";
+      ss << "C(" << Corr << ") " << parent.model[Corr]->Description() << ": ";
       for( std::size_t idxT = 0; idxT < parent.ds.FitTimes[Corr].size(); idxT++ )
       {
         if( idxT )

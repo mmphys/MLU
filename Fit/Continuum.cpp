@@ -53,6 +53,24 @@ const std::string &ContinuumFit::FieldQSq{ ModelContinuum::FieldQSq };
 const std::string &ContinuumFit::FieldEL{ ModelContinuum::FieldEL };
 constexpr std::size_t ContinuumFit::idxUnused;
 
+ContinuumFit::ScalarType ContinuumFit::InitPoleMass( const std::string &Switch )
+{
+  ScalarType st{ 0, Param::Type::Derived };
+  if( cl.GotSwitch( Switch ) )
+  {
+    std::string sVal{ cl.SwitchValue<std::string>( Switch ) };
+    if( !sVal.empty() && std::toupper( sVal.front() ) == 'G' ) // Guess
+    {
+      sVal.erase( 0, 1 );
+      st.Type = Param::Type::Variable;
+    }
+    else
+      st.Type = Param::Type::Fixed;
+    st.Value = Common::FromString<scalar>( sVal );
+  }
+  return st;
+}
+
 ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
 : cl{cl_},
   NumD{ cl.SwitchValue<unsigned int>("d") },
@@ -68,8 +86,8 @@ ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
 {
   GetEnabled( cl.SwitchValue<std::string>("f") );
   Common::MakeAncestorDirs( outBaseFileName );
-  PoleMass[idxFF0] = cl.GotSwitch( "poles" ) ? cl.SwitchValue<scalar>("poles") : 0;
-  PoleMass[idxFFPlus] = cl.GotSwitch( "polev" ) ? cl.SwitchValue<scalar>("polev") : 0;
+  PoleMass[idxFF0] = InitPoleMass( "poles" );
+  PoleMass[idxFFPlus] = InitPoleMass( "polev" );
 }
 
 void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f )
@@ -91,14 +109,17 @@ void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f )
     {
       const Common::FormFactor ff{ ffIndexReverse( idxFF ) };
       const std::string &sFF{ GetFormFactorString( ff ) };
-      if( PoleMass[idxFF] == 0 )
+      if( PoleMass[idxFF].Type == Param::Type::Derived )
       {
         kPDGDStar[idxFF].Name = GetPoleMassName( ff, f.ds.constFile[0]->Name_ );
         mp.Add( kPDGDStar[idxFF], 1 );
       }
       kDelta[idxFF].Object.push_back( sFF );
       kDelta[idxFF].Name = "Delta";
-      mp.Add( kDelta[idxFF], 1, false, Param::Type::Derived );
+      Param::Type DeltaType{ PoleMass[idxFF].Type };
+      if( DeltaType == Param::Type::Fixed )
+        DeltaType = Param::Type::Derived;
+      mp.Add( kDelta[idxFF], 1, false, DeltaType );
       // Add constants
       if( c0Enabled[idxFF] )
       {
@@ -231,7 +252,7 @@ void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
   {
     if( uiFF & ffMaskFromIndex( idxFF ) )
     {
-      if( PoleMass[idxFF] == 0 )
+      if( PoleMass[idxFF].Type == Param::Type::Derived )
         idxPDGDStar[idxFF] = mp.at( kPDGDStar[idxFF] )();
       idxDelta[idxFF] = mp.at( kDelta[idxFF] )();
       if( c0Enabled[idxFF] )
@@ -272,6 +293,22 @@ void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
   }
 }
 
+void ContinuumFit::Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
+                          const VectorView &FitData, bool bLastChance ) const
+{
+  for( int idxFF = 0; idxFF < NumFF; ++idxFF )
+  {
+    if( uiFF & ffMaskFromIndex( idxFF ) )
+    {
+      if( PoleMass[idxFF].Type == Param::Type::Variable && !bKnown[idxDelta[idxFF]] )
+      {
+        Guess[idxDelta[idxFF]] = PoleMass[idxFF].Value;
+        bKnown[idxDelta[idxFF]] = true;
+      }
+    }
+  }
+}
+
 void ContinuumFit::SetReplica( Vector &ModelParams ) const
 {
   const scalar mPDGL{ ModelParams[idxPDGL] };
@@ -281,13 +318,13 @@ void ContinuumFit::SetReplica( Vector &ModelParams ) const
   {
     if( uiFF & ffMaskFromIndex( idxFF ) )
     {
-      if( PoleMass[idxFF] == 0 )
+      if( PoleMass[idxFF].Type == Param::Type::Derived )
       {
         const scalar PoleMass{ ModelParams[idxPDGDStar[idxFF]] };
         ModelParams[idxDelta[idxFF]] = 0.5 * ( ( PoleMass*PoleMass - mPDGL*mPDGL ) / mPDGH - mPDGH );
       }
-      else
-        ModelParams[idxDelta[idxFF]] = PoleMass[idxFF];
+      else if( PoleMass[idxFF].Type == Param::Type::Fixed )
+        ModelParams[idxDelta[idxFF]] = PoleMass[idxFF].Value;
     }
   }
   // Compute chiral and finite volume corrections for each ensemble
@@ -1290,6 +1327,7 @@ int main(int argc, const char *argv[])
       {"Hotelling", CL::SwitchType::Single, DefaultHotelling},
       {"chisqdof", CL::SwitchType::Single, "0"},
       {"sep", CL::SwitchType::Single, DefaultEnergySep},
+      {"shrink", CL::SwitchType::Single, "0"},
       {"mindof", CL::SwitchType::Single, "1"},
       {"retry", CL::SwitchType::Single, "0"},
       {"iter", CL::SwitchType::Single, "0"},
@@ -1382,6 +1420,7 @@ int main(int argc, const char *argv[])
     "--Hotelling Minimum Hotelling Q-value on central replica (default " << DefaultHotelling << ")\n"
     "--chisqdof  Maximum chi^2 / dof on central replica\n"
     "--sep    Minimum relative separation between energies (default " << DefaultEnergySep << ")\n"
+    "--shrink Ledoit and Wolf shrinkage (default: 0)\n"
     "--retry  Maximum number of times to retry fits (default Minuit2=10, GSL=0)\n"
     "--iter   Max iteration count, 0 (default) = unlimited\n"
     "--tol    Tolerance of required fits (default 1e-7)\n"

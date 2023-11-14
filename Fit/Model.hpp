@@ -101,7 +101,7 @@ protected:
 public:
   virtual ~Model() {}
   // This is how to make a model
-  static ModelPtr MakeModel( const CreateParams &mcp, Model::Args &Args );
+  static ModelPtr MakeModel( int ModelNum, const CreateParams &mcp, Model::Args &Args );
   // These must be implemented by the model
   /// Models which are a function of a vector (eg continuum fit) must define X Vector, i.e. constants used
   virtual void DefineXVector( DataSet &ds, int i ) {}

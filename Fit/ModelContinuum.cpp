@@ -82,13 +82,13 @@ std::istream & operator>>( std::istream &is, ModelType &m )
 }
 
 // Create a model of the appropriate type - this is the only place with knowledge of this mapping
-ModelPtr Model::MakeModel( const Model::CreateParams &cp, Model::Args &Args )
+ModelPtr Model::MakeModel( int ModelNum, const Model::CreateParams &cp, Model::Args &Args )
 {
   // Now work out what type of model we are creating
   const eModelType modelType{ eModelType::Continuum };
   const Common::FormFactor ff{ Common::FromString<Common::FormFactor>( Args.Remove( sFF ) ) };
   // Make the model
-  std::cout << "  " << modelType;
+  std::cout << std::setw( 5 ) << ModelNum << Common::Space << modelType;
   for( typename Model::Args::value_type v : Args )
   {
     std::cout << Common::CommaSpace << v.first;
