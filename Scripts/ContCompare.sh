@@ -9,7 +9,7 @@ set -e
 
 ###################################################
 
-Do=${Do-original}
+Do=${Do-original shrink linear}
 Which=${Which:-all} # all / some
 Cont=Cont
 CompareDir=Var
@@ -29,6 +29,10 @@ Narrow=$((1-0${Narrow+1})) # Narrow is the default (wasn't originally)
 
 function DoPlot()
 {
+  local NumLoop=1
+  case "$Do" in
+    original) NumLoop=2;;
+  esac
 mkdir -p $PlotDir
 gnuplot <<-EOFMark
 
@@ -38,7 +42,8 @@ PlotDir="$PlotDir"
 Save="$save"
 FF="$ff"
 CompareDir="$CompareDir"
-NumCompare=$NumCompare
+NumLoop=$NumLoop
+DoWhich="$Do"
 
 XScale=1e-9
 if( Field eq "qSq" ) { XScale=XScale*XScale }
@@ -62,12 +67,14 @@ PlotTitles[5]='omit M2'
 PlotTitles[6]='omit M3'
 PlotTitles[7]='omit M1M2M3'
 PlotTitles[8]='omit \$n^2_{\textrm{max}}$ C1C2'
-PlotTitles[9]='\$\Delta_0$ 300 MeV, $\Delta_+$ -25 MeV'
+PlotTitles[9]='\$\Delta_0$ 313 MeV, $\Delta_+$ -5 MeV'
 #PlotTitles[10]='\$\Delta_+$ -100 MeV, omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
-PlotTitles[10]='\$\Delta_+$ -50 MeV'
-PlotTitles[11]='\$\Delta_0$ 250 MeV'
+PlotTitles[10]='\$\Delta_+$ -5 MeV'
+PlotTitles[11]='\$\Delta_0$ 313 MeV'
 PlotTitles[12]='Alternate C1 fits'
 
+if( DoWhich eq 'original' ) {
+  NumRows=19
 # These are destructive tests - not part of my error budget
 PlotTitles[13]='omit F1M'
 PlotTitles[14]='omit C1C2 and $\left(a \Lambda\right)^2$'
@@ -76,6 +83,10 @@ PlotTitles[16]=PlotTitles[1].' and $\delta^{\left(\textrm{chiral}\right)}$'
 PlotTitles[17]='omit $\left(a \Lambda\right)^2$'
 PlotTitles[18]='omit $\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
 PlotTitles[19]='omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
+} else {
+  NumRows=$((12+0${ShrinkWith:+1}))
+  PlotTitles[13]='\$f_+ \left(\flatfrac{E_L}{\Lambda}\right)^3$ terms'
+}
 
 PlotErrorBar="abs((column('y_high')-column('y_low'))/(2*column('y')))*100"
 PlotPrefix="'$Ref/$Prefix'.FF.'$Suffix' using "
@@ -84,21 +95,15 @@ PlotPrefixB="):("
 PlotPrefixC=") with filledcurves title 'Error' fc 'gray05' fs transparent solid 0.5"
 
 OutName=Save.'_'.FF
-NumLoop=NumCompare > 12 ? 2 : 1
 
 do for [Loop=1:NumLoop] {
 
 if( Loop == 2 ) {
-  NumCompare=12
+  NumRows=12
   OutName=OutName.'_zoom'
 }
 
-if( NumCompare > 12 ) {
-  #set key center left Left reverse maxrows 10
-  set key top left Left reverse maxrows 10
-} else {
-  set key top left Left reverse maxrows 7
-}
+set key top left Left reverse maxrows (NumRows+2)/2 # NumRows + Error row and round up
 
 AbsFunc='abs'
 do for [AbsLoop=1:2] {
@@ -107,7 +112,7 @@ PlotPrefixA='0'
 if( AbsLoop == 2 ) { PlotPrefixA='-'.PlotErrorBar }
 
 Cmd=''
-do for [i=1:NumCompare] {
+do for [i=1:NumRows] {
   if( PlotTitles[i] ne '' ) {
   Cmd=Cmd.', "'.FieldFile(Field,i,FF).'"'
   Cmd=Cmd." using (column('x')*XScale):(".AbsFunc."(column('y')/column('Ref')-1)*100)"
@@ -129,7 +134,7 @@ EOFMark
 
 (
 cd $PlotDir
-unset DoZoom; (( NumCompare > 12 )) && DoZoom=_zoom
+unset DoZoom; (( NumLoop > 1 )) && DoZoom=_zoom
 for Zoom in '' $DoZoom; do
   for AbsFunc in '' abs; do
     pdflatex "${save}_${ff}${Zoom}$AbsFunc"
@@ -220,11 +225,10 @@ function MakeOne()
 
 ###################################################
 
-function MakeRef()
+function SetRef()
 {
   RefBase=$2 # This is the reference fit base name
   Ref=${1:+$1/}$RefBase # This is the path to the reference fit
-  MakeStats Ref "$Ref" # Reference value
 }
 
 function MakeCommon()
@@ -244,7 +248,7 @@ function MakeCommon()
 
 function MakeOriginal()
 {
-  MakeRef Simul renorm-CZ34
+  MakeStats Ref "$Ref" # Reference value
   MakeOne a Omit/renorm-CVZ34 # Omit FV
   MakeCommon
   # These are destructive tests - not part of my error budget
@@ -259,9 +263,10 @@ function MakeOriginal()
 
 function MakeShrink()
 {
-  MakeRef Simul renormE1
+  MakeStats Ref "$Ref" # Reference value
   MakeOne a Omit/${RefBase}-CV # Omit FV
   MakeCommon
+  MakeOne m Simul/renorm-CZ34 # Original reference fit with cubic energy in f_+
 }
 
 ###################################################
@@ -297,7 +302,7 @@ EOFMARK
 
   case ${Do,,} in
     original) MakeOriginal;;
-    shrink)   MakeShrink;;
+    shrink | linear)   MakeShrink;;
   esac
 
   cat >> "$SummaryFile" <<-"EOFMARK"
@@ -412,16 +417,16 @@ do
   (
     cd "$Cont/$Do"
     case "$Do" in
-      original) NumCompare=19;;
-      *)        NumCompare=12;;
+      original)         SetRef Simul renorm-CZ34;;
+      shrink | linear)  SetRef Simul renormE1; ShrinkWith=;; # Add extra rows to include
     esac
     export xrange='0.48:*'
     for Field in EL
     do
       if [ -v Make ]; then MakeAll; fi
       case "$Do" in
-        original) MakeMax b l j;;
-        shrink)   MakeMax b l e j;;
+        original) MakeMax a b c d e f g h i j k l;;
+        shrink | linear)  MakeMax a b c d e f g h i j k l $ShrinkWith;;
       esac
       if [ -v Make ] || [ -v DoPlot ]; then
         save=Var ff=f0 DoPlot

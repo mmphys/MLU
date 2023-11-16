@@ -11,13 +11,14 @@ set -e
 # Plot: set to anything to perform plots only
 # Do:   original  - fits documented in Continuum.tex (*Default*)
 #       shrink    - newer fits using shrinkage
+#       linear    - drop as few data points as possible to make linear fit work without shrinkage
 #                 - anything else do nothing
 # DataRange:  set to anything so that plots cover range with data only
 #             otherwise complete physical range covered
 
 ###################################################
 
-Do=${Do-original}
+Do=${Do-original shrink linear}
 
 # Set domain - only used when performing fits
 # Can be useful to source this script when manually doing global fits
@@ -44,6 +45,8 @@ export MLUfplusELMax=$MLUf0ELMax
 
 function SensitivityOriginal()
 {
+  local AltPoleS='--poles=313e6'
+  local AltPoleV='--polev=-5e6'
   FitOptions=--block Separate= E=1 Disable=V FitSeries=renorm_mostly ContFit.sh& # Ch 2
   FitOptions=--block Separate= E=1 Disable=V ContFit.sh& # Ch 3
   FitOptions=--block Separate= E=1 ContFit.sh& # Ch 4
@@ -68,10 +71,9 @@ function SensitivityOriginal()
   OutDir=Omit EnsOpt=M3 DisableZ=34 ContFit.sh& # f) Omit Ensemble M3
   OutDir=Omit EnsOpt=M DisableZ=34 ContFit.sh& # g) Omit Ensemble M1, M2, M3
   Some= DisableZ=34 ContFit.sh& # h) Omit n^2_max from C1 C2
-  NameExtra=PoleSV DisableZ=34 FitOptions='--poles=3e8 --polev=-25e6' ContFit.sh& # i) move S&V poles
- #NameExtra=PoleV  DisableZ=34 FitOptions='--polev=-10e7' ContFit.sh& # j) Move vector pole
-  NameExtra=PoleV  DisableZ=34 FitOptions='--polev=-50e6' ContFit.sh& # j) Move vector pole
-  NameExtra=PoleS  DisableZ=34 FitOptions='--poles=250e6' ContFit.sh& # k) Move scalar pole
+  NameExtra=PoleSV DisableZ=34 FitOptions="$AltPoleS $AltPoleV" ContFit.sh& # i) move S&V poles
+  NameExtra=PoleV  DisableZ=34 FitOptions="$AltPoleV" ContFit.sh& # j) Move vector pole
+  NameExtra=PoleS  DisableZ=34 FitOptions="$AltPoleS" ContFit.sh& # k) Move scalar pole
   NameExtra=AltC1 Series='C1 renormold' DisableZ=34 ContFit.sh& # Ch 10 l) Alternate C1 fits
 
   # These are destructive tests - not part of my error budget
@@ -90,11 +92,12 @@ function SensitivityOriginal()
 
 ###################################################
 
-function SensitivityShrink()
+function SensitivityShrinkLinear()
 {
+  local AltPoleS='--poles=313e6'
+  local AltPoleV='--polev=-5e6'
   local E=1
-  local Shrink=0.005
-  export E Shrink
+  export E
   ContFit.sh& # Ref) This is my reference fit
   OutDir=Omit Disable=V ContFit.sh& # a) Omit FV
   OutDir=Omit EnsOpt=C1 ContFit.sh& # b) Omit Ensemble C1
@@ -104,10 +107,31 @@ function SensitivityShrink()
   OutDir=Omit EnsOpt=M3 ContFit.sh& # f) Omit Ensemble M3
   OutDir=Omit EnsOpt=M ContFit.sh& # g) Omit Ensemble M1, M2, M3
   Some= ContFit.sh& # h) Omit n^2_max from C1 C2
-  NameExtra=PoleSV FitOptions='--poles=3e8 --polev=-25e6' ContFit.sh& # i) move S&V poles
-  NameExtra=PoleV  FitOptions='--polev=-50e6' ContFit.sh& # j) Move vector pole
-  NameExtra=PoleS  FitOptions='--poles=250e6' ContFit.sh& # k) Move scalar pole
+  NameExtra=PoleSV FitOptions="$AltPoleS $AltPoleV" ContFit.sh& # i) move S&V poles
+  NameExtra=PoleV  FitOptions="$AltPoleV" ContFit.sh& # j) Move vector pole
+  NameExtra=PoleS  FitOptions="$AltPoleS" ContFit.sh& # k) Move scalar pole
   NameExtra=AltC1 Series='C1 renormold' ContFit.sh& # Ch 10 l) Alternate C1 fits
+  unset E
+  unset Shrink
+  DisableZ=34 ContFit.sh& # m) Original reference fit
+}
+
+# Linear model with shrinkage
+
+function SensitivityShrink()
+{
+  local Shrink=0.005
+  export Shrink
+  SensitivityShrinkLinear
+}
+
+# Drop as few data points as possible to make linear model work without shrinkage
+
+function SensitivityLinear()
+{
+  local PMaxFZero='C1 4 C2 3 F1M 6 M1 3 M2 3 M3 3'
+  export PMaxFZero
+  SensitivityShrinkLinear
 }
 
 ###################################################
@@ -142,6 +166,7 @@ then
     case ${Do,,} in
       original) SensitivityOriginal;;
       shrink)   SensitivityShrink;;
+      linear)   SensitivityLinear;;
       *)        echo "Unrecognised fit variation - doing nothing";;
     esac
   done
