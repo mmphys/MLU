@@ -9,9 +9,8 @@ set -e
 
 # Optional
 #  D:         Number of discretisation constants (default: 1)
-#  E:         Number of energy constants (default: 3)
+#  E:         Number of energy constants (default: 1)
 #  Separate:  Set to anything to perform separate fits for f0 and fplus
-#  Some:      Set to anything to drop the highest n^2 data points from C ensembles
 #  FitSeries: Name of series to fit
 #  Series:    List of 'Ensemble seriesname' pairs to override specific choices
 #  Disable:   List of constants to disable (each between 0 and 4) both form factors
@@ -23,9 +22,7 @@ set -e
 ###################################################
 
 Separate=$((0${Separate+1}))
-Some=$((0${Some+1}))
 FitSeries=${FitSeries:-renorm}
-#OutDir=${OutDir:-C1C2F1MM1M2M3}
 
 eval declare -A ASeries=($Series)
 
@@ -59,8 +56,8 @@ fi
 ###################################################
 
 unset Disabled
-[ -v D ] && Disabled+="D$D"
 [ -v E ] && Disabled+="E$E"
+[ -v D ] && Disabled+="D$D"
 if [ "$Disable" != '' ] || [ "$DisableZ" != '' ] || [ "$DisableP" != '' ]
 then
   Disabled+="-C$Disable"
@@ -90,7 +87,7 @@ OutModel=".g5P_g5W.model"
 function GetFiles()
 {
   unset Files # Returned
-  local pMax Ens i ThisSeries
+  local Ens i ThisSeries
   local PMaxDefault='C1 4 C2 4 F1M 6 M1 4 M2 4 M3 4'
   declare -A aPMax
   if [ "$ff" == fplus ]; then
@@ -102,10 +99,8 @@ function GetFiles()
   do
     ThisSeries=${ASeries[$Ens]}
     [ -z "$ThisSeries" ] && ThisSeries=$FitSeries
-    pMax=${aPMax[$Ens]}
-    if [ "${Ens:0:1}" == C ]; then pMax=$((pMax-Some)); fi
     [ -v Files ] && Files+=' '
-    Files+="$Ens/FormFactor/$ThisSeries/3sm_sp2/'*_p2_[0-$pMax].g*'.h5"
+    Files+="$Ens/FormFactor/$ThisSeries/3sm_sp2/'*_p2_[0-${aPMax[$Ens]}].g*'.h5"
   done
 }
 
@@ -175,12 +170,7 @@ Continuum+=" --model ${MLUCache}EnsembleInfo.h5"
 Continuum+=" -i $HOME/NoSync/"
 [ -v FitOptions ] && Continuum+=" $FitOptions"
 
-  if ((Some)); then
-    OutDir+=_some
-    qSqRangeMin='*'
-  else
-    qSqRangeMin='-0.1'
-  fi
+  qSqRangeMin='-0.1'
   if ! [ -v PlotOnly ]; then
     if (( Separate )); then
       DoFit f0

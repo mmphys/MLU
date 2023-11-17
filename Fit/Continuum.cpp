@@ -1303,7 +1303,7 @@ int main(int argc, const char *argv[])
 #ifndef HAVE_MINUIT2
   std::ios_base::sync_with_stdio( false );
 #endif
-  static const char DefaultNumEnergies[] = "3";
+  static const char DefaultNumEnergies[] = "1";
   static const char DefaultNumDiscret[] = "1";
   static const char DefaultFormFactor[] = "f0";
   static const char DefaultEnergySep[] = "0";

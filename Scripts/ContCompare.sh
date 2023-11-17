@@ -9,8 +9,7 @@ set -e
 
 ###################################################
 
-Do=${Do-original shrink linear}
-Which=${Which:-all} # all / some
+Do=${Do-cubic shrink linear}
 Cont=Cont
 CompareDir=Var
 PlotDir=Plot
@@ -29,10 +28,6 @@ Narrow=$((1-0${Narrow+1})) # Narrow is the default (wasn't originally)
 
 function DoPlot()
 {
-  local NumLoop=1
-  case "$Do" in
-    original) NumLoop=2;;
-  esac
 mkdir -p $PlotDir
 gnuplot <<-EOFMark
 
@@ -42,7 +37,6 @@ PlotDir="$PlotDir"
 Save="$save"
 FF="$ff"
 CompareDir="$CompareDir"
-NumLoop=$NumLoop
 DoWhich="$Do"
 
 XScale=1e-9
@@ -66,14 +60,14 @@ PlotTitles[4]='omit M1'
 PlotTitles[5]='omit M2'
 PlotTitles[6]='omit M3'
 PlotTitles[7]='omit M1M2M3'
-PlotTitles[8]='omit \$n^2_{\textrm{max}}$ C1C2'
+PlotTitles[8]='omit \$n^2_{\textrm{max}}$ C,M'
 PlotTitles[9]='\$\Delta_0$ 313 MeV, $\Delta_+$ -5 MeV'
 #PlotTitles[10]='\$\Delta_+$ -100 MeV, omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
 PlotTitles[10]='\$\Delta_+$ -5 MeV'
 PlotTitles[11]='\$\Delta_0$ 313 MeV'
 PlotTitles[12]='Alternate C1 fits'
 
-if( DoWhich eq 'original' ) {
+if( DoWhich eq 'cubic' ) {
   NumRows=19
 # These are destructive tests - not part of my error budget
 PlotTitles[13]='omit F1M'
@@ -84,7 +78,7 @@ PlotTitles[17]='omit $\left(a \Lambda\right)^2$'
 PlotTitles[18]='omit $\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
 PlotTitles[19]='omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
 } else {
-  NumRows=$((12+0${ShrinkWith:+1}))
+  NumRows=13
   PlotTitles[13]='\$f_+ \left(\flatfrac{E_L}{\Lambda}\right)^3$ terms'
 }
 
@@ -96,11 +90,14 @@ PlotPrefixC=") with filledcurves title 'Error' fc 'gray05' fs transparent solid 
 
 OutName=Save.'_'.FF
 
-do for [Loop=1:NumLoop] {
+do for [Loop=1:2] {
 
+ExtraName=''
+if( Loop == 1 ) {
+  ExtraName='_all'
+}
 if( Loop == 2 ) {
   NumRows=12
-  OutName=OutName.'_zoom'
 }
 
 set key top left Left reverse maxrows (NumRows+2)/2 # NumRows + Error row and round up
@@ -123,7 +120,7 @@ do for [i=1:NumRows] {
   }
 }
 
-set output PlotDir.'/'.OutName.AbsFunc.'.tex'
+set output PlotDir.'/'.OutName.AbsFunc.ExtraName.'.tex'
 
 eval "plot ".PlotPrefix.PlotPrefixA.PlotPrefixB.PlotErrorBar.PlotPrefixC.Cmd
 set output
@@ -134,10 +131,9 @@ EOFMark
 
 (
 cd $PlotDir
-unset DoZoom; (( NumLoop > 1 )) && DoZoom=_zoom
-for Zoom in '' $DoZoom; do
+for Zoom in '' _all; do
   for AbsFunc in '' abs; do
-    pdflatex "${save}_${ff}${Zoom}$AbsFunc"
+    pdflatex "${save}_${ff}${AbsFunc}${Zoom}"
   done
 done
 )
@@ -239,7 +235,7 @@ function MakeCommon()
   MakeOne e Omit/${RefBase}-EnsM2 # Omit M2
   MakeOne f Omit/${RefBase}-EnsM3 # Omit M3
   MakeOne g Omit/${RefBase}-EnsM # Omit M1, M2, M3
-  MakeOne h Simul/${RefBase}_some # Omit n^2_max from C1 C2
+  MakeOne h Omit/${RefBase}_NMaxCM # Omit n^2_max from C & M ensembles
   MakeOne i Simul/${RefBase}_PoleSV # Move scalar and vector poles
   MakeOne j Simul/${RefBase}_PoleV # Move vector pole
   MakeOne k Simul/${RefBase}_PoleS # Move scalar pole
@@ -249,15 +245,15 @@ function MakeCommon()
 function MakeOriginal()
 {
   MakeStats Ref "$Ref" # Reference value
-  MakeOne a Omit/renorm-CVZ34 # Omit FV
+  MakeOne a Omit/renormE3-CVZ34 # Omit FV
   MakeCommon
   # These are destructive tests - not part of my error budget
   MakeOne m Omit/${RefBase}-EnsF1M # Omit F1M
-  MakeOne n Omit/renormD0-CZ34-EnsC # Omit C1, C2
-  MakeOne o Omit/renorm-CXZ34 # Omit Chiral
+  MakeOne n Omit/renormE3D0-CZ34-EnsC # Omit C1, C2
+  MakeOne o Omit/renormE3-CXZ34 # Omit Chiral
   MakeOne p Omit/renormE2-CVXZ3 # Omit FV and Chiral
-  MakeOne q Omit/renormD0-CZ34 # Omit a Lambda
-  MakeOne r Omit/renorm-C1Z34 # Omit Delta Mpi / Lambda
+  MakeOne q Omit/renormE3D0-CZ34 # Omit a Lambda
+  MakeOne r Omit/renormE3-C1Z34 # Omit Delta Mpi / Lambda
   MakeOne s Omit/renormE2-CZ3 # Omit (E/Lambda)^3
 }
 
@@ -266,7 +262,7 @@ function MakeShrink()
   MakeStats Ref "$Ref" # Reference value
   MakeOne a Omit/${RefBase}-CV # Omit FV
   MakeCommon
-  MakeOne m Simul/renorm-CZ34 # Original reference fit with cubic energy in f_+
+  MakeOne m Simul/renormE3-CZ34 # Original reference fit with cubic energy in f_+
 }
 
 ###################################################
@@ -301,7 +297,7 @@ EOFMARK
   fi
 
   case ${Do,,} in
-    original) MakeOriginal;;
+    cubic)             MakeOriginal;;
     shrink | linear)   MakeShrink;;
   esac
 
@@ -417,21 +413,16 @@ do
   (
     cd "$Cont/$Do"
     case "$Do" in
-      original)         SetRef Simul renorm-CZ34;;
-      shrink | linear)  SetRef Simul renormE1; ShrinkWith=;; # Add extra rows to include
+      cubic)            SetRef Simul renormE3-CZ34;;
+      shrink | linear)  SetRef Simul renorm;;
     esac
     export xrange='0.48:*'
     for Field in EL
     do
       if [ -v Make ]; then MakeAll; fi
-      case "$Do" in
-        original) MakeMax a b c d e f g h i j k l;;
-        shrink | linear)  MakeMax a b c d e f g h i j k l $ShrinkWith;;
-      esac
-      if [ -v Make ] || [ -v DoPlot ]; then
-        save=Var ff=f0 DoPlot
-        save=Var ff=fplus DoPlot
-      fi
+      MakeMax a b c d e f g h i j k l
+      save=Var ff=f0 DoPlot
+      save=Var ff=fplus DoPlot
     done
   )
   fi
