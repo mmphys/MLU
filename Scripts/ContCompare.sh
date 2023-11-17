@@ -169,7 +169,12 @@ function MakeStats()
   Out+=" & $QSqZero & $QSqMax"
   if ((!Narrow)); then Out+=" & ${QSq[0]}"; fi
   Out+=" & ${QSq[1]}"
-  echo "$Out"' \\' >> "$SummaryFile"
+  local LabelFirst="${Label:0:1}"
+  if [ "${Label,,}" == "ref" ] || [[ "${LabelFirst,}" < "m" ]]
+  then
+    echo "$Out"' \\' >> "$SummaryFile"
+  fi
+  echo "$Out"' \\' >> "$SummaryAll"
   local DefPrefix='\def\ContFit'"$Label"
   {
     echo "${DefPrefix}ChiSq{$ChiSq}"
@@ -271,40 +276,54 @@ function MakeShrink()
 
 ###################################################
 
-function MakeAll()
+function MakeAllHeader()
 {
-  mkdir -p "$CompareDir"
-  local BaseName="$CompareDir/${Field}_Summary"
-  local SummaryFile="$BaseName.txt"
-  local SummaryTex="$BaseName.tex"
-  echo "% Comparison: $Do" > "$SummaryTex"
-  echo "% Comparison: $Do" > "$SummaryFile"
   if ((Narrow))
   then
-    cat >> "$SummaryFile" <<-"EOFMARK"
+    cat <<-"EOFMARK"
     \begin{tabular}{|c|r|c|l|l|l|l|l|}
     \hline
     & $t^2$ & $\nu$ & $t^2_\nu$ & p-H & $f_0 \lr{0}$ & $f_0 \lr{q^2_{\textrm{max}}}$ & $f_+ \lr{q^2_{\textrm{max}}}$ \\
     \hline
 EOFMARK
   else
-    cat >> "$SummaryFile" <<-"EOFMARK"
+    cat <<-"EOFMARK"
     \begin{tabular}{|c|r|c|l|l|l|l|l|l|l|}
     \hline
     & $t^2$ & $\nu$ & $t^2_\nu$ & p-H & p-$\chi^2$ & $f_0 \lr{0}$ & $f_0 \lr{q^2_{\textrm{max}}}$ & $f_+ \lr{0}$ & $f_+ \lr{q^2_{\textrm{max}}}$ \\
     \hline
 EOFMARK
   fi
+}
+
+function MakeAllFooter()
+{
+  cat <<-"EOFMARK"
+  \hline
+  \end{tabular}
+EOFMARK
+}
+
+function MakeAll()
+{
+  mkdir -p "$CompareDir"
+  local BaseName="$CompareDir/${Field}_Summary"
+  local SummaryFile="$BaseName.txt"
+  local SummaryAll="${BaseName}_all.txt"
+  local SummaryTex="$BaseName.tex"
+  echo "% Comparison: $Do" > "$SummaryTex"
+  echo "% Comparison: $Do" > "$SummaryFile"
+  echo "% Comparison: $Do" > "$SummaryAll"
+  MakeAllHeader >> "$SummaryFile"
+  MakeAllHeader >> "$SummaryAll"
 
   case ${Do,,} in
     cubic)             MakeOriginal;;
     shrink | linear)   MakeShrink;;
   esac
 
-  cat >> "$SummaryFile" <<-"EOFMARK"
-	\hline
-	\end{tabular}
-EOFMARK
+  MakeAllFooter >> "$SummaryFile"
+  MakeAllFooter >> "$SummaryAll"
 }
 
 ###################################################
