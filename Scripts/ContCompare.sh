@@ -361,8 +361,10 @@ set arrow 2 from first 0.495644, graph 0 to first 0.495644, graph 1 \
 set key top center Left reverse maxrows 1
 set output OutFile
 
-plot InFile using (column('x')*XScale):(0):(column('stat')*100) with filledcurves lc "skyblue" fs transparent solid 0.5 title 'Stat', \
-  '' using (column('x')*XScale):(column('stat')*100):(column('total')*100) with filledcurves lc "red" fs transparent solid 0.5 title 'Sys'
+plot InFile using (column('x')*XScale):(0):(column('total')*100) \
+      with filledcurves title 'Total' fc 'gray05' fs transparent solid 0.5, \
+  '' using (column('x')*XScale):(column('stat')*100) with lines lc "skyblue" title 'Stat', \
+  '' using (column('x')*XScale):(column('sys')*100) with lines lc "red" title 'Sys'
 
 set output
 EOFMark
@@ -409,7 +411,7 @@ function MakeMax()
 		{ RelB=($6>$4 ? $6-$4 : $4-$6) / $4 }
 		{ Max=RelA > RelB ? $2 : $6 }
 		{ Sys=RelA > RelB ? RelA : RelB }
-		{ print $1, Max, $3, $4, $5, Stat, Sys, Stat+Sys }
+		{ print $1, Max, $3, $4, $5, Stat, Sys, sqrt(Stat*Stat+Sys*Sys) }
 ENDGAWK
       ) > "$FileData"
       (( i > 1 )) && rm "$FileA"
