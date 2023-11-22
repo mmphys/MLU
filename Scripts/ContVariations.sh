@@ -77,9 +77,10 @@ function SensitivityOriginal()
   FitOptions=--block Separate= Disable=V ContFit.sh& # Ch 3
   FitOptions=--block Separate= ContFit.sh& # Ch 4
   FitOptions=--block Separate= DisableP=1 ContFit.sh& # Ch 5
-  FitOptions=--block Disable=V ContFit.sh& # Ch 6
-  FitOptions=--block ContFit.sh& # Ch 7
-  FitOptions=--block DisableP=1 ContFit.sh& # Ch 8
+  FitOptions=--block OutDir=Block Disable=V ContFit.sh& # Ch 6
+  FitOptions=--block OutDir=Block ContFit.sh& # Ch 7
+  FitOptions=--block OutDir=Block DisableP=1 ContFit.sh& # Ch 8
+  ContFit.sh& # Full covariance matrix with linear model - terrible Hotelling p-Value
 
   local E=3
   export E
