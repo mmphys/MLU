@@ -124,7 +124,9 @@ Cmd="title='point-point point-wall' tf='$LabelTF $LabelTF' yrange='${ayRange[$Me
 local ExtraFiles="$PlotData/${CorrPrefix}gT5P_g5P.$Suffix.txt"
 ExtraFiles+=" $PlotData/${CorrPrefix}gT5P_g5W.$Suffix.txt"
 Cmd+=" extra='$ExtraFiles'"
-Cmd+=' Latex= ylabel='"'"'$a E_\\textrm{eff}$'"'"
+Cmd+=' Latex= ylabel='"'"'$a '
+((p)) && Cmd+=E || Cmd+=m
+Cmd+='_\\textrm{eff}$'"'"
 Cmd+=" plottd.sh $TDFile"
 DoCmd
 }

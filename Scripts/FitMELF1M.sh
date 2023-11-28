@@ -186,6 +186,8 @@ function RatioFitsDisp()
   DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 0
   Alt= DeltaT="20 24 28" TI='12 13 13' TF='13 16 20' FitTwoStage 0
   Alt= DeltaT='20 24' TI='12 13' TF='13 16' FitTwoStage 0
+  Alt= DeltaT="28 32" TI='14 15' TF='19 22' FitTwoStage 0
+  Alt= DeltaT="24 28 32" TI='14 14 15' TF='15 19 22' FitTwoStage 0
 
   DeltaT="24 28 32" TI='13 13 13' TF='16 20 24' FitTwoStage 1
   Alt= DeltaT="24 28" TI='13 13' TF='16 20' FitTwoStage 1

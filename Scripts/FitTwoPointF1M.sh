@@ -97,7 +97,7 @@ if [ -v DoOld ]; then
   p=4 TI=9 TF=19 TI2=10 TF2=17 FitTwoPoint # Preferred
   p=4 TI=9 TF=19 TI2=12 TF2=17 FitTwoPoint
   p=5 TI=7 TF=28 TI2=12 FitTwoPoint
-  p=6 TI=7 TF=23 TI2=12 TF2=20 FitTwoPoint
+  p=6 TI=7 TF=23 TI2=12 TF2=20 LabelTF=32 FitTwoPoint
   )
 fi
 
