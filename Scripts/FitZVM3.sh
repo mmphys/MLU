@@ -44,6 +44,10 @@ if [ -v DoFit ]; then
   ti=8 tf=12 FitZV h${Heavy} 20 l
   ti=8 tf=14 FitZV h${Heavy} 24 l # Preferred
   ti=8 tf=20 FitZV h${Heavy} 28 l
+  ti=8 tf=12 FitZV h${Heavy} 20 s
+  ti=8 tf=16 FitZV h${Heavy} 24 s
+  ti=8 tf=20 FitZV h${Heavy} 28 s
+  ti=8 tf=24 FitZV h${Heavy} 32 s
 
   ti=4 tf=16 FitZV l 20 s # Preferred
   ti=4 tf=20 FitZV l 24 s

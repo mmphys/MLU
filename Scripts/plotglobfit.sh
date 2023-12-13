@@ -139,10 +139,12 @@ if( "$ff" eq "f0" ) {
   CZero=${ColumnValues[3*8+4]}
   COne=${ColumnValues[4*8+4]}
   DZero=${ColumnValues[5*8+4]}
+  DOne=${ColumnValues[27*8+4]}
 } else {
   CZero=${ColumnValues[6*8+4]}
   COne=${ColumnValues[7*8+4]}
   DZero=${ColumnValues[8*8+4]}
+  DOne=${ColumnValues[28*8+4]}
 }
 #print "$ff COne=".sprintf("%g",COne).', DZero='.sprintf("%g",DZero)
 
@@ -181,7 +183,8 @@ plot PlotFile."_fit.txt" using (stringcolumn("field") eq xAxis ? column('x')*xSc
         with filledcurves notitle fc "skyblue" fs transparent solid 0.5, \
     for [i=1:MaxAdj] '' using (stringcolumn("field") eq xAxis ? column('x')*xScale : NaN) \
         :(column(YField) \
-          + (CZero*DeltaFV[i]+COne*DeltaMPi[i]+DZero*LambdaSq/(aInv[i]*aInv[i])) \
+          + (CZero*DeltaFV[i]+COne*DeltaMPi[i]+DZero*LambdaSq/(aInv[i]*aInv[i]) \
+              + +DOne*LambdaSq*LambdaSq/(aInv[i]*aInv[i]*aInv[i]*aInv[i])) \
             * ( RemovePole ? 1 : column('Pole') ) ) \
         with lines notitle ls i dashtype 2, \
     for [i=1:6] PlotFile.".txt" \
@@ -276,7 +279,7 @@ function GetFitData()
     fi
   fi
   if [ -e $InPath ]; then
-    ColumnValues=($(GetColumn --exact ChiSqPerDof,pValue,pValueH,f0-c0,f0-c1,f0-d0,fplus-c0,fplus-c1,fplus-d0,C1-DeltaMPi,C2-DeltaMPi,F1M-DeltaMPi,M1-DeltaMPi,M2-DeltaMPi,M3-DeltaMPi,C1-aInv,C2-aInv,F1M-aInv,M1-aInv,M2-aInv,M3-aInv,C1-ChiFV,C2-ChiFV,F1M-ChiFV,M1-ChiFV,M2-ChiFV,M3-ChiFV $InPath))
+    ColumnValues=($(GetColumn --exact ChiSqPerDof,pValue,pValueH,f0-c0,f0-c1,f0-d0,fplus-c0,fplus-c1,fplus-d0,C1-DeltaMPi,C2-DeltaMPi,F1M-DeltaMPi,M1-DeltaMPi,M2-DeltaMPi,M3-DeltaMPi,C1-aInv,C2-aInv,F1M-aInv,M1-aInv,M2-aInv,M3-aInv,C1-ChiFV,C2-ChiFV,F1M-ChiFV,M1-ChiFV,M2-ChiFV,M3-ChiFV,f0-d1,fplus-d1 $InPath))
     #RefText="χ²/dof=${ColumnValues[0*8+4]} (p-H=${ColumnValues[2*8+4]}, p-χ²=${ColumnValues[1*8+4]})"
     RefText="t_ν^2=${ColumnValues[0*8+4]} (p_H=${ColumnValues[2*8+4]})"
   else

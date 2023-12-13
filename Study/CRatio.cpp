@@ -352,11 +352,9 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
   out.NtUnfolded_ = C3.Nt();
   for( int idx = Fold::idxCentral; idx < NumSamples; ++idx )
   {
-    double CTilde{ C2(idx,fna.DeltaT) };
-    if( bMidpoint )
-      CTilde *= 0.5;
-    else
-      CTilde -= 0.5 * C2(idx,NTHalf) * std::exp( - Src.E[idx] * ( NTHalf - fna.DeltaT ) );
+    const Scalar CTilde{ bMidpoint ? C2(idx,fna.DeltaT) * 0.5
+                        : C2(idx,fna.DeltaT) - Src.A[idx] * Src.A[idx]
+                        * std::exp( - Src.E[idx] * ( C3.Nt() - fna.DeltaT ) )};
     for( int t = 0; t <= fna.DeltaT; ++t )
     {
       const double z{ CTilde / C3(idx,t) };

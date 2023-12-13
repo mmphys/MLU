@@ -202,8 +202,12 @@ protected:
     const std::string q;
     Model &EModel;
     const Column E;
+    const Column A;
     SSInfo( MPModelMap &efit, const std::string &op_, MP mp_, const std::string &q_ )
-    : op{op_}, mp{mp_}, q{q_}, EModel{efit(mp,LoadFilePrefix)}, E{efit.GetColumn(mp, mp.PK())} {}
+    : op{op_}, mp{mp_}, q{q_}, EModel{efit(mp,LoadFilePrefix)}, E{efit.GetColumn(mp, mp.PK())},
+    A{ efit.GetColumn( mp, mp.PK( op ) ) }
+    {
+    }
   };
   inline void AppendOp( std::string &s, const std::string &Op ) { Append( s, Op ); }
   inline void AppendOps( std::string &s, const std::string &Snk, const std::string &Src)

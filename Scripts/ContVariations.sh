@@ -62,6 +62,8 @@ function SensitivityCommon()
   NameExtra=PoleV  FitOptions="$AltPoleV" ContFit.sh& # j) Move vector pole
   NameExtra=PoleS  FitOptions="$AltPoleS" ContFit.sh& # k) Move scalar pole
   NameExtra=AltC1 Series='C1 renormold' ContFit.sh& # Ch 10 l) Alternate C1 fits
+  D=2 ContFit.sh&
+  D=3 ContFit.sh&
 }
 
 ###################################################
@@ -128,7 +130,7 @@ function SensitivityShrink()
 function SensitivityLinear()
 {
   E=3 DisableZ=34 ContFit.sh& # m) Original reference fit
-  local PMaxFZero='C1 4 C2 3 F1M 6 M1 3 M2 3 M3 3'
+  local PMaxFZero='C1 3 C2 3 F1M 6 M1 3 M2 3 M3 3'
   export PMaxFZero
   SensitivityCommon
 }

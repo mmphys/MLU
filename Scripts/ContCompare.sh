@@ -363,8 +363,8 @@ set output OutFile
 
 plot InFile using (column('x')*XScale):(0):(column('total')*100) \
       with filledcurves title 'Total' fc 'gray05' fs transparent solid 0.5, \
-  '' using (column('x')*XScale):(column('stat')*100) with lines lc "skyblue" title 'Stat', \
-  '' using (column('x')*XScale):(column('sys')*100) with lines lc "red" title 'Sys'
+  '' using (column('x')*XScale):(column('stat')*100) with lines lc "blue" lw 2 title 'Stat', \
+  '' using (column('x')*XScale):(column('sys')*100) with lines lc "red" lw 2 title 'Sys'
 
 set output
 EOFMark
@@ -441,7 +441,8 @@ do
     for Field in EL
     do
       if [ -v Make ]; then MakeAll; fi
-      MakeMax a b c d e f g h i j k l
+      #MakeMax a b c d e f g h i j k l
+      MakeMax a h i j k l
       save=Var ff=f0 DoPlot
       save=Var ff=fplus DoPlot
     done
