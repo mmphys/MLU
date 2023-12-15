@@ -64,6 +64,7 @@ function SensitivityCommon()
   NameExtra=AltC1 Series='C1 renormold' ContFit.sh& # Ch 10 l) Alternate C1 fits
   D=2 ContFit.sh&
   D=3 ContFit.sh&
+  FitSeries=AltZV ContFit.sh&
 }
 
 ###################################################
@@ -82,7 +83,7 @@ function SensitivityOriginal()
   FitOptions=--block OutDir=Block Disable=V ContFit.sh& # Ch 6
   FitOptions=--block OutDir=Block ContFit.sh& # Ch 7
   FitOptions=--block OutDir=Block DisableP=1 ContFit.sh& # Ch 8
-  ContFit.sh& # Full covariance matrix with linear model - terrible Hotelling p-Value
+  #ContFit.sh& # Full covariance matrix with linear model - terrible Hotelling p-Value
 
   local E=3
   export E

@@ -303,7 +303,7 @@ qSrc=h$Heavy
 qSnk=l
 qSpec=s
 
-for FileSeries in ${series-old disp priorPW betterPW priorP betterP dispstd renormold renorm}
+for FileSeries in ${series-old disp priorPW betterPW priorP betterP dispstd renormold renorm AltZV}
 do
 (
   case $FileSeries in
@@ -323,6 +323,10 @@ do
     renorm)
       ChooseTwoPtFits disp
       Ratio=ratio Renorm= NotRaw= RatioFitsRenorm;;
+
+    AltZV)
+      ChooseTwoPtFits disp
+      Ratio=ratioAltZV Renorm= NotRaw= RatioFitsRenorm;;
 
     "test")
       ChooseTwoPtFits disp

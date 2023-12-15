@@ -2,7 +2,7 @@
 
 ############################################################
 
-# Functions for performing various versions of matrix element fits
+# Plot combined (cross ensemble) ZV
 
 ############################################################
 

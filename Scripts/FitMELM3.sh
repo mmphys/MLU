@@ -273,7 +273,7 @@ qSpec=s
 
 ChooseHeavyFits
 
-for FileSeries in ${series-disp renorm}
+for FileSeries in ${series-disp renorm AltZV}
 do
 (
   case $FileSeries in
@@ -284,8 +284,11 @@ do
 
     renorm)
       ChooseTwoPtFits disp
-      #NumExp=3
       Ratio=ratio Renorm= NotRaw= RatioFitsBase;;
+
+    AltZV)
+      ChooseTwoPtFits disp
+      Ratio=ratioAltZV Renorm= NotRaw= RatioFitsBase;;
 
     simul)
       RatioFitsSimul;;

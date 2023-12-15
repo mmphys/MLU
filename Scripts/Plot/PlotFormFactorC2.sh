@@ -43,7 +43,10 @@ for f in disp dispind; do
 EndFitChoices
 done
 
-[ -e ${OutBase}renorm.txt ] || ln -s ${OutBase}disp.txt ${OutBase}renorm.txt
+for series in renorm AltZV
+do
+  [ -e ${OutBase}$series.txt ] || ln -s ${OutBase}disp.txt ${OutBase}$series.txt
+done
 )
 
 ############################################################
@@ -54,5 +57,7 @@ done
 
 series='disp dispind' PlotFormFactor.sh
 series='disp dispind' UnCorr= PlotFormFactor.sh
-series=renorm Suffix=_mostly ZV= PlotFormFactor.sh # renorm=(mostly NPR) renormalised. No need for ZV
-series=renorm FullyNP= PlotFormFactor.sh # renorm=(mostly NPR) renormalised. Apply Fully NPR correct.
+# renorm=(mostly NPR) renormalised. No need for ZV
+series=renorm Suffix=_mostly ZV= PlotFormFactor.sh
+# renorm=(mostly NPR) renormalised. Apply Fully NPR correction
+series='renorm AltZV' FullyNP= PlotFormFactor.sh

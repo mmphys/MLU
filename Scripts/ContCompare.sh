@@ -52,7 +52,7 @@ set xrange[${xrange:-*:*}]
 
 FieldFile(Field,Seq,FF)=CompareDir.'/'.Field.'_'.sprintf("%c",Seq+64).'_'.FF.'.txt'
 
-array PlotTitles[19]
+array PlotTitles[20]
 PlotTitles[1]='omit $\delta^{\left(\textrm{FV}\right)}$'
 PlotTitles[2]='omit C1'
 PlotTitles[3]='omit C2'
@@ -66,20 +66,21 @@ PlotTitles[9]='\$\Delta_0$ 313 MeV, $\Delta_+$ -5 MeV'
 PlotTitles[10]='\$\Delta_+$ -5 MeV'
 PlotTitles[11]='\$\Delta_0$ 313 MeV'
 PlotTitles[12]='Alternate C1 fits'
+PlotTitles[13]='Alternate \$Z_{\textrm{V,hh}}$'
 
 if( DoWhich eq 'cubic' ) {
-  NumRows=19
+  NumRows=20
 # These are destructive tests - not part of my error budget
-PlotTitles[13]='omit F1M'
-PlotTitles[14]='omit C1C2 and $\left(a \Lambda\right)^2$'
-PlotTitles[15]='omit $\delta^{\left(\textrm{chiral}\right)}$'
-PlotTitles[16]=PlotTitles[1].' and $\delta^{\left(\textrm{chiral}\right)}$'
-PlotTitles[17]='omit $\left(a \Lambda\right)^2$'
-PlotTitles[18]='omit $\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
-PlotTitles[19]='omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
+PlotTitles[14]='omit F1M'
+PlotTitles[15]='omit C1C2 and $\left(a \Lambda\right)^2$'
+PlotTitles[16]='omit $\delta^{\left(\textrm{chiral}\right)}$'
+PlotTitles[17]=PlotTitles[1].' and $\delta^{\left(\textrm{chiral}\right)}$'
+PlotTitles[18]='omit $\left(a \Lambda\right)^2$'
+PlotTitles[19]='omit $\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
+PlotTitles[20]='omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
 } else {
-  NumRows=13
-  PlotTitles[13]='\$f_+ \left(\flatfrac{E_L}{\Lambda}\right)^3$ terms'
+  NumRows=14
+  PlotTitles[14]='\$f_+ \left(\flatfrac{E_L}{\Lambda}\right)^3$ terms'
 }
 
 PlotErrorBar="abs((column('y_high')-column('y_low'))/(2*column('y')))*100"
@@ -97,7 +98,7 @@ if( Loop == 1 ) {
   ExtraName='_all'
 }
 if( Loop == 2 ) {
-  NumRows=12
+  NumRows=13
 }
 
 set key top left Left reverse maxrows (NumRows+2)/2 # NumRows + Error row and round up
@@ -170,7 +171,7 @@ function MakeStats()
   if ((!Narrow)); then Out+=" & ${QSq[0]}"; fi
   Out+=" & ${QSq[1]}"
   local LabelFirst="${Label:0:1}"
-  if [ "${Label,,}" == "ref" ] || [[ "${LabelFirst,}" < "m" ]]
+  if [ "${Label,,}" == "ref" ] || [[ "${LabelFirst,}" < "n" ]]
   then
     echo "$Out"' \\' >> "$SummaryFile"
   fi
@@ -228,8 +229,11 @@ function MakeOne()
 
 function SetRef()
 {
-  RefBase=$2 # This is the reference fit base name
-  Ref=${1:+$1/}$RefBase # This is the path to the reference fit
+  RefDir=${1:+$1/}
+  RefSeries=$2
+  RefSuffix=$3
+  RefBase=$RefSeries$RefSuffix # This is the reference fit base name
+  Ref=$RefDir$RefBase # This is the path to the reference fit
 }
 
 function MakeCommon()
@@ -241,25 +245,26 @@ function MakeCommon()
   MakeOne f Omit/${RefBase}-EnsM3 # Omit M3
   MakeOne g Omit/${RefBase}-EnsM # Omit M1, M2, M3
   MakeOne h Omit/${RefBase}_NMaxCM # Omit n^2_max from C & M ensembles
-  MakeOne i Simul/${RefBase}_PoleSV # Move scalar and vector poles
-  MakeOne j Simul/${RefBase}_PoleV # Move vector pole
-  MakeOne k Simul/${RefBase}_PoleS # Move scalar pole
-  MakeOne l Simul/${RefBase}_AltC1 # Alternate C1
+  MakeOne i $RefDir/${RefBase}_PoleSV # Move scalar and vector poles
+  MakeOne j $RefDir/${RefBase}_PoleV # Move vector pole
+  MakeOne k $RefDir/${RefBase}_PoleS # Move scalar pole
+  MakeOne l $RefDir/${RefBase}_AltC1 # Alternate C1
+  MakeOne m $RefDir/AltZV$RefSuffix # Alternate Z_{V, h-h}
 }
 
 function MakeOriginal()
 {
   MakeStats Ref "$Ref" # Reference value
-  MakeOne a Omit/renormE3-CVZ34 # Omit FV
+  MakeOne a Omit/${RefSeries}E3-CVZ34 # Omit FV
   MakeCommon
   # These are destructive tests - not part of my error budget
-  MakeOne m Omit/${RefBase}-EnsF1M # Omit F1M
-  MakeOne n Omit/renormE3D0-CZ34-EnsC # Omit C1, C2
-  MakeOne o Omit/renormE3-CXZ34 # Omit Chiral
-  MakeOne p Omit/renormE2-CVXZ3 # Omit FV and Chiral
-  MakeOne q Omit/renormE3D0-CZ34 # Omit a Lambda
-  MakeOne r Omit/renormE3-C1Z34 # Omit Delta Mpi / Lambda
-  MakeOne s Omit/renormE2-CZ3 # Omit (E/Lambda)^3
+  MakeOne n Omit/${RefBase}-EnsF1M # Omit F1M
+  MakeOne o Omit/${RefSeries}E3D0-CZ34-EnsC # Omit C1, C2
+  MakeOne p Omit/${RefSeries}E3-CXZ34 # Omit Chiral
+  MakeOne q Omit/${RefSeries}E2-CVXZ3 # Omit FV and Chiral
+  MakeOne r Omit/${RefSeries}E3D0-CZ34 # Omit a Lambda
+  MakeOne s Omit/${RefSeries}E3-C1Z34 # Omit Delta Mpi / Lambda
+  MakeOne t Omit/${RefSeries}E2-CZ3 # Omit (E/Lambda)^3
 }
 
 function MakeShrink()
@@ -267,7 +272,7 @@ function MakeShrink()
   MakeStats Ref "$Ref" # Reference value
   MakeOne a Omit/${RefBase}-CV # Omit FV
   MakeCommon
-  MakeOne m Simul/renormE3-CZ34 # Original reference fit with cubic energy in f_+
+  MakeOne n $RefDir/${RefSeries}E3-CZ34 # Original reference fit with cubic energy in f_+
 }
 
 ###################################################
@@ -434,15 +439,15 @@ do
   (
     cd "$Cont/$Do"
     case "$Do" in
-      cubic)            SetRef Simul renormE3-CZ34;;
+      cubic)            SetRef Simul renorm E3-CZ34;;
       shrink | linear)  SetRef Simul renorm;;
     esac
     export xrange='0.48:*'
     for Field in EL
     do
       if [ -v Make ]; then MakeAll; fi
-      #MakeMax a b c d e f g h i j k l
-      MakeMax a h i j k l
+      #MakeMax a b c d e f g h i j k l m
+      MakeMax a h i j k l m
       save=Var ff=f0 DoPlot
       save=Var ff=fplus DoPlot
     done

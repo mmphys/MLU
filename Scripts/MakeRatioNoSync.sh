@@ -6,7 +6,9 @@
 
 # Input:
 #   Ensemble: The ensemble to make ratios for
-#   ZV:       (optional) the ensemble the ZVfits come from
+#   series:   (default: renorm) which two-pt fits enter the extraction of Z_V
+#   ZVEns:    (optional) the ensemble the ZVfits come from
+#   Suffix:   (optional) Suffix for: 1) ZV$Suffix.txt; 2) ratio$Suffix
 
 ############################################################
 
@@ -18,7 +20,9 @@ set -e
 series=${series:-renorm}
 BaseDir="$PWD"
 EnsembleDir="$BaseDir/$Ensemble"
-ZV="$BaseDir/${ZV:-$Ensemble}/Renorm/ZV.txt"
+ZVEnsRoot="$BaseDir/${ZVEns:-$Ensemble}"
+ZV="$ZVEnsRoot/Renorm/ZV$Suffix.txt"
+EFit="$ZVEnsRoot/MELFit/Fit_sp2_$series.txt"
 
 if ! [ -v Ensemble ]; then
   echo "Ensemble not set"
@@ -42,11 +46,10 @@ fi
 
 . PlotCommon.sh
 
-EFit="$EnsembleDir/MELFit/Fit_sp2_$series.txt"
 SubDir=3sm_sp2
 Corr2="$PlotData/corr/2ptp2"
 Corr3="$PlotData/corr/$SubDir"
-Ratio="$PlotData/ratio/$SubDir"
+Ratio="$PlotData/ratio$Suffix/$SubDir"
 LogFile="$Ratio/MakeRatio.log"
 
 if ! [ -d "$EFit" ] && ! [ -h "$EFit" ]; then

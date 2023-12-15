@@ -41,7 +41,10 @@ cd $OutDir
 	s_l_p2_4  2ptp2/s_l/s_l.corr_6_20_6_19_7_20_7_18_6_15.g5P.model.2475361470.h5
 EndFitChoices
 
-[ -e ${OutBase}renorm.txt ] || ln -s ${OutBase}disp.txt ${OutBase}renorm.txt
+for series in renorm AltZV
+do
+  [ -e ${OutBase}$series.txt ] || ln -s ${OutBase}disp.txt ${OutBase}$series.txt
+done
 )
 
 ############################################################
@@ -52,5 +55,7 @@ EndFitChoices
 
 series=disp PlotFormFactor.sh
 series=disp UnCorr= PlotFormFactor.sh
-series=renorm Suffix=_mostly ZV= PlotFormFactor.sh # renorm=(mostly NPR) renormalised. No need for ZV
-series=renorm FullyNP= PlotFormFactor.sh # renorm=(mostly NPR) renormalised. Apply Fully NPR correct.
+# renorm=(mostly NPR) renormalised. No need for ZV
+series=renorm Suffix=_mostly ZV= PlotFormFactor.sh
+# renorm=(mostly NPR) renormalised. Apply Fully NPR correction
+series='renorm AltZV' FullyNP= PlotFormFactor.sh

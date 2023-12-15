@@ -35,8 +35,9 @@ if [ -v DoFit ]; then
   [ -e $ZVFit ] && unset ZVFit #Don't overwrite fit selection if it already exists
   export UnCorr=
   ti=9 tf=11 FitZV h${Heavy} 20 s
-  ti=9 tf=14 FitZV h${Heavy} 24 s
-  ti=10 tf=18 FitZV h${Heavy} 28 s # Preferred ZV_h
+  ti=9 tf=14 FitZV h${Heavy} 24 s # Preferred
+  ti=10 tf=18 FitZV h${Heavy} 28 s
+  ti=8 tf=11 FitZV h${Heavy} 20 l # AltZV
 
   ti=3 tf=9 FitZV l 12 s
   ti=5 tf=13 FitZV l 16 s # Preferred ZV_l
