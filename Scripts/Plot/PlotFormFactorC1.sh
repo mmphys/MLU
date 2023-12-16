@@ -127,6 +127,6 @@ done
 series='disp old priorP priorPW betterP betterPW' PlotFormFactor.sh
 series=disp FitSeries=std UnCorr= PlotFormFactor.sh
 # renorm=(mostly NPR) renormalised. No need for ZV
-series='renormold renorm' Suffix=_mostly ZV= PlotFormFactor.sh
+series='renormold renorm AltZV' Suffix=_mostly ZV= PlotFormFactor.sh
 # renorm=(mostly NPR) renormalised. Apply Fully NPR correct.
 series='renormold renorm AltZV' FullyNP= PlotFormFactor.sh
