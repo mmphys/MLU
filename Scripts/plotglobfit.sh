@@ -92,9 +92,9 @@ if( xAxis eq "EL" ) {
     set key bottom left @KeyOffset
   }
   set arrow 1 from first 1.046578, graph 0 to first 1.046578, graph 1 \
-    nohead front lc rgb "gray40" lw 0.25 dashtype "."
+    nohead front lc black lw 1 dashtype (3,6)
   set arrow 2 from first 0.495644, graph 0 to first 0.495644, graph 1 \
-    nohead front lc rgb "gray40" lw 0.25 dashtype "-"
+    nohead front lc black lw 1 dashtype (10,5)
 } else { # q^2
   if( RemovePole ) {
     if( my_ylabel eq 'f_0' ) {

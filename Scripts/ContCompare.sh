@@ -47,7 +47,7 @@ if( PDFSize ne "" ) { PDFSize='size '.PDFSize }
 eval "set term tikz standalone ".PDFSize." font '\\\\small' header '\\\\usepackage{physics}'"
 
 set xlabel '\$E_K$ / GeV'
-set ylabel '$\delta f_{'.FLabel.'}$ / \%' #^{D_s \rightarrow K}
+set ylabel '$\abs{\delta f_{'.FLabel.'}}$ / \%' #^{D_s \rightarrow K}
 set xrange[${xrange:-*:*}]
 
 FieldFile(Field,Seq,FF)=CompareDir.'/'.Field.'_'.sprintf("%c",Seq+64).'_'.FF.'.txt'
@@ -83,6 +83,24 @@ PlotTitles[20]='omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
   PlotTitles[14]='\$f_+ \left(\flatfrac{E_L}{\Lambda}\right)^3$ terms'
 }
 
+
+set linetype 5 lc rgb 0xFA60E4 #pink
+set linetype 6 lc 'blue'
+#set linetype 2 lc rgb 'dark-violet' # 0x9400D3
+#set linetype 3 lc rgb 0xE36C09 #orange
+set linetype 2 lc rgb 0x00B050 #green
+#set linetype 5 lc rgb 0x0070C0 #blue
+#set linetype 6 lc rgb 0x003860 #dark navy
+#set linetype 7 lc rgb 0xFFC000 #yellow
+#set linetype 8 lc rgb 0xC00000 #red
+#set linetype 9 lc rgb 0xC00000 #black
+NumColours=8
+
+GetColour(i)=(i-1)%NumColours+1
+GetDashType(i)=i<=1 ? 'solid' : i<=7 ? '1' : i<=13 ? 'solid' : '2'
+set dashtype 1 (5, 5)
+set dashtype 2 (2, 5)
+
 PlotErrorBar="abs((column('y_high')-column('y_low'))/(2*column('y')))*100"
 PlotPrefix="'$Ref/$Prefix'.FF.'$Suffix' using "
 PlotPrefix=PlotPrefix."(stringcolumn('field') eq Field ? column('x')*XScale : NaN):("
@@ -115,9 +133,11 @@ do for [i=1:NumRows] {
   Cmd=Cmd.', "'.FieldFile(Field,i,FF).'"'
   Cmd=Cmd." using (column('x')*XScale):(".AbsFunc."(column('y')/column('Ref')-1)*100)"
   Cmd=Cmd." with lines title '".sprintf("%c",i+96).') '.PlotTitles[i]."'"
-  Cmd=Cmd.' linestyle '.i
-  if( i > 16 ) { Cmd=Cmd.' dashtype 4' } else {
-    if( i > 8 ) { Cmd=Cmd.' dashtype 2' } }
+  Cmd=Cmd.' linewidth 1.5'
+  Cmd=Cmd.' linetype '.GetColour(i)
+  Cmd=Cmd.' dashtype '.GetDashType(i)
+  #if( i > 16 ) { Cmd=Cmd.' dashtype 4' } else {
+  #  if( i > 8 ) { Cmd=Cmd.' dashtype 2' } }
   }
 }
 
@@ -356,12 +376,12 @@ if( PDFSize ne "" ) { PDFSize='size '.PDFSize }
 eval "set term tikz standalone ".PDFSize." font '\\\\small' header '\\\\usepackage{physics}'"
 
 set xlabel '\$E_K$ / GeV'
-set ylabel '$\delta f_{'.FLabel.'}$ / \%' #^{D_s \rightarrow K}
+set ylabel '$\abs{\delta f_{'.FLabel.'}}$ / \%' #^{D_s \rightarrow K}
 set xrange[${xrange:-*:*}]
 set arrow 1 from first 1.046578, graph 0 to first 1.046578, graph 1 \
-  nohead front lc rgb "gray40" lw 0.25 dashtype ".  "
+  nohead front lc black lw 1 dashtype (3,6)
 set arrow 2 from first 0.495644, graph 0 to first 0.495644, graph 1 \
-  nohead front lc rgb "gray40" lw 0.25 dashtype "-  "
+  nohead front lc black lw 1 dashtype (10,5)
 
 set key top center Left reverse maxrows 1
 set output OutFile
