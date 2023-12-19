@@ -181,7 +181,7 @@ do
   [ -n "${ThinningPerFile[i]}" ] && FitList+="t${ThinningPerFile[i]}"
   [ -n "${FitOptionsPerFile[i]}" ] && FitList+=",${FitOptionsPerFile[i]}"
   [ -n "$FitOptionsRatio" ] && FitList+=",$FitOptionsRatio"
-  Title+="${MySep}ΔT=${DeltaT[i]}"
+  Title+="${MySep}ΔT/a=${DeltaT[i]}"
   LabelTI+="$MySep${PlotDataFrom}"
   LabelTF+="$MySep$(( ${DeltaT[i]} - PlotDataFrom ))"
   MySep=" "
