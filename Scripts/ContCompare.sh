@@ -96,7 +96,7 @@ set linetype 2 lc rgb 0x00B050 #green
 #set linetype 9 lc rgb 0xC00000 #black
 NumColours=8
 
-GetColour(i)=(i-1)%NumColours+1
+GetColour(i)=i<=7 ? i : (i-NumColours+1)%NumColours+1
 GetDashType(i)=i<=1 ? 'solid' : i<=7 ? '1' : i<=13 ? 'solid' : '2'
 set dashtype 1 (5, 5)
 set dashtype 2 (2, 5)
@@ -207,6 +207,10 @@ function MakeStats()
     echo "${DefPrefix}FZQMax{$QSqMax}"
     echo "${DefPrefix}FPQZ{${QSq[0]}}"
     echo "${DefPrefix}FPQMax{${QSq[1]}}"
+    echo "${DefPrefix}FZQZVal{${QSqZero%(*}}"
+    echo "${DefPrefix}FZQMaxVal{${QSqMax%(*}}"
+    echo "${DefPrefix}FPQZVal{${QSq[0]%(*}}"
+    echo "${DefPrefix}FPQMaxVal{${QSq[1]%(*}}"
   } >> "$SummaryTex"
 }
 
@@ -227,8 +231,9 @@ function MakeOne()
     File=$Dir/$Prefix$ff$Suffix
     FileRef=$Ref/$Prefix$ff$Suffix
     {
-      echo "x y Ref_low Ref Ref_high"
-      join -j 2 -o 1.2,1.6,2.5,2.6,2.7 <(gawk -e "$GCmd" $File) <(gawk -e "$GCmd" $FileRef)
+      echo "x y Ref_low Ref Ref_high Disc_low Disc Disc_high"
+      join -j 2 -o 1.2,1.6,2.5,2.6,2.7,2.26,2.27,2.28 \
+        <(gawk -e "$GCmd" $File) <(gawk -e "$GCmd" $FileRef)
     } > "$CompareDir/${Field}_${Label}_${ff}.txt"
   done
   MakeStats "$Label" "$Dir"
@@ -383,13 +388,17 @@ set arrow 1 from first 1.046578, graph 0 to first 1.046578, graph 1 \
 set arrow 2 from first 0.495644, graph 0 to first 0.495644, graph 1 \
   nohead front lc black lw 1 dashtype (10,5)
 
-set key top center Left reverse maxrows 1
+set key outside top center Left reverse maxrows 1
 set output OutFile
 
-plot InFile using (column('x')*XScale):(0):(column('total')*100) \
+MyX="(column('x')*XScale)"
+
+plot InFile using @MyX:(0):(column('total')*100) \
       with filledcurves title 'Total' fc 'gray05' fs transparent solid 0.5, \
-  '' using (column('x')*XScale):(column('stat')*100) with lines lc "blue" lw 2 title 'Stat', \
-  '' using (column('x')*XScale):(column('sys')*100) with lines lc "red" lw 2 title 'Sys'
+  '' using @MyX:(column('stat')*100) with lines lc "blue" lw 2 title 'Stat', \
+  '' using @MyX:(column('sys')*100) with lines lc "red" lw 2 title 'Sys', \
+  '' using @MyX:(column('fit')*100) with lines lc rgb 0xFA60E4 lw 2 dt (10,5) title 'Fit', \
+  '' using @MyX:(column('disc')*100) with lines lc rgb 0xE36C09 lw 2 dt (3,6) title 'Disc'
 
 set output
 EOFMark
@@ -427,16 +436,19 @@ function MakeMax()
         mv "$FileData" "$FileA"
       fi
       FileB="$CompareDir/${Field}_${Label[i]}_${ff}.txt"
-      join -j 1 -o 1.1,1.2,1.3,1.4,1.5,2.2 "$FileA" "$FileB" \
+      join -j 1 -o 1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.2 "$FileA" "$FileB" \
       | awk -f <(cat - <<-'ENDGAWK'
 		#{ print }
-		$1=="x" { print "x y Ref_low Ref Ref_high stat sys total"; next }
+		$1=="x" { print "x y Ref_low Ref Ref_high Disc_low Disc Disc_high stat fit disc sys total"; next }
 		{ Stat=($5-$3)/(2*$4) }
   		{ RelA=($2>$4 ? $2-$4 : $4-$2) / $4 }
-		{ RelB=($6>$4 ? $6-$4 : $4-$6) / $4 }
-		{ Max=RelA > RelB ? $2 : $6 }
-		{ Sys=RelA > RelB ? RelA : RelB }
-		{ print $1, Max, $3, $4, $5, Stat, Sys, sqrt(Stat*Stat+Sys*Sys) }
+		{ RelB=($9>$4 ? $9-$4 : $4-$9) / $4 }
+		{ Max=RelA > RelB ? $2 : $9 }
+		{ Fit=RelA > RelB ? RelA : RelB }
+        { Disc=$7 }
+        { Sys=sqrt(Fit*Fit+Disc*Disc) }
+        { Total=sqrt(Stat*Stat+Sys*Sys) }
+		{ print $1, Max, $3, $4, $5, $6, $7, $8, Stat, Fit, Disc, Sys, Total }
 ENDGAWK
       ) > "$FileData"
       (( i > 1 )) && rm "$FileA"

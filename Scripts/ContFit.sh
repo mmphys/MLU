@@ -179,7 +179,13 @@ Continuum+=" -i $HOME/NoSync/"
       DoFit f0_fplus
     fi
   fi
-  # Now plot it
+
+###################################################
+
+# Now plot it
+
+###################################################
+
   DoCmd "PlotMatrix.sh $OutDir/*.model_pcorrel.txt"
   for ff in f0 fplus
   do

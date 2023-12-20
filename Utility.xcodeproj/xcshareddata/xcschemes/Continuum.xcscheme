@@ -90,7 +90,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-f f0,34,fplus,"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--block"
@@ -101,7 +101,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;[CM]?/FormFactor/renorm/3sm_sp2/*_p2_[0-4].*.h5&apos;,ff=f0"
+            argument = "&apos;[CM]?/FormFactor/renorm/3sm_sp2/*_p2_[0-3].*.h5&apos;,ff=f0"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

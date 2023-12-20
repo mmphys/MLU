@@ -1064,11 +1064,31 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
   scalar qSqMaxCentral{ PDGHCentral - PDGLCentral };
   qSqMaxCentral *= qSqMaxCentral;
 
+  // Find index of finest ensemble, to estimate residual discretisation error
+  std::size_t idxFine{};
+  {
+    // Work out which ensemble is finest
+    scalar aInvFinest{};
+    for( std::size_t i = 0; i < EnsembleMap.size(); ++i )
+    {
+      const std::size_t idxaInv{ om.params.at( kaInv[i] )() };
+      const scalar aInvThis{ om( ModelFile::idxCentral, idxaInv ) };
+      if( i == 0 || aInvFinest < aInvThis )
+      {
+        aInvFinest = aInvThis;
+        idxFine = i;
+      }
+    }
+    std::cout << "Residual discretisation errors computed from finest ensemble " << kaInv[idxFine].Object[0]
+              << " with a^{-1}=" << aInvFinest << " eV" << Common::NewLine;
+  }
+
   // Now write each data row
-  ValWithEr ve[3];
+  ValWithEr ve[4];
   Common::Vector<scalar> Buffer( om.NumSamples() );
   Common::Vector<scalar> PoleBuffer( om.NumSamples() );
   Common::Vector<scalar> yNoPoleBuffer( om.NumSamples() );
+  Common::Vector<scalar> DiscRelErBuffer( om.NumSamples() );
   std::vector<scalar> ScratchBuffer( om.NumSamples() );
 
   scalar x = -999.999;
@@ -1083,13 +1103,14 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
     WriteFieldName( os, "y" );
     WriteFieldName( os, "Pole" );
     WriteFieldName( os, "yNoPole" );
+    WriteFieldName( os, "DiscRelEr" ); // Estimate of residual discretisation relative error
     os << Common::NewLine;
 
     scalar Min, Max;
     GetMinMax( ff, Min, Max, Loop, FieldName );
     const scalar Tick{ ( Max - Min ) / NumTicks };
     scalar Central = -999.999; // value unused
-    scalar CentPole = 0, CentYNoPole = 0; // value unused
+    scalar CentPole = 0, CentYNoPole = 0, CentDiscRelEr = 0; // value unused
   for( int nTick = -2; nTick <= NumTicks; ++nTick, x += Tick )
   {
     if( nTick == -2 )
@@ -1113,22 +1134,49 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
       }
       const scalar Pole{ Lambda / ( E + Delta ) };
       const scalar Y{ yNoPole * Pole };
+      // Work out what residual discretisation error would be
+      // assuming there's an additional discretisation term over what's specified in fit
+      scalar DiscRelEr = 0;
+      {
+        unsigned int NumDisc{ NumD };
+        while( NumDisc && !dEnabled[idxff][NumDisc-1] )
+          --NumDisc;
+        scalar DiscPrefactor{ NumDisc ? om(rep,idxD[idxff][NumDisc-1]) : 1 };
+        const scalar aFinestLambda{ 0.5 * Lambda / om(rep,idxaInv[idxFine]) };
+        const scalar aFinestLambdaSq{ aFinestLambda * aFinestLambda };
+        scalar DiscFactor{ aFinestLambdaSq };
+        for( unsigned int i = 0; i < NumDisc; ++i )
+          DiscFactor *= aFinestLambdaSq;
+        const scalar DiscProduct{ DiscPrefactor * DiscFactor };
+        DiscRelEr = std::abs( DiscProduct / yNoPole );
+        if( nTick < 0 && rep == ModelFile::idxCentral )
+        {
+          std::cout << ff << Common::Space << FieldName << "=" << x
+          << ", aFinest * Lambda=" << aFinestLambda
+          << ", Disc term " << NumDisc << "=" << DiscPrefactor
+          << ", Product " << DiscProduct << " / yNoPole " << yNoPole
+          << " = Residual disc rel er " << DiscRelEr << Common::NewLine;
+        }
+      }
       if( rep == ModelFile::idxCentral )
       {
         Central = Y;
         CentYNoPole = yNoPole;
         CentPole = Pole;
+        CentDiscRelEr = DiscRelEr;
       }
       else
       {
         Buffer[rep] = Y;
         yNoPoleBuffer[rep] = yNoPole;
         PoleBuffer[rep] = Pole;
+        DiscRelErBuffer[rep] = DiscRelEr;
       }
     }
     ve[0].Get( Central, Buffer, ScratchBuffer );
     ve[1].Get( CentPole, PoleBuffer, ScratchBuffer );
     ve[2].Get( CentYNoPole, yNoPoleBuffer, ScratchBuffer );
+    ve[3].Get( CentDiscRelEr, DiscRelErBuffer, ScratchBuffer );
     if( nTick < 0 )
       os << "# ";
     os << FieldName << Common::Space << x;

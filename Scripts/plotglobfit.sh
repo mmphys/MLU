@@ -242,7 +242,7 @@ if [[ -n $SaveDir ]]; then
 fi
 
 # Save in specified directory, otherwise in same directory as source
-# Input:  $1 filename to plot
+# Input:  $1 filename to plot. NB: modified so that it ends with '.model' on exit
 # Output: save    Path to save to, without seed or extension (ie ending in .model)
 function GetSaveName()
 {
@@ -271,6 +271,7 @@ function GetSaveName()
 
 function GetFitData()
 {
+  # Find .h5 file. Was probably be a combined fit, so look for common .h5 for f0 and fplus
   local InPath=${PlotFile}.h5
   if ! [ -e $InPath ]; then
     InPath=${PlotFile/_f0/_f0_fplus}.h5
@@ -299,9 +300,14 @@ do
     echo "Skipping empty filename"
   else
     if [[ ! -e "$PlotFile" && -e "$PlotFile.txt" ]]; then PlotFile+=.txt; fi
-    if [ -v save ]; then PlotFile="${PlotFile%.*}"; else GetSaveName PlotFile; fi
-    if [[ ! -e "$PlotFile.txt" ]]; then
-      echo "Doesn't exist $PlotFile.txt"
+    if [ -v save ]; then
+      PlotFile="${PlotFile%.*}"
+      PlotFile="${PlotFile%%_*}"
+    else
+      GetSaveName PlotFile
+    fi
+    if [[ ! -e "${PlotFile}_fit.txt" ]]; then
+      echo "Doesn't exist ${PlotFile}_fit.txt"
     else
   (
     ff=${PlotFile##*/}
