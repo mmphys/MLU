@@ -236,7 +236,7 @@ function MakeOne()
     File=$Dir/$Prefix$ff$Suffix
     FileRef=$Ref/$Prefix$ff$Suffix
     {
-      echo "x Stat Sys Total StatSq SysSq TotalSq"
+      echo "x Ref Stat Sys Total StatSq SysSq TotalSq"
       # Join gets: x y Ref_low Ref Ref_high
       join -j 2 -o 1.2,1.6,2.5,2.6,2.7 \
         <(gawk -e "$GCmd" $File) <(gawk -e "$GCmd" $FileRef) \
@@ -247,7 +247,7 @@ function MakeOne()
   		{ SysSq=Sys*Sys }
 		{ TotalSq=StatSq+SysSq }
 		{ Total=sqrt(TotalSq) }
-		{ print $1, Stat, Sys, Total, StatSq, SysSq, TotalSq }
+		{ print $1, $4, Stat, Sys, Total, StatSq, SysSq, TotalSq }
 ENDGAWK
       )
     } > "$CompareDir/${Field}_${Label}_${ff}.txt"
@@ -454,15 +454,15 @@ function MakeMax()
         mv "$FileData" "$FileA"
       fi
       FileB="$CompareDir/${Field}_${Label[i]}_${ff}.txt"
-      join -j 1 -o 1.1,1.2,1.3,1.4,1.5,1.6,1.7,2.2,2.3,2.4,2.5,2.6,2.7 "$FileA" "$FileB" \
+      join -j 1 -o 1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.2,2.3,2.4,2.5,2.6,2.7,2.8 "$FileA" "$FileB" \
       | awk -v Quad=$((0${Quad+1})) -f <(cat - <<-'ENDGAWK'
-		# Processing records of the form: x Stat Sys Total StatSq SysSq TotalSq
+		# Processing records of the form: x Ref Stat Sys Total StatSq SysSq TotalSq
 		$1=="x" { print; next }
-		{ if (Quad) { SysSq=$6 + $12; Sys=sqrt(SysSq) }
-			else { if ($12>$6) { Sys=$9; SysSq=$12 } else { Sys=$3; SysSq=$6 } } }
-		{ TotalSq=$5+SysSq }
+		{ if (Quad) { SysSq=$7 + $14; Sys=sqrt(SysSq) }
+			else { if ($14>$7) { Sys=$11; SysSq=$14 } else { Sys=$4; SysSq=$7 } } }
+		{ TotalSq=$6+SysSq }
 		{ Total=sqrt(TotalSq) }
-		{ print $1, $2, Sys, Total, $5, SysSq, TotalSq }
+		{ print $1, $2, $3, Sys, Total, $6, SysSq, TotalSq }
 ENDGAWK
       ) > "$FileData"
       (( i > 1 )) && rm "$FileA"
