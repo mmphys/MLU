@@ -48,23 +48,21 @@ function SensitivityCommon()
   local AltPoleV='--polev=-5e6'
   ContFit.sh& # Ref) This is my reference fit
   OutDir=Omit Disable=V ContFit.sh& # a) Omit FV
-  OutDir=Omit EnsOpt=C1 ContFit.sh& # b) Omit Ensemble C1
-  OutDir=Omit EnsOpt=C2 ContFit.sh& # c) Omit Ensemble C2
-  OutDir=Omit EnsOpt=M1 ContFit.sh& # d) Omit Ensemble M1
-  OutDir=Omit EnsOpt=M2 ContFit.sh& # e) Omit Ensemble M2
-  OutDir=Omit EnsOpt=M3 ContFit.sh& # f) Omit Ensemble M3
-  OutDir=Omit EnsOpt=M ContFit.sh& # g) Omit Ensemble M1, M2, M3
-  #Some= ContFit.sh& # h) Omit n^2_max from C1 C2
+  NameExtra=PoleSV FitOptions="$AltPoleS $AltPoleV" ContFit.sh& # b) move S&V poles
+  NameExtra=PoleV  FitOptions="$AltPoleV" ContFit.sh& # c) Move vector pole
+  NameExtra=PoleS  FitOptions="$AltPoleS" ContFit.sh& # d) Move scalar pole
+  NameExtra=AltC1 Series='C1 renormold' ContFit.sh& # e) Alternate C1 fits, old Ch 10
+  FitSeries=AltZV ContFit.sh& # f) Alternate ZV
   PMaxFZero='C1 3 C2 3 F1M 6 M1 3 M2 3 M3 3' \
   PMaxFPlus='C1 3 C2 3 F1M 6 M1 3 M2 3 M3 3' \
-  OutDir=Omit NameExtra=NMaxCM ContFit.sh& # h) Omit n^2_max from C & M ensembles
-  NameExtra=PoleSV FitOptions="$AltPoleS $AltPoleV" ContFit.sh& # i) move S&V poles
-  NameExtra=PoleV  FitOptions="$AltPoleV" ContFit.sh& # j) Move vector pole
-  NameExtra=PoleS  FitOptions="$AltPoleS" ContFit.sh& # k) Move scalar pole
-  NameExtra=AltC1 Series='C1 renormold' ContFit.sh& # Ch 10 l) Alternate C1 fits
-  D=2 ContFit.sh&
-  D=3 ContFit.sh&
-  FitSeries=AltZV ContFit.sh&
+    OutDir=Omit NameExtra=NMaxCM ContFit.sh& # g) Omit n^2_max from C & M ensembles
+  OutDir=Omit EnsOpt=C1 ContFit.sh& # h) Omit Ensemble C1
+  OutDir=Omit EnsOpt=C2 ContFit.sh& # i) Omit Ensemble C2
+  OutDir=Omit EnsOpt=M1 ContFit.sh& # j) Omit Ensemble M1
+  OutDir=Omit EnsOpt=M2 ContFit.sh& # k) Omit Ensemble M2
+  OutDir=Omit EnsOpt=M3 ContFit.sh& # l) Omit Ensemble M3
+  OutDir=Omit EnsOpt=M ContFit.sh& # m) Omit Ensemble M1, M2, M3
+  D=2 ContFit.sh& # Can't actually fit this second discretisation term
 }
 
 ###################################################
@@ -85,6 +83,7 @@ function SensitivityOriginal()
   FitOptions=--block OutDir=Block DisableP=1 ContFit.sh& # Ch 8
   #ContFit.sh& # Full covariance matrix with linear model - terrible Hotelling p-Value
 
+  # Cubic model
   local E=3
   export E
 
@@ -101,13 +100,13 @@ function SensitivityOriginal()
   # These are destructive tests - not part of my error budget
   local OutDir=Omit
   export OutDir
-  EnsOpt=F1M ContFit.sh& # m) Omit Ensemble F1M
-  EnsOpt=C D=0 ContFit.sh& # n) Omit Ensemble C1, C2
-  Disable=X ContFit.sh& # o) Omit Chiral
-  Disable=VX E=2 DisableZ=3 ContFit.sh& # p) Omit FV and Chiral
-  D=0       ContFit.sh& # q) Omit a Lambda
-  Disable=1 ContFit.sh& # r) Omit Delta Mpi / Lambda
-  E=2 DisableZ=3 ContFit.sh& # s) Omit (E/Lambda)^3
+  EnsOpt=F1M ContFit.sh& # n) Omit Ensemble F1M
+  EnsOpt=C D=0 ContFit.sh& # o) Omit Ensemble C1, C2
+  Disable=X ContFit.sh& # p) Omit Chiral
+  Disable=VX E=2 DisableZ=3 ContFit.sh& # q) Omit FV and Chiral
+  D=0       ContFit.sh& # r) Omit a Lambda
+  Disable=1 ContFit.sh& # s) Omit Delta Mpi / Lambda
+  E=2 DisableZ=3 ContFit.sh& # t) Omit (E/Lambda)^3
 }
 
 ###################################################
@@ -120,7 +119,7 @@ function SensitivityOriginal()
 
 function SensitivityShrink()
 {
-  E=3 DisableZ=34 ContFit.sh& # m) Original reference fit
+  E=3 DisableZ=34 ContFit.sh& # n) Original reference fit
   local Shrink=0.005
   export Shrink
   SensitivityCommon
@@ -130,7 +129,7 @@ function SensitivityShrink()
 
 function SensitivityLinear()
 {
-  E=3 DisableZ=34 ContFit.sh& # m) Original reference fit
+  E=3 DisableZ=34 ContFit.sh& # n) Original reference fit
   local PMaxFZero='C1 3 C2 3 F1M 6 M1 3 M2 3 M3 3'
   export PMaxFZero
   SensitivityCommon

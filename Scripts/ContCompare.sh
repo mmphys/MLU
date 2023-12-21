@@ -9,7 +9,7 @@ set -e
 
 ###################################################
 
-Do=${Do-cubic shrink linear}
+Do=${Do-linear cubic shrink}
 Cont=Cont
 CompareDir=Var
 PlotDir=Plot
@@ -23,6 +23,7 @@ Narrow=$((1-0${Narrow+1})) # Narrow is the default (wasn't originally)
 ###################################################
 
 # Plot all the continuum fit variation comparisons
+# at the end, also show the discretisation estimate
 
 ###################################################
 
@@ -54,19 +55,18 @@ FieldFile(Field,Seq,FF)=CompareDir.'/'.Field.'_'.sprintf("%c",Seq+64).'_'.FF.'.t
 
 array PlotTitles[20]
 PlotTitles[1]='omit $\delta^{\left(\textrm{FV}\right)}$'
-PlotTitles[2]='omit C1'
-PlotTitles[3]='omit C2'
-PlotTitles[4]='omit M1'
-PlotTitles[5]='omit M2'
-PlotTitles[6]='omit M3'
-PlotTitles[7]='omit M1M2M3'
-PlotTitles[8]='omit \$n^2_{\textrm{max}}$ C,M'
-PlotTitles[9]='\$\Delta_0$ 313 MeV, $\Delta_+$ -5 MeV'
-#PlotTitles[10]='\$\Delta_+$ -100 MeV, omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
-PlotTitles[10]='\$\Delta_+$ -5 MeV'
-PlotTitles[11]='\$\Delta_0$ 313 MeV'
-PlotTitles[12]='Alternate C1 fits'
-PlotTitles[13]='Alternate \$Z_{\textrm{V,hh}}$'
+PlotTitles[2]='\$\Delta_0$ 313 MeV, $\Delta_+$ -5 MeV'
+PlotTitles[3]='\$\Delta_+$ -5 MeV'
+PlotTitles[4]='\$\Delta_0$ 313 MeV'
+PlotTitles[5]='Alternate C1 fits'
+PlotTitles[6]='Alternate \$Z_{\textrm{V,hh}}$'
+PlotTitles[7]='omit \$n^2_{\textrm{max}}$ C,M'
+PlotTitles[8]='omit C1'
+PlotTitles[9]='omit C2'
+PlotTitles[10]='omit M1'
+PlotTitles[11]='omit M2'
+PlotTitles[12]='omit M3'
+PlotTitles[13]='omit M1M2M3'
 
 if( DoWhich eq 'cubic' ) {
   NumRows=20
@@ -96,16 +96,16 @@ set linetype 2 lc rgb 0x00B050 #green
 #set linetype 9 lc rgb 0xC00000 #black
 NumColours=8
 
-GetColour(i)=i<=7 ? i : (i-NumColours+1)%NumColours+1
-GetDashType(i)=i<=1 ? 'solid' : i<=7 ? '1' : i<=13 ? 'solid' : '2'
+GetColour(i)=i<=7 ? i : (i-8)%NumColours+1
+GetDashType(i)=i<=7 ? 'solid' : i<=13 ? '1' : '2'
 set dashtype 1 (5, 5)
-set dashtype 2 (2, 5)
+set dashtype 2 (1, 4)
 
 PlotErrorBar="abs((column('y_high')-column('y_low'))/(2*column('y')))*100"
 PlotPrefix="'$Ref/$Prefix'.FF.'$Suffix' using "
 PlotPrefix=PlotPrefix."(stringcolumn('field') eq Field ? column('x')*XScale : NaN):("
 PlotPrefixB="):("
-PlotPrefixC=") with filledcurves title 'Error' fc 'gray05' fs transparent solid 0.5"
+PlotPrefixC=") with filledcurves title 'Stat error' fc 'gray05' fs transparent solid 0.5"
 
 OutName=Save.'_'.FF
 
@@ -119,7 +119,7 @@ if( Loop == 2 ) {
   NumRows=13
 }
 
-set key top left Left reverse maxrows (NumRows+2)/2 # NumRows + Error row and round up
+set key top left Left reverse maxrows (NumRows+3)/2 # NumRows + Error row and round up
 
 AbsFunc='abs'
 do for [AbsLoop=1:2] {
@@ -140,6 +140,11 @@ do for [i=1:NumRows] {
   #  if( i > 8 ) { Cmd=Cmd.' dashtype 2' } }
   }
 }
+
+Cmd=Cmd.', '.PlotPrefix.'column("DiscRelEr")*100) with lines title "'.sprintf("%c",NumRows+97).') Discretisation"'
+Cmd=Cmd.' linewidth 1.5'
+Cmd=Cmd.' linetype '.GetColour(NumRows+1)
+Cmd=Cmd.' dashtype '.GetDashType(NumRows+1)
 
 set output PlotDir.'/'.OutName.AbsFunc.ExtraName.'.tex'
 
@@ -263,18 +268,18 @@ function SetRef()
 
 function MakeCommon()
 {
-  MakeOne b Omit/${RefBase}-EnsC1 # Omit C1
-  MakeOne c Omit/${RefBase}-EnsC2 # Omit C2
-  MakeOne d Omit/${RefBase}-EnsM1 # Omit M1
-  MakeOne e Omit/${RefBase}-EnsM2 # Omit M2
-  MakeOne f Omit/${RefBase}-EnsM3 # Omit M3
-  MakeOne g Omit/${RefBase}-EnsM # Omit M1, M2, M3
-  MakeOne h Omit/${RefBase}_NMaxCM # Omit n^2_max from C & M ensembles
-  MakeOne i $RefDir/${RefBase}_PoleSV # Move scalar and vector poles
-  MakeOne j $RefDir/${RefBase}_PoleV # Move vector pole
-  MakeOne k $RefDir/${RefBase}_PoleS # Move scalar pole
-  MakeOne l $RefDir/${RefBase}_AltC1 # Alternate C1
-  MakeOne m $RefDir/AltZV$RefSuffix # Alternate Z_{V, h-h}
+  MakeOne b $RefDir/${RefBase}_PoleSV # Move scalar and vector poles
+  MakeOne c $RefDir/${RefBase}_PoleV # Move vector pole
+  MakeOne d $RefDir/${RefBase}_PoleS # Move scalar pole
+  MakeOne e $RefDir/${RefBase}_AltC1 # Alternate C1
+  MakeOne f $RefDir/AltZV$RefSuffix # Alternate Z_{V, h-h}
+  MakeOne g Omit/${RefBase}_NMaxCM # Omit n^2_max from C & M ensembles
+  MakeOne h Omit/${RefBase}-EnsC1 # Omit C1
+  MakeOne i Omit/${RefBase}-EnsC2 # Omit C2
+  MakeOne j Omit/${RefBase}-EnsM1 # Omit M1
+  MakeOne k Omit/${RefBase}-EnsM2 # Omit M2
+  MakeOne l Omit/${RefBase}-EnsM3 # Omit M3
+  MakeOne m Omit/${RefBase}-EnsM # Omit M1, M2, M3
 }
 
 function MakeOriginal()
