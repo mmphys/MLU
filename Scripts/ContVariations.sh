@@ -51,8 +51,8 @@ function SensitivityCommon()
   NameExtra=PoleSV FitOptions="$AltPoleS $AltPoleV" ContFit.sh& # b) move S&V poles
   NameExtra=PoleV  FitOptions="$AltPoleV" ContFit.sh& # c) Move vector pole
   NameExtra=PoleS  FitOptions="$AltPoleS" ContFit.sh& # d) Move scalar pole
-  NameExtra=AltC1 Series='C1 renormold' ContFit.sh& # e) Alternate C1 fits, old Ch 10
-  FitSeries=AltZV ContFit.sh& # f) Alternate ZV
+  FitSeries=AltZV ContFit.sh& # e) Alternate ZV
+  NameExtra=AltC1 Series='C1 renormold' ContFit.sh& # f) Alternate C1 fits, old Ch 10
   PMaxFZero='C1 3 C2 3 F1M 6 M1 3 M2 3 M3 3' \
   PMaxFPlus='C1 3 C2 3 F1M 6 M1 3 M2 3 M3 3' \
     OutDir=Omit NameExtra=NMaxCM ContFit.sh& # g) Omit n^2_max from C & M ensembles

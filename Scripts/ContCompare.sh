@@ -58,8 +58,8 @@ PlotTitles[1]='omit $\delta^{\left(\textrm{FV}\right)}$'
 PlotTitles[2]='\$\Delta_0$ 313 MeV, $\Delta_+$ -5 MeV'
 PlotTitles[3]='\$\Delta_+$ -5 MeV'
 PlotTitles[4]='\$\Delta_0$ 313 MeV'
-PlotTitles[5]='Alternate C1 fits'
-PlotTitles[6]='Alternate \$Z_{\textrm{V,hh}}$'
+PlotTitles[5]='alternate \$Z_{\textrm{V,hh}}$'
+PlotTitles[6]='alternate C1 fits'
 PlotTitles[7]='omit \$n^2_{\textrm{max}}$ C,M'
 PlotTitles[8]='omit C1'
 PlotTitles[9]='omit C2'
@@ -141,7 +141,7 @@ do for [i=1:NumRows] {
   }
 }
 
-Cmd=Cmd.', '.PlotPrefix.'column("DiscRelEr")*100) with lines title "'.sprintf("%c",NumRows+97).') Discretisation"'
+Cmd=Cmd.', '.PlotPrefix.'column("DiscRelEr")*100) with lines title "'.sprintf("%c",NumRows+97).') discretisation"'
 Cmd=Cmd.' linewidth 1.5'
 Cmd=Cmd.' linetype '.GetColour(NumRows+1)
 Cmd=Cmd.' dashtype '.GetDashType(NumRows+1)
@@ -282,8 +282,8 @@ function MakeCommon()
   MakeOne b $RefDir/${RefBase}_PoleSV # Move scalar and vector poles
   MakeOne c $RefDir/${RefBase}_PoleV # Move vector pole
   MakeOne d $RefDir/${RefBase}_PoleS # Move scalar pole
-  MakeOne e $RefDir/${RefBase}_AltC1 # Alternate C1
-  MakeOne f $RefDir/AltZV$RefSuffix # Alternate Z_{V, h-h}
+  MakeOne e $RefDir/AltZV$RefSuffix # Alternate Z_{V, h-h}
+  MakeOne f $RefDir/${RefBase}_AltC1 # Alternate C1
   MakeOne g Omit/${RefBase}_NMaxCM # Omit n^2_max from C & M ensembles
   MakeOne h Omit/${RefBase}-EnsC1 # Omit C1
   MakeOne i Omit/${RefBase}-EnsC2 # Omit C2
