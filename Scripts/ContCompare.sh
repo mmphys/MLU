@@ -131,7 +131,7 @@ Cmd=''
 do for [i=1:NumRows] {
   if( PlotTitles[i] ne '' ) {
   Cmd=Cmd.', "'.FieldFile(Field,i,FF).'"'
-  Cmd=Cmd." using (column('x')*XScale):(".AbsFunc."(column('y')/column('Ref')-1)*100)"
+  Cmd=Cmd." using (column('x')*XScale):(".AbsFunc."(column('Sys'))*100)"
   Cmd=Cmd." with lines title '".sprintf("%c",i+96).') '.PlotTitles[i]."'"
   Cmd=Cmd.' linewidth 1.5'
   Cmd=Cmd.' linetype '.GetColour(i)
@@ -236,9 +236,20 @@ function MakeOne()
     File=$Dir/$Prefix$ff$Suffix
     FileRef=$Ref/$Prefix$ff$Suffix
     {
-      echo "x y Ref_low Ref Ref_high Disc_low Disc Disc_high"
-      join -j 2 -o 1.2,1.6,2.5,2.6,2.7,2.26,2.27,2.28 \
-        <(gawk -e "$GCmd" $File) <(gawk -e "$GCmd" $FileRef)
+      echo "x Stat Sys Total StatSq SysSq TotalSq"
+      # Join gets: x y Ref_low Ref Ref_high
+      join -j 2 -o 1.2,1.6,2.5,2.6,2.7 \
+        <(gawk -e "$GCmd" $File) <(gawk -e "$GCmd" $FileRef) \
+      | awk -f <(cat - <<-'ENDGAWK'
+		{ Stat=($5-$3)/(2*$4) }
+		{ StatSq=Stat*Stat }
+		{ Sys=($2-$4) / $4 }
+  		{ SysSq=Sys*Sys }
+		{ TotalSq=StatSq+SysSq }
+		{ Total=sqrt(TotalSq) }
+		{ print $1, Stat, Sys, Total, StatSq, SysSq, TotalSq }
+ENDGAWK
+      )
     } > "$CompareDir/${Field}_${Label}_${ff}.txt"
   done
   MakeStats "$Label" "$Dir"
@@ -398,13 +409,13 @@ set output OutFile
 
 MyX="(column('x')*XScale)"
 
-plot InFile using @MyX:(0):(column('total')*100) \
+plot InFile using @MyX:(0):(column('Total')*100) \
       with filledcurves title 'Total' fc 'gray05' fs transparent solid 0.5, \
-  '' using @MyX:(column('stat')*100) with lines lc "blue" lw 2 title 'Stat', \
-  '' using @MyX:(column('sys')*100) with lines lc "red" lw 2 title 'Sys', \
-  '' using @MyX:(column('fit')*100) with lines lc rgb 0xFA60E4 lw 2 dt (10,5) title 'Fit', \
-  '' using @MyX:(column('disc')*100) with lines lc rgb 0xE36C09 lw 2 dt (3,6) title 'Disc'
-
+  '' using @MyX:(column('Stat')*100) with lines lc "blue" lw 2 title 'Stat', \
+  '' using @MyX:(abs(column('Sys'))*100) with lines lc "red" lw 2 title 'Sys'
+#  , \
+#  '' using @MyX:(column('fit')*100) with lines lc rgb 0xFA60E4 lw 2 dt (10,5) title 'Fit', \
+#  '' using @MyX:(column('disc')*100) with lines lc rgb 0xE36C09 lw 2 dt (3,6) title 'Disc'
 set output
 EOFMark
 
@@ -420,6 +431,8 @@ EOFMark
 # where each file has: x y Ref_low Ref Ref_high
 # make the maximum of the y-column as statistical error
 # NB: The ref values are the same in every file
+# Optional:
+#   Quad: Set to anything to add systematic errors in quadrature rather than maximum
 
 ###################################################
 
@@ -441,19 +454,15 @@ function MakeMax()
         mv "$FileData" "$FileA"
       fi
       FileB="$CompareDir/${Field}_${Label[i]}_${ff}.txt"
-      join -j 1 -o 1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.2 "$FileA" "$FileB" \
-      | awk -f <(cat - <<-'ENDGAWK'
-		#{ print }
-		$1=="x" { print "x y Ref_low Ref Ref_high Disc_low Disc Disc_high stat fit disc sys total"; next }
-		{ Stat=($5-$3)/(2*$4) }
-  		{ RelA=($2>$4 ? $2-$4 : $4-$2) / $4 }
-		{ RelB=($9>$4 ? $9-$4 : $4-$9) / $4 }
-		{ Max=RelA > RelB ? $2 : $9 }
-		{ Fit=RelA > RelB ? RelA : RelB }
-        { Disc=$7 }
-        { Sys=sqrt(Fit*Fit+Disc*Disc) }
-        { Total=sqrt(Stat*Stat+Sys*Sys) }
-		{ print $1, Max, $3, $4, $5, $6, $7, $8, Stat, Fit, Disc, Sys, Total }
+      join -j 1 -o 1.1,1.2,1.3,1.4,1.5,1.6,1.7,2.2,2.3,2.4,2.5,2.6,2.7 "$FileA" "$FileB" \
+      | awk -v Quad=$((0${Quad+1})) -f <(cat - <<-'ENDGAWK'
+		# Processing records of the form: x Stat Sys Total StatSq SysSq TotalSq
+		$1=="x" { print; next }
+		{ if (Quad) { SysSq=$6 + $12; Sys=sqrt(SysSq) }
+			else { if ($12>$6) { Sys=$9; SysSq=$12 } else { Sys=$3; SysSq=$6 } } }
+		{ TotalSq=$5+SysSq }
+		{ Total=sqrt(TotalSq) }
+		{ print $1, $2, Sys, Total, $5, SysSq, TotalSq }
 ENDGAWK
       ) > "$FileData"
       (( i > 1 )) && rm "$FileA"
@@ -483,8 +492,8 @@ do
     for Field in EL
     do
       if [ -v Make ]; then MakeAll; fi
-      #MakeMax a b c d e f g h i j k l m
-      MakeMax a h i j k l m
+      # MakeMax a b c d e f g # Show maximum
+      Quad= MakeMax a b e f # Add systematic errors in quadrature
       save=Var ff=f0 DoPlot
       save=Var ff=fplus DoPlot
     done
