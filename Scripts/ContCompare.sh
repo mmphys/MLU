@@ -439,15 +439,15 @@ EOFMark
 function MakeMax()
 {
   local Label=($*)
-  local i FileA FileB FileBase FileData ff
+  local i FileA FileB FileBase FileData ff IsSingle
   for ff in f0 fplus
   do
     FileA="$CompareDir/${Field}_${Label[0]}_${ff}.txt"
     FileBase="${Field}_Max_${ff}"
     FileData="$CompareDir/$FileBase.txt"
-    i=0
-    (( ${#Label[@]} > 1 )) && i=1
-    for (( ; i < ${#Label[@]}; ++i ))
+    IsSingle=1
+    (( ${#Label[@]} > 1 )) && IsSingle=0
+    for (( i=1-IsSingle; i < ${#Label[@]}; ++i ))
     do
       if (( i > 1 )); then
         FileA="$FileData.tmp"
@@ -455,11 +455,12 @@ function MakeMax()
       fi
       FileB="$CompareDir/${Field}_${Label[i]}_${ff}.txt"
       join -j 1 -o 1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,2.2,2.3,2.4,2.5,2.6,2.7,2.8 "$FileA" "$FileB" \
-      | awk -v Quad=$((0${Quad+1})) -f <(cat - <<-'ENDGAWK'
+      | awk -v Quad=$((0${Quad+1})) -v IsSingle=$IsSingle -f <(cat - <<-'ENDGAWK'
 		# Processing records of the form: x Ref Stat Sys Total StatSq SysSq TotalSq
 		$1=="x" { print; next }
-		{ if (Quad) { SysSq=$7 + $14; Sys=sqrt(SysSq) }
-			else { if ($14>$7) { Sys=$11; SysSq=$14 } else { Sys=$4; SysSq=$7 } } }
+		{ if (IsSingle) { Sys=$4; SysSq=$7 }
+            else { if (Quad) { SysSq=$7 + $14; Sys=sqrt(SysSq) }
+			else { if ($14>$7) { Sys=$11; SysSq=$14 } else { Sys=$4; SysSq=$7 } } } }
 		{ TotalSq=$6+SysSq }
 		{ Total=sqrt(TotalSq) }
 		{ print $1, $2, $3, Sys, Total, $6, SysSq, TotalSq }
