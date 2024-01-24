@@ -13,7 +13,8 @@ gnuplot <<-EOFMark
 nt=${nt:-0}
 do_title="${do_title:-0}"
 my_title="${title}"
-my_x_axis="${x:-column(1)}"
+my_x_axis="(${x:-column(1)})"
+my_cond="${cond}"
 xargs="${xargs}"
 FileDT="${FileDT}"
 my_xrange="${ti:-*}:${tf:-*}"
@@ -200,6 +201,8 @@ if( do_log ) { set logscale y }
 
 # Function to get a field - potentially negated
 GetField(Suffix)='('.(do_log < 0 ? 'abs(' : '').'(word(Negate,File) eq "-" ? -1 : 1)*column(word(FieldNames,fld)."'.Suffix.'")'.(do_log < 0 ? ')' : '').')'
+GetCond(Expr)=my_cond eq '' ? Expr : '(('.my_cond.') ? NaN : '.Expr.')'
+GetFieldCond(Suffix)=GetCond(GetField(Suffix))
 # Function to get the x-axis for a file
 #GetXAxis()=''
 
@@ -224,22 +227,23 @@ if( NumFiles==1 && FileType eq "cormat" ) {
 #  } else {
     if( do_whisker ) {
       PlotWith="with candlesticks whiskerbars"
-      PlotUsing=GetField("_low").' : '.GetField("_min").' : '.GetField("_max").' : '.GetField("_high")
+      PlotUsing=GetFieldCond("_low").' : '.GetFieldCond("_min").' : '.GetFieldCond("_max").' : '.GetFieldCond("_high")
     } else {
       if( do_rel ) {
         if( do_rel == 1 ) {
-          PlotUsing='(1):('.GetField("_low").'/'.GetField("").'):('.GetField("_high").'/'.GetField("").')'
+          PlotUsing='('.GetCond('1').'):('.GetCond(GetField("_low").'/'.GetField("")).'):('.GetCond(GetField("_high").'/'.GetField("")).')'
         } else {
           PlotWith=""
-          PlotUsing='(('.GetField("_high").' - '.GetField("_low").')/(2*'.GetField("").'))'
+          PlotUsing=GetCond('(('.GetField("_high").' - '.GetField("_low").')/(2*'.GetField("").'))')
         }
       } else {
-        PlotUsing=GetField("").' : '.GetField("_low").' : '.GetField("_high")
+        PlotUsing=GetFieldCond("").' : '.GetFieldCond("_low").' : '.GetFieldCond("_high")
         }
     }
 #  }
   #print 'PlotUsing="'.PlotUsing.'"'
   PlotCmd="plot for [File=1:NumFiles] for [fld=1:NumFields] for [f=fb_min:fb_max] word(PlotFile,File) using (("
+  if( my_cond ne '' ) { PlotCmd=PlotCmd.'('.my_cond.') ? NaN : ' }
   PlotCmd=PlotCmd.my_x_axis." == 0 ? (f==0 ? 0 : 1/0) : f==0 ? "
   PlotCmd=PlotCmd.my_x_axis." : nt - "
   PlotCmd=PlotCmd.my_x_axis.")+(((File-1)*NumFields+fld-1)*NumFB+f-fb_min)*XF1+XF2) : "
@@ -291,6 +295,7 @@ then
   echo "savelabel Filename to place on RHS (default=save file name)"
   echo "nt     Plot backward propagating wave as well (or backward only if nt<0)"
   echo "x      definition of field for x-axis. Normally 'column(1)', but try, say 'column(1) / 12'"
+  echo "cond   If the condition is met, the value is not plotted (set to NaN)"
   echo "xargs  Arguments for field for x-axis, eg deltaT"
   echo "whisker plot as box (1 sigma) + error bars (min/max)"
   echo "legend string containing legend for each file"

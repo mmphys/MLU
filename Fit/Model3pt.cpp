@@ -35,9 +35,9 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args, int NumExp
 N{ dynamic_cast<const MultiFitCreateParams &>( cp ).N },
 bEnablePHat{ dynamic_cast<const MultiFitCreateParams &>( cp ).bEnablePHat }
 {
-  if( !cp.pCorr->Name_.bGotDeltaT )
+  if( !cp.pCorr->Name_.GotDeltaT() )
     throw std::runtime_error( "DeltaT not available in " + cp.pCorr->Name_.Filename );
-  DeltaT = cp.pCorr->Name_.DeltaT;
+  DeltaT = cp.pCorr->Name_.DeltaT[0];
   if( NumExponents > 3 )
     throw std::runtime_error( "Model3pt supports a maximum of 3 exponentials: "
                               "Gnd-Gnd, Gnd-Ex (and ^\\dag), Ex-Ex" );
@@ -59,9 +59,13 @@ bEnablePHat{ dynamic_cast<const MultiFitCreateParams &>( cp ).bEnablePHat }
   // Now create the matrix element
   MEL.Key.Object = objectID;
   static const std::string sMEL{ "MEL" };
-  if( cp.pCorr->Name_.Gamma.size() != 1 )
+  if( cp.pCorr->Name_.Gamma.size() > 1 )
     throw std::runtime_error( "More than one gamma unsupported" );
-  MEL.Key.Name = Args.Remove( sMEL, sMEL + Common::Gamma::NameShort( cp.pCorr->Name_.Gamma[0] ) );
+  Common::Gamma::Algebra MyGamma{ cp.pCorr->Name_.Gamma.empty() ? Common::Gamma::Algebra::Unknown
+                                                                : cp.pCorr->Name_.Gamma[0] };
+  MEL.Key.Name = Args.Remove( sMEL, sMEL );
+  if( MyGamma != Common::Gamma::Algebra::Unknown )
+    MEL.Key.Name.append( Common::Gamma::NameShort( MyGamma ) );
 }
 
 void Model3pt::AddParameters( Params &mp )

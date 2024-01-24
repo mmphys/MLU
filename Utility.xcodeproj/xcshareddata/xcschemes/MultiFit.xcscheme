@@ -55,7 +55,7 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-v 1"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--mindof 0"
@@ -67,7 +67,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--summary 2"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--Hotelling 0.0001"
@@ -91,7 +91,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--uncorr"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--testrun"
@@ -131,26 +131,62 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-o Fit/ax-ps/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-i F1M/corr/2ptp2/s_l_p2_3_"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "g5P_g5P.fold.&apos;*&apos;.h5,t=9:21"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "gT5P_g5P.fold.&apos;*&apos;.h5,t=7:21"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "g5P_g5W.fold.&apos;*&apos;.h5,t=9:11,e=1"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "gT5P_g5W.fold.&apos;*&apos;.h5,t=9:11,e=1"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o Fit/ZVC1/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i $HOME/NoSync/C1/Renorm/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "Fit/ZVEnergy/h6413_s_p2_0.corr_6_27_14_27.g5P_g5W.model.2263212701.h5"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "Fit/ZVEnergy/h6413_s_p2_0.corr_8_24_13_24.g5P_g5W.model.694228835.h5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "ZV/sp2/ZV_h6413_dt_12_g5P_g5P.fold.2263212701.h5,t=4:8"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "ZV/sp2/ZV_h6413_dt_16_g5P_g5P.fold.2263212701.h5,t=6:10"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = " --extra 20.24"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "ZV/sp2/ZV_h6413_dt_20_g5P_g5P.fold.2263212701.h5,t=8:12"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "ZV/sp2/ZV_h6413_dt_24_g5P_g5P.fold.2263212701.h5,t=9:14"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
@@ -163,11 +199,21 @@
          <EnvironmentVariable
             key = "MLUSeed"
             value = "3285139232"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "MLUCovarCentral"
             value = ""
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "MLUSeed"
+            value = "2263212701"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "MLUSeed"
+            value = "694228835"
             isEnabled = "NO">
          </EnvironmentVariable>
       </EnvironmentVariables>

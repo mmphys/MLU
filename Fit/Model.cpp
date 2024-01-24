@@ -187,19 +187,30 @@ std::vector<std::string> Object::GetObjectNameSnkSrc( const Model::CreateParams 
   std::vector<std::string> ObjectID( 2 );
   ObjectID[0] = Args.Remove( "Src", &bManualObjectID[0] );
   ObjectID[1] = Args.Remove( "Snk", &bManualObjectID[1] );
+  const Common::FileNameAtt &fna{ cp.pCorr->Name_ };
   if( !bManualObjectID[0] )
   {
-    if( cp.pCorr->Name_.MesonMom.empty() )
+    if( !fna.MesonMom.empty() )
+      ObjectID[0] = fna.MesonMom[0];
+    else if( fna.BaseShortParts.size() >= 2
+            && Common::EqualIgnoreCase( fna.BaseShortParts[0], "ZV" ) )
+    {
+      ObjectID[0] = fna.MakeMesonName( fna.BaseShortParts[1] );
+      ObjectID.resize( 1 );
+    }
+    if( ObjectID[0].empty() )
       throw std::runtime_error( "GetObjectNameSnkSrc(): Src unavailable - specify manually" );
-    ObjectID[0] = cp.pCorr->Name_.MesonMom[0];
   }
-  if( !bManualObjectID[1] )
+  if( ObjectID.size() > 1 )
   {
-    if( cp.pCorr->Name_.MesonMom.size() < 2 )
-      throw std::runtime_error( "GetObjectNameSnkSrc(): Snk unavailable - specify manually" );
-    ObjectID[1] = cp.pCorr->Name_.MesonMom[1];
+    if( !bManualObjectID[1] )
+    {
+      if( fna.MesonMom.size() < 2 )
+        throw std::runtime_error( "GetObjectNameSnkSrc(): Snk unavailable - specify manually" );
+      ObjectID[1] = fna.MesonMom[1];
+    }
+    if( Common::EqualIgnoreCase( ObjectID[0], ObjectID[1] ) )
+      ObjectID.resize( 1 );
   }
-  if( Common::EqualIgnoreCase( ObjectID[0], ObjectID[1] ) )
-    ObjectID.resize( 1 );
-  return { ObjectID };
+  return ObjectID;
 }

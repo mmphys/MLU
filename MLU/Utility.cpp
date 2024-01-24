@@ -256,6 +256,7 @@ void FileNameAtt::Parse( std::vector<std::string> * pOpNames,
       else
         ++Prev;
       // Spectator directories look like "3*_{spec}[p2]" ... with only one underscore
+      const std::size_t SuffixLen{ Common::Momentum::DefaultPrefixSquared.length() };
       if( Dir[Prev] == '3' )
       {
         std::string SpecDir{ Dir.substr( Prev, pos - Prev ) };
@@ -266,7 +267,6 @@ void FileNameAtt::Parse( std::vector<std::string> * pOpNames,
           Spectator = SpecDir.substr( Prev + 1 );
           this->SpecDir = std::move( SpecDir );
           std::size_t SpecLen{ Spectator.length() };
-          std::size_t SuffixLen{ Common::Momentum::DefaultPrefixSquared.length() };
           if( SpecLen > SuffixLen
               && Common::EqualIgnoreCase( Spectator.substr( SpecLen - SuffixLen ),
                                           Common::Momentum::DefaultPrefixSquared ) )
@@ -275,6 +275,18 @@ void FileNameAtt::Parse( std::vector<std::string> * pOpNames,
             bSpectatorGotSuffix = true;
           }
         }
+      }
+      else // Spectator directories also look like "{spec}p2"
+      {
+        std::string SpecDir{ Dir.substr( Prev, pos - Prev ) };
+        if( SpecDir.length() > SuffixLen
+           && Common::EqualIgnoreCase( SpecDir.substr( SpecDir.length() - SuffixLen, SuffixLen ),
+                                       Common::Momentum::DefaultPrefixSquared ) )
+       {
+         Spectator = SpecDir.substr( 0, SpecDir.length() - SuffixLen );
+         this->SpecDir = std::move( SpecDir );
+         bSpectatorGotSuffix = true;
+       }
       }
     }
   // If Base has extra segments, the last contains operator names. Otherwise extract 2 op names
@@ -332,10 +344,10 @@ void FileNameAtt::Parse( std::vector<std::string> * pOpNames,
     }
   }
   std::string BaseShort = Base;
+  DeltaT = ExtractDeltaT( BaseShort ); // Gets dt_ multiple consecutive integers so do this first
   p.Parse( BaseShort );
   // Extract other attributes from filename
   ExtractTimeslice( BaseShort, bGotTimeslice, Timeslice );
-  ExtractDeltaT( BaseShort, bGotDeltaT, DeltaT );
   Gamma.clear();
   Gamma = ExtractGamma( BaseShort );
   BaseShortParts = ArrayFromString( BaseShort, Underscore );
@@ -682,10 +694,10 @@ bool ExtractToken( std::string &Prefix, const std::string &Token )
 }
 
 // If present, remove integer preceded by Token from a string
-void ExtractInteger( std::string &Prefix, bool &bHasValue, int &Value, const std::string Token )
+void ExtractInteger( std::string &Prefix, bool &bHasValue, int &Value, const std::string &Token )
 {
   std::smatch match;
-  const std::regex pattern{ "_" + Token + "_?([0-9]+)" };
+  const std::regex pattern{ "_" + Token + "_?(-?[0-9]+)" };
   while( std::regex_search( Prefix, match, pattern  ) )
   {
     int ThisValue = std::stoi( match[1] );
@@ -702,6 +714,23 @@ void ExtractInteger( std::string &Prefix, bool &bHasValue, int &Value, const std
   }
 }
 
+// If present, remove integers preceded by Token from a string
+std::vector<int> ExtractIntegers( std::string &Prefix, const std::string &Token )
+{
+  std::vector<int> v;
+  std::smatch match;
+  const std::regex pattern{ "_" + Token + "(_-?[0-9]+)+" };
+  while( std::regex_search( Prefix, match, pattern  ) )
+  {
+    for( std::size_t i = 1; i < match.size(); ++i )
+      v.push_back( std::stoi( &match[1].str()[1] ) );
+    const std::string sSuffix{ match.suffix() };
+    Prefix = match.prefix();
+    Prefix.append( sSuffix );
+  }
+  return v;
+}
+
 // Strip out timeslice info from a string if present
 void ExtractTimeslice( std::string &Prefix, bool &bHasTimeslice, int &Timeslice )
 {
@@ -709,9 +738,9 @@ void ExtractTimeslice( std::string &Prefix, bool &bHasTimeslice, int &Timeslice 
 }
 
 // Strip out DeltaT from a string if present
-void ExtractDeltaT( std::string &Prefix, bool &bHasDeltaT, int &DeltaT )
+std::vector<int> ExtractDeltaT( std::string &Prefix )
 {
-  ExtractInteger( Prefix, bHasDeltaT, DeltaT, "[dD][tT]" );
+  return ExtractIntegers( Prefix, "[dD][tT]" );
 }
 
 // Append DeltaT to string

@@ -271,7 +271,7 @@ void ZVRCommon::Make( std::string &FileName )
   Common::FileNameAtt fna{ FileName, &OpNames };
   if( OpNames.empty() )
     throw std::runtime_error( "Sink / source operator names mising" );
-  if( !fna.bGotDeltaT )
+  if( !fna.GotDeltaT() )
     throw std::runtime_error( "DeltaT missing" );
   if( fna.Gamma.size() != 1 )
     throw std::runtime_error( FileName + " has " + std::to_string( fna.Gamma.size() ) + " currents" );
@@ -317,9 +317,9 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
 
   // Ensure the correlator includes timeslice DeltaT
   const int NTHalf{ C3.Nt() / 2 };
-  if( fna.DeltaT > NTHalf )
-    throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ) );
-  const bool bMidpoint{ fna.DeltaT == NTHalf };
+  if( fna.DeltaT[0] > NTHalf )
+    throw std::runtime_error( "DeltaT " + std::to_string( fna.DeltaT[0] ) + " > Nt/2 " + std::to_string( NTHalf ) );
+  const bool bMidpoint{ fna.DeltaT[0] == NTHalf };
 
   // Now read the two-point function corresponding to the model (Src and Snk are the same)
   std::string C2Name{ Src.mp.C2Name() }; // Src and Snk same, so we can choose either
@@ -343,7 +343,7 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
   }
 
   // Make somewhere to put Z_V
-  Fold out( NumSamples, fna.DeltaT + 1 );
+  Fold out( NumSamples, fna.DeltaT[0] + 1 );
   out.FileList.push_back( C3.Name_.Filename );
   out.FileList.push_back( C2.Name_.Filename );
   if( EFit.freeze != Freeze::Constant )
@@ -352,10 +352,10 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
   out.NtUnfolded_ = C3.Nt();
   for( int idx = Fold::idxCentral; idx < NumSamples; ++idx )
   {
-    const Scalar CTilde{ bMidpoint ? C2(idx,fna.DeltaT) * 0.5
-                        : C2(idx,fna.DeltaT) - Src.A[idx] * Src.A[idx]
-                        * std::exp( - Src.E[idx] * ( C3.Nt() - fna.DeltaT ) )};
-    for( int t = 0; t <= fna.DeltaT; ++t )
+    const Scalar CTilde{ bMidpoint ? C2(idx,fna.DeltaT[0]) * 0.5
+                        : C2(idx,fna.DeltaT[0]) - Src.A[idx] * Src.A[idx]
+                        * std::exp( - Src.E[idx] * ( C3.Nt() - fna.DeltaT[0] ) )};
+    for( int t = 0; t <= fna.DeltaT[0]; ++t )
     {
       const double z{ CTilde / C3(idx,t) };
       if( !std::isfinite( z ) )
@@ -369,7 +369,7 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
   OutFileName.append( "ZV_" );
   OutFileName.append( Snk.q );
   //OutFileName.append( Suffix );
-  Common::AppendDeltaT( OutFileName, fna.DeltaT );
+  Common::AppendDeltaT( OutFileName, fna.DeltaT[0] );
   AppendOps( OutFileName, Snk.op, Src.op );
   OutFileName = Common::MakeFilename( OutFileName, Common::sFold, C3.Seed(), DEF_FMT );
   std::cout << "->" << OutFileName << Common::NewLine;
@@ -451,7 +451,7 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
     Common::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? Src.q : Snk.q );
     Corr3[Snk_Src].Name.append( fnaSuffix );
     Common::AppendGammaDeltaT( Corr3[Snk_Src].Name, iSnk==iSrc ? Common::Gamma::Algebra::GammaT : fna.Gamma[0],
-                               fna.DeltaT );
+                               fna.DeltaT[0] );
     fna.AppendMomentum( Corr3[Snk_Src].Name, iSrc == iFinal ? Snk.mp.p : Src.mp.p, Src.mp.pName );
     fna.AppendMomentum( Corr3[Snk_Src].Name, iSnk==iInitial ? Src.mp.p : Snk.mp.p, Snk.mp.pName );
     Common::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.op : Snk.op );
@@ -533,8 +533,8 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
 
   // Ensure 3pt correlator includes timeslice DeltaT
   const int NTHalf{ nT3 / 2 };
-  if( fna.DeltaT > NTHalf )
-    throw std::runtime_error("DeltaT " + std::to_string( fna.DeltaT ) + " > Nt/2 " + std::to_string( NTHalf ));
+  if( fna.DeltaT[0] > NTHalf )
+    throw std::runtime_error("DeltaT " + std::to_string( fna.DeltaT[0] ) + " > Nt/2 " + std::to_string( NTHalf ));
 
   // Make somewhere to put ratios
   std::array<Fold, NumRatio> out;
@@ -545,7 +545,7 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
   {
     if( MakeRatio[i] )
     {
-      out[i].resize( NSamples, fna.DeltaT + 1 );
+      out[i].resize( NSamples, fna.DeltaT[0] + 1 );
       // Energies
       if( EFit.freeze != Freeze::Constant )
       {
@@ -585,22 +585,22 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
     for( int i = 0; i < NumC2; ++i )
     {
       E[i] = (*pE[i])[idx];
-      C2[i] = (*pC2[i])(idx,fna.DeltaT);
+      C2[i] = (*pC2[i])(idx,fna.DeltaT[0]);
       if( EFit.freeze == Freeze::Constant )
       {
         // If we're freezing energy to constant, it makes no sense to try to subtract half the midpoint
-        if( NTHalf == fna.DeltaT )
+        if( NTHalf == fna.DeltaT[0] )
           C2[i] *= 0.5; // In the middle of the lattice, this is needed for consistency
       }
       else
       {
-        C2[i] -= 0.5 * (*pC2[i])(idx,NTHalf) * std::exp( - E[i] * ( NTHalf - fna.DeltaT ) );
+        C2[i] -= 0.5 * (*pC2[i])(idx,NTHalf) * std::exp( - E[i] * ( NTHalf - fna.DeltaT[0] ) );
       }
     }
     const double EProd = E[0] * E[1];
     const double C2Prod = std::abs( C2[0] * C2[1] );
     // Now compute the ratios
-    for( int t = 0; t <= fna.DeltaT; ++t )
+    for( int t = 0; t <= fna.DeltaT[0]; ++t )
     {
       if( MakeRatio[0] || MakeRatio[1] )
       {
@@ -618,16 +618,16 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
         if( MakeRatio[2] )
         {
           // R3 - forward  (1st propagator)
-          const Scalar R3Exp{ std::exp( ( E[0] - E[1] ) * t + E[1] * fna.DeltaT ) };
+          const Scalar R3Exp{ std::exp( ( E[0] - E[1] ) * t + E[1] * fna.DeltaT[0] ) };
           const Scalar R3SqrtNum{ EProd * R3Exp * ZVSrc[idx] * ZVSnk[idx] };
-          out[2](idx,t) = 2 * (*pSrc[0])(idx,t) * std::sqrt( R3SqrtNum / ( (*pC2[0])(idx,t) * (*pC2[1])(idx,fna.DeltaT - t) ) );
+          out[2](idx,t) = 2 * (*pSrc[0])(idx,t) * std::sqrt( R3SqrtNum / ( (*pC2[0])(idx,t) * (*pC2[1])(idx,fna.DeltaT[0] - t) ) );
         }
         if( MakeRatio[3] )
         {
           // R3 backward (2nd propagator)
-          const Scalar R3Exp{ std::exp( ( E[1] - E[0] ) * t + E[0] * fna.DeltaT ) };
+          const Scalar R3Exp{ std::exp( ( E[1] - E[0] ) * t + E[0] * fna.DeltaT[0] ) };
           const Scalar R3SqrtNum{ EProd * R3Exp * ZVSrc[idx] * ZVSnk[idx] };
-          out[3](idx,t) = 2 * (*pSrc[1])(idx,t) * std::sqrt( R3SqrtNum / ( (*pC2[1])(idx,t) * (*pC2[0])(idx,fna.DeltaT - t) ) );
+          out[3](idx,t) = 2 * (*pSrc[1])(idx,t) * std::sqrt( R3SqrtNum / ( (*pC2[1])(idx,t) * (*pC2[0])(idx,fna.DeltaT[0] - t) ) );
         }
       }
       else
@@ -637,23 +637,23 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
         const Scalar OverProd{ OverlapCoeff[0][idx] * OverlapCoeff[1][idx]
                               * std::sqrt( OverlapNorm * ZVSrc[idx] * ZVSnk[idx] ) };
         if( MakeRatio[2] ) // R3 - forward  (1st propagator)
-          out[2](idx,t) = OverProd * (*pSrc[0])(idx,t) / ( (*pC2[0])(idx,t) * (*pC2[1])(idx,fna.DeltaT - t) );
+          out[2](idx,t) = OverProd * (*pSrc[0])(idx,t) / ( (*pC2[0])(idx,t) * (*pC2[1])(idx,fna.DeltaT[0] - t) );
         if( MakeRatio[3] ) // R3 backward (2nd propagator)
-          out[3](idx,t) = OverProd * (*pSrc[1])(idx,t) / ( (*pC2[1])(idx,t) * (*pC2[0])(idx,fna.DeltaT - t) );
+          out[3](idx,t) = OverProd * (*pSrc[1])(idx,t) / ( (*pC2[1])(idx,t) * (*pC2[0])(idx,fna.DeltaT[0] - t) );
       }
     }
     // Symmetrise the symmetric ratios, i.e. R1 and R2, but not R3
     if( bSymmetrise )
     {
-      assert( ! ( fna.DeltaT & 1 ) && "DeltaT must be even" );
+      assert( ! ( fna.DeltaT[0] & 1 ) && "DeltaT must be even" );
       for( int i = 0; i < NumRatio; ++i )
       {
         if( MakeRatio[i] && RatioSymmetric[i] )
         {
-          for( int t = 0; t < fna.DeltaT / 2; ++t )
+          for( int t = 0; t < fna.DeltaT[0] / 2; ++t )
           {
-            out[i](idx,t) = ( out[i](idx,t) + out[i](idx,fna.DeltaT - t) ) / 2;
-            out[i](idx,fna.DeltaT - t) = out[i](idx,t);
+            out[i](idx,t) = ( out[i](idx,t) + out[i](idx,fna.DeltaT[0] - t) ) / 2;
+            out[i](idx,fna.DeltaT[0] - t) = out[i](idx,t);
           }
         }
       }
@@ -671,7 +671,7 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
       OutFileName.append( 1, '_' );
       OutFileName.append( NameReverse[i] ? Snk.q : Src.q );
       OutFileName.append( fnaSuffix );
-      Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT );
+      Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT[0] );
       fna.AppendMomentum( OutFileName, Src.mp.p ? Src.mp.p : Snk.mp.p, Src.mp.pName );
       AppendOps( OutFileName, NameReverse[i] ? Src.op : Snk.op, NameReverse[i] ? Snk.op : Src.op );
       OutFileName = Common::MakeFilename( OutFileName, fna.Type, Corr2[0].Corr->Seed(), fna.Ext );
@@ -1140,7 +1140,7 @@ void FFitConstMaker::Make( std::string &FileName )
   Common::FileNameAtt fna{ FileName, &OpNames };
   if( OpNames.empty() )
     throw std::runtime_error( "Sink / source operator names mising" );
-  if( !fna.bGotDeltaT )
+  if( !fna.GotDeltaT() )
     throw std::runtime_error( "DeltaT missing" );
   if( fna.Gamma.size() != 1 )
     throw std::runtime_error( FileName + " has " + std::to_string( fna.Gamma.size() ) + " currents" );
@@ -1185,7 +1185,7 @@ void FFitConstMaker::Make( std::string &FileName )
   Prefix.append( qSrc );
   // Get filename suffix
   std::string Suffix1;
-  Common::AppendDeltaT( Suffix1, fna.DeltaT );
+  Common::AppendDeltaT( Suffix1, fna.DeltaT[0] );
   Suffix1.append( p.FileString( pName ) );
   Common::Append( Suffix1, fna.GetBaseShort( 3 ) );
   fna.AppendExtra( Suffix1 );

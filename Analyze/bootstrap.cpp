@@ -88,7 +88,7 @@ void TrajFile::Reverse( Common::CorrelatorFileC &File ) const
     File.Name_.Filename.append( sTimeRev );
     const int Nt{ File.Nt() };
     const int T0{ File.Timeslice() };
-    const int DeltaT{ File.Name_.bGotDeltaT ? File.Name_.DeltaT : 0 };
+    const int DeltaT{ File.Name_.GotDeltaT() ? File.Name_.DeltaT[0] : 0 };
     using ValueT = typename Common::SampleTraits<std::complex<double>>::value_type;
     std::vector<ValueT> Buffer( Nt );
     for( int row = 0; row < File.NumOps(); ++row )
@@ -788,12 +788,12 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
         throw std::runtime_error( "Contraction files must contain a configuration number" );
       if( Name_.Gamma.size() > 1 )
         throw std::runtime_error( "Multiple gamma insertions unsupported" );
-      const bool b3pt{ !Name_.Gamma.empty() && Name_.bGotDeltaT };
+      const bool b3pt{ !Name_.Gamma.empty() && Name_.GotDeltaT() };
       if( b3pt && AlgCurrent.empty() )
         throw std::runtime_error( "3pt functions present, but current insertion not specified" );
-      if( !Name_.Gamma.empty() && !Name_.bGotDeltaT )
+      if( !Name_.Gamma.empty() && !Name_.GotDeltaT() )
         std::cout << szWarning << "Gamma insertion without DeltaT. Possible 3pt function treated as 2pt" << std::endl;
-      if( Name_.Gamma.empty() && Name_.bGotDeltaT )
+      if( Name_.Gamma.empty() && Name_.GotDeltaT() )
         std::cout << szWarning << "DeltaT without gamma insertion. Possible 3pt function treated as 2pt" << std::endl;
       std::string Contraction{ Name_.GetBaseShortExtra() };
       // NB: bRev true means that the gamma in the name belongs with Q1
@@ -833,10 +833,10 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
       // Add attributes back into contraction string
       std::string sShortPrefix{ Contraction }; // Prefix is everything before gamma
       std::string sShortSuffix;  // Everything after the gamma
-      if( Name_.bGotDeltaT )
+      if( Name_.GotDeltaT() )
       {
         sShortSuffix = "_dt_";
-        sShortSuffix.append( std::to_string( Name_.DeltaT ) );
+        sShortSuffix.append( std::to_string( Name_.DeltaT[0] ) );
       }
       // Add the momenta into the correlator if they were present
       for( const MomentumMapValue & mmv : Name_.p )
@@ -875,7 +875,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
       TrajList & cl{ itc->second };
       auto it = cl.FileInfo.find( Name_.Filename );
       if( it == cl.FileInfo.end() )
-        cl.FileInfo.emplace( Name_.Filename, TrajFile( Name_.bGotTimeslice, Name_.Timeslice, Name_.p, Name_.Seed, bTimeRev, Name_.DeltaT ) );
+        cl.FileInfo.emplace( Name_.Filename, TrajFile( Name_.bGotTimeslice, Name_.Timeslice, Name_.p, Name_.Seed, bTimeRev, Name_.DeltaT[0] ) );
       else
         std::cout << "Ignoring repetition of " << Name_.Filename << std::endl;
     }

@@ -463,8 +463,8 @@ struct FileNameAtt
   bool bGotTimeslice = false;
   int         Timeslice = 0;
   MomentumMap p;
-  bool bGotDeltaT = false;
-  int         DeltaT;
+  std::vector<int> DeltaT;
+  inline bool GotDeltaT() const { return !DeltaT.empty(); }
   std::vector<Gamma::Algebra> Gamma; // Gamma algebras extracted from name
   // SpecDir and Spectator are either both set or neither is
   std::string SpecDir;
@@ -492,7 +492,7 @@ struct FileNameAtt
     Extra.clear();
     bGotTimeslice = false;
     p.clear();
-    bGotDeltaT = false;
+    DeltaT.clear();
     Gamma.clear();
     SpecDir.clear();
     Spectator.clear();
@@ -520,7 +520,6 @@ struct FileNameAtt
     std::swap( bGotTimeslice, o.bGotTimeslice );
     std::swap( Timeslice, o.Timeslice );
     std::swap( p, o.p );
-    std::swap( bGotDeltaT, o.bGotDeltaT );
     std::swap( DeltaT, o.DeltaT );
     std::swap( Gamma, o.Gamma );
     std::swap( SpecDir, o.SpecDir );
@@ -636,13 +635,16 @@ std::string PreferSeed( const std::string &sFilename ); // Uses default seed
 bool ExtractToken( std::string &Prefix, const std::string &Token );
 
 // If present, remove integer preceded by Token from a string
-void ExtractInteger( std::string &Prefix, bool &bHasValue, int &Value, const std::string Token );
+void ExtractInteger( std::string &Prefix, bool &bHasValue, int &Value, const std::string &Token );
+
+// If present, remove integer preceded by Token from a string
+std::vector<int> ExtractIntegers( std::string &Prefix, const std::string &Token );
 
 // Strip out timeslice info from a string if present
 void ExtractTimeslice( std::string &s, bool &bHasTimeslice, int & Timeslice );
 
 // Strip out DeltaT from a string if present
-void ExtractDeltaT( std::string &Prefix, bool &bHasDeltaT, int &DeltaT );
+std::vector<int> ExtractDeltaT( std::string &Prefix );
 
 // Append DeltaT to string
 void AppendDeltaT( std::string &s, int DeltaT );

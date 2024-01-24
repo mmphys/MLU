@@ -260,7 +260,7 @@ qSrc=h$Heavy
 qSnk=l
 qSpec=s
 
-for FileSeries in ${series-disp renorm AltZV}
+for FileSeries in ${series-disp renorm AltZV Jan24}
 do
 (
   case $FileSeries in
@@ -277,9 +277,9 @@ do
       ChooseTwoPtFits disp
       Ratio=ratio Renorm= NotRaw= NumExp=3 RatioFitsBase;;
 
-    AltZV)
+    AltZV | Jan24)
       ChooseTwoPtFits disp
-      Ratio=ratioAltZV Renorm= NotRaw= NumExp=3 RatioFitsBase;;
+      Ratio=ratio$FileSeries Renorm= NotRaw= NumExp=3 RatioFitsBase;;
 
     simul)
       RatioFitsSimul;;

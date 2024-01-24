@@ -52,7 +52,7 @@ Corr3="$PlotData/corr/$SubDir"
 Ratio="$PlotData/ratio$Suffix/$SubDir"
 LogFile="$Ratio/MakeRatio.log"
 
-if ! [ -d "$EFit" ] && ! [ -h "$EFit" ]; then
+if ! [ -e "$EFit" ] && ! [ -h "$EFit" ]; then
   echo "$EFit doesn't exist"
   exit 2
 fi
@@ -77,4 +77,4 @@ Cmd+=" '*_l_h*_g*_dt_*_p2_0_ps2_*_g5P_g5P.*.h5'"
   cat "$EFit"
   echo "$Cmd"
   eval "$Cmd"
-} > $LogFile
+} &> $LogFile

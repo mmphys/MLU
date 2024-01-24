@@ -47,6 +47,7 @@ NumTI=words( OriginalTI )
 NumTF=words( OriginalTF )
 #print 'NumTI='.NumTI.', OriginalTI='.OriginalTI
 #print 'NumTF='.NumTF.', OriginalTF='.OriginalTF
+#print 'tExtra='.tExtra
 
 # Get number of models
 stats PlotFile using 'model' nooutput
@@ -101,6 +102,7 @@ array PlotTMax[NumModels]
 array PlotTWidth[NumModels]
 TotalPlotTWidth=0
 UsingX='using '.GetUsing("'seq'",1,"")
+#print 'UsingX='.UsingX
 do for [model=1:NumModels] {
 
   stats PlotFile @UsingX : 't' nooutput
@@ -109,10 +111,18 @@ do for [model=1:NumModels] {
   FitTMin[model]=STATS_min_y
   FitTMax[model]=STATS_max_y
   #print "model=".(model-1+ModelMin).": seq=[".FitSeqMin[model].",".FitSeqMax[model]."], t=[".sprintf("%g",FitTMin[model]).",".sprintf("%g",FitTMax[model])."]"
-  PlotTMin[model]=((word(OriginalTI,model) ne "") ? (word(OriginalTI,model)+0) : \
-                                  (FitTMin[model] > tExtra ? FitTMin[model] - tExtra : 0)) - 0.5
-  PlotTMax[model]=((word(OriginalTF,model) ne "") ? (word(OriginalTF,model)+0) : \
-                                  (FitTMax[model] + tExtra)) + 0.5
+  ThisTI=word(OriginalTI,model)
+  ThisTF=word(OriginalTF,model)
+  #print 'word(OriginalTI,'.model.')="'.ThisTI.'", length='.strlen(ThisTI)
+  #do for [idx=1:strlen(ThisTI)] { print 'ThisTI['.idx.']="'.substr(ThisTI,idx,idx).'"' }
+  ThisTI=ThisTI ne "" ? ThisTI + 0 : FitTMin[model] > tExtra ? FitTMin[model] - tExtra : 0
+  ThisTF=ThisTF ne "" ? ThisTF + 0 : FitTMax[model] + tExtra
+  #print 'ThisTI='.sprintf('%g',ThisTI)
+  #print 'ThisTF='.sprintf('%g',ThisTF)
+  #print 'FitTMin['.model.']='.sprintf('%g',FitTMin[model])
+  #print 'FitTMax['.model.']='.sprintf('%g',FitTMax[model])
+  PlotTMin[model]=ThisTI - 0.5
+  PlotTMax[model]=ThisTF + 0.5
   #print 'PlotTMin[model]='.sprintf("%g",PlotTMin[model])
   #print 'PlotTMax[model]='.sprintf("%g",PlotTMax[model])
   PlotTWidth[model]=PlotTMax[model]-PlotTMin[model]
@@ -162,13 +172,21 @@ BMar=BMar*ScreenVChar
 TMar=TMar*ScreenVChar
 PlotWidth=1-LMar-RMar
 
+#print "NumModels=".NumModels
+#print 'PlotWidth='.sprintf('%g',PlotWidth)
+#print 'TotalPlotTWidth='.sprintf('%g',TotalPlotTWidth)
+#print "LMar=".sprintf('%g',LMar)
 array SubPlotWidth[NumModels]
 array SubPlotLeft[NumModels]
 array SubPlotRight[NumModels]
 do for [model=1:NumModels] {
+#  print 'PlotTWidth['.model.']='.sprintf('%g',PlotTWidth[model])
   SubPlotWidth[model]=PlotWidth * PlotTWidth[model] / TotalPlotTWidth
   SubPlotLeft[model]=model == 1 ? LMar : SubPlotRight[model - 1]
   SubPlotRight[model]=SubPlotLeft[model]+SubPlotWidth[model]
+#  print 'SubPlotWidth['.model.']='.sprintf('%g',SubPlotWidth[model])
+#  print 'SubPlotLeft['.model.']='.sprintf('%g',SubPlotLeft[model])
+#  print 'SubPlotRight['.model.']='.sprintf('%g',SubPlotRight[model])
 }
 
 PointSizeData="0.6"
@@ -207,6 +225,7 @@ do for [model=1:NumModels] {
 set margins 0,0,0,0
 
 if( MyTitle ne "" ) {
+  print 'Title['.model.']='.word(MyTitle,model)
   if( Latex || Enhanced ) {
     set title word(MyTitle,model)
   } else {
@@ -371,6 +390,7 @@ function GetSaveName()
   fi
 }
 
+echo "plottd.sh: title=$title"
 [ -v save ] && NameAdorn=0 || NameAdorn=1
 for PlotFile in "$@"
 do

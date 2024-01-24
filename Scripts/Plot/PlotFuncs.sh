@@ -39,8 +39,8 @@ function PlotZVFit()
         Basename="${Basename%%.*}"
   local BaseParts=(${Basename//_/ })
   local Q=${BaseParts[1]}
-  local dT=${BaseParts[3]}
-  local Meson
+  local -a dT=(${BaseParts[@]:3})
+  local i Meson ti='' tf='' title='' DeltaTOna='\\flatfrac{\\Delta T}{a}'
   OptionNoMass= GetMeson Meson $Q $Spec
   [ "$Meson" == π ] && Meson='\\pi'
 
@@ -48,18 +48,44 @@ function PlotZVFit()
   local Latex=
   GetColumnValues "$FitFile" "\$Z_V($Meson)=\$" '' ZV
 
+  # tMin / TMax ranges
+  for (( i=0; i<${#dT[@]}; ++i )); do
+    if ((i)); then
+      ti+=' '
+      tf+=' '
+    fi
+    ti+='2'
+    tf+="$((dT[i]-2))"
+  done
+
+  # Title
+  #if ((${#dT[@]}>1)); then
+    for (( i=0; i<${#dT[@]}; ++i )); do
+      ((i)) && title+=' '
+      title+="'\$$DeltaTOna=${dT[i]}\$'"
+    done
+  #elif ! [ -v MikeThesis ]; then
+    #title+="'"
+    #title+='$Z_V \\left[ '"$Meson, "' \\,'
+    #[ "$Meson" == K ] && title+=' \\textrm{spec=}'"$Spec, "' \\,'
+    #title+="$DeltaTOna=${dT[0]}, "' \\,'
+    #title+='\\textrm{'"${PW//_/\\\\_}"'} '
+    #title+=' \\right] $'
+    #title+="'"
+  #fi
+  if [ -n "$title" ]; then
+    export title
+    echo "title=$title"
+  fi
+
   # Plot it
   
-  Cmd="yrange='$yrange' field=corr"
-  if ! [ -v MikeThesis ]; then
-    Cmd+=' title="'"'"'\$Z_V \\\\left[ $Meson, '
-    [ "$Meson" == K ] && Cmd+='\\\\textrm{ spec=}$Spec, '
-    Cmd+='\\\\, \\\\Delta T=$dT, \\\\, \\\\textrm{$PW} \\\\right]\$'"'"'"'
-  fi
+  Cmd='field=corr'
+  [ -v yrange ] && Cmd+=" yrange='$yrange'"
   if [ -v RefText ]; then
     Cmd+=" RefText='$RefText' RefVal='${ColumnValues[@]:16:8}'"
   fi
-  Cmd+=" ti=2 tf=$((dT-2))"
+  Cmd+=" ti='$ti' tf='$tf'"
   Cmd+=" size='${size:-5in,1.8in}'"
   Cmd+=" Latex="
   if [ -v MikeThesis ]; then

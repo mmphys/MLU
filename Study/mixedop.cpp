@@ -768,9 +768,9 @@ bool Debug()
   Fold fWP( InWP, szReading, &OpNames );
   int NumSamples = 0;
   fPW.IsCompatible( fWP, &NumSamples );
-  if( !fPW.Name_.bGotDeltaT )
+  if( !fPW.Name_.GotDeltaT() )
     throw std::runtime_error( "Could not etract DeltaT from" + InPW );
-  const int DeltaT{ fPW.Name_.DeltaT };
+  const int DeltaT{ fPW.Name_.DeltaT[0] };
   for( int type = 0; type < 2; ++type )
   {
     const int Nt{ type == 0 ? fPW.Nt() : DeltaT + 1 };

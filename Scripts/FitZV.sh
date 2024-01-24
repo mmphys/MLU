@@ -21,11 +21,13 @@ if ! [ -d $Ensemble ]; then
   echo "Ensemble $Ensemble doesn't exist. Change directory?"
   exit 2
 fi
+DefaultSeries=Const # Original ZV fits from constant
+#DefaultSeries=Jan24 # Jan 2024 ZV Fits from model including excited-states
 OutDir=$Ensemble/${OutDir:-Renorm}
 ZVDir=${ZVDir:-ZV}
 ZVPlotDir=${ZVPlotDir:-${ZVDir}Plot}
-ZVEFit=E_For_ZV.txt
-ZVFit=ZV.txt
+ZVEFit=E_For_${ZVDir}.txt
+ZVLink=ZV.txt # Make this link to the default series
 
 if [ -v DoAll ]; then
   DoEFit=
@@ -191,11 +193,13 @@ done
 
 function PlotZV()
 {
-local x='((column(1)<2 || column(1)>word(FileDT,File)-2) ? NaN : column(1)-0.5*word(FileDT,File)+(word(FileDT,File)-24)*.025)'
+local Edge=${Edge:-2}
+local cond="column(1)<$Edge || column(1)>word(FileDT,File)-$Edge"
+local x='column(1)-0.5*word(FileDT,File)+(word(FileDT,File)-24)*.025'
 local fields=corr
 local key='bottom center maxrows 2'
 local yrange SpecDir dT legend FileName FileNames
-export x fields key legend
+export cond x fields key legend
 
 mkdir -p $ZVPlotDir
 for Action in ${Actions[@]}; do
@@ -225,45 +229,82 @@ done
 ############################################################
 
 # Perform ZV fit
+# Parameters - DeltaT list
 
+# Mandatory:
+#  Q:       Quark action we're getting Z_V for
+#  ti:      Array of initial fit times
+#  tf:      Array of final   fit times
 # Optional
-# UnCorr:   uncorrelated fit
-# Stat:     Hotelling p-value
-# FitOptions: extra fit options
+#  Spec:      Spectator we want to use (default 's')
+#  Thin:      Array of thinning specs
+#  Const:     Set to anything to perform a fit to constant
+#  UnCorr:    uncorrelated fit
+#  Stat:      Hotelling p-value
+#  FitOptions: extra fit options
+#  yrange:    gnuplot yrange
+#  Snk:       Sink   (default: g5P)
+#  Src:       Source (default: g5P)
 
 ############################################################
 
-function FitZV()
+function FitZVNew()
 {
-local Q=$1
-local dT=${2:-${EnsembleDeltaT[0]}}
-local Spec=${3:-s}
-local yrange=$4
-local Snk=${5:-g5P}
-local Src=${6:-g5P}
-local ti=${ti:-$((dT/2-1))}
-local tf=${tf:-$((dT/2+1))}
+local Spec=${Spec:-s}
+local -a dT=($*) ti=($ti) tf=($tf)
+local e=${e:-2}
+local Snk=${Snk-g5P}
+local Src=${Src-g5P}
+if (( ${#dT[@]} < 1 || ${#dT[@]} != ${#ti[@]} || ${#dT[@]} != ${#tf[@]} )); then
+  echo "${#dT[@]} deltaT but ${#ti[@]} ti and ${#tf[@]} tf"
+  return 1
+fi
 
 # Derived
+local i EFit ReadKey ReadVal ReadJunk ExtraName
 local Meson; OptionNoMass= GetMeson Meson $Q $Spec
 local PW=${Snk}; [ "$Snk" != "$Src" ] && PW=${PW}_${Src}
 local SpecDir=${Spec}p2
 local InDir=$ZVDir/$SpecDir
-local OutDir=Fit/$ZVDir/$SpecDir
-local InFile=ZV_${Q}_dt_${dT}
-InFile=${InFile}_${Snk}_${Src}.fold.$MLUSeed.h5
+local OutDir=Fit/$ZVDir$Series/$SpecDir
+local InPrefix=$InDir/ZV_${Q}_dt_
+local InSuffix=_${Snk}_${Src}.fold.$MLUSeed.h5
 local ZVName="$Q-ZV"
+
+(( ${#dT[@]} > 1 )) && ExtraName=$(IFS=_; echo "_${dT[*]:1}")
+
+# Unless fitting to constant, we need the energy fit
+if ! [ -v Const ]; then
+  while read ReadKey ReadVal ReadJunk; do
+    if [ "$ReadKey" == "${Q}_${Spec}_p2_0" ] || [ "$ReadKey" == "${Spec}_${Q}_p2_0" ]
+    then
+      EFit="$ReadVal"
+      break
+    fi
+  done < "$ZVEFit"
+  if [ -z "$EFit" ]; then
+    echo "Energy fit for ${Q}_$Spec not found in $ZVEFit"
+    return 1
+  fi
+fi
 
 mkdir -p $OutDir
 
 # Make Fit command
-local Cmd="$MultiFit${Stat:+ --Hotelling $Stat}"
-[ -v ExtraName ] && Cmd="$Cmd --extra '$ExtraName'"
-[ -v FitOptions ] && Cmd="$Cmd $FitOptions"
-[ -v UnCorr ] && Cmd="$Cmd --uncorr"
-Cmd="$Cmd -o $OutDir/ -i $InDir/ $InFile,t=${ti}:${tf}"
-[ -v Thin ] && Cmd="${Cmd}t$Thin"
-Cmd="${Cmd},model=const,const=$ZVName"
+local Cmd="$MultiFit"
+[ -v Stat ] && Cmd+=" --Hotelling '$Stat'"
+[ -n "$ExtraName" ] && Cmd+=" --extra '$ExtraName'"
+[ -v FitOptions ] && Cmd+=" $FitOptions"
+[ -v UnCorr ] && Cmd+=" --uncorr"
+[ -v Const ] || Cmd+=" -e $e"
+Cmd+=" -o $OutDir/"
+[ -n "$EFit" ] && Cmd+=" $EFit"
+for (( i=0; i<${#dT[@]}; ++i ))
+do
+  Cmd+=" $InPrefix${dT[i]}${InSuffix},t=${ti[i]}:${tf[i]}"
+  [ -n "${Thin[i]}" ] && Cmd+="t${Thin[i]}"
+  [ -v Const ] && Cmd+=",model=const,const=$ZVName" || Cmd+=',C2e=2'
+done
 
 #echo "A: $Cmd"
 local ModelBase="$(eval $Cmd --showname)"
@@ -290,8 +331,33 @@ fi
 fi
 
 # Add this to my fit list
-[ -v ZVFit ] && echo "${Q}"$'\t'"$FitFile" >> $ZVFit
+[ -v ZVFit ] && echo "$Q"$'\t'"$FitFile" >> $ZVFit
 
 #echo "B: $Cmd"
 PlotZVFit "$FitFile" "$Spec" &>> $LogFile
+}
+
+############################################################
+
+# Perform ZV fit to constant
+
+# Optional
+# UnCorr:   uncorrelated fit
+# Stat:     Hotelling p-value
+# FitOptions: extra fit options
+
+############################################################
+
+function FitZV()
+{
+local Q=$1
+local dT=${2:-${EnsembleDeltaT[0]}}
+local Spec=${3:-s}
+# DEPRECATED - None of 4, 5 or 6 are ever used and ti/tf always set by caller
+#local yrange=$4
+#local Snk=${5:-g5P}
+#local Src=${6:-g5P}
+#local ti=${ti:-$((dT/2-1))}
+#local tf=${tf:-$((dT/2+1))}
+Const= FitZVNew $dT
 }

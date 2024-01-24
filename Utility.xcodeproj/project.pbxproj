@@ -21,6 +21,7 @@
 		2748E67E2A1E114300867EF6 /* Continuum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2748E6712A1E0F9E00867EF6 /* Continuum.cpp */; };
 		2748E67F2A1E114A00867EF6 /* libMLU.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 682C5C9E28E4F41300C8E004 /* libMLU.dylib */; };
 		2748E6802A1E115000867EF6 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2723910329115E560045DE24 /* Accelerate.framework */; };
+		27636BBA2B4D788100230AEA /* ModelZV.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27636BB82B4D788000230AEA /* ModelZV.cpp */; };
 		2763DE032A1D241500529933 /* Utility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2763DE012A1D241400529933 /* Utility.cpp */; };
 		2763DE042A1D241500529933 /* Utility.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2763DE022A1D241400529933 /* Utility.hpp */; };
 		2763DE072A1D253D00529933 /* CorrFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2763DE052A1D253D00529933 /* CorrFile.cpp */; };
@@ -332,6 +333,8 @@
 		2748E6712A1E0F9E00867EF6 /* Continuum.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Continuum.cpp; sourceTree = "<group>"; };
 		2748E6722A1E0F9E00867EF6 /* Continuum.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Continuum.hpp; sourceTree = "<group>"; };
 		2748E6772A1E10CF00867EF6 /* Continuum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Continuum; sourceTree = BUILT_PRODUCTS_DIR; };
+		27636BB82B4D788000230AEA /* ModelZV.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelZV.cpp; sourceTree = "<group>"; };
+		27636BB92B4D788000230AEA /* ModelZV.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelZV.hpp; sourceTree = "<group>"; };
 		2763DE012A1D241400529933 /* Utility.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Utility.cpp; sourceTree = "<group>"; };
 		2763DE022A1D241400529933 /* Utility.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Utility.hpp; sourceTree = "<group>"; };
 		2763DE052A1D253D00529933 /* CorrFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CorrFile.cpp; sourceTree = "<group>"; };
@@ -759,6 +762,8 @@
 				277DF9D22AFCE24E00AC9260 /* ModelMisc.hpp */,
 				27E8B36028FF2DE80047FEF1 /* ModelRatio.cpp */,
 				27E8B35F28FF2DE80047FEF1 /* ModelRatio.hpp */,
+				27636BB82B4D788000230AEA /* ModelZV.cpp */,
+				27636BB92B4D788000230AEA /* ModelZV.hpp */,
 				682C5C7928E4F2C300C8E004 /* MultiFit.cpp */,
 				682C5C8028E4F2C300C8E004 /* MultiFit.hpp */,
 			);
@@ -1576,6 +1581,7 @@
 				682C5D5E28E4FF9400C8E004 /* FitMinuit2.cpp in Sources */,
 				682C5D5F28E4FF9400C8E004 /* Fitter.cpp in Sources */,
 				682C5D6028E4FF9400C8E004 /* FitterThread.cpp in Sources */,
+				27636BBA2B4D788100230AEA /* ModelZV.cpp in Sources */,
 				682C5D6128E4FF9400C8E004 /* Model.cpp in Sources */,
 				682C5D6228E4FF9400C8E004 /* Model2pt.cpp in Sources */,
 				277DF9D32AFCE24E00AC9260 /* ModelMisc.cpp in Sources */,

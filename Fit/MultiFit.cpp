@@ -286,7 +286,8 @@ int main(int argc, const char *argv[])
       // Now make base filenames for output
       if( !NameExtra.empty() )
       {
-        outBaseFileName.append( 1, '.' );
+        if( NameExtra[0] != '_' )
+          outBaseFileName.append( 1, '.' );
         outBaseFileName.append( NameExtra );
       }
       outBaseFileName.append( 1, '.' );

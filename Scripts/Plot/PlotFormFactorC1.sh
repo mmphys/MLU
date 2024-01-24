@@ -112,7 +112,7 @@ EndFitChoices
 	s_l_p2_4  2ptp2/s_l/s_l_p2_4.betterPW_6_23_7_23.corr_6_18_6_18.g5P_g5W.model.2263212701.h5
 EndFitChoices
 
-for series in renorm renormold AltZV
+for series in renorm renormold AltZV Jan24
 do
   [ -e ${OutBase}$series.txt ] || ln -s ${OutBase}disp.txt ${OutBase}$series.txt
 done
@@ -127,6 +127,6 @@ done
 series='disp old priorP priorPW betterP betterPW' PlotFormFactor.sh
 series=disp FitSeries=std UnCorr= PlotFormFactor.sh
 # renorm=(mostly NPR) renormalised. No need for ZV
-series='renormold renorm AltZV' Suffix=_mostly ZV= PlotFormFactor.sh
+series='renormold renorm AltZV Jan24' Suffix=_mostly ZV= PlotFormFactor.sh
 # renorm=(mostly NPR) renormalised. Apply Fully NPR correct.
-series='renormold renorm AltZV' FullyNP= PlotFormFactor.sh
+series='renormold renorm AltZV Jan24' FullyNP= PlotFormFactor.sh

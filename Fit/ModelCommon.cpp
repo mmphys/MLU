@@ -37,6 +37,7 @@
 #include "Model3pt.hpp"
 #include "ModelConstant.hpp"
 #include "ModelRatio.hpp"
+#include "ModelZV.hpp"
 #include "ModelMisc.hpp"
 
 static const std::string sModelTypeUnknown{ "Unknown" };
@@ -46,6 +47,7 @@ static const std::string sModelTypeSinh{ "Sinh" };
 static const std::string sModelTypeThreePoint{ "3pt" };
 static const std::string sModelTypeConstant{ "Const" };
 static const std::string sModelTypeRatio{ "R3" };
+static const std::string sModelTypeZV{ "ZV" };
 static const std::string sModelTypeMisc{ "Misc" };
 
 std::ostream & operator<<( std::ostream &os, const eModelType m )
@@ -69,6 +71,9 @@ std::ostream & operator<<( std::ostream &os, const eModelType m )
       break;
     case eModelType::R3:
       os << sModelTypeRatio;
+      break;
+    case eModelType::ZV:
+      os << sModelTypeZV;
       break;
     case eModelType::Misc:
       os << sModelTypeMisc;
@@ -102,6 +107,8 @@ std::istream & operator>>( std::istream &is, eModelType &m )
       m = eModelType::Constant;
     else if( Common::EqualIgnoreCase( s, sModelTypeRatio ) )
       m = eModelType::R3;
+    else if( Common::EqualIgnoreCase( s, sModelTypeZV ) )
+      m = eModelType::ZV;
     else if( Common::EqualIgnoreCase( s, sModelTypeMisc ) )
       m = eModelType::Misc;
     else
@@ -166,14 +173,20 @@ ModelPtr Model::MakeModel( int ModelNum, const Model::CreateParams &mcp, Model::
   if( !bGotModelType )
   {
     // We haven't been told which model to use. Choose a suitable default
-    const bool b3pt{ cp.pCorr->Name_.bGotDeltaT && cp.pCorr->Name_.Gamma.size() == 1 };
+    const std::size_t NumParts{ cp.pCorr->Name_.BaseShortParts.size() };
+    const bool bGotDeltaT{ cp.pCorr->Name_.GotDeltaT() };
+    const bool b3pt{ bGotDeltaT && cp.pCorr->Name_.Gamma.size() == 1 };
     if( b3pt )
     {
-      if( !cp.pCorr->Name_.BaseShortParts.empty()
-         && Common::EqualIgnoreCase( cp.pCorr->Name_.BaseShortParts[0], "R3" ) )
+      if( NumParts && Common::EqualIgnoreCase( cp.pCorr->Name_.BaseShortParts[0], "R3" ) )
         modelType = eModelType::R3;
       else
         modelType = eModelType::ThreePoint;
+    }
+    else if( bGotDeltaT && Common::EqualIgnoreCase( cp.pCorr->Name_.BaseShortParts[0], "ZV" )
+            && NumParts >= 2 && !cp.pCorr->Name_.HasNonZeroMomentum() )
+    {
+      modelType = eModelType::ZV;
     }
     else switch( dynamic_cast<const Fold *>( cp.pCorr )->parity )
     {
@@ -220,6 +233,9 @@ ModelPtr Model::MakeModel( int ModelNum, const Model::CreateParams &mcp, Model::
         break;
       case eModelType::R3:
         model.reset( new ModelRatio( cp, Args, nExp ) );
+        break;
+      case eModelType::ZV:
+        model.reset( new ModelZV( cp, Args, nExp ) );
         break;
       case eModelType::Misc:
         model.reset( new ModelMisc( cp, Args, nExp ) );

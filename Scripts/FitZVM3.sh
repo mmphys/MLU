@@ -30,14 +30,9 @@ if [ -v DoZV ]; then MakeZV; fi
 
 if [ -v DoPlot ]; then PlotZV; fi
 
-if [ -v DoTest ]; then
-(
-  unset ZVEFit # Don't overwrite selection of fits
-  PlotTF='29 29'
-)
-fi
-
-if [ -v DoFit ]; then
+# Original ZV fits from constant
+function FitConst()
+{
 (
   [ -e $ZVFit ] && unset ZVFit #Don't overwrite fit selection if it already exists
   export UnCorr=
@@ -56,4 +51,94 @@ if [ -v DoFit ]; then
   ti=4 tf=20 FitZV l 24 l
   ti=4 tf=24 FitZV l 28 l
 )
+}
+
+function FitJan24Light()
+{
+(
+  Q=l
+  Spec=s
+  yrange=0.73:0.755
+  e=3 ti='6 8 14' tf='10 12 18' FitZVNew 16 20 32
+  unset ZVFit # End of preferred fit choices
+  Stat=0.03 e=3 ti='6 8 10 12' tf='10 12 14 20' FitZVNew 16 20 24 32
+  e=3 ti='6 8' tf='10 12' FitZVNew 16 20
+)
+}
+
+function FitJan24Heavy()
+{
+(
+  Q=h${Heavy}
+  Spec=s
+  yrange=0.97:1.02
+  e=3 ti='6 8 10' tf='10 12 14' FitZVNew 16 20 24
+  unset ZVFit # End of preferred fit choices
+  e=3 ti='6 8 10 12' tf='10 12 14 16' FitZVNew 16 20 24 28
+  export UnCorr=
+)
+}
+
+# Jan 2024 ZV Fits from model including excited-states
+function FitJan24()
+{
+  FitJan24Light
+  FitJan24Heavy
+}
+
+function FitTest()
+{
+(
+  Q=h${Heavy}
+  Spec=s
+  yrange=0.98:1.04
+  # Test thinning
+  dT=28
+  export ti=8
+  export tf=$((dT-ti))
+  for Thin in {1..12}; do
+    Thin=$Thin ExtraName=thin_$Thin FitZV h${Heavy} $dT s
+  done
+)
+}
+
+############################################################
+
+# Choose which ZV to perform. Defaults to DefaultSeries (see FitZV.sh)
+
+############################################################
+
+if [ -v series ] || [ -v DoFit ]; then
+  for Series in ${series:-Const Jan24}
+  do
+    Series=${Series@L}
+    Series=${Series@u}
+    case $Series in
+      Const | Jan24 )
+        ZVFit=ZV$Series.txt
+        [ -e $ZVFit ] && rm $ZVFit #Overwrite fit selection if it already exists
+        eval Fit$Series;;
+      Test ) unset ZVFit; FitTest;;
+      *) echo "Ignoring unknown series '$Series'";;
+    esac
+  done
+fi
+
+############################################################
+
+# Activate the default ZV series
+
+############################################################
+
+ZVFit=ZV$DefaultSeries.txt
+if ! [ -e "$ZVFit" ]; then
+  echo "Can't link $ZVLink -> '$ZVFit' (doesn't exist)"
+else
+  (
+  for ((i=0;i<2;++i)); do
+    [ -e "$ZVLink" ] || [ -h "$ZVLink" ] && rm "$ZVLink"
+    ln -s "$ZVFit" "$ZVLink"
+    ZVLink=ZVAltZV.txt # Alternate ZV choices are actually the original choices on F1M
+  done
+  )
 fi

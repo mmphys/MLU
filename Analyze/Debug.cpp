@@ -264,7 +264,7 @@ bool MesonFile::Load( const std::string &FileName )
   {
     {
       Common::FileNameAtt fna( FileName );
-      if( fna.bGotDeltaT && fna.Gamma.size() )
+      if( fna.GotDeltaT() && fna.Gamma.size() )
         b3pt = true;
     }
     const Algebra (&Gammas)[nchannel][2]{ b3pt ? Gammas3pt : Gammas2pt };
