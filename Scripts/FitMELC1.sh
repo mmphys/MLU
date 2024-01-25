@@ -66,6 +66,7 @@ aMesonFileMom[h${Heavy}_s,0]=_p2_0
 function ChooseTwoPtFits()
 {
   local Fit2ptSeries="$1"
+  local s
   case "${Fit2ptSeries}" in
   old) # Versions using different PP+PW fit on each momentum
   aMesonFit[s_l,0]=corr_6_23_7_23
@@ -78,9 +79,11 @@ function ChooseTwoPtFits()
     aMesonFileMom[s_l,$i]=_p2_$i
   done;;
 
-  disp) # Simultaneous fit to PP at all momenta using dispersion relation
+  disp | dispC) # Simultaneous fit to PP at all momenta using dispersion relation
+    s=corr_6_23_6_23_5_20_5_20_5_18
+    [ $Fit2ptSeries == dispC ] && s=continuum.$s
   for((i = 0; i < 5; ++i)); do
-    aMesonFit[s_l,$i]=corr_6_23_6_23_5_20_5_20_5_18
+    aMesonFit[s_l,$i]=$s
     aMesonFileOp[s_l,$i]=g5P
     aMesonFileMom[s_l,$i]=
   done;;
@@ -137,7 +140,7 @@ function ChooseTwoPtFits()
     aMesonFileMom[s_l,$i]=_p2_$i.${Fit2ptSeries}_6_23_7_23
   done;;
 
-  *) echo "Two-point fits $1 unrecognised"; exit 1;;
+  *) echo "Two-point fits $Fit2ptSeries unrecognised"; exit 1;;
 esac
 }
 
@@ -322,6 +325,10 @@ do
 
     renorm)
       ChooseTwoPtFits disp
+      Ratio=ratio Renorm= NotRaw= RatioFitsRenorm;;
+
+    renormC)
+      ChooseTwoPtFits dispC
       Ratio=ratio Renorm= NotRaw= RatioFitsRenorm;;
 
     AltZV | Jan24)

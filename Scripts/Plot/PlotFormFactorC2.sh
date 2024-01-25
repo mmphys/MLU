@@ -58,6 +58,6 @@ done
 series='disp dispind' PlotFormFactor.sh
 series='disp dispind' UnCorr= PlotFormFactor.sh
 # renorm=(mostly NPR) renormalised. No need for ZV
-series='renorm AltZV Jan24' Suffix=_mostly ZV= PlotFormFactor.sh
+series='renorm renormC AltZV Jan24' Suffix=_mostly ZV= PlotFormFactor.sh
 # renorm=(mostly NPR) renormalised. Apply Fully NPR correction
-series='renorm AltZV Jan24' FullyNP= PlotFormFactor.sh
+series='renorm renormC AltZV Jan24' FullyNP= PlotFormFactor.sh

@@ -12,8 +12,6 @@ fi
 . PlotCommon.sh
 . FitTwoPoint.sh
 
-#export FitOptions="--nophat" # Enable to use p instead of p_hat
-
 ############################################################
 
 if [ -v DoScan ]; then
@@ -98,7 +96,8 @@ fi
   PriorFitTimes="${aTimes[0]}_${aTimesW[0]}"; PriorFitTimes="${PriorFitTimes//:/_}"
 
 if [ -v DoDisp ]; then
-  yrange=0.29:0.7 SimulP # Simultaneous fits of point-point data at all momenta
+  yrange=0.29:0.7 SimulP s_l # Simultaneous fits of point-point data at all momenta
+  yrange=0.29:0.7 ExtraName=continuum FitOptions='--dispersion continuum' SimulP s_l
 fi
 if [ -v DoOld ]; then
   FitEachMomPW priorPW

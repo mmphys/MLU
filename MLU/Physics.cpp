@@ -199,6 +199,56 @@ std::string MesonName( const std::string &q1, const std::string &q2 )
   return s;
 }
 
+static const std::vector<std::string> aDispersionTypes = {
+  "Continuum",
+  "LatFreeScalar",
+  "LatFreeScalarNoP"
+};
+
+std::string GetDispersionString( DispersionType dt )
+{
+  std::string s;
+  const int i{ static_cast<int>( dt ) };
+  if( i < 0 || i >= aDispersionTypes.size() )
+  {
+    s = "unknowndisp";
+    s.append( std::to_string( i ) );
+  }
+  else
+    s = aDispersionTypes[i];
+  return s;
+}
+
+std::ostream& operator<<( std::ostream& os, const DispersionType &dt )
+{
+  const int i{ static_cast<int>( dt ) };
+  if( i < 0 || i >= aDispersionTypes.size() )
+    os << "unknowndisp" << i;
+  else
+    os << aDispersionTypes[i];
+  return os;
+}
+
+std::istream& operator>>( std::istream& is, DispersionType &dt )
+{
+  bool bOK{};
+  std::string s;
+  if( is >> s )
+  {
+    const int idx{ IndexIgnoreCase( aDispersionTypes, s ) };
+    if( idx >= aDispersionTypes.size() )
+      is.setstate( std::ios_base::failbit );
+    else
+    {
+      dt = static_cast<DispersionType>( idx );
+      bOK = true;
+    }
+  }
+  if( !bOK )
+    throw std::runtime_error( "DispersionType '" + s + "' unknown" );
+  return is;
+}
+
 const Momentum p0(0,0,0);
 const std::string Momentum::DefaultPrefix{ "p" };
 const std::string Momentum::SinkPrefix{ DefaultPrefix + "s" };
@@ -367,28 +417,51 @@ void Momentum::Replace( std::string &s, const std::string &MomName, bool bNegati
 }
 
 // Use Lattice Dispersion relation and N=L/a to boost am to aE(p)
-double Momentum::LatticeDispersion( double am, unsigned int N, bool bEnablePHat,
+double Momentum::LatticeDispersion( double am, unsigned int N, DispersionType dType,
                                     bool bGetGroundFromExcited ) const
 {
+  // For all dispersion relations, E(0) = m(0)
   if( ! ( *this ) )
     return am;
-  double Val = std::sinh( 0.5 * am );
-  Val *= Val;
-  const double NInv{ 1. / N };
-  for( int i = 0; i < 3; ++i )
+  const double PiOnN{ M_PI / N };
+  double Val;
+  switch( dType )
   {
-    if( (*this)[i] )
-    {
-      double w = M_PI * NInv * (*this)[i]; // w = a p / 2
-      if( bEnablePHat )
-        w = std::sin( w );                 // w = a p_hat / 2
-      w *= w;
-      if( bGetGroundFromExcited )
-        w = -w;
-      Val += w;
-    }
+    case DispersionType::Continuum:
+      Val = am * am;
+      for( int i = 0; i < 3; ++i )
+      {
+        if( (*this)[i] )
+        {
+          double w = PiOnN * 2 * (*this)[i]; // w = a p
+          w *= w;
+          if( bGetGroundFromExcited )
+            w = -w;
+          Val += w;
+        }
+      }
+      Val = ( Val <= 0 ) ? 0 : std::sqrt( Val );
+      break;
+    default:  // Lattice free scalar
+      Val = std::sinh( 0.5 * am );
+      Val *= Val;
+      for( int i = 0; i < 3; ++i )
+      {
+        if( (*this)[i] )
+        {
+          double w = PiOnN * (*this)[i]; // w = a p / 2
+          if( dType != DispersionType::LatFreeScalarNoP )
+            w = std::sin( w );
+          w *= w;
+          if( bGetGroundFromExcited )
+            w = -w;
+          Val += w;
+        }
+      }
+      Val = ( Val <= 0 ) ? 0 : std::asinh( std::sqrt( Val ) ) * 2;
+      break;
   }
-  return ( Val <= 0 ) ? 0 : 2 * std::asinh( std::sqrt( Val ) );
+  return Val;
 }
 
 std::ostream& operator<<( std::ostream& os, const Momentum &p )

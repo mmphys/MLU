@@ -30,7 +30,7 @@
 #include <cmath>
 
 static const char szReading[] = " Reading ";
-bool bEnablePHat;
+Common::DispersionType dispType;
 
 Model DummyModel{};
 const char LoadFilePrefix[] = "  ";
@@ -781,7 +781,7 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
     Out(idx,vIdx[mH]) = MHeavy[idx];
     Out(idx,vIdx[mL]) = MLight[idx];
     Out(idx,vIdx[EL]) = ELight[idx];
-    Out(idx,vIdx[ELLat]) = p.LatticeDispersion( MLight[idx], N, bEnablePHat );
+    Out(idx,vIdx[ELLat]) = p.LatticeDispersion( MLight[idx], N, dispType );
     Out(idx,vIdx[qSqLat]) = MHeavy[idx] * MHeavy[idx] + MLight[idx] * MLight[idx] - 2 * MHeavy[idx] * Out(idx,vIdx[ELLat]);
     // z-expansion (23) pg 8 https://arxiv.org/pdf/2104.09883.pdf
     Out(idx,vIdx[tPlus ]) = MHeavy[idx] + MLight[idx];
@@ -1314,7 +1314,7 @@ int main(int argc, const char *argv[])
       {"type", CL::SwitchType::Single, DefaultType },
       {"efit", CL::SwitchType::Single, ""},
       {Common::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
-      {"nophat", CL::SwitchType::Flag, nullptr},
+      {"dispersion", CL::SwitchType::Single, nullptr},
       {"nosym", CL::SwitchType::Flag, nullptr},
       {"r3a", CL::SwitchType::Flag, nullptr},
       {"debug-signals", CL::SwitchType::Flag, nullptr},
@@ -1325,7 +1325,8 @@ int main(int argc, const char *argv[])
     {
       if( cl.GotSwitch( "debug-signals" ) )
         Common::Grid_debug_handler_init();
-      bEnablePHat = !cl.GotSwitch( "nophat" );
+      dispType = cl.GotSwitch( "dispersion" ) ? cl.SwitchValue<Common::DispersionType>( "dispersion" )
+                                              : Common::DispersionType::LatFreeScalar;
       // Read the list of fits I've chosen to use
       std::string TypeParams{ cl.SwitchValue<std::string>("type") };
       const std::string Type{ Common::ExtractToSeparator( TypeParams ) };
@@ -1402,7 +1403,7 @@ int main(int argc, const char *argv[])
     "         Any constants not mentioned are frozen to 1\n"
     "Flags:\n"
     "--" << Common::sOverlapAltNorm << " Alternate normalisation for overlap factors. DEPRECATED\n"
-    "--nophat   Just use p in dispersion relation (default: p_hat)\n"
+    "--dispersion Which dispersion relation to use (default: LatFreeScalar)\n"
     "--nosym   Disable Out[t]=(Out[t]+Out[deltaT-t])/2 for symmetric ratios\n"
     "--r3a     Use alternate definition of R3 (i.e. R3a)\n"
     "--debug-signals Trap signals (code courtesy of Grid)\n"

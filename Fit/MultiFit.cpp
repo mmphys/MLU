@@ -76,7 +76,7 @@ int main(int argc, const char *argv[])
       // ModelDefaultParams
       {"e", CL::SwitchType::Single, "1"},
       {"N", CL::SwitchType::Single, "0"},
-      {"nophat", CL::SwitchType::Flag, nullptr},
+      {"dispersion", CL::SwitchType::Single, nullptr},
       {Common::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
       // Covariance parameters
       {"covsrc", CL::SwitchType::Single, nullptr},
@@ -465,7 +465,7 @@ int main(int argc, const char *argv[])
     "--opnames  Disable sorting and deduplicating operator name list\n"
     "--testrun  Don't perform fits - load files, say which fits would be attempted\n"
     "--showname Don't perform fits - get the output file base name up to '.model'\n"
-    "--nophat   Just use p in dispersion relation (default: p_hat)\n"
+    "--dispersion Which dispersion relation to use (default: LatFreeScalar)\n"
     "--central  Don't use the central replica as guess for each replica\n"
     "--overwrite Overwite always. Default: only overwrite smaller Nboot\n"
     "--debug-signals Trap signals (code courtesy of Grid)\n"

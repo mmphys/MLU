@@ -133,7 +133,8 @@ MultiFitCreateParams::MultiFitCreateParams( const std::vector<std::string> &OpNa
 : CreateParams( OpNames_, cl_),
   NumExponents{ cl.SwitchValue<int>( "e" ) },
   N{ cl.SwitchValue<int>( "N" ) },
-  bEnablePHat{ !cl.GotSwitch( "nophat" ) }
+  dispType{ cl.GotSwitch( "dispersion" ) ? cl.SwitchValue<Common::DispersionType>( "dispersion" )
+                                         : Common::DispersionType::LatFreeScalar }
 {
   if( N < 0 )
     throw std::runtime_error( "L/a " + std::to_string( N ) + " < 0");
@@ -149,7 +150,7 @@ std::string MultiFitCreateParams::Description() const
     s.append( "using dispersion relation N=" );
     s.append( std::to_string( N ) );
     s.append( " with " );
-    s.append( bEnablePHat ? "p_hat" : "p" );
+    s.append( Common::GetDispersionString( dispType ) );
   }
   return s;
 }

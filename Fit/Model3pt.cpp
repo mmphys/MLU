@@ -33,7 +33,7 @@ Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args, int NumExp
 : ModelOverlap( cp, Args, NumExponents_, NumExponents_ > 1 ? 2 : 1,
                 std::move( objectID ), std::move( opNames ) ),
 N{ dynamic_cast<const MultiFitCreateParams &>( cp ).N },
-bEnablePHat{ dynamic_cast<const MultiFitCreateParams &>( cp ).bEnablePHat }
+dispType{ dynamic_cast<const MultiFitCreateParams &>( cp ).dispType }
 {
   if( !cp.pCorr->Name_.GotDeltaT() )
     throw std::runtime_error( "DeltaT not available in " + cp.pCorr->Name_.Filename );
@@ -71,7 +71,7 @@ bEnablePHat{ dynamic_cast<const MultiFitCreateParams &>( cp ).bEnablePHat }
 void Model3pt::AddParameters( Params &mp )
 {
   for( ModelParam &p : E )
-    AddEnergy( mp, p, NumOverlapExp, N, bEnablePHat );
+    AddEnergy( mp, p, NumOverlapExp, N, dispType );
   AddParam( mp, MEL, NumExponents, false );
   ModelOverlap::AddParameters( mp );
   if( !EDiff.Key.Object.empty() )

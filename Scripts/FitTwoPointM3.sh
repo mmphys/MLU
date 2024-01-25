@@ -12,8 +12,6 @@ fi
 . PlotCommon.sh
 . FitTwoPoint.sh
 
-#export FitOptions="--nophat${FitOptions:+ $FitOptions}" # Enable to use p instead of p_hat
-
 ############################################################
 
 if [ -v DoScan ]; then
@@ -118,7 +116,8 @@ if [ -v DoDisp ]; then
       1) aThin=('' 2 2 2 2);;
       *) : ;;
     esac
-    yrange=0.23:0.53 SimulP s_l # Simultaneous fits of point-point data at all momenta
+    #yrange=0.23:0.53 SimulP s_l # Simultaneous fits of point-point data at all momenta
+    yrange=0.23:0.53 ExtraName=continuum FitOptions='--dispersion continuum' SimulP s_l
   )
   done
 fi

@@ -49,7 +49,7 @@ protected:
   scalar Estimate( Vector &Guess, const VectorView &FitData, std::vector<int> FitTimes,
                    std::size_t NumExp, std::size_t Timeslice ) const;
   const int N;
-  const bool bEnablePHat;
+  const Common::DispersionType dispType;
   ModelParam E;
 };
 

@@ -146,6 +146,20 @@ inline std::string ConcatHeavyFirst( const std::string &Quark1, const std::strin
 /// Return the standard meson name for the given quarks
 std::string MesonName( const std::string &q1, const std::string &q2 );
 
+/**
+  Choices of diepersion relation
+Use free scalar Lattice Dispersion relation and N=L/a to boost am to aE(p)
+*/
+enum class DispersionType{
+  Continuum,
+  LatFreeScalar, // PhDYear3Diary.pdf eq (22). Or eq 2.7.21 https://saalburg.aei.mpg.de/wp-content/uploads/sites/25/2017/03/wiese.pdf
+  LatFreeScalarNoP // LatFreeScalar, but no sin on momentum components (was "no p_hat")
+};
+
+std::string GetDispersionString( DispersionType dt );
+std::ostream& operator<<( std::ostream& os, const DispersionType &dt );
+std::istream& operator>>( std::istream& is, DispersionType &dt );
+
 // Generic representation of momentum
 struct Momentum
 {
@@ -266,7 +280,7 @@ struct Momentum
    
    PhDYear3Diary.pdf eq (22)
    */
-  double LatticeDispersion( double am, unsigned int N, bool bEnablePHat = true,
+  double LatticeDispersion( double am, unsigned int N, DispersionType dType,
                             bool bGetGroundFromExcited = false ) const;
 };
 

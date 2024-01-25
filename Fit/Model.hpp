@@ -97,7 +97,8 @@ protected:
   /**
    Add energy. If N != 0 then use the lattice dispersion relation for this parameter
    */
-  void AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N, bool bEnablePHat );
+  void AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N,
+                  Common::DispersionType dispType );
 public:
   virtual ~Model() {}
   // This is how to make a model

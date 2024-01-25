@@ -117,10 +117,10 @@ struct DispEntry
 {
   Param::Key ParentKey;
   int N;
-  bool bEnablePHat;
+  DispersionType dispType;
   Momentum p;
-  DispEntry( Param::Key &ParentKey_, int N_, Momentum p_, bool bEnablePHat_ )
-  : ParentKey{ParentKey_}, N{N_}, p{p_}, bEnablePHat{bEnablePHat_} {}
+  DispEntry( Param::Key &ParentKey_, int N_, Momentum p_, DispersionType dispType_ )
+  : ParentKey{ParentKey_}, N{N_}, p{p_}, dispType{dispType_} {}
 };
 
 /**
@@ -155,7 +155,8 @@ struct Params : std::map<Param::Key, Param, Param::Key::Less>
   Params::iterator Add( const Param::Key &key, std::size_t NumExp = 1, bool bMonotonic = false,
                         Param::Type Type = Param::Type::Variable );
   /// Use the dispersion relation if ( N = L/a ) != 0
-  Params::iterator AddEnergy( const Param::Key &key, std::size_t NumExp, int N, bool bEnablePHat );
+  Params::iterator AddEnergy( const Param::Key &key, std::size_t NumExp, int N,
+                              DispersionType dispType );
   template <typename T>
   void GuessEnergy( Vector<T> &Guess, std::vector<bool> &bKnown, const Param::Key &key, std::size_t idx, T Energy ) const;
   template <typename T>

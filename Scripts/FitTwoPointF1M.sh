@@ -139,6 +139,7 @@ if [ -v DoDisp ]; then
       *) aThin=(1:1:2 1:1:3 1:1:3 1:1:3 1:1:3 1:1:3 1:1:3);;
     esac
     yrange=0.187:0.45 SimulP s_l # Simultaneous fits of point-point data at all momenta
+    yrange=0.187:0.45 ExtraName=continuum FitOptions='--dispersion continuum' SimulP s_l
   )
   done
 fi

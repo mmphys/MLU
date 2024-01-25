@@ -51,7 +51,7 @@ struct Model3pt : public ModelOverlap
 
 protected:
   const int N;
-  const bool bEnablePHat;
+  const Common::DispersionType dispType;
   int DeltaT;
   //std::size_t ParamIndex( std::size_t idxSnk, std::size_t idxSrc ) const;
   //std::size_t NumUnknown( std::vector<bool> &bKnown ) const;

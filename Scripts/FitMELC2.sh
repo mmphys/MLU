@@ -73,6 +73,8 @@ aMesonFileMom[h${Heavy}_s,0]=_p2_0
 
 function ChooseTwoPtFits()
 {
+  local Fit2ptSeries="$1"
+  local s
   unset FitOptions
   local DsTIP=8
   local DsTFP=24
@@ -80,7 +82,7 @@ function ChooseTwoPtFits()
   local DsTFW=24
   aMesonFit[h${Heavy}_s,0]=corr_${DsTIP}_${DsTFP}_${DsTIW}_${DsTFW}
 
-  case "$1" in
+  case "$Fit2ptSeries" in
     old) # Versions using different PP+PW fit on each momentum
     local aKaonTIP=( 5  6  5  6  5)
     #local aKaonTFP=(20 21 20 19 18)
@@ -95,11 +97,13 @@ function ChooseTwoPtFits()
       aMesonFileMom[s_l,$i]=_p2_$i
     done;;
 
-    disp) # Simultaneous fit to PP at all momenta using dispersion relation
+    disp | dispC) # Simultaneous fit to PP at all momenta using dispersion relation
+    # s=corr_5_20_6_22_5_20_6_20_5_18 # unthinned
+    # s=corr_5_20_6_21_5_20_6_19_5_18 # thinned 1:3:2
+    s=corr_5_20_6_22_5_19_6_20_5_17 # thinned 2
+    [ $Fit2ptSeries == dispC ] && s=continuum.$s
     for((i = 0; i < 5; ++i)); do
-      # aMesonFit[s_l,$i]=corr_5_20_6_22_5_20_6_20_5_18 # unthinned
-      # aMesonFit[s_l,$i]=corr_5_20_6_21_5_20_6_19_5_18 # thinned 1:3:2
-      aMesonFit[s_l,$i]=corr_5_20_6_22_5_19_6_20_5_17 # thinned 2
+      aMesonFit[s_l,$i]=$s
       aMesonFileOp[s_l,$i]=g5P
       aMesonFileMom[s_l,$i]=
     done;;
@@ -113,7 +117,7 @@ function ChooseTwoPtFits()
       aMesonFileMom[s_l,$i]=
     done;;
 
-    *) echo "Two-point fits $1 unrecognised"; exit 1;;
+    *) echo "Two-point fits $Fit2ptSeries unrecognised"; exit 1;;
   esac
 }
 
@@ -260,6 +264,10 @@ for FileSeries in ${series-disp dispind renorm AltZV Jan24}; do
 
     renorm)
       ChooseTwoPtFits disp
+      Ratio=ratio Renorm= NotRaw= RatioFitsBase;;
+
+    renormC)
+      ChooseTwoPtFits dispC
       Ratio=ratio Renorm= NotRaw= RatioFitsBase;;
 
     AltZV | Jan24)

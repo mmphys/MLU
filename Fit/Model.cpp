@@ -133,9 +133,10 @@ void Model::AddParam( Params &mp, ModelParam &ModPar, std::size_t NumExp, bool b
   ModPar.param = &param.back()->second;
 }
 
-void Model::AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N, bool bEnablePHat )
+void Model::AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N,
+                       Common::DispersionType dispType )
 {
-  param.emplace_back( &*mp.AddEnergy( ModPar.Key, NumExp, N, bEnablePHat ) );
+  param.emplace_back( &*mp.AddEnergy( ModPar.Key, NumExp, N, dispType ) );
   ModPar.param = &param.back()->second;
 }
 

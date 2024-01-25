@@ -423,7 +423,8 @@ Params::iterator Params::Add( const Param::Key &key, std::size_t NumExp, bool bM
   return it;
 }
 
-Params::iterator Params::AddEnergy( const Param::Key &key, std::size_t NumExp, int N, bool bEnablePHat )
+Params::iterator Params::AddEnergy( const Param::Key &key, std::size_t NumExp, int N,
+                                    DispersionType dispType )
 {
   bool bMonotonic{ true };
   Param::Type pt{ Param::Type::Variable };
@@ -445,7 +446,7 @@ Params::iterator Params::AddEnergy( const Param::Key &key, std::size_t NumExp, i
       Key0.append( p0.FileString( Common::Momentum::DefaultPrefix ) );
       Param::Key k0( std::move( Key0 ), key.Name );
       Add( k0, NumExp, true, Param::Type::Variable );
-      dispMap.emplace( key, DispEntry( k0, N, p, bEnablePHat ) );
+      dispMap.emplace( key, DispEntry( k0, N, p, dispType ) );
       bMonotonic = false;
       pt = Param::Type::Derived;
     }
@@ -498,7 +499,7 @@ void Params::GuessEnergy( Vector<T> &Guess, std::vector<bool> &bKnown,
                   << ". Keeping previous guess " << Guess[idxParent] << NewLine;
       else
       {
-        Guess[idxParent] = de.p.LatticeDispersion( Energy, de.N, de.bEnablePHat, true );
+        Guess[idxParent] = de.p.LatticeDispersion( Energy, de.N, de.dispType, true );
         bKnown[idxParent] = true;
       }
     }
@@ -541,7 +542,7 @@ void Params::PropagateEnergy( Vector<T> &Guess, std::vector<bool> *bKnown ) cons
       {
         if( !bKnown || ( !(*bKnown)[idx + i] && (*bKnown)[idxParent + i] ) )
         {
-          Guess[idx + i] = de.p.LatticeDispersion( Guess[idxParent + i], de.N, de.bEnablePHat );
+          Guess[idx + i] = de.p.LatticeDispersion( Guess[idxParent + i], de.N, de.dispType );
           if( bKnown )
           {
             (*bKnown)[idx + i] = true;

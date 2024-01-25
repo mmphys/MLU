@@ -39,7 +39,7 @@ struct MultiFitCreateParams : public Model::CreateParams
 {
   const int NumExponents; // Default if not specified per model
   const int N; // When non-zero, this is L/a (lattice spatial extent) use dispersion relation
-  const bool bEnablePHat; // true ? use p_hat in dispersion relation (per definition) : just use p
+  const Common::DispersionType dispType; // which dispersion relation to use
   MultiFitCreateParams( const std::vector<std::string> &OpNames_, const Common::CommandLine &cl_ );
   std::string Description() const override;
 };
