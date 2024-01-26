@@ -53,7 +53,7 @@ set xrange[${xrange:-*:*}]
 
 FieldFile(Field,Seq,FF)=CompareDir.'/'.Field.'_'.sprintf("%c",Seq+64).'_'.FF.'.txt'
 
-array PlotTitles[20]
+array PlotTitles[22]
 PlotTitles[1]='omit $\delta^{\left(\textrm{FV}\right)}$'
 PlotTitles[2]='\$\Delta_0$ 313 MeV, $\Delta_+$ -5 MeV'
 PlotTitles[3]='\$\Delta_+$ -5 MeV'
@@ -67,20 +67,22 @@ PlotTitles[10]='omit M1'
 PlotTitles[11]='omit M2'
 PlotTitles[12]='omit M3'
 PlotTitles[13]='omit M1M2M3'
+PlotTitles[14]='\$Z_V\$ excited'
+PlotTitles[15]='contin disp'
 
 if( DoWhich eq 'cubic' ) {
-  NumRows=20
+  NumRows=22
 # These are destructive tests - not part of my error budget
-PlotTitles[14]='omit F1M'
-PlotTitles[15]='omit C1C2 and $\left(a \Lambda\right)^2$'
-PlotTitles[16]='omit $\delta^{\left(\textrm{chiral}\right)}$'
-PlotTitles[17]=PlotTitles[1].' and $\delta^{\left(\textrm{chiral}\right)}$'
-PlotTitles[18]='omit $\left(a \Lambda\right)^2$'
-PlotTitles[19]='omit $\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
-PlotTitles[20]='omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
+PlotTitles[16]='omit F1M'
+PlotTitles[17]='omit C1C2 and $\left(a \Lambda\right)^2$'
+PlotTitles[18]='omit $\delta^{\left(\textrm{chiral}\right)}$'
+PlotTitles[19]=PlotTitles[1].' and $\delta^{\left(\textrm{chiral}\right)}$'
+PlotTitles[20]='omit $\left(a \Lambda\right)^2$'
+PlotTitles[21]='omit $\flatfrac{\Delta M_\pi^2}{\Lambda^2}$'
+PlotTitles[22]='omit $\left(\flatfrac{E_L}{\Lambda}\right)^3$'
 } else {
-  NumRows=14
-  PlotTitles[14]='\$f_+ \left(\flatfrac{E_L}{\Lambda}\right)^3$ terms'
+  NumRows=15
+  #PlotTitles[16]='\$f_+ \left(\flatfrac{E_L}{\Lambda}\right)^3$ terms'
 }
 
 
@@ -291,6 +293,8 @@ function MakeCommon()
   MakeOne k Omit/${RefBase}-EnsM2 # Omit M2
   MakeOne l Omit/${RefBase}-EnsM3 # Omit M3
   MakeOne m Omit/${RefBase}-EnsM # Omit M1, M2, M3
+  MakeOne n $RefDir/Jan24$RefSuffix # Alternate Z_V multiple wall-separations and excited-states
+  MakeOne o $RefDir/renormC$RefSuffix # Continuum dispersion relation
 }
 
 function MakeOriginal()
@@ -299,13 +303,13 @@ function MakeOriginal()
   MakeOne a Omit/${RefSeries}E3-CVZ34 # Omit FV
   MakeCommon
   # These are destructive tests - not part of my error budget
-  MakeOne n Omit/${RefBase}-EnsF1M # Omit F1M
-  MakeOne o Omit/${RefSeries}E3D0-CZ34-EnsC # Omit C1, C2
-  MakeOne p Omit/${RefSeries}E3-CXZ34 # Omit Chiral
-  MakeOne q Omit/${RefSeries}E2-CVXZ3 # Omit FV and Chiral
-  MakeOne r Omit/${RefSeries}E3D0-CZ34 # Omit a Lambda
-  MakeOne s Omit/${RefSeries}E3-C1Z34 # Omit Delta Mpi / Lambda
-  MakeOne t Omit/${RefSeries}E2-CZ3 # Omit (E/Lambda)^3
+  MakeOne p Omit/${RefBase}-EnsF1M # Omit F1M
+  MakeOne q Omit/${RefSeries}E3D0-CZ34-EnsC # Omit C1, C2
+  MakeOne r Omit/${RefSeries}E3-CXZ34 # Omit Chiral
+  MakeOne s Omit/${RefSeries}E2-CVXZ3 # Omit FV and Chiral
+  MakeOne t Omit/${RefSeries}E3D0-CZ34 # Omit a Lambda
+  MakeOne u Omit/${RefSeries}E3-C1Z34 # Omit Delta Mpi / Lambda
+  MakeOne v Omit/${RefSeries}E2-CZ3 # Omit (E/Lambda)^3
 }
 
 function MakeShrink()
@@ -313,7 +317,7 @@ function MakeShrink()
   MakeStats Ref "$Ref" # Reference value
   MakeOne a Omit/${RefBase}-CV # Omit FV
   MakeCommon
-  MakeOne n $RefDir/${RefSeries}E3-CZ34 # Original reference fit with cubic energy in f_+
+  MakeOne p $RefDir/${RefSeries}E3-CZ34 # Original reference fit with cubic energy in f_+
 }
 
 ###################################################

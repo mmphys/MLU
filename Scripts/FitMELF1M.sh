@@ -298,7 +298,7 @@ qSrc=h385
 qSnk=l
 qSpec=s
 
-for FileSeries in ${series-old better oldstd renorm AltZV Jan24}
+for FileSeries in ${series-old better oldstd renorm AltZV Jan24 renormC}
 do
 (
   case $FileSeries in

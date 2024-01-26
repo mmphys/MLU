@@ -62,6 +62,8 @@ function SensitivityCommon()
   OutDir=Omit EnsOpt=M2 ContFit.sh& # k) Omit Ensemble M2
   OutDir=Omit EnsOpt=M3 ContFit.sh& # l) Omit Ensemble M3
   OutDir=Omit EnsOpt=M ContFit.sh& # m) Omit Ensemble M1, M2, M3
+  FitSeries=Jan24 ContFit.sh& # n) Alternate Z_V multiple wall-separations and excited-states
+  FitSeries=renormC ContFit.sh& # o) Continuum dispersion relation
   D=2 ContFit.sh& # Can't actually fit this second discretisation term
 }
 
@@ -119,7 +121,7 @@ function SensitivityOriginal()
 
 function SensitivityShrink()
 {
-  E=3 DisableZ=34 ContFit.sh& # n) Original reference fit
+  E=3 DisableZ=34 ContFit.sh& # p) Original (i.e. f_+ cubic) reference fit
   local Shrink=0.005
   export Shrink
   SensitivityCommon
@@ -129,7 +131,7 @@ function SensitivityShrink()
 
 function SensitivityLinear()
 {
-  E=3 DisableZ=34 ContFit.sh& # n) Original reference fit
+  E=3 DisableZ=34 ContFit.sh& # p) Original (i.e. f_+ cubic) reference fit
   local PMaxFZero='C1 3 C2 3 F1M 6 M1 3 M2 3 M3 3'
   export PMaxFZero
   SensitivityCommon

@@ -306,7 +306,7 @@ qSrc=h$Heavy
 qSnk=l
 qSpec=s
 
-for FileSeries in ${series-old disp priorPW betterPW priorP betterP dispstd renormold renorm AltZV Jan24}
+for FileSeries in ${series-old disp priorPW betterPW priorP betterP dispstd renormold renorm AltZV Jan24 renormC}
 do
 (
   case $FileSeries in

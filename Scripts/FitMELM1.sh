@@ -264,7 +264,7 @@ qSrc=h$Heavy
 qSnk=l
 qSpec=s
 
-for FileSeries in ${series-disp renorm AltZV Jan24}
+for FileSeries in ${series-disp renorm AltZV Jan24 renormC}
 do
 (
   case $FileSeries in
