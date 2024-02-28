@@ -16,7 +16,7 @@ function Download() {
     if ! wget $Location/$Zip
     then
       # If unavailable from primary location, fallback to my copy
-      Location="https://www2.ph.ed.ac.uk/~s1786208"
+      Location="http://lqcd.me/PhD/tar"
       echo "  Downloading $Zip from $Location"
       if ! wget $Location/$Zip; then return 1; fi
     fi
@@ -55,9 +55,8 @@ if  ! Download "GSL v2.7" \
  || ! Download "Minuit2 v5.34.14" \
       http://www.cern.ch/mathlibs/sw/5_34_14/Minuit2/Minuit2-5.34.14.tar.gz \
       2ca9a283bbc315064c0a322bc4cb74c7e8fd51f9494f7856e5159d0a0aa8c356
-# || ! Download "Boost 1.77.0" \
-#      https://boostorg.jfrog.io/artifactory/main/release/1.77.0/source/boost_1_77_0.tar.gz \
-#      5347464af5b14ac54bb945dc68f1dd7c56f0dad7262816b956138fc53bcc0131
+# NB: Minuit2 standalone on cern seems to be password protected. But download defaults to my copy
+# FYI Minuit2 source code here https://github.com/root-project/root/tree/master/math/minuit2
 then
   echo "Prerequisites not installed" >&2
   exit 1

@@ -23,14 +23,14 @@ Item | Description
 
 ### Install manually -- or let `bootstrap.sh` download
 
-3. [GNU Scientific Library][gsl] (GSL), version 2.5 or later (I'm using 2.7 in production) or from [Mike's home page][MikeGSL]
-4. ** optional ** [CERN Minuit2][minuit2] standalone version (see paragraph 3, "... can be downloaded [here]") or from [Mike's home page][MikeMinuit2]
+3. [GNU Scientific Library][gsl] (GSL), version 2.5 or later (I'm using 2.7 in production) or from [Mike's PhD page][MikeGSL]
+4. ** optional ** [CERN Minuit2][minuit2] standalone version (see paragraph 3, "... can be downloaded [here]") or from [Mike's PhD page][MikeMinuit2]
 
 [gsl]: https://www.gnu.org/software/gsl/
 [minuit2]: https://seal.web.cern.ch/seal/MathLibs/Minuit2/html/index.html
 [here]: https://seal.web.cern.ch/seal/MathLibs/Minuit2/Minuit2.tar.gz
-[MikeMinuit2]: https://www2.ph.ed.ac.uk/~s1786208/Minuit2-5.34.14.tar.gz
-[MikeGSL]: https://www2.ph.ed.ac.uk/~s1786208/gsl-2.7.tar.gz
+[MikeMinuit2]: http://lqcd.me/PhD/tar/Minuit2-5.34.14.tar.gz
+[MikeGSL]: http://lqcd.me/PhD/tar/gsl-2.7.tar.gz
 
 ## 2. Bootstrap
 
@@ -106,8 +106,8 @@ This can be installed on a Mac using [MacTeX][mactex].
 1. [Mike's desktop analysis dataset][dataset] 9.1GB
 2. [Random number cache][cache] 15MB
 
-[dataset]: https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/marshall/NoSync.tar.gz
-[cache]: https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/marshall/MLUCache.tgz 
+[dataset]: http://lqcd.me/PhD/Data/NoSync.tar.gz
+[cache]: http://lqcd.me/PhD/Data/MLUCache.tgz 
 
 ### 5.2 Extract
 
@@ -142,7 +142,7 @@ Success: `Cont/Simul/renorm-CZ34` should contain fit results (e.g. pdfs).
 
 Compare the fit results against `Ch 10 Reference fit – alternate fit choices for C1` [My continuum fit results][ContFit]
 
-[ContFit]: https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/marshall/SemiLep/Continuum.pdf
+[ContFit]: http://lqcd.me/PhD/Data/Continuum.pdf
 
 #### c) Perform all fit variations
 
