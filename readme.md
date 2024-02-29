@@ -103,10 +103,11 @@ This can be installed on a Mac using [MacTeX][mactex].
 
 ### 5.1 Download
 
-1. [Mike's desktop analysis dataset][dataset] 9.1GB
+1. [Mike's desktop analysis dataset][dataset] 18GB. RBC/UKQCD members can get this from [Columbia][dataset_columbia]
 2. [Random number cache][cache] 15MB
 
 [dataset]: http://lqcd.me/PhD/Data/NoSync.tar.gz
+[dataset_columbia]: https://rbc.phys.columbia.edu/rbc_ukqcd/individual_postings/marshall/NoSync.tar.gz
 [cache]: http://lqcd.me/PhD/Data/MLUCache.tar.gz 
 
 ### 5.2 Extract
