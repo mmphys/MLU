@@ -107,7 +107,7 @@ This can be installed on a Mac using [MacTeX][mactex].
 2. [Random number cache][cache] 15MB
 
 [dataset]: http://lqcd.me/PhD/Data/NoSync.tar.gz
-[cache]: http://lqcd.me/PhD/Data/MLUCache.tgz 
+[cache]: http://lqcd.me/PhD/Data/MLUCache.tar.gz 
 
 ### 5.2 Extract
 
