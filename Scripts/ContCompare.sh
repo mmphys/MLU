@@ -45,7 +45,7 @@ if( Field eq "qSq" ) { XScale=XScale*XScale }
 if( FF eq 'f0' ) { FLabel='0' } else { FLabel='+' }
 
 if( PDFSize ne "" ) { PDFSize='size '.PDFSize }
-eval "set term tikz standalone ".PDFSize." font '\\\\small' header '\\\\usepackage{physics}'"
+eval "set term tikz createstyle standalone ".PDFSize." font '\\\\small' header '\\\\usepackage{physics}'"
 
 set xlabel '\$E_K$ / GeV'
 set ylabel '$\abs{\delta f_{'.FLabel.'}}$ / \%' #^{D_s \rightarrow K}
@@ -158,6 +158,7 @@ AbsFunc=''
 EOFMark
 
 (
+cp gnuplot*.* $PlotDir
 cd $PlotDir
 for Zoom in '' _all; do
   for AbsFunc in '' abs; do
@@ -398,7 +399,7 @@ if( Field eq "qSq" ) { XScale=XScale*XScale }
 if( FF eq 'f0' ) { FLabel='0' } else { FLabel='+' }
 
 if( PDFSize ne "" ) { PDFSize='size '.PDFSize }
-eval "set term tikz standalone ".PDFSize." font '\\\\small' header '\\\\usepackage{physics}'"
+eval "set term tikz createstyle standalone ".PDFSize." font '\\\\small' header '\\\\usepackage{physics}'"
 
 set xlabel '\$E_K$ / GeV'
 set ylabel '$\abs{\delta f_{'.FLabel.'}}$ / \%' #^{D_s \rightarrow K}
@@ -424,6 +425,7 @@ set output
 EOFMark
 
 (
+  cp gnuplot*.* $PlotDir
   cd $PlotDir
   pdflatex "$FileBase"
 )
