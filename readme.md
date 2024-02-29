@@ -151,6 +151,11 @@ Additional success test: compare `F3_K_Ds.corr_f0_fplus.g5P_g5W.model.h5` with v
 
 Should produce no output other than the return code of `0`.
 
+NB: the following two options to h5diff might be useful:
+
+1. `-p 1e-10` relative difference must be greater than 1e-10
+2. `-n 10` only show the first 10 differences when comparing files 
+
 #### c) Perform all fit variations
 
     ContVariations.sh
