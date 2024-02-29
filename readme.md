@@ -137,13 +137,19 @@ Success: Dumps instructions on how to use the continuum fitter.
 
 #### b) Recreate reference continuum fit
 
-    DisableZ=34 ContFit.sh
+    E=3 DisableZ=34 ContFit.sh
 
-Success: `Cont/Simul/renorm-CZ34` should contain fit results (e.g. pdfs).
+Success: `Cont/test/Simul/renormE3-CZ34` should contain fit results (e.g. pdfs).
 
 Compare the fit results against `Ch 10 Reference fit – alternate fit choices for C1` [My continuum fit results][ContFit]
 
 [ContFit]: http://lqcd.me/PhD/Data/Continuum.pdf
+
+Additional success test: compare `F3_K_Ds.corr_f0_fplus.g5P_g5W.model.h5` with version in `Cont.golden/cubic/Simul`, e.g.
+
+    h5diff Cont/test/Simul/renormE3-CZ34/F3_K_Ds.corr_f0_fplus.g5P_g5W.model.h5 Cont.golden/cubic/Simul/renormE3-CZ34/F3_K_Ds.corr_f0_fplus.g5P_g5W.model.h5; echo $?
+
+Should produce no output other than the return code of `0`.
 
 #### c) Perform all fit variations
 
