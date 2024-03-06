@@ -171,3 +171,125 @@ Success: `Cont` subdirectory contains `Plot` and `Var` subdirectories.
 Compare the plots against `11 Fit sensitivity / systematic uncertainties` [My continuum fit results][ContFit]
 
 NB: The continuum comparison plot scripts use `pdflatex`. This can be installed on a Mac using [MacTeX][mactex].
+
+## 6. Data production on Tursa
+
+This documentation now shifts gears and explains how data for this PhD are:
+
+1. Produced on the Tursa supercomputer
+2. Post-processed on Tursa to produce a manageably small dataset
+3. Analysed on a workstation 
+
+The project folder for heavy-light semileptonics is:
+
+    /mnt/lustre/tursafs1/home/dp207/dp207/shared/projects/semilep
+
+This contains 3 folders:
+
+1. `runs` contains scripts to produce and post-process data
+2. `data` contains the results of those runs
+3. `study` contains prior studies
+
+Within `data` and `runs` we have subdirectories for each ensemble, `C1`, `C2`, `F1M`, `M1`, `M2` and `M3`.
+
+`runs` contains a `code` subdirectory containing versions 2, 3 and 4 of the code used for data production (version 1 ran on Tesseract). Each version contains a `sourceme.sh` Bash script (for GPU) or a `sourcemecpu.sh` Bash script (for the CPU nodes).
+
+The `data` directories for each ensemble generally contain 1 or more `run` directories containing the output from `Grid/Hadrons`, as well as an `analyse` directory containing post processing.
+
+Within each `data/run` directory there are subdirectories for each configuration, each of which containing a `log` subdirectory containing the `.sh` script to perform the run, the `.log` from the run, the `.xml` input to the executable run from the script, etc.
+
+## 7. Post-processing on Tursa
+
+This section outlines how the `Grid/Hadrons` output is post-processed on Tursa to produce a manageably small dataset.
+
+Results from all of these steps are contained within the `data/ensemble/analyse` subdirectory.
+
+These scripts are each designed to be run from the `data/ensemble` directory.
+
+**Input:** the `data` directory contains one tarred, gzipped file containing the results of each production data run. These can be copied to another machine and the following steps run on these data. NB: You will need the `MakeBS.sh` scripts from each `runs/ensemble` directory as well. These require about 4TB of storage uncompressed.
+
+**Output:** simply copy the `data/analyse` directories from Tursa instead of performing the post-processing described below.
+
+### 7.1 `bootstrap` – Collecting observables into a Bootstrap
+
+The `MLU` utility `bootstrap` is used to gather the raw data into a single file for each observable.
+
+Because multiple data production runs were performed, sometimes correcting earlier data production errors, the definitive reference for which data are considered good is contained within the `runs/ensemble/MakeBS.sh` script. This script is unique per ensemble and **not** contained within the git repository for `MLU`.
+
+The output of `MakeBS.sh` is a Bash script which needs to be saved, made executable then run to perform the gather. That script uses the `MLU` utility `bootstrap` to produce bootstrap files.
+
+These correspond to the class `Sample<std::complex<double>>` in `MLU/Sample.hpp'. I.e. each temporal component consists of a complex number.
+
+### 7.2 `corr_raw` – Choosing real/imaginary and folding (if 2pt) 
+ 
+The `MLU` script `Scripts/MakeCorrRaw.sh` reads the `bootstrap` directory and creates `corr_raw` using the `fold` MLU utility. 
+
+These correspond to the class `Sample<std::complex<double>>` in `MLU/Sample.hpp'. I.e. each temporal component consists of a complex number.
+
+These correspond to the class `Fold<double>` in `MLU/Fold.hpp'. I.e. each temporal component consists of a double, where the appropriate real/imaginary component has been chosen from the `bootstrap` file – and recorded in the HDF5 (.h5) metadata.
+
+### 7.3 `corr` – Choosing which 2pt data to use
+
+As explained in the thesis, inserting momenta on the quark vs the anti-quark in each meson results in a different smearing.
+
+The `MLU` script `Scripts/MakeCorr.sh` outputs a script which when saved, made executable and run creates the `corr` directory as a set of links into the correct `corr_raw` data.
+
+### 7.4 `ratioE1ZV1` – Choosing which 2pt data to use
+
+The `MLU` script `Scripts/MakeRatio.sh` produces a script, which when saved, made executable and run produces the ratios `R1`, `R2` and `R3` defined in the thesis.
+
+These ratios are defined to require energies and overlap coefficients extracted from 2pt function fits. However for a first analysis, the energies and overlap coefficients are set to 1 with:
+
+    fixe= fixzv= MakeRatio.sh
+
+This produces the `ratioE1ZV1` directory.
+
+Other `ratio` folders are produced later in the analysis, feeding in chosen 2pt function fits. These need to be manually copied/moved into the appropriate `data/ensemble/analyse/ratio...' folder.
+
+## 8 Workstation analysis -- per ensemble
+
+Most workstation analysis scripts source `PlotCommon.sh` which contains common Utilities. In turn, this source `EnsembleX.sh` (where `X` is the actual ensemble script and `Ensemble.sh` is a link to the default ensemble).
+
+Each ensemble script contains hard-coded paths to the location of the post-processed data files (see section 7) on your analysis workstation.   
+
+The workstation analysis scripts take the post processed `ensemble/analyse` data and perform the per-ensemble analysis, i.e. to extract the matrix elements at each kinematic point.
+
+These scripts should work regardless of what the workstation analysis directory is called or where it's located on your workstation – though this is untested. However, my thesis (a separate git repository) assumes it is `$HOME/NoSync'.
+
+These scripts generally consist of an ensemble specific version containing final fit selections for each ensemble. These then call a generic script to do the work.
+
+In the sections that follow, I will describe processing for `C1` ensemble. Repeat the steps below, replacing `C1` with each of the other ensembles `C2`, `F1M`, `M1`, `M2` and `M3`.
+
+### 8.1 Renormalisation
+
+Use `DoAll= Scripts/FitZVC1.sh` to produce `C1/Renorm`
+
+### 8.2 2pt fits
+
+Use `DoAll= DoDisp= Scripts/FitTwoPointC1.sh` to produce `C1/MELFit/2ptp2`
+
+### 8.3 Create ratios using chosen 2pt fits
+
+Use `MakeRatioNoSync.sh` to produce `data/C1/analyse/ratio`
+
+Use `Suffix=AltZV MakeRatioNoSync.sh` to produce `data/C1/analyse/ratioAltZV`
+
+Use `Suffix=Jan24 series=Jan24 MakeRatioNoSync.sh` to produce `data/C1/analyse/ratioJan24`
+
+### 8.4 3pt fits
+
+Use `Scripts/FitMELC1.sh` to produce `C1/MELFit/2ptp2`
+
+### 8.5 Form factors
+
+Use `Scripts/Plot/PlotFormFactorC1.sh` to produce `C1/FormFactor`
+
+## 9 Workstation analysis -- Global chiral continuum fit
+
+### 9.1 Perform all fit variations
+
+    ContVariations.sh
+
+### 9.2 Plot fit sensitivities
+
+    Make= ContCompare.sh
