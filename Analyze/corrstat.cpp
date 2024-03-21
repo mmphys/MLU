@@ -28,13 +28,13 @@
 
 #include <stdio.h>
 #include <typeinfo>
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 using C = std::complex<double>;
 
 bool debug( int NumSamples, int Nt )
 {
-  Common::Sample<C> a( NumSamples, Nt );
+  MLU::Sample<C> a( NumSamples, Nt );
   int z = 0;
   for( int x = -1; x < NumSamples; x++ )
     for( int y = 0; y < Nt; y++ )
@@ -54,7 +54,7 @@ int main(int argc, const char *argv[])
   std::ios_base::sync_with_stdio(false);
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {
@@ -66,8 +66,8 @@ int main(int argc, const char *argv[])
     };
     cl.Parse( argc, argv, list );
     std::string outStem{ cl.SwitchValue<std::string>( "o" ) };
-    Common::MakeAncestorDirs( outStem );
-    std::vector<Common::Gamma::Algebra> Alg = Common::ArrayFromString<Common::Gamma::Algebra>( cl.SwitchValue<std::string>( "a" ) );
+    MLU::MakeAncestorDirs( outStem );
+    std::vector<MLU::Gamma::Algebra> Alg = MLU::ArrayFromString<MLU::Gamma::Algebra>( cl.SwitchValue<std::string>( "a" ) );
     std::vector<std::string> Ignore{ cl.SwitchStrings( "x" ) };
     // If there are files specified on the command line, process each file
     if( !cl.GotSwitch( "help" ) && cl.Args.size() )
@@ -81,12 +81,12 @@ int main(int argc, const char *argv[])
           iIgnore++;
         if( iIgnore < Ignore.size() )
           std::cout << "Ignoring " << Filename << std::endl;
-        else if( !Common::FileExists(Filename))
+        else if( !MLU::FileExists(Filename))
           std::cout << "Error: " << Filename << " doesn't exist" << std::endl;
         else
         {
-          std::vector<Common::Gamma::Algebra> ThisAlg{ Alg };
-          Common::CorrelatorFileC InFile( Filename, ThisAlg, ThisAlg, nullptr, "Summarising " );
+          std::vector<MLU::Gamma::Algebra> ThisAlg{ Alg };
+          MLU::CorrelatorFileC InFile( Filename, ThisAlg, ThisAlg, nullptr, "Summarising " );
           InFile.WriteSummary(outStem, ThisAlg, ThisAlg );
           Count++;
         }

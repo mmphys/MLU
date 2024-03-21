@@ -30,7 +30,7 @@
 #include "HDF5.hpp"
 #include <iostream>
 
-MLU_HDF5_hpp
+BEGIN_MLU_NAMESPACE
 
 // Make the same HDF5 complex type Grid uses
 template<typename T> ::H5::CompType MakeComplex()
@@ -242,7 +242,7 @@ Gamma::Algebra H5::ReadGammaAttribute( ::H5::Group &g, const char * pAttName )
   for( int idxGamma = 0; idxGamma < Gamma::nGamma; idxGamma++ )
     if( EqualIgnoreCase( sGamma, Gamma::name[idxGamma] ) )
       return static_cast<Gamma::Algebra>( idxGamma );
-  throw ::H5::Exception( "Common::ReadGammaAttribute", "Invalid gamma algebra string" );
+  throw ::H5::Exception( "MLU::ReadGammaAttribute", "Invalid gamma algebra string" );
 }
 
 template<> void H5::ReadStringsHelper<::H5::Attribute>( const ::H5::Attribute &a, const ::H5::StrType &aType,
@@ -334,4 +334,4 @@ std::string H5::GetErrorClearStack( const ::H5::Exception &e )
   return s;
 }
 
-MLU_HDF5_hpp_end
+END_MLU_NAMESPACE

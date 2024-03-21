@@ -46,12 +46,12 @@ ModelZV::ModelZV( const Model::CreateParams &cp, Model::Args &Args, int NumExp,
     bool b;
     std::string s{ Args.Remove( "C2e", &b ) };
     if( b )
-      NumC2Exp = Common::FromString<int>( s );
+      NumC2Exp = MLU::FromString<int>( s );
   }
   if( ChildType != eModelType::Exp && ChildType != eModelType::Cosh && ChildType != eModelType::Sinh )
   {
     std::ostringstream os;
-    os << sChildModel << Common::Space << ChildType << " invalid ZV numerator type";
+    os << sChildModel << MLU::Space << ChildType << " invalid ZV numerator type";
     throw std::runtime_error( os.str().c_str() );
   }
   {
@@ -141,12 +141,12 @@ std::vector<std::string> ModelZV::GetObjectNameZV( const Model::CreateParams &cp
   std::string ObjectID{ Args.Remove( "ObjectID", &bManualObjectID ) };
   if( !bManualObjectID )
   {
-    const Common::FileNameAtt &fna{ cp.pCorr->Name_ };
+    const MLU::FileNameAtt &fna{ cp.pCorr->Name_ };
     if( fna.BaseShortParts.size() < 2 )
       throw std::runtime_error( "ObjectID unknown - specify manually" );
     ObjectID = fna.MakeMesonName( fna.BaseShortParts[1] );
-    Common::Momentum p0( 0 );
-    ObjectID.append( p0.FileString( Common::Momentum::DefaultPrefix ) );
+    MLU::Momentum p0( 0 );
+    ObjectID.append( p0.FileString( MLU::Momentum::DefaultPrefix ) );
   }
   return { ObjectID };
 }

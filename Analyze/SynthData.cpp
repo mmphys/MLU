@@ -35,7 +35,7 @@ std::ostream & operator<<( std::ostream &os, const MeanSigma &ms )
 std::istream & operator>>( std::istream &is, MeanSigma &ms )
 {
   Scalar m, s;
-  if( is >> m && Common::NextCharIs( is, ',' ) && is >> s )
+  if( is >> m && MLU::NextCharIs( is, ',' ) && is >> s )
   {
     ms.Mean = m;
     ms.Sigma = s;
@@ -72,18 +72,18 @@ std::ostream & Synth::DumpParams( std::ostream &os ) const
 {
   for( int e = 0; e < NumExp; ++e )
     for( int p = 0; p < NumParams; ++p )
-      os << GetParamName( e, p ) << Common::Space << ParamMS[e][p] << Common::NewLine;
+      os << GetParamName( e, p ) << MLU::Space << ParamMS[e][p] << MLU::NewLine;
   return os;
 }
 
-Synth::Synth( const Common::CommandLine &cl, const std::string MachineNameActual )
+Synth::Synth( const MLU::CommandLine &cl, const std::string MachineNameActual )
 : NumExp{ cl.SwitchValue<int>( "e" ) },
   CorrelatorJitter{ cl.SwitchValue<Scalar>( "j" ) },
   MachineName{ cl.GotSwitch( "m" ) ? cl.SwitchValue<std::string>( "m" ) : MachineNameActual },
   nSample{ cl.SwitchValue<int>( "s" ) },
   nBootSample{ cl.SwitchValue<int>( "n" ) },
   outStem{ cl.SwitchValue<std::string>( "o" ) },
-  seed{ Common::RandomCache::DefaultSeed() },
+  seed{ MLU::RandomCache::DefaultSeed() },
   bVerbose{ cl.GotSwitch( "v" ) },
   bWarnIfExists{ cl.GotSwitch( "w" ) }
 {
@@ -113,8 +113,8 @@ void Synth::Make( std::string Basename ) const
   {
     MyBase.resize( Len );
     Append( MyBase, opNames[i] );
-    aFilename[i] = Common::MakeFilename( MyBase, Common::sFold, seed, DEF_FMT );
-    if( Common::FileExists( aFilename[i] ) )
+    aFilename[i] = MLU::MakeFilename( MyBase, MLU::sFold, seed, DEF_FMT );
+    if( MLU::FileExists( aFilename[i] ) )
     {
       if( !bWarnIfExists )
         throw std::runtime_error( aFilename[i] + " exists" );
@@ -122,13 +122,13 @@ void Synth::Make( std::string Basename ) const
     }
     else
       std::cout << "Creating ";
-    std::cout << aFilename[i] << Common::NewLine;
+    std::cout << aFilename[i] << MLU::NewLine;
   }
 
   // Now make our model
-  const Common::Parity MyParity{ Common::Parity::Even };
+  const MLU::Parity MyParity{ MLU::Parity::Even };
   const int Nt{ 64 };
-  const int NtHalf{ Nt / 2 + ( MyParity == Common::Parity::Odd ? 0 : 1 ) };
+  const int NtHalf{ Nt / 2 + ( MyParity == MLU::Parity::Odd ? 0 : 1 ) };
   std::array<Fold, NumOps> out;
   std::array<Matrix *, NumOps> CRaw;
   std::array<Matrix *, NumOps> CBinned;
@@ -139,15 +139,15 @@ void Synth::Make( std::string Basename ) const
     out[f].resizeBinned( nSample );
     out[f].NtUnfolded_ = Nt;
     out[f].parity = MyParity;
-    out[f].reality = Common::Reality::Real;
-    out[f].sign = Common::Sign::Positive;
+    out[f].reality = MLU::Reality::Real;
+    out[f].sign = MLU::Sign::Positive;
     out[f].SetSeed( seed );
     out[f].SeedMachine_ = MachineName;
     out[f].ConfigCount.reserve( nSample );
     CRaw[f] = &out[f].getRaw();
     CBinned[f] = &out[f].getBinned();
   }
-  Common::ConfigCount CC( 0, 1 );
+  MLU::ConfigCount CC( 0, 1 );
   std::array<std::array<Scalar, NumParams>, MaxExp> Values;
   std::mt19937                     engine( seed );
   std::normal_distribution<Scalar> random;
@@ -157,14 +157,14 @@ void Synth::Make( std::string Basename ) const
     std::cout << "Idx:";
     for( int e = 0; e < NumExp; ++e )
       for( int p = 0; p < NumParams; ++p )
-        std::cout << Common::Space << GetParamName( e, p );
-    std::cout << Common::NewLine;
+        std::cout << MLU::Space << GetParamName( e, p );
+    std::cout << MLU::NewLine;
   }
   for( int idx = 0; idx < nSample; ++idx )
   {
     // Get random values with the correct distribution
     if( bVerbose )
-      std::cout << idx << Common::Colon;
+      std::cout << idx << MLU::Colon;
     for( int e = 0; e < NumExp; ++e )
       for( int p = 0; p < NumParams; ++p )
       {
@@ -173,7 +173,7 @@ void Synth::Make( std::string Basename ) const
           std::cout << '\t' << Values[e][p];
       }
     if( bVerbose )
-      std::cout << Common::NewLine;
+      std::cout << MLU::NewLine;
     
     for( std::size_t f = 0; f < aFilename.size(); ++f )
     {
@@ -200,8 +200,8 @@ void Synth::Make( std::string Basename ) const
   {
     out[f].Resample();
     out[f].MakeCorrSummary();
-    Common::MakeAncestorDirs( aFilename[f] );
-    out[f].Write( aFilename[f], Common::sFold.c_str() );
+    MLU::MakeAncestorDirs( aFilename[f] );
+    out[f].Write( aFilename[f], MLU::sFold.c_str() );
     std::string SummaryName{ aFilename[f] };
     const std::size_t Len{ SummaryName.find_last_of( '.' ) };
     if( Len != std::string::npos )
@@ -230,8 +230,8 @@ int main(const int argc, const char *argv[])
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  const std::string MachineName{ Common::GetHostName() };
-  using CL = Common::CommandLine;
+  const std::string MachineName{ MLU::GetHostName() };
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {

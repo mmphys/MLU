@@ -48,12 +48,12 @@ struct ModelContinuum : Model
   static constexpr scalar LambdaInvSq{ ContinuumFit::LambdaInvSq };
   static const std::string FieldQSq;
   static const std::string FieldEL;
-  const Common::FormFactor ff;
+  const MLU::FormFactor ff;
   const ContinuumFit &Parent;
   const ModelFile &mf;
   const std::size_t idxFitColumn;
   const int idxFF;
-  const Common::Momentum p;
+  const MLU::Momentum p;
   const std::string Ensemble;
   const EnsembleInfo &ei;
   ModelParam EL, mH, mL, qSq;
@@ -61,7 +61,7 @@ protected:
   ModelParam aEL, amH, amL, aqSq;
   const EnsembleInfo &GetEnsembleInfo() const;
 public:
-  ModelContinuum( const Model::CreateParams &cp, Model::Args &Args, Common::FormFactor ff );
+  ModelContinuum( const Model::CreateParams &cp, Model::Args &Args, MLU::FormFactor ff );
   void DefineXVector( DataSet &ds, int i ) override;
   const std::string &XVectorKeyName() const override;
   std::string XVectorKey() const override;

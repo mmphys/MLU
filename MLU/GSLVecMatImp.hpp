@@ -2,7 +2,7 @@
 
  Mike's lattice QCD utilities
  
- Source file: CommonGSL.hpp
+ Source file: GSLVecMatImp.hpp
  
  Copyright (C) 2020
  
@@ -262,7 +262,7 @@ std::size_t Vector<COMMON_GSL_TYPE>::MinMax( Scalar &Min, Scalar &Max, bool bIgn
   for( std::size_t i = 0; i < size; ++i )
   {
     const Scalar &z{ (*this)[i] };
-    if( !bIgnoreNaN || ::Common::IsFinite( z ) )
+    if( !bIgnoreNaN || ::MLU::IsFinite( z ) )
     {
       if( Count++ == 0 )
       {
@@ -288,7 +288,7 @@ std::size_t Vector<COMMON_GSL_TYPE>::MinMax( Scalar &Min, Scalar &Max, bool bIgn
 bool Vector<COMMON_GSL_TYPE>::IsFinite() const
 {
   for( std::size_t i = 0; i < size; ++i )
-    if( !::Common::IsFinite( (*this)[i] ) )
+    if( !::MLU::IsFinite( (*this)[i] ) )
       return false;
   return true;
 };
@@ -652,7 +652,7 @@ bool Matrix<COMMON_GSL_TYPE>::IsFinite( bool bDiagonalsOnly ) const
 {
   for( std::size_t row = 0; row < size1; ++row )
     for( std::size_t col = bDiagonalsOnly ? row : 0 ; col < ( bDiagonalsOnly ? row + 1 : size2 ); ++col )
-      if( !::Common::IsFinite( (*this)( row, col ) ) )
+      if( !::MLU::IsFinite( (*this)( row, col ) ) )
         return false;
   return true;
 };

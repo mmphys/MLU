@@ -109,8 +109,8 @@ void MakeSeeds()
 {
   std::random_device rd; // Hardware generated
   for( const EnsembleInfo &ei : EnsembleArray )
-    std::cout << ei.Ensemble << '\t' << rd() << Common::NewLine;
-  std::cout << "w0" << '\t' << rd() << Common::NewLine;
+    std::cout << ei.Ensemble << '\t' << rd() << MLU::NewLine;
+  std::cout << "w0" << '\t' << rd() << MLU::NewLine;
 }
 
 Maker::EnsMPiMapT Maker::MakeMPiMap( const char *mPiList )
@@ -120,15 +120,15 @@ Maker::EnsMPiMapT Maker::MakeMPiMap( const char *mPiList )
     return EnsMPiMapT();
 
   std::ifstream s( mPiList );
-  if( !Common::FileExists( mPiList ) || s.bad() )
+  if( !MLU::FileExists( mPiList ) || s.bad() )
     throw std::runtime_error( std::string( "Error reading m_pi list \"" ) + mPiList + "\"" );
   return EnsMPiReaderT::Read( s );
 }
 
-Common::Params Maker::MakeParams()
+MLU::Params Maker::MakeParams()
 {
-  Common::Params params;
-  Common::Param::Key k;
+  MLU::Params params;
+  MLU::Param::Key k;
   for( const GlobalInfo & gi : globalInfo )
   {
     k.Name = gi.Name;
@@ -148,12 +148,12 @@ Common::Params Maker::MakeParams()
   return params;
 }
 
-void Maker::MakeGaussian( Model &m, Common::Param::Key k, const ValStddev &v, SeedType Seed ) const
+void Maker::MakeGaussian( Model &m, MLU::Param::Key k, const ValStddev &v, SeedType Seed ) const
 {
   if( Seed == 0 )
     Seed = RandomNumber();
   const std::size_t Column{ params.Find( k, "MakeGaussian() Bug" )->second() };
-  std::cout << k << '\t' << v << '\t' << Seed << Common::NewLine;
+  std::cout << k << '\t' << v << '\t' << Seed << MLU::NewLine;
   std::mt19937                     engine( Seed );
   std::normal_distribution<Scalar> random( v.Value, v.Stddev );
   m( Model::idxCentral, Column ) = v.Value;
@@ -191,10 +191,10 @@ void ZVInfo::Hydrate( ::H5::Group &g )
 
 void Maker::ReadZV()
 {
-  using VSF = Common::ValSigFig<Scalar>;
+  using VSF = MLU::ValSigFig<Scalar>;
   static constexpr int NumSigFig{ 2 };
   NumParams = MaxNumParams - 1;
-  const std::string sFilename{ Common::RandomCache::PrependCachePath( "michael_sl_Z_V_Z_q.h5" ) };
+  const std::string sFilename{ MLU::RandomCache::PrependCachePath( "michael_sl_Z_V_Z_q.h5" ) };
   std::cout << "Making ZV_mixed from " << sFilename << std::endl;
   try
   {
@@ -238,9 +238,9 @@ void Maker::ReadZV()
 
 void Maker::Run( std::string sFileName ) const
 {
-  std::cout << "Making " << sFileName << Common::NewLine;
-  Model m{ static_cast<int>( Common::RandomCache::DefaultNumReplicas() ), params, {} };
-  Common::Param::Key k;
+  std::cout << "Making " << sFileName << MLU::NewLine;
+  Model m{ static_cast<int>( MLU::RandomCache::DefaultNumReplicas() ), params, {} };
+  MLU::Param::Key k;
   for( const GlobalInfo & gi : globalInfo )
   {
     k.Name = gi.Name;
@@ -269,8 +269,8 @@ void Maker::Run( std::string sFileName ) const
         Model mPi;
         mPi.Read( it->second, "  " );
         m.FileList.push_back( it->second );
-        Common::Param::Key eKey( "l_l_p2_0", Common::ModelBase::EnergyPrefix );
-        Common::Params::const_iterator pit{ mPi.params.FindPromiscuous( eKey ) };
+        MLU::Param::Key eKey( "l_l_p2_0", MLU::ModelBase::EnergyPrefix );
+        MLU::Params::const_iterator pit{ mPi.params.FindPromiscuous( eKey ) };
         if( pit == mPi.params.cend() )
         {
           std::ostringstream os;
@@ -286,7 +286,7 @@ void Maker::Run( std::string sFileName ) const
   }
   m.SetSummaryNames( "Central" );
   m.MakeCorrSummary();
-  Common::MakeAncestorDirs( sFileName );
+  MLU::MakeAncestorDirs( sFileName );
   m.Write( sFileName );
 }
 
@@ -297,12 +297,12 @@ int main(int argc, char *argv[])
   int iReturn = EXIT_SUCCESS;
   // Decode command-line
   const std::string sFileName{ argc < 2 || !argv[1][0]
-    ? Common::RandomCache::PrependCachePath( "EnsembleInfo.h5" ) : argv[1] };
-  const std::string mPiFile{ argc < 3 ? Common::RandomCache::PrependCachePath( "mPi.txt" ) : argv[2]};
+    ? MLU::RandomCache::PrependCachePath( "EnsembleInfo.h5" ) : argv[1] };
+  const std::string mPiFile{ argc < 3 ? MLU::RandomCache::PrependCachePath( "mPi.txt" ) : argv[2]};
   try
   {
     // Abort if output file exists
-    if( Common::FileExists( sFileName ) )
+    if( MLU::FileExists( sFileName ) )
       throw std::runtime_error( sFileName + " exists" );
     // Run
     Maker( mPiFile.empty() ? nullptr : mPiFile.c_str() ).Run( sFileName );

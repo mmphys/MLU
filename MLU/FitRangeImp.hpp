@@ -26,12 +26,11 @@
 **/
 
 #ifndef FitRangeImp_hpp
-#define FitRangeImp_hpp namespace Common {
-#define FitRangeImp_hpp_end };
+#define FitRangeImp_hpp
 
 #include "FitRange.hpp"
 
-FitRangeImp_hpp
+BEGIN_MLU_NAMESPACE
 
 /*
  FitRange specialisations
@@ -134,5 +133,5 @@ struct FitRangesIteratorRelative : FitRangesIteratorBlock
   bool Increment( bool bWrap ) override;
 };
 
-FitRangeImp_hpp_end
+END_MLU_NAMESPACE
 #endif // FitRangeImp_hpp

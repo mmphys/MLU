@@ -28,7 +28,7 @@
 #include "Model.hpp"
 #include "DataSet.hpp"
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 const std::string ModelBase::EnergyPrefix{ "E" };
 const std::string ModelBase::EDiffPrefix{ "EDiff" };
@@ -78,7 +78,7 @@ template <typename T>
 UniqueNameSet Model<T>::GetStatColumnNames() const
 {
   UniqueNameSet Names;
-  const std::size_t NumParams{ params.NumScalars( Common::Param::Type::All ) };
+  const std::size_t NumParams{ params.NumScalars( MLU::Param::Type::All ) };
   const std::size_t NumColumns{ Base::ColumnNames.size() };
   for( std::size_t i = NumParams; i < NumColumns; ++i )
     Names.insert( Base::ColumnNames[i] );
@@ -107,7 +107,7 @@ template <typename T>
 void Model<T>::Read( const char *PrintPrefix, std::string *pGroupName )
 {
   // Just read the data using the Seed from the file 
-  Base::Read( false, Common::SeedWildcard, PrintPrefix, pGroupName );
+  Base::Read( false, MLU::SeedWildcard, PrintPrefix, pGroupName );
 }
 
 template <typename T>
@@ -556,7 +556,7 @@ bool Model<T>::CheckParameters( int Strictness, scalar_type MonotonicUpperLimit 
   {
     const bool bVeryStrictNonZero{ ( Strictness & 1 ) != 0 };
     const bool bVeryStrictDifferent{ ( Strictness & 2 ) != 0 };
-    using TypeVE = Common::ValWithEr<scalar_type>;
+    using TypeVE = MLU::ValWithEr<scalar_type>;
     scalar_type TypeVE::* const pLowZ { bVeryStrictNonZero ? &TypeVE::Min : &TypeVE::Low };
     scalar_type TypeVE::* const pHighZ{ bVeryStrictNonZero ? &TypeVE::Max : &TypeVE::High };
     scalar_type TypeVE::* const pLowD { bVeryStrictDifferent ? &TypeVE::Min : &TypeVE::Low };
@@ -644,7 +644,7 @@ void Model<T>::SummaryComments( std::ostream & s, bool bVerboseSummary,
       << " (dof=" << dof << ")" << NewLine;
   // Hotelling pValue
   s << "# " << sPValueH << " : Hotelling (p=" << dof << ", m-1=" << ( CovarSampleSize - 1 ) << ")";
-  bool bHotellingUsable{ Common::HotellingDist::Usable( dof, CovarSampleSize - 1 ) };
+  bool bHotellingUsable{ MLU::HotellingDist::Usable( dof, CovarSampleSize - 1 ) };
   if( !bHotellingUsable )
     s << ". Not usable - set to ChiSquared p-value instead";
   else
@@ -665,7 +665,7 @@ const char ModelBase::SummaryColumnPrefix[] = "ti tf tiLabel tfLabel NumDataPoin
 template <typename T>
 void Model<T>::SummaryColumnNames( std::ostream &os ) const
 {
-  os << SummaryColumnPrefix << Common::Space;
+  os << SummaryColumnPrefix << MLU::Space;
   Base::SummaryColumnNames( os );
   for( std::size_t i = 1; i < FitTimes.size(); ++i )
     os << Space << "ti" << i << Space << "tf" << i;
@@ -928,4 +928,4 @@ template class Model<std::complex<double>>;
 template class Model<std::complex<float>>;
 
 
-END_COMMON_NAMESPACE
+END_MLU_NAMESPACE

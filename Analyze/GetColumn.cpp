@@ -26,12 +26,12 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 struct Extractor
 {
   using Scalar = double;
-  using ValErType = Common::ValWithEr<Scalar>;
+  using ValErType = MLU::ValWithEr<Scalar>;
   static const ValErType veUnknown;
 
   struct NameValue
@@ -44,7 +44,7 @@ struct Extractor
   const std::vector<std::string> PartialNames;
   const std::string DefaultGroup;
   const int ErrDig;
-  Extractor( Common::CommandLine &cl );
+  Extractor( MLU::CommandLine &cl );
   bool Run( const std::vector<std::string> &Args );
 protected:
   NameValue ReadFile( const std::string &Filename );
@@ -54,10 +54,10 @@ protected:
 
 const Extractor::ValErType Extractor::veUnknown( 0, 0, 0, 0, 0, 0 );
 
-Extractor::Extractor( Common::CommandLine &cl )
+Extractor::Extractor( MLU::CommandLine &cl )
 : inBase{ cl.SwitchValue<std::string>("i") },
-  ExactNames{ Common::ArrayFromString( cl.SwitchValue<std::string>( "exact" ) ) },
-  PartialNames{ Common::ArrayFromString( cl.SwitchValue<std::string>( "partial" ) ) },
+  ExactNames{ MLU::ArrayFromString( cl.SwitchValue<std::string>( "exact" ) ) },
+  PartialNames{ MLU::ArrayFromString( cl.SwitchValue<std::string>( "partial" ) ) },
   DefaultGroup{ cl.SwitchValue<std::string>( "group" ) },
   ErrDig{ cl.SwitchValue<int>( "errdig" ) }
 {
@@ -66,7 +66,7 @@ Extractor::Extractor( Common::CommandLine &cl )
 bool Extractor::Run( const std::vector<std::string> &Args )
 {
   bool bOK{ true };
-  for( const std::string &s : Common::glob( Args.begin(), Args.end(), inBase.c_str() ) )
+  for( const std::string &s : MLU::glob( Args.begin(), Args.end(), inBase.c_str() ) )
   {
     try
     {
@@ -112,13 +112,13 @@ bool Extractor::Show( const NameValue &NV, const std::vector<std::string> Select
       if( bExact )
       {
         // The whole string must match - with or without trailing zero
-        bFound = Common::EqualIgnoreCase( s, ni );
+        bFound = MLU::EqualIgnoreCase( s, ni );
         if( !bFound )
         {
           if( !sWithoutZero.empty() )
-            bFound = Common::EqualIgnoreCase( sWithoutZero, ni );
+            bFound = MLU::EqualIgnoreCase( sWithoutZero, ni );
           else if( !NameWildcard.empty() )
-            bFound = Common::EqualIgnoreCase( s, NameWildcard );
+            bFound = MLU::EqualIgnoreCase( s, NameWildcard );
         }
       }
       else
@@ -127,7 +127,7 @@ bool Extractor::Show( const NameValue &NV, const std::vector<std::string> Select
         bFound = ni.find( s ) != std::string::npos;
         // ... or the end matches without the trailing zero
         if( !bFound && bLookingForZero && ni.size() >= sWithoutZero.size() )
-          bFound = Common::EqualIgnoreCase( sWithoutZero,
+          bFound = MLU::EqualIgnoreCase( sWithoutZero,
                                             ni.substr( ni.size() - sWithoutZero.size() ) );
       }
       if( bFound )
@@ -145,18 +145,18 @@ bool Extractor::Show( const NameValue &NV, const std::vector<std::string> Select
 
 void Extractor::ShowOne( const std::string &Name, const ValErType &Value ) const
 {
-  std::cout << Name << Common::Space << Value.to_string( ErrDig ) << Common::Space
-            << Value << Common::NewLine;
+  std::cout << Name << MLU::Space << Value.to_string( ErrDig ) << MLU::Space
+            << Value << MLU::NewLine;
 }
 
 Extractor::NameValue Extractor::ReadFile( const std::string &Filename )
 {
-  if( !Common::FileExists( Filename ) )
+  if( !MLU::FileExists( Filename ) )
     throw std::runtime_error( Filename + " doesn't exist" );
   ::H5::H5File f;
   ::H5::Group g;
   std::string GroupName{ DefaultGroup };
-  Common::H5::OpenFileGroup( f, g, Filename, nullptr, &GroupName );
+  MLU::H5::OpenFileGroup( f, g, Filename, nullptr, &GroupName );
   H5E_auto2_t h5at;
   void      * f5at_p;
   ::H5::Exception::getAutoPrint(h5at, &f5at_p);
@@ -167,17 +167,17 @@ Extractor::NameValue Extractor::ReadFile( const std::string &Filename )
   {
     try
     {
-      ::H5::Attribute a{ g.openAttribute( Common::sColumnNames ) };
-      ColumnNames = Common::H5::ReadStrings( a );
+      ::H5::Attribute a{ g.openAttribute( MLU::sColumnNames ) };
+      ColumnNames = MLU::H5::ReadStrings( a );
     }
     catch(const ::H5::Exception &)
     {
-      throw std::runtime_error( Common::sColumnNames + " not available in " + GroupName );
+      throw std::runtime_error( MLU::sColumnNames + " not available in " + GroupName );
     }
     bool bOK{ false };
     try
     {
-      ::H5::DataSet ds{ g.openDataSet( Common::sSummaryDSName ) };
+      ::H5::DataSet ds{ g.openDataSet( MLU::sSummaryDSName ) };
       ::H5::DataSpace dsp{ ds.getSpace() };
       int nDims{ dsp.getSimpleExtentNdims() };
       if( nDims == 2 )
@@ -188,7 +188,7 @@ Extractor::NameValue Extractor::ReadFile( const std::string &Filename )
         if( Dim[1] == ColumnNames.size() && ValSize == Dim[0] * Dim[1] )
         {
           ValEr.resize( ValSize );
-          ds.read( ValEr.data(), Common::H5::Equiv<ValErType>::Type );
+          ds.read( ValEr.data(), MLU::H5::Equiv<ValErType>::Type );
           ValEr.resize( ColumnNames.size() );
           bOK = true;
         }
@@ -198,7 +198,7 @@ Extractor::NameValue Extractor::ReadFile( const std::string &Filename )
     {
     }
     if( !bOK )
-      throw std::runtime_error( Common::sSummaryDSName + " not available in " + GroupName );
+      throw std::runtime_error( MLU::sSummaryDSName + " not available in " + GroupName );
   }
   catch(...)
   {
@@ -217,7 +217,7 @@ int main(int argc, const char *argv[])
   std::ios_base::sync_with_stdio( false );
   int iReturn = EXIT_SUCCESS;
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {

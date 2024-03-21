@@ -27,7 +27,7 @@
 
 #include "Fold.hpp"
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 template <typename T>
 const std::string &Fold<T>::DefaultGroupName()
@@ -223,4 +223,4 @@ template class Fold<float>;
 template class Fold<std::complex<double>>;
 template class Fold<std::complex<float>>;
 
-END_COMMON_NAMESPACE
+END_MLU_NAMESPACE

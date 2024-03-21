@@ -27,13 +27,12 @@
 /*  END LEGAL */
 
 #ifndef MLU_Param_hpp
-#define MLU_Param_hpp namespace Common {
-#define MLU_Param_hpp_end };
+#define MLU_Param_hpp
 
 #include <MLU/HDF5.hpp>
 #include <list>
 
-MLU_Param_hpp
+BEGIN_MLU_NAMESPACE
 
 struct Param
 {
@@ -369,5 +368,5 @@ protected:
 
 std::ostream &operator<<( std::ostream &os, const SignChoice &sc );
 
-MLU_Param_hpp_end
+END_MLU_NAMESPACE
 #endif

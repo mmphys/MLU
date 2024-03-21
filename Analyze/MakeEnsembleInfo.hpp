@@ -26,7 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 #include <stdio.h>
 #include <ostream>
@@ -34,7 +34,7 @@
 using SeedType = std::uint_fast32_t;
 
 using Scalar = double;
-using Model = Common::Model<Scalar>;
+using Model = MLU::Model<Scalar>;
 
 // A value with a standard deviation
 struct ValStddev
@@ -45,7 +45,7 @@ struct ValStddev
   ValStddev AddQuadrature( unsigned int lMul, const ValStddev &r, unsigned int rMul ) const;
   inline std::string to_string( unsigned char SigFigError ) const
   {
-    return Common::ValSigFig<Scalar>::Show( Value, Stddev, SigFigError );
+    return MLU::ValSigFig<Scalar>::Show( Value, Stddev, SigFigError );
   }
 };
 
@@ -86,13 +86,13 @@ inline SeedType RandomNumber()
 class Maker
 {
 protected:
-  using EnsMPiMapT = std::map<std::string, std::string, Common::LessCaseInsensitive>;
-  using EnsMPiReaderT = Common::KeyValReader<std::string, std::string, Common::LessCaseInsensitive>;
-  const Common::Params params;
+  using EnsMPiMapT = std::map<std::string, std::string, MLU::LessCaseInsensitive>;
+  using EnsMPiReaderT = MLU::KeyValReader<std::string, std::string, MLU::LessCaseInsensitive>;
+  const MLU::Params params;
   const EnsMPiMapT MPiMap;
-  Common::Params MakeParams();
+  MLU::Params MakeParams();
   EnsMPiMapT MakeMPiMap( const char *mPiList );
-  void MakeGaussian( Model &m, Common::Param::Key k, const ValStddev &v, SeedType Seed ) const;
+  void MakeGaussian( Model &m, MLU::Param::Key k, const ValStddev &v, SeedType Seed ) const;
   //void MakeEnsembleInfo( std::string sFileName ) const;
   // Read Raj's Z_{V,mixed} data
   void ReadZV();

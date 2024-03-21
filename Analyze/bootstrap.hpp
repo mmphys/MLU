@@ -29,10 +29,10 @@
 #ifndef bootstrap_hpp
 #define bootstrap_hpp
 
-#include <MLU/Common.hpp>
-using MomentumMap = Common::MomentumMap;
+#include <MLU/MLU.hpp>
+using MomentumMap = MLU::MomentumMap;
 using MomentumMapValue = typename MomentumMap::value_type;
-using Algebra = Common::Gamma::Algebra;
+using Algebra = MLU::Gamma::Algebra;
 
 #include <cmath>
 #include <iomanip>
@@ -50,8 +50,8 @@ enum BinOrder{ Auto, Old, VeryOld };
 
 struct OperatorAttributes
 {
-  Common::Gamma::Algebra alg;
-  Common::RPS rps;
+  MLU::Gamma::Algebra alg;
+  MLU::RPS rps;
 };
 
 struct TrajFile
@@ -60,7 +60,7 @@ struct TrajFile
   int  Timeslice;
   MomentumMap p;
   int Config;
-  Common::Momentum pFirstNonZero;
+  MLU::Momentum pFirstNonZero;
   bool bTimeRev;
   int DeltaT;
   TrajFile(bool bHasTimeslice_, int Timeslice_, const MomentumMap &p_, int Config_, bool bTimeRev_, int DeltaT_)
@@ -75,7 +75,7 @@ struct TrajFile
       }
     }
   }
-  void Reverse( Common::CorrelatorFileC &File ) const;
+  void Reverse( MLU::CorrelatorFileC &File ) const;
 };
 
 // This describes one contraction and each of its trajectory files
@@ -89,20 +89,20 @@ struct TrajList
   const bool b3pt;
   // These members only present if b3pt
   bool bRev; // If set, the gamma in filename is quark 1(rhs/reversed), otherwise quark 2(lhs)
-  Common::Gamma::Algebra Alg3pt;
+  MLU::Gamma::Algebra Alg3pt;
   // Filenames with corresponding timeslice info
   std::map<std::string, TrajFile> FileInfo;
   TrajList(const std::string &Name_, const std::string &sShortPrefix_, const std::string &sShortSuffix_,
            const std::string &opSuffixSnk_, const std::string &opSuffixSrc_,
-           bool b3pt_, bool brev_, Common::Gamma::Algebra Alg3pt_ )
+           bool b3pt_, bool brev_, MLU::Gamma::Algebra Alg3pt_ )
   : Name{Name_}, sShortPrefix{sShortPrefix_}, sShortSuffix{ sShortSuffix_}, OpSuffixSnk{opSuffixSnk_},
     OpSuffixSrc{opSuffixSrc_}, b3pt{b3pt_}, bRev{brev_}, Alg3pt{Alg3pt_} {}
   // 2pt Trajectory list
   TrajList(const std::string &Name_, const std::string &sShortPrefix_, const std::string &sShortSuffix_,
            const std::string &opSuffixSnk_, const std::string &opSuffixSrc_ )
   : TrajList( Name_, sShortPrefix_, sShortSuffix_, opSuffixSnk_, opSuffixSrc_,
-              false, false, Common::Gamma::Algebra::MinusSigmaZT ) {}
-  bool OpSuffiiSame() const { return Common::EqualIgnoreCase( OpSuffixSnk, OpSuffixSrc ); }
+              false, false, MLU::Gamma::Algebra::MinusSigmaZT ) {}
+  bool OpSuffiiSame() const { return MLU::EqualIgnoreCase( OpSuffixSnk, OpSuffixSrc ); }
 };
 
 class BootstrapParams
@@ -117,27 +117,27 @@ public:
   const int binSize;
   const bool binAuto;
   const BinOrder binOrder;
-  const Common::SeedType seed;
+  const MLU::SeedType seed;
   const std::string outStem;
   const std::string Ensemble;
 
-  using CorrFile = Common::CorrelatorFileC;
+  using CorrFile = MLU::CorrelatorFileC;
   using vCorrFile = std::vector<CorrFile>;
   using Iter = typename vCorrFile::iterator;
 protected:
-  Common::SeedType GetSeedType( const Common::CommandLine &cl );
-  static std::vector<Common::ConfigCount> CountConfigs( const Iter &first, const Iter &last, bool bGammai );
-  bool GatherInput( Common::SampleC &out, const Iter &first, const Iter &last, const TrajList &Traj,
+  MLU::SeedType GetSeedType( const MLU::CommandLine &cl );
+  static std::vector<MLU::ConfigCount> CountConfigs( const Iter &first, const Iter &last, bool bGammai );
+  bool GatherInput( MLU::SampleC &out, const Iter &first, const Iter &last, const TrajList &Traj,
                     Algebra Snk, Algebra Src, bool bAlignTimeslices ) const;
   int PerformBootstrap( const Iter &first, const Iter &last, const TrajList &Traj, const std::string &Suffix,
                         bool bAlignTimeslices, bool bSaveBootstrap, bool bSaveSummaries,
                         const std::vector<Algebra> &SinkAlgebra, const std::vector<Algebra> &SourceAlgebra ) const;
 public:
-  BootstrapParams( const Common::CommandLine &cl );
+  BootstrapParams( const MLU::CommandLine &cl );
   int PerformBootstrap( vCorrFile &f, const TrajList &Traj, const std::vector<Algebra> &SinkAlgebra,
                         const std::vector<Algebra> &SourceAlgebra ) const;
-  void Study1Bootstrap( StudySubject Study, const std::string &StudyPath, const Common::Momentum &mom,
-                        std::vector<Common::Gamma::Algebra> Alg,
+  void Study1Bootstrap( StudySubject Study, const std::string &StudyPath, const MLU::Momentum &mom,
+                        std::vector<MLU::Gamma::Algebra> Alg,
                         const std::string &Heavy, const std::string &Light, bool Factorised) const;
 };
 
@@ -158,19 +158,19 @@ struct Manifest : public std::map<std::string, TrajList>
   std::vector<Algebra> AlgSource;  // Also the sink algebra for two-point functions. Empty=wildcard, loaded from first file
 protected:
   std::vector<Algebra> AlgCurrentLoad; // These are the current algebra to load. Gammai removed and Gamma X, Y & Z added
-  std::vector<Common::NegateStar> AlgCurrentLoadNeg; // Whether to negate currents on load
+  std::vector<MLU::NegateStar> AlgCurrentLoadNeg; // Whether to negate currents on load
 public:
   const std::vector<Algebra> AlgCurrent; // Current algebra we wish to save for 3pt. May include Gammai. Empty = wildcard
 protected:
   std::unique_ptr<std::regex> SSRegEx;
-  std::vector<Algebra> GetCurrentAlgebra( const Common::CommandLine &cl );
-  static GroupMomenta GetGroupP( const Common::CommandLine &cl );
+  std::vector<Algebra> GetCurrentAlgebra( const MLU::CommandLine &cl );
+  static GroupMomenta GetGroupP( const MLU::CommandLine &cl );
   int QuarkWeight( const char q ) const;
   bool NeedsTimeReverse( std::string &Contraction, MomentumMap &p, bool &bRev,
                          std::string &OpSuffixSnk, std::string &OpSuffixSrc ) const;
 public:
   // Process list of files on the command-line, breaking them up into individual trajectories
-  Manifest( const Common::CommandLine &cl, const BootstrapParams &par );
+  Manifest( const MLU::CommandLine &cl, const BootstrapParams &par );
   /*Manifest(const std::vector<std::string> &Files, const std::vector<std::string> &Ignore,
            bool bSwapQuarks, const GroupMomenta GroupP, const std::vector<std::string> &vIgnoreMomenta,
            std::regex *SSRegEx, bool bSwapSnkSrcRegEx = false);*/

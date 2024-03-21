@@ -26,9 +26,9 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include "Common.hpp"
+#include "MLU.hpp"
 
-MLU_Physics_hpp
+BEGIN_MLU_NAMESPACE
 
 namespace Gamma
 {
@@ -510,4 +510,4 @@ std::istream& operator>>( std::istream& is, FormFactor &ff )
   return is;
 }
 
-MLU_Physics_hpp_end
+END_MLU_NAMESPACE

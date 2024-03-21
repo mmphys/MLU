@@ -28,7 +28,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 
@@ -64,7 +64,7 @@ static const Quark Quarks[] = {
 };
 static constexpr int NumQuarks{ sizeof( Quarks ) / sizeof( Quarks[0] ) };
 
-static const Common::Momentum Momenta[] = {
+static const MLU::Momentum Momenta[] = {
   { 0, 0, 0 },
   { 1, 0, 0 },
   { 1, 1, 0 },
@@ -179,7 +179,7 @@ void Make( Application &application, unsigned int nt, bool bRandom, bool bEigenp
     const std::string timeSuffix{ Sep + "t" + Sep + std::to_string( t ) };
     const std::string sZ2{ "Z2" };
     // I will always need the momentum 0 Z_2 wall source for this timeslice
-    const std::string Suffix0{ timeSuffix + Sep + "p" + Sep + Common::p0.to_string3d( Sep ) };
+    const std::string Suffix0{ timeSuffix + Sep + "p" + Sep + MLU::p0.to_string3d( Sep ) };
     const std::string srcName0{ sZ2 + Suffix0 };
     {
       MSource::Z2::Par z2Par;

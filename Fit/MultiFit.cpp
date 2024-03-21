@@ -46,7 +46,7 @@ int main(int argc, const char *argv[])
   static const char szFileWildcard[] = "*?[";
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {
@@ -77,7 +77,7 @@ int main(int argc, const char *argv[])
       {"e", CL::SwitchType::Single, "1"},
       {"N", CL::SwitchType::Single, "0"},
       {"dispersion", CL::SwitchType::Single, nullptr},
-      {Common::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
+      {MLU::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
       // Covariance parameters
       {"covsrc", CL::SwitchType::Single, nullptr},
       {"covboot", CL::SwitchType::Single, nullptr},
@@ -98,13 +98,13 @@ int main(int argc, const char *argv[])
     if( !cl.GotSwitch( "help" ) && cl.Args.size() )
     {
       if( cl.GotSwitch( "debug-signals" ) )
-        Common::Grid_debug_handler_init();
+        MLU::Grid_debug_handler_init();
       const std::string inBase{ cl.SwitchValue<std::string>("i") };
       const bool inBaseWildcard{ inBase.find_first_of( szFileWildcard ) != std::string::npos };
       std::string outBaseFileName{ cl.SwitchValue<std::string>("o") };
       // If output base is given, but doesn't end in '/', then it already contains the correct name
       bool bAppendCorr0Name{ outBaseFileName.empty() || outBaseFileName.back() == '/' };
-      Common::MakeAncestorDirs( outBaseFileName );
+      MLU::MakeAncestorDirs( outBaseFileName );
       const int NSamples{ cl.SwitchValue<int>("n") };
       const std::string NameExtra{ cl.SwitchValue<std::string>("extra") };
       const bool bShowName{ cl.GotSwitch("showname") }; // Show base output name - don't run
@@ -132,12 +132,12 @@ int main(int argc, const char *argv[])
       for( std::size_t ArgNum = 0; ArgNum < NumArgs; ++ArgNum )
       {
         // First parameter (up to comma) is the filename we're looking for
-        std::string FileToGlob{ Common::ExtractToSeparator( cl.Args[ArgNum] ) };
+        std::string FileToGlob{ MLU::ExtractToSeparator( cl.Args[ArgNum] ) };
         std::vector<std::string> Filenames;
         if( !inBaseWildcard && FileToGlob.find_first_of( szFileWildcard ) == std::string::npos )
-          Filenames.push_back( Common::PreferSeed( inBase + FileToGlob ) );
+          Filenames.push_back( MLU::PreferSeed( inBase + FileToGlob ) );
         else
-          Filenames = Common::glob( &FileToGlob, &FileToGlob + 1, inBase.c_str() );
+          Filenames = MLU::glob( &FileToGlob, &FileToGlob + 1, inBase.c_str() );
         bool bGlobEmpty{ true };
         // Anything after the comma is a list of arguments
         Model::Args vArgs;
@@ -145,8 +145,8 @@ int main(int argc, const char *argv[])
         for( const std::string &sFileName : Filenames )
         {
           bGlobEmpty = false;
-          Common::FileNameAtt Att( sFileName, &OpName );
-          const bool bIsCorr{ Common::EqualIgnoreCase( Att.Type, Common::sFold ) };
+          MLU::FileNameAtt Att( sFileName, &OpName );
+          const bool bIsCorr{ MLU::EqualIgnoreCase( Att.Type, MLU::sFold ) };
           if( bIsCorr )
           {
             bGotCorrelator = true;
@@ -164,7 +164,7 @@ int main(int argc, const char *argv[])
               PrintPrefix.append( cl.Args[ArgNum] );
               PrintPrefix.append( 1, ' ' );
             }
-            ds.LoadCorrelator( std::move( Att ), Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT,
+            ds.LoadCorrelator( std::move( Att ), MLU::COMPAT_DISABLE_BASE | MLU::COMPAT_DISABLE_NT,
                               PrintPrefix.c_str() );
             }
             // Get the fit range (if present)
@@ -204,7 +204,7 @@ int main(int argc, const char *argv[])
         throw std::runtime_error( "At least one correlator must be loaded to perform a fit" );
       // Make sure models refer to all fit ranges
       const int MinDP{ cl.SwitchValue<int>( "mindp" ) };
-      Common::FitRanges fitRanges( FitRangeSpec, MinDP );
+      MLU::FitRanges fitRanges( FitRangeSpec, MinDP );
       {
         std::vector<bool> ModelFitRangeUsed( fitRanges.size(), false );
         for( std::size_t i = 0; i < ModelFitRange.size(); ++i )
@@ -235,7 +235,7 @@ int main(int argc, const char *argv[])
       }
       if( bShowName )
       {
-        std::sort( OpName.begin(), OpName.end(), Common::LessThanIgnoreCase );
+        std::sort( OpName.begin(), OpName.end(), MLU::LessThanIgnoreCase );
       }
       else
       {
@@ -246,17 +246,17 @@ int main(int argc, const char *argv[])
         std::cout << "all ";
       else
         std::cout << "first " << ds.NSamples << " of ";
-      std::cout << ds.MaxSamples << Common::Space << ds.corr[0]->getData().SeedTypeString()
+      std::cout << ds.MaxSamples << MLU::Space << ds.corr[0]->getData().SeedTypeString()
                 << " replicas";
       if( ds.NSamples != ds.MaxSamples )
         std::cout << " (all " << ds.MaxSamples << " for var/covar)";
-      std::cout << Common::NewLine;
+      std::cout << MLU::NewLine;
       }
 
       // Work out how covariance matrix should be constructed and tell user
       CovarParams cp{ cl, ds, bShowName };
       if( !bShowName )
-        std::cout << cp << Common::NewLine;
+        std::cout << cp << MLU::NewLine;
 
       // I'll need a sorted, concatenated list of the operators in the fit for filenames
       std::string sOpNameConcat;
@@ -277,7 +277,7 @@ int main(int argc, const char *argv[])
           for( std::size_t j = ThisSize; j; )
           {
             if( i || j != ThisSize )
-              sOpNameConcat.append( Common::Underscore );
+              sOpNameConcat.append( MLU::Underscore );
             sOpNameConcat.append( OpName[ds.corr[i]->Name_.op[--j]] );
           }
         }
@@ -298,14 +298,14 @@ int main(int argc, const char *argv[])
       {
         // Just show the resulting filenames
         sOpNameConcat.append( 1, '.' );
-        sOpNameConcat.append( Common::sModel );
-        for( Common::FitRangesIterator it = fitRanges.begin(); !it.PastEnd(); ++it )
+        sOpNameConcat.append( MLU::sModel );
+        for( MLU::FitRangesIterator it = fitRanges.begin(); !it.PastEnd(); ++it )
         {
           outBaseFileName.resize( outBaseFileNameLen );
           outBaseFileName.append( it.AbbrevString() );
           outBaseFileName.append( 1, '.' );
           outBaseFileName.append( sOpNameConcat );
-          std::cout << outBaseFileName << Common::NewLine;
+          std::cout << outBaseFileName << MLU::NewLine;
         }
       }
       else
@@ -317,7 +317,7 @@ int main(int argc, const char *argv[])
       std::size_t CountOK{ 0 };
       bool bAllParamsResolved{ true };
       const auto Start{ std::chrono::steady_clock::now() };
-      for( Common::FitRangesIterator it = fitRanges.begin(); !it.PastEnd(); ++it )
+      for( MLU::FitRangesIterator it = fitRanges.begin(); !it.PastEnd(); ++it )
       {
         // Log what file we're processing and when we started
         const auto then{ std::chrono::steady_clock::now() };
@@ -337,8 +337,8 @@ int main(int argc, const char *argv[])
             Fitter::SayNumThreads( ss );
             const std::string &sMsg{ ss.str() };
             if( !m->bTestRun )
-              std::cout << std::string( sMsg.length(), '=' ) << Common::NewLine;
-            std::cout << sMsg << Common::NewLine;
+              std::cout << std::string( sMsg.length(), '=' ) << MLU::NewLine;
+            std::cout << sMsg << MLU::NewLine;
           }
           double ChiSq;
           int dof;
@@ -373,12 +373,12 @@ int main(int argc, const char *argv[])
           std::string sNow{ std::ctime( &ttNow ) };
           while( sNow.length() && sNow.back() == '\n' )
             sNow.resize( sNow.length() - 1 );
-          std::cout << ". " << sNow << Common::NewLine;
+          std::cout << ". " << sNow << MLU::NewLine;
         }
       }
       const auto now{ std::chrono::steady_clock::now() };
       auto S{ std::chrono::duration_cast<std::chrono::seconds>( now - Start ).count() };
-      std::cout << std::string( 50, '=' ) << Common::NewLine
+      std::cout << std::string( 50, '=' ) << MLU::NewLine
                 << CountOK << " fits succeeded of " << CountTotal << " attempted\n"
                 << "Total duration ";
       constexpr unsigned int DaySeconds{ 24 * 60 * 60 };
@@ -393,7 +393,7 @@ int main(int argc, const char *argv[])
       S %= 60;
       std::cout << std::setfill( '0' ) << std::setw(2) << Hours
          << ':' << std::setfill( '0' ) << std::setw(2) << Minutes
-         << ':' << std::setfill( '0' ) << std::setw(2) << S << Common::NewLine;
+         << ':' << std::setfill( '0' ) << std::setw(2) << S << MLU::NewLine;
       // Error if only one fit requested and it failed ... or all params not resolved
       if( CountTotal == 1 )
       {
@@ -469,7 +469,7 @@ int main(int argc, const char *argv[])
     "--central  Don't use the central replica as guess for each replica\n"
     "--overwrite Overwite always. Default: only overwrite smaller Nboot\n"
     "--debug-signals Trap signals (code courtesy of Grid)\n"
-    "--" << Common::sOverlapAltNorm << "  Alternate normalisation for overlap factors. DEPRECATED\n"
+    "--" << MLU::sOverlapAltNorm << "  Alternate normalisation for overlap factors. DEPRECATED\n"
     "--help     This message\n"
     "Parameters accepted by all models:\n"
     " e         Number of exponentials\n"
@@ -479,25 +479,25 @@ int main(int argc, const char *argv[])
     " SrcSnk    Force source and sink to be different (by appending 'src' and 'snk')\n"
     "Parameters accepted by models for single objects (e.g. 2pt-functions):\n"
     " ObjectID  Object identifier (defaults to base of filename)\n"
-    " Energy    Energy parameter name (defaults to " << Common::ModelBase::EnergyPrefix << ")\n"
+    " Energy    Energy parameter name (defaults to " << MLU::ModelBase::EnergyPrefix << ")\n"
     "Parameters accepted by models for dual objects (e.g. 3pt-functions):\n"
     " Src       ObjectID for source\n"
     " Snk       ObjectID for sink\n"
     " ESrc      Energy parameter name at source (defaults to "
-        << Common::ModelBase::EnergyPrefix << ")\n"
+        << MLU::ModelBase::EnergyPrefix << ")\n"
     " ESnk      Energy parameter name at sink   (defaults to "
-        << Common::ModelBase::EnergyPrefix << ")\n"
-    " " << Common::ModelBase::EDiffPrefix
+        << MLU::ModelBase::EnergyPrefix << ")\n"
+    " " << MLU::ModelBase::EDiffPrefix
         << "     Name of derived parameter for energy difference (default: "
-        << Common::ModelBase::EDiffPrefix << ")\n"
+        << MLU::ModelBase::EDiffPrefix << ")\n"
     "Parameters accepted by R3 model:\n"
     " C2e       Number of exponents for 2pt (default: Num needed for C3)\n"
     " C2Model   Which model to use for 2pt: Exp (default); Cosh; Sinh\n"
     " Raw       R3 ratio was constructed as a raw ratio - no overlap coefficients\n"
     "Parameters accepted by constant model:\n"
     " const     Constant name to use in output (defaults to '"
-                << Common::ModelBase::ConstantPrefix << "')\n";
+                << MLU::ModelBase::ConstantPrefix << "')\n";
   }
-  Common::Grid_exit_handler_disable = true;
+  MLU::Grid_exit_handler_disable = true;
   return iReturn;
 }

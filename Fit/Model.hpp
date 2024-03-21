@@ -50,7 +50,7 @@ using ModelPtr = std::unique_ptr<Model>;
 
 struct Model
 {
-  struct Args : public std::map<std::string, std::string, Common::LessCaseInsensitive>
+  struct Args : public std::map<std::string, std::string, MLU::LessCaseInsensitive>
   {
     void FromString( const std::string &s, bool bOptionalValue );
     std::string ToString() const;
@@ -60,7 +60,7 @@ struct Model
       typename Model::Args::iterator it = find( key );
       if( it == end() )
         return Default;
-      T t{ Common::FromString<T>( it->second ) };
+      T t{ MLU::FromString<T>( it->second ) };
       if( !bPeek )
         erase( it );
       return t;
@@ -76,11 +76,11 @@ struct Model
     const std::vector<bool> bOpMomIndependent;
     std::vector<bool> CreateMomList( const std::string &MomIndependentOpList );
   public:
-    const Common::CommandLine &cl;
+    const MLU::CommandLine &cl;
     const bool bOverlapAltNorm;
     // These will change per model
     const Sample *pCorr; // Actually either a Fold or a Model
-    CreateParams( const std::vector<std::string> &OpNames_, const Common::CommandLine &cl_ );
+    CreateParams( const std::vector<std::string> &OpNames_, const MLU::CommandLine &cl_ );
     virtual ~CreateParams(){}
     std::string GetOpName( int Idx ) const { return OpNames[pCorr->Name_.op[Idx]]; }
     bool OpMomIndependent( int Idx ) const { return bOpMomIndependent[pCorr->Name_.op[Idx]]; }
@@ -98,7 +98,7 @@ protected:
    Add energy. If N != 0 then use the lattice dispersion relation for this parameter
    */
   void AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N,
-                  Common::DispersionType dispType );
+                  MLU::DispersionType dispType );
 public:
   virtual ~Model() {}
   // This is how to make a model

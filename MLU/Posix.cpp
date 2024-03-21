@@ -28,7 +28,7 @@
 
 #include "Posix.hpp"
 
-MLU_Posix_hpp
+BEGIN_MLU_NAMESPACE
 
 /*****************************************************************************
 
@@ -127,4 +127,4 @@ void MakeAncestorDirs( const std::string& Filename )
   }
 }
 
-MLU_Posix_hpp_end
+END_MLU_NAMESPACE

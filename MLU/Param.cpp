@@ -28,7 +28,7 @@
 
 #include "Param.hpp"
 
-MLU_Param_hpp
+BEGIN_MLU_NAMESPACE
 
 static const std::array<std::string,4> ParamTypeHuman{ "All", "Variable", "Fixed", "Derived" };
 
@@ -229,10 +229,10 @@ std::istream &operator>>( std::istream &is, Param::Key &key )
 
 std::ostream &operator<<( std::ostream &os, const Params::DispMap::value_type &dv )
 {
-  const Common::Param::Key &dk{ dv.first };
-  const Common::DispEntry &de{ dv.second };
+  const MLU::Param::Key &dk{ dv.first };
+  const MLU::DispEntry &de{ dv.second };
   return os << dk << " derived from " << de.ParentKey << " N=" << de.N << ", p="
-            << de.p.to_string3d( Common::Comma );
+            << de.p.to_string3d( MLU::Comma );
 }
 
 std::ostream &operator<<( std::ostream &os, const Params::DispMap &dm )
@@ -241,7 +241,7 @@ std::ostream &operator<<( std::ostream &os, const Params::DispMap &dm )
   {
     os << *it;
     if( ++it != dm.cend() )
-      os << Common::NewLine;
+      os << MLU::NewLine;
   }
   return os;
 }
@@ -260,7 +260,7 @@ Params::Params( const std::vector<std::string> &ParamNames )
 Params::Params( const std::vector<std::string> &ParamNames, std::vector<std::size_t> &vIdx )
 : Params( ParamNames )
 {
-  Common::Param::Key k;
+  MLU::Param::Key k;
   vIdx.resize( ParamNames.size() );
   for( std::size_t i = 0; i < ParamNames.size(); ++i )
   {
@@ -438,12 +438,12 @@ Params::iterator Params::AddEnergy( const Param::Key &key, std::size_t NumExp, i
       throw std::runtime_error( os.str().c_str() );
     }
     std::string Key0{ key.Object[0] };
-    Common::Momentum p;
+    MLU::Momentum p;
     if( p.Extract( Key0 ) && p )
     {
       // I'm adding an energy parameter for non-zero momentum
-      Common::Momentum p0( p.bp2 );
-      Key0.append( p0.FileString( Common::Momentum::DefaultPrefix ) );
+      MLU::Momentum p0( p.bp2 );
+      Key0.append( p0.FileString( MLU::Momentum::DefaultPrefix ) );
       Param::Key k0( std::move( Key0 ), key.Name );
       Add( k0, NumExp, true, Param::Type::Variable );
       dispMap.emplace( key, DispEntry( k0, N, p, dispType ) );
@@ -1699,4 +1699,4 @@ std::ostream &operator<<( std::ostream &os, const SignChoice &sc )
   return os;
 }
 
-MLU_Param_hpp_end
+END_MLU_NAMESPACE

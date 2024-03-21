@@ -24,14 +24,14 @@
 /*  END LEGAL */
 
 #pragma once
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 using Scalar = double;
-using Fold = Common::Fold<Scalar>;
-using Model = Common::Model<Scalar>;
-//using Vector = Common::Vector<Scalar>;
-//using VectorView = Common::VectorView<Scalar>;
-using Column = Common::JackBootColumn<Scalar>;
+using Fold = MLU::Fold<Scalar>;
+using Model = MLU::Model<Scalar>;
+//using Vector = MLU::Vector<Scalar>;
+//using VectorView = MLU::VectorView<Scalar>;
+using Column = MLU::JackBootColumn<Scalar>;
 
 extern Model DummyModel;
 extern const char LoadFilePrefix[];
@@ -45,7 +45,7 @@ enum class Freeze
 
 inline void Append( std::string &s, const std::string &Add )
 {
-  s.append( Common::Underscore );
+  s.append( MLU::Underscore );
   s.append( Add );
 }
 
@@ -53,18 +53,18 @@ inline void Append( std::string &s, const std::string &Add )
 struct MP
 {
   std::string Meson;
-  Common::Momentum p;
+  MLU::Momentum p;
   std::string pName;
   MP() {};
-  MP( const std::string &Meson_, const Common::Momentum &P,
-      const std::string &pName_ =  Common::Momentum::DefaultPrefix )
+  MP( const std::string &Meson_, const MLU::Momentum &P,
+      const std::string &pName_ =  MLU::Momentum::DefaultPrefix )
   : Meson{Meson_}, p{P}, pName{pName_} {}
-  MP( const std::string &Meson_, const Common::NamedMomentum &NP ) : MP(Meson_,NP.p,NP.Name) {}
-  MP( const std::string &Meson_, const Common::MomentumPair &NP ) : MP(Meson_,NP.second,NP.first) {}
+  MP( const std::string &Meson_, const MLU::NamedMomentum &NP ) : MP(Meson_,NP.p,NP.Name) {}
+  MP( const std::string &Meson_, const MLU::MomentumPair &NP ) : MP(Meson_,NP.second,NP.first) {}
   /// Get name of two-point correlator
-  std::string C2Name() const { return Meson + p.FileString( Common::Momentum::DefaultPrefix ); }
-  Common::Param::Key PK( const std::string &FieldName = Common::ModelBase::EnergyPrefix ) const
-  { return Common::Param::Key( C2Name(), FieldName ); }
+  std::string C2Name() const { return Meson + p.FileString( MLU::Momentum::DefaultPrefix ); }
+  MLU::Param::Key PK( const std::string &FieldName = MLU::ModelBase::EnergyPrefix ) const
+  { return MLU::Param::Key( C2Name(), FieldName ); }
 };
 
 std::ostream &operator<<( std::ostream &os, const MP &mp );
@@ -74,7 +74,7 @@ struct LessMP
 {
   bool operator()( const MP &lhs, const MP &rhs ) const
   {
-    int i = Common::CompareIgnoreCase( lhs.Meson, rhs.Meson );
+    int i = MLU::CompareIgnoreCase( lhs.Meson, rhs.Meson );
     if( i )
       return i < 0;
     return lhs.p < rhs.p;
@@ -120,8 +120,8 @@ template<typename Key, typename LessKey = std::less<Key>, typename KeyRead = Key
          typename LessKeyRead = LessKey, typename Scalar = ::Scalar >
 struct KeyFileCache
 {
-  using M = Common::Model<Scalar>;
-  using ColumnT = Common::JackBootColumn<Scalar>;
+  using M = MLU::Model<Scalar>;
+  using ColumnT = MLU::JackBootColumn<Scalar>;
 //  const std::string C2Base;
   Freeze freeze;
 protected:
@@ -152,12 +152,12 @@ public:
   void Read( const std::string &Filename, const char * PrintPrefix );
   M &operator()( const Key &key, const char * PrintPrefix ); // Make sure model loaded and print message
   inline M &operator[]( const Key &key ) { return operator()( key, nullptr ); }
-  ColumnT GetColumn( const Key &key, const Common::Param::Key &pKey, std::size_t Index = 0 );
+  ColumnT GetColumn( const Key &key, const MLU::Param::Key &pKey, std::size_t Index = 0 );
 };
 
-using ZVModelMap = KeyFileCache<std::string, Common::LessCaseInsensitive>;
+using ZVModelMap = KeyFileCache<std::string, MLU::LessCaseInsensitive>;
 
-using MPModelMap = KeyFileCache<MP, LessMP, MPReader, Common::LessCaseInsensitive>;
+using MPModelMap = KeyFileCache<MP, LessMP, MPReader, MLU::LessCaseInsensitive>;
 
 // Base class for ratio construction
 class Maker
@@ -168,7 +168,7 @@ public:
   //const std::string C2Base;
   const std::string modelBase;
   const std::string outBase;
-  //const Common::Momentum p;
+  //const MLU::Momentum p;
   const bool bSymmetrise;
 protected:
   const bool bOverlapAltNorm;
@@ -186,7 +186,7 @@ public:
 protected:
   std::string HeavyKey( const std::string &Heavy ) const;
 public:
-  Maker( const Common::CommandLine &cl );
+  Maker( const MLU::CommandLine &cl );
   virtual ~Maker() {}
   virtual void Make( std::string &sFileName ) = 0;
   virtual void Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::string> &FileList );
@@ -215,21 +215,21 @@ protected:
     AppendOp( s, Snk );
     AppendOp( s, Src );
   }
-  virtual void ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+  virtual void ZVRMake( const MLU::FileNameAtt &fna, const std::string &fnaSuffix,
                         const SSInfo &Snk, const SSInfo &Src ) = 0;
 public:
   void Make( std::string &sFileName ) override;
-  ZVRCommon( const Common::CommandLine &cl ) : Maker( cl ) {}
+  ZVRCommon( const MLU::CommandLine &cl ) : Maker( cl ) {}
 };
 
 // Make Z_V: eq 2.7 pg 3 https://arxiv.org/pdf/1305.7217.pdf
 class ZVMaker : public ZVRCommon
 {
 protected:
-  void ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+  void ZVRMake( const MLU::FileNameAtt &fna, const std::string &fnaSuffix,
                 const SSInfo &Snk, const SSInfo &Src ) override;
 public:
-  ZVMaker( const std::string &TypeParams, const Common::CommandLine &cl );
+  ZVMaker( const std::string &TypeParams, const MLU::CommandLine &cl );
 };
 
 // Make R1 and R2: eq 2.8 pg 4 https://arxiv.org/pdf/1305.7217.pdf
@@ -238,10 +238,10 @@ class RMaker : public ZVRCommon
 protected:
   const bool bAltR3;
   ZVModelMap ZVmi;
-  void ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+  void ZVRMake( const MLU::FileNameAtt &fna, const std::string &fnaSuffix,
              const SSInfo &Snk, const SSInfo &Src ) override;
 public:
-  RMaker( const std::string &TypeParams, const Common::CommandLine &cl );
+  RMaker( const std::string &TypeParams, const MLU::CommandLine &cl );
 };
 
 struct FormFactor
@@ -276,7 +276,7 @@ struct FormFactor
   void Write( std::string &OutFileName, const Model &CopyAttributesFrom,
               std::vector<std::string> &&SourceFileNames, int NumSamples,
               const Column &MHeavy, const Column &ELight,
-              const Column &vT, const Common::Momentum &p,
+              const Column &vT, const MLU::Momentum &p,
               const Column &ZVPrevSrc, const Column &ZVPrevSnk, const Column &ZVMixed,
              // These only required for non-zero momentum
               const Column *pMLight, const Column *pvXYZ );
@@ -291,12 +291,12 @@ class FMaker : public Maker, public FormFactor
 {
   struct RatioFile
   {
-    Common::Momentum p;
+    MLU::Momentum p;
     //std::string Prefix;
     std::string Source;
     std::string Sink;
     struct Less { bool operator()( const RatioFile &lhs, const RatioFile &rhs ) const; };
-    RatioFile( const Common::Momentum &p_, const std::string &Source_, const std::string &Sink_ )
+    RatioFile( const MLU::Momentum &p_, const std::string &Source_, const std::string &Sink_ )
     : p{p_}, Source{Source_}, Sink{Sink_} {}
   };
   using FileMap = std::map<RatioFile, std::vector<std::string>, RatioFile::Less>;
@@ -306,7 +306,7 @@ protected:
   std::array<FileMap,2> map;
 public:
   static int Weight( const std::string &Quark );
-  FMaker( std::string TypeParams, const Common::CommandLine &cl )
+  FMaker( std::string TypeParams, const MLU::CommandLine &cl )
   : Maker( cl ), FormFactor{TypeParams}, i3Base{ cl.SwitchValue<std::string>("i3") } {}
   void Make( std::string &sFileName ) override;
   void Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::string> &FileList ) override;
@@ -320,14 +320,14 @@ protected:
   int RatioNum;
   std::string qSnk;
   std::string qSrc;
-  Common::Momentum p; std::string pName;
+  MLU::Momentum p; std::string pName;
   std::string Prefix;
   std::string Suffix;
   std::string FitType;
   std::vector<int> FitParts;
 public:
   static int Weight( const std::string &Quark );
-  FFitConstMaker( std::string TypeParams, const Common::CommandLine &cl )
+  FFitConstMaker( std::string TypeParams, const MLU::CommandLine &cl )
   : Maker( cl ), FormFactor{TypeParams}, i3Base{ cl.SwitchValue<std::string>("i3") } {}
   void Make( std::string &sFileName ) override;
 };

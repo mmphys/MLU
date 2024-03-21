@@ -76,7 +76,7 @@ void FitterThread::InitialiseCovar( const std::string *pBaseName )
 {
   if( pBaseName && pBaseName->empty() )
     pBaseName = nullptr;
-  const Common::SeedType Seed{ OutputModel.Name_.Seed };
+  const MLU::SeedType Seed{ OutputModel.Name_.Seed };
   // Extract StdErrorMean = sqrt(diagonals) and CholeskyDiag = 1/StdErrorMean
   for( std::size_t i = 0; i < Extent; ++i )
     StdErrorMean[i] = Covar( i, i );
@@ -93,11 +93,11 @@ void FitterThread::InitialiseCovar( const std::string *pBaseName )
     OutputModel.Correl = Correl;
     if( pBaseName )
     {
-      parent.SaveMatrixFile( Covar, Common::sCovariance,
-            Common::MakeFilename( *pBaseName, Common::sCovmat, Seed, TEXT_EXT ) );
-      parent.SaveMatrixFile( Correl, Common::sCorrelation,
-            Common::MakeFilename( *pBaseName, Common::sCormat, Seed, TEXT_EXT ),
-                                  Common::pszCorrelGnuplot );
+      parent.SaveMatrixFile( Covar, MLU::sCovariance,
+            MLU::MakeFilename( *pBaseName, MLU::sCovmat, Seed, TEXT_EXT ) );
+      parent.SaveMatrixFile( Correl, MLU::sCorrelation,
+            MLU::MakeFilename( *pBaseName, MLU::sCormat, Seed, TEXT_EXT ),
+                                  MLU::pszCorrelGnuplot );
     }
   }
   // Cholesky decompose the correlation matrix
@@ -151,7 +151,7 @@ void FitterThread::InitialiseCovar( const std::string *pBaseName )
         Vector CondBuffer( 3 * Cholesky.size1 );
         const int e2{ gsl_linalg_pcholesky_rcond( &Cholesky, Perm, &CondNumber, &CondBuffer ) };
         if( e2 )
-          Common::GSLLibraryGlobal::Error( "Unable to get condition number using pivoted Cholesky"
+          MLU::GSLLibraryGlobal::Error( "Unable to get condition number using pivoted Cholesky"
                                           " decomposition", __FILE__, __LINE__, e2 );
       }
       if( gsl_linalg_pcholesky_invert( &Cholesky, Perm, &CorrelInv ) )
@@ -200,10 +200,10 @@ void FitterThread::InitialiseCovar( const std::string *pBaseName )
     parent.Dump( idx, "Inverse Covar", OutputModel.CovarInv );
     if( pBaseName )
     {
-      parent.SaveMatrixFile( Cholesky, Common::sCorrelationCholesky,
-         Common::MakeFilename(*pBaseName, Common::sCormatCholesky, Seed, TEXT_EXT));
-      parent.SaveMatrixFile( OutputModel.CovarInv, Common::sCovarianceInv,
-         Common::MakeFilename( *pBaseName, Common::sCovmatInv, Seed,TEXT_EXT ) );
+      parent.SaveMatrixFile( Cholesky, MLU::sCorrelationCholesky,
+         MLU::MakeFilename(*pBaseName, MLU::sCormatCholesky, Seed, TEXT_EXT));
+      parent.SaveMatrixFile( OutputModel.CovarInv, MLU::sCovarianceInv,
+         MLU::MakeFilename( *pBaseName, MLU::sCovmatInv, Seed,TEXT_EXT ) );
     }
   }
   // Set Cholesky = Cholesky decomposition of the inverse correlation matrix
@@ -220,10 +220,10 @@ void FitterThread::InitialiseCovar( const std::string *pBaseName )
         OutputModel.CovarInvCholesky( i, j ) *= CholeskyDiag[i];
     if( pBaseName )
     {
-      parent.SaveMatrixFile( Cholesky, Common::sCorrelationInvCholesky,
-                Common::MakeFilename( *pBaseName, Common::sCormatInvCholesky, Seed, TEXT_EXT ) );
-      parent.SaveMatrixFile( OutputModel.CovarInvCholesky, Common::sCovarianceInvCholesky,
-                Common::MakeFilename( *pBaseName, Common::sCovmatInvCholesky, Seed, TEXT_EXT ) );
+      parent.SaveMatrixFile( Cholesky, MLU::sCorrelationInvCholesky,
+                MLU::MakeFilename( *pBaseName, MLU::sCormatInvCholesky, Seed, TEXT_EXT ) );
+      parent.SaveMatrixFile( OutputModel.CovarInvCholesky, MLU::sCovarianceInvCholesky,
+                MLU::MakeFilename( *pBaseName, MLU::sCovmatInvCholesky, Seed, TEXT_EXT ) );
     }
   }
 }
@@ -374,9 +374,9 @@ std::string FitterThread::ReplicaString( int iFitNum ) const
 void FitterThread::ShowReplicaMessage( int iFitNum ) const
 {
   double ChiSq{ getTestStat() };
-  std::cout << ReplicaString( iFitNum ) << ", calls " << getNumCalls() << ", chi^2 " << ChiSq << Common::NewLine;
+  std::cout << ReplicaString( iFitNum ) << ", calls " << getNumCalls() << ", chi^2 " << ChiSq << MLU::NewLine;
   ReplicaMessage( std::cout );
-  std::cout << "dof " << parent.dof << ", chi^2/dof " << ( ChiSq / ( parent.dof ? parent.dof : 1 ) ) << Common::NewLine;
+  std::cout << "dof " << parent.dof << ", chi^2/dof " << ( ChiSq / ( parent.dof ? parent.dof : 1 ) ) << MLU::NewLine;
   // TODO: I don't think this first case is correct?
   if( parent.Verbosity > 2 )
     DumpParamsFitter( std::cout );
@@ -543,9 +543,9 @@ scalar FitterThread::FitOne()
   else
   {
     ChiSqPerDof /= parent.dof;
-    qValue = Common::qValueChiSq( dTestStat, parent.dof );
-    if( Common::HotellingDist::Usable( FDist_p, FDist_m ) )
-      qValueH = Common::HotellingDist::qValue( dTestStat, FDist_p, FDist_m );
+    qValue = MLU::qValueChiSq( dTestStat, parent.dof );
+    if( MLU::HotellingDist::Usable( FDist_p, FDist_m ) )
+      qValueH = MLU::HotellingDist::qValue( dTestStat, FDist_p, FDist_m );
     else
       qValueH = qValue;
   }
@@ -570,7 +570,7 @@ scalar FitterThread::FitOne()
     }
     std::cout << ss.str();
     ss.str(std::string());
-    ss << "chi^2/dof " << ChiSqPerDof << ", dof " << parent.dof << Common::CommaSpace;
+    ss << "chi^2/dof " << ChiSqPerDof << ", dof " << parent.dof << MLU::CommaSpace;
     if( parent.dof == 0 )
       ss << "Extrapolation => qValue 1";
     else
@@ -579,7 +579,7 @@ scalar FitterThread::FitOne()
     if( parent.dof )
     {
       ss << ", Hotelling qValue ";
-      if( Common::HotellingDist::Usable( FDist_p, FDist_m ) )
+      if( MLU::HotellingDist::Usable( FDist_p, FDist_m ) )
         ss << qValueH;
       else
         ss << "invalid (m <= p)";
@@ -617,7 +617,7 @@ scalar FitterThread::FitOne()
         }
       }
     }
-    std::cout << "OK: " << ss.str() << Common::NewLine;
+    std::cout << "OK: " << ss.str() << MLU::NewLine;
   }
   // Make pairs of parameters the right sign
   parent.mp.AdjustSigns( ModelParams );

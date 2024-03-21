@@ -29,7 +29,7 @@
 #ifndef MultiFit_hpp
 #define MultiFit_hpp
 
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 // Uncomment the next line if your cmath doesn't define M_PI etc by default
 //#define _USE_MATH_DEFINES
@@ -38,29 +38,29 @@
 //#include <sys/stat.h>
 
 using scalar = double;
-using Matrix = Common::Matrix<scalar>;
-using Vector = Common::Vector<scalar>;
-using MatrixView = Common::MatrixView<scalar>;
-using VectorView = Common::VectorView<scalar>;
-using Sample = Common::Sample<scalar>;
+using Matrix = MLU::Matrix<scalar>;
+using Vector = MLU::Vector<scalar>;
+using MatrixView = MLU::MatrixView<scalar>;
+using VectorView = MLU::VectorView<scalar>;
+using Sample = MLU::Sample<scalar>;
 using SamplePtr = std::unique_ptr<Sample>;
-using Fold = Common::Fold<scalar>;
+using Fold = MLU::Fold<scalar>;
 using FoldPtr = std::unique_ptr<Fold>;
 using vCorrelator = std::vector<Fold>;
-using ModelFile = Common::Model<scalar>;
+using ModelFile = MLU::Model<scalar>;
 using ModelFilePtr = std::unique_ptr<ModelFile>;
-using DataSet = Common::DataSet<scalar>;
-using JackBoot = Common::JackBoot<scalar>;
-using JackBootColumn = Common::JackBootColumn<scalar>;
-using ValWithEr = Common::ValWithEr<scalar>;
-using ConstantSource = Common::ConstantSource;
+using DataSet = MLU::DataSet<scalar>;
+using JackBoot = MLU::JackBoot<scalar>;
+using JackBootColumn = MLU::JackBootColumn<scalar>;
+using ValWithEr = MLU::ValWithEr<scalar>;
+using ConstantSource = MLU::ConstantSource;
 using vString = std::vector<std::string>;
 using vInt = std::vector<int>;
-using UniqueNames = Common::UniqueNames;
-using Param = Common::Param;
-using Params = Common::Params;
-using ParamsPairs = Common::ParamsPairs;
-using GSLLG = Common::GSLLibraryGlobal;
+using UniqueNames = MLU::UniqueNames;
+using Param = MLU::Param;
+using Params = MLU::Params;
+using ParamsPairs = MLU::ParamsPairs;
+using GSLLG = MLU::GSLLibraryGlobal;
 
 // Indices for operators in correlator names
 constexpr int idxSrc{ 0 };

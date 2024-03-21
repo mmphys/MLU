@@ -35,15 +35,12 @@
 #include <omp.h>
 #endif
 
-MLU_JackBoot_hpp
+BEGIN_MLU_NAMESPACE
 
 const std::string s_C{ "_C" };
 const std::string JackBootBase::s_S{ "_S" };
 const std::string JackBootBase::sBootstrap{ "bootstrap" };
 const std::string JackBootBase::sJackknife{ "jackknife" };
-
-// TODO: I need these from Common.hpp
-void MakeAncestorDirs( const std::string& Filename );
 
 /*****************************************************************************
 
@@ -322,7 +319,7 @@ void RandomCache::SaveRandom( const Key &key, Value &value )
     bool bOK{};
     try // to write in my format
     {
-      if( Common::FileExists( Filename ) )
+      if( MLU::FileExists( Filename ) )
       {
         // See whether compatible with existing file ... but only do this once
         if( !value.bOnDisk )
@@ -733,7 +730,7 @@ void JackBoot<T>::MakeStatistics( ValWithEr<T> *vStats, std::size_t StartCol,
         {
           for( std::size_t j = 0; j < NumCols; ++j )
           {
-            if( ::Common::IsFinite( Replica( replica, j + StartCol ) ) )
+            if( ::MLU::IsFinite( Replica( replica, j + StartCol ) ) )
             {
               Var[j] += Squared( Replica( replica, j + StartCol ) - Central[j + StartCol] );
               ++Count[j];
@@ -765,7 +762,7 @@ void JackBoot<T>::MakeStatistics( ValWithEr<T> *vStats, std::size_t StartCol,
           std::size_t Count{};
           for( std::size_t replica = 0; replica < NumReplicas(); ++replica )
           {
-            if( ::Common::IsFinite( Replica( replica, j + StartCol ) ) )
+            if( ::MLU::IsFinite( Replica( replica, j + StartCol ) ) )
               Buffer[Count++] = Replica( replica, j + StartCol );
           }
           vStats[j].Get( Central[j + StartCol], Buffer, Count );
@@ -1074,4 +1071,4 @@ template class JackBoot<float>;
 template class JackBoot<std::complex<double>>;
 template class JackBoot<std::complex<float>>;
 
-MLU_JackBoot_hpp_end
+END_MLU_NAMESPACE

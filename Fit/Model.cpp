@@ -48,10 +48,10 @@ std::string Model::Args::Remove( const std::string &key, bool * Removed )
 // Read key-Value map. In future this should work for any type - but for now, it's string only
 void Model::Args::FromString( const std::string &s, bool bOptionalValue )
 {
-  for( std::size_t iStart = 0; ( iStart = s.find_first_not_of( Common::WhiteSpace, iStart ) ) != std::string::npos; )
+  for( std::size_t iStart = 0; ( iStart = s.find_first_not_of( MLU::WhiteSpace, iStart ) ) != std::string::npos; )
   {
     // Find where this field stops, trimming trailing whitespace
-    const std::size_t NextComma = s.find_first_of( Common::Comma, iStart );
+    const std::size_t NextComma = s.find_first_of( MLU::Comma, iStart );
     std::size_t iStop = ( NextComma == std::string::npos ? s.length() : NextComma );
     while( iStop - iStart && std::isspace( s[iStop - 1] ) )
       iStop--;
@@ -63,7 +63,7 @@ void Model::Args::FromString( const std::string &s, bool bOptionalValue )
     if( iEquals != std::string::npos )
     {
       // We've found an equal sign. Extract the value
-      const std::size_t ValStart = sKey.find_first_not_of( Common::WhiteSpace, iEquals + 1 );
+      const std::size_t ValStart = sKey.find_first_not_of( MLU::WhiteSpace, iEquals + 1 );
       if( ValStart != std::string::npos )
         Value = sKey.substr( ValStart );
       // Now trim the Key
@@ -98,9 +98,9 @@ std::string Model::Args::ToString() const
 std::vector<bool> Model::CreateParams::CreateMomList( const std::string &MomIndependentOpList )
 {
   std::vector<bool> v( OpNames.size(), false );
-  for( const std::string &s : Common::ArrayFromString( MomIndependentOpList ) )
+  for( const std::string &s : MLU::ArrayFromString( MomIndependentOpList ) )
   {
-    int i{ Common::IndexIgnoreCase( OpNames, s ) };
+    int i{ MLU::IndexIgnoreCase( OpNames, s ) };
     if( i < 0 || i >= OpNames.size() )
       std::cout << "WARNING: Operator " << s << " not referred to in input files.\n";
     else
@@ -109,14 +109,14 @@ std::vector<bool> Model::CreateParams::CreateMomList( const std::string &MomInde
   return v;
 }
 
-Model::CreateParams::CreateParams( const std::vector<std::string> &o, const Common::CommandLine &c )
+Model::CreateParams::CreateParams( const std::vector<std::string> &o, const MLU::CommandLine &c )
 : OpNames{ o },
   bOpMomIndependent( CreateMomList( c.SwitchValue<std::string>( "nopolap" ) ) ),
   cl{ c },
-  bOverlapAltNorm{ cl.GotSwitch( Common::sOverlapAltNorm.c_str() ) }
+  bOverlapAltNorm{ cl.GotSwitch( MLU::sOverlapAltNorm.c_str() ) }
 {
   if( bOverlapAltNorm )
-    std::cout << "WARNING: Use of --" << Common::sOverlapAltNorm << " is deprecated.\n";
+    std::cout << "WARNING: Use of --" << MLU::sOverlapAltNorm << " is deprecated.\n";
 }
 
 std::string Model::CreateParams::Description() const
@@ -134,7 +134,7 @@ void Model::AddParam( Params &mp, ModelParam &ModPar, std::size_t NumExp, bool b
 }
 
 void Model::AddEnergy( Params &mp, ModelParam &ModPar, std::size_t NumExp, int N,
-                       Common::DispersionType dispType )
+                       MLU::DispersionType dispType )
 {
   param.emplace_back( &*mp.AddEnergy( ModPar.Key, NumExp, N, dispType ) );
   ModPar.param = &param.back()->second;
@@ -188,13 +188,13 @@ std::vector<std::string> Object::GetObjectNameSnkSrc( const Model::CreateParams 
   std::vector<std::string> ObjectID( 2 );
   ObjectID[0] = Args.Remove( "Src", &bManualObjectID[0] );
   ObjectID[1] = Args.Remove( "Snk", &bManualObjectID[1] );
-  const Common::FileNameAtt &fna{ cp.pCorr->Name_ };
+  const MLU::FileNameAtt &fna{ cp.pCorr->Name_ };
   if( !bManualObjectID[0] )
   {
     if( !fna.MesonMom.empty() )
       ObjectID[0] = fna.MesonMom[0];
     else if( fna.BaseShortParts.size() >= 2
-            && Common::EqualIgnoreCase( fna.BaseShortParts[0], "ZV" ) )
+            && MLU::EqualIgnoreCase( fna.BaseShortParts[0], "ZV" ) )
     {
       ObjectID[0] = fna.MakeMesonName( fna.BaseShortParts[1] );
       ObjectID.resize( 1 );
@@ -210,7 +210,7 @@ std::vector<std::string> Object::GetObjectNameSnkSrc( const Model::CreateParams 
         throw std::runtime_error( "GetObjectNameSnkSrc(): Snk unavailable - specify manually" );
       ObjectID[1] = fna.MesonMom[1];
     }
-    if( Common::EqualIgnoreCase( ObjectID[0], ObjectID[1] ) )
+    if( MLU::EqualIgnoreCase( ObjectID[0], ObjectID[1] ) )
       ObjectID.resize( 1 );
   }
   return ObjectID;

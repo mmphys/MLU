@@ -27,8 +27,9 @@
 /*  END LEGAL */
 
 #ifndef MLU_GSLVecMat_hpp
-#define MLU_GSLVecMat_hpp namespace Common {
-#define MLU_GSLVecMat_hpp_end };
+#define MLU_GSLVecMat_hpp
+
+#include <MLU/MLUFirst.hpp>
 
 #include <cassert>
 #include <complex>
@@ -55,7 +56,7 @@
 
 #include <gsl/gsl_sf_bessel.h>
 
-MLU_GSLVecMat_hpp
+BEGIN_MLU_NAMESPACE
 
 extern const double NaN;
 
@@ -435,5 +436,5 @@ inline double BesselK1( double x, double * pError = nullptr )
   return gsfRes.val;
 }
 
-MLU_GSLVecMat_hpp_end
+END_MLU_NAMESPACE
 #endif

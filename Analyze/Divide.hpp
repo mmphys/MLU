@@ -24,11 +24,11 @@
 /*  END LEGAL */
 
 #pragma once
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 using Scalar = double;
-using Fold = Common::Fold<Scalar>;
-using Boot = Common::Sample<std::complex<Scalar>>;
+using Fold = MLU::Fold<Scalar>;
+using Boot = MLU::Sample<std::complex<Scalar>>;
 
 class Params
 {
@@ -48,13 +48,13 @@ protected:
   void DivideCommon( const Boot &Denominator, Boot &Numerator );
   void ReadNumerator( const std::string &FileName );
   template <typename T>
-  void Normalise( Common::JackBoot<T> &jb, const std::vector<int> &opNum,
+  void Normalise( MLU::JackBoot<T> &jb, const std::vector<int> &opNum,
              const std::vector<std::string> &opNames );
   template <typename FoldBoot>
   void DivideBoot( FoldBoot &Numerator, const FoldBoot &Denominator );
   void DivideFold( Fold &Numerator, const Fold &Denominator );
 
 public:
-  Params( const Common::CommandLine &cl );
-  void Run( const Common::CommandLine &cl, bool &bShowUsage );
+  Params( const MLU::CommandLine &cl );
+  void Run( const MLU::CommandLine &cl, bool &bShowUsage );
 };

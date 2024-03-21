@@ -173,7 +173,7 @@ void FitterThreadGSL::Minimise( int )
     if( gsl_e )
       GSLLG::Error( "FitterThreadGSL::Minimise() unable to compute starting residual using gsl_blas_ddot()",
                    __FILE__, __LINE__, gsl_e );
-    std::cout << (state.bValid ? "Intermediate" : "Guess") << " uncorrelated chi^2=" << TestStat << Common::NewLine;
+    std::cout << (state.bValid ? "Intermediate" : "Guess") << " uncorrelated chi^2=" << TestStat << MLU::NewLine;
   }
 
   // solve the system with a maximum of parent.MaxIt iterations
@@ -214,8 +214,8 @@ void FitterThreadGSL::Minimise( int )
     // Compare numeric derivatives to the analytic ones I would have computed
     Matrix MyJacobian( parent.ds.Extent, parent.NumVariable );
     AnalyticJacobian( MyJacobian );
-    std::cout << Common::NewLine << "GSL Jacobian:\n" << mJacobian << Common::NewLine
-              << "My Jacobian:\n" << MyJacobian << Common::NewLine;
+    std::cout << MLU::NewLine << "GSL Jacobian:\n" << mJacobian << MLU::NewLine
+              << "My Jacobian:\n" << MyJacobian << MLU::NewLine;
     MyJacobian.cols(); // Debug breakpoint here
   }*/
 }
@@ -246,7 +246,7 @@ FitterGSL * FitterGSL::Make( const std::string &FitterArgs, Model::CreateParams 
   static const std::vector<std::string> Algorithms{ "lm", "lmaccel", "dogleg", "ddogleg", "subspace2d" };
   if( !FitterArgs.empty() )
   {
-    int idx{ Common::IndexIgnoreCase( Algorithms, FitterArgs ) };
+    int idx{ MLU::IndexIgnoreCase( Algorithms, FitterArgs ) };
     if( idx >= Algorithms.size() )
       return nullptr;
     trs = static_cast<TRS>( idx );

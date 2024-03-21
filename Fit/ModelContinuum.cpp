@@ -62,7 +62,7 @@ std::istream & operator>>( std::istream &is, eModelType &m )
   std::string s;
   if( is >> s )
   {
-    if( Common::EqualIgnoreCase( s, sModelTypeContinuum ) )
+    if( MLU::EqualIgnoreCase( s, sModelTypeContinuum ) )
       m = eModelType::Continuum;
     else
     {
@@ -86,12 +86,12 @@ ModelPtr Model::MakeModel( int ModelNum, const Model::CreateParams &cp, Model::A
 {
   // Now work out what type of model we are creating
   const eModelType modelType{ eModelType::Continuum };
-  const Common::FormFactor ff{ Common::FromString<Common::FormFactor>( Args.Remove( sFF ) ) };
+  const MLU::FormFactor ff{ MLU::FromString<MLU::FormFactor>( Args.Remove( sFF ) ) };
   // Make the model
-  std::cout << std::setw( 5 ) << ModelNum << Common::Space << modelType;
+  std::cout << std::setw( 5 ) << ModelNum << MLU::Space << modelType;
   for( typename Model::Args::value_type v : Args )
   {
-    std::cout << Common::CommaSpace << v.first;
+    std::cout << MLU::CommaSpace << v.first;
     if( !v.second.empty() )
       std::cout << '=' << v.second;
   }
@@ -102,10 +102,10 @@ ModelPtr Model::MakeModel( int ModelNum, const Model::CreateParams &cp, Model::A
   }
   catch(...)
   {
-    std::cout << Common::Space;
+    std::cout << MLU::Space;
     throw;
   }
-  std::cout << " => " << model->Description() << Common::NewLine;
+  std::cout << " => " << model->Description() << MLU::NewLine;
   // 2 part construction - now that virtual functions in place
   return model;
 }
@@ -124,28 +124,28 @@ const std::string ModelContinuum::FieldQSq{ "qSq" };
 const std::string ModelContinuum::FieldEL{ "EL" };
 
 ModelContinuum::ModelContinuum( const Model::CreateParams &mcp, Model::Args &Args,
-                                Common::FormFactor ff_ )
+                                MLU::FormFactor ff_ )
 : Model( mcp, 1 ),
   ff{ff_},
   Ensemble{ Args.Remove( "Ensemble", mcp.pCorr->Ensemble ) },
   ei{ GetEnsembleInfo() },
   Parent{ dynamic_cast<const ::CreateParams &>( mcp ).Parent },
   mf{ * dynamic_cast<const ModelFile *>( mcp.pCorr ) },
-  idxFitColumn{ mf.params.Find( Common::Param::Key( Common::GetFormFactorString( ff ) ),
+  idxFitColumn{ mf.params.Find( MLU::Param::Key( MLU::GetFormFactorString( ff ) ),
                                 "ModelContinuum::GetFitColumn()" )->second() },
   idxFF{ Parent.ffIndex( ff ) },
   p{ mcp.pCorr->Name_.MesonP[1].p }
 {
   // Check source and sink names match the parent
-  const Common::FileNameAtt &fna{ mcp.pCorr->Name_ };
+  const MLU::FileNameAtt &fna{ mcp.pCorr->Name_ };
   if( fna.BaseShortParts.size() < 3 || fna.Spectator.empty() )
     throw std::runtime_error( "Meson names not included in model filename " + fna.Filename );
-  std::string MesonSnk{ Common::MesonName( fna.BaseShortParts[1], fna.Spectator ) };
-  std::string MesonSrc{ Common::MesonName( fna.BaseShortParts[2], fna.Spectator ) };;
-  if( !Common::EqualIgnoreCase( MesonSnk, Parent.Meson[idxSnk] ) )
+  std::string MesonSnk{ MLU::MesonName( fna.BaseShortParts[1], fna.Spectator ) };
+  std::string MesonSrc{ MLU::MesonName( fna.BaseShortParts[2], fna.Spectator ) };;
+  if( !MLU::EqualIgnoreCase( MesonSnk, Parent.Meson[idxSnk] ) )
     throw std::runtime_error( "ModelContinuum(): Snk " + MesonSnk
                              + " doesn't match parent " + Parent.Meson[idxSnk] );
-  if( !Common::EqualIgnoreCase( MesonSrc, Parent.Meson[idxSrc] ) )
+  if( !MLU::EqualIgnoreCase( MesonSrc, Parent.Meson[idxSrc] ) )
     throw std::runtime_error( "ModelContinuum(): Src " + MesonSrc
                              + " doesn't match parent " + Parent.Meson[idxSrc] );
   const ::CreateParams &cp{ dynamic_cast<const ::CreateParams &>( mcp ) };
@@ -235,10 +235,10 @@ void ModelContinuum::AddParameters( Params &mp )
   AddParam( mp, amH );
   AddParam( mp, amL );
   AddParam( mp, aqSq );
-  AddParam( mp, EL, 1, false, Common::Param::Type::Derived );
-  AddParam( mp, mH, 1, false, Common::Param::Type::Derived );
-  AddParam( mp, mL, 1, false, Common::Param::Type::Derived );
-  AddParam( mp, qSq, 1, false, Common::Param::Type::Derived );
+  AddParam( mp, EL, 1, false, MLU::Param::Type::Derived );
+  AddParam( mp, mH, 1, false, MLU::Param::Type::Derived );
+  AddParam( mp, mL, 1, false, MLU::Param::Type::Derived );
+  AddParam( mp, qSq, 1, false, MLU::Param::Type::Derived );
 }
 
 std::size_t ModelContinuum::GetFitColumn() const

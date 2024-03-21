@@ -28,15 +28,14 @@
 #ifndef SynthData_hpp
 #define SynthData_hpp
 
-#include <MLU/Common.hpp>
-//using MomentumMap = Common::FileNameAtt::MomentumMap;
+#include <MLU/MLU.hpp>
+//using MomentumMap = MLU::FileNameAtt::MomentumMap;
 //using MomentumMapValue = typename MomentumMap::value_type;
-using Algebra = Common::Gamma::Algebra;
-//using namespace Common;
+using Algebra = MLU::Gamma::Algebra;
 
 using Scalar = double;
-using Fold = Common::Fold<Scalar>;
-using Matrix = Common::Matrix<Scalar>;
+using Fold = MLU::Fold<Scalar>;
+using Matrix = MLU::Matrix<Scalar>;
 
 #include <cmath>
 #include <iomanip>
@@ -79,16 +78,16 @@ struct Synth
   const int nSample;
   const int nBootSample;
   const std::string outStem;
-  const Common::SeedType seed;
+  const MLU::SeedType seed;
   const bool bVerbose;
   const bool bWarnIfExists;
-  Synth( const Common::CommandLine &cl, const std::string MachineNameActual );
+  Synth( const MLU::CommandLine &cl, const std::string MachineNameActual );
   void Make( std::string Basename ) const;
   std::ostream & DumpParams( std::ostream &os ) const;
 protected:
   std::array<std::array<MeanSigma, NumParams>, MaxExp> ParamMS;
   Fold RandomSample;
-  Common::SeedType GetSeedType( const Common::CommandLine &cl );
+  MLU::SeedType GetSeedType( const MLU::CommandLine &cl );
   std::string GetParamName( int e, int p ) const;
 };
 

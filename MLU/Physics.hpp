@@ -27,15 +27,14 @@
 /*  END LEGAL */
 
 #ifndef MLU_Physics_hpp
-#define MLU_Physics_hpp namespace Common {
-#define MLU_Physics_hpp_end };
+#define MLU_Physics_hpp
 
 #include <array>
 #include <ostream>
 #include <regex>
 #include <string>
 
-MLU_Physics_hpp
+BEGIN_MLU_NAMESPACE
 
 extern const std::string Underscore;
 
@@ -356,5 +355,5 @@ struct DeltaF
   }
 };
 
-MLU_Physics_hpp_end
+END_MLU_NAMESPACE
 #endif

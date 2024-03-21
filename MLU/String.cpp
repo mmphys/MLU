@@ -29,7 +29,7 @@
 #include "String.hpp"
 #include <iostream>
 
-MLU_String_hpp
+BEGIN_MLU_NAMESPACE
 
 extern const std::string Empty{ "" };
 extern const std::string Space{ " " };
@@ -272,4 +272,4 @@ void DumpEnv(int argc, const char * const *argv, const char * pStr )
   }
 }
 
-MLU_String_hpp_end
+END_MLU_NAMESPACE

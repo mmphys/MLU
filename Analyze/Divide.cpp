@@ -26,22 +26,22 @@
 #include "Divide.hpp"
 
 template <typename T>
-inline void Divide( Common::Matrix<T> &Num, const Common::Matrix<T> Den )
+inline void Divide( MLU::Matrix<T> &Num, const MLU::Matrix<T> Den )
 {
   for( std::size_t i = 0; i != Num.size1; ++i )
     for( std::size_t j = 0; j < Num.size2; ++j )
-      Num(i,j) = Common::ComponentDivide( Num(i,j), Den(i,j) );
+      Num(i,j) = MLU::ComponentDivide( Num(i,j), Den(i,j) );
 }
 
 template <typename T>
-inline void Divide( Common::JackBoot<T> &Num, const Common::JackBoot<T> Den )
+inline void Divide( MLU::JackBoot<T> &Num, const MLU::JackBoot<T> Den )
 {
   for( std::size_t i = Num.idxReplicaMean; i != Num.NumReplicas(); ++i )
     for( std::size_t j = 0; j < Num.extent(); ++j )
-      Num(i,j) = Common::ComponentDivide( Num(i,j), Den(i,j) );
+      Num(i,j) = MLU::ComponentDivide( Num(i,j), Den(i,j) );
 }
 
-Params::Params( const Common::CommandLine &cl )
+Params::Params( const MLU::CommandLine &cl )
 : bForceOverwrite{ cl.GotSwitch( "f" ) },
   bSaveHdf5{ cl.GotSwitch( "h" ) },
   InBase { cl.SwitchValue<std::string>("i") },
@@ -49,16 +49,16 @@ Params::Params( const Common::CommandLine &cl )
 {
   if( cl.GotSwitch( "v" ) )
   {
-    std::vector<std::string> v{ Common::Split( cl.SwitchValue<std::string>( "v" ), Common::Comma.c_str() ) };
+    std::vector<std::string> v{ MLU::Split( cl.SwitchValue<std::string>( "v" ), MLU::Comma.c_str() ) };
     for( std::string &s : v )
     {
       bool bError{ true };
       std::size_t pos{ s.find_first_of( '=' ) };
       if( pos != std::string::npos && pos && ( s.length() - pos ) > 1 )
       {
-        double d{ Common::FromString<double>( s.substr( pos + 1, s.length() - pos - 1 ) ) };
+        double d{ MLU::FromString<double>( s.substr( pos + 1, s.length() - pos - 1 ) ) };
         s.resize( pos );
-        Common::Trim( s );
+        MLU::Trim( s );
         if( !s.empty() )
         {
           VolFactor.emplace( std::make_pair( s, d ) ); // Spatial volume factor is cubed
@@ -77,21 +77,21 @@ Params::Params( const Common::CommandLine &cl )
         bFirst = false;
       }
       else
-        std::cout << Common::CommaSpace;
+        std::cout << MLU::CommaSpace;
       std::cout << pair.first << "=" << pair.second;
       pair.second = 1 / std::sqrt( pair.second * pair.second * pair.second );
     }
     if( !bFirst )
-      std::cout << Common::NewLine;
+      std::cout << MLU::NewLine;
   }
-  Common::MakeAncestorDirs( OutBase );
+  MLU::MakeAncestorDirs( OutBase );
 }
 
 template <typename T>
-void Params::Normalise( Common::JackBoot<T> &jb, const std::vector<int> &opNum,
+void Params::Normalise( MLU::JackBoot<T> &jb, const std::vector<int> &opNum,
                    const std::vector<std::string> &opNames )
 {
-  using Real = typename Common::JackBoot<T>::Real;
+  using Real = typename MLU::JackBoot<T>::Real;
   static constexpr Real One{ static_cast<Real>( 1 ) };
   // First work out what the volume factor is
   Real dFactor{ One };
@@ -103,7 +103,7 @@ void Params::Normalise( Common::JackBoot<T> &jb, const std::vector<int> &opNum,
   }
   if( dFactor != One )
   {
-    std::cout << "  Volume factor " << dFactor << Common::NewLine;
+    std::cout << "  Volume factor " << dFactor << MLU::NewLine;
     for( std::size_t i = 0; i < jb.NumReplicas(); ++i )
       for( std::size_t j = 0; j < jb.extent(); ++j )
         jb(i,j) *= dFactor;
@@ -114,13 +114,13 @@ template <typename FoldBoot>
 void Params::DivideBoot( FoldBoot &Numerator, const FoldBoot &Denominator )
 {
   int NumSamples = Numerator.NumSamples();
-  Numerator.IsCompatible( Denominator, &NumSamples, Common::COMPAT_DISABLE_BASE );
+  Numerator.IsCompatible( Denominator, &NumSamples, MLU::COMPAT_DISABLE_BASE );
   // Make sure output doesn't exist
   const std::string OutBaseName{ OutBase + Numerator.Name_.NameNoExt + "." };
   const std::string OutFileName{ OutBaseName + DEF_FMT };
   const std::string SummaryName{ OutBaseName + TEXT_EXT };
-  if( !bForceOverwrite && ( Common::FileExists( OutFileName ) || Common::FileExists( SummaryName ) ) )
-    std::cout << " Skip existing " << OutFileName << Common::NewLine;
+  if( !bForceOverwrite && ( MLU::FileExists( OutFileName ) || MLU::FileExists( SummaryName ) ) )
+    std::cout << " Skip existing " << OutFileName << MLU::NewLine;
   else
   {
     // Divide the Numerator by the denominator
@@ -146,7 +146,7 @@ void Params::DivideBoot( FoldBoot &Numerator, const FoldBoot &Denominator )
     // Merge the file lists
     if( Numerator.FileList.size() != Denominator.FileList.size() )
       std::cout << "Warning: sample FileList lengths unequal, appending" << std::endl;
-    Numerator.FileList = Common::ZipperMerge( Numerator.FileList, Denominator.FileList );
+    Numerator.FileList = MLU::ZipperMerge( Numerator.FileList, Denominator.FileList );
     // Update the summaries
     Numerator.MakeCorrSummary();
     if( bSaveHdf5 )
@@ -160,7 +160,7 @@ void Params::DivideFold( Fold &Numerator, const Fold &Denominator )
   // Merge the Bootstrap lists
   if( Numerator.BootstrapList.size() != Denominator.BootstrapList.size() )
     std::cout << "Warning: sample BootstrapList lengths unequal, appending" << std::endl;
-  Numerator.BootstrapList = Common::ZipperMerge( Numerator.BootstrapList, Denominator.BootstrapList );
+  Numerator.BootstrapList = MLU::ZipperMerge( Numerator.BootstrapList, Denominator.BootstrapList );
   DivideBoot( Numerator, Denominator );
 }
 
@@ -182,9 +182,9 @@ void Params::ReadNumerator( const std::string &FileName )
   }
 }
 
-void Params::Run( const Common::CommandLine &cl, bool &bShowUsage )
+void Params::Run( const MLU::CommandLine &cl, bool &bShowUsage )
 {
-  std::vector<std::string> Filename{ Common::glob( cl.Args.begin(), cl.Args.end(), InBase.c_str() ) };
+  std::vector<std::string> Filename{ MLU::glob( cl.Args.begin(), cl.Args.end(), InBase.c_str() ) };
   if( Filename.empty() )
     throw std::runtime_error( "No input files found" );
   bShowUsage = false;
@@ -210,7 +210,7 @@ void Params::Run( const Common::CommandLine &cl, bool &bShowUsage )
         bDenominator.Read( Filename[FileNum], nullptr, &opNames, &GroupName );
         Normalise( bDenominator.getData(), bDenominator.Name_.op, opNames );
       }
-      std::cout << "Denominator " << GroupName << Common::Space << Filename[FileNum] << Common::NewLine;
+      std::cout << "Denominator " << GroupName << MLU::Space << Filename[FileNum] << MLU::NewLine;
     }
     else
     {
@@ -228,7 +228,7 @@ int main(int argc, const char *argv[])
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {

@@ -29,9 +29,9 @@
 
 #include "bootstrap.hpp"
 
-using Scalar = Common::SampleC::value_type;
-using Vector = Common::Vector<Scalar>;
-using Matrix = Common::Matrix<Scalar>;
+using Scalar = MLU::SampleC::value_type;
+using Vector = MLU::Vector<Scalar>;
+using Matrix = MLU::Matrix<Scalar>;
 
 static const char szError[]{ "Error: " };
 static const char szWarning[]{ "Warning: " };
@@ -66,11 +66,11 @@ std::istream& operator>>(std::istream& is, BinOrder &binOrder )
   std::string s;
   if( is >> s )
   {
-    if( Common::EqualIgnoreCase( s, "Old" ) )
+    if( MLU::EqualIgnoreCase( s, "Old" ) )
       binOrder = BinOrder::Old;
-    else if( Common::EqualIgnoreCase( s, "VeryOld" ) )
+    else if( MLU::EqualIgnoreCase( s, "VeryOld" ) )
       binOrder = BinOrder::VeryOld;
-    else if( Common::EqualIgnoreCase( s, "Auto" ) )
+    else if( MLU::EqualIgnoreCase( s, "Auto" ) )
       binOrder = BinOrder::Auto;
     else
       is.setstate( std::ios_base::failbit );
@@ -80,7 +80,7 @@ std::istream& operator>>(std::istream& is, BinOrder &binOrder )
   return is;
 }
 
-void TrajFile::Reverse( Common::CorrelatorFileC &File ) const
+void TrajFile::Reverse( MLU::CorrelatorFileC &File ) const
 {
   if( bTimeRev )
   {
@@ -89,7 +89,7 @@ void TrajFile::Reverse( Common::CorrelatorFileC &File ) const
     const int Nt{ File.Nt() };
     const int T0{ File.Timeslice() };
     const int DeltaT{ File.Name_.GotDeltaT() ? File.Name_.DeltaT[0] : 0 };
-    using ValueT = typename Common::SampleTraits<std::complex<double>>::value_type;
+    using ValueT = typename MLU::SampleTraits<std::complex<double>>::value_type;
     std::vector<ValueT> Buffer( Nt );
     for( int row = 0; row < File.NumOps(); ++row )
     {
@@ -102,7 +102,7 @@ void TrajFile::Reverse( Common::CorrelatorFileC &File ) const
   }
 }
 
-BootstrapParams::BootstrapParams( const Common::CommandLine &cl )
+BootstrapParams::BootstrapParams( const MLU::CommandLine &cl )
 : b2ptSymOp{ cl.GotSwitch( "symop" ) },
   b2ptSortZeroMom{ !cl.GotSwitch( "nosort" ) },
   bOverwrite{ cl.GotSwitch( "overwrite" ) },
@@ -112,7 +112,7 @@ BootstrapParams::BootstrapParams( const Common::CommandLine &cl )
   binSize{ cl.SwitchValue<int>( "b" ) },
   binAuto{ binSize == 0 },
   binOrder{ cl.SwitchValue<BinOrder>( "border" ) },
-  seed{ Common::RandomCache::DefaultSeed() },
+  seed{ MLU::RandomCache::DefaultSeed() },
   outStem{ cl.SwitchValue<std::string>( "o" ) },
   Ensemble{ cl.GotSwitch("e") ? cl.SwitchValue<std::string>("e") : "" }
 {
@@ -123,11 +123,11 @@ BootstrapParams::BootstrapParams( const Common::CommandLine &cl )
     throw std::runtime_error( "Bin size must be positive if specified" );
   if( binAuto && binOrder != BinOrder::Auto )
     throw std::runtime_error( "Auto binning only works with Auto order" );
-  if( Common::GetHostName().empty() )
+  if( MLU::GetHostName().empty() )
     throw std::invalid_argument( "Machine name can't be empty" );
   if( Ensemble.empty() )
     throw std::invalid_argument( "Ensemble name can't be empty" );
-  Common::MakeAncestorDirs( outStem );
+  MLU::MakeAncestorDirs( outStem );
 }
 
 void CopyTimeSlice( std::complex<double> *&pDst, const std::complex<double> *pSrc, int Nt, int TOffset )
@@ -136,7 +136,7 @@ void CopyTimeSlice( std::complex<double> *&pDst, const std::complex<double> *pSr
     *pDst++  = pSrc[ ( t + TOffset ) % Nt ];
 }
 
-bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, const Iter &last,
+bool BootstrapParams::GatherInput( MLU::SampleC &out, const Iter &first, const Iter &last,
                         const TrajList &Traj, Algebra Snk, Algebra Src, bool bAlignTimeslices ) const
 {
   // Factorised 2pt functions with Snk!=Src will have both entries loaded
@@ -150,7 +150,7 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
     int iNum{ Snk == Algebra::Spatial ? 0 : OpFactor };
     if( !iNum )
     {
-      const Common::Momentum &p{ it->Name_.GetFirstNonZeroMomentum().second };
+      const MLU::Momentum &p{ it->Name_.GetFirstNonZeroMomentum().second };
       if( p.x )
         iNum++;
       if( p.y )
@@ -191,10 +191,10 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
     const std::size_t FilenameLen{ Filename.length() };
     if( Snk == Algebra::Spatial )
     {
-      const Common::Momentum &p{ file->Name_.GetFirstNonZeroMomentum().second };
+      const MLU::Momentum &p{ file->Name_.GetFirstNonZeroMomentum().second };
       if( p.x )
       {
-        Common::AppendGamma( Filename, Algebra::GammaX, Common::Comma );
+        MLU::AppendGamma( Filename, Algebra::GammaX, MLU::Comma );
         out.FileList.emplace_back( Filename );
         const double Scale{ 1. / p.x };
         const std::complex<double> * const pSrc = (*file)( Algebra::GammaX, Src );
@@ -205,7 +205,7 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
       if( p.y )
       {
         Filename.resize( FilenameLen );
-        Common::AppendGamma( Filename, Algebra::GammaY, Common::Comma );
+        MLU::AppendGamma( Filename, Algebra::GammaY, MLU::Comma );
         out.FileList.emplace_back( Filename );
         const double Scale{ 1. / p.y };
         const std::complex<double> * const pSrc = (*file)( Algebra::GammaY, Src );
@@ -216,7 +216,7 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
       if( p.z )
       {
         Filename.resize( FilenameLen );
-        Common::AppendGamma( Filename, Algebra::GammaZ, Common::Comma );
+        MLU::AppendGamma( Filename, Algebra::GammaZ, MLU::Comma );
         out.FileList.emplace_back( Filename );
         const double Scale{ 1. / p.z };
         const std::complex<double> * const pSrc = (*file)( Algebra::GammaZ, Src );
@@ -234,8 +234,8 @@ bool BootstrapParams::GatherInput( Common::SampleC &out, const Iter &first, cons
         if( OpFactor > 1 )
         {
           Filename.resize( FilenameLen );
-          Common::AppendGamma( Filename, ThisSnk, Common::Comma );
-          Common::AppendGamma( Filename, ThisSrc, Common::Comma );
+          MLU::AppendGamma( Filename, ThisSnk, MLU::Comma );
+          MLU::AppendGamma( Filename, ThisSrc, MLU::Comma );
         }
         out.FileList.emplace_back( Filename );
         const std::complex<double> * const pSrc = (*file)( ThisSnk, ThisSrc );
@@ -289,7 +289,7 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
   }
   int iCount{ 0 };
   // Make somewhere to put the raw data
-  Common::SampleC out( nSample, first->Nt() );
+  MLU::SampleC out( nSample, first->Nt() );
   out.Ensemble = Ensemble;
   for( int Snk = 0; Snk < SinkAlgebra.size(); Snk++ )
   {
@@ -304,19 +304,19 @@ int BootstrapParams::PerformBootstrap( const Iter &first, const Iter &last, cons
       if( Traj.b3pt )
       {
         // The current insertion is what was at the contraction sink
-        sOutBase.append( Common::Gamma::NameShort( SinkAlgebra[Snk], pszSep, nullptr ) );
+        sOutBase.append( MLU::Gamma::NameShort( SinkAlgebra[Snk], pszSep, nullptr ) );
       }
       sOutBase.append( Traj.sShortSuffix );
       sOutBase.append( Suffix );
-      sOutBase.append(Common::Gamma::NameShort(Traj.b3pt ? (Traj.bRev ? SourceAlgebra[Src] : Traj.Alg3pt ):SinkAlgebra[Snk],
+      sOutBase.append(MLU::Gamma::NameShort(Traj.b3pt ? (Traj.bRev ? SourceAlgebra[Src] : Traj.Alg3pt ):SinkAlgebra[Snk],
                                                pszSep, Traj.OpSuffixSnk.c_str() ));
-      sOutBase.append(Common::Gamma::NameShort(Traj.b3pt && Traj.bRev ? Traj.Alg3pt : SourceAlgebra[Src],
+      sOutBase.append(MLU::Gamma::NameShort(Traj.b3pt && Traj.bRev ? Traj.Alg3pt : SourceAlgebra[Src],
                                                pszSep, Traj.OpSuffixSrc.c_str() ));
       // Skip bootstrap if output exists
-      const std::string sOutFile{ Common::MakeFilename( sOutBase, Common::sBootstrap, seed, DEF_FMT ) };
-      const std::string sSummary{ Common::MakeFilename( sOutBase, Common::sBootstrap, seed, TEXT_EXT)};
-      const bool bExistsFile{ Common::FileExists( sOutFile ) };
-      const bool bExistsSummary{ Common::FileExists( sSummary ) };
+      const std::string sOutFile{ MLU::MakeFilename( sOutBase, MLU::sBootstrap, seed, DEF_FMT ) };
+      const std::string sSummary{ MLU::MakeFilename( sOutBase, MLU::sBootstrap, seed, TEXT_EXT)};
+      const bool bExistsFile{ MLU::FileExists( sOutFile ) };
+      const bool bExistsSummary{ MLU::FileExists( sSummary ) };
       const bool bOutFileExists{ bExistsFile || ( !bSaveBootstrap && bExistsSummary ) };
       const std::string &sWarnFile{ bExistsFile ? sOutFile : sSummary };
       static const char szOver[]{ "overwriting " };
@@ -437,7 +437,7 @@ const std::string & MesonSuffix( const std::string MesonTypeName )
 // Heavy-light meson decays. 2pt function with current inserted and momentum on light meson
 
 void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &StudyPath,
-                      const Common::Momentum &mom, std::vector<Algebra> Alg,
+                      const MLU::Momentum &mom, std::vector<Algebra> Alg,
                       const std::string &Heavy, const std::string &Light, bool Factorised ) const
 {
   /*
@@ -457,7 +457,7 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
   static const std::string Space{ " " };  // whitespace as field separator / human readable info
   static const std::string Sink{ Sep + "sink" };    // used inside filenames
   static const std::string sProp{ "prop" + Sep };    // used inside filenames
-  static const std::string sMom0{ Sep + "p" + Sep + Common::p0.to_string3d( Sep ) };
+  static const std::string sMom0{ Sep + "p" + Sep + MLU::p0.to_string3d( Sep ) };
   const std::string sMom{ Sep + "p" + Sep + mom.to_string3d( Sep )};
   const std::string sMomNeg{ Sep + "p" + Sep + mom.to_string3d( Sep, true )};
   //assert( alg.size() == algNames.size() && "Abbreviations should match gamma algebra" );
@@ -471,12 +471,12 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
       CorrSuffixes[iCorr] = ss.str();
     }*/
   const int TimeSliceInc{ Study == Z2 ? 1 : 4 };
-  const unsigned int NumEnds{ Factorised && !Common::EqualIgnoreCase( Heavy, Light ) ? 2u : 1u };
+  const unsigned int NumEnds{ Factorised && !MLU::EqualIgnoreCase( Heavy, Light ) ? 2u : 1u };
   /*const std::size_t NumSamplesT{ NumEnds * CCount };
   const std::size_t NumSamples{ NumSamplesT * ( Nt / TimeSliceInc ) };
   std::vector<Latan::Dataset<Latan::DMat>> bsData( NumCorr );
   std::vector<Latan::Dataset<Latan::DMat>> bsDataT( NumCorr );
-  std::vector<Common::Correlator> buffer( NumCorr );
+  std::vector<MLU::Correlator> buffer( NumCorr );
   for( int iCorr = 0 ; iCorr < NumCorr; iCorr++ ) {
     bsData[ iCorr ].resize( NumSamples );
     bsDataT[ iCorr ].resize( NumSamplesT );
@@ -507,11 +507,11 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
             break;
         }
         sFileName.append( Dot + std::to_string( iConfig ) + H5 );
-        /*Common::ReadComplexArray(buffer, alg, sFileName, 0);
+        /*MLU::ReadComplexArray(buffer, alg, sFileName, 0);
         for( int iCorr = 0; iCorr < NumCorr; ++iCorr )
         {
-          Common::CopyCorrelator( bsData[iCorr][CorrIndex], buffer[iCorr], t );
-          Common::CopyCorrelator( bsDataT[iCorr][CorrIndexT], buffer[iCorr] );
+          MLU::CopyCorrelator( bsData[iCorr][CorrIndex], buffer[iCorr], t );
+          MLU::CopyCorrelator( bsDataT[iCorr][CorrIndexT], buffer[iCorr] );
         }
         CorrIndex++;
         CorrIndexT++;*/
@@ -550,7 +550,7 @@ void BootstrapParams::Study1Bootstrap(StudySubject Study, const std::string &Stu
                     Alg, Alg );
 }
 
-GroupMomenta Manifest::GetGroupP( const Common::CommandLine &cl )
+GroupMomenta Manifest::GetGroupP( const MLU::CommandLine &cl )
 {
   GroupMomenta GroupP{ GroupMomenta::None };
   const bool p2{ cl.GotSwitch( "p2" ) };
@@ -565,7 +565,7 @@ GroupMomenta Manifest::GetGroupP( const Common::CommandLine &cl )
   return GroupP;
 }
 
-std::vector<Algebra> Manifest::GetCurrentAlgebra( const Common::CommandLine &cl )
+std::vector<Algebra> Manifest::GetCurrentAlgebra( const MLU::CommandLine &cl )
 {
   bool bGammaSpatial{ false };
   AlgCurrentLoad.clear();
@@ -573,11 +573,11 @@ std::vector<Algebra> Manifest::GetCurrentAlgebra( const Common::CommandLine &cl 
   std::vector<Algebra> Alg3pt;
   if( cl.GotSwitch( "c" ) )
   {
-    std::vector<Common::NegateStar> NegRequested;
-    Alg3pt = Common::ArrayFromString<Algebra>( cl.SwitchValue<std::string>( "c" ), &NegRequested );
-    Common::NoDuplicates( Alg3pt, "Current algebra", 1 );
+    std::vector<MLU::NegateStar> NegRequested;
+    Alg3pt = MLU::ArrayFromString<Algebra>( cl.SwitchValue<std::string>( "c" ), &NegRequested );
+    MLU::NoDuplicates( Alg3pt, "Current algebra", 1 );
     // Copy algebra to be saved into algebra to be loaded, removing Spatial
-    Common::NegateStar bGammaSpatialNeg{ Common::NegateStar::None };
+    MLU::NegateStar bGammaSpatialNeg{ MLU::NegateStar::None };
     std::vector<bool> AlgGammaXYZFound( 3, false );
     for( int i = 0; i < Alg3pt.size(); ++i )
     {
@@ -631,7 +631,7 @@ std::vector<Algebra> Manifest::GetCurrentAlgebra( const Common::CommandLine &cl 
   return Alg3pt;
 }
 
-Manifest::Manifest( const Common::CommandLine &cl, const BootstrapParams &par_ )
+Manifest::Manifest( const MLU::CommandLine &cl, const BootstrapParams &par_ )
 /*Manifest::Manifest(const std::vector<std::string> &Args, const std::vector<std::string> &Ignore,
                    bool bSwapQuarks, const GroupMomenta GroupP, const std::vector<std::string> &vIgnoreMomenta,
                    std::regex *SSRegEx, bool bSwapSnkSrcRegEx )*/
@@ -643,14 +643,14 @@ Manifest::Manifest( const Common::CommandLine &cl, const BootstrapParams &par_ )
   InStem{ cl.SwitchValue<std::string>( "i" ) },
   DefaultGroup{ cl.SwitchValue<std::string>( "g" ) },
   DefaultDataSet{ cl.SwitchValue<std::string>( "d" ) },
-  vIgnoreMomenta{ Common::ArrayFromString( cl.SwitchValue<std::string>("pignore") ) },
-  vIgnoreRegEx{ Common::ArrayFromString( cl.SwitchValue<std::string>("ignore") ) },
-  AlgSource{ Common::ArrayFromString<Algebra>( cl.SwitchValue<std::string>( "a" ) ) },
+  vIgnoreMomenta{ MLU::ArrayFromString( cl.SwitchValue<std::string>("pignore") ) },
+  vIgnoreRegEx{ MLU::ArrayFromString( cl.SwitchValue<std::string>("ignore") ) },
+  AlgSource{ MLU::ArrayFromString<Algebra>( cl.SwitchValue<std::string>( "a" ) ) },
   AlgCurrent{ GetCurrentAlgebra( cl ) }
 {
-  Common::NoDuplicates( vIgnoreMomenta, "Ignored momenta", 0 );
-  Common::NoDuplicates( vIgnoreRegEx, "Ignored regular expressions", 0 );
-  Common::NoDuplicates( AlgSource, "Source algebra", 0 );
+  MLU::NoDuplicates( vIgnoreMomenta, "Ignored momenta", 0 );
+  MLU::NoDuplicates( vIgnoreRegEx, "Ignored regular expressions", 0 );
+  MLU::NoDuplicates( AlgSource, "Source algebra", 0 );
   for( Algebra a : AlgCurrent )
   {
     if( a == Algebra::Spatial )
@@ -677,7 +677,7 @@ void Manifest::MakeStudies( const std::vector<std::string> &Args )
 {
   static const std::string qHeavy{ "h1" };
   static const std::string qLight{ "l" };
-  static const Common::Momentum StudyMomenta[] = {
+  static const MLU::Momentum StudyMomenta[] = {
     { 0, 0, 0 },
     { 1, 0, 0 },
     { 1, 1, 0 },
@@ -686,7 +686,7 @@ void Manifest::MakeStudies( const std::vector<std::string> &Args )
   };
   for( const std::string &s : Args )
   {
-    const int iStudy{ Common::FromString<int>( s ) };
+    const int iStudy{ MLU::FromString<int>( s ) };
     std::cout << "Study " << iStudy << ": ";
     const StudySubject Study{ static_cast<StudySubject>( iStudy ) };
     switch( Study )
@@ -696,7 +696,7 @@ void Manifest::MakeStudies( const std::vector<std::string> &Args )
       case GFPW:
         // Heavy-light semi-leptonics
         std::cout << "Making manifest for " << qHeavy << " and " << qLight << std::endl;
-        for( const Common::Momentum &m : StudyMomenta )
+        for( const MLU::Momentum &m : StudyMomenta )
         {
           const bool Factorised{ Study != GFPW };
           par.Study1Bootstrap( Study, InStem, m, AlgSource, qHeavy, qLight, Factorised );
@@ -736,8 +736,8 @@ bool Manifest::NeedsTimeReverse( std::string &Contraction, MomentumMap &p, bool 
   bool bNeedsReverse{ false };
   if( p.size() == 2 )
   {
-    std::vector<std::string> Parts( Common::ArrayFromString( Contraction, Common::Underscore ) );
-    if( Parts.size() == 3 && !Common::EqualIgnoreCase( Parts[1], Parts[2] ) )
+    std::vector<std::string> Parts( MLU::ArrayFromString( Contraction, MLU::Underscore ) );
+    if( Parts.size() == 3 && !MLU::EqualIgnoreCase( Parts[1], Parts[2] ) )
     {
       /*const int Weight1{ QuarkWeight( Parts[1][0] ) };
       const int Weight2{ QuarkWeight( Parts[2][0] ) };
@@ -751,8 +751,8 @@ bool Manifest::NeedsTimeReverse( std::string &Contraction, MomentumMap &p, bool 
         Contraction.append( Parts[2] );
         Contraction.append( 1, '_' );
         Contraction.append( Parts[1] );
-        Common::Momentum &pOne{ p.begin()->second };
-        Common::Momentum &pTwo{ (++p.begin())->second };
+        MLU::Momentum &pOne{ p.begin()->second };
+        MLU::Momentum &pTwo{ (++p.begin())->second };
         std::swap( pOne, pTwo );
         std::swap( OpSuffixSnk, OpSuffixSrc );
       }
@@ -767,7 +767,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
   // Now walk the list of arguments.
   // Any file that's not in the ignore list gets added to the manifest
   bool parsed = true;
-  for( const std::string &Filename : Common::glob( Args.begin(), Args.end(), InStem.c_str() ) )
+  for( const std::string &Filename : MLU::glob( Args.begin(), Args.end(), InStem.c_str() ) )
   {
     // See whether this file is in the ignore list
     std::size_t iIgnore = 0;
@@ -775,7 +775,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
       iIgnore++;
     if( iIgnore < Ignore.size() )
       std::cout << "Ignoring " << Filename << std::endl;
-    else if( !Common::FileExists(Filename))
+    else if( !MLU::FileExists(Filename))
     {
       parsed = false;
       std::cout << szError << Filename << " doesn't exist" << std::endl;
@@ -783,7 +783,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
     else
     {
       // Parse the name. Not expecting a type, so if present, put it back on the end of Base
-      Common::FileNameAtt Name_{ Filename, nullptr, &vIgnoreMomenta, &vIgnoreRegEx, true };
+      MLU::FileNameAtt Name_{ Filename, nullptr, &vIgnoreMomenta, &vIgnoreRegEx, true };
       if( !Name_.bSeedNum )
         throw std::runtime_error( "Contraction files must contain a configuration number" );
       if( Name_.Gamma.size() > 1 )
@@ -797,7 +797,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
         std::cout << szWarning << "DeltaT without gamma insertion. Possible 3pt function treated as 2pt" << std::endl;
       std::string Contraction{ Name_.GetBaseShortExtra() };
       // NB: bRev true means that the gamma in the name belongs with Q1
-      bool bRev{ b3pt ? Common::ExtractToken( Contraction, "[Rr][Ee][Vv]" ) : false };
+      bool bRev{ b3pt ? MLU::ExtractToken( Contraction, "[Rr][Ee][Vv]" ) : false };
       bool bOpSuffix{ false }; // Suffix for sink and source operators
       std::string OpSuffixSnk;
       std::string OpSuffixSrc;
@@ -818,7 +818,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
       if( !b3pt && par.b2ptSortZeroMom && !Name_.HasNonZeroMomentum() )
       {
         // Sort all the separate, underscore delimited component parts
-        std::vector<std::string> vs{ Common::ArrayFromString( Contraction, Common::Underscore ) };
+        std::vector<std::string> vs{ MLU::ArrayFromString( Contraction, MLU::Underscore ) };
         Contraction.clear();
         std::sort(vs.begin(), vs.end());
         for( int i = 0; i < vs.size(); i++ )
@@ -858,7 +858,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
       }
       // The contraction is everything that makes this unique
       for( Algebra a : Name_.Gamma )
-        Contraction.append( Common::Gamma::NameShort( a, Sep.c_str() ) );
+        Contraction.append( MLU::Gamma::NameShort( a, Sep.c_str() ) );
       Contraction.append( sShortSuffix );
       if( bOpSuffix )
       {
@@ -890,7 +890,7 @@ bool Manifest::RunManifest()
   int BootstrapCount{ 0 };
   int CorrelatorCount{ 0 };
   if( bShowOnly )
-    std::cout << "Contraction, Files, Configs, Config..., Count..." << Common::NewLine;
+    std::cout << "Contraction, Files, Configs, Config..., Count..." << MLU::NewLine;
   bool bOK{ true };
   for( auto itc = this->begin(); bOK && itc != this->end(); itc++ )
   {
@@ -915,18 +915,18 @@ bool Manifest::RunManifest()
       static const std::string SepTab{ ",\t" };
       std::cout << Contraction << (l.bRev ? "[Rev]" : "") << SepTab << nFile << SepTab << ConfigCount.size();
       for( auto it = ConfigCount.begin(); it != ConfigCount.end(); ++it )
-        std::cout << Common::Comma << it->first;
+        std::cout << MLU::Comma << it->first;
       for( auto it = ConfigCount.begin(); it != ConfigCount.end(); ++it )
-        std::cout << Common::Comma << it->second;
-      std::cout << Common::NewLine;
+        std::cout << MLU::Comma << it->second;
+      std::cout << MLU::NewLine;
       //for( const auto &v : l.FileInfo )
-        //std::cout << "  " << v.first << (v.second.bTimeRev ? " trev" : "") << Common::NewLine;
+        //std::cout << "  " << v.first << (v.second.bTimeRev ? " trev" : "") << MLU::NewLine;
     }
     else
     {
-      std::cout << "Loading " << nFile << " files for " << Contraction << Common::NewLine;
+      std::cout << "Loading " << nFile << " files for " << Contraction << MLU::NewLine;
       //const bool b3pt{ !Alg3pt.empty() };
-      std::vector<Common::CorrelatorFileC> InFiles( nFile );
+      std::vector<MLU::CorrelatorFileC> InFiles( nFile );
       unsigned int j{ 0 };
       for( auto it = l.FileInfo.begin(); it != l.FileInfo.end(); ++j, ++it )
       {
@@ -974,7 +974,7 @@ int main(const int argc, const char *argv[])
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {

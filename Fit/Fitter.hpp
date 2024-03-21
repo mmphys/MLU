@@ -41,9 +41,9 @@ struct FitController
 {
   virtual ~FitController() {}
   /// Models have agreed parameters - controller can adjust the parameters before offsets assigned
-  virtual void ParamsAdjust( Common::Params &mp, const Fitter &f ) {}
+  virtual void ParamsAdjust( MLU::Params &mp, const Fitter &f ) {}
   /// Offsets have been assigned - controller can save indices
-  virtual void SaveParameters( Common::Params &mp, const Fitter &f ) {}
+  virtual void SaveParameters( MLU::Params &mp, const Fitter &f ) {}
   /// FitController gets to participate in guesses
   virtual void Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
                       const VectorView &FitData, bool bLastChance ) const {};
@@ -52,7 +52,7 @@ struct FitController
   /// Called every time the fitter makes a new guess on each replica - allow controller to compute derived properties
   virtual void ComputeDerived( Vector &ModelParams ) const {}
   /// Allow the fit controller to adjust the list of parameters in the parameter covariance matrix
-  virtual void ParamCovarList( Common::Params &paramsCovar ) const {}
+  virtual void ParamCovarList( MLU::Params &paramsCovar ) const {}
   static FitController None;
 };
 

@@ -29,7 +29,7 @@
 #include "Covar.hpp"
 
 // Work out where the covariance matrix comes from
-CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw, bool bNoInit ) : ds{ dsrw }
+CovarParams::CovarParams( const MLU::CommandLine &cl, DataSet &dsrw, bool bNoInit ) : ds{ dsrw }
 {
   if( bNoInit )
     return;
@@ -50,19 +50,19 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw, bool bNo
   {
     // There could be multiple options separated by '.'
     const std::string &sCovOptions{ cl.SwitchValue<std::string>( sCovarSourceSwitch ) };
-    std::vector<std::string> vCovarSwitch{ Common::ArrayFromString( sCovOptions, "." ) };
+    std::vector<std::string> vCovarSwitch{ MLU::ArrayFromString( sCovOptions, "." ) };
     static const std::string TooMany{ "Too many " };
     for( std::size_t optNum = 0; optNum < vCovarSwitch.size(); ++optNum )
     {
       // Decode the user's choice of covariance source
-      const std::string sCovSrc{ Common::ExtractToSeparator( vCovarSwitch[optNum] ) };
-      if( Common::EqualIgnoreCase( sCovSrc, "Reboot" ) )
+      const std::string sCovSrc{ MLU::ExtractToSeparator( vCovarSwitch[optNum] ) };
+      if( MLU::EqualIgnoreCase( sCovSrc, "Reboot" ) )
       {
         if( optNum > 1 )
           throw std::runtime_error( "Too many " + sCovarSourceSwitch + " options " + sCovOptions );
         const int NumReplicas{ vCovarSwitch[optNum].empty()
-          ? static_cast<int>( Common::RandomCache::DefaultNumReplicas() )
-          : Common::FromString<int>( vCovarSwitch[optNum] ) };
+          ? static_cast<int>( MLU::RandomCache::DefaultNumReplicas() )
+          : MLU::FromString<int>( vCovarSwitch[optNum] ) };
         std::cout << "Covar Reboot " << NumReplicas << " replicas\n";
         for( std::unique_ptr<Sample> &f : dsrw.corr )
           f->Resample( 1, NumReplicas, idxJackBoot );
@@ -71,22 +71,22 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw, bool bNo
       }
       else if( optNum )
         throw std::runtime_error( "Too many " + sCovarSourceSwitch + " options " + sCovOptions );
-      else if( Common::EqualIgnoreCase( sCovSrc, "Rebin" ) )
+      else if( MLU::EqualIgnoreCase( sCovSrc, "Rebin" ) )
       {
         // Rebin the raw data. Overwrites the raw data in the correlators
-        dsrw.Rebin( Common::ArrayFromString<int>( vCovarSwitch[optNum] ) );
+        dsrw.Rebin( MLU::ArrayFromString<int>( vCovarSwitch[optNum] ) );
         RebinSize = ds.RebinSize;
         std::cout << "Covar Rebin";
         for( int i : RebinSize )
-          std::cout << Common::Space << i;
-        std::cout << Common::NewLine;
+          std::cout << MLU::Space << i;
+        std::cout << MLU::NewLine;
         Source = SS::Binned;
         idxJackBoot = 1;
       }
-      else if( Common::EqualIgnoreCase( sCovSrc, "h5" ) )
+      else if( MLU::EqualIgnoreCase( sCovSrc, "h5" ) )
       {
         // Load inverse covariance matrix from hdf5 - for debugging and comparison with other fit code
-        std::vector<std::string> Opts{ Common::ArrayFromString( vCovarSwitch[optNum] ) };
+        std::vector<std::string> Opts{ MLU::ArrayFromString( vCovarSwitch[optNum] ) };
         if( Opts.size() < 2 || Opts.size() > 3 )
           throw std::runtime_error( "Options should contain file[,group],dataset. Bad options: " + vCovarSwitch[optNum] );
         std::string sRoot( "/" );
@@ -95,10 +95,10 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw, bool bNo
         std::string &DataSetName{ Opts[1 + iHaveGroupName] };
         ::H5::H5File f;
         ::H5::Group  g;
-        Common::H5::OpenFileGroup( f, g, Opts[0], "Loading covariance matrix from ", &GroupName );
+        MLU::H5::OpenFileGroup( f, g, Opts[0], "Loading covariance matrix from ", &GroupName );
         try
         {
-          Common::H5::ReadMatrix( g, DataSetName, Covar );
+          MLU::H5::ReadMatrix( g, DataSetName, Covar );
         }
         catch(const ::H5::Exception &)
         {
@@ -112,7 +112,7 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw, bool bNo
       else
       {
         // See what the user has asked for
-        Source = Common::FromString<SS>( sCovSrc );
+        Source = MLU::FromString<SS>( sCovSrc );
         if( !vCovarSwitch[optNum].empty() )
           throw std::runtime_error( "Covariance source " + sCovSrc + " unexpected parameters: " + vCovarSwitch[optNum] );
       }
@@ -138,10 +138,10 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw, bool bNo
       if( Count != ds.corr[0]->NumSamples( Source ) )
       {
         std::ostringstream os;
-        os << "Can't use " << Source << " samples for covariance:" << Common::NewLine
-           << Common::Space << ds.corr[0]->NumSamples( Source ) << " samples in "
-           << ds.corr[0]->Name_.Filename << Common::NewLine
-           << Common::Space << ds.corr[i]->NumSamples( Source ) << " samples in "
+        os << "Can't use " << Source << " samples for covariance:" << MLU::NewLine
+           << MLU::Space << ds.corr[0]->NumSamples( Source ) << " samples in "
+           << ds.corr[0]->Name_.Filename << MLU::NewLine
+           << MLU::Space << ds.corr[i]->NumSamples( Source ) << " samples in "
            << ds.corr[i]->Name_.Filename;
         throw std::runtime_error( os.str().c_str() );
       }
@@ -180,7 +180,7 @@ CovarParams::CovarParams( const Common::CommandLine &cl, DataSet &dsrw, bool bNo
     }
     else
     {
-      Common::GenerateRandom( vCovarRandom, ds.corr[0].Seed_, CovarNumBoot, CovarCount() );
+      MLU::GenerateRandom( vCovarRandom, ds.corr[0].Seed_, CovarNumBoot, CovarCount() );
       CovarRandom.Map( vCovarRandom.data(), CovarNumBoot, CovarCount() );
     }
   }*/
@@ -193,8 +193,8 @@ std::ostream & operator<<( std::ostream &os, const CovarParams &cp )
   else
     os << "Unf";
   os << "rozen covariance matrix (mean from "
-     << ( Common::JackBootBase::UseCentralCovar() ? "binned" : "resampled" )
-     << " data) constructed from " << cp.CovarCount() << Common::Space;
+     << ( MLU::JackBootBase::UseCentralCovar() ? "binned" : "resampled" )
+     << " data) constructed from " << cp.CovarCount() << MLU::Space;
   if( cp.CovarCount() != cp.CovarSampleSize() )
     os << "(" << cp.CovarSampleSize() << " independent) ";
   os << cp.Source << " samples";

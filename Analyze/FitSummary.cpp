@@ -28,8 +28,8 @@
 
 #include "FitSummary.hpp"
 
-const std::string &Sep{ Common::Space };
-const std::string &NL{ Common::NewLine };
+const std::string &Sep{ MLU::Space };
+const std::string &NL{ MLU::NewLine };
 const std::string sIndent{ "  " };
 const std::string sError{ "Error: " };
 
@@ -85,7 +85,7 @@ bool FitTimes::ParseTimes( std::string Times )
   for( auto &c : Times )
     if( c == '_' )
       c = ' ';
-  try { time = Common::ArrayFromString<int>( Times ); } catch(...) {}
+  try { time = MLU::ArrayFromString<int>( Times ); } catch(...) {}
   if( time.size() & 1 )
     time.clear();
   return !time.empty();
@@ -128,23 +128,23 @@ bool FitTimes::operator<( const FitTimes &rhs ) const
 
 void FitData::WriteLongFormat( std::ostream &os, const FitTimes &ft ) const
 {
-  os << Seq << Common::Space << idxLoadOrder << Common::Space;
+  os << Seq << MLU::Space << idxLoadOrder << MLU::Space;
   if( ft.NumFitTimes() == 0 )
     os << "0 0 0 0";
   else
   {
-    os << ft.ti( 0 ) << Common::Space << ft.tf( 0 )
-       << Common::Space << ft.tiLabel() << Common::Space << ft.tfLabel();
+    os << ft.ti( 0 ) << MLU::Space << ft.tf( 0 )
+       << MLU::Space << ft.tiLabel() << MLU::Space << ft.tfLabel();
   }
-  os << Common::Space << NumDataPoints;
-  os << Common::Space << dof;
-  os << Common::Space << SampleSize;
-  os << Common::Space << CovarSampleSize;
+  os << MLU::Space << NumDataPoints;
+  os << MLU::Space << dof;
+  os << MLU::Space << SampleSize;
+  os << MLU::Space << CovarSampleSize;
   for( const veScalar &v : Parameters )
-    os << Common::Space << v;
+    os << MLU::Space << v;
   for( int i = 1; i < ft.NumFitTimes(); ++i )
-    os << Common::Space << ft.ti( i ) << Common::Space << ft.tf( i );
-  os << Common::NewLine;
+    os << MLU::Space << ft.ti( i ) << MLU::Space << ft.tf( i );
+  os << MLU::NewLine;
 }
 
 void FitData::WriteTableFormat( std::ostream &os, const FitTimes &ft, std::size_t StatIndex,
@@ -153,7 +153,7 @@ void FitData::WriteTableFormat( std::ostream &os, const FitTimes &ft, std::size_
   for( int i = 0; i < ft.NumFitTimes(); ++i )
   {
     if( i )
-      os << Common::CommaSpace;
+      os << MLU::CommaSpace;
     os << "$ \\left[ " << ft.ti( i );
     if( ft.tf( i ) != ft.ti( i ) )
       os << "\\text{-}" << ft.tf( i );
@@ -193,9 +193,9 @@ bool TestStatKey::operator<( const TestStatKey &rhs ) const
 }
 
 // Parse the command line, splitting into separate lists for each base
-Summariser::Summariser( const Common::CommandLine &cl )
-: inBase{ Common::AppendSlash( cl.SwitchValue<std::string>("i") ) },
-  outBaseFileName{ Common::AppendSlash( cl.SwitchValue<std::string>("o") ) },
+Summariser::Summariser( const MLU::CommandLine &cl )
+: inBase{ MLU::AppendSlash( cl.SwitchValue<std::string>("i") ) },
+  outBaseFileName{ MLU::AppendSlash( cl.SwitchValue<std::string>("o") ) },
   StatisticName{ cl.SwitchValue<std::string>( "stat" ) },
   Strictness{ cl.SwitchValue<int>( "strict" ) },
   MonotonicUpperLimit{ cl.SwitchValue<scalar>( "maxE" ) },
@@ -204,23 +204,23 @@ Summariser::Summariser( const Common::CommandLine &cl )
   bTableN{ cl.GotSwitch( "tabn" ) },
   ErrorDigits{ static_cast<unsigned char>( cl.SwitchValue<unsigned int>( "errdig" ) ) },
   TableRowsPerPage{ cl.SwitchValue<std::size_t>( "tablen" ) },
-  vIgnoreMomenta{ Common::ArrayFromString( cl.SwitchValue<std::string>("pignore") ) },
-  ParamSubset{ Common::ArrayFromString( cl.SwitchValue<std::string>("params") ) }
+  vIgnoreMomenta{ MLU::ArrayFromString( cl.SwitchValue<std::string>("pignore") ) },
+  ParamSubset{ MLU::ArrayFromString( cl.SwitchValue<std::string>("params") ) }
 {
   if( !ParamSubset.empty() && bAll )
     throw std::runtime_error( "--all and --params can't be used together" );
-  Common::NoDuplicates( vIgnoreMomenta, "Ignored momenta", 0 );
+  MLU::NoDuplicates( vIgnoreMomenta, "Ignored momenta", 0 );
   if( Strictness < -1 || Strictness > 3 )
     throw std::runtime_error( "--strict " + std::to_string( Strictness ) + " invalid" );
   if( bAll && bFast )
     throw std::runtime_error( "--fast implies all models have same parameters. --all incompatible" );
   TestStatKey::bReverseSort = !cl.GotSwitch( "inc" );
-  Common::MakeAncestorDirs( outBaseFileName );
+  MLU::MakeAncestorDirs( outBaseFileName );
   int SeqNum{ 0 };
-  for( const std::string &sFileName : Common::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
+  for( const std::string &sFileName : MLU::glob( cl.Args.begin(), cl.Args.end(), inBase.c_str()))
   {
-    Common::FileNameAtt n{ sFileName, nullptr, &vIgnoreMomenta };
-    if( !Common::FileExists( sFileName ) )
+    MLU::FileNameAtt n{ sFileName, nullptr, &vIgnoreMomenta };
+    if( !MLU::FileExists( sFileName ) )
       throw std::runtime_error( sFileName + " doesn't exist" );
     FitTimes ft;
     std::string sFitType;
@@ -244,13 +244,13 @@ Summariser::Summariser( const Common::CommandLine &cl )
       sOutFile.append( 1, '.' );
       sOutFile.append( sFitType );
     }
-    n.AppendOps( sOutFile, Common::Period );
-    std::cout << sOutFile << Common::Space << sFileName << Common::NewLine;
+    n.AppendOps( sOutFile, MLU::Period );
+    std::cout << sOutFile << MLU::Space << sFileName << MLU::NewLine;
     // Have we seen this base before?
     BaseList::iterator it{ lBase.find( sOutFile ) };
     if( it == lBase.end() )
     {
-      const Common::Momentum &np{ n.p.empty() ? Common::p0 : n.GetFirstNonZeroMomentum().second };
+      const MLU::Momentum &np{ n.p.empty() ? MLU::p0 : n.GetFirstNonZeroMomentum().second };
       it = lBase.emplace( sOutFile, BaseInfo( np ) ).first;
     }
     it->second.vFI.emplace_back( ft, sFileName, bIsFit );
@@ -260,7 +260,7 @@ Summariser::Summariser( const Common::CommandLine &cl )
 bool Summariser::ReadModel( Model &m, FileInfoIterator &it, std::vector<FileInfo> &Files,
                             std::vector<std::string> &FileNameOps, bool bShow )
 {
-  m.SetName( Common::FileNameAtt{ it->FileName, &FileNameOps, &vIgnoreMomenta } );
+  m.SetName( MLU::FileNameAtt{ it->FileName, &FileNameOps, &vIgnoreMomenta } );
   try
   {
     m.Read( bShow ? " " : nullptr );
@@ -301,7 +301,7 @@ bool Summariser::GetCommonParameters( std::vector<FileInfo> &Files, bool bMaximu
       else
         Params.KeepCommon( Models[1].params );
       // Remove statistics columns not present in this model
-      using UNS = Common::UniqueNameSet;
+      using UNS = MLU::UniqueNameSet;
       const UNS mStat{ Models[1].GetStatColumnNames() };
       if( bAll )
       {
@@ -330,8 +330,8 @@ bool Summariser::GetCommonParameters( std::vector<FileInfo> &Files, bool bMaximu
 
 void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
 {
-  const unsigned int CompatFlags{ bDoPassOne ? Common::COMPAT_DISABLE_NT
-                                             : Common::COMPAT_DEFAULT };
+  const unsigned int CompatFlags{ bDoPassOne ? MLU::COMPAT_DISABLE_NT
+                                             : MLU::COMPAT_DEFAULT };
   int ModelNum = 0;
   std::size_t idxLoadOrder{ 0 };
   Fits.clear();
@@ -350,7 +350,7 @@ void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
           ++ModelNum;
           std::ostringstream ss;
           m.SummaryComments( ss );
-          ss << "# column(1) is the row order when sorted by " << StatisticName << Common::Space
+          ss << "# column(1) is the row order when sorted by " << StatisticName << MLU::Space
              << ( TestStatKey::bReverseSort ? "de" : "a" ) << "scending\n";
           Comments = ss.str();
           Seed = m.Name_.Seed;
@@ -368,7 +368,7 @@ void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
           throw std::runtime_error( StatisticName + " unavailable - required for fit" );
         scalar TestStat = idxpValue < 0 ? 1 : m.SummaryData(idxpValue).Central;
         // save the model in my list
-        const int NumDataPoints{ static_cast<int>( Common::GetExtent( m.FitTimes ) ) };
+        const int NumDataPoints{ static_cast<int>( MLU::GetExtent( m.FitTimes ) ) };
         FitData fd( TestStat, NumDataPoints, m.dof, m.SampleSize, m.CovarSampleSize,
                     idxLoadOrder++, m.GetValWithEr( Params, StatColumnNames ) );
         Fits.emplace( std::make_pair( ThisFile.ft, fd ) );
@@ -382,18 +382,18 @@ void Summariser::BuildFitMap( std::vector<FileInfo> &Files )
 }
 
 void Summariser::SummaryColumnNames( std::ostream &os, std::size_t NumFitTimes,
-              const Common::Params &ParamNames, const Common::UniqueNameSet &StatNames ) const
+              const MLU::Params &ParamNames, const MLU::UniqueNameSet &StatNames ) const
 {
-  os << "Load " << Model::SummaryColumnPrefix << Common::Space;
+  os << "Load " << Model::SummaryColumnPrefix << MLU::Space;
   ParamNames.WriteNamesValWithEr( os );
   for( const std::string &Name : StatNames )
   {
-    os << Common::Space;
-    veScalar::Header( Name, os, Common::Space );
+    os << MLU::Space;
+    veScalar::Header( Name, os, MLU::Space );
   }
   // Write additional fit time pair names
   for( std::size_t i = 1; i < NumFitTimes; ++i )
-    os << Common::Space << "ti" << i << Common::Space << "tf" << i;
+    os << MLU::Space << "ti" << i << MLU::Space << "tf" << i;
 }
 
 // Write sorted list. Must be done first because this fills in the sort sequence number
@@ -402,7 +402,7 @@ void Summariser::WriteSorted( const std::string &sFileName, const std::set<TestS
 {
   // Create file and write header
   std::ofstream s( sFileName );
-  Common::SummaryHeader<scalar>( s, sFileName );
+  MLU::SummaryHeader<scalar>( s, sFileName );
   s << Comments << "Seq ";
   SummaryColumnNames( s, MaxFitTimes, Params, StatColumnNames );
   s << NL;
@@ -433,7 +433,7 @@ void Summariser::WriteUnsorted( const std::string &sFileName ) const
       if( !s.is_open() )
       {
         s.open( sFileName );
-        Common::SummaryHeader<scalar>( s, sFileName );
+        MLU::SummaryHeader<scalar>( s, sFileName );
         s << Comments;
         s << "# columnheader(1) is the block (index) title\n";
       }
@@ -445,7 +445,7 @@ void Summariser::WriteUnsorted( const std::string &sFileName ) const
       // Name the data series
       s << "# [ti=" << ft.ti() << "]\n";
       // Column names, with the series value embedded in the column header (best I can do atm)
-      s << "ti=" << ft.ti() << Common::Space;
+      s << "ti=" << ft.ti() << MLU::Space;
       SummaryColumnNames( s, MaxFitTimes, Params, StatColumnNames );
       s << NL;
     }
@@ -466,9 +466,9 @@ void Summariser::WriteTableHeader( std::ofstream &os ) const
   if( bTableN )
     os << "$n^2$ & ";
   os << "Fit";
-  for( const Common::Params::value_type &it : Params )
+  for( const MLU::Params::value_type &it : Params )
   {
-    const Common::Param &p{ it.second };
+    const MLU::Param &p{ it.second };
     for( std::size_t i = 0; i < p.size; ++i )
       os << " & " << Params.GetName( it, i );
   }
@@ -476,7 +476,7 @@ void Summariser::WriteTableHeader( std::ofstream &os ) const
   for( const std::string &s : StatColumnNames )
   {
     os << " & ";
-    if( Common::EqualIgnoreCase( s, Common::sChiSqPerDof ) )
+    if( MLU::EqualIgnoreCase( s, MLU::sChiSqPerDof ) )
       os << "$\\flatfrac{\\chi^2}{\\textrm{dof}}$";
     else
       os << s;
@@ -505,7 +505,7 @@ void Summariser::WriteTabular( const std::string &sFileName, const BaseInfo &bi 
       if( bFirst )
         bFirst = false;
       else
-        os << Common::NewLine;
+        os << MLU::NewLine;
       WriteTableHeader( os );
     }
     const FitTimes &ft{ dt.first };
@@ -549,7 +549,7 @@ void Summariser::Run()
     else
     {
       std::vector<std::size_t> vIdx;
-      Params = Common::Params( ParamSubset, vIdx );
+      Params = MLU::Params( ParamSubset, vIdx );
     }
     StatColumnNames = Models[0].GetStatColumnNames();
     // Optional first pass - build a list of common parameters and statistics columns
@@ -568,11 +568,11 @@ void Summariser::Run()
         std::set<TestStatKey> SortSet;
         for( FitMap::value_type &dt : Fits )
           SortSet.emplace( TestStatKey{ dt.second.Stat, dt.first } );
-        WriteSorted( Common::MakeFilename(sSummaryName,Common::sParams+"_sort",Seed,TEXT_EXT),
+        WriteSorted( MLU::MakeFilename(sSummaryName,MLU::sParams+"_sort",Seed,TEXT_EXT),
                      SortSet, true );
       }
-      WriteUnsorted( Common::MakeFilename(sSummaryName,Common::sParams,Seed,TEXT_EXT) );
-      WriteTabular( Common::MakeFilename(sSummaryName,Common::sParams+"_table",Seed,TEXT_EXT), bi );
+      WriteUnsorted( MLU::MakeFilename(sSummaryName,MLU::sParams,Seed,TEXT_EXT) );
+      WriteTabular( MLU::MakeFilename(sSummaryName,MLU::sParams+"_table",Seed,TEXT_EXT), bi );
       Fits.clear();
     }
   }
@@ -586,14 +586,14 @@ int main(int argc, const char *argv[])
   static const char DefaultIgnoreMomenta[]{ "" };
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {
     const std::initializer_list<CL::SwitchDef> list = {
       {"i", CL::SwitchType::Single, "" },
       {"o", CL::SwitchType::Single, "" },
-      {"stat", CL::SwitchType::Single, Common::sPValueH.c_str() },
+      {"stat", CL::SwitchType::Single, MLU::sPValueH.c_str() },
       {"inc",  CL::SwitchType::Flag, nullptr},
       {"strict",  CL::SwitchType::Single, "-1"},
       {"maxE",  CL::SwitchType::Single, "10"},
@@ -630,7 +630,7 @@ int main(int argc, const char *argv[])
     "Summarise the fits contained in each model (ready for plotting), where <options> are:\n"
     "-i       Input  filename prefix\n"
     "-o       Output filename prefix\n"
-    "--stat   Statistic (default: " << Common::sPValueH << ")\n"
+    "--stat   Statistic (default: " << MLU::sPValueH << ")\n"
     "--strict Mask. Only include models where all parameters are non-zero and unique\n"
     "         Strictness bits: Off=+/- 1 sigma; On=every replica\n"
     "         Bit 0: Difference from 0\n"

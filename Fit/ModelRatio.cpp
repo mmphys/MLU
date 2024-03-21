@@ -46,7 +46,7 @@ ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int Nu
     s[2] = Args.Remove( "C2e", &b[2] );
     if( b[2] )
     {
-      const int nE{ Common::FromString<int>( s[2] ) };
+      const int nE{ MLU::FromString<int>( s[2] ) };
       for( std::size_t i = 0; i < NumC2Exp.size(); ++i )
         NumC2Exp[i] = nE;
     }
@@ -59,13 +59,13 @@ ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int Nu
         throw std::runtime_error( "C2e, C2eSrc and C2eSnk cannot all be specified" );
       for( int i = 0; i < 2; ++i )
         if( b[i] )
-          NumC2Exp[i] = Common::FromString<int>( s[i] );
+          NumC2Exp[i] = MLU::FromString<int>( s[i] );
     }
   }
   if( ChildType != eModelType::Exp && ChildType != eModelType::Cosh && ChildType != eModelType::Sinh )
   {
     std::ostringstream os;
-    os << sChildModel << Common::Space << ChildType << " invalid for ratio children";
+    os << sChildModel << MLU::Space << ChildType << " invalid for ratio children";
     throw std::runtime_error( os.str().c_str() );
   }
   C2.reserve( E.size() );
@@ -89,7 +89,7 @@ ModelRatio::ModelRatio( const Model::CreateParams &cp, Model::Args &Args, int Nu
   if( cp.pCorr->Name_.Gamma.size() != 1 )
     throw std::runtime_error( "More than one gamma unsupported" );
   R3Raw.Key.Object = objectID;
-  R3Raw.Key.Name = sR3 + Common::Gamma::NameShort( cp.pCorr->Name_.Gamma[0] ) + sRaw;
+  R3Raw.Key.Name = sR3 + MLU::Gamma::NameShort( cp.pCorr->Name_.Gamma[0] ) + sRaw;
   // The raw option means the ratio was constructed without the overlap coefficients
   Args.Remove( sRaw, &bRaw );
 }

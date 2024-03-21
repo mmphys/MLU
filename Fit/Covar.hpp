@@ -38,7 +38,7 @@ struct CovarParams
   // Whether to rebin the data before computing covariances
   std::vector<int> RebinSize;
   // Where am I building the covariance from
-  using SS = Common::SampleSource;
+  using SS = MLU::SampleSource;
   SS Source;
   int idxJackBoot;
 
@@ -50,7 +50,7 @@ struct CovarParams
   // Manually loaded inverse covariance matrix
   Matrix Covar;
   // Constructor
-  CovarParams( const Common::CommandLine &cl, DataSet &ds, bool bNoInit = false );
+  CovarParams( const MLU::CommandLine &cl, DataSet &ds, bool bNoInit = false );
   /// Can we compute (co)variance on non-central replicas? Only possible if we have rebinned data
   inline bool SupportsUnfrozen() const { return ds.NumSamplesBinned(); }
   // Source is a bootstrap - only valid to compute variance on central replica

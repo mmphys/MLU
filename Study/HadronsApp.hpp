@@ -23,7 +23,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 
@@ -34,7 +34,7 @@ extern const std::string Sep;    // used inside filenames
 extern const std::string Space;  // whitespace as field separator / human readable info
 extern const std::string defaultMomName;
 extern const std::string SeqMomentumName;
-extern const Common::Momentum p0;
+extern const MLU::Momentum p0;
 extern const std::string GaugeFieldName;
 
 enum class Precision { Double, Single };
@@ -116,7 +116,7 @@ public:
   [[noreturn]] void HissyFit( const std::string &Message = HissyFitDefault ) const
   {
     std::stringstream ss;
-    ss << Message << ": " << family << Common::CommaSpace << species;
+    ss << Message << ": " << family << MLU::CommaSpace << species;
     throw std::runtime_error( ss.str() );
   }
 
@@ -186,7 +186,7 @@ public:
 
 inline std::ostream& operator<<(std::ostream& os, const Taxonomy &taxonomy)
 {
-  return os << taxonomy.family << Common::Space << taxonomy.species;
+  return os << taxonomy.family << MLU::Space << taxonomy.species;
 }
 
 std::istream& operator>>(std::istream& is, Taxonomy &taxonomy);
@@ -301,12 +301,12 @@ inline void Append( std::string &sDest, Species species )
   Append( sDest, ss.str() );
 }
 
-inline void AppendP( std::string &sDest, const Common::Momentum &p, const std::string & sMomentumName = defaultMomName )
+inline void AppendP( std::string &sDest, const MLU::Momentum &p, const std::string & sMomentumName = defaultMomName )
 {
   Append( sDest, sMomentumName, p.to_string3d( Sep ) );
 }
 
-inline void AppendPSeq( std::string &sDest, const Common::Momentum &p )
+inline void AppendPSeq( std::string &sDest, const MLU::Momentum &p )
 {
   Append( sDest, "ps", p.to_string3d( Sep ) );
 }
@@ -316,7 +316,7 @@ inline void AppendT( std::string &sDest, int t )
   Append( sDest, 't', t );
 }
 
-inline void AppendPT( std::string &sDest, int t, const Common::Momentum &p )
+inline void AppendPT( std::string &sDest, int t, const MLU::Momentum &p )
 {
   AppendP( sDest, p );
   AppendT( sDest, t );
@@ -477,10 +477,10 @@ public:
   ~HModList() { Write(); }
   const std::string TakeOwnership( HMod *pHMod );
   std::string MakeProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q,
-                        const Common::Momentum &p, int t, int hit = 1 );
+                        const MLU::Momentum &p, int t, int hit = 1 );
   std::string MakePropSeq( HModList &ML, const Taxonomy &tax, const Quark &qSeq,
-                           Gamma::Algebra current, int deltaT, const Common::Momentum &pSeq,
-                           const Quark &q, const Common::Momentum &p, int t );
+                           Gamma::Algebra current, int deltaT, const MLU::Momentum &pSeq,
+                           const Quark &q, const MLU::Momentum &p, int t );
 };
 
 /**************************
@@ -491,8 +491,8 @@ class ModSink : public HMod
 {
 public:
   static const std::string Prefix;
-  const Common::Momentum p;
-  ModSink(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p);
+  const MLU::Momentum p;
+  ModSink(HModList &ModList, const Taxonomy &taxonomy, const MLU::Momentum &p);
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
@@ -504,8 +504,8 @@ class ModSinkSmear : public HMod
 {
 public:
   static const std::string Prefix;
-  const Common::Momentum p;
-  ModSinkSmear(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p);
+  const MLU::Momentum p;
+  ModSinkSmear(HModList &ModList, const Taxonomy &taxonomy, const MLU::Momentum &p);
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
@@ -517,10 +517,10 @@ class ModSource : public HMod
 {
 public:
   static const std::string Prefix;
-  const Common::Momentum p;
+  const MLU::Momentum p;
   const int t;
   const int hit;
-  ModSource(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p, int t, int hit = 1);
+  ModSource(HModList &ModList, const Taxonomy &taxonomy, const MLU::Momentum &p, int t, int hit = 1);
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
@@ -601,10 +601,10 @@ public:
   static const std::string Prefix;
   static const std::string PrefixConserved;
   const Quark &q;
-  const Common::Momentum p;
+  const MLU::Momentum p;
   const int t;
   const int hit;
-  ModProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, const Common::Momentum &p,
+  ModProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, const MLU::Momentum &p,
            int t, int hit = 1 );
   virtual void AddDependencies( HModList &ModList ) const;
 };
@@ -618,10 +618,10 @@ class ModSlicedProp : public HMod
 public:
   static const std::string Prefix;
   const Quark &q;
-  const Common::Momentum p;
+  const MLU::Momentum p;
   const int t;
   const int hit;
-  ModSlicedProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, const Common::Momentum &p,
+  ModSlicedProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q, const MLU::Momentum &p,
                  int t, int hit );
   virtual void AddDependencies( HModList &ModList ) const;
 };
@@ -636,12 +636,12 @@ public:
   static const std::string Prefix;
   const Gamma::Algebra Current;
   const int deltaT;
-  const Common::Momentum pSeq;
+  const MLU::Momentum pSeq;
   const Quark &q;
-  const Common::Momentum p;
+  const MLU::Momentum p;
   const int t;
   ModSourceSeq( HModList &ModList, const Taxonomy &taxonomy, Gamma::Algebra Current, int deltaT,
-                const Common::Momentum &pSeq, const Quark &q, const Common::Momentum &p, int t );
+                const MLU::Momentum &pSeq, const Quark &q, const MLU::Momentum &p, int t );
   virtual void AddDependencies( HModList &ModList ) const;
 protected:
   template<typename T> void AddDependenciesT( HModList &ModList, typename T::Par &seqPar ) const;
@@ -658,12 +658,12 @@ public:
   const Quark &qSeq;
   const Gamma::Algebra Current;
   const int deltaT;
-  const Common::Momentum pSeq;
+  const MLU::Momentum pSeq;
   const Quark &q;
-  const Common::Momentum p;
+  const MLU::Momentum p;
   const int t;
   ModPropSeq( HModList &ModList, const Taxonomy &taxonomy, const Quark &qSeq, Gamma::Algebra Current, int deltaT,
-              const Common::Momentum &pSeq, const Quark &q, const Common::Momentum &p, int t );
+              const MLU::Momentum &pSeq, const Quark &q, const MLU::Momentum &p, int t );
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
@@ -684,14 +684,14 @@ public:
   static const std::string Prefix;
   const Quark &q1;
   const Quark &q2;
-  const Common::Momentum p1;
-  const Common::Momentum p2;
+  const MLU::Momentum p1;
+  const MLU::Momentum p2;
   const int t;
-  const Common::Momentum pSource;
+  const MLU::Momentum pSource;
   const int hit;
   ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
-                  const Quark &q1, const Quark &q2, const Common::Momentum &p1, int t,
-                  const Common::Momentum &p2, int hit );
+                  const Quark &q1, const Quark &q2, const MLU::Momentum &p1, int t,
+                  const MLU::Momentum &p2, int hit );
   virtual void AddDependencies( HModList &ModList ) const;
 };
 
@@ -711,14 +711,14 @@ public:
   const Quark &qSnk;
   const Quark &qSrc;
   const Quark &qSpec;
-  const Common::Momentum pSeq;
-  const Common::Momentum p;
+  const MLU::Momentum pSeq;
+  const MLU::Momentum p;
   const Gamma::Algebra Current;
   const int deltaT;
   const int t;
   const bool bHeavyAnti;
   ModContract3pt( HModList &ModList, const Taxonomy &taxonomy, bool bReverse, const Quark &qSnk, const Quark &qSrc,
-                  const Quark &qSpec, const Common::Momentum &pSeq_, const Common::Momentum &p,
+                  const Quark &qSpec, const MLU::Momentum &pSeq_, const MLU::Momentum &p,
                   Gamma::Algebra Current, int deltaT, int t, bool bHeavyAnti );
   virtual void AddDependencies( HModList &ModList ) const;
 };

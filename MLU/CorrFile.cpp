@@ -1,8 +1,8 @@
 /**
 
- Mike's lattice QCD utilities
+ Correlator file as saved by Hadrons (Grid)
  
- Source file: Utility.cpp
+ Source file: CorrFile.cpp
  
  Copyright (C) 2019 - 2023
  
@@ -27,12 +27,12 @@
 
 #include "CorrFile.hpp"
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 template <typename T>
 bool CorrelatorFile<T>::IsFinite() const
 {
-  return Common::IsFinite( m_pData.get(), static_cast<size_t>( NumSnk_ ) * NumSrc_ * Nt_ );
+  return MLU::IsFinite( m_pData.get(), static_cast<size_t>( NumSnk_ ) * NumSrc_ * Nt_ );
 }
 
 template <typename T>
@@ -293,12 +293,12 @@ void CorrelatorFile<T>::WriteSummary( const std::string &Prefix, const std::vect
   {
     static const char pszSep[] = "_";
     sOutFileName.resize( Len );
-    sOutFileName.append( Common::Gamma::NameShort( AlgSnk[Snk], pszSep ) );
+    sOutFileName.append( MLU::Gamma::NameShort( AlgSnk[Snk], pszSep ) );
     std::size_t Len2{ sOutFileName.length() };
     for( int Src = 0; Src < NumSrc; Src++ )
     {
       sOutFileName.resize( Len2 );
-      sOutFileName.append( Common::Gamma::NameShort( AlgSrc[Src], pszSep ) );
+      sOutFileName.append( MLU::Gamma::NameShort( AlgSrc[Src], pszSep ) );
       sOutFileName.append( sSuffix );
       SummaryHelper( sOutFileName, (*this)( AlgSnk[Snk], AlgSrc[Src] ), nt );
     }
@@ -321,4 +321,4 @@ template void swap( CorrelatorFileD &l, CorrelatorFileD &r );
 template void swap( CorrelatorFile<float> &l, CorrelatorFile<float> &r );
 template void swap( CorrelatorFile<std::complex<float>> &l, CorrelatorFile<std::complex<float>> &r );
 
-END_COMMON_NAMESPACE
+END_MLU_NAMESPACE

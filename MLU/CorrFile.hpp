@@ -1,9 +1,9 @@
 /**
 
- Mike's lattice QCD utilities
+ Correlator file as saved by Hadrons (Grid)
  
- Source file: Utility.hpp
- 
+ Source file: CorrFile.hpp
+
  Copyright (C) 2019 - 2023
  
  Author: Michael Marshall <Michael.Marshall@ed.ac.uk>
@@ -25,14 +25,12 @@
  See the full license in the file "LICENSE" in the top level distribution directory
 **/
 
-// Common utilities (no dependencies other than c++ stdlib)
-
 #ifndef MLU_CorrFile_hpp
 #define MLU_CorrFile_hpp
 
 #include <MLU/Utility.hpp>
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 // Correlator file. Could be either single correlator, or multiple gammas
 
@@ -129,5 +127,5 @@ using CorrelatorFileD = CorrelatorFile<double>;
 template <typename T>
 void swap( CorrelatorFile<T> &l, CorrelatorFile<T> &r );
 
-END_COMMON_NAMESPACE
+END_MLU_NAMESPACE
 #endif // MLU_CorrFile

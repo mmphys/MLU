@@ -27,15 +27,16 @@
 /*  END LEGAL */
 
 #ifndef MLU_DebugInfo_hpp
-#define MLU_DebugInfo_hpp namespace Common {
-#define MLU_DebugInfo_hpp_end };
+#define MLU_DebugInfo_hpp
 
 #include <type_traits>
 
-MLU_DebugInfo_hpp
+#include <MLU/MLUFirst.hpp>
+
+BEGIN_MLU_NAMESPACE
 
 extern bool Grid_exit_handler_disable; // Set to true just before exit so nothing printed
 void Grid_debug_handler_init(void);
 
-MLU_DebugInfo_hpp_end
+END_MLU_NAMESPACE
 #endif

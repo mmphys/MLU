@@ -30,8 +30,8 @@
 **************************/
 
 // Map from (case insensitive) quark names to Quarks
-using QuarkList    = std::map<std::string, Quark  , Common::LessCaseInsensitive>;
-using QuarkNameList = std::set<std::string, Common::LessCaseInsensitive>;
+using QuarkList    = std::map<std::string, Quark  , MLU::LessCaseInsensitive>;
+using QuarkNameList = std::set<std::string, MLU::LessCaseInsensitive>;
 
 class AppMaker
 {
@@ -87,7 +87,7 @@ protected:
   MakePar makePar;
   bool ThreePoint;
   std::vector<Taxonomy> Taxa;
-  std::vector<Common::Momentum> Momenta;
+  std::vector<MLU::Momentum> Momenta;
   std::vector<int> deltaT;
   std::vector<Gamma::Algebra> gamma;
   std::vector<Quark *> HeavyQuarks;
@@ -151,9 +151,9 @@ protected:
   std::set<int> UniqueP2;
 
   // Check whether 0-momentum in the list. Add the negative of each momentum if requested
-  bool Check0Negate( std::vector<Common::Momentum> &Momenta, bool bNegate );
+  bool Check0Negate( std::vector<MLU::Momentum> &Momenta, bool bNegate );
   void Contract2pt( const Taxonomy &tax, const Quark &q1, const Quark &q2, int idxMomentum, int t,
-                    const std::vector<Common::Momentum> &Momenta, bool bGotp0 );
+                    const std::vector<MLU::Momentum> &Momenta, bool bGotp0 );
 
 public:
   explicit Study3( const AppParams &appPar, const std::string &sXmlTagName ) : AppMaker{appPar,sXmlTagName} {}

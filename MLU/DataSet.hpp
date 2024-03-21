@@ -25,15 +25,13 @@
  See the full license in the file "LICENSE" in the top level distribution directory
 **/
 
-// Common utilities (no dependencies other than c++ stdlib)
-
 #ifndef MLU_DataSet_hpp
 #define MLU_DataSet_hpp
 
 #include <MLU/Fold.hpp>
 #include <MLU/Model.hpp>
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 struct ConstantSource
 {
@@ -125,14 +123,14 @@ public:
   inline void AddConstant( const Param::Key &Key, std::size_t File ) {AddConstant( Key, File, Key );}
   const Param &GetConstantParam( const ConstantSource &cs ) const;
   JackBootColumn<T> GetConstant( const Param::Key &Key );
-  int  LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags = COMPAT_DEFAULT,
+  int  LoadCorrelator( MLU::FileNameAtt &&FileAtt, unsigned int CompareFlags = COMPAT_DEFAULT,
                        const char * PrintPrefix = "  " );
   /// Load a model file
-  void LoadModel( Common::FileNameAtt &&FileAtt,
+  void LoadModel( MLU::FileNameAtt &&FileAtt,
                   const char *pszPrintPrefix = nullptr,
                   unsigned int CompareFlags = COMPAT_DISABLE_BASE | COMPAT_DISABLE_NT );
   /// Load a model and create parameters for selected entries (all if Args empty)
-  void LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Args,
+  void LoadModel( MLU::FileNameAtt &&FileAtt, const std::string &Args,
                   const char *pszPrintPrefix = nullptr,
                   unsigned int CompareFlags = COMPAT_DISABLE_BASE | COMPAT_DISABLE_NT );
   std::vector<std::string> GetModelFilenames( std::size_t Start = 0 ) const;
@@ -153,5 +151,5 @@ public:
                        const char *pGnuplotExtra = nullptr ) const;
 };
 
-END_COMMON_NAMESPACE
+END_MLU_NAMESPACE
 #endif // MLU_DataSet_hpp

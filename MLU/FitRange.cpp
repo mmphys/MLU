@@ -29,7 +29,7 @@
 #include <list>
 #include <cstdint>
 
-FitRange_hpp
+BEGIN_MLU_NAMESPACE
 
 /*****************************************************************
 
@@ -634,4 +634,4 @@ bool FitRangesIteratorRelative::Increment( bool bWrap )
   return bOverflow;
 }
 
-FitRange_hpp_end
+END_MLU_NAMESPACE

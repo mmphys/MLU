@@ -27,8 +27,7 @@
 /*  END LEGAL */
 
 #ifndef MLU_HDF5_hpp
-#define MLU_HDF5_hpp namespace Common {
-#define MLU_HDF5_hpp_end };
+#define MLU_HDF5_hpp
 
 #include <MLUconfig.h>
 #include <MLU/Math.hpp>
@@ -45,7 +44,7 @@
 #define DEF_FMT "h5"
 #endif
 
-MLU_HDF5_hpp
+BEGIN_MLU_NAMESPACE
 
 // My implementation of H5File - adds a definition of complex type
 namespace H5 {
@@ -110,18 +109,18 @@ namespace H5 {
   template<typename T>
   void ReadVector( ::H5::Group &g, const std::string &DSName, T &v );
   template<typename T>
-  void ReadVector( ::H5::Group &g, const std::string &DSName, std::vector<Common::Matrix<T>> &v );
+  void ReadVector( ::H5::Group &g, const std::string &DSName, std::vector<MLU::Matrix<T>> &v );
   // Write a vector to a dataset
   template<typename T>
-  bool WriteVector( ::H5::Group &g, const std::string &DSName, const Common::Vector<T> &v );
+  bool WriteVector( ::H5::Group &g, const std::string &DSName, const MLU::Vector<T> &v );
   template<typename T>
   bool WriteVector( ::H5::Group &g, const std::string &DSName, const std::vector<T> &v );
   // Read a matrix from a dataset
   template<typename T>
-  void ReadMatrix( ::H5::Group &g, const std::string &DSName, Common::Matrix<T> &m );
+  void ReadMatrix( ::H5::Group &g, const std::string &DSName, MLU::Matrix<T> &m );
   // Write a matrix to a dataset
   template<typename T>
-  bool WriteMatrix( ::H5::Group &g, const std::string &DSName, const Common::Matrix<T> &m );
+  bool WriteMatrix( ::H5::Group &g, const std::string &DSName, const MLU::Matrix<T> &m );
 
   // I would like these to be private members of a class full of static functions
   // BUT explicit specialisations must be at class scope (until C++ 17)
@@ -129,8 +128,8 @@ namespace H5 {
   void ReadStringsHelper( const T &a, const ::H5::StrType &aType, char * * MDString );
 
   template<typename T> inline typename T::value_type * GetDataHelper( T & t ) { return t.data(); }
-  template<typename T> inline T * GetDataHelper( Common::Vector<T> &v ) { return v.Data(); }
-  //template<typename T> inline T * GetDataHelper( Common::Matrix<T> &m ) { return m.Data(); }
+  template<typename T> inline T * GetDataHelper( MLU::Vector<T> &v ) { return v.Data(); }
+  //template<typename T> inline T * GetDataHelper( MLU::Matrix<T> &m ) { return m.Data(); }
   std::string GetErrorClearStack( const ::H5::Exception &e );
 };
 
@@ -164,7 +163,7 @@ void H5::ReadVector( ::H5::Group &g, const std::string &DSName, T &v )
 
 // Read a vector of matrices from a dataset
 template<typename T>
-void H5::ReadVector( ::H5::Group &g, const std::string &DSName, std::vector<Common::Matrix<T>> &v )
+void H5::ReadVector( ::H5::Group &g, const std::string &DSName, std::vector<MLU::Matrix<T>> &v )
 {
   ::H5::DataSet ds = g.openDataSet( DSName );
   ::H5::DataSpace dsp = ds.getSpace();
@@ -201,14 +200,14 @@ void H5::ReadVector( ::H5::Group &g, const std::string &DSName, std::vector<Comm
 
 // Write a vector to a dataset
 template<typename T>
-bool H5::WriteVector( ::H5::Group &g, const std::string &DSName, const Common::Vector<T> &v )
+bool H5::WriteVector( ::H5::Group &g, const std::string &DSName, const MLU::Vector<T> &v )
 {
   const bool bHasData{ v.size != 0 };
   if( bHasData )
   {
     // Make sure the vector's memory is contiguous (copy it if not)
-    Common::Vector<T> vContiguous;
-    const Common::Vector<T> * pContiguous = &v;
+    MLU::Vector<T> vContiguous;
+    const MLU::Vector<T> * pContiguous = &v;
     if( v.stride != 1 )
     {
       vContiguous = v;
@@ -243,7 +242,7 @@ bool H5::WriteVector( ::H5::Group &g, const std::string &DSName, const std::vect
 
 // Read a matrix from a dataset
 template<typename T>
-void H5::ReadMatrix( ::H5::Group &g, const std::string &DSName, Common::Matrix<T> &m )
+void H5::ReadMatrix( ::H5::Group &g, const std::string &DSName, MLU::Matrix<T> &m )
 {
   ::H5::DataSet ds = g.openDataSet( DSName );
   ::H5::DataSpace dsp = ds.getSpace();
@@ -266,14 +265,14 @@ void H5::ReadMatrix( ::H5::Group &g, const std::string &DSName, Common::Matrix<T
 
 // Write a matrix to a dataset
 template<typename T>
-bool H5::WriteMatrix( ::H5::Group &g, const std::string &DSName, const Common::Matrix<T> &m )
+bool H5::WriteMatrix( ::H5::Group &g, const std::string &DSName, const MLU::Matrix<T> &m )
 {
   const bool bHasData{ m.size1 && m.size2 };
   if( bHasData )
   {
     // Make sure the vector's memory is contiguous (copy it if not)
-    Common::Matrix<T> mContiguous;
-    const Common::Matrix<T> * pContiguous = &m;
+    MLU::Matrix<T> mContiguous;
+    const MLU::Matrix<T> * pContiguous = &m;
     if( m.tda != m.size2 )
     {
       mContiguous = m;
@@ -289,5 +288,5 @@ bool H5::WriteMatrix( ::H5::Group &g, const std::string &DSName, const Common::M
   return bHasData;
 }
 
-MLU_HDF5_hpp_end
+END_MLU_NAMESPACE
 #endif

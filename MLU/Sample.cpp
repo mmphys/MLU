@@ -27,7 +27,7 @@
 
 #include "Sample.hpp"
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 template <typename T>
 void Sample<T>::resize( int NumReplicas, int Nt )
@@ -95,7 +95,7 @@ void Sample<T>::WriteColumnNames( std::ostream &s ) const
       ps = &ColumnNames[t];
     if( t )
       s << Sep;
-    Common::ValWithEr<T>::Header( *ps, s, Sep );
+    MLU::ValWithEr<T>::Header( *ps, s, Sep );
   }
 }
 
@@ -106,11 +106,11 @@ void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, unsigned in
 {
   static const std::string sPrefix{ "Incompatible " + sBootstrap + " samples - " };
   const std::string sSuffix{ bSuffix ? ":\n  " + Name_.Filename + "\nv " + o.Name_.Filename : "" };
-  if( !( CompareFlags & COMPAT_DISABLE_BASE ) && !Common::EqualIgnoreCase( o.Name_.Base, Name_.Base ) )
+  if( !( CompareFlags & COMPAT_DISABLE_BASE ) && !MLU::EqualIgnoreCase( o.Name_.Base, Name_.Base ) )
     throw std::runtime_error( sPrefix + "base " + o.Name_.Base + sNE + Name_.Base + sSuffix );
-  if( !( CompareFlags & COMPAT_DISABLE_TYPE ) && !Common::EqualIgnoreCase( o.Name_.Type, Name_.Type ) )
+  if( !( CompareFlags & COMPAT_DISABLE_TYPE ) && !MLU::EqualIgnoreCase( o.Name_.Type, Name_.Type ) )
     throw std::runtime_error( sPrefix + "type " + o.Name_.Type + sNE + Name_.Type + sSuffix );
-  if( !Common::EqualIgnoreCase( o.Name_.Ext, Name_.Ext ) )
+  if( !MLU::EqualIgnoreCase( o.Name_.Ext, Name_.Ext ) )
     throw std::runtime_error( sPrefix + "extension " + o.Name_.Ext + sNE + Name_.Ext + sSuffix );
   if( pNumSamples )
   {
@@ -142,8 +142,8 @@ void Sample<T>::IsCompatible( const Sample<U> &o, int * pNumSamples, unsigned in
                                  std::to_string(CSizeO) + sNE + std::to_string(CSize) + sSuffix );
       for( std::size_t i = 0; i < CSize; i++ )
       {
-        const Common::ConfigCount &l{   ConfigCount[i] };
-        const Common::ConfigCount &r{ o.ConfigCount[i] };
+        const MLU::ConfigCount &l{   ConfigCount[i] };
+        const MLU::ConfigCount &r{ o.ConfigCount[i] };
         if( r.Config != l.Config )
           throw std::runtime_error( sPrefix + "Config " + std::to_string(r.Config) +
                                    sNE + std::to_string(l.Config) + sSuffix );
@@ -227,7 +227,7 @@ template <typename T> void Sample<T>::BinAuto( int JackBootDest )
   // Work out how many bins there are and whether they are all the same size
   int NumSamplesRaw{ 0 };
   int NewBinSize{ ConfigCount[0].Count };
-  for( const Common::ConfigCount &cc : ConfigCount )
+  for( const MLU::ConfigCount &cc : ConfigCount )
   {
     if( cc.Count < 1 )
       throw std::runtime_error( "ConfigCount invalid" );
@@ -270,7 +270,7 @@ template <typename T> void Sample<T>::BinFixed( int binSize_, int JackBootDest )
     throw std::runtime_error( "No raw data to bin" );
   // Work out how many samples there are and check they match ConfigCount
   int NumSamplesRaw{ 0 };
-  for( const Common::ConfigCount &cc : ConfigCount )
+  for( const MLU::ConfigCount &cc : ConfigCount )
   {
     if( cc.Count != ConfigCount[0].Count )
       throw std::runtime_error( "Can't manually bin - raw sample counts differ per config" );
@@ -392,7 +392,7 @@ void Sample<T>::Read( bool bSetSeed, SeedType NewSeed,
           else if( Dim[0] != static_cast<unsigned int>( Nt_ ) )
             break;
           ds.read( buffer.data(), ::H5::PredType::NATIVE_DOUBLE );
-          if( !Common::IsFinite( buffer ) )
+          if( !MLU::IsFinite( buffer ) )
             throw std::runtime_error( "NANs at row " + std::to_string(i) + "in " + Name_.Filename );
           for( int t = 0; t < Nt_; t++ )
             CopyOldFormat( Data[0]( i, t ), buffer[t], buffer[t + Nt_] );
@@ -559,7 +559,7 @@ void Sample<T>::Read( bool bSetSeed, SeedType NewSeed,
         if( NumConfig > std::numeric_limits<int>::max() )
           throw std::runtime_error( sConfigCount + " too many items in ConfigCount: " + std::to_string( NumConfig ) );
         ConfigCount.resize( NumConfig );
-        a.read( H5::Equiv<Common::ConfigCount>::Type, &ConfigCount[0] );
+        a.read( H5::Equiv<MLU::ConfigCount>::Type, &ConfigCount[0] );
         a.close();
       }
       catch(const ::H5::Exception &)
@@ -822,8 +822,8 @@ void Sample<T>::Write( const char * pszGroupName, unsigned int Flags )
     {
       Dims[0] = ConfigCount.size();
       dsp = ::H5::DataSpace( 1, Dims );
-      a = g.createAttribute( sConfigCount, H5::Equiv<Common::ConfigCount>::Type, dsp );
-      a.write( H5::Equiv<Common::ConfigCount>::Type, &ConfigCount[0] );
+      a = g.createAttribute( sConfigCount, H5::Equiv<MLU::ConfigCount>::Type, dsp );
+      a.write( H5::Equiv<MLU::ConfigCount>::Type, &ConfigCount[0] );
       a.close();
       dsp.close();
       NumAttributes++;
@@ -989,7 +989,7 @@ void Sample<T>::SummaryComments( std::ostream & s, bool bVerboseSummary,
   if( !ConfigCount.empty() )
   {
     s << "# Configs: " << ConfigCount.size();
-    for( const Common::ConfigCount &cc : ConfigCount )
+    for( const MLU::ConfigCount &cc : ConfigCount )
       s << CommaSpace << cc;
     s << NewLine;
   }
@@ -1077,4 +1077,4 @@ template class Sample<float>;
 template class Sample<std::complex<double>>;
 template class Sample<std::complex<float>>;
 
-END_COMMON_NAMESPACE
+END_MLU_NAMESPACE

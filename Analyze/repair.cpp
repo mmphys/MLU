@@ -28,7 +28,7 @@
 
 #include <stdio.h>
 #include <typeinfo>
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 int main(int argc, char *argv[])
 {

@@ -30,12 +30,12 @@
 // The correlators I want to import - in order
 
 const std::vector<CorrInfo> Importer::corrInfo{
-  { "pp_SSLL", "pLS", "pLS", Common::Parity::Even },
-  { "pp_SLLL", "pLS", "pLL", Common::Parity::Even },
-  { "ap_SSLL", "aLS", "pLS", Common::Parity::Odd },
-  { "ap_SLLL", "aLL", "pLS", Common::Parity::Odd },
-  { "aa_SSLL", "aLS", "aLS", Common::Parity::Even },
-  { "aa_SLLL", "aLS", "aLL", Common::Parity::Even },
+  { "pp_SSLL", "pLS", "pLS", MLU::Parity::Even },
+  { "pp_SLLL", "pLS", "pLL", MLU::Parity::Even },
+  { "ap_SSLL", "aLS", "pLS", MLU::Parity::Odd },
+  { "ap_SLLL", "aLL", "pLS", MLU::Parity::Odd },
+  { "aa_SSLL", "aLS", "aLS", MLU::Parity::Even },
+  { "aa_SLLL", "aLS", "aLL", MLU::Parity::Even },
 };
 
 
@@ -45,8 +45,8 @@ const std::vector<CorrInfo> Importer::corrInfo{
 
 *****************************************************************/
 
-Importer::Importer( const Common::CommandLine &cl )
-: Seed{ Common::RandomCache::DefaultSeed() },
+Importer::Importer( const MLU::CommandLine &cl )
+: Seed{ MLU::RandomCache::DefaultSeed() },
   outStem{ cl.SwitchValue<std::string>( "o" ) },
   bDebug{ cl.GotSwitch( "debug" ) },
   GroupName{ cl.SwitchValue<std::string>( "g" ) }
@@ -62,15 +62,15 @@ Importer::Importer( const Common::CommandLine &cl )
 template <typename T>
 void Importer::ReadCorrVector( ::H5::Group &g, const std::string &Name, std::vector<T> &v )
 {
-  std::cout << "Reading vector from " << Name << Common::NewLine;
+  std::cout << "Reading vector from " << Name << MLU::NewLine;
   ::H5::Group gName{ g.openGroup( Name ) };
   v.clear();
   v.reserve( corrInfo.size() );
   for( const CorrInfo &i : corrInfo )
   {
     v.emplace_back();
-    std::cout << "  Reading element from " << i.id << Common::NewLine;
-    Common::H5::ReadVector( gName, i.id, v.back() );
+    std::cout << "  Reading element from " << i.id << MLU::NewLine;
+    MLU::H5::ReadVector( gName, i.id, v.back() );
   }
 }
 
@@ -97,8 +97,8 @@ void Importer::DebugDump( const std::vector<Matrix> &v ) const
         else
           std::cout << std::string( 7, ' ' );
         for( int j = 0; j < cols; ++j )
-          std::cout << Common::Space << m( i, j );
-        std::cout << Common::NewLine;
+          std::cout << MLU::Space << m( i, j );
+        std::cout << MLU::NewLine;
       }
     }
   }
@@ -111,7 +111,7 @@ void Importer::DebugDump( const std::vector<std::vector<Matrix>> &v ) const
     std::cout << std::setprecision( std::numeric_limits<Scalar>::max_digits10 );
     for( std::size_t f = 0; f < v.size(); ++f )
     {
-      std::cout << Common::NewLine << corrInfo[f].id << Common::NewLine;
+      std::cout << MLU::NewLine << corrInfo[f].id << MLU::NewLine;
       DebugDump( v[f] );
     }
   }
@@ -129,41 +129,41 @@ void Importer::ReadInput( const std::string &Filename )
   {
     ::H5::H5File f;
     ::H5::Group gRoot;
-    Common::H5::OpenFileGroup( f, gRoot, Filename, "Importing ", &GroupName );
+    MLU::H5::OpenFileGroup( f, gRoot, Filename, "Importing ", &GroupName );
     ReadCorrVector( gRoot, "rawdata", vRawData );
     ::H5::Group gFit{ gRoot.openGroup( "fitinput" ) };
     ReadCorrVector( gFit, "fitranges", vFitRanges );
     static const std::string sCentral{ "central" };
     static const std::string sBootstraps{ "Bootstraps" };
     ::H5::Group g{ gFit.openGroup( "binneddata" ) };
-    Common::H5::ReadVector( g, sCentral, vBinnedCentral );
-    Common::H5::ReadMatrix( g, sBootstraps, mBinnedData );
+    MLU::H5::ReadVector( g, sCentral, vBinnedCentral );
+    MLU::H5::ReadMatrix( g, sBootstraps, mBinnedData );
     g.close();
     g = gFit.openGroup( "unbinnneddata" ); // Spelling error "nnn" is in the source data
-    Common::H5::ReadVector( g, sCentral, vUnbinnedCentral );
-    Common::H5::ReadMatrix( g, sBootstraps, mUnbinnedData );
+    MLU::H5::ReadVector( g, sCentral, vUnbinnedCentral );
+    MLU::H5::ReadMatrix( g, sBootstraps, mUnbinnedData );
   }
   DebugDump( vRawData );
   if( vRawData[0][0].size2 > std::numeric_limits<int>::max() || vRawData[0][0].size2 & 1 )
     throw std::runtime_error( "Raw data Nt=" + std::to_string( vRawData[0][0].size2 ) + " invalid" );
   Nt = static_cast<int>( vRawData[0][0].size2 );
   NtOut = Nt / 2 + 1;
-  std::cout << "Timeslices" << Common::NewLine;
+  std::cout << "Timeslices" << MLU::NewLine;
   std::size_t TotalTimeslices{ 0 };
   bool bBadTimeslice{ false };
   for( std::size_t i = 0; i < corrInfo.size(); ++i )
   {
     TotalTimeslices += vFitRanges[i].size();
-    std::cout << Common::Space << corrInfo[i].id << " (" << corrInfo[i].opSrc << ", "
+    std::cout << MLU::Space << corrInfo[i].id << " (" << corrInfo[i].opSrc << ", "
               << corrInfo[i].opSnk << "):";
     for( int t : vFitRanges[i] )
     {
-      std::cout << Common::Space << t;
+      std::cout << MLU::Space << t;
       if( t < 0 || t > Nt / 2 )
         bBadTimeslice = true;
     }
-    std::cout << Common::NewLine;
-    Common::NoDuplicates( vFitRanges[i], "Timeslice", 1 );
+    std::cout << MLU::NewLine;
+    MLU::NoDuplicates( vFitRanges[i], "Timeslice", 1 );
   }
   const std::string Suffix{ " timeslices != " + std::to_string( TotalTimeslices ) };
   if( TotalTimeslices != vBinnedCentral.size )
@@ -230,7 +230,7 @@ void Importer::SaveRawData( std::vector<Fold> &out, bool bPreserveSign )
 {
   for( std::size_t f = 0; f < out.size(); ++f )
   {
-    const Scalar Multiplier{ corrInfo[f].parity == Common::Parity::Odd ? -1. : 1. };
+    const Scalar Multiplier{ corrInfo[f].parity == MLU::Parity::Odd ? -1. : 1. };
     std::string sName{ corrInfo[f].id };
     sName.append( "_config_" );
     const std::size_t SizeConf{ sName.length() };
@@ -252,7 +252,7 @@ void Importer::SaveRawData( std::vector<Fold> &out, bool bPreserveSign )
                                + std::to_string( NumTimeslices ) + " timeslices" );
     const bool bNegate{ !bPreserveSign && vRawData[f][0]( 0, Nt >> 2 ) < 0 };
     out[f].binSize = NumTimeslices;
-    out[f].sign = bNegate ? Common::Sign::Negative : Common::Sign::Positive;
+    out[f].sign = bNegate ? MLU::Sign::Negative : MLU::Sign::Positive;
     out[f].ConfigCount.resize( NumConfigs );
     out[f].SampleSize = NumConfigs;
     out[f].binSize = NumTimeslices;
@@ -299,8 +299,8 @@ void Importer::SaveRawData( std::vector<Fold> &out, bool bPreserveSign )
 void Importer::Write( const std::string &Base, bool bPreserveSign )
 {
   const int NumSamples{ static_cast<int>( mBinnedData.size1 ) };
-  std::cout << "Writing " << Base << Common::NewLine;
-  Common::MakeAncestorDirs( Base );
+  std::cout << "Writing " << Base << MLU::NewLine;
+  MLU::MakeAncestorDirs( Base );
   std::vector<Fold> out( corrInfo.size() );
   for( std::size_t f = 0; f < corrInfo.size(); ++f )
   {
@@ -357,10 +357,10 @@ void Importer::Write( const std::string &Base, bool bPreserveSign )
       Filename.append( corrInfo[f].opSnk );
       Filename.append( 1, '_' );
       Filename.append( corrInfo[f].opSrc );
-      std::string FullName{ Common::MakeFilename( Filename, Common::sFold, Seed, DEF_FMT ) };
-      std::cout << Common::Space << out[f].NumSamplesRaw() << Common::Space << FullName << Common::NewLine;
+      std::string FullName{ MLU::MakeFilename( Filename, MLU::sFold, Seed, DEF_FMT ) };
+      std::cout << MLU::Space << out[f].NumSamplesRaw() << MLU::Space << FullName << MLU::NewLine;
       out[f].Write( FullName );
-      out[f].WriteSummary( Common::MakeFilename( Filename, Common::sFold, Seed, TEXT_EXT ) );
+      out[f].WriteSummary( MLU::MakeFilename( Filename, MLU::sFold, Seed, TEXT_EXT ) );
     }
   }
 }
@@ -399,8 +399,8 @@ void Importer::Import( const std::string &Filename, const std::string &Group, co
     ::H5::H5File f;
     ::H5::Group g;
     std::string gName{ Group };
-    Common::H5::OpenFileGroup( f, g, Filename, "Importing ", &gName );
-    Common::H5::ReadMatrix( g, DS, mBinnedData );
+    MLU::H5::OpenFileGroup( f, g, Filename, "Importing ", &gName );
+    MLU::H5::ReadMatrix( g, DS, mBinnedData );
     g.close();
     std::cout << Filename << " " << mBinnedData.size1 << " x " << mBinnedData.size2 << "\n";
   }
@@ -408,7 +408,7 @@ void Importer::Import( const std::string &Filename, const std::string &Group, co
   std::string OutBase{ outStem };
   {
     std::string InFile{ Filename };
-    Common::ExtractDirPrefix( InFile );
+    MLU::ExtractDirPrefix( InFile );
     OutBase.append( InFile );
     const std::size_t LastSlash{ OutBase.find_last_of( '/' ) };
     std::size_t pos{ OutBase.find_last_of( '.' ) };
@@ -417,8 +417,8 @@ void Importer::Import( const std::string &Filename, const std::string &Group, co
   }
 
   // Now write it
-  std::cout << "Writing " << OutBase << Common::NewLine;
-  Common::MakeAncestorDirs( OutBase );
+  std::cout << "Writing " << OutBase << MLU::NewLine;
+  MLU::MakeAncestorDirs( OutBase );
   const int NumSamples{ static_cast<int>( mBinnedData.size1 ) };
   const int Nt{ static_cast<int>( mBinnedData.size2 ) };
   Fold out( NumSamples, Nt );
@@ -438,9 +438,9 @@ void Importer::Import( const std::string &Filename, const std::string &Group, co
   for( int t = 0; t < Nt; ++t )
     out(Fold::idxCentral,t) /= NumSamples;
   out.MakeCorrSummary();
-  std::string FullName{ Common::MakeFilename( OutBase, Common::sFold, Seed, DEF_FMT ) };
+  std::string FullName{ MLU::MakeFilename( OutBase, MLU::sFold, Seed, DEF_FMT ) };
   out.Write( FullName );
-  out.WriteSummary( Common::MakeFilename( OutBase, Common::sFold, Seed, TEXT_EXT ) );
+  out.WriteSummary( MLU::MakeFilename( OutBase, MLU::sFold, Seed, TEXT_EXT ) );
 }
 
 /*****************************************************************
@@ -455,7 +455,7 @@ int main(const int argc, const char *argv[])
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {
@@ -478,7 +478,7 @@ int main(const int argc, const char *argv[])
         std::string sGroupName;
         std::string sDSName;
         bool bPreserveSign{ false };
-        std::string Files{ Common::ExtractToSeparator( Args ) };
+        std::string Files{ MLU::ExtractToSeparator( Args ) };
         if( Args.length() )
         {
           if( Args.length() == 1 && std::toupper( Args[0] ) == 'S' )
@@ -486,14 +486,14 @@ int main(const int argc, const char *argv[])
           else
           {
             sDSName = Args;
-            sGroupName = Common::ExtractDirPrefix( sDSName );
+            sGroupName = MLU::ExtractDirPrefix( sDSName );
             if( sGroupName.empty() )
               sGroupName = "/";
             else if( sGroupName.length() > 1 && sGroupName.back() == '/' )
               sGroupName.resize( sGroupName.size() - 1 );
           }
         }
-          for( auto &File : Common::glob( &Files, &Files + 1, InBase.c_str() ) )
+          for( auto &File : MLU::glob( &Files, &Files + 1, InBase.c_str() ) )
           {
             try
             {

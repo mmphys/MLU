@@ -26,7 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 #include <Grid/Grid.h>
 //#include <Hadrons/../utilities/Contractor.hpp>
 //#include <Hadrons/Application.hpp>
@@ -41,7 +41,7 @@ int main(int argc, const char *argv[])
   int iReturn{ EXIT_SUCCESS };
   try
   {
-  using Common::CommandLine;
+  using MLU::CommandLine;
   static const char longSwitch[]{ "balderdash" };
   const std::initializer_list<CommandLine::SwitchDef> l = {
     {"b", CommandLine::SwitchType::Multiple, nullptr},

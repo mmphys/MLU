@@ -25,10 +25,10 @@
  See the full license in the file "LICENSE" in the top level distribution directory
 **/
 
-// Common utilities (no dependencies other than c++ stdlib)
+// MLU utilities (no dependencies other than c++ stdlib)
 
-#ifndef Common_Utility_hpp
-#define Common_Utility_hpp
+#ifndef MLU_Utility_hpp
+#define MLU_Utility_hpp
 
 #include <MLUconfig.h>
 #include <MLU/FitRange.hpp>
@@ -61,12 +61,9 @@
 #define DAT_EXT "dat"
 #endif
 
-#define BEGIN_COMMON_NAMESPACE namespace Common {
-#define END_COMMON_NAMESPACE   };
-
 extern "C" const char * MLUVersionInfoHuman();
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 // Compatibility flags for filename comparisons
 
@@ -330,11 +327,11 @@ protected:
   {
     bool bOK = static_cast<bool>( std::getline( iss, v ) );
     if( bOK )
-      Common::Trim( v );
+      MLU::Trim( v );
     return bOK;
   }
   template<class V = T> static typename std::enable_if<!std::is_same<V, std::string>::value, bool>::type
-  GetValue( std::istringstream &iss, V &v ) { return iss >> v && Common::StreamEmpty( iss ); }
+  GetValue( std::istringstream &iss, V &v ) { return iss >> v && MLU::StreamEmpty( iss ); }
   template<class V = T> static void MyEmplace( std::multimap<Key, V, Compare> &m, Key &&k, V &&t )
   {
     // Multimap, so won't fail
@@ -356,13 +353,13 @@ protected:
   static void ReadLine( Map &m, const std::string &s, bool bOptional = false )
   {
     std::istringstream iss( s );
-    if( !Common::StreamEmpty( iss ) )
+    if( !MLU::StreamEmpty( iss ) )
     {
       Key k;
       if( !( iss >> k ) )
         throw std::runtime_error( "KeyValReader::ReadLine() bad key " + s );
       T t{};
-      if( !bOptional || !Common::StreamEmpty( iss ) )
+      if( !bOptional || !MLU::StreamEmpty( iss ) )
       {
         if( !GetValue( iss, t ) )
           throw std::runtime_error( "KeyValReader::ReadLine() bad value " + s );
@@ -410,7 +407,7 @@ public:
   static Map Read( const std::string &Filename, const char *ErrorMsgType = nullptr,
                    const std::string &sComment = Hash )
   {
-    if( Common::FileExists( Filename ) )
+    if( MLU::FileExists( Filename ) )
     {
       std::ifstream s( Filename );
       if( !s.bad() )
@@ -602,7 +599,7 @@ public:
   void AppendMomentum( std::string &s, const MomentumPair &np ) const
   { AppendMomentum( s, np.second, np.first );}
   std::string MakeMesonName( const std::string &Quark ) const
-  { return ::Common::ConcatHeavyFirst( Quark, Spectator ); }
+  { return ::MLU::ConcatHeavyFirst( Quark, Spectator ); }
 protected:
   std::vector<std::string> ParseOpNames( int NumOps );
 };
@@ -748,8 +745,8 @@ inline RPS operator*( const RPS &l, const RPS &r )
   rps.reality = l.reality * r.reality;
   rps.parity = l.parity * r.parity;
   rps.sign = l.sign * r.sign;
-  if( l.reality == Common::Reality::Imag && r.reality == Common::Reality::Imag )
-    rps.sign = rps.sign * Common::Sign::Negative;
+  if( l.reality == MLU::Reality::Imag && r.reality == MLU::Reality::Imag )
+    rps.sign = rps.sign * MLU::Sign::Negative;
   return rps;
 }
 inline std::ostream& operator<<(std::ostream& os, const RPS &rps)
@@ -801,10 +798,10 @@ struct FoldProp
     switch( iCount[0] + iCount[1] )
     {
       case 0:
-        rps.reality = Common::Reality::Unknown;
+        rps.reality = MLU::Reality::Unknown;
         break;
       case 1:
-        rps.reality = iCount[0] ? Common::Reality::Real : Common::Reality::Imag;
+        rps.reality = iCount[0] ? MLU::Reality::Real : MLU::Reality::Imag;
         break;
       default:
         bOK = false;
@@ -812,10 +809,10 @@ struct FoldProp
     switch( iCount[2] + iCount[3] )
     {
       case 0:
-        rps.parity = Common::Parity::Unknown;
+        rps.parity = MLU::Parity::Unknown;
         break;
       case 1:
-        rps.parity = iCount[2] ? Common::Parity::Even : Common::Parity::Odd;
+        rps.parity = iCount[2] ? MLU::Parity::Even : MLU::Parity::Odd;
         break;
       default:
         bOK = false;
@@ -823,10 +820,10 @@ struct FoldProp
     switch( iCount[4] + iCount[5] )
     {
       case 0:
-        rps.sign = Common::Sign::Unknown;
+        rps.sign = MLU::Sign::Unknown;
         break;
       case 1:
-        rps.sign = iCount[4] ? Common::Sign::Positive : Common::Sign::Negative;
+        rps.sign = iCount[4] ? MLU::Sign::Positive : MLU::Sign::Negative;
         break;
       default:
         bOK = false;
@@ -1012,5 +1009,5 @@ public:
 
 std::ostream& operator<<( std::ostream& os, const CommandLine &cl);
 
-END_COMMON_NAMESPACE
-#endif // Common_Utility_hpp
+END_MLU_NAMESPACE
+#endif // MLU_Utility_hpp

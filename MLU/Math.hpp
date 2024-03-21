@@ -27,8 +27,7 @@
 /*  END LEGAL */
 
 #ifndef MLU_Math_hpp
-#define MLU_Math_hpp namespace Common {
-#define MLU_Math_hpp_end };
+#define MLU_Math_hpp
 
 #include <MLU/GSLVecMat.hpp>
 
@@ -36,7 +35,7 @@
 #include <limits>
 #include <type_traits>
 
-MLU_Math_hpp
+BEGIN_MLU_NAMESPACE
 
 // https://en.wikipedia.org/wiki/68–95–99.7_rule
 constexpr double OneSigma{ 0.682689492137086 };
@@ -183,5 +182,5 @@ std::ostream & operator<<( std::ostream &os, const ValWithEr<T> &v );
 template <typename T>
 void LedoitWolfShrink( Matrix<T> &M, typename GSLTraits<T>::Real Rho );
 
-MLU_Math_hpp_end
+END_MLU_NAMESPACE
 #endif

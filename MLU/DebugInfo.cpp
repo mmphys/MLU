@@ -75,7 +75,7 @@ static int feenableexcept (unsigned int excepts)
 }
 #endif
 
-MLU_DebugInfo_hpp
+BEGIN_MLU_NAMESPACE
 
 std::string demangle(const char* name) {
     
@@ -190,4 +190,5 @@ void Grid_debug_handler_init(void)
 
   atexit(Grid_exit_handler);
 }
-MLU_DebugInfo_hpp_end
+
+END_MLU_NAMESPACE

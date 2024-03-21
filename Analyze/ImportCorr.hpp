@@ -30,20 +30,20 @@
 
 #include <cmath>
 #include <iomanip>
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 using Scalar = double;
-using Fold = Common::Fold<Scalar>;
-using Algebra = Common::Gamma::Algebra;
-using Vector = Common::Vector<Scalar>;
-using Matrix = Common::Matrix<Scalar>;
+using Fold = MLU::Fold<Scalar>;
+using Algebra = MLU::Gamma::Algebra;
+using Vector = MLU::Vector<Scalar>;
+using Matrix = MLU::Matrix<Scalar>;
 
 struct CorrInfo
 {
   std::string id;
   std::string opSrc;
   std::string opSnk;
-  Common::Parity parity;
+  MLU::Parity parity;
 };
 
 /*****************************************************************
@@ -54,7 +54,7 @@ Importer
 
 struct Importer
 {
-  const Common::SeedType Seed;
+  const MLU::SeedType Seed;
   const std::string outStem;
   const bool bDebug;
 protected:
@@ -78,7 +78,7 @@ protected:
   void SaveRawData( std::vector<Fold> &out, bool bPreserveSign );
   void Write( const std::string &Base, bool bPreserveSign );
 public:
-  Importer( const Common::CommandLine &cl );
+  Importer( const MLU::CommandLine &cl );
   void Import( const std::string &Filename, bool bPreserveSign ); // Tobi format
   void Import( const std::string &Filename, const std::string &Group, const std::string &DS );
 };

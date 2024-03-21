@@ -23,7 +23,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 
@@ -91,9 +91,9 @@ static const Quark Quarks[] = {
 };
 static constexpr int NumQuarks{ sizeof( Quarks ) / sizeof( Quarks[0] ) };
 
-static const Common::Momentum Momentum0{ 0, 0, 0 };
+static const MLU::Momentum Momentum0{ 0, 0, 0 };
 
-static const Common::Momentum Momenta[] = {
+static const MLU::Momentum Momenta[] = {
   { 0, 0, 0 },
   { 1, 0, 0 },
   { 1, 1, 0 },
@@ -133,7 +133,7 @@ void CreateApp( Application &application )
   // Do I need the stout smeared heavy quark gauge field?
   for( int q = 0; q < NumQuarks; q++ )
   {
-    if( Common::EqualIgnoreCase( Quarks[q].GaugeField, GaugeFieldNameSmeared ) )
+    if( MLU::EqualIgnoreCase( Quarks[q].GaugeField, GaugeFieldNameSmeared ) )
     {
       MGauge::StoutSmearing::Par stoutPar;
       stoutPar.steps = 3;

@@ -29,19 +29,19 @@
 
 #include <stdio.h>
 #include <typeinfo>
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 using scalar = double;
 using Complex = std::complex<scalar>;
-using Fold = Common::Fold<scalar>;
-using SC = Common::Sample<Complex>;
-using VScalar = Common::Vector<scalar>;
-using VComplex = Common::Vector<Complex>;
-using MScalar = Common::Matrix<scalar>;
-using MComplex = Common::Matrix<Complex>;
-using JBScalar = Common::JackBoot<scalar>;
-using JBComplex = Common::JackBoot<Complex>;
-using CTraits = Common::SampleTraits<Complex>;
+using Fold = MLU::Fold<scalar>;
+using SC = MLU::Sample<Complex>;
+using VScalar = MLU::Vector<scalar>;
+using VComplex = MLU::Vector<Complex>;
+using MScalar = MLU::Matrix<scalar>;
+using MComplex = MLU::Matrix<Complex>;
+using JBScalar = MLU::JackBoot<scalar>;
+using JBComplex = MLU::JackBoot<Complex>;
+using CTraits = MLU::SampleTraits<Complex>;
 
 /** Copy Src to Dst.
  
@@ -49,7 +49,7 @@ using CTraits = Common::SampleTraits<Complex>;
  `bRealImagOnly == false` fold forward and backward waves as specified
  */
 void CopyFold( MScalar &dst, const MComplex src, int NtHalf,
-               Common::FoldProp &f, bool bRealImagOnly )
+               MLU::FoldProp &f, bool bRealImagOnly )
 {
   std::size_t NumRows{ src.size1 };
   std::size_t Nt{ src.size2 };
@@ -57,7 +57,7 @@ void CopyFold( MScalar &dst, const MComplex src, int NtHalf,
     throw std::runtime_error( "CopyFold() bug: NumRows mismatch" );
   if( dst.size2 != NtHalf )
     throw std::runtime_error( "CopyFold() bug: NtHalf mismatch" );
-  const int RI{ f.rps.reality == Common::Reality::Imag ? 1 : 0 };
+  const int RI{ f.rps.reality == MLU::Reality::Imag ? 1 : 0 };
   if( bRealImagOnly )
   {
     for( std::size_t i = 0; i < NumRows; ++i )
@@ -66,7 +66,7 @@ void CopyFold( MScalar &dst, const MComplex src, int NtHalf,
   }
   else
   {
-    const scalar Norm{ f.rps.sign == Common::Sign::Negative ? -0.5 : 0.5 };
+    const scalar Norm{ f.rps.sign == MLU::Sign::Negative ? -0.5 : 0.5 };
     for( std::size_t i = 0; i < NumRows; ++i )
       for( std::size_t t = 0; t < NtHalf; ++t )
       {
@@ -80,7 +80,7 @@ void CopyFold( MScalar &dst, const MComplex src, int NtHalf,
         else
         {
           // All the other timeslices
-          if( f.rps.parity == Common::Parity::Odd )
+          if( f.rps.parity == MLU::Parity::Odd )
             d -= CTraits::RealImag( src( i, Nt - t ), RI );
           else
             d += CTraits::RealImag( src( i, Nt - t ), RI );
@@ -92,7 +92,7 @@ void CopyFold( MScalar &dst, const MComplex src, int NtHalf,
 }
 
 void CopyFold( VScalar &dst, const VComplex &src, int NtHalf,
-               Common::FoldProp &f, bool bRealImagOnly )
+               MLU::FoldProp &f, bool bRealImagOnly )
 {
   MScalar mDst;
   MComplex mSrc;
@@ -107,7 +107,7 @@ int main(int argc, const char *argv[])
   std::ios_base::sync_with_stdio(false);
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {
@@ -118,7 +118,7 @@ int main(int argc, const char *argv[])
     };
     cl.Parse( argc, argv, list );
     const std::string outPrefix{ cl.SwitchValue<std::string>( "o" ) };
-    Common::MakeAncestorDirs( outPrefix );
+    MLU::MakeAncestorDirs( outPrefix );
     std::string inFileName{ cl.SwitchValue<std::string>( "i" ) };
     // If there are files specified on the command line, process each file
     if( !cl.GotSwitch( "help" ) && cl.Args.size() )
@@ -131,7 +131,7 @@ int main(int argc, const char *argv[])
       {
         inFileName.resize( inFileNameLen );
         // Look for a comma
-        Common::FoldProp f;
+        MLU::FoldProp f;
         std::size_t pos = Arg.find_last_of(',');
         bool bRealImagOnly{ true };
         if( pos == std::string::npos )
@@ -142,22 +142,22 @@ int main(int argc, const char *argv[])
           inFileName.append( Arg.c_str(), pos );
         }
         // I always pick either the real or imaginary component of source
-        if( f.rps.reality != Common::Reality::Imag )
-          f.rps.reality = Common::Reality::Real;
+        if( f.rps.reality != MLU::Reality::Imag )
+          f.rps.reality = MLU::Reality::Real;
         if( !bRealImagOnly )
         {
           // If I'm folding, then I need to choose odd or even and the sign
-          if( f.rps.parity != Common::Parity::Odd )
-            f.rps.parity = Common::Parity::Even;
-          if( f.rps.sign != Common::Sign::Negative )
-            f.rps.sign = Common::Sign::Positive;
+          if( f.rps.parity != MLU::Parity::Odd )
+            f.rps.parity = MLU::Parity::Even;
+          if( f.rps.sign != MLU::Sign::Negative )
+            f.rps.sign = MLU::Sign::Positive;
         }
         std::cout << "FoldProp: " << f << std::endl;
         static const char pIndent[] = "  ";
-        std::vector<std::string> FileList{ Common::glob( &inFileName, &inFileName + 1 ) };
+        std::vector<std::string> FileList{ MLU::glob( &inFileName, &inFileName + 1 ) };
         for( const std::string & FileName : FileList )
         {
-          if( !Common::FileExists( FileName ) )
+          if( !MLU::FileExists( FileName ) )
             std::cout << pIndent << "Error: " << FileName << " doesn't exist" << std::endl;
           else
           {
@@ -173,19 +173,19 @@ int main(int argc, const char *argv[])
             else
             {
               // Try to load the file with source and sink swapped
-              if( Common::EqualIgnoreCase( OpNames[0], OpNames[1] ) )
+              if( MLU::EqualIgnoreCase( OpNames[0], OpNames[1] ) )
                 throw std::runtime_error( "Folding with conjugate specified, but sink and source are both " + OpNames[0] );
               std::string ConjFileName{ in.Name_.Dir };
               ConjFileName.append( in.Name_.Base );
-              ConjFileName.append( Common::Underscore );
+              ConjFileName.append( MLU::Underscore );
               ConjFileName.append( OpNames[in.Name_.op[0]] );
-              ConjFileName.append( Common::Underscore );
+              ConjFileName.append( MLU::Underscore );
               ConjFileName.append( OpNames[in.Name_.op[1]] );
-              ConjFileName.append( Common::Period );
+              ConjFileName.append( MLU::Period );
               ConjFileName.append( in.Name_.Type );
-              ConjFileName.append( Common::Period );
+              ConjFileName.append( MLU::Period );
               ConjFileName.append( in.Name_.SeedString );
-              ConjFileName.append( Common::Period );
+              ConjFileName.append( MLU::Period );
               ConjFileName.append( in.Name_.Ext );
               SC in2{ ConjFileName, "+ ", &OpNames };
               in.IsCompatible( in2 );
@@ -196,18 +196,18 @@ int main(int argc, const char *argv[])
                 // Same length - merge the lists like a zipper
                 std::string sAlt;
                 sAlt.append( OpNames[in.Name_.op[1]] );
-                sAlt.append( Common::Underscore );
+                sAlt.append( MLU::Underscore );
                 sAlt.append( OpNames[in.Name_.op[0]] );
-                sAlt.append( Common::Comma );
+                sAlt.append( MLU::Comma );
                 sAlt.append( OpNames[in.Name_.op[0]] );
-                sAlt.append( Common::Underscore );
+                sAlt.append( MLU::Underscore );
                 sAlt.append( OpNames[in.Name_.op[1]] );
                 myFileList.reserve( FSize + FSize2 );
                 auto p1 = in .FileList.begin();
                 auto p2 = in2.FileList.begin();
                 for( std::size_t i = 0; i < FSize; ++i, ++p1, ++p2 )
                 {
-                  bool bSame{ Common::EqualIgnoreCase(*p1, *p2) };
+                  bool bSame{ MLU::EqualIgnoreCase(*p1, *p2) };
                   myFileList.emplace_back( *p1 );
                   myFileList.emplace_back( bSame ? sAlt : *p2 );
                 }
@@ -215,7 +215,7 @@ int main(int argc, const char *argv[])
               else
               {
                 std::cout << pIndent << "Warning: bootstrap FileLists uneven length, "
-                          << std::to_string( FSize2 ) << Common::sNE << std::to_string( FSize )
+                          << std::to_string( FSize2 ) << MLU::sNE << std::to_string( FSize )
                           << ". Appending lists" << std::endl;
                 myFileList = in.FileList;
                 myFileList.insert( myFileList.end(), in2.FileList.begin(), in2.FileList.end() );
@@ -250,7 +250,7 @@ int main(int argc, const char *argv[])
               }
             }
             // Now fold the correlator, obeying the fold properties
-            const int NtHalf{ bRealImagOnly ? Nt : Nt / 2 + ( f.rps.parity == Common::Parity::Odd ? 0 : 1 ) };
+            const int NtHalf{ bRealImagOnly ? Nt : Nt / 2 + ( f.rps.parity == MLU::Parity::Odd ? 0 : 1 ) };
             out.resize( NumSamples, NtHalf );
             out.FileList = std::move( myFileList );
             out.CopyAttributes( in );
@@ -280,19 +280,19 @@ int main(int argc, const char *argv[])
             // Now save the folded correlator
             std::string OutFileName{ outPrefix };
             OutFileName.append( in.Name_.Base );
-            OutFileName.append( Common::Underscore );
+            OutFileName.append( MLU::Underscore );
             OutFileName.append( OpNames[in.Name_.op[1]] );
-            OutFileName.append( Common::Underscore );
+            OutFileName.append( MLU::Underscore );
             OutFileName.append( OpNames[in.Name_.op[0]] );
-            OutFileName.append( Common::Period );
-            OutFileName.append( Common::sFold );
-            OutFileName.append( Common::Period );
+            OutFileName.append( MLU::Period );
+            OutFileName.append( MLU::sFold );
+            OutFileName.append( MLU::Period );
             OutFileName.append( in.Name_.SeedString );
-            OutFileName.append( Common::Period );
+            OutFileName.append( MLU::Period );
             std::size_t OutLen{ OutFileName.length() };
             OutFileName.append( in.Name_.Ext );
             std::cout << "->" << OutFileName << std::endl;
-            out.Write( OutFileName, Common::sFold.c_str() );
+            out.Write( OutFileName, MLU::sFold.c_str() );
             OutFileName.resize( OutLen );
             OutFileName.append( TEXT_EXT );
             out.WriteSummary( OutFileName );

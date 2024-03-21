@@ -42,7 +42,7 @@ void EnsembleMapT::Loaded()
     it.second.idx = idx++;
 }
 
-CreateParams::CreateParams( const std::vector<std::string> &O, const Common::CommandLine &C,
+CreateParams::CreateParams( const std::vector<std::string> &O, const MLU::CommandLine &C,
                             const ContinuumFit &parent )
 : Model::CreateParams( O, C ), Parent{ parent }
 {
@@ -66,31 +66,31 @@ ContinuumFit::ScalarType ContinuumFit::InitPoleMass( const std::string &Switch )
     }
     else
       st.Type = Param::Type::Fixed;
-    st.Value = Common::FromString<scalar>( sVal );
+    st.Value = MLU::FromString<scalar>( sVal );
   }
   return st;
 }
 
-ContinuumFit::ContinuumFit( Common::CommandLine &cl_ )
+ContinuumFit::ContinuumFit( MLU::CommandLine &cl_ )
 : cl{cl_},
   NumD{ cl.SwitchValue<unsigned int>("d") },
   NumE{ cl.SwitchValue<unsigned int>("e") },
   NumSamples{cl.SwitchValue<int>("n")},
   doCorr{ !cl.GotSwitch( "uncorr" ) },
   CovarBlock{ cl.GotSwitch( "block" ) },
-  ffDefault{Common::FromString<Common::FormFactor>(Common::TrimAt(cl.SwitchValue<std::string>("f")))},
+  ffDefault{MLU::FromString<MLU::FormFactor>(MLU::TrimAt(cl.SwitchValue<std::string>("f")))},
   inBase{ cl.SwitchValue<std::string>("i") },
   outBaseFileName{ cl.SwitchValue<std::string>("o") },
   ds{NumSamples},
   uiFF{0}
 {
   GetEnabled( cl.SwitchValue<std::string>("f") );
-  Common::MakeAncestorDirs( outBaseFileName );
+  MLU::MakeAncestorDirs( outBaseFileName );
   PoleMass[idxFF0] = InitPoleMass( "poles" );
   PoleMass[idxFFPlus] = InitPoleMass( "polev" );
 }
 
-void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f )
+void ContinuumFit::ParamsAdjust( MLU::Params &mp, const Fitter &f )
 {
   // Global parameters
   kfPi.Name = "fPi";
@@ -107,7 +107,7 @@ void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f )
   {
     if( uiFF & ffMaskFromIndex( idxFF ) )
     {
-      const Common::FormFactor ff{ ffIndexReverse( idxFF ) };
+      const MLU::FormFactor ff{ ffIndexReverse( idxFF ) };
       const std::string &sFF{ GetFormFactorString( ff ) };
       if( PoleMass[idxFF].Type == Param::Type::Derived )
       {
@@ -236,7 +236,7 @@ void ContinuumFit::ParamsAdjust( Common::Params &mp, const Fitter &f )
   }
 }
 
-void ContinuumFit::SaveParameters( Common::Params &mp, const Fitter &f )
+void ContinuumFit::SaveParameters( MLU::Params &mp, const Fitter &f )
 {
   // PDG masses for heavy and light, plus the Delta in this case
   static const std::string sFindError{ "ContinuumFit::SaveParameters() finding model constants" };
@@ -335,7 +335,7 @@ void ContinuumFit::SetReplica( Vector &ModelParams ) const
     scalar sChiPhys = 0;
     if( NeedChiral() )
     {
-      sChiPhys = Common::DeltaF::ChiralLog( ModelParams[idxmPDGPi], LambdaInv );
+      sChiPhys = MLU::DeltaF::ChiralLog( ModelParams[idxmPDGPi], LambdaInv );
       ModelParams[idxChiralPhys] = sChiPhys;
     }
     for( const typename EnsembleMapT::value_type &ei : EnsembleMap )
@@ -346,14 +346,14 @@ void ContinuumFit::SetReplica( Vector &ModelParams ) const
       scalar sFVSim = 0, sFVPhys = 0, sChiSim = 0;
       if( NeedFV() )
       {
-        sFVSim = Common::DeltaF::FiniteVol( ModelParams[idxmPi[i]], L, aInv_L );
-        sFVPhys = Common::DeltaF::FiniteVol( ModelParams[idxmPDGPi], L, aInv_L );
+        sFVSim = MLU::DeltaF::FiniteVol( ModelParams[idxmPi[i]], L, aInv_L );
+        sFVPhys = MLU::DeltaF::FiniteVol( ModelParams[idxmPDGPi], L, aInv_L );
         ModelParams[idxFVSim[i]] = sFVSim;
         ModelParams[idxFVPhys[i]] = sFVPhys;
       }
       if( NeedChiral() )
       {
-        sChiSim = Common::DeltaF::ChiralLog( ModelParams[idxmPi[i]], LambdaInv );
+        sChiSim = MLU::DeltaF::ChiralLog( ModelParams[idxmPi[i]], LambdaInv );
         ModelParams[idxChiSim[i]] = sChiSim;
       }
       ModelParams[idxChiFV[i]] = ( DeltaF(sChiSim,sFVSim ) - DeltaF(sChiPhys,sFVPhys) ) * Denom;
@@ -406,23 +406,23 @@ void ContinuumFit::ComputeDerived( Vector &ModelParams ) const
   }
 }
 
-void ContinuumFit::ParamCovarList( Common::Params &paramsCovar ) const
+void ContinuumFit::ParamCovarList( MLU::Params &paramsCovar ) const
 {
   if( ( uiFF & uiFF0 ) && ( uiFF & uiFFPlus ) )
   {
-    const Common::Param::Key &k{ ConstraintKey() };
-    paramsCovar.Add( k, 1, false, Common::Param::Type::Derived );
+    const MLU::Param::Key &k{ ConstraintKey() };
+    paramsCovar.Add( k, 1, false, MLU::Param::Type::Derived );
   }
 }
 
-const std::string &ContinuumFit::GetPoleMassName( Common::FormFactor ff,
-                                                  const Common::FileNameAtt &fna )
+const std::string &ContinuumFit::GetPoleMassName( MLU::FormFactor ff,
+                                                  const MLU::FileNameAtt &fna )
 {
   static const std::string PDGDStar{ "PDGDStar" };
   static const std::string PDGD0Star{ "PDGD0Star" };
   static const std::string PDGDsStar{ "PDGDsStar" };
   static const std::string PDGDs0Star{ "PDGDs0Star" };
-  const bool bVector{ ff == Common::FormFactor::fplus || ff == Common::FormFactor::fperp };
+  const bool bVector{ ff == MLU::FormFactor::fplus || ff == MLU::FormFactor::fperp };
   // Pole-mass determined by final-state quark (not spectator)
   if( std::toupper( fna.Quark[idxSnk][0] ) == 'L' )
     return bVector ? PDGDStar : PDGD0Star;
@@ -475,13 +475,13 @@ void ContinuumFit::GetEnabled( std::string sOptions )
     idxE[idxFF].resize( NumE, idxUnused );
     kE[idxFF].resize( NumE );
   }
-  std::vector<Common::FormFactor> ffRepeats;
-  while( Common::Trim( sOptions ) )
+  std::vector<MLU::FormFactor> ffRepeats;
+  while( MLU::Trim( sOptions ) )
   {
     // Get form factor and check its not a repeat
-    const std::string sThisFF{ Common::ExtractToSeparator( sOptions ) };
-    Common::FormFactor ThisFF{ ValidateFF( Common::FromString<Common::FormFactor>( sThisFF ) ) };
-    for( Common::FormFactor &ff : ffRepeats )
+    const std::string sThisFF{ MLU::ExtractToSeparator( sOptions ) };
+    MLU::FormFactor ThisFF{ ValidateFF( MLU::FromString<MLU::FormFactor>( sThisFF ) ) };
+    for( MLU::FormFactor &ff : ffRepeats )
       if( ff == ThisFF )
       {
         std::ostringstream os;
@@ -490,7 +490,7 @@ void ContinuumFit::GetEnabled( std::string sOptions )
       }
     ffRepeats.push_back( ThisFF );
     // Now get the options and check they contain no repeats
-    const std::string sDisabled{ Common::ExtractToSeparator( sOptions ) };
+    const std::string sDisabled{ MLU::ExtractToSeparator( sOptions ) };
     for( std::size_t i = 1; i < sDisabled.length(); ++i )
     {
       const int c{ std::toupper( sDisabled[i] ) };
@@ -552,26 +552,26 @@ void ContinuumFit::LoadModels()
   for( std::size_t ArgNum = 0; ArgNum < cl.Args.size(); ++ArgNum )
   {
     // First parameter is the filename we're looking for, optionally followed by comma and arguments
-    std::string FileToGlob{ Common::ExtractToSeparator( cl.Args[ArgNum] ) };
-    std::vector<std::string> Filenames{ Common::glob( &FileToGlob, &FileToGlob + 1,
+    std::string FileToGlob{ MLU::ExtractToSeparator( cl.Args[ArgNum] ) };
+    std::vector<std::string> Filenames{ MLU::glob( &FileToGlob, &FileToGlob + 1,
                                                       inBase.c_str() ) };
     bool bGlobEmpty{ true };
     // Anything after the comma is a list of arguments
     Model::Args vArgs;
     vArgs.FromString( cl.Args[ArgNum], true );
     // If Ensemble is specified, I will override what I loaded in the file
-    std::string Ensemble{ vArgs.Remove( Common::sEnsemble ) };
+    std::string Ensemble{ vArgs.Remove( MLU::sEnsemble ) };
     // Make sure the default form factor is included as an argument to model (if not user-specified)
-    Common::FormFactor thisFF;
+    MLU::FormFactor thisFF;
     typename Model::Args::iterator itFF{ vArgs.find( sFF ) };
     if( itFF == vArgs.end() )
     {
       thisFF = ffDefault;
-      vArgs.emplace( sFF, Common::GetFormFactorString( thisFF ) );
+      vArgs.emplace( sFF, MLU::GetFormFactorString( thisFF ) );
     }
     else
     {
-      thisFF = Common::FromString<Common::FormFactor>( itFF->second );
+      thisFF = MLU::FromString<MLU::FormFactor>( itFF->second );
     }
     // Load this batch of files
     for( const std::string &sFileName : Filenames )
@@ -583,10 +583,10 @@ void ContinuumFit::LoadModels()
         PrintPrefix.append( cl.Args[ArgNum] );
         PrintPrefix.append( 1, ' ' );
       }
-      Common::FileNameAtt fna{ sFileName, &OpName };
-      if( ( thisFF == Common::FormFactor::fplus || thisFF == Common::FormFactor::fperp )
+      MLU::FileNameAtt fna{ sFileName, &OpName };
+      if( ( thisFF == MLU::FormFactor::fplus || thisFF == MLU::FormFactor::fperp )
          && !fna.HasNonZeroMomentum() )
-        std::cout << PrintPrefix << "Ignoring zero momentum file " << sFileName << Common::NewLine;
+        std::cout << PrintPrefix << "Ignoring zero momentum file " << sFileName << MLU::NewLine;
       else
       {
         // Output meson name comes from the first file I load
@@ -595,20 +595,20 @@ void ContinuumFit::LoadModels()
           bFirst = false;
           if( fna.BaseShortParts.size() < 3 || fna.Spectator.empty() )
             throw std::runtime_error( "Meson names not included in filename " + sFileName );
-          Meson[idxSnk] = Common::MesonName( fna.BaseShortParts[1], fna.Spectator );
-          Meson[idxSrc] = Common::MesonName( fna.BaseShortParts[2], fna.Spectator );
-          if( Common::EqualIgnoreCase( Meson[idxSnk], Meson[idxSrc] ) )
+          Meson[idxSnk] = MLU::MesonName( fna.BaseShortParts[1], fna.Spectator );
+          Meson[idxSrc] = MLU::MesonName( fna.BaseShortParts[2], fna.Spectator );
+          if( MLU::EqualIgnoreCase( Meson[idxSnk], Meson[idxSrc] ) )
             throw std::runtime_error( "Snk and Src are both " + Meson[idxSnk] );
-          bDoConstraint = thisFF == Common::FormFactor::f0 || thisFF == Common::FormFactor::fplus;
+          bDoConstraint = thisFF == MLU::FormFactor::f0 || thisFF == MLU::FormFactor::fplus;
         }
-        if( thisFF == Common::FormFactor::f0 || thisFF == Common::FormFactor::fpar )
+        if( thisFF == MLU::FormFactor::f0 || thisFF == MLU::FormFactor::fpar )
           uiFF |= uiFF0;
         else
           uiFF |= uiFFPlus;
         bGlobEmpty = false;
         ds.LoadModel( std::move( fna ), PrintPrefix.c_str(),
-                     Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
-                     | Common::COMPAT_DISABLE_ENSEMBLE );
+                     MLU::COMPAT_DISABLE_BASE | MLU::COMPAT_DISABLE_NT
+                     | MLU::COMPAT_DISABLE_ENSEMBLE );
         ModelArgs.emplace_back( vArgs );
         if( !Ensemble.empty() )
           ds.constFile.back()->Ensemble = std::move( Ensemble );
@@ -629,7 +629,7 @@ void ContinuumFit::GetEnsembleStats()
     if( it == EnsembleStats.end() )
     {
       EnsembleStats.emplace( std::make_pair( mp->Ensemble, EnsembleStat{ 1, mp->Seed() } ) );
-      std::cout << "SampleSize[" << mp->Ensemble << "] = " << mp->SampleSize << Common::NewLine;
+      std::cout << "SampleSize[" << mp->Ensemble << "] = " << mp->SampleSize << MLU::NewLine;
     }
     else
     {
@@ -637,7 +637,7 @@ void ContinuumFit::GetEnsembleStats()
       if( mp->Seed() != es.Seed )
         throw std::runtime_error( "GetEnsembleStats() seeds don't match on ensemble "
                                  + mp->Ensemble + " file " + std::to_string( es.Num )
-                                 + Common::Space + mp->Name_.Filename );
+                                 + MLU::Space + mp->Name_.Filename );
       ++es.Num;
     }
   }
@@ -648,7 +648,7 @@ void ContinuumFit::SetEnsembleStats()
   if( EnsembleStats.size() > 1 )
   {
     std::string &Ens{ f->OutputModel.Ensemble };
-    std::vector<Common::ConfigCount> &vcc{ f->OutputModel.ConfigCount };
+    std::vector<MLU::ConfigCount> &vcc{ f->OutputModel.ConfigCount };
     vcc.resize( EnsembleStats.size() );
     f->OutputModel.SampleSize = static_cast<int>( EnsembleStats.size() );
     Ens.clear();
@@ -694,7 +694,7 @@ void ContinuumFit::SortModels()
   if( ds.constFile.empty() )
     throw std::runtime_error( "Nothing to fit" );
 
-  using FF = Common::FormFactor;
+  using FF = MLU::FormFactor;
 
   struct ModelWithArgs
   {
@@ -709,7 +709,7 @@ void ContinuumFit::SortModels()
     ModelWithArgsLess( bool covarBlock ) : CovarBlock{covarBlock} {}
     bool operator()( const ModelWithArgs &lhs, const ModelWithArgs &rhs )
     {
-      int i{ Common::CompareIgnoreCase( lhs.m->Ensemble, rhs.m->Ensemble ) };
+      int i{ MLU::CompareIgnoreCase( lhs.m->Ensemble, rhs.m->Ensemble ) };
       if( i )
         return i < 0;
       const int lp2{ lhs.m->Name_.GetFirstNonZeroMomentum().second.p2() };
@@ -732,7 +732,7 @@ void ContinuumFit::SortModels()
   {
     ei[i].m.reset( ds.constFile[i].release() );
     ei[i].Args = std::move( ModelArgs[i] );
-    ei[i].ff = Common::FromString<FF>( ei[i].Args.find( sFF )->second );
+    ei[i].ff = MLU::FromString<FF>( ei[i].Args.find( sFF )->second );
   }
   // Sort the models and corresponding arguments by ensemble
   std::sort( ei.begin(), ei.end(), ModelWithArgsLess( CovarBlock ) );
@@ -749,7 +749,7 @@ void ContinuumFit::SortModels()
     std::cout << "all ";
   else
     std::cout << "first " << ds.NSamples << " of ";
-  std::cout << ds.MaxSamples << Common::Space << ds.front().getData().SeedTypeString()
+  std::cout << ds.MaxSamples << MLU::Space << ds.front().getData().SeedTypeString()
             << " replicas";
   if( ds.NSamples != ds.MaxSamples )
     std::cout << " (all " << ds.MaxSamples << " for var/covar)";
@@ -763,11 +763,11 @@ void ContinuumFit::LoadExtra()
 {
   const std::vector<std::string> &vExtra{ cl.SwitchStrings( "model" ) };
   const std::string PrintPrefix( 2, ' ' );
-  const unsigned int CompareFlags{ Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT
-                                 | Common::COMPAT_DISABLE_ENSEMBLE };
+  const unsigned int CompareFlags{ MLU::COMPAT_DISABLE_BASE | MLU::COMPAT_DISABLE_NT
+                                 | MLU::COMPAT_DISABLE_ENSEMBLE };
   for( const std::string &sFileName : vExtra )
   {
-    Common::FileNameAtt fna;
+    MLU::FileNameAtt fna;
     fna.Filename = sFileName;
     fna.Type = "Model constants";
     if( ds.empty() )
@@ -778,7 +778,7 @@ void ContinuumFit::LoadExtra()
     }
     else
     {
-      const Common::FileNameAtt &S{ ds.front().Name_ };
+      const MLU::FileNameAtt &S{ ds.front().Name_ };
       fna.Ext = S.Ext;
       fna.bSeedNum = S.bSeedNum;
       fna.Seed = S.Seed;
@@ -792,18 +792,18 @@ void ContinuumFit::NormaliseData()
   static int NumCalled{};
   if( NumCalled++ )
     throw std::runtime_error( "NormaliseData() repeated" );
-  using FF = Common::FormFactor;
+  using FF = MLU::FormFactor;
   for( std::size_t i = 0; i < ModelArgs.size(); ++i )
   {
-    const FF ff{ Common::FromString<FF>( ModelArgs[i].find( sFF )->second ) };
+    const FF ff{ MLU::FromString<FF>( ModelArgs[i].find( sFF )->second ) };
     if( ff == FF::fpar || ff ==FF::fperp )
     {
       static const std::string sErrorMsg{ "NormaliseData() find column" };
       // Remove scale in fpar and fperp
       ModelFile &mf{ *ds.constFile[i] };
-      const Common::Param::Key kFF{ Common::GetFormFactorString( ff ) };
+      const MLU::Param::Key kFF{ MLU::GetFormFactorString( ff ) };
       const std::size_t idx{ mf.params.Find( kFF, sErrorMsg )->second() };
-      const Common::Param::Key kaInv{ Common::Param::Key( mf.Ensemble, "aInv" ) };
+      const MLU::Param::Key kaInv{ MLU::Param::Key( mf.Ensemble, "aInv" ) };
       const JackBootColumn aInv{ ds.GetConstant( kaInv ) };
       for( std::size_t rep = JackBoot::idxCentral; rep != mf.NumSamples(); ++rep )
       {
@@ -841,7 +841,7 @@ std::string ContinuumFit::GetOutputFilename( unsigned int uiFF )
   if( outBaseFileName.empty() || outBaseFileName.back() == '/' )
   {
     // Simplistic, but better is hard to automate
-    const Common::FileNameAtt &fna{ ds.front().Name_ };
+    const MLU::FileNameAtt &fna{ ds.front().Name_ };
     if( fna.BaseShortParts.size() < 3 || fna.Spectator.empty() )
       throw std::runtime_error( "Please include output filename in -o" );
     s.append( fna.BaseShortParts[0] );
@@ -860,12 +860,12 @@ std::string ContinuumFit::GetOutputFilename( unsigned int uiFF )
   if( uiFF & uiFF0 )
   {
     s.append( 1, '_' );
-    s.append( Common::GetFormFactorString( Common::FormFactor::f0 ) );
+    s.append( MLU::GetFormFactorString( MLU::FormFactor::f0 ) );
   }
   if( uiFF & uiFFPlus )
   {
     s.append( 1, '_' );
-    s.append( Common::GetFormFactorString( Common::FormFactor::fplus ) );
+    s.append( MLU::GetFormFactorString( MLU::FormFactor::fplus ) );
   }
   s.append( 1, '.' );
   return s;
@@ -879,7 +879,7 @@ void ContinuumFit::ShowCovar()
     // Find the width of this sub-matrix on the same Ensemble
     std::size_t width = 1;
     while( i + width < ds.mCovar.size1
-          && Common::EqualIgnoreCase( ds.constFile[i]->Ensemble, ds.constFile[i+width]->Ensemble ) )
+          && MLU::EqualIgnoreCase( ds.constFile[i]->Ensemble, ds.constFile[i+width]->Ensemble ) )
       ++width;
     // Show the condition number
     Vector S;
@@ -889,8 +889,8 @@ void ContinuumFit::ShowCovar()
               << std::setw(5) << i
               << std::setw(5) << width
               << std::setw(5) << width
-              << Common::Space << Cond
-              << Common::NewLine;
+              << MLU::Space << Cond
+              << MLU::NewLine;
     i += width;
   }
 }
@@ -900,13 +900,13 @@ void ContinuumFit::MakeCovarBlock()
   std::cout << "Block Covariance\n";
   for( std::size_t i = 0; i < ds.mCovar.size1; ++i )
   {
-    std::cout << Common::Space;
+    std::cout << MLU::Space;
     const ModelContinuum &Mi{ * dynamic_cast<const ModelContinuum *>( f->model[i].get() ) };
     for( std::size_t j = 0; j <= i; ++j )
     {
       const ModelContinuum &Mj{ * dynamic_cast<const ModelContinuum *>( f->model[j].get() ) };
       const bool SameFF{ CovarBlock ? ( Mi.ff == Mj.ff ) : true };
-      const bool SameEnsemble{ Common::EqualIgnoreCase( ds.constFile[i]->Ensemble,
+      const bool SameEnsemble{ MLU::EqualIgnoreCase( ds.constFile[i]->Ensemble,
                                                         ds.constFile[j]->Ensemble ) };
       const bool bZero{ i != j && !( SameEnsemble && SameFF ) };
       if( bZero )
@@ -916,16 +916,16 @@ void ContinuumFit::MakeCovarBlock()
       }
       std::cout << ( bZero ? '0' : '1' );
     }
-    std::cout << Common::NewLine;
+    std::cout << MLU::NewLine;
   }
 }
 
 // Now get the min / max of the specified field
-void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max, int Loop,
+void ContinuumFit::GetMinMax( MLU::FormFactor ff, scalar &Min, scalar &Max, int Loop,
                               const std::string &Field ) const
 {
   // See whether Min / Max specified in the environment
-  const std::string sEnvPrefix{ "MLU" + Common::GetFormFactorString( ff ) + Field };
+  const std::string sEnvPrefix{ "MLU" + MLU::GetFormFactorString( ff ) + Field };
   const std::string sEnvMin{ sEnvPrefix + "Min" };
   const std::string sEnvMax{ sEnvPrefix + "Max" };
   const char *pMin{ std::getenv( sEnvMin.c_str() ) };
@@ -941,7 +941,7 @@ void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max, i
       throw std::runtime_error( szEnv + sEnvMax + szMissing );
     try
     {
-      Min = Common::FromString<scalar>( pMin );
+      Min = MLU::FromString<scalar>( pMin );
     }
     catch( const std::runtime_error &e )
     {
@@ -949,16 +949,16 @@ void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max, i
     }
     try
     {
-      Max = Common::FromString<scalar>( pMax );
+      Max = MLU::FromString<scalar>( pMax );
     }
     catch( const std::runtime_error &e )
     {
       throw std::runtime_error( szEnv + sEnvMax + szInvalid + e.what() );
     }
     std::cout << Field
-              << Common::CommaSpace << sEnvMin << "=" << pMin
-              << Common::CommaSpace << sEnvMax << "=" << pMax
-              << Common::NewLine;
+              << MLU::CommaSpace << sEnvMin << "=" << pMin
+              << MLU::CommaSpace << sEnvMax << "=" << pMax
+              << MLU::NewLine;
     return;
   }
   const ModelFile &om{ f->OutputModel };
@@ -975,7 +975,7 @@ void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max, i
         if( !ve.Check )
         {
           std::ostringstream os;
-          os << "ContinuumFit::GetMinMax() ValWithEr Check 0 for " << ff << Common::Space << Field;
+          os << "ContinuumFit::GetMinMax() ValWithEr Check 0 for " << ff << MLU::Space << Field;
           throw std::runtime_error( os.str().c_str() );
         }
         Min = ve.Central;
@@ -994,42 +994,42 @@ void ContinuumFit::GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max, i
   {
     std::ostringstream os;
     os << std::scientific << std::setprecision( std::numeric_limits<scalar>::max_digits10 + 2 )
-       << Min << " <= " << ff << '-' << Field << " <= " << Max << Common::NewLine;
+       << Min << " <= " << ff << '-' << Field << " <= " << Max << MLU::NewLine;
     std::cout << os.str();
   }
 }
 
 std::ofstream ContinuumFit::WriteHeader(const std::string &sPrefix, const std::string &FileType) const
 {
-  const Common::FileNameAtt &fna{ f->OutputModel.Name_ };
+  const MLU::FileNameAtt &fna{ f->OutputModel.Name_ };
   std::string NewType{ fna.Type };
   if( !FileType.empty() )
   {
     NewType.append( 1, '_' );
     NewType.append( FileType );
   }
-  Common::FileNameAtt fnaNew;
+  MLU::FileNameAtt fnaNew;
   fnaNew.Parse( sPrefix, NewType, fna.bSeedNum, fna.Seed, TEXT_EXT );
-  std::cout << "Make " << FileType << Common::Space << fnaNew.Filename << Common::NewLine;
+  std::cout << "Make " << FileType << MLU::Space << fnaNew.Filename << MLU::NewLine;
   std::ofstream os( fnaNew.Filename );
-  Common::SummaryHeader<scalar>( os, fnaNew.Filename );
+  MLU::SummaryHeader<scalar>( os, fnaNew.Filename );
   f->OutputModel.Sample::SummaryComments( os, true, false );
-  os << "# Primary key: ensemble " << f->model[0]->XVectorKeyName() << Common::NewLine;
+  os << "# Primary key: ensemble " << f->model[0]->XVectorKeyName() << MLU::NewLine;
   os << "# x-units: eV\n";
   return os;
 }
 
 void ContinuumFit::WriteFieldName( std::ofstream &os, const std::string &FieldName ) const
 {
-  os << Common::Space << FieldName << "_witherr ";
-  ValWithEr::Header( FieldName, os, Common::Space );
+  os << MLU::Space << FieldName << "_witherr ";
+  ValWithEr::Header( FieldName, os, MLU::Space );
 }
 
 struct BootDat
 {
   const int ErrorDigits;
   scalar Central;
-  Common::Vector<scalar> Buffer;
+  MLU::Vector<scalar> Buffer;
   ValWithEr ve;
   BootDat( int errorDigits, int Size ) : ErrorDigits{errorDigits}, Buffer( Size ) {}
   inline scalar &operator[]( int idx )
@@ -1047,10 +1047,10 @@ struct BootDat
 
 std::ostream & operator<<( std::ostream &os, BootDat &bd )
 {
-  return os << Common::Space << bd.ve.to_string( bd.ErrorDigits ) << Common::Space << bd.ve;
+  return os << MLU::Space << bd.ve.to_string( bd.ErrorDigits ) << MLU::Space << bd.ve;
 }
 
-void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefix ) const
+void ContinuumFit::WriteFitQSq( MLU::FormFactor ff, const std::string &sPrefix ) const
 {
   const int idxff{ ffIndex( ff ) };
 
@@ -1080,15 +1080,15 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
       }
     }
     std::cout << "Residual discretisation errors computed from finest ensemble " << kaInv[idxFine].Object[0]
-              << " with a^{-1}=" << aInvFinest << " eV" << Common::NewLine;
+              << " with a^{-1}=" << aInvFinest << " eV" << MLU::NewLine;
   }
 
   // Now write each data row
   ValWithEr ve[4];
-  Common::Vector<scalar> Buffer( om.NumSamples() );
-  Common::Vector<scalar> PoleBuffer( om.NumSamples() );
-  Common::Vector<scalar> yNoPoleBuffer( om.NumSamples() );
-  Common::Vector<scalar> DiscRelErBuffer( om.NumSamples() );
+  MLU::Vector<scalar> Buffer( om.NumSamples() );
+  MLU::Vector<scalar> PoleBuffer( om.NumSamples() );
+  MLU::Vector<scalar> yNoPoleBuffer( om.NumSamples() );
+  MLU::Vector<scalar> DiscRelErBuffer( om.NumSamples() );
   std::vector<scalar> ScratchBuffer( om.NumSamples() );
 
   scalar x = -999.999;
@@ -1104,7 +1104,7 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
     WriteFieldName( os, "Pole" );
     WriteFieldName( os, "yNoPole" );
     WriteFieldName( os, "DiscRelEr" ); // Estimate of residual discretisation relative error
-    os << Common::NewLine;
+    os << MLU::NewLine;
 
     scalar Min, Max;
     GetMinMax( ff, Min, Max, Loop, FieldName );
@@ -1151,11 +1151,11 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
         DiscRelEr = std::abs( DiscProduct / yNoPole );
         if( nTick < 0 && rep == ModelFile::idxCentral )
         {
-          std::cout << ff << Common::Space << FieldName << "=" << x
+          std::cout << ff << MLU::Space << FieldName << "=" << x
           << ", aFinest * Lambda=" << aFinestLambda
           << ", Disc term " << NumDisc << "=" << DiscPrefactor
           << ", Product " << DiscProduct << " / yNoPole " << yNoPole
-          << " = Residual disc rel er " << DiscRelEr << Common::NewLine;
+          << " = Residual disc rel er " << DiscRelEr << MLU::NewLine;
         }
       }
       if( rep == ModelFile::idxCentral )
@@ -1179,19 +1179,19 @@ void ContinuumFit::WriteFitQSq( Common::FormFactor ff, const std::string &sPrefi
     ve[3].Get( CentDiscRelEr, DiscRelErBuffer, ScratchBuffer );
     if( nTick < 0 )
       os << "# ";
-    os << FieldName << Common::Space << x;
+    os << FieldName << MLU::Space << x;
     for( int i = 0; i < sizeof(ve) / sizeof(ve[0]); ++i )
-      os << Common::Space << ve[i].to_string( f->ErrorDigits ) << Common::Space << ve[i];
+      os << MLU::Space << ve[i].to_string( f->ErrorDigits ) << MLU::Space << ve[i];
     if( nTick == -2 )
       os << " # q_0";
     else if( nTick == -1 )
       os << " # q^2_max";
-    os << Common::NewLine;
+    os << MLU::NewLine;
   }
   }
 }
 
-void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &sPrefix ) const
+void ContinuumFit::WriteAdjustedQSq( MLU::FormFactor ff, const std::string &sPrefix ) const
 {
   const ModelFile &om{ f->OutputModel };
   std::ofstream os{ WriteHeader( sPrefix, "" ) };
@@ -1204,7 +1204,7 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
   WriteFieldName( os, "dataNoPole" );
   WriteFieldName( os, "adjustedNoPole" );
   WriteFieldName( os, "Pole" );
-  os << Common::NewLine;
+  os << MLU::NewLine;
 
   // Now write each data row
   std::vector<scalar> ScratchBuffer( om.NumSamples() );
@@ -1260,12 +1260,12 @@ void ContinuumFit::WriteAdjustedQSq( Common::FormFactor ff, const std::string &s
     const ValWithEr &veQ{ om.SummaryData( static_cast<int>( m.qSq.idx ) ) };
     const ValWithEr &veEL{ om.SummaryData( static_cast<int>( m.EL.idx ) ) };
     const ValWithEr &F{ mf.SummaryData( static_cast<int>( m.idxFitColumn ) ) };
-    os << RowNum++ << Common::Space << mf.Ensemble << Common::Space << m.XVectorKey()
-       << Common::Space << veQ .to_string( f->ErrorDigits ) << Common::Space << veQ
-       << Common::Space << veEL.to_string( f->ErrorDigits ) << Common::Space << veEL
-       << Common::Space << F.to_string( f->ErrorDigits ) << Common::Space << F
+    os << RowNum++ << MLU::Space << mf.Ensemble << MLU::Space << m.XVectorKey()
+       << MLU::Space << veQ .to_string( f->ErrorDigits ) << MLU::Space << veQ
+       << MLU::Space << veEL.to_string( f->ErrorDigits ) << MLU::Space << veEL
+       << MLU::Space << F.to_string( f->ErrorDigits ) << MLU::Space << F
        << Adjusted << DataNoPole << AdjNoPole << Pole
-       << Common::NewLine;
+       << MLU::NewLine;
   }
   }
 }
@@ -1277,7 +1277,7 @@ void ContinuumFit::WriteSynthetic()
     const unsigned int uiMyFF{ ffMaskFromIndex( idxFF ) };
     if( uiFF & uiMyFF )
     {
-      const Common::FormFactor ff{ ffIndexReverse( idxFF ) };
+      const MLU::FormFactor ff{ ffIndexReverse( idxFF ) };
       const std::string sPrefix{ GetOutputFilename( uiMyFF ) + sOpNameConcat };
       WriteFitQSq( ff, sPrefix );
       WriteAdjustedQSq( ff, sPrefix );
@@ -1359,7 +1359,7 @@ int main(int argc, const char *argv[])
   static const char DefaultErrDig[] = "2";
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {
@@ -1405,7 +1405,7 @@ int main(int argc, const char *argv[])
     {
       bShowUsage = false;
       if( cl.GotSwitch( "debug-signals" ) )
-        Common::Grid_debug_handler_init();
+        MLU::Grid_debug_handler_init();
       const auto Start{ std::chrono::steady_clock::now() };
       ContinuumFit cf{ cl };
       iReturn = cf.Run();
@@ -1505,6 +1505,6 @@ int main(int argc, const char *argv[])
     "--debug-signals Trap signals (code courtesy of Grid)\n"
     "--help     This message\n";
   }
-  Common::Grid_exit_handler_disable = true;
+  MLU::Grid_exit_handler_disable = true;
   return iReturn;
 }

@@ -73,7 +73,7 @@ Fitter::Fitter( Model::CreateParams &mcp, DataSet &ds_,
     bAllParamsKnown{ mp.NumScalars( Param::Type::Variable ) == 0 },
     cp{ std::move( cp_ ) },
     Guess{ mp.NumScalars( Param::Type::All ) },
-    OutputModel( ds.NSamples, mp, Common::DefaultModelStats,
+    OutputModel( ds.NSamples, mp, MLU::DefaultModelStats,
                  cp.CovarSampleSize(), cp.bFreeze, cp.Source, cp.RebinSize, cp.CovarNumBoot )
 {
   /*assert( NumModelParams == NumFixed + NumVariable && "NumModelParams doesn't match fixed and variable" );
@@ -93,7 +93,7 @@ Fitter::Fitter( Model::CreateParams &mcp, DataSet &ds_,
   // If we've been given a guess, initialise variable parameters with the user-supplied guess
   if( UserGuess )
   {
-    const std::vector<scalar> vGuess{Common::ArrayFromString<scalar>(mcp.cl.SwitchValue<std::string>("guess"))};
+    const std::vector<scalar> vGuess{MLU::ArrayFromString<scalar>(mcp.cl.SwitchValue<std::string>("guess"))};
     if( vGuess.size() != mp.NumScalars( Param::Type::Variable ) )
       throw std::invalid_argument( "Guess contains " + std::to_string( vGuess.size() )
                                  + " parameters, but there are "
@@ -124,7 +124,7 @@ std::vector<ModelPtr> Fitter::CreateModels( Model::CreateParams &mcp,
     const std::string sDescription{ mcp.Description() };
     if( !sDescription.empty() )
       std::cout << " (" << sDescription << ")";
-    std::cout << Common::NewLine;
+    std::cout << MLU::NewLine;
   }
   // Error check
   const int NumModels{ static_cast<int>( ModelArgs.size() ) };
@@ -153,10 +153,10 @@ std::vector<ModelPtr> Fitter::CreateModels( Model::CreateParams &mcp,
         if( bFirst )
           bFirst = false;
         else
-          os << Common::CommaSpace;
+          os << MLU::CommaSpace;
         os << v.first;
         if( !v.second.empty() )
-          os << Common::EqualSign << v.second;
+          os << MLU::EqualSign << v.second;
       }
       throw std::runtime_error( os.str().c_str() );
     }
@@ -261,7 +261,7 @@ Params Fitter::MakeModelParams()
     else
     {
       // Ask the models whether they can guess parameters
-      Common::ParamsPairs PP( mp );
+      MLU::ParamsPairs PP( mp );
       ParamsPairs::StateSize ss{ PP.GetStateSize() };
       ParamsPairs::StateSize ssLast;
       do
@@ -271,7 +271,7 @@ Params Fitter::MakeModelParams()
         {
           model[i]->Guessable( PP );
           if( Verbosity )
-            std::cout << "Model " << i << Common::NewLine << PP;
+            std::cout << "Model " << i << MLU::NewLine << PP;
         }
         ss = PP.GetStateSize();
       }
@@ -280,9 +280,9 @@ Params Fitter::MakeModelParams()
       // If we have unknown product pairs, try ask all the models to minimise number of parameters
       if( bSoluble )
       {
-        Common::SignChoice sc( PP, Verbosity );
+        MLU::SignChoice sc( PP, Verbosity );
         mp.SignList = sc;
-        std::cout << "Sign groups: " << sc << Common::NewLine;
+        std::cout << "Sign groups: " << sc << MLU::NewLine;
         mp.DumpSignList( std::cout );
       }
       else if( pass == 0 )
@@ -296,7 +296,7 @@ Params Fitter::MakeModelParams()
     }
   }
   if( !mp.dispMap.empty() )
-    std::cout << mp.dispMap << Common::NewLine;
+    std::cout << mp.dispMap << MLU::NewLine;
   return mp;
 }
 
@@ -340,7 +340,7 @@ void Fitter::MakeGuess()
       }
       if( Verbosity )
       {
-        std::cout << " Guess after model " << i << Common::Space << model[i]->Description() << Common::NewLine;
+        std::cout << " Guess after model " << i << MLU::Space << model[i]->Description() << MLU::NewLine;
         mp.Dump<scalar>( std::cout, Guess, Param::Type::Variable, nullptr, &ParamKnown );
       }
     }
@@ -412,14 +412,14 @@ void Fitter::SaveParamCorrel( const std::string &sFileName )
       
       // Now put all the parameter data in a new bootstrap
       JackBoot jb( ds.NSamples, NumCols );
-      for( std::size_t i = Common::JackBootBase::idxCentral; i != jb.NumReplicas(); ++i )
+      for( std::size_t i = MLU::JackBootBase::idxCentral; i != jb.NumReplicas(); ++i )
         for( std::size_t col = 0; col < NumCols; ++col )
           jb(i,OldNew[col].New) = OutputModel(i,OldNew[col].Old);
       jb.MakeMean();
       jb.MakeCovar( OutputModel.CorrelParam );
       OutputModel.CorrelParam.CholeskyExtract();
       OutputModel.CorrelParam.SaveSquare( sFileName, "Parameter correlation",
-                                          OutputModel.CorrelParamNames, Common::pszCorrelGnuplot );
+                                          OutputModel.CorrelParamNames, MLU::pszCorrelGnuplot );
     }
   }
   catch( const std::exception &e )
@@ -447,12 +447,12 @@ Fitter * Fitter::Make( Model::CreateParams &&mcp, DataSet &ds,
 {
   Fitter * f;
   std::string FitterArgs{ mcp.cl.SwitchValue<std::string>( "fitter" ) };
-  std::string FitterType{ Common::ExtractToSeparator( FitterArgs ) };
-  if( Common::EqualIgnoreCase( FitterType, "GSL" ) )
+  std::string FitterType{ MLU::ExtractToSeparator( FitterArgs ) };
+  if( MLU::EqualIgnoreCase( FitterType, "GSL" ) )
     f = MakeFitterGSL( FitterArgs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr,
                        fitController );
 #ifdef HAVE_MINUIT2
-  else if( Common::EqualIgnoreCase( FitterType, "Minuit2" ) )
+  else if( MLU::EqualIgnoreCase( FitterType, "Minuit2" ) )
     f = MakeFitterMinuit2( FitterArgs, mcp, ds, std::move( ModelArgs ), std::move( cp ), bFitCorr,
                           fitController );
 #endif
@@ -480,13 +480,13 @@ bool Fitter::Dump( int idx ) const
 void Fitter::Dump( int idx, const std::string &Name, const Matrix &m ) const
 {
   if( Verbosity > 2 || ( Verbosity >= 1 && idx == Fold::idxCentral ) )
-    std::cout << Name << Common::Space << m << Common::NewLine;
+    std::cout << Name << MLU::Space << m << MLU::NewLine;
 }
 
 void Fitter::Dump( int idx, const std::string &Name, const Vector &v ) const
 {
   if( Verbosity > 2 || ( Verbosity >= 1 && idx == Fold::idxCentral ) )
-    std::cout << Name << Common::Space << v << Common::NewLine;
+    std::cout << Name << MLU::Space << v << MLU::NewLine;
 }
 
 void Fitter::SaveMatrixFile( const Matrix &m, const std::string &Type, const std::string &Filename,
@@ -505,8 +505,8 @@ void Fitter::SaveMatrixFile( const Matrix &m, const std::string &Type, const std
     std::ostringstream s;
     s << "# Model" << f << ": " << model[f]->Type();
     for( std::size_t i = 0; i < model[f]->param.size(); ++i )
-      s << Common::CommaSpace << model[f]->param[i];
-    s << Common::NewLine;
+      s << MLU::CommaSpace << model[f]->param[i];
+    s << MLU::NewLine;
     FileComments.emplace_back( s.str() );
   }
   // If we're saving the correlation matrix, it should have a similar name to the model
@@ -518,7 +518,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
                     const std::string &ModelSuffix )
 {
   const bool HasSeed{ ds.HasSameSeed() };
-  const Common::SeedType Seed{ ds.Seed() };
+  const MLU::SeedType Seed{ ds.Seed() };
   bCorrelated = Bcorrelated;
   dof = ds.Extent - static_cast<int>( mp.NumScalars( Param::Type::Variable ) );
   if( dof < MinDof )
@@ -540,8 +540,8 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
   // See whether this fit already exists
   bool bPerformFit{ true };
   const std::string sModelBase{ OutBaseName + ModelSuffix };
-  OutputModel.Name_.Parse( sModelBase, Common::sModel, HasSeed, Seed, DEF_FMT );
-  if( !bOverwrite && Common::FileExists( OutputModel.Name_.Filename ) )
+  OutputModel.Name_.Parse( sModelBase, MLU::sModel, HasSeed, Seed, DEF_FMT );
+  if( !bOverwrite && MLU::FileExists( OutputModel.Name_.Filename ) )
   {
     ModelFile PreBuilt;
     PreBuilt.Name_ = OutputModel.Name_;
@@ -555,7 +555,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
       throw std::runtime_error( "Pre-built fit not compatible with parameters from this run" );
     bPerformFit = PreBuilt.NewParamsMorePrecise( cp.bFreeze, ds.NSamples );
     if( !bPerformFit )
-      ChiSq = dof * PreBuilt.SummaryData( Common::sChiSqPerDof ).Central;
+      ChiSq = dof * PreBuilt.SummaryData( MLU::sChiSqPerDof ).Central;
     else
       std::cout << "Overwriting\n";
   }
@@ -580,9 +580,9 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     {
       const std::string sDescription{ ftC->Description() };
       if( !sDescription.empty() )
-        std::cout << sDescription << Common::NewLine;
+        std::cout << sDescription << MLU::NewLine;
     }
-    std::cout << "Tolerance " << Tolerance << Common::NewLine;
+    std::cout << "Tolerance " << Tolerance << MLU::NewLine;
     if( !bAllParamsKnown )
     {
       std::cout << "Using ";
@@ -602,7 +602,7 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     {
       std::cout << " Derived parameters: ";
       bool bFirst{ true };
-      for( Common::Params::value_type it : mp )
+      for( MLU::Params::value_type it : mp )
       {
         Param &p{ it.second };
         if( p.type == Param::Type::Derived )
@@ -616,13 +616,13 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
             std::cout << '[' << p.size << ']';
         }
       }
-      std::cout << Common::NewLine;
+      std::cout << MLU::NewLine;
     }
     if( mp.NumScalars( Param::Type::Fixed ) )
       Show( Param::Type::Fixed );
     if( !bAllParamsKnown )
     {
-      std::cout << Common::Space << ( UserGuess ? "User supplied" : "Initial" ) << " guess:\n";
+      std::cout << MLU::Space << ( UserGuess ? "User supplied" : "Initial" ) << " guess:\n";
       mp.Dump( std::cout, Guess, Param::Type::Variable );
       // For correlated fits, perform an uncorrelated fit on the central replica to use as the guess
       if( bCorrelated && !UserGuess )
@@ -710,13 +710,13 @@ bool Fitter::PerformFit( bool Bcorrelated, double &ChiSq, int &dof_, const std::
     OutputModel.Guess = Guess;
     OutputModel.FitInput.GetCentral() = ds.mFitData.GetCentral();
     OutputModel.FitInput.Replica = ds.mFitData.Replica;
-    OutputModel.SetSummaryNames( Common::sParams );
+    OutputModel.SetSummaryNames( MLU::sParams );
     OutputModel.MakeCorrSummary();
     OutputModel.CheckParameters( Strictness, MonotonicUpperLimit );
     // Show output
     Show( Param::Type::Variable );
     Show( Param::Type::Derived );
-    const Common::FileNameAtt &fna{ OutputModel.Name_ };
+    const MLU::FileNameAtt &fna{ OutputModel.Name_ };
     SaveParamCorrel( fna.GetAltPath( fna.Type + "_pcorrel", TEXT_EXT ) );
     // Save the file
     if( !bAllParamsKnown )
@@ -747,17 +747,17 @@ void Fitter::Show( Param::Type type ) const
   const int NumWidth{ static_cast<int>( std::cout.precision() ) + 7 };
   const int WithErrWidth{ 13 + 2 * ErrorDigits };
   std::cout << type << " params " << OutputModel.NumSamples()
-       << Common::Space << OutputModel.getData().SeedTypeString() << " replicas\n"
+       << MLU::Space << OutputModel.getData().SeedTypeString() << " replicas\n"
        << "Ok" << std::setw(maxLen - 1) << "Field" << std::left
-       << Common::Space << std::setw(WithErrWidth) << "Cent(Err)"
-       << Common::Space << std::setw(NumWidth) << "Central"
-       << Common::Space << std::setw(NumWidth) << "+ 1 sigma"
-       << Common::Space << std::setw(NumWidth) << "- 1 sigma"
-       << Common::Space << std::setw(NumWidth) << "Max"
-       << Common::Space << std::setw(NumWidth) << "Min"
-       << std::right << Common::NewLine;
+       << MLU::Space << std::setw(WithErrWidth) << "Cent(Err)"
+       << MLU::Space << std::setw(NumWidth) << "Central"
+       << MLU::Space << std::setw(NumWidth) << "+ 1 sigma"
+       << MLU::Space << std::setw(NumWidth) << "- 1 sigma"
+       << MLU::Space << std::setw(NumWidth) << "Max"
+       << MLU::Space << std::setw(NumWidth) << "Min"
+       << std::right << MLU::NewLine;
   std::size_t i;
-  const Common::ValWithEr<scalar> * v;
+  const MLU::ValWithEr<scalar> * v;
   for( const Params::value_type &it : mp )
   {
     const Param &p{ it.second };
@@ -775,7 +775,7 @@ void Fitter::Show( Param::Type type ) const
           throw std::runtime_error( os.str().c_str() );
         }
         const ModelFile &mFile{ *ds.constFile[cit->second.File].get() };
-        Common::Params::const_iterator pit{ mFile.params.find( cit->second.pKey ) };
+        MLU::Params::const_iterator pit{ mFile.params.find( cit->second.pKey ) };
         if( pit == mFile.params.cend() )
         {
           std::ostringstream os;
@@ -795,13 +795,13 @@ void Fitter::Show( Param::Type type ) const
       {
         const char cOK{ v[i].Check == 0 ? 'x' : ' ' };
         std::cout << cOK << std::setw(maxLen) << Cols[ColNum + j] << std::left
-        << Common::Space << std::setw(WithErrWidth) << v[i].to_string( ErrorDigits )
-        << Common::Space << std::setw(NumWidth) << v[i].Central
-        << Common::Space << std::setw(NumWidth) << (v[i].High - v[i].Central)
-        << Common::Space << std::setw(NumWidth) << (v[i].Central - v[i].Low)
-        << Common::Space << std::setw(NumWidth) << v[i].Max
-        << Common::Space                        << v[i].Min
-        << Common::NewLine << std::right; // Right-aligned is the default
+        << MLU::Space << std::setw(WithErrWidth) << v[i].to_string( ErrorDigits )
+        << MLU::Space << std::setw(NumWidth) << v[i].Central
+        << MLU::Space << std::setw(NumWidth) << (v[i].High - v[i].Central)
+        << MLU::Space << std::setw(NumWidth) << (v[i].Central - v[i].Low)
+        << MLU::Space << std::setw(NumWidth) << v[i].Max
+        << MLU::Space                        << v[i].Min
+        << MLU::NewLine << std::right; // Right-aligned is the default
       }
     }
   }
@@ -832,30 +832,30 @@ std::vector<std::string> Fitter::GetModelArgs() const
 void Fitter::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSummary )
 {
   const ValWithEr veZero( 0, 0, 0, 0, 0, 0 );
-  //using namespace Common::CorrSumm;
-  assert( std::isnan( Common::NaN ) && "Compiler does not support quiet NaNs" );
+  //using namespace MLU::CorrSumm;
+  assert( std::isnan( MLU::NaN ) && "Compiler does not support quiet NaNs" );
   std::ofstream ofs( sOutFileName );
-  Common::SummaryHeader<scalar>( ofs, sOutFileName );
+  MLU::SummaryHeader<scalar>( ofs, sOutFileName );
   OutputModel.SummaryComments( ofs, bVerboseSummary );
   // Write the list of ensembles
   {
     std::string *pLast{ nullptr };
     ofs << "# Ensembles:";
     for( std::size_t i = 0; i < model.size(); ++i )
-      if( i == 0 || Common::CompareIgnoreCase( ds.constFile[i]->Ensemble, *pLast ) )
+      if( i == 0 || MLU::CompareIgnoreCase( ds.constFile[i]->Ensemble, *pLast ) )
       {
         pLast = &ds.constFile[i]->Ensemble;
-        ofs << Common::Space << *pLast;
+        ofs << MLU::Space << *pLast;
       }
-    ofs << "\n# Primary key: ensemble " << model[0]->XVectorKeyName() << Common::NewLine;
+    ofs << "\n# Primary key: ensemble " << model[0]->XVectorKeyName() << MLU::NewLine;
   }
   // Write column names
   static constexpr int idxData{ 0 };
   //static constexpr int idxTheory{ 1 };
   ofs << "# Global fit results\n";
-  ofs << "model ensemble " << model[0]->XVectorKeyName() << Common::Space;
+  ofs << "model ensemble " << model[0]->XVectorKeyName() << MLU::Space;
   ValWithEr::Header( "theory", ofs );
-  ofs << Common::Space;
+  ofs << MLU::Space;
   ValWithEr::Header( "data", ofs );
   for( const Param::Key &k : model[0]->XVectorKeyNames() )
   {
@@ -863,11 +863,11 @@ void Fitter::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSumma
     const std::size_t idx{ p() };
     for( std::size_t i = 0; i < p.size; ++i )
     {
-      ofs << Common::Space;
+      ofs << MLU::Space;
       ValWithEr::Header( k.ShortName( i, p.size ), ofs );
     }
   }
-  ofs << Common::NewLine;
+  ofs << MLU::NewLine;
   // Grab the model data and theory with bootstrapped errors
   const int Extent{ OutputModel.GetExtent() };
   if( !Extent )
@@ -888,17 +888,17 @@ void Fitter::WriteSummaryTD( const std::string &sOutFileName, bool bVerboseSumma
                                + std::to_string( OutputModel.FitTimes[i].size() ) + " != 1" );
     ModelFile &mf{ *ds.constFile[i] };
     Model &m{ *model[i] };
-    ofs << i << Common::Space << mf.Ensemble << Common::Space << m.XVectorKey();
+    ofs << i << MLU::Space << mf.Ensemble << MLU::Space << m.XVectorKey();
     for( std::size_t j = Value.size(); j-- != 0; )
-      ofs << Common::Space << Value[j][i];
+      ofs << MLU::Space << Value[j][i];
     for( const Param::Key &k : m.XVectorKeyNames() )
     {
       const Param &p{ mp.Find( k, "WriteSummaryTD()" )->second };
       const std::size_t idx{ p() };
       for( std::size_t j = 0; j < p.size; ++j )
-        ofs << Common::Space << OutputModel.SummaryData( 0, idx + j );
+        ofs << MLU::Space << OutputModel.SummaryData( 0, idx + j );
     }
-    ofs << Common::NewLine;
+    ofs << MLU::NewLine;
   }
 }
 

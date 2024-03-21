@@ -51,7 +51,7 @@ void AppMaker::ReadQuarks( XmlReader &r )
 {
   std::string sQuarks;
   read( r, "Quarks", sQuarks );
-  std::vector<std::string> Quarks = Common::ArrayFromString( sQuarks, Common::WhiteSpace );
+  std::vector<std::string> Quarks = MLU::ArrayFromString( sQuarks, MLU::WhiteSpace );
   for( const std::string &sQuark : Quarks )
   {
     LOG(Message) << "Reading quarks from " << sQuark << std::endl;
@@ -69,8 +69,8 @@ void AppMaker::ReadQuarks( XmlReader &r )
 std::vector<Quark *> AppMaker::ValidateQuarkList( const std::string &sList, const std::string &sName, std::size_t Min )
 {
   LOG(Message) << sName << " quarks: " << sList << std::endl;
-  std::vector<std::string> vs = Common::ArrayFromString( sList, Common::WhiteSpace );
-  Common::NoDuplicates( vs, sName, Min );
+  std::vector<std::string> vs = MLU::ArrayFromString( sList, MLU::WhiteSpace );
+  MLU::NoDuplicates( vs, sName, Min );
   std::vector<Quark *> v;
   v.reserve( vs.size() );
   for( const std::string &s : vs )
@@ -212,23 +212,23 @@ void Study2::Setup( XmlReader &r )
   // Read parameters from Xml
   read( r, sXmlTagName, makePar );
   // Check the taxonomy
-  Taxa = Common::ArrayFromString<Taxonomy>( makePar.Taxa );
-  Common::NoDuplicates( Taxa, "Taxa", 1 );
+  Taxa = MLU::ArrayFromString<Taxonomy>( makePar.Taxa );
+  MLU::NoDuplicates( Taxa, "Taxa", 1 );
   for( const Taxonomy &t : Taxa )
     if( t == Family::GR )
       LOG(Warning) << t << " don't swap the gamma structures at sink and source (18-Feb-2021)" << std::endl;
   // Check parameters make sense
   //if( !( Run.TwoPoint || Run.HeavyQuark ||Run.HeavyAnti ) )
     //throw std::runtime_error( "At least one must be true of: TwoPoint; HeavyQuark; or HeavyAnti" );
-  Momenta = Common::ArrayFromString<Common::Momentum>( makePar.Momenta );
-  Common::NoDuplicates( Momenta, "Momenta", 1 );
+  Momenta = MLU::ArrayFromString<MLU::Momentum>( makePar.Momenta );
+  MLU::NoDuplicates( Momenta, "Momenta", 1 );
   ThreePoint = makePar.HeavyQuark || makePar.HeavyAnti;
   if( ThreePoint )
   {
-    deltaT = Common::ArrayFromString<int>( makePar.deltaT );
-    Common::NoDuplicates( deltaT, "deltaT", 1 );
-    gamma = Common::ArrayFromString<Gamma::Algebra>( makePar.gamma );
-    Common::NoDuplicates( gamma, "gamma", 1 );
+    deltaT = MLU::ArrayFromString<int>( makePar.deltaT );
+    MLU::NoDuplicates( deltaT, "deltaT", 1 );
+    gamma = MLU::ArrayFromString<Gamma::Algebra>( makePar.gamma );
+    MLU::NoDuplicates( gamma, "gamma", 1 );
   }
   HeavyQuarks        = ValidateQuarkList( makePar.Heavy, "Heavy", 1 );
   SpectatorQuarks    = ValidateQuarkList( makePar.Spectator, "Spectator", 1 );
@@ -254,7 +254,7 @@ std::string Study2::RunID() const
   if( !makePar.DoNegativeMomenta )
     s << Sep << "pos";
   s << Sep << "p";
-  for( const Common::Momentum &p : Momenta )
+  for( const MLU::Momentum &p : Momenta )
     s << Sep << p.to_string3d( Sep );
   if( ThreePoint )
   {
@@ -275,7 +275,7 @@ void Study2::Make()
     {
       for( const Taxonomy &tax : Taxa )
       {
-        for( Common::Momentum p : Momenta )
+        for( MLU::Momentum p : Momenta )
         {
           for( int pDoNeg = 0; pDoNeg < ( ( makePar.DoNegativeMomenta && p ) ? 2 : 1 ); ++pDoNeg )
           {
@@ -351,29 +351,29 @@ void Study3::Setup( XmlReader &r )
   // Read parameters from Xml
   read( r, sXmlTagName, makePar );
   // Check the taxonomy
-  Taxa = Common::ArrayFromString<Taxonomy>( makePar.Taxa );
-  Common::NoDuplicates( Taxa, "Taxa", 1 );
+  Taxa = MLU::ArrayFromString<Taxonomy>( makePar.Taxa );
+  MLU::NoDuplicates( Taxa, "Taxa", 1 );
   for( const Taxonomy &t : Taxa )
     if( t == Family::GR )
       LOG(Warning) << t << " don't swap the gamma structures at sink and source (18-Feb-2021)" << std::endl;
   // Number of hits is optional - because I added this after performing production runs
-  Taxonomy::NumHits( Common::FromString<int>( makePar.NumHits, 1 ) );
+  Taxonomy::NumHits( MLU::FromString<int>( makePar.NumHits, 1 ) );
   // Check parameters make sense
   //if( !( Run.TwoPoint || Run.HeavyQuark ||Run.HeavyAnti ) )
     //throw std::runtime_error( "At least one must be true of: TwoPoint; HeavyQuark; or HeavyAnti" );
   ThreePoint = makePar.HeavyQuark || makePar.HeavyAnti;
   if( ThreePoint )
   {
-    deltaT = Common::ArrayFromString<int>( makePar.deltaT );
-    Common::NoDuplicates( deltaT, "deltaT", 1 );
-    gamma = Common::ArrayFromString<Gamma::Algebra>( makePar.gamma );
-    Common::NoDuplicates( gamma, "gamma", 1 );
+    deltaT = MLU::ArrayFromString<int>( makePar.deltaT );
+    MLU::NoDuplicates( deltaT, "deltaT", 1 );
+    gamma = MLU::ArrayFromString<Gamma::Algebra>( makePar.gamma );
+    MLU::NoDuplicates( gamma, "gamma", 1 );
   }
   CountHeavyMomenta = 0;
   for( Decay &d : makePar.Decays )
   {
-    Common::Trim( d.qLight );
-    Common::Trim( d.qSpectator );
+    MLU::Trim( d.qLight );
+    MLU::Trim( d.qSpectator );
     LOG(Message) << "Decay " << d.name << ": light=" << d.qLight << ", spectator=" << d.qSpectator
                  << ", " << d.HeavyMom.size() << " heavy quarks" << std::endl;
     Q.at( d.qLight );
@@ -382,17 +382,17 @@ void Study3::Setup( XmlReader &r )
       throw std::runtime_error( "There should be at least 1 heavy quark" );
     for( HeavyMomenta &hp : d.HeavyMom )
     {
-      Common::Trim( hp.qHeavy );
-      Common::Trim( hp.Momenta );
+      MLU::Trim( hp.qHeavy );
+      MLU::Trim( hp.Momenta );
       LOG(Message) << " heavy " << hp.qHeavy << ": momenta " << hp.Momenta << std::endl;
       const std::string & qh{ Q.at( hp.qHeavy ).flavour };
       if( HeavyQuarks.find( qh ) == HeavyQuarks.end() )
         HeavyQuarks.emplace( qh );
-      std::vector<Common::Momentum> Momenta = Common::ArrayFromString<Common::Momentum>( hp.Momenta );
+      std::vector<MLU::Momentum> Momenta = MLU::ArrayFromString<MLU::Momentum>( hp.Momenta );
       Check0Negate( Momenta, makePar.DoNegativeMomenta );
-      Common::NoDuplicates( Momenta, "HeavyMomenta", 1 );
+      MLU::NoDuplicates( Momenta, "HeavyMomenta", 1 );
       CountHeavyMomenta += Momenta.size();
-      for( const Common::Momentum &p : Momenta )
+      for( const MLU::Momentum &p : Momenta )
       {
         if( UniqueP2.find( p.p2() ) == UniqueP2.end() )
           UniqueP2.emplace( p.p2() );
@@ -433,7 +433,7 @@ std::string Study3::RunID() const
 
 // Get the list of momenta to use for Q2 when we perform two-point contractions
 // Copy the momenta, add zero-momentum and (optionally) add the negative momenta. De-duplicate the list
-bool Study3::Check0Negate( std::vector<Common::Momentum> &Momenta, bool bNegate )
+bool Study3::Check0Negate( std::vector<MLU::Momentum> &Momenta, bool bNegate )
 {
   bool bGot0{ false };
   const std::size_t Num{ Momenta.size() };
@@ -450,12 +450,12 @@ bool Study3::Check0Negate( std::vector<Common::Momentum> &Momenta, bool bNegate 
 }
 
 void Study3::Contract2pt( const Taxonomy &tax, const Quark &q1, const Quark &q2, int idxMomentum, int t,
-                          const std::vector<Common::Momentum> &Momenta, bool bGotp0 )
+                          const std::vector<MLU::Momentum> &Momenta, bool bGotp0 )
 {
   // Only the Z2 sources are protected by the gauge-average delta
   const bool bMultiP2{ tax == Family::Z2 || tax == Family::ZF };
-  const Common::Momentum &p{ Momenta[idxMomentum] };
-  const bool bFlavourDiagonal{ !Common::CompareIgnoreCase( q1.flavour, q2.flavour ) };
+  const MLU::Momentum &p{ Momenta[idxMomentum] };
+  const bool bFlavourDiagonal{ !MLU::CompareIgnoreCase( q1.flavour, q2.flavour ) };
   const int idxMomentumStart{ !bMultiP2 || !bGotp0 ? -1 : 0 };
   const int idxMomentumLimit{ !bMultiP2 ?  0
                               : bFlavourDiagonal ? idxMomentum + 1 : static_cast<int>( Momenta.size() ) };
@@ -463,7 +463,7 @@ void Study3::Contract2pt( const Taxonomy &tax, const Quark &q1, const Quark &q2,
   {
     for( int hit = 1; hit <= tax.NumHits(); ++hit )
     {
-      const Common::Momentum &p2{ idxMomentum2 < 0 ? p0 : Momenta[idxMomentum2] };
+      const MLU::Momentum &p2{ idxMomentum2 < 0 ? p0 : Momenta[idxMomentum2] };
       l.TakeOwnership( new ModContract2pt( l, tax, q1, q2, p, t, p2, hit ) );
       if( !bFlavourDiagonal )
         l.TakeOwnership( new ModContract2pt( l, tax, q2, q1, p, t, p2, hit ) );
@@ -481,11 +481,11 @@ void Study3::MakeStudy3( unsigned int t, const Decay &d )
       for( std::size_t idxHP = 0; idxHP < d.HeavyMom.size(); ++idxHP )
       {
         const Quark &qh{ Q.at( d.HeavyMom[idxHP].qHeavy ) };
-        std::vector<Common::Momentum> Momenta = Common::ArrayFromString<Common::Momentum>( d.HeavyMom[idxHP].Momenta );
+        std::vector<MLU::Momentum> Momenta = MLU::ArrayFromString<MLU::Momentum>( d.HeavyMom[idxHP].Momenta );
         const bool bGotp0{ Check0Negate( Momenta, makePar.DoNegativeMomenta ) };
         for( int idxMomentum = 0; idxMomentum < Momenta.size(); ++idxMomentum )
         {
-            const Common::Momentum &p{ Momenta[idxMomentum] };
+            const MLU::Momentum &p{ Momenta[idxMomentum] };
             if( makePar.TwoPoint )
             {
               // Create the two-point functions I need for R1. Second pair not really needed, but doesn't take much time
@@ -513,7 +513,7 @@ void Study3::MakeStudy3( unsigned int t, const Decay &d )
                     {
                       const bool bHLB{ makePar.R1Term1Backwards };
                       const unsigned int tHLB{ bHLB ? l.params.TimeBound( t - deltaT ) : t };
-                      const Common::Momentum pHLB{ makePar.R2Terms ? (bHLB ? -p : -p) : ( bHLB ? -p : -p ) };
+                      const MLU::Momentum pHLB{ makePar.R2Terms ? (bHLB ? -p : -p) : ( bHLB ? -p : -p ) };
                       l.TakeOwnership(new ModContract3pt(l,tax,bHLB,ql,qh,qSpectator,pHLB,p0,j,deltaT,tHLB,bHeavyAnti));
                     }
                     if( makePar.R1Term2 ) // In practice, R2Terms should equal !R1Term1Backwards
@@ -558,7 +558,7 @@ void Study3::Make()
 int main(int argc, char *argv[])
 {
   // See whether parameter file exists
-  if( argc < 2 || !Common::FileExists( argv[1] ) )
+  if( argc < 2 || !MLU::FileExists( argv[1] ) )
   {
     std::cout << "Usage: xml3pt in_file [job_suffix]\n"
               << "where:\n"
@@ -569,6 +569,6 @@ int main(int argc, char *argv[])
   }
   const std::string sXmlFilename{ argv[1] };
   // 2nd parameter is optional. If present (and not a switch) it's a prefix for current run
-  const std::string sRunSuffix( argc >= 3 && argv[2][0] != '-' ? ( Common::Period + argv[2] ) : "" );
+  const std::string sRunSuffix( argc >= 3 && argv[2][0] != '-' ? ( MLU::Period + argv[2] ) : "" );
   return AppMaker::MakeThreePoint( argc, argv, sXmlFilename, sRunSuffix );
 }

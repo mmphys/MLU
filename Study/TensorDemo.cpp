@@ -25,7 +25,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 /*  END LEGAL */
 
 #include <stdio.h>
-//#include <MLU/Common.hpp>
+//#include <MLU/MLU.hpp>
 #include <omp.h>
 #include <Grid/Grid.h>
 #include <Hadrons/Modules.hpp>

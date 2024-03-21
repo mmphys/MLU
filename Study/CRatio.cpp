@@ -30,7 +30,7 @@
 #include <cmath>
 
 static const char szReading[] = " Reading ";
-Common::DispersionType dispType;
+MLU::DispersionType dispType;
 
 Model DummyModel{};
 const char LoadFilePrefix[] = "  ";
@@ -42,7 +42,7 @@ std::ostream &operator<<( std::ostream &os, const MP &mp )
   if( mp.p.bp2 )
     os << "^2=" << mp.p.p2();
   else
-    os << "=" << mp.p.to_string3d( Common::Space );
+    os << "=" << mp.p.to_string3d( MLU::Space );
   return os;
 }
 
@@ -50,7 +50,7 @@ MP MPReader::operator()( const std::string &Filename ) const
 {
   MP mp;
   mp.Meson = *this;
-  mp.pName = Common::Momentum::DefaultPrefix;
+  mp.pName = MLU::Momentum::DefaultPrefix;
   mp.p.Extract( mp.Meson, mp.pName );
   return mp;
 }
@@ -77,7 +77,7 @@ int FileCache<FileT>::GetIndex( const std::string &Filename, const char * printP
   if( Filename.empty() || Filename[0] != '/' )
     Fullname = Base;
   Fullname.append( Filename );
-  if( !Common::FileExists( Fullname ) )
+  if( !MLU::FileExists( Fullname ) )
   {
     // File doesn't exist
     if( printPrefix )
@@ -134,7 +134,7 @@ template<typename K, typename R>
 typename std::enable_if<std::is_same<K, R>::value, std::map<Key, std::string, LessKey>>::type
 KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, S>::ReadNameMap( const std::string &Filename, const char *p )
 {
-  return Common::KeyValReader<Key, std::string, LessKey>::Read( Filename, p );
+  return MLU::KeyValReader<Key, std::string, LessKey>::Read( Filename, p );
 }
 
 template<typename Key, typename LessKey, typename KeyRead, typename LessKeyRead, typename S>
@@ -144,7 +144,7 @@ KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, S>::ReadNameMap( const std::str
 {
   // Read the file list
   using KeyNameRead = std::multimap<KeyRead, std::string, LessKeyRead>;
-  using StringMapCIReader = Common::KeyValReader<KeyRead, std::string, LessKeyRead, KeyNameRead>;
+  using StringMapCIReader = MLU::KeyValReader<KeyRead, std::string, LessKeyRead, KeyNameRead>;
   KeyNameRead ReadList{ StringMapCIReader::Read( Filename, p ) };
   // Now make a unique key for each row from name and filename
   KeyReadMapT m;
@@ -158,11 +158,11 @@ void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, S>::Read(const std::string
 {
   clear();
   std::string sParams{ filename };
-  std::string Filename{ Common::ExtractToSeparator( sParams ) };
+  std::string Filename{ MLU::ExtractToSeparator( sParams ) };
   if( Filename.empty() )
   {
     freeze = Freeze::Constant;
-    ConstantMap = Common::KeyValReader<std::string, Scalar>::Read( Common::ArrayFromString( sParams ) );
+    ConstantMap = MLU::KeyValReader<std::string, Scalar>::Read( MLU::ArrayFromString( sParams ) );
     return;
   }
 
@@ -170,20 +170,20 @@ void KeyFileCache<Key, LessKey, KeyRead, LessKeyRead, S>::Read(const std::string
   {
     // See whether next parameter is 'C'
     std::string RemainingParams{ sParams };
-    std::string Options{ Common::ExtractToSeparator( RemainingParams ) };
+    std::string Options{ MLU::ExtractToSeparator( RemainingParams ) };
     if( Options.length() == 1 && std::toupper( sParams[0] ) == 'C' )
     {
       freeze = Freeze::Central;
       sParams = RemainingParams;
     }
   }
-  FieldMap = Common::KeyValReader<std::string, std::string>::Read( Common::ArrayFromString( sParams ) );
+  FieldMap = MLU::KeyValReader<std::string, std::string>::Read( MLU::ArrayFromString( sParams ) );
 
   static const char szDescription[]{ "2pt fit list" };
-  std::cout << "Reading " << szDescription << " from " << Filename << Common::NewLine;
+  std::cout << "Reading " << szDescription << " from " << Filename << MLU::NewLine;
   KeyReadMapT m{ ReadNameMap( Filename, szDescription ) };
   // All the files in the cache are relative to the directory containing the fit list
-  model.SetBase( Common::GetDirPrefix( Filename ) );
+  model.SetBase( MLU::GetDirPrefix( Filename ) );
   // Put all the filenames in our cache and save their index
   // This delays loading until the files are referenced
   for( const auto &i : m )
@@ -214,7 +214,7 @@ int KeyFileCache<Key,L,KR,LKR,S>::GetIndex( const Key &key ) const
 }
 
 template<typename Key, typename L, typename KR, typename LKR, typename S>
-Common::Model<S> &KeyFileCache<Key,L,KR,LKR,S>::operator()( const Key &key, const char * PrintPrefix )
+MLU::Model<S> &KeyFileCache<Key,L,KR,LKR,S>::operator()( const Key &key, const char * PrintPrefix )
 {
   if( freeze==Freeze::Constant )
     return DummyModel;
@@ -222,13 +222,13 @@ Common::Model<S> &KeyFileCache<Key,L,KR,LKR,S>::operator()( const Key &key, cons
 }
 
 template<typename Key, typename L, typename KR, typename LKR, typename S>
-Common::JackBootColumn<S> KeyFileCache<Key,L,KR,LKR,S>::GetColumn( const Key &key, const Common::Param::Key &pKey, std::size_t Index )
+MLU::JackBootColumn<S> KeyFileCache<Key,L,KR,LKR,S>::GetColumn( const Key &key, const MLU::Param::Key &pKey, std::size_t Index )
 {
   if( freeze == Freeze::Constant )
   {
     // Freeze to value specified on command line, or 1 if not specified
     typename ConstantMapT::iterator it = ConstantMap.find( pKey.FullName( Index ) );
-    return Common::JackBootColumn<S>( it == ConstantMap.end() ? ConstantOne : it->second );
+    return MLU::JackBootColumn<S>( it == ConstantMap.end() ? ConstantOne : it->second );
   }
   else
   {
@@ -266,9 +266,9 @@ void Maker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::string
 // Incoming file should be a three-point function with a heavy sink and light(er) source
 void ZVRCommon::Make( std::string &FileName )
 {
-  std::cout << "Processing " << FileName << Common::NewLine;
+  std::cout << "Processing " << FileName << MLU::NewLine;
   std::vector<std::string> OpNames;
-  Common::FileNameAtt fna{ FileName, &OpNames };
+  MLU::FileNameAtt fna{ FileName, &OpNames };
   if( OpNames.empty() )
     throw std::runtime_error( "Sink / source operator names mising" );
   if( !fna.GotDeltaT() )
@@ -284,22 +284,22 @@ void ZVRCommon::Make( std::string &FileName )
   ZVRMake( fna, FileNameSuffix, Snk, Src );
 }
 
-ZVMaker::ZVMaker( const std::string &TypeParams, const Common::CommandLine &cl ) : ZVRCommon( cl )
+ZVMaker::ZVMaker( const std::string &TypeParams, const MLU::CommandLine &cl ) : ZVRCommon( cl )
 {
   if( !TypeParams.empty() )
     throw std::runtime_error( "ZVMaker does not recognise any parameters: " + TypeParams );
 }
 
-void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+void ZVMaker::ZVRMake( const MLU::FileNameAtt &fna, const std::string &fnaSuffix,
                        const SSInfo &Snk, const SSInfo &Src )
 {
   // Complain about errors
   {
     std::ostringstream os;
-    if( Common::CompareIgnoreCase( Snk.q, Src.q ) )
+    if( MLU::CompareIgnoreCase( Snk.q, Src.q ) )
       os << "qSnk " << Snk.q << " != qSrc " << Src.q;
-    else if( fna.Gamma[0] != Common::Gamma::Algebra::GammaT )
-      os << "Gamma " << fna.Gamma[0] << " != " << Common::Gamma::Algebra::GammaT;
+    else if( fna.Gamma[0] != MLU::Gamma::Algebra::GammaT )
+      os << "Gamma " << fna.Gamma[0] << " != " << MLU::Gamma::Algebra::GammaT;
     else if( Snk.mp.p )
       os << "Sink momentum " << Snk.mp.p.FileString( Snk.mp.pName );
     else if( Src.mp.p )
@@ -330,11 +330,11 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
     //AppendOps( C2Name, opSrc, opSnk );
   //else
     AppendOps( C2Name, Snk.op, Src.op );
-  C2Name = Common::ExistingFilename( C2Name, Common::sFold, fna.Seed, DEF_FMT );
+  C2Name = MLU::ExistingFilename( C2Name, MLU::sFold, fna.Seed, DEF_FMT );
   Fold &C2{ Cache2[C2Name] };
   //C2.Read( C2Name, LoadFilePrefix );
   int NumSamples {};
-  C3.IsCompatible( C2, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+  C3.IsCompatible( C2, &NumSamples, MLU::COMPAT_DISABLE_BASE | MLU::COMPAT_DISABLE_NT );
   if( C2.NtUnfolded() != C3.Nt() )
   {
     std::ostringstream os;
@@ -369,31 +369,31 @@ void ZVMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuf
   OutFileName.append( "ZV_" );
   OutFileName.append( Snk.q );
   //OutFileName.append( Suffix );
-  Common::AppendDeltaT( OutFileName, fna.DeltaT[0] );
+  MLU::AppendDeltaT( OutFileName, fna.DeltaT[0] );
   AppendOps( OutFileName, Snk.op, Src.op );
-  OutFileName = Common::MakeFilename( OutFileName, Common::sFold, C3.Seed(), DEF_FMT );
-  std::cout << "->" << OutFileName << Common::NewLine;
-  out.Write( OutFileName, Common::sFold.c_str() );
-  Common::ReplaceExtension( OutFileName, TEXT_EXT );
+  OutFileName = MLU::MakeFilename( OutFileName, MLU::sFold, C3.Seed(), DEF_FMT );
+  std::cout << "->" << OutFileName << MLU::NewLine;
+  out.Write( OutFileName, MLU::sFold.c_str() );
+  MLU::ReplaceExtension( OutFileName, TEXT_EXT );
   out.WriteSummary( OutFileName );
 }
 
-RMaker::RMaker( const std::string &TypeParams, const Common::CommandLine &cl )
+RMaker::RMaker( const std::string &TypeParams, const MLU::CommandLine &cl )
 : ZVRCommon( cl ), bAltR3{cl.GotSwitch("r3a")}
 {
   ZVmi.Read( TypeParams, LoadFilePrefix );
 }
 
-void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuffix,
+void RMaker::ZVRMake( const MLU::FileNameAtt &fna, const std::string &fnaSuffix,
                       const SSInfo &Snk, const SSInfo &Src )
 {
   // Make sure I have the model for Z_V already loaded
   Model &ZVModelSnk{ ZVmi( Snk.q, LoadFilePrefix ) };
   Model &ZVModelSrc{ ZVmi( Src.q, LoadFilePrefix ) };
-  const std::vector<Common::Param::Key> vZVKeys{ Common::Param::Key( Src.q, "ZV" ),
-                                                 Common::Param::Key( Snk.q, "ZV" ) };
-  const Common::Param::Key &kZVSrc( vZVKeys[0] );
-  const Common::Param::Key &kZVSnk{ vZVKeys[1] };
+  const std::vector<MLU::Param::Key> vZVKeys{ MLU::Param::Key( Src.q, "ZV" ),
+                                                 MLU::Param::Key( Snk.q, "ZV" ) };
+  const MLU::Param::Key &kZVSrc( vZVKeys[0] );
+  const MLU::Param::Key &kZVSnk{ vZVKeys[1] };
   Column ZVSnk{ ZVmi.GetColumn( Snk.q, kZVSnk ) };
   Column ZVSrc{ ZVmi.GetColumn( Src.q, kZVSrc ) };
 
@@ -407,7 +407,7 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
   // Must put both in the cache before trying to dereference either
   for( int i = 0; i < NumC2; ++i )
   {
-    Corr2[i].Name = Common::ExistingFilename( Corr2[i].Name, Common::sFold, fna.Seed, DEF_FMT );
+    Corr2[i].Name = MLU::ExistingFilename( Corr2[i].Name, MLU::sFold, fna.Seed, DEF_FMT );
     Corr2[i].Handle = Cache2.GetIndex( Corr2[i].Name );
     if( Corr2[i].Handle == CorrCache::BadIndex )
       throw std::runtime_error( "2pt functions are required" );
@@ -447,16 +447,16 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
     }
     Corr3[Snk_Src].Name = fna.Dir;
     Corr3[Snk_Src].Name.append( fna.GetBaseShort() );
-    Common::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.q : Snk.q );
-    Common::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? Src.q : Snk.q );
+    MLU::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.q : Snk.q );
+    MLU::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? Src.q : Snk.q );
     Corr3[Snk_Src].Name.append( fnaSuffix );
-    Common::AppendGammaDeltaT( Corr3[Snk_Src].Name, iSnk==iSrc ? Common::Gamma::Algebra::GammaT : fna.Gamma[0],
+    MLU::AppendGammaDeltaT( Corr3[Snk_Src].Name, iSnk==iSrc ? MLU::Gamma::Algebra::GammaT : fna.Gamma[0],
                                fna.DeltaT[0] );
     fna.AppendMomentum( Corr3[Snk_Src].Name, iSrc == iFinal ? Snk.mp.p : Src.mp.p, Src.mp.pName );
     fna.AppendMomentum( Corr3[Snk_Src].Name, iSnk==iInitial ? Src.mp.p : Snk.mp.p, Snk.mp.pName );
-    Common::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.op : Snk.op );
-    Common::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? Src.op : Snk.op );
-    Corr3[Snk_Src].Name = Common::ExistingFilename(Corr3[Snk_Src].Name, fna.Type, fna.Seed, fna.Ext);
+    MLU::Append( Corr3[Snk_Src].Name, iSnk == iInitial ? Src.op : Snk.op );
+    MLU::Append( Corr3[Snk_Src].Name, iSrc == iInitial ? Src.op : Snk.op );
+    Corr3[Snk_Src].Name = MLU::ExistingFilename(Corr3[Snk_Src].Name, fna.Type, fna.Seed, fna.Ext);
     Corr3[Snk_Src].Handle = Cache3.GetIndex( Corr3[Snk_Src].Name );
     if( Corr3[Snk_Src].Handle == CorrCache::BadIndex )
     {
@@ -480,7 +480,7 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
 
   // Load 2pt functions
   int NSamples{ MaxSamples };
-  const unsigned int CompareFlags{ Common::COMPAT_DISABLE_BASE };
+  const unsigned int CompareFlags{ MLU::COMPAT_DISABLE_BASE };
   const Fold * pC2[NumC2];
   for( int i = 0; i < NumC2; ++i )
   {
@@ -500,7 +500,7 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
       Corr3[i].Corr = &Cache3[Corr3[i].Handle];
       if( i == 0 )
       {
-        Corr2[0].Corr->IsCompatible( *Corr3[i].Corr, &NSamples, CompareFlags | Common::COMPAT_DISABLE_NT );
+        Corr2[0].Corr->IsCompatible( *Corr3[i].Corr, &NSamples, CompareFlags | MLU::COMPAT_DISABLE_NT );
         if( Corr2[0].Corr->NtUnfolded() != Corr3[i].Corr->NtUnfolded() )
           throw std::runtime_error( "2-pt NtUnfolded "
                                    + std::to_string( Corr2[0].Corr->NtUnfolded() )
@@ -517,7 +517,7 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
   // Check compatibility with the models
   if( ZVmi.freeze != Freeze::Constant )
   {
-    const unsigned int ModelCompareFlags{CompareFlags|Common::COMPAT_DISABLE_TYPE|Common::COMPAT_DISABLE_NT};
+    const unsigned int ModelCompareFlags{CompareFlags|MLU::COMPAT_DISABLE_TYPE|MLU::COMPAT_DISABLE_NT};
     int * pNumSamples = ZVmi.freeze == Freeze::None ? &NSamples : nullptr;
     Corr2[0].Corr->IsCompatible( ZVModelSnk, pNumSamples, ModelCompareFlags );
     Corr2[0].Corr->IsCompatible( ZVModelSrc, pNumSamples, ModelCompareFlags );
@@ -671,17 +671,17 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
       OutFileName.append( 1, '_' );
       OutFileName.append( NameReverse[i] ? Snk.q : Src.q );
       OutFileName.append( fnaSuffix );
-      Common::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT[0] );
+      MLU::AppendGammaDeltaT( OutFileName, fna.Gamma[0], fna.DeltaT[0] );
       fna.AppendMomentum( OutFileName, Src.mp.p ? Src.mp.p : Snk.mp.p, Src.mp.pName );
       AppendOps( OutFileName, NameReverse[i] ? Src.op : Snk.op, NameReverse[i] ? Snk.op : Src.op );
-      OutFileName = Common::MakeFilename( OutFileName, fna.Type, Corr2[0].Corr->Seed(), fna.Ext );
-      std::cout << "->" << OutFileName << Common::NewLine;
-      out[i].Write( OutFileName, Common::sFold.c_str() );
+      OutFileName = MLU::MakeFilename( OutFileName, fna.Type, Corr2[0].Corr->Seed(), fna.Ext );
+      std::cout << "->" << OutFileName << MLU::NewLine;
+      out[i].Write( OutFileName, MLU::sFold.c_str() );
       // Now save ZV together with the ratio
       if( !ZVSrc.IsIdentity() || !ZVSnk.IsIdentity() )
       {
         static const std::string sError{ "RMaker::ZVRMake() writing ZV" };
-        Model m( NSamples, Common::Params( vZVKeys ), {} );
+        Model m( NSamples, MLU::Params( vZVKeys ), {} );
         m.FileList.push_back( ZVModelSrc.Name_.Filename );
         m.FileList.push_back( ZVModelSnk.Name_.Filename );
         m.CopyAttributes( *Corr3[0].Corr );
@@ -692,9 +692,9 @@ void RMaker::ZVRMake( const Common::FileNameAtt &fna, const std::string &fnaSuff
           m(rep,iZVSrc) = ZVSrc[rep];
           m(rep,iZVSnk) = ZVSnk[rep];
         }
-        m.Write( OutFileName, Common::sModel.c_str(), H5F_ACC_RDWR );
+        m.Write( OutFileName, MLU::sModel.c_str(), H5F_ACC_RDWR );
       }
-      Common::ReplaceExtension( OutFileName, TEXT_EXT );
+      MLU::ReplaceExtension( OutFileName, TEXT_EXT );
       out[i].WriteSummary( OutFileName );
     }
   }
@@ -705,21 +705,21 @@ const std::vector<std::string> FormFactor::ParamNames{ "EL", "mL", "mH", "qSq", 
   "tPlus", "tMinus", "t0", "zre", "zim", "ZV", "melV0Raw", "melViRaw" };
 
 FormFactor::FormFactor( std::string TypeParams )
-: N{ Common::FromString<unsigned int>( Common::ExtractToSeparator( TypeParams ) ) },
+: N{ MLU::FromString<unsigned int>( MLU::ExtractToSeparator( TypeParams ) ) },
   ap{ 2 * M_PI / N },
   apInv{ 1. / ap },
-  bAdjustGammaSpatial{ Common::EqualIgnoreCase( Common::ExtractToSeparator(TypeParams), "spatial" ) }
+  bAdjustGammaSpatial{ MLU::EqualIgnoreCase( MLU::ExtractToSeparator(TypeParams), "spatial" ) }
 {
   // optional ZV: Can be constant (number), or cache of ZV files
   std::string sZV;
   if( !TypeParams.empty() )
-    sZV = Common::ExtractToSeparator( TypeParams );
+    sZV = MLU::ExtractToSeparator( TypeParams );
   if( sZV.empty() )
   {
     ZV[0] = 1.;
     ZV[1] = 1.;
   }
-  else if( Common::FileExists( sZV ) )
+  else if( MLU::FileExists( sZV ) )
   {
     ZVmi.Read( sZV, LoadFilePrefix );
     if( ZVmi.empty() )
@@ -727,15 +727,15 @@ FormFactor::FormFactor( std::string TypeParams )
   }
   else
   {
-    const Scalar s{ Common::FromString<Scalar>( sZV ) };
+    const Scalar s{ MLU::FromString<Scalar>( sZV ) };
     ZV[0] = s;
     ZV[1] = s;
   }
   // optional: Filename for Fully non-perturbative ZV correction Z_{V,mixed}
   if( !TypeParams.empty() )
   {
-    const std::string sEnsembleInfo{ Common::ExtractToSeparator( TypeParams ) };
-    if( !Common::FileExists( sEnsembleInfo ) )
+    const std::string sEnsembleInfo{ MLU::ExtractToSeparator( TypeParams ) };
+    if( !MLU::FileExists( sEnsembleInfo ) )
       throw std::runtime_error( "Ensemble info file doesn't exist " + sEnsembleInfo );
     try { mEnsembleInfo.SetName( sEnsembleInfo ); } catch ( const std::runtime_error &e ) {}
     try
@@ -755,7 +755,7 @@ FormFactor::FormFactor( std::string TypeParams )
 void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFrom,
                         std::vector<std::string> &&SourceFileNames, int NumSamples,
                         const Column &MHeavy, const Column &ELight,
-                        const Column &vT, const Common::Momentum &p,
+                        const Column &vT, const MLU::Momentum &p,
                         const Column &ZVPrevSrc, const Column &ZVPrevSnk, const Column &ZVMixed,
                         // These only required for non-zero momentum
                         const Column *pMLight, const Column *pvXYZ )
@@ -770,7 +770,7 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
   }
   const Column &MLight{ p ? *pMLight : ELight };
   std::vector<std::size_t> vIdx;
-  Model Out( NumSamples, Common::Params( ParamNames, vIdx ), {} );
+  Model Out( NumSamples, MLU::Params( ParamNames, vIdx ), {} );
   Out.FileList = std::move( SourceFileNames );
   Out.CopyAttributes( CopyAttributesFrom );
   Out.Name_.Seed = CopyAttributesFrom.Name_.Seed;
@@ -836,8 +836,8 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
     Out(idx,vIdx[f0]) *= Root2MH / ( MHeavy[idx] * MHeavy[idx] - MLight[idx] * MLight[idx] );
   }
   // Write output
-  std::cout << " Writing " << OutFileName <<Common::NewLine;
-  Out.SetSummaryNames( Common::sParams );
+  std::cout << " Writing " << OutFileName <<MLU::NewLine;
+  Out.SetSummaryNames( MLU::sParams );
   Out.MakeCorrSummary();
   Out.Write( OutFileName );
   OutFileName.resize( OutFileName.length() - Out.Name_.Ext.length() );
@@ -847,13 +847,13 @@ void FormFactor::Write( std::string &OutFileName, const Model &CopyAttributesFro
 
 bool FMaker::RatioFile::Less::operator()( const RatioFile &lhs, const RatioFile &rhs ) const
 {
-  /*int i{ Common::CompareIgnoreCase( lhs.Prefix, rhs.Prefix ) };
+  /*int i{ MLU::CompareIgnoreCase( lhs.Prefix, rhs.Prefix ) };
   if( i )
     return i < 0;*/
-  int i = Common::CompareIgnoreCase( lhs.Sink, rhs.Sink );
+  int i = MLU::CompareIgnoreCase( lhs.Sink, rhs.Sink );
   if( i )
     return i < 0;
-  i = Common::CompareIgnoreCase( lhs.Source, rhs.Source );
+  i = MLU::CompareIgnoreCase( lhs.Source, rhs.Source );
   if( i )
     return i < 0;
   return lhs.p < rhs.p;
@@ -862,27 +862,27 @@ bool FMaker::RatioFile::Less::operator()( const RatioFile &lhs, const RatioFile 
 void FMaker::Make( std::string &FileName )
 {
   // Parse Filename and check it contains what we need
-  //std::cout << "Processing " << FileName << Common::NewLine;
+  //std::cout << "Processing " << FileName << MLU::NewLine;
   std::vector<std::string> OpNames;
-  Common::FileNameAtt fna{ FileName, &OpNames };
+  MLU::FileNameAtt fna{ FileName, &OpNames };
   if( OpNames.empty() )
     throw std::runtime_error( "Sink / source operator names mising" );
   if( fna.Gamma.size() != 1 )
     throw std::runtime_error( FileName + " has " + std::to_string( fna.Gamma.size() ) + " currents" );
-  const bool bGammaT{ fna.Gamma[0] == Common::Gamma::Algebra::GammaT };
-  if( !bGammaT && fna.Gamma[0] != Common::Gamma::Algebra::Spatial )
+  const bool bGammaT{ fna.Gamma[0] == MLU::Gamma::Algebra::GammaT };
+  if( !bGammaT && fna.Gamma[0] != MLU::Gamma::Algebra::Spatial )
   {
     std::ostringstream ss;
     ss << "Ignoring current " << fna.Gamma[0] << " - should be "
-       << Common::Gamma::Algebra::GammaT << " or " << Common::Gamma::Algebra::Spatial << " only";
+       << MLU::Gamma::Algebra::GammaT << " or " << MLU::Gamma::Algebra::Spatial << " only";
     throw std::runtime_error( ss.str().c_str() );
   }
   if( fna.p.empty() )
     throw std::runtime_error( FileName + " has no momenta" );
   if( fna.Meson.size() != 2 || fna.MesonMom.size() != 2 )
     throw std::runtime_error( FileName + " unable to decode mesons" );
-  //std::cout << "  " << fna.MesonMom[0] << " -> " << fna.Gamma[0] << " -> " << fna.MesonMom[1] << Common::NewLine;
-  const Common::Momentum &p{ fna.p.begin()->second };
+  //std::cout << "  " << fna.MesonMom[0] << " -> " << fna.Gamma[0] << " -> " << fna.MesonMom[1] << MLU::NewLine;
+  const MLU::Momentum &p{ fna.p.begin()->second };
   RatioFile rf( p, fna.Meson[0], fna.Meson[1] );
   std::vector<std::string> &vs{ map[bGammaT ? 0 : 1][rf] };
   vs.emplace_back( FileName );
@@ -915,25 +915,25 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
       const RatioFile &rf{ vt.first };
       const std::vector<std::string> &vFileGammaT{ vt.second };
       std::vector<std::string> OpNames;
-      Common::FileNameAtt fna{ vFileGammaT[0], &OpNames };
+      MLU::FileNameAtt fna{ vFileGammaT[0], &OpNames };
       std::string sOpNames;
-      fna.AppendOps( sOpNames, Common::Period, &OpNames );
-      const Common::MomentumPair &p{ fna.GetFirstNonZeroMomentum() };
+      fna.AppendOps( sOpNames, MLU::Period, &OpNames );
+      const MLU::MomentumPair &p{ fna.GetFirstNonZeroMomentum() };
       std::string Description;
       {
         std::ostringstream os;
-        os << rf.Source << " --> " << rf.Sink << p.second.FileString( p.first, Common::Space );
+        os << rf.Source << " --> " << rf.Sink << p.second.FileString( p.first, MLU::Space );
         Description = os.str();
       }
-      std::cout << Description << Common::NewLine;
+      std::cout << Description << MLU::NewLine;
       const std::vector<std::string> &Quark{ fna.Quark };
-      const int iLight{ Common::QuarkWeight( Quark[0] ) <= Common::QuarkWeight( Quark[1] ) ? 0 : 1 };
+      const int iLight{ MLU::QuarkWeight( Quark[0] ) <= MLU::QuarkWeight( Quark[1] ) ? 0 : 1 };
       const int iHeavy{ 1 - iLight };
       // Get ZV
       if( !ZVmi.empty() )
       {
-        ZV[0] = ZVmi.GetColumn( Quark[0], Common::Param::Key( Quark[0], "ZV" ) );
-        ZV[1] = ZVmi.GetColumn( Quark[1], Common::Param::Key( Quark[1], "ZV" ) );
+        ZV[0] = ZVmi.GetColumn( Quark[0], MLU::Param::Key( Quark[0], "ZV" ) );
+        ZV[1] = ZVmi.GetColumn( Quark[1], MLU::Param::Key( Quark[1], "ZV" ) );
       }
       // If non-zero momentum, build a list of corresponding spatial correlators
       std::vector<Model> mGammaXYZ;
@@ -944,7 +944,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
       else
       {
         // Get the zero-momentum version of the light
-        const Common::MomentumPair p0( p.first, p.second.bp2 );
+        const MLU::MomentumPair p0( p.first, p.second.bp2 );
         MP mpMLight( fna.Meson[iLight], p0.second, p0.first );
         pmMLight = &EFit( mpMLight, szReading );
         MLight = EFit.GetColumn( mpMLight, mpMLight.PK() );
@@ -989,7 +989,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
           Model mGT;
           mGT.Read( File, " reading temporal model ", &OpNames );
           // Most of the data can come from the temporal file
-          Common::Param::Key k( fna.MesonMom[iLight], mGT.EnergyPrefix );
+          MLU::Param::Key k( fna.MesonMom[iLight], mGT.EnergyPrefix );
           Column ELight = mGT.Column( k );
           k.Object[0] = fna.MesonMom[iHeavy];
           Column MHeavy = mGT.Column( k );
@@ -1011,7 +1011,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
           ZVMixed = 1;
           if( mEnsembleInfo.Nt() )
           {
-            Common::Param::Key k( "ZVmixed" );
+            MLU::Param::Key k( "ZVmixed" );
             if( !mGT.Ensemble.empty() )
               k.Object.push_back( mGT.Ensemble );
             try
@@ -1029,11 +1029,11 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
             if( !mGT.FileList.empty() )
             {
               sPrevZVFilename = mGT.FileList[0];
-              if( Common::FileExists( sPrevZVFilename ) )
+              if( MLU::FileExists( sPrevZVFilename ) )
               {
-                std::string GroupName{ Common::sModel };
+                std::string GroupName{ MLU::sModel };
                 mRenorm.Read( sPrevZVFilename, " Prior renormalisation ", &OpNames, &GroupName );
-                Common::Param::Key k( fna.Quark[0], "ZV" );
+                MLU::Param::Key k( fna.Quark[0], "ZV" );
                 ZVPrevSrc = mRenorm.Column( k );
                 k.Object[0] = fna.Quark[1];
                 ZVPrevSnk = mRenorm.Column( k );
@@ -1047,7 +1047,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
           {
             ZVPrevSrc = 1.;
             ZVPrevSnk = 1.;
-            std::cout << " Previous ZV unavailable " << sPrevZVFilename << Common::NewLine;
+            std::cout << " Previous ZV unavailable " << sPrevZVFilename << MLU::NewLine;
           }
           // NB: There's a single, dummy spatial model in the list for zero momentum
           for( Model &mSpatial : mGammaXYZ )
@@ -1061,12 +1061,12 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
               if( rf.p )
               {
                 mGT.IsCompatible( mSpatial, &NumSamples,
-                                  Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+                                  MLU::COMPAT_DISABLE_BASE | MLU::COMPAT_DISABLE_NT );
                 mGT.IsCompatible( *pmMLight, &NumSamples,
-                                  Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+                                  MLU::COMPAT_DISABLE_BASE | MLU::COMPAT_DISABLE_NT );
                 vSourceFiles.emplace_back( mSpatial.Name_.Filename );
                 vSourceFiles.emplace_back( pmMLight->Name_.Filename );
-                Common::Param::Key kSpatial( k.Object, "MELgXYZ" );
+                MLU::Param::Key kSpatial( k.Object, "MELgXYZ" );
                 try
                 {
                   vXYZ = mSpatial.Column( kSpatial );
@@ -1083,7 +1083,7 @@ void FMaker::Run( std::size_t &NumOK, std::size_t &Total, std::vector<std::strin
                 OutFileName.append( std::to_string( iSeq ) );
               }
               OutFileName.append( sOpNames );
-              OutFileName = Common::MakeFilename( OutFileName, Common::sModel, mGT.Seed(), DEF_FMT );
+              OutFileName = MLU::MakeFilename( OutFileName, MLU::sModel, mGT.Seed(), DEF_FMT );
               Write( OutFileName, mGT, std::move( vSourceFiles ), NumSamples, MHeavy, ELight,
                      vT, rf.p, ZVPrevSrc, ZVPrevSnk, ZVMixed, &MLight, &vXYZ );
               ++NumOK;
@@ -1135,19 +1135,19 @@ int FFitConstMaker::Weight( const std::string &Quark )
 void FFitConstMaker::Make( std::string &FileName )
 {
   // Parse Filename and check it contains what we need
-  std::cout << "Processing " << FileName << Common::NewLine;
+  std::cout << "Processing " << FileName << MLU::NewLine;
   std::vector<std::string> OpNames;
-  Common::FileNameAtt fna{ FileName, &OpNames };
+  MLU::FileNameAtt fna{ FileName, &OpNames };
   if( OpNames.empty() )
     throw std::runtime_error( "Sink / source operator names mising" );
   if( !fna.GotDeltaT() )
     throw std::runtime_error( "DeltaT missing" );
   if( fna.Gamma.size() != 1 )
     throw std::runtime_error( FileName + " has " + std::to_string( fna.Gamma.size() ) + " currents" );
-  if( fna.Gamma[0] != Common::Gamma::Algebra::GammaT )
+  if( fna.Gamma[0] != MLU::Gamma::Algebra::GammaT )
   {
     std::ostringstream ss;
-    ss << "Ignoring current " << fna.Gamma[0] << " - should be " << Common::Gamma::Algebra::GammaT << " only";
+    ss << "Ignoring current " << fna.Gamma[0] << " - should be " << MLU::Gamma::Algebra::GammaT << " only";
     throw std::runtime_error( ss.str().c_str() );
   }
   if( fna.p.empty() )
@@ -1155,14 +1155,14 @@ void FFitConstMaker::Make( std::string &FileName )
   if( fna.BaseShortParts.size() < 3 || fna.BaseShortParts[0].size() < 2
      || std::toupper( fna.BaseShortParts[0][0] ) != 'R' || fna.Extra.empty() )
     throw std::runtime_error( FileName + " is not a ratio file" );
-  RatioNum = Common::FromString<int>( fna.BaseShortParts[0].substr( 1 ) );
+  RatioNum = MLU::FromString<int>( fna.BaseShortParts[0].substr( 1 ) );
   qSnk = fna.BaseShortParts[1];
   qSrc = fna.BaseShortParts[2];
   const bool bSnkHeavier{ Weight( qSnk ) > Weight( qSrc ) };
   const std::string &MesonHeavy{ fna.Meson[bSnkHeavier ? 1 : 0] };
   const std::string &MesonLight{ fna.Meson[bSnkHeavier ? 0 : 1] };
   {
-    const Common::MomentumPair &np{ fna.GetFirstNonZeroMomentum() };
+    const MLU::MomentumPair &np{ fna.GetFirstNonZeroMomentum() };
     p = np.second;
     pName = np.first;
   }
@@ -1170,10 +1170,10 @@ void FFitConstMaker::Make( std::string &FileName )
   const std::string &FitTypeOriginal{ fna.Extra[0] };
   {
     std::string FitTypeBuffer{ FitTypeOriginal };
-    FitType = Common::ExtractToSeparator( FitTypeBuffer, Common::Underscore );
+    FitType = MLU::ExtractToSeparator( FitTypeBuffer, MLU::Underscore );
     for( std::size_t pos = 0; ( pos = FitTypeBuffer.find( '_', pos ) ) != std::string::npos; )
       FitTypeBuffer[pos] = ' ';
-    FitParts = Common::ArrayFromString<int>( FitTypeBuffer );
+    FitParts = MLU::ArrayFromString<int>( FitTypeBuffer );
     if( FitParts.empty() || FitParts.size() % 2 )
       throw std::runtime_error( FileName + " fit info " + ( FitParts.empty() ? "missing" : "bad" ) );
   }
@@ -1185,11 +1185,11 @@ void FFitConstMaker::Make( std::string &FileName )
   Prefix.append( qSrc );
   // Get filename suffix
   std::string Suffix1;
-  Common::AppendDeltaT( Suffix1, fna.DeltaT[0] );
+  MLU::AppendDeltaT( Suffix1, fna.DeltaT[0] );
   Suffix1.append( p.FileString( pName ) );
-  Common::Append( Suffix1, fna.GetBaseShort( 3 ) );
+  MLU::Append( Suffix1, fna.GetBaseShort( 3 ) );
   fna.AppendExtra( Suffix1 );
-  std::string Suffix2{ Common::Period };
+  std::string Suffix2{ MLU::Period };
   Suffix2.append( OpNames[fna.op[1]] );
   Suffix2.append( 1, '_' );
   Suffix2.append( OpNames[fna.op[0]] );
@@ -1205,27 +1205,27 @@ void FFitConstMaker::Make( std::string &FileName )
   Suffix.append( Suffix2 );
   // Debug - show filename
 #if DEBUG
-  std::cout << RatioNum << Common::Space << qSnk << Common::Space << qSrc << Common::Space << fna.Gamma[0];
+  std::cout << RatioNum << MLU::Space << qSnk << MLU::Space << qSrc << MLU::Space << fna.Gamma[0];
   for( std::size_t i = 3; i < fna.BaseShortParts.size(); ++i )
-    std::cout << Common::Space << fna.BaseShortParts[i];
+    std::cout << MLU::Space << fna.BaseShortParts[i];
   std::cout << " { " << FitType;
   for( std::size_t i = 0; i < FitParts.size(); i += 2 )
   {
     if( i )
-      std::cout << Common::Comma;
+      std::cout << MLU::Comma;
     std::cout << " [" << FitParts[i] << "," << FitParts[i+1] << "]";
   }
   std::cout << " }";
   for( std::size_t i = fna.Extra.size(); i-- > 1; )
     std::cout << " ." << fna.Extra[i];
-  std::cout << " Suffix=" << Suffix << Common::NewLine;
+  std::cout << " Suffix=" << Suffix << MLU::NewLine;
 #endif
   // Check whether output exists
   std::string OutFileName{ outBase };
   OutFileName.append( 1, 'F' );
   OutFileName.append( Prefix );
   OutFileName.append( Suffix );
-  //if( Common::FileExists( OutFileName ) )
+  //if( MLU::FileExists( OutFileName ) )
     //throw std::runtime_error( OutFileName + " exists" );
   // Open files
   Model mT, mXYZ;
@@ -1239,30 +1239,30 @@ void FFitConstMaker::Make( std::string &FileName )
     std::string GlobName;
     {
       std::ostringstream ss;
-      ss << "R" << Prefix << Common::Underscore << Common::Gamma::Algebra::Spatial << Suffix1 << ".*" << Suffix2;
+      ss << "R" << Prefix << MLU::Underscore << MLU::Gamma::Algebra::Spatial << Suffix1 << ".*" << Suffix2;
       GlobName = ss.str();
     }
-    std::vector<std::string> FileList{ Common::glob( &GlobName, &GlobName + 1, i3Base.c_str() ) };
+    std::vector<std::string> FileList{ MLU::glob( &GlobName, &GlobName + 1, i3Base.c_str() ) };
     if( FileList.empty() )
       throw std::runtime_error( GlobName + " not found" );
     if( FileList.size() != 1 )
-      std::cout << Common::Space << GlobName << " ambiguous" << Common::NewLine;
+      std::cout << MLU::Space << GlobName << " ambiguous" << MLU::NewLine;
     FileNameXYZ = std::move( FileList[0] );
     mXYZ.Read( FileNameXYZ, szReading );
     vXYZ = mXYZ.Sample<Scalar>::Column( 0 );
-    mT.IsCompatible( mXYZ, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+    mT.IsCompatible( mXYZ, &NumSamples, MLU::COMPAT_DISABLE_BASE | MLU::COMPAT_DISABLE_NT );
   }
   // Load energies
-  MP mpMHeavy( MesonHeavy, Common::p0 );
-  MP mpMLight( MesonLight, Common::p0 );
+  MP mpMHeavy( MesonHeavy, MLU::p0 );
+  MP mpMLight( MesonLight, MLU::p0 );
   MP mpELight( MesonLight, p );
   Model &mMHeavy( EFit( mpMHeavy, szReading ) );
-  mT.IsCompatible( mMHeavy, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+  mT.IsCompatible( mMHeavy, &NumSamples, MLU::COMPAT_DISABLE_BASE | MLU::COMPAT_DISABLE_NT );
   Model &mMLight( EFit( mpMLight, szReading ) );
-  mT.IsCompatible( mMLight, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+  mT.IsCompatible( mMLight, &NumSamples, MLU::COMPAT_DISABLE_BASE | MLU::COMPAT_DISABLE_NT );
   Model &mELight( p ? EFit( mpELight, szReading ) : mMLight );
   if( p )
-    mT.IsCompatible( mELight, &NumSamples, Common::COMPAT_DISABLE_BASE | Common::COMPAT_DISABLE_NT );
+    mT.IsCompatible( mELight, &NumSamples, MLU::COMPAT_DISABLE_BASE | MLU::COMPAT_DISABLE_NT );
   const Column MHeavy{ EFit.GetColumn( mpMHeavy, mpMHeavy.PK() ) };
   const Column MLight{ EFit.GetColumn( mpMLight, mpMLight.PK() ) };
   const Column ELight{ EFit.GetColumn( mpELight, mpELight.PK() ) };
@@ -1279,20 +1279,20 @@ void FFitConstMaker::Make( std::string &FileName )
   Write( OutFileName, mT, std::move( SourceFileNames ), NumSamples, MHeavy, ELight, mT.Sample<Scalar>::Column(0), p, PrevOne, PrevOne, PrevOne, &MLight, &vXYZ );
 }
 
-Maker::Maker( const Common::CommandLine &cl )
+Maker::Maker( const MLU::CommandLine &cl )
 : MaxSamples{cl.SwitchValue<int>("n")},
   outBase{cl.SwitchValue<std::string>("o")},
   bSymmetrise{!cl.GotSwitch("nosym")},
-  bOverlapAltNorm{ cl.GotSwitch( Common::sOverlapAltNorm.c_str() ) },
+  bOverlapAltNorm{ cl.GotSwitch( MLU::sOverlapAltNorm.c_str() ) },
   Cache2{ LoadFilePrefix },
   Cache3{ LoadFilePrefix }
 {
   if( bOverlapAltNorm )
-    std::cout << "WARNING: Use of --" << Common::sOverlapAltNorm << " is deprecated.\n";
+    std::cout << "WARNING: Use of --" << MLU::sOverlapAltNorm << " is deprecated.\n";
   Cache2.SetBase( cl.SwitchValue<std::string>("i2") );
   //Cache3.SetBase( cl.SwitchValue<std::string>("i3") );
   EFit.Read( cl.SwitchValue<std::string>( "efit" ), LoadFilePrefix );
-  Common::MakeAncestorDirs( outBase );
+  MLU::MakeAncestorDirs( outBase );
 }
 
 int main(int argc, const char *argv[])
@@ -1302,7 +1302,7 @@ int main(int argc, const char *argv[])
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {
@@ -1313,7 +1313,7 @@ int main(int argc, const char *argv[])
       {"o", CL::SwitchType::Single, "" },
       {"type", CL::SwitchType::Single, DefaultType },
       {"efit", CL::SwitchType::Single, ""},
-      {Common::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
+      {MLU::sOverlapAltNorm.c_str(), CL::SwitchType::Flag, nullptr},
       {"dispersion", CL::SwitchType::Single, nullptr},
       {"nosym", CL::SwitchType::Flag, nullptr},
       {"r3a", CL::SwitchType::Flag, nullptr},
@@ -1324,26 +1324,26 @@ int main(int argc, const char *argv[])
     if( !cl.GotSwitch( "help" ) && cl.Args.size() )
     {
       if( cl.GotSwitch( "debug-signals" ) )
-        Common::Grid_debug_handler_init();
-      dispType = cl.GotSwitch( "dispersion" ) ? cl.SwitchValue<Common::DispersionType>( "dispersion" )
-                                              : Common::DispersionType::LatFreeScalar;
+        MLU::Grid_debug_handler_init();
+      dispType = cl.GotSwitch( "dispersion" ) ? cl.SwitchValue<MLU::DispersionType>( "dispersion" )
+                                              : MLU::DispersionType::LatFreeScalar;
       // Read the list of fits I've chosen to use
       std::string TypeParams{ cl.SwitchValue<std::string>("type") };
-      const std::string Type{ Common::ExtractToSeparator( TypeParams ) };
+      const std::string Type{ MLU::ExtractToSeparator( TypeParams ) };
       std::unique_ptr<Maker> m;
-      if( Common::EqualIgnoreCase( Type, "R" ) )
+      if( MLU::EqualIgnoreCase( Type, "R" ) )
         m.reset( new RMaker( TypeParams, cl ) );
-      else if( Common::EqualIgnoreCase( Type, "ZV" ) )
+      else if( MLU::EqualIgnoreCase( Type, "ZV" ) )
         m.reset( new ZVMaker( TypeParams, cl ) );
-      else if( Common::EqualIgnoreCase( Type, "F" ) )
+      else if( MLU::EqualIgnoreCase( Type, "F" ) )
         m.reset( new FMaker( TypeParams, cl ) );
-      else if( Common::EqualIgnoreCase( Type, "FFC" ) )
+      else if( MLU::EqualIgnoreCase( Type, "FFC" ) )
         m.reset( new FFitConstMaker( TypeParams, cl ) );
       else
         throw std::runtime_error( "I don't know how to make type " + Type );
       bShowUsage = false;
       const std::string Prefix3pt{ cl.SwitchValue<std::string>("i3") };
-      std::vector<std::string> FileList{ Common::glob( cl.Args.begin(), cl.Args.end(),
+      std::vector<std::string> FileList{ MLU::glob( cl.Args.begin(), cl.Args.end(),
                                                        Prefix3pt.c_str() ) };
       std::size_t Count{ 0 };
       std::size_t Done{ 0 };
@@ -1359,7 +1359,7 @@ int main(int argc, const char *argv[])
       {
         std::cerr << "Error: Unknown exception" << std::endl;
       }
-      std::cout << Done << " of " << Count << Common::Space << Type << " ratios created\n";
+      std::cout << Done << " of " << Count << MLU::Space << Type << " ratios created\n";
     }
   }
   catch(const std::exception &e)
@@ -1402,13 +1402,13 @@ int main(int argc, const char *argv[])
     "       If Fit_list='', comma separated list of Variable=Value pairs follows.\n"
     "         Any constants not mentioned are frozen to 1\n"
     "Flags:\n"
-    "--" << Common::sOverlapAltNorm << " Alternate normalisation for overlap factors. DEPRECATED\n"
+    "--" << MLU::sOverlapAltNorm << " Alternate normalisation for overlap factors. DEPRECATED\n"
     "--dispersion Which dispersion relation to use (default: LatFreeScalar)\n"
     "--nosym   Disable Out[t]=(Out[t]+Out[deltaT-t])/2 for symmetric ratios\n"
     "--r3a     Use alternate definition of R3 (i.e. R3a)\n"
     "--debug-signals Trap signals (code courtesy of Grid)\n"
     "--help    This message\n";
   }
-  Common::Grid_exit_handler_disable = true;
+  MLU::Grid_exit_handler_disable = true;
   return iReturn;
 }

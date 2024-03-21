@@ -27,8 +27,9 @@
 /*  END LEGAL */
 
 #ifndef MLU_Posix_hpp
-#define MLU_Posix_hpp namespace Common {
-#define MLU_Posix_hpp_end };
+#define MLU_Posix_hpp
+
+#include <MLU/MLUFirst.hpp>
 
 #include <cstring>
 #include <stdexcept>
@@ -40,7 +41,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-MLU_Posix_hpp
+BEGIN_MLU_NAMESPACE
 
 // Does the specified file exist?
 bool FileExists( const std::string& Filename );
@@ -93,5 +94,5 @@ std::vector<std::string> glob( const Iter &first, const Iter &last, const char *
   return Filenames;
 }
 
-MLU_Posix_hpp_end
+END_MLU_NAMESPACE
 #endif

@@ -27,15 +27,14 @@
 /*  END LEGAL */
 
 #ifndef MLU_JackBoot_hpp
-#define MLU_JackBoot_hpp namespace Common {
-#define MLU_JackBoot_hpp_end };
+#define MLU_JackBoot_hpp
 
 #include <MLU/HDF5.hpp>
 #include <MLU/Posix.hpp>
 
 #include <cstdint>
 
-MLU_JackBoot_hpp
+BEGIN_MLU_NAMESPACE
 
 static constexpr SeedType SeedWildcard{};
 
@@ -373,5 +372,5 @@ inline bool IsFinite( const JackBoot<T> &jb )
   return jb.IsFinite();
 }
 
-MLU_JackBoot_hpp_end
+END_MLU_NAMESPACE
 #endif

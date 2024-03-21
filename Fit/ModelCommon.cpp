@@ -95,21 +95,21 @@ std::istream & operator>>( std::istream &is, eModelType &m )
   std::string s;
   if( is >> s )
   {
-    if( Common::EqualIgnoreCase( s, sModelTypeExp ) )
+    if( MLU::EqualIgnoreCase( s, sModelTypeExp ) )
       m = eModelType::Exp;
-    else if( Common::EqualIgnoreCase( s, sModelTypeCosh ) )
+    else if( MLU::EqualIgnoreCase( s, sModelTypeCosh ) )
       m = eModelType::Cosh;
-    else if( Common::EqualIgnoreCase( s, sModelTypeSinh ) )
+    else if( MLU::EqualIgnoreCase( s, sModelTypeSinh ) )
       m = eModelType::Sinh;
-    else if( Common::EqualIgnoreCase( s, sModelTypeThreePoint ) )
+    else if( MLU::EqualIgnoreCase( s, sModelTypeThreePoint ) )
       m = eModelType::ThreePoint;
-    else if( Common::EqualIgnoreCase( s, sModelTypeConstant ) )
+    else if( MLU::EqualIgnoreCase( s, sModelTypeConstant ) )
       m = eModelType::Constant;
-    else if( Common::EqualIgnoreCase( s, sModelTypeRatio ) )
+    else if( MLU::EqualIgnoreCase( s, sModelTypeRatio ) )
       m = eModelType::R3;
-    else if( Common::EqualIgnoreCase( s, sModelTypeZV ) )
+    else if( MLU::EqualIgnoreCase( s, sModelTypeZV ) )
       m = eModelType::ZV;
-    else if( Common::EqualIgnoreCase( s, sModelTypeMisc ) )
+    else if( MLU::EqualIgnoreCase( s, sModelTypeMisc ) )
       m = eModelType::Misc;
     else
     {
@@ -129,12 +129,12 @@ std::istream & operator>>( std::istream &is, ModelType &m )
 }
 
 MultiFitCreateParams::MultiFitCreateParams( const std::vector<std::string> &OpNames_,
-                                            const Common::CommandLine &cl_ )
+                                            const MLU::CommandLine &cl_ )
 : CreateParams( OpNames_, cl_),
   NumExponents{ cl.SwitchValue<int>( "e" ) },
   N{ cl.SwitchValue<int>( "N" ) },
-  dispType{ cl.GotSwitch( "dispersion" ) ? cl.SwitchValue<Common::DispersionType>( "dispersion" )
-                                         : Common::DispersionType::LatFreeScalar }
+  dispType{ cl.GotSwitch( "dispersion" ) ? cl.SwitchValue<MLU::DispersionType>( "dispersion" )
+                                         : MLU::DispersionType::LatFreeScalar }
 {
   if( N < 0 )
     throw std::runtime_error( "L/a " + std::to_string( N ) + " < 0");
@@ -146,11 +146,11 @@ std::string MultiFitCreateParams::Description() const
   if( N )
   {
     if( !s.empty() )
-      s.append( Common::CommaSpace );
+      s.append( MLU::CommaSpace );
     s.append( "using dispersion relation N=" );
     s.append( std::to_string( N ) );
     s.append( " with " );
-    s.append( Common::GetDispersionString( dispType ) );
+    s.append( MLU::GetDispersionString( dispType ) );
   }
   return s;
 }
@@ -167,7 +167,7 @@ ModelPtr Model::MakeModel( int ModelNum, const Model::CreateParams &mcp, Model::
     if( bGotModelType )
     {
       std::istringstream ss( s );
-      if( !( ss >> modelType ) || !Common::StreamEmpty( ss ) )
+      if( !( ss >> modelType ) || !MLU::StreamEmpty( ss ) )
         throw std::runtime_error( "Unknown ModelType \"" + s + "\"" );
     }
   }
@@ -179,22 +179,22 @@ ModelPtr Model::MakeModel( int ModelNum, const Model::CreateParams &mcp, Model::
     const bool b3pt{ bGotDeltaT && cp.pCorr->Name_.Gamma.size() == 1 };
     if( b3pt )
     {
-      if( NumParts && Common::EqualIgnoreCase( cp.pCorr->Name_.BaseShortParts[0], "R3" ) )
+      if( NumParts && MLU::EqualIgnoreCase( cp.pCorr->Name_.BaseShortParts[0], "R3" ) )
         modelType = eModelType::R3;
       else
         modelType = eModelType::ThreePoint;
     }
-    else if( bGotDeltaT && Common::EqualIgnoreCase( cp.pCorr->Name_.BaseShortParts[0], "ZV" )
+    else if( bGotDeltaT && MLU::EqualIgnoreCase( cp.pCorr->Name_.BaseShortParts[0], "ZV" )
             && NumParts >= 2 && !cp.pCorr->Name_.HasNonZeroMomentum() )
     {
       modelType = eModelType::ZV;
     }
     else switch( dynamic_cast<const Fold *>( cp.pCorr )->parity )
     {
-      case Common::Parity::Even:
+      case MLU::Parity::Even:
         modelType = eModelType::Cosh;
         break;
-      case Common::Parity::Odd:
+      case MLU::Parity::Odd:
         modelType = eModelType::Sinh;
         break;
       default:
@@ -203,10 +203,10 @@ ModelPtr Model::MakeModel( int ModelNum, const Model::CreateParams &mcp, Model::
     }
   }
   // Say which model we're making and what the parameters are
-  std::cout << std::setw( 5 ) << ModelNum << Common::Space << modelType;
+  std::cout << std::setw( 5 ) << ModelNum << MLU::Space << modelType;
   for( typename Model::Args::value_type v : Args )
   {
-    std::cout << Common::CommaSpace << v.first;
+    std::cout << MLU::CommaSpace << v.first;
     if( !v.second.empty() )
       std::cout << '=' << v.second;
   }
@@ -247,10 +247,10 @@ ModelPtr Model::MakeModel( int ModelNum, const Model::CreateParams &mcp, Model::
   }
   catch(...)
   {
-    std::cout << Common::Space;
+    std::cout << MLU::Space;
     throw;
   }
-  std::cout << " => " << model->Description() << Common::NewLine;
+  std::cout << " => " << model->Description() << MLU::NewLine;
   // 2 part construction - now that virtual functions in place
   return model;
 }
@@ -286,8 +286,8 @@ ModelOverlap::ModelOverlap( const Model::CreateParams &cp, Model::Args &Args,
     vOverlap[i].Key.Name = opNames[i];
     if( cp.OpMomIndependent( i ) )
     {
-      Common::Momentum pIgnore;
-      pIgnore.Extract( vOverlap[i].Key.Object.back(), Common::Momentum::DefaultPrefix );
+      MLU::Momentum pIgnore;
+      pIgnore.Extract( vOverlap[i].Key.Object.back(), MLU::Momentum::DefaultPrefix );
     }
   }
   if( vOverlap[0].Key == vOverlap[1].Key )
@@ -356,9 +356,9 @@ void ModelOverlap::ReduceUnknown( const ParamsPairs &PP )
           throw std::runtime_error( "ModelOverlap::ReduceUnknown() : Class invariant breached" );
         vOverlap.resize( 3 );
         vOverlap[2].Key = vOverlap[1].Key;
-        if( !Common::EqualIgnoreCase( vOverlap[0].Key.Object[0], vOverlap[1].Key.Object[0] ) )
+        if( !MLU::EqualIgnoreCase( vOverlap[0].Key.Object[0], vOverlap[1].Key.Object[0] ) )
           vOverlap[2].Key.Object.push_back( vOverlap[0].Key.Object[0] );
-        if( !Common::EqualIgnoreCase( vOverlap[0].Key.Name, vOverlap[1].Key.Name ) )
+        if( !MLU::EqualIgnoreCase( vOverlap[0].Key.Name, vOverlap[1].Key.Name ) )
           vOverlap[2].Key.Name.append( vOverlap[0].Key.Name );
       }
       if( NewDual == 0 )

@@ -26,8 +26,9 @@
 **/
 
 #ifndef FitRange_hpp
-#define FitRange_hpp namespace Common {
-#define FitRange_hpp_end };
+#define FitRange_hpp
+
+#include <MLU/MLUFirst.hpp>
 
 #include <array>
 #include <algorithm>
@@ -41,7 +42,7 @@
 #include <string>
 #include <vector>
 
-FitRange_hpp
+BEGIN_MLU_NAMESPACE
 
 struct FitRangesIterator;
 struct FitRangesIteratorElement;
@@ -190,5 +191,5 @@ protected:
 
 std::ostream & operator<<( std::ostream &os, const FitRangesIterator &it );
 
-FitRange_hpp_end
+END_MLU_NAMESPACE
 #endif // FitRange_hpp

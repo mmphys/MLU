@@ -59,7 +59,7 @@ double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
 {
   FitterThreadMinuit2 * pMe{ const_cast<FitterThreadMinuit2 *>( this ) };
   if( !pMe->SaveError( Error, &par[0], par.size() ) )
-    return Common::NaN;
+    return MLU::NaN;
   double chi2;
   if( bCorrelated )
     chi2 = Error.Dot( Error );
@@ -70,7 +70,7 @@ double FitterThreadMinuit2::operator()( const std::vector<double> & par ) const
       chi2 += Error[i] * Error[i];
   }
   if( chi2 < 0 )
-    return Common::NaN;
+    return MLU::NaN;
   return chi2;
 }
 

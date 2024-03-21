@@ -25,15 +25,13 @@
  See the full license in the file "LICENSE" in the top level distribution directory
 **/
 
-// Common utilities (no dependencies other than c++ stdlib)
-
 #ifndef MLU_Sample_hpp
 #define MLU_Sample_hpp
 
 #include <MLU/Utility.hpp>
 #include <MLU/JackBoot.hpp>
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 /**
  This is for a sample of anything, but usually a sample of correlators.
@@ -70,7 +68,7 @@ public:
   std::string SeedMachine_; // name of the machine that ran the bootstrap
   int binSize = 1;
   int SampleSize = 0; // Number of samples (after binning) used to create bootstrap (set during bootstrap)
-  std::vector<Common::ConfigCount> ConfigCount; // Info on every config in the bootstrap in order
+  std::vector<MLU::ConfigCount> ConfigCount; // Info on every config in the bootstrap in order
   std::vector<std::string> FileList; // Info on every config in the bootstrap in order
 protected:
   inline void AllocSummaryBuffer() { m_SummaryData.resize( SummaryNames.size() * Nt_ ); }
@@ -343,7 +341,7 @@ public:
   inline bool IsFinite( int idxJackBoot = 0 ) const
   {
     ValidateJackBoot( idxJackBoot );
-    return ::Common::IsFinite( Data[idxJackBoot] );
+    return ::MLU::IsFinite( Data[idxJackBoot] );
   }
   void WriteColumnNames( std::ostream &s ) const;
   /// Initialise *pNumSamples either to 0, or to the size of the first Sample before first call
@@ -405,5 +403,5 @@ public: // Override these for specialisations
 using SampleC = Sample<std::complex<double>>;
 using SampleD = Sample<double>;
 
-END_COMMON_NAMESPACE
+END_MLU_NAMESPACE
 #endif // MLU_Sample_hpp

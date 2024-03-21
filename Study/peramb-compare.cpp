@@ -30,7 +30,7 @@
 #include <typeinfo>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 using namespace Grid;
 using namespace Hadrons;
@@ -106,7 +106,7 @@ int main(int argc, const char *argv[])
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {

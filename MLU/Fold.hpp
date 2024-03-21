@@ -25,14 +25,12 @@
  See the full license in the file "LICENSE" in the top level distribution directory
 **/
 
-// Common utilities (no dependencies other than c++ stdlib)
-
 #ifndef MLU_Fold_hpp
 #define MLU_Fold_hpp
 
 #include <MLU/Sample.hpp>
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 template <typename T>
 class Fold : public Sample<T>
@@ -56,5 +54,5 @@ public:
   int WriteAttributes( ::H5::Group &g ) const override;
 };
 
-END_COMMON_NAMESPACE
+END_MLU_NAMESPACE
 #endif // MLU_Fold_hpp

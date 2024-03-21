@@ -27,8 +27,9 @@
 /*  END LEGAL */
 
 #ifndef MLU_String_hpp
-#define MLU_String_hpp namespace Common {
-#define MLU_String_hpp_end };
+#define MLU_String_hpp
+
+#include <MLU/MLUFirst.hpp>
 
 #include <algorithm>
 #include <array>
@@ -42,7 +43,7 @@
 #include <string>
 #include <vector>
 
-MLU_String_hpp
+BEGIN_MLU_NAMESPACE
 
 extern const std::string Empty;
 extern const std::string Space;
@@ -133,7 +134,7 @@ inline int IndexIgnoreCase( const C &v, const std::string &s )
 {
   assert( v.size() < std::numeric_limits<int>::max() && "Terribly inefficient search!" );
   int idx = 0;
-  for( ; idx < v.size() && !Common::EqualIgnoreCase( v[idx], s ); ++idx )
+  for( ; idx < v.size() && !MLU::EqualIgnoreCase( v[idx], s ); ++idx )
     ;
   return idx;
 }
@@ -174,8 +175,8 @@ struct LessCaseInsensitive
 };
 
 // A list of case insensitive, but unique names, each mapped to an int
-using UniqueNames = std::map<std::string, int, Common::LessCaseInsensitive>;
-using UniqueNameSet = std::set<std::string, Common::LessCaseInsensitive>;
+using UniqueNames = std::map<std::string, int, MLU::LessCaseInsensitive>;
+using UniqueNameSet = std::set<std::string, MLU::LessCaseInsensitive>;
 
 inline std::ostream &operator<<( std::ostream &os, const UniqueNameSet &uns )
 {
@@ -233,7 +234,7 @@ inline bool Trim( std::string &s )
   return bHasString;
 }
 
-inline std::string TrimAt( const std::string &String, const std::string &Chars = Common::Comma )
+inline std::string TrimAt( const std::string &String, const std::string &Chars = MLU::Comma )
 {
   std::string s{ String.substr( 0, String.find_first_of( Chars ) ) };
   Trim( s );
@@ -464,5 +465,5 @@ std::vector<std::string> ZipperMerge( const std::vector<std::string> &v1, const 
 // Dump the environment to stdout, prefixed by optional message
 void DumpEnv(int argc, const char * const *argv, const char * pStr = nullptr );
 
-MLU_String_hpp_end
+END_MLU_NAMESPACE
 #endif

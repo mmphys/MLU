@@ -7,7 +7,7 @@ AC_COPYRIGHT([Michael Marshall 2021])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AC_CONFIG_SRCDIR([MLU/CommonGrid.cpp])
+AC_CONFIG_SRCDIR([MLU/Physics.cpp])
 #AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([MLUconfig.h],
     [$SED_INPLACE -e 's|#define PACKAGE|#define MLU_PACKAGE|g' -e 's|#define VERSION|#define MLU_VERSION|g' MLUconfig.h],

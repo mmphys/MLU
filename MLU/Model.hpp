@@ -25,14 +25,12 @@
  See the full license in the file "LICENSE" in the top level distribution directory
 **/
 
-// Common utilities (no dependencies other than c++ stdlib)
-
 #ifndef MLU_Model_hpp
 #define MLU_Model_hpp
 
 #include <MLU/Sample.hpp>
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 struct ModelBase
 {
@@ -84,7 +82,7 @@ struct Model : public Sample<T>, public ModelBase
   std::vector<std::string> ModelArgs;
 
   // Helper functions
-  int GetExtent() const { return static_cast<int>( ::Common::GetExtent( FitTimes ) ); };
+  int GetExtent() const { return static_cast<int>( ::MLU::GetExtent( FitTimes ) ); };
   int NumFitParams() const { return static_cast<int>( params.NumScalars( Param::Type::Variable ) ); };
   int NumParams() const { return static_cast<int>( params.NumScalars( Param::Type::All ) ); };
   JackBootColumn<T> Column( const Param::Key &k, std::size_t Index = 0 );
@@ -137,5 +135,5 @@ protected:
   void SummaryContentsSuffix( std::ostream &os ) const;
 };
 
-END_COMMON_NAMESPACE
+END_MLU_NAMESPACE
 #endif // MLU_Model

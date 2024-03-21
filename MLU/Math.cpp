@@ -32,7 +32,7 @@
 
 #include "JackBoot.hpp"
 
-MLU_Math_hpp
+BEGIN_MLU_NAMESPACE
 
 const double NaN{ std::nan( "" ) };
 
@@ -72,10 +72,10 @@ double HotellingDist::operator()( double TestStatistic ) const
   const double FDistP{ gsl_cdf_fdist_P( ModifiedStatistic, p, Nu ) };
   std::cout << "t^2=" << TestStatistic << ", Factor=" << Factor
             << ", t^2 * Factor=" << ModifiedStatistic << ", p [dof]=" << p
-            << ", m [SampleSize-1]=" << m << ", Nu [m - p + 1]=" << Nu << Common::NewLine
-            << "gsl_cdf_fdist_Q( t^2 * Factor, p, Nu )=" << FDistQ << Common::NewLine
-            << "gsl_cdf_fdist_P( t^2 * Factor, p, Nu )=" << FDistP << Common::NewLine
-            << "gsl_cdf_fdist_Q + gsl_cdf_fdist_P = " << ( FDistQ + FDistP ) << Common::NewLine;
+            << ", m [SampleSize-1]=" << m << ", Nu [m - p + 1]=" << Nu << MLU::NewLine
+            << "gsl_cdf_fdist_Q( t^2 * Factor, p, Nu )=" << FDistQ << MLU::NewLine
+            << "gsl_cdf_fdist_P( t^2 * Factor, p, Nu )=" << FDistP << MLU::NewLine
+            << "gsl_cdf_fdist_Q + gsl_cdf_fdist_P = " << ( FDistQ + FDistP ) << MLU::NewLine;
 #endif
   return FDistQ;
 }
@@ -257,6 +257,9 @@ std::string ValSigFig<T>::Show( T Value, T Error_, unsigned char SigFigError, bo
   }
   return s;
 }
+
+template class ValSigFig<float>;
+template class ValSigFig<double>;
 
 /*****************************************************************************
  
@@ -539,4 +542,4 @@ template void LedoitWolfShrink( Matrix<double> &M, double Rho );
 template void LedoitWolfShrink( Matrix<std::complex<float>> &M, float Rho );
 template void LedoitWolfShrink( Matrix<std::complex<double>> &M, double Rho );
 
-MLU_Math_hpp_end
+END_MLU_NAMESPACE

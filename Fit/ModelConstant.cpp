@@ -31,8 +31,8 @@
 ModelConstant::ModelConstant( const Model::CreateParams &cp, Model::Args &Args, int NumExponents )
 : Model( cp, 1 ), Object( GetObjectNameSingle( cp, Args ) ) // Silently ignore NumExponents
 {
-  Common::Param::Key kDefault{ ObjectID( idxSrc ), Common::ModelBase::ConstantPrefix };
-  Constant.Key = Args.Remove<Common::Param::Key>( "const", kDefault );
+  MLU::Param::Key kDefault{ ObjectID( idxSrc ), MLU::ModelBase::ConstantPrefix };
+  Constant.Key = Args.Remove<MLU::Param::Key>( "const", kDefault );
 }
 
 void ModelConstant::AddParameters( Params &mp )

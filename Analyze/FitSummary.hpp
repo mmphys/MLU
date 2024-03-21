@@ -29,14 +29,14 @@
 #ifndef Fit_Summary_hpp
 #define Fit_Summary_hpp
 
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 #include <set>
 #include <gsl/gsl_randist.h>
 
 using scalar = double;
-using Model = Common::Model<scalar>;
-using veScalar = Common::ValWithEr<typename Model::scalar_type>;
+using Model = MLU::Model<scalar>;
+using veScalar = MLU::ValWithEr<typename Model::scalar_type>;
 
 struct FitTimes
 {
@@ -94,9 +94,9 @@ struct FileInfo
 
 struct BaseInfo
 {
-  const Common::Momentum p;
+  const MLU::Momentum p;
   std::vector<FileInfo> vFI;
-  BaseInfo( const Common::Momentum &p_ ) : p{p_} {}
+  BaseInfo( const MLU::Momentum &p_ ) : p{p_} {}
 };
 
 struct Summariser
@@ -117,28 +117,28 @@ struct Summariser
   using BaseList = std::map<std::string, BaseInfo>;
   BaseList lBase;
   void Run();
-  Summariser( const Common::CommandLine &cl );
+  Summariser( const MLU::CommandLine &cl );
 protected:
   using FileInfoIterator = std::vector<FileInfo>::iterator;
   bool bDoPassOne;
   std::array<Model, 2> Models;
   std::vector<std::string> FileNameOps;
   std::size_t MaxFitTimes; // Maximum number of TI-TF pairs
-  Common::Params Params;
-  std::size_t NumParams() const { return Params.NumScalars( Common::Param::Type::All ); }
-  Common::UniqueNameSet StatColumnNames;
+  MLU::Params Params;
+  std::size_t NumParams() const { return Params.NumScalars( MLU::Param::Type::All ); }
+  MLU::UniqueNameSet StatColumnNames;
   std::size_t NumStats() const { return StatColumnNames.size(); }
   FitMap Fits;
   // Saved about first model by BuildFitMap()
   std::string Comments;
-  Common::SeedType Seed{ 0 };
+  MLU::SeedType Seed{ 0 };
   int NumSamples{ 0 };
   bool ReadModel( Model &m, FileInfoIterator &it, std::vector<FileInfo> &Files,
                   std::vector<std::string> &FileNameOps, bool bShow );
   bool GetCommonParameters( std::vector<FileInfo> &Files, bool bMaximum );
   void BuildFitMap( std::vector<FileInfo> &Files );
   void SummaryColumnNames( std::ostream &os, std::size_t NumFitTimes,
-              const Common::Params &ParamNames, const Common::UniqueNameSet &StatNames ) const;
+              const MLU::Params &ParamNames, const MLU::UniqueNameSet &StatNames ) const;
   void WriteSorted( const std::string &sFileName, const std::set<TestStatKey> &SortSet, bool SetSeq );
   void WriteUnsorted( const std::string &sFileName ) const;
   void WriteTableHeader( std::ofstream &os ) const;

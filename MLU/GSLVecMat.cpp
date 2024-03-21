@@ -28,7 +28,7 @@
 
 #include "GSLVecMat.hpp"
 
-MLU_GSLVecMat_hpp
+BEGIN_MLU_NAMESPACE
 
 /*****************************************************************************
  
@@ -236,4 +236,4 @@ template void VectorView<double>::MapColumn( const Matrix<double> &, std::size_t
 template void VectorView<std::complex<float>>::MapColumn( const Matrix<std::complex<float>> &, std::size_t );
 template void VectorView<std::complex<double>>::MapColumn( const Matrix<std::complex<double>> &, std::size_t );
 
-MLU_GSLVecMat_hpp_end
+END_MLU_NAMESPACE

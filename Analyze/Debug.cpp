@@ -11,7 +11,7 @@
 #include <ostream>
 #include <random>
 #include <thread>
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 #include <omp.h>
 #include <Grid/Grid.h>
 
@@ -229,11 +229,11 @@ public:
   bool Load( const std::string &FileName );
 };
 
-std::ostream & operator<<( std::ostream &os, const Common::FileNameAtt &fna )
+std::ostream & operator<<( std::ostream &os, const MLU::FileNameAtt &fna )
 {
   os << fna.NameNoExt;
   if( !fna.Ext.empty() )
-    os << Common::Period << fna.Ext;
+    os << MLU::Period << fna.Ext;
   return os;
 }
 
@@ -241,7 +241,7 @@ static constexpr int nchannel{ 4 };
 static constexpr int idxSrc{ 0 };
 static constexpr int idxSnk{ 1 };
 
-using Algebra = Common::Gamma::Algebra;
+using Algebra = MLU::Gamma::Algebra;
 static const Algebra Gammas2pt[nchannel][2] = {
   { Algebra::Gamma5      , Algebra::Gamma5 },
   { Algebra::GammaTGamma5, Algebra::GammaTGamma5 },
@@ -260,16 +260,16 @@ bool MesonFile::Load( const std::string &FileName )
 {
   bool b3pt{ false };
   std::size_t pos{ FileName.find_last_of( '.' ) };
-  if( pos != std::string::npos && Common::EqualIgnoreCase( FileName.substr( pos + 1 ), "h5" ) )
+  if( pos != std::string::npos && MLU::EqualIgnoreCase( FileName.substr( pos + 1 ), "h5" ) )
   {
     {
-      Common::FileNameAtt fna( FileName );
+      MLU::FileNameAtt fna( FileName );
       if( fna.GotDeltaT() && fna.Gamma.size() )
         b3pt = true;
     }
     const Algebra (&Gammas)[nchannel][2]{ b3pt ? Gammas3pt : Gammas2pt };
-    std::vector<Common::Gamma::Algebra> Alg;
-    using Corr = Common::CorrelatorFileC;
+    std::vector<MLU::Gamma::Algebra> Alg;
+    using Corr = MLU::CorrelatorFileC;
     Corr corr( FileName, Alg, Alg, nullptr, "  Reading hdf5 " );
     data.resize( nchannel );
     for( int channel = 0; channel < nchannel; ++channel )
@@ -301,8 +301,8 @@ bool MesonFile::Load( const std::string &FileName )
 
 void Convert( const std::string &FileName, std::string OutBase )
 {
-  Common::FileNameAtt fna( FileName );
-  if( Common::EqualIgnoreCase( fna.Ext, "xml" ) )
+  MLU::FileNameAtt fna( FileName );
+  if( MLU::EqualIgnoreCase( fna.Ext, "xml" ) )
     std::cout << "Doing nothing: " << fna.NameNoExt << fna.Ext << " is xml" << std::endl;
   else
   {
@@ -425,12 +425,12 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, Comp
       const std::string HeadImag{ "Snk Src t Im(f1) Im(f2) Im(f2)" + c.CompareType() + "Im(f1)" };
       using TReIm = double (Grid::Complex::*)() const;
       TReIm ReIm = b3pt ? static_cast<TReIm>(&Grid::Complex::imag) : static_cast<TReIm>(&Grid::Complex::real);
-      out << Comment << "File 1 " << FileName[0] << Common::NewLine
-          << Comment << "File 2 " << FileName[f] << Common::NewLine << std::defaultfloat;
+      out << Comment << "File 1 " << FileName[0] << MLU::NewLine
+          << Comment << "File 2 " << FileName[f] << MLU::NewLine << std::defaultfloat;
       if( c.absError )
-        out << Comment << "Absolute error: Num2 - Num1 <= " << c.absError << Common::NewLine;
+        out << Comment << "Absolute error: Num2 - Num1 <= " << c.absError << MLU::NewLine;
       if( c.relError )
-        out << Comment << "Relative error: Num2 / Num1 <= " << c.relError << Common::NewLine;
+        out << Comment << "Relative error: Num2 / Num1 <= " << c.relError << MLU::NewLine;
       out << ( b3pt ? HeadImag : HeadReal ) << std::endl;
       for( std::size_t channel = 0; channel < nchannel; ++channel )
       {
@@ -448,12 +448,12 @@ int Compare( const std::vector<std::string> &FileName, std::string OutBase, Comp
           if( c.bSignFlip )
             SignFlip++;
           static constexpr int PrintPrecision{ std::numeric_limits<double>::digits10 + 1 };
-          out << Common::Gamma::NameShort( Gammas[channel][idxSnk] ) << Common::Space
-              << Common::Gamma::NameShort( Gammas[channel][idxSrc] ) << Common::Space
-              << std::setw(3) << t << Common::Space
+          out << MLU::Gamma::NameShort( Gammas[channel][idxSnk] ) << MLU::Space
+              << MLU::Gamma::NameShort( Gammas[channel][idxSrc] ) << MLU::Space
+              << std::setw(3) << t << MLU::Space
               << std::scientific << std::setprecision( PrintPrecision )
-              << std::setw( PrintPrecision + 7 ) << Num1 << Common::Space
-              << std::setw( PrintPrecision + 7 ) << Num2 << Common::Space
+              << std::setw( PrintPrecision + 7 ) << Num1 << MLU::Space
+              << std::setw( PrintPrecision + 7 ) << Num2 << MLU::Space
               << c.StringValue;
           if( !c.bSame )
             out << " different";
@@ -527,12 +527,12 @@ bool FitRangeTest( int argc, char *argv[] )
       vs.reserve( argc - 1 );
       for (int i = 1; i < argc; ++i)
         vs.push_back( argv[i] );
-      Common::FitRanges fr( vs, 1 );
+      MLU::FitRanges fr( vs, 1 );
       // Show FitRanges
       std::cout << fr << std::endl;
       // Iterate FitRanges
       std::size_t Count{};
-      for( Common::FitRangesIterator it = fr.begin(); !it.PastEnd(); ++it )
+      for( MLU::FitRangesIterator it = fr.begin(); !it.PastEnd(); ++it )
       {
         std::cout << Count++ << ": " << it.AbbrevString( "-", ", " )
                   << " --- " << it.AbbrevString()
@@ -565,7 +565,7 @@ struct CKelly
 
   using Table = std::vector<Entry>;
 
-  const Common::HotellingDist TSq;
+  const MLU::HotellingDist TSq;
   const Table &t;
 
   CKelly( unsigned int Dof, unsigned int n, const Table &t_ ) : TSq(Dof, n - 1), t{t_} {}
@@ -582,7 +582,7 @@ std::ostream & operator<<( std::ostream &os, const CKelly::Entry &e )
 
 void CKelly::Test( const Entry &e ) const
 {
-  const double ChisqQ{ Common::qValueChiSq( e.ChiSq, TSq.p ) };
+  const double ChisqQ{ MLU::qValueChiSq( e.ChiSq, TSq.p ) };
   const double FDistQ{ TSq( e.ChiSq ) };
   std::cout << "CHISQ=" << e.ChiSq << " CHISQ/dof=" << e.ChiSq / TSq.p
             << " P(T2)=" << FDistQ << " P(CHI2)=" << ChisqQ
@@ -824,10 +824,10 @@ int main(int argc, char *argv[])
               OutBase = NextString( argc, argv, i );
               break;
             case 'd':
-              absError = Common::FromString<double>( NextString( argc, argv, i ) );
+              absError = MLU::FromString<double>( NextString( argc, argv, i ) );
               break;
             case 'p':
-              relError = Common::FromString<double>( NextString( argc, argv, i ) );
+              relError = MLU::FromString<double>( NextString( argc, argv, i ) );
               break;
             case 'x':
               bConvertXml = true;
@@ -855,7 +855,7 @@ int main(int argc, char *argv[])
       if( !relError && !absError )
         relError = relErrorDefault;
       // Parse arguments
-      std::vector<std::string> args{ Common::glob( argsRaw.begin(), argsRaw.end(), InBase ) };
+      std::vector<std::string> args{ MLU::glob( argsRaw.begin(), argsRaw.end(), InBase ) };
       if( !bConvertXml )
       {
         if( args.size() < 2 )

@@ -29,7 +29,7 @@ const std::string Sep{ "_" };    // used inside filenames
 const std::string Space{ " " };  // whitespace as field separator / human readable info
 const std::string defaultMomName{ "p" };
 const std::string SeqMomentumName{ "ps" };
-const Common::Momentum p0(0,0,0);
+const MLU::Momentum p0(0,0,0);
 const std::string GaugeFieldName{"gauge"};
 const std::string HMod::sSinglePrec{ "float" };
 
@@ -49,7 +49,7 @@ std::istream& operator>>(std::istream& is, Family &family)
   if( is >> s )
   {
     int i;
-    for(i = 0; i < FamilyNames.size() && !Common::EqualIgnoreCase( s, FamilyNames[i] ); ++i)
+    for(i = 0; i < FamilyNames.size() && !MLU::EqualIgnoreCase( s, FamilyNames[i] ); ++i)
       ;
     if( i < FamilyNames.size() )
       family = static_cast<Family>( i );
@@ -75,7 +75,7 @@ std::istream& operator>>(std::istream& is, Species &species)
   if( is >> s )
   {
     int i;
-    for(i = 0; i < SpeciesNames.size() && !Common::EqualIgnoreCase( s, SpeciesNames[i] ); ++i)
+    for(i = 0; i < SpeciesNames.size() && !MLU::EqualIgnoreCase( s, SpeciesNames[i] ); ++i)
       ;
     if( i < SpeciesNames.size() )
       species = static_cast<Species>( i );
@@ -293,7 +293,7 @@ const std::string HModList::TakeOwnership( HMod *pHMod )
 }
 
 std::string HModList::MakeProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q,
-                                const Common::Momentum &p, int t, int hit )
+                                const MLU::Momentum &p, int t, int hit )
 {
   std::string PropName;
 #ifdef MLU_HADRONS_HAS_GUESSERS
@@ -311,8 +311,8 @@ std::string HModList::MakeProp( HModList &ModList, const Taxonomy &taxonomy, con
 }
 
 std::string HModList::MakePropSeq( HModList &ML, const Taxonomy &tax, const Quark &qSeq,
-                                   Gamma::Algebra current, int deltaT, const Common::Momentum &pSeq,
-                                   const Quark &q, const Common::Momentum &p, int t )
+                                   Gamma::Algebra current, int deltaT, const MLU::Momentum &pSeq,
+                                   const Quark &q, const MLU::Momentum &p, int t )
 {
   std::string PropName;
 #ifdef MLU_HADRONS_HAS_GUESSERS
@@ -335,7 +335,7 @@ std::string HModList::MakePropSeq( HModList &ML, const Taxonomy &tax, const Quar
 
 const std::string ModSink::Prefix{ "Sink" };
 
-ModSink::ModSink(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p_)
+ModSink::ModSink(HModList &ModList, const Taxonomy &taxonomy, const MLU::Momentum &p_)
 : HMod(taxonomy), p{p_}
 {
   name = Prefix;
@@ -355,7 +355,7 @@ void ModSink::AddDependencies( HModList &ModList ) const
 
 const std::string ModSinkSmear::Prefix{ "Sink_Smear" };
 
-ModSinkSmear::ModSinkSmear(HModList &ModList, const Taxonomy &taxonomy, const Common::Momentum &p_)
+ModSinkSmear::ModSinkSmear(HModList &ModList, const Taxonomy &taxonomy, const MLU::Momentum &p_)
 : HMod(taxonomy), p{p_}
 {
   name = Prefix;
@@ -375,7 +375,7 @@ void ModSinkSmear::AddDependencies( HModList &ModList ) const
 
 const std::string ModSource::Prefix{ "Source" };
 
-ModSource::ModSource(HModList &ModList, const Taxonomy &tx, const Common::Momentum &p_, int t_, int hit_)
+ModSource::ModSource(HModList &ModList, const Taxonomy &tx, const MLU::Momentum &p_, int t_, int hit_)
 // Silently translate ZF sources into Z2 sources
 : HMod(tx.family == Family::ZF ? Taxonomy(Family::Z2,tx.species) : tx), p{p_}, t{t_}, hit{hit_}
 {
@@ -394,7 +394,7 @@ void ModSource::AddDependencies( HModList &ModList ) const
       {
         MSource::MomentumPhase::Par par;
         par.src = ModList.TakeOwnership( new ModSource( ModList, tax, p0, t, hit ) );
-        par.mom = p.to_string4d( Common::Space );
+        par.mom = p.to_string4d( MLU::Space );
         ModList.application.createModule<MSource::MomentumPhase>(name, par);
       }
       else
@@ -408,7 +408,7 @@ void ModSource::AddDependencies( HModList &ModList ) const
     case Family::GP:
       {
         MSource::Point::Par par;
-        par.position = ModList.params.Run.SpatialPos + Common::Space + std::to_string( t );
+        par.position = ModList.params.Run.SpatialPos + MLU::Space + std::to_string( t );
         ModList.application.createModule<MSource::Point>(name, par);
       }
       break;
@@ -416,7 +416,7 @@ void ModSource::AddDependencies( HModList &ModList ) const
       {
         MSource::Wall::Par par;
         par.tW = t;
-        par.mom = p.to_string4d( Common::Space );
+        par.mom = p.to_string4d( MLU::Space );
         ModList.application.createModule<MSource::Wall>(name, par);
       }
       break;
@@ -710,7 +710,7 @@ void ModSolver::AddDependencies( HModList &ModList ) const
 const std::string ModProp::Prefix{ "Prop" };
 const std::string ModProp::PrefixConserved{ "Ward" };
 
-ModProp::ModProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_, const Common::Momentum &p_,
+ModProp::ModProp( HModList &ModList, const Taxonomy &taxonomy, const Quark &q_, const MLU::Momentum &p_,
                   int t_, int hit_ )
 : HMod(taxonomy), q{q_}, p{p_}, t{t_}, hit{hit_}
 {
@@ -751,7 +751,7 @@ void ModProp::AddDependencies( HModList &ModList ) const
 
 const std::string ModSlicedProp::Prefix{ "SlicedProp" };
 
-ModSlicedProp::ModSlicedProp( HModList &ML, const Taxonomy &tax_, const Quark &q_, const Common::Momentum &p_,
+ModSlicedProp::ModSlicedProp( HModList &ML, const Taxonomy &tax_, const Quark &q_, const MLU::Momentum &p_,
                               int t_, int hit_ )
 : HMod(tax_), q{q_}, p{p_}, t{t_}, hit{hit_}
 {
@@ -777,7 +777,7 @@ void ModSlicedProp::AddDependencies( HModList &ModList ) const
 const std::string ModSourceSeq::Prefix{ "Seq" + ModSource::Prefix };
 
 ModSourceSeq::ModSourceSeq( HModList &ML, const Taxonomy &tax_, Gamma::Algebra current_, int deltaT_,
-                            const Common::Momentum &pSeq_, const Quark &q_, const Common::Momentum &p_, int t_ )
+                            const MLU::Momentum &pSeq_, const Quark &q_, const MLU::Momentum &p_, int t_ )
 : HMod(tax_), Current{current_}, deltaT{deltaT_}, pSeq{pSeq_}, q{q_}, p{p_}, t{t_}
 {
   name = Prefix;
@@ -825,7 +825,7 @@ void ModSourceSeq::AddDependencies( HModList &ModList ) const
     {
       using M = MSource::SeqGammaRegion;
       typename M::Par seqPar;
-      seqPar.LowerLeft  = ModList.params.Run.SpatialPos + Common::Space + std::to_string( tSink );
+      seqPar.LowerLeft  = ModList.params.Run.SpatialPos + MLU::Space + std::to_string( tSink );
       seqPar.RegionSize = ModList.params.Run.RegionSize;
       AddDependenciesT<M>( ModList, seqPar );
     }
@@ -840,7 +840,7 @@ void ModSourceSeq::AddDependencies( HModList &ModList ) const
 const std::string ModPropSeq::Prefix{ "Seq" + ModProp::Prefix };
 
 ModPropSeq::ModPropSeq( HModList &ML, const Taxonomy &tax_, const Quark &qSeq_, Gamma::Algebra current_, int deltaT_,
-                        const Common::Momentum &pSeq_, const Quark &q_, const Common::Momentum &p_, int t_ )
+                        const MLU::Momentum &pSeq_, const Quark &q_, const MLU::Momentum &p_, int t_ )
 : HMod(tax_),qSeq{qSeq_},Current{current_},deltaT{deltaT_},pSeq{pSeq_},q{q_},p{p_},t{t_}
 {
   name = Prefix;
@@ -872,8 +872,8 @@ void ModPropSeq::AddDependencies( HModList &ModList ) const
 const std::string ContractionPrefix{ "meson" };
 
 ModContract2pt::ModContract2pt( HModList &ModList, const Taxonomy &taxonomy,
-                                const Quark &q1_, const Quark &q2_, const Common::Momentum &p1_, int t_,
-                                const Common::Momentum &p2_, int hit_ )
+                                const Quark &q1_, const Quark &q2_, const MLU::Momentum &p1_, int t_,
+                                const MLU::Momentum &p2_, int hit_ )
 // Two-point Region-sinks don't really exist - silently translate to point-sinks
 : HMod(taxonomy == Species::Region ? Taxonomy(taxonomy.family, Species::Point) : taxonomy),
 q1{q1_}, q2{q2_}, p1{p1_}, t{t_}, p2{p2_}, pSource{p1_ - p2_}, hit{hit_}
@@ -938,7 +938,7 @@ void ModContract2pt::AddDependencies( HModList &ModList ) const
 **************************/
 
 ModContract3pt::ModContract3pt( HModList &ML,const Taxonomy &tax_, bool bRev_,const Quark &Snk_,const Quark &Src_,
-                                const Quark &Spec_, const Common::Momentum &pSeq_, const Common::Momentum &p_,
+                                const Quark &Spec_, const MLU::Momentum &pSeq_, const MLU::Momentum &p_,
                                 Gamma::Algebra Cur_, int dT_, int t_, bool bHA_ )
 : HMod(tax_), bReverse{tax == Family::GR ? !bRev_ : bRev_}, qSnk{Snk_}, qSrc{Src_}, qSpec{Spec_},
   pSeq{pSeq_}, p{p_}, Current{Cur_}, deltaT{dT_}, t{t_}, bHeavyAnti{bHA_}
@@ -986,9 +986,9 @@ void ModContract3pt::AddDependencies( HModList &ML ) const
   const Quark &sqSnk{ bReverse ? qSrc : qSnk };
   const int st      { bReverse ? ML.params.TimeBound( t + deltaT ) : t      };
   const int sdeltaT { bReverse ? ML.params.TimeBound(   - deltaT ) : deltaT };
-  const Common::Momentum &pSource( bReverse ? pSeq : p );
-  const Common::Momentum &pSink  ( bReverse ? p : pSeq );
-  Common::Momentum pCurrent( - ( pSource + pSink ) );
+  const MLU::Momentum &pSource( bReverse ? pSeq : p );
+  const MLU::Momentum &pSink  ( bReverse ? p : pSeq );
+  MLU::Momentum pCurrent( - ( pSource + pSink ) );
   if( bInvertSeq )
   {
     par.q1 = ML.MakeProp   ( ML, stax, sqSrc, pSource, st );

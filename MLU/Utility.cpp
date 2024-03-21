@@ -25,9 +25,7 @@
  See the full license in the file "LICENSE" in the top level distribution directory
 **/
 
-// Common utilities (no dependencies other than c++ stdlib)
-
-#include "Common.hpp"
+#include "MLU.hpp"
 
 #include <cstddef>
 #include <mutex> // Apparently empty under __INTEL_COMPILER
@@ -45,7 +43,7 @@ extern "C" const char * MLUVersionInfoHuman()
   return PackageString;
 }
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 // Text required for summaries of correlators
 namespace CorrSumm {
@@ -119,7 +117,7 @@ const std::string sPValueH{ "pvalueH" };
 // (see definition of ModelOverlap in Fit/ModelCommon.hpp)
 const std::string sOverlapAltNorm{ "AltOver" };
 
-const std::vector<std::string> DefaultModelStats{ Common::sChiSqPerDof, Common::sPValue, Common::sPValueH };
+const std::vector<std::string> DefaultModelStats{ MLU::sChiSqPerDof, MLU::sPValue, MLU::sPValueH };
 
 void MomentumMap::Parse( std::string &BaseShort )
 {
@@ -256,7 +254,7 @@ void FileNameAtt::Parse( std::vector<std::string> * pOpNames,
       else
         ++Prev;
       // Spectator directories look like "3*_{spec}[p2]" ... with only one underscore
-      const std::size_t SuffixLen{ Common::Momentum::DefaultPrefixSquared.length() };
+      const std::size_t SuffixLen{ MLU::Momentum::DefaultPrefixSquared.length() };
       if( Dir[Prev] == '3' )
       {
         std::string SpecDir{ Dir.substr( Prev, pos - Prev ) };
@@ -268,8 +266,8 @@ void FileNameAtt::Parse( std::vector<std::string> * pOpNames,
           this->SpecDir = std::move( SpecDir );
           std::size_t SpecLen{ Spectator.length() };
           if( SpecLen > SuffixLen
-              && Common::EqualIgnoreCase( Spectator.substr( SpecLen - SuffixLen ),
-                                          Common::Momentum::DefaultPrefixSquared ) )
+              && MLU::EqualIgnoreCase( Spectator.substr( SpecLen - SuffixLen ),
+                                          MLU::Momentum::DefaultPrefixSquared ) )
           {
             Spectator.resize( SpecLen - SuffixLen );
             bSpectatorGotSuffix = true;
@@ -280,8 +278,8 @@ void FileNameAtt::Parse( std::vector<std::string> * pOpNames,
       {
         std::string SpecDir{ Dir.substr( Prev, pos - Prev ) };
         if( SpecDir.length() > SuffixLen
-           && Common::EqualIgnoreCase( SpecDir.substr( SpecDir.length() - SuffixLen, SuffixLen ),
-                                       Common::Momentum::DefaultPrefixSquared ) )
+           && MLU::EqualIgnoreCase( SpecDir.substr( SpecDir.length() - SuffixLen, SuffixLen ),
+                                       MLU::Momentum::DefaultPrefixSquared ) )
        {
          Spectator = SpecDir.substr( 0, SpecDir.length() - SuffixLen );
          this->SpecDir = std::move( SpecDir );
@@ -390,7 +388,7 @@ void FileNameAtt::Parse( std::vector<std::string> * pOpNames,
     Quark.reserve( 2 );
     Quark.push_back( BaseShortParts[1] ); // Source
     Quark.push_back( BaseShortParts[0] ); // Sink
-    Meson.emplace_back( ::Common::ConcatHeavyFirstNoExcept( Quark[1], Quark[0] ) );
+    Meson.emplace_back( ::MLU::ConcatHeavyFirstNoExcept( Quark[1], Quark[0] ) );
     typename MomentumMap::iterator it{ p.find( Momentum::DefaultPrefix ) };
     if( it != p.end() )
       MesonP.emplace_back( *it );
@@ -520,7 +518,7 @@ std::string FileNameAtt::GetAlt( const std::string &Type, const std::string &Ext
                                  const std::string &Prefix ) const
 {
   std::string s{ GetBase( Prefix ) };
-  return Common::MakeFilename( s, Type, bSeedNum, Seed, Ext );
+  return MLU::MakeFilename( s, Type, bSeedNum, Seed, Ext );
 }
 // Make a new name based on this one, overriding specified elements
 std::string FileNameAtt::DerivedName( const std::string &Suffix, const std::string &Snk, const std::string &Src,
@@ -791,13 +789,13 @@ void ReplaceGamma( std::string &Prefix, Gamma::Algebra gFrom, Gamma::Algebra gTo
   std::regex GammaPattern;
   {
     std::ostringstream ss;
-    ss << Common::Underscore << gFrom << "(_|$)";
+    ss << MLU::Underscore << gFrom << "(_|$)";
     GammaPattern = ss.str();
   }
   std::string GammaReplace;
   {
     std::ostringstream ss;
-    ss << Common::Underscore << gTo;
+    ss << MLU::Underscore << gTo;
     GammaReplace = ss.str();
   }
   std::smatch match;
@@ -1001,7 +999,7 @@ void SummaryHelper( const std::string & sOutFileName, const T * pData, const int
       if( i )
         n.append( "_im" );
       s << sep;
-      Common::ValWithEr<T>::Header( n, s, sep );
+      MLU::ValWithEr<T>::Header( n, s, sep );
     }
   }
   s << NewLine;
@@ -1048,7 +1046,7 @@ void SummaryHelper( const std::string & sOutFileName, const T * pData, const int
           else if( std::isfinite( d ) )
             Data[Count++] = d;
         }
-        Common::ValWithEr<scalar_type> v( Central, Data, Count );
+        MLU::ValWithEr<scalar_type> v( Central, Data, Count );
         s << sep << v;
       }
     }
@@ -1266,4 +1264,4 @@ void CommandLine::Parse( int argc, const char *argv[], const std::vector<SwitchD
       Switches[defs[i].Switch].push_back( defs[i].Default );
   }
 }
-END_COMMON_NAMESPACE
+END_MLU_NAMESPACE

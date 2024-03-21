@@ -27,7 +27,7 @@
 
 #include "DataSet.hpp"
 
-BEGIN_COMMON_NAMESPACE
+BEGIN_MLU_NAMESPACE
 
 template <typename T>
 bool DataSet<T>::HasSameSeed() const
@@ -263,17 +263,17 @@ void DataSet<T>::SaveMatrixFile( const Matrix<T> &m, const std::string &Type, co
 {
   // For now, all the matrices I write are square and match dataset, but this restriction can be safely relaxed
   if( m.size1 != Extent || m.size1 != m.size2 )
-    throw std::runtime_error( Type + " matrix dimensions (" + std::to_string( m.size1 ) + Common::CommaSpace
+    throw std::runtime_error( Type + " matrix dimensions (" + std::to_string( m.size1 ) + MLU::CommaSpace
                              + std::to_string( m.size2 ) + ") don't match dataset" );
   // Header describing what the covariance matrix is for and how to plot it with gnuplot
   std::ofstream s{ Filename };
-  s << "# Matrix: " << Filename << "\n# Type: " << Type << "\n# Files: " << corr.size() << Common::NewLine;
+  s << "# Matrix: " << Filename << "\n# Type: " << Type << "\n# Files: " << corr.size() << MLU::NewLine;
   for( std::size_t f = 0; f < corr.size(); ++f )
   {
     s << "# File" << f << ": " << corr[f]->Name_.NameNoExt << "\n# Times" << f << ":";
     for( int t : FitTimes[f] )
-      s << Common::Space << t;
-    s << Common::NewLine;
+      s << MLU::Space << t;
+    s << MLU::NewLine;
     // Say which operators are in each file
     if( FileComments && !(*FileComments)[f].empty() )
       s << (*FileComments)[f]; // These are expected to have a trailing NewLine
@@ -292,9 +292,9 @@ void DataSet<T>::SaveMatrixFile( const Matrix<T> &m, const std::string &Type, co
   for( std::size_t f = 0; f < corr.size(); ++f )
   {
     for( int t : FitTimes[f] )
-      s << Common::Space << Abbreviations[f] << t;
+      s << MLU::Space << Abbreviations[f] << t;
   }
-  s << Common::NewLine << std::setprecision( std::numeric_limits<T>::max_digits10 );
+  s << MLU::NewLine << std::setprecision( std::numeric_limits<T>::max_digits10 );
   // Now print the actual covariance matrix
   int i{ 0 };
   for( std::size_t f = 0; f < corr.size(); ++f )
@@ -303,8 +303,8 @@ void DataSet<T>::SaveMatrixFile( const Matrix<T> &m, const std::string &Type, co
     {
       s << Abbreviations[f] << t;
       for( int j = 0; j < Extent; ++j )
-        s << Common::Space << m( i, j );
-      s << Common::NewLine;
+        s << MLU::Space << m( i, j );
+      s << MLU::NewLine;
       ++i;
     }
   }
@@ -339,7 +339,7 @@ void DataSet<T>::AddConstant( const Param::Key &Key, std::size_t File, const Par
     const std::size_t ColNew{ itSource->second() };
     for( int idx = Model<T>::idxCentral; idx != MaxSamples; ++idx )
       if( mOld(idx,ColOld) != mNew(idx,ColNew) )
-      //if( Common::ComponentRelDif( mOld(idx,ColOld), mNew(idx,ColNew) ) > 1e-6 )
+      //if( MLU::ComponentRelDif( mOld(idx,ColOld), mNew(idx,ColNew) ) > 1e-6 )
       {
         std::ostringstream os;
         os << "DataSet::AddConstant " << Key << " loaded from "
@@ -384,7 +384,7 @@ JackBootColumn<T> DataSet<T>::GetConstant( const Param::Key &Key )
 }
 
 template <typename T>
-int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int CompareFlags,
+int DataSet<T>::LoadCorrelator( MLU::FileNameAtt &&FileAtt, unsigned int CompareFlags,
                                 const char * PrintPrefix )
 {
   if( corr.size() >= std::numeric_limits<int>::max() )
@@ -414,7 +414,7 @@ int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int Comp
   else
   {
     if( i == 0 )
-      CompareFlags |= Common::COMPAT_DISABLE_TYPE;
+      CompareFlags |= MLU::COMPAT_DISABLE_TYPE;
     const Sample<T> &o{ i == 0 ? *constFile[0] : *corr[0] };
     o.IsCompatible( *corr[i], &NSamples, CompareFlags );
     if( MaxSamples > corr[i]->NumSamples() )
@@ -425,7 +425,7 @@ int DataSet<T>::LoadCorrelator( Common::FileNameAtt &&FileAtt, unsigned int Comp
 
 // Load a model file
 template <typename T>
-void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const char *pszPrintPrefix,
+void DataSet<T>::LoadModel( MLU::FileNameAtt &&FileAtt, const char *pszPrintPrefix,
                             unsigned int CompareFlags )
 {
   // This is a pre-built model (i.e. the result of a previous fit)
@@ -450,7 +450,7 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const char *pszPrintP
   else
   {
     if( i == 0 )
-      CompareFlags |= Common::COMPAT_DISABLE_TYPE;
+      CompareFlags |= MLU::COMPAT_DISABLE_TYPE;
     const Sample<T> &o{ i == 0 ? *corr[0] : *constFile[0] };
     o.IsCompatible( *constFile[i], &NSamples, CompareFlags );
     if( MaxSamples > constFile[i]->NumSamples() )
@@ -460,12 +460,12 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const char *pszPrintP
 
 // Load a model and create parameters for selected entries (all if Args empty)
 template <typename T>
-void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Args,
+void DataSet<T>::LoadModel( MLU::FileNameAtt &&FileAtt, const std::string &Args,
                             const char *pszPrintPrefix, unsigned int CompareFlags )
 {
   const std::size_t i{ constFile.size() };
   LoadModel( std::move( FileAtt ), pszPrintPrefix, CompareFlags );
-  if( Args.find_first_not_of( Common::WhiteSpace ) == std::string::npos )
+  if( Args.find_first_not_of( MLU::WhiteSpace ) == std::string::npos )
   {
     // Load every constant in this file
     for( const Params::value_type &it : constFile[i]->params )
@@ -476,7 +476,7 @@ void DataSet<T>::LoadModel( Common::FileNameAtt &&FileAtt, const std::string &Ar
     // Load only those constants specifically asked for
     using ReadMap = std::map<Param::Key, Param::Key, Param::Key::Less>;
     using KVR = KeyValReader<Param::Key, Param::Key, Param::Key::Less>;
-    ReadMap vThisArg{ KVR::Read( Common::ArrayFromString( Args ), &EqualSign, true ) };
+    ReadMap vThisArg{ KVR::Read( MLU::ArrayFromString( Args ), &EqualSign, true ) };
     for( const ReadMap::value_type &it : vThisArg )
     {
       const Param::Key OldKey{ it.first };
@@ -594,4 +594,4 @@ template class DataSet<float>;
 template class DataSet<std::complex<double>>;
 template class DataSet<std::complex<float>>;
 
-END_COMMON_NAMESPACE
+END_MLU_NAMESPACE

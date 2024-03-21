@@ -41,13 +41,13 @@ dispType{ dynamic_cast<const MultiFitCreateParams &>( cp ).dispType }
   if( NumExponents > 3 )
     throw std::runtime_error( "Model3pt supports a maximum of 3 exponentials: "
                               "Gnd-Gnd, Gnd-Ex (and ^\\dag), Ex-Ex" );
-  std::string ESrc = Args.Remove( "ESrc", Common::ModelBase::EnergyPrefix );
-  std::string ESnk = Args.Remove( "ESnk", Common::ModelBase::EnergyPrefix );
-  const bool bESame{ objectID.size() == 1 && Common::EqualIgnoreCase( ESrc, ESnk ) };
+  std::string ESrc = Args.Remove( "ESrc", MLU::ModelBase::EnergyPrefix );
+  std::string ESnk = Args.Remove( "ESnk", MLU::ModelBase::EnergyPrefix );
+  const bool bESame{ objectID.size() == 1 && MLU::EqualIgnoreCase( ESrc, ESnk ) };
   E.resize( bESame ? 1 : 2 );
   E[idxSrc].Key.Object = { ObjectID( idxSrc ) };
   E[idxSrc].Key.Name = std::move( ESrc );
-  std::string sEDiff{ Args.Remove( Common::ModelBase::EDiffPrefix, Common::ModelBase::EDiffPrefix ) };
+  std::string sEDiff{ Args.Remove( MLU::ModelBase::EDiffPrefix, MLU::ModelBase::EDiffPrefix ) };
   if( !bESame )
   {
     E[idxSnk].Key.Object = { ObjectID( idxSnk ) };
@@ -61,11 +61,11 @@ dispType{ dynamic_cast<const MultiFitCreateParams &>( cp ).dispType }
   static const std::string sMEL{ "MEL" };
   if( cp.pCorr->Name_.Gamma.size() > 1 )
     throw std::runtime_error( "More than one gamma unsupported" );
-  Common::Gamma::Algebra MyGamma{ cp.pCorr->Name_.Gamma.empty() ? Common::Gamma::Algebra::Unknown
+  MLU::Gamma::Algebra MyGamma{ cp.pCorr->Name_.Gamma.empty() ? MLU::Gamma::Algebra::Unknown
                                                                 : cp.pCorr->Name_.Gamma[0] };
   MEL.Key.Name = Args.Remove( sMEL, sMEL );
-  if( MyGamma != Common::Gamma::Algebra::Unknown )
-    MEL.Key.Name.append( Common::Gamma::NameShort( MyGamma ) );
+  if( MyGamma != MLU::Gamma::Algebra::Unknown )
+    MEL.Key.Name.append( MLU::Gamma::NameShort( MyGamma ) );
 }
 
 void Model3pt::AddParameters( Params &mp )

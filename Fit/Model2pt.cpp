@@ -36,7 +36,7 @@ Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args, int NumExp
 dispType{ dynamic_cast<const MultiFitCreateParams &>( cp ).dispType }
 {
   E.Key.Object = { ObjectID( idxSrc ) };
-  E.Key.Name = Args.Remove( "Energy", Common::ModelBase::EnergyPrefix );
+  E.Key.Name = Args.Remove( "Energy", MLU::ModelBase::EnergyPrefix );
 }
 
 void Model2pt::AddParameters( Params &mp )
@@ -205,9 +205,9 @@ double Model2pt::Derivative( int t, int p ) const
     {
       // Derivative wrt Energy
       d = t * std::exp( - Params[Energy[e]] * t );
-      if( parity == Common::Parity::Even || parity == Common::Parity::Odd )
+      if( parity == MLU::Parity::Even || parity == MLU::Parity::Odd )
       {
-        int NtMinusT = parity == Common::Parity::Even ? Nt - t : t - Nt;
+        int NtMinusT = parity == MLU::Parity::Even ? Nt - t : t - Nt;
         d += NtMinusT * std::exp( - Params[Energy[e]] * ( Nt - t ) );
         d *= 0.5;
       }
@@ -232,10 +232,10 @@ double Model2pt::Derivative( int t, int p ) const
     {
       switch( parity )
       {
-        case Common::Parity::Even:
+        case MLU::Parity::Even:
           d = SinhCoshAdjust[e] * std::cosh( - Params[Energy[e]] * ( t - HalfNt ) );
           break;
-        case Common::Parity::Odd:
+        case MLU::Parity::Odd:
           d = SinhCoshAdjust[e] * std::sinh( - Params[Energy[e]] * ( t - HalfNt ) );
           break;
         default:

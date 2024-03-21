@@ -39,7 +39,7 @@ struct EnsembleInfo
   unsigned int aInv_L;
   unsigned int aInv_T;
 };
-struct EnsembleMapT : public std::map<std::string, EnsembleInfo, Common::LessCaseInsensitive>
+struct EnsembleMapT : public std::map<std::string, EnsembleInfo, MLU::LessCaseInsensitive>
 {
   void Loaded(); // Call this once all ensembles loaded
 };
@@ -49,7 +49,7 @@ struct ContinuumFit;
 struct CreateParams : public Model::CreateParams
 {
   const ContinuumFit &Parent;
-  CreateParams( const std::vector<std::string> &OpNames, const Common::CommandLine &cl,
+  CreateParams( const std::vector<std::string> &OpNames, const MLU::CommandLine &cl,
                 const ContinuumFit &Parent );
 };
 
@@ -68,12 +68,12 @@ struct ContinuumFit : public FitController
   static constexpr int NumFF{ 2 };
   static constexpr const std::size_t idxUnused{ std::numeric_limits<std::size_t>::max() };
 
-  Common::CommandLine &cl;
+  MLU::CommandLine &cl;
   const unsigned int NumD, NumE;
   const int NumSamples;
   const bool doCorr;
   const bool CovarBlock;
-  const Common::FormFactor ffDefault;
+  const MLU::FormFactor ffDefault;
   const std::string inBase;
   const std::string outBaseFileName;
   DataSet ds;
@@ -101,18 +101,18 @@ struct ContinuumFit : public FitController
   std::vector<std::size_t> idxaInv, idxmPi, idxFVSim, idxFVPhys, idxChiSim, idxChiFV, idxDeltaMPi;
 
   // Global keys
-  Common::Param::Key kfPi;
-  Common::Param::Key kmPDGPi;
-  Common::Param::Key kPDGH;
-  Common::Param::Key kPDGL;
-  Common::Param::Key kChiPhys;
+  MLU::Param::Key kfPi;
+  MLU::Param::Key kmPDGPi;
+  MLU::Param::Key kPDGH;
+  MLU::Param::Key kPDGL;
+  MLU::Param::Key kChiPhys;
   // Per form factor keys
-  std::array<Common::Param::Key, NumFF> kC0, kC1;
-  std::array<std::vector<Common::Param::Key>, NumFF> kD, kE;
-  std::array<Common::Param::Key, NumFF> kDelta;
-  std::array<Common::Param::Key, NumFF> kPDGDStar;
+  std::array<MLU::Param::Key, NumFF> kC0, kC1;
+  std::array<std::vector<MLU::Param::Key>, NumFF> kD, kE;
+  std::array<MLU::Param::Key, NumFF> kDelta;
+  std::array<MLU::Param::Key, NumFF> kPDGDStar;
   // Per ensemble keys
-  std::vector<Common::Param::Key> kaInv, kmPi, kFVSim, kFVPhys, kChiSim, kChiFV, kDeltaMPi;
+  std::vector<MLU::Param::Key> kaInv, kmPi, kFVSim, kFVPhys, kChiSim, kChiFV, kDeltaMPi;
 
   struct ScalarType
   {
@@ -126,7 +126,7 @@ protected:
   bool bDoConstraint;
   std::size_t idxConstraint;
   unsigned int WhichConstraint;
-  inline const Common::Param::Key &ConstraintKey() const
+  inline const MLU::Param::Key &ConstraintKey() const
   {
     if( WhichConstraint < eEnabled[idxFFPlus].size() )
       return kE[idxFFPlus][WhichConstraint];
@@ -149,9 +149,9 @@ protected:
   struct EnsembleStat
   {
     int Num;
-    Common::SeedType Seed;
+    MLU::SeedType Seed;
   };
-  using EnsembleStatMap = std::map<std::string, EnsembleStat, Common::LessCaseInsensitive>;
+  using EnsembleStatMap = std::map<std::string, EnsembleStat, MLU::LessCaseInsensitive>;
   EnsembleStatMap EnsembleStats;
   //using ESPair = std::pair<typename EnsembleStatMap::iterator, bool>;
 
@@ -160,11 +160,11 @@ protected:
   static constexpr unsigned int uiFFPlus = 2;
   unsigned int uiFF;
   inline unsigned int ffMaskFromIndex( int idx ) const { return idx ? uiFFPlus : uiFF0; }
-  inline unsigned int ffMask( Common::FormFactor ff ) const
+  inline unsigned int ffMask( MLU::FormFactor ff ) const
   {
-    if( ff == Common::FormFactor::f0 || ff == Common::FormFactor::fpar )
+    if( ff == MLU::FormFactor::f0 || ff == MLU::FormFactor::fpar )
       return uiFF0;
-    if( ff == Common::FormFactor::fplus || ff == Common::FormFactor::fperp )
+    if( ff == MLU::FormFactor::fplus || ff == MLU::FormFactor::fperp )
       return uiFFPlus;
     std::ostringstream os;
     os << "ContinuumFit::ffMask() " << ff << " invalid";
@@ -173,26 +173,26 @@ protected:
   // Parameters from the model just created
   static constexpr int idxFF0 = 0;
   static constexpr int idxFFPlus = 1;
-  inline Common::FormFactor ffIndexReverse( int idx ) const
-  { return idx ? Common::FormFactor::fplus : Common::FormFactor::f0; }
+  inline MLU::FormFactor ffIndexReverse( int idx ) const
+  { return idx ? MLU::FormFactor::fplus : MLU::FormFactor::f0; }
 public:
-  inline int ffIndex( Common::FormFactor ff ) const
+  inline int ffIndex( MLU::FormFactor ff ) const
   {
-    if( ff == Common::FormFactor::f0 || ff == Common::FormFactor::fpar )
+    if( ff == MLU::FormFactor::f0 || ff == MLU::FormFactor::fpar )
       return idxFF0;
-    if( ff == Common::FormFactor::fplus || ff == Common::FormFactor::fperp )
+    if( ff == MLU::FormFactor::fplus || ff == MLU::FormFactor::fperp )
       return idxFFPlus;
     std::ostringstream os;
     os << "ContinuumFit::ffIndex() " << ff << " invalid";
     throw std::runtime_error( os.str().c_str() );
   }
-  static inline Common::FormFactor ValidateFF( Common::FormFactor ff )
+  static inline MLU::FormFactor ValidateFF( MLU::FormFactor ff )
   {
-    if( ff == Common::FormFactor::fpar )
-      ff = Common::FormFactor::f0;
-    else if( ff == Common::FormFactor::fperp )
-      ff = Common::FormFactor::fplus;
-    else if( ff != Common::FormFactor::fplus && ff != Common::FormFactor::f0 )
+    if( ff == MLU::FormFactor::fpar )
+      ff = MLU::FormFactor::f0;
+    else if( ff == MLU::FormFactor::fperp )
+      ff = MLU::FormFactor::fplus;
+    else if( ff != MLU::FormFactor::fplus && ff != MLU::FormFactor::f0 )
     {
       std::ostringstream os;
       os << "Unsupported form factor " << ff;
@@ -201,15 +201,15 @@ public:
     return ff;
   }
 
-  explicit ContinuumFit( Common::CommandLine &cl );
+  explicit ContinuumFit( MLU::CommandLine &cl );
   virtual ~ContinuumFit() {}
-  void ParamsAdjust( Common::Params &mp, const Fitter &f ) override;
-  void SaveParameters( Common::Params &mp, const Fitter &f ) override;
+  void ParamsAdjust( MLU::Params &mp, const Fitter &f ) override;
+  void SaveParameters( MLU::Params &mp, const Fitter &f ) override;
   void Guess( Vector &Guess, std::vector<bool> &bKnown, const Params &mp,
               const VectorView &FitData, bool bLastChance ) const override;
   void SetReplica( Vector &ModelParams ) const override;
   void ComputeDerived( Vector &ModelParams ) const override;
-  void ParamCovarList( Common::Params &paramsCovar ) const override;
+  void ParamCovarList( MLU::Params &paramsCovar ) const override;
   int Run();
 protected:
   inline static scalar EOfQSq( scalar PDGH, scalar PDGL, scalar qSq )
@@ -222,7 +222,7 @@ protected:
     return EOfQSq( f->OutputModel(rep,idxPDGH), f->OutputModel(rep,idxPDGL), qSq );
   }
   std::string sOpNameConcat; // Sorted, concatenated list of operators in the fit for filenames
-  static const std::string &GetPoleMassName( Common::FormFactor ff, const Common::FileNameAtt &fna );
+  static const std::string &GetPoleMassName( MLU::FormFactor ff, const MLU::FileNameAtt &fna );
   void AddEnsemble( const std::string &Ensemble );
   void GetEnabled( std::string sOptions );
   void LoadModels();
@@ -236,12 +236,12 @@ protected:
   std::string GetOutputFilename( unsigned int uiFF );
   void ShowCovar();
   void MakeCovarBlock();
-  void GetMinMax( Common::FormFactor ff, scalar &Min, scalar &Max, int Loop,
+  void GetMinMax( MLU::FormFactor ff, scalar &Min, scalar &Max, int Loop,
                   const std::string &Field ) const;
   std::ofstream WriteHeader( const std::string &sPrefix, const std::string &FileType ) const;
   void WriteFieldName( std::ofstream &os, const std::string &FieldName ) const;
-  void WriteFitQSq( Common::FormFactor ff, const std::string &sPrefix ) const;
-  void WriteAdjustedQSq( Common::FormFactor ff, const std::string &sPrefix ) const;
+  void WriteFitQSq( MLU::FormFactor ff, const std::string &sPrefix ) const;
+  void WriteAdjustedQSq( MLU::FormFactor ff, const std::string &sPrefix ) const;
   void WriteSynthetic();
   int DoFit();
 };

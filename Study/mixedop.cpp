@@ -30,13 +30,13 @@
 //#include <iomanip>
 #include <stdio.h>
 
-#include <MLU/Common.hpp>
+#include <MLU/MLU.hpp>
 
 using scalar = double; // Minuit2 uses double, so haven't tested any other type
 using degrees= int;    // Have tested float, but still need to fix file naming when number contains period
-using Model  = Common::Model <scalar>;
-using Fold   = Common::Fold  <scalar>;
-using SSS    = Common::StartStopStep<degrees>;
+using Model  = MLU::Model <scalar>;
+using Fold   = MLU::Fold  <scalar>;
+using SSS    = MLU::StartStopStep<degrees>;
 
 static const std::string Sep{ "_" };
 static const std::string Energy{ "E" };
@@ -106,11 +106,11 @@ protected:
     std::array<std::string, ModelNumIndices> OpName;
   };
   std::vector<ModelInfo> MI;
-  Common::SeedType Seed; // Set when first model loaded. Everything else needs to be compatible
+  MLU::SeedType Seed; // Set when first model loaded. Everything else needs to be compatible
   int ModelSnk, ModelSrc; // Based on filename, which model should be used at sink and source?
   int Exponent;
   std::vector<std::string> FileOpNames; // Operator names that came from the filenames ... somewhat redundant
-  Common::FileNameAtt fnaName;
+  MLU::FileNameAtt fnaName;
   Fold CorrMixed;
   std::vector<std::vector<Fold>> CorrIn;
 
@@ -120,7 +120,7 @@ protected:
   //Normaliser<scalar> Normalisation;
 
   std::string NormString();
-  void LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vector<std::string>> &Words );
+  void LoadModel( MLU::FileNameAtt &&fna, const std::vector<std::vector<std::string>> &Words );
   void LoadCorrelator( int idxSnk, int idxSrc, const std::string &InFileName );
   void DoOneAngle( degrees Phi, degrees Theta, std::string &Out, std::size_t OutLen, bool bSaveCorr );
   inline bool IsSource() const { return CorrIn[0].size() > 1; }
@@ -131,7 +131,7 @@ protected:
 public:
   MixedOp( const std::string &description_, const Parameters &par ) : Description{ description_ }, Par{ par } {}
   virtual ~MixedOp() {}
-  bool LoadModels( Common::FileNameAtt &&fna, const std::string &Args, bool * pSingle = nullptr );
+  bool LoadModels( MLU::FileNameAtt &&fna, const std::string &Args, bool * pSingle = nullptr );
   void Make( const std::string &FileName );
 };
 
@@ -214,7 +214,7 @@ const std::string MixedOp_Snk   ::MyDescription{ "sink" };
 const std::string MixedOp_SnkSrc::MyDescription{ "source & sink" };
 
 // Load one model given overlap coefficient names that have already been validated
-void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vector<std::string>> &Words )
+void MixedOp::LoadModel( MLU::FileNameAtt &&fna, const std::vector<std::vector<std::string>> &Words )
 {
   // Now try to load the specified Model(s)
   const bool bFirst{ MI.empty() };
@@ -224,23 +224,23 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   ModelInfo &mi{ MI.back() };
   Model &m{ mi.model };
   m.SetName( std::move( fna ) );
-  m.Read( ( "Read model " + idxString + Common::Space ).c_str() );
+  m.Read( ( "Read model " + idxString + MLU::Space ).c_str() );
   if( bFirst )
     Seed = m.Seed();
   else
-    MI[0].model.IsCompatible( m, nullptr, Common::COMPAT_DISABLE_BASE );
+    MI[0].model.IsCompatible( m, nullptr, MLU::COMPAT_DISABLE_BASE );
   // Check that the exponent we want is available
   /*if( bFirst )
     Exponent = ( Par.Exponent >= 0 ) ? Par.Exponent : Par.Exponent + m.NumExponents;
   if( Exponent < 0 || Exponent >= m.NumExponents )
     throw std::runtime_error( "Exponent " + std::to_string( Par.Exponent ) + " not available in model" );
   // Display info about the model
-  std::cout << "  Base: " << m.Name_.Base << Common::NewLine;
+  std::cout << "  Base: " << m.Name_.Base << MLU::NewLine;
   for( std::size_t i = m.Name_.Extra.size(); i > 0; i-- )
-    std::cout << "  Extra[" << std::to_string(i-1) << "]: " << m.Name_.Extra[i-1] << Common::NewLine;
-  std::cout << "  Fit: ti=" << m.ti << ", tf=" << m.tf << Common::NewLine;
+    std::cout << "  Extra[" << std::to_string(i-1) << "]: " << m.Name_.Extra[i-1] << MLU::NewLine;
+  std::cout << "  Fit: ti=" << m.ti << ", tf=" << m.tf << MLU::NewLine;
   for( std::size_t i = 0; i < m.OpNames.size(); i++ )
-    std::cout << "  Model op[" << i << "]: " << m.OpNames[i] << Common::NewLine;
+    std::cout << "  Model op[" << i << "]: " << m.OpNames[i] << MLU::NewLine;
   // Now see which operators to use
   if( Words.empty() )
   {
@@ -267,7 +267,7 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   }*/
   // Now say which operators we are using for normalisation
   for( int i = 0; i < ModelNumIndices; ++i )
-    std::cout << "  normalisation[" << i << "]: " << mi.OpName[i] << Exponent << " = Model[" << mi.OpIdx[i] << "]" << Common::NewLine;
+    std::cout << "  normalisation[" << i << "]: " << mi.OpName[i] << Exponent << " = Model[" << mi.OpIdx[i] << "]" << MLU::NewLine;
   // Now save the name of the mixed operator
   if( Par.MixedOpName.empty() )
   {
@@ -280,17 +280,17 @@ void MixedOp::LoadModel( Common::FileNameAtt &&fna, const std::vector<std::vecto
   if( Par.bNormalise )
   {
     mi.idxNorm = m.GetColumnIndex( Energy, Exponent );
-    std::cout << "  energy normalisation: " << Energy << Exponent << " = Model[" << mi.idxNorm << "]" << Common::NewLine;
+    std::cout << "  energy normalisation: " << Energy << Exponent << " = Model[" << mi.idxNorm << "]" << MLU::NewLine;
   }
 }
 
-bool MixedOp::LoadModels( Common::FileNameAtt &&fna, const std::string &Args, bool * pSingle )
+bool MixedOp::LoadModels( MLU::FileNameAtt &&fna, const std::string &Args, bool * pSingle )
 {
   // First validate the arguments
   std::vector<std::vector<std::string>> Words;
-  if( Args.find_first_not_of( Common::WhiteSpace ) != std::string::npos )
+  if( Args.find_first_not_of( MLU::WhiteSpace ) != std::string::npos )
   {
-    std::vector<std::string> OpNames = Common::ArrayFromString( Args );
+    std::vector<std::string> OpNames = MLU::ArrayFromString( Args );
     bool bOK{ ( OpNames.size() == ModelNumIndices ) };
     for( int i = 0; bOK && i < ModelNumIndices; ++i )
     {
@@ -302,26 +302,26 @@ bool MixedOp::LoadModels( Common::FileNameAtt &&fna, const std::string &Args, bo
     Words.reserve( ModelNumIndices );
     for( int i = 0; i < ModelNumIndices; ++i )
     {
-      Words.push_back( Common::ArrayFromString( OpNames[i], "=" ) );
+      Words.push_back( MLU::ArrayFromString( OpNames[i], "=" ) );
       if( Words[i].empty() || Words[i][0].empty() || Words[i].size() > 2 || ( Words[i].size() > 1 && Words[i][1].empty() ) )
         throw std::runtime_error( "Cannot interpret model parameter " + std::to_string( i ) + " \"" + OpNames[i] + "\"" );
     }
   }
   MI.clear(); // Replace models already loaded
   bool bIsModel{ false };
-  if( Common::EqualIgnoreCase( fna.Ext, TEXT_EXT ) )
+  if( MLU::EqualIgnoreCase( fna.Ext, TEXT_EXT ) )
   {
     // Entries in the key file are relative to the file
     std::string Base{ std::move( fna.Dir ) };
-    Common::AppendSlash( Base );
+    MLU::AppendSlash( Base );
     const std::size_t BaseLen{ Base.length() };
     // Treat this as a list of fit files to read
     std::map<int, std::string> FitList;
     {
       std::ifstream s( fna.Filename );
-      if( !Common::FileExists( fna.Filename ) || s.bad() )
+      if( !MLU::FileExists( fna.Filename ) || s.bad() )
         throw std::runtime_error( "Error reading \"" + fna.Filename + "\"" );
-      FitList = Common::KeyValReader<int, std::string>::Read( s );
+      FitList = MLU::KeyValReader<int, std::string>::Read( s );
     }
     std::map<int, std::string>::iterator it;
     MI.reserve( FitList.size() );
@@ -336,7 +336,7 @@ bool MixedOp::LoadModels( Common::FileNameAtt &&fna, const std::string &Args, bo
         *pSingle = false;
     }
   }
-  else if( Common::EqualIgnoreCase( fna.Type, Common::sModel ) )
+  else if( MLU::EqualIgnoreCase( fna.Type, MLU::sModel ) )
   {
     LoadModel( std::move( fna ), Words );
     bIsModel = true;
@@ -409,8 +409,8 @@ void MixedOp::DoOneAngle( degrees Phi, degrees Theta, std::string &Out, std::siz
   Out.append( IsSource() ? MI[ModelSrc].MixedOpName : FileOpNames[CorrIn[0][0].Name_.op[idxSrc]] );
   CorrMixed.MakeCorrSummary();
   if( bSaveCorr )
-    CorrMixed.Write( Common::MakeFilename( Out, CorrIn[0][0].Name_.Type, Seed, DEF_FMT ) );
-  CorrMixed.WriteSummary( Common::MakeFilename( Out, CorrIn[0][0].Name_.Type, Seed, TEXT_EXT ) );
+    CorrMixed.Write( MLU::MakeFilename( Out, CorrIn[0][0].Name_.Type, Seed, DEF_FMT ) );
+  CorrMixed.WriteSummary( MLU::MakeFilename( Out, CorrIn[0][0].Name_.Type, Seed, TEXT_EXT ) );
 }
 
 // Given a filename, work out which models apply, then rotate source and/or sink
@@ -432,12 +432,12 @@ void MixedOp::Make( const std::string &FileName )
     std::smatch base_match;
     if( std::regex_search( fnaName.Base, base_match, Par.RegExExt2 ) && base_match.size() == 3 )
     {
-      ModelSnk = Common::FromString<int>( base_match[Par.RegExSwap ? 2 : 1] );
-      ModelSrc = Common::FromString<int>( base_match[Par.RegExSwap ? 1 : 2] );
+      ModelSnk = MLU::FromString<int>( base_match[Par.RegExSwap ? 2 : 1] );
+      ModelSrc = MLU::FromString<int>( base_match[Par.RegExSwap ? 1 : 2] );
     }
     else if( std::regex_search( fnaName.Base, base_match, Par.RegExExt1 ) && base_match.size() == 2 )
     {
-      ModelSnk = Common::FromString<int>( base_match[1] );
+      ModelSnk = MLU::FromString<int>( base_match[1] );
       ModelSrc = ModelSnk;
     }
     else
@@ -450,7 +450,7 @@ void MixedOp::Make( const std::string &FileName )
 
   //Input base is everything except the operator names
   std::string InBase{ fnaName.Dir };
-  //Common::AppendSlash( InBase );
+  //MLU::AppendSlash( InBase );
   InBase.append( fnaName.GetBaseExtra( 0, -1 ) ); // TODO: 7-Sep-2023 Should this be GetBaseExtra()?
   // Output base name for the output files is the input + fit times + theta
   std::string OutBase{ fnaName.GetBaseExtra( 0, -1 ) }; // TODO: 7-Sep-2023 just GetBaseExtra()?
@@ -474,7 +474,7 @@ void MixedOp::Make( const std::string &FileName )
   CorrMixed.CopyAttributes( CorrIn[0][0] );
 
   std::string Out{ Par.OutBase + OutBase };
-  std::cout << "    Writing " << Description << " mixed operator to:\n    " << Out << Common::NewLine << "   ";
+  std::cout << "    Writing " << Description << " mixed operator to:\n    " << Out << MLU::NewLine << "   ";
   Out.append( IsSink() ? ".phi_" : ".theta_" );
   const std::size_t OutLen{ Out.length() };
   bool bFirstSnk{ true };
@@ -498,7 +498,7 @@ void MixedOp::Make( const std::string &FileName )
       DoOneAngle( Par.bPhiEqualsTheta ? Theta : Phi, Theta, Out, OutLen, Par.bSaveCorr );
     }
   }
-  std::cout << Common::NewLine;
+  std::cout << MLU::NewLine;
 }
 
 // Set sink / source normalisation
@@ -544,18 +544,18 @@ void MixedOp::LoadCorrelator( int idxSnk, int idxSrc, const std::string &InFileN
   {
     CorrIn[0][0].IsCompatible( Corr, &NumSamples );
     if( CorrMixed.parity != Corr.parity )
-      CorrMixed.parity = Common::Parity::Unknown;
+      CorrMixed.parity = MLU::Parity::Unknown;
     if( CorrMixed.reality != Corr.reality )
-      CorrMixed.reality = Common::Reality::Unknown;
+      CorrMixed.reality = MLU::Reality::Unknown;
     if( CorrMixed.sign != Corr.sign )
-      CorrMixed.sign = Common::Sign::Unknown;
+      CorrMixed.sign = MLU::Sign::Unknown;
   }
 }
 
 void MixedOp_Src::LoadCorrelators( const std::string &InBase )
 {
   const std::string &SinkName{ FileOpNames[fnaName.op[idxSnk]] };
-  iSnk = Common::IndexIgnoreCase( MI[ModelSnk].OpName, SinkName );
+  iSnk = MLU::IndexIgnoreCase( MI[ModelSnk].OpName, SinkName );
   if( iSnk == FileOpNames.size() )
     throw std::runtime_error( "Sink operator \"" + SinkName + "\" not member of rotation basis" );
   // If we're using all model replicas then this limits the maximum number of samples
@@ -572,15 +572,15 @@ void MixedOp_Src::LoadCorrelators( const std::string &InBase )
     InFile.resize( InFileLen2 );
     const std::string &SourceName{ MI[ModelSrc].OpName[iSrc] };
     InFile.append( SourceName );
-    std::string InFileName{ Common::MakeFilename( InFile, Common::sFold, Seed, DEF_FMT ) };
-    if(!Common::FileExists( InFileName ) && Par.bTryConjugate && !Common::EqualIgnoreCase( SinkName, SourceName ) )
+    std::string InFileName{ MLU::MakeFilename( InFile, MLU::sFold, Seed, DEF_FMT ) };
+    if(!MLU::FileExists( InFileName ) && Par.bTryConjugate && !MLU::EqualIgnoreCase( SinkName, SourceName ) )
     {
-      std::cout << "Warning: loading conjugate of " << InFileName << Common::NewLine;
+      std::cout << "Warning: loading conjugate of " << InFileName << MLU::NewLine;
       InFile.resize( InFileLen1 );
       InFile.append( SourceName );
       InFile.append( 1, '_' );
       InFile.append( SinkName );
-      InFileName = Common::MakeFilename( InFile, Common::sFold, Seed, DEF_FMT );
+      InFileName = MLU::MakeFilename( InFile, MLU::sFold, Seed, DEF_FMT );
     }
     LoadCorrelator( 0, iSrc, InFileName );
   }
@@ -589,7 +589,7 @@ void MixedOp_Src::LoadCorrelators( const std::string &InBase )
 void MixedOp_Snk::LoadCorrelators( const std::string &InBase )
 {
   const std::string &SourceName{ FileOpNames[fnaName.op[idxSrc]] };
-  iSrc = Common::IndexIgnoreCase( MI[ModelSrc].OpName, SourceName );
+  iSrc = MLU::IndexIgnoreCase( MI[ModelSrc].OpName, SourceName );
   if( iSrc == FileOpNames.size() )
     throw std::runtime_error( "Source operator \"" + SourceName + "\" not member of rotation basis" );
   // If we're using all model replicas then this limits the maximum number of samples
@@ -605,15 +605,15 @@ void MixedOp_Snk::LoadCorrelators( const std::string &InBase )
     InFile.append( SinkName );
     InFile.append( 1, '_' );
     InFile.append( SourceName ); // Use the source from the original file
-    std::string InFileName{ Common::MakeFilename( InFile, Common::sFold, Seed, DEF_FMT ) };
-    if(!Common::FileExists( InFileName ) && Par.bTryConjugate && !Common::EqualIgnoreCase( SinkName, SourceName ) )
+    std::string InFileName{ MLU::MakeFilename( InFile, MLU::sFold, Seed, DEF_FMT ) };
+    if(!MLU::FileExists( InFileName ) && Par.bTryConjugate && !MLU::EqualIgnoreCase( SinkName, SourceName ) )
     {
-      std::cout << "Warning: loading conjugate of " << InFileName << Common::NewLine;
+      std::cout << "Warning: loading conjugate of " << InFileName << MLU::NewLine;
       InFile.resize( InFileLen1 );
       InFile.append( SourceName );
       InFile.append( 1, '_' );
       InFile.append( SinkName );
-      InFileName = Common::MakeFilename( InFile, Common::sFold, Seed, DEF_FMT );
+      InFileName = MLU::MakeFilename( InFile, MLU::sFold, Seed, DEF_FMT );
     }
     LoadCorrelator( iSnk, 0, InFileName );
   }
@@ -639,15 +639,15 @@ void MixedOp_SnkSrc::LoadCorrelators( const std::string &InBase )
       InFile.resize( InFileLen2 );
       const std::string &SourceName{ MI[ModelSrc].OpName[iSrc] };
       InFile.append( SourceName );
-      std::string InFileName{ Common::MakeFilename( InFile, Common::sFold, Seed, DEF_FMT ) };
-      if(!Common::FileExists( InFileName ) && Par.bTryConjugate && !Common::EqualIgnoreCase( SinkName, SourceName ) )
+      std::string InFileName{ MLU::MakeFilename( InFile, MLU::sFold, Seed, DEF_FMT ) };
+      if(!MLU::FileExists( InFileName ) && Par.bTryConjugate && !MLU::EqualIgnoreCase( SinkName, SourceName ) )
       {
-        std::cout << "Warning: loading conjugate of " << InFileName << Common::NewLine;
+        std::cout << "Warning: loading conjugate of " << InFileName << MLU::NewLine;
         InFile.resize( InFileLen1 );
         InFile.append( SourceName );
         InFile.append( 1, '_' );
         InFile.append( SinkName );
-        InFileName = Common::MakeFilename( InFile, Common::sFold, Seed, DEF_FMT );
+        InFileName = MLU::MakeFilename( InFile, MLU::sFold, Seed, DEF_FMT );
       }
       LoadCorrelator( iSnk, iSrc, InFileName );
     }
@@ -745,10 +745,10 @@ void MixedOp_SnkSrc::MixingAngle( degrees phi_, degrees theta_ )
       Op_PW = AnglePW / ( A_P_snk * A_W_src );
       Op_WP = AngleWP / ( A_W_snk * A_P_src );
       Op_WW = AngleWW / ( A_W_snk * A_W_src );
-      //std::cout << "\nCos theta=" << Theta.cos << ", Sin theta=" << Theta.sin << ", Cos phi=" << Phi.cos << ", Sin phi=" << Phi.sin << Common::NewLine;
-      //std::cout << "A_P_src=" << A_P_src << ", A_W_src=" << A_W_src << "A_P_snk=" << A_P_snk << ", A_W_snk=" << A_W_src << Common::NewLine;
-      //std::cout << "PP=" << fPP(i,0) << ", PW=" << fPW(i,0) << ", WP=" << fWP(i,0) << ", WW=" << fWW(i,0) << Common::NewLine;
-      //std::cout << "M-M=" << ( Op_PP * fPP(i,0) + Op_WW * fWW(i,0) + Op_WP * fWP(i,0) + Op_PW * fPW(i,0) ) << Common::NewLine;
+      //std::cout << "\nCos theta=" << Theta.cos << ", Sin theta=" << Theta.sin << ", Cos phi=" << Phi.cos << ", Sin phi=" << Phi.sin << MLU::NewLine;
+      //std::cout << "A_P_src=" << A_P_src << ", A_W_src=" << A_W_src << "A_P_snk=" << A_P_snk << ", A_W_snk=" << A_W_src << MLU::NewLine;
+      //std::cout << "PP=" << fPP(i,0) << ", PW=" << fPW(i,0) << ", WP=" << fWP(i,0) << ", WW=" << fWW(i,0) << MLU::NewLine;
+      //std::cout << "M-M=" << ( Op_PP * fPP(i,0) + Op_WW * fWW(i,0) + Op_WP * fWP(i,0) + Op_PW * fPW(i,0) ) << MLU::NewLine;
     }
     for( int t = 0; t < Nt; t++ )
       CorrMixed(i,t) = Op_PP * fPP(i,t) + Op_WW * fWW(i,t) + Op_WP * fWP(i,t) + Op_PW * fPW(i,t);
@@ -796,12 +796,12 @@ bool Debug()
     }
     static const std::array<std::string,2> Sufii{ "_Ratio", "_Ratio_reversed" };
     const std::string Out{ OutDir + fPW.Name_.GetBaseExtra( 0, -1 ) + Sufii[type] }; // TODO: 7-Sep-2023 Should this be GetBaseExtra()?
-    static const Common::SeedType Seed{ fPW.Name_.Seed };
-    std::cout << "Writing to " << Out << Common::NewLine;
+    static const MLU::SeedType Seed{ fPW.Name_.Seed };
+    std::cout << "Writing to " << Out << MLU::NewLine;
     fOut.SetSummaryNames( "Ratio" );
     fOut.MakeCorrSummary();
-    fOut.Write( Common::MakeFilename( Out, Common::sBootstrap, Seed, DEF_FMT ) );
-    fOut.WriteSummary( Common::MakeFilename( Out, Common::sBootstrap, Seed, TEXT_EXT ), true );
+    fOut.Write( MLU::MakeFilename( Out, MLU::sBootstrap, Seed, DEF_FMT ) );
+    fOut.WriteSummary( MLU::MakeFilename( Out, MLU::sBootstrap, Seed, TEXT_EXT ), true );
   }
   return true;
 }
@@ -822,7 +822,7 @@ int main( int argc, const char *argv[] )
   std::ios_base::sync_with_stdio( false );
   int iReturn{ EXIT_SUCCESS };
   bool bShowUsage{ true };
-  using CL = Common::CommandLine;
+  using CL = MLU::CommandLine;
   CL cl;
   try
   {
@@ -856,7 +856,7 @@ int main( int argc, const char *argv[] )
       Par.Exponent = cl.SwitchValue<int>("e");
       Par.InBase = cl.SwitchValue<std::string>("i");
       Par.OutBase = cl.SwitchValue<std::string>("o");
-      Common::MakeAncestorDirs( Par.OutBase );
+      MLU::MakeAncestorDirs( Par.OutBase );
       const std::string modelBase{ cl.SwitchValue<std::string>("m") };
       Par.MixedOpName = cl.SwitchValue<std::string>("n");
       Par.bTryConjugate = cl.GotSwitch("c");
@@ -893,7 +893,7 @@ int main( int argc, const char *argv[] )
       //Par.Phi.SetSingle( 0 );
       if( Par.bPhi )
       {
-        if( Common::EqualIgnoreCase( cl.SwitchValue<std::string>("phi"), "theta" ) )
+        if( MLU::EqualIgnoreCase( cl.SwitchValue<std::string>("phi"), "theta" ) )
           Par.bPhiEqualsTheta = true;
         else
         {
@@ -926,12 +926,12 @@ int main( int argc, const char *argv[] )
         bool bIsModel{ false };
         {
           std::string Args{ FileName };
-          std::string ModelFileName{ Common::ExtractToSeparator( Args ) };
-          std::vector<std::string> ModelList{ Common::glob( &ModelFileName, &ModelFileName + 1, modelBase.c_str() ) };
-          if( ModelList.size() == 1 && Common::FileExists( ModelList[0] ) )
+          std::string ModelFileName{ MLU::ExtractToSeparator( Args ) };
+          std::vector<std::string> ModelList{ MLU::glob( &ModelFileName, &ModelFileName + 1, modelBase.c_str() ) };
+          if( ModelList.size() == 1 && MLU::FileExists( ModelList[0] ) )
           {
-            Common::FileNameAtt fna( ModelList[0] );
-            if( Common::EqualIgnoreCase( fna.Ext, TEXT_EXT ) || Common::EqualIgnoreCase( fna.Type, Common::sModel ) )
+            MLU::FileNameAtt fna( ModelList[0] );
+            if( MLU::EqualIgnoreCase( fna.Ext, TEXT_EXT ) || MLU::EqualIgnoreCase( fna.Type, MLU::sModel ) )
             {
               if( state == State::ModelLoaded )
                 throw std::runtime_error( "Reading consecutive models, i.e. no processing done with prior model" );
@@ -955,7 +955,7 @@ int main( int argc, const char *argv[] )
           // This is not a model - see whether it's a number of rotations to perform
           if( state == State::Empty )
             throw std::runtime_error( "A model must be loaded before rotations performed" );
-          for( const std::string &BootFile : Common::glob( &FileName, &FileName + 1, Par.InBase.c_str() ) )
+          for( const std::string &BootFile : MLU::glob( &FileName, &FileName + 1, Par.InBase.c_str() ) )
           {
             Op->Make( BootFile );
             ++Count;
@@ -963,7 +963,7 @@ int main( int argc, const char *argv[] )
           }
         }
       }
-      std::cout << Count << " rotations performed" << Common::NewLine;
+      std::cout << Count << " rotations performed" << MLU::NewLine;
     }
   }
   catch(const std::exception &e)
