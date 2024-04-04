@@ -4,12 +4,12 @@ aka
 
 ## Mike's PhD -- Data production and analysis
 
-Item | Description
-| --- | ---
-`libMLU.a` | Library containing helper functions (HDF5 wrappers, I/O, filename globbing, ...) 
-`bootstrap`, `MultiFit`, `Continuum` ... | Generic analysis code  
-`xml3pt` | Production job for generating semilep dataset on Tesseract and Tursa
-`Scripts` | All analysis jobs to turn correlators into form factors
+| Item | Description |
+| --- | --- |
+| `libMLU.a` | Library containing helper functions (HDF5 wrappers, I/O, filename globbing, ...) | 
+| `bootstrap`, `MultiFit`, `Continuum` ... | Generic analysis code |
+| `xml3pt` | Production job for generating semilep dataset on Tesseract and Tursa |
+| `Scripts` | All analysis jobs to turn correlators into form factors |
 
 ## 1. Install Prerequisites
 
@@ -209,6 +209,30 @@ These scripts are each designed to be run from the `data/ensemble` directory.
 **Input:** the `data` directory contains one tarred, gzipped file containing the results of each production data run. These can be copied to another machine and the following steps run on these data. NB: You will need the `MakeBS.sh` scripts from each `runs/ensemble` directory as well. These require about 4TB of storage uncompressed.
 
 **Output:** simply copy the `data/analyse` directories from Tursa instead of performing the post-processing described below.
+
+### 7.0 Bootstrap random number seeds and environment variables
+
+Post processing utilities rely on the following environment variables (search for `getenv` in `MLU/JackBoot.cpp`):
+
+| Environment variable | Description | Default |
+| --- | --- | --- |
+| `MLUSeed` | Integer random number seed for bootstrap or "`Jackknife`". `MLUSeed` is used each time the file is loaded to perform the bootstrap (or jackknife). | 1835672416 |
+| `MLUHost` | Name of the host the random number seeds were generated on | Local host name. |
+| `MLUCache` | Directory of cache containing random number files. Include a trailing '/', otherwise the trailing text becomes a filename prefix. | Cache file names consist of five parts: *MLUHost*.*NumSamples*.`Random`.*MLUSeed*.`h5` |
+| `MLUNumBoot` | Number of bootstrap replicas | 10000 |
+| `MLUFat` | When defined, causes random numbers to be saved with each sample file | Random numbers stored in cache only. |
+| `MLUCovarCentral` | When defined, the central replica is used as the estimate of the mean when computing the covariance matrix. | Mean of the binned data is used as estimate of mean. |
+
+**NB:** for Mike's original analysis, `MLUHost=Tursa` and bootstrap random number seeds for each ensemble were (`Scripts/Plot/EnsembleC1.sh` etc):
+
+| Ensemble | Seed |
+| :-: | --: |
+| C1 | 2263212701 |
+| C2 | 694228835 |
+| M1 | 1835672416 |
+| M2 | 2475361470 |
+| M3 | 3301941204 |
+| F1M | 3285139232 |
 
 ### 7.1 `bootstrap` – Collecting observables into a Bootstrap
 
