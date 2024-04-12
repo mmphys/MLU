@@ -41,6 +41,13 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   using GSLMatrix = Traits::GSLMatrixType;
   using MyVector  = Vector<COMMON_GSL_TYPE>;
   using MyMatrix  = Matrix<COMMON_GSL_TYPE>;
+  inline void NotEmpty() const { if( size == 0 ) throw std::runtime_error( "Vector empty" ); }
+  inline void Compatible( const MyVector &right ) const
+  {
+    NotEmpty();
+    if( size != right.size )
+      throw std::runtime_error( "Vectors incompatible" );
+  }
   inline Vector( std::size_t size );
   inline Vector() : Vector( 0 ) {};
   inline Vector( const MyVector &o );
@@ -73,11 +80,18 @@ template <> struct Vector<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline const Scalar & operator[]( std::size_t i ) const;
   inline Scalar & operator[]( std::size_t i );
   inline std::size_t MinMax( Scalar &Min, Scalar &Max, bool bIgnoreNaN = false ) const;
-#ifdef COMMON_GSL_BLAS
+#ifdef MLU_CBLAS
+  const MLU_CBLAS_SCALAR_PTR DataCBLAS()const{return static_cast<const MLU_CBLAS_SCALAR_PTR>(data);}
+        MLU_CBLAS_SCALAR_PTR DataCBLAS()     {return static_cast<      MLU_CBLAS_SCALAR_PTR>(data);}
   inline bool IsFinite() const;
-  inline Real norm2() const { return COMMON_GSL_BLAS_REAL( nrm2 )( this ); }
+  inline Real norm2() const
+  {
+    return MLU_CBLAS_RET_REAL( nrm2 )( static_cast<int>( size ), DataCBLAS(),
+                                       static_cast<int>( stride ) );
+  }
   inline Real norm() const { return norm2(); }
   inline Scalar Dot( const MyVector &right ) const;
+  inline Scalar DotConj( const MyVector &right ) const; // conjugate( this ) . right
   inline void blas_trmv( CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag, const GSLMatrix &A );
 #endif
 };
@@ -284,7 +298,7 @@ std::size_t Vector<COMMON_GSL_TYPE>::MinMax( Scalar &Min, Scalar &Max, bool bIgn
   return Count;
 }
 
-#ifdef COMMON_GSL_BLAS
+#ifdef MLU_CBLAS
 bool Vector<COMMON_GSL_TYPE>::IsFinite() const
 {
   for( std::size_t i = 0; i < size; ++i )
@@ -295,15 +309,45 @@ bool Vector<COMMON_GSL_TYPE>::IsFinite() const
 
 inline Vector<COMMON_GSL_TYPE>::Scalar Vector<COMMON_GSL_TYPE>::Dot( const MyVector &right ) const
 {
-  GSLScalar result;
-  COMMON_GSL_BLAS_CPLX( dot )( this, &right, &result );
-  return * reinterpret_cast<Scalar *>( &result );
+  Compatible( right );
+#ifdef COMMON_GSL_IS_COMPLEX
+    Scalar z;
+    MLU_CBLAS( dotu_sub )( static_cast<int>( size ), DataCBLAS(), static_cast<int>( stride ),
+                           right.DataCBLAS(), static_cast<int>( right.stride ),
+                           static_cast<void *>( &z ) );
+    return z;
+#else
+  return MLU_CBLAS( dot )( static_cast<int>( size ), DataCBLAS(), static_cast<int>( stride ),
+                           right.DataCBLAS(), static_cast<int>( right.stride ) );
+#endif
+}
+
+inline Vector<COMMON_GSL_TYPE>::Scalar Vector<COMMON_GSL_TYPE>::DotConj( const MyVector &right ) const
+{
+  Compatible( right );
+#ifdef COMMON_GSL_IS_COMPLEX
+    Scalar z;
+    MLU_CBLAS( dotc_sub )( static_cast<int>( size ), DataCBLAS(), static_cast<int>( stride ),
+                           right.DataCBLAS(), static_cast<int>( right.stride ),
+                           static_cast<void *>( &z ) );
+    return z;
+#else
+  return MLU_CBLAS( dot )( static_cast<int>( size ), DataCBLAS(), static_cast<int>( stride ),
+                           right.DataCBLAS(), static_cast<int>( right.stride ) );
+#endif
 }
 
 inline void Vector<COMMON_GSL_TYPE>::blas_trmv( CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag,
                                                 const Vector<COMMON_GSL_TYPE>::GSLMatrix &A )
 {
-  COMMON_GSL_BLAS( trmv )( Uplo, TransA, Diag, &A, reinterpret_cast<GSLVector *>( this ) );
+  if( size == 0 || A.size2 != size || A.size1 != A.size2 )
+    throw std::runtime_error( "MLU::blas_trmv incompatible matrix and vector" );
+  const int N{ static_cast<int>( size ) };
+  const int ldA{ static_cast<int>( A.tda ) };
+  const int incX{ static_cast<int>( stride ) };
+  MLU_CBLAS( trmv )( CblasRowMajor, Uplo, TransA, Diag,
+                     N, reinterpret_cast<const MLU_CBLAS_SCALAR_PTR>( A.data ), ldA,
+                     reinterpret_cast<MLU_CBLAS_SCALAR_PTR>( data ), incX );
 }
 #endif
 
@@ -384,7 +428,9 @@ template <> struct Matrix<COMMON_GSL_TYPE> : public GSLTraits<COMMON_GSL_TYPE>::
   inline void Column( std::size_t idx, MyVector &v );
   inline void SetDiagonalOne();
   inline void ZeroUpperTriangle();
-#ifdef COMMON_GSL_BLAS
+#ifdef MLU_CBLAS
+  const MLU_CBLAS_SCALAR_PTR DataCBLAS()const{return static_cast<const MLU_CBLAS_SCALAR_PTR>(Data());}
+        MLU_CBLAS_SCALAR_PTR DataCBLAS()     {return static_cast<      MLU_CBLAS_SCALAR_PTR>(Data());}
   inline bool IsFinite( bool bDiagonalsOnly = false ) const;
   inline Real norm2() const;
   inline Real norm() const { return norm2(); }
@@ -647,7 +693,7 @@ inline void Matrix<COMMON_GSL_TYPE>::ZeroUpperTriangle()
       ( *this ) ( i, j ) = 0;
 }
 
-#ifdef COMMON_GSL_BLAS
+#ifdef MLU_CBLAS
 bool Matrix<COMMON_GSL_TYPE>::IsFinite( bool bDiagonalsOnly ) const
 {
   for( std::size_t row = 0; row < size1; ++row )
@@ -667,35 +713,135 @@ Matrix<COMMON_GSL_TYPE>::Real Matrix<COMMON_GSL_TYPE>::norm2() const
   return v.norm2();
 }
 
+// https://developer.apple.com/documentation/accelerate/1513282-cblas_dgemm?language=objc
+// this = C
+
 void Matrix<COMMON_GSL_TYPE>::blas_gemm( CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, Scalar alpha,
                                          const Matrix<COMMON_GSL_TYPE> &A, const Matrix<COMMON_GSL_TYPE> &B,
                                          Scalar beta )
 {
-  // TODO: complex untested
-  GSLScalar &gAlpha{ *reinterpret_cast<GSLScalar *>( &alpha ) };
-  GSLScalar &gBeta { *reinterpret_cast<GSLScalar *>( &beta  ) };
-  COMMON_GSL_BLAS( gemm )( TransA, TransB, gAlpha, reinterpret_cast<const GSLMatrix *>( &A ),
-                           reinterpret_cast<const GSLMatrix *>( &B ), gBeta,
-                           reinterpret_cast<GSLMatrix *>( this ) );
+  NotEmpty();
+  if( size1 != A.size1 )
+    throw std::runtime_error( "blas_gemm() A doesn't have " + std::to_string( size1 ) + " rows" );
+  if( size2 != B.size2 )
+    throw std::runtime_error( "blas_gemm() B doesn't have " + std::to_string( size2 ) + " columns" );
+  if( A.size2 != B.size1 )
+    throw std::runtime_error( "blas_gemm() A and B not correct shape for multiply" );
+  const int M{ static_cast<int>( size1 ) };
+  const int N{ static_cast<int>( size2 ) };
+  const int K{ static_cast<int>( A.size2 ) };
+  const int ldA{ static_cast<int>( A.tda ) };
+  const int ldB{ static_cast<int>( B.tda ) };
+  const int ldC{ static_cast<int>( tda ) };
+#ifdef COMMON_GSL_IS_COMPLEX
+  MLU_CBLAS( gemm )( CblasRowMajor, TransA, TransB, M, N, K,
+                     reinterpret_cast<MLU_CBLAS_SCALAR_PTR>(&alpha), A.DataCBLAS(), ldA,
+                     B.DataCBLAS(), ldB, reinterpret_cast<MLU_CBLAS_SCALAR_PTR>(&beta),
+                     DataCBLAS(), ldC );
+#else
+  MLU_CBLAS( gemm )( CblasRowMajor, TransA, TransB, M, N, K,
+                     alpha, A.DataCBLAS(), ldA,
+                     B.DataCBLAS(), ldB, beta,
+                     DataCBLAS(), ldC );
+#endif
 }
+
+// https://www.ibm.com/docs/en/essl/6.2?topic=mos-ssymm-dsymm-csymm-zsymm-chemm-zhemm-matrix-matrix-product-where-one-matrix-is-real-complex-symmetric-complex-hermitian
+// this = C, A is symmetric, C = alpha AB + beta C, or C = alpha BA + beta C
 
 void Matrix<COMMON_GSL_TYPE>::blas_symm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo,
                                          Scalar alpha, const Matrix<COMMON_GSL_TYPE> &A,
                                          const Matrix<COMMON_GSL_TYPE> &B, Scalar beta )
 {
-  // TODO: complex untested
-  GSLScalar &gAlpha{ *reinterpret_cast<GSLScalar *>( &alpha ) };
-  GSLScalar &gBeta { *reinterpret_cast<GSLScalar *>( &beta  ) };
-  COMMON_GSL_BLAS( symm )( Side, Uplo, gAlpha, reinterpret_cast<const GSLMatrix *>( &A ),
-                           reinterpret_cast<const GSLMatrix *>( &B ), gBeta,
-                           reinterpret_cast<GSLMatrix *>( this ) );
+  NotEmpty();
+  if( Side != CblasLeft && Side != CblasRight )
+    throw std::runtime_error( "blas_symm() Side invalid" );
+  if( Uplo != CblasUpper && Uplo != CblasLower )
+    throw std::runtime_error( "blas_symm() Uplo invalid" );
+  if( A.size1 == 0 || A.size1 != A.size2 )
+    throw std::runtime_error( "blas_symm() A " + std::to_string( size1 ) + " x "
+                             + std::to_string( size2 ) + " isn't symmetric" );
+  if( Side == CblasLeft )
+  {
+    // AB
+    if( size1 != A.size1 )
+      throw std::runtime_error( "blas_symm() A doesn't have " + std::to_string( size1 ) + " rows" );
+    if( size2 != B.size2 )
+      throw std::runtime_error( "blas_symm() B doesn't have " + std::to_string( size2 ) + " columns" );
+    if( A.size2 != B.size1 )
+      throw std::runtime_error( "blas_symm() A and B not correct shape for multiply" );
+  }
+  else
+  {
+    // BA
+    if( size1 != B.size1 )
+      throw std::runtime_error( "blas_symm() B doesn't have " + std::to_string( size1 ) + " rows" );
+    if( size2 != A.size2 )
+      throw std::runtime_error( "blas_symm() A doesn't have " + std::to_string( size2 ) + " columns" );
+    if( B.size2 != A.size1 )
+      throw std::runtime_error( "blas_symm() A and B not correct shape for multiply" );
+  }
+  const int M{ static_cast<int>( size1 ) };
+  const int N{ static_cast<int>( size2 ) };
+  const int ldA{ static_cast<int>( A.tda ) };
+  const int ldB{ static_cast<int>( B.tda ) };
+  const int ldC{ static_cast<int>( tda ) };
+#ifdef COMMON_GSL_IS_COMPLEX
+  MLU_CBLAS( symm )( CblasRowMajor, Side, Uplo, M, N,
+                     reinterpret_cast<MLU_CBLAS_SCALAR_PTR>(&alpha), A.DataCBLAS(), ldA,
+                     B.DataCBLAS(), ldB, reinterpret_cast<MLU_CBLAS_SCALAR_PTR>(&beta),
+                     DataCBLAS(), ldC );
+#else
+  MLU_CBLAS( symm )( CblasRowMajor, Side, Uplo, M, N,
+                     alpha, A.DataCBLAS(), ldA,
+                     B.DataCBLAS(), ldB, beta,
+                     DataCBLAS(), ldC );
+#endif
 }
+
+// https://developer.apple.com/documentation/accelerate/1513037-cblas_strmm?language=objc
+// this = B, A is triangular, B = alpha AB, or B = alpha BA
 
 void Matrix<COMMON_GSL_TYPE>::blas_trmm( CBLAS_SIDE_t Side, CBLAS_UPLO_t Uplo, CBLAS_TRANSPOSE_t TransA, CBLAS_DIAG_t Diag,
                                          Scalar alpha, const Matrix<COMMON_GSL_TYPE> &A )
 {
-  COMMON_GSL_BLAS( trmm )( Side, Uplo, TransA, Diag, * reinterpret_cast<GSLScalar*>( &alpha ),
-                           reinterpret_cast<const GSLMatrix *>( &A ), reinterpret_cast<GSLMatrix *>( this ) );
+  NotEmpty();
+  if( Side != CblasLeft && Side != CblasRight )
+    throw std::runtime_error( "blas_trmm() Side invalid" );
+  if( Uplo != CblasUpper && Uplo != CblasLower )
+    throw std::runtime_error( "blas_trmm() Uplo invalid" );
+  if( TransA != CblasNoTrans && TransA != CblasTrans && TransA != CblasConjTrans )
+    throw std::runtime_error( "blas_trmm() TransA invalid" );
+  if( Diag != CblasUnit && Diag != CblasNonUnit )
+    throw std::runtime_error( "blas_trmm() Diag invalid" );
+  if( A.size1 == 0 || A.size1 != A.size2 )
+    throw std::runtime_error( "blas_trmm() A " + std::to_string( size1 ) + " x "
+                             + std::to_string( size2 ) + " isn't triangular" );
+  if( Side == CblasLeft )
+  {
+    // AB
+    if( A.size2 != size1 )
+      throw std::runtime_error( "blas_trmm() A doesn't have " + std::to_string( size1 ) + " columns");
+  }
+  else
+  {
+    // BA
+    if( size2 != A.size1 )
+      throw std::runtime_error( "blas_trmm() A doesn't have " + std::to_string( size2 ) + " rows" );
+  }
+  const int M{ static_cast<int>( size1 ) };
+  const int N{ static_cast<int>( size2 ) };
+  const int ldA{ static_cast<int>( A.tda ) };
+  const int ldB{ static_cast<int>( tda ) };
+#ifdef COMMON_GSL_IS_COMPLEX
+  MLU_CBLAS( trmm )( CblasRowMajor, Side, Uplo, TransA, Diag, M, N,
+                     reinterpret_cast<MLU_CBLAS_SCALAR_PTR>(&alpha), A.DataCBLAS(), ldA,
+                     DataCBLAS(), ldB );
+#else
+  MLU_CBLAS( trmm )( CblasRowMajor, Side, Uplo, TransA, Diag, M, N,
+                     alpha, A.DataCBLAS(), ldA,
+                     DataCBLAS(), ldB );
+#endif
 }
 #endif
 
@@ -915,9 +1061,12 @@ inline std::ostream & operator<<( std::ostream &os, const Matrix<COMMON_GSL_TYPE
 }
 
 #undef COMMON_GSL_TYPE
-#undef COMMON_GSL_BLAS
-#undef COMMON_GSL_BLAS_REAL
-#undef COMMON_GSL_BLAS_CPLX
 #undef COMMON_GSL_FUNC
+#undef COMMON_GSL_DOUBLE
+#undef COMMON_GSL_IS_COMPLEX
+#undef COMMON_GSL_OPTIONAL
+#undef MLU_CBLAS
+#undef MLU_CBLAS_RET_REAL
+#undef MLU_CBLAS_SCALAR_PTR
 
 #endif // COMMON_GSL_TYPE

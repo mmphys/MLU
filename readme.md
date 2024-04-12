@@ -317,3 +317,7 @@ Use `Scripts/Plot/PlotFormFactorC1.sh` to produce `C1/FormFactor`
 ### 9.2 Plot fit sensitivities
 
     Make= ContCompare.sh
+
+## CBLAS
+
+See `ReadMeCblasVsAccelerate.md` for CBLAS validation and benchmarking.

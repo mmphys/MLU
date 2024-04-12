@@ -270,43 +270,37 @@ template<> struct GSLTraits<fint>
 //#define EXPAND(...) __VA_ARGS__
 
 #define COMMON_GSL_TYPE double
-#define COMMON_GSL_BLAS( x ) gsl_blas_d ## x
-#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_d ## x
-#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_d ## x
 #define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _ ## func
 #define COMMON_GSL_OPTIONAL
 #define COMMON_GSL_DOUBLE
+#define MLU_CBLAS( x ) cblas_d ## x
+#define MLU_CBLAS_RET_REAL( x ) cblas_d ## x
+#define MLU_CBLAS_SCALAR_PTR double *
 #include "GSLVecMatImp.hpp"
-#undef COMMON_GSL_DOUBLE
-#undef COMMON_GSL_OPTIONAL
 #define COMMON_GSL_TYPE float
-#define COMMON_GSL_BLAS( x ) gsl_blas_s ## x
-#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_s ## x
-#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_s ## x
 #define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _float ## _ ## func
+#define MLU_CBLAS( x ) cblas_s ## x
+#define MLU_CBLAS_RET_REAL( x ) cblas_s ## x
+#define MLU_CBLAS_SCALAR_PTR float *
 #include "GSLVecMatImp.hpp"
 #define COMMON_GSL_TYPE std::complex<double>
-#define COMMON_GSL_BLAS( x ) gsl_blas_z ## x
-#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_dz ## x
-#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_z ## x ## u
 #define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _complex ## _ ## func
+#define COMMON_GSL_IS_COMPLEX
 #define COMMON_GSL_OPTIONAL
+#define MLU_CBLAS( x ) cblas_z ## x
+#define MLU_CBLAS_RET_REAL( x ) cblas_dz ## x
+#define MLU_CBLAS_SCALAR_PTR void *
 #include "GSLVecMatImp.hpp"
-#undef COMMON_GSL_OPTIONAL
 #define COMMON_GSL_TYPE std::complex<float>
-#define COMMON_GSL_BLAS( x ) gsl_blas_c ## x
-#define COMMON_GSL_BLAS_REAL( x ) gsl_blas_sc ## x
-#define COMMON_GSL_BLAS_CPLX( x ) gsl_blas_c ## x ## c
 #define COMMON_GSL_FUNC( x, func ) gsl_ ## x ## _complex_float ## _ ## func
+#define COMMON_GSL_IS_COMPLEX
+#define MLU_CBLAS( x ) cblas_c ## x
+#define MLU_CBLAS_RET_REAL( x ) cblas_sc ## x
+#define MLU_CBLAS_SCALAR_PTR void *
 #include "GSLVecMatImp.hpp"
-#undef COMMON_GSL_BLAS
-#undef COMMON_GSL_BLAS_REAL
-#undef COMMON_GSL_BLAS_CPLX
 #define COMMON_GSL_TYPE fint
 #define COMMON_GSL_FUNC( x, func ) MLU_ ## x ## _fint_ ## func
 #include "GSLVecMatImp.hpp"
-#undef COMMON_GSL_TYPE
-#undef COMMON_GSL_FUNC
 
 template <typename T> inline bool IsFinite( const Vector<T> &v )
 {
