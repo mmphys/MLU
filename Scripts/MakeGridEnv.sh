@@ -36,7 +36,7 @@ else
     echo "  ${ShortEnv}: $Dest --> $MyEnv"
     if ! [ -v Headers ]; then
       LinkFiles "$Dest/bin" grid-config
-      LinkFiles "$Dest/lib" "$MyEnv/Grid/libGrid.a"
+      LinkFiles "$Dest/lib" "Grid/libGrid.a"
     fi
     # Make Grid subdirectory with all required headers
     LinkFiles "$Dest/include/Grid" Grid/Config.h Grid/Version.h
