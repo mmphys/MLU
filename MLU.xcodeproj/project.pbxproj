@@ -2003,7 +2003,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = arm64;
+				ARCHS = "$(ARCHS_STANDARD)";
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
@@ -2066,7 +2066,7 @@
 					"$(GridPre)$(CONFIGURATION)/lib",
 					$GridPre/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.4;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -2092,6 +2092,8 @@
 					"-lgsl",
 					"-lMinuit2",
 					"-lcrypto",
+					"-lfftw3f",
+					"-lfftw3",
 				);
 				SDKROOT = macosx;
 			};
@@ -2101,7 +2103,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = arm64;
+				ARCHS = "$(ARCHS_STANDARD)";
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
@@ -2158,7 +2160,7 @@
 					"$(GridPre)$(CONFIGURATION)/lib",
 					$GridPre/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.4;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -2184,6 +2186,8 @@
 					"-lgsl",
 					"-lMinuit2",
 					"-lcrypto",
+					"-lfftw3f",
+					"-lfftw3",
 				);
 				SDKROOT = macosx;
 			};
