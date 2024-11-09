@@ -23,6 +23,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "HadronsApp.hpp"
 
 const std::string Sep{ "_" };    // used inside filenames

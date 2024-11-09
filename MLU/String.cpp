@@ -26,6 +26,7 @@
  ****************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "String.hpp"
 #include <iostream>
 

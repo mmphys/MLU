@@ -26,10 +26,13 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+// NB This is not part of MLU (which has no dependency on LatAnalyze).
+// Old code that I can't quite bring myself to delete
+
 #ifndef MLULatAn_hpp
 #define MLULatAn_hpp
 
-#include "MLU.hpp"
+#include <MLU/MLU.hpp>
 #include <LatAnalyze/Statistics/Dataset.hpp>
 
 /**

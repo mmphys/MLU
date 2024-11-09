@@ -28,6 +28,7 @@
 
 // Keep my models separate from my fitting code
 
+#include <MLUconfig.h>
 #include "ModelContinuum.hpp"
 
 const std::string sFF{ "ff" };

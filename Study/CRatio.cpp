@@ -23,6 +23,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "CRatio.hpp"
 #include <MLU/DebugInfo.hpp>
 

@@ -28,6 +28,7 @@
 
 // Keep my models separate from my fitting code
 
+#include <MLUconfig.h>
 #include "Model.hpp"
 
 std::string Model::Args::Remove( const std::string &key, bool * Removed )

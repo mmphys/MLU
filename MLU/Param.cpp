@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "Param.hpp"
 
 BEGIN_MLU_NAMESPACE

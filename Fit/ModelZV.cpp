@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "ModelZV.hpp"
 
 //const std::string ModelZV::sRaw{ "Raw" };

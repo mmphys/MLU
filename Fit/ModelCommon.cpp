@@ -28,6 +28,7 @@
 
 // Keep my models separate from my fitting code
 
+#include <MLUconfig.h>
 #include "ModelCommon.hpp"
 
 // This is the glue between abstract models and specific implementations

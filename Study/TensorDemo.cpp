@@ -24,6 +24,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 *************************************************************************************/
 /*  END LEGAL */
 
+//#include <MLUconfig.h> // Not needed. Pure grid
 #include <stdio.h>
 //#include <MLU/MLU.hpp>
 #include <omp.h>

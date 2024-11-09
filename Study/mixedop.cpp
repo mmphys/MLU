@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include <cmath>
 //#include <iomanip>
 #include <stdio.h>

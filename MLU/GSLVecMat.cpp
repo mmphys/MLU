@@ -26,6 +26,7 @@
  ****************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "GSLVecMat.hpp"
 
 BEGIN_MLU_NAMESPACE

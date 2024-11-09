@@ -26,6 +26,7 @@
  ****************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "Math.hpp"
 #include <gsl/gsl_cdf.h>
 #include <iomanip>

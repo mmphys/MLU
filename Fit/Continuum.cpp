@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "Continuum.hpp"
 #include "ModelContinuum.hpp"
 #include <MLU/DebugInfo.hpp>

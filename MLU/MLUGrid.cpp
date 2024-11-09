@@ -26,6 +26,10 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+// NB This is not part of MLU (which has no dependency on Grid).
+// Old code that I can't quite bring myself to delete
+
+#include <MLUconfig.h>
 #include "MLUGrid.hpp"
 
 BEGIN_MLU_NAMESPACE

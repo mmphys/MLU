@@ -25,6 +25,7 @@
  See the full license in the file "LICENSE" in the top level distribution directory
 **/
 
+#include <MLUconfig.h>
 #include "SynthData.hpp"
 
 std::ostream & operator<<( std::ostream &os, const MeanSigma &ms )

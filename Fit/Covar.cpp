@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "Covar.hpp"
 
 // Work out where the covariance matrix comes from

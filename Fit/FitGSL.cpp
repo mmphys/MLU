@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "FitGSL.hpp"
 
 void FitterThreadGSL::DumpParamsFitter( std::ostream &os ) const

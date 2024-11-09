@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "ModelRatio.hpp"
 
 const std::string ModelRatio::sRaw{ "Raw" };

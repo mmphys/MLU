@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "Model3pt.hpp"
 
 Model3pt::Model3pt( const Model::CreateParams &cp, Model::Args &Args, int NumExponents_,

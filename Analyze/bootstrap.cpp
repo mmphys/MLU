@@ -27,6 +27,7 @@
 
 // Perform a bootstrap
 
+#include <MLUconfig.h>
 #include "bootstrap.hpp"
 
 using Scalar = MLU::SampleC::value_type;
@@ -875,7 +876,7 @@ void Manifest::BuildManifest( const std::vector<std::string> &Args, const std::v
       TrajList & cl{ itc->second };
       auto it = cl.FileInfo.find( Name_.Filename );
       if( it == cl.FileInfo.end() )
-        cl.FileInfo.emplace( Name_.Filename, TrajFile( Name_.bGotTimeslice, Name_.Timeslice, Name_.p, Name_.Seed, bTimeRev, Name_.DeltaT[0] ) );
+        cl.FileInfo.emplace( Name_.Filename, TrajFile( Name_.bGotTimeslice, Name_.Timeslice, Name_.p, Name_.Seed, bTimeRev, Name_.GotDeltaT() ? Name_.DeltaT[0] : 0 ) );
       else
         std::cout << "Ignoring repetition of " << Name_.Filename << std::endl;
     }

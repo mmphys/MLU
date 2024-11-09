@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "MakeEnsembleInfo.hpp"
 
 #include <iomanip>

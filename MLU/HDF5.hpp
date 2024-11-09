@@ -29,7 +29,7 @@
 #ifndef MLU_HDF5_hpp
 #define MLU_HDF5_hpp
 
-#include <MLUconfig.h>
+#include <MLU/MLUFirst.hpp>
 #include <MLU/Math.hpp>
 #include <MLU/Physics.hpp>
 #include <MLU/String.hpp>
@@ -59,9 +59,7 @@ namespace H5 {
   template<> struct Equiv<std::size_t>                  { static const ::H5::PredType& Type; };
   template<> struct Equiv<std::string>                  { static const ::H5::StrType   Type; };
   template<> struct Equiv<char *>                       { static const ::H5::StrType&  Type; };
-#ifndef HAVE_FAST32_IS_SIZE_T
-  template<> struct Equiv<std::uint_fast32_t>           { static const ::H5::PredType& Type; };
-#endif
+  template<> struct Equiv<unsigned int>                 { static const ::H5::PredType& Type; };
   template<> struct Equiv<std::complex<float>>          { static const ::H5::CompType  Type; };
   template<> struct Equiv<std::complex<double>>         { static const ::H5::CompType  Type; };
   template<> struct Equiv<ValWithEr<float>>             { static const ::H5::CompType  Type; };
@@ -120,7 +118,8 @@ namespace H5 {
   void ReadMatrix( ::H5::Group &g, const std::string &DSName, MLU::Matrix<T> &m );
   // Write a matrix to a dataset
   template<typename T>
-  bool WriteMatrix( ::H5::Group &g, const std::string &DSName, const MLU::Matrix<T> &m );
+  bool WriteMatrix( ::H5::Group &g, const std::string &DSName, const MLU::Matrix<T> &m,
+                    const ::H5::DataType &dsType = Equiv<T>::Type );
 
   // I would like these to be private members of a class full of static functions
   // BUT explicit specialisations must be at class scope (until C++ 17)
@@ -265,7 +264,8 @@ void H5::ReadMatrix( ::H5::Group &g, const std::string &DSName, MLU::Matrix<T> &
 
 // Write a matrix to a dataset
 template<typename T>
-bool H5::WriteMatrix( ::H5::Group &g, const std::string &DSName, const MLU::Matrix<T> &m )
+bool H5::WriteMatrix( ::H5::Group &g, const std::string &DSName, const MLU::Matrix<T> &m,
+                      const ::H5::DataType &dsType )
 {
   const bool bHasData{ m.size1 && m.size2 };
   if( bHasData )
@@ -280,7 +280,7 @@ bool H5::WriteMatrix( ::H5::Group &g, const std::string &DSName, const MLU::Matr
     }
     const hsize_t Dims[2]{ pContiguous->size1, pContiguous->size2 };
     ::H5::DataSpace dsp( 2, Dims );
-    ::H5::DataSet ds = g.createDataSet( DSName, Equiv<T>::Type, dsp );
+    ::H5::DataSet ds = g.createDataSet( DSName, dsType, dsp );
     ds.write( pContiguous->data, Equiv<T>::Type );
     ds.close();
     dsp.close();

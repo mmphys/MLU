@@ -27,6 +27,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "ModelMisc.hpp"
 
 ModelMisc::ModelMisc( const Model::CreateParams &cp, Model::Args &Args, int NumExponents_ )

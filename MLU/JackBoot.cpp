@@ -26,6 +26,7 @@
  ****************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "JackBoot.hpp"
 #include <random>
 
@@ -158,7 +159,9 @@ void RandomCache::Write( ::H5::Group &g, const Matrix<fint> &Random,
   hsize_t Dim;
   Dim = 1;
   ::H5::DataSpace ds1( 1, &Dim );
-  H5::WriteMatrix( g, RandomCache::sRandom, Random );
+  const ::H5::DataType &dtRandom{ Random.size2 <= 0x100u ? ::H5::PredType::STD_U8LE
+    : Random.size2 <= 0x10000u ? ::H5::PredType::STD_U16LE : ::H5::PredType::STD_U32LE };
+  H5::WriteMatrix( g, RandomCache::sRandom, Random, dtRandom );
   ::H5::Attribute a = g.createAttribute( RandomCache::sSeed, ::H5::PredType::STD_U32LE, ds1 );
   a.write( H5::Equiv<SeedType>::Type, &Seed );
   a.close();

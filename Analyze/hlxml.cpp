@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include <MLU/MLU.hpp>
 #include <Grid/Grid.h>
 //#include <Hadrons/../utilities/Contractor.hpp>

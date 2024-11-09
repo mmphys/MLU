@@ -25,16 +25,15 @@
  See the full license in the file "LICENSE" in the top level distribution directory
 **/
 
+// This should be the only use of the AutoConf header
+// Any useful values should be exposed as functions
+#include <MLUconfig.h>
 #include "MLU.hpp"
 
 #include <cstddef>
 #include <mutex> // Apparently empty under __INTEL_COMPILER
 #include <sys/stat.h>
 
-// This should be the only use of the AutoConf header
-// Any useful values should be exposed as functions
-
-#include <MLUconfig.h>
 #include <MLU/JackBoot.hpp>
 
 extern "C" const char * MLUVersionInfoHuman()

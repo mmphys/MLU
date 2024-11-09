@@ -30,7 +30,7 @@
 #ifndef MLU_Utility_hpp
 #define MLU_Utility_hpp
 
-#include <MLUconfig.h>
+#include <MLU/MLUFirst.hpp>
 #include <MLU/FitRange.hpp>
 #include <MLU/GSLVecMat.hpp>
 #include <MLU/HDF5.hpp>

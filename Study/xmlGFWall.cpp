@@ -23,6 +23,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include <MLU/MLU.hpp>
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>

@@ -34,4 +34,7 @@
 #define BEGIN_MLU_NAMESPACE namespace MLU_NAMESPACE {
 #define END_MLU_NAMESPACE   };
 
+// Undefine to run without Hadrons guessers (very old code)
+#define MLU_HADRONS_HAS_GUESSERS
+
 #endif // MLUFirst_hpp

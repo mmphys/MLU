@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "Model2pt.hpp"
 
 Model2pt::Model2pt( const Model::CreateParams &cp, Model::Args &Args, int NumExp,

@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "ModelConstant.hpp"
 
 ModelConstant::ModelConstant( const Model::CreateParams &cp, Model::Args &Args, int NumExponents )

@@ -35,6 +35,9 @@
 #include <Hadrons/Application.hpp>
 #include <Hadrons/Modules.hpp>
 
+// NB This is not part of MLU (which has no dependency on Grid).
+// Old code that I can't quite bring myself to delete
+
 BEGIN_MLU_NAMESPACE
 
 // Load all combinations of gamma_snk and gamma_src from an HDF5 file into the array of correlators

@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include <stdio.h>
 #include <typeinfo>
 #include <MLU/MLU.hpp>

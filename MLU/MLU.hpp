@@ -31,6 +31,7 @@
 #ifndef MLU_hpp
 #define MLU_hpp
 
+#include <MLU/MLUFirst.hpp>
 #include <MLU/Utility.hpp>
 #include <MLU/CorrFile.hpp>
 #include <MLU/Sample.hpp>

@@ -23,6 +23,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+//#include <MLUconfig.h> // Not needed - pure Grid
 #include <stdio.h>
 //#include <MLU/MLU.hpp>
 #include <omp.h>

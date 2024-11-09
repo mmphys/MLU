@@ -23,6 +23,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "Divide.hpp"
 
 template <typename T>

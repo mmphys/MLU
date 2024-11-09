@@ -26,9 +26,8 @@
  ****************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "DebugInfo.hpp"
-#include "MLUconfig.h"
-
 
 #include <cstdio>
 #include <cxxabi.h>

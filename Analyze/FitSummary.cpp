@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "FitSummary.hpp"
 
 const std::string &Sep{ MLU::Space };

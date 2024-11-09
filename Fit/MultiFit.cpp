@@ -26,6 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
+#include <MLUconfig.h>
 #include "Fitter.hpp"
 #include "ModelCommon.hpp"
 #include <MLU/DebugInfo.hpp>
