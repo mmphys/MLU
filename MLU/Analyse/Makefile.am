@@ -1,20 +1,28 @@
 # Mike's Lattice Utilities - Analyze
 
-LDADD = ../MLU/libMLU.a $(MLU_LIBS)
+AM_CPPFLAGS = @MLU_CALLER_CPPFLAGS@ -I$(srcdir)/..
+AM_CXXFLAGS = @MLU_CALLER_CXXFLAGS@
+AM_LDFLAGS = @MLU_CALLER_LDFLAGS@ @MLU_CALLER_LIBS@
 
-bin_PROGRAMS = bootstrap corr corrstat Debug Divide FitSummary GaugeCmp GetColumn hlxml ImportCorr lime_truncate MakeEnsembleInfo repair SynthData
+# link with the MLU library.
+LDADD = ../MLU/libMLU.la
 
-bootstrap_SOURCES = bootstrap.cpp
+bin_PROGRAMS = bootstrap corr corrstat CRatio Divide FitSummary \
+  GetColumn ImportCorr MakeEnsembleInfo mixedop repair SynthData
+
+bootstrap_SOURCES = bootstrap.cpp bootstrap.hpp
 corr_SOURCES = corr.cpp
 corrstat_SOURCES = corrstat.cpp
-Debug_SOURCES = Debug.cpp
-Divide_SOURCES = Divide.cpp
-FitSummary_SOURCES =  FitSummary.cpp
-GaugeCmp_SOURCES = GaugeCmp.cpp
+CRatio_SOURCES = CRatio.cpp CRatio.hpp
+# Debug_SOURCES = Debug.cpp
+Divide_SOURCES = Divide.cpp Divide.hpp
+FitSummary_SOURCES =  FitSummary.cpp FitSummary.hpp
+#GaugeCmp_SOURCES = GaugeCmp.cpp
 GetColumn_SOURCES = GetColumn.cpp
-hlxml_SOURCES = hlxml.cpp
-ImportCorr_SOURCES = hlxml.cpp
-lime_truncate = lime_truncate.c
-MakeEnsembleInfo_SOURCES = MakeEnsembleInfo.cpp
+#hlxml_SOURCES = hlxml.cpp
+ImportCorr_SOURCES = ImportCorr.cpp ImportCorr.hpp
+#lime_truncate = lime_truncate.c
+MakeEnsembleInfo_SOURCES = MakeEnsembleInfo.cpp MakeEnsembleInfo.
+mixedop_SOURCES = mixedop.cpp
 repair_SOURCES = repair.cpp
-SynthData_SOURCES = SynthData.cpp
+SynthData_SOURCES = SynthData.cpp SynthData.hpp

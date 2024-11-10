@@ -332,6 +332,12 @@
 		2748E6712A1E0F9E00867EF6 /* Continuum.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Continuum.cpp; sourceTree = "<group>"; };
 		2748E6722A1E0F9E00867EF6 /* Continuum.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Continuum.hpp; sourceTree = "<group>"; };
 		2748E6772A1E10CF00867EF6 /* Continuum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Continuum; sourceTree = BUILT_PRODUCTS_DIR; };
+		274D738D2CE0CEDE00DD1287 /* bootstrap.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = bootstrap.sh; sourceTree = "<group>"; };
+		274D738E2CE0CEDE00DD1287 /* Config.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = Config.sh; sourceTree = "<group>"; };
+		274D738F2CE0CEDE00DD1287 /* configure.ac */ = {isa = PBXFileReference; lastKnownFileType = text; path = configure.ac; sourceTree = "<group>"; };
+		274D73902CE0CEDE00DD1287 /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
+		274D73912CE0CEDE00DD1287 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
+		274D73922CE0D79A00DD1287 /* Clean.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = Clean.sh; sourceTree = "<group>"; };
 		2757D8132BAB8DCD006FA32D /* MLUFirst.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MLUFirst.hpp; sourceTree = "<group>"; };
 		27636BB82B4D788000230AEA /* ModelZV.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelZV.cpp; sourceTree = "<group>"; };
 		27636BB92B4D788000230AEA /* ModelZV.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelZV.hpp; sourceTree = "<group>"; };
@@ -802,6 +808,11 @@
 				27F41E3F2CE09FC6007D6C52 /* MLU */,
 				27F41E812CE0A2C9007D6C52 /* Analyse */,
 				27F41E822CE0A32E007D6C52 /* Fit */,
+				274D738D2CE0CEDE00DD1287 /* bootstrap.sh */,
+				274D738E2CE0CEDE00DD1287 /* Config.sh */,
+				274D738F2CE0CEDE00DD1287 /* configure.ac */,
+				274D73902CE0CEDE00DD1287 /* Makefile.am */,
+				274D73912CE0CEDE00DD1287 /* readme.md */,
 			);
 			path = MLU;
 			sourceTree = "<group>";
@@ -825,6 +836,7 @@
 				68C5946028E4F20200FA1835 /* Products */,
 				6820525F28E50661003AD91D /* .gitignore */,
 				6820526028E50662003AD91D /* bootstrap.sh */,
+				274D73922CE0D79A00DD1287 /* Clean.sh */,
 				6820525E28E50661003AD91D /* configure.ac */,
 				6820525D28E50661003AD91D /* Makefile.am */,
 				6820526128E50662003AD91D /* readme.md */,

@@ -1,114 +1,79 @@
-# Ignore the build and run / test directories
-*~
+# Build subdirectories
 build*/
-.Package/
-**/run*/
-**/test*/
-**/Felix*/
+
+# Temporaries
+*~
 
 # Apple stuff
 .DS_Store
 
-# My customisations of the AutoTools build system
+# Sub-package dependencies of MLU Library
+MLU/gsl*.tar.gz
+MLU/gsl/
+MLU/gsl-2.7/
+MLU/Minuit2*.tar.gz
+MLU/Minuit2-5.34.14/
 
-/MLUconfig.h.in
+SemiLepConfig.h.in
+MLU/MLUconfig.h.in
+
+# Ignore run / test directories
+**/run*/
+**/test*/
 
 # Ignore the link to the currently active plot ensemble
 Scripts/Plot/Ensemble.sh
 
-
-
-# Created by https://www.toptal.com/developers/gitignore/api/xcode
-# Edit at https://www.toptal.com/developers/gitignore?templates=xcode
-
-### Xcode ###
-# Xcode
-#
-# gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
-
-## User settings
-xcuserdata/
-
-## compatibility with Xcode 8 and earlier (ignoring not required starting Xcode 9)
-*.xcscmblueprint
-*.xccheckout
-
-## compatibility with Xcode 3 and earlier (ignoring not required starting Xcode 4)
-build/
-DerivedData/
-*.moved-aside
-*.pbxuser
-!default.pbxuser
-*.mode1v3
-!default.mode1v3
-*.mode2v3
-!default.mode2v3
-*.perspectivev3
-!default.perspectivev3
-
-## Gcc Patch
-/*.gcno
-
-### Xcode Patch ###
-*.xcodeproj/*
-!*.xcodeproj/project.pbxproj
-!*.xcodeproj/xcshareddata/
-!*.xcworkspace/contents.xcworkspacedata
-**/xcshareddata/WorkspaceSettings.xcsettings
-
-# End of https://www.toptal.com/developers/gitignore/api/xcode
-
-
-
-
-# Created by https://www.toptal.com/developers/gitignore/api/autotools
-# Edit at https://www.toptal.com/developers/gitignore?templates=autotools
+# Created by https://www.toptal.com/developers/gitignore/api/xcode,autotools
+# Edit at https://www.toptal.com/developers/gitignore?templates=xcode,autotools
 
 ### Autotools ###
 # http://www.gnu.org/software/automake
 
 Makefile.in
-/ar-lib
-/mdate-sh
-/py-compile
-/test-driver
-/ylwrap
+ar-lib
+mdate-sh
+py-compile
+test-driver
+ylwrap
 .deps/
+.dirstamp
 
 # http://www.gnu.org/software/autoconf
 
-autom4te.cache
-/autoscan.log
-/autoscan-*.log
-/aclocal.m4
-/compile
-/config.guess
-/config.h.in
-/config.log
-/config.status
-/config.sub
-/configure
-/configure.scan
-/depcomp
-/install-sh
-/missing
-/stamp-h1
+autom4te.cache/
+autoscan.log
+autoscan-*.log
+aclocal.m4
+compile
+config.cache
+config.guess
+config.h.in
+config.log
+config.status
+config.sub
+configure
+configure.scan
+depcomp
+install-sh
+missing
+stamp-h1
 
 # https://www.gnu.org/software/libtool/
 
-/ltmain.sh
+ltmain.sh
 
 # http://www.gnu.org/software/texinfo
 
-/texinfo.tex
+texinfo.tex
 
 # http://www.gnu.org/software/m4/
 
-m4/libtool.m4
-m4/ltoptions.m4
-m4/ltsugar.m4
-m4/ltversion.m4
-m4/lt~obsolete.m4
+**/m4/libtool.m4
+**/m4/ltoptions.m4
+**/m4/ltsugar.m4
+**/m4/ltversion.m4
+**/m4/lt~obsolete.m4
 
 # Generated Makefile
 # (meta build system like autotools,
@@ -118,4 +83,21 @@ Makefile
 
 ### Autotools Patch ###
 
-# End of https://www.toptal.com/developers/gitignore/api/autotools
+### Xcode ###
+## User settings
+xcuserdata/
+
+## Xcode 8 and earlier
+*.xcscmblueprint
+*.xccheckout
+
+### Xcode Patch ###
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+/*.gcno
+**/xcshareddata/WorkspaceSettings.xcsettings
+
+# End of https://www.toptal.com/developers/gitignore/api/xcode,autotools
