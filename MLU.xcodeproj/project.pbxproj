@@ -397,7 +397,6 @@
 		682C5C6228E4F2C300C8E004 /* TensorDemo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TensorDemo.cpp; sourceTree = "<group>"; };
 		682C5C6328E4F2C300C8E004 /* CRatio.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CRatio.cpp; sourceTree = "<group>"; };
 		682C5C6428E4F2C300C8E004 /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
-		682C5C6528E4F2C300C8E004 /* gpuxml.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = gpuxml.sh; sourceTree = "<group>"; };
 		682C5C6628E4F2C300C8E004 /* CRatio.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CRatio.hpp; sourceTree = "<group>"; };
 		682C5C6728E4F2C300C8E004 /* xmlZ2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlZ2.cpp; sourceTree = "<group>"; };
 		682C5C6828E4F2C300C8E004 /* xmlGFWall.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = xmlGFWall.cpp; sourceTree = "<group>"; };
@@ -661,7 +660,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		682C5C4628E4F2C300C8E004 /* MLU */ = {
+		27F41E3F2CE09FC6007D6C52 /* MLU */ = {
 			isa = PBXGroup;
 			children = (
 				2763DE052A1D253D00529933 /* CorrFile.cpp */,
@@ -709,28 +708,34 @@
 			path = MLU;
 			sourceTree = "<group>";
 		};
-		682C5C5E28E4F2C300C8E004 /* Study */ = {
+		27F41E812CE0A2C9007D6C52 /* Analyse */ = {
 			isa = PBXGroup;
 			children = (
+				682C5C9228E4F2C300C8E004 /* bootstrap.cpp */,
+				682C5C8E28E4F2C300C8E004 /* bootstrap.hpp */,
+				682C5C8D28E4F2C300C8E004 /* corr.cpp */,
+				682C5C9328E4F2C300C8E004 /* corrstat.cpp */,
 				682C5C6328E4F2C300C8E004 /* CRatio.cpp */,
 				682C5C6628E4F2C300C8E004 /* CRatio.hpp */,
-				682C5C6528E4F2C300C8E004 /* gpuxml.sh */,
-				682C5C6D28E4F2C300C8E004 /* HadronsApp.cpp */,
-				682C5C6128E4F2C300C8E004 /* HadronsApp.hpp */,
-				682C5C6428E4F2C300C8E004 /* Makefile.am */,
+				682C5C9928E4F2C300C8E004 /* Divide.cpp */,
+				682C5C8B28E4F2C300C8E004 /* Divide.hpp */,
+				682C5C9528E4F2C300C8E004 /* FitSummary.cpp */,
+				682C5C9028E4F2C300C8E004 /* FitSummary.hpp */,
+				278BA02A290ED4AB00960730 /* GetColumn.cpp */,
+				682C5C8828E4F2C300C8E004 /* ImportCorr.cpp */,
+				682C5C9628E4F2C300C8E004 /* ImportCorr.hpp */,
+				271DB9D92A2A24E900AF0501 /* MakeEnsembleInfo.cpp */,
+				278D748D2A97756200651141 /* MakeEnsembleInfo.hpp */,
+				682C5C9128E4F2C300C8E004 /* Makefile.am */,
 				682C5C6C28E4F2C300C8E004 /* mixedop.cpp */,
-				682C5C6928E4F2C300C8E004 /* peramb-compare.cpp */,
-				682C5C6228E4F2C300C8E004 /* TensorDemo.cpp */,
-				682C5C6B28E4F2C300C8E004 /* xml3pt.cpp */,
-				682C5C5F28E4F2C300C8E004 /* xml3pt.hpp */,
-				682C5C6828E4F2C300C8E004 /* xmlGFWall.cpp */,
-				682C5C6028E4F2C300C8E004 /* xmlPeramb.cpp */,
-				682C5C6728E4F2C300C8E004 /* xmlZ2.cpp */,
+				682C5C8C28E4F2C300C8E004 /* repair.cpp */,
+				682C5C8A28E4F2C300C8E004 /* SynthData.cpp */,
+				682C5C9728E4F2C300C8E004 /* SynthData.hpp */,
 			);
-			path = Study;
+			path = Analyse;
 			sourceTree = "<group>";
 		};
-		682C5C6E28E4F2C300C8E004 /* Fit */ = {
+		27F41E822CE0A32E007D6C52 /* Fit */ = {
 			isa = PBXGroup;
 			children = (
 				2748E6712A1E0F9E00867EF6 /* Continuum.cpp */,
@@ -770,32 +775,35 @@
 			path = Fit;
 			sourceTree = "<group>";
 		};
-		682C5C8728E4F2C300C8E004 /* Analyze */ = {
+		27F41E832CE0A575007D6C52 /* SemiLep */ = {
 			isa = PBXGroup;
 			children = (
-				682C5C9228E4F2C300C8E004 /* bootstrap.cpp */,
-				682C5C8E28E4F2C300C8E004 /* bootstrap.hpp */,
-				682C5C8D28E4F2C300C8E004 /* corr.cpp */,
-				682C5C9328E4F2C300C8E004 /* corrstat.cpp */,
 				682C5C9428E4F2C300C8E004 /* Debug.cpp */,
-				682C5C9928E4F2C300C8E004 /* Divide.cpp */,
-				682C5C8B28E4F2C300C8E004 /* Divide.hpp */,
-				682C5C9528E4F2C300C8E004 /* FitSummary.cpp */,
-				682C5C9028E4F2C300C8E004 /* FitSummary.hpp */,
 				682C5C8F28E4F2C300C8E004 /* GaugeCmp.cpp */,
-				278BA02A290ED4AB00960730 /* GetColumn.cpp */,
+				682C5C6D28E4F2C300C8E004 /* HadronsApp.cpp */,
+				682C5C6128E4F2C300C8E004 /* HadronsApp.hpp */,
 				682C5C8928E4F2C300C8E004 /* hlxml.cpp */,
-				682C5C8828E4F2C300C8E004 /* ImportCorr.cpp */,
-				682C5C9628E4F2C300C8E004 /* ImportCorr.hpp */,
 				27D49A4129105615003E2146 /* lime_truncate.c */,
-				271DB9D92A2A24E900AF0501 /* MakeEnsembleInfo.cpp */,
-				278D748D2A97756200651141 /* MakeEnsembleInfo.hpp */,
-				682C5C9128E4F2C300C8E004 /* Makefile.am */,
-				682C5C8C28E4F2C300C8E004 /* repair.cpp */,
-				682C5C8A28E4F2C300C8E004 /* SynthData.cpp */,
-				682C5C9728E4F2C300C8E004 /* SynthData.hpp */,
+				682C5C6428E4F2C300C8E004 /* Makefile.am */,
+				682C5C6928E4F2C300C8E004 /* peramb-compare.cpp */,
+				682C5C6228E4F2C300C8E004 /* TensorDemo.cpp */,
+				682C5C6B28E4F2C300C8E004 /* xml3pt.cpp */,
+				682C5C5F28E4F2C300C8E004 /* xml3pt.hpp */,
+				682C5C6828E4F2C300C8E004 /* xmlGFWall.cpp */,
+				682C5C6028E4F2C300C8E004 /* xmlPeramb.cpp */,
+				682C5C6728E4F2C300C8E004 /* xmlZ2.cpp */,
 			);
-			path = Analyze;
+			path = SemiLep;
+			sourceTree = "<group>";
+		};
+		682C5C4628E4F2C300C8E004 /* MLU */ = {
+			isa = PBXGroup;
+			children = (
+				27F41E3F2CE09FC6007D6C52 /* MLU */,
+				27F41E812CE0A2C9007D6C52 /* Analyse */,
+				27F41E822CE0A32E007D6C52 /* Fit */,
+			);
+			path = MLU;
 			sourceTree = "<group>";
 		};
 		682C5CC128E4FA3200C8E004 /* Frameworks */ = {
@@ -810,9 +818,7 @@
 			isa = PBXGroup;
 			children = (
 				682C5C4628E4F2C300C8E004 /* MLU */,
-				682C5C8728E4F2C300C8E004 /* Analyze */,
-				682C5C6E28E4F2C300C8E004 /* Fit */,
-				682C5C5E28E4F2C300C8E004 /* Study */,
+				27F41E832CE0A575007D6C52 /* SemiLep */,
 				6820525C28E505CA003AD91D /* Scripts */,
 				6820525B28E505CA003AD91D /* Xml */,
 				682C5CC128E4FA3200C8E004 /* Frameworks */,
