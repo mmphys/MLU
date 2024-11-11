@@ -196,6 +196,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "27D49A452910563C003E2146"
+               BuildableName = "lime_truncate"
+               BlueprintName = "lime_truncate"
+               ReferencedContainer = "container:MLU.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "271DB9DD2A2A256C00AF0501"
                BuildableName = "MakeEnsembleInfo"
                BlueprintName = "MakeEnsembleInfo"
@@ -269,6 +283,20 @@
                BlueprintIdentifier = "682C5D8428E500A500C8E004"
                BuildableName = "SynthData"
                BlueprintName = "SynthData"
+               ReferencedContainer = "container:MLU.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "27536D5D2CE2A2B6008D3755"
+               BuildableName = "TensorDemo"
+               BlueprintName = "TensorDemo"
                ReferencedContainer = "container:MLU.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

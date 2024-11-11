@@ -16,6 +16,7 @@
 		271E1A202A1E404A00A60A27 /* FitMinuit2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C6F28E4F2C300C8E004 /* FitMinuit2.cpp */; };
 		271E1A212A1E406F00A60A27 /* Covar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C8528E4F2C300C8E004 /* Covar.cpp */; };
 		271E1A222A1E409700A60A27 /* Model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C7E28E4F2C300C8E004 /* Model.cpp */; };
+		27244BA82CE2BE1A0079EC97 /* TensorDemo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 682C5C6228E4F2C300C8E004 /* TensorDemo.cpp */; };
 		2735220429E9267D00E8720F /* FitRangeImp.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 2735220329E9267D00E8720F /* FitRangeImp.hpp */; };
 		2748E67E2A1E114300867EF6 /* Continuum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2748E6712A1E0F9E00867EF6 /* Continuum.cpp */; };
 		2748E67F2A1E114A00867EF6 /* libMLU.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 682C5C9E28E4F41300C8E004 /* libMLU.dylib */; };
@@ -123,6 +124,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		2748E6752A1E10CF00867EF6 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		27536D5C2CE2A2B6008D3755 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -338,6 +348,7 @@
 		274D73902CE0CEDE00DD1287 /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
 		274D73912CE0CEDE00DD1287 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
 		274D73922CE0D79A00DD1287 /* Clean.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = Clean.sh; sourceTree = "<group>"; };
+		27536D5E2CE2A2B6008D3755 /* TensorDemo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TensorDemo; sourceTree = BUILT_PRODUCTS_DIR; };
 		2757D8132BAB8DCD006FA32D /* MLUFirst.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MLUFirst.hpp; sourceTree = "<group>"; };
 		27636BB82B4D788000230AEA /* ModelZV.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelZV.cpp; sourceTree = "<group>"; };
 		27636BB92B4D788000230AEA /* ModelZV.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelZV.hpp; sourceTree = "<group>"; };
@@ -488,6 +499,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				2748E67F2A1E114A00867EF6 /* libMLU.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		27536D5B2CE2A2B6008D3755 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -875,6 +893,7 @@
 				27D49A462910563C003E2146 /* lime_truncate */,
 				2748E6772A1E10CF00867EF6 /* Continuum */,
 				271DB9DE2A2A256C00AF0501 /* MakeEnsembleInfo */,
+				27536D5E2CE2A2B6008D3755 /* TensorDemo */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -945,6 +964,25 @@
 			name = Continuum;
 			productName = Continuum;
 			productReference = 2748E6772A1E10CF00867EF6 /* Continuum */;
+			productType = "com.apple.product-type.tool";
+		};
+		27536D5D2CE2A2B6008D3755 /* TensorDemo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 27536D642CE2A2B6008D3755 /* Build configuration list for PBXNativeTarget "TensorDemo" */;
+			buildPhases = (
+				27536D5A2CE2A2B6008D3755 /* Sources */,
+				27536D5B2CE2A2B6008D3755 /* Frameworks */,
+				27536D5C2CE2A2B6008D3755 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TensorDemo;
+			packageProductDependencies = (
+			);
+			productName = TensorDemo;
+			productReference = 27536D5E2CE2A2B6008D3755 /* TensorDemo */;
 			productType = "com.apple.product-type.tool";
 		};
 		278BA02F290ED52400960730 /* GetColumn */ = {
@@ -1336,6 +1374,9 @@
 					2748E6762A1E10CF00867EF6 = {
 						CreatedOnToolsVersion = 14.3;
 					};
+					27536D5D2CE2A2B6008D3755 = {
+						CreatedOnToolsVersion = 16.1;
+					};
 					278BA02F290ED52400960730 = {
 						CreatedOnToolsVersion = 14.1;
 					};
@@ -1441,6 +1482,7 @@
 				682C5D9F28E501D300C8E004 /* xmlGFWall */,
 				682C5DAC28E5023700C8E004 /* xmlPeramb */,
 				682C5DB928E5029B00C8E004 /* xmlZ2 */,
+				27536D5D2CE2A2B6008D3755 /* TensorDemo */,
 			);
 		};
 /* End PBXProject section */
@@ -1466,6 +1508,14 @@
 				271E1A1E2A1E401B00A60A27 /* FitterThread.cpp in Sources */,
 				271E1A222A1E409700A60A27 /* Model.cpp in Sources */,
 				27118C7E2A262134003C50BA /* ModelContinuum.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		27536D5A2CE2A2B6008D3755 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				27244BA82CE2BE1A0079EC97 /* TensorDemo.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1699,6 +1749,20 @@
 			name = Debug;
 		};
 		2748E67D2A1E10CF00867EF6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		27536D622CE2A2B6008D3755 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		27536D632CE2A2B6008D3755 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2081,6 +2145,7 @@
 					$GridPre/include,
 					$PROJECT_DIR,
 					"$PROJECT_DIR/build$(CONFIGURATION)",
+					"$PROJECT_DIR/build$(CONFIGURATION)/MLU",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					$GridPkg/lib,
@@ -2175,6 +2240,7 @@
 					$GridPre/include,
 					$PROJECT_DIR,
 					"$PROJECT_DIR/build$(CONFIGURATION)",
+					"$PROJECT_DIR/build$(CONFIGURATION)/MLU",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					$GridPkg/lib,
@@ -2232,6 +2298,15 @@
 			buildConfigurations = (
 				2748E67C2A1E10CF00867EF6 /* Debug */,
 				2748E67D2A1E10CF00867EF6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		27536D642CE2A2B6008D3755 /* Build configuration list for PBXNativeTarget "TensorDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				27536D622CE2A2B6008D3755 /* Debug */,
+				27536D632CE2A2B6008D3755 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

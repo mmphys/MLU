@@ -2,6 +2,8 @@
 
 #  Created by Michael Marshall on 02/11/2024.
 
+set -e
+
 cd "${0%/*}"
 echo "Configuring SemiLep and MLU in $PWD"
 
@@ -10,15 +12,17 @@ BuildDir=build$Config
 Prefix=$HOME/.local$Config
 Pkg=/opt/local # MacPorts packages
 
+if [ "${1@L}" = clean ]
+then
 # Clean just my directory
 shopt -s globstar
 rm -rf **/autom4te.cache {,MLU/}build*
 rm **/{aclocal.m4,ar-lib,compile,config.guess,config.sub,configure,depcomp,install-sh,ltmain.sh,missing,Makefile.in,*onfig.h.in,*~}
 
-set -e
+autoreconf -fvi
+fi
 set -x
 
-autoreconf -fvi
 mkdir "$BuildDir"
 cd "$BuildDir"
 #../configure CC=clang --with-cblas="-framework Accelerate" --with-minuit2="$HOME/.local" --prefix="$Prefix"
