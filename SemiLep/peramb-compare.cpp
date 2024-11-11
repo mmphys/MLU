@@ -26,7 +26,7 @@
  *************************************************************************************/
 /*  END LEGAL */
 
-#include <MLUconfig.h>
+#include <SemiLepConfig.h>
 #include <stdio.h>
 #include <typeinfo>
 #include <Hadrons/Application.hpp>

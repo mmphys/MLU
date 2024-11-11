@@ -1,22 +1,15 @@
 ## Process this file with autoconf to produce a configure script.
-# Meson Lattice Utilities
+# Semileptonic data production (SemiLep) and Meson Lattice Utilities (MLU)
 
-AC_PREREQ([2.69])
-AC_INIT([MLU], [0.1])
-AC_COPYRIGHT([Michael Marshall 2021])
+AC_INIT([SemiLep], [0.2])
+AC_COPYRIGHT([Michael Marshall 2021-2024])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AC_CONFIG_SRCDIR([MLU/Physics.cpp])
-#AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_HEADERS([MLUconfig.h],
-    [$SED_INPLACE -e 's|#define PACKAGE|#define MLU_PACKAGE|g' -e 's|#define VERSION|#define MLU_VERSION|g' MLUconfig.h],
-    [if test x"$host_os" = x"${host_os#darwin}" ; then]
-        [SED_INPLACE="sed -i"]
-    [else]
-        [SED_INPLACE="sed -i .bak"]
-    [fi])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.13])
+AC_CONFIG_AUX_DIR([.])
+AC_CONFIG_MACRO_DIRS([m4])
+AC_CONFIG_SRCDIR([SemiLep/xml3pt.cpp])
+AM_INIT_AUTOMAKE([foreign])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 # Optional arguments for Grid / Hadrons.
@@ -58,31 +51,6 @@ AC_ARG_WITH([hadrons],
 
 AC_ARG_ENABLE([check], AS_HELP_STRING([--disable-check], [Disable check of Grid and Hadrons build]))
 
-# Optional arguments for other pre-requisite libraries
-
-GSLConfig=gsl-config
-GSLInstall=no
-AC_ARG_WITH([gsl],
-    [AS_HELP_STRING([--with-gsl=prefix],
-    [Install path of the GNU Scientific Library])],
-    [AC_MSG_NOTICE([--with-gsl=$with_gsl])]
-    [GSLConfig="$with_gsl/bin/$GSLConfig"],
-    [AC_CHECK_PROG([GSLCONF],[${GSLConfig}],[yes],[no])]
-    [if test x"$GSLCONF" != xyes ; then]
-        [GSLInstall=yes]
-    [fi])
-
-AC_ARG_WITH([minuit2],
-    [AS_HELP_STRING([--with-minuit2=prefix],
-    [try this for a non-standard install prefix of Minuit2])],
-    [],
-    [: m4_divert_text([DEFAULTS], [with_minuit2=no])])
-
-#AC_ARG_WITH([boost],
-#    [AS_HELP_STRING([--with-boost=prefix],
-#    [try this for a non-standard install prefix of Boost])],
-#    [CPPFLAGS="-I$with_boost $CPPFLAGS"])
-
 # If the user hasn't specified a CXX compiler, get it from Hadrons
 
 if test x"$CXX" = x ; then
@@ -102,26 +70,80 @@ if test x"$CXXLD" = x ; then
     fi
 fi
 
+# Check for programs
+AC_PROG_CXX
+AX_CXX_COMPILE_STDCXX(17, [noext], [mandatory])
+AC_PROG_CC
+AM_PROG_AR
+LT_INIT
+AC_LANG([C++])
+
+# Decode --with-MLU option
+AC_ARG_WITH([MLU],
+  [AS_HELP_STRING([--with-MLU],
+    [yes to build MLU sub-package, no assumes MLU can be found in environment,
+    otherwise path to installation location of MLU @<:@default=yes@:>@])],
+  [],
+  [: m4_divert_text([DEFAULTS], [with_MLU=yes])])
+
+# --with-MLU[=yes] means we're building MLU subpackage
+# Otherwise --with-MLU=optional prefix to pre-installed MLU
+AM_CONDITIONAL([WANT_BUILD_MLU], [test "x$with_MLU" = xyes])
+AS_IF([test "x$with_MLU" = xyes],
+      [AC_CONFIG_SUBDIRS([MLU])],
+      [AS_IF([test "x$with_MLU" != xno],
+            [CPPFLAGS+=" -I$with_MLU/include"]
+            [LDFLAGS+=" -L$with_MLU/lib"])]
+)
+
+# Optional path to hdf5_cpp header (we can rely on MLU for link to library)
+AC_ARG_WITH([hdf5], [AS_HELP_STRING([--with-hdf5], [path to installation location of hdf5])],
+  AS_IF([test "x$with_hdf5" != xyes && test "x$with_hdf5" != xno],
+        [CPPFLAGS+=" -I$with_hdf5/include"]))
+
+# Optional path to GSL header (we can rely on MLU for link to libraries)
+AC_ARG_WITH([gsl], [AS_HELP_STRING([--with-gsl], [path to installation location of GSL])],
+  AS_IF([test "x$with_gsl" != xyes && test "x$with_gsl" != xno],
+        [CPPFLAGS+=" -I$with_gsl/include"]))
+
+# Optional path to lime
+AC_ARG_WITH([lime], [AS_HELP_STRING([--with-lime], [path to installation location of lime])],
+  AS_IF([test "x$with_lime" != xyes && test "x$with_lime" != xno],
+      [CPPFLAGS+=" -I$with_lime/include"]
+      [LDFLAGS+=" -L$with_lime/lib"]
+      [AC_CHECK_LIB([lime],[limeCreateReader],,[AC_MSG_FAILURE([lime library not found])])]
+      ))
+
 # Now setup my environment
-CPPFLAGS="-I$with_grid/include $CPPFLAGS"
-LDFLAGS="-L$with_grid/lib $LDFLAGS"
+CPPFLAGS="-I$with_hadrons/include $CPPFLAGS"
+LDFLAGS="-L$with_hadrons/lib $LDFLAGS"
 if test x"$with_hadrons" != x"$with_grid" ; then
-  CPPFLAGS="-I$with_hadrons/include $CPPFLAGS"
-  LDFLAGS="-L$with_hadrons/lib $LDFLAGS"
+  CPPFLAGS="-I$with_grid/include $CPPFLAGS"
+  LDFLAGS="-L$with_grid/lib $LDFLAGS"
 fi
+
 CXXFLAGS="`$HadronsConfig --cxxflags` $CXXFLAGS"
 LDFLAGS="`$HadronsConfig --ldflags` $LDFLAGS"
 LIBS="-lHadrons `$HadronsConfig --libs` $LIBS"
 
-# I'd like to use c++17
-#CXXFLAGS="${CXXFLAGS//-std=c++* /-std=c++17 }"
+# Grid and Hadrons use CXXFLAGS (compiler) but should have used CPPFLAGS (preprocessor)
+# Copy all the -I flags from CXXFLAGS to CPPFLAGS
+[CPPFLAGS="`echo $CXXFLAGS | sed -E 's/(^| )([^-]|-[^I])[^ ]*//g'` $CPPFLAGS"]
+# Remove all the -I flags from CXXFLAGS
+[CXXFLAGS="`echo $CXXFLAGS | sed -E 's/(^| )-I[^ ]*//g'`"]
+# If CXXFlags contains -Xpreprocessor -fopenmp, put it in CPPFLAGS
+[CPPFLAGS="$CPPFLAGS `echo $CXXFLAGS | sed -E 's/.*(-Xpreprocessor -fopenmp).*/-Xpreprocessor -fopenmp/'`"]
+# Remove -Xpreprocessor -fopenmp from CXXFlags
+[CXXFLAGS="`echo $CXXFLAGS | sed -E 's/-Xpreprocessor -fopenmp//g'`"]
 
-# Checks for programs.
-AC_PROG_CXX
-AC_PROG_CC
-AC_PROG_RANLIB
-AM_PROG_AR
-AC_LANG([C++])
+AC_MSG_NOTICE([CPPFLAGS=$CPPFLAGS])
+AC_MSG_NOTICE([LDFLAGS=$LDFLAGS])
+AC_MSG_NOTICE([CXXFLAGS=$CXXFLAGS])
+AC_MSG_NOTICE([LIBS=$LIBS])
+AC_MSG_NOTICE([CXXLD=$CXXLD])
+
+# See whether OpenMP is available
+AC_OPENMP
 
 AS_IF([test x"$enable_check" != xno], [
     AC_MSG_CHECKING([that a minimal Grid and Hadrons program compiles]);
@@ -148,210 +170,28 @@ AS_IF([test x"$enable_check" != xno], [
         [AC_MSG_ERROR([Could not compile a minimal Grid and Hadrons program])])
     ])
 
-AbsMLUBuildDir=`pwd -P`; cd ${srcdir}; abs_srcdir=`pwd -P`; cd ${AbsMLUBuildDir}
-MLUBuildDir=${AbsMLUBuildDir##*/}
-AC_MSG_NOTICE([AbsMLUBuildDir=$AbsMLUBuildDir])
-AC_MSG_NOTICE([MLUBuildDir=$MLUBuildDir])
+#AC_DEFINE_UNQUOTED([SemiLep_SHA], ["`git rev-parse HEAD`"], [git commit SHA])
+#AC_DEFINE_UNQUOTED([SemiLep_SHORT_SHA], ["`git rev-parse --short HEAD`"], [git commit short SHA])
+#AC_DEFINE_UNQUOTED([SemiLep_BRANCH], ["`git rev-parse --abbrev-ref HEAD`"], [git branch])
+AC_DEFINE_UNQUOTED([SemiLep_GIT_SUMMARY], ["MLU `git rev-parse --abbrev-ref HEAD` `git rev-parse HEAD`, Grid `$GridConfig --git`, Hadrons `$HadronsConfig --git`"], [git branch and commit for MLU, Grid and Hadrons])
 
-# Check for Minuit2 by making a small test program (can't check libraries as pure C++)
-
-if test x$with_minuit2 != xno ; then
-  if test x$with_minuit2 = xyes ; then
-    # See whether I've already installed a version in prefix
-    if test -d $prefix/include/Minuit2 ; then
-        AC_MSG_NOTICE([Using Minuit2 previously installed in --prefix])
-    else
-        # Install my version in prefix
-        Minuit2Dir="$abs_srcdir/.Package/Minuit2-5.34.14"
-        Minuit2ConfigureDir="."
-        if test x$AbsMLUBuildDir != x$abs_srcdir ; then
-            Minuit2Dir="$Minuit2Dir/$MLUBuildDir"
-            Minuit2ConfigureDir=".."
-        fi
-        AC_MSG_NOTICE([Making $Minuit2Dir])
-        mkdir -p "$Minuit2Dir"
-        cd "$Minuit2Dir"
-        OldCXX="$CXX"
-        if test x${OldCXX:0:4} = xnvcc ; then
-            OldCC="$CC"
-            OldCPPFLAGS="$CPPFLAGS"
-            OldCXXDEPMODE="$CXXDEPMODE"
-            OldCXXFLAGS="$CXXFLAGS"
-            OldCXXLD="$CXXLD"
-            CXX="g++"
-            CC=gcc
-            CPPFLAGS=""
-            CXXDEPMODE="depmode=gcc3"
-            CXXFLAGS=""
-            unset CXXLD
-            for f in $OldCXXFlags ; do
-                if test x${f:0:2} = x-I ; then
-                    CXXFLAGS="$CXXFLAGS $f"
-                fi
-            done
-        fi
-        $Minuit2ConfigureDir/configure --prefix="$prefix"
-        make -j 12
-        make install
-        if test x${OldCXX:0:4} = xnvcc ; then
-            CXX="$OldCXX"
-            CC="$OldCC"
-            CPPFLAGS="$OldCPPFLAGS"
-            CXXDEPMODE="$OldCXXDEPMODE"
-            CXXFLAGS="$OldCXXFLAGS"
-            CXXLD="$OldCXXLD"
-        fi
-        cd $AbsMLUBuildDir
-        if ! test -d $prefix/include/Minuit2 ; then
-            AC_MSG_ERROR([Could not install ${Minuit2Config}])
-        fi
-    fi
-    # Use the version I installed in prefix
-    CPPFLAGS="-I$prefix/include $CPPFLAGS"
-    LDFLAGS="-L$prefix/lib $LDFLAGS"
-  else
-    # --with-minuit2 specified the path to Minuit2
-    CPPFLAGS="-I$with_minuit2/include $CPPFLAGS"
-    LDFLAGS="-L$with_minuit2/lib $LDFLAGS"
-  fi
-  LIBS+=" -lMinuit2"
-  AC_MSG_CHECKING([that a minimal Minuit2 program compiles]);
-  AC_LINK_IFELSE(
-          [AC_LANG_SOURCE([[
-      #include <Minuit2/Minuit2Minimizer.h>
-      int main(int argc, char *argv[]) {
-          ROOT::Minuit2::MnUserParameterState Minuit2State;
-          return 0; }
-      ]])],
-      [AC_MSG_RESULT([yes])]
-      [AC_DEFINE([HAVE_MINUIT2], [], [Optional Minuit2 fitter])],
-      [AC_MSG_RESULT([no])]
-      [AC_MSG_ERROR([Could not compile a minimal Minuit2 program])])
-fi
-AM_CONDITIONAL([MINUIT2], [test x$with_minuit2 != xno])
-
-# Do we have NVidia's CUDA BLAS library?
-# Disable BLAS libraries with GSL_CBLAS_LIB=-lgslcblas before configure
-if test x"$GSL_CBLAS_LIB" = x ; then
-  AC_MSG_CHECKING([for CUDA BLAS]);
-  GSL_CBLAS_LIB="-lnvblas -lgslcblas" #nvblas only provides some functions, rest from gslcblas
-  OldLDFLAGS="$LDFLAGS"
-  LDFLAGS="$GSL_CBLAS_LIB $LDFLAGS"
-  AC_LINK_IFELSE(
-      [AC_LANG_SOURCE([[
-      #include <iostream>
-      int main() {
-          std::cout << "Hello world" << std::endl;
-          return 0; }
-      ]])],
-      [AC_MSG_RESULT([yes])],
-      [AC_MSG_RESULT([no])]
-      [unset GSL_CBLAS_LIB])
-  LDFLAGS="$OldLDFLAGS"
-fi
-
-# Can we use CBLAS from Apple's Accelerate framework?
-if test x"$GSL_CBLAS_LIB" = x ; then
-  AC_MSG_CHECKING([for Apple Accelerate]);
-  GSL_CBLAS_LIB="-framework Accelerate"
-  OldLDFLAGS="$LDFLAGS"
-  LDFLAGS="$GSL_CBLAS_LIB $LDFLAGS"
-  AC_LINK_IFELSE(
-      [AC_LANG_SOURCE([[
-      #include <iostream>
-      int main() {
-          std::cout << "Hello world" << std::endl;
-          return 0; }
-      ]])],
-      [AC_MSG_RESULT([yes])],
-      [AC_MSG_RESULT([no])]
-      [unset GSL_CBLAS_LIB])
-  LDFLAGS="$OldLDFLAGS"
-fi
-
-# Check for GSL
-
-if test x"$GSL_CBLAS_LIB" = x ; then
-  GSL_LIB_OPTION=--libs
-else
-  GSL_LIB_OPTION=--libs-without-cblas
-fi
-if test x$GSLInstall = xyes ; then
-    GSLConfig="$prefix/bin/$GSLConfig"
-    if test -x "$GSLConfig" ; then
-        AC_MSG_NOTICE([Using GSL previously installed in --prefix])
-    else
-        GSLDir="$abs_srcdir/.Package/gsl-2.7"
-        GSLConfigureDir="."
-        if test x$AbsMLUBuildDir != x$abs_srcdir ; then
-            GSLDir="$GSLDir/$MLUBuildDir"
-            GSLConfigureDir=".."
-        fi
-        AC_MSG_NOTICE([Making $GSLDir])
-        mkdir -p "$GSLDir"
-        cd "$GSLDir"
-        $GSLConfigureDir/configure --prefix="$prefix"
-        make -j 12
-        make install
-        cd $AbsMLUBuildDir
-        if ! test -x "$GSLConfig" ; then
-            AC_MSG_ERROR([Could not install ${GSLConfig}])
-        fi
-    fi
-fi
-LDFLAGS+=" $GSL_CBLAS_LIB `$GSLConfig $GSL_LIB_OPTION`"
-CPPFLAGS+=" `$GSLConfig --cflags`"
-
-#AC_SEARCH_LIBS([gsl_set_error_handler], [gsl], [],
-#               [AC_MSG_ERROR([GNU Scientific Library not found])])
-#if test x"$ac_cv_search_gsl_set_error_handler" != x"none required" ; then
-#    LIBS+=" $ac_cv_search_gsl_set_error_handler"
-#fi
-
-#BoostPackage="$abs_srcdir/.Package/boost_1_77_0"
-## Make sure header-only boost is available
-#AC_CHECK_HEADER([boost/spirit/home/x3/version.hpp],
-#                [AC_MSG_NOTICE([Pre-installed Boost headers])],
-#                [AC_MSG_NOTICE([checking for Boost headers in $BoostPackage])]
-#                [CPPFLAGS+=" -I$BoostPackage"]
-#                [unset ac_cv_header_boost_spirit_home_x3_version_hpp]
-#                [AC_CHECK_HEADER([boost/spirit/home/x3/version.hpp],,
-#                                 [AC_MSG_ERROR([Boost not available in $BoostPackage. Try bootstrap.sh?])])])
-
-# For backtrace in DebugInfo.cpp
-AC_CHECK_HEADERS(execinfo.h)
-
-CPPFLAGS="-I${abs_srcdir} $CPPFLAGS -I$AbsMLUBuildDir"
-
-#AC_DEFINE_UNQUOTED([MLU_SHA], ["`git rev-parse HEAD`"], [git commit SHA])
-#AC_DEFINE_UNQUOTED([MLU_SHORT_SHA], ["`git rev-parse --short HEAD`"], [git commit short SHA])
-#AC_DEFINE_UNQUOTED([MLU_BRANCH], ["`git rev-parse --abbrev-ref HEAD`"], [git branch])
-AC_DEFINE_UNQUOTED([MLU_GIT_SUMMARY], ["MLU `git rev-parse --abbrev-ref HEAD` `git rev-parse HEAD`, Grid `$GridConfig --git`, Hadrons `$HadronsConfig --git`"], [git branch and commit for MLU, Grid and Hadrons])
-
-AM_CPPFLAGS="$CPPFLAGS"
-AM_CXXFLAGS="$CXXFLAGS"
-AM_CFLAGS="$CFLAGS"
-AM_LDFLAGS="$LDFLAGS"
-MLU_LIBS="$LIBS"
 CCLD="$CXXLD"
-
-unset CPPFLAGS
-unset CXXFLAGS
-unset CFLAGS
-unset LDFLAGS
-unset LIBS
-
-#AC_SUBST([MLU_SHORT])
-#AC_SUBST([MLU_SHA])
-#AC_SUBST([MLU_BRANCH])
-AC_SUBST([MLU_GIT_SUMMARY])
+AC_SUBST([AM_CPPFLAGS],["$CPPFLAGS"])
+AC_SUBST([AM_CXXFLAGS],["$CXXFLAGS"])
+AC_SUBST([AM_LDFLAGS],["$LDFLAGS $LIBS"])
 AC_SUBST([CXXLD])
 AC_SUBST([CCLD])
-AC_SUBST([AM_CPPFLAGS])
-AC_SUBST([AM_CXXFLAGS])
-AC_SUBST([AM_CFLAGS])
-AC_SUBST([AM_LDFLAGS])
-AC_SUBST([MLU_LIBS])
-AC_CONFIG_FILES([Makefile MLU/Makefile Analyze/Makefile Fit/Makefile Study/Makefile])
-#AC_CONFIG_SUBDIRS([.Package/gsl-2.7 .Package/Minuit2-5.34.14])
+AC_SUBST([SemiLep_GIT_SUMMARY])
+CPPFLAGS=""
+CXXFLAGS=""
+LDFLAGS=""
+LIBS=""
+AC_CONFIG_HEADERS([SemiLepConfig.h],
+    [$SED_INPLACE -e 's|#define PACKAGE|#define SemiLep_PACKAGE|g' -e 's|#define VERSION|#define SemiLep_VERSION|g' SemiLepConfig.h],
+    [if test x"$host_os" = x"${host_os#darwin}" ; then]
+        [SED_INPLACE="sed -i"]
+    [else]
+        [SED_INPLACE="sed -i .bak"]
+    [fi])
+AC_CONFIG_FILES([Makefile SemiLep/Makefile])
 AC_OUTPUT

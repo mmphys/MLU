@@ -18,10 +18,7 @@ libMLU_la_SOURCES = CorrFile.cpp CorrFile.hpp DataSet.cpp DataSet.hpp \
   Physics.cpp Physics.hpp Posix.cpp Posix.hpp Sample.cpp Sample.hpp \
   String.cpp String.hpp Utility.cpp Utility.hpp
 
-#include_HEADERS = CorrFile.hpp DataSet.hpp DebugInfo.hpp FitRange.hpp \
-  FitRangeImp.hpp Fold.hpp GSLVecMat.hpp GSLVecMatImp.hpp HDF5.hpp \
-  JackBoot.hpp Math.hpp MLU.hpp MLUFirst.hpp Model.hpp Param.hpp \
-  Physics.hpp Posix.hpp Sample.hpp String.hpp Utility.hpp
+# Don't forget to update nobase_include_HEADERS in ../Makefile.am
 
 if WANT_BUILD_GSL
 libMLU_la_LIBADD = ../gsl-2.7/libgsl.la

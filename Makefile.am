@@ -1,5 +1,8 @@
-# Mike's Lattice Utilities
+# SemiLep
 
-# ACLOCAL_AMFLAGS = -I .buildutils/m4
-
-SUBDIRS = MLU Analyze Fit Study
+# Build the library in the MLU subdirectory first.
+SUBDIRS =
+if WANT_BUILD_MLU
+SUBDIRS += MLU
+endif
+SUBDIRS += SemiLep

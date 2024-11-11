@@ -345,6 +345,7 @@
 		2763DE022A1D241400529933 /* Utility.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Utility.hpp; sourceTree = "<group>"; };
 		2763DE052A1D253D00529933 /* CorrFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CorrFile.cpp; sourceTree = "<group>"; };
 		2763DE062A1D253D00529933 /* CorrFile.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CorrFile.hpp; sourceTree = "<group>"; };
+		276592112CE1203500B536AA /* ConfigSemiLep.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ConfigSemiLep.sh; sourceTree = "<group>"; };
 		277DF9D12AFCE24E00AC9260 /* ModelMisc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelMisc.cpp; sourceTree = "<group>"; };
 		277DF9D22AFCE24E00AC9260 /* ModelMisc.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelMisc.hpp; sourceTree = "<group>"; };
 		278BA02A290ED4AB00960730 /* GetColumn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GetColumn.cpp; sourceTree = "<group>"; };
@@ -354,6 +355,7 @@
 		27953EAC28FB226D00A4CF67 /* DebugInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DebugInfo.cpp; sourceTree = "<group>"; };
 		27B48A982A039D4C0006EE75 /* Posix.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Posix.hpp; sourceTree = "<group>"; };
 		27B48A992A039D4C0006EE75 /* Posix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Posix.cpp; sourceTree = "<group>"; };
+		27D4400C2CE26C1F00C1AEAA /* ConfigAll.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ConfigAll.sh; sourceTree = "<group>"; };
 		27D49A4129105615003E2146 /* lime_truncate.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = lime_truncate.c; sourceTree = "<group>"; };
 		27D49A462910563C003E2146 /* lime_truncate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lime_truncate; sourceTree = BUILT_PRODUCTS_DIR; };
 		27E8B35F28FF2DE80047FEF1 /* ModelRatio.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelRatio.hpp; sourceTree = "<group>"; };
@@ -837,6 +839,8 @@
 				6820525F28E50661003AD91D /* .gitignore */,
 				6820526028E50662003AD91D /* bootstrap.sh */,
 				274D73922CE0D79A00DD1287 /* Clean.sh */,
+				27D4400C2CE26C1F00C1AEAA /* ConfigAll.sh */,
+				276592112CE1203500B536AA /* ConfigSemiLep.sh */,
 				6820525E28E50661003AD91D /* configure.ac */,
 				6820525D28E50661003AD91D /* Makefile.am */,
 				6820526128E50662003AD91D /* readme.md */,
