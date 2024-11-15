@@ -55,23 +55,16 @@ GSLPrefix=gsl-2.7
 Minuit2Prefix=Minuit2-5.34.14
 if  ! Download "GSL v2.7" \
       https://mirror.ibcp.fr/pub/gnu/gsl/${GSLPrefix}.tar.gz \
-      efbbf3785da0e53038be7907500628b466152dbc3c173a87de1b5eba2e23602b
+      efbbf3785da0e53038be7907500628b466152dbc3c173a87de1b5eba2e23602b \
+      No
 then
   AllOK=0
 else
-  cd "$GSLPrefix"
-  echo "Configuring $GSLPrefix"
-  autoreconf -fvi
-  cd ..
-  #if [ ! -d gsl ]
-  #then
-    #mkdir gsl
-    #cd gsl
-    #echo "Making links to gsl headers"
-    #find ../gsl-2.7 -type f -name '*'.h -exec ln -s {} \;
-    #cd ..
-  #fi
-  #[ ! -h gsl ] && ln -s "$GSLPrefix"/gsl
+  mkdir -p "$GSLPrefix"
+  #cd "$GSLPrefix"
+  #echo "Configuring $GSLPrefix"
+  #autoreconf -fvi
+  #cd ..
 fi
 
 # NB: Minuit2 standalone on cern seems to be password protected. But download defaults to my copy
