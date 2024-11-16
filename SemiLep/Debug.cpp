@@ -490,7 +490,7 @@ void GridDebug(int argc, char *argv[])
   Grid::Grid_init( &argc, &argv );
   try
   {
-    std::cout << Grid::GridLogMessage << MLUVersionInfoHuman() << std::endl;
+    std::cout << Grid::GridLogMessage << SemiLep_GIT_SUMMARY << std::endl;
     std::cout << Grid::GridLogMessage << "Hello" << std::endl;
     //std::cout << Grid::GridLogMessage << "Boost Spirit X3 version 0x"
     //          << std::hex << SPIRIT_X3_VERSION << std::dec << std::endl;

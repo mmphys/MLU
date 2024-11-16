@@ -139,7 +139,7 @@ int AppMaker::MakeThreePoint( int argc, char *argv[], const std::string &sXmlFil
   HadronsLogMessage.Active(GridLogMessage.isActive());
   HadronsLogIterative.Active(GridLogIterative.isActive());
   HadronsLogDebug.Active(GridLogDebug.isActive());
-  LOG(Message) << MLUVersionInfoHuman() << std::endl;
+  LOG(Message) << SemiLep_GIT_SUMMARY << std::endl;
   // Make a default spacetime grid ... just in case we need to communicate
   const Grid::Coordinate &gridDefaultLatt{ GridDefaultLatt() };
   Grid::GridCartesian * grid = Grid::SpaceTimeGrid::makeFourDimGrid( gridDefaultLatt,
