@@ -3,11 +3,10 @@
 # Fail on any error
 set -e
 
-echo "SemiLep (semileptonic) data production and Meson Lattice Utilities (MLU)"
+cd "${0%/*}"
+echo "Bootstrapping SemiLep (semileptonic data generation) in $PWD"
 
-cd MLU
-./bootstrap.sh
-cd ..
+[ -f MLU/bootstrap.sh ] && MLU/bootstrap.sh
 
-echo "Generating configure for SemiLep (semileptonic) data production"
+echo "Generating configure for SemiLep (semileptonic data generation)"
 autoreconf -fvi

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -342,6 +342,7 @@
 		2748E6712A1E0F9E00867EF6 /* Continuum.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Continuum.cpp; sourceTree = "<group>"; };
 		2748E6722A1E0F9E00867EF6 /* Continuum.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Continuum.hpp; sourceTree = "<group>"; };
 		2748E6772A1E10CF00867EF6 /* Continuum */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Continuum; sourceTree = BUILT_PRODUCTS_DIR; };
+		274A21202CE8D9FD0038C970 /* ReadMeCblasVsAccelerate.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ReadMeCblasVsAccelerate.md; sourceTree = "<group>"; };
 		274D738D2CE0CEDE00DD1287 /* bootstrap.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = bootstrap.sh; sourceTree = "<group>"; };
 		274D738E2CE0CEDE00DD1287 /* Config.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = Config.sh; sourceTree = "<group>"; };
 		274D738F2CE0CEDE00DD1287 /* configure.ac */ = {isa = PBXFileReference; lastKnownFileType = text; path = configure.ac; sourceTree = "<group>"; };
@@ -371,7 +372,6 @@
 		27D49A462910563C003E2146 /* lime_truncate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lime_truncate; sourceTree = BUILT_PRODUCTS_DIR; };
 		27E8B35F28FF2DE80047FEF1 /* ModelRatio.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModelRatio.hpp; sourceTree = "<group>"; };
 		27E8B36028FF2DE80047FEF1 /* ModelRatio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelRatio.cpp; sourceTree = "<group>"; };
-		27F12AE72BC94DC90039DA35 /* ReadMeCblasVsAccelerate.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ReadMeCblasVsAccelerate.md; sourceTree = "<group>"; };
 		27FACB6629F6D4CA00213B2A /* JackBoot.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JackBoot.cpp; sourceTree = "<group>"; };
 		27FACB6729F6D4CA00213B2A /* JackBoot.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = JackBoot.hpp; sourceTree = "<group>"; };
 		27FE177A2A1D2AF700C271ED /* Sample.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Sample.cpp; sourceTree = "<group>"; };
@@ -383,7 +383,6 @@
 		27FE17862A1D304800C271ED /* DataSet.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DataSet.hpp; sourceTree = "<group>"; };
 		27FE17872A1D304800C271ED /* DataSet.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DataSet.cpp; sourceTree = "<group>"; };
 		6820525B28E505CA003AD91D /* Xml */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Xml; sourceTree = "<group>"; };
-		6820525C28E505CA003AD91D /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		6820525D28E50661003AD91D /* Makefile.am */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
 		6820525E28E50661003AD91D /* configure.ac */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = configure.ac; sourceTree = "<group>"; };
 		6820525F28E50661003AD91D /* .gitignore */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
@@ -484,6 +483,10 @@
 		682C5DAD28E5023700C8E004 /* xmlPeramb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlPeramb; sourceTree = BUILT_PRODUCTS_DIR; };
 		682C5DBA28E5029B00C8E004 /* xmlZ2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xmlZ2; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		274A211F2CE8B4A40038C970 /* Scripts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Scripts; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		271DB9DB2A2A256C00AF0501 /* Frameworks */ = {
@@ -828,11 +831,13 @@
 				27F41E3F2CE09FC6007D6C52 /* MLU */,
 				27F41E812CE0A2C9007D6C52 /* Analyse */,
 				27F41E822CE0A32E007D6C52 /* Fit */,
+				274A211F2CE8B4A40038C970 /* Scripts */,
 				274D738D2CE0CEDE00DD1287 /* bootstrap.sh */,
 				274D738E2CE0CEDE00DD1287 /* Config.sh */,
 				274D738F2CE0CEDE00DD1287 /* configure.ac */,
 				274D73902CE0CEDE00DD1287 /* Makefile.am */,
 				274D73912CE0CEDE00DD1287 /* readme.md */,
+				274A21202CE8D9FD0038C970 /* ReadMeCblasVsAccelerate.md */,
 			);
 			path = MLU;
 			sourceTree = "<group>";
@@ -850,7 +855,6 @@
 			children = (
 				682C5C4628E4F2C300C8E004 /* MLU */,
 				27F41E832CE0A575007D6C52 /* SemiLep */,
-				6820525C28E505CA003AD91D /* Scripts */,
 				6820525B28E505CA003AD91D /* Xml */,
 				682C5CC128E4FA3200C8E004 /* Frameworks */,
 				68C5946028E4F20200FA1835 /* Products */,
@@ -862,7 +866,6 @@
 				6820525E28E50661003AD91D /* configure.ac */,
 				6820525D28E50661003AD91D /* Makefile.am */,
 				6820526128E50662003AD91D /* readme.md */,
-				27F12AE72BC94DC90039DA35 /* ReadMeCblasVsAccelerate.md */,
 			);
 			sourceTree = "<group>";
 		};
