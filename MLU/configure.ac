@@ -11,6 +11,24 @@ AC_CONFIG_SRCDIR([MLU/Physics.cpp])
 AM_INIT_AUTOMAKE([foreign])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
+# Because this can be made as a subpackage and the parent might be compiled for GPU and/or MPI, provide a means to specify compiler and new options
+AC_ARG_WITH([cxx],[AS_HELP_STRING([--with-cxx], [override CXX])],
+  [AS_IF([test "x$with_cxx" != x],[CXX="$with_cxx"])])
+AC_ARG_WITH([cc],[AS_HELP_STRING([--with-cc], [override CC])],
+  [AS_IF([test "x$with_cc" != x],[CC="$with_cc"])])
+AC_ARG_WITH([cxxld],[AS_HELP_STRING([--with-cxxld], [override CXXLD])],
+  [AS_IF([test "x$with_cxxld" != x],[CXXLD="$with_cxxld"])])
+AC_ARG_WITH([ccld],[AS_HELP_STRING([--with-ccld], [override CCLD])],
+  [AS_IF([test "x$with_ccld" != x],[CCLD="$with_ccld"])])
+AC_ARG_WITH([cxxflags],[AS_HELP_STRING([--with-cxxflags], [override CXXFLAGS])],
+  [AS_IF([test "x$with_cxxflags" != x],[CXXFLAGS="$with_cxxflags"])])
+AC_ARG_WITH([cppflags],[AS_HELP_STRING([--with-cppflags], [override CPPFLAGS])],
+  [AS_IF([test "x$with_cppflags" != x],[CPPFLAGS="$with_cppflags"])])
+AC_ARG_WITH([ldflags],[AS_HELP_STRING([--with-ldflags], [override LDFLAGS])],
+  [AS_IF([test "x$with_ldflags" != x],[LDFLAGS="$with_ldflags"])])
+AC_ARG_WITH([libs],[AS_HELP_STRING([--with-libs], [override LIBS])],
+  [AS_IF([test "x$with_libs" != x],[LIBS="$with_libs"])])
+
 # Check for programs
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX(17, [noext], [mandatory])

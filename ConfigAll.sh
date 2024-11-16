@@ -25,7 +25,7 @@ set -x
 
 mkdir "$BuildDir"
 cd "$BuildDir"
-#../configure CC=clang --with-cblas="-framework Accelerate" --with-minuit2="$HOME/.local" --prefix="$Prefix"
+#../configure CXX=mpicxx-openmpi-mp CC=mpicc-openmpi-mp CPPFLAGS="-I$Pkg/include -I$Pkg/include/libomp -Xpreprocessor -fopenmp" LDFLAGS="-L$Pkg/lib -L$Pkg/lib/libomp" LIBS="-lomp" --with-cxx=clang++ --with-cc=clang --with-cblas="-framework Accelerate" --with-minuit2="$HOME/.local" --prefix="$Prefix"
 ../configure CC=clang CPPFLAGS="-I$Pkg/include -I$Pkg/include/libomp -Xpreprocessor -fopenmp" LDFLAGS="-L$Pkg/lib -L$Pkg/lib/libomp" LIBS="-lomp" --with-cblas="-framework Accelerate" --with-minuit2="$HOME/.local" --prefix="$Prefix"
 make -j 20
 make install
