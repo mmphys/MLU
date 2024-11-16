@@ -88,7 +88,7 @@ Update your path to include Script subdirectories:
     PATH+=":$MLU/Scripts:$MLU/Scripts/Plot:$MLU/Scripts/Study1Plateau"`
 
 The scripts require a recent version of Bash (>= 4.2) that supports associative arrays.
-** Mac users in particular take note**, make sure the version of Bash you wish to use is earliest in your path.
+**Mac users in particular take note**, make sure the version of Bash you wish to use is earliest in your path.
 
 ### Script dependencies
 

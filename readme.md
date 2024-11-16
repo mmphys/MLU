@@ -43,8 +43,6 @@ Choose one of the following options:
 
     ./bootstrap.sh
 
-`bootstrap.sh` will download its own version of GSL and Minuit2 into `.Package` subdirectory, then run `autoreconf -fvi`
-
 #### 2b. Build `SemiLep` only (if you already have `MLU` installed)
 
     autoreconf -fvi --no-recursive
