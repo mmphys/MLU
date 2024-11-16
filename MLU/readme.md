@@ -30,7 +30,7 @@ NB: GSL can be installed as a subpackage of MLU (see below).
 Optional
 
 1. **highly recommended** [OpenMP] (except for debug builds)
-2. ** optional ** [CERN `Minuit2`][minuit2] standalone version (see paragraph 3, "... can be downloaded [here]") or from [Mike's PhD page][MikeMinuit2]
+2. **optional** [CERN `Minuit2`][minuit2] standalone version (see paragraph 3, "... can be downloaded [here]") or from [Mike's PhD page][MikeMinuit2]
 
 [bash]: https://www.gnu.org/software/bash/
 [hdf5]: https://www.hdfgroup.org/solutions/hdf5/
