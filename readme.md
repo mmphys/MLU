@@ -47,7 +47,7 @@ Choose one of the following options:
 
 #### 2b. Build `SemiLep` only (if you already have `MLU` installed)
 
-    autoreconf -fvi
+    autoreconf -fvi --no-recursive
 
 ## 3. Configure
 

@@ -79,7 +79,7 @@ AS_IF([test "x$with_gsl" = xcheck || test "x$with_gsl" = xyes],
         [AC_MSG_NOTICE([Making gsl from subpackage in gsl-2.7 directory])],
         [AC_MSG_RESULT([no])]
         [AS_IF([test "x$with_gsl" = xyes],
-          [AC_MSG_ERROR([gsl-2.7/configure.ac missing. Run bootstrap.sh or specify --with-gsl=path])],
+          [AC_MSG_ERROR([$srcdir/gsl-2.7/configure.ac missing. Install it or specify --with-gsl=path])],
           [with_gsl=no]
         )]
       )]

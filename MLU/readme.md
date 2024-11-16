@@ -53,9 +53,13 @@ Downloads archives containing the versions of `GSL` and `Minuit2` used in produc
 
 **Skip this step if you already have `GSL` installed.**
 
-If the subdirectory `gsl-2.7` exists, MLU will build it as a subpackage:
+If GSL exists in the subdirectory `gsl-2.7`, MLU will build it as a subpackage:
 
     tar -xf gsl-2.7.tar.gz
+    cd gsl-2.7
+    autoreconf -fvi
+
+NB: You can put any version of GSL in this directory, but it must be named `gsl-2.7`
 
 ## 3. Configure
 

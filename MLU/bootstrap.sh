@@ -61,10 +61,6 @@ then
   AllOK=0
 else
   mkdir -p "$GSLPrefix"
-  #cd "$GSLPrefix"
-  #echo "Configuring $GSLPrefix"
-  #autoreconf -fvi
-  #cd ..
 fi
 
 # NB: Minuit2 standalone on cern seems to be password protected. But download defaults to my copy
