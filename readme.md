@@ -23,6 +23,7 @@ If you wish to perform data analysis only, **don't** install this package. Inste
 3. [c-lime][lime]
 4. [Grid] Latest version (with HDF5, OpenMP and c-lime)
 5. [Hadrons] commit 49fd078f7b8d43d5c6c2c4814e1a8987afc244f0
+6. [GNU Scientific Library][gsl] (GSL), version 2.5 or later (I used 2.7 in production) or from [Mike's PhD page][MikeGSL]
 
 This commit of Hadrons requires `-fpermissive` to be included in `CXXFLAGS` in order to build successfully. It also has a dependency on a Grid deflation header which has moved, requiring (assuming Grid has been installed in `$Prefix`)
 
@@ -34,6 +35,8 @@ This commit of Hadrons requires `-fpermissive` to be included in `CXXFLAGS` in o
 [lime]: https://usqcd-software.github.io/c-lime/
 [grid]: https://github.com/paboyle/Grid
 [hadrons]: https://github.com/aportelli/Hadrons
+[gsl]: https://www.gnu.org/software/gsl/doc/html/index.html
+[MikeGSL]: http://lqcd.me/PhD/tar/gsl-2.7.tar.gz
 
 ## 2. Bootstrap
 
@@ -49,25 +52,32 @@ Choose one of the following options:
 
 ## 3. Configure
 
-If you have built Grid with OpenMP, HDF5 and lime, then use the usual incantation (the arguments are *optional*):
+Use the usual incantation
 
     mkdir build
     cd build
-    ../configure --with-grid=*path* --with-hadrons=*path* --with-gsl=*path* --with-minuit2=*path* --prefix=*InstallPath*
 
-If you need to specify additional paths, use `CXXFLAGS`, `LDFLAGS`, etc.
-E.g. to pick up prerequisites installed in a location specified by environment variable `GridPre`: 
+In `configure`, if you wish to build `MLU` as a subpackage, set `--with-MLU=yes` (or leave it out entirely - `yes` is the default). Otherwise set `--with-MLU=*path*` to link to a pre-installed copy of `MLU` in `*path*`, or '--with-MLU=no' if `MLU` can be found via `CPPFLAGS` etc.
 
-    ../configure CXXFLAGS=-I$GridPre/include LDFLAGS=-L$GridPre/lib --with-grid=*path* --with-hadrons=*path* --with-gsl=*path* --with-minuit2=*path* --prefix=*InstallPath*
+*Optionally* set `with-grid=*path*`, `with-hadrons=*path*`, `--with-hdf5=*path*`, `--with-gsl=*path*` and `--with-lime=*path*`. E.g.
 
-E.g. if you also wish to use Xcode clang and tell it to use OpenMP (download the OpenMP library separately, e.g. with MacPorts):
+    ../configure --with-grid=*path* --with-hadrons=*path* --with-gsl=*path* --prefix=*InstallPath*
 
-    ../configure CXX=clang++ CC=clang CXXFLAGS="-I$GridPre/include -I$GridPre/include/libomp -Xpreprocessor -fopenmp" LDFLAGS="-L$GridPre/lib -L$GridPre/lib/libomp" LIBS=-lomp --with-grid=*path* --with-hadrons=*path* --with-gsl=*path* --with-minuit2=*path* --prefix=*InstallPath*
- 
+If you need to specify additional paths, use `CPPFLAGS`, `LDFLAGS`, `LIBS` etc.
+E.g. to pick up prerequisites installed in a location specified by `$GridPre`: 
+
+    ../configure CPPFLAGS=-I$GridPre/include LDFLAGS=-L$GridPre/lib --with-grid=*path* --with-hadrons=*path* --prefix=*InstallPath*
+
+You can also specify `CXX`, `CC`, `CXXLD`, `CCLD` to choose specific c++ and c compilers and linkers. If not set, `CXX` and `CXXLD` will be taken from 'hadrons-config'. `configure` will also do its best to apportion `hadrons-config --cxxflags` between CPPFLAGS (c & c++ pre-processor flags) and CXXFLAGS (c++ compiler flags). E.g. if you also wish to use Xcode clang and tell it to use OpenMP installed in $GridPkg (download the OpenMP library separately, e.g. with MacPorts):
+
+    ../configure CXX=clang++ CC=clang CPPFLAGS="-I$GridPkg/include -I$GridPkg/include/libomp -Xpreprocessor -fopenmp" LDFLAGS="-L$GridPkg/lib -L$GridPkg/lib/libomp" LIBS=-lomp --with-grid=*path* --with-hadrons=*path* --prefix=*InstallPath*
+
 MacOS example configure scripts can be found in
 
 * `ConfigAll.sh` configure SemiLep and MLU as a single package
 * `ConfigSemiLep.sh` configure SemiLep only
+
+If you wish to build `SemiLep` for gpu, it is recommended that `MLU` still be built for cpu so that the `MLU` utilities (`bootstrap`, `MultiFit`, `Continuum` etc) can be run from the shell. If building both at the same time, specify different compiler settings for `MLU` using `--with-cxx`, `--with-cc`, `--with-cxxld`, `--with-ccld`, `--with-cxxflags`, `--with-cppflags`, `--with-ldflags` and `--with-libs`.  
 
 More help is available
 

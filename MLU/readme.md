@@ -61,6 +61,10 @@ If GSL exists in the subdirectory `gsl-2.7`, MLU will build it as a subpackage:
 
 NB: You can put any version of GSL in this directory, but it must be named `gsl-2.7`
 
+### 2b. Optional: Build `Minuit2`
+
+MLU will use the Levenberg-Marquardt algorithm from `GSL` by default for fitting. But it offers a choice of `GSL` or `Minuit2` if built with `Minuit2`. If you want the option to use `Minuit2`, build and install it now (if not already installed).
+
 ## 3. Configure
 
 Perform the usual incantation
