@@ -1,6 +1,6 @@
 /*************************************************************************************
  
- Use Minuit2 as fitting exgine (OPTIONAL)
+ Use Minuit2 as fitting engine (OPTIONAL)
 
  Source file: FitMinuit2.hpp
  

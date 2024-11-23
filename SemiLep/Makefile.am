@@ -1,7 +1,7 @@
 # SemiLep
 
 # Include MLU when compiling this directory
-AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(srcdir)/../MLU
+AM_CPPFLAGS = -I$(srcdir)/../MLU @AM_CPPFLAGS@
 AM_LDFLAGS = @AM_LDFLAGS@
 if WANT_BUILD_MLU
 LDADD = ../MLU/MLU/libMLU.la

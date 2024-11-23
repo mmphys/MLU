@@ -1,6 +1,6 @@
 /*************************************************************************************
  
- Use GSL as fitting exgine (OPTIONAL)
+ Use GSL as fitting engine
 
  Source file: FitGSL.hpp
  

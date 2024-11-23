@@ -1,6 +1,6 @@
 # Mike's Lattice Utilities - libMLU
 
-AM_CPPFLAGS = @MLU_CPPFLAGS@ -I$(srcdir)/..
+AM_CPPFLAGS = -I$(srcdir)/.. @MLU_CPPFLAGS@
 AM_CXXFLAGS = @MLU_CXXFLAGS@
 AM_LDFLAGS = @MLU_LDFLAGS@ @MLU_LIBS@
 
