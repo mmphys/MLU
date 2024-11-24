@@ -69,6 +69,8 @@ if test x"$CXXLD" = x ; then
         AC_MSG_WARN([hadrons-config --cxxld unknown])
     fi
 fi
+CCLD="$CXXLD"
+LD="$CXXLD"
 
 # Check for programs
 AC_PROG_CXX
@@ -131,10 +133,12 @@ LIBS="-lHadrons `$HadronsConfig --libs` $LIBS"
 [CPPFLAGS="`echo $CXXFLAGS | sed -E 's/(^| )([^-]|-[^I])[^ ]*//g'` $CPPFLAGS"]
 # Remove all the -I flags from CXXFLAGS
 [CXXFLAGS="`echo $CXXFLAGS | sed -E 's/(^| )-I[^ ]*//g'`"]
-# If CXXFlags contains -Xpreprocessor -fopenmp, put it in CPPFLAGS
-[CPPFLAGS="$CPPFLAGS `echo $CXXFLAGS | sed -E 's/.*(-Xpreprocessor -fopenmp).*/-Xpreprocessor -fopenmp/'`"]
-# Remove -Xpreprocessor -fopenmp from CXXFlags
-[CXXFLAGS="`echo $CXXFLAGS | sed -E 's/-Xpreprocessor -fopenmp//g'`"]
+# If CXXFlags contains -Xpreprocessor or -Xcompiler options, move them to CPPFLAGS
+[CPPFLAGS+=" `echo $CXXFLAGS | sed -E -e 's/(( |^)-(Xpreprocessor|Xcompiler)) +/\1{}/g' -e 's/ /\n/g' | grep    '{}' | tr '\n' ' ' | sed 's/{}/ /g'`"]
+[  CXXFLAGS="`echo $CXXFLAGS | sed -E -e 's/(( |^)-(Xpreprocessor|Xcompiler)) +/\1{}/g' -e 's/ /\n/g' | grep -v '{}' | tr '\n' ' '`"]
+# Now move experimental flags
+[CPPFLAGS+=" `echo $CXXFLAGS | sed -E -e 's/(( |^)--expt-[^ ]+)/\1{}/g' -e 's/ /\n/g' | grep    '{}' | tr '\n' ' ' | sed 's/{}/ /g'`"]
+[  CXXFLAGS="`echo $CXXFLAGS | sed -E -e 's/(( |^)--expt-[^ ]+)/\1{}/g' -e 's/ /\n/g' | grep -v '{}' | tr '\n' ' '`"]
 
 AC_MSG_NOTICE([CPPFLAGS=$CPPFLAGS])
 AC_MSG_NOTICE([LDFLAGS=$LDFLAGS])
@@ -175,7 +179,10 @@ AS_IF([test x"$enable_check" != xno], [
 #AC_DEFINE_UNQUOTED([SemiLep_BRANCH], ["`git rev-parse --abbrev-ref HEAD`"], [git branch])
 AC_DEFINE_UNQUOTED([SemiLep_GIT_SUMMARY], ["MLU `git rev-parse --abbrev-ref HEAD` `git rev-parse HEAD`, Grid `$GridConfig --git`, Hadrons `$HadronsConfig --git`"], [git branch and commit for MLU, Grid and Hadrons])
 
-CCLD="$CXXLD"
+# NVCC and libtool both swallow -Xcompiler
+AS_IF([test x"`echo $CXXLD | grep -E '^ *nvcc( |$)'`" != x ],
+  [LDFLAGS="`echo $LDFLAGS | sed -E -e 's/(( |^)(-Xcompiler) +)/ \3 \3 \3 /g'`"])
+
 AC_SUBST([AM_CPPFLAGS],["$CPPFLAGS"])
 AC_SUBST([AM_CXXFLAGS],["$CXXFLAGS"])
 AC_SUBST([AM_LDFLAGS],["$LDFLAGS $LIBS"])

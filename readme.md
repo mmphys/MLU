@@ -25,7 +25,7 @@ If you wish to perform data analysis only, **don't** install this package. Inste
 5. [Hadrons] commit 49fd078f7b8d43d5c6c2c4814e1a8987afc244f0
 6. [GNU Scientific Library][gsl] (GSL), version 2.5 or later (I used 2.7 in production) or from [Mike's PhD page][MikeGSL]
 
-This commit of Hadrons requires `-fpermissive` to be included in `CXXFLAGS` in order to build successfully. It also has a dependency on a Grid deflation header which has moved, requiring (assuming Grid has been installed in `$Prefix`)
+This commit of Hadrons requires `-fpermissive` to be included in `CXXFLAGS` in order to build successfully with g++ (`-Xcompiler -fpermissive` for nvcc). It also has a dependency on a Grid deflation header which has moved, requiring (assuming Grid has been installed in `$Prefix`)
 
     cd ~/$Prefix/include/Grid/algorithms/iterative
     ln -s ../deflation/Deflation.h
@@ -78,6 +78,10 @@ MacOS example configure scripts can be found in
 * `ConfigSemiLep.sh` configure SemiLep only
 
 If you wish to build `SemiLep` for gpu, it is recommended that `MLU` still be built for cpu so that the `MLU` utilities (`bootstrap`, `MultiFit`, `Continuum` etc) can be run from the shell. If building both at the same time, specify different compiler settings for `MLU` using `--with-cxx`, `--with-cc`, `--with-cxxld`, `--with-ccld`, `--with-cxxflags`, `--with-cppflags`, `--with-ldflags` and `--with-libs`.  
+
+E.g. building for gpu on Tursa (assuming Grid, Hadrons and GSL are all available in $Prefix)
+
+    ../configure CXX= CPPFLAGS="-I$Prefix/include" LDFLAGS="-L$Prefix/lib" --with-grid=$Prefix --with-hadrons=$Prefix --with-cxx=g++ --with-cxxld=g++ --prefix=$Prefix
 
 More help is available
 
