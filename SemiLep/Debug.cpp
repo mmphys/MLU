@@ -1,10 +1,29 @@
-//
-//  Debug.cpp
-//  A place to play with debug code
-//
-//  Created by Michael Marshall on 09/05/2020.
-//  Copyright © 2020 sopa. All rights reserved.
-//
+/**
+
+ A place to play with debug code
+
+ Source file: Debug.cpp
+
+ Copyright (C) 2019 - 2024
+ 
+ Author: Michael Marshall
+ 
+ This file is part of Semileptonic Data Generation (SemiLep).
+ 
+ SemiLep is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 3 of the License, or
+ (at your option) any later version.
+ 
+ SemiLep is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License along
+ with MLU. If not, see <https://www.gnu.org/licenses/>
+
+**/
 
 #include <SemiLepConfig.h>
 #include <functional>

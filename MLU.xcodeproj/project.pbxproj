@@ -389,24 +389,20 @@
 		6820526028E50662003AD91D /* bootstrap.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = bootstrap.sh; sourceTree = "<group>"; };
 		6820526128E50662003AD91D /* readme.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
 		682C5C4828E4F2C300C8E004 /* Math.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Math.cpp; sourceTree = "<group>"; };
-		682C5C4928E4F2C300C8E004 /* MLULatAn.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MLULatAn.hpp; sourceTree = "<group>"; };
 		682C5C4A28E4F2C300C8E004 /* GSLVecMat.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GSLVecMat.cpp; sourceTree = "<group>"; };
 		682C5C4B28E4F2C300C8E004 /* Param.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Param.hpp; sourceTree = "<group>"; };
 		682C5C4C28E4F2C300C8E004 /* String.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = String.cpp; sourceTree = "<group>"; };
 		682C5C4D28E4F2C300C8E004 /* Physics.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Physics.hpp; sourceTree = "<group>"; };
 		682C5C4E28E4F2C300C8E004 /* FitRange.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = FitRange.hpp; sourceTree = "<group>"; };
 		682C5C4F28E4F2C300C8E004 /* HDF5.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = HDF5.cpp; sourceTree = "<group>"; };
-		682C5C5028E4F2C300C8E004 /* MLUGrid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MLUGrid.cpp; sourceTree = "<group>"; };
 		682C5C5128E4F2C300C8E004 /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
 		682C5C5228E4F2C300C8E004 /* Math.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Math.hpp; sourceTree = "<group>"; };
-		682C5C5328E4F2C300C8E004 /* MLULatAn.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MLULatAn.cpp; sourceTree = "<group>"; };
 		682C5C5428E4F2C300C8E004 /* Param.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Param.cpp; sourceTree = "<group>"; };
 		682C5C5528E4F2C300C8E004 /* GSLVecMat.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = GSLVecMat.hpp; sourceTree = "<group>"; };
 		682C5C5628E4F2C300C8E004 /* String.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = String.hpp; sourceTree = "<group>"; };
 		682C5C5728E4F2C300C8E004 /* Physics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Physics.cpp; sourceTree = "<group>"; };
 		682C5C5828E4F2C300C8E004 /* FitRange.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FitRange.cpp; sourceTree = "<group>"; };
 		682C5C5928E4F2C300C8E004 /* HDF5.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = HDF5.hpp; sourceTree = "<group>"; };
-		682C5C5A28E4F2C300C8E004 /* MLUGrid.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MLUGrid.hpp; sourceTree = "<group>"; };
 		682C5C5B28E4F2C300C8E004 /* MLU.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MLU.hpp; sourceTree = "<group>"; };
 		682C5C5C28E4F2C300C8E004 /* GSLVecMatImp.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = GSLVecMatImp.hpp; sourceTree = "<group>"; };
 		682C5C5F28E4F2C300C8E004 /* xml3pt.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = xml3pt.hpp; sourceTree = "<group>"; };
@@ -715,10 +711,6 @@
 				682C5C5228E4F2C300C8E004 /* Math.hpp */,
 				682C5C5B28E4F2C300C8E004 /* MLU.hpp */,
 				2757D8132BAB8DCD006FA32D /* MLUFirst.hpp */,
-				682C5C5028E4F2C300C8E004 /* MLUGrid.cpp */,
-				682C5C5A28E4F2C300C8E004 /* MLUGrid.hpp */,
-				682C5C5328E4F2C300C8E004 /* MLULatAn.cpp */,
-				682C5C4928E4F2C300C8E004 /* MLULatAn.hpp */,
 				27FE17822A1D2F0100C271ED /* Model.cpp */,
 				27FE17832A1D2F0100C271ED /* Model.hpp */,
 				682C5C5428E4F2C300C8E004 /* Param.cpp */,
