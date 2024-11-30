@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1430"
+   LastUpgradeVersion = "1610"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      buildArchitectures = "Automatic">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -14,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "682C5D6A28E5000300C8E004"
+               BlueprintIdentifier = "27C344652CFA7CC800C3689A"
                BuildableName = "peramb-compare"
                BlueprintName = "peramb-compare"
-               ReferencedContainer = "container:MLU.xcodeproj">
+               ReferencedContainer = "container:SemiLep.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -34,7 +35,8 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
-      useCustomWorkingDirectory = "NO"
+      useCustomWorkingDirectory = "YES"
+      customWorkingDirectory = "$PROJECT_DIR/run"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -44,10 +46,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "682C5D6A28E5000300C8E004"
+            BlueprintIdentifier = "27C344652CFA7CC800C3689A"
             BuildableName = "peramb-compare"
             BlueprintName = "peramb-compare"
-            ReferencedContainer = "container:MLU.xcodeproj">
+            ReferencedContainer = "container:SemiLep.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -61,10 +63,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "682C5D6A28E5000300C8E004"
+            BlueprintIdentifier = "27C344652CFA7CC800C3689A"
             BuildableName = "peramb-compare"
             BlueprintName = "peramb-compare"
-            ReferencedContainer = "container:MLU.xcodeproj">
+            ReferencedContainer = "container:SemiLep.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

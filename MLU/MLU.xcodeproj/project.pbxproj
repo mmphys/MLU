@@ -320,6 +320,14 @@
 		2745065F2CFA4F8D001A9F64 /* SynthData */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SynthData; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		273F4D132CFB1601008B5949 /* Scripts */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Scripts;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		2745057C2CFA48C5001A9F64 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -446,9 +454,10 @@
 		2743813D2CFA395C00961149 = {
 			isa = PBXGroup;
 			children = (
+				274505772CFA4880001A9F64 /* MLU */,
 				274505282CFA4880001A9F64 /* Analyse */,
 				2745054E2CFA4880001A9F64 /* Fit */,
-				274505772CFA4880001A9F64 /* MLU */,
+				273F4D132CFB1601008B5949 /* Scripts */,
 				274505292CFA4880001A9F64 /* bootstrap.sh */,
 				2745052A2CFA4880001A9F64 /* Config.sh */,
 				2745052B2CFA4880001A9F64 /* configure.ac */,
