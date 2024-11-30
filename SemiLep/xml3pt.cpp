@@ -100,6 +100,19 @@ void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix, Grid::Gri
   globalPar.trajCounter  = appPar.Run.trajCounter;
   globalPar.genetic      = appPar.Run.genetic;
   globalPar.runId        = appPar.Run.runId;
+  bool bGotMoreThanOneMPIRank{};
+  for( auto dim : Grid::GridDefaultMpi() )
+    if( dim != 1 )
+    {
+      bGotMoreThanOneMPIRank = true;
+      break;
+    }
+  if( !bGotMoreThanOneMPIRank )
+  {
+    LOG(Warning) << "Ignoring request to use database (crashes without MPI)" << std::endl;
+  }
+  else
+  {
   // result database
   globalPar.database.resultDb = appPar.Run.dbOptions.resultDb;
   Grid::Hadrons::makeFileDir( globalPar.database.resultDb );
@@ -115,6 +128,7 @@ void AppMaker::SetupBase( XmlReader &r, const std::string &sRunSuffix, Grid::Gri
   globalPar.database.restoreModules = false;
   globalPar.database.restoreMemoryProfile = false;
   globalPar.database.restoreSchedule = false;
+  }
   globalPar.scheduleFile = JobFilePrefix + ".sched";
   globalPar.graphFile = JobFilePrefix + ".graph";
   globalPar.saveSchedule = true;
