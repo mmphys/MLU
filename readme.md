@@ -2,13 +2,13 @@
 
 This project contains semileptonic data production code for [Mike's PhD](http://lqcd.me/PhD/).
 
-If you wish to perform data analysis only, **don't** install this package. Instead, install the [subpackage](MLU/readme.md): Meson (aka Mike's) Lattice Utilities (MLU).
+If you wish to perform data analysis only, **don't** build this package. Instead, build the [subpackage](MLU/readme.md): Meson (aka Mike's) Lattice Utilities (`MLU`).
 
 ## Folder structure
 
 | Item | Description |
 | --- | --- |
-| `MLU` | [Subpackage](MLU/readme.md) Meson (aka Mike's) Lattice Utilities (MLU) | 
+| `MLU` | [Subpackage](MLU/readme.md) Meson (aka Mike's) Lattice Utilities (`MLU`) | 
 | `SemiLep` | `xml3pt` generates the SemiLep dataset on Tursa (and previously Tesseract). Includes other utilities with dependencies on `Grid` and `Hadrons` |
 | `xml` | Sample xml used for data production | 
 
@@ -18,12 +18,18 @@ If you wish to perform data analysis only, **don't** install this package. Inste
 
 ### You must install these mandatory dependencies
 
+You must install the mandatory dependencies for `MLU`
+
 1. [HDF5]
 2. [OpenMP]
-3. [c-lime][lime]
-4. [Grid] Latest version (with HDF5, OpenMP and c-lime)
-5. [Hadrons] commit 49fd078f7b8d43d5c6c2c4814e1a8987afc244f0
-6. [GNU Scientific Library][gsl] (GSL), version 2.5 or later (I used 2.7 in production) or from [Mike's PhD page][MikeGSL]
+3. [GNU Scientific Library][gsl] (`GSL`), version 2.5 or later (I used 2.7 in production) or from [Mike's PhD page][MikeGSL]
+4. [Bash] with associative arrays (version >= 4.2, latest preferred)
+
+and additional dependencies for `SemiLep`
+
+5. [c-lime][lime]
+6. [Grid] Latest version (with HDF5, OpenMP and c-lime)
+7. [Hadrons] commit 49fd078f7b8d43d5c6c2c4814e1a8987afc244f0
 
 This commit of Hadrons requires `-fpermissive` to be included in `CXXFLAGS` in order to build successfully with g++ (`-Xcompiler -fpermissive` for nvcc). It also has a dependency on a Grid deflation header which has moved, requiring (assuming Grid has been installed in `$Prefix`)
 
@@ -32,11 +38,12 @@ This commit of Hadrons requires `-fpermissive` to be included in `CXXFLAGS` in o
 
 [hdf5]: https://www.hdfgroup.org/solutions/hdf5/
 [openmp]: https://www.openmp.org
+[gsl]: https://www.gnu.org/software/gsl/doc/html/index.html
+[MikeGSL]: http://lqcd.me/PhD/tar/gsl-2.7.tar.gz
+[bash]: https://www.gnu.org/software/bash/
 [lime]: https://usqcd-software.github.io/c-lime/
 [grid]: https://github.com/paboyle/Grid
 [hadrons]: https://github.com/aportelli/Hadrons
-[gsl]: https://www.gnu.org/software/gsl/doc/html/index.html
-[MikeGSL]: http://lqcd.me/PhD/tar/gsl-2.7.tar.gz
 
 ## 2. Bootstrap
 
@@ -93,6 +100,8 @@ Use the usual incantation:
 
     make -j 20
     make install
+
+or, using Xcode, open `SemiLep.xcodeproj` and build the scheme `All`.
 
 # Semileptonic data production
 

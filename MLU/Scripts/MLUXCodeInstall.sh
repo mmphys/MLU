@@ -90,7 +90,7 @@ function DoConfig()
             HadronsFermionEP64To32)
   local MLUExe=(bootstrap Continuum corr corrstat CRatio Divide FitSummary GetColumn ImportCorr \
             MakeEnsembleInfo mixedop MultiFit repair SynthData)
-  local SemiLepExe=(Debug GaugeCmp hlxml lime_truncate peramb-compare TensorDemo xml3pt \
+  local SemiLepExe=(Debug GaugeCmp hlxml peramb-compare TensorDemo xml3pt \
             xmlGFWall xmlPeramb xmlZ2)
 
   GetXcodeGUIBuild GridBP Grid

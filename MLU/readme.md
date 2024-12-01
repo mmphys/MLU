@@ -1,8 +1,8 @@
 # Meson (aka Mike's) Lattice Utilities (MLU)
 
-This package contains the MLU Library and Analysis Utilities used for performing the data analysis for [Mike's PhD](http://lqcd.me/PhD/).
+This package contains the `MLU` Library and Analysis Utilities used for performing the data analysis for [Mike's PhD](http://lqcd.me/PhD/).
 
-Follow these instructions to build a stand-alone version of the MLU Library and Analysis Utilities.
+Follow these instructions to build a stand-alone version of the `MLU` Library and Analysis Utilities.
 
 (For the full Semileptonic Data Generation package see [`readme.md`](../readme.md) in the containing directory.)
 
@@ -19,27 +19,31 @@ Follow these instructions to build a stand-alone version of the MLU Library and 
 
 ## 1. Install dependencies
 
-Mandatory
+### Mandatory
 
 1. [HDF5]
-2. [GNU Scientific Library][gsl] (GSL), version 2.5 or later (I used 2.7 in production) or from [Mike's PhD page][MikeGSL]
-3. [Bash] with associative arrays (version >= 4.2, latest preferred)
+2. [OpenMP]
+3. [GNU Scientific Library][gsl] (`GSL`), version 2.5 or later (I used 2.7 in production) or from [Mike's PhD page][MikeGSL]
+4. [Bash] with associative arrays (version >= 4.2, latest preferred)
 
-NB: GSL can be installed as a subpackage of MLU (see below).
+NB: GSL can be built as a subpackage of MLU (see below).
 
-Optional
+### Optional
 
-1. **highly recommended** [OpenMP] (except for debug builds)
-2. **optional** [CERN `Minuit2`][minuit2] standalone version (see paragraph 3, "... can be downloaded [here]") or from [Mike's PhD page][MikeMinuit2]
+5. [CERN `Minuit2`][minuit2] standalone version (see paragraph 3, "... can be downloaded [here]") or from [Mike's PhD page][MikeMinuit2] to install a second fitter, e.g. to validate difficult fits
+6. [Gnuplot] required by plotting scripts. Can be installed with macports using `sudo port install gnuplot`
+7. `pdflatex` used by the continuum comparison plot script. Can be installed on a Mac using [MacTeX].
 
-[bash]: https://www.gnu.org/software/bash/
 [hdf5]: https://www.hdfgroup.org/solutions/hdf5/
 [openmp]: https://www.openmp.org
 [gsl]: https://www.gnu.org/software/gsl/doc/html/index.html
+[MikeGSL]: http://lqcd.me/PhD/tar/gsl-2.7.tar.gz
+[bash]: https://www.gnu.org/software/bash/
 [minuit2]: https://seal.web.cern.ch/seal/MathLibs/Minuit2/html/index.html
 [here]: https://seal.web.cern.ch/seal/MathLibs/Minuit2/Minuit2.tar.gz
 [MikeMinuit2]: http://lqcd.me/PhD/tar/Minuit2-5.34.14.tar.gz
-[MikeGSL]: http://lqcd.me/PhD/tar/gsl-2.7.tar.gz
+[Gnuplot]: http://www.gnuplot.info/
+[MacTeX]: https://tug.org/mactex/
 
 ## 2. Bootstrap
 
@@ -86,6 +90,8 @@ Use the usual incantation:
     make -j 20
     make install
 
+or, using Xcode, open `MLU.xcodeproj` and build the scheme `AllMLU`.
+
 Update your path to include Script subdirectories:
 
     MLU=*path_to_MLU*
@@ -93,17 +99,6 @@ Update your path to include Script subdirectories:
 
 The scripts require a recent version of Bash (>= 4.2) that supports associative arrays.
 **Mac users in particular take note**, make sure the version of Bash you wish to use is earliest in your path.
-
-### Script dependencies
-
-These scripts require `gnuplot`
-
-    sudo port install gnuplot
-
-The continuum comparison plot scripts use `pdflatex`.
-This can be installed on a Mac using [MacTeX][mactex].
-
-[mactex]: https://tug.org/mactex/
 
 # Semileptonic data post-processing
 

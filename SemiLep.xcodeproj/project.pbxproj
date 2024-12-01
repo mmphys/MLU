@@ -13,7 +13,6 @@
 		27C344482CFA7C1300C3689A /* libMLU.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 27C3441C2CFA7AC500C3689A /* libMLU.dylib */; };
 		27C344542CFA7C5900C3689A /* hlxml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 274507052CFA5227001A9F64 /* hlxml.cpp */; };
 		27C344552CFA7C5F00C3689A /* libMLU.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 27C3441C2CFA7AC500C3689A /* libMLU.dylib */; };
-		27C344612CFA7C9C00C3689A /* lime_truncate.c in Sources */ = {isa = PBXBuildFile; fileRef = 274507062CFA5227001A9F64 /* lime_truncate.c */; };
 		27C3446D2CFA7CDE00C3689A /* peramb-compare.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 274507092CFA5227001A9F64 /* peramb-compare.cpp */; };
 		27C3446E2CFA7CE400C3689A /* libMLU.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 27C3441C2CFA7AC500C3689A /* libMLU.dylib */; };
 		27C3447A2CFA7D1B00C3689A /* TensorDemo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2745070A2CFA5227001A9F64 /* TensorDemo.cpp */; };
@@ -59,15 +58,6 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		27C3444B2CFA7C4300C3689A /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-		27C344582CFA7C8600C3689A /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -146,7 +136,6 @@
 		274507032CFA5227001A9F64 /* HadronsApp.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = HadronsApp.hpp; sourceTree = "<group>"; };
 		274507042CFA5227001A9F64 /* HadronsApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = HadronsApp.cpp; sourceTree = "<group>"; };
 		274507052CFA5227001A9F64 /* hlxml.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = hlxml.cpp; sourceTree = "<group>"; };
-		274507062CFA5227001A9F64 /* lime_truncate.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = lime_truncate.c; sourceTree = "<group>"; };
 		274507072CFA5227001A9F64 /* Makefile.am */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.am; sourceTree = "<group>"; };
 		274507082CFA5227001A9F64 /* Makefile.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.in; sourceTree = "<group>"; };
 		274507092CFA5227001A9F64 /* peramb-compare.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "peramb-compare.cpp"; sourceTree = "<group>"; };
@@ -162,7 +151,6 @@
 		274CBABD2CFA37F0009091B8 /* Debug */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Debug; sourceTree = BUILT_PRODUCTS_DIR; };
 		27C344402CFA7BF100C3689A /* GaugeCmp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GaugeCmp; sourceTree = BUILT_PRODUCTS_DIR; };
 		27C3444D2CFA7C4300C3689A /* hlxml */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hlxml; sourceTree = BUILT_PRODUCTS_DIR; };
-		27C3445A2CFA7C8600C3689A /* lime_truncate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lime_truncate; sourceTree = BUILT_PRODUCTS_DIR; };
 		27C344662CFA7CC800C3689A /* peramb-compare */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "peramb-compare"; sourceTree = BUILT_PRODUCTS_DIR; };
 		27C344732CFA7D0700C3689A /* TensorDemo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TensorDemo; sourceTree = BUILT_PRODUCTS_DIR; };
 		27C344802CFA7D5500C3689A /* xml3pt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xml3pt; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -193,13 +181,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				27C344552CFA7C5F00C3689A /* libMLU.dylib in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		27C344572CFA7C8600C3689A /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -262,7 +243,6 @@
 				274507032CFA5227001A9F64 /* HadronsApp.hpp */,
 				274507042CFA5227001A9F64 /* HadronsApp.cpp */,
 				274507052CFA5227001A9F64 /* hlxml.cpp */,
-				274507062CFA5227001A9F64 /* lime_truncate.c */,
 				274507072CFA5227001A9F64 /* Makefile.am */,
 				274507082CFA5227001A9F64 /* Makefile.in */,
 				274507092CFA5227001A9F64 /* peramb-compare.cpp */,
@@ -318,7 +298,6 @@
 				274CBABD2CFA37F0009091B8 /* Debug */,
 				27C344402CFA7BF100C3689A /* GaugeCmp */,
 				27C3444D2CFA7C4300C3689A /* hlxml */,
-				27C3445A2CFA7C8600C3689A /* lime_truncate */,
 				27C344662CFA7CC800C3689A /* peramb-compare */,
 				27C344732CFA7D0700C3689A /* TensorDemo */,
 				27C344802CFA7D5500C3689A /* xml3pt */,
@@ -394,25 +373,6 @@
 			);
 			productName = hlxml;
 			productReference = 27C3444D2CFA7C4300C3689A /* hlxml */;
-			productType = "com.apple.product-type.tool";
-		};
-		27C344592CFA7C8600C3689A /* lime_truncate */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 27C3445E2CFA7C8600C3689A /* Build configuration list for PBXNativeTarget "lime_truncate" */;
-			buildPhases = (
-				27C344562CFA7C8600C3689A /* Sources */,
-				27C344572CFA7C8600C3689A /* Frameworks */,
-				27C344582CFA7C8600C3689A /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = lime_truncate;
-			packageProductDependencies = (
-			);
-			productName = lime_truncate;
-			productReference = 27C3445A2CFA7C8600C3689A /* lime_truncate */;
 			productType = "com.apple.product-type.tool";
 		};
 		27C344652CFA7CC800C3689A /* peramb-compare */ = {
@@ -547,9 +507,6 @@
 					27C3444C2CFA7C4300C3689A = {
 						CreatedOnToolsVersion = 16.1;
 					};
-					27C344592CFA7C8600C3689A = {
-						CreatedOnToolsVersion = 16.1;
-					};
 					27C344652CFA7CC800C3689A = {
 						CreatedOnToolsVersion = 16.1;
 					};
@@ -593,7 +550,6 @@
 				274CBABC2CFA37F0009091B8 /* Debug */,
 				27C3443F2CFA7BF100C3689A /* GaugeCmp */,
 				27C3444C2CFA7C4300C3689A /* hlxml */,
-				27C344592CFA7C8600C3689A /* lime_truncate */,
 				27C344652CFA7CC800C3689A /* peramb-compare */,
 				27C344722CFA7D0700C3689A /* TensorDemo */,
 				27C3447F2CFA7D5500C3689A /* xml3pt */,
@@ -636,14 +592,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				27C344542CFA7C5900C3689A /* hlxml.cpp in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		27C344562CFA7C8600C3689A /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				27C344612CFA7C9C00C3689A /* lime_truncate.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -931,20 +879,6 @@
 			};
 			name = Release;
 		};
-		27C3445F2CFA7C8600C3689A /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		27C344602CFA7C8600C3689A /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
 		27C3446B2CFA7CC800C3689A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1064,15 +998,6 @@
 			buildConfigurations = (
 				27C344522CFA7C4300C3689A /* Debug */,
 				27C344532CFA7C4300C3689A /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		27C3445E2CFA7C8600C3689A /* Build configuration list for PBXNativeTarget "lime_truncate" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				27C3445F2CFA7C8600C3689A /* Debug */,
-				27C344602CFA7C8600C3689A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
