@@ -14,7 +14,6 @@ Pkg=/opt/local # MacPorts packages
 
 if [ "${1@L}" = clean ]
 then
-# Clean just my directory
 shopt -s globstar
 rm -rf **/autom4te.cache {,MLU/}build* || :
 rm **/{aclocal.m4,ar-lib,compile,config.guess,config.sub,configure,depcomp,install-sh,ltmain.sh,missing,Makefile.in,*onfig.h.in,*~} || :

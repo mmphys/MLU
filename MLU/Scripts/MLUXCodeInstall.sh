@@ -130,7 +130,16 @@ function DoConfig()
       fi
       ln -s "$Hadrons/Hadrons"
     fi
-    # Should do Grid directory too - see GridMakeEnv.sh
+    # Grid
+    if [ -n "$Grid" ]; then
+      rm -rf Grid
+      mkdir -p Grid
+      cd Grid
+      LinkTo "$Grid/build$Config/Grid" Config.h Version.h
+      for f in "$Grid/Grid/"*; do if [[ -d $f ]] ; then rm -rf ${f##*/}; ln -s $f; fi; done
+      for f in "$Grid/Grid/"*.{h,hpp}; do if [[ -f $f ]] ; then rm -f ${f##*/}; ln -s $f; fi; done
+      cd ..
+    fi
   done
 }
 
